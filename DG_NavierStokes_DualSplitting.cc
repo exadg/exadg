@@ -1080,8 +1080,6 @@ namespace DG_NavierStokes
   time_step(time_step_size),
   viscosity(VISCOSITY),
   gamma0(1.0),
-  alpha({1.0,0.0}),
-  beta({1.0,0.0}),
   computing_times(4),
   times_cg_velo(3),
   iterations_cg_velo(3),
@@ -1090,6 +1088,10 @@ namespace DG_NavierStokes
   fe_wall_distance(1),
   dof_handler_wall_distance(dof_handler.get_tria())
   {
+    alpha[0] = 1.0;
+    alpha[1] = 0.0;
+    beta[0] = 1.0;
+    beta[1] = 0.0;
     dof_handler_wall_distance.distribute_dofs(fe_wall_distance);
     dof_handler_wall_distance.distribute_mg_dofs(fe_wall_distance);
 
