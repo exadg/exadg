@@ -1,0 +1,8 @@
+*vtu
+DG_NavierStokes_DualSplitting
+CMakeFiles
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+.project
+.cproject
