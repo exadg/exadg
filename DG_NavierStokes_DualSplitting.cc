@@ -1227,8 +1227,6 @@ namespace DG_NavierStokes
   time_step(time_step_size),
   viscosity(VISCOSITY),
   gamma0(1.0),
-  alpha({1.0,0.0}),
-  beta({1.0,0.0}),
   computing_times(4),
   times_cg_velo(3),
   iterations_cg_velo(3),
@@ -1236,6 +1234,10 @@ namespace DG_NavierStokes
   iterations_cg_pressure(2),
   xwall(dof_handler,&data)
   {
+    alpha[0] = 1.0;
+    alpha[1] = 0.0;
+    beta[0] = 1.0;
+    beta[1] = 0.0;
 
   data.resize(dof_handler_p.get_tria().n_levels());
   //mg_matrices_pressure.resize(dof_handler_p.get_tria().n_levels()-2, dof_handler_p.get_tria().n_levels()-1);
