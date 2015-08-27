@@ -823,7 +823,8 @@ namespace DG_NavierStokes
   //time-integration-level routines for xwall
   public:
     XWall(const DoFHandler<dim> &dof_handler,
-        std::vector<MatrixFree<dim,double> >* data);
+        std::vector<MatrixFree<dim,double> >* data,
+        double visc);
 
     //initialize everything, e.g.
     //setup of wall distance
@@ -844,18 +845,41 @@ namespace DG_NavierStokes
     }
 
     //Update wall shear stress at the beginning of every time step
-    void UpdateTauW();
+    void UpdateTauW(std::vector<parallel::distributed::Vector<double> > solution_np);
 
     DoFHandler<dim>* ReturnDofHandlerWallDistance(){return &dof_handler_wall_distance;}
     parallel::distributed::Vector<double>* ReturnWDist(){return &wall_distance;}
+    parallel::distributed::Vector<double>* ReturnTauW(){return &tauw;}
   private:
 
     void InitWDist();
 
     //calculate wall shear stress based on current solution
-    void CalculateWallShearStress(){};
+    void CalculateWallShearStress(const std::vector<parallel::distributed::Vector<double> >   &src,
+        parallel::distributed::Vector<double>      &dst);
 
     void L2Projection(){};
+
+    //element-level routines
+    void local_rhs_dummy (const MatrixFree<dim,double>                &data,
+                          parallel::distributed::Vector<double>      &dst,
+                          const std::vector<parallel::distributed::Vector<double> >    &src,
+                          const std::pair<unsigned int,unsigned int>          &cell_range) const;
+
+    void local_rhs_wss_boundary_face(const MatrixFree<dim,double>              &data,
+                      parallel::distributed::Vector<double>      &dst,
+                      const std::vector<parallel::distributed::Vector<double> >  &src,
+                      const std::pair<unsigned int,unsigned int>          &face_range) const;
+
+    void local_rhs_dummy_face (const MatrixFree<dim,double>              &data,
+                  parallel::distributed::Vector<double>      &dst,
+                  const std::vector<parallel::distributed::Vector<double> >  &src,
+                  const std::pair<unsigned int,unsigned int>          &face_range) const;
+
+    void local_rhs_normalization_boundary_face(const MatrixFree<dim,double>              &data,
+                      parallel::distributed::Vector<double>      &dst,
+                      const std::vector<parallel::distributed::Vector<double> >  &src,
+                      const std::pair<unsigned int,unsigned int>          &face_range) const;
 
     //continuous vectors with linear interpolation
     FE_Q<dim> fe_wall_distance;
@@ -864,6 +888,7 @@ namespace DG_NavierStokes
     parallel::distributed::Vector<double> tauw;
     //MatrixFree<dim,value_type> data;
     std::vector<MatrixFree<dim,double> >* mydata;
+    double viscosity;
 
   public:
 
@@ -871,10 +896,12 @@ namespace DG_NavierStokes
 
   template<int dim, int fe_degree>
   XWall<dim,fe_degree>::XWall(const DoFHandler<dim> &dof_handler,
-      std::vector<MatrixFree<dim,double> >* data)
+      std::vector<MatrixFree<dim,double> >* data,
+      double visc)
   :fe_wall_distance(1),
    dof_handler_wall_distance(dof_handler.get_tria()),
-   mydata(data)
+   mydata(data),
+   viscosity(visc)
   {
     dof_handler_wall_distance.distribute_dofs(fe_wall_distance);
     dof_handler_wall_distance.distribute_mg_dofs(fe_wall_distance);
@@ -909,7 +936,8 @@ namespace DG_NavierStokes
           {
             typename DoFHandler<dim>::face_iterator face=cellw->face(f);
             //this is a face with dirichlet boundary
-            if((*mydata).at(0).get_boundary_indicator(face->boundary_id()) == 0)
+            unsigned int bid = face->boundary_id();
+            if(bid == 0)
             {
               for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_cell; ++v)
               {
@@ -955,13 +983,162 @@ namespace DG_NavierStokes
   }
 
   template<int dim, int fe_degree>
-  void XWall<dim,fe_degree>::UpdateTauW()
+  void XWall<dim,fe_degree>::UpdateTauW(std::vector<parallel::distributed::Vector<double> > solution_np)
   {
     std::cout << "\nCompute new tauw: ";
-    CalculateWallShearStress();
+    CalculateWallShearStress(solution_np,tauw);
+    //mean does not work currently because of all off-wall nodes in the vector
+//    double tauwmean = tauw.mean_value();
+//    std::cout << "mean = " << tauwmean << " ";
+    double tauwmax = tauw.linfty_norm();
+
+    std::cout << "max = " << tauwmax << " ";
+
+    double minloc = 1e9;
+    for(unsigned int i = 0; i < tauw.local_size(); ++i)
+    {
+      if(tauw.local_element(i)>0.0)
+      {
+        if(minloc > tauw.local_element(i))
+          minloc = tauw.local_element(i);
+      }
+    }
+    const double minglob = Utilities::MPI::min(minloc, MPI_COMM_WORLD);
+
+    std::cout << "min = " << minglob << " ";
     std::cout << "L2-project... ";
     L2Projection();
     std::cout << "done!" << std::endl;
+  }
+
+  template<int dim, int fe_degree>
+  void XWall<dim, fe_degree>::
+  CalculateWallShearStress (const std::vector<parallel::distributed::Vector<double> >   &src,
+            parallel::distributed::Vector<double>      &dst)
+  {
+    parallel::distributed::Vector<double> normalization;
+    (*mydata).back().initialize_dof_vector(normalization, 2);
+    parallel::distributed::Vector<double> force;
+    (*mydata).back().initialize_dof_vector(force, 2);
+    // initialize
+    std::vector<types::global_dof_index> element_dof_indices(fe_wall_distance.dofs_per_cell);
+    for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distance.begin_active();
+        cell != dof_handler_wall_distance.end(); ++cell)
+      if (cell->is_locally_owned())
+      {
+        cell->get_dof_indices(element_dof_indices);
+        for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_cell; ++v)
+        {
+          force(element_dof_indices[v]) = 0.0;
+          normalization(element_dof_indices[v]) = 0.0;
+        }
+      }
+
+    (*mydata).back().loop (&XWall<dim, fe_degree>::local_rhs_dummy,
+        &XWall<dim, fe_degree>::local_rhs_dummy_face,
+        &XWall<dim, fe_degree>::local_rhs_wss_boundary_face,
+              this, force, src);
+
+    (*mydata).back().loop (&XWall<dim, fe_degree>::local_rhs_dummy,
+        &XWall<dim, fe_degree>::local_rhs_dummy_face,
+        &XWall<dim, fe_degree>::local_rhs_normalization_boundary_face,
+              this, normalization, src);
+
+    for(unsigned int i = 0; i < force.local_size(); ++i)
+    {
+      if(normalization.local_element(i)>0.0)
+        dst.local_element(i) = force.local_element(i) / normalization.local_element(i);
+    }
+
+  }
+
+  template <int dim, int fe_degree>
+  void XWall<dim,fe_degree>::
+  local_rhs_dummy (const MatrixFree<dim,double>                &data,
+              parallel::distributed::Vector<double>      &dst,
+              const std::vector<parallel::distributed::Vector<double> >  &src,
+              const std::pair<unsigned int,unsigned int>           &cell_range) const
+  {
+
+  }
+
+  template <int dim, int fe_degree>
+  void XWall<dim,fe_degree>::
+  local_rhs_wss_boundary_face (const MatrixFree<dim,double>             &data,
+                         parallel::distributed::Vector<double>    &dst,
+                         const std::vector<parallel::distributed::Vector<double> >  &src,
+                         const std::pair<unsigned int,unsigned int>          &face_range) const
+  {
+    FEFaceEvaluation<dim,fe_degree,fe_degree+1,dim,double> fe_eval(data,true,0,0);
+    FEFaceEvaluation<dim,1,fe_degree+1,1,double> fe_eval_tauw(data,true,2,0);
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      if (data.get_boundary_indicator(face) == 0) // Infow and wall boundaries
+      {
+        fe_eval.reinit (face);
+        fe_eval_tauw.reinit (face);
+
+        fe_eval.read_dof_values(src);
+        fe_eval.evaluate(true,true);
+        fe_eval_tauw.read_dof_values(dst);
+        fe_eval_tauw.evaluate(true,false);
+
+        if(fe_eval.n_q_points != fe_eval_tauw.n_q_points)
+          std::cerr << "\nwrong number of quadrature points" << std::endl;
+
+        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        {
+          Tensor<1, dim, VectorizedArray<double> > average_gradient = fe_eval.get_normal_gradient(q);
+
+          VectorizedArray<double> tauwsc = make_vectorized_array<double>(0.0);
+          if(dim == 2)
+            tauwsc = std::sqrt(average_gradient[0]*average_gradient[0] + average_gradient[1]*average_gradient[1]);
+          else if(dim == 3)
+            tauwsc = std::sqrt(average_gradient[0]*average_gradient[0] + average_gradient[1]*average_gradient[1] + average_gradient[2]*average_gradient[2]);
+
+          tauwsc = tauwsc * (make_vectorized_array<double>(viscosity));
+          fe_eval_tauw.submit_value(tauwsc,q);
+        }
+        fe_eval_tauw.integrate(true,false);
+        fe_eval_tauw.distribute_local_to_global(dst);
+      }
+    }
+  }
+
+  template <int dim, int fe_degree>
+  void XWall<dim,fe_degree>::
+  local_rhs_normalization_boundary_face (const MatrixFree<dim,double>             &data,
+                         parallel::distributed::Vector<double>    &dst,
+                         const std::vector<parallel::distributed::Vector<double> >  &src,
+                         const std::pair<unsigned int,unsigned int>          &face_range) const
+  {
+    FEFaceEvaluation<dim,1,fe_degree+1,1,double> fe_eval_tauw(data,true,2,0);
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      if (data.get_boundary_indicator(face) == 0) // Infow and wall boundaries
+      {
+        fe_eval_tauw.reinit (face);
+
+        fe_eval_tauw.read_dof_values(dst);
+        fe_eval_tauw.evaluate(true,false);
+
+        for(unsigned int q=0;q<fe_eval_tauw.n_q_points;++q)
+          fe_eval_tauw.submit_value(make_vectorized_array<double>(1.0),q);
+
+        fe_eval_tauw.integrate(true,false);
+        fe_eval_tauw.distribute_local_to_global(dst);
+      }
+    }
+  }
+
+  template <int dim, int fe_degree>
+  void XWall<dim,fe_degree>::
+  local_rhs_dummy_face (const MatrixFree<dim,double>                 &data,
+                parallel::distributed::Vector<double>      &dst,
+                const std::vector<parallel::distributed::Vector<double> >  &src,
+                const std::pair<unsigned int,unsigned int>          &face_range) const
+  {
+
   }
 
   template<int dim, int fe_degree, int fe_degree_p>
@@ -1232,7 +1409,7 @@ namespace DG_NavierStokes
   iterations_cg_velo(3),
   times_cg_pressure(2),
   iterations_cg_pressure(2),
-  xwall(dof_handler,&data)
+  xwall(dof_handler,&data,viscosity)
   {
     alpha[0] = 1.0;
     alpha[1] = 0.0;
@@ -1537,7 +1714,7 @@ namespace DG_NavierStokes
     Timer timer;
     timer.restart();
   /***************** STEP 0: xwall update **********************************/
-    xwall.UpdateTauW();
+    xwall.UpdateTauW(solution_n);
   /*************************************************************************/
 
   /***************** STEP 1: convective (nonlinear) term ********************/
@@ -1761,7 +1938,6 @@ namespace DG_NavierStokes
 
   vorticity_nm = vorticity_n;
   compute_vorticity(solution_n,vorticity_n);
-
   if(time_step_number == 1)
     update_time_integrator();
   }
@@ -3559,7 +3735,8 @@ namespace DG_NavierStokes
     }
     data_out.add_data_vector (dof_handler_p,solution_n[dim], "pressure");
     data_out.add_data_vector (*(*xwall).ReturnDofHandlerWallDistance(),(*(*xwall).ReturnWDist()), "wdist");
-    data_out.build_patches (10);
+    data_out.add_data_vector (*(*xwall).ReturnDofHandlerWallDistance(),(*(*xwall).ReturnTauW()), "tauw");
+    data_out.build_patches (3);
     std::ostringstream filename;
     filename << "solution_"
              << output_number
@@ -3684,7 +3861,7 @@ namespace DG_NavierStokes
     if( (time+time_step) > (output_number*output_interval_time-EPSILON) )
     {
     write_output(navier_stokes_operation.solution_n,
-            navier_stokes_operation.solution_n,
+            navier_stokes_operation.vorticity_n,
             navier_stokes_operation.ReturnXWall(),
             output_number++);
       pcout << std::endl << "Write output at TIME t = " << time+time_step << std::endl;
