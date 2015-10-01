@@ -440,13 +440,13 @@ namespace DG_NavierStokes
 {
   using namespace dealii;
 
-  const unsigned int fe_degree = 2;
+  const unsigned int fe_degree = 3;
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 20;
   const unsigned int dimension = 2; // dimension >= 2
-  const unsigned int refine_steps_min = 4;
-  const unsigned int refine_steps_max = 4;
+  const unsigned int refine_steps_min = 3;
+  const unsigned int refine_steps_max = 3;
 
   const double START_TIME = 0.0;
   const double END_TIME = 5.0; // Poisseuille 5.0;  Kovasznay 1.0
@@ -455,7 +455,7 @@ namespace DG_NavierStokes
   const double MAX_VELOCITY = 1.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
   const double stab_factor = 16.0;
 
-  const double MAX_WDIST_XWALL = 0.1;
+  const double MAX_WDIST_XWALL = 0.2;
   bool pure_dirichlet_bc = false;
 
   const double lambda = 0.5/VISCOSITY - std::pow(0.25/std::pow(VISCOSITY,2.0)+4.0*std::pow(numbers::PI,2.0),0.5);
@@ -519,6 +519,8 @@ namespace DG_NavierStokes
       result = 1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
     if(component == dim)
     result = (p[0]-1.0)*pressure_gradient*(t<T? (t/T) : 1.0);
+    if(component >dim)
+      result = 0.0;
     /********************************************************************/
 
     /************************* vortex problem ***************************/
@@ -951,8 +953,8 @@ namespace DG_NavierStokes
          //calculate transformation done ----------------------------------
 
          //get enrichment function and scalar derivatives
-           VectorizedArray<Number> psigp = SpaldingsLaw(wdist, utau, enriched_components)*make_vectorized_array(0.01);
-           VectorizedArray<Number> derpsigpsc=DerSpaldingsLaw(psigp)*make_vectorized_array(0.01);
+           VectorizedArray<Number> psigp = SpaldingsLaw(wdist, utau, enriched_components)*make_vectorized_array(1.0);
+           VectorizedArray<Number> derpsigpsc=DerSpaldingsLaw(psigp)*make_vectorized_array(1.0);
 //         const Number der2psigpsc=Der2SpaldingsLaw(wdist, utau, psigp,derpsigpsc);
 //
 //         //calculate final derivatives
@@ -1113,7 +1115,6 @@ public:
             if ((dcell->center()[1] > (1.0-MAX_WDIST_XWALL)) || (dcell->center()[1] <(-1.0 + MAX_WDIST_XWALL)))
               enriched = true;
           }
-
           enriched_components.resize(VectorizedArray<Number>::n_array_elements);
           for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
             enriched_components.at(v) = false;
@@ -1123,14 +1124,9 @@ public:
             for (unsigned int v=0; v<EvaluationXWall<dim,n_q_points_1d, Number>::mydata.n_components_filled(cell); ++v)
             {
               typename DoFHandler<dim>::cell_iterator dcell = EvaluationXWall<dim,n_q_points_1d, Number>::mydata.get_cell_iterator(cell, v);
-                if (dcell->center()[1] > 1.0-MAX_WDIST_XWALL || dcell->center()[1] <-1.0 + MAX_WDIST_XWALL)
+              if ((dcell->center()[1] > (1.0-MAX_WDIST_XWALL)) || (dcell->center()[1] <(-1.0 + MAX_WDIST_XWALL)))
                   enriched_components.at(v) = true;
-                else
-                  enriched_components.at(v) = false;
             }
-            // in case there are unused vectors, I guess they are in the end of the array
-            for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements-EvaluationXWall<dim,n_q_points_1d, Number>::mydata.n_components_filled(cell); ++v)
-              enriched_components.at(v) = false;
 
             //initialize the enrichment function
             {
@@ -1343,6 +1339,25 @@ public:
           }
 #endif
       }
+      void submit_value(const Tensor<1,1,VectorizedArray<Number> > val_in,
+          const unsigned int q_point)
+      {
+        fe_eval.submit_value(val_in[0],q_point);
+#ifdef XWALL
+          if(enriched)
+          {
+            value_type submitvalue = value_type();
+            for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
+            {
+              if(enriched_components.at(v))
+              {
+                add_array_component_to_value(submitvalue,val_in[0],v);
+              }
+            }
+            values.at(q_point) = submitvalue;
+          }
+#endif
+      }
 
       void submit_gradient(const gradient_type grad_in,
           const unsigned int q_point)
@@ -1416,6 +1431,7 @@ public:
         for (unsigned int d = 0; d<n_components_; d++)
           val[d][v] += toadd[d][v];
       }
+
 
       gradient_type get_gradient (const unsigned int q_point)
       {
@@ -1755,6 +1771,7 @@ public:
                           fe_eval(matrix_free,is_left_face,0,quad_no,no_gradients_on_faces),
                           fe_eval_xwall(matrix_free,is_left_face,3,quad_no,no_gradients_on_faces),
                           fe_eval_tauw(matrix_free,is_left_face,2,quad_no,no_gradients_on_faces),
+                          is_left_face(is_left_face),
                           values(fe_eval.n_q_points),
                           gradients(fe_eval.n_q_points),
                           dofs_per_cell(0),
@@ -1772,15 +1789,30 @@ public:
           enriched = false;
           values.resize(fe_eval.n_q_points,value_type());
           gradients.resize(fe_eval.n_q_points,gradient_type());
-  //        decide if we have an enriched element via the y component of the cell center
-          for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements &&
-            EvaluationXWall<dim,n_q_points_1d, Number>::mydata.faces.at(f).left_cell[v] != numbers::invalid_unsigned_int; ++v)
+          if(is_left_face)
           {
-            typename DoFHandler<dim>::cell_iterator dcell =  EvaluationXWall<dim,n_q_points_1d, Number>::mydata.get_cell_iterator(
-                EvaluationXWall<dim,n_q_points_1d, Number>::mydata.faces.at(f).left_cell[v] / VectorizedArray<Number>::n_array_elements,
-                EvaluationXWall<dim,n_q_points_1d, Number>::mydata.faces.at(f).left_cell[v] % VectorizedArray<Number>::n_array_elements);
-                if (dcell->center()[1] > 1.0-MAX_WDIST_XWALL || dcell->center()[1] <-1.0 + MAX_WDIST_XWALL)
-                  enriched = true;
+  //        decide if we have an enriched element via the y component of the cell center
+            for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements &&
+              EvaluationXWall<dim,n_q_points_1d, Number>::mydata.faces.at(f).left_cell[v] != numbers::invalid_unsigned_int; ++v)
+            {
+              typename DoFHandler<dim>::cell_iterator dcell =  EvaluationXWall<dim,n_q_points_1d, Number>::mydata.get_cell_iterator(
+                  EvaluationXWall<dim,n_q_points_1d, Number>::mydata.faces.at(f).left_cell[v] / VectorizedArray<Number>::n_array_elements,
+                  EvaluationXWall<dim,n_q_points_1d, Number>::mydata.faces.at(f).left_cell[v] % VectorizedArray<Number>::n_array_elements);
+                  if ((dcell->center()[1] > (1.0-MAX_WDIST_XWALL)) || (dcell->center()[1] <(-1.0 + MAX_WDIST_XWALL)))
+                    enriched = true;
+            }
+          }
+          else
+          {
+            for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements &&
+              EvaluationXWall<dim,n_q_points_1d, Number>::mydata.faces.at(f).right_cell[v] != numbers::invalid_unsigned_int; ++v)
+            {
+              typename DoFHandler<dim>::cell_iterator dcell =  EvaluationXWall<dim,n_q_points_1d, Number>::mydata.get_cell_iterator(
+                  EvaluationXWall<dim,n_q_points_1d, Number>::mydata.faces.at(f).right_cell[v] / VectorizedArray<Number>::n_array_elements,
+                  EvaluationXWall<dim,n_q_points_1d, Number>::mydata.faces.at(f).right_cell[v] % VectorizedArray<Number>::n_array_elements);
+                  if ((dcell->center()[1] > (1.0-MAX_WDIST_XWALL)) || (dcell->center()[1] <(-1.0 + MAX_WDIST_XWALL)))
+                    enriched = true;
+            }
           }
           enriched_components.resize(VectorizedArray<Number>::n_array_elements);
           for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
@@ -1788,21 +1820,31 @@ public:
           if(enriched)
           {
             //store, exactly which component of the vectorized array is enriched
-            for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
+            if(is_left_face)
             {
-              if(EvaluationXWall<dim,n_q_points_1d, Number>::mydata.faces.at(f).left_cell[v] == numbers::invalid_unsigned_int)
-                enriched_components.at(v)=(false);
-              else
+              for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements&&
+              EvaluationXWall<dim,n_q_points_1d, Number>::mydata.faces.at(f).left_cell[v] != numbers::invalid_unsigned_int; ++v)
               {
                 typename DoFHandler<dim>::cell_iterator dcell =  EvaluationXWall<dim,n_q_points_1d, Number>::mydata.get_cell_iterator(
                     EvaluationXWall<dim,n_q_points_1d, Number>::mydata.faces.at(f).left_cell[v] / VectorizedArray<Number>::n_array_elements,
                     EvaluationXWall<dim,n_q_points_1d, Number>::mydata.faces.at(f).left_cell[v] % VectorizedArray<Number>::n_array_elements);
-                    if (dcell->center()[1] > 1.0-MAX_WDIST_XWALL || dcell->center()[1] < -1.0 + MAX_WDIST_XWALL)
+                    if ((dcell->center()[1] > (1.0-MAX_WDIST_XWALL)) || (dcell->center()[1] <(-1.0 + MAX_WDIST_XWALL)))
                       enriched_components.at(v)=(true);
-                    else
-                      enriched_components.at(v)=(false);
               }
             }
+            else
+            {
+              for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements&&
+              EvaluationXWall<dim,n_q_points_1d, Number>::mydata.faces.at(f).right_cell[v] != numbers::invalid_unsigned_int; ++v)
+              {
+                typename DoFHandler<dim>::cell_iterator dcell =  EvaluationXWall<dim,n_q_points_1d, Number>::mydata.get_cell_iterator(
+                    EvaluationXWall<dim,n_q_points_1d, Number>::mydata.faces.at(f).right_cell[v] / VectorizedArray<Number>::n_array_elements,
+                    EvaluationXWall<dim,n_q_points_1d, Number>::mydata.faces.at(f).right_cell[v] % VectorizedArray<Number>::n_array_elements);
+                    if ((dcell->center()[1] > (1.0-MAX_WDIST_XWALL)) || (dcell->center()[1] <(-1.0 + MAX_WDIST_XWALL)))
+                      enriched_components.at(v)=(true);
+              }
+            }
+
             Assert(enriched_components.size()==VectorizedArray<Number>::n_array_elements,ExcInternalError());
 
             //initialize the enrichment function
@@ -2369,6 +2411,7 @@ public:
       FEFaceEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number> fe_eval;
       FEFaceEvaluation<dim,fe_degree_xwall,n_q_points_1d,n_components_,Number> fe_eval_xwall;
       FEFaceEvaluation<dim,1,n_q_points_1d,1,Number> fe_eval_tauw;
+      bool is_left_face;
       std::vector<value_type> values;
       std::vector<gradient_type> gradients;
 
@@ -3129,11 +3172,16 @@ public:
   }
   velocity_temp2 = velocity_temp;
 
-  vorticity_n.resize(number_vorticity_components);
+  vorticity_n.resize(2*number_vorticity_components);
   data.back().initialize_dof_vector(vorticity_n[0]);
   for (unsigned int d=1;d<number_vorticity_components;++d)
   {
     vorticity_n[d] = vorticity_n[0];
+  }
+  data.back().initialize_dof_vector(vorticity_n[number_vorticity_components],3);
+  for (unsigned int d=1;d<number_vorticity_components;++d)
+  {
+    vorticity_n[d+number_vorticity_components] = vorticity_n[number_vorticity_components];
   }
   vorticity_nm = vorticity_n;
 
@@ -3451,6 +3499,7 @@ public:
 //    data_out.write_vtk(output);
 
     rhs_convection_nm = rhs_convection_n;
+    rhs_convection_n=velocity_temp;
 
     computing_times[0] += timer.wall_time();
   /*************************************************************************/
@@ -3597,7 +3646,7 @@ std::cout << "works" << std::endl;
 
 
   // set maximum number of iterations, tolerance
-  SolverControl solver_control_velocity (1e3, 1.e-4);
+  SolverControl solver_control_velocity (1e3, 1.e-12);
   SolverCG<parallel::distributed::BlockVector<double> > solver_velocity (solver_control_velocity);
   NavierStokesViscousMatrix<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> ns_viscous_matrix;
   ns_viscous_matrix.initialize(*this);
@@ -3633,7 +3682,7 @@ std::cout << "works" << std::endl;
     PreconditionerInverseMassMatrix<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> preconditioner(*this);
     std::cout << "step4c" << std::endl;
 
-    solver_velocity.solve (ns_viscous_matrix, tmp_solution, tmp_solution_np, PreconditionIdentity());
+    solver_velocity.solve (ns_viscous_matrix, tmp_solution, tmp_solution_np, preconditioner);//PreconditionIdentity());
 
 //    times_cg_velo[1] += cg_timer_viscous.wall_time();
 //    iterations_cg_velo[1] += solver_control_velocity.last_step();
@@ -5200,7 +5249,7 @@ std::cout << "works" << std::endl;
   compute_vorticity (const std::vector<parallel::distributed::Vector<value_type> >   &src,
               std::vector<parallel::distributed::Vector<value_type> >      &dst)
   {
-  for(unsigned int d=0;d<number_vorticity_components;++d)
+  for(unsigned int d=0;d<2*number_vorticity_components;++d)
     dst[d] = 0;
   // data.loop
   data.back().cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_vorticity,this, dst, src);
@@ -5213,40 +5262,150 @@ std::cout << "works" << std::endl;
                 const std::vector<parallel::distributed::Vector<value_type> >  &src,
                 const std::pair<unsigned int,unsigned int>            &cell_range) const
   {
-    //TODO Benjamin the vorticity lives only on the standard space
-//#ifdef XWALL
-//    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall(data,src.at(dim+1),src.at(dim+2),0,3);
-//    FEEvaluation<dim,fe_degree,n_q_points_1d_xwall,number_vorticity_components,value_type> phi(data,0,3);
-//#else
-//    FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> velocity(data,0,0);
-    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall(data,src.at(2*dim+1),src.at(2*dim+2),0,0);
-//    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,number_vorticity_components,value_type> fe_eval_xwall_phi(data,src.at(dim),src.at(dim+1),0,0);
+//    //TODO Benjamin the vorticity lives only on the standard space
+////#ifdef XWALL
+////    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall(data,src.at(2*dim+1),src.at(2*dim+2),0,3);
+////    FEEvaluation<dim,fe_degree,n_q_points_1d_xwall,number_vorticity_components,value_type> phi(data,0,3);
+////#else
+////    FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> velocity(data,0,0);
+//    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall(data,src.at(2*dim+1),src.at(2*dim+2),0,0);
+////    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,number_vorticity_components,value_type> fe_eval_xwall_phi(data,src.at(dim),src.at(dim+1),0,0);
     FEEvaluation<dim,fe_degree,fe_degree+1,number_vorticity_components,value_type> phi(data,0,0);
-//#endif
-    const unsigned int dofs_per_cell = phi.dofs_per_cell;
+////#endif
+//    const unsigned int dofs_per_cell = phi.dofs_per_cell;
+//
+//    AlignedVector<VectorizedArray<value_type> > coefficients(dofs_per_cell);
+//    MatrixFreeOperators::CellwiseInverseMassMatrix<dim, fe_degree, number_vorticity_components, value_type> inverse(phi);
+//
+//    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+//    {
+//      velocity_xwall.reinit(cell);
+//      velocity_xwall.read_dof_values(src,0,src,dim+1);
+//      velocity_xwall.evaluate (false,true,false);
+//
+//      phi.reinit(cell);
+//
+//      for (unsigned int q=0; q<phi.n_q_points; ++q)
+//      {
+//      Tensor<1,number_vorticity_components,VectorizedArray<value_type> > omega = velocity_xwall.get_curl(q);
+//        phi.submit_value (omega, q);
+//      }
+//      phi.integrate (true,false);
+//
+//      inverse.fill_inverse_JxW_values(coefficients);
+//    inverse.apply(coefficients,number_vorticity_components,phi.begin_dof_values(),phi.begin_dof_values());
+//
+//    phi.set_dof_values(dst,0);
+//    }
 
-    AlignedVector<VectorizedArray<value_type> > coefficients(dofs_per_cell);
-    MatrixFreeOperators::CellwiseInverseMassMatrix<dim, fe_degree, number_vorticity_components, value_type> inverse(phi);
+#ifdef XWALL
+   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,number_vorticity_components,value_type> fe_eval_xwall(data,src.at(2*dim+1),src.at(2*dim+2),0,3);
+   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> velocity_xwall(data,src.at(2*dim+1),src.at(2*dim+2),0,3);
+#else
 
-    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,number_vorticity_components,value_type> fe_eval_xwall(data,src.at(2*dim+1),src.at(2*dim+2),0,0);
+   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> velocity_xwall(data,src.at(2*dim+1),src.at(2*dim+2),0,0);
+#endif
+//no XWALL but with XWALL routine
+//   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,1,value_type> fe_eval_xwall (data,src.at(dim+1),src.at(dim+2),0,0);
+
+
+
+   //   FEEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval_xwall (data,0,0);
+
+  for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+  {
+    phi.reinit(cell);
+    velocity_xwall.reinit(cell);
+    velocity_xwall.read_dof_values(src,0,src,dim+1);
+    velocity_xwall.evaluate (false,true,false);
+#ifdef XWALL
+    //first, check if we have an enriched element
+    //if so, perform the routine for the enriched elements
+    fe_eval_xwall.reinit (cell);
+//    if(fe_eval_xwall.enriched)
     {
-      fe_eval_xwall.reinit(cell);
-      fe_eval_xwall.read_dof_values(src,0,src,dim+1);
-      fe_eval_xwall.evaluate (false,true,false);
-
-      phi.reinit(cell);
-
-      for (unsigned int q=0; q<phi.n_q_points; ++q)
+      std::vector<FullMatrix<value_type> > matrices;
       {
-      Tensor<1,number_vorticity_components,VectorizedArray<value_type> > omega = fe_eval_xwall.get_curl(q);
-        phi.submit_value (omega, q);
+        FullMatrix<value_type> matrix(fe_eval_xwall.dofs_per_cell);
+        for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
+          matrices.push_back(matrix);
       }
-      phi.integrate (true,false);
+      for (unsigned int j=0; j<fe_eval_xwall.dofs_per_cell; ++j)
+      {
+        for (unsigned int i=0; i<fe_eval_xwall.dofs_per_cell; ++i)
+          fe_eval_xwall.write_cellwise_dof_value(i,make_vectorized_array(0.));
+        fe_eval_xwall.write_cellwise_dof_value(j,make_vectorized_array(1.));
 
-      inverse.fill_inverse_JxW_values(coefficients);
-    inverse.apply(coefficients,number_vorticity_components,phi.begin_dof_values(),phi.begin_dof_values());
+        fe_eval_xwall.evaluate (true,false,false);
+        for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
+        {
+  //        std::cout << fe_eval_xwall.get_value(q)[0] << std::endl;
+          fe_eval_xwall.submit_value (fe_eval_xwall.get_value(q), q);
+        }
+        fe_eval_xwall.integrate (true,false);
 
-    phi.set_dof_values(dst,0);
+        for (unsigned int i=0; i<fe_eval_xwall.dofs_per_cell; ++i)
+          for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
+            if(fe_eval_xwall.component_enriched(v))
+              (matrices[v])(i,j) = (fe_eval_xwall.read_cellwise_dof_value(i))[v];
+            else//this is a non-enriched element
+            {
+              if(i<phi.tensor_dofs_per_cell && j<phi.tensor_dofs_per_cell)
+                (matrices[v])(i,j) = (fe_eval_xwall.read_cellwise_dof_value(i))[v];
+              else if(i == j)//diagonal
+                (matrices[v])(i,j) = 1.0;
+              else
+                (matrices[v])(i,j) = 0.0;
+            }
+      }
+//      for (unsigned int i=0; i<10; ++i)
+//        std::cout << std::endl;
+//      for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
+//        matrices[v].print(std::cout,14,8);
+
+      for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
+      {
+        (matrices[v]).gauss_jordan();
+      }
+
+      //now apply vectors to inverse matrix
+        for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
+        {
+          Tensor<1,number_vorticity_components,VectorizedArray<value_type> > omega = velocity_xwall.get_curl(q);
+          Tensor<1,dim,VectorizedArray<value_type> > omegadim;
+
+          fe_eval_xwall.submit_value (omega, q);
+        }
+        fe_eval_xwall.integrate (true,false);
+
+
+        for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
+        {
+          Vector<value_type> vector_input(fe_eval_xwall.dofs_per_cell);
+          for (unsigned int j=0; j<fe_eval_xwall.dofs_per_cell; ++j)
+            vector_input(j)=(fe_eval_xwall.read_cellwise_dof_value(j))[v];
+          Vector<value_type> vector_result(fe_eval_xwall.dofs_per_cell);
+          (matrices[v]).vmult(vector_result,vector_input);
+          for (unsigned int j=0; j<fe_eval_xwall.dofs_per_cell; ++j)
+            fe_eval_xwall.write_cellwise_dof_value(j,vector_result(j),v);
+        }
+        fe_eval_xwall.distribute_local_to_global (dst,0,dst,number_vorticity_components);
+
+    }
+//    else
+#endif
+//    {
+//      phi.read_dof_values(src,0);
+//
+//      inverse.fill_inverse_JxW_values(coefficients);
+//      inverse.apply(coefficients,dim,phi.begin_dof_values(),phi.begin_dof_values());
+//
+//      phi.set_dof_values(dst,0);
+//    }
+//  }
+
+  //
     }
   }
 
@@ -5255,7 +5414,7 @@ std::cout << "works" << std::endl;
   {
     static
     Tensor<1,dim,VectorizedArray<typename FEEval::number_type> >
-    compute(const FEEval     &fe_eval,
+    compute(FEEval     &fe_eval,
         const unsigned int   q_point)
     {
     return fe_eval.get_curl(q_point);
@@ -5267,7 +5426,7 @@ std::cout << "works" << std::endl;
   {
   static
     Tensor<1,2,VectorizedArray<typename FEEval::number_type> >
-    compute(const FEEval     &fe_eval,
+    compute(FEEval     &fe_eval,
         const unsigned int   q_point)
     {
     Tensor<1,2,VectorizedArray<typename FEEval::number_type> > rot;
@@ -5524,14 +5683,14 @@ std::cout << "works" << std::endl;
 #ifdef XWALL
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall_n (data,src.at(2*dim),src.at(2*dim+1),true,0,3);
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall_nm (data,src.at(2*dim),src.at(2*dim+1),true,0,3);
-    FEFaceEvaluation<dim,fe_degree,n_q_points_1d_xwall,number_vorticity_components,value_type> omega_n(data,true,0,3);
-    FEFaceEvaluation<dim,fe_degree,n_q_points_1d_xwall,number_vorticity_components,value_type> omega_nm(data,true,0,3);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,number_vorticity_components,value_type> omega_n(data,src.at(2*dim),src.at(2*dim+1),true,0,3);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,number_vorticity_components,value_type> omega_nm(data,src.at(2*dim),src.at(2*dim+1),true,0,3);
     FEFaceEvaluation<dim,fe_degree_p,n_q_points_1d_xwall,1,value_type> pressure (data,true,1,3);
 #else
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree_p+1,dim,value_type> fe_eval_xwall_n (data,src.at(dim),src.at(dim+1),true,0,1);
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree_p+1,dim,value_type> fe_eval_xwall_nm (data,src.at(dim),src.at(dim+1),true,0,1);
-    FEFaceEvaluation<dim,fe_degree,fe_degree_p+1,number_vorticity_components,value_type> omega_n(data,true,0,1);
-    FEFaceEvaluation<dim,fe_degree,fe_degree_p+1,number_vorticity_components,value_type> omega_nm(data,true,0,1);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree_p+1,number_vorticity_components,value_type> omega_n(data,src.at(2*dim),src.at(2*dim+1),true,0,1);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree_p+1,number_vorticity_components,value_type> omega_nm(data,src.at(2*dim),src.at(2*dim+1),true,0,1);
     FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> pressure (data,true,1,1);
 #endif
     // inhomogene Dirichlet-RB für Druck p
@@ -5553,10 +5712,10 @@ std::cout << "works" << std::endl;
     fe_eval_xwall_nm.evaluate (true,true);
 
     omega_n.reinit (face);
-    omega_n.read_dof_values(vorticity_n,0);
+    omega_n.read_dof_values(vorticity_n,0,vorticity_n,number_vorticity_components);
     omega_n.evaluate (false,true);
     omega_nm.reinit (face);
-    omega_nm.read_dof_values(vorticity_nm,0);
+    omega_nm.read_dof_values(vorticity_nm,0,vorticity_nm,number_vorticity_components);
     omega_nm.evaluate (false,true);
 
     //VectorizedArray<value_type> sigmaF = (std::abs( pressure.get_normal_volume_fraction()) ) *
@@ -5791,7 +5950,7 @@ std::cout << "works" << std::endl;
   dof_handler(triangulation),
   dof_handler_p(triangulation),
   dof_handler_xwall(triangulation),
-  cfl(0.1/pow(fe_degree,2.0)),
+  cfl(0.05/pow(fe_degree,2.0)),
   n_refinements(refine_steps),
   output_interval_time(0.00095)
   {
@@ -5920,6 +6079,41 @@ std::cout << "works" << std::endl;
   std::vector<std::string> velocity_name (dim, "velocity");
     std::vector< DataComponentInterpretation::DataComponentInterpretation > component_interpretation(dim,DataComponentInterpretation::component_is_part_of_vector);
     data_out.add_data_vector (joint_dof_handler,joint_velocity, velocity_name, component_interpretation);
+
+    //xwall dofs
+//    const FESystem<dim> joint_fe_xwall (fe_xwall, dim);
+//  DoFHandler<dim> joint_dof_handler_xwall (dof_handler_xwall.get_tria());
+//  joint_dof_handler_xwall.distribute_dofs (joint_fe_xwall);
+//
+//  Vector<double> joint_velocity_xwall (joint_dof_handler_xwall.n_dofs());
+//  std::vector<types::global_dof_index> loc_joint_dof_indices_xwall (joint_fe_xwall.dofs_per_cell),
+//  loc_vel_dof_indices_xwall (fe_xwall.dofs_per_cell);
+//  typename DoFHandler<dim>::active_cell_iterator joint_cell_xwall = joint_dof_handler_xwall.begin_active(), joint_endc_xwall = joint_dof_handler_xwall.end(), vel_cell_xwall = dof_handler_xwall.begin_active();
+//  Assert(joint_cell_xwall!=joint_endc_xwall,ExcInternalError());
+//  for (; joint_cell_xwall != joint_endc_xwall; ++joint_cell_xwall, ++vel_cell_xwall)
+//  {
+//    joint_cell_xwall->get_dof_indices (loc_joint_dof_indices_xwall);
+//    vel_cell_xwall->get_dof_indices (loc_vel_dof_indices_xwall);
+//    for (unsigned int i=0; i<joint_fe_xwall.dofs_per_cell; ++i)
+//    switch (joint_fe_xwall.system_to_base_index(i).first.first)
+//      {
+//      case 0:
+//      Assert (joint_fe_xwall.system_to_base_index(i).first.second < dim,
+//          ExcInternalError());
+//      joint_velocity_xwall (loc_joint_dof_indices_xwall[i]) =
+//          solution_n[ joint_fe_xwall.system_to_base_index(i).first.second+dim+1]//solution_n[ joint_fe_xwall.system_to_base_index(i).first.second +dim+1]
+//        (loc_vel_dof_indices_xwall[ joint_fe_xwall.system_to_base_index(i).second ]);
+//      break;
+//      default:
+//      Assert (false, ExcInternalError());
+//      break;
+//      }
+//  }
+//
+//  std::vector<std::string> velocity_name_xwall (dim, "velocity_xwall");
+//    std::vector< DataComponentInterpretation::DataComponentInterpretation > component_interpretation_xwall(dim,DataComponentInterpretation::component_is_part_of_vector);
+    data_out.add_data_vector (dof_handler_xwall,solution_n[dim+1],"velocity_xwall_x");
+    data_out.add_data_vector (dof_handler_xwall,solution_n[dim+2],"velocity_xwall_y");
 
     // vorticity
   Vector<double> joint_vorticity (joint_dof_handler.n_dofs());
@@ -6060,6 +6254,8 @@ std::cout << "works" << std::endl;
   for(unsigned int d=0;d<dim;++d)
     VectorTools::interpolate(dof_handler, AnalyticalSolution<dim>(d,time), navier_stokes_operation.solution_n[d]);
   VectorTools::interpolate(dof_handler_p, AnalyticalSolution<dim>(dim,time), navier_stokes_operation.solution_n[dim]);
+  for(unsigned int d=0;d<dim;++d)
+    VectorTools::interpolate(dof_handler_xwall, AnalyticalSolution<dim>(d+dim+1,time), navier_stokes_operation.solution_n[d+dim+1]);
   navier_stokes_operation.solution_nm = navier_stokes_operation.solution_n;
 
   // compute vorticity from initial data at time t = START_TIME
