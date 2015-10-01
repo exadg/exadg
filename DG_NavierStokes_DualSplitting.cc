@@ -440,7 +440,7 @@ namespace DG_NavierStokes
 {
   using namespace dealii;
 
-  const unsigned int fe_degree = 3;
+  const unsigned int fe_degree = 1;
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 20;
@@ -1246,6 +1246,8 @@ public:
 #ifdef XWALL
           if(enriched)
           {
+            gradients.resize(fe_eval.n_q_points,gradient_type());
+            values.resize(fe_eval.n_q_points,value_type());
             fe_eval_xwall.evaluate(true,evaluate_grad);
             //this function is quite nasty because deal.ii doesn't seem to be made for enrichments
             EvaluationXWall<dim,n_q_points_1d,Number>::evaluate(evaluate_val,evaluate_grad,evaluate_hess);
@@ -1324,6 +1326,7 @@ public:
           const unsigned int q_point)
       {
         fe_eval.submit_value(val_in,q_point);
+        values.at(q_point) = value_type();
 #ifdef XWALL
           if(enriched)
           {
@@ -1343,6 +1346,7 @@ public:
           const unsigned int q_point)
       {
         fe_eval.submit_value(val_in[0],q_point);
+        values.at(q_point) = value_type();
 #ifdef XWALL
           if(enriched)
           {
@@ -1363,6 +1367,7 @@ public:
           const unsigned int q_point)
       {
         fe_eval.submit_gradient(grad_in,q_point);
+        gradients.at(q_point) = gradient_type();
 #ifdef XWALL
           if(enriched)
           {
@@ -1523,9 +1528,9 @@ public:
       void distribute_local_to_global (parallel::distributed::Vector<double> &dst, parallel::distributed::Vector<double> &dst_xwall)
       {
         fe_eval.distribute_local_to_global(dst);
-        for(unsigned int i = 0; i<fe_eval.dofs_per_cell ; i++)
-          for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-            Assert(not isnan(fe_eval.begin_dof_values()[i][v]),ExcInternalError());
+//        for(unsigned int i = 0; i<fe_eval.dofs_per_cell ; i++)
+//          for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
+//            Assert(not isnan(fe_eval.begin_dof_values()[i][v]),ExcInternalError());
 #ifdef XWALL
           if(enriched)
           {
@@ -1536,9 +1541,9 @@ public:
                   fe_eval_xwall.begin_dof_values()[i][v] = 0.0;
             }
             fe_eval_xwall.distribute_local_to_global(dst_xwall);
-            for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
-              for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-                Assert(not isnan(fe_eval_xwall.begin_dof_values()[i][v]),ExcInternalError());
+//            for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
+//              for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
+//                Assert(not isnan(fe_eval_xwall.begin_dof_values()[i][v]),ExcInternalError());
           }
 //          else
 //          {
@@ -1555,9 +1560,9 @@ public:
       void distribute_local_to_global (std::vector<parallel::distributed::Vector<double> > &dst, unsigned int i,std::vector<parallel::distributed::Vector<double> > &dst_xwall, unsigned int j)
       {
         fe_eval.distribute_local_to_global(dst,i);
-        for(unsigned int i = 0; i<fe_eval.dofs_per_cell ; i++)
-          for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-            Assert(not isnan(fe_eval.begin_dof_values()[i][v]),ExcInternalError());
+//        for(unsigned int i = 0; i<fe_eval.dofs_per_cell ; i++)
+//          for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
+//            Assert(not isnan(fe_eval.begin_dof_values()[i][v]),ExcInternalError());
 #ifdef XWALL
         if(enriched)
         {
@@ -1568,9 +1573,9 @@ public:
                 fe_eval_xwall.begin_dof_values()[k][v] = 0.0;
           }
           fe_eval_xwall.distribute_local_to_global(dst_xwall,j);
-          for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
-            for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-              Assert(not isnan(fe_eval_xwall.begin_dof_values()[i][v]),ExcInternalError());
+//          for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
+//            for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
+//              Assert(not isnan(fe_eval_xwall.begin_dof_values()[i][v]),ExcInternalError());
         }
 //        else
 //        {
@@ -1779,7 +1784,6 @@ public:
                           n_q_points(fe_eval.n_q_points),
                           enriched(false)
       {
-
       };
 
       void reinit(const unsigned int f)
@@ -1909,7 +1913,7 @@ public:
       {
         fe_eval.read_dof_values(src);
 #ifdef XWALL
-          if(enriched)
+//          if(enriched)
           {
             fe_eval_xwall.read_dof_values(src_xwall);
 //            for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
@@ -1955,6 +1959,8 @@ public:
 #ifdef XWALL
           if(enriched)
           {
+            gradients.resize(fe_eval.n_q_points,gradient_type());
+            values.resize(fe_eval.n_q_points,value_type());
             fe_eval_xwall.evaluate(true,evaluate_grad);
             //this function is quite nasty because deal.ii doesn't seem to be made for enrichments
             EvaluationXWall<dim,n_q_points_1d,Number>::evaluate(evaluate_val,evaluate_grad,evaluate_hess);
@@ -2031,6 +2037,7 @@ public:
           const unsigned int q_point)
       {
         fe_eval.submit_value(val_in,q_point);
+        values.at(q_point) = value_type();
 #ifdef XWALL
           if(enriched)
           {
@@ -2051,6 +2058,7 @@ public:
           const unsigned int q_point)
       {
         fe_eval.submit_gradient(grad_in,q_point);
+        gradients.at(q_point) = gradient_type();
 #ifdef XWALL
           if(enriched)
           {
@@ -2193,9 +2201,9 @@ public:
       void distribute_local_to_global (parallel::distributed::Vector<double> &dst, parallel::distributed::Vector<double> &dst_xwall)
       {
         fe_eval.distribute_local_to_global(dst);
-        for(unsigned int i = 0; i<fe_eval.dofs_per_cell ; i++)
-          for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-            Assert(not isnan(fe_eval.begin_dof_values()[i][v]),ExcInternalError());
+//        for(unsigned int i = 0; i<fe_eval.dofs_per_cell ; i++)
+//          for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
+//            Assert(not isnan(fe_eval.begin_dof_values()[i][v]),ExcInternalError());
 #ifdef XWALL
           if(enriched)
           {
@@ -2207,9 +2215,9 @@ public:
             }
             fe_eval_xwall.distribute_local_to_global(dst_xwall);
 
-            for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
-              for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-                Assert(not isnan(fe_eval_xwall.begin_dof_values()[i][v]),ExcInternalError());
+//            for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
+//              for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
+//                Assert(not isnan(fe_eval_xwall.begin_dof_values()[i][v]),ExcInternalError());
           }
 //          else
 //          {
@@ -2237,9 +2245,9 @@ public:
                 fe_eval_xwall.begin_dof_values()[k][v] = 0.0;
           }
           fe_eval_xwall.distribute_local_to_global(dst_xwall,j);
-          for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
-            for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-              Assert(not isnan(fe_eval_xwall.begin_dof_values()[i][v]),ExcInternalError());
+//          for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
+//            for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
+//              Assert(not isnan(fe_eval_xwall.begin_dof_values()[i][v]),ExcInternalError());
 
         }
 //        else
@@ -2310,6 +2318,7 @@ public:
                                 const unsigned int q)
       {
         fe_eval.submit_normal_gradient(grad_in,q);
+        gradients.at(q)=gradient_type();
 #ifdef XWALL
 
         if(enriched)
@@ -2335,6 +2344,7 @@ public:
                                 const unsigned int q)
       {
         fe_eval.submit_normal_gradient(grad_in,q);
+        gradients.at(q)=gradient_type();
 #ifdef XWALL
 
         if(enriched)
@@ -3643,7 +3653,7 @@ std::cout << "works" << std::endl;
       rhs_viscous(velocity_temp_tmp,solution_np);
       std::cout << "step4a" << std::endl;
     }
-
+solution_np.at(dim+1).print(std::cout);
 
   // set maximum number of iterations, tolerance
   SolverControl solver_control_velocity (1e3, 1.e-12);
@@ -4049,6 +4059,9 @@ std::cout << "works" << std::endl;
                const std::pair<unsigned int,unsigned int>   &cell_range) const
   {
 #ifdef XWALL
+    Assert(false,ExcInternalError());
+#endif
+#ifdef XWALL
     FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type> fe_eval_xwall(data,src.at(2*dim+1),src.at(2*dim+2),0,3);
 #else
     FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,1,value_type> fe_eval_xwall(data,src.at(2*dim),src.at(2*dim+1),0,0);
@@ -4087,6 +4100,9 @@ std::cout << "works" << std::endl;
       const std::vector<parallel::distributed::Vector<double> >  &src,
                    const std::pair<unsigned int,unsigned int>  &face_range) const
   {
+#ifdef XWALL
+    Assert(false,ExcInternalError());
+#endif
 #ifdef XWALL
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type> fe_eval_xwall(data,src.at(2*dim+1),src.at(2*dim+2),true,0,3);
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type> fe_eval_xwall_neighbor(data,src.at(2*dim+1),src.at(2*dim+2),false,0,3);
@@ -4183,6 +4199,9 @@ std::cout << "works" << std::endl;
       const std::vector<parallel::distributed::Vector<double> >  &src,
                        const std::pair<unsigned int,unsigned int>  &face_range) const
   {
+#ifdef XWALL
+    Assert(false,ExcInternalError());
+#endif
 #ifdef XWALL
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type> fe_eval_xwall(data,src.at(2*dim+1),src.at(2*dim+2),true,0,3);
 #else
@@ -6153,7 +6172,7 @@ std::cout << "works" << std::endl;
     data_out.add_data_vector (dof_handler_p,solution_n[dim], "pressure");
     data_out.add_data_vector (*(*xwall).ReturnDofHandlerWallDistance(),(*(*xwall).ReturnWDist()), "wdist");
     data_out.add_data_vector (*(*xwall).ReturnDofHandlerWallDistance(),(*(*xwall).ReturnTauW()), "tauw");
-    data_out.build_patches (3);
+    data_out.build_patches (10);
     std::ostringstream filename;
     filename << "solution_"
              << output_number
