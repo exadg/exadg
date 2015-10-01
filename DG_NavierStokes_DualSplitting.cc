@@ -489,11 +489,11 @@ namespace DG_NavierStokes
     {
 
       qp_enrichment.resize(n_q_points);
-      qp_grad_enrichment.reserve(n_q_points);
+      qp_grad_enrichment.resize(n_q_points);
       for(unsigned int q=0;q<n_q_points;++q)
       {
         qp_enrichment[q] =  EnrichmentShapeDer(qp_wdist[q], qp_tauw[q],
-            qp_gradwdist[q], qp_gradtauw[q],&qp_grad_enrichment, enriched_components);
+            qp_gradwdist[q], qp_gradtauw[q],&(qp_grad_enrichment[q]), enriched_components);
 
         for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
         {
@@ -524,7 +524,7 @@ namespace DG_NavierStokes
     protected:
     VectorizedArray<Number> EnrichmentShapeDer(VectorizedArray<Number> wdist, VectorizedArray<Number> tauw,
         Tensor<1,dim,VectorizedArray<Number> > gradwdist, Tensor<1,dim,VectorizedArray<Number> > gradtauw,
-        AlignedVector<Tensor<1,dim,VectorizedArray<Number> > >* gradpsi, std::vector<bool> enriched_components)
+        Tensor<1,dim,VectorizedArray<Number> >* gradpsi, std::vector<bool> enriched_components)
       {
            VectorizedArray<Number> density = make_vectorized_array(1.0);
 //        //calculate transformation ---------------------------------------
@@ -585,7 +585,8 @@ namespace DG_NavierStokes
          {
            gradpsiq[sdm]=derpsigpsc*gradtrans[sdm];
          }
-         (*gradpsi).push_back(gradpsiq);
+
+         (*gradpsi)=gradpsiq;
 //         if(evaluate_hessian)
 //           for(int sdm=0;sdm < my::numderiv2_;++sdm)
 //           {
@@ -948,7 +949,7 @@ public:
           const unsigned int q_point)
       {
         fe_eval.submit_value(val_in,q_point);
-        values.at(q_point) = value_type();
+        values[q_point] = value_type();
 #ifdef XWALL
           if(enriched)
           {
@@ -968,7 +969,7 @@ public:
           const unsigned int q_point)
       {
         fe_eval.submit_value(val_in[0],q_point);
-        values.at(q_point) = value_type();
+        values[q_point] = value_type();
 #ifdef XWALL
           if(enriched)
           {
@@ -989,7 +990,7 @@ public:
           const unsigned int q_point)
       {
         fe_eval.submit_gradient(grad_in,q_point);
-        gradients.at(q_point) = gradient_type();
+        gradients[q_point] = gradient_type();
 #ifdef XWALL
           if(enriched)
           {
@@ -1659,7 +1660,7 @@ public:
           const unsigned int q_point)
       {
         fe_eval.submit_value(val_in,q_point);
-        values.at(q_point) = value_type();
+        values[q_point] = value_type();
 #ifdef XWALL
           if(enriched)
           {
@@ -1801,6 +1802,7 @@ public:
       {
         for(unsigned int q=0;q<fe_eval.n_q_points;++q)
         {
+
           for(int j=0; j<dim;++j)//comp
           {
             for(int i=0; i<dim;++i)//dim
@@ -1940,7 +1942,7 @@ public:
                                 const unsigned int q)
       {
         fe_eval.submit_normal_gradient(grad_in,q);
-        gradients.at(q)=gradient_type();
+        gradients[q]=gradient_type();
 #ifdef XWALL
 
         if(enriched)
@@ -1966,7 +1968,7 @@ public:
                                 const unsigned int q)
       {
         fe_eval.submit_normal_gradient(grad_in,q);
-        gradients.at(q)=gradient_type();
+        gradients[q]=gradient_type();
 #ifdef XWALL
 
         if(enriched)
@@ -3077,38 +3079,37 @@ public:
     Timer timer;
     timer.restart();
   /***************** STEP 0: xwall update **********************************/
-    {std::cout << "step0" << std::endl;
+    {
       std::vector<parallel::distributed::Vector<value_type> > tmp_solution_n;
       for(std::vector<parallel::distributed::Vector<value_type> >::iterator i = solution_n.begin(); i != solution_n.end(); ++i)
         tmp_solution_n.push_back(*i);
       tmp_solution_n.push_back(*xwall.ReturnWDist());
       tmp_solution_n.push_back(*xwall.ReturnTauW());
-      std::cout << "step0a" << std::endl;
       xwall.UpdateTauW(tmp_solution_n);
     }
   /*************************************************************************/
 
   /***************** STEP 1: convective (nonlinear) term ********************/
-    {std::cout << "step1" << std::endl;
+    {
       std::vector<parallel::distributed::Vector<value_type> > tmp_solution_n;
       for(std::vector<parallel::distributed::Vector<value_type> >::iterator i = solution_n.begin(); i != solution_n.end(); ++i)
         tmp_solution_n.push_back(*i);
       tmp_solution_n.push_back(*xwall.ReturnWDist());
       tmp_solution_n.push_back(*xwall.ReturnTauW());
-      std::cout << "step1a" << std::endl;
+
       rhs_convection(tmp_solution_n,rhs_convection_n);
     }
 
     {
       std::vector<parallel::distributed::Vector<value_type> > tmp_wdist_tauw;
       //make sure that they end up in the correct position
-      std::cout << "step1b" << std::endl;
+
       tmp_wdist_tauw.push_back(*xwall.ReturnWDist());
       tmp_wdist_tauw.push_back(*xwall.ReturnTauW());
-      std::cout << "step1c" << std::endl;
+
       compute_rhs(tmp_wdist_tauw,f);
     }
-    std::cout << "step1d" << std::endl;
+
     for (unsigned int d=0; d<dim; ++d)
     {
       velocity_temp[d].equ(beta[0],rhs_convection_n[d],beta[1],rhs_convection_nm[d],1.,f[d]); // Stokes problem: velocity_temp[d] = f[d];
@@ -3118,7 +3119,7 @@ public:
       velocity_temp[d+dim].sadd(time_step,alpha[0],solution_n[d+1+dim],alpha[1],solution_nm[d+1+dim]);
     }
 
-    std::cout << "step1e" << std::endl;
+
 //    DataOut<dim> data_out;
 //    data_out.add_data_vector (data.back().get_dof_handler(0),velocity_temp[0], "velocity1");
 //    data_out.add_data_vector (data.back().get_dof_handler(0),velocity_temp[1], "velocity2");
@@ -3135,11 +3136,11 @@ public:
 
     computing_times[0] += timer.wall_time();
   /*************************************************************************/
-std::cout << "works" << std::endl;
+
   /************ STEP 2: solve poisson equation for pressure ****************/
     timer.restart();
 
-    {std::cout << "step2" << std::endl;
+    {
       std::vector<parallel::distributed::Vector<value_type> > velocity_temp_tmp;
       for(std::vector<parallel::distributed::Vector<value_type> >::iterator i = velocity_temp.begin(); i != velocity_temp.end(); ++i)
         velocity_temp_tmp.push_back(*i);
@@ -3247,7 +3248,7 @@ std::cout << "works" << std::endl;
 
   /********************** STEP 3: projection *******************************/
     timer.restart();
-    std::cout << "step3" << std::endl;
+
     {
       std::vector<parallel::distributed::Vector<value_type> > tmp_solution_np;
       for(std::vector<parallel::distributed::Vector<value_type> >::iterator i = solution_np.begin(); i != solution_np.end(); ++i)
@@ -3266,23 +3267,23 @@ std::cout << "works" << std::endl;
   /************************ STEP 4: viscous term ***************************/
     timer.restart();
 
-    {    std::cout << "step4" << std::endl;
+    {
       std::vector<parallel::distributed::Vector<value_type> > velocity_temp_tmp;
       for(std::vector<parallel::distributed::Vector<value_type> >::iterator i = velocity_temp2.begin(); i != velocity_temp2.end(); ++i)
         velocity_temp_tmp.push_back(*i);
       velocity_temp_tmp.push_back(*xwall.ReturnWDist());
       velocity_temp_tmp.push_back(*xwall.ReturnTauW());
       rhs_viscous(velocity_temp_tmp,solution_np);
-      std::cout << "step4a" << std::endl;
+
     }
-solution_np.at(dim+1).print(std::cout);
+//solution_np.at(dim+1).print(std::cout);
 
   // set maximum number of iterations, tolerance
   SolverControl solver_control_velocity (1e3, 1.e-12);
   SolverCG<parallel::distributed::BlockVector<double> > solver_velocity (solver_control_velocity);
   NavierStokesViscousMatrix<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> ns_viscous_matrix;
   ns_viscous_matrix.initialize(*this);
-  std::cout << "step4b" << std::endl;
+
   for (unsigned int d=0;d<dim;++d)
   {
     double wall_time_temp = timer.wall_time();
@@ -3312,7 +3313,7 @@ solution_np.at(dim+1).print(std::cout);
 
 
     PreconditionerInverseMassMatrix<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> preconditioner(*this);
-    std::cout << "step4c" << std::endl;
+
 
     solver_velocity.solve (ns_viscous_matrix, tmp_solution, tmp_solution_np, preconditioner);//PreconditionIdentity());
 
@@ -5794,7 +5795,7 @@ solution_np.at(dim+1).print(std::cout);
     data_out.add_data_vector (dof_handler_p,solution_n[dim], "pressure");
     data_out.add_data_vector (*(*xwall).ReturnDofHandlerWallDistance(),(*(*xwall).ReturnWDist()), "wdist");
     data_out.add_data_vector (*(*xwall).ReturnDofHandlerWallDistance(),(*(*xwall).ReturnTauW()), "tauw");
-    data_out.build_patches (10);
+    data_out.build_patches (3);
     std::ostringstream filename;
     filename << "solution_"
              << output_number
