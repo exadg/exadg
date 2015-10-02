@@ -280,6 +280,7 @@ namespace DG_NavierStokes
   template<int dim>
   double NeumannBoundaryPressure<dim>::value(const Point<dim> &p,const unsigned int /* component */) const
   {
+    (void)p;
     double result = 0.0;
     // Kovasznay flow
 //    if(std::abs(p[0]+1.0)<1.0e-12)
@@ -446,7 +447,7 @@ namespace DG_NavierStokes
        ns_viscous_coarse = &viscous;
      }
 
-     virtual void operator() (const unsigned int   level,
+    virtual void operator() (const unsigned int   /*level*/,
                               parallel::distributed::BlockVector<double> &dst,
                               const parallel::distributed::BlockVector<double> &src) const
      {
@@ -5680,6 +5681,94 @@ public:
       << "  number of dofs (xwall):\t" << std::setw(10) << dof_handler_xwall.n_dofs()*dim << std::endl;
   }
 
+
+
+  template <int dim>
+  class Postprocessor : public DataPostprocessor<dim>
+  {
+  public:
+    Postprocessor (const unsigned int partition)
+      :
+      partition (partition)
+    {}
+
+    virtual
+    std::vector<std::string>
+    get_names() const
+    {
+      // must be kept in sync with get_data_component_interpretation and
+      // compute_derived_quantities_vector
+      std::vector<std::string> solution_names (dim, "velocity");
+      solution_names.push_back ("p");
+      for (unsigned int d=0; d<dim; ++d)
+        solution_names.push_back ("velocity_xwall");
+      for (unsigned int d=0; d<dim; ++d)
+        solution_names.push_back ("vorticity");
+      solution_names.push_back ("owner");
+      return solution_names;
+    }
+
+    virtual
+    std::vector<DataComponentInterpretation::DataComponentInterpretation>
+    get_data_component_interpretation() const
+    {
+      std::vector<DataComponentInterpretation::DataComponentInterpretation>
+        interpretation(3*dim+2, DataComponentInterpretation::component_is_part_of_vector);
+      // pressure
+      interpretation[dim] = DataComponentInterpretation::component_is_scalar;
+      // owner
+      interpretation.back() = DataComponentInterpretation::component_is_scalar;
+      return interpretation;
+    }
+
+    virtual
+    UpdateFlags
+    get_needed_update_flags () const
+    {
+      return update_values | update_quadrature_points;
+    }
+
+    virtual void
+    compute_derived_quantities_vector (const std::vector<Vector<double> >              &uh,
+                                       const std::vector<std::vector<Tensor<1,dim> > > &/*duh*/,
+                                       const std::vector<std::vector<Tensor<2,dim> > > &/*dduh*/,
+                                       const std::vector<Point<dim> >                  &/*normals*/,
+                                       const std::vector<Point<dim> >                  &evaluation_points,
+                                       std::vector<Vector<double> >                    &computed_quantities) const
+    {
+      const unsigned int n_quadrature_points = uh.size();
+      Assert (computed_quantities.size() == n_quadrature_points,  ExcInternalError());
+      Assert (uh[0].size() == 3*dim+1,                            ExcInternalError());
+
+      for (unsigned int q=0; q<n_quadrature_points; ++q)
+        {
+          // TODO: fill in wall distance function
+          const double enrichment_func = 1. + 0.*evaluation_points[q][1];
+          for (unsigned int d=0; d<dim; ++d)
+            computed_quantities[q](d)
+              = (uh[q](d) + uh[q](dim+1+d) * enrichment_func);
+
+          // pressure
+          computed_quantities[q](dim) = uh[q](dim);
+
+          // velocity_xwall
+          for (unsigned int d=0; d<dim; ++d)
+            computed_quantities[q](dim+1+d) = uh[q](dim+1+d);
+
+          // vorticity
+          for (unsigned int d=0; d<dim; ++d)
+            computed_quantities[q](2*dim+1+d) = uh[q](2*dim+1+d);
+
+          // owner
+          computed_quantities[q](3*dim+1) = partition;
+        }
+    }
+
+  private:
+    const unsigned int partition;
+  };
+
+
   template<int dim>
   void NavierStokesProblem<dim>::
   write_output(std::vector<parallel::distributed::Vector<value_type>>   &solution_n,
@@ -5688,114 +5777,77 @@ public:
           const unsigned int                     output_number)
   {
 
-    // velocity
-    const FESystem<dim> joint_fe (fe, dim);
-  DoFHandler<dim> joint_dof_handler (dof_handler.get_tria());
-  joint_dof_handler.distribute_dofs (joint_fe);
-  Vector<double> joint_velocity (joint_dof_handler.n_dofs());
-  std::vector<types::global_dof_index> loc_joint_dof_indices (joint_fe.dofs_per_cell),
-  loc_vel_dof_indices (fe.dofs_per_cell);
-  typename DoFHandler<dim>::active_cell_iterator joint_cell = joint_dof_handler.begin_active(), joint_endc = joint_dof_handler.end(), vel_cell = dof_handler.begin_active();
-  for (; joint_cell != joint_endc; ++joint_cell, ++vel_cell)
-  {
-    joint_cell->get_dof_indices (loc_joint_dof_indices);
-    vel_cell->get_dof_indices (loc_vel_dof_indices);
-    for (unsigned int i=0; i<joint_fe.dofs_per_cell; ++i)
-    switch (joint_fe.system_to_base_index(i).first.first)
+    // velocity + xwall dofs
+    const FESystem<dim> joint_fe (fe, dim,
+                                  fe_p, 1,
+                                  fe_xwall, dim,
+                                  fe, dim);
+    DoFHandler<dim> joint_dof_handler (dof_handler.get_tria());
+    joint_dof_handler.distribute_dofs (joint_fe);
+    parallel::distributed::Vector<double>
+      joint_solution (joint_dof_handler.locally_owned_dofs(), MPI_COMM_WORLD);
+    std::vector<types::global_dof_index> loc_joint_dof_indices (joint_fe.dofs_per_cell),
+      loc_vel_dof_indices (fe.dofs_per_cell), loc_pre_dof_indices(fe_p.dofs_per_cell),
+      loc_vel_xwall_dof_indices(fe_xwall.dofs_per_cell);
+    typename DoFHandler<dim>::active_cell_iterator
+      joint_cell = joint_dof_handler.begin_active(),
+      joint_endc = joint_dof_handler.end(),
+      vel_cell = dof_handler.begin_active(),
+      pre_cell = dof_handler_p.begin_active(),
+      vel_cell_xwall = dof_handler_xwall.begin_active();
+    for (; joint_cell != joint_endc; ++joint_cell, ++vel_cell, ++ pre_cell, ++vel_cell_xwall)
+      if (joint_cell->is_locally_owned())
       {
-      case 0:
-      Assert (joint_fe.system_to_base_index(i).first.second < dim,
-          ExcInternalError());
-      joint_velocity (loc_joint_dof_indices[i]) =
-        solution_n[ joint_fe.system_to_base_index(i).first.second ]
-        (loc_vel_dof_indices[ joint_fe.system_to_base_index(i).second ]);
-      break;
-      default:
-      Assert (false, ExcInternalError());
-      break;
+        joint_cell->get_dof_indices (loc_joint_dof_indices);
+        vel_cell->get_dof_indices (loc_vel_dof_indices);
+        pre_cell->get_dof_indices (loc_pre_dof_indices);
+        vel_cell_xwall->get_dof_indices (loc_vel_xwall_dof_indices);
+        for (unsigned int i=0; i<joint_fe.dofs_per_cell; ++i)
+          switch (joint_fe.system_to_base_index(i).first.first)
+            {
+            case 0:
+              Assert (joint_fe.system_to_base_index(i).first.second < dim,
+                      ExcInternalError());
+              joint_solution (loc_joint_dof_indices[i]) =
+                solution_n[ joint_fe.system_to_base_index(i).first.second ]
+                (loc_vel_dof_indices[ joint_fe.system_to_base_index(i).second ]);
+              break;
+            case 1:
+              Assert (joint_fe.system_to_base_index(i).first.second == 0,
+                      ExcInternalError());
+              joint_solution (loc_joint_dof_indices[i]) =
+                solution_n[ dim ]
+                (loc_pre_dof_indices[ joint_fe.system_to_base_index(i).second ]);
+              break;
+            case 2:
+              Assert (joint_fe.system_to_base_index(i).first.second < dim,
+                      ExcInternalError());
+              joint_solution (loc_joint_dof_indices[i]) =
+                solution_n[ dim+1+joint_fe.system_to_base_index(i).first.second ]
+                (loc_vel_xwall_dof_indices[ joint_fe.system_to_base_index(i).second ]);
+              break;
+            case 3:
+              Assert (joint_fe.system_to_base_index(i).first.second < dim,
+                      ExcInternalError());
+              joint_solution (loc_joint_dof_indices[i]) =
+                vorticity[ joint_fe.system_to_base_index(i).first.second ]
+                (loc_vel_dof_indices[ joint_fe.system_to_base_index(i).second ]);
+              break;
+            default:
+              Assert (false, ExcInternalError());
+              break;
+            }
       }
-  }
+
+  Postprocessor<dim> postprocessor (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD));
 
   DataOut<dim> data_out;
+  data_out.attach_dof_handler(joint_dof_handler);
+  data_out.add_data_vector(joint_solution, postprocessor);
 
-  std::vector<std::string> velocity_name (dim, "velocity");
-    std::vector< DataComponentInterpretation::DataComponentInterpretation > component_interpretation(dim,DataComponentInterpretation::component_is_part_of_vector);
-    data_out.add_data_vector (joint_dof_handler,joint_velocity, velocity_name, component_interpretation);
-
-    //xwall dofs
-//    const FESystem<dim> joint_fe_xwall (fe_xwall, dim);
-//  DoFHandler<dim> joint_dof_handler_xwall (dof_handler_xwall.get_tria());
-//  joint_dof_handler_xwall.distribute_dofs (joint_fe_xwall);
-//
-//  Vector<double> joint_velocity_xwall (joint_dof_handler_xwall.n_dofs());
-//  std::vector<types::global_dof_index> loc_joint_dof_indices_xwall (joint_fe_xwall.dofs_per_cell),
-//  loc_vel_dof_indices_xwall (fe_xwall.dofs_per_cell);
-//  typename DoFHandler<dim>::active_cell_iterator joint_cell_xwall = joint_dof_handler_xwall.begin_active(), joint_endc_xwall = joint_dof_handler_xwall.end(), vel_cell_xwall = dof_handler_xwall.begin_active();
-//  Assert(joint_cell_xwall!=joint_endc_xwall,ExcInternalError());
-//  for (; joint_cell_xwall != joint_endc_xwall; ++joint_cell_xwall, ++vel_cell_xwall)
-//  {
-//    joint_cell_xwall->get_dof_indices (loc_joint_dof_indices_xwall);
-//    vel_cell_xwall->get_dof_indices (loc_vel_dof_indices_xwall);
-//    for (unsigned int i=0; i<joint_fe_xwall.dofs_per_cell; ++i)
-//    switch (joint_fe_xwall.system_to_base_index(i).first.first)
-//      {
-//      case 0:
-//      Assert (joint_fe_xwall.system_to_base_index(i).first.second < dim,
-//          ExcInternalError());
-//      joint_velocity_xwall (loc_joint_dof_indices_xwall[i]) =
-//          solution_n[ joint_fe_xwall.system_to_base_index(i).first.second+dim+1]//solution_n[ joint_fe_xwall.system_to_base_index(i).first.second +dim+1]
-//        (loc_vel_dof_indices_xwall[ joint_fe_xwall.system_to_base_index(i).second ]);
-//      break;
-//      default:
-//      Assert (false, ExcInternalError());
-//      break;
-//      }
-//  }
-//
-//  std::vector<std::string> velocity_name_xwall (dim, "velocity_xwall");
-//    std::vector< DataComponentInterpretation::DataComponentInterpretation > component_interpretation_xwall(dim,DataComponentInterpretation::component_is_part_of_vector);
-    data_out.add_data_vector (dof_handler_xwall,solution_n[dim+1],"velocity_xwall_x");
-    data_out.add_data_vector (dof_handler_xwall,solution_n[dim+2],"velocity_xwall_y");
-
-    // vorticity
-  Vector<double> joint_vorticity (joint_dof_handler.n_dofs());
-    if (dim==2)
-    {  data_out.add_data_vector (dof_handler,vorticity[0], "vorticity"); }
-    else if (dim==3)
-    {
-//      for (unsigned int d=0; d<dim; ++d)
-//        data_out.add_data_vector (dof_handler,vorticity[d], "vorticity_" + Utilities::int_to_string(d+1));
-
-    std::vector<types::global_dof_index> loc_joint_dof_indices (joint_fe.dofs_per_cell),
-    loc_vel_dof_indices (fe.dofs_per_cell);
-    typename DoFHandler<dim>::active_cell_iterator joint_cell = joint_dof_handler.begin_active(), joint_endc = joint_dof_handler.end(), vel_cell = dof_handler.begin_active();
-    for (; joint_cell != joint_endc; ++joint_cell, ++vel_cell)
-    {
-      joint_cell->get_dof_indices (loc_joint_dof_indices);
-      vel_cell->get_dof_indices (loc_vel_dof_indices);
-      for (unsigned int i=0; i<joint_fe.dofs_per_cell; ++i)
-      switch (joint_fe.system_to_base_index(i).first.first)
-        {
-        case 0:
-        Assert (joint_fe.system_to_base_index(i).first.second < dim,
-            ExcInternalError());
-        joint_vorticity (loc_joint_dof_indices[i]) =
-          vorticity[ joint_fe.system_to_base_index(i).first.second ]
-          (loc_vel_dof_indices[ joint_fe.system_to_base_index(i).second ]);
-        break;
-        default:
-        Assert (false, ExcInternalError());
-        break;
-        }
-    }
-    std::vector<std::string> vorticity_name (dim, "vorticity");
-    std::vector< DataComponentInterpretation::DataComponentInterpretation > component_interpretation(dim,DataComponentInterpretation::component_is_part_of_vector);
-    data_out.add_data_vector (joint_dof_handler,joint_vorticity, vorticity_name, component_interpretation);
-    }
-    data_out.add_data_vector (dof_handler_p,solution_n[dim], "pressure");
-    data_out.add_data_vector (*(*xwall).ReturnDofHandlerWallDistance(),(*(*xwall).ReturnWDist()), "wdist");
-    data_out.add_data_vector (*(*xwall).ReturnDofHandlerWallDistance(),(*(*xwall).ReturnTauW()), "tauw");
-    data_out.build_patches (3);
+  data_out.add_data_vector (*(*xwall).ReturnDofHandlerWallDistance(),(*(*xwall).ReturnWDist()), "wdist");
+  data_out.add_data_vector (*(*xwall).ReturnDofHandlerWallDistance(),(*(*xwall).ReturnTauW()), "tauw");
+  data_out.build_patches (3);
     std::ostringstream filename;
     filename << "solution_"
              << output_number
