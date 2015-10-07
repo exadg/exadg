@@ -30,6 +30,7 @@
 #include <deal.II/grid/tria_accessor.h>
 #include <deal.II/grid/tria_iterator.h>
 #include <deal.II/grid/tria_boundary_lib.h>
+#include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
 
 #include <deal.II/multigrid/multigrid.h>
@@ -57,16 +58,17 @@
 #include <sstream>
 
 #define XWALL
+#define usepressuremg
 
 namespace DG_NavierStokes
 {
   using namespace dealii;
 
-  const unsigned int fe_degree = 1;
+  const unsigned int fe_degree = 2;
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
-  const unsigned int n_q_points_1d_xwall = 20;
-  const unsigned int dimension = 2; // dimension >= 2
+  const unsigned int n_q_points_1d_xwall = 9;
+  const unsigned int dimension = 3; // dimension >= 2
   const unsigned int refine_steps_min = 3;
   const unsigned int refine_steps_max = 3;
 
@@ -74,11 +76,11 @@ namespace DG_NavierStokes
   const double END_TIME = 5.0; // Poisseuille 5.0;  Kovasznay 1.0
 
   const double VISCOSITY = 0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
-  const double MAX_VELOCITY = 1.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
-  const double stab_factor = 16.0;
+  const double MAX_VELOCITY = 30.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
+  const double stab_factor = 32.0;
 
   const double MAX_WDIST_XWALL = 0.2;
-  bool pure_dirichlet_bc = false;
+  bool pure_dirichlet_bc = true;
 
   const double lambda = 0.5/VISCOSITY - std::pow(0.25/std::pow(VISCOSITY,2.0)+4.0*std::pow(numbers::PI,2.0),0.5);
 
@@ -135,14 +137,21 @@ namespace DG_NavierStokes
     result = (p[0]-1.0)*pressure_gradient;*/
 
     // parabolic velocity profile at inflow - instationary
-    const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
-    double T = 0.5;
+//    const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
+//    double T = 0.5;
+    //turbulent channel flow
     if(component == 0)
-      result = 1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
-    if(component == dim)
-    result = (p[0]-1.0)*pressure_gradient*(t<T? (t/T) : 1.0);
+    {
+      if(p[1]<0.99&&p[1]>-0.99)
+        result = -22.0*(pow(p[1],2.0)-1.0)*(1.0+((double)rand()/RAND_MAX)*0.01);//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
+      else
+        result = 0.0;
+    }
+      if(component == dim)
+    result = 0.0;//(p[0]-1.0)*pressure_gradient*(t<T? (t/T) : 1.0);
     if(component >dim)
       result = 0.0;
+
     /********************************************************************/
 
     /************************* vortex problem ***************************/
@@ -293,16 +302,6 @@ namespace DG_NavierStokes
     return result;
   }
 
-  template <int dim, typename Number>
-  Tensor<1,dim,Number> get_rhs(Point<dim,Number> &point, double time)
-  {
-    Tensor<1,dim,Number> rhs;
-    for(unsigned int d=0;d<dim;++d)
-      rhs[d] = 0.0;
-
-    return rhs;
-  }
-
   template<int dim>
   class RHS : public Function<dim>
   {
@@ -321,6 +320,12 @@ namespace DG_NavierStokes
   template<int dim>
   double RHS<dim>::value(const Point<dim> &p,const unsigned int /* component */) const
   {
+
+    //channel flow with periodic bc
+    if(component==0)
+      return 1.0;
+    else
+      return 0.0;
 //  double t = this->get_time();
   double result = 0.0;
 
@@ -1987,6 +1992,54 @@ public:
         }
 #endif
       }
+      Tensor<1,dim==2?1:dim,VectorizedArray<Number> >
+      get_curl (const unsigned int q_point) const
+       {
+  #ifdef XWALL
+        if(enriched)
+        {
+          // copy from generic function into dim-specialization function
+          const Tensor<2,dim,VectorizedArray<Number> > grad = gradients[q_point];
+          Tensor<1,dim==2?1:dim,VectorizedArray<Number> > curl;
+          switch (dim)
+            {
+            case 1:
+              Assert (false,
+                      ExcMessage("Computing the curl in 1d is not a useful operation"));
+              break;
+            case 2:
+              curl[0] = grad[1][0] - grad[0][1];
+              for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
+              {
+                if(not enriched_components.at(v))
+                {
+                  curl[0][v]=0.0;
+                }
+              }
+              break;
+            case 3:
+              curl[0] = grad[2][1] - grad[1][2];
+              curl[1] = grad[0][2] - grad[2][0];
+              curl[2] = grad[1][0] - grad[0][1];
+              for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
+              {
+                if(not enriched_components.at(v))
+                {
+                  curl[0][v]=0.0;
+                  curl[1][v]=0.0;
+                  curl[2][v]=0.0;
+                }
+              }
+              break;
+            default:
+              Assert (false, ExcNotImplemented());
+              break;
+            }
+          return fe_eval.get_curl(q_point) + curl;
+        }
+  #endif
+        return fe_eval.get_curl(q_point);
+       }
 
       VectorizedArray<Number> read_cellwise_dof_value (unsigned int j)
       {
@@ -2157,106 +2210,109 @@ public:
   {
     // compute wall distance
     (*mydata).back().initialize_dof_vector(wall_distance, 2);
+    //TODO this first version doesn't work with periodic BC, I think...
 //    //save all nodes on dirichlet boundaries in a map
-    std::map<unsigned int, Point<dim> > wallnodes_locations;
+//    std::map<unsigned int, Point<dim> > wallnodes_locations;
+////
+//    std::vector<types::global_dof_index> element_dof_indices((*mydata).back().get_dof_handler(2).get_fe().dofs_per_cell);
+//    for (typename DoFHandler<dim>::active_cell_iterator cellw=dof_handler_wall_distance.begin_active();
+//        cellw != dof_handler_wall_distance.end(); ++cellw)
+//    {
+//      if (cellw->is_locally_owned())
+//      {
+//        cellw->get_dof_indices(element_dof_indices);
+//        for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
+//        {
+//          typename DoFHandler<dim>::face_iterator face=cellw->face(f);
+//          //this is a face with dirichlet boundary
+//          if(face->at_boundary())
+//          {
+//            unsigned int bid = face->boundary_id();
+//            if(bid == 0)
+//            {
+//              for (unsigned int vw=0; vw<GeometryInfo<dim>::vertices_per_face; ++vw)
+//              {
+//                wallnodes_locations[element_dof_indices[vw]]=face->vertex(vw);
+//              }
+//            }
+//          }
+//        }
+//      }
+//    }
 //
-    std::vector<types::global_dof_index> element_dof_indices((*mydata).back().get_dof_handler(2).get_fe().dofs_per_cell);
-    for (typename DoFHandler<dim>::active_cell_iterator cellw=dof_handler_wall_distance.begin_active();
-        cellw != dof_handler_wall_distance.end(); ++cellw)
-    {
-      if (cellw->is_locally_owned())
-      {
-        cellw->get_dof_indices(element_dof_indices);
-        for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
-        {
-          typename DoFHandler<dim>::face_iterator face=cellw->face(f);
-          //this is a face with dirichlet boundary
-          if(face->at_boundary())
-          {
-            unsigned int bid = face->boundary_id();
-            if(bid == 0)
-            {
-              for (unsigned int vw=0; vw<GeometryInfo<dim>::vertices_per_face; ++vw)
-              {
-                wallnodes_locations[element_dof_indices[vw]]=face->vertex(vw);
-              }
-            }
-          }
-        }
-      }
-    }
-
-    //look for the nearst wall node
-    //TODO Benjamin: for parallel computations, communicate wallnodes_locations to all procs
-    std::vector<types::global_dof_index> element_dof_indicesxw((*mydata).back().get_dof_handler(2).get_fe().dofs_per_cell);
-    for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distance.begin_active();
-        cell != dof_handler_wall_distance.end(); ++cell)
-      if (cell->is_locally_owned())
-      {
-        std::vector<double> tmpwdist(GeometryInfo<dim>::vertices_per_cell,1e9);
-
-        for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_cell; ++v)
-        {
-          Point<dim> p = cell->vertex(v);
-
-          for(typename std::map<unsigned int, Point<dim> >::const_iterator pw = wallnodes_locations.begin(); pw != wallnodes_locations.end(); pw++)
-          {
-            double wdist=pw->second.distance(p);
-            if(wdist < tmpwdist.at(v))
-            {
-              tmpwdist.at(v) = wdist;
-            }
-          }
-        }
-        //TODO also store the connectivity of the enrichment nodes to these Dirichlet nodes
-        //to efficiently communicate the wall shear stress later on
-        cell->get_dof_indices(element_dof_indicesxw);
-        for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_cell; ++v)
-        {
-          wall_distance(element_dof_indicesxw[v]) = tmpwdist.at(v);
-        }
-      }
-//
-////old version for serial case
+//    //look for the nearst wall node
+//    //TODO Benjamin: for parallel computations, communicate wallnodes_locations to all procs
+//    std::vector<types::global_dof_index> element_dof_indicesxw((*mydata).back().get_dof_handler(2).get_fe().dofs_per_cell);
 //    for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distance.begin_active();
 //        cell != dof_handler_wall_distance.end(); ++cell)
 //      if (cell->is_locally_owned())
 //      {
 //        std::vector<double> tmpwdist(GeometryInfo<dim>::vertices_per_cell,1e9);
-//        //TODO Benjamin
-//        //this won't work in parallel
-//        for (typename DoFHandler<dim>::active_cell_iterator cellw=dof_handler_wall_distance.begin_active();
-//            cellw != dof_handler_wall_distance.end(); ++cellw)
+//
+//        for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_cell; ++v)
 //        {
-//          for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
+//          Point<dim> p = cell->vertex(v);
+//
+//          for(typename std::map<unsigned int, Point<dim> >::const_iterator pw = wallnodes_locations.begin(); pw != wallnodes_locations.end(); pw++)
 //          {
-//            typename DoFHandler<dim>::face_iterator face=cellw->face(f);
-//            //this is a face with dirichlet boundary
-//            unsigned int bid = face->boundary_id();
-//            if(bid == 0)
+//            double wdist=pw->second.distance(p);
+//            if(wdist < tmpwdist.at(v))
 //            {
-//              for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_cell; ++v)
-//              {
-//                Point<dim> p = cell->vertex(v);
-//                for (unsigned int vw=0; vw<GeometryInfo<dim>::vertices_per_face; ++vw)
-//                {
-//                  Point<dim> pw =face->vertex(vw);
-//                  double wdist=pw.distance(p);
-//                  if(wdist < tmpwdist[v))
-//                    tmpwdist[v)=wdist;
-//                }
-//              }
+//              tmpwdist.at(v) = wdist;
 //            }
 //          }
 //        }
 //        //TODO also store the connectivity of the enrichment nodes to these Dirichlet nodes
 //        //to efficiently communicate the wall shear stress later on
-//        cell->get_dof_indices(element_dof_indices);
+//        cell->get_dof_indices(element_dof_indicesxw);
 //        for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_cell; ++v)
 //        {
-//          wall_distance(element_dof_indices[v]) = tmpwdist[v);
+//          wall_distance(element_dof_indicesxw[v]) = tmpwdist.at(v);
 //        }
 //      }
+//
+//old version for serial case
+        std::vector<types::global_dof_index> element_dof_indices((*mydata).back().get_dof_handler(2).get_fe().dofs_per_cell);
+    for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distance.begin_active();
+        cell != dof_handler_wall_distance.end(); ++cell)
+      if (cell->is_locally_owned())
+      {
+                cell->get_dof_indices(element_dof_indices);
+        std::vector<double> tmpwdist(GeometryInfo<dim>::vertices_per_cell,1e9);
+        //TODO Benjamin
+        //this won't work in parallel
+        for (typename DoFHandler<dim>::active_cell_iterator cellw=dof_handler_wall_distance.begin_active();
+            cellw != dof_handler_wall_distance.end(); ++cellw)
+        {
+          for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
+          {
+            typename DoFHandler<dim>::face_iterator face=cellw->face(f);
+            //this is a face with dirichlet boundary
+            unsigned int bid = face->boundary_id();
+            if(bid == 0)
+            {
+              for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_cell; ++v)
+              {
+                Point<dim> p = cell->vertex(v);
+                for (unsigned int vw=0; vw<GeometryInfo<dim>::vertices_per_face; ++vw)
+                {
+                  Point<dim> pw =face->vertex(vw);
+                  double wdist=pw.distance(p);
+                  if(wdist < tmpwdist[v])
+                    tmpwdist[v]=wdist;
+                }
+              }
+            }
+          }
+        }
+        //TODO also store the connectivity of the enrichment nodes to these Dirichlet nodes
+        //to efficiently communicate the wall shear stress later on
+        cell->get_dof_indices(element_dof_indices);
+        for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_cell; ++v)
+        {
+          wall_distance(element_dof_indices[v]) = tmpwdist[v];
+        }
+      }
 //    wall_distance.print(std::cout);
 //    Vector<double> local_distance_values(fe_wall_distance.dofs_per_cell);
 //    for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distance.begin_active();
@@ -2445,7 +2501,8 @@ public:
   typedef double value_type;
   static const unsigned int number_vorticity_components = (dim==2) ? 1 : dim;
 
-  NavierStokesOperation(const DoFHandler<dim> &dof_handler,const DoFHandler<dim> &dof_handler_p, const DoFHandler<dim> &dof_handler_xwall, const double time_step_size);
+  NavierStokesOperation(const DoFHandler<dim> &dof_handler,const DoFHandler<dim> &dof_handler_p, const DoFHandler<dim> &dof_handler_xwall, const double time_step_size,
+      const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs);
 
   void do_timestep (const double  &cur_time,const double  &delta_t, const unsigned int &time_step_number);
 
@@ -2699,7 +2756,8 @@ public:
   NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::NavierStokesOperation(const DoFHandler<dim> &dof_handler,
                                                                        const DoFHandler<dim> &dof_handler_p,
                                                                        const DoFHandler<dim> &dof_handler_xwall,
-                                                                       const double time_step_size):
+                                                                       const double time_step_size,
+                                                                       const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs):
   time(0.0),
   time_step(time_step_size),
   viscosity(VISCOSITY),
@@ -2733,6 +2791,7 @@ public:
                           update_quadrature_points | update_normal_vectors |
                           update_values);
     additional_data.level_mg_handler = level;
+    additional_data.periodic_face_pairs_level_0 = periodic_face_pairs;
 
     std::vector<const DoFHandler<dim> * >  dof_handler_vec;
     dof_handler_vec.push_back(&dof_handler);
@@ -2772,7 +2831,9 @@ public:
   smoother_data_pressure.smoothing_range = 30;
   smoother_data_pressure.degree = 5; //empirically: use degree = 3 - 6
   smoother_data_pressure.eig_cg_n_iterations = 20;
+#ifdef usepressuremg
   mg_smoother_pressure.initialize(mg_matrices_pressure, smoother_data_pressure);
+#endif
 
 //  smoother_data_viscous.smoothing_range = 30;
 //  smoother_data_viscous.degree = 5; //empirically: use degree = 3 - 6
@@ -3132,7 +3193,6 @@ public:
 //    data_out.write_vtk(output);
 
     rhs_convection_nm = rhs_convection_n;
-    rhs_convection_n=velocity_temp;
 
     computing_times[0] += timer.wall_time();
   /*************************************************************************/
@@ -3152,7 +3212,7 @@ public:
     solution_np[dim] *= -1.0/time_step;
 
   // set maximum number of iterations, tolerance
-  SolverControl solver_control (1e3, 1.e-15);
+  SolverControl solver_control (1e3, 1.e-8);
   SolverCG<parallel::distributed::Vector<double> > solver (solver_control);
 
 //  Timer cg_timer;
@@ -3170,6 +3230,7 @@ public:
 //    solution = solution_n[dim];
 
     // PCG-Solver with GMG + Chebyshev smoother as a preconditioner
+#ifdef usepressuremg
   mg::Matrix<parallel::distributed::Vector<double> > mgmatrix_pressure(mg_matrices_pressure);
   Multigrid<parallel::distributed::Vector<double> > mg_pressure(data.back().get_dof_handler(1),
                              mgmatrix_pressure,
@@ -3184,10 +3245,13 @@ public:
     solver.solve (mg_matrices_pressure[mg_matrices_pressure.max_level()], solution, solution_np[dim], preconditioner_pressure);
   }
   catch (SolverControl::NoConvergence)
+#endif
   {
+#ifdef usepressuremg
     std::cout<<"Multigrid failed. Try CG ..." << std::endl;
+#endif
     solution=solution_n[dim];
-    SolverControl solver_control (1e3, 1.e-15);
+    SolverControl solver_control (5e3, 1.e-6);
     SolverCG<parallel::distributed::Vector<double> > solver (solver_control);
     solver.solve (mg_matrices_pressure[mg_matrices_pressure.max_level()], solution, solution_np[dim], PreconditionIdentity());
   }
@@ -4663,7 +4727,7 @@ public:
       //first, check if we have an enriched element
       //if so, perform the routine for the enriched elements
       fe_eval_xwall.reinit (cell);
-//      if(fe_eval_xwall.enriched)
+      if(fe_eval_xwall.enriched)
       {
         std::vector<FullMatrix<value_type> > matrices;
         {
@@ -4726,16 +4790,16 @@ public:
           fe_eval_xwall.distribute_local_to_global (dst.at(0),dst.at(1));
 
       }
-//      else
+      else
   #endif
-//      {
-//        phi.read_dof_values(src.at(0));
-//
-//        inverse.fill_inverse_JxW_values(coefficients);
-//        inverse.apply(coefficients,1,phi.begin_dof_values(),phi.begin_dof_values());
-//
-//        phi.set_dof_values(dst.at(0));
-//      }
+      {
+        phi.read_dof_values(src.at(0));
+
+        inverse.fill_inverse_JxW_values(coefficients);
+        inverse.apply(coefficients,1,phi.begin_dof_values(),phi.begin_dof_values());
+
+        phi.set_dof_values(dst.at(0));
+      }
     }
     }
   }
@@ -4912,42 +4976,25 @@ public:
 ////    FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> velocity(data,0,0);
 //    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall(data,src.at(2*dim+1),src.at(2*dim+2),0,0);
 ////    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,number_vorticity_components,value_type> fe_eval_xwall_phi(data,src.at(dim),src.at(dim+1),0,0);
-    FEEvaluation<dim,fe_degree,fe_degree+1,number_vorticity_components,value_type> phi(data,0,0);
-////#endif
-//    const unsigned int dofs_per_cell = phi.dofs_per_cell;
-//
-//    AlignedVector<VectorizedArray<value_type> > coefficients(dofs_per_cell);
-//    MatrixFreeOperators::CellwiseInverseMassMatrix<dim, fe_degree, number_vorticity_components, value_type> inverse(phi);
-//
-//    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
-//    {
-//      velocity_xwall.reinit(cell);
-//      velocity_xwall.read_dof_values(src,0,src,dim+1);
-//      velocity_xwall.evaluate (false,true,false);
-//
-//      phi.reinit(cell);
-//
-//      for (unsigned int q=0; q<phi.n_q_points; ++q)
-//      {
-//      Tensor<1,number_vorticity_components,VectorizedArray<value_type> > omega = velocity_xwall.get_curl(q);
-//        phi.submit_value (omega, q);
-//      }
-//      phi.integrate (true,false);
-//
-//      inverse.fill_inverse_JxW_values(coefficients);
-//    inverse.apply(coefficients,number_vorticity_components,phi.begin_dof_values(),phi.begin_dof_values());
-//
-//    phi.set_dof_values(dst,0);
-//    }
+//    AlignedVector<VectorizedArray<value_type> > coefficients(phi.dofs_per_cell);
 
+//
 #ifdef XWALL
    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,number_vorticity_components,value_type> fe_eval_xwall(data,src.at(2*dim+1),src.at(2*dim+2),0,3);
    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> velocity_xwall(data,src.at(2*dim+1),src.at(2*dim+2),0,3);
+   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> velocity(data,src.at(2*dim+1),src.at(2*dim+2),0,0);
+   FEEvaluation<dim,fe_degree,fe_degree+1,number_vorticity_components,value_type> phi(data,0,0);
 #else
-
-   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,number_vorticity_components,value_type> fe_eval_xwall(data,src.at(2*dim+1),src.at(2*dim+2),0,0);
-   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> velocity_xwall(data,src.at(2*dim+1),src.at(2*dim+2),0,0);
+//   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,number_vorticity_components,value_type> fe_eval_xwall(data,src.at(2*dim+1),src.at(2*dim+2),0,0);
+   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> velocity(data,src.at(2*dim+1),src.at(2*dim+2),0,0);
+   FEEvaluation<dim,fe_degree,fe_degree+1,number_vorticity_components,value_type> phi(data,0,0);
 #endif
+
+  MatrixFreeOperators::CellwiseInverseMassMatrix<dim, fe_degree, number_vorticity_components, value_type> inverse(phi);
+  const unsigned int dofs_per_cell = phi.dofs_per_cell;
+  AlignedVector<VectorizedArray<value_type> > coefficients(dofs_per_cell);
+//    MatrixFreeOperators::CellwiseInverseMassMatrix<dim, fe_degree, number_vorticity_components, value_type> inverse(phi);
+
 //no XWALL but with XWALL routine
 //   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,1,value_type> fe_eval_xwall (data,src.at(dim+1),src.at(dim+2),0,0);
 
@@ -4958,15 +5005,15 @@ public:
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
   {
     phi.reinit(cell);
-    velocity_xwall.reinit(cell);
-    velocity_xwall.read_dof_values(src,0,src,dim+1);
-    velocity_xwall.evaluate (false,true,false);
 #ifdef XWALL
     //first, check if we have an enriched element
     //if so, perform the routine for the enriched elements
     fe_eval_xwall.reinit (cell);
-//    if(fe_eval_xwall.enriched)
+    if(fe_eval_xwall.enriched)
     {
+      velocity_xwall.reinit(cell);
+      velocity_xwall.read_dof_values(src,0,src,dim+1);
+      velocity_xwall.evaluate (false,true,false);
       std::vector<FullMatrix<value_type> > matrices;
       {
         FullMatrix<value_type> matrix(fe_eval_xwall.dofs_per_cell);
@@ -4993,7 +5040,7 @@ public:
               (matrices[v])(i,j) = (fe_eval_xwall.read_cellwise_dof_value(i))[v];
             else//this is a non-enriched element
             {
-              if(i<phi.tensor_dofs_per_cell && j<phi.tensor_dofs_per_cell)
+              if(i<phi.dofs_per_cell && j<phi.dofs_per_cell)
                 (matrices[v])(i,j) = (fe_eval_xwall.read_cellwise_dof_value(i))[v];
               else if(i == j)//diagonal
                 (matrices[v])(i,j) = 1.0;
@@ -5010,45 +5057,66 @@ public:
       {
         (matrices[v]).gauss_jordan();
       }
-
+      //initialize again to get a clean version
+//      fe_eval_xwall.reinit (cell);
       //now apply vectors to inverse matrix
-        for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
-        {
-          Tensor<1,number_vorticity_components,VectorizedArray<value_type> > omega = velocity_xwall.get_curl(q);
-          Tensor<1,dim,VectorizedArray<value_type> > omegadim;
-
-          fe_eval_xwall.submit_value (omega, q);
-        }
-        fe_eval_xwall.integrate (true,false);
+      for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
+      {
+        fe_eval_xwall.submit_value (velocity_xwall.get_curl(q), q);
+      }
+      fe_eval_xwall.integrate (true,false);
 
 
-        for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
-        {
-          Vector<value_type> vector_input(fe_eval_xwall.dofs_per_cell);
-          for (unsigned int j=0; j<fe_eval_xwall.dofs_per_cell; ++j)
-            vector_input(j)=(fe_eval_xwall.read_cellwise_dof_value(j))[v];
-          Vector<value_type> vector_result(fe_eval_xwall.dofs_per_cell);
-          (matrices[v]).vmult(vector_result,vector_input);
-          for (unsigned int j=0; j<fe_eval_xwall.dofs_per_cell; ++j)
-            fe_eval_xwall.write_cellwise_dof_value(j,vector_result(j),v);
-        }
-        fe_eval_xwall.distribute_local_to_global (dst,0,dst,number_vorticity_components);
+      for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
+      {
+        Vector<value_type> vector_input(fe_eval_xwall.dofs_per_cell);
+        for (unsigned int j=0; j<fe_eval_xwall.dofs_per_cell; ++j)
+          vector_input(j)=(fe_eval_xwall.read_cellwise_dof_value(j))[v];
+        Vector<value_type> vector_result(fe_eval_xwall.dofs_per_cell);
+        (matrices[v]).vmult(vector_result,vector_input);
+        for (unsigned int j=0; j<fe_eval_xwall.dofs_per_cell; ++j)
+          fe_eval_xwall.write_cellwise_dof_value(j,vector_result(j),v);
+      }
+      fe_eval_xwall.distribute_local_to_global (dst,0,dst,number_vorticity_components);
 
     }
-//    else
+    else
 #endif
+    {
+//      phi.reinit(cell);
+
+      velocity.reinit(cell);
+      velocity.read_dof_values(src,0,src,dim+1);
+      velocity.evaluate (false,true,false);
+      for (unsigned int q=0; q<phi.n_q_points; ++q)
+      {
+      Tensor<1,number_vorticity_components,VectorizedArray<value_type> > omega = velocity.get_curl(q);
+        phi.submit_value (omega, q);
+      }
+      phi.integrate (true,false);
+
+      inverse.fill_inverse_JxW_values(coefficients);
+      inverse.apply(coefficients,number_vorticity_components,phi.begin_dof_values(),phi.begin_dof_values());
+
+      phi.set_dof_values(dst,0);
+    }
+  }
+
+//    else
+
 //    {
 //      phi.read_dof_values(src,0);
 //
 //      inverse.fill_inverse_JxW_values(coefficients);
-//      inverse.apply(coefficients,dim,phi.begin_dof_values(),phi.begin_dof_values());
+//      inverse.apply(coefficients,number_vorticity_components,phi.begin_dof_values(),phi.begin_dof_values());
 //
 //      phi.set_dof_values(dst,0);
 //    }
 //  }
 
   //
-    }
+
+
   }
 
   template <int dim, typename FEEval>
@@ -5124,7 +5192,7 @@ public:
                   parallel::distributed::Vector<value_type>      &dst,
                   const unsigned int                 &level) const
   {
-  //dst = 0;
+  dst = 0;
   data[level].loop (  &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_pressure,
             &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_pressure_face,
             &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_pressure_boundary_face,
@@ -5556,6 +5624,7 @@ public:
   void run();
 
   private:
+//  Point<dim> grid_transform (const Point<dim> &in);
   void make_grid_and_dofs ();
   void write_output(std::vector<parallel::distributed::Vector<value_type>>   &solution_n,
              std::vector<parallel::distributed::Vector<value_type>>   &vorticity,
@@ -5568,7 +5637,8 @@ public:
 
   double time, time_step;
 
-  Triangulation<dim> triangulation;
+  parallel::distributed::Triangulation<dim> triangulation;
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_faces;
     FE_DGQArbitraryNodes<dim>  fe;
     FE_DGQArbitraryNodes<dim>  fe_p;
     FE_DGQArbitraryNodes<dim>  fe_xwall;
@@ -5586,13 +5656,15 @@ public:
   pcout (std::cout,
          Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0),
   time(START_TIME),
+  triangulation(MPI_COMM_WORLD,
+      dealii::Triangulation<dim>::none,parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
   fe(QGaussLobatto<1>(fe_degree+1)),
   fe_p(QGaussLobatto<1>(fe_degree_p+1)),
   fe_xwall(QGaussLobatto<1>(fe_degree_xwall+1)),
   dof_handler(triangulation),
   dof_handler_p(triangulation),
   dof_handler_xwall(triangulation),
-  cfl(0.05/pow(fe_degree,2.0)),
+  cfl(1.0/pow(fe_degree,2.0)),
   n_refinements(refine_steps),
   output_interval_time(0.00095)
   {
@@ -5605,29 +5677,65 @@ public:
   << std::endl;
   }
 
+  template <int dim>
+  Point<dim> grid_transform (const Point<dim> &in)
+  {
+    Point<dim> out = in;
+    //no wall model
+//    out[1] =  std::tanh(1.5*(2.*in(1)-1))/std::tanh(1.5);
+    //wall-model
+    out[0] = in(0)-numbers::PI;
+    out[1] =  2.*in(1)-1.;
+    out[2] = in(2)-0.5*numbers::PI;
+    return out;
+  }
+
   template<int dim>
   void NavierStokesProblem<dim>::make_grid_and_dofs ()
   {
     /* --------------- Generate grid ------------------- */
-
+    //turbulent channel flow
+    Point<dim> coordinates;
+    coordinates[0] = 2*numbers::PI;
+    coordinates[1] = 1.;
+    if (dim == 3)
+      coordinates[2] = numbers::PI;
     // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
-    const double left = -1.0, right = 1.0;
-    GridGenerator::hyper_cube(triangulation,left,right);
-
+//    const double left = -1.0, right = 1.0;
+//    GridGenerator::hyper_cube(triangulation,left,right);
+//    const unsigned int base_refinements = n_refinements;
+    std::vector<unsigned int> refinements(dim, 1);
+    //refinements[0] *= 3;
+    GridGenerator::subdivided_hyper_rectangle (triangulation,
+        refinements,Point<dim>(),
+        coordinates);
     // set boundary indicator
-    typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
-    for(;cell!=endc;++cell)
-    {
-    for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-    {
-    //  if ((std::fabs(cell->face(face_number)->center()(0) - left)< 1e-12)||
-    //      (std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12))
-     if ((std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12))
-        cell->face(face_number)->set_boundary_indicator (1);
-    }
-    }
+//    typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+//    for(;cell!=endc;++cell)
+//    {
+//    for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+//    {
+//    //  if ((std::fabs(cell->face(face_number)->center()(0) - left)< 1e-12)||
+//    //      (std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12))
+//     if ((std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12))
+//        cell->face(face_number)->set_boundary_indicator (1);
+//    }
+//    }
+    //periodicity in x- and z-direction
+    //add 10 to avoid conflicts with dirichlet boundary, which is 0
+    triangulation.begin()->face(0)->set_all_boundary_ids(0+10);
+    triangulation.begin()->face(1)->set_all_boundary_ids(1+10);
+    //periodicity in z-direction, if dim==3
+    for (unsigned int face=4; face<GeometryInfo<dim>::faces_per_cell; ++face)
+      triangulation.begin()->face(face)->set_all_boundary_ids(face+10);
+
+    GridTools::collect_periodic_faces(triangulation, 2*0+10, 2*0+1+10, 0, periodic_faces);
+    for (unsigned int d=2; d<dim; ++d)
+      GridTools::collect_periodic_faces(triangulation, 2*d+10, 2*d+1+10, d, periodic_faces);
+    triangulation.add_periodicity(periodic_faces);
     triangulation.refine_global(n_refinements);
 
+    GridTools::transform (&grid_transform<dim>, triangulation);
     // vortex problem
 //    const double left = -0.5, right = 0.5;
 //    GridGenerator::subdivided_hyper_cube(triangulation,2,left,right);
@@ -5792,12 +5900,13 @@ public:
     std::vector< DataComponentInterpretation::DataComponentInterpretation > component_interpretation(dim,DataComponentInterpretation::component_is_part_of_vector);
     data_out.add_data_vector (joint_dof_handler,joint_vorticity, vorticity_name, component_interpretation);
     }
+//    data_out.add_data_vector (dof_handler_xwall,vorticity[dim+2],"vorticity_xwall_z");
     data_out.add_data_vector (dof_handler_p,solution_n[dim], "pressure");
     data_out.add_data_vector (*(*xwall).ReturnDofHandlerWallDistance(),(*(*xwall).ReturnWDist()), "wdist");
     data_out.add_data_vector (*(*xwall).ReturnDofHandlerWallDistance(),(*(*xwall).ReturnTauW()), "tauw");
     data_out.build_patches (3);
     std::ostringstream filename;
-    filename << "solution_"
+    filename << "solution_wm8_p2_f32_"
              << output_number
              << ".vtu";
 
@@ -5890,7 +5999,7 @@ public:
 
   calculate_time_step();
 
-  NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>  navier_stokes_operation(dof_handler, dof_handler_p, dof_handler_xwall, time_step);
+  NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>  navier_stokes_operation(dof_handler, dof_handler_p, dof_handler_xwall, time_step, periodic_faces);
 
   // prescribe initial conditions
   for(unsigned int d=0;d<dim;++d)
@@ -5918,7 +6027,7 @@ public:
           navier_stokes_operation.ReturnXWall(),
           output_number++);
     pcout << std::endl << "Write output at START_TIME t = " << START_TIME << std::endl;
-  calculate_error(navier_stokes_operation.solution_n);
+//  calculate_error(navier_stokes_operation.solution_n);
 
   const double EPSILON = 1.0e-10;
   unsigned int time_step_number = 1;
@@ -5934,7 +6043,7 @@ public:
             navier_stokes_operation.ReturnXWall(),
             output_number++);
       pcout << std::endl << "Write output at TIME t = " << time+time_step << std::endl;
-      calculate_error(navier_stokes_operation.solution_n,time_step);
+//      calculate_error(navier_stokes_operation.solution_n,time_step);
     }
   }
   navier_stokes_operation.analyse_computing_times();
