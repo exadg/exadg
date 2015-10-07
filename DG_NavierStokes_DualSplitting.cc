@@ -26,6 +26,7 @@
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/fe_system.h>
+#include <deal.II/fe/mapping_q.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/grid/tria_accessor.h>
 #include <deal.II/grid/tria_iterator.h>
@@ -1950,6 +1951,11 @@ public:
         return fe_eval.get_normal_volume_fraction();
       }
 
+      VectorizedArray<Number> read_cell_data(const AlignedVector<VectorizedArray<Number> > &cell_data)
+      {
+        return fe_eval.read_cell_data(cell_data);
+      }
+
       Tensor<1,n_components_,VectorizedArray<Number> > get_normal_gradient(const unsigned int q_point) const
       {
 #ifdef XWALL
@@ -2653,6 +2659,8 @@ public:
 //    SMOOTHER_VISCOUS, parallel::distributed::BlockVector<double> > mg_smoother_viscous;
 //    MGCoarseViscous<dim,fe_degree,fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> mg_coarse_viscous;
 
+    std::vector< AlignedVector<VectorizedArray<value_type> > > array_penalty_parameter;
+
     Point<dim> first_point;
     types::global_dof_index dof_index_first_point;
 
@@ -2797,6 +2805,7 @@ public:
 
   //penalty parameter
   void calculate_penalty_parameter(double &factor) const;
+  void calculate_penalty_parameter_pressure(double &factor) const;
   };
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -2826,6 +2835,9 @@ public:
   mg_matrices_pressure.resize(0, dof_handler_p.get_tria().n_levels()-1);
 //  mg_matrices_viscous.resize(0, dof_handler.get_tria().n_levels()-1);
   gamma0 = 3.0/2.0;
+
+  array_penalty_parameter.resize(dof_handler_p.get_tria().n_levels());
+
   for (unsigned int level=mg_matrices_pressure.min_level();level<=mg_matrices_pressure.max_level(); ++level)
   {
     // initialize matrix_free_data
@@ -2862,8 +2874,37 @@ public:
     quadratures.push_back(QGauss<1>(fe_degree + (fe_degree+2)/2));
     quadratures.push_back(QGauss<1>(n_q_points_1d_xwall));
 
-    data[level].reinit (dof_handler_vec, constraint_matrix_vec,
+    const MappingQ<dim> mapping(fe_degree);
+
+    data[level].reinit (mapping, dof_handler_vec, constraint_matrix_vec,
                   quadratures, additional_data);
+
+    // penalty parameter: calculate surface/volume ratio for each cell
+    QGauss<dim> quadrature(fe_degree+1);
+    FEValues<dim> fe_values(mapping, dof_handler.get_fe(), quadrature, update_JxW_values);
+    QGauss<dim-1> face_quadrature(fe_degree+1);
+    FEFaceValues<dim> fe_face_values(mapping, dof_handler.get_fe(), face_quadrature,update_JxW_values);
+    //pcout << "Level " << level << std::endl;
+    array_penalty_parameter[level].resize(data[level].n_macro_cells()+data[level].n_macro_ghost_cells());
+    for (unsigned int i=0; i<data[level].n_macro_cells()+data[level].n_macro_ghost_cells(); ++i)
+      for (unsigned int v=0; v<data[level].n_components_filled(i); ++v)
+        {
+          typename DoFHandler<dim>::cell_iterator cell = data[level].get_cell_iterator(i,v);
+          fe_values.reinit(cell);
+          double volume = 0;
+          for (unsigned int q=0; q<quadrature.size(); ++q)
+            volume += fe_values.JxW(q);
+          double surface_area = 0;
+          for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
+            {
+              fe_face_values.reinit(cell, f);
+              const double factor = cell->at_boundary(f) ? 1. : 0.5;
+              for (unsigned int q=0; q<face_quadrature.size(); ++q)
+                surface_area += fe_face_values.JxW(q) * factor;
+            }
+          array_penalty_parameter[level][i][v] = surface_area / volume;
+          //pcout << "surface to volume ratio: " << array_penalty_parameter[level][i][v] << std::endl;
+        }
 
     mg_matrices_pressure[level].initialize(*this, level);
 //    mg_matrices_viscous[level].initialize(*this, level);
@@ -3535,9 +3576,22 @@ public:
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   calculate_penalty_parameter(double &factor) const
   {
-//TODO Benjamin: why is h missing here?
-  // penalty parameter = stab_factor*(p+1)(p+d)*2/h
-  factor = stab_factor * (fe_degree +1.0) * (fe_degree + dim) * 2.0;
+    // triangular/tetrahedral elements: penalty parameter = stab_factor*(p+1)(p+d)/dim * surface/volume
+//  factor = stab_factor * (fe_degree +1.0) * (fe_degree + dim) / dim;
+
+    // quadrilateral/hexahedral elements: penalty parameter = stab_factor*(p+1)(p+1) * surface/volume
+    factor = stab_factor * (fe_degree +1.0) * (fe_degree + 1.0);
+  }
+
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  calculate_penalty_parameter_pressure(double &factor) const
+  {
+    // triangular/tetrahedral elements: penalty parameter = stab_factor*(p+1)(p+d)/dim * surface/volume
+//  factor = stab_factor * (fe_degree_p +1.0) * (fe_degree_p + dim) / dim;
+
+    // quadrilateral/hexahedral elements: penalty parameter = stab_factor*(p+1)(p+1) * surface/volume
+    factor = stab_factor * (fe_degree_p +1.0) * (fe_degree_p + 1.0);
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -3616,6 +3670,7 @@ public:
   {
   FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval(data,true,1,1);
   FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval_neighbor(data,false,1,1);
+  const unsigned int level = data.get_cell_iterator(0,0)->level();
 
   for(unsigned int face=face_range.first; face<face_range.second; face++)
   {
@@ -3627,8 +3682,9 @@ public:
       (value_type)(fe_degree * (fe_degree + 1.0)) * 0.5   *stab_factor; */
 
       double factor = 1.;
-      calculate_penalty_parameter(factor);
-      VectorizedArray<value_type> sigmaF = std::abs(fe_eval.get_normal_volume_fraction()) * (value_type)factor;
+      calculate_penalty_parameter_pressure(factor);
+      //VectorizedArray<value_type> sigmaF = std::abs(fe_eval.get_normal_volume_fraction()) * (value_type)factor;
+      VectorizedArray<value_type> sigmaF = std::max(fe_eval.read_cell_data(array_penalty_parameter[level]),fe_eval_neighbor.read_cell_data(array_penalty_parameter[level])) * (value_type)factor;
 
     // element-
     VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
@@ -3708,6 +3764,7 @@ public:
                         const std::pair<unsigned int,unsigned int>    &face_range) const
   {
     FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval(data,true,1,1);
+    const unsigned int level = data.get_cell_iterator(0,0)->level();
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -3717,8 +3774,9 @@ public:
       //  (value_type)(fe_degree * (fe_degree + 1.0))  *stab_factor;
 
       double factor = 1.;
-      calculate_penalty_parameter(factor);
-      VectorizedArray<value_type> sigmaF = std::abs(fe_eval.get_normal_volume_fraction()) * (value_type)factor;
+      calculate_penalty_parameter_pressure(factor);
+      //VectorizedArray<value_type> sigmaF = std::abs(fe_eval.get_normal_volume_fraction()) * (value_type)factor;
+      VectorizedArray<value_type> sigmaF = fe_eval.read_cell_data(array_penalty_parameter[level]) * (value_type)factor;
 
     VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
     for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
@@ -3847,6 +3905,8 @@ public:
 //     FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,true,0,0);
 //     FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval_neighbor(data,false,0,0);
 
+    const unsigned int level = data.get_cell_iterator(0,0)->level();
+
      for(unsigned int face=face_range.first; face<face_range.second; face++)
      {
        fe_eval_xwall.reinit (face);
@@ -3854,7 +3914,8 @@ public:
 
        double factor = 1.;
        calculate_penalty_parameter(factor);
-       VectorizedArray<value_type> sigmaF = std::abs(fe_eval_xwall.get_normal_volume_fraction()) * (value_type)factor;
+       //VectorizedArray<value_type> sigmaF = std::abs(fe_eval_xwall.get_normal_volume_fraction()) * (value_type)factor;
+      VectorizedArray<value_type> sigmaF = std::max(fe_eval_xwall.read_cell_data(array_penalty_parameter[level]),fe_eval_xwall_neighbor.read_cell_data(array_penalty_parameter[level])) * (value_type)factor;
 
        // element-
        VectorizedArray<value_type> local_diagonal_vector[fe_eval_xwall.tensor_dofs_per_cell];
@@ -3943,13 +4004,16 @@ public:
 #endif
 //     FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,true,0,0);
 
+    const unsigned int level = data.get_cell_iterator(0,0)->level();
+
      for(unsigned int face=face_range.first; face<face_range.second; face++)
      {
        fe_eval_xwall.reinit (face);
 
        double factor = 1.;
        calculate_penalty_parameter(factor);
-       VectorizedArray<value_type> sigmaF = std::abs(fe_eval_xwall.get_normal_volume_fraction()) * (value_type)factor;
+       //VectorizedArray<value_type> sigmaF = std::abs(fe_eval_xwall.get_normal_volume_fraction()) * (value_type)factor;
+      VectorizedArray<value_type> sigmaF = fe_eval_xwall.read_cell_data(array_penalty_parameter[level]) * (value_type)factor;
 
        VectorizedArray<value_type> local_diagonal_vector[fe_eval_xwall.tensor_dofs_per_cell];
        for (unsigned int j=0; j<fe_eval_xwall.dofs_per_cell; ++j)
@@ -4408,6 +4472,8 @@ public:
 //    FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,true,0,0);
 //    FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval_neighbor(data,false,0,0);
 
+    const unsigned int level = data.get_cell_iterator(0,0)->level();
+
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       fe_eval_xwall.reinit (face);
@@ -4424,7 +4490,8 @@ public:
 
       double factor = 1.;
       calculate_penalty_parameter(factor);
-      VectorizedArray<value_type> sigmaF = std::abs(fe_eval_xwall.get_normal_volume_fraction()) * (value_type)factor;
+      //VectorizedArray<value_type> sigmaF = std::abs(fe_eval_xwall.get_normal_volume_fraction()) * (value_type)factor;
+      VectorizedArray<value_type> sigmaF = std::max(fe_eval_xwall.read_cell_data(array_penalty_parameter[level]),fe_eval_xwall_neighbor.read_cell_data(array_penalty_parameter[level])) * (value_type)factor;
 
       for(unsigned int q=0;q<fe_eval_xwall.n_q_points;++q)
       {
@@ -4462,6 +4529,8 @@ public:
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,1,value_type> fe_eval_xwall(data,src.at(2*dim+1),src.at(2*dim+2),true,0,0);
 #endif
 
+    const unsigned int level = data.get_cell_iterator(0,0)->level();
+
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       fe_eval_xwall.reinit (face);
@@ -4474,7 +4543,8 @@ public:
 
       double factor = 1.;
       calculate_penalty_parameter(factor);
-      VectorizedArray<value_type> sigmaF = std::abs(fe_eval_xwall.get_normal_volume_fraction()) * (value_type)factor;
+      //VectorizedArray<value_type> sigmaF = std::abs(fe_eval_xwall.get_normal_volume_fraction()) * (value_type)factor;
+      VectorizedArray<value_type> sigmaF = fe_eval_xwall.read_cell_data(array_penalty_parameter[level]) * (value_type)factor;
 
       for(unsigned int q=0;q<fe_eval_xwall.n_q_points;++q)
       {
@@ -4557,6 +4627,9 @@ public:
 #else
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall(data,src.at(2*dim),src.at(2*dim+1),true,0,0);
 #endif
+
+    const unsigned int level = data.get_cell_iterator(0,0)->level();
+
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       fe_eval_xwall.reinit (face);
@@ -4566,7 +4639,8 @@ public:
 
       double factor = 1.;
       calculate_penalty_parameter(factor);
-      VectorizedArray<value_type> sigmaF = std::abs(fe_eval_xwall.get_normal_volume_fraction()) * (value_type)factor;
+      //VectorizedArray<value_type> sigmaF = std::abs(fe_eval_xwall.get_normal_volume_fraction()) * (value_type)factor;
+      VectorizedArray<value_type> sigmaF = fe_eval_xwall.read_cell_data(array_penalty_parameter[level]) * (value_type)factor;
 
       for(unsigned int q=0;q<fe_eval_xwall.n_q_points;++q)
       {
@@ -5278,6 +5352,8 @@ public:
     FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval(data,true,1,1);
     FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval_neighbor(data,false,1,1);
 
+    const unsigned int level = data.get_cell_iterator(0,0)->level();
+
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       fe_eval.reinit (face);
@@ -5292,8 +5368,9 @@ public:
 //        (value_type)(fe_degree * (fe_degree + 1.0)) * 0.5;//   *stab_factor;
 
       double factor = 1.;
-      calculate_penalty_parameter(factor);
-      VectorizedArray<value_type> sigmaF = std::abs(fe_eval.get_normal_volume_fraction()) * (value_type)factor;
+      calculate_penalty_parameter_pressure(factor);
+      //VectorizedArray<value_type> sigmaF = std::abs(fe_eval.get_normal_volume_fraction()) * (value_type)factor;
+      VectorizedArray<value_type> sigmaF = std::max(fe_eval.read_cell_data(array_penalty_parameter[level]),fe_eval_neighbor.read_cell_data(array_penalty_parameter[level])) * (value_type)factor;
 
       for(unsigned int q=0;q<fe_eval.n_q_points;++q)
       {
@@ -5326,6 +5403,8 @@ public:
   {
   FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval(data,true,1,1);
 
+  const unsigned int level = data.get_cell_iterator(0,0)->level();
+
   for(unsigned int face=face_range.first; face<face_range.second; face++)
   {
     fe_eval.reinit (face);
@@ -5337,8 +5416,9 @@ public:
 //      (value_type)(fe_degree * (fe_degree + 1.0));//  *stab_factor;
 
       double factor = 1.;
-      calculate_penalty_parameter(factor);
-      VectorizedArray<value_type> sigmaF = std::abs(fe_eval.get_normal_volume_fraction()) * (value_type)factor;
+      calculate_penalty_parameter_pressure(factor);
+      //VectorizedArray<value_type> sigmaF = std::abs(fe_eval.get_normal_volume_fraction()) * (value_type)factor;
+      VectorizedArray<value_type> sigmaF = fe_eval.read_cell_data(array_penalty_parameter[level]) * (value_type)factor;
 
     for(unsigned int q=0;q<fe_eval.n_q_points;++q)
     {
@@ -5458,6 +5538,8 @@ public:
 //  FEFaceEvaluation<dim,fe_degree,fe_degree_p+1,number_vorticity_components,value_type> omega_n(data,true,0,1);
 //  FEFaceEvaluation<dim,fe_degree,fe_degree_p+1,number_vorticity_components,value_type> omega_nm(data,true,0,1);
 
+    const unsigned int level = data.get_cell_iterator(0,0)->level();
+
   for(unsigned int face=face_range.first; face<face_range.second; face++)
   {
     pressure.reinit (face);
@@ -5478,9 +5560,10 @@ public:
     //VectorizedArray<value_type> sigmaF = (std::abs( pressure.get_normal_volume_fraction()) ) *
     //  (value_type)(fe_degree * (fe_degree + 1.0)) *stab_factor;
 
-      double factor = 1.;
-      calculate_penalty_parameter(factor);
-      VectorizedArray<value_type> sigmaF = std::abs(pressure.get_normal_volume_fraction()) * (value_type)factor;
+    double factor = 1.;
+    calculate_penalty_parameter(factor);
+    //VectorizedArray<value_type> sigmaF = std::abs(pressure.get_normal_volume_fraction()) * (value_type)factor;
+    VectorizedArray<value_type> sigmaF = fe_eval_xwall_n.read_cell_data(array_penalty_parameter[level]) * (value_type)factor;
 
     for(unsigned int q=0;q<pressure.n_q_points;++q)
     {
