@@ -66,7 +66,7 @@ namespace DG_NavierStokes
   using namespace dealii;
 
   const unsigned int fe_degree = 2;
-  const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
+  const unsigned int fe_degree_p = fe_degree-1;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 9;
   const unsigned int dimension = 3; // dimension >= 2
@@ -78,7 +78,7 @@ namespace DG_NavierStokes
 
   const double VISCOSITY = 0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
   const double MAX_VELOCITY = 30.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
-  const double stab_factor = 32.0;
+  const double stab_factor = 64.0;
 
   const double MAX_WDIST_XWALL = 0.2;
   bool pure_dirichlet_bc = true;
@@ -5794,7 +5794,7 @@ public:
   dof_handler(triangulation),
   dof_handler_p(triangulation),
   dof_handler_xwall(triangulation),
-  cfl(1.0/pow(fe_degree,2.0)),
+  cfl(0.3/pow(fe_degree,2.0)),
   n_refinements(refine_steps),
   output_interval_time(0.00095)
   {
@@ -5985,6 +5985,7 @@ public:
             wdist = 1.0+evaluation_points[q][1];
           else
             wdist = 1.0-evaluation_points[q][1];
+          //todo: add correct utau
           const double enrichment_func = SimpleSpaldingsLaw::SpaldingsLaw(wdist,1.0);
           for (unsigned int d=0; d<dim; ++d)
             computed_quantities[q](d)
@@ -6091,7 +6092,7 @@ public:
   data_out.add_data_vector (*(*xwall).ReturnDofHandlerWallDistance(),(*(*xwall).ReturnTauW()), "tauw");
   data_out.build_patches (3);
     std::ostringstream filename;
-    filename << "solution_wm8_p2_f32_"
+    filename << "solution_wm8_p2p1_f64_"
              << output_number
              << ".vtu";
 
