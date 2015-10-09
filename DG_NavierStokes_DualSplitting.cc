@@ -2856,6 +2856,16 @@ public:
     additional_data.level_mg_handler = level;
     additional_data.periodic_face_pairs_level_0 = periodic_face_pairs;
 
+    // collect the boundary indicators of periodic faces because their
+    // weighting in the formula for the penalty parameter should be the one
+    // for the interior not for the boundary
+    std::set<types::boundary_id> periodic_boundary_ids;
+    for (unsigned int i=0; i<periodic_face_pairs.size(); ++i)
+      {
+        periodic_boundary_ids.insert(periodic_face_pairs[i].cell[0]->face(periodic_face_pairs[i].face_idx[0])->boundary_id());
+        periodic_boundary_ids.insert(periodic_face_pairs[i].cell[1]->face(periodic_face_pairs[i].face_idx[1])->boundary_id());
+      }
+
     std::vector<const DoFHandler<dim> * >  dof_handler_vec;
     dof_handler_vec.push_back(&dof_handler);
     dof_handler_vec.push_back(&dof_handler_p);
@@ -2902,7 +2912,9 @@ public:
           for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
             {
               fe_face_values.reinit(cell, f);
-              const double factor = cell->at_boundary(f) ? 1. : 0.5;
+              const double factor = (cell->at_boundary(f) &&
+                                     periodic_boundary_ids.find(cell->face(f)->boundary_id()) ==
+                                     periodic_boundary_ids.end()) ? 1. : 0.5;
               for (unsigned int q=0; q<face_quadrature.size(); ++q)
                 surface_area += fe_face_values.JxW(q) * factor;
             }
