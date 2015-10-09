@@ -58,27 +58,28 @@
 #include <fstream>
 #include <sstream>
 
-#define XWALL
-#define usepressuremg
+//#define XWALL
+//#define usepressuremg
 
 namespace DG_NavierStokes
 {
   using namespace dealii;
 
-  const unsigned int fe_degree = 2;
-  const unsigned int fe_degree_p = fe_degree-1;//fe_degree-1;
+  const unsigned int fe_degree = 1;
+  const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 9;
   const unsigned int dimension = 3; // dimension >= 2
-  const unsigned int refine_steps_min = 3;
-  const unsigned int refine_steps_max = 3;
+  const unsigned int refine_steps_min = 4;
+  const unsigned int refine_steps_max = 4;
 
   const double START_TIME = 0.0;
   const double END_TIME = 5.0; // Poisseuille 5.0;  Kovasznay 1.0
 
-  const double VISCOSITY = 0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
+  const double VISCOSITY = 1./395.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
+
   const double MAX_VELOCITY = 30.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
-  const double stab_factor = 64.0;
+  const double stab_factor = 32.0;
 
   const double MAX_WDIST_XWALL = 0.2;
   bool pure_dirichlet_bc = true;
@@ -105,7 +106,6 @@ namespace DG_NavierStokes
   {
       double t = this->get_time();
     double result = 0.0;
-
     /*********************** cavitiy flow *******************************/
   /*  const double T = 0.1;
     if(component == 0 && (std::abs(p[1]-1.0)<1.0e-15))
@@ -144,9 +144,13 @@ namespace DG_NavierStokes
     if(component == 0)
     {
       if(p[1]<0.99&&p[1]>-0.99)
-        result = -22.0*(pow(p[1],2.0)-1.0)*(1.0+((double)rand()/RAND_MAX)*0.01);//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
+        result = -22.0*(pow(p[1],2.0)-1.0);//+sin(p[1]/numbers::PI);//*(1.0+((double)rand()/RAND_MAX)*0.02);//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
       else
         result = 0.0;
+    }
+    if(component == 1|| component == 2)
+    {
+      result = 0.;
     }
       if(component == dim)
     result = 0.0;//(p[0]-1.0)*pressure_gradient*(t<T? (t/T) : 1.0);
@@ -3339,7 +3343,7 @@ public:
     std::cout<<"Multigrid failed. Try CG ..." << std::endl;
 #endif
     solution=solution_n[dim];
-    SolverControl solver_control (5e3, 1.e-6);
+    SolverControl solver_control (5e3, 1.e-8);
     SolverCG<parallel::distributed::Vector<double> > solver (solver_control);
     solver.solve (mg_matrices_pressure[mg_matrices_pressure.max_level()], solution, solution_np[dim], PreconditionIdentity());
   }
@@ -4548,27 +4552,27 @@ public:
 
       for(unsigned int q=0;q<fe_eval_xwall.n_q_points;++q)
       {
-      if (data.get_boundary_indicator(face) == 0) // Infow and wall boundaries
-      {
-        // applying inhomogeneous Dirichlet BC (value+ = - value- + 2g , grad+ = grad-)
-        VectorizedArray<value_type> uM = fe_eval_xwall.get_value(q);
-        VectorizedArray<value_type> uP = -uM;
+        if (data.get_boundary_indicator(face) == 0) // Infow and wall boundaries
+        {
+          // applying inhomogeneous Dirichlet BC (value+ = - value- + 2g , grad+ = grad-)
+          VectorizedArray<value_type> uM = fe_eval_xwall.get_value(q);
+          VectorizedArray<value_type> uP = -uM;
 
-        VectorizedArray<value_type> jump_value = uM - uP;
-        VectorizedArray<value_type> average_gradient = fe_eval_xwall.get_normal_gradient(q,true);
-        average_gradient = average_gradient - jump_value * sigmaF;
+          VectorizedArray<value_type> jump_value = uM - uP;
+          VectorizedArray<value_type> average_gradient = fe_eval_xwall.get_normal_gradient(q,true);
+          average_gradient = average_gradient - jump_value * sigmaF;
 
-        fe_eval_xwall.submit_normal_gradient(-0.5*viscosity*jump_value,q);
-        fe_eval_xwall.submit_value(-viscosity*average_gradient,q);
-      }
-      else if (data.get_boundary_indicator(face) == 1) // Outflow boundary
-      {
-        // applying inhomogeneous Neumann BC (value+ = value- , grad+ =  - grad- +2h)
-        VectorizedArray<value_type> jump_value = make_vectorized_array<value_type>(0.0);
-        VectorizedArray<value_type> average_gradient = make_vectorized_array<value_type>(0.0);
-        fe_eval_xwall.submit_normal_gradient(-0.5*viscosity*jump_value,q);
-        fe_eval_xwall.submit_value(-viscosity*average_gradient,q);
-      }
+          fe_eval_xwall.submit_normal_gradient(-0.5*viscosity*jump_value,q);
+          fe_eval_xwall.submit_value(-viscosity*average_gradient,q);
+        }
+        else if (data.get_boundary_indicator(face) == 1) // Outflow boundary
+        {
+          // applying inhomogeneous Neumann BC (value+ = value- , grad+ =  - grad- +2h)
+          VectorizedArray<value_type> jump_value = make_vectorized_array<value_type>(0.0);
+          VectorizedArray<value_type> average_gradient = make_vectorized_array<value_type>(0.0);
+          fe_eval_xwall.submit_normal_gradient(-0.5*viscosity*jump_value,q);
+          fe_eval_xwall.submit_value(-viscosity*average_gradient,q);
+        }
       }
       fe_eval_xwall.integrate(true,true);
       fe_eval_xwall.distribute_local_to_global(dst.at(0),dst.at(1));
@@ -5796,7 +5800,7 @@ public:
   dof_handler_xwall(triangulation),
   cfl(0.3/pow(fe_degree,2.0)),
   n_refinements(refine_steps),
-  output_interval_time(0.00095)
+  output_interval_time(0.00000001)
   {
   pcout << std::endl << std::endl << std::endl
   << "/******************************************************************/" << std::endl
@@ -5812,7 +5816,7 @@ public:
   {
     Point<dim> out = in;
     //no wall model
-//    out[1] =  std::tanh(1.5*(2.*in(1)-1))/std::tanh(1.5);
+//    out[1] =  std::tanh(2.7*(2.*in(1)-1))/std::tanh(2.7);
     //wall-model
     out[0] = in(0)-numbers::PI;
     out[1] =  2.*in(1)-1.;
@@ -5856,12 +5860,14 @@ public:
     triangulation.begin()->face(0)->set_all_boundary_ids(0+10);
     triangulation.begin()->face(1)->set_all_boundary_ids(1+10);
     //periodicity in z-direction, if dim==3
-    for (unsigned int face=4; face<GeometryInfo<dim>::faces_per_cell; ++face)
-      triangulation.begin()->face(face)->set_all_boundary_ids(face+10);
+//    for (unsigned int face=4; face<GeometryInfo<dim>::faces_per_cell; ++face)
+    triangulation.begin()->face(4)->set_all_boundary_ids(2+10);
+    triangulation.begin()->face(5)->set_all_boundary_ids(3+10);
 
-    GridTools::collect_periodic_faces(triangulation, 2*0+10, 2*0+1+10, 0, periodic_faces);
-    for (unsigned int d=2; d<dim; ++d)
-      GridTools::collect_periodic_faces(triangulation, 2*d+10, 2*d+1+10, d, periodic_faces);
+    GridTools::collect_periodic_faces(triangulation, 0+10, 1+10, 0, periodic_faces);
+    GridTools::collect_periodic_faces(triangulation, 2+10, 3+10, 2, periodic_faces);
+//    for (unsigned int d=2; d<dim; ++d)
+//      GridTools::collect_periodic_faces(triangulation, 2*d+10, 2*d+1+10, d, periodic_faces);
     triangulation.add_periodicity(periodic_faces);
     triangulation.refine_global(n_refinements);
 
@@ -6092,7 +6098,7 @@ public:
   data_out.add_data_vector (*(*xwall).ReturnDofHandlerWallDistance(),(*(*xwall).ReturnTauW()), "tauw");
   data_out.build_patches (3);
     std::ostringstream filename;
-    filename << "solution_wm8_p2p1_f64_"
+    filename << "solution_ch395_16_p1_f32_"
              << output_number
              << ".vtu";
 
@@ -6147,8 +6153,8 @@ public:
     for (; cell!=endc; ++cell)
     {
     // calculate minimum diameter
-    diameter = cell->diameter()/std::sqrt(dim); // diameter is the largest diagonal -> divide by sqrt(dim)
-    //diameter = cell->minimum_vertex_distance();
+//    diameter = cell->diameter()/std::sqrt(dim); // diameter is the largest diagonal -> divide by sqrt(dim)
+    diameter = cell->minimum_vertex_distance();
     if (diameter < min_cell_diameter)
       min_cell_diameter = diameter;
 
