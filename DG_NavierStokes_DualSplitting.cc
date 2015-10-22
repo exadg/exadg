@@ -61,7 +61,7 @@
 #include <fstream>
 #include <sstream>
 
-//#define XWALL
+#define XWALL
 #define usepressuremg
 
 namespace DG_NavierStokes
@@ -71,7 +71,7 @@ namespace DG_NavierStokes
   const unsigned int fe_degree = 3;
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
-  const unsigned int n_q_points_1d_xwall = 9;
+  const unsigned int n_q_points_1d_xwall = 12;
   const unsigned int dimension = 3; // dimension >= 2
   const unsigned int refine_steps_min = 3;
   const unsigned int refine_steps_max = 3;
@@ -84,7 +84,7 @@ namespace DG_NavierStokes
   const double VISCOSITY = 1./180.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
 
   const double MAX_VELOCITY = 30.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
-  const double stab_factor = 48.0;
+  const double stab_factor = 64.0;
 
   const double MAX_WDIST_XWALL = 0.2;
   bool pure_dirichlet_bc = true;
@@ -806,16 +806,31 @@ public:
                         const unsigned int            fe_no = 0,
                         const unsigned int            quad_no = 0):
                           EvaluationXWall<dim,n_q_points_1d, Number>::EvaluationXWall(matrix_free, wdist, tauw),
-                          fe_eval(matrix_free,0,quad_no),
-                          fe_eval_xwall(matrix_free,3,quad_no),
-                          fe_eval_tauw(matrix_free,2,quad_no),
-                          values(fe_eval.n_q_points,value_type()),
-                          gradients(fe_eval.n_q_points,gradient_type()),
+                          fe_eval(),
+                          fe_eval_xwall(),
+                          fe_eval_tauw(),
+                          values(),
+                          gradients(),
                           dofs_per_cell(0),
                           tensor_dofs_per_cell(0),
-                          n_q_points(fe_eval.n_q_points),
+                          n_q_points(0),
                           enriched(false)
       {
+        {
+          FEEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number> fe_eval_tmp(matrix_free,0,quad_no);
+          fe_eval.resize(1,fe_eval_tmp);
+        }
+        {
+          FEEvaluation<dim,fe_degree_xwall,n_q_points_1d,n_components_,Number> fe_eval_xwall_tmp(matrix_free,3,quad_no);
+          fe_eval_xwall.resize(1,fe_eval_xwall_tmp);
+        }
+        {
+          FEEvaluation<dim,1,n_q_points_1d,1,double> fe_eval_tauw_tmp(matrix_free,2,quad_no);
+          fe_eval_tauw.resize(1,fe_eval_tauw_tmp);
+        }
+        values.resize(fe_eval[0].n_q_points,value_type());
+        gradients.resize(fe_eval[0].n_q_points,gradient_type());
+        n_q_points = fe_eval[0].n_q_points;
       };
 
       void reinit(const unsigned int cell)
@@ -823,8 +838,8 @@ public:
 #ifdef XWALL
         {
           enriched = false;
-          values.resize(fe_eval.n_q_points,value_type());
-          gradients.resize(fe_eval.n_q_points,gradient_type());
+          values.resize(fe_eval[0].n_q_points,value_type());
+          gradients.resize(fe_eval[0].n_q_points,gradient_type());
   //        decide if we have an enriched element via the y component of the cell center
           for (unsigned int v=0; v<EvaluationXWall<dim,n_q_points_1d, Number>::mydata.n_components_filled(cell); ++v)
           {
@@ -848,84 +863,84 @@ public:
 
             //initialize the enrichment function
             {
-              fe_eval_tauw.reinit(cell);
+              fe_eval_tauw[0].reinit(cell);
               //get wall distance and wss at quadrature points
-              fe_eval_tauw.read_dof_values(EvaluationXWall<dim,n_q_points_1d, Number>::wdist);
-              fe_eval_tauw.evaluate(true, true);
+              fe_eval_tauw[0].read_dof_values(EvaluationXWall<dim,n_q_points_1d, Number>::wdist);
+              fe_eval_tauw[0].evaluate(true, true);
 
               AlignedVector<VectorizedArray<Number> > cell_wdist;
               AlignedVector<Tensor<1,dim,VectorizedArray<Number> > > cell_gradwdist;
-              cell_wdist.resize(fe_eval_tauw.n_q_points);
-              cell_gradwdist.resize(fe_eval_tauw.n_q_points);
-              for(unsigned int q=0;q<fe_eval_tauw.n_q_points;++q)
+              cell_wdist.resize(fe_eval_tauw[0].n_q_points);
+              cell_gradwdist.resize(fe_eval_tauw[0].n_q_points);
+              for(unsigned int q=0;q<fe_eval_tauw[0].n_q_points;++q)
               {
-                cell_wdist[q] = fe_eval_tauw.get_value(q);
-                cell_gradwdist[q] = fe_eval_tauw.get_gradient(q);
+                cell_wdist[q] = fe_eval_tauw[0].get_value(q);
+                cell_gradwdist[q] = fe_eval_tauw[0].get_gradient(q);
               }
 
-              fe_eval_tauw.read_dof_values(EvaluationXWall<dim,n_q_points_1d, Number>::tauw);
+              fe_eval_tauw[0].read_dof_values(EvaluationXWall<dim,n_q_points_1d, Number>::tauw);
 
-              fe_eval_tauw.evaluate(true, true);
+              fe_eval_tauw[0].evaluate(true, true);
 
               AlignedVector<VectorizedArray<Number> > cell_tauw;
               AlignedVector<Tensor<1,dim,VectorizedArray<Number> > > cell_gradtauw;
 
-              cell_tauw.resize(fe_eval_tauw.n_q_points);
-              cell_gradtauw.resize(fe_eval_tauw.n_q_points);
+              cell_tauw.resize(fe_eval_tauw[0].n_q_points);
+              cell_gradtauw.resize(fe_eval_tauw[0].n_q_points);
 
-              for(unsigned int q=0;q<fe_eval_tauw.n_q_points;++q)
+              for(unsigned int q=0;q<fe_eval_tauw[0].n_q_points;++q)
               {
-                cell_tauw[q] = fe_eval_tauw.get_value(q);
+                cell_tauw[q] = fe_eval_tauw[0].get_value(q);
                 for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
                 {
                   if(enriched_components.at(v))
-                    Assert( fe_eval_tauw.get_value(q)[v] > 1.0e-9 ,ExcInternalError());
+                    Assert( fe_eval_tauw[0].get_value(q)[v] > 1.0e-9 ,ExcInternalError());
                 }
 
-                cell_gradtauw[q] = fe_eval_tauw.get_gradient(q);
+                cell_gradtauw[q] = fe_eval_tauw[0].get_gradient(q);
               }
-              EvaluationXWall<dim,n_q_points_1d, Number>::reinit(cell_wdist, cell_tauw, cell_gradwdist, cell_gradtauw, fe_eval_tauw.n_q_points,enriched_components);
+              EvaluationXWall<dim,n_q_points_1d, Number>::reinit(cell_wdist, cell_tauw, cell_gradwdist, cell_gradtauw, fe_eval_tauw[0].n_q_points,enriched_components);
             }
           }
-          fe_eval_xwall.reinit(cell);
+          fe_eval_xwall[0].reinit(cell);
         }
 #endif
-        fe_eval.reinit(cell);
+        fe_eval[0].reinit(cell);
 #ifdef XWALL
         if(enriched)
         {
-          dofs_per_cell = fe_eval.dofs_per_cell + fe_eval_xwall.dofs_per_cell;
-          tensor_dofs_per_cell = fe_eval.tensor_dofs_per_cell + fe_eval_xwall.tensor_dofs_per_cell;
+          dofs_per_cell = fe_eval[0].dofs_per_cell + fe_eval_xwall[0].dofs_per_cell;
+          tensor_dofs_per_cell = fe_eval[0].tensor_dofs_per_cell + fe_eval_xwall[0].tensor_dofs_per_cell;
         }
         else
         {
-          dofs_per_cell = fe_eval.dofs_per_cell;
-          tensor_dofs_per_cell = fe_eval.tensor_dofs_per_cell;
+          dofs_per_cell = fe_eval[0].dofs_per_cell;
+          tensor_dofs_per_cell = fe_eval[0].tensor_dofs_per_cell;
         }
 #else
-        dofs_per_cell = fe_eval.dofs_per_cell;
-        tensor_dofs_per_cell = fe_eval.tensor_dofs_per_cell;
+        dofs_per_cell = fe_eval[0].dofs_per_cell;
+        tensor_dofs_per_cell = fe_eval[0].tensor_dofs_per_cell;
 #endif
       }
 
       void read_dof_values (const parallel::distributed::Vector<double> &src, const parallel::distributed::Vector<double> &src_xwall)
       {
 
-        fe_eval.read_dof_values(src);
+        fe_eval[0].read_dof_values(src);
 #ifdef XWALL
 //          if(enriched)
           {
-            fe_eval_xwall.read_dof_values(src_xwall);
+            fe_eval_xwall[0].read_dof_values(src_xwall);
 //            std::cout << "b" << std::endl;
-//            for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
+//            for(unsigned int i = 0; i<fe_eval_xwall[0].dofs_per_cell ; i++)
 //              for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
 //                if(not enriched_components.at(v))
-//                  fe_eval_xwall.begin_dof_values()[i][v] = 0.0;
+//                  fe_eval_xwall[0].begin_dof_values()[i][v] = 0.0;
 //              std::cout << "d" << std::endl;
 //            std::cout << "e" << std::endl;
-//            for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
+//            for(unsigned int i = 0; i<fe_eval_xwall[0].dofs_per_cell ; i++)
 //              for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-//                Assert(not isnan(fe_eval_xwall.begin_dof_values()[i][v]),ExcInternalError());
+//                Assert(not isnan(fe_eval_xwall[0].begin_dof_values()[i][v]),ExcInternalError());
 //            std::cout << "f" << std::endl;
           }
 
@@ -934,22 +949,22 @@ public:
 
       void read_dof_values (const std::vector<parallel::distributed::Vector<double> > &src, unsigned int i,const std::vector<parallel::distributed::Vector<double> > &src_xwall, unsigned int j)
       {
-        fe_eval.read_dof_values(src,i);
+        fe_eval[0].read_dof_values(src,i);
 #ifdef XWALL
 //          if(enriched)
           {
-            fe_eval_xwall.read_dof_values(src_xwall,j);
+            fe_eval_xwall[0].read_dof_values(src_xwall,j);
 //            for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
 //            {
 //              if(not enriched_components.at(v))
-//                for(unsigned int k = 0; k<fe_eval_xwall.dofs_per_cell ; k++)
-//                  fe_eval_xwall.begin_dof_values()[k][v] = 0.0;
+//                for(unsigned int k = 0; k<fe_eval_xwall[0].dofs_per_cell ; k++)
+//                  fe_eval_xwall[0].begin_dof_values()[k][v] = 0.0;
 //            }
-//            for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
+//            for(unsigned int i = 0; i<fe_eval_xwall[0].dofs_per_cell ; i++)
 //              for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
 //              {
-//                std::cout << (fe_eval_xwall.begin_dof_values()[i])[v] << " ";
-//                Assert(not isnan((fe_eval_xwall.begin_dof_values()[i])[v]),ExcInternalError());
+//                std::cout << (fe_eval_xwall[0].begin_dof_values()[i])[v] << " ";
+//                Assert(not isnan((fe_eval_xwall[0].begin_dof_values()[i])[v]),ExcInternalError());
 //              }
 //            std::cout << std::endl;
           }
@@ -960,13 +975,13 @@ public:
                  const bool evaluate_grad,
                  const bool evaluate_hess = false)
       {
-  fe_eval.evaluate(evaluate_val,evaluate_grad);
+  fe_eval[0].evaluate(evaluate_val,evaluate_grad);
 #ifdef XWALL
           if(enriched)
           {
-            gradients.resize(fe_eval.n_q_points,gradient_type());
-            values.resize(fe_eval.n_q_points,value_type());
-            fe_eval_xwall.evaluate(true,evaluate_grad);
+            gradients.resize(fe_eval[0].n_q_points,gradient_type());
+            values.resize(fe_eval[0].n_q_points,value_type());
+            fe_eval_xwall[0].evaluate(true,evaluate_grad);
             //this function is quite nasty because deal.ii doesn't seem to be made for enrichments
             EvaluationXWall<dim,n_q_points_1d,Number>::evaluate(evaluate_val,evaluate_grad,evaluate_hess);
             //evaluate gradient
@@ -975,14 +990,14 @@ public:
               //there are 2 parts due to chain rule
               //start with part 1
               AlignedVector<gradient_type> final_gradient;
-              final_gradient.resize(fe_eval_xwall.n_q_points);
+              final_gradient.resize(fe_eval_xwall[0].n_q_points);
 
               val_enrgrad_to_grad(final_gradient);
-              for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+              for(unsigned int q=0;q<fe_eval[0].n_q_points;++q)
               {
-                final_gradient[q] += fe_eval_xwall.get_gradient(q)*EvaluationXWall<dim,n_q_points_1d,Number>::enrichment(q);
+                final_gradient[q] += fe_eval_xwall[0].get_gradient(q)*EvaluationXWall<dim,n_q_points_1d,Number>::enrichment(q);
               }
-              for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+              for(unsigned int q=0;q<fe_eval[0].n_q_points;++q)
               {
                 gradient_type submitgradient = gradient_type();
                 for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
@@ -997,9 +1012,9 @@ public:
             }
             if(evaluate_val)
             {
-              for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+              for(unsigned int q=0;q<fe_eval[0].n_q_points;++q)
               {
-                value_type finalvalue = fe_eval_xwall.get_value(q)*EvaluationXWall<dim,n_q_points_1d,Number>::enrichment(q);
+                value_type finalvalue = fe_eval_xwall[0].get_value(q)*EvaluationXWall<dim,n_q_points_1d,Number>::enrichment(q);
                 value_type submitvalue = value_type();
                 for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
                 {
@@ -1021,9 +1036,9 @@ public:
         {
           for(unsigned int i=0;i<dim;++i)
           {
-            for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+            for(unsigned int q=0;q<fe_eval[0].n_q_points;++q)
             {
-              grad[q][j][i] += fe_eval_xwall.get_value(q)[j]*EvaluationXWall<dim,n_q_points_1d,Number>::enrichment_gradient(q)[i];
+              grad[q][j][i] += fe_eval_xwall[0].get_value(q)[j]*EvaluationXWall<dim,n_q_points_1d,Number>::enrichment_gradient(q)[i];
             }
           }
         }
@@ -1032,9 +1047,9 @@ public:
       {
         for(unsigned int i=0;i<dim;++i)
         {
-          for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+          for(unsigned int q=0;q<fe_eval[0].n_q_points;++q)
           {
-            grad[q][i] += fe_eval_xwall.get_value(q)*EvaluationXWall<dim,n_q_points_1d,Number>::enrichment_gradient(q)[i];
+            grad[q][i] += fe_eval_xwall[0].get_value(q)*EvaluationXWall<dim,n_q_points_1d,Number>::enrichment_gradient(q)[i];
           }
         }
       }
@@ -1043,7 +1058,7 @@ public:
       void submit_value(const value_type val_in,
           const unsigned int q_point)
       {
-        fe_eval.submit_value(val_in,q_point);
+        fe_eval[0].submit_value(val_in,q_point);
         values[q_point] = value_type();
 #ifdef XWALL
           if(enriched)
@@ -1063,7 +1078,7 @@ public:
       void submit_value(const Tensor<1,1,VectorizedArray<Number> > val_in,
           const unsigned int q_point)
       {
-        fe_eval.submit_value(val_in[0],q_point);
+        fe_eval[0].submit_value(val_in[0],q_point);
         values[q_point] = value_type();
 #ifdef XWALL
           if(enriched)
@@ -1084,7 +1099,7 @@ public:
       void submit_gradient(const gradient_type grad_in,
           const unsigned int q_point)
       {
-        fe_eval.submit_gradient(grad_in,q_point);
+        fe_eval[0].submit_gradient(grad_in,q_point);
         gradients[q_point] = gradient_type();
 #ifdef XWALL
           if(enriched)
@@ -1131,7 +1146,7 @@ public:
         {
           if(enriched)
           {
-            value_type returnvalue = fe_eval.get_value(q_point);
+            value_type returnvalue = fe_eval[0].get_value(q_point);
             for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
             {
               if(enriched_components.at(v))
@@ -1139,11 +1154,11 @@ public:
                 add_array_component_to_value(returnvalue,values[q_point],v);
               }
             }
-            return returnvalue;//fe_eval.get_value(q_point) + values[q_point];
+            return returnvalue;//fe_eval[0].get_value(q_point) + values[q_point];
           }
         }
 #endif
-          return fe_eval.get_value(q_point);
+          return fe_eval[0].get_value(q_point);
       }
       void add_array_component_to_value(VectorizedArray<Number>& val,const VectorizedArray<Number>& toadd, unsigned int v)
       {
@@ -1162,7 +1177,7 @@ public:
         {
           if(enriched)
           {
-            gradient_type returngradient = fe_eval.get_gradient(q_point);
+            gradient_type returngradient = fe_eval[0].get_gradient(q_point);
             for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
             {
               if(enriched_components.at(v))
@@ -1174,7 +1189,7 @@ public:
           }
         }
 #endif
-        return fe_eval.get_gradient(q_point);
+        return fe_eval[0].get_gradient(q_point);
       }
 
       void add_array_component_to_gradient(Tensor<2,dim,VectorizedArray<Number> >& grad,const Tensor<2,dim,VectorizedArray<Number> >& toadd, unsigned int v)
@@ -1196,9 +1211,9 @@ public:
         {
           if(enriched)
           {
-            AlignedVector<value_type> tmp_values(fe_eval.n_q_points,value_type());
+            AlignedVector<value_type> tmp_values(fe_eval[0].n_q_points,value_type());
             if(integrate_val)
-              for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+              for(unsigned int q=0;q<fe_eval[0].n_q_points;++q)
                 tmp_values[q]=values[q]*EvaluationXWall<dim,n_q_points_1d,Number>::enrichment(q);
             //this function is quite nasty because deal.ii doesn't seem to be made for enrichments
             //the scalar product of the second part of the gradient is computed directly and added to the value
@@ -1207,22 +1222,22 @@ public:
               //first, zero out all non-enriched vectorized array components
               grad_enr_to_val(tmp_values, gradients);
 
-              for(unsigned int q=0;q<fe_eval.n_q_points;++q)
-                fe_eval_xwall.submit_gradient(gradients[q]*EvaluationXWall<dim,n_q_points_1d,Number>::enrichment(q),q);
+              for(unsigned int q=0;q<fe_eval[0].n_q_points;++q)
+                fe_eval_xwall[0].submit_gradient(gradients[q]*EvaluationXWall<dim,n_q_points_1d,Number>::enrichment(q),q);
             }
 
-            for(unsigned int q=0;q<fe_eval.n_q_points;++q)
-              fe_eval_xwall.submit_value(tmp_values[q],q);
+            for(unsigned int q=0;q<fe_eval[0].n_q_points;++q)
+              fe_eval_xwall[0].submit_value(tmp_values[q],q);
             //integrate
-            fe_eval_xwall.integrate(true,integrate_grad);
+            fe_eval_xwall[0].integrate(true,integrate_grad);
           }
         }
 #endif
-        fe_eval.integrate(integrate_val, integrate_grad);
+        fe_eval[0].integrate(integrate_val, integrate_grad);
       }
       void grad_enr_to_val(AlignedVector<Tensor<1,dim,VectorizedArray<Number> > >& tmp_values, AlignedVector<Tensor<2,dim,VectorizedArray<Number> > >& gradient)
       {
-        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        for(unsigned int q=0;q<fe_eval[0].n_q_points;++q)
         {
           for(int j=0; j<dim;++j)//comp
           {
@@ -1235,7 +1250,7 @@ public:
       }
       void grad_enr_to_val(AlignedVector<VectorizedArray<Number> >& tmp_values, AlignedVector<Tensor<1,dim,VectorizedArray<Number> > >& gradient)
       {
-        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        for(unsigned int q=0;q<fe_eval[0].n_q_points;++q)
         {
           for(int i=0; i<dim;++i)//dim
           {
@@ -1245,80 +1260,80 @@ public:
       }
       void distribute_local_to_global (parallel::distributed::Vector<double> &dst, parallel::distributed::Vector<double> &dst_xwall)
       {
-        fe_eval.distribute_local_to_global(dst);
-//        for(unsigned int i = 0; i<fe_eval.dofs_per_cell ; i++)
+        fe_eval[0].distribute_local_to_global(dst);
+//        for(unsigned int i = 0; i<fe_eval[0].dofs_per_cell ; i++)
 //          for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-//            Assert(not isnan(fe_eval.begin_dof_values()[i][v]),ExcInternalError());
+//            Assert(not isnan(fe_eval[0].begin_dof_values()[i][v]),ExcInternalError());
 #ifdef XWALL
           if(enriched)
           {
             for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
             {
               if(not enriched_components.at(v))
-                for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
-                  fe_eval_xwall.begin_dof_values()[i][v] = 0.0;
+                for(unsigned int i = 0; i<fe_eval_xwall[0].dofs_per_cell*n_components_ ; i++)
+                  fe_eval_xwall[0].begin_dof_values()[i][v] = 0.0;
             }
-            fe_eval_xwall.distribute_local_to_global(dst_xwall);
-//            for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
+            fe_eval_xwall[0].distribute_local_to_global(dst_xwall);
+//            for(unsigned int i = 0; i<fe_eval_xwall[0].dofs_per_cell ; i++)
 //              for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-//                Assert(not isnan(fe_eval_xwall.begin_dof_values()[i][v]),ExcInternalError());
+//                Assert(not isnan(fe_eval_xwall[0].begin_dof_values()[i][v]),ExcInternalError());
           }
 //          else
 //          {
-//            for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
-//              fe_eval_xwall.begin_dof_values()[i] = make_vectorized_array(0.0);
-//            fe_eval_xwall.distribute_local_to_global(dst_xwall);
-//            for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
+//            for(unsigned int i = 0; i<fe_eval_xwall[0].dofs_per_cell ; i++)
+//              fe_eval_xwall[0].begin_dof_values()[i] = make_vectorized_array(0.0);
+//            fe_eval_xwall[0].distribute_local_to_global(dst_xwall);
+//            for(unsigned int i = 0; i<fe_eval_xwall[0].dofs_per_cell ; i++)
 //              for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-//                Assert(not isnan(fe_eval_xwall.begin_dof_values()[i][v]),ExcInternalError());
+//                Assert(not isnan(fe_eval_xwall[0].begin_dof_values()[i][v]),ExcInternalError());
 //          }
 #endif
       }
 
       void distribute_local_to_global (std::vector<parallel::distributed::Vector<double> > &dst, unsigned int i,std::vector<parallel::distributed::Vector<double> > &dst_xwall, unsigned int j)
       {
-        fe_eval.distribute_local_to_global(dst,i);
-//        for(unsigned int i = 0; i<fe_eval.dofs_per_cell ; i++)
+        fe_eval[0].distribute_local_to_global(dst,i);
+//        for(unsigned int i = 0; i<fe_eval[0].dofs_per_cell ; i++)
 //          for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-//            Assert(not isnan(fe_eval.begin_dof_values()[i][v]),ExcInternalError());
+//            Assert(not isnan(fe_eval[0].begin_dof_values()[i][v]),ExcInternalError());
 #ifdef XWALL
         if(enriched)
         {
           for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
           {
             if(not enriched_components.at(v))
-              for(unsigned int k = 0; k<fe_eval_xwall.dofs_per_cell ; k++)
-                fe_eval_xwall.begin_dof_values()[k][v] = 0.0;
+              for(unsigned int k = 0; k<fe_eval_xwall[0].dofs_per_cell*n_components_ ; k++)
+                fe_eval_xwall[0].begin_dof_values()[k][v] = 0.0;
           }
-          fe_eval_xwall.distribute_local_to_global(dst_xwall,j);
-//          for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
+          fe_eval_xwall[0].distribute_local_to_global(dst_xwall,j);
+//          for(unsigned int i = 0; i<fe_eval_xwall[0].dofs_per_cell ; i++)
 //            for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-//              Assert(not isnan(fe_eval_xwall.begin_dof_values()[i][v]),ExcInternalError());
+//              Assert(not isnan(fe_eval_xwall[0].begin_dof_values()[i][v]),ExcInternalError());
         }
 //        else
 //        {
-//          for(unsigned int k = 0; k<fe_eval_xwall.dofs_per_cell ; k++)
-//            fe_eval_xwall.begin_dof_values()[k] = make_vectorized_array(0.0);
-//          fe_eval_xwall.distribute_local_to_global(dst_xwall,j);
-//          for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
+//          for(unsigned int k = 0; k<fe_eval_xwall[0].dofs_per_cell ; k++)
+//            fe_eval_xwall[0].begin_dof_values()[k] = make_vectorized_array(0.0);
+//          fe_eval_xwall[0].distribute_local_to_global(dst_xwall,j);
+//          for(unsigned int i = 0; i<fe_eval_xwall[0].dofs_per_cell ; i++)
 //            for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-//              Assert(not isnan(fe_eval_xwall.begin_dof_values()[i][v]),ExcInternalError());
+//              Assert(not isnan(fe_eval_xwall[0].begin_dof_values()[i][v]),ExcInternalError());
 //        }
 #endif
       }
 
       void fill_JxW_values(AlignedVector<VectorizedArray<Number> > &JxW_values) const
       {
-        fe_eval.fill_JxW_values(JxW_values);
+        fe_eval[0].fill_JxW_values(JxW_values);
 #ifdef XWALL
           if(enriched)
-            fe_eval_xwall.fill_JxW_values(JxW_values);
+            fe_eval_xwall[0].fill_JxW_values(JxW_values);
 #endif
       }
 
       Point<dim,VectorizedArray<Number> > quadrature_point(unsigned int q)
       {
-        return fe_eval.quadrature_point(q);
+        return fe_eval[0].quadrature_point(q);
       }
 
       VectorizedArray<Number> get_divergence(unsigned int q)
@@ -1336,10 +1351,10 @@ public:
               div_enr[v] = 0.0;
             }
           }
-          return fe_eval.get_divergence(q) + div_enr;
+          return fe_eval[0].get_divergence(q) + div_enr;
         }
 #endif
-        return fe_eval.get_divergence(q);
+        return fe_eval[0].get_divergence(q);
     }
 
     Tensor<1,dim==2?1:dim,VectorizedArray<Number> >
@@ -1385,26 +1400,26 @@ public:
             Assert (false, ExcNotImplemented());
             break;
           }
-        return fe_eval.get_curl(q_point) + curl;
+        return fe_eval[0].get_curl(q_point) + curl;
       }
 #endif
-      return fe_eval.get_curl(q_point);
+      return fe_eval[0].get_curl(q_point);
      }
     VectorizedArray<Number> read_cellwise_dof_value (unsigned int j)
     {
 #ifdef XWALL
       if(enriched)
       {
-        if(j<fe_eval.dofs_per_cell)
-          return fe_eval.begin_dof_values()[j];
+        if(j<fe_eval[0].dofs_per_cell*n_components_)
+          return fe_eval[0].begin_dof_values()[j];
         else
-          return fe_eval_xwall.begin_dof_values()[j-fe_eval.dofs_per_cell];
+          return fe_eval_xwall[0].begin_dof_values()[j-fe_eval[0].dofs_per_cell*n_components_];
       }
       else
-        return fe_eval.begin_dof_values()[j];
+        return fe_eval[0].begin_dof_values()[j];
 #else
 
-      return fe_eval.begin_dof_values()[j];
+      return fe_eval[0].begin_dof_values()[j];
 #endif
     }
     void write_cellwise_dof_value (unsigned int j, Number value, unsigned int v)
@@ -1412,16 +1427,16 @@ public:
 #ifdef XWALL
       if(enriched)
       {
-        if(j<fe_eval.dofs_per_cell)
-          fe_eval.begin_dof_values()[j][v] = value;
+        if(j<fe_eval[0].dofs_per_cell*n_components_)
+          fe_eval[0].begin_dof_values()[j][v] = value;
         else
-          fe_eval_xwall.begin_dof_values()[j-fe_eval.dofs_per_cell][v] = value;
+          fe_eval_xwall[0].begin_dof_values()[j-fe_eval[0].dofs_per_cell*n_components_][v] = value;
       }
       else
-        fe_eval.begin_dof_values()[j][v]=value;
+        fe_eval[0].begin_dof_values()[j][v]=value;
       return;
 #else
-      fe_eval.begin_dof_values()[j][v]=value;
+      fe_eval[0].begin_dof_values()[j][v]=value;
       return;
 #endif
     }
@@ -1430,16 +1445,16 @@ public:
 #ifdef XWALL
       if(enriched)
       {
-        if(j<fe_eval.dofs_per_cell)
-          fe_eval.begin_dof_values()[j] = value;
+        if(j<fe_eval[0].dofs_per_cell*n_components_)
+          fe_eval[0].begin_dof_values()[j] = value;
         else
-          fe_eval_xwall.begin_dof_values()[j-fe_eval.dofs_per_cell] = value;
+          fe_eval_xwall[0].begin_dof_values()[j-fe_eval[0].dofs_per_cell*n_components_] = value;
       }
       else
-        fe_eval.begin_dof_values()[j]=value;
+        fe_eval[0].begin_dof_values()[j]=value;
       return;
 #else
-      fe_eval.begin_dof_values()[j]=value;
+      fe_eval[0].begin_dof_values()[j]=value;
       return;
 #endif
     }
@@ -1451,14 +1466,14 @@ public:
         return enriched_components.at(v);
     }
     private:
-      FEEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number> fe_eval;
-      FEEvaluation<dim,fe_degree_xwall,n_q_points_1d,n_components_,Number> fe_eval_xwall;
-      FEEvaluation<dim,1,n_q_points_1d,1,double> fe_eval_tauw;
+      AlignedVector<FEEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number> > fe_eval;
+      AlignedVector<FEEvaluation<dim,fe_degree_xwall,n_q_points_1d,n_components_,Number> > fe_eval_xwall;
+      AlignedVector<FEEvaluation<dim,1,n_q_points_1d,1,double> > fe_eval_tauw;
       AlignedVector<value_type> values;
       AlignedVector<gradient_type> gradients;
 
     public:
-      const unsigned int n_q_points;
+      unsigned int n_q_points;
       unsigned int dofs_per_cell;
       unsigned int tensor_dofs_per_cell;
       bool enriched;
@@ -1929,7 +1944,7 @@ public:
             for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
             {
               if(not enriched_components.at(v))
-                for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
+                for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell*n_components_ ; i++)
                   fe_eval_xwall.begin_dof_values()[i][v] = 0.0;
             }
             fe_eval_xwall.distribute_local_to_global(dst_xwall);
@@ -1960,7 +1975,7 @@ public:
           for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
           {
             if(not enriched_components.at(v))
-              for(unsigned int k = 0; k<fe_eval_xwall.dofs_per_cell ; k++)
+              for(unsigned int k = 0; k<fe_eval_xwall.dofs_per_cell*n_components_ ; k++)
                 fe_eval_xwall.begin_dof_values()[k][v] = 0.0;
           }
           fe_eval_xwall.distribute_local_to_global(dst_xwall,j);
@@ -2141,10 +2156,10 @@ public:
   #ifdef XWALL
         if(enriched)
         {
-          if(j<fe_eval.dofs_per_cell)
+          if(j<fe_eval.dofs_per_cell*n_components_)
             return fe_eval.begin_dof_values()[j];
           else
-            return fe_eval_xwall.begin_dof_values()[j-fe_eval.dofs_per_cell];
+            return fe_eval_xwall.begin_dof_values()[j-fe_eval.dofs_per_cell*n_components_];
         }
         else
           return fe_eval.begin_dof_values()[j];
@@ -2158,10 +2173,10 @@ public:
   #ifdef XWALL
         if(enriched)
         {
-          if(j<fe_eval.dofs_per_cell)
+          if(j<fe_eval.dofs_per_cell*n_components_)
             fe_eval.begin_dof_values()[j][v] = value;
           else
-            fe_eval_xwall.begin_dof_values()[j-fe_eval.dofs_per_cell][v] = value;
+            fe_eval_xwall.begin_dof_values()[j-fe_eval.dofs_per_cell*n_components_][v] = value;
         }
         else
           fe_eval.begin_dof_values()[j][v]=value;
@@ -2176,10 +2191,10 @@ public:
   #ifdef XWALL
         if(enriched)
         {
-          if(j<fe_eval.dofs_per_cell)
+          if(j<fe_eval.dofs_per_cell*n_components_)
             fe_eval.begin_dof_values()[j] = value;
           else
-            fe_eval_xwall.begin_dof_values()[j-fe_eval.dofs_per_cell] = value;
+            fe_eval_xwall.begin_dof_values()[j-fe_eval.dofs_per_cell*n_components_] = value;
         }
         else
           fe_eval.begin_dof_values()[j]=value;
@@ -2482,7 +2497,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
       std::cout << "(set to 1.0 for now) ";
     tauw = 1.0;
-
+    tauw.update_ghost_values();
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
       std::cout << "L2-project... ";
     L2Projection();
@@ -2520,7 +2535,6 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
       if(normalization.local_element(i)>0.0)
         dst.local_element(i) = force.local_element(i) / normalization.local_element(i);
     }
-    dst.update_ghost_values();
 
   }
 
@@ -2556,7 +2570,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
         fe_eval_tauw.reinit (face);
 
         fe_eval_xwall.read_dof_values(src,0,src,dim+1);
-        fe_eval_xwall.evaluate(true,true);
+        fe_eval_xwall.evaluate(false,true);
 
         if(fe_eval_xwall.n_q_points != fe_eval_tauw.n_q_points)
           std::cerr << "\nwrong number of quadrature points" << std::endl;
@@ -2594,9 +2608,6 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
       {
         fe_eval_tauw.reinit (face);
 
-        fe_eval_tauw.read_dof_values(dst);
-        fe_eval_tauw.evaluate(true,false);
-
         for(unsigned int q=0;q<fe_eval_tauw.n_q_points;++q)
           fe_eval_tauw.submit_value(make_vectorized_array<double>(1.0),q);
 
@@ -2631,8 +2642,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   void  rhs_convection (const std::vector<parallel::distributed::Vector<value_type> > &src,
                 std::vector<parallel::distributed::Vector<value_type> >    &dst);
 
-  void  compute_rhs (const std::vector<parallel::distributed::Vector<value_type> >  &src,
-      std::vector<parallel::distributed::Vector<value_type> >  &dst);
+  void  compute_rhs (std::vector<parallel::distributed::Vector<value_type> >  &dst);
 
   void  apply_viscous (const std::vector<parallel::distributed::Vector<value_type> >     &src,
                    std::vector<parallel::distributed::Vector<value_type> >      &dst) const;
@@ -3115,11 +3125,9 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   xwall.initialize();
   xwallstatevec.push_back(*xwall.ReturnWDist());
   xwallstatevec.push_back(*xwall.ReturnTauW());
-  solution_n.push_back(*xwall.ReturnWDist());
-  solution_n.push_back(*xwall.ReturnTauW());
-  solution_np.push_back(*xwall.ReturnWDist());
-  solution_np.push_back(*xwall.ReturnTauW());
-
+  //make sure that these vectors are available on the ghosted elements
+  xwallstatevec[0].update_ghost_values();
+  xwallstatevec[1].update_ghost_values();
   }
 
   template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -3368,8 +3376,6 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   /***************** STEP 0: xwall update **********************************/
     {
       xwall.UpdateTauW(solution_n);
-      solution_n[dim*2+2]=*xwall.ReturnTauW();
-      solution_np[dim*2+2]=*xwall.ReturnTauW();
       xwallstatevec[1]=*xwall.ReturnTauW();
     }
   /*************************************************************************/
@@ -3380,13 +3386,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     }
 
     {
-      std::vector<parallel::distributed::Vector<value_type> > tmp_wdist_tauw;
-      //make sure that they end up in the correct position
-
-      tmp_wdist_tauw.push_back(*xwall.ReturnWDist());
-      tmp_wdist_tauw.push_back(*xwall.ReturnTauW());
-
-      compute_rhs(tmp_wdist_tauw,f);
+      compute_rhs(f);
     }
 
     for (unsigned int d=0; d<dim; ++d)
@@ -3600,7 +3600,6 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
 //    times_cg_velo[2] += cg_timer_viscous.wall_time();
 //    iterations_cg_velo[2] += solver_control_velocity.last_step();
-
     solution_np[d] = tmp_solution.block(0);
     solution_np[d+dim+1] = tmp_solution.block(1);
 
@@ -3847,18 +3846,22 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   calculate_laplace_diagonal(parallel::distributed::Vector<value_type> &laplace_diagonal) const
   {
-    parallel::distributed::Vector<value_type> src(laplace_diagonal);
+    parallel::distributed::Vector<value_type> src;
     data.back().loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_laplace_diagonal,
               &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_laplace_diagonal_face,
               &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_laplace_diagonal_boundary_face,
               this, laplace_diagonal, src);
     if(pure_dirichlet_bc)
     {
-      parallel::distributed::Vector<value_type> vec1(laplace_diagonal);
-      for(unsigned int i=0;i<vec1.local_size();++i)
-        vec1.local_element(i) = 1.;
+      parallel::distributed::Vector<value_type> vec1;
+      data.back().initialize_dof_vector(vec1,1);
+      vec1=1.0;
+//      for(unsigned int i=0;i<vec1.local_size();++i)
+//        vec1.local_element(i) = 1.;
       parallel::distributed::Vector<value_type> d;
-      d.reinit(laplace_diagonal);
+//      d.reinit(laplace_diagonal);
+      d=vec1;
+      d=0.0;
       apply_pressure(vec1,d);
       double length = vec1*vec1;
       double factor = vec1*d;
@@ -3870,7 +3873,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   calculate_laplace_diagonal(parallel::distributed::Vector<value_type> &laplace_diagonal, unsigned int level) const
   {
-    parallel::distributed::Vector<value_type> src(laplace_diagonal);
+    parallel::distributed::Vector<value_type> src;
     data[level].loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_laplace_diagonal,
               &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_laplace_diagonal_face,
               &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_laplace_diagonal_boundary_face,
@@ -3878,11 +3881,12 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
     if(pure_dirichlet_bc)
     {
-      parallel::distributed::Vector<value_type> vec1(laplace_diagonal);
-      for(unsigned int i=0;i<vec1.local_size();++i)
-        vec1.local_element(i) = 1.;
+      parallel::distributed::Vector<value_type> vec1;
+      data[level].initialize_dof_vector(vec1,1);
+      vec1=1.0;
       parallel::distributed::Vector<value_type> d;
-      d.reinit(laplace_diagonal);
+      d=vec1;
+      d=0.0;
       apply_pressure(vec1,d,level);
       double length = vec1*vec1;
       double factor = vec1*d;
@@ -4332,13 +4336,12 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-  compute_rhs (const std::vector<parallel::distributed::Vector<value_type> >  &src,
-      std::vector<parallel::distributed::Vector<value_type> >  &dst)
+  compute_rhs (std::vector<parallel::distributed::Vector<value_type> >  &dst)
   {
   for(unsigned int d=0;d<2*dim;++d)
     dst[d] = 0;
   // data.loop
-  data.back().cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_rhs,this, dst, src);
+  data.back().cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_rhs,this, dst, dst);
 
   // data.cell_loop
   data.back().cell_loop(&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_mass_matrix,
@@ -4711,7 +4714,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   local_compute_rhs (const MatrixFree<dim,value_type>              &data,
           std::vector<parallel::distributed::Vector<double> >      &dst,
-          const std::vector<parallel::distributed::Vector<double> >  &src,
+          const std::vector<parallel::distributed::Vector<double> >  &,
           const std::pair<unsigned int,unsigned int>           &cell_range) const
   {
     // (data,0,0) : second argument: which dof-handler, third argument: which quadrature
@@ -5427,14 +5430,13 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 #ifdef XWALL
    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,number_vorticity_components,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],0,3);
    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> velocity_xwall(data,xwallstatevec[0],xwallstatevec[1],0,3);
-   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> velocity(data,xwallstatevec[0],xwallstatevec[1],0,0);
+   FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> velocity(data,0,0);
    FEEvaluation<dim,fe_degree,fe_degree+1,number_vorticity_components,value_type> phi(data,0,0);
 #else
 //   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,number_vorticity_components,value_type> fe_eval_xwall(data,src.at(2*dim+1),src.at(2*dim+2),0,0);
    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> velocity(data,xwallstatevec[0],xwallstatevec[1],0,0);
    FEEvaluation<dim,fe_degree,fe_degree+1,number_vorticity_components,value_type> phi(data,0,0);
 #endif
-
   MatrixFreeOperators::CellwiseInverseMassMatrix<dim, fe_degree, number_vorticity_components, value_type> inverse(phi);
   const unsigned int dofs_per_cell = phi.dofs_per_cell;
   AlignedVector<VectorizedArray<value_type> > coefficients(dofs_per_cell);
@@ -5456,18 +5458,19 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     fe_eval_xwall.reinit (cell);
     if(fe_eval_xwall.enriched)
     {
+      const unsigned int total_dofs_per_cell = fe_eval_xwall.dofs_per_cell * number_vorticity_components;
       velocity_xwall.reinit(cell);
       velocity_xwall.read_dof_values(src,0,src,dim+1);
       velocity_xwall.evaluate (false,true,false);
       std::vector<FullMatrix<value_type> > matrices;
       {
-        FullMatrix<value_type> matrix(fe_eval_xwall.dofs_per_cell);
+        FullMatrix<value_type> matrix(total_dofs_per_cell);
         for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
           matrices.push_back(matrix);
       }
-      for (unsigned int j=0; j<fe_eval_xwall.dofs_per_cell; ++j)
+      for (unsigned int j=0; j<total_dofs_per_cell; ++j)
       {
-        for (unsigned int i=0; i<fe_eval_xwall.dofs_per_cell; ++i)
+        for (unsigned int i=0; i<total_dofs_per_cell; ++i)
           fe_eval_xwall.write_cellwise_dof_value(i,make_vectorized_array(0.));
         fe_eval_xwall.write_cellwise_dof_value(j,make_vectorized_array(1.));
 
@@ -5479,13 +5482,13 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
         }
         fe_eval_xwall.integrate (true,false);
 
-        for (unsigned int i=0; i<fe_eval_xwall.dofs_per_cell; ++i)
+        for (unsigned int i=0; i<total_dofs_per_cell; ++i)
           for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
             if(fe_eval_xwall.component_enriched(v))
               (matrices[v])(i,j) = (fe_eval_xwall.read_cellwise_dof_value(i))[v];
             else//this is a non-enriched element
             {
-              if(i<phi.dofs_per_cell && j<phi.dofs_per_cell)
+              if(i<phi.dofs_per_cell*number_vorticity_components && j<phi.dofs_per_cell*number_vorticity_components)
                 (matrices[v])(i,j) = (fe_eval_xwall.read_cellwise_dof_value(i))[v];
               else if(i == j)//diagonal
                 (matrices[v])(i,j) = 1.0;
@@ -5503,23 +5506,27 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
         (matrices[v]).gauss_jordan();
       }
       //initialize again to get a clean version
-//      fe_eval_xwall.reinit (cell);
+      fe_eval_xwall.reinit (cell);
       //now apply vectors to inverse matrix
       for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
       {
         fe_eval_xwall.submit_value (velocity_xwall.get_curl(q), q);
+//        std::cout << velocity_xwall.get_curl(q)[2][0] << "   "  << velocity_xwall.get_curl(q)[2][1] << std::endl;
       }
       fe_eval_xwall.integrate (true,false);
 
 
       for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
       {
-        Vector<value_type> vector_input(fe_eval_xwall.dofs_per_cell);
-        for (unsigned int j=0; j<fe_eval_xwall.dofs_per_cell; ++j)
+//        std::cout << fe_eval_xwall.dofs_per_cell << std::endl;
+//        std::cout << fe_eval_xwall.tensor_dofs_per_cell << std::endl;
+        Vector<value_type> vector_input(total_dofs_per_cell);
+        for (unsigned int j=0; j<total_dofs_per_cell; ++j)
           vector_input(j)=(fe_eval_xwall.read_cellwise_dof_value(j))[v];
-        Vector<value_type> vector_result(fe_eval_xwall.dofs_per_cell);
+//        vector_input.print(std::cout);
+        Vector<value_type> vector_result(total_dofs_per_cell);
         (matrices[v]).vmult(vector_result,vector_input);
-        for (unsigned int j=0; j<fe_eval_xwall.dofs_per_cell; ++j)
+        for (unsigned int j=0; j<total_dofs_per_cell; ++j)
           fe_eval_xwall.write_cellwise_dof_value(j,vector_result(j),v);
       }
       fe_eval_xwall.distribute_local_to_global (dst,0,dst,number_vorticity_components);
@@ -5528,14 +5535,13 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     else
 #endif
     {
-//      phi.reinit(cell);
-
       velocity.reinit(cell);
-      velocity.read_dof_values(src,0,src,dim+1);
+      velocity.read_dof_values(src,0);
       velocity.evaluate (false,true,false);
       for (unsigned int q=0; q<phi.n_q_points; ++q)
       {
       Tensor<1,number_vorticity_components,VectorizedArray<value_type> > omega = velocity.get_curl(q);
+//      std::cout << omega[2][0] << "    " << omega[2][1] << std::endl;
         phi.submit_value (omega, q);
       }
       phi.integrate (true,false);
@@ -6159,11 +6165,13 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   Point<dim> grid_transform (const Point<dim> &in)
   {
     Point<dim> out = in;
-    //no wall model
-    out[1] =  std::tanh(1.9*(2.*in(1)-1.))/std::tanh(1.9);
-    //wall-model
+
     out[0] = in(0)-numbers::PI;
-//    out[1] =  2.*in(1)-1.;
+#ifdef XWALL    //wall-model
+    out[1] =  2.*in(1)-1.;
+#else    //no wall model
+    out[1] =  std::tanh(1.9*(2.*in(1)-1.))/std::tanh(1.9);
+#endif
     out[2] = in(2)-0.5*numbers::PI;
     return out;
   }
@@ -6325,7 +6333,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     {
       const unsigned int n_quadrature_points = uh.size();
       Assert (computed_quantities.size() == n_quadrature_points,  ExcInternalError());
-      Assert (uh[0].size() == 3*dim+1,                            ExcInternalError());
+      Assert (uh[0].size() == 4*dim+1,                            ExcInternalError());
 
       for (unsigned int q=0; q<n_quadrature_points; ++q)
         {
@@ -6350,7 +6358,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
           // vorticity
           for (unsigned int d=0; d<dim; ++d)
-            computed_quantities[q](2*dim+1+d) = uh[q](2*dim+1+d);
+            computed_quantities[q](2*dim+1+d) = uh[q](2*dim+1+d)+uh[q](3*dim+1+d)*enrichment_func;
 
           // owner
           computed_quantities[q](3*dim+1) = partition;
@@ -6374,7 +6382,8 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     const FESystem<dim> joint_fe (fe, dim,
                                   fe_p, 1,
                                   fe_xwall, dim,
-                                  fe, dim);
+                                  fe, dim,
+                                  fe_xwall, dim);
     DoFHandler<dim> joint_dof_handler (dof_handler.get_tria());
     joint_dof_handler.distribute_dofs (joint_fe);
     parallel::distributed::Vector<double>
@@ -6426,6 +6435,13 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
                 vorticity[ joint_fe.system_to_base_index(i).first.second ]
                 (loc_vel_dof_indices[ joint_fe.system_to_base_index(i).second ]);
               break;
+            case 4:
+              Assert (joint_fe.system_to_base_index(i).first.second < dim,
+                      ExcInternalError());
+              joint_solution (loc_joint_dof_indices[i]) =
+                vorticity[ dim + joint_fe.system_to_base_index(i).first.second ]
+                (loc_vel_xwall_dof_indices[ joint_fe.system_to_base_index(i).second ]);
+              break;
             default:
               Assert (false, ExcInternalError());
               break;
@@ -6443,7 +6459,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   data_out.add_data_vector (*(*xwall).ReturnDofHandlerWallDistance(),(*(*xwall).ReturnWDist()), "wdist");
   data_out.add_data_vector (*(*xwall).ReturnDofHandlerWallDistance(),(*(*xwall).ReturnTauW()), "tauw");
 
-  std::string output_prefix = "solution_ch180_8_p3_gt19_f48";
+  std::string output_prefix = "solution_ch180_8_p3_xwall_f64";
     std::ostringstream filename;
     filename << "output/"
              << output_prefix
