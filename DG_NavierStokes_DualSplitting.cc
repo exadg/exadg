@@ -61,8 +61,8 @@
 #include <fstream>
 #include <sstream>
 
-#define XWALL
-#define usepressuremg
+//#define XWALL
+#define SYMMETRIC //(VISCOUS TERM)
 
 namespace DG_NavierStokes
 {
@@ -84,10 +84,14 @@ namespace DG_NavierStokes
   const double VISCOSITY = 1./180.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
 
   const double MAX_VELOCITY = 30.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
-  const double stab_factor = 64.0;
+  const double stab_factor = 8.0;
+  const double CS = 0.17; // Smagorinsky constant
 
   const double MAX_WDIST_XWALL = 0.2;
+  const double GRID_STRETCH_FAC = 1.8;
   bool pure_dirichlet_bc = true;
+
+  const std::string output_prefix = "solution_ch180_8_p3_gt18_f8_cs17_newvisc_bdf3_cfl1";
 
   const double lambda = 0.5/VISCOSITY - std::pow(0.25/std::pow(VISCOSITY,2.0)+4.0*std::pow(numbers::PI,2.0),0.5);
 
@@ -149,7 +153,7 @@ namespace DG_NavierStokes
     if(component == 0)
     {
       if(p[1]<0.99&&p[1]>-0.99)
-        result = -22.0*(pow(p[1],2.0)-1.0)*(1.0+((double)rand()/RAND_MAX)*0.0005);//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
+        result = -22.0*(pow(p[1],2.0)-1.0);//*(1.0+((double)rand()/RAND_MAX)*0.0005);//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
       else
         result = 0.0;
     }
@@ -317,13 +321,14 @@ namespace DG_NavierStokes
   {
   public:
     RHS (const unsigned int   component,
-      const double     time = 0.) : Function<dim>(1, time),component(component) {}
+      const double     time = 0.) : Function<dim>(1, time),time(time),component(component) {}
 
     virtual ~RHS(){};
 
     virtual double value (const Point<dim> &p,const unsigned int component = 0) const;
 
   private:
+    const double time;
     const unsigned int component;
   };
 
@@ -333,7 +338,10 @@ namespace DG_NavierStokes
 
     //channel flow with periodic bc
     if(component==0)
-      return 1.0;
+      if(time<0.01)
+        return 1.0*(1.0+((double)rand()/RAND_MAX)*0.01);
+      else
+        return 1.0;
     else
       return 0.0;
 //  double t = this->get_time();
@@ -426,7 +434,8 @@ namespace DG_NavierStokes
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall> struct NavierStokesPressureMatrix;
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall> struct NavierStokesViscousMatrix;
-  template<int dim, int fe_degree, int fe_degree_p> struct PreconditionerJacobiPressure;
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall> struct PreconditionerJacobiPressure;
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall> struct PreconditionerJacobiPressureCoarse;
 //template<int dim, int fe_degree, int fe_degree_p> struct PreconditionerJacobiViscous;
 
     template <typename MATRIX>
@@ -447,13 +456,9 @@ namespace DG_NavierStokes
               MGLevelObject<parallel::distributed::Vector<double> > &dst,
               const InVector &src) const
   {
-  for (unsigned int level=mg_dof.get_tria().n_global_levels(); level != 0;)
-    {
-    --level;
+    for (unsigned int level=dst.min_level();
+         level<=dst.max_level(); ++level)
       matrix_operator[level].initialize_dof_vector(dst[level]);
-      dst[level].update_ghost_values();
-    }
-    src.update_ghost_values();
     MGTransferPrebuilt<parallel::distributed::Vector<double> >::copy_to_mg(mg_dof, dst, src);
   }
 
@@ -467,21 +472,26 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
   public:
     MGCoarsePressure() {}
 
-    void initialize(const NavierStokesPressureMatrix<dim,fe_degree,fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> &pressure)
+    void initialize(const NavierStokesPressureMatrix<dim,fe_degree,fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> &pressure,
+        const PreconditionerJacobiPressureCoarse<dim,fe_degree,fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> & preconditioner)
     {
       ns_pressure_coarse = &pressure;
+      jacobi_preconditioner_pressure_coarse = &preconditioner;
     }
 
     virtual void operator() (const unsigned int   level,
                              parallel::distributed::Vector<double> &dst,
                              const parallel::distributed::Vector<double> &src) const
     {
-      SolverControl solver_control (1e3, 1e-6);
+//      SolverControl solver_control (1e3, 1e-6);
+      ReductionControl solver_control (1e3, 1.e-12,1e-6);
       SolverCG<parallel::distributed::Vector<double> > solver_coarse (solver_control);
-      solver_coarse.solve (*ns_pressure_coarse, dst, src, PreconditionIdentity());
+      solver_coarse.solve (*ns_pressure_coarse, dst, src, *jacobi_preconditioner_pressure_coarse);
+//      solver_coarse.solve (*ns_pressure_coarse, dst, src, PreconditionIdentity());
     }
 
     const  NavierStokesPressureMatrix<dim,fe_degree,fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> *ns_pressure_coarse;
+    const  PreconditionerJacobiPressureCoarse<dim,fe_degree,fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> *jacobi_preconditioner_pressure_coarse;
   };
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -692,7 +702,7 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
         return psigp;
       }
 
-      const MatrixFree<dim,Number> mydata;
+      const MatrixFree<dim,Number> &mydata;
 
     const parallel::distributed::Vector<double>& wdist;
     const parallel::distributed::Vector<double>& tauw;
@@ -970,6 +980,13 @@ public:
           }
 #endif
       }
+      void read_dof_values (const parallel::distributed::BlockVector<double> &src, unsigned int i,const parallel::distributed::BlockVector<double> &src_xwall, unsigned int j)
+      {
+        fe_eval[0].read_dof_values(src,i);
+#ifdef XWALL
+        fe_eval_xwall[0].read_dof_values(src_xwall,j);
+#endif
+      }
 
       void evaluate(const bool evaluate_val,
                  const bool evaluate_grad,
@@ -1192,6 +1209,11 @@ public:
         return fe_eval[0].get_gradient(q_point);
       }
 
+      gradient_type get_symmetric_gradient (const unsigned int q_point)
+      {
+        return make_symmetric(get_gradient(q_point));
+      }
+
       void add_array_component_to_gradient(Tensor<2,dim,VectorizedArray<Number> >& grad,const Tensor<2,dim,VectorizedArray<Number> >& toadd, unsigned int v)
       {
         for (unsigned int comp = 0; comp<dim; comp++)
@@ -1202,6 +1224,25 @@ public:
       {
         for (unsigned int d = 0; d<n_components_; d++)
           grad[d][v] += toadd[d][v];
+      }
+
+      Tensor<2,dim,VectorizedArray<Number> > make_symmetric(const Tensor<2,dim,VectorizedArray<Number> >& grad)
+    {
+        Tensor<2,dim,VectorizedArray<Number> > symgrad;
+        for (unsigned int i = 0; i<dim; i++)
+          for (unsigned int j = 0; j<dim; j++)
+            symgrad[i][j] =  grad[i][j] + grad[j][i];
+        return symgrad;
+    }
+
+    Tensor<1,dim,VectorizedArray<Number> > make_symmetric(const Tensor<1,dim,VectorizedArray<Number> >& grad)
+      {
+          Tensor<1,dim,VectorizedArray<Number> > symgrad;
+          for (unsigned int j = 0; j<dim; j++)
+            symgrad[j] = make_vectorized_array(0.);
+          // symmetric gradient is not defined in that case
+          Assert(false, ExcInternalError());
+          return symgrad;
       }
 
       void integrate (const bool integrate_val,
@@ -1235,6 +1276,7 @@ public:
 #endif
         fe_eval[0].integrate(integrate_val, integrate_grad);
       }
+
       void grad_enr_to_val(AlignedVector<Tensor<1,dim,VectorizedArray<Number> > >& tmp_values, AlignedVector<Tensor<2,dim,VectorizedArray<Number> > >& gradient)
       {
         for(unsigned int q=0;q<fe_eval[0].n_q_points;++q)
@@ -1243,7 +1285,7 @@ public:
           {
             for(int i=0; i<dim;++i)//dim
             {
-              tmp_values[q][j] += gradient[q][j][i]*EvaluationXWall<dim,n_q_points_1d,Number>::enrichment_gradient(q)[i];
+              tmp_values[q][j] += gradient[q][i][j]*EvaluationXWall<dim,n_q_points_1d,Number>::enrichment_gradient(q)[i];
             }
           }
         }
@@ -1257,6 +1299,25 @@ public:
             tmp_values[q] += gradient[q][i]*EvaluationXWall<dim,n_q_points_1d,Number>::enrichment_gradient(q)[i];
           }
         }
+      }
+
+      void sym_grad_enr_to_val(AlignedVector<Tensor<1,dim,VectorizedArray<Number> > >& tmp_values, AlignedVector<Tensor<2,dim,VectorizedArray<Number> > >& gradient)
+      {
+        for(unsigned int q=0;q<fe_eval[0].n_q_points;++q)
+        {
+          for(int j=0; j<dim;++j)//comp
+          {
+            for(int i=0; i<dim;++i)//dim
+            {
+              tmp_values[q][j] += 0.5*gradient[q][i][j]*(EvaluationXWall<dim,n_q_points_1d,Number>::enrichment_gradient(q)[i]);
+              tmp_values[q][i] += 0.5*gradient[q][i][j]*(EvaluationXWall<dim,n_q_points_1d,Number>::enrichment_gradient(q)[j]);
+            }
+          }
+        }
+      }
+      void sym_grad_enr_to_val(AlignedVector<VectorizedArray<Number> >& tmp_values, AlignedVector<Tensor<1,dim,VectorizedArray<Number> > >& gradient)
+      {
+        Assert(false,ExcInternalError());
       }
       void distribute_local_to_global (parallel::distributed::Vector<double> &dst, parallel::distributed::Vector<double> &dst_xwall)
       {
@@ -1319,6 +1380,23 @@ public:
 //            for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
 //              Assert(not isnan(fe_eval_xwall[0].begin_dof_values()[i][v]),ExcInternalError());
 //        }
+#endif
+      }
+
+      void distribute_local_to_global (parallel::distributed::BlockVector<double> &dst, unsigned int i,parallel::distributed::BlockVector<double> &dst_xwall, unsigned int j)
+      {
+        fe_eval[0].distribute_local_to_global(dst,i);
+#ifdef XWALL
+        if(enriched)
+        {
+          for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
+          {
+            if(not enriched_components.at(v))
+              for(unsigned int k = 0; k<fe_eval_xwall[0].dofs_per_cell*n_components_ ; k++)
+                fe_eval_xwall[0].begin_dof_values()[k][v] = 0.0;
+          }
+          fe_eval_xwall[0].distribute_local_to_global(dst_xwall,j);
+        }
 #endif
       }
 
@@ -1465,6 +1543,52 @@ public:
       else
         return enriched_components.at(v);
     }
+
+    void evaluate_eddy_viscosity(std::vector<parallel::distributed::Vector<double> > solution_n, unsigned int cell)
+    {
+      eddyvisc.resize(n_q_points);
+      const VectorizedArray<Number> Cs = make_vectorized_array(CS);
+      VectorizedArray<Number> hfac = make_vectorized_array(1.0/(double)fe_degree);
+      fe_eval_tauw[0].reinit(cell);
+      {
+        VectorizedArray<Number> volume = make_vectorized_array(0.);
+        {
+          AlignedVector<VectorizedArray<Number> > JxW_values;
+          JxW_values.resize(fe_eval_tauw[0].n_q_points);
+          fe_eval_tauw[0].fill_JxW_values(JxW_values);
+          for (unsigned int q=0; q<fe_eval_tauw[0].n_q_points; ++q)
+            volume += JxW_values[q];
+        }
+        reinit(cell);
+        read_dof_values(solution_n,0,solution_n,dim+1);
+        evaluate (false,true,false);
+        AlignedVector<VectorizedArray<Number> > wdist;
+        wdist.resize(fe_eval_tauw[0].n_q_points);
+        fe_eval_tauw[0].read_dof_values(EvaluationXWall<dim,n_q_points_1d, Number>::wdist);
+        fe_eval_tauw[0].evaluate(true,false,false);
+        for (unsigned int q=0; q<fe_eval_tauw[0].n_q_points; ++q)
+          wdist[q] = fe_eval_tauw[0].get_value(q);
+        fe_eval_tauw[0].reinit(cell);
+        fe_eval_tauw[0].read_dof_values(EvaluationXWall<dim,n_q_points_1d, Number>::tauw);
+        fe_eval_tauw[0].evaluate(true,false,false);
+
+        for (unsigned int q=0; q<n_q_points; ++q)
+        {
+          Tensor<2,dim,VectorizedArray<Number> > s = get_symmetric_gradient(q);
+
+          VectorizedArray<Number> snorm = make_vectorized_array(0.);
+          for (unsigned int i = 0; i<dim ; i++)
+            for (unsigned int j = 0; j<dim ; j++)
+              snorm += make_vectorized_array(0.5)*(s[i][j])*(s[i][j]);
+          //simple wall correction
+          VectorizedArray<Number> fmu = (1.-std::exp(-wdist[q]/VISCOSITY*std::sqrt(fe_eval_tauw[0].get_value(q))/25.));
+          VectorizedArray<Number> lm = Cs*std::pow(volume,1./3.)*hfac*fmu;
+          eddyvisc[q]= make_vectorized_array(VISCOSITY) + std::pow(lm,2.)*std::sqrt(make_vectorized_array(2.)*snorm);
+        }
+      }
+
+      return;
+    }
     private:
       AlignedVector<FEEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number> > fe_eval;
       AlignedVector<FEEvaluation<dim,fe_degree_xwall,n_q_points_1d,n_components_,Number> > fe_eval_xwall;
@@ -1478,6 +1602,7 @@ public:
       unsigned int tensor_dofs_per_cell;
       bool enriched;
       std::vector<bool> enriched_components;
+      AlignedVector<VectorizedArray<Number> > eddyvisc;
 
     };
 
@@ -1646,20 +1771,7 @@ public:
       {
         fe_eval.read_dof_values(src);
 #ifdef XWALL
-//          if(enriched)
-          {
-            fe_eval_xwall.read_dof_values(src_xwall);
-//            for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-//            {
-//              if(not enriched_components.at(v))
-//                for(unsigned int k = 0; k<fe_eval_xwall.dofs_per_cell ; k++)
-//                  fe_eval_xwall.begin_dof_values()[k][v] = 0.0;
-//            }
-//            std::cout << "test5" << std::endl;
-//            for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
-//              for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-//                Assert(not isnan(fe_eval_xwall.begin_dof_values()[i][v]),ExcInternalError());
-          }
+        fe_eval_xwall.read_dof_values(src_xwall);
 #endif
       }
 
@@ -1667,20 +1779,15 @@ public:
       {
         fe_eval.read_dof_values(src,i);
 #ifdef XWALL
-//          if(enriched)
-          {
-            fe_eval_xwall.read_dof_values(src_xwall,j);
-//            for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-//            {
-//              if(not enriched_components.at(v))
-//                for(unsigned int k = 0; k<fe_eval_xwall.dofs_per_cell ; k++)
-//                  fe_eval_xwall.begin_dof_values()[k][v] = 0.0;
-//            }
-//            std::cout << "test6" << std::endl;
-//            for(unsigned int i = 0; i<fe_eval_xwall.dofs_per_cell ; i++)
-//              for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-//                Assert(not isnan(fe_eval_xwall.begin_dof_values()[i][v]),ExcInternalError());
-          }
+        fe_eval_xwall.read_dof_values(src_xwall,j);
+#endif
+      }
+
+      void read_dof_values (const parallel::distributed::BlockVector<double> &src, unsigned int i,const parallel::distributed::BlockVector<double> &src_xwall, unsigned int j)
+      {
+        fe_eval.read_dof_values(src,i);
+#ifdef XWALL
+        fe_eval_xwall.read_dof_values(src_xwall,j);
 #endif
       }
 
@@ -1791,7 +1898,7 @@ public:
           const unsigned int q_point)
       {
         fe_eval.submit_gradient(grad_in,q_point);
-        gradients.at(q_point) = gradient_type();
+        gradients[q_point] = gradient_type();
 #ifdef XWALL
           if(enriched)
           {
@@ -1859,6 +1966,30 @@ public:
         return fe_eval.get_gradient(q_point);
       }
 
+      gradient_type get_symmetric_gradient (const unsigned int q_point)
+      {
+        return make_symmetric(get_gradient(q_point));
+      }
+
+      Tensor<2,dim,VectorizedArray<Number> > make_symmetric(const Tensor<2,dim,VectorizedArray<Number> >& grad)
+    {
+        Tensor<2,dim,VectorizedArray<Number> > symgrad;
+        for (unsigned int i = 0; i<dim; i++)
+          for (unsigned int j = 0; j<dim; j++)
+            symgrad[i][j] = grad[i][j] + grad[j][i];
+        return symgrad;
+    }
+
+      Tensor<1,dim,VectorizedArray<Number> > make_symmetric(const Tensor<1,dim,VectorizedArray<Number> >& grad)
+    {
+        Tensor<1,dim,VectorizedArray<Number> > symgrad;
+        for (unsigned int j = 0; j<dim; j++)
+          symgrad[j] = make_vectorized_array(0.);
+        // symmetric gradient is not defined in that case
+        Assert(false, ExcInternalError());
+        return symgrad;
+    }
+
       void add_array_component_to_gradient(Tensor<2,dim,VectorizedArray<Number> >& grad,const Tensor<2,dim,VectorizedArray<Number> >& toadd, unsigned int v)
       {
         for (unsigned int comp = 0; comp<dim; comp++)
@@ -1870,6 +2001,27 @@ public:
         for (unsigned int d = 0; d<n_components_; d++)
           grad[d][v] += toadd[d][v];
       }
+
+      VectorizedArray<Number> get_divergence(unsigned int q)
+    {
+#ifdef XWALL
+        if(enriched)
+        {
+          VectorizedArray<Number> div_enr= make_vectorized_array(0.0);
+          for (unsigned int i=0;i<dim;i++)
+            div_enr += gradients[q][i][i];
+          for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
+          {
+            if(not enriched_components.at(v))
+            {
+              div_enr[v] = 0.0;
+            }
+          }
+          return fe_eval[0].get_divergence(q) + div_enr;
+        }
+#endif
+        return fe_eval[0].get_divergence(q);
+    }
 
       Tensor<1,dim,VectorizedArray<Number> > get_normal_vector(const unsigned int q_point) const
       {
@@ -1892,7 +2044,6 @@ public:
             if(integrate_grad)
             {
               //first, zero out all non-enriched vectorized array components
-
               grad_enr_to_val(tmp_values,gradients);
               for(unsigned int q=0;q<fe_eval.n_q_points;++q)
                 fe_eval_xwall.submit_gradient(gradients[q]*EvaluationXWall<dim,n_q_points_1d,Number>::enrichment(q),q);
@@ -1917,7 +2068,7 @@ public:
           {
             for(int i=0; i<dim;++i)//dim
             {
-              tmp_values[q][j] += gradient[q][j][i]*EvaluationXWall<dim,n_q_points_1d,Number>::enrichment_gradient(q)[i];
+              tmp_values[q][j] += gradient[q][i][j]*EvaluationXWall<dim,n_q_points_1d,Number>::enrichment_gradient(q)[i];
             }
           }
         }
@@ -1931,6 +2082,25 @@ public:
             tmp_values[q] += gradient[q][i]*EvaluationXWall<dim,n_q_points_1d,Number>::enrichment_gradient(q)[i];
           }
         }
+      }
+
+      void sym_grad_enr_to_val(AlignedVector<Tensor<1,dim,VectorizedArray<Number> > >& tmp_values, AlignedVector<Tensor<2,dim,VectorizedArray<Number> > >& gradient)
+      {
+        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        {
+          for(int j=0; j<dim;++j)//comp
+          {
+            for(int i=0; i<dim;++i)//dim
+            {
+              tmp_values[q][j] += 0.5*gradient[q][i][j]*(EvaluationXWall<dim,n_q_points_1d,Number>::enrichment_gradient(q)[i]);
+              tmp_values[q][i] += 0.5*gradient[q][i][j]*(EvaluationXWall<dim,n_q_points_1d,Number>::enrichment_gradient(q)[j]);
+            }
+          }
+        }
+      }
+      void sym_grad_enr_to_val(AlignedVector<VectorizedArray<Number> >& tmp_values, AlignedVector<Tensor<1,dim,VectorizedArray<Number> > >& gradient)
+      {
+        Assert(false,ExcInternalError());
       }
       void distribute_local_to_global (parallel::distributed::Vector<double> &dst, parallel::distributed::Vector<double> &dst_xwall)
       {
@@ -1995,6 +2165,25 @@ public:
 //              Assert(not isnan(fe_eval_xwall.begin_dof_values()[i][v]),ExcInternalError());
 //
 //        }
+#endif
+      }
+
+
+      void distribute_local_to_global (parallel::distributed::BlockVector<double> &dst, unsigned int i,parallel::distributed::BlockVector<double> &dst_xwall, unsigned int j)
+      {
+        fe_eval.distribute_local_to_global(dst,i);
+#ifdef XWALL
+        if(enriched)
+        {
+          for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
+          {
+            if(not enriched_components.at(v))
+              for(unsigned int k = 0; k<fe_eval_xwall.dofs_per_cell*n_components_ ; k++)
+                fe_eval_xwall.begin_dof_values()[k][v] = 0.0;
+          }
+          fe_eval_xwall.distribute_local_to_global(dst_xwall,j);
+
+        }
 #endif
       }
 
@@ -2204,6 +2393,43 @@ public:
         return;
   #endif
       }
+      void evaluate_eddy_viscosity(std::vector<parallel::distributed::Vector<double> > solution_n, unsigned int face, const VectorizedArray<Number> volume)
+      {
+        eddyvisc.resize(n_q_points);
+        const VectorizedArray<Number> Cs = make_vectorized_array(CS);
+        VectorizedArray<Number> hfac = make_vectorized_array(1.0/(double)fe_degree);
+        fe_eval_tauw.reinit(face);
+        {
+          reinit(face);
+          read_dof_values(solution_n,0,solution_n,dim+1);
+          evaluate (false,true,false);
+          AlignedVector<VectorizedArray<Number> > wdist;
+          wdist.resize(fe_eval_tauw.n_q_points);
+          fe_eval_tauw.read_dof_values(EvaluationXWall<dim,n_q_points_1d, Number>::wdist);
+          fe_eval_tauw.evaluate(true,false);
+          for (unsigned int q=0; q<fe_eval_tauw.n_q_points; ++q)
+            wdist[q] = fe_eval_tauw.get_value(q);
+          fe_eval_tauw.reinit(face);
+          fe_eval_tauw.read_dof_values(EvaluationXWall<dim,n_q_points_1d, Number>::tauw);
+          fe_eval_tauw.evaluate(true,false);
+
+          for (unsigned int q=0; q<n_q_points; ++q)
+          {
+            Tensor<2,dim,VectorizedArray<Number> > s = get_symmetric_gradient(q);
+
+            VectorizedArray<Number> snorm = make_vectorized_array(0.);
+            for (unsigned int i = 0; i<dim ; i++)
+              for (unsigned int j = 0; j<dim ; j++)
+                snorm += make_vectorized_array(0.5)*(s[i][j])*(s[i][j]);
+            //simple wall correction
+            VectorizedArray<Number> fmu = (1.-std::exp(-wdist[q]/VISCOSITY*std::sqrt(fe_eval_tauw.get_value(q))/25.));
+            VectorizedArray<Number> lm = Cs*std::pow(volume,1./3.)*hfac*fmu;
+            eddyvisc[q]= make_vectorized_array(VISCOSITY) + std::pow(lm,2.)*std::sqrt(make_vectorized_array(2.)*snorm);
+          }
+        }
+
+        return;
+      }
     private:
       FEFaceEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number> fe_eval;
       FEFaceEvaluation<dim,fe_degree_xwall,n_q_points_1d,n_components_,Number> fe_eval_xwall;
@@ -2219,6 +2445,7 @@ public:
       const unsigned int n_q_points;
       bool enriched;
       std::vector<bool> enriched_components;
+      AlignedVector<VectorizedArray<Number> > eddyvisc;
     };
 
 
@@ -2230,7 +2457,8 @@ public:
   public:
     XWall(const DoFHandler<dim> &dof_handler,
         std::vector<MatrixFree<dim,double> >* data,
-        double visc);
+        double visc,
+        AlignedVector<VectorizedArray<double> > &element_volume);
 
     //initialize everything, e.g.
     //setup of wall distance
@@ -2255,13 +2483,15 @@ public:
     }
 
     //Update wall shear stress at the beginning of every time step
-    void UpdateTauW(std::vector<parallel::distributed::Vector<double> > solution_np);
+    void UpdateTauW(std::vector<parallel::distributed::Vector<double> > &solution_np);
 
     DoFHandler<dim>* ReturnDofHandlerWallDistance(){return &dof_handler_wall_distance;}
     const parallel::distributed::Vector<double>* ReturnWDist() const
         {return &wall_distance;}
     const parallel::distributed::Vector<double>* ReturnTauW() const
         {return &tauw;}
+    const std::vector<MatrixFree<dim,double> >* ReturnData() const
+        {return &mydata;}
   private:
 
     void InitWDist();
@@ -2300,6 +2530,8 @@ public:
     parallel::distributed::Vector<double> tauw;
     std::vector<MatrixFree<dim,double> >* mydata;
     double viscosity;
+//    parallel::distributed::Vector<double> &eddy_viscosity;
+    AlignedVector<VectorizedArray<double> >& element_volume;
 
   public:
 
@@ -2308,11 +2540,13 @@ public:
   template<int dim, int fe_degree, int fe_degree_xwall>
   XWall<dim,fe_degree,fe_degree_xwall>::XWall(const DoFHandler<dim> &dof_handler,
       std::vector<MatrixFree<dim,double> >* data,
-      double visc)
+      double visc,
+      AlignedVector<VectorizedArray<double> > &element_volume)
   :fe_wall_distance(1),
    dof_handler_wall_distance(dof_handler.get_tria()),
    mydata(data),
-   viscosity(visc)
+   viscosity(visc),
+   element_volume(element_volume)
   {
     dof_handler_wall_distance.distribute_dofs(fe_wall_distance);
     dof_handler_wall_distance.distribute_mg_dofs(fe_wall_distance);
@@ -2468,7 +2702,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   }
 
   template<int dim, int fe_degree, int fe_degree_xwall>
-  void XWall<dim,fe_degree,fe_degree_xwall>::UpdateTauW(std::vector<parallel::distributed::Vector<double> > solution_np)
+  void XWall<dim,fe_degree,fe_degree_xwall>::UpdateTauW(std::vector<parallel::distributed::Vector<double> > &solution_np)
   {
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
       std::cout << "\nCompute new tauw: ";
@@ -2498,11 +2732,16 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
       std::cout << "(set to 1.0 for now) ";
     tauw = 1.0;
     tauw.update_ghost_values();
+#ifdef XWALL
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
       std::cout << "L2-project... ";
     L2Projection();
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
       std::cout << "done!" << std::endl;
+#else
+    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+      std::cout << std::endl;
+#endif
   }
 
   template<int dim, int fe_degree, int fe_degree_xwall>
@@ -2529,13 +2768,22 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
         &XWall<dim, fe_degree, fe_degree_xwall>::local_rhs_dummy_face,
         &XWall<dim, fe_degree, fe_degree_xwall>::local_rhs_normalization_boundary_face,
               this, normalization, src);
-
+    double mean = 0.0;
+    unsigned int count = 0;
     for(unsigned int i = 0; i < force.local_size(); ++i)
     {
       if(normalization.local_element(i)>0.0)
+      {
         dst.local_element(i) = force.local_element(i) / normalization.local_element(i);
+        mean += dst.local_element(i);
+        count++;
+      }
     }
-
+    mean = Utilities::MPI::sum(mean,MPI_COMM_WORLD);
+    count = Utilities::MPI::sum(count,MPI_COMM_WORLD);
+    mean /= (double)count;
+    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+      std::cout << "mean = " << mean << " ";
   }
 
   template <int dim, int fe_degree, int fe_degree_xwall>
@@ -2567,11 +2815,12 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
       if (data.get_boundary_indicator(face) == 0) // Infow and wall boundaries
       {
         fe_eval_xwall.reinit (face);
+        fe_eval_xwall.evaluate_eddy_viscosity(src,face,fe_eval_xwall.read_cell_data(element_volume));
+        fe_eval_xwall.reinit (face);
         fe_eval_tauw.reinit (face);
 
         fe_eval_xwall.read_dof_values(src,0,src,dim+1);
         fe_eval_xwall.evaluate(false,true);
-
         if(fe_eval_xwall.n_q_points != fe_eval_tauw.n_q_points)
           std::cerr << "\nwrong number of quadrature points" << std::endl;
 
@@ -2585,7 +2834,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
           else if(dim == 3)
             tauwsc = std::sqrt(average_gradient[0]*average_gradient[0] + average_gradient[1]*average_gradient[1] + average_gradient[2]*average_gradient[2]);
 
-          tauwsc = tauwsc * (make_vectorized_array<double>(viscosity));
+          tauwsc = tauwsc * fe_eval_xwall.eddyvisc[q];//(make_vectorized_array<double>(viscosity));
           fe_eval_tauw.submit_value(tauwsc,q);
         }
         fe_eval_tauw.integrate(true,false);
@@ -2644,12 +2893,8 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
   void  compute_rhs (std::vector<parallel::distributed::Vector<value_type> >  &dst);
 
-  void  apply_viscous (const std::vector<parallel::distributed::Vector<value_type> >     &src,
-                   std::vector<parallel::distributed::Vector<value_type> >      &dst) const;
-
-  void  apply_viscous (const parallel::distributed::BlockVector<value_type> &src,
-                parallel::distributed::BlockVector<value_type>     &dst,
-                const unsigned int                 &level) const;
+  void  apply_viscous (const parallel::distributed::BlockVector<value_type>     &src,
+                   parallel::distributed::BlockVector<value_type>      &dst) const;
 
   void  rhs_viscous (const std::vector<parallel::distributed::Vector<value_type> >   &src,
                    std::vector<parallel::distributed::Vector<value_type> >  &dst);
@@ -2665,8 +2910,10 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
   void  shift_pressure (parallel::distributed::Vector<value_type>  &pressure);
 
-  void apply_inverse_mass_matrix(const std::vector<parallel::distributed::Vector<value_type> >  &src,
-      std::vector<parallel::distributed::Vector<value_type> >    &dst) const;
+  void apply_inverse_mass_matrix(const parallel::distributed::BlockVector<value_type>  &src,
+                parallel::distributed::BlockVector<value_type>    &dst) const;
+
+  void precompute_inverse_mass_matrix();
 
   void  rhs_pressure (const std::vector<parallel::distributed::Vector<value_type> >     &src,
                 std::vector<parallel::distributed::Vector<value_type> >      &dst);
@@ -2678,12 +2925,17 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
                       std::vector<parallel::distributed::Vector<value_type> >      &dst);
 
   void analyse_computing_times();
+  void DistributeConstraintP(parallel::distributed::Vector<value_type> vec)
+  {
+    constraint_p_maxlevel.distribute(vec);
+  }
 
-  std::vector<parallel::distributed::Vector<value_type> > solution_nm, solution_n, velocity_temp, velocity_temp2, solution_np;
-  std::vector<parallel::distributed::Vector<value_type> > vorticity_nm, vorticity_n;
-  std::vector<parallel::distributed::Vector<value_type> > rhs_convection_nm, rhs_convection_n;
+  std::vector<parallel::distributed::Vector<value_type> > solution_nm2, solution_nm, solution_n, velocity_temp, velocity_temp2, solution_np;
+  std::vector<parallel::distributed::Vector<value_type> > vorticity_nm2, vorticity_nm, vorticity_n;
+  std::vector<parallel::distributed::Vector<value_type> > rhs_convection_nm2, rhs_convection_nm, rhs_convection_n;
   std::vector<parallel::distributed::Vector<value_type> > f;
   std::vector<parallel::distributed::Vector<value_type> > xwallstatevec;
+//  parallel::distributed::Vector<value_type> eddy_viscosity;
 
   const MatrixFree<dim,value_type> & get_data() const
   {
@@ -2711,7 +2963,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   double time, time_step;
   const double viscosity;
   double gamma0;
-  double alpha[2], beta[2];
+  double alpha[3], beta[3];
   std::vector<double> computing_times;
   std::vector<double> times_cg_velo;
   std::vector<unsigned int> iterations_cg_velo;
@@ -2738,7 +2990,8 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   typename PreconditionChebyshev<NavierStokesPressureMatrix<dim,fe_degree,fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>,
                   parallel::distributed::Vector<value_type> >::AdditionalData smoother_data_chebyshev_pressure;
 
-//  PreconditionerJacobiPressure<dim,fe_degree,fe_degree_p> jacobi_preconditioner_pressure;
+  PreconditionerJacobiPressure<dim,fe_degree,fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> jacobi_preconditioner_pressure;
+  PreconditionerJacobiPressureCoarse<dim,fe_degree,fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> jacobi_preconditioner_pressure_coarse;
 //  MGLevelObject<NavierStokesViscousMatrix<dim,fe_degree,fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > mg_matrices_viscous;
 //  MGTransferPrebuilt<parallel::distributed::BlockVector<double> > mg_transfer_viscous;
 
@@ -2751,10 +3004,14 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
     std::vector< AlignedVector<VectorizedArray<value_type> > > array_penalty_parameter;
 
+    AlignedVector<VectorizedArray<value_type> > element_volume;
+
     Point<dim> first_point;
     types::global_dof_index dof_index_first_point;
 
     XWall<dim,fe_degree,fe_degree_xwall> xwall;
+    std::vector<Table<2,VectorizedArray<value_type> > > matrices;
+    ConstraintMatrix constraint_p_maxlevel;
 
   void update_time_integrator();
   void check_time_integrator();
@@ -2781,18 +3038,18 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
                         const std::pair<unsigned int,unsigned int>          &cell_range) const;
 
   void local_apply_viscous (const MatrixFree<dim,value_type>        &data,
-                        std::vector<parallel::distributed::Vector<double> >      &dst,
-                        const std::vector<parallel::distributed::Vector<double> >  &src,
+                        parallel::distributed::BlockVector<double>      &dst,
+                        const parallel::distributed::BlockVector<double>  &src,
                         const std::pair<unsigned int,unsigned int>  &cell_range) const;
 
   void local_apply_viscous_face (const MatrixFree<dim,value_type>      &data,
-                  std::vector<parallel::distributed::Vector<double> >    &dst,
-                  const std::vector<parallel::distributed::Vector<double> >  &src,
+                  parallel::distributed::BlockVector<double>      &dst,
+                  const parallel::distributed::BlockVector<double>  &src,
                   const std::pair<unsigned int,unsigned int>  &face_range) const;
 
   void local_apply_viscous_boundary_face(const MatrixFree<dim,value_type>      &data,
-                      std::vector<parallel::distributed::Vector<double> >    &dst,
-                      const std::vector<parallel::distributed::Vector<double> >  &src,
+                      parallel::distributed::BlockVector<double>      &dst,
+                      const parallel::distributed::BlockVector<double>  &src,
                       const std::pair<unsigned int,unsigned int>  &face_range) const;
 
   void local_rhs_viscous (const MatrixFree<dim,value_type>                &data,
@@ -2876,6 +3133,16 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
                       std::vector<parallel::distributed::Vector<value_type> >    &dst,
                       const std::vector<parallel::distributed::Vector<value_type> >  &src,
                       const std::pair<unsigned int,unsigned int>          &cell_range) const;
+  // inverse mass matrix velocity
+  void local_apply_mass_matrix(const MatrixFree<dim,value_type>                &data,
+                      parallel::distributed::BlockVector<value_type>    &dst,
+                      const parallel::distributed::BlockVector<value_type>  &src,
+                      const std::pair<unsigned int,unsigned int>          &cell_range) const;
+  // inverse mass matrix velocity
+  void local_precompute_mass_matrix(const MatrixFree<dim,value_type>                &data,
+                      std::vector<parallel::distributed::Vector<value_type> >    &,
+                      const std::vector<parallel::distributed::Vector<value_type> >  &,
+                      const std::pair<unsigned int,unsigned int>          &cell_range);
 
   void local_apply_mass_matrix(const MatrixFree<dim,value_type>          &data,
                       parallel::distributed::Vector<value_type>      &dst,
@@ -2898,8 +3165,37 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   void calculate_penalty_parameter_pressure(double &factor) const;
 
   void compute_lift_and_drag();
+
   void compute_pressure_difference();
+  void add_periodicity_constraints(const unsigned int level,
+                                   const unsigned int target_level,
+                                   const typename DoFHandler<dim>::face_iterator face1,
+                                   const typename DoFHandler<dim>::face_iterator face2,
+                                   ConstraintMatrix &constraints)
+  {
+    if (level == 0)
+      {
+        const unsigned int dofs_per_face = face1->get_fe(0).dofs_per_face;
+        std::vector<types::global_dof_index> dofs_1(dofs_per_face);
+        std::vector<types::global_dof_index> dofs_2(dofs_per_face);
+
+        face1->get_mg_dof_indices(target_level, dofs_1, 0);
+        face2->get_mg_dof_indices(target_level, dofs_2, 0);
+
+        for (unsigned int i=0; i<dofs_per_face; ++i)
+          {
+            constraints.add_line(dofs_2[i]);
+            constraints.add_entry(dofs_2[i], dofs_1[i], 1.);
+          }
+      }
+    else
+      {
+        for (unsigned int c=0; c<face1->n_children(); ++c)
+          add_periodicity_constraints(level-1, target_level, face1->child(c),face2->child(c),constraints);
+      }
   };
+  };
+
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::NavierStokesOperation(const DoFHandler<dim> &dof_handler,
@@ -2911,24 +3207,27 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   time_step(time_step_size),
   viscosity(VISCOSITY),
   gamma0(1.0),
-  alpha({1.0,0.0}),
-  beta({1.0,0.0}),
+  alpha({1.0,0.0,0.0}),
+  beta({1.0,0.0,0.0}),
   computing_times(4),
   times_cg_velo(3),
   iterations_cg_velo(3),
   times_cg_pressure(2),
   iterations_cg_pressure(2),
   mg_transfer_pressure(mg_matrices_pressure),
-  xwall(dof_handler,&data,viscosity)
+  jacobi_preconditioner_pressure(*this),
+  jacobi_preconditioner_pressure_coarse(*this),
+  element_volume(0),
+  xwall(dof_handler,&data,viscosity,element_volume)
   {
 
-  data.resize(dof_handler_p.get_tria().n_levels());
+  data.resize(dof_handler_p.get_tria().n_global_levels());
   //mg_matrices_pressure.resize(dof_handler_p.get_tria().n_levels()-2, dof_handler_p.get_tria().n_levels()-1);
-  mg_matrices_pressure.resize(0, dof_handler_p.get_tria().n_levels()-1);
+  mg_matrices_pressure.resize(0, dof_handler_p.get_tria().n_global_levels()-1);
 //  mg_matrices_viscous.resize(0, dof_handler.get_tria().n_levels()-1);
-  gamma0 = 3.0/2.0;
+  gamma0 = 11.0/6.0;
 
-  array_penalty_parameter.resize(dof_handler_p.get_tria().n_levels());
+  array_penalty_parameter.resize(dof_handler_p.get_tria().n_global_levels());
 
   for (unsigned int level=mg_matrices_pressure.min_level();level<=mg_matrices_pressure.max_level(); ++level)
   {
@@ -2961,8 +3260,24 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     dof_handler_vec.push_back(&dof_handler_xwall);
 
     ConstraintMatrix constraint, constraint_p;
+    for (typename std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >::const_iterator it=periodic_face_pairs.begin(); it!=periodic_face_pairs.end(); ++it)
+      {
+        typename Triangulation<dim>::face_iterator face1 = it->cell[1]->face(it->face_idx[1]);
+        typename Triangulation<dim>::face_iterator face2 = it->cell[0]->face(it->face_idx[0]);
+        typename DoFHandler<dim>::face_iterator dface1(&dof_handler_p.get_tria(), face1->level(), face1->index(), &dof_handler_p);
+        typename DoFHandler<dim>::face_iterator dface2(&dof_handler_p.get_tria(), face2->level(), face2->index(), &dof_handler_p);
+        add_periodicity_constraints(level, level,dface1,dface2,constraint_p);
+        if(level == mg_matrices_pressure.max_level())
+        {
+          add_periodicity_constraints(level, level,dface1,dface2,constraint_p_maxlevel);
+          constraint_p_maxlevel.close();
+        }
+      }
+
+
     constraint.close();
     constraint_p.close();
+
     std::vector<const ConstraintMatrix *> constraint_matrix_vec;
     constraint_matrix_vec.push_back(&constraint);
     constraint_matrix_vec.push_back(&constraint_p);
@@ -3020,14 +3335,16 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   smoother_data_chebyshev_pressure.matrix_diagonal_inverse = mg_matrices_pressure[mg_matrices_pressure.max_level()].get_inverse_diagonal();
   precondition_chebyshev_pressure.initialize(mg_matrices_pressure[mg_matrices_pressure.max_level()], smoother_data_chebyshev_pressure);
 
+  jacobi_preconditioner_pressure.initialize();
+  jacobi_preconditioner_pressure_coarse.initialize();
   mg_transfer_pressure.build_matrices(dof_handler_p);
-  mg_coarse_pressure.initialize(mg_matrices_pressure[mg_matrices_pressure.min_level()]);
+  mg_coarse_pressure.initialize(mg_matrices_pressure[mg_matrices_pressure.min_level()],jacobi_preconditioner_pressure_coarse);
 
 //  mg_transfer_viscous.build_matrices(dof_handler);
 //  mg_coarse_viscous.initialize(mg_matrices_viscous[mg_matrices_viscous.min_level()]);
 
-  smoother_data_pressure.resize(0, dof_handler_p.get_tria().n_levels()-1);
-  for(unsigned int level=0; level<dof_handler_p.get_tria().n_levels();++level)
+  smoother_data_pressure.resize(0, dof_handler_p.get_tria().n_global_levels()-1);
+  for(unsigned int level=0; level<dof_handler_p.get_tria().n_global_levels();++level)
   {
     smoother_data_pressure[level].smoothing_range = 30;
     smoother_data_pressure[level].degree = 7; //empirically: use degree = 3 - 6
@@ -3035,9 +3352,9 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
     smoother_data_pressure[level].matrix_diagonal_inverse = mg_matrices_pressure[level].get_inverse_diagonal();
   }
-#ifdef usepressuremg
+
   mg_smoother_pressure.initialize(mg_matrices_pressure, smoother_data_pressure);
-#endif
+
 
 //  smoother_data_viscous.smoothing_range = 30;
 //  smoother_data_viscous.degree = 5; //empirically: use degree = 3 - 6
@@ -3058,6 +3375,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   {
     solution_n[dim+d+1] = solution_n[dim+1];
   }
+  solution_nm2 = solution_n;
   solution_nm = solution_n;
   solution_np = solution_n;
 
@@ -3082,7 +3400,9 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   {
     vorticity_n[d+number_vorticity_components] = vorticity_n[number_vorticity_components];
   }
+  vorticity_nm2 = vorticity_n;
   vorticity_nm = vorticity_n;
+//  data.back().initialize_dof_vector(eddy_viscosity,0);
 
   rhs_convection_n.resize(2*dim);
   data.back().initialize_dof_vector(rhs_convection_n[0],0);
@@ -3092,6 +3412,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     rhs_convection_n[d] = rhs_convection_n[0];
     rhs_convection_n[d+dim] = rhs_convection_n[dim];
   }
+  rhs_convection_nm2 = rhs_convection_n;
   rhs_convection_nm = rhs_convection_n;
   f = rhs_convection_n;
 
@@ -3128,6 +3449,22 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   //make sure that these vectors are available on the ghosted elements
   xwallstatevec[0].update_ghost_values();
   xwallstatevec[1].update_ghost_values();
+  matrices.resize(data.back().n_macro_cells());
+  const MappingQ<dim> mapping(fe_degree);
+  QGauss<dim> quadrature(fe_degree+1);
+  FEValues<dim> fe_values(mapping, dof_handler.get_fe(), quadrature, update_JxW_values);
+  element_volume.resize(data.back().n_macro_cells()+data.back().n_macro_ghost_cells());
+  for (unsigned int i=0; i<data.back().n_macro_cells()+data.back().n_macro_ghost_cells(); ++i)
+    for (unsigned int v=0; v<data.back().n_components_filled(i); ++v)
+      {
+        typename DoFHandler<dim>::cell_iterator cell = data.back().get_cell_iterator(i,v);
+        fe_values.reinit(cell);
+        double volume = 0.;
+        for (unsigned int q=0; q<quadrature.size(); ++q)
+          volume += fe_values.JxW(q);
+        element_volume[i][v] = volume;
+        //pcout << "surface to volume ratio: " << array_penalty_parameter[level][i][v] << std::endl;
+      }
   }
 
   template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -3143,6 +3480,12 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
       for(unsigned int i=0; i<inverse_diagonal.local_size();++i)
         if( std::abs(inverse_diagonal.local_element(i)) > 1.0e-10 )
           inverse_diagonal.local_element(i) = 1.0/diagonal.local_element(i);
+        else
+        {
+          inverse_diagonal.local_element(i) = 1.0;
+          diagonal.local_element(i) = 1.0;
+        }
+      inverse_diagonal.update_ghost_values();
     }
 
     unsigned int m() const
@@ -3198,7 +3541,8 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
       void initialize_dof_vector(parallel::distributed::Vector<double> &src) const
       {
-      ns_operation->get_data(level).initialize_dof_vector(src,1);
+        if (!src.partitioners_are_compatible(*ns_operation->get_data(level).get_dof_info(1).vector_partitioner))
+          ns_operation->get_data(level).initialize_dof_vector(src,1);
       }
 
     const NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> *ns_operation;
@@ -3217,20 +3561,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     void vmult (parallel::distributed::BlockVector<double> &dst,
         const parallel::distributed::BlockVector<double> &src) const
     {
-
-      std::vector<parallel::distributed::Vector<double> >  src_tmp;
-        src_tmp.push_back(src.block(0));
-        src_tmp.push_back(src.block(1));
-
-      std::vector<parallel::distributed::Vector<double> >  dst_tmp;
-      dst_tmp.resize(2);
-      dst_tmp.at(0) = dst.block(0);
-      dst_tmp.at(1) = dst.block(1);
-
-      ns_operation->apply_viscous(src_tmp,dst_tmp);
-
-      dst.block(0)=dst_tmp.at(0);
-      dst.block(1)=dst_tmp.at(1);
+      ns_operation->apply_viscous(src,dst);
     }
 
     NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> *ns_operation;
@@ -3313,33 +3644,23 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     void vmult (parallel::distributed::BlockVector<double> &dst,
         const parallel::distributed::BlockVector<double> &src) const
     {
-
-      std::vector<parallel::distributed::Vector<double> >  src_tmp;
-        src_tmp.push_back(src.block(0));
-        src_tmp.push_back(src.block(1));
-
-      std::vector<parallel::distributed::Vector<double> >  dst_tmp;
-      dst_tmp.resize(2);
-      dst_tmp.at(0) = dst.block(0);
-      dst_tmp.at(1) = dst.block(1);
-
-      ns_op.apply_inverse_mass_matrix(src_tmp,dst_tmp);
-
-      dst.block(0)=dst_tmp.at(0);
-      dst.block(1)=dst_tmp.at(1);
-
-
+      ns_op.apply_inverse_mass_matrix(src,dst);
     }
 
     NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> &ns_op;
   };
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-  struct PreconditionerJacobi
+  struct PreconditionerJacobiPressure
   {
-    PreconditionerJacobi(const NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> &ns_op)
+    PreconditionerJacobiPressure(const NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> &ns_op)
     :
         ns_operation(ns_op)
+    {
+
+    }
+
+    void initialize()
     {
       ns_operation.get_data().initialize_dof_vector(diagonal,1);
       ns_operation.calculate_laplace_diagonal(diagonal);
@@ -3350,13 +3671,53 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     {
       for (unsigned int i=0;i<src.local_size();++i)
       {
+        if( std::abs(diagonal.local_element(i)) > 1.0e-10 )
           dst.local_element(i) = src.local_element(i)/diagonal.local_element(i);
+        else
+          dst.local_element(i) = src.local_element(i);
       }
+      dst.update_ghost_values();
     }
 
-    const NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> ns_operation;
+    const NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> &ns_operation;
     parallel::distributed::Vector<double> diagonal;
   };
+
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  struct PreconditionerJacobiPressureCoarse
+  {
+    PreconditionerJacobiPressureCoarse(const NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> &ns_op)
+    :
+        ns_operation(ns_op),
+        level(0)
+    {
+
+    }
+
+    void initialize()
+    {
+      ns_operation.get_data(level).initialize_dof_vector(diagonal,1);
+      ns_operation.calculate_laplace_diagonal(diagonal,level);
+    }
+
+    void vmult (parallel::distributed::Vector<double> &dst,
+        const parallel::distributed::Vector<double> &src) const
+    {
+      for (unsigned int i=0;i<src.local_size();++i)
+      {
+        if( std::abs(diagonal.local_element(i)) > 1.0e-10 )
+          dst.local_element(i) = src.local_element(i)/diagonal.local_element(i);
+        else
+          dst.local_element(i) += src.local_element(i);
+      }
+      dst.update_ghost_values();
+    }
+
+    const NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> &ns_operation;
+    parallel::distributed::Vector<double> diagonal;
+    unsigned int level;
+  };
+
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
@@ -3373,33 +3734,39 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
     Timer timer;
     timer.restart();
+    //important because I am using this on element level without giving it as argument to element loop
+    for (unsigned int d=0; d<dim; ++d)
+    {
+      solution_n[d].update_ghost_values();
+      solution_n[d+dim+1].update_ghost_values();
+    }
   /***************** STEP 0: xwall update **********************************/
     {
       xwall.UpdateTauW(solution_n);
       xwallstatevec[1]=*xwall.ReturnTauW();
+      xwallstatevec[0].update_ghost_values();
+      xwallstatevec[1].update_ghost_values();
+#ifdef XWALL
+      precompute_inverse_mass_matrix();
+#endif
     }
   /*************************************************************************/
 
   /***************** STEP 1: convective (nonlinear) term ********************/
-    {
-      rhs_convection(solution_n,rhs_convection_n);
-    }
-
-    {
-      compute_rhs(f);
-    }
-
+    rhs_convection(solution_n,rhs_convection_n);
+    compute_rhs(f);
     for (unsigned int d=0; d<dim; ++d)
     {
-      velocity_temp[d].equ(beta[0],rhs_convection_n[d],beta[1],rhs_convection_nm[d],1.,f[d]); // Stokes problem: velocity_temp[d] = f[d];
-      velocity_temp[d].sadd(time_step,alpha[0],solution_n[d],alpha[1],solution_nm[d]);
+      velocity_temp[d].equ(beta[0],rhs_convection_n[d],beta[1],rhs_convection_nm[d],beta[2],rhs_convection_nm2[d]); // Stokes problem: velocity_temp[d] = f[d];
+      velocity_temp[d].sadd(1.,f[d]);
+      velocity_temp[d].sadd(time_step,alpha[0],solution_n[d],alpha[1],solution_nm[d],alpha[2],solution_nm2[d]);
       //xwall
-      velocity_temp[d+dim].equ(beta[0],rhs_convection_n[d+dim],beta[1],rhs_convection_nm[d+dim],1.,f[d+dim]); // Stokes problem: velocity_temp[d] = f[d];
-      velocity_temp[d+dim].sadd(time_step,alpha[0],solution_n[d+1+dim],alpha[1],solution_nm[d+1+dim]);
+      velocity_temp[d+dim].equ(beta[0],rhs_convection_n[d+dim],beta[1],rhs_convection_nm[d+dim],beta[2],rhs_convection_nm2[d+dim]); // Stokes problem: velocity_temp[d] = f[d];
+      velocity_temp[d+dim].sadd(1.,f[d+dim]);
+      velocity_temp[d+dim].sadd(time_step,alpha[0],solution_n[d+1+dim],alpha[1],solution_nm[d+1+dim],alpha[2],solution_nm2[d+1+dim]);
     }
-
-
-    rhs_convection_nm = rhs_convection_n;
+    rhs_convection_nm2.swap(rhs_convection_nm);
+    rhs_convection_nm.swap(rhs_convection_n);
 
     computing_times[0] += timer.wall_time();
   /*************************************************************************/
@@ -3407,14 +3774,10 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   /************ STEP 2: solve poisson equation for pressure ****************/
     timer.restart();
 
-    {
-      rhs_pressure(velocity_temp,solution_np);
-    }
-
-    solution_np[dim] *= -1.0/time_step;
+    rhs_pressure(velocity_temp,solution_np);
 
   // set maximum number of iterations, tolerance
-    ReductionControl solver_control (1e3, 1.e-12, 1.e-6); //1.e-5
+    ReductionControl solver_control (1e3, 1.e-12, 1.e-8); //1.e-5
 //  SolverControl solver_control (1e3, 1.e-6);
   SolverCG<parallel::distributed::Vector<double> > solver (solver_control);
 
@@ -3433,7 +3796,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 //    solution = solution_n[dim];
 
     // PCG-Solver with GMG + Chebyshev smoother as a preconditioner
-#ifdef usepressuremg
+
   mg::Matrix<parallel::distributed::Vector<double> > mgmatrix_pressure(mg_matrices_pressure);
   Multigrid<parallel::distributed::Vector<double> > mg_pressure(data.back().get_dof_handler(1),
                              mgmatrix_pressure,
@@ -3445,18 +3808,16 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   preconditioner_pressure(data.back().get_dof_handler(1), mg_pressure, mg_transfer_pressure);
   try
   {
-    solver.solve (mg_matrices_pressure[mg_matrices_pressure.max_level()], solution, solution_np[dim], preconditioner_pressure);
+    solver.solve (mg_matrices_pressure[mg_matrices_pressure.max_level()], solution, solution_np[dim], PreconditionIdentity());//preconditioner_pressure);
   }
-  catch (SolverControl::NoConvergence)
-#endif
+  catch (SolverControl::NoConvergence test)
   {
-#ifdef usepressuremg
-    std::cout<<"Multigrid failed. Try CG ..." << std::endl;
-#endif
-    solution=solution_n[dim];
-    SolverControl solver_control (5e3, 1.e-8);
-    SolverCG<parallel::distributed::Vector<double> > solver (solver_control);
-    solver.solve (mg_matrices_pressure[mg_matrices_pressure.max_level()], solution, solution_np[dim], PreconditionIdentity());
+    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+    {
+      std::cout<<"Pressure Poisson solver reached maximum iterations. The residual at the last iteration was: " << test.last_residual << std::endl;
+    }
+    if(test.last_residual>1.0)
+      Assert(false,ExcInternalError());
   }
 
 //    times_cg_pressure[1] += cg_timer.wall_time();
@@ -3498,10 +3859,10 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 //    std::abort();
 //  }
 
-  if(pure_dirichlet_bc)
-  {
-    shift_pressure(solution);
-  }
+//  if(pure_dirichlet_bc)
+//  {
+//    shift_pressure(solution);
+//  }
   solution_np[dim] = solution;
 
     if(time_step_number%output_solver_info_every_timesteps == 0)
@@ -3515,10 +3876,9 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
   /********************** STEP 3: projection *******************************/
     timer.restart();
+    DistributeConstraintP(solution_np[dim]);
 
-    {
-      apply_projection(solution_np,velocity_temp2);
-    }
+  apply_projection(solution_np,velocity_temp2);
   for (unsigned int d=0; d<2*dim; ++d)
   {
     velocity_temp2[d].sadd(time_step,1.0,velocity_temp[d]);
@@ -3529,17 +3889,16 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   /************************ STEP 4: viscous term ***************************/
     timer.restart();
 
-    {
-      rhs_viscous(velocity_temp2,solution_np);
-    }
+    rhs_viscous(velocity_temp2,solution_np);
 
   // set maximum number of iterations, tolerance
-  ReductionControl solver_control_velocity (1e3, 1.e-12, 1.e-6);//1.e-5
-  SolverCG<parallel::distributed::BlockVector<double> > solver_velocity (solver_control_velocity);
+  ReductionControl solver_control_velocity (1e3, 1.e-12, 1.e-8);//1.e-5
+//  SolverCG<parallel::distributed::BlockVector<double> > solver_velocity (solver_control_velocity);
+  SolverGMRES<parallel::distributed::BlockVector<double> > solver_velocity (solver_control_velocity);
   NavierStokesViscousMatrix<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> ns_viscous_matrix;
   ns_viscous_matrix.initialize(*this);
 
-  for (unsigned int d=0;d<dim;++d)
+//  for (unsigned int d=0;d<dim;++d)
   {
     double wall_time_temp = timer.wall_time();
 
@@ -3547,12 +3906,22 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 //    cg_timer_viscous.restart();
 
     // start CG-iterations with solution_n
-    parallel::distributed::BlockVector<value_type> tmp_solution(2);
-    tmp_solution.block(0) = solution_n[d];
-    tmp_solution.block(1) = solution_n[d+dim+1];
-    parallel::distributed::BlockVector<value_type> tmp_solution_np(2);
-    tmp_solution_np.block(0) = solution_np[d];
-    tmp_solution_np.block(1) = solution_np[d+dim+1];
+    parallel::distributed::BlockVector<value_type> tmp_solution(6);
+    tmp_solution.block(0) = solution_n[0];
+    tmp_solution.block(1) = solution_n[1];
+    tmp_solution.block(2) = solution_n[2];
+    tmp_solution.block(3) = solution_n[0+dim+1];
+    tmp_solution.block(4) = solution_n[1+dim+1];
+    tmp_solution.block(5) = solution_n[2+dim+1];
+    tmp_solution.collect_sizes();
+    parallel::distributed::BlockVector<value_type> tmp_solution_np(6);
+    tmp_solution_np.block(0) = solution_np[0];
+    tmp_solution_np.block(1) = solution_np[1];
+    tmp_solution_np.block(2) = solution_np[2];
+    tmp_solution_np.block(3) = solution_np[0+dim+1];
+    tmp_solution_np.block(4) = solution_np[1+dim+1];
+    tmp_solution_np.block(5) = solution_np[2+dim+1];
+    tmp_solution_np.collect_sizes();
 
     // CG-Solver without preconditioning
     //solver_velocity.solve (ns_viscous_matrix, solution, solution_np[d], PreconditionIdentity());
@@ -3569,8 +3938,16 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
     PreconditionerInverseMassMatrix<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> preconditioner(*this);
 
+    try
+    {
+      solver_velocity.solve (ns_viscous_matrix, tmp_solution, tmp_solution_np, preconditioner);//PreconditionIdentity());
+    }
+    catch (SolverControl::NoConvergence)
+    {
+      if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+        std::cout<<"Viscous solver failed to solve to given convergence." << std::endl;
+    }
 
-    solver_velocity.solve (ns_viscous_matrix, tmp_solution, tmp_solution_np, preconditioner);//PreconditionIdentity());
 
 //    times_cg_velo[1] += cg_timer_viscous.wall_time();
 //    iterations_cg_velo[1] += solver_control_velocity.last_step();
@@ -3600,13 +3977,17 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
 //    times_cg_velo[2] += cg_timer_viscous.wall_time();
 //    iterations_cg_velo[2] += solver_control_velocity.last_step();
-    solution_np[d] = tmp_solution.block(0);
-    solution_np[d+dim+1] = tmp_solution.block(1);
+    solution_np[0] = tmp_solution.block(0);
+    solution_np[1] = tmp_solution.block(1);
+    solution_np[2] = tmp_solution.block(2);
+    solution_np[0+dim+1] = tmp_solution.block(3);
+    solution_np[1+dim+1] = tmp_solution.block(4);
+    solution_np[2+dim+1] = tmp_solution.block(5);
 
-    if(time_step_number%output_solver_info_every_timesteps == 0)
-    {
-    std::cout << "Solve viscous step for u" << d+1 <<":    PCG iterations: " << std::setw(3) << solver_control_velocity.last_step() << "  Wall time: " << timer.wall_time()-wall_time_temp << std::endl;
-    }
+//    if(time_step_number%output_solver_info_every_timesteps == 0)
+//    {
+//    std::cout << "Solve viscous step for u" << d+1 <<":    PCG iterations: " << std::setw(3) << solver_control_velocity.last_step() << "  Wall time: " << timer.wall_time()-wall_time_temp << std::endl;
+//    }
   }
 //  if(time_step_number%10 == 0)
 //    std::cout << "Solve viscous step for u: Number of timesteps: " << time_step_number << std::endl
@@ -3619,13 +4000,15 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   /*************************************************************************/
 
   // solution at t_n -> solution at t_n-1    and    solution at t_n+1 -> solution at t_n
+  solution_nm2.swap(solution_nm);
   solution_nm.swap(solution_n);
   solution_n.swap(solution_np);
 
-  vorticity_nm = vorticity_n;
-  {
-    compute_vorticity(solution_n,vorticity_n);
-  }
+  vorticity_nm2.swap(vorticity_nm);
+  vorticity_nm.swap(vorticity_n);
+
+  compute_vorticity(solution_n,vorticity_n);
+
 //  compute_lift_and_drag();
 //  compute_pressure_difference();
 //  compute_vorticity(solution_n,vorticity_n);
@@ -3637,11 +4020,20 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   update_time_integrator ()
   {
-    gamma0 = 3.0/2.0;
-    alpha[0] = 2.0;
-    alpha[1] = -0.5;
-    beta[0] = 2.0;
-    beta[1] = -1.0;
+//    BDF2
+//    gamma0 = 3.0/2.0;
+//    alpha[0] = 2.0;
+//    alpha[1] = -0.5;
+//    beta[0] = 2.0;
+//    beta[1] = -1.0;
+//    BDF3
+    gamma0 = 11./6.;
+    alpha[0] = 3.;
+    alpha[1] = -1.5;
+    alpha[2] = 1./3.;
+    beta[0] = 3.0;
+    beta[1] = -3.0;
+    beta[2] = 1.0;
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -3765,6 +4157,85 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 //  }
   }
 
+
+//  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+//  void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+//  compute_eddy_viscosity(const std::vector<parallel::distributed::Vector<value_type> >     &src)
+//  {
+//
+//    eddy_viscosity = 0;
+//    data.back().cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_eddy_viscosity,this, eddy_viscosity, src);
+//
+//    const double mean = eddy_viscosity.mean_value();
+//    eddy_viscosity.update_ghost_values();
+//    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+//      std::cout << "new viscosity:   " << mean << "/" << viscosity << std::endl;
+//  }
+
+//  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+//  void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+//  local_compute_eddy_viscosity(const MatrixFree<dim,value_type>                  &data,
+//                parallel::distributed::Vector<value_type>      &dst,
+//                const std::vector<parallel::distributed::Vector<value_type> >  &src,
+//                const std::pair<unsigned int,unsigned int>            &cell_range) const
+//  {
+//    const VectorizedArray<value_type> Cs = make_vectorized_array(CS);
+//    VectorizedArray<value_type> hfac = make_vectorized_array(1.0/(double)fe_degree);
+//
+//  //Warning: eddy viscosity is only interpolated using the polynomial space
+//
+//  FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> velocity_xwall(data,xwallstatevec[0],xwallstatevec[1],0,0);
+//  FEEvaluation<dim,fe_degree,fe_degree+1,1,value_type> phi(data,0,0);
+//  FEEvaluation<dim,1,fe_degree+1,1,double> fe_wdist(data,2,0);
+//  FEEvaluation<dim,1,fe_degree+1,1,double> fe_tauw(data,2,0);
+//  MatrixFreeOperators::CellwiseInverseMassMatrix<dim, fe_degree, 1, value_type> inverse(phi);
+//  const unsigned int dofs_per_cell = phi.dofs_per_cell;
+//  AlignedVector<VectorizedArray<value_type> > coefficients(dofs_per_cell);
+//
+//  for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+//  {
+//    phi.reinit(cell);
+//    {
+//      VectorizedArray<value_type> volume = make_vectorized_array(0.);
+//      {
+//        AlignedVector<VectorizedArray<value_type> > JxW_values;
+//        JxW_values.resize(phi.n_q_points);
+//        phi.fill_JxW_values(JxW_values);
+//        for (unsigned int q=0; q<phi.n_q_points; ++q)
+//          volume += JxW_values[q];
+//      }
+//      velocity_xwall.reinit(cell);
+//      velocity_xwall.read_dof_values(src,0,src,dim+1);
+//      velocity_xwall.evaluate (false,true,false);
+//      fe_wdist.reinit(cell);
+//      fe_wdist.read_dof_values(xwallstatevec[0]);
+//      fe_wdist.evaluate(true,false,false);
+//      fe_tauw.reinit(cell);
+//      fe_tauw.read_dof_values(xwallstatevec[1]);
+//      fe_tauw.evaluate(true,false,false);
+//      for (unsigned int q=0; q<phi.n_q_points; ++q)
+//      {
+//        Tensor<2,dim,VectorizedArray<value_type> > s = velocity_xwall.get_gradient(q);
+//
+//        VectorizedArray<value_type> snorm = make_vectorized_array(0.);
+//        for (unsigned int i = 0; i<dim ; i++)
+//          for (unsigned int j = 0; j<dim ; j++)
+//            snorm += make_vectorized_array(0.5)*(s[i][j]+s[j][i])*(s[i][j]+s[j][i]);
+//        //simple wall correction
+//        VectorizedArray<value_type> fmu = (1.-std::exp(-fe_wdist.get_value(q)/viscosity*std::sqrt(fe_tauw.get_value(q))/25.));
+//        VectorizedArray<value_type> lm = Cs*std::pow(volume,1./3.)*hfac*fmu;
+//        phi.submit_value (make_vectorized_array(viscosity) + std::pow(lm,2.)*std::sqrt(make_vectorized_array(2.)*snorm), q);
+//      }
+//      phi.integrate (true,false);
+//
+//      inverse.fill_inverse_JxW_values(coefficients);
+//      inverse.apply(coefficients,1,phi.begin_dof_values(),phi.begin_dof_values());
+//
+//      phi.set_dof_values(dst);
+//    }
+//  }
+//
+//  }
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   compute_pressure_difference()
@@ -3851,17 +4322,15 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
               &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_laplace_diagonal_face,
               &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_laplace_diagonal_boundary_face,
               this, laplace_diagonal, src);
+    for (unsigned int i=0; i<data.back().get_constrained_dofs(1).size(); ++i)
+      laplace_diagonal.local_element(data.back().get_constrained_dofs(1)[i]) += 1.0;
     if(pure_dirichlet_bc)
     {
-      parallel::distributed::Vector<value_type> vec1;
-      data.back().initialize_dof_vector(vec1,1);
-      vec1=1.0;
-//      for(unsigned int i=0;i<vec1.local_size();++i)
-//        vec1.local_element(i) = 1.;
+		  parallel::distributed::Vector<value_type> vec1(laplace_diagonal);
+		  for(unsigned int i=0;i<vec1.local_size();++i)
+			  vec1.local_element(i) = 1.;
       parallel::distributed::Vector<value_type> d;
-//      d.reinit(laplace_diagonal);
-      d=vec1;
-      d=0.0;
+		  d.reinit(laplace_diagonal);
       apply_pressure(vec1,d);
       double length = vec1*vec1;
       double factor = vec1*d;
@@ -3878,15 +4347,15 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
               &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_laplace_diagonal_face,
               &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_laplace_diagonal_boundary_face,
               this, laplace_diagonal, src);
-
+    for (unsigned int i=0; i<data[level].get_constrained_dofs(1).size(); ++i)
+      laplace_diagonal.local_element(data[level].get_constrained_dofs(1)[i]) += 1.0;
     if(pure_dirichlet_bc)
     {
-      parallel::distributed::Vector<value_type> vec1;
-      data[level].initialize_dof_vector(vec1,1);
-      vec1=1.0;
+		  parallel::distributed::Vector<value_type> vec1(laplace_diagonal);
+		  for(unsigned int i=0;i<vec1.local_size();++i)
+			  vec1.local_element(i) = 1.;
       parallel::distributed::Vector<value_type> d;
-      d=vec1;
-      d=0.0;
+		  d.reinit(laplace_diagonal);
       apply_pressure(vec1,d,level);
       double length = vec1*vec1;
       double factor = vec1*d;
@@ -3933,92 +4402,92 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
                   const parallel::distributed::Vector<double>  &,
                   const std::pair<unsigned int,unsigned int>  &face_range) const
   {
-  FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval(data,true,1,1);
-  FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval_neighbor(data,false,1,1);
-  const unsigned int level = data.get_cell_iterator(0,0)->level();
-
-  for(unsigned int face=face_range.first; face<face_range.second; face++)
-  {
-    fe_eval.reinit (face);
-    fe_eval_neighbor.reinit (face);
-
-    /*VectorizedArray<value_type> sigmaF = (std::abs(fe_eval.get_normal_volume_fraction()) +
-             std::abs(fe_eval_neighbor.get_normal_volume_fraction())) *
-      (value_type)(fe_degree * (fe_degree + 1.0)) * 0.5   *stab_factor; */
-
-      double factor = 1.;
-      calculate_penalty_parameter_pressure(factor);
-      //VectorizedArray<value_type> sigmaF = std::abs(fe_eval.get_normal_volume_fraction()) * (value_type)factor;
-      VectorizedArray<value_type> sigmaF = std::max(fe_eval.read_cell_data(array_penalty_parameter[level]),fe_eval_neighbor.read_cell_data(array_penalty_parameter[level])) * (value_type)factor;
-
-    // element-
-    VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
-    for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
-    {
-      for (unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
-        fe_eval.begin_dof_values()[i] = make_vectorized_array(0.);
-      for (unsigned int i=0; i<fe_eval_neighbor.dofs_per_cell; ++i)
-        fe_eval_neighbor.begin_dof_values()[i] = make_vectorized_array(0.);
-
-      fe_eval.begin_dof_values()[j] = make_vectorized_array(1.);
-
-      fe_eval.evaluate(true,true);
-      fe_eval_neighbor.evaluate(true,true);
-
-      for(unsigned int q=0;q<fe_eval.n_q_points;++q)
-      {
-        VectorizedArray<value_type> valueM = fe_eval.get_value(q);
-        VectorizedArray<value_type> valueP = fe_eval_neighbor.get_value(q);
-
-        VectorizedArray<value_type> jump_value = valueM - valueP;
-        VectorizedArray<value_type> average_gradient =
-            ( fe_eval.get_normal_gradient(q) + fe_eval_neighbor.get_normal_gradient(q) ) * 0.5;
-        average_gradient = average_gradient - jump_value * sigmaF;
-
-        fe_eval.submit_normal_gradient(-0.5*jump_value,q);
-        fe_eval.submit_value(-average_gradient,q);
-      }
-      fe_eval.integrate(true,true);
-      local_diagonal_vector[j] = fe_eval.begin_dof_values()[j];
-    }
-    for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
-      fe_eval.begin_dof_values()[j] = local_diagonal_vector[j];
-    fe_eval.distribute_local_to_global(dst);
-
-    // neighbor (element+)
-    VectorizedArray<value_type> local_diagonal_vector_neighbor[fe_eval_neighbor.tensor_dofs_per_cell];
-    for (unsigned int j=0; j<fe_eval_neighbor.dofs_per_cell; ++j)
-    {
-      for (unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
-        fe_eval.begin_dof_values()[i] = make_vectorized_array(0.);
-      for (unsigned int i=0; i<fe_eval_neighbor.dofs_per_cell; ++i)
-        fe_eval_neighbor.begin_dof_values()[i] = make_vectorized_array(0.);
-
-      fe_eval_neighbor.begin_dof_values()[j] = make_vectorized_array(1.);
-
-      fe_eval.evaluate(true,true);
-      fe_eval_neighbor.evaluate(true,true);
-
-      for(unsigned int q=0;q<fe_eval_neighbor.n_q_points;++q)
-      {
-        VectorizedArray<value_type> valueM = fe_eval.get_value(q);
-        VectorizedArray<value_type> valueP = fe_eval_neighbor.get_value(q);
-
-        VectorizedArray<value_type> jump_value = valueM - valueP;
-        VectorizedArray<value_type> average_gradient =
-            ( fe_eval.get_normal_gradient(q) + fe_eval_neighbor.get_normal_gradient(q) ) * 0.5;
-        average_gradient = average_gradient - jump_value * sigmaF;
-
-        fe_eval_neighbor.submit_normal_gradient(-0.5*jump_value,q);
-        fe_eval_neighbor.submit_value(average_gradient,q);
-      }
-      fe_eval_neighbor.integrate(true,true);
-      local_diagonal_vector_neighbor[j] = fe_eval_neighbor.begin_dof_values()[j];
-    }
-    for (unsigned int j=0; j<fe_eval_neighbor.dofs_per_cell; ++j)
-      fe_eval_neighbor.begin_dof_values()[j] = local_diagonal_vector_neighbor[j];
-    fe_eval_neighbor.distribute_local_to_global(dst);
-  }
+//  FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval(data,true,1,1);
+//  FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval_neighbor(data,false,1,1);
+//  const unsigned int level = data.get_cell_iterator(0,0)->level();
+//
+//  for(unsigned int face=face_range.first; face<face_range.second; face++)
+//  {
+//    fe_eval.reinit (face);
+//    fe_eval_neighbor.reinit (face);
+//
+//    /*VectorizedArray<value_type> sigmaF = (std::abs(fe_eval.get_normal_volume_fraction()) +
+//             std::abs(fe_eval_neighbor.get_normal_volume_fraction())) *
+//      (value_type)(fe_degree * (fe_degree + 1.0)) * 0.5   *stab_factor; */
+//
+//      double factor = 1.;
+//      calculate_penalty_parameter_pressure(factor);
+//      //VectorizedArray<value_type> sigmaF = std::abs(fe_eval.get_normal_volume_fraction()) * (value_type)factor;
+//      VectorizedArray<value_type> sigmaF = std::max(fe_eval.read_cell_data(array_penalty_parameter[level]),fe_eval_neighbor.read_cell_data(array_penalty_parameter[level])) * (value_type)factor;
+//
+//    // element-
+//    VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
+//    for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+//    {
+//      for (unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+//        fe_eval.begin_dof_values()[i] = make_vectorized_array(0.);
+//      for (unsigned int i=0; i<fe_eval_neighbor.dofs_per_cell; ++i)
+//        fe_eval_neighbor.begin_dof_values()[i] = make_vectorized_array(0.);
+//
+//      fe_eval.begin_dof_values()[j] = make_vectorized_array(1.);
+//
+//      fe_eval.evaluate(true,true);
+//      fe_eval_neighbor.evaluate(true,true);
+//
+//      for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+//      {
+//        VectorizedArray<value_type> valueM = fe_eval.get_value(q);
+//        VectorizedArray<value_type> valueP = fe_eval_neighbor.get_value(q);
+//
+//        VectorizedArray<value_type> jump_value = valueM - valueP;
+//        VectorizedArray<value_type> average_gradient =
+//            ( fe_eval.get_normal_gradient(q) + fe_eval_neighbor.get_normal_gradient(q) ) * 0.5;
+//        average_gradient = average_gradient - jump_value * sigmaF;
+//
+//        fe_eval.submit_normal_gradient(-0.5*jump_value,q);
+//        fe_eval.submit_value(-average_gradient,q);
+//      }
+//      fe_eval.integrate(true,true);
+//      local_diagonal_vector[j] = fe_eval.begin_dof_values()[j];
+//    }
+//    for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+//      fe_eval.begin_dof_values()[j] = local_diagonal_vector[j];
+//    fe_eval.distribute_local_to_global(dst);
+//
+//    // neighbor (element+)
+//    VectorizedArray<value_type> local_diagonal_vector_neighbor[fe_eval_neighbor.tensor_dofs_per_cell];
+//    for (unsigned int j=0; j<fe_eval_neighbor.dofs_per_cell; ++j)
+//    {
+//      for (unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+//        fe_eval.begin_dof_values()[i] = make_vectorized_array(0.);
+//      for (unsigned int i=0; i<fe_eval_neighbor.dofs_per_cell; ++i)
+//        fe_eval_neighbor.begin_dof_values()[i] = make_vectorized_array(0.);
+//
+//      fe_eval_neighbor.begin_dof_values()[j] = make_vectorized_array(1.);
+//
+//      fe_eval.evaluate(true,true);
+//      fe_eval_neighbor.evaluate(true,true);
+//
+//      for(unsigned int q=0;q<fe_eval_neighbor.n_q_points;++q)
+//      {
+//        VectorizedArray<value_type> valueM = fe_eval.get_value(q);
+//        VectorizedArray<value_type> valueP = fe_eval_neighbor.get_value(q);
+//
+//        VectorizedArray<value_type> jump_value = valueM - valueP;
+//        VectorizedArray<value_type> average_gradient =
+//            ( fe_eval.get_normal_gradient(q) + fe_eval_neighbor.get_normal_gradient(q) ) * 0.5;
+//        average_gradient = average_gradient - jump_value * sigmaF;
+//
+//        fe_eval_neighbor.submit_normal_gradient(-0.5*jump_value,q);
+//        fe_eval_neighbor.submit_value(average_gradient,q);
+//      }
+//      fe_eval_neighbor.integrate(true,true);
+//      local_diagonal_vector_neighbor[j] = fe_eval_neighbor.begin_dof_values()[j];
+//    }
+//    for (unsigned int j=0; j<fe_eval_neighbor.dofs_per_cell; ++j)
+//      fe_eval_neighbor.begin_dof_values()[j] = local_diagonal_vector_neighbor[j];
+//    fe_eval_neighbor.distribute_local_to_global(dst);
+//  }
   }
 
   template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -4028,63 +4497,63 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
                         const parallel::distributed::Vector<double>    &,
                         const std::pair<unsigned int,unsigned int>    &face_range) const
   {
-    FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval(data,true,1,1);
-    const unsigned int level = data.get_cell_iterator(0,0)->level();
-
-    for(unsigned int face=face_range.first; face<face_range.second; face++)
-    {
-      fe_eval.reinit (face);
-
-      //VectorizedArray<value_type> sigmaF = (std::abs( fe_eval.get_normal_volume_fraction()) ) *
-      //  (value_type)(fe_degree * (fe_degree + 1.0))  *stab_factor;
-
-      double factor = 1.;
-      calculate_penalty_parameter_pressure(factor);
-      //VectorizedArray<value_type> sigmaF = std::abs(fe_eval.get_normal_volume_fraction()) * (value_type)factor;
-      VectorizedArray<value_type> sigmaF = fe_eval.read_cell_data(array_penalty_parameter[level]) * (value_type)factor;
-
-    VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
-    for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
-    {
-      for (unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
-      {
-        fe_eval.begin_dof_values()[i] = make_vectorized_array(0.);
-      }
-      fe_eval.begin_dof_values()[j] = make_vectorized_array(1.);
-      fe_eval.evaluate(true,true);
-
-      for(unsigned int q=0;q<fe_eval.n_q_points;++q)
-      {
-        if (data.get_boundary_indicator(face) == 0) // Infow and wall boundaries
-        {
-          //set pressure gradient in normal direction to zero, i.e. pressure+ = pressure-, grad+ = -grad-
-          VectorizedArray<value_type> jump_value = make_vectorized_array<value_type>(0.0);
-          VectorizedArray<value_type> average_gradient = make_vectorized_array<value_type>(0.0);
-          average_gradient = average_gradient - jump_value * sigmaF;
-
-          fe_eval.submit_normal_gradient(-0.5*jump_value,q);
-          fe_eval.submit_value(-average_gradient,q);
-        }
-        else if (data.get_boundary_indicator(face) == 1) // outflow boundaries
-        {
-          //set pressure to zero, i.e. pressure+ = - pressure- , grad+ = grad-
-          VectorizedArray<value_type> valueM = fe_eval.get_value(q);
-
-          VectorizedArray<value_type> jump_value = 2.0*valueM;
-          VectorizedArray<value_type> average_gradient = fe_eval.get_normal_gradient(q);
-          average_gradient = average_gradient - jump_value * sigmaF;
-
-          fe_eval.submit_normal_gradient(-0.5*jump_value,q);
-          fe_eval.submit_value(-average_gradient,q);
-        }
-      }
-      fe_eval.integrate(true,true);
-      local_diagonal_vector[j] = fe_eval.begin_dof_values()[j];
-      }
-    for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
-      fe_eval.begin_dof_values()[j] = local_diagonal_vector[j];
-      fe_eval.distribute_local_to_global(dst);
-    }
+//    FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval(data,true,1,1);
+//    const unsigned int level = data.get_cell_iterator(0,0)->level();
+//
+//    for(unsigned int face=face_range.first; face<face_range.second; face++)
+//    {
+//      fe_eval.reinit (face);
+//
+//      //VectorizedArray<value_type> sigmaF = (std::abs( fe_eval.get_normal_volume_fraction()) ) *
+//      //  (value_type)(fe_degree * (fe_degree + 1.0))  *stab_factor;
+//
+//      double factor = 1.;
+//      calculate_penalty_parameter_pressure(factor);
+//      //VectorizedArray<value_type> sigmaF = std::abs(fe_eval.get_normal_volume_fraction()) * (value_type)factor;
+//      VectorizedArray<value_type> sigmaF = fe_eval.read_cell_data(array_penalty_parameter[level]) * (value_type)factor;
+//
+//    VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
+//    for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+//    {
+//      for (unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+//      {
+//        fe_eval.begin_dof_values()[i] = make_vectorized_array(0.);
+//      }
+//      fe_eval.begin_dof_values()[j] = make_vectorized_array(1.);
+//      fe_eval.evaluate(true,true);
+//
+//      for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+//      {
+//        if (data.get_boundary_indicator(face) == 0) // Infow and wall boundaries
+//        {
+//          //set pressure gradient in normal direction to zero, i.e. pressure+ = pressure-, grad+ = -grad-
+//          VectorizedArray<value_type> jump_value = make_vectorized_array<value_type>(0.0);
+//          VectorizedArray<value_type> average_gradient = make_vectorized_array<value_type>(0.0);
+//          average_gradient = average_gradient - jump_value * sigmaF;
+//
+//          fe_eval.submit_normal_gradient(-0.5*jump_value,q);
+//          fe_eval.submit_value(-average_gradient,q);
+//        }
+//        else if (data.get_boundary_indicator(face) == 1) // outflow boundaries
+//        {
+//          //set pressure to zero, i.e. pressure+ = - pressure- , grad+ = grad-
+//          VectorizedArray<value_type> valueM = fe_eval.get_value(q);
+//
+//          VectorizedArray<value_type> jump_value = 2.0*valueM;
+//          VectorizedArray<value_type> average_gradient = fe_eval.get_normal_gradient(q);
+//          average_gradient = average_gradient - jump_value * sigmaF;
+//
+//          fe_eval.submit_normal_gradient(-0.5*jump_value,q);
+//          fe_eval.submit_value(-average_gradient,q);
+//        }
+//      }
+//      fe_eval.integrate(true,true);
+//      local_diagonal_vector[j] = fe_eval.begin_dof_values()[j];
+//      }
+//    for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+//      fe_eval.begin_dof_values()[j] = local_diagonal_vector[j];
+//      fe_eval.distribute_local_to_global(dst);
+//    }
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -4094,7 +4563,8 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   {
 
     std::vector<parallel::distributed::Vector<double> >  src_tmp;
-
+    //not implemented with symmetric formulation
+    Assert(false,ExcInternalError());
     data[level].loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_diagonal_viscous,
               &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_diagonal_viscous_face,
               &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_diagonal_viscous_boundary_face,
@@ -4115,11 +4585,12 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],0,3);
 #else
     FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,1,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],0,0);
-//  FEEvaluation<dim,fe_degree,fe_degree+1,1,value_type> velocity (data,0,0);
 #endif
 
    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
    {
+     fe_eval_xwall.reinit (cell);
+     fe_eval_xwall.evaluate_eddy_viscosity(solution_n,cell);
      fe_eval_xwall.reinit (cell);
 
     VectorizedArray<value_type> local_diagonal_vector[fe_eval_xwall.tensor_dofs_per_cell];
@@ -4132,7 +4603,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
       for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
       {
         fe_eval_xwall.submit_value (gamma0/time_step*fe_eval_xwall.get_value(q), q);
-        fe_eval_xwall.submit_gradient (make_vectorized_array<value_type>(viscosity)*fe_eval_xwall.get_gradient(q), q);
+        fe_eval_xwall.submit_gradient (make_vectorized_array<value_type>(fe_eval_xwall.eddyvisc[q])*fe_eval_xwall.get_gradient(q), q);
       }
       fe_eval_xwall.integrate (true,true);
       local_diagonal_vector[j] = fe_eval_xwall.read_cellwise_dof_value(j);
@@ -4160,8 +4631,6 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,1,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,2);
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,1,value_type> fe_eval_xwall_neighbor(data,xwallstatevec[0],xwallstatevec[1],false,0,2);
 #endif
-//     FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,true,0,0);
-//     FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval_neighbor(data,false,0,0);
 
     const unsigned int level = data.get_cell_iterator(0,0)->level();
 
@@ -4169,7 +4638,10 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
      {
        fe_eval_xwall.reinit (face);
        fe_eval_xwall_neighbor.reinit (face);
-
+       fe_eval_xwall.evaluate_eddy_viscosity(solution_n,face,fe_eval_xwall.read_cell_data(element_volume));
+       fe_eval_xwall_neighbor.evaluate_eddy_viscosity(solution_n,face,fe_eval_xwall_neighbor.read_cell_data(element_volume));
+       fe_eval_xwall.reinit (face);
+       fe_eval_xwall_neighbor.reinit (face);
        double factor = 1.;
        calculate_penalty_parameter(factor);
        //VectorizedArray<value_type> sigmaF = std::abs(fe_eval_xwall.get_normal_volume_fraction()) * (value_type)factor;
@@ -4199,8 +4671,8 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
             ( fe_eval_xwall.get_normal_gradient(q,true) + fe_eval_xwall_neighbor.get_normal_gradient(q,true) ) * make_vectorized_array<value_type>(0.5);
         average_gradient = average_gradient - jump_value * sigmaF;
 
-        fe_eval_xwall.submit_normal_gradient(-0.5*viscosity*jump_value,q);
-        fe_eval_xwall.submit_value(-viscosity*average_gradient,q);
+        fe_eval_xwall.submit_normal_gradient(-0.5*fe_eval_xwall.eddyvisc[q]*jump_value,q);
+        fe_eval_xwall.submit_value(-fe_eval_xwall.eddyvisc[q]*average_gradient,q);
       }
       fe_eval_xwall.integrate(true,true);
       local_diagonal_vector[j] = fe_eval_xwall.read_cellwise_dof_value(j);
@@ -4233,8 +4705,8 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
               ( fe_eval_xwall.get_normal_gradient(q,true) + fe_eval_xwall_neighbor.get_normal_gradient(q,true) ) * make_vectorized_array<value_type>(0.5);
           average_gradient = average_gradient - jump_value * sigmaF;
 
-          fe_eval_xwall_neighbor.submit_normal_gradient(-0.5*viscosity*jump_value,q);
-          fe_eval_xwall_neighbor.submit_value(viscosity*average_gradient,q);
+          fe_eval_xwall_neighbor.submit_normal_gradient(-0.5*fe_eval_xwall_neighbor.eddyvisc[q]*jump_value,q);
+          fe_eval_xwall_neighbor.submit_value(fe_eval_xwall_neighbor.eddyvisc[q]*average_gradient,q);
         }
       fe_eval_xwall_neighbor.integrate(true,true);
       local_diagonal_vector_neighbor[j] = fe_eval_xwall_neighbor.read_cellwise_dof_value(j);
@@ -4260,14 +4732,14 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 #else
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,1,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,2);
 #endif
-//     FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,true,0,0);
 
     const unsigned int level = data.get_cell_iterator(0,0)->level();
 
      for(unsigned int face=face_range.first; face<face_range.second; face++)
      {
        fe_eval_xwall.reinit (face);
-
+       fe_eval_xwall.evaluate_eddy_viscosity(solution_n,face,fe_eval_xwall.read_cell_data(element_volume));
+       fe_eval_xwall.reinit (face);
        double factor = 1.;
        calculate_penalty_parameter(factor);
        //VectorizedArray<value_type> sigmaF = std::abs(fe_eval_xwall.get_normal_volume_fraction()) * (value_type)factor;
@@ -4295,16 +4767,16 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
           VectorizedArray<value_type> average_gradient = fe_eval_xwall.get_normal_gradient(q,true);
           average_gradient = average_gradient - jump_value * sigmaF;
 
-          fe_eval_xwall.submit_normal_gradient(-0.5*viscosity*jump_value,q);
-          fe_eval_xwall.submit_value(-viscosity*average_gradient,q);
+          fe_eval_xwall.submit_normal_gradient(-0.5*fe_eval_xwall.eddyvisc[q]*jump_value,q);
+          fe_eval_xwall.submit_value(-fe_eval_xwall.eddyvisc[q]*average_gradient,q);
         }
         else if (data.get_boundary_indicator(face) == 1) // Outflow boundary
         {
           // applying inhomogeneous Neumann BC (value+ = value- , grad+ =  - grad- +2h)
           VectorizedArray<value_type> jump_value = make_vectorized_array<value_type>(0.0);
           VectorizedArray<value_type> average_gradient = make_vectorized_array<value_type>(0.0);
-          fe_eval_xwall.submit_normal_gradient(-0.5*viscosity*jump_value,q);
-          fe_eval_xwall.submit_value(-viscosity*average_gradient,q);
+          fe_eval_xwall.submit_normal_gradient(-0.5*fe_eval_xwall.eddyvisc[q]*jump_value,q);
+          fe_eval_xwall.submit_value(-fe_eval_xwall.eddyvisc[q]*average_gradient,q);
         }
       }
       fe_eval_xwall.integrate(true,true);
@@ -4351,36 +4823,36 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-  apply_viscous (const std::vector<parallel::distributed::Vector<value_type> >   &src,
-              std::vector<parallel::distributed::Vector<value_type> >      &dst) const
+  apply_viscous (const parallel::distributed::BlockVector<value_type>   &src,
+              parallel::distributed::BlockVector<value_type>      &dst) const
   {
-
-    dst.at(0)=0;
-    dst.at(1)=0;
+    for(unsigned int d=0;d<2*dim;++d)
+      dst.block(d)=0;
   data.back().loop (  &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_viscous,
             &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_viscous_face,
             &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_viscous_boundary_face,
             this, dst, src);
   }
-
-  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-  void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-  apply_viscous (const parallel::distributed::BlockVector<value_type>   &src,
-              parallel::distributed::BlockVector<value_type>      &dst,
-            const unsigned int                &level) const
-  {
-    std::vector<parallel::distributed::Vector<value_type> > src_tmp;
-    std::vector<parallel::distributed::Vector<value_type> > dst_tmp;
-    dst_tmp.resize(2);
-    src_tmp.push_back(src.block(0));
-    src_tmp.push_back(src.block(1));
-  data[level].loop (  &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_viscous,
-            &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_viscous_face,
-            &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_viscous_boundary_face,
-            this, dst, src);
-  dst.block(0)=dst_tmp.at(0);
-  dst.block(1)=dst_tmp.at(1);
-  }
+//
+//  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+//  void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+//  apply_viscous (const parallel::distributed::BlockVector<value_type>   &src,
+//              parallel::distributed::BlockVector<value_type>      &dst,
+//            const unsigned int                &level) const
+//  {
+//    Assert(false,ExcInternalError());
+//    std::vector<parallel::distributed::Vector<value_type> > src_tmp;
+//    std::vector<parallel::distributed::Vector<value_type> > dst_tmp;
+//    dst_tmp.resize(2);
+//    src_tmp.push_back(src.block(0));
+//    src_tmp.push_back(src.block(1));
+//  data[level].loop (  &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_viscous,
+//            &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_viscous_face,
+//            &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_viscous_boundary_face,
+//            this, dst, src);
+//  dst.block(0)=dst_tmp.at(0);
+//  dst.block(1)=dst_tmp.at(1);
+//  }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
@@ -4461,7 +4933,6 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   {
 
     fe_eval_xwall.reinit(face);
-//    fe_eval.reinit (face);
     fe_eval_xwall_neighbor.reinit (face);
 
     fe_eval_xwall.read_dof_values(src, 0, src, dim+1);
@@ -4735,7 +5206,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
       for(unsigned int d=0;d<dim;++d)
       {
         RHS<dim> f(d,time+time_step);
-        VectorizedArray<value_type> array;
+        value_type array [VectorizedArray<value_type>::n_array_elements];
         for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
         {
           Point<dim> q_point;
@@ -4743,7 +5214,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
             q_point[d] = q_points[d][n];
           array[n] = f.value(q_point);
         }
-        rhs[d] = array;
+        rhs[d].load(&array[0]);
       }
       fe_eval_xwall.submit_value (rhs, q);
     }
@@ -4752,52 +5223,84 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   }
   }
 
+//  template <int dim, int model>
+//  class Evaluator
+//  {
+//    void evaluate()
+//    if (model == 0)
+//      ...
+//    else
+//      ...
+//
+//  };
+//
+//  template <int dim>
+//  class Evaluator<dim,0>
+//  {
+//    void evaluate()
+//    {
+//      ...;
+//    }
+//  }
+//
+//  template <int dim>
+//  class Evaluator<dim,0>
+//  {
+//    void evaluate()
+//    {
+//      ...;
+//    }
+//  }
+
   template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   local_apply_viscous (const MatrixFree<dim,value_type>        &data,
-            std::vector<parallel::distributed::Vector<double> >    &dst,
-            const std::vector<parallel::distributed::Vector<double> >  &src,
+            parallel::distributed::BlockVector<double>      &dst,
+            const parallel::distributed::BlockVector<double>  &src,
             const std::pair<unsigned int,unsigned int>   &cell_range) const
   {
 #ifdef XWALL
-    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],0,3);
+    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],0,3);
 #else
-    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,1,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],0,0);
-//  FEEvaluation<dim,fe_degree,fe_degree+1,1,value_type> velocity (data,0,0);
+    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],0,0);
 #endif
 
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
   {
+    fe_eval_xwall.evaluate_eddy_viscosity(solution_n,cell);
     fe_eval_xwall.reinit (cell);
-    fe_eval_xwall.read_dof_values(src.at(0),src.at(1));
-    fe_eval_xwall.evaluate (true,true,false);
+    fe_eval_xwall.read_dof_values(src,0,src,dim);
+    fe_eval_xwall.evaluate (true,true);
+
 
     for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
     {
       fe_eval_xwall.submit_value (gamma0/time_step * fe_eval_xwall.get_value(q), q);
-      fe_eval_xwall.submit_gradient (make_vectorized_array<value_type>(viscosity)*fe_eval_xwall.get_gradient(q), q);
+#ifdef SYMMETRIC
+      fe_eval_xwall.submit_gradient (fe_eval_xwall.eddyvisc[q]*fe_eval_xwall.get_symmetric_gradient(q), q);
+#else
+      fe_eval_xwall.submit_gradient (fe_eval_xwall.eddyvisc[q]*fe_eval_xwall.get_gradient(q), q);
+#endif
     }
     fe_eval_xwall.integrate (true,true);
-    fe_eval_xwall.distribute_local_to_global (dst.at(0),dst.at(1));
+    fe_eval_xwall.distribute_local_to_global (dst,0,dst,dim);
   }
   }
 
   template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   local_apply_viscous_face (const MatrixFree<dim,value_type>       &data,
-                std::vector<parallel::distributed::Vector<double> >    &dst,
-                const std::vector<parallel::distributed::Vector<double> >  &src,
+                parallel::distributed::BlockVector<double>      &dst,
+                const parallel::distributed::BlockVector<double>  &src,
                 const std::pair<unsigned int,unsigned int>  &face_range) const
   {
 #ifdef XWALL
-    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,3);
-    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type> fe_eval_xwall_neighbor(data,xwallstatevec[0],xwallstatevec[1],false,0,3);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,3);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall_neighbor(data,xwallstatevec[0],xwallstatevec[1],false,0,3);
 #else
-    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,1,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,0);
-    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,1,value_type> fe_eval_xwall_neighbor(data,xwallstatevec[0],xwallstatevec[1],false,0,0);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,0);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall_neighbor(data,xwallstatevec[0],xwallstatevec[1],false,0,0);
 #endif
-//    FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,true,0,0);
-//    FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval_neighbor(data,false,0,0);
 
     const unsigned int level = data.get_cell_iterator(0,0)->level();
 
@@ -4805,10 +5308,14 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     {
       fe_eval_xwall.reinit (face);
       fe_eval_xwall_neighbor.reinit (face);
+      fe_eval_xwall.evaluate_eddy_viscosity(solution_n,face,fe_eval_xwall.read_cell_data(element_volume));
+      fe_eval_xwall_neighbor.evaluate_eddy_viscosity(solution_n,face,fe_eval_xwall_neighbor.read_cell_data(element_volume));
+      fe_eval_xwall.reinit (face);
+      fe_eval_xwall_neighbor.reinit (face);
 
-      fe_eval_xwall.read_dof_values(src.at(0),src.at(1));
+      fe_eval_xwall.read_dof_values(src,0,src,dim);
       fe_eval_xwall.evaluate(true,true);
-      fe_eval_xwall_neighbor.read_dof_values(src.at(0),src.at(1));
+      fe_eval_xwall_neighbor.read_dof_values(src,0,src,dim);
       fe_eval_xwall_neighbor.evaluate(true,true);
 
 //      VectorizedArray<value_type> sigmaF = (std::abs(fe_eval.get_normal_volume_fraction()) +
@@ -4822,47 +5329,78 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
       for(unsigned int q=0;q<fe_eval_xwall.n_q_points;++q)
       {
-        VectorizedArray<value_type> uM = fe_eval_xwall.get_value(q);
-        VectorizedArray<value_type> uP = fe_eval_xwall_neighbor.get_value(q);
 
-        VectorizedArray<value_type> jump_value = uM - uP;
-        VectorizedArray<value_type> average_gradient =
-            ( fe_eval_xwall.get_normal_gradient(q,true) + fe_eval_xwall_neighbor.get_normal_gradient(q,true) ) * make_vectorized_array<value_type>(0.5);
-        average_gradient = average_gradient - jump_value * sigmaF;
+        Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_xwall.get_value(q);
+        Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_xwall_neighbor.get_value(q);
+        VectorizedArray<value_type> average_viscosity = 0.5*(fe_eval_xwall.eddyvisc[q] + fe_eval_xwall_neighbor.eddyvisc[q]);
+        Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
+#ifdef SYMMETRIC
+        Tensor<2,dim,VectorizedArray<value_type> > average_gradient_tensor =
+            ( fe_eval_xwall.get_symmetric_gradient(q) + fe_eval_xwall_neighbor.get_symmetric_gradient(q)) * make_vectorized_array<value_type>(0.5);
+#else
+        Tensor<2,dim,VectorizedArray<value_type> > average_gradient_tensor =
+                    ( fe_eval_xwall.get_gradient(q) + fe_eval_xwall_neighbor.get_gradient(q)) * make_vectorized_array<value_type>(0.5);
+#endif
+        Tensor<2,dim,VectorizedArray<value_type> > jump_tensor;
+        outer_product(jump_tensor,jump_value,fe_eval_xwall.get_normal_vector(q));
 
-        fe_eval_xwall.submit_normal_gradient(-0.5*viscosity*jump_value,q);
-        fe_eval_xwall_neighbor.submit_normal_gradient(-0.5*viscosity*jump_value,q);
-        fe_eval_xwall.submit_value(-viscosity*average_gradient,q);
-        fe_eval_xwall_neighbor.submit_value(viscosity*average_gradient,q);
+
+        //we do not want to symmetrize the penalty part
+        average_gradient_tensor = average_gradient_tensor*average_viscosity - std::max(fe_eval_xwall.eddyvisc[q], fe_eval_xwall_neighbor.eddyvisc[q])*jump_tensor * sigmaF;
+//#ifdef SYMMETRIC
+//        jump_tensor = fe_eval_xwall.make_symmetric(jump_tensor);
+//#endif
+
+        Tensor<1,dim,VectorizedArray<value_type> > average_gradient;
+        for (unsigned int comp=0; comp<dim; comp++)
+          {
+          average_gradient[comp] = average_gradient_tensor[comp][0] *
+              fe_eval_xwall.get_normal_vector(q)[0];
+            for (unsigned int d=1; d<dim; ++d)
+              average_gradient[comp] += average_gradient_tensor[comp][d] *
+                fe_eval_xwall.get_normal_vector(q)[d];
+          }
+#ifdef SYMMETRIC
+      fe_eval_xwall.submit_gradient(0.5*fe_eval_xwall.make_symmetric(average_viscosity*jump_tensor),q);
+      fe_eval_xwall_neighbor.submit_gradient(0.5*fe_eval_xwall.make_symmetric(average_viscosity*jump_tensor),q);
+#else
+      fe_eval_xwall.submit_gradient(0.5*average_viscosity*jump_tensor,q);
+      fe_eval_xwall_neighbor.submit_gradient(0.5*average_viscosity*jump_tensor,q);
+#endif
+        fe_eval_xwall.submit_value(-average_gradient,q);
+        fe_eval_xwall_neighbor.submit_value(average_gradient,q);
+
       }
       fe_eval_xwall.integrate(true,true);
-      fe_eval_xwall.distribute_local_to_global(dst.at(0),dst.at(1));
+      fe_eval_xwall.distribute_local_to_global(dst,0,dst,dim);
       fe_eval_xwall_neighbor.integrate(true,true);
-      fe_eval_xwall_neighbor.distribute_local_to_global(dst.at(0),dst.at(1));
+      fe_eval_xwall_neighbor.distribute_local_to_global(dst,0,dst,dim);
     }
   }
 
   template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   local_apply_viscous_boundary_face (const MatrixFree<dim,value_type>       &data,
-                    std::vector<parallel::distributed::Vector<double> >    &dst,
-                    const std::vector<parallel::distributed::Vector<double> >  &src,
+                    parallel::distributed::BlockVector<double>      &dst,
+                    const parallel::distributed::BlockVector<double>  &src,
                     const std::pair<unsigned int,unsigned int>  &face_range) const
   {
 //    FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,true,0,0);
 #ifdef XWALL
-    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,3);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,3);
 #else
-    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,1,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,0);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,0);
 #endif
-
     const unsigned int level = data.get_cell_iterator(0,0)->level();
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       fe_eval_xwall.reinit (face);
+      fe_eval_xwall.evaluate_eddy_viscosity(solution_n,face,fe_eval_xwall.read_cell_data(element_volume));
 
-      fe_eval_xwall.read_dof_values(src.at(0),src.at(1));
+      fe_eval_xwall.reinit (face);
+
+      fe_eval_xwall.read_dof_values(src,0,src,dim);
       fe_eval_xwall.evaluate(true,true);
 
 //    VectorizedArray<value_type> sigmaF = (std::abs( fe_eval.get_normal_volume_fraction()) ) *
@@ -4878,27 +5416,67 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
         if (data.get_boundary_indicator(face) == 0) // Infow and wall boundaries
         {
           // applying inhomogeneous Dirichlet BC (value+ = - value- + 2g , grad+ = grad-)
-          VectorizedArray<value_type> uM = fe_eval_xwall.get_value(q);
-          VectorizedArray<value_type> uP = -uM;
+          Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_xwall.get_value(q);
+          Tensor<1,dim,VectorizedArray<value_type> > uP = -uM;
+          Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
+  #ifdef SYMMETRIC
+          Tensor<2,dim,VectorizedArray<value_type> > average_gradient_tensor =
+              fe_eval_xwall.get_symmetric_gradient(q);
+  #else
+          Tensor<2,dim,VectorizedArray<value_type> > average_gradient_tensor =
+                      fe_eval_xwall.get_gradient(q);
+  #endif
+          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor;
+          outer_product(jump_tensor,jump_value,fe_eval_xwall.get_normal_vector(q));
 
-          VectorizedArray<value_type> jump_value = uM - uP;
-          VectorizedArray<value_type> average_gradient = fe_eval_xwall.get_normal_gradient(q,true);
-          average_gradient = average_gradient - jump_value * sigmaF;
 
-          fe_eval_xwall.submit_normal_gradient(-0.5*viscosity*jump_value,q);
-          fe_eval_xwall.submit_value(-viscosity*average_gradient,q);
+          //we do not want to symmetrize the penalty part
+          average_gradient_tensor = average_gradient_tensor - jump_tensor * sigmaF;
+//  #ifdef SYMMETRIC
+//          jump_tensor = fe_eval_xwall.make_symmetric(jump_tensor);
+//  #endif
+
+          Tensor<1,dim,VectorizedArray<value_type> > average_gradient;
+          for (unsigned int comp=0; comp<dim; comp++)
+            {
+            average_gradient[comp] = average_gradient_tensor[comp][0] *
+                fe_eval_xwall.get_normal_vector(q)[0];
+              for (unsigned int d=1; d<dim; ++d)
+                average_gradient[comp] += average_gradient_tensor[comp][d] *
+                  fe_eval_xwall.get_normal_vector(q)[d];
+            }
+#ifdef SYMMETRIC
+          fe_eval_xwall.submit_gradient(0.5*fe_eval_xwall.make_symmetric(fe_eval_xwall.eddyvisc[q]*jump_tensor),q);
+#else
+          fe_eval_xwall.submit_gradient(0.5*fe_eval_xwall.eddyvisc[q]*jump_tensor,q);
+#endif
+          fe_eval_xwall.submit_value(-fe_eval_xwall.eddyvisc[q]*average_gradient,q);
+
         }
         else if (data.get_boundary_indicator(face) == 1) // Outflow boundary
         {
           // applying inhomogeneous Neumann BC (value+ = value- , grad+ =  - grad- +2h)
-          VectorizedArray<value_type> jump_value = make_vectorized_array<value_type>(0.0);
-          VectorizedArray<value_type> average_gradient = make_vectorized_array<value_type>(0.0);
-          fe_eval_xwall.submit_normal_gradient(-0.5*viscosity*jump_value,q);
-          fe_eval_xwall.submit_value(-viscosity*average_gradient,q);
+          Tensor<1,dim,VectorizedArray<value_type> > jump_value;
+          Tensor<1,dim,VectorizedArray<value_type> > average_gradient;// = make_vectorized_array<value_type>(0.0);
+          for(unsigned int i=0;i<dim;i++)
+          {
+            average_gradient[i] = make_vectorized_array(0.);
+            jump_value[i] = make_vectorized_array(0.);
+          }
+          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor;
+
+          outer_product(jump_tensor,jump_value,fe_eval_xwall.get_normal_vector(q));
+#ifdef SYMMETRIC
+          fe_eval_xwall.submit_gradient(0.5*fe_eval_xwall.make_symmetric(fe_eval_xwall.eddyvisc[q]*jump_tensor),q);
+#else
+          fe_eval_xwall.submit_gradient(0.5*fe_eval_xwall.eddyvisc[q]*jump_tensor,q);
+#endif
+          fe_eval_xwall.submit_value(-fe_eval_xwall.eddyvisc[q]*average_gradient,q);
+
         }
       }
       fe_eval_xwall.integrate(true,true);
-      fe_eval_xwall.distribute_local_to_global(dst.at(0),dst.at(1));
+      fe_eval_xwall.distribute_local_to_global(dst,0,dst,dim);
     }
   }
 
@@ -4960,13 +5538,12 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       fe_eval_xwall.reinit (face);
-
-      /* VectorizedArray<value_type> sigmaF = (std::abs( fe_eval.get_normal_volume_fraction()) ) *
-        (value_type)(fe_degree * (fe_degree + 1.0))   *stab_factor; */
+      fe_eval_xwall.evaluate_eddy_viscosity(solution_n,face,fe_eval_xwall.read_cell_data(element_volume));
+      fe_eval_xwall.reinit (face);
 
       double factor = 1.;
       calculate_penalty_parameter(factor);
-      //VectorizedArray<value_type> sigmaF = std::abs(fe_eval_xwall.get_normal_volume_fraction()) * (value_type)factor;
+
       VectorizedArray<value_type> sigmaF = fe_eval_xwall.read_cell_data(array_penalty_parameter[level]) * (value_type)factor;
 
       for(unsigned int q=0;q<fe_eval_xwall.n_q_points;++q)
@@ -4990,10 +5567,17 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
             g_np[d].load(&array[0]);
           }
 
-          VectorizedArray<value_type> nu = make_vectorized_array<value_type>(viscosity);
+          g_np *= fe_eval_xwall.eddyvisc[q];;
+          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor;
+          outer_product(jump_tensor,g_np,fe_eval_xwall.get_normal_vector(q));
 
-          fe_eval_xwall.submit_normal_gradient(-nu*g_np,q);
-          fe_eval_xwall.submit_value(2.0*nu*sigmaF*g_np,q);
+#ifdef SYMMETRIC
+          fe_eval_xwall.submit_gradient(0.5*fe_eval_xwall.make_symmetric(2.*jump_tensor),q);
+#else
+          fe_eval_xwall.submit_gradient(jump_tensor,q);
+#endif
+          fe_eval_xwall.submit_value(2.0*sigmaF*g_np,q);
+
         }
         else if (data.get_boundary_indicator(face) == 1) // Outflow boundary
         {
@@ -5017,9 +5601,17 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
           for(unsigned d=0;d<dim;++d)
             jump_value[d] = 0.0;
 
-          VectorizedArray<value_type> nu = make_vectorized_array<value_type>(viscosity);
-          fe_eval_xwall.submit_normal_gradient(jump_value,q);
-          fe_eval_xwall.submit_value(nu*h,q);
+          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor;
+          outer_product(jump_tensor,jump_value,fe_eval_xwall.get_normal_vector(q));
+//#ifdef SYMMETRIC
+//          jump_tensor = fe_eval_xwall.make_symmetric(jump_tensor);
+//#endif
+#ifdef SYMMETRIC
+          fe_eval_xwall.submit_gradient(2.*jump_tensor,q);
+#else
+          fe_eval_xwall.submit_gradient(jump_tensor,q);
+#endif
+          fe_eval_xwall.submit_value(fe_eval_xwall.eddyvisc[q]*h,q);
         }
       }
 
@@ -5030,57 +5622,68 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-  apply_inverse_mass_matrix (const std::vector<parallel::distributed::Vector<value_type> >  &src,
-      std::vector<parallel::distributed::Vector<value_type> >      &dst) const
+  precompute_inverse_mass_matrix ()
   {
-  dst.at(0) = 0;
-  dst.at(1) = 0;
-
-  data.back().cell_loop(&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_mass_matrix,
-                   this, dst, src);
-
-  dst.at(0) *= time_step/gamma0;
-  dst.at(1) *= time_step/gamma0;
+   std::vector<parallel::distributed::Vector<value_type> > dummy;
+  data.back().cell_loop(&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_precompute_mass_matrix,
+                   this, dummy, dummy);
   }
 
   template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-  local_apply_mass_matrix (const MatrixFree<dim,value_type>        &data,
-      std::vector<parallel::distributed::Vector<value_type> >    &dst,
-      const std::vector<parallel::distributed::Vector<value_type> >  &src,
-               const std::pair<unsigned int,unsigned int>   &cell_range) const
+  local_precompute_mass_matrix (const MatrixFree<dim,value_type>        &data,
+      std::vector<parallel::distributed::Vector<value_type> >    &,
+      const std::vector<parallel::distributed::Vector<value_type> >  &,
+               const std::pair<unsigned int,unsigned int>   &cell_range)
   {
 
-    if(dst.size()>dim)
-    {
     //initialize routine for non-enriched elements
     FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> phi(data,0,0);
-    AlignedVector<VectorizedArray<value_type> > coefficients(phi.dofs_per_cell);
-    MatrixFreeOperators::CellwiseInverseMassMatrix<dim, fe_degree, dim, value_type> inverse(phi);
-#ifdef XWALL
+//#ifdef XWALL
    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type> fe_eval_xwall (data,xwallstatevec[0],xwallstatevec[1],0,3);
-#endif
+//#endif
 //no XWALL but with XWALL routine
 //   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,1,value_type> fe_eval_xwall (data,src.at(dim+1),src.at(dim+2),0,0);
 
+/*
+   std::vector<Table<2,VectorizedArray<value_type>>> matrices(matrix_free.n_macro_cells());
+   for (unsigned int cell=0; cell<matrix.n_macro_cells(); ++cell)
+   {
+     if (enriched)
+     {
+       matrices[cell].reinit(fe_eval_xwall.dofs_per_cell, fe_eval_xwall.dofs_per_cell);
+       ... fuelle wie unten
+     }
+   }
 
+   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+   {
+     phi.reinit(cell);
+     fe_eval_xwall.read_dof_values(...);
+     if (enriched)
+     for (unsigned int i=0; i<fe_eval_xwall.dofs_per_cell; i++)
+     {
+       VectorizedArray<value_type> sum = VectorizedArray<value_type>();
+       for (unsigned int i=0; i<fe_eval_xwall.dofs_per_cell; i++)
+         sum += matrices[cell](i,j) * fe_eval_xwall.begin_dof_values()[j];
+     }
+   }
+*/
 
    //   FEEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval_xwall (data,0,0);
 
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
   {
     phi.reinit(cell);
-#ifdef XWALL
+
     //first, check if we have an enriched element
     //if so, perform the routine for the enriched elements
     fe_eval_xwall.reinit (cell);
-    if(fe_eval_xwall.enriched)
-    {
-      std::vector<FullMatrix<value_type> > matrices;
+      std::vector<FullMatrix<value_type> > matrix;
       {
-        FullMatrix<value_type> matrix(fe_eval_xwall.tensor_dofs_per_cell);
+        FullMatrix<value_type> onematrix(fe_eval_xwall.tensor_dofs_per_cell);
         for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
-          matrices.push_back(matrix);
+          matrix.push_back(onematrix);
       }
       for (unsigned int j=0; j<fe_eval_xwall.tensor_dofs_per_cell; ++j)
       {
@@ -5099,48 +5702,100 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
         for (unsigned int i=0; i<fe_eval_xwall.dofs_per_cell; ++i)
           for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
             if(fe_eval_xwall.component_enriched(v))
-              (matrices[v])(i,j) = (fe_eval_xwall.read_cellwise_dof_value(i))[v];
+              (matrix[v])(i,j) = (fe_eval_xwall.read_cellwise_dof_value(i))[v];
             else//this is a non-enriched element
             {
-              if(i<phi.tensor_dofs_per_cell && j<phi.tensor_dofs_per_cell)
-                (matrices[v])(i,j) = (fe_eval_xwall.read_cellwise_dof_value(i))[v];
+              if(i<phi.dofs_per_cell && j<phi.dofs_per_cell)
+                (matrix[v])(i,j) = (fe_eval_xwall.read_cellwise_dof_value(i))[v];
               else if(i == j)//diagonal
-                (matrices[v])(i,j) = 1.0;
+                (matrix[v])(i,j) = 1.0;
               else
-                (matrices[v])(i,j) = 0.0;
+                (matrix[v])(i,j) = 0.0;
             }
       }
 //      for (unsigned int i=0; i<10; ++i)
 //        std::cout << std::endl;
 //      for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
-//        matrices[v].print(std::cout,14,8);
+//        matrix[v].print(std::cout,14,8);
 
       for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
       {
-        (matrices[v]).gauss_jordan();
+        (matrix[v]).gauss_jordan();
       }
+      matrices[cell].reinit(fe_eval_xwall.dofs_per_cell, fe_eval_xwall.dofs_per_cell);
+      //now apply vectors to inverse matrix
+      for (unsigned int i=0; i<fe_eval_xwall.dofs_per_cell; ++i)
+        for (unsigned int j=0; j<fe_eval_xwall.dofs_per_cell; ++j)
+        {
+          VectorizedArray<value_type> value;
+          for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
+            value[v] = (matrix[v])(i,j);
+          matrices[cell](i,j) = value;
+        }
+    }
 
+  //
+
+
+  }
+
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  apply_inverse_mass_matrix (const parallel::distributed::BlockVector<value_type>  &src,
+      parallel::distributed::BlockVector<value_type>      &dst) const
+  {
+    for (unsigned int i = 0; i<2*dim; i++)
+      dst.block(i)=0;
+
+  data.back().cell_loop(&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_mass_matrix,
+                   this, dst, src);
+
+  for (unsigned int i = 0; i<2*dim; i++)
+    dst.block(i)*= time_step/gamma0;
+
+  }
+  template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  local_apply_mass_matrix (const MatrixFree<dim,value_type>        &data,
+                parallel::distributed::BlockVector<value_type>    &dst,
+                const parallel::distributed::BlockVector<value_type>  &src,
+                const std::pair<unsigned int,unsigned int>   &cell_range) const
+  {
+
+    //initialize routine for non-enriched elements
+    FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> phi(data,0,0);
+//    VectorizedArray<value_type> coefficients[FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type>::tensor_dofs_per_cell]
+    AlignedVector<VectorizedArray<value_type> > coefficients(phi.dofs_per_cell);
+    MatrixFreeOperators::CellwiseInverseMassMatrix<dim, fe_degree, dim, value_type> inverse(phi);
+#ifdef XWALL
+   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type> fe_eval_xwall (data,xwallstatevec[0],xwallstatevec[1],0,3);
+#endif
+
+  for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+  {
+#ifdef XWALL
+    //first, check if we have an enriched element
+    //if so, perform the routine for the enriched elements
+    fe_eval_xwall.reinit (cell);
+    if(fe_eval_xwall.enriched)
+    {
       //now apply vectors to inverse matrix
       for (unsigned int idim = 0; idim < dim; ++idim)
       {
-        fe_eval_xwall.read_dof_values(src.at(idim),src.at(idim+dim));
-
-        for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
-        {
-          Vector<value_type> vector_input(fe_eval_xwall.tensor_dofs_per_cell);
-          for (unsigned int j=0; j<fe_eval_xwall.tensor_dofs_per_cell; ++j)
-            vector_input(j)=(fe_eval_xwall.read_cellwise_dof_value(j))[v];
-          Vector<value_type> vector_result(fe_eval_xwall.tensor_dofs_per_cell);
-          (matrices[v]).vmult(vector_result,vector_input);
-          for (unsigned int j=0; j<fe_eval_xwall.tensor_dofs_per_cell; ++j)
-            fe_eval_xwall.write_cellwise_dof_value(j,vector_result(j),v);
-        }
-        fe_eval_xwall.distribute_local_to_global (dst.at(idim),dst.at(idim+dim));
+        fe_eval_xwall.read_dof_values(src.block(idim),src.block(idim+dim));
+        AlignedVector<VectorizedArray<value_type> > vector_result(fe_eval_xwall.dofs_per_cell);
+        for (unsigned int i=0; i<fe_eval_xwall.dofs_per_cell; ++i)
+          for (unsigned int j=0; j<fe_eval_xwall.dofs_per_cell; ++j)
+            vector_result[i] += matrices[cell](i,j) * fe_eval_xwall.read_cellwise_dof_value(j);
+        for (unsigned int i=0; i<fe_eval_xwall.dofs_per_cell; ++i)
+          fe_eval_xwall.write_cellwise_dof_value(i,vector_result[i]);
+        fe_eval_xwall.distribute_local_to_global (dst.block(idim),dst.block(idim+dim));
       }
     }
     else
 #endif
     {
+      phi.reinit(cell);
       phi.read_dof_values(src,0);
 
       inverse.fill_inverse_JxW_values(coefficients);
@@ -5149,7 +5804,90 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
       phi.set_dof_values(dst,0);
     }
   }
+  //
 
+  }
+  template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  local_apply_mass_matrix (const MatrixFree<dim,value_type>        &data,
+      std::vector<parallel::distributed::Vector<value_type> >    &dst,
+      const std::vector<parallel::distributed::Vector<value_type> >  &src,
+               const std::pair<unsigned int,unsigned int>   &cell_range) const
+  {
+
+    if(dst.size()>dim)
+    {
+    //initialize routine for non-enriched elements
+    FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> phi(data,0,0);
+//    VectorizedArray<value_type> coefficients[FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type>::tensor_dofs_per_cell]
+    AlignedVector<VectorizedArray<value_type> > coefficients(phi.dofs_per_cell);
+    MatrixFreeOperators::CellwiseInverseMassMatrix<dim, fe_degree, dim, value_type> inverse(phi);
+#ifdef XWALL
+   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type> fe_eval_xwall (data,xwallstatevec[0],xwallstatevec[1],0,3);
+#endif
+//no XWALL but with XWALL routine
+//   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,1,value_type> fe_eval_xwall (data,src.at(dim+1),src.at(dim+2),0,0);
+
+/*
+   std::vector<Table<2,VectorizedArray<value_type>>> matrices(matrix_free.n_macro_cells());
+   for (unsigned int cell=0; cell<matrix.n_macro_cells(); ++cell)
+   {
+     if (enriched)
+     {
+       matrices[cell].reinit(fe_eval_xwall.dofs_per_cell, fe_eval_xwall.dofs_per_cell);
+       ... fuelle wie unten
+     }
+   }
+
+   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+   {
+     phi.reinit(cell);
+     fe_eval_xwall.read_dof_values(...);
+     if (enriched)
+     for (unsigned int i=0; i<fe_eval_xwall.dofs_per_cell; i++)
+     {
+       VectorizedArray<value_type> sum = VectorizedArray<value_type>();
+       for (unsigned int i=0; i<fe_eval_xwall.dofs_per_cell; i++)
+         sum += matrices[cell](i,j) * fe_eval_xwall.begin_dof_values()[j];
+     }
+   }
+*/
+
+   //   FEEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval_xwall (data,0,0);
+
+  for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+  {
+#ifdef XWALL
+    //first, check if we have an enriched element
+    //if so, perform the routine for the enriched elements
+    fe_eval_xwall.reinit (cell);
+    if(fe_eval_xwall.enriched)
+    {
+      //now apply vectors to inverse matrix
+      for (unsigned int idim = 0; idim < dim; ++idim)
+      {
+        fe_eval_xwall.read_dof_values(src.at(idim),src.at(idim+dim));
+        AlignedVector<VectorizedArray<value_type> > vector_result(fe_eval_xwall.dofs_per_cell);
+        for (unsigned int i=0; i<fe_eval_xwall.dofs_per_cell; ++i)
+          for (unsigned int j=0; j<fe_eval_xwall.dofs_per_cell; ++j)
+            vector_result[i] += matrices[cell](i,j) * fe_eval_xwall.read_cellwise_dof_value(j);
+        for (unsigned int i=0; i<fe_eval_xwall.dofs_per_cell; ++i)
+          fe_eval_xwall.write_cellwise_dof_value(i,vector_result[i]);
+        fe_eval_xwall.distribute_local_to_global (dst.at(idim),dst.at(idim+dim));
+      }
+    }
+    else
+#endif
+    {
+      phi.reinit(cell);
+      phi.read_dof_values(src,0);
+
+      inverse.fill_inverse_JxW_values(coefficients);
+      inverse.apply(coefficients,dim,phi.begin_dof_values(),phi.begin_dof_values());
+
+      phi.set_dof_values(dst,0);
+    }
+  }
   //
     }
     else
@@ -5170,77 +5908,26 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
-      phi.reinit(cell);
 #ifdef XWALL
       //first, check if we have an enriched element
       //if so, perform the routine for the enriched elements
       fe_eval_xwall.reinit (cell);
       if(fe_eval_xwall.enriched)
       {
-        std::vector<FullMatrix<value_type> > matrices;
-        {
-          FullMatrix<value_type> matrix(fe_eval_xwall.tensor_dofs_per_cell);
-          for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
-            matrices.push_back(matrix);
-        }
-        for (unsigned int j=0; j<fe_eval_xwall.tensor_dofs_per_cell; ++j)
-        {
-          for (unsigned int i=0; i<fe_eval_xwall.dofs_per_cell; ++i)
-            fe_eval_xwall.write_cellwise_dof_value(i,make_vectorized_array(0.));
-          fe_eval_xwall.write_cellwise_dof_value(j,make_vectorized_array(1.));
-
-          fe_eval_xwall.evaluate (true,false,false);
-          for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
-          {
-    //        std::cout << fe_eval_xwall.get_value(q)[0] << std::endl;
-            fe_eval_xwall.submit_value (fe_eval_xwall.get_value(q), q);
-          }
-          fe_eval_xwall.integrate (true,false);
-
-          for (unsigned int i=0; i<fe_eval_xwall.dofs_per_cell; ++i)
-            for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
-              if(fe_eval_xwall.component_enriched(v))
-                (matrices[v])(i,j) = (fe_eval_xwall.read_cellwise_dof_value(i))[v];
-              else//this is a non-enriched element
-              {
-                if(i<phi.tensor_dofs_per_cell && j<phi.tensor_dofs_per_cell)
-                  (matrices[v])(i,j) = (fe_eval_xwall.read_cellwise_dof_value(i))[v];
-                else if(i == j)//diagonal
-                  (matrices[v])(i,j) = 1.0;
-                else
-                  (matrices[v])(i,j) = 0.0;
-              }
-        }
-  //      for (unsigned int i=0; i<10; ++i)
-  //        std::cout << std::endl;
-  //      for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
-  //        matrices[v].print(std::cout,14,8);
-
-        for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
-        {
-          (matrices[v]).gauss_jordan();
-        }
-
         //now apply vectors to inverse matrix
-
           fe_eval_xwall.read_dof_values(src.at(0),src.at(1));
-
-          for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
-          {
-            Vector<value_type> vector_input(fe_eval_xwall.tensor_dofs_per_cell);
-            for (unsigned int j=0; j<fe_eval_xwall.tensor_dofs_per_cell; ++j)
-              vector_input(j)=(fe_eval_xwall.read_cellwise_dof_value(j))[v];
-            Vector<value_type> vector_result(fe_eval_xwall.tensor_dofs_per_cell);
-            (matrices[v]).vmult(vector_result,vector_input);
-            for (unsigned int j=0; j<fe_eval_xwall.tensor_dofs_per_cell; ++j)
-              fe_eval_xwall.write_cellwise_dof_value(j,vector_result(j),v);
-          }
+          AlignedVector<VectorizedArray<value_type> > vector_result(fe_eval_xwall.dofs_per_cell);
+          for (unsigned int i=0; i<fe_eval_xwall.dofs_per_cell; ++i)
+            for (unsigned int j=0; j<fe_eval_xwall.dofs_per_cell; ++j)
+              vector_result[i] += matrices[cell](i,j) * fe_eval_xwall.read_cellwise_dof_value(j);
+          for (unsigned int i=0; i<fe_eval_xwall.dofs_per_cell; ++i)
+            fe_eval_xwall.write_cellwise_dof_value(i,vector_result[i]);
           fe_eval_xwall.distribute_local_to_global (dst.at(0),dst.at(1));
-
       }
       else
   #endif
       {
+        phi.reinit(cell);
         phi.read_dof_values(src.at(0));
 
         inverse.fill_inverse_JxW_values(coefficients);
@@ -5434,7 +6121,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
    FEEvaluation<dim,fe_degree,fe_degree+1,number_vorticity_components,value_type> phi(data,0,0);
 #else
 //   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,number_vorticity_components,value_type> fe_eval_xwall(data,src.at(2*dim+1),src.at(2*dim+2),0,0);
-   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> velocity(data,xwallstatevec[0],xwallstatevec[1],0,0);
+   FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> velocity(data,0,0);
    FEEvaluation<dim,fe_degree,fe_degree+1,number_vorticity_components,value_type> phi(data,0,0);
 #endif
   MatrixFreeOperators::CellwiseInverseMassMatrix<dim, fe_degree, number_vorticity_components, value_type> inverse(phi);
@@ -5605,6 +6292,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     parallel::distributed::Vector<value_type> vec1(vector);
     for(unsigned int i=0;i<vec1.local_size();++i)
       vec1.local_element(i) = 1.;
+    vec1.update_ghost_values();
     double scalar = vec1*vector;
     double length = vec1*vec1;
     vector.add(-scalar/length,vec1);
@@ -5634,10 +6322,13 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   {
   dst = 0;
 
-  data.loop (  &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_pressure,
+  data.back().loop (  &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_pressure,
         &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_pressure_face,
         &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_pressure_boundary_face,
         this, dst, src);
+  for (unsigned int i=0; i<data.back().get_constrained_dofs(1).size(); ++i)
+    dst.local_element(data.back().get_constrained_dofs(1)[i]) +=
+        src.local_element(data.back().get_constrained_dofs(1)[i]);
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -5651,6 +6342,9 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
             &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_pressure_face,
             &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_pressure_boundary_face,
             this, dst, src);
+  for (unsigned int i=0; i<data[level].get_constrained_dofs(1).size(); ++i)
+    dst.local_element(data[level].get_constrained_dofs(1)[i]) +=
+        src.local_element(data[level].get_constrained_dofs(1)[i]);
   }
 
   template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -5682,49 +6376,49 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
                 const parallel::distributed::Vector<double>  &src,
                 const std::pair<unsigned int,unsigned int>  &face_range) const
   {
-    FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval(data,true,1,1);
-    FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval_neighbor(data,false,1,1);
-
-    const unsigned int level = data.get_cell_iterator(0,0)->level();
-
-    for(unsigned int face=face_range.first; face<face_range.second; face++)
-    {
-      fe_eval.reinit (face);
-      fe_eval_neighbor.reinit (face);
-
-      fe_eval.read_dof_values(src);
-      fe_eval.evaluate(true,true);
-      fe_eval_neighbor.read_dof_values(src);
-      fe_eval_neighbor.evaluate(true,true);
-//      VectorizedArray<value_type> sigmaF = (std::abs(fe_eval.get_normal_volume_fraction()) +
-//               std::abs(fe_eval_neighbor.get_normal_volume_fraction())) *
-//        (value_type)(fe_degree * (fe_degree + 1.0)) * 0.5;//   *stab_factor;
-
-      double factor = 1.;
-      calculate_penalty_parameter_pressure(factor);
-      //VectorizedArray<value_type> sigmaF = std::abs(fe_eval.get_normal_volume_fraction()) * (value_type)factor;
-      VectorizedArray<value_type> sigmaF = std::max(fe_eval.read_cell_data(array_penalty_parameter[level]),fe_eval_neighbor.read_cell_data(array_penalty_parameter[level])) * (value_type)factor;
-
-      for(unsigned int q=0;q<fe_eval.n_q_points;++q)
-      {
-        VectorizedArray<value_type> valueM = fe_eval.get_value(q);
-        VectorizedArray<value_type> valueP = fe_eval_neighbor.get_value(q);
-
-        VectorizedArray<value_type> jump_value = valueM - valueP;
-        VectorizedArray<value_type> average_gradient =
-            ( fe_eval.get_normal_gradient(q) + fe_eval_neighbor.get_normal_gradient(q) ) * 0.5;
-        average_gradient = average_gradient - jump_value * sigmaF;
-
-        fe_eval.submit_normal_gradient(-0.5*jump_value,q);
-        fe_eval_neighbor.submit_normal_gradient(-0.5*jump_value,q);
-        fe_eval.submit_value(-average_gradient,q);
-        fe_eval_neighbor.submit_value(average_gradient,q);
-      }
-      fe_eval.integrate(true,true);
-      fe_eval.distribute_local_to_global(dst);
-      fe_eval_neighbor.integrate(true,true);
-      fe_eval_neighbor.distribute_local_to_global(dst);
-    }
+//    FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval(data,true,1,1);
+//    FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval_neighbor(data,false,1,1);
+//
+//    const unsigned int level = data.get_cell_iterator(0,0)->level();
+//
+//    for(unsigned int face=face_range.first; face<face_range.second; face++)
+//    {
+//      fe_eval.reinit (face);
+//      fe_eval_neighbor.reinit (face);
+//
+//      fe_eval.read_dof_values(src);
+//      fe_eval.evaluate(true,true);
+//      fe_eval_neighbor.read_dof_values(src);
+//      fe_eval_neighbor.evaluate(true,true);
+////      VectorizedArray<value_type> sigmaF = (std::abs(fe_eval.get_normal_volume_fraction()) +
+////               std::abs(fe_eval_neighbor.get_normal_volume_fraction())) *
+////        (value_type)(fe_degree * (fe_degree + 1.0)) * 0.5;//   *stab_factor;
+//
+//      double factor = 1.;
+//      calculate_penalty_parameter_pressure(factor);
+//      //VectorizedArray<value_type> sigmaF = std::abs(fe_eval.get_normal_volume_fraction()) * (value_type)factor;
+//      VectorizedArray<value_type> sigmaF = std::max(fe_eval.read_cell_data(array_penalty_parameter[level]),fe_eval_neighbor.read_cell_data(array_penalty_parameter[level])) * (value_type)factor;
+//
+//      for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+//      {
+//        VectorizedArray<value_type> valueM = fe_eval.get_value(q);
+//        VectorizedArray<value_type> valueP = fe_eval_neighbor.get_value(q);
+//
+//        VectorizedArray<value_type> jump_value = valueM - valueP;
+//        VectorizedArray<value_type> average_gradient =
+//            ( fe_eval.get_normal_gradient(q) + fe_eval_neighbor.get_normal_gradient(q) ) * 0.5;
+//        average_gradient = average_gradient - jump_value * sigmaF;
+//
+//        fe_eval.submit_normal_gradient(-0.5*jump_value,q);
+//        fe_eval_neighbor.submit_normal_gradient(-0.5*jump_value,q);
+//        fe_eval.submit_value(-average_gradient,q);
+//        fe_eval_neighbor.submit_value(average_gradient,q);
+//      }
+//      fe_eval.integrate(true,true);
+//      fe_eval.distribute_local_to_global(dst);
+//      fe_eval_neighbor.integrate(true,true);
+//      fe_eval_neighbor.distribute_local_to_global(dst);
+//    }
   }
 
   template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -5734,53 +6428,53 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
                       const parallel::distributed::Vector<double>    &src,
                       const std::pair<unsigned int,unsigned int>    &face_range) const
   {
-  FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval(data,true,1,1);
-
-  const unsigned int level = data.get_cell_iterator(0,0)->level();
-
-  for(unsigned int face=face_range.first; face<face_range.second; face++)
-  {
-    fe_eval.reinit (face);
-
-    fe_eval.read_dof_values(src);
-    fe_eval.evaluate(true,true);
-
-//    VectorizedArray<value_type> sigmaF = (std::abs( fe_eval.get_normal_volume_fraction()) ) *
-//      (value_type)(fe_degree * (fe_degree + 1.0));//  *stab_factor;
-
-      double factor = 1.;
-      calculate_penalty_parameter_pressure(factor);
-      //VectorizedArray<value_type> sigmaF = std::abs(fe_eval.get_normal_volume_fraction()) * (value_type)factor;
-      VectorizedArray<value_type> sigmaF = fe_eval.read_cell_data(array_penalty_parameter[level]) * (value_type)factor;
-
-    for(unsigned int q=0;q<fe_eval.n_q_points;++q)
-    {
-      if (data.get_boundary_indicator(face) == 0) // Infow and wall boundaries
-      {
-        //set pressure gradient in normal direction to zero, i.e. pressure+ = pressure-, grad+ = -grad-
-        VectorizedArray<value_type> jump_value = make_vectorized_array<value_type>(0.0);
-        VectorizedArray<value_type> average_gradient = make_vectorized_array<value_type>(0.0);
-        average_gradient = average_gradient - jump_value * sigmaF;
-
-        fe_eval.submit_normal_gradient(-0.5*jump_value,q);
-        fe_eval.submit_value(-average_gradient,q);
-      }
-      else if (data.get_boundary_indicator(face) == 1) // outflow boundaries
-      {
-        //set pressure to zero, i.e. pressure+ = - pressure- , grad+ = grad-
-        VectorizedArray<value_type> valueM = fe_eval.get_value(q);
-
-        VectorizedArray<value_type> jump_value = 2.0*valueM;
-        VectorizedArray<value_type> average_gradient = fe_eval.get_normal_gradient(q);
-        average_gradient = average_gradient - jump_value * sigmaF;
-
-        fe_eval.submit_normal_gradient(-0.5*jump_value,q);
-        fe_eval.submit_value(-average_gradient,q);
-      }
-    }
-    fe_eval.integrate(true,true);
-    fe_eval.distribute_local_to_global(dst);
-  }
+//  FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval(data,true,1,1);
+//
+//  const unsigned int level = data.get_cell_iterator(0,0)->level();
+//
+//  for(unsigned int face=face_range.first; face<face_range.second; face++)
+//  {
+//    fe_eval.reinit (face);
+//
+//    fe_eval.read_dof_values(src);
+//    fe_eval.evaluate(true,true);
+//
+////    VectorizedArray<value_type> sigmaF = (std::abs( fe_eval.get_normal_volume_fraction()) ) *
+////      (value_type)(fe_degree * (fe_degree + 1.0));//  *stab_factor;
+//
+//      double factor = 1.;
+//      calculate_penalty_parameter_pressure(factor);
+//      //VectorizedArray<value_type> sigmaF = std::abs(fe_eval.get_normal_volume_fraction()) * (value_type)factor;
+//      VectorizedArray<value_type> sigmaF = fe_eval.read_cell_data(array_penalty_parameter[level]) * (value_type)factor;
+//
+//    for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+//    {
+//      if (data.get_boundary_indicator(face) == 0) // Infow and wall boundaries
+//      {
+//        //set pressure gradient in normal direction to zero, i.e. pressure+ = pressure-, grad+ = -grad-
+//        VectorizedArray<value_type> jump_value = make_vectorized_array<value_type>(0.0);
+//        VectorizedArray<value_type> average_gradient = make_vectorized_array<value_type>(0.0);
+//        average_gradient = average_gradient - jump_value * sigmaF;
+//
+//        fe_eval.submit_normal_gradient(-0.5*jump_value,q);
+//        fe_eval.submit_value(-average_gradient,q);
+//      }
+//      else if (data.get_boundary_indicator(face) == 1) // outflow boundaries
+//      {
+//        //set pressure to zero, i.e. pressure+ = - pressure- , grad+ = grad-
+//        VectorizedArray<value_type> valueM = fe_eval.get_value(q);
+//
+//        VectorizedArray<value_type> jump_value = 2.0*valueM;
+//        VectorizedArray<value_type> average_gradient = fe_eval.get_normal_gradient(q);
+//        average_gradient = average_gradient - jump_value * sigmaF;
+//
+//        fe_eval.submit_normal_gradient(-0.5*jump_value,q);
+//        fe_eval.submit_value(-average_gradient,q);
+//      }
+//    }
+//    fe_eval.integrate(true,true);
+//    fe_eval.distribute_local_to_global(dst);
+//  }
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -5825,7 +6519,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
     {
     VectorizedArray<value_type> divergence = fe_eval_xwall.get_divergence(q);
-    pressure.submit_value (divergence, q);
+    pressure.submit_value (-divergence/time_step, q);
     }
     pressure.integrate (true,false);
     pressure.distribute_local_to_global (dst,dim);
@@ -5853,28 +6547,27 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 #ifdef XWALL
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall_n (data,xwallstatevec[0],xwallstatevec[1],true,0,3);
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall_nm (data,xwallstatevec[0],xwallstatevec[1],true,0,3);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall_nm2 (data,xwallstatevec[0],xwallstatevec[1],true,0,3);
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,number_vorticity_components,value_type> omega_n(data,xwallstatevec[0],xwallstatevec[1],true,0,3);
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,number_vorticity_components,value_type> omega_nm(data,xwallstatevec[0],xwallstatevec[1],true,0,3);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,number_vorticity_components,value_type> omega_nm2(data,xwallstatevec[0],xwallstatevec[1],true,0,3);
     FEFaceEvaluation<dim,fe_degree_p,n_q_points_1d_xwall,1,value_type> pressure (data,true,1,3);
 #else
-    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree_p+1,dim,value_type> fe_eval_xwall_n (data,xwallstatevec[0],xwallstatevec[1],true,0,1);
-    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree_p+1,dim,value_type> fe_eval_xwall_nm (data,xwallstatevec[0],xwallstatevec[1],true,0,1);
-    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree_p+1,number_vorticity_components,value_type> omega_n(data,xwallstatevec[0],xwallstatevec[1],true,0,1);
-    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree_p+1,number_vorticity_components,value_type> omega_nm(data,xwallstatevec[0],xwallstatevec[1],true,0,1);
-    FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> pressure (data,true,1,1);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,dim,value_type> fe_eval_xwall_n (data,xwallstatevec[0],xwallstatevec[1],true,0,2);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,dim,value_type> fe_eval_xwall_nm (data,xwallstatevec[0],xwallstatevec[1],true,0,2);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,dim,value_type> fe_eval_xwall_nm2 (data,xwallstatevec[0],xwallstatevec[1],true,0,2);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,number_vorticity_components,value_type> omega_n(data,xwallstatevec[0],xwallstatevec[1],true,0,2);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,number_vorticity_components,value_type> omega_nm(data,xwallstatevec[0],xwallstatevec[1],true,0,2);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,number_vorticity_components,value_type> omega_nm2(data,xwallstatevec[0],xwallstatevec[1],true,0,2);
+    FEFaceEvaluation<dim,fe_degree_p,fe_degree+(fe_degree+2)/2,1,value_type> pressure (data,true,1,2);
 #endif
-    // inhomogene Dirichlet-RB für Druck p
-//  FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> pressure(data,true,1,1);
-
-//  FEFaceEvaluation<dim,fe_degree,fe_degree_p+1,dim,value_type> velocity_n(data,true,0,1);
-//  FEFaceEvaluation<dim,fe_degree,fe_degree_p+1,dim,value_type> velocity_nm(data,true,0,1);
-//  FEFaceEvaluation<dim,fe_degree,fe_degree_p+1,number_vorticity_components,value_type> omega_n(data,true,0,1);
-//  FEFaceEvaluation<dim,fe_degree,fe_degree_p+1,number_vorticity_components,value_type> omega_nm(data,true,0,1);
 
     const unsigned int level = data.get_cell_iterator(0,0)->level();
 
   for(unsigned int face=face_range.first; face<face_range.second; face++)
   {
+    fe_eval_xwall_n.reinit(face);
+    fe_eval_xwall_n.evaluate_eddy_viscosity(solution_n,face,fe_eval_xwall_n.read_cell_data(element_volume));
     pressure.reinit (face);
     fe_eval_xwall_n.reinit (face);
     fe_eval_xwall_n.read_dof_values(solution_n,0,solution_n,dim+1);
@@ -5882,6 +6575,9 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     fe_eval_xwall_nm.reinit (face);
     fe_eval_xwall_nm.read_dof_values(solution_nm,0,solution_nm,dim+1);
     fe_eval_xwall_nm.evaluate (true,true);
+    fe_eval_xwall_nm2.reinit (face);
+    fe_eval_xwall_nm2.read_dof_values(solution_nm2,0,solution_nm2,dim+1);
+    fe_eval_xwall_nm2.evaluate (true,true);
 
     omega_n.reinit (face);
     omega_n.read_dof_values(vorticity_n,0,vorticity_n,number_vorticity_components);
@@ -5889,12 +6585,14 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     omega_nm.reinit (face);
     omega_nm.read_dof_values(vorticity_nm,0,vorticity_nm,number_vorticity_components);
     omega_nm.evaluate (false,true);
-
+    omega_nm2.reinit (face);
+    omega_nm2.read_dof_values(vorticity_nm2,0,vorticity_nm2,number_vorticity_components);
+    omega_nm2.evaluate (false,true);
     //VectorizedArray<value_type> sigmaF = (std::abs( pressure.get_normal_volume_fraction()) ) *
     //  (value_type)(fe_degree * (fe_degree + 1.0)) *stab_factor;
 
     double factor = 1.;
-    calculate_penalty_parameter(factor);
+    calculate_penalty_parameter_pressure(factor);
     //VectorizedArray<value_type> sigmaF = std::abs(pressure.get_normal_volume_fraction()) * (value_type)factor;
     VectorizedArray<value_type> sigmaF = fe_eval_xwall_n.read_cell_data(array_penalty_parameter[level]) * (value_type)factor;
 
@@ -5978,7 +6676,10 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
           Tensor<1,dim,VectorizedArray<value_type> > conv_n = grad_u_n * u_n;
           Tensor<1,dim,VectorizedArray<value_type> > u_nm = fe_eval_xwall_nm.get_value(q);
           Tensor<2,dim,VectorizedArray<value_type> > grad_u_nm = fe_eval_xwall_nm.get_gradient(q);
+          Tensor<1,dim,VectorizedArray<value_type> > u_nm2 = fe_eval_xwall_nm2.get_value(q);
+          Tensor<2,dim,VectorizedArray<value_type> > grad_u_nm2 = fe_eval_xwall_nm2.get_gradient(q);
           Tensor<1,dim,VectorizedArray<value_type> > conv_nm = grad_u_nm * u_nm;
+          Tensor<1,dim,VectorizedArray<value_type> > conv_nm2 = grad_u_nm2 * u_nm2;
 //          Tensor<1,dim,VectorizedArray<value_type> > rot_n = CurlCompute<dim,decltype(omega_n)>::compute(omega_n,q);
 //          Tensor<1,dim,VectorizedArray<value_type> > rot_nm = CurlCompute<dim,decltype(omega_nm)>::compute(omega_nm,q);
 
@@ -5986,16 +6687,19 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 #ifdef XWALL
           Tensor<1,dim,VectorizedArray<value_type> > rot_n = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,number_vorticity_components,value_type> >::compute(omega_n,q);
           Tensor<1,dim,VectorizedArray<value_type> > rot_nm = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,number_vorticity_components,value_type> >::compute(omega_nm,q);
+          Tensor<1,dim,VectorizedArray<value_type> > rot_nm2 = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,number_vorticity_components,value_type> >::compute(omega_nm2,q);
 #else
-          Tensor<1,dim,VectorizedArray<value_type> > rot_n = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree_p+1,number_vorticity_components,value_type> >::compute(omega_n,q);
-          Tensor<1,dim,VectorizedArray<value_type> > rot_nm = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree_p+1,number_vorticity_components,value_type> >::compute(omega_nm,q);
+          Tensor<1,dim,VectorizedArray<value_type> > rot_n = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,number_vorticity_components,value_type> >::compute(omega_n,q);
+          Tensor<1,dim,VectorizedArray<value_type> > rot_nm = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,number_vorticity_components,value_type> >::compute(omega_nm,q);
+          Tensor<1,dim,VectorizedArray<value_type> > rot_nm2 = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,number_vorticity_components,value_type> >::compute(omega_nm2,q);
 #endif
           // 2nd order extrapolation
 //        h = - normal * (make_vectorized_array<value_type>(beta[0])*(dudt_n + conv_n + make_vectorized_array<value_type>(viscosity)*rot_n - rhs_n)
 //                + make_vectorized_array<value_type>(beta[1])*(dudt_nm + conv_nm + make_vectorized_array<value_type>(viscosity)*rot_nm - rhs_nm));
 
-        h = - normal * (dudt_np - rhs_np + make_vectorized_array<value_type>(beta[0])*(conv_n + make_vectorized_array<value_type>(viscosity)*rot_n)
-                + make_vectorized_array<value_type>(beta[1])*(conv_nm + make_vectorized_array<value_type>(viscosity)*rot_nm));
+        h = - normal * (dudt_np - rhs_np + make_vectorized_array<value_type>(beta[0])*(conv_n + fe_eval_xwall_n.eddyvisc[q]*rot_n)
+                + make_vectorized_array<value_type>(beta[1])*(conv_nm + fe_eval_xwall_n.eddyvisc[q]*rot_nm)
+                + make_vectorized_array<value_type>(beta[2])*(conv_nm2 + fe_eval_xwall_n.eddyvisc[q]*rot_nm2));
         // Stokes
 //        h = - normal * (dudt_np - rhs_np + make_vectorized_array<value_type>(beta[0])*(make_vectorized_array<value_type>(viscosity)*rot_n)
 //                        + make_vectorized_array<value_type>(beta[1])*(make_vectorized_array<value_type>(viscosity)*rot_nm));
@@ -6003,7 +6707,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 //        h = - normal * (dudt_np - rhs_np + conv_n + make_vectorized_array<value_type>(viscosity)*rot_n);
 
         pressure.submit_normal_gradient(make_vectorized_array<value_type>(0.0),q);
-        pressure.submit_value(-time_step*h,q);
+        pressure.submit_value(h,q);
       }
       else if (data.get_boundary_indicator(face) == 1) // Outflow boundary
       {
@@ -6022,8 +6726,8 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
         }
         g.load(&array[0]);
 
-        pressure.submit_normal_gradient(time_step*g,q);
-        pressure.submit_value(-time_step * 2.0 *sigmaF * g,q);
+        pressure.submit_normal_gradient(-g,q);
+        pressure.submit_value(make_vectorized_array<value_type>(0.0),q);
       }
     }
     pressure.integrate(true,true);
@@ -6124,7 +6828,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   parallel::distributed::Triangulation<dim> triangulation;
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_faces;
     FE_DGQArbitraryNodes<dim>  fe;
-    FE_DGQArbitraryNodes<dim>  fe_p;
+    FE_Q<dim>  fe_p;
     FE_DGQArbitraryNodes<dim>  fe_xwall;
     DoFHandler<dim>  dof_handler;
     DoFHandler<dim>  dof_handler_p;
@@ -6170,7 +6874,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 #ifdef XWALL    //wall-model
     out[1] =  2.*in(1)-1.;
 #else    //no wall model
-    out[1] =  std::tanh(1.9*(2.*in(1)-1.))/std::tanh(1.9);
+    out[1] =  std::tanh(GRID_STRETCH_FAC*(2.*in(1)-1.))/std::tanh(GRID_STRETCH_FAC);
 #endif
     out[2] = in(2)-0.5*numbers::PI;
     return out;
@@ -6384,6 +7088,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
                                   fe_xwall, dim,
                                   fe, dim,
                                   fe_xwall, dim);
+
     DoFHandler<dim> joint_dof_handler (dof_handler.get_tria());
     joint_dof_handler.distribute_dofs (joint_fe);
     parallel::distributed::Vector<double>
@@ -6459,7 +7164,6 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   data_out.add_data_vector (*(*xwall).ReturnDofHandlerWallDistance(),(*(*xwall).ReturnWDist()), "wdist");
   data_out.add_data_vector (*(*xwall).ReturnDofHandlerWallDistance(),(*(*xwall).ReturnTauW()), "tauw");
 
-  std::string output_prefix = "solution_ch180_8_p3_xwall_f64";
     std::ostringstream filename;
     filename << "output/"
              << output_prefix
@@ -6586,10 +7290,12 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   for(unsigned int d=0;d<dim;++d)
     VectorTools::interpolate(dof_handler_xwall, AnalyticalSolution<dim>(d+dim+1,time), navier_stokes_operation.solution_n[d+dim+1]);
   navier_stokes_operation.solution_nm = navier_stokes_operation.solution_n;
+  navier_stokes_operation.solution_nm2 = navier_stokes_operation.solution_n;
 
   // compute vorticity from initial data at time t = START_TIME
   {
     navier_stokes_operation.compute_vorticity(navier_stokes_operation.solution_n,navier_stokes_operation.vorticity_n);
+//    navier_stokes_operation.compute_eddy_viscosity(navier_stokes_operation.solution_n);
   }
   navier_stokes_operation.vorticity_nm = navier_stokes_operation.vorticity_n;
 
@@ -6610,7 +7316,9 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     pcout << "Step = " << time_step_number << "  t = " << time << std::endl;
     if( (time+time_step) > (output_number*output_interval_time-EPSILON) )
     {
-    write_output(navier_stokes_operation.solution_n,
+      //distribute constraints in case of periodic BC with continuous pressure
+      navier_stokes_operation.DistributeConstraintP(navier_stokes_operation.solution_n[ dim ]);
+      write_output(navier_stokes_operation.solution_n,
             navier_stokes_operation.vorticity_n,
             navier_stokes_operation.ReturnXWall(),
             output_number++);
