@@ -78,7 +78,7 @@ namespace DG_NavierStokes
 
   const double START_TIME = 0.0;
   const double END_TIME = 30.0; // Poisseuille 5.0;  Kovasznay 1.0
-  const double OUTPUT_INTERVAL_TIME = 0.01;
+  const double OUTPUT_INTERVAL_TIME = 0.0001;
   const double CFL = 1.0;
 
   const double VISCOSITY = 1./180.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
@@ -465,7 +465,7 @@ namespace DG_NavierStokes
   private:
     const MGLevelObject<MATRIX> &matrix_operator;
   };
-  
+
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   class MGCoarsePressure : public MGCoarseGridBase<parallel::distributed::Vector<double> >
   {
@@ -583,9 +583,9 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
                           expmkmb(exp(-k*B))
       {};
 
-    virtual ~EvaluationXWall(){};
+    ~EvaluationXWall(){};
 
-    virtual void reinit(AlignedVector<VectorizedArray<Number> > qp_wdist,
+    void reinit(AlignedVector<VectorizedArray<Number> > qp_wdist,
         AlignedVector<VectorizedArray<Number> > qp_tauw,
         AlignedVector<Tensor<1,dim,VectorizedArray<Number> > > qp_gradwdist,
         AlignedVector<Tensor<1,dim,VectorizedArray<Number> > > qp_gradtauw,
@@ -614,7 +614,7 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 
     };
 
-    virtual void evaluate(const bool evaluate_val,
+    void evaluate(const bool evaluate_val,
                const bool evaluate_grad,
                const bool evaluate_hess = false)
     {
@@ -821,9 +821,9 @@ public:
                           fe_eval_tauw(),
                           values(),
                           gradients(),
+                          n_q_points(0),
                           dofs_per_cell(0),
                           tensor_dofs_per_cell(0),
-                          n_q_points(0),
                           enriched(false)
       {
         {
@@ -2925,7 +2925,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
                       std::vector<parallel::distributed::Vector<value_type> >      &dst);
 
   void analyse_computing_times();
-  void DistributeConstraintP(parallel::distributed::Vector<value_type> vec)
+  void DistributeConstraintP(parallel::distributed::Vector<value_type> &vec)
   {
     constraint_p_maxlevel.distribute(vec);
   }
@@ -3207,8 +3207,6 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   time_step(time_step_size),
   viscosity(VISCOSITY),
   gamma0(1.0),
-  alpha({1.0,0.0,0.0}),
-  beta({1.0,0.0,0.0}),
   computing_times(4),
   times_cg_velo(3),
   iterations_cg_velo(3),
@@ -3220,6 +3218,10 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   element_volume(0),
   xwall(dof_handler,&data,viscosity,element_volume)
   {
+    alpha[0] = 1.0;
+    alpha[1] = alpha[2] = 0.0;
+    beta[0] = 1.0;
+    beta[1] = beta[2] = 0.0;
 
   data.resize(dof_handler_p.get_tria().n_global_levels());
   //mg_matrices_pressure.resize(dof_handler_p.get_tria().n_levels()-2, dof_handler_p.get_tria().n_levels()-1);
@@ -3270,9 +3272,10 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
         if(level == mg_matrices_pressure.max_level())
         {
           add_periodicity_constraints(level, level,dface1,dface2,constraint_p_maxlevel);
-          constraint_p_maxlevel.close();
         }
       }
+    if (level == mg_matrices_pressure.max_level())
+      constraint_p_maxlevel.close();
 
 
     constraint.close();
@@ -3757,13 +3760,18 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     compute_rhs(f);
     for (unsigned int d=0; d<dim; ++d)
     {
-      velocity_temp[d].equ(beta[0],rhs_convection_n[d],beta[1],rhs_convection_nm[d],beta[2],rhs_convection_nm2[d]); // Stokes problem: velocity_temp[d] = f[d];
-      velocity_temp[d].sadd(1.,f[d]);
-      velocity_temp[d].sadd(time_step,alpha[0],solution_n[d],alpha[1],solution_nm[d],alpha[2],solution_nm2[d]);
+      velocity_temp[d].equ(beta[0],rhs_convection_n[d]);
+      velocity_temp[d].add(beta[1],rhs_convection_nm[d],beta[2],rhs_convection_nm2[d]); // Stokes problem: velocity_temp[d] = f[d];
+      velocity_temp[d] += f[d];
+      velocity_temp[d].sadd(time_step,alpha[0],solution_n[d]);
+      velocity_temp[d].add(alpha[1],solution_nm[d],alpha[2],solution_nm2[d]);
       //xwall
-      velocity_temp[d+dim].equ(beta[0],rhs_convection_n[d+dim],beta[1],rhs_convection_nm[d+dim],beta[2],rhs_convection_nm2[d+dim]); // Stokes problem: velocity_temp[d] = f[d];
-      velocity_temp[d+dim].sadd(1.,f[d+dim]);
-      velocity_temp[d+dim].sadd(time_step,alpha[0],solution_n[d+1+dim],alpha[1],solution_nm[d+1+dim],alpha[2],solution_nm2[d+1+dim]);
+      velocity_temp[d+dim].equ(beta[0],rhs_convection_n[d+dim]);
+      velocity_temp[d+dim].add(beta[1],rhs_convection_nm[d+dim],beta[2],rhs_convection_nm2[d+dim]); // Stokes problem: velocity_temp[d] = f[d];
+      velocity_temp[d+dim] += f[d+dim];
+      velocity_temp[d+dim].sadd(time_step, alpha[0], solution_n[d+1+dim]);
+      velocity_temp[d+dim].add(alpha[1],solution_nm[d+1+dim],
+                               alpha[2],solution_nm2[d+1+dim]);
     }
     rhs_convection_nm2.swap(rhs_convection_nm);
     rhs_convection_nm.swap(rhs_convection_n);
@@ -4898,8 +4906,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
       {
         // nonlinear convective flux F(u) = uu
         Tensor<1,dim,VectorizedArray<value_type> > u = fe_eval_xwall.get_value(q);
-        Tensor<2,dim,VectorizedArray<value_type> > F;
-        outer_product(F,u,u);
+        Tensor<2,dim,VectorizedArray<value_type> > F = outer_product(u,u);
         fe_eval_xwall.submit_gradient (F, q);
       }
       fe_eval_xwall.integrate (false,true);
@@ -4972,9 +4979,9 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
       Tensor<2,dim,VectorizedArray<value_type> > unity_tensor;
       for(unsigned int d=0;d<dim;++d)
         unity_tensor[d][d] = 1.0;
-      Tensor<2,dim,VectorizedArray<value_type> > flux_jacobian_M, flux_jacobian_P;
-      outer_product(flux_jacobian_M,uM,normal);
-      outer_product(flux_jacobian_P,uP,normal);
+      Tensor<2,dim,VectorizedArray<value_type> >
+        flux_jacobian_M = outer_product(uM, normal),
+        flux_jacobian_P = outer_product(uP, normal);
       flux_jacobian_M += uM_n*unity_tensor;
       flux_jacobian_P += uP_n*unity_tensor;
 
@@ -5118,9 +5125,9 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
         Tensor<2,dim,VectorizedArray<value_type> > unity_tensor;
         for(unsigned int d=0;d<dim;++d)
           unity_tensor[d][d] = 1.0;
-        Tensor<2,dim,VectorizedArray<value_type> > flux_jacobian_M, flux_jacobian_P;
-        outer_product(flux_jacobian_M,uM,normal);
-        outer_product(flux_jacobian_P,uP,normal);
+        Tensor<2,dim,VectorizedArray<value_type> >
+          flux_jacobian_M = outer_product(uM, normal),
+          flux_jacobian_P = outer_product(uP, normal);
         flux_jacobian_M += uM_n*unity_tensor;
         flux_jacobian_P += uP_n*unity_tensor;
 
@@ -5341,8 +5348,8 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
         Tensor<2,dim,VectorizedArray<value_type> > average_gradient_tensor =
                     ( fe_eval_xwall.get_gradient(q) + fe_eval_xwall_neighbor.get_gradient(q)) * make_vectorized_array<value_type>(0.5);
 #endif
-        Tensor<2,dim,VectorizedArray<value_type> > jump_tensor;
-        outer_product(jump_tensor,jump_value,fe_eval_xwall.get_normal_vector(q));
+        Tensor<2,dim,VectorizedArray<value_type> > jump_tensor =
+          outer_product(jump_value, fe_eval_xwall.get_normal_vector(q));
 
 
         //we do not want to symmetrize the penalty part
@@ -5426,8 +5433,8 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
           Tensor<2,dim,VectorizedArray<value_type> > average_gradient_tensor =
                       fe_eval_xwall.get_gradient(q);
   #endif
-          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor;
-          outer_product(jump_tensor,jump_value,fe_eval_xwall.get_normal_vector(q));
+          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor =
+            outer_product(jump_value, fe_eval_xwall.get_normal_vector(q));
 
 
           //we do not want to symmetrize the penalty part
@@ -5463,9 +5470,9 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
             average_gradient[i] = make_vectorized_array(0.);
             jump_value[i] = make_vectorized_array(0.);
           }
-          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor;
+          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor =
+            outer_product(jump_value, fe_eval_xwall.get_normal_vector(q));
 
-          outer_product(jump_tensor,jump_value,fe_eval_xwall.get_normal_vector(q));
 #ifdef SYMMETRIC
           fe_eval_xwall.submit_gradient(0.5*fe_eval_xwall.make_symmetric(fe_eval_xwall.eddyvisc[q]*jump_tensor),q);
 #else
@@ -5568,8 +5575,8 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
           }
 
           g_np *= fe_eval_xwall.eddyvisc[q];;
-          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor;
-          outer_product(jump_tensor,g_np,fe_eval_xwall.get_normal_vector(q));
+          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor =
+            outer_product(g_np, fe_eval_xwall.get_normal_vector(q));
 
 #ifdef SYMMETRIC
           fe_eval_xwall.submit_gradient(0.5*fe_eval_xwall.make_symmetric(2.*jump_tensor),q);
@@ -5601,8 +5608,8 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
           for(unsigned d=0;d<dim;++d)
             jump_value[d] = 0.0;
 
-          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor;
-          outer_product(jump_tensor,jump_value,fe_eval_xwall.get_normal_vector(q));
+          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor =
+            outer_product(jump_value, fe_eval_xwall.get_normal_vector(q));
 //#ifdef SYMMETRIC
 //          jump_tensor = fe_eval_xwall.make_symmetric(jump_tensor);
 //#endif
