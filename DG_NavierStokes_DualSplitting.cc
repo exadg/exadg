@@ -73,15 +73,15 @@ namespace DG_NavierStokes
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 12;
   const unsigned int dimension = 3; // dimension >= 2
-  const unsigned int refine_steps_min = 3;
-  const unsigned int refine_steps_max = 3;
+  const unsigned int refine_steps_min = 2;
+  const unsigned int refine_steps_max = 2;
 
   const double START_TIME = 0.0;
   const double END_TIME = 30.0; // Poisseuille 5.0;  Kovasznay 1.0
   const double OUTPUT_INTERVAL_TIME = 0.0001;
   const double CFL = 1.0;
 
-  const double VISCOSITY = 1./180.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
+  const double VISCOSITY = 1./10.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
 
   const double MAX_VELOCITY = 30.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
   const double stab_factor = 8.0;
@@ -91,7 +91,7 @@ namespace DG_NavierStokes
   const double GRID_STRETCH_FAC = 1.8;
   bool pure_dirichlet_bc = true;
 
-  const std::string output_prefix = "solution_ch180_8_p3_gt18_f8_cs17_newvisc_bdf3_cfl1";
+  const std::string output_prefix = "solution_ch10_4_p3_gt18_f8_cs17_newvisc_bdf3_cfl1";
 
   const double lambda = 0.5/VISCOSITY - std::pow(0.25/std::pow(VISCOSITY,2.0)+4.0*std::pow(numbers::PI,2.0),0.5);
 
@@ -339,7 +339,7 @@ namespace DG_NavierStokes
     //channel flow with periodic bc
     if(component==0)
       if(time<0.01)
-        return 1.0*(1.0+((double)rand()/RAND_MAX)*0.01);
+        return 1.0;//*(1.0+((double)rand()/RAND_MAX)*0.01);
       else
         return 1.0;
     else
@@ -3816,7 +3816,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   preconditioner_pressure(data.back().get_dof_handler(1), mg_pressure, mg_transfer_pressure);
   try
   {
-    solver.solve (mg_matrices_pressure[mg_matrices_pressure.max_level()], solution, solution_np[dim], PreconditionIdentity());//preconditioner_pressure);
+    solver.solve (mg_matrices_pressure[mg_matrices_pressure.max_level()], solution, solution_np[dim], preconditioner_pressure);
   }
   catch (SolverControl::NoConvergence test)
   {
@@ -3884,7 +3884,6 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
   /********************** STEP 3: projection *******************************/
     timer.restart();
-    DistributeConstraintP(solution_np[dim]);
 
   apply_projection(solution_np,velocity_temp2);
   for (unsigned int d=0; d<2*dim; ++d)
