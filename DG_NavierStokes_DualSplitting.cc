@@ -89,7 +89,8 @@ namespace DG_NavierStokes
 
   const double MAX_WDIST_XWALL = 0.2;
   const double GRID_STRETCH_FAC = 1.8;
-  bool pure_dirichlet_bc = true;
+  const bool pure_dirichlet_bc = true;
+  const bool use_dg_elements = false;
 
   const std::string output_prefix = "solution_ch10_4_p3_gt18_f8_cs17_newvisc_bdf3_cfl1";
 
@@ -485,7 +486,9 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
     {
 //      SolverControl solver_control (1e3, 1e-6);
       ReductionControl solver_control (1e3, 1.e-12,1e-6);
-      SolverCG<parallel::distributed::Vector<double> > solver_coarse (solver_control);
+      SolverCG<parallel::distributed::Vector<double> >::AdditionalData data;
+      //data.compute_eigenvalues = true;
+      SolverCG<parallel::distributed::Vector<double> > solver_coarse (solver_control, data);
       solver_coarse.solve (*ns_pressure_coarse, dst, src, *jacobi_preconditioner_pressure_coarse);
 //      solver_coarse.solve (*ns_pressure_coarse, dst, src, PreconditionIdentity());
     }
@@ -2906,7 +2909,8 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
                    parallel::distributed::Vector<value_type>    &dst,
                    const unsigned int                &level) const;
 
-  void  apply_P (parallel::distributed::Vector<value_type> &dst) const;
+  void  apply_P (parallel::distributed::Vector<value_type> &dst,
+                 const unsigned int level) const;
 
   void  shift_pressure (parallel::distributed::Vector<value_type>  &pressure);
 
@@ -3012,6 +3016,9 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     XWall<dim,fe_degree,fe_degree_xwall> xwall;
     std::vector<Table<2,VectorizedArray<value_type> > > matrices;
     ConstraintMatrix constraint_p_maxlevel;
+
+    std::vector<parallel::distributed::Vector<value_type> > pressure_constraint_selector;
+    std::vector<double> pressure_constraint_selector_norm_sqr;
 
   void update_time_integrator();
   void check_time_integrator();
@@ -3182,7 +3189,9 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
         face1->get_mg_dof_indices(target_level, dofs_1, 0);
         face2->get_mg_dof_indices(target_level, dofs_2, 0);
 
+        // only add constraints that are not yet present
         for (unsigned int i=0; i<dofs_per_face; ++i)
+          if (!constraints.is_constrained(dofs_2[i]))
           {
             constraints.add_line(dofs_2[i]);
             constraints.add_entry(dofs_2[i], dofs_1[i], 1.);
@@ -3262,6 +3271,10 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     dof_handler_vec.push_back(&dof_handler_xwall);
 
     ConstraintMatrix constraint, constraint_p;
+    IndexSet pressure_relevant_set;
+    DoFTools::extract_locally_relevant_level_dofs(dof_handler_p, level,
+                                                  pressure_relevant_set);
+    constraint_p.reinit(pressure_relevant_set);
     for (typename std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >::const_iterator it=periodic_face_pairs.begin(); it!=periodic_face_pairs.end(); ++it)
       {
         typename Triangulation<dim>::face_iterator face1 = it->cell[1]->face(it->face_idx[1]);
@@ -3269,17 +3282,36 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
         typename DoFHandler<dim>::face_iterator dface1(&dof_handler_p.get_tria(), face1->level(), face1->index(), &dof_handler_p);
         typename DoFHandler<dim>::face_iterator dface2(&dof_handler_p.get_tria(), face2->level(), face2->index(), &dof_handler_p);
         add_periodicity_constraints(level, level,dface1,dface2,constraint_p);
-        if(level == mg_matrices_pressure.max_level())
-        {
-          add_periodicity_constraints(level, level,dface1,dface2,constraint_p_maxlevel);
-        }
       }
-    if (level == mg_matrices_pressure.max_level())
-      constraint_p_maxlevel.close();
-
+    if (pure_dirichlet_bc && !use_dg_elements)
+      {
+        // put constraint on first unconstrained pressure dof for continuous
+        // elements
+        unsigned int i=0;
+        for ( ; i<pressure_relevant_set.n_elements(); ++i)
+          {
+            if (!constraint_p.is_constrained(pressure_relevant_set.index_within_set(i)))
+              break;
+          }
+        const types::global_dof_index first_index
+          = i < pressure_relevant_set.n_elements() ?
+                pressure_relevant_set.index_within_set(i) : pressure_relevant_set.size();
+        const types::global_dof_index first_index_global
+                = Utilities::MPI::min(first_index, MPI_COMM_WORLD);
+        if (pressure_relevant_set.is_element(first_index_global))
+          constraint_p.add_line(first_index_global);
+      }
 
     constraint.close();
     constraint_p.close();
+
+    if (level == mg_matrices_pressure.max_level())
+      {
+        constraint_p_maxlevel.clear();
+        constraint_p_maxlevel.reinit(constraint_p.get_local_lines());
+        constraint_p_maxlevel.merge(constraint_p);
+        constraint_p_maxlevel.close();
+      }
 
     std::vector<const ConstraintMatrix *> constraint_matrix_vec;
     constraint_matrix_vec.push_back(&constraint);
@@ -3331,6 +3363,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     mg_matrices_pressure[level].initialize(*this, level);
 //    mg_matrices_viscous[level].initialize(*this, level);
   }
+
   // PCG - solver for pressure with Chebyshev preconditioner
   smoother_data_chebyshev_pressure.smoothing_range = 30;
   smoother_data_chebyshev_pressure.degree = 0;
@@ -3524,12 +3557,12 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     void vmult_add (parallel::distributed::Vector<double> &dst,
         const parallel::distributed::Vector<double> &src) const
     {
-      if(pure_dirichlet_bc)
+      if(pure_dirichlet_bc && use_dg_elements)
       {
         parallel::distributed::Vector<double> temp1(src);
-        ns_operation->apply_P(temp1);
+        ns_operation->apply_P(temp1, level);
         ns_operation->apply_pressure(temp1,dst,level);
-        ns_operation->apply_P(dst);
+        ns_operation->apply_P(dst, level);
       }
       else
       {
@@ -3787,7 +3820,10 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   // set maximum number of iterations, tolerance
     ReductionControl solver_control (1e3, 1.e-12, 1.e-8); //1.e-5
 //  SolverControl solver_control (1e3, 1.e-6);
-  SolverCG<parallel::distributed::Vector<double> > solver (solver_control);
+    SolverCG<parallel::distributed::Vector<double> > solver (solver_control);
+    //SolverGMRES<parallel::distributed::Vector<double> >::AdditionalData gmres_data;
+    //gmres_data.compute_eigenvalues = true;
+    //SolverGMRES<parallel::distributed::Vector<double> > solver(solver_control, gmres_data);
 
 //  Timer cg_timer;
 //  cg_timer.restart();
@@ -4329,20 +4365,40 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
               &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_laplace_diagonal_face,
               &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_laplace_diagonal_boundary_face,
               this, laplace_diagonal, src);
-    for (unsigned int i=0; i<data.back().get_constrained_dofs(1).size(); ++i)
-      laplace_diagonal.local_element(data.back().get_constrained_dofs(1)[i]) += 1.0;
-    if(pure_dirichlet_bc)
+
+    if(pure_dirichlet_bc && use_dg_elements)
     {
-		  parallel::distributed::Vector<value_type> vec1(laplace_diagonal);
-		  for(unsigned int i=0;i<vec1.local_size();++i)
-			  vec1.local_element(i) = 1.;
+      if (pressure_constraint_selector.size() != data.size())
+        {
+          const_cast<std::vector<parallel::distributed::Vector<value_type> > &>
+            (pressure_constraint_selector).resize(data.size());
+          const_cast<std::vector<double> &>
+            (pressure_constraint_selector_norm_sqr).resize(data.size());
+        }
+      parallel::distributed::Vector<value_type> &pcs
+        = const_cast<parallel::distributed::Vector<value_type> &>
+        (pressure_constraint_selector.back());
+      double &pcs_norm_sqr
+        = const_cast<double&> (pressure_constraint_selector_norm_sqr.back());
+
+      data.back().initialize_dof_vector(pcs, 1);
+
+      for(unsigned int i=0; i<pcs.local_size();++i)
+        pcs.local_element(i) = 1.;
+      for (unsigned int i=0; i<data.back().get_constrained_dofs(1).size(); ++i)
+        pcs.local_element(data.back().get_constrained_dofs(1)[i]) = 0.;
+      pcs_norm_sqr = pcs.norm_sqr();
+
       parallel::distributed::Vector<value_type> d;
-		  d.reinit(laplace_diagonal);
-      apply_pressure(vec1,d);
-      double length = vec1*vec1;
-      double factor = vec1*d;
-      laplace_diagonal.add(-2./length,d,factor/pow(length,2.),vec1);
+      d.reinit(laplace_diagonal);
+      apply_pressure(pcs,d);
+      double factor = pcs*d;
+      laplace_diagonal.add(-2./pcs_norm_sqr, d,
+                           factor/pow(pcs_norm_sqr,2.), pcs);
     }
+
+    for (unsigned int i=0; i<data.back().get_constrained_dofs(1).size(); ++i)
+      laplace_diagonal.local_element(data.back().get_constrained_dofs(1)[i]) = 1.0;
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -4354,20 +4410,40 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
               &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_laplace_diagonal_face,
               &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_laplace_diagonal_boundary_face,
               this, laplace_diagonal, src);
-    for (unsigned int i=0; i<data[level].get_constrained_dofs(1).size(); ++i)
-      laplace_diagonal.local_element(data[level].get_constrained_dofs(1)[i]) += 1.0;
-    if(pure_dirichlet_bc)
+
+    if(pure_dirichlet_bc && use_dg_elements)
     {
-		  parallel::distributed::Vector<value_type> vec1(laplace_diagonal);
-		  for(unsigned int i=0;i<vec1.local_size();++i)
-			  vec1.local_element(i) = 1.;
+      if (pressure_constraint_selector.size() != data.size())
+        {
+          const_cast<std::vector<parallel::distributed::Vector<value_type> > &>
+            (pressure_constraint_selector).resize(data.size());
+          const_cast<std::vector<double> &>
+            (pressure_constraint_selector_norm_sqr).resize(data.size());
+        }
+      parallel::distributed::Vector<value_type> &pcs
+        = const_cast<parallel::distributed::Vector<value_type> &>
+        (pressure_constraint_selector[level]);
+      double &pcs_norm_sqr
+        = const_cast<double&> (pressure_constraint_selector_norm_sqr[level]);
+
+      data[level].initialize_dof_vector(pcs, 1);
+
+      for(unsigned int i=0; i<pcs.local_size();++i)
+        pcs.local_element(i) = 1.;
+      for (unsigned int i=0; i<data[level].get_constrained_dofs(1).size(); ++i)
+        pcs.local_element(data[level].get_constrained_dofs(1)[i]) = 0.;
+      pcs_norm_sqr = pcs.norm_sqr();
+
       parallel::distributed::Vector<value_type> d;
-		  d.reinit(laplace_diagonal);
-      apply_pressure(vec1,d,level);
-      double length = vec1*vec1;
-      double factor = vec1*d;
-      laplace_diagonal.add(-2./length,d,factor/pow(length,2.),vec1);
+      d.reinit(laplace_diagonal);
+      apply_pressure(pcs,d,level);
+      double factor = pcs*d;
+      laplace_diagonal.add(-2./pcs_norm_sqr, d,
+                           factor/pow(pcs_norm_sqr,2.), pcs);
     }
+
+    for (unsigned int i=0; i<data[level].get_constrained_dofs(1).size(); ++i)
+      laplace_diagonal.local_element(data[level].get_constrained_dofs(1)[i]) = 1.0;
   }
 
   template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -6293,15 +6369,12 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-  apply_P (parallel::distributed::Vector<value_type> &vector) const
+  apply_P (parallel::distributed::Vector<value_type> &vector,
+           const unsigned int level) const
   {
-    parallel::distributed::Vector<value_type> vec1(vector);
-    for(unsigned int i=0;i<vec1.local_size();++i)
-      vec1.local_element(i) = 1.;
-    vec1.update_ghost_values();
-    double scalar = vec1*vector;
-    double length = vec1*vec1;
-    vector.add(-scalar/length,vec1);
+    double scalar = pressure_constraint_selector[level] * vector;
+    vector.add(-scalar/pressure_constraint_selector_norm_sqr[level],
+               pressure_constraint_selector[level]);
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -6496,8 +6569,8 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
         &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_rhs_pressure_boundary_face,
         this, dst, src);
 
-  if(pure_dirichlet_bc)
-  {  apply_P(dst[dim]);  }
+  if(pure_dirichlet_bc && use_dg_elements)
+    {  apply_P(dst[dim], data.size()-1);  }
   }
 
   template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
