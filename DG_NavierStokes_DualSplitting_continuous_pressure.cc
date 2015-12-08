@@ -57,6 +57,7 @@
 #include <deal.II/meshworker/loop.h>
 
 #include <deal.II/integrators/laplace.h>
+//#include <deal.II/dofs/dof_tools.h>
 
 #include <fstream>
 #include <sstream>
@@ -78,21 +79,21 @@ namespace DG_NavierStokes
 
   const double START_TIME = 0.0;
   const double END_TIME = 30.0; // Poisseuille 5.0;  Kovasznay 1.0
-  const double OUTPUT_INTERVAL_TIME = 0.0001;
-  const double CFL = 1.0;
+  const double OUTPUT_INTERVAL_TIME = 0.01;
+  const double CFL = 0.1;
 
-  const double VISCOSITY = 1./10.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
+  const double VISCOSITY = 1./1.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
 
   const double MAX_VELOCITY = 30.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
-  const double stab_factor = 8.0;
-  const double CS = 0.17; // Smagorinsky constant
+  const double stab_factor = 1.0;
+  const double CS = 0.0; // Smagorinsky constant
 
   const double MAX_WDIST_XWALL = 0.2;
   const double GRID_STRETCH_FAC = 1.8;
   const bool pure_dirichlet_bc = true;
-  const bool use_dg_elements = false;
+  const bool use_dg_elements = true;
 
-  const std::string output_prefix = "solution_ch10_4_p3_gt18_f8_cs17_newvisc_bdf3_cfl1";
+  const std::string output_prefix = "solution_ch10_4_p3_gt18_f1_cs0_newvisc_bdf3_cfl01";
 
   const double lambda = 0.5/VISCOSITY - std::pow(0.25/std::pow(VISCOSITY,2.0)+4.0*std::pow(numbers::PI,2.0),0.5);
 
@@ -2929,7 +2930,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
                       std::vector<parallel::distributed::Vector<value_type> >      &dst);
 
   void analyse_computing_times();
-  void DistributeConstraintP(parallel::distributed::Vector<value_type> &vec)
+  void DistributeConstraintP(parallel::distributed::Vector<value_type> &vec) const
   {
     constraint_p_maxlevel.distribute(vec);
   }
@@ -3205,6 +3206,42 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   };
   };
 
+template <class DH>
+ void  extract_locally_relevant_level_dofs (const DH &dof_handler,
+                                        const unsigned int level,
+                                        IndexSet &dof_set)
+   {
+     // collect all the locally owned dofs
+     dof_set = dof_handler.locally_owned_mg_dofs(level);
+
+     // add the DoF on the adjacent ghost cells to the IndexSet
+
+     // Note: It is not worth it to cache intermediate data in a set because
+     // add_indices is more efficient. I also benchmarked skipping the
+     // locally_owned_dofs by doing locally_owned_dofs().is_element() but
+     // that is also slower unless 70%+ of the DoFs are locally owned and they
+     // are contiguous. - Timo Heister
+     std::vector<types::global_dof_index> dof_indices;
+
+     typename DH::cell_iterator cell = dof_handler.begin(level),
+                                endc = dof_handler.end(level);
+     for (; cell!=endc; ++cell)
+       {
+         const types::subdomain_id id = cell->level_subdomain_id();
+
+         // skip artificial and own cells (only look at ghost cells)
+         if (id == dof_handler.get_tria().locally_owned_subdomain()
+             || id == numbers::artificial_subdomain_id)
+           continue;
+
+         dof_indices.resize(cell->get_fe().dofs_per_cell);
+         cell->get_mg_dof_indices(dof_indices);
+         dof_set.add_indices(dof_indices.begin(), dof_indices.end());
+       }
+
+    dof_set.compress();
+}
+
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::NavierStokesOperation(const DoFHandler<dim> &dof_handler,
@@ -3272,7 +3309,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
 
     ConstraintMatrix constraint, constraint_p;
     IndexSet pressure_relevant_set;
-    DoFTools::extract_locally_relevant_level_dofs(dof_handler_p, level,
+    extract_locally_relevant_level_dofs(dof_handler_p, level,
                                                   pressure_relevant_set);
     constraint_p.reinit(pressure_relevant_set);
     for (typename std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >::const_iterator it=periodic_face_pairs.begin(); it!=periodic_face_pairs.end(); ++it)
@@ -3512,6 +3549,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
       level = lvl;
       ns_operation->get_data(level).initialize_dof_vector(diagonal,1);
       ns_operation->calculate_laplace_diagonal(diagonal,level);
+//      ns_operation->DistributeConstraintP(diagonal);
       inverse_diagonal = diagonal;
       for(unsigned int i=0; i<inverse_diagonal.local_size();++i)
         if( std::abs(inverse_diagonal.local_element(i)) > 1.0e-10 )
@@ -3521,6 +3559,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
           inverse_diagonal.local_element(i) = 1.0;
           diagonal.local_element(i) = 1.0;
         }
+//      ns_operation->DistributeConstraintP(inverse_diagonal);
       inverse_diagonal.update_ghost_values();
     }
 
@@ -3700,6 +3739,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     {
       ns_operation.get_data().initialize_dof_vector(diagonal,1);
       ns_operation.calculate_laplace_diagonal(diagonal);
+//      ns_operation.DistributeConstraintP(diagonal);
     }
 
     void vmult (parallel::distributed::Vector<double> &dst,
@@ -3712,6 +3752,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
         else
           dst.local_element(i) = src.local_element(i);
       }
+//      ns_operation.DistributeConstraintP(dst);
       dst.update_ghost_values();
     }
 
@@ -3734,6 +3775,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
     {
       ns_operation.get_data(level).initialize_dof_vector(diagonal,1);
       ns_operation.calculate_laplace_diagonal(diagonal,level);
+//      ns_operation.DistributeConstraintP(diagonal);
     }
 
     void vmult (parallel::distributed::Vector<double> &dst,
@@ -3746,6 +3788,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
         else
           dst.local_element(i) += src.local_element(i);
       }
+//      ns_operation.DistributeConstraintP(dst);
       dst.update_ghost_values();
     }
 
@@ -3852,7 +3895,7 @@ for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler_wall_distan
   preconditioner_pressure(data.back().get_dof_handler(1), mg_pressure, mg_transfer_pressure);
   try
   {
-    solver.solve (mg_matrices_pressure[mg_matrices_pressure.max_level()], solution, solution_np[dim], preconditioner_pressure);
+    solver.solve (mg_matrices_pressure[mg_matrices_pressure.max_level()], solution, solution_np[dim], PreconditionIdentity());//preconditioner_pressure);
   }
   catch (SolverControl::NoConvergence test)
   {
