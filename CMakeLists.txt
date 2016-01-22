@@ -4,11 +4,12 @@
 
 # Set the name of the project and target:
 SET(TARGET "DG_NavierStokes_DualSplitting")
+#SET(TARGET "multigrid_solver")
 
 # Declare all source files the target consists of:
 SET(TARGET_SRC
   ${TARGET}.cc
-  # You can specify additional files here!
+  poisson_solver.cc
   )
 
 # Usually, you will not need to modify anything beyond this point...
