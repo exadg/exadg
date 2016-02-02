@@ -1,6 +1,6 @@
 
 // Navier-Stokes splitting program
-// authors: Niklas Krank, Benjamin Krank, Martin Kronbichler, LNM
+// authors: Niklas Fehn, Benjamin Krank, Martin Kronbichler, LNM
 // years: 2015-2016
 
 #include <deal.II/base/vectorization.h>
@@ -8,6 +8,7 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/logstream.h>
 #include <deal.II/base/convergence_table.h>
+#include <deal.II/base/thread_local_storage.h>
 #include <deal.II/base/timer.h>
 
 #include <deal.II/lac/parallel_vector.h>
@@ -99,7 +100,7 @@ namespace DG_NavierStokes
   const bool pure_dirichlet_bc = true;
 
   const std::string output_prefix = "solution_ch180_8_p3_gt18_partp_k0_partu_sf1_cfl2";//solution_ch180_8_p4p4_gt18_f1_k1_cs0_cfl3";
- 
+
   const double lambda = 0.5/VISCOSITY - std::pow(0.25/std::pow(VISCOSITY,2.0)+4.0*std::pow(numbers::PI,2.0),0.5);
 
   template<int dim>
@@ -2510,7 +2511,7 @@ public:
     for(unsigned int i = 0; i < force.local_size(); ++i)
     {
       if(normalization.local_element(i)>0.0)
-      { 
+      {
         tauw_boundary.local_element(i) = force.local_element(i) / normalization.local_element(i);
         mean += tauw_boundary.local_element(i);
         count++;
@@ -2656,6 +2657,39 @@ public:
 
 
 
+  /// Collect all data for the inverse mass matrix operation in a struct in
+  /// order to avoid allocating the memory repeatedly.
+  template <int dim, int fe_degree, typename Number>
+  struct InverseMassMatrixData
+  {
+    InverseMassMatrixData(const MatrixFree<dim,Number> &data,
+                          const unsigned int fe_index = 0,
+                          const unsigned int quad_index = 0)
+      :
+      phi(1, FEEvaluation<dim,fe_degree,fe_degree+1,dim,Number>(data,fe_index,
+                                                                quad_index)),
+      coefficients(FEEvaluation<dim,fe_degree,fe_degree+1,dim,Number>::n_q_points),
+      inverse(phi[0])
+    {}
+
+    // Manually implement the copy operator because CellwiseInverseMassMatrix
+    // must point to the object 'phi'
+    InverseMassMatrixData(const InverseMassMatrixData &other)
+      :
+      phi(other.phi),
+      coefficients(other.coefficients),
+      inverse(phi[0])
+    {}
+
+    // For memory alignment reasons, need to place the FEEvaluation object
+    // into an aligned vector
+    AlignedVector<FEEvaluation<dim,fe_degree,fe_degree+1,dim,Number> > phi;
+    AlignedVector<VectorizedArray<Number> > coefficients;
+    MatrixFreeOperators::CellwiseInverseMassMatrix<dim,fe_degree,dim,Number> inverse;
+  };
+
+
+
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   class NavierStokesOperation
   {
@@ -2670,8 +2704,6 @@ public:
 
   void  rhs_convection (const std::vector<parallel::distributed::Vector<value_type> > &src,
                 std::vector<parallel::distributed::Vector<value_type> >    &dst);
-
-  void  compute_rhs (std::vector<parallel::distributed::Vector<value_type> >  &dst);
 
   void  apply_viscous (const parallel::distributed::BlockVector<value_type>     &src,
                    parallel::distributed::BlockVector<value_type>      &dst) const;
@@ -2744,6 +2776,8 @@ public:
     std::vector<Table<2,VectorizedArray<value_type> > > matrices;
     std::vector<std::vector<std::vector<LAPACKFullMatrix<value_type> > > > div_matrices;
 
+    mutable std_cxx11::shared_ptr<Threads::ThreadLocalStorage<InverseMassMatrixData<dim,fe_degree,value_type> > > mass_matrix_data;
+
   void update_time_integrator();
   void check_time_integrator();
 
@@ -2762,11 +2796,6 @@ public:
                       std::vector<parallel::distributed::Vector<double> >      &dst,
                       const std::vector<parallel::distributed::Vector<double> >  &src,
                       const std::pair<unsigned int,unsigned int>          &face_range) const;
-
-  void local_compute_rhs (const MatrixFree<dim,value_type>                &data,
-                        std::vector<parallel::distributed::Vector<double> >      &dst,
-                        const std::vector<parallel::distributed::Vector<double> >    &,
-                        const std::pair<unsigned int,unsigned int>          &cell_range) const;
 
   void local_apply_viscous (const MatrixFree<dim,value_type>        &data,
                         parallel::distributed::BlockVector<double>      &dst,
@@ -2974,6 +3003,10 @@ public:
   data.reinit (mapping, dof_handler_vec, constraint_matrix_vec,
                quadratures, additional_data);
 
+  // generate initial mass matrix data to avoid allocating it over and over
+  // again
+  mass_matrix_data.reset(new Threads::ThreadLocalStorage<InverseMassMatrixData<dim,fe_degree,value_type> >(InverseMassMatrixData<dim,fe_degree,value_type>(data,0,0)));
+
   // PCG - solver for pressure
   PoissonSolverData<dim> solver_data;
   solver_data.pressure_dof_index = 1;
@@ -3115,7 +3148,7 @@ public:
   }
   double sum = Utilities::MPI::sum(MemoryConsumption::memory_consumption(div_matrices), MPI_COMM_WORLD);
   if ( Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    std::cout << "memory consumption total: " << sum << std::endl; 
+    std::cout << "memory consumption total: " << sum << std::endl;
 #endif
 #endif
   QGauss<dim> quadrature(fe_degree+1);
@@ -3286,7 +3319,6 @@ public:
     Timer timer;
     timer.restart();
     rhs_convection(solution_n,rhs_convection_n);
-    compute_rhs(f);
     for (unsigned int d=0; d<dim; ++d)
     {
       solution_np[d].equ(beta[0],rhs_convection_n[d]);
@@ -3316,12 +3348,21 @@ public:
 
     unsigned int pres_niter = pressure_poisson_solver.solve(solution_np[dim], rhs_p);
 
-    if(time_step_number%output_solver_info_every_timesteps == 0 &&
-       Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-  {
-    std::cout << std::endl << "Number of timesteps: " << time_step_number << std::endl;
-    std::cout << "Solve Poisson equation for p: PCG iterations: " << std::setw(3) << pres_niter << "  Wall time: " << timer.wall_time() << std::endl;
-  }
+    if(time_step_number%output_solver_info_every_timesteps == 0)
+      {
+        Utilities::System::MemoryStats stats;
+        Utilities::System::get_memory_stats(stats);
+        Utilities::MPI::MinMaxAvg memory =
+          Utilities::MPI::min_max_avg (stats.VmRSS/1024., MPI_COMM_WORLD);
+        if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+          {
+            std::cout << std::endl << "Number of timesteps: " << time_step_number << std::endl;
+            std::cout << "Solve Poisson equation for p: PCG iterations: " << std::setw(3) << pres_niter << "  Wall time: " << timer.wall_time() << std::endl;
+            std::cout << "Memory stats [MB]: " << memory.min << " [p" << memory.min_index << "] "
+                      << memory.avg << " " << memory.max << " [p" << memory.max_index << "]"
+                      << std::endl;
+          }
+      }
 
   computing_times[1] += timer.wall_time();
   /*************************************************************************/
@@ -3448,27 +3489,23 @@ public:
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   analyse_computing_times()
   {
-    std::vector<double> final_computing_times(5);
+    double total_avg_time = 0;
 
-    const int numproc = Utilities::MPI::sum(1,MPI_COMM_WORLD);
-  final_computing_times[0] = Utilities::MPI::sum(computing_times[0],MPI_COMM_WORLD)/(double)numproc;
-  final_computing_times[1] = Utilities::MPI::sum(computing_times[1],MPI_COMM_WORLD)/(double)numproc;
-  final_computing_times[2] = Utilities::MPI::sum(computing_times[2],MPI_COMM_WORLD)/(double)numproc;
-  final_computing_times[3] = Utilities::MPI::sum(computing_times[3],MPI_COMM_WORLD)/(double)numproc;
-  final_computing_times[4] = Utilities::MPI::sum(computing_times[4],MPI_COMM_WORLD)/(double)numproc;
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
-  {
-  double time=0.0;
-  for(unsigned int i=0;i<5;++i)
-    time+=final_computing_times[i];
-  std::cout<<std::endl<<"Computing times:"
-       <<std::endl<<"Step 1: Convection:\t"<<final_computing_times[0]/time
-       <<std::endl<<"Step 2: Pressure:\t"<<final_computing_times[1]/time
-       <<std::endl<<"Step 3: Projection:\t"<<final_computing_times[2]/time
-       <<std::endl<<"Step 4: Viscous:\t"<<final_computing_times[3]/time
-       <<std::endl<<"Step 5: Other:\t\t"<<final_computing_times[4]/time
-       <<std::endl<<"Time (Step 1-5):\t"<<time<<std::endl;
-  }
+    std::string names [5] = {"Convection","Pressure","Projection","Viscous   ","Other    "};
+    if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+      std::cout << std::endl << "Computing times:    \t [min/avg/max] \t\t [p_min/p_max]" << std::endl;
+    for (unsigned int i=0; i<computing_times.size(); ++i)
+      {
+        Utilities::MPI::MinMaxAvg data =
+          Utilities::MPI::min_max_avg (computing_times[i], MPI_COMM_WORLD);
+        if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+          std::cout << "Step " << i+1 <<  ": " << names[i] << "\t " << data.min << "/" << data.avg << "/" << data.max << " \t " << data.min_index << "/" << data.max_index << std::endl;
+        total_avg_time += data.avg;
+      }
+    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+      {
+        std::cout  <<"Time (Step 1-5):\t "<<total_avg_time<<std::endl;
+      }
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -3963,26 +4000,6 @@ public:
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-  compute_rhs (std::vector<parallel::distributed::Vector<value_type> >  &dst)
-  {
-    for(unsigned int d=0;d<dim;++d)
-    {
-      dst[d] = 0;
-#ifdef XWALL
-      dst[d+dim] = 0;
-#endif
-    }
-  // data.loop
-  data.cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_rhs,this, dst, dst);
-
-  // data.cell_loop
-  data.cell_loop(&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_mass_matrix,
-                             this, dst, dst);
-
-  }
-
-  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-  void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   apply_viscous (const parallel::distributed::BlockVector<value_type>   &src,
               parallel::distributed::BlockVector<value_type>      &dst) const
   {
@@ -4048,8 +4065,26 @@ public:
         Tensor<2,dim,VectorizedArray<value_type> > F
           = outer_product(u,u);
         fe_eval_xwall.submit_gradient (F, q);
+
+        // include rhs force term
+        Point<dim,VectorizedArray<value_type> > q_points = fe_eval_xwall.quadrature_point(q);
+        Tensor<1,dim,VectorizedArray<value_type> > rhs;
+        for(unsigned int d=0;d<dim;++d)
+          {
+            RHS<dim> f(d,time+time_step);
+            value_type array [VectorizedArray<value_type>::n_array_elements];
+            for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+              {
+                Point<dim> q_point;
+                for (unsigned int d=0; d<dim; ++d)
+                  q_point[d] = q_points[d][n];
+                array[n] = f.value(q_point);
+              }
+            rhs[d].load(&array[0]);
+          }
+        fe_eval_xwall.submit_value (rhs, q);
       }
-      fe_eval_xwall.integrate (false,true);
+      fe_eval_xwall.integrate (true,true);
       fe_eval_xwall.distribute_local_to_global (dst,0, dst, dim);
     }
   }
@@ -4329,48 +4364,6 @@ public:
 
     fe_eval_xwall.integrate(true,false);
     fe_eval_xwall.distribute_local_to_global(dst,0, dst, dim);
-  }
-  }
-
-  template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-  void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-  local_compute_rhs (const MatrixFree<dim,value_type>              &data,
-          std::vector<parallel::distributed::Vector<double> >      &dst,
-          const std::vector<parallel::distributed::Vector<double> >  &,
-          const std::pair<unsigned int,unsigned int>           &cell_range) const
-  {
-    // (data,0,0) : second argument: which dof-handler, third argument: which quadrature
-//  FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> velocity (data,0,0);
-#ifdef XWALL
-  FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall (data,xwallstatevec[0],xwallstatevec[1],0,3);
-#else
-  FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall (data,xwallstatevec[0],xwallstatevec[1],0,0);
-#endif
-  for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
-  {
-    fe_eval_xwall.reinit (cell);
-
-    for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
-    {
-      Point<dim,VectorizedArray<value_type> > q_points = fe_eval_xwall.quadrature_point(q);
-      Tensor<1,dim,VectorizedArray<value_type> > rhs;
-      for(unsigned int d=0;d<dim;++d)
-      {
-        RHS<dim> f(d,time+time_step);
-        value_type array [VectorizedArray<value_type>::n_array_elements];
-        for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
-        {
-          Point<dim> q_point;
-          for (unsigned int d=0; d<dim; ++d)
-            q_point[d] = q_points[d][n];
-          array[n] = f.value(q_point);
-        }
-        rhs[d].load(&array[0]);
-      }
-      fe_eval_xwall.submit_value (rhs, q);
-    }
-    fe_eval_xwall.integrate (true,false);
-    fe_eval_xwall.distribute_local_to_global (dst,0, dst, dim);
   }
   }
 
@@ -4915,12 +4908,8 @@ public:
                 const parallel::distributed::BlockVector<value_type>  &src,
                 const std::pair<unsigned int,unsigned int>   &cell_range) const
   {
+   InverseMassMatrixData<dim,fe_degree,value_type>& mass_data = mass_matrix_data->get();
 
-    //initialize routine for non-enriched elements
-    FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> phi(data,0,0);
-//    VectorizedArray<value_type> coefficients[FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type>::tensor_dofs_per_cell]
-    AlignedVector<VectorizedArray<value_type> > coefficients(phi.dofs_per_cell);
-    MatrixFreeOperators::CellwiseInverseMassMatrix<dim, fe_degree, dim, value_type> inverse(phi);
 #ifdef XWALL
    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type> fe_eval_xwall (data,xwallstatevec[0],xwallstatevec[1],0,3);
 #endif
@@ -4949,13 +4938,15 @@ public:
     else
 #endif
     {
-      phi.reinit(cell);
-      phi.read_dof_values(src,0);
+      mass_data.phi[0].reinit(cell);
+      mass_data.phi[0].read_dof_values(src, 0);
 
-      inverse.fill_inverse_JxW_values(coefficients);
-      inverse.apply(coefficients,dim,phi.begin_dof_values(),phi.begin_dof_values());
+      mass_data.inverse.fill_inverse_JxW_values(mass_data.coefficients);
+      mass_data.inverse.apply(mass_data.coefficients, dim,
+                              mass_data.phi[0].begin_dof_values(),
+                              mass_data.phi[0].begin_dof_values());
 
-      phi.set_dof_values(dst,0);
+      mass_data.phi[0].set_dof_values(dst,0);
     }
   }
   }
@@ -5969,14 +5960,10 @@ public:
 #endif
 
 
-#ifdef LOWMEMORY
+#if defined(LOWMEMORY) || defined(XWALL)
     data.cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_grad_div_projection,this, dst, dst);
 #else
-#ifdef XWALL
-  data.cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_grad_div_projection,this, dst, dst);
-#else
-  data.cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_fast_grad_div_projection,this, dst, dst);
-#endif
+    data.cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_fast_grad_div_projection,this, dst, dst);
 #endif
 
 
