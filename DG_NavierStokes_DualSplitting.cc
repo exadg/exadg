@@ -60,6 +60,9 @@
 
 //#define XWALL
 //#define COMPDIV
+#define LOWMEMORY //compute grad-div matrices directly instead of saving them
+#define PRESPARTIAL
+#define DIVUPARTIAL
 
 namespace DG_NavierStokes
 {
@@ -68,33 +71,35 @@ namespace DG_NavierStokes
   const unsigned int fe_degree = 3;
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
-  const unsigned int n_q_points_1d_xwall = 15;
+  const unsigned int n_q_points_1d_xwall = 1;
   const unsigned int dimension = 3; // dimension >= 2
-  const unsigned int refine_steps_min = 4;
-  const unsigned int refine_steps_max = 4;
+  const unsigned int refine_steps_min = 3;
+  const unsigned int refine_steps_max = 3;
 
   const double START_TIME = 0.0;
-  const double END_TIME = 50.0; // Poisseuille 5.0;  Kovasznay 1.0
-  const double OUTPUT_INTERVAL_TIME = 0.01;
-  const double OUTPUT_START_TIME = 30.0;
-  const double CFL = 1.0;
+  const double END_TIME = 70.0; // Poisseuille 5.0;  Kovasznay 1.0
+  const double OUTPUT_INTERVAL_TIME = 1.0;
+  const double OUTPUT_START_TIME = 50.0;
+  const double STATISTICS_START_TIME = 50.0;
+  const int MAX_NUM_STEPS = 10000000;
+  const double CFL = 2.0;
 
   const double VISCOSITY = 1./180.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
 
   const double MAX_VELOCITY = 30.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
   const double stab_factor = 1.0;
-  const double K=1.0; //grad-div stabilization/penalty parameter
+  const double K=0.0; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
-  const double DTAUW = 0.5;
+  const double DTAUW = 1.0;
 
   const double MAX_WDIST_XWALL = 0.2;
   const double GRID_STRETCH_FAC = 1.8;
   const bool pure_dirichlet_bc = true;
 
-  const std::string output_prefix = "solution_ch180_4_p3p3_f1_k1_cs0_cfl1";//solution_ch180_8_p4p4_gt18_f1_k1_cs0_cfl3";
-
+  const std::string output_prefix = "solution_ch180_8_p3_gt18_partp_k0_partu_sf1_cfl2";//solution_ch180_8_p4p4_gt18_f1_k1_cs0_cfl3";
+ 
   const double lambda = 0.5/VISCOSITY - std::pow(0.25/std::pow(VISCOSITY,2.0)+4.0*std::pow(numbers::PI,2.0),0.5);
 
   template<int dim>
@@ -154,7 +159,7 @@ namespace DG_NavierStokes
     //turbulent channel flow
     if(component == 0)
     {
-      if(p[1]<0.99&&p[1]>-0.99)
+      if(p[1]<0.9999&&p[1]>-0.9999)
         result = -22.0*(pow(p[1],2.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*1.0);//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
       else
         result = 0.0;
@@ -2505,7 +2510,7 @@ public:
     for(unsigned int i = 0; i < force.local_size(); ++i)
     {
       if(normalization.local_element(i)>0.0)
-      {
+      { 
         tauw_boundary.local_element(i) = force.local_element(i) / normalization.local_element(i);
         mean += tauw_boundary.local_element(i);
         count++;
@@ -2570,7 +2575,6 @@ public:
 
           VectorizedArray<double> tauwsc = make_vectorized_array<double>(0.0);
           tauwsc = average_gradient.norm();
-
           tauwsc *= fe_eval_xwall.eddyvisc[q];
           fe_eval_tauw.submit_value(tauwsc,q);
         }
@@ -2893,6 +2897,11 @@ public:
   void compute_lift_and_drag();
 
   void compute_pressure_difference();
+  public:
+  void local_compute_divu_for_channel_stats (const MatrixFree<dim,value_type>                &data,
+                            std::vector<double >      &test,
+                            const std::vector<parallel::distributed::Vector<double> >    &source,
+                            const std::pair<unsigned int,unsigned int>          &cell_range);
   };
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -2912,7 +2921,7 @@ public:
   time_step(time_step_size),
   viscosity(VISCOSITY),
   gamma0(1.0),
-  computing_times(4),
+  computing_times(5),
   times_cg_velo(3),
   iterations_cg_velo(3),
   times_cg_pressure(2),
@@ -3039,6 +3048,7 @@ public:
 //  data.initialize_dof_vector(eddy_viscosity,0);
 
   rhs_convection_n.resize(2*dim);
+#ifdef XWALL
   data.initialize_dof_vector(rhs_convection_n[0],0);
   data.initialize_dof_vector(rhs_convection_n[dim],3);
   for (unsigned int d=1;d<dim;++d)
@@ -3049,6 +3059,16 @@ public:
   rhs_convection_nm2 = rhs_convection_n;
   rhs_convection_nm = rhs_convection_n;
   f = rhs_convection_n;
+#else
+  data.initialize_dof_vector(rhs_convection_n[0],0);
+  for (unsigned int d=1;d<dim;++d)
+  {
+    rhs_convection_n[d] = rhs_convection_n[0];
+  }
+  rhs_convection_nm2 = rhs_convection_n;
+  rhs_convection_nm = rhs_convection_n;
+  f = rhs_convection_n;
+#endif
 
   dof_index_first_point = 0;
   for(unsigned int d=0;d<dim;++d)
@@ -3083,13 +3103,20 @@ public:
   //make sure that these vectors are available on the ghosted elements
   xwallstatevec[0].update_ghost_values();
   xwallstatevec[1].update_ghost_values();
+#ifdef XWALL
   matrices.resize(data.n_macro_cells());
+#endif
+#ifndef LOWMEMORY
 #ifndef XWALL
   {
     std::vector<parallel::distributed::Vector<value_type> > dummy;
     div_matrices.resize(data.n_macro_cells());
     data.cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_precompute_grad_div_projection,this, dummy, dummy);
   }
+  double sum = Utilities::MPI::sum(MemoryConsumption::memory_consumption(div_matrices), MPI_COMM_WORLD);
+  if ( Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    std::cout << "memory consumption total: " << sum << std::endl; 
+#endif
 #endif
   QGauss<dim> quadrature(fe_degree+1);
   FEValues<dim> fe_values(mapping, dof_handler.get_fe(), quadrature, update_JxW_values);
@@ -3221,8 +3248,6 @@ public:
     time = cur_time;
     time_step = delta_t;
 
-    Timer timer;
-    timer.restart();
     //important because I am using this on element level without giving it as argument to element loop
     for (unsigned int d=0; d<dim; ++d)
     {
@@ -3258,6 +3283,8 @@ public:
   /*************************************************************************/
 
   /***************** STEP 1: convective (nonlinear) term ********************/
+    Timer timer;
+    timer.restart();
     rhs_convection(solution_n,rhs_convection_n);
     compute_rhs(f);
     for (unsigned int d=0; d<dim; ++d)
@@ -3368,8 +3395,8 @@ public:
 
   computing_times[3] += timer.wall_time();
   /*************************************************************************/
-
-  // solution at t_n -> solution at t_n-1    and    solution at t_n+1 -> solution at t_n
+  timer.restart();
+  // solueion at t_n -> solution at t_n-1    and    solution at t_n+1 -> solution at t_n
   solution_nm2.swap(solution_nm);
   solution_nm.swap(solution_n);
   solution_n.swap(solution_np);
@@ -3378,7 +3405,7 @@ public:
   vorticity_nm.swap(vorticity_n);
 
   compute_vorticity(solution_n,vorticity_n);
-
+  computing_times[4] += timer.wall_time();
 //  compute_lift_and_drag();
 //  compute_pressure_difference();
 //  compute_vorticity(solution_n,vorticity_n);
@@ -3421,15 +3448,27 @@ public:
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   analyse_computing_times()
   {
+    std::vector<double> final_computing_times(5);
+
+    const int numproc = Utilities::MPI::sum(1,MPI_COMM_WORLD);
+  final_computing_times[0] = Utilities::MPI::sum(computing_times[0],MPI_COMM_WORLD)/(double)numproc;
+  final_computing_times[1] = Utilities::MPI::sum(computing_times[1],MPI_COMM_WORLD)/(double)numproc;
+  final_computing_times[2] = Utilities::MPI::sum(computing_times[2],MPI_COMM_WORLD)/(double)numproc;
+  final_computing_times[3] = Utilities::MPI::sum(computing_times[3],MPI_COMM_WORLD)/(double)numproc;
+  final_computing_times[4] = Utilities::MPI::sum(computing_times[4],MPI_COMM_WORLD)/(double)numproc;
+  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+  {
   double time=0.0;
-  for(unsigned int i=0;i<4;++i)
-    time+=computing_times[i];
+  for(unsigned int i=0;i<5;++i)
+    time+=final_computing_times[i];
   std::cout<<std::endl<<"Computing times:"
-       <<std::endl<<"Step 1: Convection:\t"<<computing_times[0]/time
-       <<std::endl<<"Step 2: Pressure:\t"<<computing_times[1]/time
-       <<std::endl<<"Step 3: Projection:\t"<<computing_times[2]/time
-       <<std::endl<<"Step 4: Viscous:\t"<<computing_times[3]/time
-       <<std::endl<<"Time (Step 1-4):\t"<<time<<std::endl;
+       <<std::endl<<"Step 1: Convection:\t"<<final_computing_times[0]/time
+       <<std::endl<<"Step 2: Pressure:\t"<<final_computing_times[1]/time
+       <<std::endl<<"Step 3: Projection:\t"<<final_computing_times[2]/time
+       <<std::endl<<"Step 4: Viscous:\t"<<final_computing_times[3]/time
+       <<std::endl<<"Step 5: Other:\t\t"<<final_computing_times[4]/time
+       <<std::endl<<"Time (Step 1-5):\t"<<time<<std::endl;
+  }
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -3515,7 +3554,6 @@ public:
 //    f_lift.close();
 //  }
   }
-
 
 //  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 //  void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
@@ -5260,6 +5298,45 @@ public:
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  local_compute_divu_for_channel_stats(const MatrixFree<dim,value_type>                  &data,
+                std::vector<double >      &test,
+                const std::vector<parallel::distributed::Vector<value_type> >  &source,
+                const std::pair<unsigned int,unsigned int>            &cell_range)
+  {
+
+
+  FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> phi(data,xwallstatevec[0],xwallstatevec[1],0,0);
+  AlignedVector<VectorizedArray<value_type> > JxW_values(phi.n_q_points);
+  VectorizedArray<value_type> div_vec = make_vectorized_array(0.);
+  VectorizedArray<value_type> vol_vec = make_vectorized_array(0.);
+  for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+  {
+    phi.reinit(cell);
+    phi.read_dof_values(source,0,source,dim+1);
+    phi.evaluate(false,true);
+    phi.fill_JxW_values(JxW_values);
+
+    for (unsigned int q=0; q<phi.n_q_points; ++q)
+    {
+      vol_vec += JxW_values[q];
+      div_vec += std::abs(phi.get_divergence(q));
+    }
+  }
+  value_type div = 0.;
+  value_type vol = 0.;
+  for (unsigned int v=0;v<VectorizedArray<value_type>::n_array_elements;v++)
+  {
+    div += div_vec[v];
+    vol += vol_vec[v];
+  }
+  div = Utilities::MPI::sum (div, MPI_COMM_WORLD);
+  vol = Utilities::MPI::sum (vol, MPI_COMM_WORLD);
+  test.at(0)=div/vol;
+
+  }
+
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   local_fast_grad_div_projection(const MatrixFree<dim,value_type>                  &data,
                 std::vector<parallel::distributed::Vector<value_type> >      &dst,
                 const std::vector<parallel::distributed::Vector<value_type> >  &src,
@@ -5371,10 +5448,10 @@ public:
 //no XWALL but with XWALL routine
 //   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,1,value_type> fe_eval_xwall (data,src.at(dim+1),src.at(dim+2),0,0);
 
-
-
    //   FEEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval_xwall (data,0,0);
+#ifdef XWALL
   std::vector<LAPACKFullMatrix<value_type> > matrices(VectorizedArray<value_type>::n_array_elements);
+#endif
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
   {
 #ifdef XWALL
@@ -5569,12 +5646,21 @@ public:
     fe_eval_xwall.reinit (cell);
     pressure.reinit (cell);
     fe_eval_xwall.read_dof_values(src,0,src,dim+1);
+#ifdef DIVUPARTIAL
     fe_eval_xwall.evaluate (true,false,false);
     for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
     {
       pressure.submit_gradient (fe_eval_xwall.get_value(q)/time_step, q);
     }
     pressure.integrate (false,true);
+#else
+    fe_eval_xwall.evaluate (false,true,false);
+    for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
+    {
+      pressure.submit_value (-fe_eval_xwall.get_divergence(q)/time_step, q);
+    }
+    pressure.integrate (true,false);
+#endif
     pressure.distribute_local_to_global (dst);
   }
   }
@@ -5612,7 +5698,11 @@ public:
     {
       Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_xwall.get_normal_vector(q);
 //      Tensor<1,dim,VectorizedArray<value_type> > meanvel = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q));
+#ifdef DIVUPARTIAL
       Tensor<1,dim,VectorizedArray<value_type> > meanvel = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q));
+#else
+      Tensor<1,dim,VectorizedArray<value_type> > meanvel = make_vectorized_array(q);
+#endif
       VectorizedArray<value_type> submitvalue;
       submitvalue = normal[0]*meanvel[0];
       for (unsigned int i = 1; i<dim;i++)
@@ -5804,8 +5894,11 @@ public:
 //                        + make_vectorized_array<value_type>(beta[1])*(make_vectorized_array<value_type>(viscosity)*rot_nm));
         // 1st order extrapolation
 //        h = - normal * (dudt_np - rhs_np + conv_n + make_vectorized_array<value_type>(viscosity)*rot_n);
-
+#ifdef DIVUPARTIAL
         Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q);
+#else
+        Tensor<1,dim,VectorizedArray<value_type> > meanvel = make_vectorized_array(0.);
+#endif
         VectorizedArray<value_type> submitvalue;
         submitvalue = normal[0]*meanvel[0];
         for (unsigned int i = 1; i<dim;i++)
@@ -5832,7 +5925,11 @@ public:
         g.load(&array[0]);
 
         Tensor<1,dim,VectorizedArray<value_type> > normal = pressure.get_normal_vector(q);
+#ifdef DIVUPARTIAL
         Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q);
+#else
+        Tensor<1,dim,VectorizedArray<value_type> > meanvel = make_vectorized_array(0.);
+#endif
         VectorizedArray<value_type> submitvalue;
         submitvalue = normal[0]*meanvel[0];
         for (unsigned int i = 1; i<dim;i++)
@@ -5872,10 +5969,14 @@ public:
 #endif
 
 
+#ifdef LOWMEMORY
+    data.cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_grad_div_projection,this, dst, dst);
+#else
 #ifdef XWALL
   data.cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_grad_div_projection,this, dst, dst);
 #else
   data.cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_fast_grad_div_projection,this, dst, dst);
+#endif
 #endif
 
 
@@ -5907,8 +6008,9 @@ public:
     pressure.reinit (cell);
     pressure.read_dof_values(src,dim);
     fe_eval_xwall.read_dof_values(src,0,src,dim+1);
-    pressure.evaluate (true,false);
     fe_eval_xwall.evaluate(true,false);
+#ifdef PRESPARTIAL
+    pressure.evaluate (true,false);
     for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
     {
       Tensor<2,dim,VectorizedArray<value_type> > test;
@@ -5920,6 +6022,14 @@ public:
       fe_eval_xwall.submit_value(fe_eval_xwall.get_value(q),q);
     }
     fe_eval_xwall.integrate (true,true);
+#else
+    pressure.evaluate (false,true);
+    for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
+    {
+      fe_eval_xwall.submit_value(fe_eval_xwall.get_value(q)-fac*pressure.get_gradient(q),q);
+    }
+    fe_eval_xwall.integrate (true,false);
+#endif
     fe_eval_xwall.distribute_local_to_global (dst,0,dst,dim);
   }
   }
@@ -5957,7 +6067,11 @@ public:
     {
       Tensor<1,dim,VectorizedArray<value_type> > normal = fac*pressure.get_normal_vector(q);
 //      Tensor<1,dim,VectorizedArray<value_type> > meanvel = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q));
+#ifdef PRESPARTIAL
       VectorizedArray<value_type> meanpres = 0.5*(pressure.get_value(q)+pressure_neighbor.get_value(q));
+#else
+      VectorizedArray<value_type> meanpres =make_vectorized_array(0.);
+#endif
       normal*=meanpres;
 
       fe_eval_xwall.submit_value (-normal, q);
@@ -5996,7 +6110,11 @@ public:
     {
       Tensor<1,dim,VectorizedArray<value_type> > normal = fac*pressure.get_normal_vector(q);
 //      Tensor<1,dim,VectorizedArray<value_type> > meanvel = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q));
+#ifdef PRESPARTIAL
       VectorizedArray<value_type> meanpres = pressure.get_value(q);
+#else
+      VectorizedArray<value_type> meanpres =make_vectorized_array(0.);
+#endif
       normal*=meanpres;
 
       fe_eval_xwall.submit_value (-normal, q);
@@ -6045,6 +6163,16 @@ public:
              parallel::distributed::Vector<value_type>   &div_new,
 #endif
              const unsigned int                     timestep_number);
+
+  std::vector<double> vel_glob;
+  std::vector<double> velxsq_glob;
+  std::vector<double> velysq_glob;
+  std::vector<double> velzsq_glob;
+  std::vector<double> veluv_glob;
+  int numchsamp;
+  double udiv_samp;
+  void init_channel_statistics();
+  void compute_channel_statistics(std::vector<parallel::distributed::Vector<value_type> >   &solution_n, std::vector<parallel::distributed::Vector<value_type> >   &vel_hat, NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> & nsoperation);
   void calculate_error(std::vector<parallel::distributed::Vector<value_type>> &solution_n, const double delta_t=0.0);
   void calculate_time_step();
 
@@ -6186,9 +6314,9 @@ public:
     dof_handler.distribute_dofs(fe);
     dof_handler_p.distribute_dofs(fe_p);
     dof_handler_xwall.distribute_dofs(fe_xwall);
-    dof_handler.distribute_mg_dofs(fe);
+    //dof_handler.distribute_mg_dofs(fe);
     dof_handler_p.distribute_mg_dofs(fe_p);
-    dof_handler_xwall.distribute_mg_dofs(fe_xwall);
+    //dof_handler_xwall.distribute_mg_dofs(fe_xwall);
 
     float ndofs_per_cell_velocity = pow(float(fe_degree+1),dim)*dim;
     float ndofs_per_cell_pressure = pow(float(fe_degree_p+1),dim);
@@ -6416,7 +6544,7 @@ public:
              << output_number
              << ".vtu";
 
-    data_out.build_patches (2);
+    data_out.build_patches (5);
 
     std::ofstream output (filename.str().c_str());
 
@@ -6444,6 +6572,182 @@ public:
     data_out.write_pvtu_record (master_output, filenames);
   }
   }
+
+  template<int dim>
+  void NavierStokesProblem<dim>::
+  init_channel_statistics()
+  {
+    const int n_points_y = 9;
+    const int n_points_y_glob =  std::pow(2,n_refinements)*(n_points_y-1)+1;
+
+    vel_glob.resize(n_points_y_glob);
+    velxsq_glob.resize(n_points_y_glob);
+    velysq_glob.resize(n_points_y_glob);
+    velzsq_glob.resize(n_points_y_glob);
+    veluv_glob.resize(n_points_y_glob);
+    udiv_samp = 0;
+    numchsamp = 0;
+  }
+
+  template<int dim>
+  void NavierStokesProblem<dim>::
+  compute_channel_statistics(std::vector<parallel::distributed::Vector<value_type> >   &solution_n,std::vector<parallel::distributed::Vector<value_type> >   &vel_hathat, NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> & nsoperation)
+  {
+    numchsamp++;
+    const int n_points_y = 9;
+    const int n_points_y_glob =  std::pow(2,n_refinements)*(n_points_y-1)+1;
+
+    std::vector<double> y_glob;
+    for (unsigned int ele = 0; ele < std::pow(2,n_refinements);ele++)
+    {
+      double elelower = 1./(double)std::pow(2,n_refinements)*(double)ele;
+      double eleupper = 1./(double)std::pow(2,n_refinements)*(double)(ele+1);
+      Point<dim> pointlower;
+      pointlower[0]=0;
+      pointlower[1]=elelower;
+      pointlower[2]=0;
+      Point<dim> pointupper;
+      pointupper[0]=0;
+      pointupper[1]=eleupper;
+      pointupper[2]=0;
+      double ylower = grid_transform(pointlower)[1];
+      double yupper = grid_transform(pointupper)[1];
+      for (unsigned int plane = 0; plane<n_points_y-1;plane++)
+      {
+        double coord = ylower + (yupper-ylower)/(n_points_y-1)*plane;
+        y_glob.push_back(coord);
+      }
+    }
+    //push back last missing coordinate at upper wall
+    y_glob.push_back(1.0);
+
+    std::vector<double> area_loc(n_points_y_glob);
+    std::vector<double> vel_loc(n_points_y_glob);
+    std::vector<double> velxsq_loc(n_points_y_glob);
+    std::vector<double> velysq_loc(n_points_y_glob);
+    std::vector<double> velzsq_loc(n_points_y_glob);
+    std::vector<double> veluv_loc(n_points_y_glob);
+
+    std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y);
+    std::vector<Quadrature<dim> > quadratures(n_points_y);
+    QGauss<dim-1> gauss_2d(fe_degree+1);
+    for (unsigned int i=0; i<n_points_y; ++i)
+    {
+      std::vector<Point<dim> > points(gauss_2d.size());
+      std::vector<double> weights(gauss_2d.size());
+      for (unsigned int j=0; j<gauss_2d.size(); ++j)
+      {
+        points[j][0] = gauss_2d.point(j)[0];
+        points[j][2] = gauss_2d.point(j)[1];
+        points[j][1] = (double)i/(n_points_y-1);
+        weights[j] = gauss_2d.weight(j);
+      }
+      quadratures[i] = Quadrature<dim>(points, weights);
+      fe_values[i].reset(new FEValues<dim>(fe, quadratures[i], update_values | update_jacobians | update_quadrature_points));
+    }
+    std::vector<double> vel_values(quadratures[0].size());
+    std::vector<double> velocity_vector_x;
+    std::vector<double> velocity_vector_y;
+    std::vector<double> velocity_vector_z;
+//    for (unsigned int i=0; i<data.n_macro_cells()+data.n_macro_ghost_cells(); ++i)
+//      for (unsigned int v=0; v<data.n_components_filled(i); ++v)
+//        {
+//          typename DoFHandler<dim>::cell_iterator cell = data.get_cell_iterator(i,v);
+    for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler.begin_active(); cell!=dof_handler.end(); ++cell)
+      if (cell->is_locally_owned())
+     {
+       for (unsigned int i=0; i<n_points_y; ++i)
+       {
+         velocity_vector_x.resize(quadratures[0].size());
+         velocity_vector_y.resize(quadratures[0].size());
+         velocity_vector_z.resize(quadratures[0].size());
+         fe_values[i]->reinit(cell);
+         fe_values[i]->get_function_values(solution_n.at(0),velocity_vector_x);
+         fe_values[i]->get_function_values(solution_n.at(1),velocity_vector_y);
+         fe_values[i]->get_function_values(solution_n.at(2),velocity_vector_z);
+         double area = 0, velx = 0, velxsq = 0, velysq = 0, velzsq = 0, veluv = 0;
+
+         for (unsigned int q=0; q<quadratures[i].size(); ++q)
+         {
+           Tensor<2,dim-1> reduced_jacobian;
+           reduced_jacobian[0][0] = fe_values[i]->jacobian(q)[0][0];
+           reduced_jacobian[0][1] = fe_values[i]->jacobian(q)[0][2];
+           reduced_jacobian[1][0] = fe_values[i]->jacobian(q)[2][0];
+           reduced_jacobian[1][1] = fe_values[i]->jacobian(q)[2][2];
+           double area_ele = determinant(reduced_jacobian) * quadratures[i].weight(q);
+           area += area_ele;
+           velx += velocity_vector_x[q] * area_ele;
+           velxsq += velocity_vector_x[q] * velocity_vector_x[q] * area_ele;
+           velysq += velocity_vector_y[q] * velocity_vector_y[q] * area_ele;
+           velzsq += velocity_vector_z[q] * velocity_vector_z[q] * area_ele;
+           veluv += velocity_vector_x[q] * velocity_vector_y[q] * area_ele;
+         }
+         unsigned int idx = 0;
+         for (unsigned int j = 0; j<y_glob.size(); j++)
+         {
+           if(y_glob.at(j)+1e-9 > fe_values[i]->quadrature_point(0)[1] && y_glob.at(j)-1e-9 < fe_values[i]->quadrature_point(0)[1])
+           {
+             idx=j;
+             break;
+           }
+         }
+         vel_loc.at(idx) += velx;
+         velxsq_loc.at(idx) += velxsq;
+         velysq_loc.at(idx) += velysq;
+         velzsq_loc.at(idx) += velzsq;
+         veluv_loc.at(idx) += veluv;
+         area_loc.at(idx) += area;
+
+      }
+     }
+
+    std::vector<double > dummy(1);
+    nsoperation.get_data().cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, 1>::local_compute_divu_for_channel_stats,&nsoperation, dummy, vel_hathat);
+    udiv_samp += dummy.at(0);
+    for (unsigned int idx = 0; idx<y_glob.size(); idx++)
+    {
+      double vel = Utilities::MPI::sum (vel_loc.at(idx), MPI_COMM_WORLD);
+      double velxsq = Utilities::MPI::sum (velxsq_loc.at(idx), MPI_COMM_WORLD);
+      double velysq = Utilities::MPI::sum (velysq_loc.at(idx), MPI_COMM_WORLD);
+      double velzsq = Utilities::MPI::sum (velzsq_loc.at(idx), MPI_COMM_WORLD);
+      double veluv = Utilities::MPI::sum (veluv_loc.at(idx), MPI_COMM_WORLD);
+      double area = Utilities::MPI::sum (area_loc.at(idx), MPI_COMM_WORLD);
+      vel_glob.at(idx) += vel/area;
+      velxsq_glob.at(idx) += velxsq/area;
+      velysq_glob.at(idx) += velysq/area;
+      velzsq_glob.at(idx) += velzsq/area;
+      veluv_glob.at(idx) += veluv/area;
+    }
+
+    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+    {
+      std::ostringstream filename;
+      filename << output_prefix
+               << ".flow_statistics";
+
+      std::ofstream f;
+
+      f.open(filename.str().c_str(),std::ios::trunc);
+      f<<"statistics of turbulent channel flow  "<<std::endl;
+      f<<"number of samples:   " << numchsamp << std::endl;
+      f<<"friction Reynolds number:   " << sqrt(VISCOSITY*(vel_glob.at(1)/numchsamp/(y_glob.at(1)+1.)))/VISCOSITY << std::endl;
+      f<<"wall shear stress:   " << VISCOSITY*(vel_glob.at(1)/numchsamp/(y_glob.at(1)+1.)) << std::endl;
+      f<<"mean rms of div u_hathat:   " << udiv_samp/numchsamp << std::endl;
+      f<< "       y       |       u      |   rms(u')    |   rms(v')    |   rms(w')    |     u'v'     " << std::endl;
+      for (unsigned int idx = 0; idx<y_glob.size(); idx++)
+      {
+        f<<std::scientific<<std::setprecision(5) << std::setw(15) << y_glob.at(idx);
+        f<<std::scientific<<std::setprecision(5) << std::setw(15) << vel_glob.at(idx)/(double)numchsamp;
+        f<<std::scientific<<std::setprecision(5) << std::setw(15) << sqrt(abs((velxsq_glob.at(idx)/(double)(numchsamp)-vel_glob.at(idx)*vel_glob.at(idx)/(double)(numchsamp*numchsamp))));
+        f<<std::scientific<<std::setprecision(5) << std::setw(15) << sqrt(velysq_glob.at(idx)/(double)(numchsamp));
+        f<<std::scientific<<std::setprecision(5) << std::setw(15) << sqrt(velzsq_glob.at(idx)/(double)(numchsamp));
+        f<<std::scientific<<std::setprecision(5) << std::setw(15) << (veluv_glob.at(idx))/(double)(numchsamp);
+        f << std::endl;
+      }
+      f.close();
+    }
+   }
+
 
   template<int dim>
   void NavierStokesProblem<dim>::
@@ -6555,6 +6859,8 @@ public:
   navier_stokes_operation.vorticity_nm = navier_stokes_operation.vorticity_n;
 
   unsigned int output_number = 0;
+  const double EPSILON = 1.0e-10;
+  if(OUTPUT_START_TIME<0.0+EPSILON)
   write_output(navier_stokes_operation.solution_n,
           navier_stokes_operation.vorticity_n,
           navier_stokes_operation.ReturnXWall(),
@@ -6563,13 +6869,16 @@ public:
           navier_stokes_operation.divergence_new,
 #endif
           output_number++);
+  else
+    output_number++;
     pcout << std::endl << "Write output at START_TIME t = " << START_TIME << std::endl;
 //  calculate_error(navier_stokes_operation.solution_n);
 
-  const double EPSILON = 1.0e-10;
   unsigned int time_step_number = 1;
 
-  for(;time<(END_TIME-EPSILON);time+=time_step,++time_step_number)
+  init_channel_statistics();
+
+  for(;time<(END_TIME-EPSILON)&&time_step_number<=MAX_NUM_STEPS;time+=time_step,++time_step_number)
   {
     navier_stokes_operation.do_timestep(time,time_step,time_step_number);
     pcout << "Step = " << time_step_number << "  t = " << time << std::endl;
@@ -6588,6 +6897,8 @@ public:
     }
     else if((time+time_step) > (output_number*output_interval_time-EPSILON))
       output_number++;
+    if((time+time_step) > STATISTICS_START_TIME-EPSILON)
+    compute_channel_statistics(navier_stokes_operation.solution_n, navier_stokes_operation.velocity_temp, navier_stokes_operation);
   }
   navier_stokes_operation.analyse_computing_times();
   }
