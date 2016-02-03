@@ -82,7 +82,7 @@ namespace DG_NavierStokes
   const double OUTPUT_INTERVAL_TIME = 1.0;
   const double OUTPUT_START_TIME = 50.0;
   const double STATISTICS_START_TIME = 50.0;
-  const int MAX_NUM_STEPS = 10000000;
+  const int MAX_NUM_STEPS = 100;
   const double CFL = 2.0;
 
   const double VISCOSITY = 1./180.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0

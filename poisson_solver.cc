@@ -2,11 +2,13 @@
 
 #include "poisson_solver.h"
 
+#include <deal.II/base/function_lib.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/distributed/tria_base.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/numerics/vector_tools.h>
 
 template <int dim, typename Number>
 LaplaceOperator<dim,Number>::LaplaceOperator ()
@@ -25,6 +27,7 @@ void LaplaceOperator<dim,Number>::clear()
   fe_degree = numbers::invalid_unsigned_int;
   own_matrix_free_storage.clear();
   tmp_projection_vector.reinit(0);
+  have_interface_matrices = false;
 }
 
 
@@ -50,6 +53,7 @@ template <int dim, typename Number>
 void LaplaceOperator<dim,Number>::reinit (const DoFHandler<dim> &dof_handler,
                                           const Mapping<dim> &mapping,
                                           const PoissonSolverData<dim> &solver_data,
+                                          const MGConstrainedDoFs &mg_constrained_dofs,
                                           const unsigned int level)
 {
   clear();
@@ -66,12 +70,43 @@ void LaplaceOperator<dim,Number>::reinit (const DoFHandler<dim> &dof_handler,
 
   ConstraintMatrix constraints;
   const bool is_feq = dof_handler.get_fe().dofs_per_vertex > 0;
-  if (is_feq)
+
+  // For continuous elements, add the constraints due to hanging nodes and
+  // boundary conditions
+  if (is_feq && level == numbers::invalid_unsigned_int)
     {
+      ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
+      typename FunctionMap<dim>::type dirichlet_boundary;
+      for (std::set<types::boundary_id>::const_iterator it =
+             solver_data.dirichlet_boundaries.begin();
+           it != solver_data.dirichlet_boundaries.end(); ++it)
+        dirichlet_boundary[*it] = &zero_function;
+
       IndexSet relevant_dofs;
       DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs);
       constraints.reinit(relevant_dofs);
       DoFTools::make_hanging_node_constraints(dof_handler, constraints);
+      VectorTools::interpolate_boundary_values(dof_handler, dirichlet_boundary,
+                                               constraints);
+    }
+  else if (is_feq)
+    {
+      IndexSet relevant_dofs;
+      DoFTools::extract_locally_relevant_level_dofs(dof_handler, level,
+                                                    relevant_dofs);
+      constraints.reinit(relevant_dofs);
+      constraints.add_lines(mg_constrained_dofs.get_boundary_indices(level));
+
+      std::vector<types::global_dof_index> interface_indices;
+      mg_constrained_dofs.get_refinement_edge_indices(level).fill_index_vector(interface_indices);
+      edge_constrained_indices.clear();
+      edge_constrained_indices.reserve(interface_indices.size());
+      edge_constrained_values.resize(interface_indices.size());
+      const IndexSet &locally_owned = dof_handler.locally_owned_mg_dofs(level);
+      for (unsigned int i=0; i<interface_indices.size(); ++i)
+        if (locally_owned.is_element(interface_indices[i]))
+          edge_constrained_indices.push_back(locally_owned.index_within_set(interface_indices[i]));
+      have_interface_matrices = Utilities::MPI::max((unsigned int)edge_constrained_indices.size(), MPI_COMM_WORLD) > 0;
     }
   constraints.close();
 
@@ -137,7 +172,7 @@ void LaplaceOperator<dim,Number>::check_boundary_conditions(const Mapping<dim> &
             }
           AssertThrow(periodic_boundary_ids.find(bid) != periodic_boundary_ids.end(),
                       ExcMessage("Boundary id " + Utilities::to_string((int)bid) +
-                                 " does neither set Dirichlet, Neumann, no periodic " +
+                                 " does neither set Dirichlet, Neumann, nor periodic " +
                                  "boundary conditions! Bailing out."));
         }
 
@@ -150,10 +185,17 @@ void LaplaceOperator<dim,Number>::check_boundary_conditions(const Mapping<dim> &
     MPI_COMM_SELF;
   const int max_pure_neumann = Utilities::MPI::max(my_neumann,
                                                    mpi_communicator);
-  const int min_pure_neumann = Utilities::MPI::min(my_neumann,
-                                                   mpi_communicator);
+  int min_pure_neumann = Utilities::MPI::min(my_neumann, mpi_communicator);
   AssertThrow(max_pure_neumann == min_pure_neumann,
               ExcMessage("Neumann/Dirichlet assignment over processors does not match."));
+
+  // Finally, we need to check if we have interfaces at different refinement
+  // level in the FE_Q case. This yields Dirichlet constraints and thus, no
+  // Neumann condition should be applied.
+  if (edge_constrained_indices.size() > 0)
+    my_neumann = 0;
+  min_pure_neumann = Utilities::MPI::min(my_neumann, mpi_communicator);
+
   pure_neumann_problem = min_pure_neumann;
 
   // Compute penalty parameter for each cell
@@ -222,9 +264,6 @@ template <int dim, typename Number>
 void LaplaceOperator<dim,Number>::vmult_add(parallel::distributed::Vector<Number> &dst,
                                             const parallel::distributed::Vector<Number> &src) const
 {
-  Assert(src.partitioners_are_globally_compatible(*data->get_dof_info(solver_data.pressure_dof_index).vector_partitioner), ExcInternalError());
-  Assert(dst.partitioners_are_globally_compatible(*data->get_dof_info(solver_data.pressure_dof_index).vector_partitioner), ExcInternalError());
-
   const parallel::distributed::Vector<Number> *actual_src = &src;
   if(pure_neumann_problem)
     {
@@ -233,80 +272,192 @@ void LaplaceOperator<dim,Number>::vmult_add(parallel::distributed::Vector<Number
       actual_src = &tmp_projection_vector;
     }
 
+  // For continuous elements: set zero Dirichlet values on the input vector
+  // (and remember the src and dst values because we need to reset them at the
+  // end). Note that we should only have edge constrained indices for non-pure
+  // Neumann problems.
+  for (unsigned int i=0; i<edge_constrained_indices.size(); ++i)
+    {
+      Assert(!pure_neumann_problem, ExcInternalError());
+
+      edge_constrained_values[i] =
+        std::pair<Number,Number>(src.local_element(edge_constrained_indices[i]),
+                                 dst.local_element(edge_constrained_indices[i]));
+      const_cast<parallel::distributed::Vector<Number>&>(src).local_element(edge_constrained_indices[i]) = 0.;
+    }
+
+  run_vmult_loop(dst, *actual_src);
+
+  // Apply Dirichlet boundary conditions in the continuous case by simulating
+  // a one in the diagonal (note that the ConstraintMatrix passed to the
+  // MatrixFree object takes care of Dirichlet conditions on outer
+  // (non-refinement edge) boundaries)
+  const std::vector<unsigned int> &
+    constrained_dofs = data->get_constrained_dofs();
+  for (unsigned int i=0; i<constrained_dofs.size(); ++i)
+    dst.local_element(constrained_dofs[i]) += src.local_element(constrained_dofs[i]);
+
+  // reset edge constrained values, multiply by unit matrix and add into
+  // destination
+  for (unsigned int i=0; i<edge_constrained_indices.size(); ++i)
+    {
+      const_cast<parallel::distributed::Vector<Number>&>(src).local_element(edge_constrained_indices[i]) = edge_constrained_values[i].first;
+      dst.local_element(edge_constrained_indices[i]) = edge_constrained_values[i].second + edge_constrained_values[i].first;
+    }
+
+  if (pure_neumann_problem)
+    apply_nullspace_projection(dst);
+}
+
+
+
+template <int dim, typename Number>
+void LaplaceOperator<dim,Number>::run_vmult_loop(parallel::distributed::Vector<Number> &dst,
+                                                 const parallel::distributed::Vector<Number> &src) const
+{
+  Assert(src.partitioners_are_globally_compatible(*data->get_dof_info(solver_data.pressure_dof_index).vector_partitioner), ExcInternalError());
+  Assert(dst.partitioners_are_globally_compatible(*data->get_dof_info(solver_data.pressure_dof_index).vector_partitioner), ExcInternalError());
+
   switch (fe_degree)
     {
     case 0:
       data->loop (&LaplaceOperator::template local_apply<0>,
                   &LaplaceOperator::template local_apply_face<0>,
                   &LaplaceOperator::template local_apply_boundary<0>,
-                  this, dst, *actual_src);
+                  this, dst, src);
       break;
     case 1:
       data->loop (&LaplaceOperator::template local_apply<1>,
                   &LaplaceOperator::template local_apply_face<1>,
                   &LaplaceOperator::template local_apply_boundary<1>,
-                  this, dst, *actual_src);
+                  this, dst, src);
       break;
     case 2:
       data->loop (&LaplaceOperator::template local_apply<2>,
                   &LaplaceOperator::template local_apply_face<2>,
                   &LaplaceOperator::template local_apply_boundary<2>,
-                  this, dst, *actual_src);
+                  this, dst, src);
       break;
     case 3:
       data->loop (&LaplaceOperator::template local_apply<3>,
                   &LaplaceOperator::template local_apply_face<3>,
                   &LaplaceOperator::template local_apply_boundary<3>,
-                  this, dst, *actual_src);
+                  this, dst, src);
       break;
     case 4:
       data->loop (&LaplaceOperator::template local_apply<4>,
                   &LaplaceOperator::template local_apply_face<4>,
                   &LaplaceOperator::template local_apply_boundary<4>,
-                  this, dst, *actual_src);
+                  this, dst, src);
       break;
     case 5:
       data->loop (&LaplaceOperator::template local_apply<5>,
                   &LaplaceOperator::template local_apply_face<5>,
                   &LaplaceOperator::template local_apply_boundary<5>,
-                  this, dst, *actual_src);
+                  this, dst, src);
       break;
     case 6:
       data->loop (&LaplaceOperator::template local_apply<6>,
                   &LaplaceOperator::template local_apply_face<6>,
                   &LaplaceOperator::template local_apply_boundary<6>,
-                  this, dst, *actual_src);
+                  this, dst, src);
       break;
     case 7:
       data->loop (&LaplaceOperator::template local_apply<7>,
                   &LaplaceOperator::template local_apply_face<7>,
                   &LaplaceOperator::template local_apply_boundary<7>,
-                  this, dst, *actual_src);
+                  this, dst, src);
       break;
     case 8:
       data->loop (&LaplaceOperator::template local_apply<8>,
                   &LaplaceOperator::template local_apply_face<8>,
                   &LaplaceOperator::template local_apply_boundary<8>,
-                  this, dst, *actual_src);
+                  this, dst, src);
       break;
     case 9:
       data->loop (&LaplaceOperator::template local_apply<9>,
                   &LaplaceOperator::template local_apply_face<9>,
                   &LaplaceOperator::template local_apply_boundary<9>,
-                  this, dst, *actual_src);
+                  this, dst, src);
       break;
     case 10:
       data->loop (&LaplaceOperator::template local_apply<10>,
                   &LaplaceOperator::template local_apply_face<10>,
                   &LaplaceOperator::template local_apply_boundary<10>,
-                  this, dst, *actual_src);
+                  this, dst, src);
       break;
     default:
       AssertThrow(false, ExcMessage("Only polynomial degrees 0 up to 10 instantiated"));
     }
+}
 
-  if (pure_neumann_problem)
-    apply_nullspace_projection(dst);
+
+
+template <int dim, typename Number>
+void LaplaceOperator<dim,Number>
+::vmult_interface_down(parallel::distributed::Vector<Number> &dst,
+                       const parallel::distributed::Vector<Number> &src) const
+{
+  dst = 0;
+
+  if (!have_interface_matrices)
+    return;
+
+  // set zero Dirichlet values on the input vector (and remember the src and
+  // dst values because we need to reset them at the end)
+  for (unsigned int i=0; i<edge_constrained_indices.size(); ++i)
+    {
+      const double src_val = src.local_element(edge_constrained_indices[i]);
+      const_cast<parallel::distributed::Vector<Number>&>(src).local_element(edge_constrained_indices[i]) = 0.;
+      edge_constrained_values[i] = std::pair<Number,Number>(src_val,
+                                                            dst.local_element(edge_constrained_indices[i]));
+    }
+
+  run_vmult_loop(dst, src);
+
+  unsigned int c=0;
+  for (unsigned int i=0; i<edge_constrained_indices.size(); ++i)
+    {
+      for ( ; c<edge_constrained_indices[i]; ++c)
+        dst.local_element(c) = 0.;
+      ++c;
+
+      // reset the src values
+      const_cast<parallel::distributed::Vector<Number>&>(src).local_element(edge_constrained_indices[i]) = edge_constrained_values[i].first;
+    }
+  for ( ; c<dst.local_size(); ++c)
+    dst.local_element(c) = 0.;
+}
+
+
+
+template <int dim, typename Number>
+void LaplaceOperator<dim,Number>
+::vmult_interface_up(parallel::distributed::Vector<Number> &dst,
+                     const parallel::distributed::Vector<Number> &src) const
+{
+  dst = 0;
+
+  if (!have_interface_matrices)
+    return;
+
+  parallel::distributed::Vector<Number> src_cpy (src);
+  unsigned int c=0;
+  for (unsigned int i=0; i<edge_constrained_indices.size(); ++i)
+    {
+      for ( ; c<edge_constrained_indices[i]; ++c)
+        src_cpy.local_element(c) = 0.;
+      ++c;
+    }
+  for ( ; c<src_cpy.local_size(); ++c)
+    src_cpy.local_element(c) = 0.;
+
+  run_vmult_loop (dst, src_cpy);
+
+  for (unsigned int i=0; i<edge_constrained_indices.size(); ++i)
+    {
+      dst.local_element(edge_constrained_indices[i]) = 0.;
+    }
 }
 
 
@@ -447,6 +598,15 @@ void LaplaceOperator<dim,Number>
       inverse_diagonal_entries.add(-2./length,d,factor/pow(length,2.),vec1);
     }
 
+  const std::vector<unsigned int> &
+    constrained_dofs = data->get_constrained_dofs();
+  for (unsigned int i=0; i<constrained_dofs.size(); ++i)
+    inverse_diagonal_entries.local_element(constrained_dofs[i]) = 1.;
+  for (unsigned int i=0; i<edge_constrained_indices.size(); ++i)
+    {
+      inverse_diagonal_entries.local_element(edge_constrained_indices[i]) = 1.;
+    }
+
   for (unsigned int i=0; i<inverse_diagonal_entries.local_size(); ++i)
     if (std::abs(inverse_diagonal_entries.local_element(i)) > 1e-10)
       inverse_diagonal_entries.local_element(i) = 1./inverse_diagonal_entries.local_element(i);
@@ -490,6 +650,10 @@ local_apply_face (const MatrixFree<dim,Number>                &data,
                   const parallel::distributed::Vector<Number> &src,
                   const std::pair<unsigned int,unsigned int>  &face_range) const
 {
+  // Nothing to do for continuous elements
+  if (data.get_dof_handler(solver_data.pressure_dof_index).get_fe().dofs_per_vertex > 0)
+    return;
+
   FEFaceEvaluation<dim,degree,degree+1,1,Number> fe_eval(data,true,
                                                          solver_data.pressure_dof_index,
                                                          solver_data.pressure_quad_index);
@@ -544,6 +708,10 @@ local_apply_boundary (const MatrixFree<dim,Number>                &data,
                       const parallel::distributed::Vector<Number> &src,
                       const std::pair<unsigned int,unsigned int>  &face_range) const
 {
+  // Nothing to do for continuous elements
+  if (data.get_dof_handler(solver_data.pressure_dof_index).get_fe().dofs_per_vertex > 0)
+    return;
+
   FEFaceEvaluation<dim,degree,degree+1,1,Number> fe_eval(data, true,
                                                          solver_data.pressure_dof_index,
                                                          solver_data.pressure_quad_index);
@@ -636,6 +804,10 @@ local_diagonal_face (const MatrixFree<dim,Number>                &data,
                      const unsigned int  &,
                      const std::pair<unsigned int,unsigned int>  &face_range) const
 {
+  // Nothing to do for continuous elements
+  if (data.get_dof_handler(solver_data.pressure_dof_index).get_fe().dofs_per_vertex > 0)
+    return;
+
   FEFaceEvaluation<dim,degree,degree+1,1,Number> phi(data,true,
                                                      solver_data.pressure_dof_index,
                                                      solver_data.pressure_quad_index);
@@ -728,6 +900,10 @@ local_diagonal_boundary (const MatrixFree<dim,Number>                &data,
                          const unsigned int  &,
                          const std::pair<unsigned int,unsigned int>  &face_range) const
 {
+  // Nothing to do for continuous elements
+  if (data.get_dof_handler(solver_data.pressure_dof_index).get_fe().dofs_per_vertex > 0)
+    return;
+
   FEFaceEvaluation<dim,degree,degree+1,1,Number> phi (data, true,
                                                       solver_data.pressure_dof_index,
                                                       solver_data.pressure_quad_index);
@@ -885,12 +1061,25 @@ void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
   AssertThrow(tria != 0, ExcMessage("Only works for distributed triangulations"));
   mpi_communicator = tria->get_communicator();
 
+  mg_constrained_dofs.clear();
+  ZeroFunction<dim> zero_function;
+  typename FunctionMap<dim>::type dirichlet_boundary;
+  for (std::set<types::boundary_id>::const_iterator it =
+         solver_data.dirichlet_boundaries.begin();
+       it != solver_data.dirichlet_boundaries.end(); ++it)
+    dirichlet_boundary[*it] = &zero_function;
+  mg_constrained_dofs.initialize(dof_handler, dirichlet_boundary);
+
   mg_matrices.resize(0, tria->n_global_levels()-1);
+  mg_interface_matrices.resize(0, tria->n_global_levels()-1);
+
   MGLevelObject<typename SMOOTHER::AdditionalData> smoother_data;
   smoother_data.resize(0, dof_handler.get_triangulation().n_global_levels()-1);
   for (unsigned int level = 0; level<tria->n_global_levels(); ++level)
     {
-      mg_matrices[level].reinit(dof_handler, mapping, solver_data, level);
+      mg_matrices[level].reinit(dof_handler, mapping, solver_data,
+                                mg_constrained_dofs, level);
+      mg_interface_matrices[level].initialize(mg_matrices[level]);
 
       if (level > 0)
         {
@@ -940,9 +1129,11 @@ void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
     }
 
   mg_transfer.set_laplace_operator(mg_matrices);
+  mg_transfer.initialize_constraints(mg_constrained_dofs);
   mg_transfer.build(dof_handler);
 
   mg_matrix.reset(new mg::Matrix<parallel::distributed::Vector<Number> > (mg_matrices));
+  mg_interface.reset(new  mg::Matrix<parallel::distributed::Vector<Number> >(mg_interface_matrices));
 
   mg.reset(new Multigrid<parallel::distributed::Vector<Number> > (dof_handler,
                                                                   *mg_matrix,
@@ -950,6 +1141,7 @@ void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
                                                                   mg_transfer,
                                                                   mg_smoother,
                                                                   mg_smoother));
+  mg->set_edge_matrices(*mg_interface, *mg_interface);
 
   preconditioner.reset(new PreconditionMG<dim, parallel::distributed::Vector<Number>,
                        MGTransferMF<dim,LevelMatrixType> >

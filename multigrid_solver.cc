@@ -21,6 +21,7 @@
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
 
+#include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_values.h>
 
@@ -66,6 +67,7 @@ namespace Step37
   const unsigned int degree_finite_element = 3;
   const unsigned int dimension = 3;
   const bool run_variable_sizes = true;
+  const bool do_adaptive = false;
   const unsigned int n_tests = 2;
 
 
@@ -303,6 +305,7 @@ namespace Step37
 #endif
     MappingQ<dim>                    mapping;
     DoFHandler<dim>                  dof_handler;
+    ConstraintMatrix                 constraints;
     MatrixFree<dim,double>           matrix_free;
 
     parallel::distributed::Vector<double> solution;
@@ -351,6 +354,15 @@ namespace Step37
           << dof_handler.n_dofs()
           << std::endl;
 
+    IndexSet relevant_dofs;
+    DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs);
+    constraints.clear();
+    constraints.reinit(relevant_dofs);
+    DoFTools::make_hanging_node_constraints(dof_handler, constraints);
+    VectorTools::interpolate_boundary_values(dof_handler, 1, ZeroFunction<dim>(),
+                                             constraints);
+    constraints.close();
+
     setup_time += time.wall_time();
     time_details << "Distribute DoFs & B.C.     (CPU/wall) "
                  << time() << "s/" << time.wall_time() << "s" << std::endl;
@@ -361,7 +373,7 @@ namespace Step37
     addit_data.tasks_parallel_scheme = MatrixFree<dim,double>::AdditionalData::none;
     addit_data.build_face_info = true;
     addit_data.mpi_communicator = triangulation.get_communicator();
-    matrix_free.reinit(mapping, dof_handler, ConstraintMatrix(),
+    matrix_free.reinit(mapping, dof_handler, constraints,
                        quad, addit_data);
     matrix_free.initialize_dof_vector(system_rhs);
     solution.reinit (system_rhs);
@@ -382,10 +394,12 @@ namespace Step37
   {
     Timer time;
     std::map<types::global_dof_index, double> boundary_values;
-    VectorTools::interpolate_boundary_values(dof_handler, 0, Solution<dim>(), boundary_values);
+    VectorTools::interpolate_boundary_values(dof_handler, 1, Solution<dim>(), boundary_values);
     for (typename std::map<types::global_dof_index, double>::const_iterator
            it = boundary_values.begin(); it!=boundary_values.end(); ++it)
-      solution[it->first] = it->second;
+      if (dof_handler.locally_owned_dofs().is_element(it->first))
+        solution(it->first) = it->second;
+    solution.update_ghost_values();
 
     system_rhs = 0;
     QGauss<dim>  quadrature_formula(fe.degree+1);
@@ -394,9 +408,9 @@ namespace Step37
                              update_values | update_gradients | update_JxW_values
                              | update_quadrature_points);
     FEFaceValues<dim> fe_face_values(fe, quadrature_face,
-				     update_values | update_gradients |
-				     update_quadrature_points |
-				     update_normal_vectors);
+                                     update_values | update_gradients |
+                                     update_quadrature_points |
+                                     update_normal_vectors);
 
     const unsigned int   dofs_per_cell = fe.dofs_per_cell;
     const unsigned int   n_q_points    = quadrature_formula.size();
@@ -406,13 +420,13 @@ namespace Step37
     std::vector<double> rhs_values(n_q_points);
     Solution<dim> solution_function;
     std::vector<Tensor<1,dim> > solution_gradients(n_q_points);
+    Vector<double> local_rhs(dofs_per_cell);
 
     for (unsigned int c=0; c<matrix_free.n_macro_cells(); ++c)
       for (unsigned int v=0; v<matrix_free.n_components_filled(c); ++v)
         {
           typename DoFHandler<dim>::cell_iterator cell =
             matrix_free.get_cell_iterator(c, v);
-          cell->get_dof_indices (local_dof_indices);
           fe_values.reinit (cell);
 #ifdef USE_FEQ
           fe_values.get_function_gradients(solution, solution_gradients);
@@ -428,7 +442,7 @@ namespace Step37
 #endif
                              ) *
                             fe_values.JxW(q));
-              system_rhs(local_dof_indices[i]) += rhs_val;
+              local_rhs(i) = rhs_val;
             }
 #ifndef USE_FEQ
           for (unsigned int face=0; face<GeometryInfo<dim>::faces_per_cell; ++face)
@@ -441,7 +455,7 @@ namespace Step37
                   {
                     const double solution_value = solution_function.value(fe_face_values.quadrature_point(q));
                     for (unsigned int i=0; i<dofs_per_cell; ++i)
-                      system_rhs(local_dof_indices[i]) +=
+                      local_rhs(i) +=
                         (sigmaF *fe_face_values.shape_value(i,q)-
                          fe_face_values.shape_grad(i,q) *
                          fe_face_values.normal_vector(q)) * solution_value
@@ -449,6 +463,10 @@ namespace Step37
                   }
               }
 #endif
+          cell->get_dof_indices (local_dof_indices);
+          constraints.distribute_local_to_global(local_rhs,
+                                                 local_dof_indices,
+                                                 system_rhs);
         }
     system_rhs.compress(VectorOperation::add);
 
@@ -480,6 +498,8 @@ namespace Step37
     */
 
     setup_time += time.wall_time();
+    pcout << "Initialize multigrid solver(CPU/wall) " << time() << "s/"
+          << time.wall_time() << "s\n";
 
     assemble_system(solver);
 
@@ -490,16 +510,22 @@ namespace Step37
     double sol_time = 1e10;
     for (unsigned int i=0; i<n_tests; ++i)
       {
-        solution = 0;
+        solution_update = 0;
         time.restart();
 
-        unsigned int n_iter = solver.solve(solution, system_rhs);
+        unsigned int n_iter = solver.solve(solution_update, system_rhs);
 
         sol_time = std::min(sol_time, time.wall_time());
         pcout << "Time solve (" << n_iter
               << " iterations)  (CPU/wall) " << time() << "s/"
               << time.wall_time() << "s\n";
       }
+#ifdef USE_FEQ
+    constraints.distribute(solution_update);
+#endif
+    solution += solution_update;
+
+    solution.update_ghost_values();
 
     {
       Utilities::System::MemoryStats stats;
@@ -605,6 +631,24 @@ namespace Step37
               n_refinements += 1;
             GridGenerator::subdivided_hyper_cube (triangulation, n_subdiv, -1, 1);
             triangulation.refine_global(n_refinements);
+            if (do_adaptive)
+              {
+                for (typename Triangulation<dim>::active_cell_iterator cell=triangulation.begin_active(); cell != triangulation.end(); ++cell)
+                  if (cell->is_locally_owned() &&
+                      cell->center().norm() < 0.5)
+                    cell->set_refine_flag();
+                triangulation.execute_coarsening_and_refinement();
+                for (typename Triangulation<dim>::active_cell_iterator cell=triangulation.begin_active(); cell != triangulation.end(); ++cell)
+                  if (cell->is_locally_owned() &&
+                      cell->center().norm() > 0.3 && cell->center().norm() < 0.4)
+                    cell->set_refine_flag();
+                triangulation.execute_coarsening_and_refinement();
+                for (typename Triangulation<dim>::active_cell_iterator cell=triangulation.begin_active(); cell != triangulation.end(); ++cell)
+                  if (cell->is_locally_owned() &&
+                      cell->center().norm() > 0.33 && cell->center().norm() < 0.37)
+                    cell->set_refine_flag();
+                triangulation.execute_coarsening_and_refinement();
+              }
           }
         else
           {

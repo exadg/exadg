@@ -10,6 +10,7 @@ SET(TARGET "DG_NavierStokes_DualSplitting")
 SET(TARGET_SRC
   ${TARGET}.cc
   poisson_solver.cc
+  fluid_base_algorithm.cc
   )
 
 # Usually, you will not need to modify anything beyond this point...
