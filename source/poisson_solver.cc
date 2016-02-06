@@ -39,10 +39,10 @@ void LaplaceOperator<dim,Number>::reinit(const MatrixFree<dim,Number>       &mf_
 {
   this->data = &mf_data;
   this->solver_data = solver_data;
-  this->fe_degree = mf_data.get_dof_handler(solver_data.pressure_dof_index).get_fe().degree;
+  this->fe_degree = mf_data.get_dof_handler(solver_data.poisson_dof_index).get_fe().degree;
   AssertThrow (Utilities::fixed_power<dim>(fe_degree+1) ==
-               mf_data.get_n_q_points(solver_data.pressure_quad_index),
-               ExcMessage("Expected pressure_degree+1 quadrature points"));
+               mf_data.get_n_q_points(solver_data.poisson_quad_index),
+               ExcMessage("Expected fe_degree+1 quadrature points"));
 
   check_boundary_conditions(mapping);
 }
@@ -111,8 +111,8 @@ void LaplaceOperator<dim,Number>::reinit (const DoFHandler<dim> &dof_handler,
   constraints.close();
 
   PoissonSolverData<dim> my_solver_data = solver_data;
-  my_solver_data.pressure_dof_index = 0;
-  my_solver_data.pressure_quad_index = 0;
+  my_solver_data.poisson_dof_index = 0;
+  my_solver_data.poisson_quad_index = 0;
 
   own_matrix_free_storage.reinit(mapping, dof_handler, constraints, quad,
                                  addit_data);
@@ -137,7 +137,7 @@ void LaplaceOperator<dim,Number>::check_boundary_conditions(const Mapping<dim> &
 
   pure_neumann_problem = true;
   const Triangulation<dim> &tria =
-    data->get_dof_handler(solver_data.pressure_dof_index).get_triangulation();
+    data->get_dof_handler(solver_data.poisson_dof_index).get_triangulation();
   for (typename Triangulation<dim>::cell_iterator cell = tria.begin();
        cell != tria.end(); ++cell)
     for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
@@ -202,15 +202,15 @@ void LaplaceOperator<dim,Number>::check_boundary_conditions(const Mapping<dim> &
   array_penalty_parameter.resize(data->n_macro_cells()+data->n_macro_ghost_cells());
   QGauss<dim> quadrature(fe_degree+1);
   FEValues<dim> fe_values(mapping,
-                          data->get_dof_handler(solver_data.pressure_dof_index).get_fe(),
+                          data->get_dof_handler(solver_data.poisson_dof_index).get_fe(),
                           quadrature, update_JxW_values);
   QGauss<dim-1> face_quadrature(fe_degree+1);
-  FEFaceValues<dim> fe_face_values(mapping, data->get_dof_handler(solver_data.pressure_dof_index).get_fe(), face_quadrature, update_JxW_values);
+  FEFaceValues<dim> fe_face_values(mapping, data->get_dof_handler(solver_data.poisson_dof_index).get_fe(), face_quadrature, update_JxW_values);
 
   for (unsigned int i=0; i<data->n_macro_cells()+data->n_macro_ghost_cells(); ++i)
     for (unsigned int v=0; v<data->n_components_filled(i); ++v)
       {
-        typename DoFHandler<dim>::cell_iterator cell = data->get_cell_iterator(i,v,solver_data.pressure_dof_index);
+        typename DoFHandler<dim>::cell_iterator cell = data->get_cell_iterator(i,v,solver_data.poisson_dof_index);
         fe_values.reinit(cell);
         double volume = 0;
         for (unsigned int q=0; q<quadrature.size(); ++q)
@@ -293,7 +293,7 @@ void LaplaceOperator<dim,Number>::vmult_add(parallel::distributed::Vector<Number
   // MatrixFree object takes care of Dirichlet conditions on outer
   // (non-refinement edge) boundaries)
   const std::vector<unsigned int> &
-    constrained_dofs = data->get_constrained_dofs(solver_data.pressure_dof_index);
+    constrained_dofs = data->get_constrained_dofs(solver_data.poisson_dof_index);
   for (unsigned int i=0; i<constrained_dofs.size(); ++i)
     dst.local_element(constrained_dofs[i]) += src.local_element(constrained_dofs[i]);
 
@@ -315,8 +315,8 @@ template <int dim, typename Number>
 void LaplaceOperator<dim,Number>::run_vmult_loop(parallel::distributed::Vector<Number> &dst,
                                                  const parallel::distributed::Vector<Number> &src) const
 {
-  Assert(src.partitioners_are_globally_compatible(*data->get_dof_info(solver_data.pressure_dof_index).vector_partitioner), ExcInternalError());
-  Assert(dst.partitioners_are_globally_compatible(*data->get_dof_info(solver_data.pressure_dof_index).vector_partitioner), ExcInternalError());
+  Assert(src.partitioners_are_globally_compatible(*data->get_dof_info(solver_data.poisson_dof_index).vector_partitioner), ExcInternalError());
+  Assert(dst.partitioners_are_globally_compatible(*data->get_dof_info(solver_data.poisson_dof_index).vector_partitioner), ExcInternalError());
 
   switch (fe_degree)
     {
@@ -474,7 +474,7 @@ void LaplaceOperator<dim,Number>::apply_nullspace_projection(parallel::distribut
 template <int dim, typename Number>
 types::global_dof_index LaplaceOperator<dim,Number>::m() const
 {
-  return data->get_vector_partitioner(solver_data.pressure_dof_index)->size();
+  return data->get_vector_partitioner(solver_data.poisson_dof_index)->size();
 }
 
 
@@ -482,7 +482,7 @@ types::global_dof_index LaplaceOperator<dim,Number>::m() const
 template <int dim, typename Number>
 types::global_dof_index LaplaceOperator<dim,Number>::n() const
 {
-  return data->get_vector_partitioner(solver_data.pressure_dof_index)->size();
+  return data->get_vector_partitioner(solver_data.poisson_dof_index)->size();
 }
 
 
@@ -500,8 +500,8 @@ template <int dim, typename Number>
 void LaplaceOperator<dim,Number>
 ::initialize_dof_vector(parallel::distributed::Vector<Number> &vector) const
 {
-  if (!vector.partitioners_are_compatible(*data->get_dof_info(solver_data.pressure_dof_index).vector_partitioner))
-    data->initialize_dof_vector(vector, solver_data.pressure_dof_index);
+  if (!vector.partitioners_are_compatible(*data->get_dof_info(solver_data.poisson_dof_index).vector_partitioner))
+    data->initialize_dof_vector(vector, solver_data.poisson_dof_index);
 }
 
 
@@ -510,7 +510,7 @@ template <int dim, typename Number>
 void LaplaceOperator<dim,Number>
 ::compute_inverse_diagonal (parallel::distributed::Vector<Number> &inverse_diagonal_entries)
 {
-  data->initialize_dof_vector(inverse_diagonal_entries, solver_data.pressure_dof_index);
+  data->initialize_dof_vector(inverse_diagonal_entries, solver_data.poisson_dof_index);
   unsigned int dummy;
   switch (fe_degree)
     {
@@ -625,8 +625,8 @@ local_apply (const MatrixFree<dim,Number>                &data,
              const std::pair<unsigned int,unsigned int>  &cell_range) const
 {
   FEEvaluation<dim,degree,degree+1,1,Number> phi (data,
-                                                  solver_data.pressure_dof_index,
-                                                  solver_data.pressure_quad_index);
+                                                  solver_data.poisson_dof_index,
+                                                  solver_data.poisson_quad_index);
 
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -651,15 +651,15 @@ local_apply_face (const MatrixFree<dim,Number>                &data,
                   const std::pair<unsigned int,unsigned int>  &face_range) const
 {
   // Nothing to do for continuous elements
-  if (data.get_dof_handler(solver_data.pressure_dof_index).get_fe().dofs_per_vertex > 0)
+  if (data.get_dof_handler(solver_data.poisson_dof_index).get_fe().dofs_per_vertex > 0)
     return;
 
   FEFaceEvaluation<dim,degree,degree+1,1,Number> fe_eval(data,true,
-                                                         solver_data.pressure_dof_index,
-                                                         solver_data.pressure_quad_index);
+                                                         solver_data.poisson_dof_index,
+                                                         solver_data.poisson_quad_index);
   FEFaceEvaluation<dim,degree,degree+1,1,Number> fe_eval_neighbor(data,false,
-                                                                  solver_data.pressure_dof_index,
-                                                                  solver_data.pressure_quad_index);
+                                                                  solver_data.poisson_dof_index,
+                                                                  solver_data.poisson_quad_index);
 
   for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -709,12 +709,12 @@ local_apply_boundary (const MatrixFree<dim,Number>                &data,
                       const std::pair<unsigned int,unsigned int>  &face_range) const
 {
   // Nothing to do for continuous elements
-  if (data.get_dof_handler(solver_data.pressure_dof_index).get_fe().dofs_per_vertex > 0)
+  if (data.get_dof_handler(solver_data.poisson_dof_index).get_fe().dofs_per_vertex > 0)
     return;
 
   FEFaceEvaluation<dim,degree,degree+1,1,Number> fe_eval(data, true,
-                                                         solver_data.pressure_dof_index,
-                                                         solver_data.pressure_quad_index);
+                                                         solver_data.poisson_dof_index,
+                                                         solver_data.poisson_quad_index);
   for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       fe_eval.reinit (face);
@@ -769,8 +769,8 @@ local_diagonal_cell (const MatrixFree<dim,Number>                &data,
                      const std::pair<unsigned int,unsigned int>  &cell_range) const
 {
   FEEvaluation<dim,degree,degree+1,1,Number> phi (data,
-                                                  solver_data.pressure_dof_index,
-                                                  solver_data.pressure_quad_index);
+                                                  solver_data.poisson_dof_index,
+                                                  solver_data.poisson_quad_index);
 
   VectorizedArray<Number> local_diagonal_vector[phi.tensor_dofs_per_cell];
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
@@ -805,15 +805,15 @@ local_diagonal_face (const MatrixFree<dim,Number>                &data,
                      const std::pair<unsigned int,unsigned int>  &face_range) const
 {
   // Nothing to do for continuous elements
-  if (data.get_dof_handler(solver_data.pressure_dof_index).get_fe().dofs_per_vertex > 0)
+  if (data.get_dof_handler(solver_data.poisson_dof_index).get_fe().dofs_per_vertex > 0)
     return;
 
   FEFaceEvaluation<dim,degree,degree+1,1,Number> phi(data,true,
-                                                     solver_data.pressure_dof_index,
-                                                     solver_data.pressure_quad_index);
+                                                     solver_data.poisson_dof_index,
+                                                     solver_data.poisson_quad_index);
   FEFaceEvaluation<dim,degree,degree+1,1,Number> phi_outer(data,false,
-                                                           solver_data.pressure_dof_index,
-                                                           solver_data.pressure_quad_index);
+                                                           solver_data.poisson_dof_index,
+                                                           solver_data.poisson_quad_index);
 
   VectorizedArray<Number> local_diagonal_vector[phi.tensor_dofs_per_cell];
   for(unsigned int face=face_range.first; face<face_range.second; face++)
@@ -901,12 +901,12 @@ local_diagonal_boundary (const MatrixFree<dim,Number>                &data,
                          const std::pair<unsigned int,unsigned int>  &face_range) const
 {
   // Nothing to do for continuous elements
-  if (data.get_dof_handler(solver_data.pressure_dof_index).get_fe().dofs_per_vertex > 0)
+  if (data.get_dof_handler(solver_data.poisson_dof_index).get_fe().dofs_per_vertex > 0)
     return;
 
   FEFaceEvaluation<dim,degree,degree+1,1,Number> phi (data, true,
-                                                      solver_data.pressure_dof_index,
-                                                      solver_data.pressure_quad_index);
+                                                      solver_data.poisson_dof_index,
+                                                      solver_data.poisson_quad_index);
 
   VectorizedArray<Number> local_diagonal_vector[phi.tensor_dofs_per_cell];
   for(unsigned int face=face_range.first; face<face_range.second; face++)
@@ -1055,7 +1055,7 @@ void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
 {
   global_matrix.reinit(matrix_free, mapping, solver_data);
 
-  const DoFHandler<dim> &dof_handler = matrix_free.get_dof_handler(solver_data.pressure_dof_index);
+  const DoFHandler<dim> &dof_handler = matrix_free.get_dof_handler(solver_data.poisson_dof_index);
   const parallel::Triangulation<dim> *tria =
     dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
   AssertThrow(tria != 0, ExcMessage("Only works for distributed triangulations"));

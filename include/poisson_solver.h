@@ -22,8 +22,8 @@ struct PoissonSolverData
 {
   PoissonSolverData ()
     :
-    pressure_dof_index(0),
-    pressure_quad_index(0),
+    poisson_dof_index(0),
+    poisson_quad_index(0),
     penalty_factor(1.),
     solver_tolerance(1e-5),
     smoother_poly_degree(5),
@@ -34,12 +34,12 @@ struct PoissonSolverData
   // If an external MatrixFree object is given which can contain other
   // components than the variable for which the Poisson equation should be
   // solved, this selects the correct DoFHandler component
-  unsigned int pressure_dof_index;
+  unsigned int poisson_dof_index;
 
   // If an external MatrixFree object is given which can contain other
   // quadrature formulas than the quadrature formula which should be used by
   // the Poisson solver, this selects the correct quadrature index
-  unsigned int pressure_quad_index;
+  unsigned int poisson_quad_index;
 
   // The penalty parameter for the symmetric interior penalty method is
   // computed as penalty_factor * (fe_degree+1)^2 /
