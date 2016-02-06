@@ -293,7 +293,7 @@ void LaplaceOperator<dim,Number>::vmult_add(parallel::distributed::Vector<Number
   // MatrixFree object takes care of Dirichlet conditions on outer
   // (non-refinement edge) boundaries)
   const std::vector<unsigned int> &
-    constrained_dofs = data->get_constrained_dofs();
+    constrained_dofs = data->get_constrained_dofs(solver_data.pressure_dof_index);
   for (unsigned int i=0; i<constrained_dofs.size(); ++i)
     dst.local_element(constrained_dofs[i]) += src.local_element(constrained_dofs[i]);
 

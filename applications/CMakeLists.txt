@@ -12,6 +12,7 @@ INCLUDE_DIRECTORIES(
 SET( SOURCE_FILES
      DG_NavierStokes_DualSplitting.cc
      multigrid_solver.cc
+     fe_flow_past_cylinder.cc
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )
@@ -21,4 +22,3 @@ FOREACH ( sourcefile ${SOURCE_FILES} )
         DEAL_II_SETUP_TARGET(${testname})
 	TARGET_LINK_LIBRARIES(${testname} indexa)
 ENDFOREACH ( sourcefile ${APP_SOURCES} )
-

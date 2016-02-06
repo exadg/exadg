@@ -8,3 +8,5 @@ cmake_install.cmake
 .cproject
 *~
 libindexa.so
+applications/multigrid_solver
+applications/fe_flow_past_cylinder

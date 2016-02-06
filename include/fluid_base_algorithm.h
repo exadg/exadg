@@ -3,6 +3,7 @@
 #define __indexa_fluid_base_algorithm_h
 
 #include <deal.II/base/function.h>
+#include <deal.II/base/tensor_function.h>
 #include <deal.II/base/std_cxx11/shared_ptr.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/grid/grid_tools.h>
@@ -204,7 +205,44 @@ struct FluidBaseAlgorithm
   /**
    * Sets a general function for the body force.
    */
-  void set_body_force(const std_cxx11::shared_ptr<Function<dim> > body_force);
+  void set_body_force(const std_cxx11::shared_ptr<TensorFunction<1,dim> > body_force);
+
+  /**
+   * Returns the body force.
+   */
+  std_cxx11::shared_ptr<TensorFunction<1,dim> > get_body_force() const
+  {
+    return body_force;
+  }
+
+  /**
+   * Sets the fluid viscosity.
+   */
+  void set_viscosity (const double viscosity);
+
+  /**
+   * Returns the viscosity.
+   */
+  double get_viscosity () const
+  {
+    return viscosity;
+  }
+
+  /**
+   * Sets the size of the time step.
+   */
+  void set_time_step (const double time_step)
+  {
+    time_step_size = time_step;
+  }
+
+  /**
+   * Returns the time step size.
+   */
+  double get_time_step () const
+  {
+    return time_step_size;
+  }
 
 protected:
   /**
@@ -216,12 +254,22 @@ protected:
   /**
    * Function holding the body force.
    */
-  std_cxx11::shared_ptr<Function<dim> > body_force;
+  std_cxx11::shared_ptr<TensorFunction<1,dim> > body_force;
 
   /**
    * The mapping used for representing curved boundaries.
    */
   MappingQ<dim> mapping;
+
+  /**
+   * The viscosity of the underlying fluid
+   */
+  double viscosity;
+
+  /**
+   * The time chosen step size
+   */
+  double time_step_size;
 };
 
 

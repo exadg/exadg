@@ -11,7 +11,8 @@ template <int dim>
 FluidBaseAlgorithm<dim>::FluidBaseAlgorithm(const unsigned int mapping_degree)
   :
   boundary (new helpers::BoundaryDescriptor<dim>()),
-  mapping (mapping_degree)
+  mapping (mapping_degree),
+  viscosity (1.)
 {
 }
 
@@ -130,9 +131,18 @@ FluidBaseAlgorithm<dim>::set_periodic_boundaries
 
 template<int dim>
 void
-FluidBaseAlgorithm<dim>::set_body_force(const std_cxx11::shared_ptr<Function<dim> > body_force)
+FluidBaseAlgorithm<dim>::set_body_force(const std_cxx11::shared_ptr<TensorFunction<1,dim> > body_force)
 {
   this->body_force = body_force;
+}
+
+
+
+template<int dim>
+void
+FluidBaseAlgorithm<dim>::set_viscosity(const double viscosity)
+{
+  this->viscosity = viscosity;
 }
 
 
