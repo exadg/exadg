@@ -3011,7 +3011,7 @@ public:
   PoissonSolverData<dim> solver_data;
   solver_data.poisson_dof_index = 1;
   solver_data.poisson_quad_index = 1;
-  solver_data.periodic_face_pairs = periodic_face_pairs;
+  solver_data.periodic_face_pairs_level0 = periodic_face_pairs;
   solver_data.penalty_factor = stab_factor;
   solver_data.solver_tolerance = 1e-5;
   solver_data.dirichlet_boundaries.insert(1);

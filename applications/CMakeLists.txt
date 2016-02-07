@@ -13,6 +13,7 @@ SET( SOURCE_FILES
      DG_NavierStokes_DualSplitting.cc
      multigrid_solver.cc
      fe_flow_past_cylinder.cc
+     fe_turbulent_channel.cc
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )

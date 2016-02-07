@@ -54,7 +54,7 @@ struct PoissonSolverData
 
   // If periodic boundaries are present, this variable collects matching faces
   // on the two sides of the domain
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs;
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs_level0;
 
   // Sets the tolerance for the linear solver
   double solver_tolerance;
@@ -101,6 +101,14 @@ public:
                const PoissonSolverData<dim> &solver_data,
                const MGConstrainedDoFs &mg_constrained_dofs,
                const unsigned int level = numbers::invalid_unsigned_int);
+
+  // Checks whether the boundary conditions are consistent, i.e., no overlap
+  // between the Dirichlet, Neumann, and periodic parts. The return value of
+  // this function indicates whether a pure Neumann problem is detected (and
+  // additional measures for making the linear system non-singular are
+  // necessary).
+  static bool verify_boundary_conditions(const DoFHandler<dim>        &dof_handler,
+                                         const PoissonSolverData<dim> &solver_data);
 
   // Performs a matrix-vector multiplication
   void vmult(parallel::distributed::Vector<Number> &dst,
@@ -191,9 +199,9 @@ public:
 
 private:
 
-  // Ensures that the boundary conditions make sense and computes the array
-  // penalty parameter. Called in reinit().
-  void check_boundary_conditions(const Mapping<dim> &mapping);
+  // Computes the array penalty parameter for later use of the symmetric
+  // interior penalty method. Called in reinit().
+  void compute_array_penalty_parameter(const Mapping<dim> &mapping);
 
   // Runs the loop over all cells and faces for use in matrix-vector
   // multiplication, adding the result in the previous content of dst
@@ -246,7 +254,7 @@ private:
   MatrixFree<dim,Number> own_matrix_free_storage;
   PoissonSolverData<dim> solver_data;
   unsigned int fe_degree;
-  bool pure_neumann_problem;
+  bool apply_mean_value_constraint;
   AlignedVector<VectorizedArray<Number> > array_penalty_parameter;
   mutable parallel::distributed::Vector<Number> tmp_projection_vector;
 

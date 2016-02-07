@@ -112,11 +112,11 @@ void CylinderFlowProblem<dim>::run ()
   solver.set_viscosity(0.01);
   solver.set_time_step(0.0001);
 
-  solver.output_solution("solution" + Utilities::to_string(0, 4));
+  solver.output_solution("solution" + Utilities::to_string(0, 4), 3);
   solver.time_step_output_frequency = 10;
   double tick = 0.1;
   unsigned int count = 0;
-  const double end_time = 20;
+  const double end_time = 30;
   for (  ; solver.time < end_time; )
     {
       solver.advance_time_step();
@@ -124,7 +124,7 @@ void CylinderFlowProblem<dim>::run ()
       const int position = int(solver.time * 1.0000000001 / tick);
       const double slot = position * tick;
       if (((solver.time - slot) < (solver.get_time_step()*0.99)) || solver.time >= end_time)
-        solver.output_solution("solution" + Utilities::to_string(++count, 4));
+        solver.output_solution("solution" + Utilities::to_string(++count, 4), 3);
     }
 }
 

@@ -14,7 +14,8 @@ template <int dim, typename Number>
 LaplaceOperator<dim,Number>::LaplaceOperator ()
   :
   data (0),
-  fe_degree (numbers::invalid_unsigned_int)
+  fe_degree (numbers::invalid_unsigned_int),
+  apply_mean_value_constraint (false)
 {}
 
 
@@ -25,6 +26,7 @@ void LaplaceOperator<dim,Number>::clear()
   solver_data = PoissonSolverData<dim>();
   data = 0;
   fe_degree = numbers::invalid_unsigned_int;
+  apply_mean_value_constraint = false;
   own_matrix_free_storage.clear();
   tmp_projection_vector.reinit(0);
   have_interface_matrices = false;
@@ -44,7 +46,71 @@ void LaplaceOperator<dim,Number>::reinit(const MatrixFree<dim,Number>       &mf_
                mf_data.get_n_q_points(solver_data.poisson_quad_index),
                ExcMessage("Expected fe_degree+1 quadrature points"));
 
-  check_boundary_conditions(mapping);
+  compute_array_penalty_parameter(mapping);
+
+  // Check whether the Poisson matrix is singular when applied to a vector
+  // consisting of only ones (except for constrained entries)
+  parallel::distributed::Vector<Number> in_vec, out_vec;
+  initialize_dof_vector(in_vec);
+  initialize_dof_vector(out_vec);
+  in_vec = 1;
+  const std::vector<unsigned int> &constrained_entries =
+    mf_data.get_constrained_dofs(solver_data.poisson_dof_index);
+  for (unsigned int i=0; i<constrained_entries.size(); ++i)
+    in_vec.local_element(constrained_entries[i]) = 0;
+  vmult_add(out_vec, in_vec);
+  const double linfty_norm = out_vec.linfty_norm();
+
+  // since we cannot know the magnitude of the entries at this point (the
+  // diagonal entries would be a guideline but they are not available here),
+  // we instead multiply by a random vector
+  for (unsigned int i=0; i<in_vec.local_size(); ++i)
+    in_vec.local_element(i) = (double)rand()/RAND_MAX;
+  vmult(out_vec, in_vec);
+  const double linfty_norm_compare = out_vec.linfty_norm();
+
+  // use mean value constraint if the infty norm with the one vector is very
+  // small
+  apply_mean_value_constraint =
+    linfty_norm / linfty_norm_compare < std::pow(std::numeric_limits<Number>::epsilon(), 2./3.);
+}
+
+
+
+namespace
+{
+  template <int dim>
+  void add_periodicity_constraints(const unsigned int level,
+                                   const unsigned int target_level,
+                                   const typename DoFHandler<dim>::face_iterator face1,
+                                   const typename DoFHandler<dim>::face_iterator face2,
+                                   ConstraintMatrix &constraints)
+  {
+    if (level == 0)
+      {
+        const unsigned int dofs_per_face = face1->get_fe(0).dofs_per_face;
+        std::vector<types::global_dof_index> dofs_1(dofs_per_face);
+        std::vector<types::global_dof_index> dofs_2(dofs_per_face);
+
+        face1->get_mg_dof_indices(target_level, dofs_1, 0);
+        face2->get_mg_dof_indices(target_level, dofs_2, 0);
+
+        for (unsigned int i=0; i<dofs_per_face; ++i)
+          if (constraints.can_store_line(dofs_2[i]) &&
+              constraints.can_store_line(dofs_1[i]) &&
+              !constraints.is_constrained(dofs_2[i]))
+            {
+              constraints.add_line(dofs_2[i]);
+              constraints.add_entry(dofs_2[i], dofs_1[i], 1.);
+            }
+      }
+    else
+      {
+        for (unsigned int c=0; c<face1->n_children(); ++c)
+          add_periodicity_constraints<dim>(level-1, target_level, face1->child(c),
+                                           face2->child(c), constraints);
+      }
+  }
 }
 
 
@@ -57,6 +123,7 @@ void LaplaceOperator<dim,Number>::reinit (const DoFHandler<dim> &dof_handler,
                                           const unsigned int level)
 {
   clear();
+  this->solver_data = solver_data;
 
   const QGauss<1> quad(dof_handler.get_fe().degree+1);
   typename MatrixFree<dim,Number>::AdditionalData addit_data;
@@ -66,7 +133,7 @@ void LaplaceOperator<dim,Number>::reinit (const DoFHandler<dim> &dof_handler,
   addit_data.mpi_communicator =
     dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()) ?
     (dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()))->get_communicator() : MPI_COMM_SELF;
-  addit_data.periodic_face_pairs_level_0 = solver_data.periodic_face_pairs;
+  addit_data.periodic_face_pairs_level_0 = solver_data.periodic_face_pairs_level0;
 
   ConstraintMatrix constraints;
   const bool is_feq = dof_handler.get_fe().dofs_per_vertex > 0;
@@ -86,6 +153,28 @@ void LaplaceOperator<dim,Number>::reinit (const DoFHandler<dim> &dof_handler,
       DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs);
       constraints.reinit(relevant_dofs);
       DoFTools::make_hanging_node_constraints(dof_handler, constraints);
+
+      // add periodicity constraints
+      std::vector<GridTools::PeriodicFacePair<typename DoFHandler<dim>::cell_iterator> > periodic_faces;
+      for (typename std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >::const_iterator
+             it = solver_data.periodic_face_pairs_level0.begin();
+           it != solver_data.periodic_face_pairs_level0.end(); ++it)
+        {
+          GridTools::PeriodicFacePair<typename DoFHandler<dim>::cell_iterator> periodic;
+          for (unsigned int i=0; i<2; ++i)
+            {
+              periodic.cell[i] = typename DoFHandler<dim>::cell_iterator
+                (&dof_handler.get_triangulation(),
+                 it->cell[i]->level(), it->cell[i]->index(), &dof_handler);
+              periodic.face_idx[i] = it->face_idx[i];
+            }
+          periodic.orientation = it->orientation;
+          periodic.matrix = it->matrix;
+          periodic_faces.push_back(periodic);
+        }
+      DoFTools::make_periodicity_constraints<DoFHandler<dim> > (periodic_faces,
+                                                                constraints);
+
       VectorTools::interpolate_boundary_values(dof_handler, dirichlet_boundary,
                                                constraints);
     }
@@ -95,6 +184,21 @@ void LaplaceOperator<dim,Number>::reinit (const DoFHandler<dim> &dof_handler,
       DoFTools::extract_locally_relevant_level_dofs(dof_handler, level,
                                                     relevant_dofs);
       constraints.reinit(relevant_dofs);
+
+      // add periodicity constraints
+      for (typename std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >::const_iterator
+             it = solver_data.periodic_face_pairs_level0.begin();
+           it != solver_data.periodic_face_pairs_level0.end(); ++it)
+        {
+          typename DoFHandler<dim>::cell_iterator
+            cell1(&dof_handler.get_triangulation(), 0, it->cell[1]->index(), &dof_handler),
+            cell0(&dof_handler.get_triangulation(), 0, it->cell[0]->index(), &dof_handler);
+          add_periodicity_constraints<dim>(level, level,
+                                           cell1->face(it->face_idx[1]),
+                                           cell0->face(it->face_idx[0]),
+                                           constraints);
+        }
+
       constraints.add_lines(mg_constrained_dofs.get_boundary_indices(level));
 
       std::vector<types::global_dof_index> interface_indices;
@@ -108,6 +212,35 @@ void LaplaceOperator<dim,Number>::reinit (const DoFHandler<dim> &dof_handler,
           edge_constrained_indices.push_back(locally_owned.index_within_set(interface_indices[i]));
       have_interface_matrices = Utilities::MPI::max((unsigned int)edge_constrained_indices.size(), MPI_COMM_WORLD) > 0;
     }
+
+  // constraint zeroth DoF in continuous case (the mean value constraint will
+  // be applied in the DG case). In case we have interface matrices, there are
+  // Dirichlet constraints on parts of the boundary and no such transformation
+  // is required.
+  if (verify_boundary_conditions(dof_handler, solver_data)
+      && is_feq && !have_interface_matrices && constraints.can_store_line(0))
+    {
+      // if dof 0 is constrained, it must be a periodic dof, so we take the
+      // value on the other side
+      types::global_dof_index line_index = 0;
+      while (true)
+        {
+          const std::vector<std::pair<types::global_dof_index,double> >* lines =
+            constraints.get_constraint_entries(line_index);
+          if (lines == 0)
+            {
+              constraints.add_line(line_index);
+              break;
+            }
+          else
+            {
+              Assert(lines->size() == 1 && std::abs((*lines)[0].second-1.)<1e-15,
+                     ExcMessage("Periodic index expected, bailing out"));
+              line_index = (*lines)[0].first;
+            }
+        }
+    }
+
   constraints.close();
 
   PoissonSolverData<dim> my_solver_data = solver_data;
@@ -123,21 +256,22 @@ void LaplaceOperator<dim,Number>::reinit (const DoFHandler<dim> &dof_handler,
 
 
 template <int dim, typename Number>
-void LaplaceOperator<dim,Number>::check_boundary_conditions(const Mapping<dim> &mapping)
+bool LaplaceOperator<dim,Number>
+::verify_boundary_conditions(const DoFHandler<dim>        &dof_handler,
+                             const PoissonSolverData<dim> &solver_data)
 {
   // Check that the Dirichlet and Neumann boundary conditions do not overlap
   std::set<types::boundary_id> periodic_boundary_ids;
-  for (unsigned int i=0; i<solver_data.periodic_face_pairs.size(); ++i)
+  for (unsigned int i=0; i<solver_data.periodic_face_pairs_level0.size(); ++i)
     {
-      AssertThrow(solver_data.periodic_face_pairs[i].cell[0]->level() == 0,
+      AssertThrow(solver_data.periodic_face_pairs_level0[i].cell[0]->level() == 0,
                   ExcMessage("Received periodic cell pairs on non-zero level"));
-      periodic_boundary_ids.insert(solver_data.periodic_face_pairs[i].cell[0]->face(solver_data.periodic_face_pairs[i].face_idx[0])->boundary_id());
-      periodic_boundary_ids.insert(solver_data.periodic_face_pairs[i].cell[1]->face(solver_data.periodic_face_pairs[i].face_idx[1])->boundary_id());
+      periodic_boundary_ids.insert(solver_data.periodic_face_pairs_level0[i].cell[0]->face(solver_data.periodic_face_pairs_level0[i].face_idx[0])->boundary_id());
+      periodic_boundary_ids.insert(solver_data.periodic_face_pairs_level0[i].cell[1]->face(solver_data.periodic_face_pairs_level0[i].face_idx[1])->boundary_id());
     }
 
-  pure_neumann_problem = true;
-  const Triangulation<dim> &tria =
-    data->get_dof_handler(solver_data.poisson_dof_index).get_triangulation();
+  bool pure_neumann_problem = true;
+  const Triangulation<dim> &tria = dof_handler.get_triangulation();
   for (typename Triangulation<dim>::cell_iterator cell = tria.begin();
        cell != tria.end(); ++cell)
     for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
@@ -189,14 +323,22 @@ void LaplaceOperator<dim,Number>::check_boundary_conditions(const Mapping<dim> &
   AssertThrow(max_pure_neumann == min_pure_neumann,
               ExcMessage("Neumann/Dirichlet assignment over processors does not match."));
 
-  // Finally, we need to check if we have interfaces at different refinement
-  // level in the FE_Q case. This yields Dirichlet constraints and thus, no
-  // Neumann condition should be applied.
-  if (edge_constrained_indices.size() > 0)
-    my_neumann = 0;
-  min_pure_neumann = Utilities::MPI::min(my_neumann, mpi_communicator);
+  return pure_neumann_problem;
+}
 
-  pure_neumann_problem = min_pure_neumann;
+
+
+template <int dim, typename Number>
+void LaplaceOperator<dim,Number>::compute_array_penalty_parameter(const Mapping<dim> &mapping)
+{
+  std::set<types::boundary_id> periodic_boundary_ids;
+  for (unsigned int i=0; i<solver_data.periodic_face_pairs_level0.size(); ++i)
+    {
+      AssertThrow(solver_data.periodic_face_pairs_level0[i].cell[0]->level() == 0,
+                  ExcMessage("Received periodic cell pairs on non-zero level"));
+      periodic_boundary_ids.insert(solver_data.periodic_face_pairs_level0[i].cell[0]->face(solver_data.periodic_face_pairs_level0[i].face_idx[0])->boundary_id());
+      periodic_boundary_ids.insert(solver_data.periodic_face_pairs_level0[i].cell[1]->face(solver_data.periodic_face_pairs_level0[i].face_idx[1])->boundary_id());
+    }
 
   // Compute penalty parameter for each cell
   array_penalty_parameter.resize(data->n_macro_cells()+data->n_macro_ghost_cells());
@@ -265,7 +407,7 @@ void LaplaceOperator<dim,Number>::vmult_add(parallel::distributed::Vector<Number
                                             const parallel::distributed::Vector<Number> &src) const
 {
   const parallel::distributed::Vector<Number> *actual_src = &src;
-  if(pure_neumann_problem)
+  if(apply_mean_value_constraint)
     {
       tmp_projection_vector = src;
       apply_nullspace_projection(tmp_projection_vector);
@@ -278,7 +420,7 @@ void LaplaceOperator<dim,Number>::vmult_add(parallel::distributed::Vector<Number
   // Neumann problems.
   for (unsigned int i=0; i<edge_constrained_indices.size(); ++i)
     {
-      Assert(!pure_neumann_problem, ExcInternalError());
+      Assert(!apply_mean_value_constraint, ExcInternalError());
 
       edge_constrained_values[i] =
         std::pair<Number,Number>(src.local_element(edge_constrained_indices[i]),
@@ -305,7 +447,7 @@ void LaplaceOperator<dim,Number>::vmult_add(parallel::distributed::Vector<Number
       dst.local_element(edge_constrained_indices[i]) = edge_constrained_values[i].second + edge_constrained_values[i].first;
     }
 
-  if (pure_neumann_problem)
+  if (apply_mean_value_constraint)
     apply_nullspace_projection(dst);
 }
 
@@ -584,7 +726,7 @@ void LaplaceOperator<dim,Number>
       AssertThrow(false, ExcMessage("Only polynomial degrees 0 up to 10 instantiated"));
     }
 
-  if(pure_neumann_problem)
+  if(apply_mean_value_constraint)
     {
       parallel::distributed::Vector<Number> vec1;
       vec1.reinit(inverse_diagonal_entries, true);
@@ -1180,6 +1322,8 @@ PoissonSolver<dim>::solve (parallel::distributed::Vector<double> &dst,
         if(Utilities::MPI::this_mpi_process(mpi_communicator)==0)
           std::cout<<"Multigrid failed trying to solve the pressure poisson equation." << std::endl;
       }
+    AssertThrow(std::isfinite(solver_control.last_value()),
+                ExcMessage("Poisson solver contained NaN of Inf values"));
     return solver_control.last_step();
   }
 

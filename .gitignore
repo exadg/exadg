@@ -10,3 +10,4 @@ cmake_install.cmake
 libindexa.so
 applications/multigrid_solver
 applications/fe_flow_past_cylinder
+applications/fe_turbulent_channel

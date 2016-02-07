@@ -124,6 +124,8 @@ void FENavierStokesSolver<dim>::setup_problem
         << dof_handler_p.n_dofs()  << ")"
         << std::endl;
 
+  PoissonSolverData<dim> poisson_data;
+
   // no-slip boundaries directly filled into velocity system
   constraints_u.clear();
   constraints_p.clear();
@@ -171,10 +173,12 @@ void FENavierStokesSolver<dim>::setup_problem
           periodic_u.cell[i] = typename DoFHandler<dim>::cell_iterator
             (&dof_handler_u.get_triangulation(),
              it->cell[i]->level(), it->cell[i]->index(), &dof_handler_u);
+          periodic_u.face_idx[i] = it->face_idx[i];
+
           periodic_p.cell[i] = typename DoFHandler<dim>::cell_iterator
             (&dof_handler_p.get_triangulation(),
              it->cell[i]->level(), it->cell[i]->index(), &dof_handler_p);
-          periodic_u.face_idx[i] = it->face_idx[i];
+          periodic_p.face_idx[i] = it->face_idx[i];
         }
       periodic_u.orientation = it->orientation;
       periodic_u.matrix = it->matrix;
@@ -187,15 +191,19 @@ void FENavierStokesSolver<dim>::setup_problem
                                                             constraints_u);
   DoFTools::make_periodicity_constraints<DoFHandler<dim> > (periodic_faces_p,
                                                             constraints_p);
+  poisson_data.periodic_face_pairs_level0 = this->boundary->periodic_face_pairs_level0;
 
   for (typename std::set<types::boundary_id>::const_iterator it =
          this->boundary->symmetry.begin();
        it != this->boundary->symmetry.end(); ++it)
-    AssertThrow (this->boundary->open_conditions_p.find(*it) == this->boundary->open_conditions_p.end() &&
-                 this->boundary->no_slip.find(*it) == this->boundary->no_slip.end() &&
-                 this->boundary->dirichlet_conditions_u.find(*it) == this->boundary->dirichlet_conditions_u.end(),
-                 ExcMessage("Cannot mix symmetry boundary conditions with "
-                            "other boundary conditions on same boundary!"));
+    {
+      AssertThrow (this->boundary->open_conditions_p.find(*it) == this->boundary->open_conditions_p.end() &&
+                   this->boundary->no_slip.find(*it) == this->boundary->no_slip.end() &&
+                   this->boundary->dirichlet_conditions_u.find(*it) == this->boundary->dirichlet_conditions_u.end(),
+                   ExcMessage("Cannot mix symmetry boundary conditions with "
+                              "other boundary conditions on same boundary!"));
+      poisson_data.neumann_boundaries.insert(*it);
+    }
 
   VectorTools::compute_no_normal_flux_constraints (dof_handler_u, 0,
                                                    this->boundary->symmetry,
@@ -204,7 +212,6 @@ void FENavierStokesSolver<dim>::setup_problem
                                                 this->boundary->normal_flux,
                                                 constraints_u);
 
-  PoissonSolverData<dim> poisson_data;
   {
     ZeroFunction<dim> zero_func(dim);
     typename FunctionMap<dim>::type homogeneous_dirichlet;
@@ -267,10 +274,31 @@ void FENavierStokesSolver<dim>::setup_problem
                                              constraints_p);
   }
 
-  // constrain the zeroth pressure degree of freedom
-  if (Utilities::MPI::sum(constraints_p.n_constraints(),communicator) == 0 &&
+  // constrain the zeroth pressure degree of freedom in case we have a pure
+  // Neumann problem in pressure
+  if (LaplaceOperator<dim,double>::verify_boundary_conditions(dof_handler_p, poisson_data) &&
       constraints_p.can_store_line(0))
-    constraints_p.add_line(0);
+    {
+      // if dof 0 is constrained, it must be a periodic dof, so we take the
+      // value on the other side
+      types::global_dof_index line_index = 0;
+      while (true)
+        {
+          const std::vector<std::pair<types::global_dof_index,double> >* lines =
+            constraints_p.get_constraint_entries(line_index);
+          if (lines == 0)
+            {
+              constraints_p.add_line(line_index);
+              break;
+            }
+          else
+            {
+              Assert(lines->size() == 1 && std::abs((*lines)[0].second-1.)<1e-15,
+                     ExcMessage("Periodic index expected, bailing out"));
+              line_index = (*lines)[0].first;
+            }
+        }
+    }
 
   constraints_p.close();
 
@@ -288,6 +316,7 @@ void FENavierStokesSolver<dim>::setup_problem
     typename MatrixFree<dim>::AdditionalData data (communicator);
     data.tasks_parallel_scheme = MatrixFree<dim>::AdditionalData::none;
     data.tasks_block_size = 16;
+    data.mapping_update_flags |= update_quadrature_points;
     matrix_free.reinit (this->mapping, dofs, constraints, quadratures, data);
   }
 
