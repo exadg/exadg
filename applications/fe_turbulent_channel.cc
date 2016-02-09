@@ -51,10 +51,10 @@ public:
   virtual void vector_value (const Point<dim> &p,
                              Vector<double>   &values) const
   {
-    values(0) = (1.-p[1]*p[1]*p[1]*p[1]*p[1]*p[1])*1.15 + 0.1 * (-1. + 2.*(1.*rand()/RAND_MAX));
-    values(1) = 0.1 * (-1. + 2.*(1.*rand()/RAND_MAX));
+    values(0) = 22.*(1.-p[1]*p[1]*p[1]*p[1]*p[1]*p[1])*1.15 + 4. * (-1. + 2.*(1.*rand()/RAND_MAX));
+    values(1) = 4. * (-1. + 2.*(1.*rand()/RAND_MAX));
     if (dim == 3)
-      values(2) =  0.1 * (-1. + 2.*(1.*rand()/RAND_MAX));
+      values(2) =  4. * (-1. + 2.*(1.*rand()/RAND_MAX));
   }
 };
 
@@ -67,7 +67,8 @@ class BodyForce : public TensorFunction<1,dim>
   {
     // body force for 395 channel
     Tensor<1,dim> out;
-    out[0] = 0.00337204;
+    out[0] = 1.;
+    //out[0] = 0.00337204;
     return out;
   }
 };
@@ -146,8 +147,8 @@ template <int dim>
 void ChannelFlowProblem<dim>::run ()
 {
   create_grid(triangulation, 5);
-  const double time_step = 0.0035;
-  solver.set_viscosity(0.0001472);
+  const double time_step = 0.00015;
+  solver.set_viscosity(1./180);
   solver.set_body_force(std_cxx11::shared_ptr<TensorFunction<1,dim> >(new BodyForce<dim>()));
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
@@ -166,7 +167,7 @@ void ChannelFlowProblem<dim>::run ()
   solver.time_step_output_frequency = 1;
   const double end_time = 1000;
   unsigned int count = 0;
-  const double tick = 1;
+  const double tick = 0.05;
   for ( ; solver.time < end_time; )
     {
       solver.advance_time_step();
