@@ -371,8 +371,48 @@ void FENavierStokesSolver<dim>::setup_problem
   updates1 = solution;
   updates2 = solution;
 
-  VectorTools::interpolate(this->mapping, dof_handler_u, initial_velocity_field,
-                           solution.block(0));
+  // interpolate initial solution. Since we want to support random data set
+  // from different processors, we need to manually read from the function and
+  // filter out non-owned parts (the method
+  // VectorTools::interpolate_boundary_values would run into an exception when
+  // setting inconsistent ghost values over different processors)
+  {
+    AssertDimension(initial_velocity_field.n_components, dim);
+    Quadrature<dim> quad(fe_u.base_element(0).get_unit_support_points());
+    FEValues<dim> fe_values(this->mapping, fe_u, quad,
+                            update_values | update_quadrature_points);
+    std::vector<Vector<double> > sol_values(quad.size(), Vector<double>(dim));
+    std::vector<types::global_dof_index> dof_indices(fe_u.dofs_per_cell);
+    Table<2,unsigned int> component_to_system_index(dim, quad.size());
+    for (unsigned int d=0; d<dim; ++d)
+      for (unsigned int i=0; i<quad.size(); ++i)
+        {
+          component_to_system_index(d,i) = fe_u.component_to_system_index(d,i);
+          Assert(quad.point(i).distance(fe_u.get_unit_support_points()[component_to_system_index(d,i)]) < 1e-14,
+                 ExcInternalError());
+        }
+    IndexSet locally_owned_indices = dof_handler_u.locally_owned_dofs();
+    double *vec_data = solution.block(0).begin();
+
+    for (typename DoFHandler<dim>::active_cell_iterator
+           cell=dof_handler_u.begin_active(); cell != dof_handler_u.end(); ++cell)
+      if (cell->is_locally_owned())
+        {
+          fe_values.reinit(cell);
+          initial_velocity_field.vector_value_list(fe_values.get_quadrature_points(),
+                                                   sol_values);
+          cell->get_dof_indices(dof_indices);
+          for (unsigned int i=0; i<quad.size(); ++i)
+            for (unsigned int d=0; d<dim; ++d)
+              {
+                const types::global_dof_index glob_index
+                  = dof_indices[component_to_system_index(d,i)];
+                if (locally_owned_indices.is_element(glob_index))
+                  vec_data[locally_owned_indices.index_within_set(glob_index)]
+                    = sol_values[i](d);
+              }
+        }
+  }
   constraints_u.distribute(solution.block(0));
 
   pcout << "Time vectors + integrator: " << timer.wall_time() << std::endl;
