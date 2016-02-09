@@ -104,7 +104,7 @@ namespace
               constraints.add_entry(dofs_2[i], dofs_1[i], 1.);
             }
       }
-    else
+    else if (face1->has_children() && face2->has_children())
       {
         for (unsigned int c=0; c<face1->n_children(); ++c)
           add_periodicity_constraints<dim>(level-1, target_level, face1->child(c),
