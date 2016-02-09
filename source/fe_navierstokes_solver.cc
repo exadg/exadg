@@ -745,12 +745,17 @@ FENavierStokesSolver<dim>::output_solution (const std::string  filename_base,
 
   if ( Utilities::MPI::this_mpi_process(communicator) == 0)
     {
+      // remove directory part from filename_base
+      std::string filename_plain = filename_base;
+      std::string::size_type found = filename_plain.find_last_of("/\\");
+      if (found != std::string::npos)
+        filename_plain = filename_plain.substr(found+1);
 
       std::vector<std::string> filenames;
       for (unsigned int i=0;i<Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);++i)
         {
           std::ostringstream filename;
-          filename << filename_base
+          filename << filename_plain
                    << "_Proc"
                    << i
                    << ".vtu";

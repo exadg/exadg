@@ -841,7 +841,7 @@ public:
                  const bool evaluate_grad,
                  const bool evaluate_hess = false)
       {
-  fe_eval[0].evaluate(evaluate_val,evaluate_grad);
+        fe_eval[0].evaluate(evaluate_val,evaluate_grad,evaluate_hess);
 #ifdef XWALL
           if(enriched)
           {
@@ -1550,7 +1550,8 @@ public:
                  const bool evaluate_grad,
                  const bool evaluate_hess = false)
       {
-  fe_eval.evaluate(evaluate_val,evaluate_grad);
+        AssertThrow(evaluate_hess == false, ExcNotImplemented());
+        fe_eval.evaluate(evaluate_val,evaluate_grad);
 #ifdef XWALL
           if(enriched)
           {
@@ -4112,8 +4113,6 @@ public:
 //  FEFaceEvaluation<dim,fe_degree,fe_degree+(fe_degree+2)/2,dim,value_type> fe_eval(data,true,0,2);
 //  FEFaceEvaluation<dim,fe_degree,fe_degree+(fe_degree+2)/2,dim,value_type> fe_eval_neighbor(data,false,0,2);
 
-    LAPACKFullMatrix<value_type> FluxJacobian(dim);
-
   for(unsigned int face=face_range.first; face<face_range.second; face++)
   {
 
@@ -4144,52 +4143,21 @@ public:
       Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_xwall.get_value(q);
       Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_xwall_neighbor.get_value(q);
       Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_xwall.get_normal_vector(q);
-      VectorizedArray<value_type> uM_n = uM*normal;
-      VectorizedArray<value_type> uP_n = uP*normal;
-      VectorizedArray<value_type> lambda;
+
+      const VectorizedArray<value_type> uM_n = uM*normal;
+      const VectorizedArray<value_type> uP_n = uP*normal;
 
       // calculation of lambda according to Hesthaven & Warburton
 //      for(unsigned int k=0;k<lambda.n_array_elements;++k)
 //        lambda[k] = std::abs(uM_n[k]) > std::abs(uP_n[k]) ? std::abs(uM_n[k]) : std::abs(uP_n[k]);//lambda = std::max(std::abs(uM_n), std::abs(uP_n));
       // calculation of lambda according to Hesthaven & Warburton
 
-      // calculation of lambda according to Shahbazi et al.
-      Tensor<2,dim,VectorizedArray<value_type> > unity_tensor;
-      for(unsigned int d=0;d<dim;++d)
-        unity_tensor[d][d] = 1.0;
-      Tensor<2,dim,VectorizedArray<value_type> > flux_jacobian_M, flux_jacobian_P;
-      flux_jacobian_M = outer_product(uM,normal);
-      flux_jacobian_P = outer_product(uP,normal);
-      flux_jacobian_M += uM_n*unity_tensor;
-      flux_jacobian_P += uP_n*unity_tensor;
-
-      // calculate maximum absolute eigenvalue of flux_jacobian_M: max |lambda(flux_jacobian_M)|
-      VectorizedArray<value_type> lambda_max_m = make_vectorized_array<value_type>(0.0);
-      for(unsigned int n=0;n<lambda_max_m.n_array_elements;++n)
-      {
-        FluxJacobian = 0;
-        for(unsigned int i=0;i<dim;++i)
-          for(unsigned int j=0;j<dim;++j)
-            FluxJacobian(i,j) = flux_jacobian_M[i][j][n];
-        FluxJacobian.compute_eigenvalues();
-        for(unsigned int d=0;d<dim;++d)
-          lambda_max_m[n] = std::max(lambda_max_m[n],std::abs(FluxJacobian.eigenvalue(d)));
-      }
-
-      // calculate maximum absolute eigenvalue of flux_jacobian_P: max |lambda(flux_jacobian_P)|
-      VectorizedArray<value_type> lambda_max_p = make_vectorized_array<value_type>(0.0);
-      for(unsigned int n=0;n<lambda_max_p.n_array_elements;++n)
-      {
-        FluxJacobian = 0;
-        for(unsigned int i=0;i<dim;++i)
-          for(unsigned int j=0;j<dim;++j)
-            FluxJacobian(i,j) = flux_jacobian_P[i][j][n];
-        FluxJacobian.compute_eigenvalues();
-        for(unsigned int d=0;d<dim;++d)
-          lambda_max_p[n] = std::max(lambda_max_p[n],std::abs(FluxJacobian.eigenvalue(d)));
-      }
+      // calculation of lambda according to Shahbazi et al.: maximum
+      // eigenvalue of (u^T * normal) * I + u * normal^T, which is
+      // abs(2*u^T*normal) (this can be verified by rank-1 matrix algebra)
       // lambda = max ( max |lambda(flux_jacobian_M)| , max |lambda(flux_jacobian_P)| )
-      lambda = std::max(lambda_max_m, lambda_max_p);
+      const VectorizedArray<value_type> lambda = 2.*std::max(std::abs(uM_n), std::abs(uP_n));
+
 //      Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_xwall.get_value(q);
 //      Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_xwall_neighbor.get_value(q);
 //      Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_xwall.get_normal_vector(q);
@@ -4228,8 +4196,6 @@ public:
 #else
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,dim,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,2);
 #endif
-
-    LAPACKFullMatrix<value_type> FluxJacobian(dim);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
   {
@@ -4293,52 +4259,20 @@ public:
 
         Tensor<1,dim,VectorizedArray<value_type> > uP = -uM + make_vectorized_array<value_type>(2.0)*g_n;
         Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_xwall.get_normal_vector(q);
-        VectorizedArray<value_type> uM_n = uM*normal;
-        VectorizedArray<value_type> uP_n = uP*normal;
-        VectorizedArray<value_type> lambda;
+        const VectorizedArray<value_type> uM_n = uM*normal;
+        const VectorizedArray<value_type> uP_n = uP*normal;
+
         // calculation of lambda according to Hesthaven & Warburton
 //        for(unsigned int k=0;k<lambda.n_array_elements;++k)
 //          lambda[k] = std::abs(uM_n[k]) > std::abs(uP_n[k]) ? std::abs(uM_n[k]) : std::abs(uP_n[k]);
         // calculation of lambda according to Hesthaven & Warburton
 
-        // calculation of lambda according to Shahbazi et al.
-        Tensor<2,dim,VectorizedArray<value_type> > unity_tensor;
-        for(unsigned int d=0;d<dim;++d)
-          unity_tensor[d][d] = 1.0;
-        Tensor<2,dim,VectorizedArray<value_type> > flux_jacobian_M, flux_jacobian_P;
-        flux_jacobian_M = outer_product(uM,normal);
-        flux_jacobian_P = outer_product(uP,normal);
-        flux_jacobian_M += uM_n*unity_tensor;
-        flux_jacobian_P += uP_n*unity_tensor;
-
-        // calculate maximum absolute eigenvalue of flux_jacobian_M: max |lambda(flux_jacobian_M)|
-        VectorizedArray<value_type> lambda_max_m = make_vectorized_array<value_type>(0.0);
-        for(unsigned int n=0;n<lambda_max_m.n_array_elements;++n)
-        {
-          FluxJacobian = 0;
-          for(unsigned int i=0;i<dim;++i)
-            for(unsigned int j=0;j<dim;++j)
-              FluxJacobian(i,j) = flux_jacobian_M[i][j][n];
-          FluxJacobian.compute_eigenvalues();
-          for(unsigned int d=0;d<dim;++d)
-            lambda_max_m[n] = std::max(lambda_max_m[n],std::abs(FluxJacobian.eigenvalue(d)));
-        }
-
-        // calculate maximum absolute eigenvalue of flux_jacobian_P: max |lambda(flux_jacobian_P)|
-        VectorizedArray<value_type> lambda_max_p = make_vectorized_array<value_type>(0.0);
-        for(unsigned int n=0;n<lambda_max_p.n_array_elements;++n)
-        {
-          FluxJacobian = 0;
-          for(unsigned int i=0;i<dim;++i)
-            for(unsigned int j=0;j<dim;++j)
-              FluxJacobian(i,j) = flux_jacobian_P[i][j][n];
-          FluxJacobian.compute_eigenvalues();
-          for(unsigned int d=0;d<dim;++d)
-            lambda_max_p[n] = std::max(lambda_max_p[n],std::abs(FluxJacobian.eigenvalue(d)));
-        }
+        // calculation of lambda according to Shahbazi et al.: maximum
+        // eigenvalue of (u^T * normal) * I + u * normal^T, which is
+        // abs(2*u^T*normal) (this can be verified by rank-1 matrix algebra)
         // lambda = max ( max |lambda(flux_jacobian_M)| , max |lambda(flux_jacobian_P)| )
-        lambda = std::max(lambda_max_m, lambda_max_p);
-        // calculation of lambda according to Shahbazi et al.
+        const VectorizedArray<value_type> lambda = 2.*std::max(std::abs(uM_n), std::abs(uP_n));
+
         Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
         Tensor<1,dim,VectorizedArray<value_type> > average_normal_flux = ( uM*uM_n + uP*uP_n) * make_vectorized_array<value_type>(0.5);
         Tensor<1,dim,VectorizedArray<value_type> > lf_flux = average_normal_flux + 0.5 * lambda * jump_value;
@@ -4350,8 +4284,8 @@ public:
         // applying inhomogeneous Neumann BC (value+ = value- , grad+ = - grad- +2h)
         Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_xwall.get_value(q);
         Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_xwall.get_normal_vector(q);
-        VectorizedArray<value_type> uM_n = uM*normal;
-        VectorizedArray<value_type> lambda = make_vectorized_array<value_type>(0.0);
+        const VectorizedArray<value_type> uM_n = uM*normal;
+        const VectorizedArray<value_type> lambda = make_vectorized_array<value_type>(0.0);
 
         Tensor<1,dim,VectorizedArray<value_type> > jump_value;
         for(unsigned d=0;d<dim;++d)
@@ -4641,8 +4575,6 @@ public:
 #else
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,0);
 #endif
-
-    const unsigned int level = data.get_cell_iterator(0,0)->level();
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -5738,8 +5670,6 @@ public:
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,number_vorticity_components,value_type> omega_nm2(data,xwallstatevec[0],xwallstatevec[1],true,0,2);
     FEFaceEvaluation<dim,fe_degree_p,fe_degree+(fe_degree+2)/2,1,value_type> pressure (data,true,1,2);
 #endif
-
-    const unsigned int level = data.get_cell_iterator(0,0)->level();
 
   for(unsigned int face=face_range.first; face<face_range.second; face++)
   {
