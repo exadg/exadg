@@ -64,6 +64,7 @@
 #define LOWMEMORY //compute grad-div matrices directly instead of saving them
 #define PRESPARTIAL
 #define DIVUPARTIAL
+#define CONSCONVPBC
 
 namespace DG_NavierStokes
 {
@@ -5692,7 +5693,7 @@ public:
 #ifdef DIVUPARTIAL
       Tensor<1,dim,VectorizedArray<value_type> > meanvel = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q));
 #else
-      Tensor<1,dim,VectorizedArray<value_type> > meanvel = make_vectorized_array(q);
+      Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
 #endif
       VectorizedArray<value_type> submitvalue;
       submitvalue = normal[0]*meanvel[0];
@@ -5853,13 +5854,18 @@ public:
         Tensor<1,dim,VectorizedArray<value_type> > normal = pressure.get_normal_vector(q);
           Tensor<1,dim,VectorizedArray<value_type> > u_n = fe_eval_xwall_n.get_value(q);
           Tensor<2,dim,VectorizedArray<value_type> > grad_u_n = fe_eval_xwall_n.get_gradient(q);
-          Tensor<1,dim,VectorizedArray<value_type> > conv_n = grad_u_n * u_n + fe_eval_xwall_n.get_divergence(q) * u_n;
+          Tensor<1,dim,VectorizedArray<value_type> > conv_n = grad_u_n * u_n;
           Tensor<1,dim,VectorizedArray<value_type> > u_nm = fe_eval_xwall_nm.get_value(q);
           Tensor<2,dim,VectorizedArray<value_type> > grad_u_nm = fe_eval_xwall_nm.get_gradient(q);
           Tensor<1,dim,VectorizedArray<value_type> > u_nm2 = fe_eval_xwall_nm2.get_value(q);
           Tensor<2,dim,VectorizedArray<value_type> > grad_u_nm2 = fe_eval_xwall_nm2.get_gradient(q);
-          Tensor<1,dim,VectorizedArray<value_type> > conv_nm = grad_u_nm * u_nm + fe_eval_xwall_nm.get_divergence(q) * u_nm;
-          Tensor<1,dim,VectorizedArray<value_type> > conv_nm2 = grad_u_nm2 * u_nm2 + fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
+          Tensor<1,dim,VectorizedArray<value_type> > conv_nm = grad_u_nm * u_nm;
+          Tensor<1,dim,VectorizedArray<value_type> > conv_nm2 = grad_u_nm2 * u_nm2;
+#ifdef CONSCONVPBC
+conv_n += fe_eval_xwall_n.get_divergence(q) * u_n;
+conv_nm += fe_eval_xwall_nm.get_divergence(q) * u_nm;
+conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
+#endif
 //          Tensor<1,dim,VectorizedArray<value_type> > rot_n = CurlCompute<dim,decltype(omega_n)>::compute(omega_n,q);
 //          Tensor<1,dim,VectorizedArray<value_type> > rot_nm = CurlCompute<dim,decltype(omega_nm)>::compute(omega_nm,q);
 
@@ -5888,7 +5894,7 @@ public:
 #ifdef DIVUPARTIAL
         Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q);
 #else
-        Tensor<1,dim,VectorizedArray<value_type> > meanvel = make_vectorized_array(0.);
+        Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
 #endif
         VectorizedArray<value_type> submitvalue;
         submitvalue = normal[0]*meanvel[0];
@@ -5919,7 +5925,7 @@ public:
 #ifdef DIVUPARTIAL
         Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q);
 #else
-        Tensor<1,dim,VectorizedArray<value_type> > meanvel = make_vectorized_array(0.);
+        Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
 #endif
         VectorizedArray<value_type> submitvalue;
         submitvalue = normal[0]*meanvel[0];
@@ -5960,11 +5966,19 @@ public:
 #endif
 
 
+    if(K>0.0+1e-9)
+    {
 #if defined(LOWMEMORY) || defined(XWALL)
     data.cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_grad_div_projection,this, dst, dst);
 #else
     data.cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_fast_grad_div_projection,this, dst, dst);
 #endif
+    }
+    else
+    {
+      data.cell_loop(&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_mass_matrix,
+                                 this, dst, dst);
+    }
 
 
 #ifdef COMPDIV
@@ -6564,7 +6578,7 @@ public:
   void NavierStokesProblem<dim>::
   init_channel_statistics()
   {
-    const int n_points_y = 9;
+    const int n_points_y = 21;
     const int n_points_y_glob =  std::pow(2,n_refinements)*(n_points_y-1)+1;
 
     vel_glob.resize(n_points_y_glob);
@@ -6581,7 +6595,7 @@ public:
   compute_channel_statistics(std::vector<parallel::distributed::Vector<value_type> >   &solution_n,std::vector<parallel::distributed::Vector<value_type> >   &vel_hathat, NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> & nsoperation)
   {
     numchsamp++;
-    const int n_points_y = 9;
+    const int n_points_y = 21;
     const int n_points_y_glob =  std::pow(2,n_refinements)*(n_points_y-1)+1;
 
     std::vector<double> y_glob;
@@ -6719,13 +6733,14 @@ public:
       f<<"number of samples:   " << numchsamp << std::endl;
       f<<"friction Reynolds number:   " << sqrt(VISCOSITY*(vel_glob.at(1)/numchsamp/(y_glob.at(1)+1.)))/VISCOSITY << std::endl;
       f<<"wall shear stress:   " << VISCOSITY*(vel_glob.at(1)/numchsamp/(y_glob.at(1)+1.)) << std::endl;
-      f<<"mean rms of div u_hathat:   " << udiv_samp/numchsamp << std::endl;
+      f<<"mean rms of div u_hathat:   " << udiv_samp/numchsamp*6.0/11.0 << std::endl;//the factor 6/11 is gamma0^-1, which is the factor u_hathat is scaled compared to solution_n
       f<< "       y       |       u      |   rms(u')    |   rms(v')    |   rms(w')    |     u'v'     " << std::endl;
       for (unsigned int idx = 0; idx<y_glob.size(); idx++)
       {
         f<<std::scientific<<std::setprecision(5) << std::setw(15) << y_glob.at(idx);
         f<<std::scientific<<std::setprecision(5) << std::setw(15) << vel_glob.at(idx)/(double)numchsamp;
-        f<<std::scientific<<std::setprecision(5) << std::setw(15) << sqrt(abs((velxsq_glob.at(idx)/(double)(numchsamp)-vel_glob.at(idx)*vel_glob.at(idx)/(double)(numchsamp*numchsamp))));
+        f<<std::scientific<<std::setprecision(5) << std::setw(15) << sqrt(abs((velxsq_glob.at(idx)/(double)(numchsamp)
+               -vel_glob.at(idx)*vel_glob.at(idx)/(((double)numchsamp)*((double)numchsamp)))));//this has caused a problem before because the square of two ints was larger than the largest int32
         f<<std::scientific<<std::setprecision(5) << std::setw(15) << sqrt(velysq_glob.at(idx)/(double)(numchsamp));
         f<<std::scientific<<std::setprecision(5) << std::setw(15) << sqrt(velzsq_glob.at(idx)/(double)(numchsamp));
         f<<std::scientific<<std::setprecision(5) << std::setw(15) << (veluv_glob.at(idx))/(double)(numchsamp);
@@ -6790,7 +6805,7 @@ public:
     const double global_min_cell_diameter = -Utilities::MPI::max(-min_cell_diameter, MPI_COMM_WORLD);
 
 	  pcout << std::endl << "Temporal discretisation:" << std::endl << std::endl
-			<< "  High order dual splitting scheme (2nd order)" << std::endl << std::endl
+			<< "  High order dual splitting scheme (3rd order)" << std::endl << std::endl
 			<< "Calculation of time step size:" << std::endl << std::endl
 			<< "  h_min: " << std::setw(10) << global_min_cell_diameter << std::endl
 			<< "  u_max: " << std::setw(10) << MAX_VELOCITY << std::endl
