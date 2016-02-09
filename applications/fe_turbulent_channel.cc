@@ -43,8 +43,7 @@ template <int dim>
 class InitialChannel : public Function<dim>
 {
 public:
-  InitialChannel (const double time = 0.,
-                  const unsigned int selected_component = numbers::invalid_unsigned_int)
+  InitialChannel (const double time = 0.)
     :
     Function<dim>(dim, time)
   {}
@@ -64,7 +63,7 @@ public:
 template <int dim>
 class BodyForce : public TensorFunction<1,dim>
 {
-  virtual Tensor<1,dim> value (const Point<dim> &p) const
+  virtual Tensor<1,dim> value (const Point<dim> &) const
   {
     // body force for 395 channel
     Tensor<1,dim> out;
