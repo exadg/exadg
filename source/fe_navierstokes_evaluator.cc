@@ -78,7 +78,7 @@ namespace helpers
     const parallel::distributed::Vector<double> &last_pressure_update;
     const FluidBaseAlgorithm<dim>               &fluid_algorithm;
 
-    void local_advect (const MatrixFree<dim>              &data,
+    void local_advect (const MatrixFree<dim>              &,
                        parallel::distributed::Vector<double> &dst,
                        const parallel::distributed::Vector<double> &src,
                        const std::pair<unsigned int,unsigned int> &cell_range) const
