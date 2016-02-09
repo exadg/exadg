@@ -102,6 +102,7 @@ void FENavierStokesSolver<dim>::setup_problem
        it != dof_handler_u.get_triangulation().end(); ++it)
     shortest_edge = std::min(shortest_edge,
                              it->minimum_vertex_distance());
+  shortest_edge = Utilities::MPI::min(shortest_edge, communicator);
 
   const double cfl = 0.08/fe_u.degree;
   this->time_step_size = std::min(shortest_edge * cfl,
@@ -311,7 +312,8 @@ void FENavierStokesSolver<dim>::setup_problem
     constraints.push_back (&constraints_u);
     constraints.push_back (&constraints_p);
     std::vector<Quadrature<1> > quadratures;
-    quadratures.push_back(QGauss<1>(fe_u.degree+1));
+    // Choose enough points to avoid aliasing effects
+    quadratures.push_back(QGauss<1>(fe_u.degree+1+fe_u.degree/2));
     quadratures.push_back(QGauss<1>(fe_u.degree));
     typename MatrixFree<dim>::AdditionalData data (communicator);
     data.tasks_parallel_scheme = MatrixFree<dim>::AdditionalData::none;
@@ -322,6 +324,7 @@ void FENavierStokesSolver<dim>::setup_problem
 
   poisson_data.poisson_dof_index = 1;
   poisson_data.poisson_quad_index = 1;
+  poisson_data.smoother_smoothing_range = 25;
   poisson_solver.initialize(this->mapping, matrix_free, poisson_data);
 
   // compute diagonal vectors of velocity/pressure mass matrix needed for time
@@ -548,7 +551,7 @@ FENavierStokesSolver<dim>::advance_time_step()
 
   if (output_info)
     pcout << "Step " << std::setw(5) << step_number+1 << " to t = "
-          << std::setw(6) << time+this->time_step_size;
+          << std::setw(8) << time+this->time_step_size;
 
   Timer time;
 
@@ -631,14 +634,15 @@ FENavierStokesSolver<dim>::advance_time_step()
   solution.block(1).add(-this->viscosity, updates2.block(1),
                         1./this->time_step_size, updates1.block(1));
 
-  parallel::distributed::Vector<double> vec = solution.block(1);
-  vec.add(1./this->time_step_size, updates1.block(1));
-
   // apply pressure boundary values
   for (std::map<types::global_dof_index,double>::const_iterator
          it = boundary_values.begin(); it != boundary_values.end(); ++it)
     if (pres_part.in_local_range(it->first))
       solution.block(1).local_element(it->first-pres_part.local_range().first) = it->second;
+
+  solution.block(1).update_ghost_values();
+  updates1.block(1).update_ghost_values();
+
   computing_times[3] += time.wall_time();
 
   ++step_number;

@@ -84,9 +84,10 @@ namespace helpers
                        const std::pair<unsigned int,unsigned int> &cell_range) const
     {
       const VectorizedArray<double> inv_time_step = make_vectorized_array(1./fluid_algorithm.get_time_step());
-      FEEvaluation<dim,u_degree,u_degree+1,dim> phi_u(matrix_free, 0);
-      FEEvaluation<dim,u_degree-1,u_degree+1> phi_p(matrix_free, 1);
-      FEEvaluation<dim,u_degree-1,u_degree+1> phi_p_old(matrix_free, 1);
+      const unsigned int n_q_points_1d = u_degree+1+u_degree/2;
+      FEEvaluation<dim,u_degree,n_q_points_1d,dim> phi_u(matrix_free, 0);
+      FEEvaluation<dim,u_degree-1,n_q_points_1d> phi_p(matrix_free, 1);
+      FEEvaluation<dim,u_degree-1,n_q_points_1d> phi_p_old(matrix_free, 1);
 
       for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
         {
@@ -169,8 +170,9 @@ namespace helpers
                           const parallel::distributed::Vector<double> &src,
                           const std::pair<unsigned int,unsigned int>  &cell_range) const
     {
-      FEEvaluation<dim,u_degree,u_degree+1,dim> phi_u(matrix_free, 0);
-      FEEvaluation<dim,u_degree-1,u_degree+1> phi_p(matrix_free, 1);
+      const unsigned int n_q_points_1d = u_degree+1+u_degree/2;
+      FEEvaluation<dim,u_degree,n_q_points_1d,dim> phi_u(matrix_free, 0);
+      FEEvaluation<dim,u_degree-1,n_q_points_1d> phi_p(matrix_free, 1);
       for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
         {
           phi_u.reinit(cell);
@@ -189,7 +191,8 @@ namespace helpers
                          const parallel::distributed::Vector<double> &src,
                          const std::pair<unsigned int,unsigned int>  &cell_range) const
     {
-      FEEvaluation<dim,u_degree,u_degree+1,dim> phi_u(matrix_free, 0);
+      const unsigned int n_q_points_1d = u_degree+1+u_degree/2;
+      FEEvaluation<dim,u_degree,n_q_points_1d,dim> phi_u(matrix_free, 0);
       Tensor<1,dim==2?1:dim,VectorizedArray<double> > curl;
       Tensor<1,dim,VectorizedArray<double> > curl_submit;
       for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)

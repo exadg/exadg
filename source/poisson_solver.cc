@@ -1272,6 +1272,7 @@ void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
 
   mg_transfer.set_laplace_operator(mg_matrices);
   mg_transfer.initialize_constraints(mg_constrained_dofs);
+  mg_transfer.add_periodicity(solver_data.periodic_face_pairs_level0);
   mg_transfer.build(dof_handler);
 
   mg_matrix.reset(new mg::Matrix<parallel::distributed::Vector<Number> > (mg_matrices));
