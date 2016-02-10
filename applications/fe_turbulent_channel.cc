@@ -26,7 +26,7 @@ template <int dim>
 class ChannelFlowProblem
 {
 public:
-  static const unsigned int u_degree = 4;
+  static const unsigned int u_degree = 5;
 
   ChannelFlowProblem ();
   void run ();
@@ -51,25 +51,10 @@ public:
   virtual void vector_value (const Point<dim> &p,
                              Vector<double>   &values) const
   {
-    values(0) = 22.*(1.-p[1]*p[1]*p[1]*p[1]*p[1]*p[1])*1.15 + 4. * (-1. + 2.*(1.*rand()/RAND_MAX));
-    values(1) = 4. * (-1. + 2.*(1.*rand()/RAND_MAX));
+    values(0) = 40.*(1.-p[1]*p[1]*p[1]*p[1]*p[1]*p[1])*1.15 + 16. * (-1. + 2.*(1.*rand()/RAND_MAX));
+    values(1) = 16. * (-1. + 2.*(1.*rand()/RAND_MAX));
     if (dim == 3)
-      values(2) =  4. * (-1. + 2.*(1.*rand()/RAND_MAX));
-  }
-};
-
-
-
-template <int dim>
-class BodyForce : public TensorFunction<1,dim>
-{
-  virtual Tensor<1,dim> value (const Point<dim> &) const
-  {
-    // body force for 395 channel
-    Tensor<1,dim> out;
-    out[0] = 1.;
-    //out[0] = 0.00337204;
-    return out;
+      values(2) =  16. * (-1. + 2.*(1.*rand()/RAND_MAX));
   }
 };
 
@@ -100,10 +85,10 @@ void create_grid(parallel::distributed::Triangulation<dim> &triangulation,
 {
   const unsigned int base_refinements = 1;
   Point<dim> coordinates;
-  coordinates[0] = 2*numbers::PI;
+  coordinates[0] = 4.*numbers::PI;
   coordinates[1] = 1.;
   if (dim == 3)
-    coordinates[2] = 2./3.*numbers::PI;
+    coordinates[2] = 2.*numbers::PI;
   std::vector<unsigned int> refinements(dim, base_refinements);
   GridGenerator::subdivided_hyper_rectangle (triangulation, refinements,
                                              Point<dim>(), coordinates);
@@ -149,7 +134,12 @@ void ChannelFlowProblem<dim>::run ()
   create_grid(triangulation, 5);
   const double time_step = 0.00015;
   solver.set_viscosity(1./180);
-  solver.set_body_force(std_cxx11::shared_ptr<TensorFunction<1,dim> >(new BodyForce<dim>()));
+  Tensor<1,dim> body_force;
+  // body force for 180 channel
+  body_force[0] = 1.;
+  // body force for 395 channel
+  //body_force[0] = 0.00337204;
+  solver.set_body_force(body_force);
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
     periodic_faces;
@@ -163,9 +153,9 @@ void ChannelFlowProblem<dim>::run ()
 
   solver.set_time_step(time_step*0.03);
 
-  solver.output_solution("solution" + Utilities::to_string(0, 4));
+  solver.output_solution("solution" + Utilities::to_string(0, 4), 1);
   solver.time_step_output_frequency = 1;
-  const double end_time = 1000;
+  const double end_time = 0.0001;
   unsigned int count = 0;
   const double tick = 0.05;
   for ( ; solver.time < end_time; )
@@ -175,7 +165,7 @@ void ChannelFlowProblem<dim>::run ()
       const int position = int(solver.time * 1.0000000001 / tick);
       const double slot = position * tick;
       if (((solver.time - slot) < (solver.get_time_step()*0.99)) || solver.time >= end_time)
-        solver.output_solution("solution" + Utilities::to_string(++count, 4));
+        solver.output_solution("solution" + Utilities::to_string(++count, 4), 1);
 
       // Start with small time steps to capture the initial pressure
       // distribution more robustly and later increase them...

@@ -31,6 +31,7 @@ FluidBaseAlgorithm<dim>::clear()
 {
   boundary.reset(new helpers::BoundaryDescriptor<dim>());
   body_force.reset();
+  constant_body_force = Tensor<1,dim>();
 }
 
 
@@ -131,9 +132,20 @@ FluidBaseAlgorithm<dim>::set_periodic_boundaries
 
 template<int dim>
 void
+FluidBaseAlgorithm<dim>::set_body_force(const Tensor<1,dim> constant_body_force)
+{
+  this->constant_body_force = constant_body_force;
+  this->body_force.reset();
+}
+
+
+
+template<int dim>
+void
 FluidBaseAlgorithm<dim>::set_body_force(const std_cxx11::shared_ptr<TensorFunction<1,dim> > body_force)
 {
   this->body_force = body_force;
+  this->constant_body_force = Tensor<1,dim>();
 }
 
 

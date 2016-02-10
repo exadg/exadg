@@ -89,6 +89,10 @@ namespace helpers
       FEEvaluation<dim,u_degree-1,n_q_points_1d> phi_p(matrix_free, 1);
       FEEvaluation<dim,u_degree-1,n_q_points_1d> phi_p_old(matrix_free, 1);
 
+      const bool body_force_is_constant = fluid_algorithm.body_force_is_constant();
+      const Tensor<1,dim> constant_body_force = body_force_is_constant ?
+        fluid_algorithm.get_body_force(Point<dim>()) : Tensor<1,dim>();
+
       for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
         {
           phi_u.reinit(cell);
@@ -112,8 +116,10 @@ namespace helpers
               Tensor<1,dim,VectorizedArray<double> >
                 mom_val = grad * vel + 0.5 * div * vel;
 
-              if (const TensorFunction<1,dim> * funct =
-                  fluid_algorithm.get_body_force().get())
+              if (body_force_is_constant)
+                for (unsigned int d=0; d<dim; ++d)
+                  mom_val[d] -= make_vectorized_array<double>(constant_body_force[d]);
+              else
                 {
                   Point<dim,VectorizedArray<double> > q_points = phi_u.quadrature_point(q);
                   for (unsigned int n=0; n<VectorizedArray<double>::n_array_elements; ++n)
@@ -121,7 +127,7 @@ namespace helpers
                       Point<dim> q_point;
                       for (unsigned int d=0; d<dim; ++d)
                         q_point[d] = q_points[d][n];
-                      Tensor<1,dim> value = funct->value(q_point);
+                      Tensor<1,dim> value = fluid_algorithm.get_body_force(q_point);
                       for (unsigned int d=0; d<dim; ++d)
                         mom_val[d][n] -= value[d];
                     }

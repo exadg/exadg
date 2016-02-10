@@ -203,16 +203,33 @@ struct FluidBaseAlgorithm
   void set_periodic_boundaries (std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > &periodic_faces);
 
   /**
-   * Sets a general function for the body force.
+   * Sets a constant body force given as a tensor.
+   */
+  void set_body_force(const Tensor<1,dim> constant_body_force);
+
+  /**
+   * Sets a general function for the body force. This is slower than the other
+   * function, so prefer the other one whenever the function is constant.
    */
   void set_body_force(const std_cxx11::shared_ptr<TensorFunction<1,dim> > body_force);
 
   /**
-   * Returns the body force.
+   * Returns the body force on a given point.
    */
-  std_cxx11::shared_ptr<TensorFunction<1,dim> > get_body_force() const
+  bool body_force_is_constant() const
   {
-    return body_force;
+    return body_force.get() == 0;
+  }
+
+  /**
+   * Returns the body force on a given point.
+   */
+  Tensor<1,dim> get_body_force(const Point<dim> &p) const
+  {
+    if (body_force.get())
+      return body_force->value(p);
+    else
+      return constant_body_force;
   }
 
   /**
@@ -250,6 +267,11 @@ protected:
    * classes.
    */
   std_cxx11::shared_ptr<helpers::BoundaryDescriptor<dim> > boundary;
+
+  /**
+   * Tensor holding constant body forces.
+   */
+  Tensor<1,dim> constant_body_force;
 
   /**
    * Function holding the body force.
