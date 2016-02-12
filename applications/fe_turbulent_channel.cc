@@ -27,15 +27,12 @@ template <int dim>
 class ChannelFlowProblem
 {
 public:
-  static const unsigned int u_degree = 5;
-
   ChannelFlowProblem ();
   void run ();
 
 private:
 
   parallel::distributed::Triangulation<dim>   triangulation;
-  FENavierStokesSolver<dim> solver;
 };
 
 
@@ -64,8 +61,7 @@ public:
 template <int dim>
 ChannelFlowProblem<dim>::ChannelFlowProblem () :
   triangulation (MPI_COMM_WORLD, Triangulation<dim>::none,
-                 parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
-  solver(triangulation, u_degree)
+                 parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy)
 {}
 
 
@@ -84,13 +80,17 @@ template <int dim>
 void create_grid(parallel::distributed::Triangulation<dim> &triangulation,
                  const unsigned int n_global_refinements)
 {
-  const unsigned int base_refinements = 1;
   Point<dim> coordinates;
   coordinates[0] = 4.*numbers::PI;
   coordinates[1] = 1.;
   if (dim == 3)
     coordinates[2] = 2.*numbers::PI;
+  const unsigned int base_refinements = 1;
   std::vector<unsigned int> refinements(dim, base_refinements);
+  refinements[0] = 3;
+  if (dim == 3)
+    refinements[2] = 2;
+
   GridGenerator::subdivided_hyper_rectangle (triangulation, refinements,
                                              Point<dim>(), coordinates);
   std::vector<unsigned int> face_to_indicator_list(6);
@@ -132,16 +132,21 @@ bool is_at_tick(const double time,
 template <int dim>
 void ChannelFlowProblem<dim>::run ()
 {
+  // create mesh and solver
   create_grid(triangulation, 5);
-  const double time_step = 0.00015;
+  const unsigned int u_degree = 5;
+
+  FENavierStokesSolver<dim> solver(triangulation, u_degree);
+
+  // Settings for 180 channel
   solver.set_viscosity(1./180);
   Tensor<1,dim> body_force;
-  // body force for 180 channel
   body_force[0] = 1.;
-  // body force for 395 channel
-  //body_force[0] = 0.00337204;
-  solver.set_body_force(body_force);
+  std::string output_base = "output/cha-180-32-q5-";
+  const double end_time = 100;
+  const double time_step = 0.00015;
 
+  solver.set_body_force(body_force);
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
     periodic_faces;
   GridTools::collect_periodic_faces(triangulation, 1, 3, 0, periodic_faces);
@@ -151,30 +156,36 @@ void ChannelFlowProblem<dim>::run ()
   solver.set_no_slip_boundary(0);
 
   solver.setup_problem(InitialChannel<dim>(0.));
-
   solver.set_time_step(time_step*0.03);
 
   StatisticsManager<dim> statistics (solver.dof_handler_u, grid_transform<dim>);
 
-  solver.output_solution("solution" + Utilities::to_string(0, 4), 1);
+  solver.output_solution(output_base + Utilities::to_string(0, 4), 1);
   solver.time_step_output_frequency = 1;
-  const double end_time = 0.0001;
   unsigned int count = 0;
-  const double tick = 0.05;
+  const double out_tick = 0.5;
+  const double statistics_tick = end_time / 10;
+  unsigned int slice = 0;
   for ( ; solver.time < end_time; )
     {
       solver.advance_time_step();
 
-      const int position = int(solver.time * 1.0000000001 / tick);
-      const double slot = position * tick;
-      if (((solver.time - slot) < (solver.get_time_step()*0.99)) || solver.time >= end_time)
-        solver.output_solution("solution" + Utilities::to_string(++count, 4), 1);
+      if (is_at_tick(solver.time, solver.get_time_step(), out_tick)
+          || solver.time >= end_time)
+        solver.output_solution(output_base + Utilities::to_string(++count, 4), 1);
 
       solver.solution.update_ghost_values();
 
-      Timer time;
-      statistics.evaluate(solver.solution.block(0));
-      std::cout << "time statistics: " << time.wall_time() << std::endl;
+      if (solver.step_number % 10 == 0)
+        statistics.evaluate(solver.solution.block(0));
+      if (solver.step_number % 100 == 0 || solver.time >= end_time)
+        statistics.write_output(output_base + "slice-" + Utilities::to_string(slice,1),
+                                solver.get_viscosity());
+      if (is_at_tick(solver.time, solver.get_time_step(), statistics_tick))
+        {
+          statistics.reset();
+          slice++;
+        }
 
       // Start with small time steps to capture the initial pressure
       // distribution more robustly and later increase them...
@@ -183,7 +194,6 @@ void ChannelFlowProblem<dim>::run ()
       if (solver.step_number == 169)
         solver.set_time_step(time_step);
     }
-  statistics.write_output("channel-180-32x32x32-q5", solver.get_viscosity());
 }
 
 
