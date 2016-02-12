@@ -225,19 +225,19 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const parallel::distribute
                 for (unsigned int j=0; j<velocity_vector.size(); ++j)
                   velocity += fe_values[i]->shape_value(j,q) * velocity_vector[j];
 
-                Tensor<2,dim-1> reduced_jacobian;
+                Tensor<2,2> reduced_jacobian;
                 reduced_jacobian[0][0] = fe_values[i]->jacobian(q)[0][0];
-                reduced_jacobian[0][1] = fe_values[i]->jacobian(q)[0][2];
-                reduced_jacobian[1][0] = fe_values[i]->jacobian(q)[2][0];
-                reduced_jacobian[1][1] = fe_values[i]->jacobian(q)[2][2];
+                reduced_jacobian[0][1] = fe_values[i]->jacobian(q)[0][dim-1];
+                reduced_jacobian[1][0] = fe_values[i]->jacobian(q)[dim-1][0];
+                reduced_jacobian[1][1] = fe_values[i]->jacobian(q)[dim-1][dim-1];
                 double area_ele = determinant(reduced_jacobian) * fe_values[i]->get_quadrature().weight(q);
                 area += area_ele;
                 velx += velocity[0] * area_ele;
                 vely += velocity[1] * area_ele;
-                velz += velocity[2] * area_ele;
+                velz += velocity[dim-1] * area_ele;
                 velxsq += velocity[0] * velocity[0] * area_ele;
                 velysq += velocity[1] * velocity[1] * area_ele;
-                velzsq += velocity[2] * velocity[2] * area_ele;
+                velzsq += velocity[dim-1] * velocity[dim-1] * area_ele;
                 veluv += velocity[0] * velocity[1] * area_ele;
               }
 
