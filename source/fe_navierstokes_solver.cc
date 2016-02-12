@@ -325,6 +325,7 @@ void FENavierStokesSolver<dim>::setup_problem
   poisson_data.poisson_dof_index = 1;
   poisson_data.poisson_quad_index = 1;
   poisson_data.smoother_smoothing_range = 25;
+  poisson_data.solver_tolerance = 5e-5;
   poisson_solver.initialize(this->mapping, matrix_free, poisson_data);
 
   // compute diagonal vectors of velocity/pressure mass matrix needed for time

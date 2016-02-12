@@ -48,6 +48,7 @@ SET( TARGET_SRC
      source/fe_navierstokes_evaluator.cc
      source/fe_navierstokes_solver.cc
      source/fluid_base_algorithm.cc
+     source/statistics_manager.cc
    )
 
 # Set the include directory and the name of the project

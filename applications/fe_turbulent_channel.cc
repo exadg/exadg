@@ -12,7 +12,8 @@
 #include <deal.II/numerics/vector_tools.h>
 #include <deal.II/distributed/tria.h>
 
-#include "fe_navierstokes_solver.h"
+#include <fe_navierstokes_solver.h>
+#include <statistics_manager.h>
 
 #include <fstream>
 #include <sstream>
@@ -51,10 +52,10 @@ public:
   virtual void vector_value (const Point<dim> &p,
                              Vector<double>   &values) const
   {
-    values(0) = 40.*(1.-p[1]*p[1]*p[1]*p[1]*p[1]*p[1])*1.15 + 16. * (-1. + 2.*(1.*rand()/RAND_MAX));
-    values(1) = 16. * (-1. + 2.*(1.*rand()/RAND_MAX));
+    values(0) = 22. * (1.-p[1]*p[1]*p[1]*p[1]*p[1]*p[1]);
+    values(1) = 6.*(1-p[1]*p[1]*p[1]*p[1])*std::cos(p[dim-1]*3.+1./2.*p[0]);
     if (dim == 3)
-      values(2) =  16. * (-1. + 2.*(1.*rand()/RAND_MAX));
+      values(2) =  6.*(1-p[1]*p[1]*p[1]*p[1]*p[1]*p[1])*std::sin(p[dim-1]*3+1./2.*p[0]);
   }
 };
 
@@ -153,6 +154,8 @@ void ChannelFlowProblem<dim>::run ()
 
   solver.set_time_step(time_step*0.03);
 
+  StatisticsManager<dim> statistics (solver.dof_handler_u, grid_transform<dim>);
+
   solver.output_solution("solution" + Utilities::to_string(0, 4), 1);
   solver.time_step_output_frequency = 1;
   const double end_time = 0.0001;
@@ -167,6 +170,12 @@ void ChannelFlowProblem<dim>::run ()
       if (((solver.time - slot) < (solver.get_time_step()*0.99)) || solver.time >= end_time)
         solver.output_solution("solution" + Utilities::to_string(++count, 4), 1);
 
+      solver.solution.update_ghost_values();
+
+      Timer time;
+      statistics.evaluate(solver.solution.block(0));
+      std::cout << "time statistics: " << time.wall_time() << std::endl;
+
       // Start with small time steps to capture the initial pressure
       // distribution more robustly and later increase them...
       if (solver.step_number == 19)
@@ -174,6 +183,7 @@ void ChannelFlowProblem<dim>::run ()
       if (solver.step_number == 169)
         solver.set_time_step(time_step);
     }
+  statistics.write_output("channel-180-32x32x32-q5", solver.get_viscosity());
 }
 
 
