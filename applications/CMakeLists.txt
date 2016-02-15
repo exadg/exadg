@@ -14,6 +14,7 @@ SET( SOURCE_FILES
      multigrid_solver.cc
      fe_flow_past_cylinder.cc
      fe_turbulent_channel.cc
+     fe_poiseuille.cc
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )

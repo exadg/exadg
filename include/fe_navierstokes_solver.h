@@ -75,6 +75,7 @@ public:
 
   ConstraintMatrix     constraints_u;
   ConstraintMatrix     constraints_p;
+  ConstraintMatrix     constraints_p_solve;
 
   double        time;
   unsigned int  step_number;

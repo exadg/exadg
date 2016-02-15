@@ -142,7 +142,7 @@ void ChannelFlowProblem<dim>::run ()
   solver.set_viscosity(1./180);
   Tensor<1,dim> body_force;
   body_force[0] = 1.;
-  std::string output_base = "output/cha-180-32-q5-";
+  std::string output_base = "output/cha-180-32-q" + Utilities::to_string(u_degree) + "-";
   const double end_time = 100;
   const double time_step = 0.00015;
 
@@ -175,10 +175,10 @@ void ChannelFlowProblem<dim>::run ()
         solver.output_solution(output_base + Utilities::to_string(++count, 4), 1);
 
       solver.solution.update_ghost_values();
-
       if (solver.step_number % 10 == 0)
         statistics.evaluate(solver.solution.block(0));
-      if (solver.step_number % 100 == 0 || solver.time >= end_time)
+      if (solver.step_number % 100 == 0 || solver.time >= end_time ||
+          is_at_tick(solver.time, solver.get_time_step(), statistics_tick))
         statistics.write_output(output_base + "slice-" + Utilities::to_string(slice,1),
                                 solver.get_viscosity());
       if (is_at_tick(solver.time, solver.get_time_step(), statistics_tick))
