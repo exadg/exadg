@@ -24,20 +24,6 @@ using namespace dealii;
 
 
 template <int dim>
-class ChannelFlowProblem
-{
-public:
-  ChannelFlowProblem ();
-  void run ();
-
-private:
-
-  parallel::distributed::Triangulation<dim>   triangulation;
-};
-
-
-
-template <int dim>
 class InitialChannel : public Function<dim>
 {
 public:
@@ -59,14 +45,6 @@ public:
 
 
 template <int dim>
-ChannelFlowProblem<dim>::ChannelFlowProblem () :
-  triangulation (MPI_COMM_WORLD, Triangulation<dim>::none,
-                 parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy)
-{}
-
-
-
-template <int dim>
 Point<dim> grid_transform (const Point<dim> &in)
 {
   Point<dim> out = in;
@@ -78,18 +56,24 @@ Point<dim> grid_transform (const Point<dim> &in)
 
 template <int dim>
 void create_grid(parallel::distributed::Triangulation<dim> &triangulation,
-                 const unsigned int n_global_refinements)
+                 const unsigned int elements_in_y_dir)
 {
   Point<dim> coordinates;
   coordinates[0] = 4.*numbers::PI;
   coordinates[1] = 1.;
   if (dim == 3)
     coordinates[2] = 2.*numbers::PI;
-  const unsigned int base_refinements = 1;
+  unsigned int base_refinements = elements_in_y_dir;
+  unsigned int n_global_refinements = 0;
+  while (base_refinements > 1 && base_refinements % 2 == 0)
+    {
+      ++n_global_refinements;
+      base_refinements /= 2;
+    }
   std::vector<unsigned int> refinements(dim, base_refinements);
-  refinements[0] = 3;
+  refinements[0] = 3 * base_refinements;
   if (dim == 3)
-    refinements[2] = 2;
+    refinements[2] = 2 * base_refinements;
 
   GridGenerator::subdivided_hyper_rectangle (triangulation, refinements,
                                              Point<dim>(), coordinates);
@@ -130,19 +114,37 @@ bool is_at_tick(const double time,
 
 
 template <int dim>
-void ChannelFlowProblem<dim>::run ()
+void run_channel_flow ()
 {
-  // create mesh and solver
-  create_grid(triangulation, 5);
+  const unsigned int elements_in_y_dir = 32;
   const unsigned int u_degree = 5;
 
+  // create mesh and solver
+  parallel::distributed::Triangulation<dim> triangulation
+    (MPI_COMM_WORLD, Triangulation<dim>::none,
+     parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy);
+  create_grid(triangulation, elements_in_y_dir);
   FENavierStokesSolver<dim> solver(triangulation, u_degree);
+
+  if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    {
+      std::cout << "Running on " << Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD)
+                << " MPI ranks" << std::endl;
+      std::cout << "Mesh information: " << elements_in_y_dir
+                << " elements in wall-normal direction, "
+                << triangulation.n_global_active_cells() << " elements in total"
+                << std::endl;
+      std::cout << "Finite element in use: " << solver.fe_u.base_element(0).get_name()
+                << "^" << dim << " x " << solver.fe_p.get_name()
+                << std::endl << std::endl;
+    }
 
   // Settings for 180 channel
   solver.set_viscosity(1./180);
   Tensor<1,dim> body_force;
   body_force[0] = 1.;
-  std::string output_base = "output/cha-180-32-q" + Utilities::to_string(u_degree) + "-";
+  std::string output_base = "output/cha-180-" + Utilities::to_string(elements_in_y_dir)
+    + "-q" + Utilities::to_string(u_degree) + "-";
   const double end_time = 100;
   const double time_step = 0.00015;
 
@@ -200,11 +202,35 @@ void ChannelFlowProblem<dim>::run ()
 
 int main (int argc, char** argv)
 {
-  Utilities::MPI::MPI_InitFinalize mpi(argc,argv,1);
-  deallog.depth_console(0);
+  try
+    {
+      Utilities::MPI::MPI_InitFinalize mpi(argc,argv,1);
+      run_channel_flow<3>();
+    }
+  catch (std::exception &exc)
+    {
+      std::cerr << std::endl << std::endl
+                << "----------------------------------------------------"
+                << std::endl;
+      std::cerr << "Exception on processing: " << std::endl
+                << exc.what() << std::endl
+                << "Aborting!" << std::endl
+                << "----------------------------------------------------"
+                << std::endl;
 
-  ChannelFlowProblem<3> solver;
-  solver.run ();
+      return 1;
+    }
+  catch (...)
+    {
+      std::cerr << std::endl << std::endl
+                << "----------------------------------------------------"
+                << std::endl;
+      std::cerr << "Unknown exception!" << std::endl
+                << "Aborting!" << std::endl
+                << "----------------------------------------------------"
+                << std::endl;
+      return 1;
+    }
 
   return 0;
 }
