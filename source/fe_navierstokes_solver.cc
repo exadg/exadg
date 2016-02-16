@@ -311,6 +311,7 @@ void FENavierStokesSolver<dim>::setup_problem
   poisson_data.poisson_quad_index = 1;
   poisson_data.smoother_smoothing_range = 25;
   poisson_data.solver_tolerance = 5e-5;
+  poisson_data.coarse_solver = PoissonSolverData<dim>::coarse_iterative_jacobi;
   poisson_solver.initialize(this->mapping, matrix_free, poisson_data);
 
   // compute diagonal vectors of velocity/pressure mass matrix needed for time
@@ -648,7 +649,8 @@ FENavierStokesSolver<dim>::advance_time_step()
     {
       std::cout.precision(3);
       pcout << ", div norm: " << std::setw(8) << updates2.block(1).l2_norm()
-            << ", cg its: " << n_iter << std::endl;
+            << ", cg its: " << n_iter << ", Poisson time: " << time.wall_time()
+            << "s" << std::endl;
     }
 
   computing_times[2] += time.wall_time();

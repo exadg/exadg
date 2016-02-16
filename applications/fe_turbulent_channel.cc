@@ -179,7 +179,7 @@ void ChannelFlowProblem<dim>::run ()
         statistics.evaluate(solver.solution.block(0));
       if (solver.step_number % 100 == 0 || solver.time >= end_time ||
           is_at_tick(solver.time, solver.get_time_step(), statistics_tick))
-        statistics.write_output(output_base + "slice-" + Utilities::to_string(slice,1),
+        statistics.write_output(output_base + "slice-" + Utilities::to_string(slice),
                                 solver.get_viscosity());
       if (is_at_tick(solver.time, solver.get_time_step(), statistics_tick))
         {
