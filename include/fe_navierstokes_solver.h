@@ -30,7 +30,7 @@ public:
   FENavierStokesSolver (const parallel::distributed::Triangulation<dim> &triangulation,
                         const unsigned int velocity_degree);
 
-  ~FENavierStokesSolver()
+  virtual ~FENavierStokesSolver()
   {
     print_computing_times();
   }
@@ -102,6 +102,7 @@ private:
 
   ConditionalOStream  pcout;
 
+  Timer               global_timer;
   std::vector<double> computing_times;
 };
 

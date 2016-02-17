@@ -130,11 +130,11 @@ void run_channel_flow ()
     {
       std::cout << "Running on " << Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD)
                 << " MPI ranks" << std::endl;
-      std::cout << "Mesh information: " << elements_in_y_dir
+      std::cout << "Mesh: " << elements_in_y_dir
                 << " elements in wall-normal direction, "
                 << triangulation.n_global_active_cells() << " elements in total"
                 << std::endl;
-      std::cout << "Finite element in use: " << solver.fe_u.base_element(0).get_name()
+      std::cout << "Finite element pair: " << solver.fe_u.base_element(0).get_name()
                 << "^" << dim << " x " << solver.fe_p.get_name()
                 << std::endl << std::endl;
     }
@@ -191,9 +191,7 @@ void run_channel_flow ()
 
       // Start with small time steps to capture the initial pressure
       // distribution more robustly and later increase them...
-      if (solver.step_number == 19)
-        solver.set_time_step(time_step * 0.3);
-      if (solver.step_number == 169)
+      if (solver.step_number == 5)
         solver.set_time_step(time_step);
     }
 }

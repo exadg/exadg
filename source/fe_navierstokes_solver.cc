@@ -116,14 +116,15 @@ void FENavierStokesSolver<dim>::setup_problem
   dof_handler_u.distribute_dofs (fe_u);
   dof_handler_p.distribute_dofs (fe_p);
   dof_handler_p.distribute_mg_dofs (fe_p);
-  pcout << "Time distribute dofs: " << timer.wall_time() << std::endl;
-  timer.restart();
 
   pcout << "Number of degrees of freedom: "
         << dof_handler_u.n_dofs() + dof_handler_p.n_dofs()
         << " (" << dim << "*" << dof_handler_u.n_dofs()/dim << " + "
         << dof_handler_p.n_dofs()  << ")"
         << std::endl;
+
+  pcout << "Time distribute dofs: " << timer.wall_time() << std::endl;
+  timer.restart();
 
   PoissonSolverData<dim> poisson_data;
 
@@ -402,9 +403,11 @@ void FENavierStokesSolver<dim>::setup_problem
   }
   constraints_u.distribute(solution.block(0));
 
-  pcout << "Time vectors + integrator: " << timer.wall_time() << std::endl;
+  pcout << "Time vectors + integrator: " << timer.wall_time() << std::endl << std::endl;
 
+  computing_times.clear();
   computing_times.resize(4);
+  global_timer.restart();
 }
 
 
@@ -767,16 +770,30 @@ void
 FENavierStokesSolver<dim>::print_computing_times() const
 {
   std::string names [4] = {"Advection","Velocity div","Pressure","Other   "};
-  pcout << std::endl << "Computing times:    \t [min/avg/max] \t\t [p_min/p_max]" << std::endl;
+  pcout << std::endl << "Computing times:    \t       min       avg       max    p_min  p_max" << std::endl;
   double total_avg_time = 0;
   for (unsigned int i=0; i<computing_times.size(); ++i)
     {
       Utilities::MPI::MinMaxAvg data =
         Utilities::MPI::min_max_avg (computing_times[i], communicator);
-      pcout << "Step " << i+1 <<  ": " << names[i] << "\t " << data.min << "/" << data.avg << "/" << data.max << " \t " << data.min_index << "/" << data.max_index << std::endl;
+      pcout << "Step " << i+1 <<  ": " << names[i] << "\t "
+            << std::setprecision(4) << std::setw(9) << data.min << " "
+            << std::setprecision(4) << std::setw(9) << data.avg << " "
+            << std::setprecision(4) << std::setw(9) << data.max << "   "
+            << std::setw(6) << data.min_index << " "
+            << std::setw(6) << data.max_index << std::endl;
       total_avg_time += data.avg;
     }
-  pcout  <<"Time (Step 1-" << computing_times.size() << "):\t "<<total_avg_time<<std::endl;
+  pcout  <<"Time in steps 1-" << computing_times.size() << ":\t           "
+         << std::setprecision(4) << std::setw(9) << total_avg_time << std::endl;
+  Utilities::MPI::MinMaxAvg data =
+    Utilities::MPI::min_max_avg (global_timer.wall_time(), communicator);
+  pcout  <<"Global time since setup: "
+         << std::setprecision(4) << std::setw(9) << data.min << " "
+         << std::setprecision(4) << std::setw(9) << data.avg << " "
+         << std::setprecision(4) << std::setw(9) << data.max << "   "
+         << std::setw(6) << data.min_index << " "
+         << std::setw(6) << data.max_index << std::endl;
 }
 
 
