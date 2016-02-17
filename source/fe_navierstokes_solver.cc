@@ -136,6 +136,7 @@ void FENavierStokesSolver<dim>::setup_problem
   constraints_u.reinit(relevant_dofs_u);
   DoFTools::extract_locally_relevant_dofs(dof_handler_p, relevant_dofs_p);
   constraints_p.reinit(relevant_dofs_p);
+  constraints_p_solve.reinit(relevant_dofs_p);
 
   DoFTools::make_hanging_node_constraints(dof_handler_u, constraints_u);
   DoFTools::make_hanging_node_constraints(dof_handler_p, constraints_p);
@@ -257,10 +258,14 @@ void FENavierStokesSolver<dim>::setup_problem
                ExcMessage("Constraint matrix for u has inhomogeneities which "
                           "is not allowed."));
 
+  constraints_p_solve.merge(constraints_p);
   {
     ZeroFunction<dim> zero_func(1);
     typename FunctionMap<dim>::type homogeneous_dirichlet;
-    // open boundaries with prescribed pressure values
+    // open boundaries with prescribed pressure values -> insert zero function
+    // for solving; we will manually set the values at other boundaries (TODO:
+    // implement nonzero pressure values for the momentum equation on Neumann
+    // boundaries).
     for (typename std::map<types::boundary_id,
          std_cxx11::shared_ptr<Function<dim> > >::
          const_iterator it = this->boundary->open_conditions_p.begin();
@@ -272,45 +277,25 @@ void FENavierStokesSolver<dim>::setup_problem
 
     VectorTools::interpolate_boundary_values(this->mapping, dof_handler_p,
                                              homogeneous_dirichlet,
-                                             constraints_p);
+                                             constraints_p_solve);
   }
 
-  // constrain the zeroth pressure degree of freedom in case we have a pure
-  // Neumann problem in pressure
-  if (LaplaceOperator<dim,double>::verify_boundary_conditions(dof_handler_p, poisson_data) &&
-      constraints_p.can_store_line(0))
-    {
-      // if dof 0 is constrained, it must be a periodic dof, so we take the
-      // value on the other side
-      types::global_dof_index line_index = 0;
-      while (true)
-        {
-          const std::vector<std::pair<types::global_dof_index,double> >* lines =
-            constraints_p.get_constraint_entries(line_index);
-          if (lines == 0)
-            {
-              constraints_p.add_line(line_index);
-              break;
-            }
-          else
-            {
-              Assert(lines->size() == 1 && std::abs((*lines)[0].second-1.)<1e-15,
-                     ExcMessage("Periodic index expected, bailing out"));
-              line_index = (*lines)[0].first;
-            }
-        }
-    }
+  // for a pure Neumann problem in pressure, the mean value constraint built
+  // into the solver will make sure that the linear system is solvable
 
   constraints_p.close();
+  constraints_p_solve.close();
 
   // setup matrix-free object (integrator for all FE-related stuff)
   {
     std::vector<const DoFHandler<dim>*> dofs;
     dofs.push_back(&dof_handler_u);
     dofs.push_back(&dof_handler_p);
+    dofs.push_back(&dof_handler_p);
     std::vector<const ConstraintMatrix *> constraints;
     constraints.push_back (&constraints_u);
     constraints.push_back (&constraints_p);
+    constraints.push_back (&constraints_p_solve);
     std::vector<Quadrature<1> > quadratures;
     // Choose enough points to avoid aliasing effects
     quadratures.push_back(QGauss<1>(fe_u.degree+1+fe_u.degree/2));
@@ -322,10 +307,11 @@ void FENavierStokesSolver<dim>::setup_problem
     matrix_free.reinit (this->mapping, dofs, constraints, quadratures, data);
   }
 
-  poisson_data.poisson_dof_index = 1;
+  poisson_data.poisson_dof_index = 2;
   poisson_data.poisson_quad_index = 1;
   poisson_data.smoother_smoothing_range = 25;
   poisson_data.solver_tolerance = 5e-5;
+  poisson_data.coarse_solver = PoissonSolverData<dim>::coarse_iterative_jacobi;
   poisson_solver.initialize(this->mapping, matrix_free, poisson_data);
 
   // compute diagonal vectors of velocity/pressure mass matrix needed for time
@@ -651,6 +637,7 @@ FENavierStokesSolver<dim>::advance_time_step()
          it = boundary_values.begin(); it != boundary_values.end(); ++it)
     if (pres_part.in_local_range(it->first))
       updates2.block(1).local_element(it->first-pres_part.local_range().first) = 0;
+  poisson_solver.get_matrix().apply_nullspace_projection(updates2.block(1));
 
   computing_times[1] += time.wall_time();
   time.restart();
@@ -662,7 +649,8 @@ FENavierStokesSolver<dim>::advance_time_step()
     {
       std::cout.precision(3);
       pcout << ", div norm: " << std::setw(8) << updates2.block(1).l2_norm()
-            << ", cg its: " << n_iter << std::endl;
+            << ", cg its: " << n_iter << ", Poisson time: " << time.wall_time()
+            << "s" << std::endl;
     }
 
   computing_times[2] += time.wall_time();

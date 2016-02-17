@@ -230,6 +230,11 @@ void LaplaceOperator<dim,Number>::reinit (const DoFHandler<dim> &dof_handler,
           if (lines == 0)
             {
               constraints.add_line(line_index);
+              // add the constraint back to the MGConstrainedDoFs field. This
+              // is potentially dangerous but we know what we are doing... ;-)
+              if (level != numbers::invalid_unsigned_int)
+                const_cast<IndexSet &>(mg_constrained_dofs.get_boundary_indices(level))
+                  .add_index(line_index);
               break;
             }
           else
@@ -607,8 +612,11 @@ void LaplaceOperator<dim,Number>
 template <int dim, typename Number>
 void LaplaceOperator<dim,Number>::apply_nullspace_projection(parallel::distributed::Vector<Number> &vec) const
 {
-  const Number mean_val = vec.mean_value();
-  vec.add(-mean_val);
+  if (apply_mean_value_constraint)
+    {
+      const Number mean_val = vec.mean_value();
+      vec.add(-mean_val);
+    }
 }
 
 
@@ -1302,7 +1310,10 @@ void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
                 << " [p" << memory.max_index << "]"
                 << std::endl;
   }
+
 }
+
+
 
 template <int dim>
 unsigned int

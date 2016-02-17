@@ -41,7 +41,6 @@ StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> &dof_handler_vel
   velysq_glob.resize(n_points_y_glob);
   velzsq_glob.resize(n_points_y_glob);
   veluv_glob.resize(n_points_y_glob);
-  udiv_samp = 0;
   numchsamp = 0;
 
   y_glob.reserve(n_points_y_glob);
@@ -107,7 +106,6 @@ StatisticsManager<dim>::write_output(const std::string output_prefix,
       f<<"number of samples:   " << numchsamp << std::endl;
       f<<"friction Reynolds number:   " << sqrt(viscosity*(velx_glob.at(1)/numchsamp/(y_glob.at(1)+1.)))/viscosity << std::endl;
       f<<"wall shear stress:   " << viscosity*(velx_glob.at(1)/numchsamp/(y_glob.at(1)+1.)) << std::endl;
-      f<<"mean rms of div u_hathat:   " << udiv_samp/numchsamp*6.0/11.0 << std::endl;//the factor 6/11 is gamma0^-1, which is the factor u_hathat is scaled compared to solution_n
 
       f<< "       y       |       u      |       v      |       w      |   rms(u')    |   rms(v')    |   rms(w')    |     u'v'     " << std::endl;
       for (unsigned int idx = 0; idx<y_glob.size(); idx++)
@@ -140,7 +138,6 @@ StatisticsManager<dim>::reset()
   std::fill(velysq_glob.begin(), velysq_glob.end(), 0.);
   std::fill(velzsq_glob.begin(), velzsq_glob.end(), 0.);
   std::fill(veluv_glob.begin(), veluv_glob.end(), 0.);
-  udiv_samp = 0;
   numchsamp = 0;
 }
 

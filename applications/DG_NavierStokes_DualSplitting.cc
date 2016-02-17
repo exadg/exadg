@@ -54,6 +54,8 @@
 
 #include <deal.II/integrators/laplace.h>
 
+#include <../include/statistics_manager.h>
+
 #include <fstream>
 #include <sstream>
 
@@ -70,20 +72,21 @@ namespace DG_NavierStokes
 {
   using namespace dealii;
 
-  const unsigned int fe_degree = 3;
+  const unsigned int fe_degree = 4;
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
   const unsigned int dimension = 3; // dimension >= 2
-  const unsigned int refine_steps_min = 3;
-  const unsigned int refine_steps_max = 3;
+  const unsigned int refine_steps_min = 2;
+  const unsigned int refine_steps_max = 2;
 
   const double START_TIME = 0.0;
   const double END_TIME = 70.0; // Poisseuille 5.0;  Kovasznay 1.0
   const double OUTPUT_INTERVAL_TIME = 1.0;
   const double OUTPUT_START_TIME = 50.0;
   const double STATISTICS_START_TIME = 50.0;
-  const int MAX_NUM_STEPS = 100;
+  const bool DIVU_TIMESERIES = true;
+  const int MAX_NUM_STEPS = 1000000;
   const double CFL = 2.0;
 
   const double VISCOSITY = 1./180.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
@@ -100,7 +103,7 @@ namespace DG_NavierStokes
   const double GRID_STRETCH_FAC = 1.8;
   const bool pure_dirichlet_bc = true;
 
-  const std::string output_prefix = "solution_ch180_8_p3_gt18_partp_k0_partu_sf1_cfl2";//solution_ch180_8_p4p4_gt18_f1_k1_cs0_cfl3";
+  const std::string output_prefix = "solution_ch180_4_p4_gt18_partp_k0_partu_sf1_cfl2";//solution_ch180_8_p4p4_gt18_f1_k1_cs0_cfl3";
 
   const double lambda = 0.5/VISCOSITY - std::pow(0.25/std::pow(VISCOSITY,2.0)+4.0*std::pow(numbers::PI,2.0),0.5);
 
@@ -5171,7 +5174,6 @@ public:
                 const std::pair<unsigned int,unsigned int>            &cell_range)
   {
 
-
   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> phi(data,xwallstatevec[0],xwallstatevec[1],0,0);
   AlignedVector<VectorizedArray<value_type> > JxW_values(phi.n_q_points);
   VectorizedArray<value_type> div_vec = make_vectorized_array(0.);
@@ -5196,9 +5198,8 @@ public:
     div += div_vec[v];
     vol += vol_vec[v];
   }
-  div = Utilities::MPI::sum (div, MPI_COMM_WORLD);
-  vol = Utilities::MPI::sum (vol, MPI_COMM_WORLD);
-  test.at(0)=div/vol;
+  test.at(0)+=div;
+  test.at(1)+=vol;
 
   }
 
@@ -6038,15 +6039,11 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
 #endif
              const unsigned int                     timestep_number);
 
-  std::vector<double> vel_glob;
-  std::vector<double> velxsq_glob;
-  std::vector<double> velysq_glob;
-  std::vector<double> velzsq_glob;
-  std::vector<double> veluv_glob;
   int numchsamp;
   double udiv_samp;
   void init_channel_statistics();
-  void compute_channel_statistics(std::vector<parallel::distributed::Vector<value_type> >   &solution_n, std::vector<parallel::distributed::Vector<value_type> >   &vel_hat, NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> & nsoperation);
+  void compute_divu_statistics(std::vector<parallel::distributed::Vector<value_type> >   &vel_hat, NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> & nsoperation);
+  void write_divu(std::vector<parallel::distributed::Vector<value_type> >   &vel_hat, NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> & nsoperation, double time, unsigned int time_step_number);
   void calculate_error(std::vector<parallel::distributed::Vector<value_type>> &solution_n, const double delta_t=0.0);
   void calculate_time_step();
 
@@ -6451,177 +6448,67 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
   void NavierStokesProblem<dim>::
   init_channel_statistics()
   {
-    const int n_points_y = 21;
-    const int n_points_y_glob =  std::pow(2,n_refinements)*(n_points_y-1)+1;
-
-    vel_glob.resize(n_points_y_glob);
-    velxsq_glob.resize(n_points_y_glob);
-    velysq_glob.resize(n_points_y_glob);
-    velzsq_glob.resize(n_points_y_glob);
-    veluv_glob.resize(n_points_y_glob);
     udiv_samp = 0;
     numchsamp = 0;
   }
 
   template<int dim>
   void NavierStokesProblem<dim>::
-  compute_channel_statistics(std::vector<parallel::distributed::Vector<value_type> >   &solution_n,std::vector<parallel::distributed::Vector<value_type> >   &vel_hathat, NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> & nsoperation)
+  compute_divu_statistics(std::vector<parallel::distributed::Vector<value_type> >   &vel_hathat, NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> & nsoperation)
   {
     numchsamp++;
-    const int n_points_y = 21;
-    const int n_points_y_glob =  std::pow(2,n_refinements)*(n_points_y-1)+1;
 
-    std::vector<double> y_glob;
-    for (unsigned int ele = 0; ele < std::pow(2,n_refinements);ele++)
-    {
-      double elelower = 1./(double)std::pow(2,n_refinements)*(double)ele;
-      double eleupper = 1./(double)std::pow(2,n_refinements)*(double)(ele+1);
-      Point<dim> pointlower;
-      pointlower[0]=0;
-      pointlower[1]=elelower;
-      pointlower[2]=0;
-      Point<dim> pointupper;
-      pointupper[0]=0;
-      pointupper[1]=eleupper;
-      pointupper[2]=0;
-      double ylower = grid_transform(pointlower)[1];
-      double yupper = grid_transform(pointupper)[1];
-      for (unsigned int plane = 0; plane<n_points_y-1;plane++)
-      {
-        double coord = ylower + (yupper-ylower)/(n_points_y-1)*plane;
-        y_glob.push_back(coord);
-      }
-    }
-    //push back last missing coordinate at upper wall
-    y_glob.push_back(1.0);
-
-    std::vector<double> area_loc(n_points_y_glob);
-    std::vector<double> vel_loc(n_points_y_glob);
-    std::vector<double> velxsq_loc(n_points_y_glob);
-    std::vector<double> velysq_loc(n_points_y_glob);
-    std::vector<double> velzsq_loc(n_points_y_glob);
-    std::vector<double> veluv_loc(n_points_y_glob);
-
-    std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y);
-    std::vector<Quadrature<dim> > quadratures(n_points_y);
-    QGauss<dim-1> gauss_2d(fe_degree+1);
-    for (unsigned int i=0; i<n_points_y; ++i)
-    {
-      std::vector<Point<dim> > points(gauss_2d.size());
-      std::vector<double> weights(gauss_2d.size());
-      for (unsigned int j=0; j<gauss_2d.size(); ++j)
-      {
-        points[j][0] = gauss_2d.point(j)[0];
-        points[j][2] = gauss_2d.point(j)[1];
-        points[j][1] = (double)i/(n_points_y-1);
-        weights[j] = gauss_2d.weight(j);
-      }
-      quadratures[i] = Quadrature<dim>(points, weights);
-      fe_values[i].reset(new FEValues<dim>(fe, quadratures[i], update_values | update_jacobians | update_quadrature_points));
-    }
-    std::vector<double> vel_values(quadratures[0].size());
-    std::vector<double> velocity_vector_x;
-    std::vector<double> velocity_vector_y;
-    std::vector<double> velocity_vector_z;
-//    for (unsigned int i=0; i<data.n_macro_cells()+data.n_macro_ghost_cells(); ++i)
-//      for (unsigned int v=0; v<data.n_components_filled(i); ++v)
-//        {
-//          typename DoFHandler<dim>::cell_iterator cell = data.get_cell_iterator(i,v);
-    for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler.begin_active(); cell!=dof_handler.end(); ++cell)
-      if (cell->is_locally_owned())
-     {
-       for (unsigned int i=0; i<n_points_y; ++i)
-       {
-         velocity_vector_x.resize(quadratures[0].size());
-         velocity_vector_y.resize(quadratures[0].size());
-         velocity_vector_z.resize(quadratures[0].size());
-         fe_values[i]->reinit(cell);
-         fe_values[i]->get_function_values(solution_n.at(0),velocity_vector_x);
-         fe_values[i]->get_function_values(solution_n.at(1),velocity_vector_y);
-         fe_values[i]->get_function_values(solution_n.at(2),velocity_vector_z);
-         double area = 0, velx = 0, velxsq = 0, velysq = 0, velzsq = 0, veluv = 0;
-
-         for (unsigned int q=0; q<quadratures[i].size(); ++q)
-         {
-           Tensor<2,dim-1> reduced_jacobian;
-           reduced_jacobian[0][0] = fe_values[i]->jacobian(q)[0][0];
-           reduced_jacobian[0][1] = fe_values[i]->jacobian(q)[0][2];
-           reduced_jacobian[1][0] = fe_values[i]->jacobian(q)[2][0];
-           reduced_jacobian[1][1] = fe_values[i]->jacobian(q)[2][2];
-           double area_ele = determinant(reduced_jacobian) * quadratures[i].weight(q);
-           area += area_ele;
-           velx += velocity_vector_x[q] * area_ele;
-           velxsq += velocity_vector_x[q] * velocity_vector_x[q] * area_ele;
-           velysq += velocity_vector_y[q] * velocity_vector_y[q] * area_ele;
-           velzsq += velocity_vector_z[q] * velocity_vector_z[q] * area_ele;
-           veluv += velocity_vector_x[q] * velocity_vector_y[q] * area_ele;
-         }
-         unsigned int idx = 0;
-         for (unsigned int j = 0; j<y_glob.size(); j++)
-         {
-           if(y_glob.at(j)+1e-9 > fe_values[i]->quadrature_point(0)[1] && y_glob.at(j)-1e-9 < fe_values[i]->quadrature_point(0)[1])
-           {
-             idx=j;
-             break;
-           }
-         }
-         vel_loc.at(idx) += velx;
-         velxsq_loc.at(idx) += velxsq;
-         velysq_loc.at(idx) += velysq;
-         velzsq_loc.at(idx) += velzsq;
-         veluv_loc.at(idx) += veluv;
-         area_loc.at(idx) += area;
-
-      }
-     }
-
-    std::vector<double > dummy(1);
+    std::vector<double > dummy(2,0.0);
     nsoperation.get_data().cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, 1>::local_compute_divu_for_channel_stats,&nsoperation, dummy, vel_hathat);
-    udiv_samp += dummy.at(0);
-    for (unsigned int idx = 0; idx<y_glob.size(); idx++)
-    {
-      double vel = Utilities::MPI::sum (vel_loc.at(idx), MPI_COMM_WORLD);
-      double velxsq = Utilities::MPI::sum (velxsq_loc.at(idx), MPI_COMM_WORLD);
-      double velysq = Utilities::MPI::sum (velysq_loc.at(idx), MPI_COMM_WORLD);
-      double velzsq = Utilities::MPI::sum (velzsq_loc.at(idx), MPI_COMM_WORLD);
-      double veluv = Utilities::MPI::sum (veluv_loc.at(idx), MPI_COMM_WORLD);
-      double area = Utilities::MPI::sum (area_loc.at(idx), MPI_COMM_WORLD);
-      vel_glob.at(idx) += vel/area;
-      velxsq_glob.at(idx) += velxsq/area;
-      velysq_glob.at(idx) += velysq/area;
-      velzsq_glob.at(idx) += velzsq/area;
-      veluv_glob.at(idx) += veluv/area;
-    }
-
+    double div = Utilities::MPI::sum (dummy.at(0), MPI_COMM_WORLD);
+    double vol = Utilities::MPI::sum (dummy.at(1), MPI_COMM_WORLD);
+    udiv_samp += div/vol;
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
     {
       std::ostringstream filename;
       filename << output_prefix
-               << ".flow_statistics";
+               << ".flow_statistics_divu";
 
       std::ofstream f;
 
       f.open(filename.str().c_str(),std::ios::trunc);
-      f<<"statistics of turbulent channel flow  "<<std::endl;
+      f<<"average divergence over space and time"<<std::endl;
       f<<"number of samples:   " << numchsamp << std::endl;
-      f<<"friction Reynolds number:   " << sqrt(VISCOSITY*(vel_glob.at(1)/numchsamp/(y_glob.at(1)+1.)))/VISCOSITY << std::endl;
-      f<<"wall shear stress:   " << VISCOSITY*(vel_glob.at(1)/numchsamp/(y_glob.at(1)+1.)) << std::endl;
-      f<<"mean rms of div u_hathat:   " << udiv_samp/numchsamp*6.0/11.0 << std::endl;//the factor 6/11 is gamma0^-1, which is the factor u_hathat is scaled compared to solution_n
-      f<< "       y       |       u      |   rms(u')    |   rms(v')    |   rms(w')    |     u'v'     " << std::endl;
-      for (unsigned int idx = 0; idx<y_glob.size(); idx++)
-      {
-        f<<std::scientific<<std::setprecision(5) << std::setw(15) << y_glob.at(idx);
-        f<<std::scientific<<std::setprecision(5) << std::setw(15) << vel_glob.at(idx)/(double)numchsamp;
-        f<<std::scientific<<std::setprecision(5) << std::setw(15) << sqrt(abs((velxsq_glob.at(idx)/(double)(numchsamp)
-               -vel_glob.at(idx)*vel_glob.at(idx)/(((double)numchsamp)*((double)numchsamp)))));//this has caused a problem before because the square of two ints was larger than the largest int32
-        f<<std::scientific<<std::setprecision(5) << std::setw(15) << sqrt(velysq_glob.at(idx)/(double)(numchsamp));
-        f<<std::scientific<<std::setprecision(5) << std::setw(15) << sqrt(velzsq_glob.at(idx)/(double)(numchsamp));
-        f<<std::scientific<<std::setprecision(5) << std::setw(15) << (veluv_glob.at(idx))/(double)(numchsamp);
-        f << std::endl;
-      }
+      f<<"mean div u_hathat:   " << udiv_samp/numchsamp*6.0/11.0 << std::endl;//the factor 6/11 is gamma0^-1, which is the factor u_hathat is scaled compared to solution_n
       f.close();
     }
    }
+
+  template<int dim>
+  void NavierStokesProblem<dim>::
+  write_divu(std::vector<parallel::distributed::Vector<value_type> >   &vel_hathat, NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> & nsoperation, double time, unsigned int time_step_number)
+  {
+    std::vector<double > dummy(2,0.0);
+    nsoperation.get_data().cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, 1>::local_compute_divu_for_channel_stats,&nsoperation, dummy, vel_hathat);
+    double div = Utilities::MPI::sum (dummy.at(0), MPI_COMM_WORLD);
+    double vol = Utilities::MPI::sum (dummy.at(1), MPI_COMM_WORLD);
+    double udiv = div/vol;
+    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+    {
+      std::ostringstream filename;
+      filename << output_prefix
+               << ".flow_statistics_divu_timeseries";
+
+      std::ofstream f;
+      if(time_step_number==1)
+      {
+        f.open(filename.str().c_str(),std::ios::trunc);
+        f<< "       n       |       t      |     divu     " << std::endl;
+      }
+      else
+        f.open(filename.str().c_str(),std::ios::app);
+      f << std::setw(15) <<time_step_number;
+      f << std::scientific<<std::setprecision(7) << std::setw(15) << time ;
+      f << std::scientific<<std::setprecision(7) << std::setw(15) << udiv*6.0/11.0 << std::endl;
+      //the factor 6/11 is gamma0^-1, which is the factor u_hathat is scaled compared to solution_n
+      f.close();
+    }
+  }
 
 
   template<int dim>
@@ -6726,6 +6613,7 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
   navier_stokes_operation.solution_nm = navier_stokes_operation.solution_n;
   navier_stokes_operation.solution_nm2 = navier_stokes_operation.solution_n;
 
+  StatisticsManager<dim> statistics (dof_handler, &grid_transform<dim>);
   // compute vorticity from initial data at time t = START_TIME
   {
     navier_stokes_operation.compute_vorticity(navier_stokes_operation.solution_n,navier_stokes_operation.vorticity_n);
@@ -6778,9 +6666,16 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
     else if((time+time_step) > (output_number*output_interval_time-EPSILON))
       output_number++;
     if((time+time_step) > STATISTICS_START_TIME-EPSILON)
-    compute_channel_statistics(navier_stokes_operation.solution_n, navier_stokes_operation.velocity_temp, navier_stokes_operation);
+    {
+      statistics.evaluate(navier_stokes_operation.solution_n);
+      if(time_step_number % 100 == 0)
+        statistics.write_output(output_prefix,VISCOSITY);
+      compute_divu_statistics(navier_stokes_operation.velocity_temp, navier_stokes_operation);
+    }
+    if(DIVU_TIMESERIES)
+      write_divu(navier_stokes_operation.velocity_temp, navier_stokes_operation,time+time_step,time_step_number);
   }
-  navier_stokes_operation.analyse_computing_times();
+    navier_stokes_operation.analyse_computing_times();
   }
 }
 
