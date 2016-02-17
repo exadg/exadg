@@ -43,7 +43,6 @@ private:
   std::vector<double> velzsq_glob;
   std::vector<double> veluv_glob;
   int numchsamp;
-  double udiv_samp;
 };
 
 #endif
