@@ -51,6 +51,8 @@ namespace helpers
       fluid_algorithm (fluid_algo)
     {}
 
+    virtual ~FENavierStokesEvaluatorImpl() {}
+
     virtual void do_advect(const parallel::distributed::Vector<double> &src,
                            parallel::distributed::Vector<double> &dst) const
     {
