@@ -2963,6 +2963,7 @@ public:
     alpha[0] = beta[0] = 1.;
     alpha[1] = alpha[2] = beta[1] = beta[2] = 0.;
 
+  // use this gamma0 when initializing the multigrid solver (in function calculate_diagonal_viscous())
   gamma0 = 11.0/6.0;
 
   xwall.initialize_constraints(periodic_face_pairs);
@@ -3439,7 +3440,7 @@ public:
   computing_times[3] += timer.wall_time();
   /*************************************************************************/
   timer.restart();
-  // solueion at t_n -> solution at t_n-1    and    solution at t_n+1 -> solution at t_n
+  // solution at t_n -> solution at t_n-1    and    solution at t_n+1 -> solution at t_n
   solution_nm2.swap(solution_nm);
   solution_nm.swap(solution_n);
   solution_n.swap(solution_np);
@@ -3449,9 +3450,11 @@ public:
 
   compute_vorticity(solution_n,vorticity_n);
   computing_times[4] += timer.wall_time();
-//  compute_lift_and_drag();
-//  compute_pressure_difference();
-//  compute_vorticity(solution_n,vorticity_n);
+
+  // laminar flow around cylinder
+  //compute_lift_and_drag();
+  //compute_pressure_difference();
+
   if(time_step_number == 1)
     update_time_integrator();
   }
@@ -4126,18 +4129,6 @@ public:
     fe_eval_xwall_neighbor.read_dof_values(src,0,src,dim+1);
     fe_eval_xwall_neighbor.evaluate(true,false);
 
-  /*  VectorizedArray<value_type> lambda = make_vectorized_array<value_type>(0.0);
-    for(unsigned int q=0;q<fe_eval.n_q_points;++q)
-    {
-      Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval.get_value(q);
-      Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_neighbor.get_value(q);
-      Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
-      VectorizedArray<value_type> uM_n = uM*normal;
-      VectorizedArray<value_type> uP_n = uP*normal;
-      VectorizedArray<value_type> lambda_qpoint = std::max(std::abs(uM_n), std::abs(uP_n));
-      lambda = std::max(lambda_qpoint,lambda);
-    } */
-
     for(unsigned int q=0;q<fe_eval_xwall.n_q_points;++q)
     {
       Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_xwall.get_value(q);
@@ -4147,25 +4138,12 @@ public:
       const VectorizedArray<value_type> uM_n = uM*normal;
       const VectorizedArray<value_type> uP_n = uP*normal;
 
-      // calculation of lambda according to Hesthaven & Warburton
-//      for(unsigned int k=0;k<lambda.n_array_elements;++k)
-//        lambda[k] = std::abs(uM_n[k]) > std::abs(uP_n[k]) ? std::abs(uM_n[k]) : std::abs(uP_n[k]);//lambda = std::max(std::abs(uM_n), std::abs(uP_n));
-      // calculation of lambda according to Hesthaven & Warburton
-
-      // calculation of lambda according to Shahbazi et al.: maximum
-      // eigenvalue of (u^T * normal) * I + u * normal^T, which is
-      // abs(2*u^T*normal) (this can be verified by rank-1 matrix algebra)
+      // calculation of lambda according to Shahbazi et al., i.e.
       // lambda = max ( max |lambda(flux_jacobian_M)| , max |lambda(flux_jacobian_P)| )
+      // where the maximum eigenvalue of the flux Jacobian is the
+      // maximum eigenvalue of (u^T * normal) * I + u * normal^T, which is
+      // abs(2*u^T*normal) (this can be verified by rank-1 matrix algebra)
       const VectorizedArray<value_type> lambda = 2.*std::max(std::abs(uM_n), std::abs(uP_n));
-
-//      Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_xwall.get_value(q);
-//      Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_xwall_neighbor.get_value(q);
-//      Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_xwall.get_normal_vector(q);
-//      VectorizedArray<value_type> uM_n = uM*normal;
-//      VectorizedArray<value_type> uP_n = uP*normal;
-//      VectorizedArray<value_type> lambda; //lambda = std::max(std::abs(uM_n), std::abs(uP_n));
-//      for(unsigned int k=0;k<lambda.n_array_elements;++k)
-//        lambda[k] = std::abs(uM_n[k]) > std::abs(uP_n[k]) ? std::abs(uM_n[k]) : std::abs(uP_n[k]);
 
       Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
       Tensor<1,dim,VectorizedArray<value_type> > average_normal_flux = ( uM*uM_n + uP*uP_n) * make_vectorized_array<value_type>(0.5);
@@ -4203,37 +4181,6 @@ public:
     fe_eval_xwall.read_dof_values(src,0,src,dim+1);
     fe_eval_xwall.evaluate(true,false);
 
-  /*  VectorizedArray<value_type> lambda = make_vectorized_array<value_type>(0.0);
-    if (data.get_boundary_indicator(face) == 0) // Infow and wall boundaries
-    {
-      for(unsigned int q=0;q<fe_eval.n_q_points;++q)
-      {
-        Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval.get_value(q);
-
-        Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
-        Tensor<1,dim,VectorizedArray<value_type> > g_n;
-        for(unsigned int d=0;d<dim;++d)
-        {
-          AnalyticalSolution<dim> dirichlet_boundary(d,time);
-          value_type array [VectorizedArray<value_type>::n_array_elements];
-          for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
-          {
-            Point<dim> q_point;
-            for (unsigned int d=0; d<dim; ++d)
-            q_point[d] = q_points[d][n];
-            array[n] = dirichlet_boundary.value(q_point);
-          }
-          g_n[d].load(&array[0]);
-        }
-        Tensor<1,dim,VectorizedArray<value_type> > uP = -uM + make_vectorized_array<value_type>(2.0)*g_n;
-        Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
-        VectorizedArray<value_type> uM_n = uM*normal;
-        VectorizedArray<value_type> uP_n = uP*normal;
-        VectorizedArray<value_type> lambda_qpoint = std::max(std::abs(uM_n), std::abs(uP_n));
-        lambda = std::max(lambda_qpoint,lambda);
-      }
-    } */
-
     for(unsigned int q=0;q<fe_eval_xwall.n_q_points;++q)
     {
       if (data.get_boundary_indicator(face) == 0) // Infow and wall boundaries
@@ -4262,15 +4209,11 @@ public:
         const VectorizedArray<value_type> uM_n = uM*normal;
         const VectorizedArray<value_type> uP_n = uP*normal;
 
-        // calculation of lambda according to Hesthaven & Warburton
-//        for(unsigned int k=0;k<lambda.n_array_elements;++k)
-//          lambda[k] = std::abs(uM_n[k]) > std::abs(uP_n[k]) ? std::abs(uM_n[k]) : std::abs(uP_n[k]);
-        // calculation of lambda according to Hesthaven & Warburton
-
-        // calculation of lambda according to Shahbazi et al.: maximum
-        // eigenvalue of (u^T * normal) * I + u * normal^T, which is
-        // abs(2*u^T*normal) (this can be verified by rank-1 matrix algebra)
+        // calculation of lambda according to Shahbazi et al., i.e.
         // lambda = max ( max |lambda(flux_jacobian_M)| , max |lambda(flux_jacobian_P)| )
+        // where the maximum eigenvalue of the flux Jacobian is the
+        // maximum eigenvalue of (u^T * normal) * I + u * normal^T, which is
+        // abs(2*u^T*normal) (this can be verified by rank-1 matrix algebra)
         const VectorizedArray<value_type> lambda = 2.*std::max(std::abs(uM_n), std::abs(uP_n));
 
         Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
@@ -6122,7 +6065,7 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
 
   const double cfl;
   const unsigned int n_refinements;
-  const double output_interval_time;
+  const double output_interval_time;//TODO: delete output_interval_time, use constant OUTPUT_INTERVAL TIME instead
   };
 
   template<int dim>
@@ -6792,7 +6735,7 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
 
   unsigned int output_number = 0;
   const double EPSILON = 1.0e-10;
-  if(OUTPUT_START_TIME<0.0+EPSILON)
+  if(OUTPUT_START_TIME<0.0+EPSILON) // OUTPUT_START_TIME < (START_TIME+EPSILON) ???
   write_output(navier_stokes_operation.solution_n,
           navier_stokes_operation.vorticity_n,
           navier_stokes_operation.ReturnXWall(),
@@ -6803,6 +6746,9 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
           output_number++);
   else
     output_number++;
+//#endif
+//          output_number);
+//  output_number++;
     pcout << std::endl << "Write output at START_TIME t = " << START_TIME << std::endl;
 //  calculate_error(navier_stokes_operation.solution_n);
 
@@ -6814,6 +6760,7 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
   {
     navier_stokes_operation.do_timestep(time,time_step,time_step_number);
     pcout << "Step = " << time_step_number << "  t = " << time << std::endl;
+    //if( (time+time_step-START_TIME) > (output_number*output_interval_time-EPSILON) && (time+time_step) > OUTPUT_START_TIME-EPSILON)
     if( (time+time_step) > (output_number*output_interval_time-EPSILON) && (time+time_step) > OUTPUT_START_TIME-EPSILON)
     {
     write_output(navier_stokes_operation.solution_n,
@@ -6827,6 +6774,7 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
       pcout << std::endl << "Write output at TIME t = " << time+time_step << std::endl;
 //      calculate_error(navier_stokes_operation.solution_n,time_step);
     }
+    //else if((time+time_step-START_TIME) > (output_number*output_interval_time-EPSILON))
     else if((time+time_step) > (output_number*output_interval_time-EPSILON))
       output_number++;
     if((time+time_step) > STATISTICS_START_TIME-EPSILON)
