@@ -64,9 +64,9 @@
 //#define XWALL
 //#define COMPDIV
 #define LOWMEMORY //compute grad-div matrices directly instead of saving them
-//#define PRESPARTIAL
-//#define DIVUPARTIAL
-//#define CONSCONVPBC
+#define PRESPARTIAL
+#define DIVUPARTIAL
+#define CONSCONVPBC
 //#define CHANNEL
 #define VORTEX
 
@@ -75,13 +75,13 @@ namespace DG_NavierStokes
   using namespace dealii;
 
 #ifdef VORTEX
-  const unsigned int fe_degree = 4;
+  const unsigned int fe_degree = 10;
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
   const unsigned int dimension = 2; // dimension >= 2
-  const unsigned int refine_steps_min = 3;
-  const unsigned int refine_steps_max = 3;
+  const unsigned int refine_steps_min = 2;
+  const unsigned int refine_steps_max = 2;
 
   const double START_TIME = 0.0;
   const double END_TIME = 1.0; // Poisseuille 5.0;  Kovasznay 1.0
@@ -90,7 +90,7 @@ namespace DG_NavierStokes
   const double STATISTICS_START_TIME = 50.0;
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 1e6;
-  const double CFL = 2.0;
+  const double CFL = 2.;
 
   const double VISCOSITY = 0.025;//1./180.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
 
@@ -3352,8 +3352,19 @@ public:
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   do_timestep (const double  &cur_time,const double  &delta_t, const unsigned int &time_step_number)
   {
-  if(time_step_number < ORDER_TIME_INTEGRATOR+1)
-    check_time_integrator(time_step_number);
+#ifdef VORTEX
+    if(time_step_number < 2)
+    {
+      update_time_integrator(2);
+      time-=time_step;
+      rhs_convection(solution_nm,rhs_convection_nm);
+      time-=time_step;
+      rhs_convection(solution_nm2,rhs_convection_nm2);
+      time+=2*time_step;
+    }
+#endif
+    if(time_step_number < ORDER_TIME_INTEGRATOR+1)
+      check_time_integrator(time_step_number);
 
     time = cur_time;
     time_step = delta_t;
@@ -3534,10 +3545,12 @@ public:
 //  if(time_step_number == 2)
 //    update_time_integrator();
 
+#ifndef VORTEX
   if(time_step_number == 1 && ORDER_TIME_INTEGRATOR >1)
     update_time_integrator(time_step_number);
   if(time_step_number ==2 && ORDER_TIME_INTEGRATOR >2)
     update_time_integrator(time_step_number);
+#endif
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -6761,17 +6774,27 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
     VectorTools::interpolate(dof_handler_xwall, AnalyticalSolution<dim>(d+dim+1,time), navier_stokes_operation.solution_n[d+dim+1]);
   navier_stokes_operation.solution_nm = navier_stokes_operation.solution_n;
   navier_stokes_operation.solution_nm2 = navier_stokes_operation.solution_n;
-
-#ifdef CHANNEL
-  StatisticsManager<dim> statistics (dof_handler, &grid_transform<dim>);
-#endif
   // compute vorticity from initial data at time t = START_TIME
   {
     navier_stokes_operation.compute_vorticity(navier_stokes_operation.solution_n,navier_stokes_operation.vorticity_n);
 //    navier_stokes_operation.compute_eddy_viscosity(navier_stokes_operation.solution_n);
+    navier_stokes_operation.vorticity_nm = navier_stokes_operation.vorticity_n;
+    navier_stokes_operation.vorticity_nm2 = navier_stokes_operation.vorticity_n;
   }
-  navier_stokes_operation.vorticity_nm = navier_stokes_operation.vorticity_n;
-  navier_stokes_operation.vorticity_nm2 = navier_stokes_operation.vorticity_n;
+#ifdef VORTEX
+  for(unsigned int d=0;d<dim;++d)
+    VectorTools::interpolate(dof_handler, AnalyticalSolution<dim>(d,time-time_step), navier_stokes_operation.solution_nm[d]);
+  VectorTools::interpolate(dof_handler_p, AnalyticalSolution<dim>(dim,time-time_step), navier_stokes_operation.solution_nm[dim]);
+  for(unsigned int d=0;d<dim;++d)
+    VectorTools::interpolate(dof_handler, AnalyticalSolution<dim>(d,time-time_step*2), navier_stokes_operation.solution_nm2[d]);
+  VectorTools::interpolate(dof_handler_p, AnalyticalSolution<dim>(dim,time-time_step*2), navier_stokes_operation.solution_nm2[dim]);
+  navier_stokes_operation.compute_vorticity(navier_stokes_operation.solution_nm,navier_stokes_operation.vorticity_nm);
+  navier_stokes_operation.compute_vorticity(navier_stokes_operation.solution_nm2,navier_stokes_operation.vorticity_nm2);
+#endif
+
+#ifdef CHANNEL
+  StatisticsManager<dim> statistics (dof_handler, &grid_transform<dim>);
+#endif
 
   unsigned int output_number = 0;
   const double EPSILON = 1.0e-10;
