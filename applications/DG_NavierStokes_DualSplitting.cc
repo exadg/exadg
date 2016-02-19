@@ -67,8 +67,8 @@
 #define PRESPARTIAL
 #define DIVUPARTIAL
 #define CONSCONVPBC
-//#define CHANNEL
-#define VORTEX
+#define CHANNEL
+//#define VORTEX
 //#define POISEUILLE
 
 namespace DG_NavierStokes
@@ -110,6 +110,14 @@ namespace DG_NavierStokes
   const double REL_TOL_PRESSURE = 1.0e-8;
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-8;
+
+  const std::string output_prefix = "vortex";
+
+  const unsigned int output_solver_info_every_timesteps = 1e4;
+  const unsigned int output_solver_info_details = 1e4;
+
+  const unsigned int ORDER_TIME_INTEGRATOR = 3;
+  const bool START_WITH_LOW_ORDER = false;
 #endif
 
 #ifdef POISEUILLE
@@ -147,6 +155,14 @@ namespace DG_NavierStokes
   const double REL_TOL_PRESSURE = 1.0e-8;
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-8;
+
+  const std::string output_prefix = "poiseuille";
+
+  const unsigned int output_solver_info_every_timesteps = 1e4;
+  const unsigned int output_solver_info_details = 1e4;
+
+  const unsigned int ORDER_TIME_INTEGRATOR = 3;
+  const bool START_WITH_LOW_ORDER = false;
 #endif
 
 #ifdef CHANNEL
@@ -184,18 +200,18 @@ namespace DG_NavierStokes
   const double REL_TOL_PRESSURE = 1.0e-8;
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-8;
+
+  const std::string output_prefix = "solution_ch180_4_p4_gt18_partp_k0_partu_sf1_cfl2";
+
+  const unsigned int output_solver_info_every_timesteps = 5;
+  const unsigned int output_solver_info_details = 1e4;
+
+  const unsigned int ORDER_TIME_INTEGRATOR = 3;
+  const bool START_WITH_LOW_ORDER = true;
 #endif
 
 
-  const std::string output_prefix = "vortex";//"solution_ch180_4_p4_gt18_partp_k0_partu_sf1_cfl2";//solution_ch180_8_p4p4_gt18_f1_k1_cs0_cfl3";
-
-  const unsigned int output_solver_info_every_timesteps = 1e4;
-  const unsigned int output_solver_info_details = 1e4;
-
   const double lambda = 0.5/VISCOSITY - std::pow(0.25/std::pow(VISCOSITY,2.0)+4.0*std::pow(numbers::PI,2.0),0.5);
-
-  const unsigned int ORDER_TIME_INTEGRATOR = 3;
-  const bool START_WITH_LOW_ORDER = false;
 
   template<int dim>
   class AnalyticalSolution : public Function<dim>
@@ -6919,7 +6935,7 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
     {
 #ifdef CHANNEL
       statistics.evaluate(navier_stokes_operation.solution_n);
-      if(time_step_number % 100 == 0)
+      if(time_step_number % 100 == 0||(time+time_step) > (END_TIME-EPSILON))
         statistics.write_output(output_prefix,VISCOSITY);
 #endif
       compute_divu_statistics(navier_stokes_operation.velocity_temp, navier_stokes_operation);
