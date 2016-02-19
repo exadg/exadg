@@ -68,7 +68,8 @@
 //#define DIVUPARTIAL
 //#define CONSCONVPBC
 //#define CHANNEL
-#define VORTEX
+//#define VORTEX
+#define POISEUILLE
 
 namespace DG_NavierStokes
 {
@@ -90,11 +91,44 @@ namespace DG_NavierStokes
   const double STATISTICS_START_TIME = 50.0;
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 1e6;
-  const double CFL = 2.0;
+  const double CFL = 8.0;
 
   const double VISCOSITY = 0.025;//1./180.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
 
   const double MAX_VELOCITY = 1.4; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
+  const double stab_factor = 1.0;
+  const double K=0.0e2; //grad-div stabilization/penalty parameter
+  const double CS = 0.0; // Smagorinsky constant
+  const double ML = 0.0; // mixing-length model for xwall
+  const bool variabletauw = false;
+  const double DTAUW = 1.0;
+
+  const double MAX_WDIST_XWALL = 0.2;
+  const double GRID_STRETCH_FAC = 1.8;
+  const bool pure_dirichlet_bc = false;
+#endif
+
+#ifdef POISEUILLE
+  const unsigned int fe_degree = 2;
+  const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
+  const unsigned int fe_degree_xwall = 1;
+  const unsigned int n_q_points_1d_xwall = 1;
+  const unsigned int dimension = 2; // dimension >= 2
+  const unsigned int refine_steps_min = 3;
+  const unsigned int refine_steps_max = 3;
+
+  const double START_TIME = 0.0;
+  const double END_TIME = 1.0; // Poisseuille 5.0;  Kovasznay 1.0
+  const double OUTPUT_INTERVAL_TIME = 0.1;
+  const double OUTPUT_START_TIME = 0.0;
+  const double STATISTICS_START_TIME = 50.0;
+  const bool DIVU_TIMESERIES = false; //true;
+  const int MAX_NUM_STEPS = 1e6;
+  const double CFL = 0.5;
+
+  const double VISCOSITY = 0.1;
+
+  const double MAX_VELOCITY = 1.0;
   const double stab_factor = 1.0;
   const double K=0.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
@@ -169,8 +203,9 @@ namespace DG_NavierStokes
   template<int dim>
   double AnalyticalSolution<dim>::value(const Point<dim> &p,const unsigned int /* component */) const
   {
-      double t = this->get_time();
+    double t = this->get_time();
     double result = 0.0;
+    (void)t;
     /*********************** cavitiy flow *******************************/
   /*  const double T = 0.1;
     if(component == 0 && (std::abs(p[1]-1.0)<1.0e-15))
@@ -189,6 +224,7 @@ namespace DG_NavierStokes
     /********************************************************************/
 
     /****************** Poisseuille flow problem ************************/
+#ifdef POISEUILLE
     // constant velocity profile at inflow
    /* const double pressure_gradient = -0.01;
     double T = 0.5;
@@ -196,15 +232,16 @@ namespace DG_NavierStokes
     result = (t<T? (t/T) : 1.0); */
 
     // parabolic velocity profile at inflow - stationary
-    /*const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
+    const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
     if(component == 0)
     result = 1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0;
     if(component == dim)
-    result = (p[0]-1.0)*pressure_gradient;*/
+    result = (p[0]-4.0)*pressure_gradient;
 
     // parabolic velocity profile at inflow - instationary
 //    const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
 //    double T = 0.5;
+#endif
     /********************************************************************/
 
     /****************** turbulent channel flow ************************/
@@ -316,6 +353,7 @@ namespace DG_NavierStokes
   {
     double t = this->get_time();
     double result = 0.0;
+    (void)t;
 
     // Kovasznay flow
 //    const double pi = numbers::PI;
@@ -365,6 +403,11 @@ namespace DG_NavierStokes
       else if((std::abs(p[0]-0.5)< 1e-12) && (p[1]<0) )
         result = 2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);
     }
+#endif
+
+#ifdef POISEUILLE
+//    if(component==1)
+//      result = - MAX_VELOCITY * 2.0 * p[1];
 #endif
     return result;
   }
@@ -429,7 +472,7 @@ namespace DG_NavierStokes
 
   double t = this->get_time();
   double result = 0.0;
-
+  (void)t;
   // Stokes problem (Guermond,2003 & 2006)
 //  const double pi = numbers::PI;
 //  double sint = std::sin(t);
@@ -472,7 +515,7 @@ namespace DG_NavierStokes
   {
   double t = this->get_time();
   double result = 0.0;
-
+  (void)t;
   //Taylor vortex (Shahbazi et al.,2007)
 //  const double pi = numbers::PI;
 //  if(component == 0)
@@ -3544,7 +3587,7 @@ public:
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   update_time_integrator (unsigned int time_step_number)
   {
-    if(time_step_number ==1)
+    if(time_step_number==1)
     {
       //BDF2
       gamma0 = 3.0/2.0;
@@ -3555,7 +3598,7 @@ public:
       beta[1] = -1.0;
       beta[2] = 0.0;
     }
-    if(time_step_number ==2)
+    if(time_step_number==2)
     {
       //BDF3
       gamma0 = 11./6.;
@@ -3572,20 +3615,14 @@ public:
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   check_time_integrator(unsigned int time_step_number)
   {
-//    if (std::abs(gamma0-1.0)>1.e-12 || std::abs(alpha[0]-1.0)>1.e-12 || std::abs(alpha[1]-0.0)>1.e-12 || std::abs(beta[0]-1.0)>1.e-12 || std::abs(beta[1]-0.0)>1.e-12)
-//    {
-//      std::cout<< "Time integrator constants invalid!" << std::endl;
-//      std::abort();
-//    }
       std::cout << "Time integrator constants: time step "<< time_step_number << std::endl
-          <<"Gamma0: " << gamma0 << std::endl
-          <<"Alpha0: " << alpha[0] << std::endl
-          <<"Alpha1: " << alpha[1] << std::endl
-          <<"Alpha2: " << alpha[2] << std::endl
-          <<"Beta0: " << beta[0] << std::endl
-          <<"Beta1: " << beta[1] << std::endl
-          <<"Beta2: " << beta[2] << std::endl << std::endl;
-
+                <<"Gamma0: " << gamma0 << std::endl
+                <<"Alpha0: " << alpha[0] << std::endl
+                <<"Alpha1: " << alpha[1] << std::endl
+                <<"Alpha2: " << alpha[2] << std::endl
+                <<"Beta0: "  << beta[0] << std::endl
+                <<"Beta1: "  << beta[1] << std::endl
+                <<"Beta2: "  << beta[2] << std::endl << std::endl;
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -6260,15 +6297,33 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
     typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
     for(;cell!=endc;++cell)
     {
-    for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+      for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+      {
+       if (((std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12) && (cell->face(face_number)->center()(1)<0))||
+           ((std::fabs(cell->face(face_number)->center()(0) - left)< 1e-12) && (cell->face(face_number)->center()(1)>0))||
+           ((std::fabs(cell->face(face_number)->center()(1) - left)< 1e-12) && (cell->face(face_number)->center()(0)<0))||
+           ((std::fabs(cell->face(face_number)->center()(1) - right)< 1e-12) && (cell->face(face_number)->center()(0)>0)))
+          cell->face(face_number)->set_boundary_indicator (1);
+      }
+    }
+#endif
+
+#ifdef POISEUILLE
+    std::vector<unsigned int> repetitions({2,1});
+    Point<dim> point1(0.0,-1.0), point2(4.0,1.0);
+    GridGenerator::subdivided_hyper_rectangle(triangulation,repetitions,point1,point2);
+
+    // set boundary indicator
+    typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+    for(;cell!=endc;++cell)
     {
-     if (((std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12) && (cell->face(face_number)->center()(1)<0))||
-         ((std::fabs(cell->face(face_number)->center()(0) - left)< 1e-12) && (cell->face(face_number)->center()(1)>0))||
-         ((std::fabs(cell->face(face_number)->center()(1) - left)< 1e-12) && (cell->face(face_number)->center()(0)<0))||
-         ((std::fabs(cell->face(face_number)->center()(1) - right)< 1e-12) && (cell->face(face_number)->center()(0)>0)))
-        cell->face(face_number)->set_boundary_indicator (1);
+      for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+      {
+       if ((std::fabs(cell->face(face_number)->center()(0) - 4.0)< 1e-12))
+          cell->face(face_number)->set_boundary_indicator (1);
+      }
     }
-    }
+    triangulation.refine_global(n_refinements);
 #endif
 
     pcout << std::endl << "Generating grid for " << dim << "-dimensional problem" << std::endl << std::endl
