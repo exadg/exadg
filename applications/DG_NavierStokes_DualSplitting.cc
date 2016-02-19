@@ -175,17 +175,17 @@ namespace DG_NavierStokes
   const unsigned int refine_steps_max = 2;
 
   const double START_TIME = 0.0;
-  const double END_TIME = 1.0; // Poisseuille 5.0;  Kovasznay 1.0
-  const double OUTPUT_INTERVAL_TIME = 0.1;
+  const double END_TIME = 70.0; // Poisseuille 5.0;  Kovasznay 1.0
+  const double OUTPUT_INTERVAL_TIME = 1.0;
   const double OUTPUT_START_TIME = 50.0;
   const double STATISTICS_START_TIME = 50.0;
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 1000000;
-  const double CFL = 2.0;
+  const double CFL = 1.0;
 
   const double VISCOSITY = 1./180.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
 
-  const double MAX_VELOCITY = 30.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
+  const double MAX_VELOCITY = 15.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
   const double stab_factor = 1.0;
   const double K=0.0; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
@@ -197,11 +197,11 @@ namespace DG_NavierStokes
   const double GRID_STRETCH_FAC = 1.8;
   const bool pure_dirichlet_bc = true;
 
-  const double REL_TOL_PRESSURE = 1.0e-8;
+  const double REL_TOL_PRESSURE = 1.0e-5;
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-8;
 
-  const std::string output_prefix = "solution_ch180_4_p4_gt18_partp_k0_partu_sf1_cfl2";
+  const std::string output_prefix = "solution_ch180_4_p4_gt18_partp_k0_partu_sf1_cfl1";
 
   const unsigned int output_solver_info_every_timesteps = 5;
   const unsigned int output_solver_info_details = 1e4;
