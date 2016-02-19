@@ -177,7 +177,7 @@ namespace DG_NavierStokes
   const double START_TIME = 0.0;
   const double END_TIME = 1.0; // Poisseuille 5.0;  Kovasznay 1.0
   const double OUTPUT_INTERVAL_TIME = 0.1;
-  const double OUTPUT_START_TIME = 0.0;
+  const double OUTPUT_START_TIME = 50.0;
   const double STATISTICS_START_TIME = 50.0;
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 1000000;
