@@ -68,6 +68,7 @@
 #define DIVUPARTIAL
 
 #define CONSCONVPBC
+//#define SKEWSYMMVISC
 
 #define VORTEX
 //#define STOKES
@@ -81,7 +82,7 @@ namespace DG_NavierStokes
   using namespace dealii;
 
 #ifdef VORTEX
-  const unsigned int fe_degree = 2; //2
+  const unsigned int fe_degree = 3; //2
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
@@ -98,11 +99,11 @@ namespace DG_NavierStokes
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.05; //0.001
 
-  const double VISCOSITY = 0.01;
+  const double VISCOSITY = 0.025;
 
   const double MAX_VELOCITY = 1.4;
   const double stab_factor = 1.0;
-  const double K=0.0e2; //1.0e2; //grad-div stabilization/penalty parameter
+  const double K=1.0e2; //1.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -266,24 +267,24 @@ namespace DG_NavierStokes
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
   const unsigned int dimension = 2; // dimension >= 2
-  const unsigned int refine_steps_min = 2;//2
-  const unsigned int refine_steps_max = 2;
+  const unsigned int refine_steps_min = 1;//2
+  const unsigned int refine_steps_max = 4;
 
   const double START_TIME = 0.0;
   const double END_TIME = 1.0;
   const double OUTPUT_INTERVAL_TIME = 0.1;
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
-  const bool DIVU_TIMESERIES = true;
+  const bool DIVU_TIMESERIES = false;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.2; // CFL number irrelevant for Stokes flow problem
-  const double TIME_STEP_SIZE = 5.0e-3; //5.0e-4
+  const double TIME_STEP_SIZE = 2.0e-4; //5.0e-4
 
   const double VISCOSITY = 1.0;
 
   const double MAX_VELOCITY = 2.65; // MAX_VELOCITY also irrelevant
   const double stab_factor = 1.0;
-  const double K=0.0e2; //grad-div stabilization/penalty parameter
+  const double K=1.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -4705,8 +4706,6 @@ public:
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall_neighbor(data,xwallstatevec[0],xwallstatevec[1],false,0,0);
 #endif
 
-    const unsigned int level = data.get_cell_iterator(0,0)->level();
-
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       fe_eval_xwall.reinit (face);
@@ -4753,9 +4752,13 @@ public:
               average_gradient[comp] += average_gradient_tensor[comp][d] *
                 fe_eval_xwall.get_normal_vector(q)[d];
           }
-
+#ifdef SKEWSYMMVISC
       fe_eval_xwall.submit_gradient(0.5*fe_eval_xwall.make_symmetric(average_viscosity*jump_tensor),q);
       fe_eval_xwall_neighbor.submit_gradient(0.5*fe_eval_xwall.make_symmetric(average_viscosity*jump_tensor),q);
+#else
+      fe_eval_xwall.submit_gradient(-0.5*fe_eval_xwall.make_symmetric(average_viscosity*jump_tensor),q);
+      fe_eval_xwall_neighbor.submit_gradient(-0.5*fe_eval_xwall.make_symmetric(average_viscosity*jump_tensor),q);
+#endif
         fe_eval_xwall.submit_value(-average_gradient,q);
         fe_eval_xwall_neighbor.submit_value(average_gradient,q);
 
@@ -4824,7 +4827,11 @@ public:
                 average_gradient[comp] += average_gradient_tensor[comp][d] *
                   fe_eval_xwall.get_normal_vector(q)[d];
             }
+#ifdef SKEWSYMMVISC
           fe_eval_xwall.submit_gradient(0.5*fe_eval_xwall.make_symmetric(fe_eval_xwall.eddyvisc[q]*jump_tensor),q);
+#else
+          fe_eval_xwall.submit_gradient(-0.5*fe_eval_xwall.make_symmetric(fe_eval_xwall.eddyvisc[q]*jump_tensor),q);
+#endif
           fe_eval_xwall.submit_value(-fe_eval_xwall.eddyvisc[q]*average_gradient,q);
 
         }
@@ -4841,7 +4848,11 @@ public:
           Tensor<2,dim,VectorizedArray<value_type> > jump_tensor
             = outer_product(jump_value,fe_eval_xwall.get_normal_vector(q));
 
+#ifdef SKEWSYMMVISC
           fe_eval_xwall.submit_gradient(0.5*fe_eval_xwall.make_symmetric(fe_eval_xwall.eddyvisc[q]*jump_tensor),q);
+#else
+          fe_eval_xwall.submit_gradient(-0.5*fe_eval_xwall.make_symmetric(fe_eval_xwall.eddyvisc[q]*jump_tensor),q);
+#endif
           fe_eval_xwall.submit_value(-fe_eval_xwall.eddyvisc[q]*average_gradient,q);
 
         }
@@ -4938,8 +4949,11 @@ public:
           g_np *= fe_eval_xwall.eddyvisc[q];
           Tensor<2,dim,VectorizedArray<value_type> > jump_tensor
             = outer_product(g_np,fe_eval_xwall.get_normal_vector(q));
-
+#ifdef SKEWSYMMVISC
           fe_eval_xwall.submit_gradient(fe_eval_xwall.make_symmetric(jump_tensor),q);
+#else
+          fe_eval_xwall.submit_gradient(-fe_eval_xwall.make_symmetric(jump_tensor),q);
+#endif
           fe_eval_xwall.submit_value(2.0*sigmaF*g_np,q);
 
         }
@@ -4967,8 +4981,11 @@ public:
 
           Tensor<2,dim,VectorizedArray<value_type> > jump_tensor
             = outer_product(jump_value,fe_eval_xwall.get_normal_vector(q));
-
+#ifdef SKEWSYMMVISC
           fe_eval_xwall.submit_gradient(jump_tensor,q);
+#else
+          fe_eval_xwall.submit_gradient(-jump_tensor,q);
+#endif
           fe_eval_xwall.submit_value(fe_eval_xwall.eddyvisc[q]*h,q);
         }
       }
