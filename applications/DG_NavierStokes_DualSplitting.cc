@@ -64,8 +64,8 @@
 //#define XWALL
 //#define COMPDIV
 #define LOWMEMORY //compute grad-div matrices directly instead of saving them
-//#define PRESPARTIAL
-//#define DIVUPARTIAL
+#define PRESPARTIAL
+#define DIVUPARTIAL
 
 #define CONSCONVPBC
 
@@ -74,6 +74,7 @@
 //#define POISEUILLE
 //#define KOVASZNAY
 //#define BELTRAMI
+#define CHANNEL
 
 namespace DG_NavierStokes
 {
@@ -326,8 +327,6 @@ namespace DG_NavierStokes
   const bool START_WITH_LOW_ORDER = true;
 #endif
 
-
-  const double lambda = 0.5/VISCOSITY - std::pow(0.25/std::pow(VISCOSITY,2.0)+4.0*std::pow(numbers::PI,2.0),0.5);
 
   template<int dim>
   class AnalyticalSolution : public Function<dim>
@@ -6503,6 +6502,9 @@ public:
     triangulation.refine_global(n_refinements);
 
     GridTools::transform (&grid_transform<dim>, triangulation);
+
+    dirichlet_boundary.insert(0);
+    neumann_boundary.insert(1);
 #endif
 
 #ifdef VORTEX
