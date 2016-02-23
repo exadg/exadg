@@ -323,7 +323,7 @@ namespace DG_NavierStokes
   const unsigned int output_solver_info_every_timesteps = 5;
   const unsigned int output_solver_info_details = 1e4;
 
-  const unsigned int ORDER_TIME_INTEGRATOR = 2;
+  const unsigned int ORDER_TIME_INTEGRATOR = 3;
   const bool START_WITH_LOW_ORDER = true;
 #endif
 
@@ -3799,6 +3799,8 @@ public:
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   check_time_integrator(unsigned int time_step_number)
   {
+    if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    {
     std::cout << "Time integrator constants: time step "<< time_step_number << std::endl
               <<"Gamma0: " << gamma0   << std::endl
               <<"Alpha0: " << alpha[0] << std::endl
@@ -3807,6 +3809,7 @@ public:
               <<"Beta0: "  << beta[0]  << std::endl
               <<"Beta1: "  << beta[1]  << std::endl
               <<"Beta2: "  << beta[2]  << std::endl << std::endl;
+    }
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
