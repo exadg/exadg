@@ -69,12 +69,12 @@
 
 #define CONSCONVPBC
 
-//#define VORTEX
+#define VORTEX
 //#define STOKES
 //#define POISEUILLE
 //#define KOVASZNAY
 //#define BELTRAMI
-#define CHANNEL
+//#define CHANNEL
 
 namespace DG_NavierStokes
 {
@@ -86,7 +86,7 @@ namespace DG_NavierStokes
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
   const unsigned int dimension = 2; // dimension >= 2
-  const unsigned int refine_steps_min = 2; //1
+  const unsigned int refine_steps_min = 1; //1
   const unsigned int refine_steps_max = 4;
 
   const double START_TIME = 0.0;
@@ -101,7 +101,7 @@ namespace DG_NavierStokes
   const double VISCOSITY = 0.01;
 
   const double MAX_VELOCITY = 1.4;
-  const double stab_factor = 6.0;
+  const double stab_factor = 1.0;
   const double K=0.0e2; //1.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
@@ -115,6 +115,14 @@ namespace DG_NavierStokes
   const double REL_TOL_PRESSURE = 1.0e-8;
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-8;
+
+  const std::string output_prefix = "vortex";
+
+  const unsigned int output_solver_info_every_timesteps = 1e4;
+  const unsigned int output_solver_info_details = 1e4;
+
+  const unsigned int ORDER_TIME_INTEGRATOR = 3;
+  const bool START_WITH_LOW_ORDER = false;
 #endif
 
 #ifdef POISEUILLE
@@ -197,6 +205,14 @@ namespace DG_NavierStokes
   const double REL_TOL_PRESSURE = 1.0e-8;
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-8;
+
+  const std::string output_prefix = "kovasznay";
+
+   const unsigned int output_solver_info_every_timesteps = 1e4;
+   const unsigned int output_solver_info_details = 1e4;
+
+   const unsigned int ORDER_TIME_INTEGRATOR = 3;
+   const bool START_WITH_LOW_ORDER = false;
 #endif
 
 #ifdef BELTRAMI
@@ -234,6 +250,14 @@ namespace DG_NavierStokes
   const double REL_TOL_PRESSURE = 1.0e-8;
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-8;
+
+  const std::string output_prefix = "beltrami";
+
+   const unsigned int output_solver_info_every_timesteps = 1e4;
+   const unsigned int output_solver_info_details = 1e4;
+
+   const unsigned int ORDER_TIME_INTEGRATOR = 3;
+   const bool START_WITH_LOW_ORDER = false;
 #endif
 
 #ifdef STOKES
@@ -273,7 +297,7 @@ namespace DG_NavierStokes
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-8;
 
-  const std::string output_prefix = "poiseuille";
+  const std::string output_prefix = "stokes";
 
   const unsigned int output_solver_info_every_timesteps = 1e4;
   const unsigned int output_solver_info_details = 1e4;
