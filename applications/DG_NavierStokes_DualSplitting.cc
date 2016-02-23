@@ -64,40 +64,45 @@
 //#define XWALL
 //#define COMPDIV
 #define LOWMEMORY //compute grad-div matrices directly instead of saving them
-#define PRESPARTIAL
-#define DIVUPARTIAL
+//#define PRESPARTIAL
+//#define DIVUPARTIAL
+
 #define CONSCONVPBC
+
 //#define CHANNEL
-#define VORTEX
+#define STOKES
+//#define VORTEX
 //#define POISEUILLE
+//#define KOVASZNAY
+//#define BELTRAMI
 
 namespace DG_NavierStokes
 {
   using namespace dealii;
 
 #ifdef VORTEX
-  const unsigned int fe_degree = 4;
+  const unsigned int fe_degree = 2;//2
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
   const unsigned int dimension = 2; // dimension >= 2
-  const unsigned int refine_steps_min = 3;
-  const unsigned int refine_steps_max = 3;
+  const unsigned int refine_steps_min = 1;//1
+  const unsigned int refine_steps_max = 1;
 
   const double START_TIME = 0.0;
-  const double END_TIME = 1.0; // Poisseuille 5.0;  Kovasznay 1.0
+  const double END_TIME = 1.0;
   const double OUTPUT_INTERVAL_TIME = 0.1;
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 1e6;
-  const double CFL = 16.;
+  const double CFL = 0.001;//0.001
 
-  const double VISCOSITY = 0.025;//1./180.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
+  const double VISCOSITY = 0.01;
 
-  const double MAX_VELOCITY = 1.4; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
+  const double MAX_VELOCITY = 1.4;
   const double stab_factor = 1.0;
-  const double K=0.0e2; //grad-div stabilization/penalty parameter
+  const double K=1.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -122,17 +127,91 @@ namespace DG_NavierStokes
   const unsigned int refine_steps_max = 3;
 
   const double START_TIME = 0.0;
-  const double END_TIME = 1.0; // Poisseuille 5.0;  Kovasznay 1.0
+  const double END_TIME = 1.0;
   const double OUTPUT_INTERVAL_TIME = 0.1;
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 1e6;
-  const double CFL = 0.5;
+  const double CFL = 0.005;
 
   const double VISCOSITY = 0.1;
 
   const double MAX_VELOCITY = 1.0;
+  const double stab_factor = 1.0;
+  const double K=1.0e2; //grad-div stabilization/penalty parameter
+  const double CS = 0.0; // Smagorinsky constant
+  const double ML = 0.0; // mixing-length model for xwall
+  const bool variabletauw = false;
+  const double DTAUW = 1.0;
+
+  const double MAX_WDIST_XWALL = 0.2;
+  const double GRID_STRETCH_FAC = 1.8;
+  const bool pure_dirichlet_bc = false;
+
+  const double REL_TOL_PRESSURE = 1.0e-8;
+  const double ABS_TOL_VISCOUS = 1.0e-12;
+  const double REL_TOL_VISCOUS = 1.0e-8;
+#endif
+
+#ifdef KOVASZNAY
+  const unsigned int fe_degree = 2;
+  const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
+  const unsigned int fe_degree_xwall = 1;
+  const unsigned int n_q_points_1d_xwall = 1;
+  const unsigned int dimension = 2; // dimension >= 2
+  const unsigned int refine_steps_min = 3;
+  const unsigned int refine_steps_max = 3;
+
+  const double START_TIME = 0.0;
+  const double END_TIME = 1.0;
+  const double OUTPUT_INTERVAL_TIME = 0.1;
+  const double OUTPUT_START_TIME = 0.0;
+  const double STATISTICS_START_TIME = 50.0;
+  const bool DIVU_TIMESERIES = false; //true;
+  const int MAX_NUM_STEPS = 1e6;
+  const double CFL = 0.01;
+
+  const double VISCOSITY = 0.025;
+
+  const double MAX_VELOCITY = 3.6;
+  const double stab_factor = 1.0;
+  const double K=1.0e2; //grad-div stabilization/penalty parameter
+  const double CS = 0.0; // Smagorinsky constant
+  const double ML = 0.0; // mixing-length model for xwall
+  const bool variabletauw = false;
+  const double DTAUW = 1.0;
+
+  const double MAX_WDIST_XWALL = 0.2;
+  const double GRID_STRETCH_FAC = 1.8;
+  const bool pure_dirichlet_bc = false;
+
+  const double REL_TOL_PRESSURE = 1.0e-8;
+  const double ABS_TOL_VISCOUS = 1.0e-12;
+  const double REL_TOL_VISCOUS = 1.0e-8;
+#endif
+
+#ifdef BELTRAMI
+  const unsigned int fe_degree = 3;
+  const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
+  const unsigned int fe_degree_xwall = 1;
+  const unsigned int n_q_points_1d_xwall = 1;
+  const unsigned int dimension = 3; // dimension >= 2
+  const unsigned int refine_steps_min = 2;
+  const unsigned int refine_steps_max = 2;
+
+  const double START_TIME = 0.0;
+  const double END_TIME = 1.0;
+  const double OUTPUT_INTERVAL_TIME = 0.1;
+  const double OUTPUT_START_TIME = 0.0;
+  const double STATISTICS_START_TIME = 50.0;
+  const bool DIVU_TIMESERIES = false; //true;
+  const int MAX_NUM_STEPS = 1e6;
+  const double CFL = 0.01;
+
+  const double VISCOSITY = 0.1;
+
+  const double MAX_VELOCITY = 3.5;
   const double stab_factor = 1.0;
   const double K=0.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
@@ -142,7 +221,45 @@ namespace DG_NavierStokes
 
   const double MAX_WDIST_XWALL = 0.2;
   const double GRID_STRETCH_FAC = 1.8;
-  const bool pure_dirichlet_bc = false;
+  const bool pure_dirichlet_bc = true;
+
+  const double REL_TOL_PRESSURE = 1.0e-8;
+  const double ABS_TOL_VISCOUS = 1.0e-12;
+  const double REL_TOL_VISCOUS = 1.0e-8;
+#endif
+
+#ifdef STOKES
+  const unsigned int fe_degree = 3;//3
+  const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
+  const unsigned int fe_degree_xwall = 1;
+  const unsigned int n_q_points_1d_xwall = 1;
+  const unsigned int dimension = 2; // dimension >= 2
+  const unsigned int refine_steps_min = 2;//2
+  const unsigned int refine_steps_max = 2;
+
+  const double START_TIME = 0.0;
+  const double END_TIME = 1.0;
+  const double OUTPUT_INTERVAL_TIME = 0.1;
+  const double OUTPUT_START_TIME = 0.0;
+  const double STATISTICS_START_TIME = 50.0;
+  const bool DIVU_TIMESERIES = true;
+  const int MAX_NUM_STEPS = 1e6;
+  const double CFL = 0.2; // CFL number irrelevant for Stokes flow problem
+  const double TIME_STEP_SIZE = 5.0e-4; //5.0e-4
+
+  const double VISCOSITY = 1.0;
+
+  const double MAX_VELOCITY = 2.65; // MAX_VELOCITY also irrelevant
+  const double stab_factor = 1.0;
+  const double K=0.0e2; //grad-div stabilization/penalty parameter
+  const double CS = 0.0; // Smagorinsky constant
+  const double ML = 0.0; // mixing-length model for xwall
+  const bool variabletauw = false;
+  const double DTAUW = 1.0;
+
+  const double MAX_WDIST_XWALL = 0.2;
+  const double GRID_STRETCH_FAC = 1.8;
+  const bool pure_dirichlet_bc = true;
 
   const double REL_TOL_PRESSURE = 1.0e-8;
   const double ABS_TOL_VISCOUS = 1.0e-12;
@@ -192,9 +309,7 @@ namespace DG_NavierStokes
   const unsigned int output_solver_info_every_timesteps = 1e4;
   const unsigned int output_solver_info_details = 1e4;
 
-  const double lambda = 0.5/VISCOSITY - std::pow(0.25/std::pow(VISCOSITY,2.0)+4.0*std::pow(numbers::PI,2.0),0.5);
-
-  const unsigned int ORDER_TIME_INTEGRATOR = 3;
+  const unsigned int ORDER_TIME_INTEGRATOR = 2;
   const bool START_WITH_LOW_ORDER = false;
 
   template<int dim>
@@ -300,17 +415,21 @@ namespace DG_NavierStokes
     /********************************************************************/
 
     /************************* Kovasznay flow ***************************/
-//    const double pi = numbers::PI;
-//    if (component == 0)
-//      result = 1.0 - std::exp(lambda*p[0])*std::cos(2*pi*p[1]);
-//    else if (component == 1)
-//      result = lambda/2.0/pi*std::exp(lambda*p[0])*std::sin(2*pi*p[1]);
-//    else if (component == dim)
-//      result = 0.5*(1.0-std::exp(2.0*lambda*p[0]));
+#ifdef KOVASZNAY
+    const double pi = numbers::PI;
+    const double lambda = 0.5/VISCOSITY - std::pow(0.25/std::pow(VISCOSITY,2.0)+4.0*std::pow(numbers::PI,2.0),0.5);
+    if (component == 0)
+      result = 1.0 - std::exp(lambda*p[0])*std::cos(2*pi*p[1]);
+    else if (component == 1)
+      result = lambda/2.0/pi*std::exp(lambda*p[0])*std::sin(2*pi*p[1]);
+    else if (component == dim)
+      result = 0.5*(1.0-std::exp(2.0*lambda*p[0]));
+#endif
     /********************************************************************/
 
     /************************* Beltrami flow ****************************/
-    /*const double pi = numbers::PI;
+#ifdef BELTRAMI
+    const double pi = numbers::PI;
     const double a = 0.25*pi;
     const double d = 2*a;
     if (component == 0)
@@ -323,23 +442,26 @@ namespace DG_NavierStokes
         result = -a*a*0.5*(std::exp(2*a*p[0]) + std::exp(2*a*p[1]) + std::exp(2*a*p[2]) +
                            2*std::sin(a*p[0]+d*p[1])*std::cos(a*p[2]+d*p[0])*std::exp(a*(p[1]+p[2])) +
                            2*std::sin(a*p[1]+d*p[2])*std::cos(a*p[0]+d*p[1])*std::exp(a*(p[2]+p[0])) +
-                           2*std::sin(a*p[2]+d*p[0])*std::cos(a*p[1]+d*p[2])*std::exp(a*(p[0]+p[1]))) * std::exp(-2*VISCOSITY*d*d*t);*/
+                           2*std::sin(a*p[2]+d*p[0])*std::cos(a*p[1]+d*p[2])*std::exp(a*(p[0]+p[1]))) * std::exp(-2*VISCOSITY*d*d*t);
+#endif
     /********************************************************************/
 
     /************* Stokes problem (Guermond,2003 & 2006) ****************/
-//    const double pi = numbers::PI;
-//    double sint = std::sin(t);
-//    double sinx = std::sin(pi*p[0]);
-//    double siny = std::sin(pi*p[1]);
-//    double cosx = std::cos(pi*p[0]);
-//    double sin2x = std::sin(2.*pi*p[0]);
-//    double sin2y = std::sin(2.*pi*p[1]);
-//    if (component == 0)
-//      result = pi*sint*sin2y*pow(sinx,2.);
-//    else if (component == 1)
-//      result = -pi*sint*sin2x*pow(siny,2.);
-//    else if (component == dim)
-//      result = cosx*siny*sint;
+#ifdef STOKES
+    const double pi = numbers::PI;
+    double sint = std::sin(t);
+    double sinx = std::sin(pi*p[0]);
+    double siny = std::sin(pi*p[1]);
+    double cosx = std::cos(pi*p[0]);
+    double sin2x = std::sin(2.*pi*p[0]);
+    double sin2y = std::sin(2.*pi*p[1]);
+    if (component == 0)
+      result = pi*sint*sin2y*pow(sinx,2.);
+    else if (component == 1)
+      result = -pi*sint*sin2x*pow(siny,2.);
+    else if (component == dim)
+      result = cosx*siny*sint;
+#endif
     /********************************************************************/
 
   return result;
@@ -368,11 +490,23 @@ namespace DG_NavierStokes
     (void)t;
 
     // Kovasznay flow
+#ifdef KOVASZNAY
+    // Laplace formulation of viscous term -> prescribe velocity gradient (grad U)*n on Gamma_N
 //    const double pi = numbers::PI;
+//    const double lambda = 0.5/VISCOSITY - std::pow(0.25/std::pow(VISCOSITY,2.0)+4.0*std::pow(numbers::PI,2.0),0.5);
 //    if (component == 0)
 //      result = -lambda*std::exp(lambda)*std::cos(2*pi*p[1]);
 //    else if (component == 1)
 //      result = std::pow(lambda,2.0)/2/pi*std::exp(lambda)*std::sin(2*pi*p[1]);
+
+    // Divergence formulation of viscous term -> prescribe (grad U + (grad U) ^T)*n on Gamma_N
+    const double pi = numbers::PI;
+    const double lambda = 0.5/VISCOSITY - std::pow(0.25/std::pow(VISCOSITY,2.0)+4.0*std::pow(numbers::PI,2.0),0.5);
+    if (component == 0)
+      result = -2.0*lambda*std::exp(lambda)*std::cos(2*pi*p[1]);
+    else if (component == 1)
+      result = (std::pow(lambda,2.0)/2/pi+2.0*pi)*std::exp(lambda)*std::sin(2*pi*p[1]);
+#endif
 
     //Taylor vortex (Shahbazi et al.,2007)
 //    const double pi = numbers::PI;
@@ -418,37 +552,9 @@ namespace DG_NavierStokes
 #endif
 
 #ifdef POISEUILLE
-//    if(component==1)
-//      result = - MAX_VELOCITY * 2.0 * p[1];
+    if(component==1)
+      result = - MAX_VELOCITY * 2.0 * p[1];
 #endif
-    return result;
-  }
-
-  template<int dim>
-  class NeumannBoundaryPressure : public Function<dim>
-  {
-  public:
-  NeumannBoundaryPressure (const unsigned int   n_components = 1,
-                 const double       time = 0.) : Function<dim>(n_components, time) {}
-
-    virtual ~NeumannBoundaryPressure(){};
-
-    virtual double value (const Point<dim> &p,const unsigned int component = 0) const;
-  };
-
-  template<int dim>
-  double NeumannBoundaryPressure<dim>::value(const Point<dim> &p,const unsigned int /* component */) const
-  {
-    double result = 0.0;
-    // Kovasznay flow
-//    if(std::abs(p[0]+1.0)<1.0e-12)
-//      result = lambda*std::exp(2.0*lambda*p[0]);
-
-    // Poiseuille
-//    const double pressure_gradient = -0.01;
-//    if(std::abs(p[0]+1.0)<1.0e-12)
-//      result = -pressure_gradient;
-
     return result;
   }
 
@@ -486,24 +592,26 @@ namespace DG_NavierStokes
   double result = 0.0;
   (void)t;
 
+#ifdef STOKES
   // Stokes problem (Guermond,2003 & 2006)
-//  const double pi = numbers::PI;
-//  double sint = std::sin(t);
-//  double cost = std::cos(t);
-//  double sinx = std::sin(pi*p[0]);
-//  double siny = std::sin(pi*p[1]);
-//  double cosx = std::cos(pi*p[0]);
-//  double cosy = std::cos(pi*p[1]);
-//  double sin2x = std::sin(2.*pi*p[0]);
-//  double sin2y = std::sin(2.*pi*p[1]);
-//  if (component == 0)
-//    result = pi*cost*sin2y*pow(sinx,2.)
-//        - 2.*pow(pi,3.)*sint*sin2y*(1.-4.*pow(sinx,2.))
-//        - pi*sint*sinx*siny;
-//  else if (component == 1)
-//    result = -pi*cost*sin2x*pow(siny,2.)
-//        + 2.*pow(pi,3.)*sint*sin2x*(1.-4.*pow(siny,2.))
-//        + pi*sint*cosx*cosy;
+  const double pi = numbers::PI;
+  double sint = std::sin(t);
+  double cost = std::cos(t);
+  double sinx = std::sin(pi*p[0]);
+  double siny = std::sin(pi*p[1]);
+  double cosx = std::cos(pi*p[0]);
+  double cosy = std::cos(pi*p[1]);
+  double sin2x = std::sin(2.*pi*p[0]);
+  double sin2y = std::sin(2.*pi*p[1]);
+  if (component == 0)
+    result = pi*cost*sin2y*pow(sinx,2.)
+        - 2.*pow(pi,3.)*sint*sin2y*(1.-4.*pow(sinx,2.))
+        - pi*sint*sinx*siny;
+  else if (component == 1)
+    result = -pi*cost*sin2x*pow(siny,2.)
+        + 2.*pow(pi,3.)*sint*sin2x*(1.-4.*pow(siny,2.))
+        + pi*sint*cosx*cosy;
+#endif
 
   return result;
   }
@@ -543,30 +651,33 @@ namespace DG_NavierStokes
   else if(component == 1)
     result = -4.0*pi*pi*VISCOSITY*std::sin(2.0*pi*p[0])*std::exp(-4.0*pi*pi*VISCOSITY*t);
 #endif
+
   // Beltrami flow
-//  const double pi = numbers::PI;
-//  const double a = 0.25*pi;
-//  const double d = 2*a;
-//  if (component == 0)
-//    result = a*VISCOSITY*d*d*(std::exp(a*p[0])*std::sin(a*p[1]+d*p[2]) + std::exp(a*p[2])*std::cos(a*p[0]+d*p[1]))*std::exp(-VISCOSITY*d*d*t);
-//  else if (component == 1)
-//    result = a*VISCOSITY*d*d*(std::exp(a*p[1])*std::sin(a*p[2]+d*p[0]) + std::exp(a*p[0])*std::cos(a*p[1]+d*p[2]))*std::exp(-VISCOSITY*d*d*t);
-//  else if (component == 2)
-//    result = a*VISCOSITY*d*d*(std::exp(a*p[2])*std::sin(a*p[0]+d*p[1]) + std::exp(a*p[1])*std::cos(a*p[2]+d*p[0]))*std::exp(-VISCOSITY*d*d*t);
+#ifdef BELTRAMI
+  const double pi = numbers::PI;
+  const double a = 0.25*pi;
+  const double d = 2*a;
+  if (component == 0)
+    result = a*VISCOSITY*d*d*(std::exp(a*p[0])*std::sin(a*p[1]+d*p[2]) + std::exp(a*p[2])*std::cos(a*p[0]+d*p[1]))*std::exp(-VISCOSITY*d*d*t);
+  else if (component == 1)
+    result = a*VISCOSITY*d*d*(std::exp(a*p[1])*std::sin(a*p[2]+d*p[0]) + std::exp(a*p[0])*std::cos(a*p[1]+d*p[2]))*std::exp(-VISCOSITY*d*d*t);
+  else if (component == 2)
+    result = a*VISCOSITY*d*d*(std::exp(a*p[2])*std::sin(a*p[0]+d*p[1]) + std::exp(a*p[1])*std::cos(a*p[2]+d*p[0]))*std::exp(-VISCOSITY*d*d*t);
+#endif
 
   // Stokes problem (Guermond,2003 & 2006)
-//  const double pi = numbers::PI;
-//  double cost = std::cos(t);
-//  double sinx = std::sin(pi*p[0]);
-//  double siny = std::sin(pi*p[1]);
-//  double cosx = std::cos(pi*p[0]);
-//  double cosy = std::cos(pi*p[1]);
-//  double sin2x = std::sin(2.*pi*p[0]);
-//  double sin2y = std::sin(2.*pi*p[1]);
-//  if (component == 0)
-//    result = pi*cost*sin2y*pow(sinx,2.);
-//  else if (component == 1)
-//    result = -pi*cost*sin2x*pow(siny,2.);
+#ifdef STOKES
+  const double pi = numbers::PI;
+  double cost = std::cos(t);
+  double sinx = std::sin(pi*p[0]);
+  double siny = std::sin(pi*p[1]);
+  double sin2x = std::sin(2.*pi*p[0]);
+  double sin2y = std::sin(2.*pi*p[1]);
+  if (component == 0)
+    result = pi*cost*sin2y*pow(sinx,2.);
+  else if (component == 1)
+    result = -pi*cost*sin2x*pow(siny,2.);
+#endif
 
   return result;
   }
@@ -2830,7 +2941,8 @@ public:
   static const unsigned int number_vorticity_components = (dim==2) ? 1 : dim;
 
   NavierStokesOperation(const DoFHandler<dim> &dof_handler,const DoFHandler<dim> &dof_handler_p, const DoFHandler<dim> &dof_handler_xwall, const double time_step_size,
-      const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs);
+      const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
+      std::set<types::boundary_id> dirichlet_bc_indicator, std::set<types::boundary_id> neumann_bc_indicator);
 
   ~NavierStokesOperation()
   {
@@ -2841,6 +2953,8 @@ public:
 
   void  rhs_convection (const std::vector<parallel::distributed::Vector<value_type> > &src,
                 std::vector<parallel::distributed::Vector<value_type> >    &dst);
+
+  void  compute_rhs (std::vector<parallel::distributed::Vector<value_type> >  &dst);
 
   void  apply_viscous (const parallel::distributed::BlockVector<value_type>     &src,
                    parallel::distributed::BlockVector<value_type>      &dst) const;
@@ -2915,6 +3029,9 @@ public:
 
   mutable std_cxx11::shared_ptr<Threads::ThreadLocalStorage<InverseMassMatrixData<dim,fe_degree,value_type> > > mass_matrix_data;
 
+  std::set<types::boundary_id> dirichlet_boundary;
+  std::set<types::boundary_id> neumann_boundary;
+
   void update_time_integrator(unsigned int time_step_number);
   void check_time_integrator(unsigned int time_step_number);
 
@@ -2933,6 +3050,11 @@ public:
                       std::vector<parallel::distributed::Vector<double> >      &dst,
                       const std::vector<parallel::distributed::Vector<double> >  &src,
                       const std::pair<unsigned int,unsigned int>          &face_range) const;
+
+  void local_compute_rhs (const MatrixFree<dim,value_type>                &data,
+                        std::vector<parallel::distributed::Vector<double> >     &dst,
+                        const std::vector<parallel::distributed::Vector<double> >   &,
+                        const std::pair<unsigned int,unsigned int>          &cell_range) const;
 
   void local_apply_viscous (const MatrixFree<dim,value_type>        &data,
                         parallel::distributed::BlockVector<double>      &dst,
@@ -3075,7 +3197,9 @@ public:
                                                                        const DoFHandler<dim> &dof_handler_p,
                                                                        const DoFHandler<dim> &dof_handler_xwall,
                                                                        const double time_step_size,
-                                                                       const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs):
+                                                                       const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
+                                                                       std::set<types::boundary_id> dirichlet_bc_indicator,
+                                                                       std::set<types::boundary_id> neumann_bc_indicator):
 #ifdef XWALL
   rhs_visc(6),
   solution_temp_visc(6),
@@ -3093,7 +3217,9 @@ public:
   times_cg_pressure(2),
   iterations_cg_pressure(2),
   element_volume(0),
-  xwall(dof_handler,&data,viscosity,element_volume)
+  xwall(dof_handler,&data,viscosity,element_volume),
+  dirichlet_boundary(dirichlet_bc_indicator),
+  neumann_boundary(neumann_bc_indicator)
   {
     alpha[0] = beta[0] = 1.;
     alpha[1] = alpha[2] = beta[1] = beta[2] = 0.;
@@ -3153,11 +3279,11 @@ public:
   solver_data.poisson_dof_index = 1;
   solver_data.poisson_quad_index = 1;
   solver_data.periodic_face_pairs_level0 = periodic_face_pairs;
-  solver_data.penalty_factor = stab_factor;
+  solver_data.penalty_factor = stab_factor; //stab_factor/nu*delta_t;
   solver_data.solver_tolerance = REL_TOL_PRESSURE;
-  solver_data.dirichlet_boundaries.insert(1);
-  solver_data.neumann_boundaries.insert(0);
-  solver_data.coarse_solver = PoissonSolverData<dim>::coarse_chebyshev_smoother;
+  solver_data.dirichlet_boundaries = neumann_boundary;
+  solver_data.neumann_boundaries = dirichlet_boundary;
+  solver_data.coarse_solver = PoissonSolverData<dim>::coarse_iterative_jacobi;
   pressure_poisson_solver.initialize(mapping, data, solver_data);
 
 //  smoother_data_viscous.smoothing_range = 30;
@@ -3416,17 +3542,19 @@ public:
     time = cur_time;
     time_step = delta_t;
 
-    if(START_WITH_LOW_ORDER == false)
+    if(START_WITH_LOW_ORDER == false && time_step_number == 1)
+    {
       update_time_integrator(ORDER_TIME_INTEGRATOR-1);
 
-    // calculate rhs_convection using the analytical solution at time t_nm and t_nm2
-    time-=time_step;
-    rhs_convection(solution_nm,rhs_convection_nm);
-    time-=time_step;
-    rhs_convection(solution_nm2,rhs_convection_nm2);
+      // calculate rhs_convection using the analytical solution at time t_nm and t_nm2
+      time-=time_step;
+      rhs_convection(solution_nm,rhs_convection_nm);
+      time-=time_step;
+      rhs_convection(solution_nm2,rhs_convection_nm2);
 
-    // reset time
-    time = cur_time;
+      // reset time
+      time = cur_time;
+    }
 
     if(time_step_number < ORDER_TIME_INTEGRATOR+1)
       check_time_integrator(time_step_number);
@@ -3471,11 +3599,15 @@ public:
     Timer timer;
     timer.restart();
     rhs_convection(solution_n,rhs_convection_n);
+    compute_rhs(f);
     for (unsigned int d=0; d<dim; ++d)
     {
       solution_np[d].equ(beta[0],rhs_convection_n[d]);
       solution_np[d].add(beta[1],rhs_convection_nm[d],beta[2],rhs_convection_nm2[d]); // Stokes problem: velocity_temp[d] = f[d];
       solution_np[d] += f[d];
+#ifdef STOKES
+      solution_np[d] = f[d];
+#endif
       solution_np[d].sadd(time_step,alpha[0],solution_n[d]);
       solution_np[d].add(alpha[1],solution_nm[d],alpha[2],solution_nm2[d]);
       //xwall
@@ -3500,6 +3632,11 @@ public:
 
     unsigned int pres_niter = pressure_poisson_solver.solve(solution_np[dim], rhs_p);
 
+    if(pure_dirichlet_bc)
+    {
+      shift_pressure(solution_np[dim]);
+    }
+
     if(time_step_number%output_solver_info_every_timesteps == 0)
       {
         Utilities::System::MemoryStats stats;
@@ -3520,7 +3657,7 @@ public:
   /*************************************************************************/
 
   /********************** STEP 3: projection *******************************/
-    timer.restart();
+  timer.restart();
 
   apply_projection(solution_np,velocity_temp);
 
@@ -3528,9 +3665,9 @@ public:
   /*************************************************************************/
 
   /************************ STEP 4: viscous term ***************************/
-    timer.restart();
+  timer.restart();
 
-    rhs_viscous(velocity_temp,rhs_visc);
+  rhs_viscous(velocity_temp,rhs_visc);
 
   // set maximum number of iterations, tolerance
   ReductionControl solver_control_velocity (1e5, ABS_TOL_VISCOUS, REL_TOL_VISCOUS);//1.e-5
@@ -3647,13 +3784,13 @@ public:
   check_time_integrator(unsigned int time_step_number)
   {
     std::cout << "Time integrator constants: time step "<< time_step_number << std::endl
-              <<"Gamma0: " << gamma0 << std::endl
+              <<"Gamma0: " << gamma0   << std::endl
               <<"Alpha0: " << alpha[0] << std::endl
               <<"Alpha1: " << alpha[1] << std::endl
               <<"Alpha2: " << alpha[2] << std::endl
-              <<"Beta0: "  << beta[0] << std::endl
-              <<"Beta1: "  << beta[1] << std::endl
-              <<"Beta2: "  << beta[2] << std::endl << std::endl;
+              <<"Beta0: "  << beta[0]  << std::endl
+              <<"Beta1: "  << beta[1]  << std::endl
+              <<"Beta2: "  << beta[2]  << std::endl << std::endl;
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -4115,7 +4252,7 @@ public:
 
       for(unsigned int q=0;q<fe_eval_xwall.n_q_points;++q)
       {
-        if (data.get_boundary_indicator(face) == 0) // Infow and wall boundaries
+        if (dirichlet_boundary.find(data.get_boundary_indicator(face)) != dirichlet_boundary.end()) // Infow and wall boundaries
         {
           // applying inhomogeneous Dirichlet BC (value+ = - value- + 2g , grad+ = grad-)
           VectorizedArray<value_type> uM = fe_eval_xwall.get_value(q);
@@ -4128,7 +4265,7 @@ public:
           fe_eval_xwall.submit_normal_gradient(-0.5*fe_eval_xwall.eddyvisc[q]*jump_value,q);
           fe_eval_xwall.submit_value(-fe_eval_xwall.eddyvisc[q]*average_gradient,q);
         }
-        else if (data.get_boundary_indicator(face) == 1) // Outflow boundary
+        else if (neumann_boundary.find(data.get_boundary_indicator(face)) != neumann_boundary.end()) // Outflow boundary
         {
           // applying inhomogeneous Neumann BC (value+ = value- , grad+ =  - grad- +2h)
           VectorizedArray<value_type> jump_value = make_vectorized_array<value_type>(0.0);
@@ -4167,6 +4304,19 @@ public:
 
   data.cell_loop(&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_mass_matrix,
                              this, dst, dst);
+  }
+
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  compute_rhs (std::vector<parallel::distributed::Vector<value_type> >  &dst)
+  {
+  for(unsigned int d=0;d<dim;++d)
+    dst[d] = 0;
+
+  // data.loop
+  data.cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_rhs,this, dst, dst);
+  // data.cell_loop
+  data.cell_loop(&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_mass_matrix,this, dst, dst);
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -4237,25 +4387,8 @@ public:
           = outer_product(u,u);
         fe_eval_xwall.submit_gradient (F, q);
 
-        // include rhs force term
-        Point<dim,VectorizedArray<value_type> > q_points = fe_eval_xwall.quadrature_point(q);
-        Tensor<1,dim,VectorizedArray<value_type> > rhs;
-        for(unsigned int d=0;d<dim;++d)
-          {
-            RHS<dim> f(d,time+time_step);
-            value_type array [VectorizedArray<value_type>::n_array_elements];
-            for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
-              {
-                Point<dim> q_point;
-                for (unsigned int d=0; d<dim; ++d)
-                  q_point[d] = q_points[d][n];
-                array[n] = f.value(q_point);
-              }
-            rhs[d].load(&array[0]);
-          }
-        fe_eval_xwall.submit_value (rhs, q);
       }
-      fe_eval_xwall.integrate (true,true);
+      fe_eval_xwall.integrate (false,true);
       fe_eval_xwall.distribute_local_to_global (dst,0, dst, dim);
     }
   }
@@ -4349,7 +4482,7 @@ public:
 
     for(unsigned int q=0;q<fe_eval_xwall.n_q_points;++q)
     {
-      if (data.get_boundary_indicator(face) == 0) // Infow and wall boundaries
+      if (dirichlet_boundary.find(data.get_boundary_indicator(face)) != dirichlet_boundary.end()) // Infow and wall boundaries
       {
         // applying inhomogeneous Dirichlet BC (value+ = - value- + 2g , grad+ = grad-)
         Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_xwall.get_value(q);
@@ -4388,7 +4521,7 @@ public:
 
         fe_eval_xwall.submit_value(-lf_flux,q);
       }
-      else if (data.get_boundary_indicator(face) == 1) // Outflow boundary
+      else if (neumann_boundary.find(data.get_boundary_indicator(face)) != neumann_boundary.end()) // Outflow boundary
       {
         // applying inhomogeneous Neumann BC (value+ = value- , grad+ = - grad- +2h)
         Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_xwall.get_value(q);
@@ -4439,6 +4572,49 @@ public:
 //      ...;
 //    }
 //  }
+
+  template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  local_compute_rhs (const MatrixFree<dim,value_type>             &data,
+          std::vector<parallel::distributed::Vector<double> >     &dst,
+          const std::vector<parallel::distributed::Vector<double> > &,
+          const std::pair<unsigned int,unsigned int>          &cell_range) const
+  {
+    // (data,0,0) : second argument: which dof-handler, third argument: which quadrature
+#ifdef XWALL
+    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall (data,xwallstatevec[0],xwallstatevec[1],0,3);
+#else
+    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall (data,xwallstatevec[0],xwallstatevec[1],0,0);
+#endif
+
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval_xwall.reinit (cell);
+
+      for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
+      {
+        Point<dim,VectorizedArray<value_type> > q_points = fe_eval_xwall.quadrature_point(q);
+        Tensor<1,dim,VectorizedArray<value_type> > rhs;
+        for(unsigned int d=0;d<dim;++d)
+        {
+          RHS<dim> f(d,time+time_step);
+          value_type array [VectorizedArray<value_type>::n_array_elements];
+          for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+          {
+            Point<dim> q_point;
+            for (unsigned int d=0; d<dim; ++d)
+            q_point[d] = q_points[d][n];
+            array[n] = f.value(q_point);
+          }
+          rhs[d].load(&array[0]);
+        }
+        fe_eval_xwall.submit_value (rhs, q);
+      }
+      fe_eval_xwall.integrate (true,false);
+      fe_eval_xwall.distribute_local_to_global(dst,0, dst, dim);
+    }
+  }
+
 
   template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
@@ -4581,7 +4757,7 @@ public:
 
       for(unsigned int q=0;q<fe_eval_xwall.n_q_points;++q)
       {
-        if (data.get_boundary_indicator(face) == 0) // Infow and wall boundaries
+        if (dirichlet_boundary.find(data.get_boundary_indicator(face)) != dirichlet_boundary.end()) // Infow and wall boundaries
         {
           // applying inhomogeneous Dirichlet BC (value+ = - value- + 2g , grad+ = grad-)
           Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_xwall.get_value(q);
@@ -4609,7 +4785,7 @@ public:
           fe_eval_xwall.submit_value(-fe_eval_xwall.eddyvisc[q]*average_gradient,q);
 
         }
-        else if (data.get_boundary_indicator(face) == 1) // Outflow boundary
+        else if (neumann_boundary.find(data.get_boundary_indicator(face)) != neumann_boundary.end()) // Outflow boundary
         {
           // applying inhomogeneous Neumann BC (value+ = value- , grad+ =  - grad- +2h)
           Tensor<1,dim,VectorizedArray<value_type> > jump_value;
@@ -4697,7 +4873,7 @@ public:
 
       for(unsigned int q=0;q<fe_eval_xwall.n_q_points;++q)
       {
-        if (data.get_boundary_indicator(face) == 0) // Infow and wall boundaries
+        if (dirichlet_boundary.find(data.get_boundary_indicator(face)) != dirichlet_boundary.end()) // Infow and wall boundaries
         {
           // applying inhomogeneous Dirichlet BC (value+ = - value- + 2g , grad+ = grad-)
           Point<dim,VectorizedArray<value_type> > q_points = fe_eval_xwall.quadrature_point(q);
@@ -4724,7 +4900,7 @@ public:
           fe_eval_xwall.submit_value(2.0*sigmaF*g_np,q);
 
         }
-        else if (data.get_boundary_indicator(face) == 1) // Outflow boundary
+        else if (neumann_boundary.find(data.get_boundary_indicator(face)) != neumann_boundary.end()) // Outflow boundary
         {
           // applying inhomogeneous Neumann BC (value+ = value- , grad+ = - grad- +2h)
           Point<dim,VectorizedArray<value_type> > q_points = fe_eval_xwall.quadrature_point(q);
@@ -5189,10 +5365,17 @@ public:
       matrices[v].reinit(total_dofs_per_cell, total_dofs_per_cell);
 
     // compute grad-div parameter
-    //use definition Franca_Barrenacha_Valentin_Frey_Wall in Baci
+    //use definition Ohlhanskii et al. (2009)
+#ifdef STOKES
+    const VectorizedArray<value_type> tau = K*normmeanvel*std::pow(volume,1./(double)dim) + make_vectorized_array<value_type>(VISCOSITY*K);
+//    const VectorizedArray<value_type> tau = make_vectorized_array<value_type>(VISCOSITY*K);
+#else
     const VectorizedArray<value_type> tau =
-      K*0.5*normmeanvel*std::pow(volume,1./(double)dim);
+      K*normmeanvel*std::pow(volume,1./(double)dim);
+#endif
 
+//    std::cout << "tau" << tau[0] << "  " << tau[1] << std::endl;
+//    std::cout << "vel  " << normmeanvel[0] << "  " << normmeanvel[1] << std::endl;
     for (unsigned int j=0; j<total_dofs_per_cell; ++j)
     {
       for (unsigned int i=0; i<total_dofs_per_cell; ++i)
@@ -5224,6 +5407,7 @@ public:
               (matrices[v])(j,j) = 1.0;
           }
     }
+
 //      for (unsigned int i=0; i<10; ++i)
 //        std::cout << std::endl;
 //      for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
@@ -5412,9 +5596,14 @@ public:
          matrices[v] = 0;
 
      // compute grad-div parameter
-     //use definition Franca_Barrenacha_Valentin_Frey_Wall in Baci
+     //use definition Ohlhanskii et al. (2009)
+#ifdef STOKES
+     const VectorizedArray<value_type> tau = K*normmeanvel*std::pow(volume,1./(double)dim) + make_vectorized_array<value_type>(VISCOSITY*K);
+//     const VectorizedArray<value_type> tau = make_vectorized_array<value_type>(VISCOSITY*K);
+#else
      const VectorizedArray<value_type> tau =
-       K*0.5*normmeanvel*std::pow(volume,1./(double)dim);
+       K*normmeanvel*std::pow(volume,1./(double)dim);
+#endif
 
      //now apply vectors to inverse matrix
 //     for (unsigned int q=0; q<velocity.n_q_points; ++q)
@@ -5665,8 +5854,8 @@ public:
             const std::pair<unsigned int,unsigned int>           &cell_range) const
   {
 #ifdef XWALL
-    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall (data,xwallstatevec[0],xwallstatevec[1],0,3);
-    FEEvaluation<dim,fe_degree_p,n_q_points_1d_xwall,1,value_type> pressure (data,1,3);
+  FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall (data,xwallstatevec[0],xwallstatevec[1],0,3);
+  FEEvaluation<dim,fe_degree_p,n_q_points_1d_xwall,1,value_type> pressure (data,1,3);
 #else
   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree_p+1,dim,value_type> fe_eval_xwall (data,xwallstatevec[0],xwallstatevec[1],0,1);
   FEEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> pressure (data,1,1);
@@ -5816,105 +6005,58 @@ public:
 
     for(unsigned int q=0;q<pressure.n_q_points;++q)
     {
-      if (data.get_boundary_indicator(face) == 0) // Inflow and wall boundaries
+      if (dirichlet_boundary.find(data.get_boundary_indicator(face)) != dirichlet_boundary.end()) // Inflow and wall boundaries
       {
         // p+ =  p-
         Point<dim,VectorizedArray<value_type> > q_points = pressure.quadrature_point(q);
         VectorizedArray<value_type> h;
 
-//        NeumannBoundaryPressure<dim> neumann_boundary(1,time+time_step);
-//        value_type array [VectorizedArray<value_type>::n_array_elements];
-//        for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
-//        {
-//          Point<dim> q_point;
-//          for (unsigned int d=0; d<dim; ++d)
-//          q_point[d] = q_points[d][n];
-//          array[n] = neumann_boundary.value(q_point);
-//        }
-//        h.load(&array[0]);
-
-//          Tensor<1,dim,VectorizedArray<value_type> > dudt_n, rhs_n;
-//          for(unsigned int d=0;d<dim;++d)
-//          {
-//            PressureBC_dudt<dim> neumann_boundary_pressure(d,time);
-//            value_type array_dudt [VectorizedArray<value_type>::n_array_elements];
-//            value_type array_f [VectorizedArray<value_type>::n_array_elements];
-//            for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
-//            {
-//              Point<dim> q_point;
-//              for (unsigned int d=0; d<dim; ++d)
-//              q_point[d] = q_points[d][n];
-//              array_dudt[n] = neumann_boundary_pressure.value(q_point);
-//              array_f[n] = f.value(q_point);
-//            }
-//            dudt_n[d].load(&array_dudt[0]);
-//            rhs_n[d].load(&array_f[0]);
-//          }
-//          Tensor<1,dim,VectorizedArray<value_type> > dudt_nm, rhs_nm;
-//          for(unsigned int d=0;d<dim;++d)
-//          {
-//            PressureBC_dudt<dim> neumann_boundary_pressure(d,time-time_step);
-//            RHS<dim> f(d,time-time_step);
-//            value_type array_dudt [VectorizedArray<value_type>::n_array_elements];
-//            value_type array_f [VectorizedArray<value_type>::n_array_elements];
-//            for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
-//            {
-//              Point<dim> q_point;
-//              for (unsigned int d=0; d<dim; ++d)
-//              q_point[d] = q_points[d][n];
-//              array_dudt[n] = neumann_boundary_pressure.value(q_point);
-//              array_f[n] = f.value(q_point);
-//            }
-//            dudt_nm[d].load(&array_dudt[0]);
-//            rhs_nm[d].load(&array_f[0]);
-//          }
-
-          Tensor<1,dim,VectorizedArray<value_type> > dudt_np, rhs_np;
-          for(unsigned int d=0;d<dim;++d)
+        Tensor<1,dim,VectorizedArray<value_type> > dudt_np, rhs_np;
+        for(unsigned int d=0;d<dim;++d)
+        {
+          PressureBC_dudt<dim> neumann_boundary_pressure(d,time+time_step);
+          RHS<dim> f(d,time+time_step);
+          value_type array_dudt [VectorizedArray<value_type>::n_array_elements];
+          value_type array_f [VectorizedArray<value_type>::n_array_elements];
+          for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
           {
-            PressureBC_dudt<dim> neumann_boundary_pressure(d,time+time_step);
-            RHS<dim> f(d,time+time_step);
-            value_type array_dudt [VectorizedArray<value_type>::n_array_elements];
-            value_type array_f [VectorizedArray<value_type>::n_array_elements];
-            for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
-            {
-              Point<dim> q_point;
-              for (unsigned int d=0; d<dim; ++d)
-              q_point[d] = q_points[d][n];
-              array_dudt[n] = neumann_boundary_pressure.value(q_point);
-              array_f[n] = f.value(q_point);
-            }
-            dudt_np[d].load(&array_dudt[0]);
-            rhs_np[d].load(&array_f[0]);
+            Point<dim> q_point;
+            for (unsigned int d=0; d<dim; ++d)
+            q_point[d] = q_points[d][n];
+            array_dudt[n] = neumann_boundary_pressure.value(q_point);
+            array_f[n] = f.value(q_point);
           }
+          dudt_np[d].load(&array_dudt[0]);
+          rhs_np[d].load(&array_f[0]);
+        }
 
         Tensor<1,dim,VectorizedArray<value_type> > normal = pressure.get_normal_vector(q);
-          Tensor<1,dim,VectorizedArray<value_type> > u_n = fe_eval_xwall_n.get_value(q);
-          Tensor<2,dim,VectorizedArray<value_type> > grad_u_n = fe_eval_xwall_n.get_gradient(q);
-          Tensor<1,dim,VectorizedArray<value_type> > conv_n = grad_u_n * u_n;
-          Tensor<1,dim,VectorizedArray<value_type> > u_nm = fe_eval_xwall_nm.get_value(q);
-          Tensor<2,dim,VectorizedArray<value_type> > grad_u_nm = fe_eval_xwall_nm.get_gradient(q);
-          Tensor<1,dim,VectorizedArray<value_type> > u_nm2 = fe_eval_xwall_nm2.get_value(q);
-          Tensor<2,dim,VectorizedArray<value_type> > grad_u_nm2 = fe_eval_xwall_nm2.get_gradient(q);
-          Tensor<1,dim,VectorizedArray<value_type> > conv_nm = grad_u_nm * u_nm;
-          Tensor<1,dim,VectorizedArray<value_type> > conv_nm2 = grad_u_nm2 * u_nm2;
+        Tensor<1,dim,VectorizedArray<value_type> > u_n = fe_eval_xwall_n.get_value(q);
+        Tensor<2,dim,VectorizedArray<value_type> > grad_u_n = fe_eval_xwall_n.get_gradient(q);
+        Tensor<1,dim,VectorizedArray<value_type> > conv_n = grad_u_n * u_n;
+        Tensor<1,dim,VectorizedArray<value_type> > u_nm = fe_eval_xwall_nm.get_value(q);
+        Tensor<2,dim,VectorizedArray<value_type> > grad_u_nm = fe_eval_xwall_nm.get_gradient(q);
+        Tensor<1,dim,VectorizedArray<value_type> > u_nm2 = fe_eval_xwall_nm2.get_value(q);
+        Tensor<2,dim,VectorizedArray<value_type> > grad_u_nm2 = fe_eval_xwall_nm2.get_gradient(q);
+        Tensor<1,dim,VectorizedArray<value_type> > conv_nm = grad_u_nm * u_nm;
+        Tensor<1,dim,VectorizedArray<value_type> > conv_nm2 = grad_u_nm2 * u_nm2;
 #ifdef CONSCONVPBC
-conv_n += fe_eval_xwall_n.get_divergence(q) * u_n;
-conv_nm += fe_eval_xwall_nm.get_divergence(q) * u_nm;
-conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
+        conv_n += fe_eval_xwall_n.get_divergence(q) * u_n;
+        conv_nm += fe_eval_xwall_nm.get_divergence(q) * u_nm;
+        conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
 #endif
 //          Tensor<1,dim,VectorizedArray<value_type> > rot_n = CurlCompute<dim,decltype(omega_n)>::compute(omega_n,q);
 //          Tensor<1,dim,VectorizedArray<value_type> > rot_nm = CurlCompute<dim,decltype(omega_nm)>::compute(omega_nm,q);
 
           // kaiser cluster: decltype() is unknown
 #ifdef XWALL
-          Tensor<1,dim,VectorizedArray<value_type> > rot_n = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,number_vorticity_components,value_type> >::compute(omega_n,q);
-          Tensor<1,dim,VectorizedArray<value_type> > rot_nm = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,number_vorticity_components,value_type> >::compute(omega_nm,q);
-          Tensor<1,dim,VectorizedArray<value_type> > rot_nm2 = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,number_vorticity_components,value_type> >::compute(omega_nm2,q);
+        Tensor<1,dim,VectorizedArray<value_type> > rot_n = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,number_vorticity_components,value_type> >::compute(omega_n,q);
+        Tensor<1,dim,VectorizedArray<value_type> > rot_nm = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,number_vorticity_components,value_type> >::compute(omega_nm,q);
+        Tensor<1,dim,VectorizedArray<value_type> > rot_nm2 = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,number_vorticity_components,value_type> >::compute(omega_nm2,q);
 #else
-          Tensor<1,dim,VectorizedArray<value_type> > rot_n = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,number_vorticity_components,value_type> >::compute(omega_n,q);
-          Tensor<1,dim,VectorizedArray<value_type> > rot_nm = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,number_vorticity_components,value_type> >::compute(omega_nm,q);
-          Tensor<1,dim,VectorizedArray<value_type> > rot_nm2 = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,number_vorticity_components,value_type> >::compute(omega_nm2,q);
+        Tensor<1,dim,VectorizedArray<value_type> > rot_n = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,number_vorticity_components,value_type> >::compute(omega_n,q);
+        Tensor<1,dim,VectorizedArray<value_type> > rot_nm = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,number_vorticity_components,value_type> >::compute(omega_nm,q);
+        Tensor<1,dim,VectorizedArray<value_type> > rot_nm2 = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,number_vorticity_components,value_type> >::compute(omega_nm2,q);
 #endif
           // 2nd order extrapolation
 //        h = - normal * (make_vectorized_array<value_type>(beta[0])*(dudt_n + conv_n + make_vectorized_array<value_type>(viscosity)*rot_n - rhs_n)
@@ -5923,13 +6065,37 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
         h = - normal * (dudt_np - rhs_np + make_vectorized_array<value_type>(beta[0])*(conv_n + fe_eval_xwall_n.eddyvisc[q]*rot_n)
                 + make_vectorized_array<value_type>(beta[1])*(conv_nm + fe_eval_xwall_n.eddyvisc[q]*rot_nm)
                 + make_vectorized_array<value_type>(beta[2])*(conv_nm2 + fe_eval_xwall_n.eddyvisc[q]*rot_nm2));
+
         // Stokes
+#ifdef STOKES
 //        h = - normal * (dudt_np - rhs_np + make_vectorized_array<value_type>(beta[0])*(make_vectorized_array<value_type>(viscosity)*rot_n)
 //                        + make_vectorized_array<value_type>(beta[1])*(make_vectorized_array<value_type>(viscosity)*rot_nm));
+        h = - normal * (dudt_np - rhs_np + make_vectorized_array<value_type>(beta[0])*(fe_eval_xwall_n.eddyvisc[q]*rot_n)
+                + make_vectorized_array<value_type>(beta[1])*( fe_eval_xwall_n.eddyvisc[q]*rot_nm)
+                + make_vectorized_array<value_type>(beta[2])*(fe_eval_xwall_n.eddyvisc[q]*rot_nm2));
+#endif
+
         // 1st order extrapolation
 //        h = - normal * (dudt_np - rhs_np + conv_n + make_vectorized_array<value_type>(viscosity)*rot_n);
+
 #ifdef DIVUPARTIAL
         Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q);
+
+//        Tensor<1,dim,VectorizedArray<value_type> > g_np;
+//        for(unsigned int d=0;d<dim;++d)
+//        {
+//          AnalyticalSolution<dim> dirichlet_boundary(d,time+time_step);
+//          value_type array [VectorizedArray<value_type>::n_array_elements];
+//          for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+//          {
+//            Point<dim> q_point;
+//            for (unsigned int d=0; d<dim; ++d)
+//            q_point[d] = q_points[d][n];
+//            array[n] = dirichlet_boundary.value(q_point);
+//          }
+//          g_np[d].load(&array[0]);
+//        }
+//        Tensor<1,dim,VectorizedArray<value_type> > meanvel = make_vectorized_array<value_type>(gamma0)*g_np;
 #else
         Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
 #endif
@@ -5941,7 +6107,7 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
         pressure.submit_normal_gradient(make_vectorized_array<value_type>(0.0),q);
         pressure.submit_value(h-(submitvalue)/time_step,q);
       }
-      else if (data.get_boundary_indicator(face) == 1) // Outflow boundary
+      else if (neumann_boundary.find(data.get_boundary_indicator(face)) != neumann_boundary.end()) // Outflow boundary
       {
         // p+ = - p- + 2g
         Point<dim,VectorizedArray<value_type> > q_points = pressure.quadrature_point(q);
@@ -6216,15 +6382,18 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
 
   parallel::distributed::Triangulation<dim> triangulation;
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_faces;
-    FE_DGQArbitraryNodes<dim>  fe;
-    FE_DGQArbitraryNodes<dim>  fe_p;
-    FE_DGQArbitraryNodes<dim>  fe_xwall;
-    DoFHandler<dim>  dof_handler;
-    DoFHandler<dim>  dof_handler_p;
-    DoFHandler<dim>  dof_handler_xwall;
+  FE_DGQArbitraryNodes<dim>  fe;
+  FE_DGQArbitraryNodes<dim>  fe_p;
+  FE_DGQArbitraryNodes<dim>  fe_xwall;
+  DoFHandler<dim>  dof_handler;
+  DoFHandler<dim>  dof_handler_p;
+  DoFHandler<dim>  dof_handler_xwall;
 
   const double cfl;
   const unsigned int n_refinements;
+
+  std::set<types::boundary_id> dirichlet_boundary;
+  std::set<types::boundary_id> neumann_boundary;
   };
 
   template<int dim>
@@ -6323,8 +6492,6 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
     const double left = -0.5, right = 0.5;
     GridGenerator::subdivided_hyper_cube(triangulation,2,left,right);
 
-    triangulation.refine_global(n_refinements);
-
     typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
     for(;cell!=endc;++cell)
     {
@@ -6337,6 +6504,10 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
           cell->face(face_number)->set_boundary_indicator (1);
       }
     }
+    triangulation.refine_global(n_refinements);
+
+    dirichlet_boundary.insert(0);
+    neumann_boundary.insert(1);
 #endif
 
 #ifdef POISEUILLE
@@ -6355,6 +6526,41 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
       }
     }
     triangulation.refine_global(n_refinements);
+    dirichlet_boundary.insert(0);
+    neumann_boundary.insert(1);
+#endif
+
+#ifdef KOVASZNAY
+    const double left = -1.0, right = 1.0;
+    GridGenerator::hyper_cube(triangulation,left,right);
+
+    // set boundary indicator
+    typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+    for(;cell!=endc;++cell)
+    {
+      for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+      {
+       if ((std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12))
+          cell->face(face_number)->set_boundary_indicator (1);
+      }
+    }
+    triangulation.refine_global(n_refinements);
+    dirichlet_boundary.insert(0);
+    neumann_boundary.insert(1);
+#endif
+
+#ifdef BELTRAMI
+    const double left = -1.0, right = 1.0;
+    GridGenerator::hyper_cube(triangulation,left,right);
+    triangulation.refine_global(n_refinements);
+    dirichlet_boundary.insert(0);
+#endif
+
+#ifdef STOKES
+    const double left = 0.0, right = 1.0;
+    GridGenerator::hyper_cube(triangulation,left,right);
+    triangulation.refine_global(n_refinements);
+    dirichlet_boundary.insert(0);
 #endif
 
     pcout << std::endl << "Generating grid for " << dim << "-dimensional problem" << std::endl << std::endl
@@ -6651,7 +6857,7 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
              << output_number
              << ".vtu";
 
-    data_out.build_patches (0);
+    data_out.build_patches (10);
 
     std::ofstream output (filename.str().c_str());
     data_out.write_vtu (output);
@@ -6813,9 +7019,9 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
 
     // decrease time_step in order to exactly hit END_TIME
     time_step = (END_TIME-START_TIME)/(1+int((END_TIME-START_TIME)/time_step));
-
-//    time_step = 2.e-4;// 0.1/pow(2.0,8);
-
+#ifdef STOKES
+    time_step = TIME_STEP_SIZE; // 0.1/pow(2.0,8);
+#endif
     pcout << std::endl << "time step size:\t" << std::setw(10) << time_step << std::endl;
 
     pcout << std::endl << "further parameters:" << std::endl;
@@ -6837,7 +7043,7 @@ conv_nm2 += fe_eval_xwall_nm2.get_divergence(q) * u_nm2;
 
   calculate_time_step();
 
-  NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>  navier_stokes_operation(dof_handler, dof_handler_p, dof_handler_xwall, time_step, periodic_faces);
+  NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>  navier_stokes_operation(dof_handler, dof_handler_p, dof_handler_xwall, time_step, periodic_faces, dirichlet_boundary, neumann_boundary);
 
   // prescribe initial conditions
   for(unsigned int d=0;d<dim;++d)

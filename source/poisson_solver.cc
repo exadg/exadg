@@ -1157,15 +1157,20 @@ public:
                            const parallel::distributed::Vector<typename Operator::value_type> &src) const
   {
     ReductionControl solver_control (1e4, 1e-50, 1e-4);
+    //IterationNumberControl solver_control (10, 1e-15);
+
     SolverCG<parallel::distributed::Vector<typename Operator::value_type> >
       solver_coarse (solver_control, solver_memory);
+    typename VectorMemory<parallel::distributed::Vector<typename Operator::value_type> >::Pointer r(solver_memory);
+    *r = src;
+    coarse_matrix.apply_nullspace_projection(*r);
     if (use_jacobi)
       {
         JacobiPreconditioner<typename Operator::value_type> preconditioner(inverse_diagonal);
-        solver_coarse.solve (coarse_matrix, dst, src, preconditioner);
+        solver_coarse.solve (coarse_matrix, dst, *r, preconditioner);
       }
     else
-      solver_coarse.solve (coarse_matrix, dst, src, PreconditionIdentity());
+      solver_coarse.solve (coarse_matrix, dst, *r, PreconditionIdentity());
   }
 
 private:
@@ -1239,9 +1244,13 @@ void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
         }
       else
         {
-          // TODO: here we would like to have an adaptive choice...
           smoother_data[level].smoothing_range = 0.;
-          if (dof_handler.n_dofs(0) > 2000)
+          if (solver_data.coarse_solver != PoissonSolverData<dim>::coarse_chebyshev_smoother)
+          {
+            smoother_data[level].eig_cg_n_iterations = 0;
+          }
+          // TODO: here we would like to have an adaptive choice...
+          else if (dof_handler.n_dofs(0) > 2000)
             {
               smoother_data[level].degree = 100;
               smoother_data[level].eig_cg_n_iterations = 200;
