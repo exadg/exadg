@@ -70,8 +70,8 @@
 #define CONSCONVPBC
 
 //#define CHANNEL
-#define STOKES
-//#define VORTEX
+//#define STOKES
+#define VORTEX
 //#define POISEUILLE
 //#define KOVASZNAY
 //#define BELTRAMI
@@ -81,13 +81,13 @@ namespace DG_NavierStokes
   using namespace dealii;
 
 #ifdef VORTEX
-  const unsigned int fe_degree = 2;//2
+  const unsigned int fe_degree = 2; //2
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
   const unsigned int dimension = 2; // dimension >= 2
-  const unsigned int refine_steps_min = 1;//1
-  const unsigned int refine_steps_max = 1;
+  const unsigned int refine_steps_min = 2; //1
+  const unsigned int refine_steps_max = 4;
 
   const double START_TIME = 0.0;
   const double END_TIME = 1.0;
@@ -96,13 +96,13 @@ namespace DG_NavierStokes
   const double STATISTICS_START_TIME = 50.0;
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 1e6;
-  const double CFL = 0.001;//0.001
+  const double CFL = 0.05; //0.001
 
   const double VISCOSITY = 0.01;
 
   const double MAX_VELOCITY = 1.4;
-  const double stab_factor = 1.0;
-  const double K=1.0e2; //grad-div stabilization/penalty parameter
+  const double stab_factor = 6.0;
+  const double K=0.0e2; //1.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -245,7 +245,7 @@ namespace DG_NavierStokes
   const bool DIVU_TIMESERIES = true;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.2; // CFL number irrelevant for Stokes flow problem
-  const double TIME_STEP_SIZE = 5.0e-4; //5.0e-4
+  const double TIME_STEP_SIZE = 5.0e-3; //5.0e-4
 
   const double VISCOSITY = 1.0;
 
@@ -4829,8 +4829,8 @@ public:
 
       for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
       {
-      Tensor<1,dim,VectorizedArray<value_type> > u = fe_eval_xwall.get_value(q);
-      fe_eval_xwall.submit_value (make_vectorized_array<value_type>(1.0/time_step)*u, q);
+        Tensor<1,dim,VectorizedArray<value_type> > u = fe_eval_xwall.get_value(q);
+        fe_eval_xwall.submit_value (make_vectorized_array<value_type>(1.0/time_step)*u, q);
       }
       fe_eval_xwall.integrate (true,false);
       fe_eval_xwall.distribute_local_to_global (dst,0,dst,dim);
