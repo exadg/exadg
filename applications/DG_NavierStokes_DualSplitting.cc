@@ -3789,7 +3789,11 @@ public:
   // set maximum number of iterations, tolerance
   ReductionControl solver_control_velocity (1e5, ABS_TOL_VISCOUS, REL_TOL_VISCOUS);//1.e-5
 //  SolverCG<parallel::distributed::BlockVector<double> > solver_velocity (solver_control_velocity);
+#ifdef SKEWSYMMVISC
   SolverGMRES<parallel::distributed::BlockVector<double> > solver_velocity (solver_control_velocity);
+#else
+  SolverCG<parallel::distributed::BlockVector<double> > solver_velocity (solver_control_velocity);
+#endif
   NavierStokesViscousMatrix<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> ns_viscous_matrix;
   ns_viscous_matrix.initialize(*this);
 
