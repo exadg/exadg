@@ -65,7 +65,7 @@
 //#define COMPDIV
 #define LOWMEMORY //compute grad-div matrices directly instead of saving them
 #define PRESPARTIAL
-//#define DIVUPARTIAL
+#define DIVUPARTIAL
 
 #define CONSCONVPBC
 //#define SKEWSYMMVISC
@@ -346,13 +346,13 @@ namespace DG_NavierStokes
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-8;
 
-  const std::string output_prefix = "flow_past_cylinder";
+  const std::string output_prefix = "fpc_r0_p2";
 
-  const unsigned int output_solver_info_every_timesteps = 1e4;
+  const unsigned int output_solver_info_every_timesteps = 1e2;
   const unsigned int output_solver_info_details = 1e4;
 
-  const unsigned int ORDER_TIME_INTEGRATOR = 2;
-  const bool START_WITH_LOW_ORDER = false;
+  const unsigned int ORDER_TIME_INTEGRATOR = 3;
+  const bool START_WITH_LOW_ORDER = true;
 #endif
 
 #ifdef CHANNEL
@@ -3299,7 +3299,7 @@ public:
   //penalty parameter
   void calculate_penalty_parameter(double &factor) const;
 
-  void compute_lift_and_drag();
+  void compute_lift_and_drag(const bool clear_files);
 
   void compute_pressure_difference();
   public:
@@ -3859,7 +3859,7 @@ public:
   computing_times[4] += timer.wall_time();
 
 #ifdef FLOW_PAST_CYLINDER
-  compute_lift_and_drag();
+  compute_lift_and_drag(time_step_number == 1);
   compute_pressure_difference();
 #endif
 
@@ -3954,7 +3954,7 @@ public:
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-  compute_lift_and_drag()
+  compute_lift_and_drag(const bool clear_files)
   {
   FEFaceEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> fe_eval_velocity(data,true,0,0);
   FEFaceEvaluation<dim,fe_degree_p,fe_degree+1,1,value_type> fe_eval_pressure(data,true,1,0);
@@ -3993,36 +3993,36 @@ public:
   }
   Force = Utilities::MPI::sum(Force,MPI_COMM_WORLD);
 
-//  // compute lift and drag coefficients (c = (F/rho)/(1/2 U² D)
-//  const double U = Um * (dim==2 ? 2./3. : 4./9.);
-//  const double H = 0.41;
-//  if(dim == 2)
-//    Force *= 2.0/pow(U,2.0)/D;
-//  else if(dim == 3)
-//    Force *= 2.0/pow(U,2.0)/D/H;
-//
-//  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
-//  {
-//    std::string filename_drag, filename_lift;
-//    filename_drag = "output/drag_refine" + Utilities::int_to_string(data.get_dof_handler(1).get_triangulation().n_levels()-1) + "_fedegree" + Utilities::int_to_string(fe_degree) + ".txt"; //filename_drag = "drag.txt";
-//    filename_lift = "output/lift_refine" + Utilities::int_to_string(data.get_dof_handler(1).get_triangulation().n_levels()-1) + "_fedegree" + Utilities::int_to_string(fe_degree) + ".txt"; //filename_lift = "lift.txt";
-//
-//    std::ofstream f_drag,f_lift;
-//    if(clear_files)
-//    {
-//      f_drag.open(filename_drag.c_str(),std::ios::trunc);
-//      f_lift.open(filename_lift.c_str(),std::ios::trunc);
-//    }
-//    else
-//    {
-//      f_drag.open(filename_drag.c_str(),std::ios::app);
-//      f_lift.open(filename_lift.c_str(),std::ios::app);
-//    }
-//    f_drag<<std::scientific<<std::setprecision(6)<<time+time_step<<"\t"<<Force[0]<<std::endl;
-//    f_drag.close();
-//    f_lift<<std::scientific<<std::setprecision(6)<<time+time_step<<"\t"<<Force[1]<<std::endl;
-//    f_lift.close();
-//  }
+  // compute lift and drag coefficients (c = (F/rho)/(1/2 U² D)
+  const double U = Um * (dim==2 ? 2./3. : 4./9.);
+  const double H = 0.41;
+  if(dim == 2)
+    Force *= 2.0/pow(U,2.0)/D;
+  else if(dim == 3)
+    Force *= 2.0/pow(U,2.0)/D/H;
+
+  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+  {
+    std::ostringstream filename;
+    filename << output_prefix
+             << "_refine"
+             << Utilities::int_to_string(data.get_dof_handler(1).get_triangulation().n_levels()-1)
+             << ".lift_and_drag";
+    std::ofstream f;
+    if(clear_files)
+    {
+      f.open(filename.str().c_str(),std::ios::trunc);
+      f<< "       t       |      drag     |     lift     " << std::endl;
+    }
+    else
+    {
+      f.open(filename.str().c_str(),std::ios::app);
+    }
+    f << std::scientific<<std::setprecision(7) << std::setw(15)<<time+time_step;
+    f << std::scientific<<std::setprecision(7) << std::setw(15)<<Force[0];
+    f << std::scientific<<std::setprecision(7) << std::setw(15)<<Force[1]<<std::endl;
+    f.close();
+  }
   }
 
 //  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -6061,9 +6061,7 @@ public:
 #ifdef DIVUPARTIAL
       Tensor<1,dim,VectorizedArray<value_type> > meanvel = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q));
 #else
-//      Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
-      //TODO: use strong formulation, i.e. integrate by parts once again
-      Tensor<1,dim,VectorizedArray<value_type> > meanvel = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q))-fe_eval_xwall.get_value(q);
+      Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
 #endif
       VectorizedArray<value_type> submitvalue;
       submitvalue = normal[0]*meanvel[0];
@@ -6239,24 +6237,7 @@ public:
         }
         Tensor<1,dim,VectorizedArray<value_type> > meanvel = make_vectorized_array<value_type>(gamma0)*g_np;
 #else
-//        Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
-
-        //TODO: use strong formulation, i.e. integrate by parts once again
-        Tensor<1,dim,VectorizedArray<value_type> > g_np;
-        for(unsigned int d=0;d<dim;++d)
-        {
-          AnalyticalSolution<dim> dirichlet_boundary(d,time+time_step);
-          value_type array [VectorizedArray<value_type>::n_array_elements];
-          for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
-          {
-            Point<dim> q_point;
-            for (unsigned int d=0; d<dim; ++d)
-            q_point[d] = q_points[d][n];
-            array[n] = dirichlet_boundary.value(q_point);
-          }
-          g_np[d].load(&array[0]);
-        }
-        Tensor<1,dim,VectorizedArray<value_type> > meanvel = make_vectorized_array<value_type>(gamma0)*g_np-fe_eval_xwall.get_value(q);
+        Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
 #endif
         VectorizedArray<value_type> submitvalue;
         submitvalue = normal[0]*meanvel[0];
@@ -7415,7 +7396,9 @@ public:
 #endif
           output_number);
     pcout << std::endl << "Write output at START_TIME t = " << START_TIME << std::endl;
+#ifndef FLOW_PAST_CYLINDER
     calculate_error(navier_stokes_operation.solution_n);
+#endif
   }
   output_number++;
 
