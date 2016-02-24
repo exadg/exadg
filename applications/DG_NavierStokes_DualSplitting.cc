@@ -65,16 +65,17 @@
 //#define COMPDIV
 #define LOWMEMORY //compute grad-div matrices directly instead of saving them
 #define PRESPARTIAL
-#define DIVUPARTIAL
+//#define DIVUPARTIAL
 
 #define CONSCONVPBC
 //#define SKEWSYMMVISC
 
-#define VORTEX
+//#define VORTEX
 //#define STOKES
 //#define POISEUILLE
 //#define KOVASZNAY
 //#define BELTRAMI
+#define FLOW_PAST_CYLINDER
 //#define CHANNEL
 
 namespace DG_NavierStokes
@@ -307,6 +308,53 @@ namespace DG_NavierStokes
   const bool START_WITH_LOW_ORDER = false;
 #endif
 
+#ifdef FLOW_PAST_CYLINDER
+  const unsigned int fe_degree = 2;
+  const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
+  const unsigned int fe_degree_xwall = 1;
+  const unsigned int n_q_points_1d_xwall = 1;
+  const unsigned int dimension = 2; // dimension >= 2
+  const unsigned int refine_steps_min = 0;
+  const unsigned int refine_steps_max = 0;
+
+  const double START_TIME = 0.0;
+  const double END_TIME = 16.0;
+  const double OUTPUT_INTERVAL_TIME = 1.;
+  const double OUTPUT_START_TIME = 0.0;
+  const double STATISTICS_START_TIME = 50.0;
+  const bool DIVU_TIMESERIES = true;
+  const int MAX_NUM_STEPS = 1e6;
+  const double CFL = 0.2;
+
+  const double VISCOSITY = 0.001;
+  const double Um = 0.3;//(dimension == 2 ? 1.5 : 2.25); //2D-1: 0.3; 3D-1: 0.45;
+  const double D = 0.1;
+
+  const double MAX_VELOCITY = Um;
+  const double stab_factor = 1.0;
+  const double K=1.0e2; //grad-div stabilization/penalty parameter
+  const double CS = 0.0; // Smagorinsky constant
+  const double ML = 0.0; // mixing-length model for xwall
+  const bool variabletauw = false;
+  const double DTAUW = 1.0;
+
+  const double MAX_WDIST_XWALL = 0.2;
+  const double GRID_STRETCH_FAC = 1.8;
+  const bool pure_dirichlet_bc = false;
+
+  const double REL_TOL_PRESSURE = 1.0e-8;
+  const double ABS_TOL_VISCOUS = 1.0e-12;
+  const double REL_TOL_VISCOUS = 1.0e-8;
+
+  const std::string output_prefix = "flow_past_cylinder";
+
+  const unsigned int output_solver_info_every_timesteps = 1e4;
+  const unsigned int output_solver_info_details = 1e4;
+
+  const unsigned int ORDER_TIME_INTEGRATOR = 2;
+  const bool START_WITH_LOW_ORDER = false;
+#endif
+
 #ifdef CHANNEL
   const unsigned int fe_degree = 4;
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
@@ -502,6 +550,21 @@ namespace DG_NavierStokes
       result = -pi*sint*sin2x*pow(siny,2.);
     else if (component == dim)
       result = cosx*siny*sint;
+#endif
+    /********************************************************************/
+
+    /********************** flow past cylinder **************************/
+#ifdef FLOW_PAST_CYLINDER
+    if(component == 0 && std::abs(p[0]-(dim==2 ? 0.3 : 0.0))<1.e-12)
+    {
+      const double pi = numbers::PI;
+      const double T = 0.2;
+      const double H = 0.41;
+      double coefficient = Utilities::fixed_power<dim-1>(4.) * Um / Utilities::fixed_power<2*dim-2>(H);
+      result = coefficient * p[1] * (H-p[1]) * ( (t/T)<1.0 ? std::sin(pi/2.*t/T) : 1.0);//( (t/T)<1.0 ? std::sin(pi/2.*t/T) : 1.0); //( (t/T)<1.0 ? t/T : 1.0); //std::sin(pi*t/END_TIME);
+      if (dim == 3)
+        result *= p[2] * (H-p[2]);
+    }
 #endif
     /********************************************************************/
 
@@ -718,6 +781,19 @@ namespace DG_NavierStokes
     result = pi*cost*sin2y*pow(sinx,2.);
   else if (component == 1)
     result = -pi*cost*sin2x*pow(siny,2.);
+#endif
+
+  // flow past cylinder
+#ifdef FLOW_PAST_CYLINDER
+//  if(component == 0 && std::abs(p[0]-(dim==2 ? 0.3 : 0.0))<1.e-12)
+//  {
+//    const double pi = numbers::PI;
+//    const double H = 0.41;
+//    double coefficient = Utilities::fixed_power<dim-1>(4.) * Um / Utilities::fixed_power<2*dim-2>(H);
+//    result = coefficient * p[1] * (H-p[1]) * std::cos(pi*t/END_TIME)*pi/END_TIME;
+//      if (dim == 3)
+//        result *= p[2] * (H-p[2]);
+//  }
 #endif
 
   return result;
@@ -3782,9 +3858,10 @@ public:
   compute_vorticity(solution_n,vorticity_n);
   computing_times[4] += timer.wall_time();
 
-  // laminar flow around cylinder
-  //compute_lift_and_drag();
-  //compute_pressure_difference();
+#ifdef FLOW_PAST_CYLINDER
+  compute_lift_and_drag();
+  compute_pressure_difference();
+#endif
 
   if(START_WITH_LOW_ORDER  == true)
   {
@@ -5981,11 +6058,12 @@ public:
     for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
     {
       Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_xwall.get_normal_vector(q);
-//      Tensor<1,dim,VectorizedArray<value_type> > meanvel = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q));
 #ifdef DIVUPARTIAL
       Tensor<1,dim,VectorizedArray<value_type> > meanvel = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q));
 #else
-      Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
+//      Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
+      //TODO: use strong formulation, i.e. integrate by parts once again
+      Tensor<1,dim,VectorizedArray<value_type> > meanvel = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q))-fe_eval_xwall.get_value(q);
 #endif
       VectorizedArray<value_type> submitvalue;
       submitvalue = normal[0]*meanvel[0];
@@ -6143,25 +6221,42 @@ public:
 //        h = - normal * (dudt_np - rhs_np + conv_n + make_vectorized_array<value_type>(viscosity)*rot_n);
 
 #ifdef DIVUPARTIAL
-        Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q);
+//        Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q);
 
-//        Tensor<1,dim,VectorizedArray<value_type> > g_np;
-//        for(unsigned int d=0;d<dim;++d)
-//        {
-//          AnalyticalSolution<dim> dirichlet_boundary(d,time+time_step);
-//          value_type array [VectorizedArray<value_type>::n_array_elements];
-//          for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
-//          {
-//            Point<dim> q_point;
-//            for (unsigned int d=0; d<dim; ++d)
-//            q_point[d] = q_points[d][n];
-//            array[n] = dirichlet_boundary.value(q_point);
-//          }
-//          g_np[d].load(&array[0]);
-//        }
-//        Tensor<1,dim,VectorizedArray<value_type> > meanvel = make_vectorized_array<value_type>(gamma0)*g_np;
+        Tensor<1,dim,VectorizedArray<value_type> > g_np;
+        for(unsigned int d=0;d<dim;++d)
+        {
+          AnalyticalSolution<dim> dirichlet_boundary(d,time+time_step);
+          value_type array [VectorizedArray<value_type>::n_array_elements];
+          for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+          {
+            Point<dim> q_point;
+            for (unsigned int d=0; d<dim; ++d)
+            q_point[d] = q_points[d][n];
+            array[n] = dirichlet_boundary.value(q_point);
+          }
+          g_np[d].load(&array[0]);
+        }
+        Tensor<1,dim,VectorizedArray<value_type> > meanvel = make_vectorized_array<value_type>(gamma0)*g_np;
 #else
-        Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
+//        Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
+
+        //TODO: use strong formulation, i.e. integrate by parts once again
+        Tensor<1,dim,VectorizedArray<value_type> > g_np;
+        for(unsigned int d=0;d<dim;++d)
+        {
+          AnalyticalSolution<dim> dirichlet_boundary(d,time+time_step);
+          value_type array [VectorizedArray<value_type>::n_array_elements];
+          for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+          {
+            Point<dim> q_point;
+            for (unsigned int d=0; d<dim; ++d)
+            q_point[d] = q_points[d][n];
+            array[n] = dirichlet_boundary.value(q_point);
+          }
+          g_np[d].load(&array[0]);
+        }
+        Tensor<1,dim,VectorizedArray<value_type> > meanvel = make_vectorized_array<value_type>(gamma0)*g_np-fe_eval_xwall.get_value(q);
 #endif
         VectorizedArray<value_type> submitvalue;
         submitvalue = normal[0]*meanvel[0];
@@ -6444,6 +6539,8 @@ public:
 
   double time, time_step;
 
+  std_cxx11::shared_ptr<Manifold<dim> > cylinder_manifold;
+
   parallel::distributed::Triangulation<dim> triangulation;
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_faces;
   FE_DGQArbitraryNodes<dim>  fe;
@@ -6474,6 +6571,9 @@ public:
   dof_handler(triangulation),
   dof_handler_p(triangulation),
   dof_handler_xwall(triangulation),
+  cylinder_manifold(dim == 2 ?
+                      static_cast<Manifold<dim>*>(new HyperBallBoundary<dim>(get_center<dim>(), 0.05)) :
+                      static_cast<Manifold<dim>*>(new CylindricalManifold<dim>(get_direction<dim>(), get_center<dim>()))),
   cfl(CFL/pow(fe_degree,2.0)),
   n_refinements(refine_steps)
   {
@@ -6499,6 +6599,154 @@ public:
 #endif
     out[2] = in(2)-0.5*numbers::PI;
     return out;
+  }
+
+  void create_triangulation(Triangulation<2> &tria,
+                              const bool compute_in_2d = true)
+  {
+    HyperBallBoundary<2> boundary(Point<2>(0.5,0.2), 0.05);
+  Triangulation<2> left, middle, right, tmp, tmp2;
+  // old mesh
+//  std::vector<unsigned int> ref_1(2, 3);
+//  ref_1[1] = 4;
+  // old mesh
+  // new mesh
+  std::vector<unsigned int> ref_1(2, 2);
+  ref_1[1] = 2;
+  // new mesh
+
+  GridGenerator::subdivided_hyper_rectangle(left, ref_1 ,Point<2>(), Point<2>(0.3, 0.41), false);
+  // old mesh
+//  std::vector<unsigned int> ref_2(2, 18);
+//  ref_2[1] = 4;
+  // old mesh
+  // new mesh
+  std::vector<unsigned int> ref_2(2, 9);
+  ref_2[1] = 2;
+  // new mesh
+
+  GridGenerator::subdivided_hyper_rectangle(right, ref_2,Point<2>(0.7, 0), Point<2>(2.5, 0.41), false);
+
+  // create middle part first as a hyper shell
+  GridGenerator::hyper_shell(middle, Point<2>(0.5, 0.2), 0.05, 0.2, 4, true);
+  middle.set_manifold(0, boundary);
+  middle.refine_global(1);
+
+  //for (unsigned int v=0; v<middle.get_vertices().size(); ++v)
+  //  const_cast<Point<dim> &>(middle.get_vertices()[v]) = 0.4 / 3. * middle.get_vertices()[v];
+
+  // then move the vertices to the points where we want them to be to create a
+  // slightly asymmetric cube with a hole
+  for (Triangulation<2>::cell_iterator cell = middle.begin();
+     cell != middle.end(); ++cell)
+    for (unsigned int v=0; v < GeometryInfo<2>::vertices_per_cell; ++v)
+    {
+      Point<2> &vertex = cell->vertex(v);
+      if (std::abs(vertex[0] - 0.7) < 1e-10 &&
+        std::abs(vertex[1] - 0.2) < 1e-10)
+      vertex = Point<2>(0.7, 0.205);
+      else if (std::abs(vertex[0] - 0.6) < 1e-10 &&
+           std::abs(vertex[1] - 0.3) < 1e-10)
+      vertex = Point<2>(0.7, 0.41);
+      else if (std::abs(vertex[0] - 0.6) < 1e-10 &&
+           std::abs(vertex[1] - 0.1) < 1e-10)
+      vertex = Point<2>(0.7, 0);
+      else if (std::abs(vertex[0] - 0.5) < 1e-10 &&
+           std::abs(vertex[1] - 0.4) < 1e-10)
+      vertex = Point<2>(0.5, 0.41);
+      else if (std::abs(vertex[0] - 0.5) < 1e-10 &&
+           std::abs(vertex[1] - 0.0) < 1e-10)
+      vertex = Point<2>(0.5, 0.0);
+      else if (std::abs(vertex[0] - 0.4) < 1e-10 &&
+           std::abs(vertex[1] - 0.3) < 1e-10)
+      vertex = Point<2>(0.3, 0.41);
+      else if (std::abs(vertex[0] - 0.4) < 1e-10 &&
+           std::abs(vertex[1] - 0.1) < 1e-10)
+      vertex = Point<2>(0.3, 0);
+      else if (std::abs(vertex[0] - 0.3) < 1e-10 &&
+           std::abs(vertex[1] - 0.2) < 1e-10)
+      vertex = Point<2>(0.3, 0.205);
+      else if (std::abs(vertex[0] - 0.56379) < 1e-4 &&
+           std::abs(vertex[1] - 0.13621) < 1e-4)
+      vertex = Point<2>(0.59, 0.11);
+      else if (std::abs(vertex[0] - 0.56379) < 1e-4 &&
+           std::abs(vertex[1] - 0.26379) < 1e-4)
+      vertex = Point<2>(0.59, 0.29);
+      else if (std::abs(vertex[0] - 0.43621) < 1e-4 &&
+           std::abs(vertex[1] - 0.13621) < 1e-4)
+      vertex = Point<2>(0.41, 0.11);
+      else if (std::abs(vertex[0] - 0.43621) < 1e-4 &&
+           std::abs(vertex[1] - 0.26379) < 1e-4)
+      vertex = Point<2>(0.41, 0.29);
+    }
+
+  // refine once to create the same level of refinement as in the
+  // neighboring domains
+  // old mesh
+  // middle.refine_global(1);
+  // old mesh
+
+  // must copy the triangulation because we cannot merge triangulations with
+  // refinement...
+  GridGenerator::flatten_triangulation(middle, tmp2);
+
+  if (compute_in_2d)
+    GridGenerator::merge_triangulations (tmp2, right, tria);
+  else
+    {
+    GridGenerator::merge_triangulations (left, tmp2, tmp);
+    GridGenerator::merge_triangulations (tmp, right, tria);
+    }
+
+  // Set the cylinder boundary  to 2, outflow to 1, the rest to 0.
+  for (Triangulation<2>::active_cell_iterator cell=tria.begin() ;
+     cell != tria.end(); ++cell)
+    for (unsigned int f=0; f<GeometryInfo<2>::faces_per_cell; ++f)
+    if (cell->face(f)->at_boundary())
+    {
+      if (std::abs(cell->face(f)->center()[0] - (compute_in_2d ? 0.3 : 0)) < 1e-12)
+        cell->face(f)->set_all_boundary_ids(0);
+      else if (std::abs(cell->face(f)->center()[0]-2.5) < 1e-12)
+        cell->face(f)->set_all_boundary_ids(1);
+      else if (Point<2>(0.5,0.2).distance(cell->face(f)->center())<=0.05)
+      {
+        cell->face(f)->set_all_manifold_ids(10);
+        cell->face(f)->set_all_boundary_ids(2);
+      }
+      else
+        cell->face(f)->set_all_boundary_ids(0);
+    }
+  }
+
+  void create_triangulation(Triangulation<3> &tria)
+  {
+    Triangulation<2> tria_2d;
+    create_triangulation(tria_2d, false);
+    // new mesh
+    GridGenerator::extrude_triangulation(tria_2d, 3, 0.41, tria);
+    // new mesh
+    // old mesh
+//    GridGenerator::extrude_triangulation(tria_2d, 5, 0.41, tria);
+    // old mesh
+
+  // Set the cylinder boundary  to 2, outflow to 1, the rest to 0.
+  for (Triangulation<3>::active_cell_iterator cell=tria.begin() ;
+     cell != tria.end(); ++cell)
+    for (unsigned int f=0; f<GeometryInfo<3>::faces_per_cell; ++f)
+    if (cell->face(f)->at_boundary())
+    {
+      if (std::abs(cell->face(f)->center()[0]) < 1e-12)
+        cell->face(f)->set_all_boundary_ids(0);
+      else if (std::abs(cell->face(f)->center()[0]-2.5) < 1e-12)
+        cell->face(f)->set_all_boundary_ids(1);
+      else if (Point<3>(0.5,0.2,cell->face(f)->center()[2]).distance(cell->face(f)->center())<=0.05)
+      {
+        cell->face(f)->set_all_manifold_ids(10);
+        cell->face(f)->set_all_boundary_ids(2);
+      }
+      else
+        cell->face(f)->set_all_boundary_ids(0);
+    }
   }
 
   template<int dim>
@@ -6630,6 +6878,16 @@ public:
     dirichlet_boundary.insert(0);
 #endif
 
+#ifdef FLOW_PAST_CYLINDER
+    create_triangulation(triangulation);
+    triangulation.set_manifold(10, *cylinder_manifold);
+
+    triangulation.refine_global(n_refinements);
+    dirichlet_boundary.insert(0);
+    dirichlet_boundary.insert(2);
+    neumann_boundary.insert(1);
+#endif
+
     pcout << std::endl << "Generating grid for " << dim << "-dimensional problem" << std::endl << std::endl
       << "  number of refinements:" << std::setw(10) << n_refinements << std::endl
       << "  number of cells:      " << std::setw(10) << triangulation.n_global_active_cells() << std::endl
@@ -6661,7 +6919,6 @@ public:
       << "  number of dofs per cell:\t" << std::setw(10) << ndofs_per_cell_xwall << std::endl
       << "  number of dofs (xwall):\t" << std::setw(10) << dof_handler_xwall.n_dofs()*dim << std::endl;
   }
-
 
 
   template <int dim>
@@ -6924,7 +7181,7 @@ public:
              << output_number
              << ".vtu";
 
-    data_out.build_patches (10);
+    data_out.build_patches (5);
 
     std::ofstream output (filename.str().c_str());
     data_out.write_vtu (output);
