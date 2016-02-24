@@ -65,7 +65,7 @@
 //#define COMPDIV
 #define LOWMEMORY //compute grad-div matrices directly instead of saving them
 #define PRESPARTIAL
-#define DIVUPARTIAL
+//#define DIVUPARTIAL
 
 #define CONSCONVPBC
 //#define SKEWSYMMVISC
@@ -6059,7 +6059,6 @@ public:
 #else
 //      Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
       //TODO: use strong formulation, i.e. integrate by parts once again
-//      Tensor<1,dim,VectorizedArray<value_type> > meanvel = 0.5*(fe_eval_xwall_neighbor.get_value(q)-fe_eval_xwall.get_value(q));
       Tensor<1,dim,VectorizedArray<value_type> > meanvel = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q))-fe_eval_xwall.get_value(q);
 #endif
       VectorizedArray<value_type> submitvalue;
@@ -6218,23 +6217,23 @@ public:
 //        h = - normal * (dudt_np - rhs_np + conv_n + make_vectorized_array<value_type>(viscosity)*rot_n);
 
 #ifdef DIVUPARTIAL
-        Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q);
+//        Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q);
 
-//        Tensor<1,dim,VectorizedArray<value_type> > g_np;
-//        for(unsigned int d=0;d<dim;++d)
-//        {
-//          AnalyticalSolution<dim> dirichlet_boundary(d,time+time_step);
-//          value_type array [VectorizedArray<value_type>::n_array_elements];
-//          for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
-//          {
-//            Point<dim> q_point;
-//            for (unsigned int d=0; d<dim; ++d)
-//            q_point[d] = q_points[d][n];
-//            array[n] = dirichlet_boundary.value(q_point);
-//          }
-//          g_np[d].load(&array[0]);
-//        }
-//        Tensor<1,dim,VectorizedArray<value_type> > meanvel = make_vectorized_array<value_type>(gamma0)*g_np;
+        Tensor<1,dim,VectorizedArray<value_type> > g_np;
+        for(unsigned int d=0;d<dim;++d)
+        {
+          AnalyticalSolution<dim> dirichlet_boundary(d,time+time_step);
+          value_type array [VectorizedArray<value_type>::n_array_elements];
+          for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+          {
+            Point<dim> q_point;
+            for (unsigned int d=0; d<dim; ++d)
+            q_point[d] = q_points[d][n];
+            array[n] = dirichlet_boundary.value(q_point);
+          }
+          g_np[d].load(&array[0]);
+        }
+        Tensor<1,dim,VectorizedArray<value_type> > meanvel = make_vectorized_array<value_type>(gamma0)*g_np;
 #else
 //        Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
 
@@ -6253,7 +6252,6 @@ public:
           }
           g_np[d].load(&array[0]);
         }
-//        Tensor<1,dim,VectorizedArray<value_type> > meanvel = (gamma0*g_np-fe_eval_xwall.get_value(q));
         Tensor<1,dim,VectorizedArray<value_type> > meanvel = make_vectorized_array<value_type>(gamma0)*g_np-fe_eval_xwall.get_value(q);
 #endif
         VectorizedArray<value_type> submitvalue;
