@@ -64,7 +64,7 @@
 //#define XWALL
 //#define COMPDIV
 #define LOWMEMORY //compute grad-div matrices directly instead of saving them
-#define PRESPARTIAL
+//#define PRESPARTIAL
 //#define DIVUPARTIAL
 
 #define CONSCONVPBC
@@ -89,7 +89,7 @@ namespace DG_NavierStokes
   const unsigned int n_q_points_1d_xwall = 1;
   const unsigned int dimension = 2; // dimension >= 2
   const unsigned int refine_steps_min = 1; //1
-  const unsigned int refine_steps_max = 4;
+  const unsigned int refine_steps_max = 1;
 
   const double START_TIME = 0.0;
   const double END_TIME = 1.0;
@@ -104,7 +104,7 @@ namespace DG_NavierStokes
 
   const double MAX_VELOCITY = 1.4;
   const double stab_factor = 1.0;
-  const double K=1.0e2; //1.0e2; //grad-div stabilization/penalty parameter
+  const double K=0.0e2; //1.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -268,8 +268,8 @@ namespace DG_NavierStokes
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
   const unsigned int dimension = 2; // dimension >= 2
-  const unsigned int refine_steps_min = 1;//2
-  const unsigned int refine_steps_max = 4;
+  const unsigned int refine_steps_min = 3;//2
+  const unsigned int refine_steps_max = 3;
 
   const double START_TIME = 0.0;
   const double END_TIME = 1.0;
@@ -279,7 +279,7 @@ namespace DG_NavierStokes
   const bool DIVU_TIMESERIES = false;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.2; // CFL number irrelevant for Stokes flow problem
-  const double TIME_STEP_SIZE = 2.0e-4; //5.0e-4
+  const double TIME_STEP_SIZE = 5.0e-3; //5.0e-4
 
   const double VISCOSITY = 1.0;
 
@@ -656,8 +656,8 @@ namespace DG_NavierStokes
 #endif
 
 #ifdef POISEUILLE
-    if(component==1)
-      result = - MAX_VELOCITY * 2.0 * p[1];
+//    if(component==1)
+//      result = - MAX_VELOCITY * 2.0 * p[1];
 #endif
     return result;
   }
@@ -5503,16 +5503,12 @@ public:
 
     // compute grad-div parameter
     //use definition Ohlhanskii et al. (2009)
-#ifdef STOKES
-    const VectorizedArray<value_type> tau = K*normmeanvel*std::pow(volume,1./(double)dim) + make_vectorized_array<value_type>(VISCOSITY*K);
-//    const VectorizedArray<value_type> tau = make_vectorized_array<value_type>(VISCOSITY*K);
-#else
     const VectorizedArray<value_type> tau =
       K*normmeanvel*std::pow(volume,1./(double)dim);
-#endif
 
 //    std::cout << "tau" << tau[0] << "  " << tau[1] << std::endl;
 //    std::cout << "vel  " << normmeanvel[0] << "  " << normmeanvel[1] << std::endl;
+
     for (unsigned int j=0; j<total_dofs_per_cell; ++j)
     {
       for (unsigned int i=0; i<total_dofs_per_cell; ++i)
@@ -5734,13 +5730,8 @@ public:
 
      // compute grad-div parameter
      //use definition Ohlhanskii et al. (2009)
-#ifdef STOKES
-     const VectorizedArray<value_type> tau = K*normmeanvel*std::pow(volume,1./(double)dim) + make_vectorized_array<value_type>(VISCOSITY*K);
-//     const VectorizedArray<value_type> tau = make_vectorized_array<value_type>(VISCOSITY*K);
-#else
      const VectorizedArray<value_type> tau =
        K*normmeanvel*std::pow(volume,1./(double)dim);
-#endif
 
      //now apply vectors to inverse matrix
 //     for (unsigned int q=0; q<velocity.n_q_points; ++q)
@@ -6196,9 +6187,6 @@ public:
         Tensor<1,dim,VectorizedArray<value_type> > rot_nm = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,number_vorticity_components,value_type> >::compute(omega_nm,q);
         Tensor<1,dim,VectorizedArray<value_type> > rot_nm2 = CurlCompute<dim,FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+(fe_degree+2)/2,number_vorticity_components,value_type> >::compute(omega_nm2,q);
 #endif
-          // 2nd order extrapolation
-//        h = - normal * (make_vectorized_array<value_type>(beta[0])*(dudt_n + conv_n + make_vectorized_array<value_type>(viscosity)*rot_n - rhs_n)
-//                + make_vectorized_array<value_type>(beta[1])*(dudt_nm + conv_nm + make_vectorized_array<value_type>(viscosity)*rot_nm - rhs_nm));
 
         h = - normal * (dudt_np - rhs_np + make_vectorized_array<value_type>(beta[0])*(conv_n + fe_eval_xwall_n.eddyvisc[q]*rot_n)
                 + make_vectorized_array<value_type>(beta[1])*(conv_nm + fe_eval_xwall_n.eddyvisc[q]*rot_nm)
@@ -6206,15 +6194,10 @@ public:
 
         // Stokes
 #ifdef STOKES
-//        h = - normal * (dudt_np - rhs_np + make_vectorized_array<value_type>(beta[0])*(make_vectorized_array<value_type>(viscosity)*rot_n)
-//                        + make_vectorized_array<value_type>(beta[1])*(make_vectorized_array<value_type>(viscosity)*rot_nm));
         h = - normal * (dudt_np - rhs_np + make_vectorized_array<value_type>(beta[0])*(fe_eval_xwall_n.eddyvisc[q]*rot_n)
                 + make_vectorized_array<value_type>(beta[1])*( fe_eval_xwall_n.eddyvisc[q]*rot_nm)
                 + make_vectorized_array<value_type>(beta[2])*(fe_eval_xwall_n.eddyvisc[q]*rot_nm2));
 #endif
-
-        // 1st order extrapolation
-//        h = - normal * (dudt_np - rhs_np + conv_n + make_vectorized_array<value_type>(viscosity)*rot_n);
 
 #ifdef DIVUPARTIAL
 //        Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q);
@@ -6324,7 +6307,7 @@ public:
 #endif
 
 
-    if(K>0.0+1e-9)
+    if(K>0.0+1.0e-9)
     {
 #if defined(LOWMEMORY) || defined(XWALL)
     data.cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_grad_div_projection,this, dst, dst);
