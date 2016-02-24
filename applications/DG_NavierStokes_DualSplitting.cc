@@ -6055,19 +6055,19 @@ public:
     {
       Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_xwall.get_normal_vector(q);
 #ifdef DIVUPARTIAL
-      Tensor<1,dim,VectorizedArray<value_type> > meanvel = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q));
+      Tensor<1,dim,VectorizedArray<value_type> > meanvel_in = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q));
+      Tensor<1,dim,VectorizedArray<value_type> > meanvel_out = meanvel_in;
 #else
 //      Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
       //TODO: use strong formulation, i.e. integrate by parts once again
-      Tensor<1,dim,VectorizedArray<value_type> > meanvel = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q))-fe_eval_xwall.get_value(q);
+      Tensor<1,dim,VectorizedArray<value_type> > meanvel_in = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q))-fe_eval_xwall.get_value(q);
+      Tensor<1,dim,VectorizedArray<value_type> > meanvel_out = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q))-fe_eval_xwall_neighbor.get_value(q);
 #endif
-      VectorizedArray<value_type> submitvalue;
-      submitvalue = normal[0]*meanvel[0];
-      for (unsigned int i = 1; i<dim;i++)
-        submitvalue += normal[i]*meanvel[i];
+      VectorizedArray<value_type> submitvalue_in = normal * meanvel_in;
+      VectorizedArray<value_type> submitvalue_out = normal * meanvel_out;
 
-      pressure.submit_value (-(submitvalue)/time_step, q);
-      pressure_neighbor.submit_value (submitvalue/time_step, q);
+      pressure.submit_value ((-submitvalue_in)/time_step, q);
+      pressure_neighbor.submit_value (submitvalue_out/time_step, q);
     }
     pressure.integrate (true,false);
     pressure_neighbor.integrate (true,false);
@@ -6559,6 +6559,9 @@ public:
          Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0),
   time(START_TIME),
   time_step(0.0),
+  cylinder_manifold(dim == 2 ?
+                    static_cast<Manifold<dim>*>(new HyperBallBoundary<dim>(get_center<dim>(), 0.05)) :
+                    static_cast<Manifold<dim>*>(new CylindricalManifold<dim>(get_direction<dim>(), get_center<dim>()))),
   triangulation(MPI_COMM_WORLD,
       dealii::Triangulation<dim>::none,parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
   fe(QGaussLobatto<1>(fe_degree+1)),
@@ -6567,9 +6570,6 @@ public:
   dof_handler(triangulation),
   dof_handler_p(triangulation),
   dof_handler_xwall(triangulation),
-  cylinder_manifold(dim == 2 ?
-                      static_cast<Manifold<dim>*>(new HyperBallBoundary<dim>(get_center<dim>(), 0.05)) :
-                      static_cast<Manifold<dim>*>(new CylindricalManifold<dim>(get_direction<dim>(), get_center<dim>()))),
   cfl(CFL/pow(fe_degree,2.0)),
   n_refinements(refine_steps)
   {
