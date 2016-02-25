@@ -65,7 +65,7 @@
 #define COMPDIV
 #define LOWMEMORY //compute grad-div matrices directly instead of saving them
 #define PRESPARTIAL
-//#define DIVUPARTIAL
+#define DIVUPARTIAL
 
 #define CONSCONVPBC
 //#define SKEWSYMMVISC
@@ -309,7 +309,7 @@ namespace DG_NavierStokes
 #endif
 
 #ifdef FLOW_PAST_CYLINDER
-  const unsigned int fe_degree = 3;
+  const unsigned int fe_degree = 2;
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
@@ -332,7 +332,7 @@ namespace DG_NavierStokes
 
   const double MAX_VELOCITY = Um;
   const double stab_factor = 1.0;
-  const double K=1.0e2; //grad-div stabilization/penalty parameter
+  const double K=1.0e8; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -5487,7 +5487,7 @@ public:
     phi.reinit(cell);
     velocity.reinit(cell);
     const unsigned int total_dofs_per_cell = phi.dofs_per_cell * dim;
-    velocity.read_dof_values(src,0,src,dim);
+    velocity.read_dof_values(solution_n,0,solution_n,dim);
     velocity.evaluate (true,false);
     VectorizedArray<value_type> volume;
     VectorizedArray<value_type> normmeanvel;
@@ -5504,6 +5504,8 @@ public:
       meanvel /=volume;
       normmeanvel = meanvel.norm();
     }
+    velocity.reinit(cell);
+    velocity.read_dof_values(src,0,src,dim);
 
     for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
       matrices[v].reinit(total_dofs_per_cell, total_dofs_per_cell);
@@ -5718,7 +5720,7 @@ public:
    {
      velocity.reinit(cell);
      const unsigned int total_dofs_per_cell = velocity.dofs_per_cell * dim;
-     velocity.read_dof_values(src,0,src,dim);
+     velocity.read_dof_values(solution_n,0,solution_n,dim);
      velocity.evaluate (true,false);
      VectorizedArray<value_type> volume;
      VectorizedArray<value_type> normmeanvel;
@@ -5735,7 +5737,8 @@ public:
        meanvel /=volume;
        normmeanvel = meanvel.norm();
      }
-
+     velocity.reinit(cell);
+     velocity.read_dof_values(src,0,src,dim);
      for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
        if (matrices[v].m() != total_dofs_per_cell)
          matrices[v].reinit(total_dofs_per_cell, total_dofs_per_cell);
