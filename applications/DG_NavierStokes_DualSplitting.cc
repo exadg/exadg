@@ -62,10 +62,10 @@
 #include "poisson_solver.h"
 
 //#define XWALL
-//#define COMPDIV
+#define COMPDIV
 #define LOWMEMORY //compute grad-div matrices directly instead of saving them
 #define PRESPARTIAL
-#define DIVUPARTIAL
+//#define DIVUPARTIAL
 
 #define CONSCONVPBC
 //#define SKEWSYMMVISC
@@ -83,7 +83,7 @@ namespace DG_NavierStokes
   using namespace dealii;
 
 #ifdef VORTEX
-  const unsigned int fe_degree = 3; //2
+  const unsigned int fe_degree = 2; //2
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
@@ -309,7 +309,7 @@ namespace DG_NavierStokes
 #endif
 
 #ifdef FLOW_PAST_CYLINDER
-  const unsigned int fe_degree = 2;
+  const unsigned int fe_degree = 3;
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
@@ -343,10 +343,10 @@ namespace DG_NavierStokes
   const bool pure_dirichlet_bc = false;
 
   const double REL_TOL_PRESSURE = 1.0e-8;
-  const double ABS_TOL_VISCOUS = 1.0e-12;
+  const double ABS_TOL_VISCOUS = 1.0e-16;
   const double REL_TOL_VISCOUS = 1.0e-8;
 
-  const std::string output_prefix = "fpc_r0_p2";
+  const std::string output_prefix = "fpc_r0_p2_k1";
 
   const unsigned int output_solver_info_every_timesteps = 1e2;
   const unsigned int output_solver_info_details = 1e4;
@@ -391,7 +391,7 @@ namespace DG_NavierStokes
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-8;
 
-  const std::string output_prefix = "solution_ch180_4_p4_gt18_partp_k0_partu_sf1_cfl1";
+  const std::string output_prefix = "ch180_4_p4_gt18_partp_k0_partu_sf1_cfl1";
 
   const unsigned int output_solver_info_every_timesteps = 5;
   const unsigned int output_solver_info_details = 1e4;
@@ -2219,9 +2219,8 @@ public:
                                 const unsigned int q)
       {
         fe_eval.submit_normal_gradient(grad_in,q);
-        gradients[q]=gradient_type();
 #ifdef XWALL
-
+        gradients[q]=gradient_type();
       if(enriched)
       {
         for (unsigned int comp=0; comp<n_components_; comp++)
@@ -2245,9 +2244,8 @@ public:
                                 const unsigned int q)
       {
         fe_eval.submit_normal_gradient(grad_in,q);
-        gradients[q]=gradient_type();
 #ifdef XWALL
-
+        gradients[q]=gradient_type();
         if(enriched)
         {
           for (unsigned int d=0; d<dim; ++d)
@@ -3318,11 +3316,11 @@ public:
                                                                        std::set<types::boundary_id> dirichlet_bc_indicator,
                                                                        std::set<types::boundary_id> neumann_bc_indicator):
 #ifdef XWALL
-  rhs_visc(6),
-  solution_temp_visc(6),
+  rhs_visc(dim*2),
+  solution_temp_visc(dim*2),
 #else
-  rhs_visc(3),
-  solution_temp_visc(3),
+  rhs_visc(dim),
+  solution_temp_visc(dim),
 #endif
   time(0.0),
   time_step(time_step_size),
@@ -3956,6 +3954,7 @@ public:
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   compute_lift_and_drag(const bool clear_files)
   {
+#ifdef FLOW_PAST_CYLINDER
   FEFaceEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> fe_eval_velocity(data,true,0,0);
   FEFaceEvaluation<dim,fe_degree_p,fe_degree+1,1,value_type> fe_eval_pressure(data,true,1,0);
 
@@ -4005,8 +4004,6 @@ public:
   {
     std::ostringstream filename;
     filename << output_prefix
-             << "_refine"
-             << Utilities::int_to_string(data.get_dof_handler(1).get_triangulation().n_levels()-1)
              << ".lift_and_drag";
     std::ofstream f;
     if(clear_files)
@@ -4023,6 +4020,8 @@ public:
     f << std::scientific<<std::setprecision(7) << std::setw(15)<<Force[1]<<std::endl;
     f.close();
   }
+#endif
+;
   }
 
 //  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -5320,13 +5319,17 @@ public:
 
     //initialize routine for non-enriched elements
     FEEvaluation<dim,fe_degree,fe_degree+1,1,value_type> phi(data,0,0);
-    FEEvaluation<dim,fe_degree,n_q_points_1d_xwall,1,value_type> fe_eval (data,0,3);
+
 //    VectorizedArray<value_type> coefficients[FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type>::tensor_dofs_per_cell]
     AlignedVector<VectorizedArray<value_type> > coefficients(phi.dofs_per_cell);
     MatrixFreeOperators::CellwiseInverseMassMatrix<dim, fe_degree, 1, value_type> inverse(phi);
-
+#ifdef XWALL
+    FEEvaluation<dim,fe_degree,n_q_points_1d_xwall,1,value_type> fe_eval (data,0,3);
     FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall (data,xwallstatevec[0],xwallstatevec[1],0,3);
-
+#else
+    FEEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval (data,0,0);
+    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall (data,xwallstatevec[0],xwallstatevec[1],0,0);
+#endif
 
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
   {
@@ -5507,13 +5510,13 @@ public:
 
     // compute grad-div parameter
     //use definition Ohlhanskii et al. (2009)
-#ifdef STOKES
+//#ifdef STOKES
     const VectorizedArray<value_type> tau = K*normmeanvel*std::pow(volume,1./(double)dim) + make_vectorized_array<value_type>(VISCOSITY*K);
 //    const VectorizedArray<value_type> tau = make_vectorized_array<value_type>(VISCOSITY*K);
-#else
-    const VectorizedArray<value_type> tau =
-      K*normmeanvel*std::pow(volume,1./(double)dim);
-#endif
+//#else
+//    const VectorizedArray<value_type> tau =
+//      K*normmeanvel*std::pow(volume,1./(double)dim);
+//#endif
 
 //    std::cout << "tau" << tau[0] << "  " << tau[1] << std::endl;
 //    std::cout << "vel  " << normmeanvel[0] << "  " << normmeanvel[1] << std::endl;
@@ -5661,8 +5664,11 @@ public:
                 const std::vector<parallel::distributed::Vector<value_type> >  &source,
                 const std::pair<unsigned int,unsigned int>            &cell_range)
   {
-
+#ifdef XWALL
+  FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> phi(data,xwallstatevec[0],xwallstatevec[1],0,3);
+#else
   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> phi(data,xwallstatevec[0],xwallstatevec[1],0,0);
+#endif
   AlignedVector<VectorizedArray<value_type> > JxW_values(phi.n_q_points);
   VectorizedArray<value_type> div_vec = make_vectorized_array(0.);
   VectorizedArray<value_type> vol_vec = make_vectorized_array(0.);
@@ -5738,13 +5744,13 @@ public:
 
      // compute grad-div parameter
      //use definition Ohlhanskii et al. (2009)
-#ifdef STOKES
+//#ifdef STOKES
      const VectorizedArray<value_type> tau = K*normmeanvel*std::pow(volume,1./(double)dim) + make_vectorized_array<value_type>(VISCOSITY*K);
 //     const VectorizedArray<value_type> tau = make_vectorized_array<value_type>(VISCOSITY*K);
-#else
-     const VectorizedArray<value_type> tau =
-       K*normmeanvel*std::pow(volume,1./(double)dim);
-#endif
+//#else
+//     const VectorizedArray<value_type> tau =
+//       K*normmeanvel*std::pow(volume,1./(double)dim);
+//#endif
 
      //now apply vectors to inverse matrix
 //     for (unsigned int q=0; q<velocity.n_q_points; ++q)
@@ -7226,7 +7232,7 @@ public:
     numchsamp++;
 
     std::vector<double > dummy(2,0.0);
-    nsoperation.get_data().cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, 1>::local_compute_divu_for_channel_stats,&nsoperation, dummy, vel_hathat);
+    nsoperation.get_data().cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats,&nsoperation, dummy, vel_hathat);
     double div = Utilities::MPI::sum (dummy.at(0), MPI_COMM_WORLD);
     double vol = Utilities::MPI::sum (dummy.at(1), MPI_COMM_WORLD);
     udiv_samp += div/vol;
@@ -7251,7 +7257,7 @@ public:
   write_divu(std::vector<parallel::distributed::Vector<value_type> >   &vel_hathat, NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> & nsoperation, double time, unsigned int time_step_number)
   {
     std::vector<double > dummy(2,0.0);
-    nsoperation.get_data().cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, 1>::local_compute_divu_for_channel_stats,&nsoperation, dummy, vel_hathat);
+    nsoperation.get_data().cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats,&nsoperation, dummy, vel_hathat);
     double div = Utilities::MPI::sum (dummy.at(0), MPI_COMM_WORLD);
     double vol = Utilities::MPI::sum (dummy.at(1), MPI_COMM_WORLD);
     double udiv = div/vol;
