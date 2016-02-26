@@ -62,10 +62,11 @@
 #include "poisson_solver.h"
 
 //#define XWALL
-//#define COMPDIV
+#define COMPDIV
 #define LOWMEMORY //compute grad-div matrices directly instead of saving them
 //#define PRESPARTIAL
 //#define DIVUPARTIAL
+
 
 #define CONSCONVPBC
 //#define SKEWSYMMVISC
@@ -332,7 +333,7 @@ namespace DG_NavierStokes
 
   const double MAX_VELOCITY = Um;
   const double stab_factor = 1.0;
-  const double K=1.0e2; //grad-div stabilization/penalty parameter
+  const double K=1.0e8; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -343,16 +344,16 @@ namespace DG_NavierStokes
   const bool pure_dirichlet_bc = false;
 
   const double REL_TOL_PRESSURE = 1.0e-8;
-  const double ABS_TOL_VISCOUS = 1.0e-12;
+  const double ABS_TOL_VISCOUS = 1.0e-16;
   const double REL_TOL_VISCOUS = 1.0e-8;
 
-  const std::string output_prefix = "flow_past_cylinder";
+  const std::string output_prefix = "fpc_r0_p2_k1";
 
-  const unsigned int output_solver_info_every_timesteps = 1e4;
+  const unsigned int output_solver_info_every_timesteps = 1e2;
   const unsigned int output_solver_info_details = 1e4;
 
-  const unsigned int ORDER_TIME_INTEGRATOR = 2;
-  const bool START_WITH_LOW_ORDER = false;
+  const unsigned int ORDER_TIME_INTEGRATOR = 3;
+  const bool START_WITH_LOW_ORDER = true;
 #endif
 
 #ifdef CHANNEL
@@ -391,7 +392,7 @@ namespace DG_NavierStokes
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-8;
 
-  const std::string output_prefix = "solution_ch180_4_p4_gt18_partp_k0_partu_sf1_cfl1";
+  const std::string output_prefix = "ch180_4_p4_gt18_partp_k0_partu_sf1_cfl1";
 
   const unsigned int output_solver_info_every_timesteps = 5;
   const unsigned int output_solver_info_details = 1e4;
@@ -2224,9 +2225,8 @@ public:
                                 const unsigned int q)
       {
         fe_eval.submit_normal_gradient(grad_in,q);
-        gradients[q]=gradient_type();
 #ifdef XWALL
-
+        gradients[q]=gradient_type();
       if(enriched)
       {
         for (unsigned int comp=0; comp<n_components_; comp++)
@@ -2250,9 +2250,8 @@ public:
                                 const unsigned int q)
       {
         fe_eval.submit_normal_gradient(grad_in,q);
-        gradients[q]=gradient_type();
 #ifdef XWALL
-
+        gradients[q]=gradient_type();
         if(enriched)
         {
           for (unsigned int d=0; d<dim; ++d)
@@ -3320,7 +3319,7 @@ public:
   //penalty parameter
   void calculate_penalty_parameter(double &factor) const;
 
-  void compute_lift_and_drag();
+  void compute_lift_and_drag(const bool clear_files);
 
   void compute_pressure_difference();
 
@@ -3347,11 +3346,11 @@ public:
                                                                        std::set<types::boundary_id> dirichlet_bc_indicator,
                                                                        std::set<types::boundary_id> neumann_bc_indicator):
 #ifdef XWALL
-  rhs_visc(6),
-  solution_temp_visc(6),
+  rhs_visc(dim*2),
+  solution_temp_visc(dim*2),
 #else
-  rhs_visc(3),
-  solution_temp_visc(3),
+  rhs_visc(dim),
+  solution_temp_visc(dim),
 #endif
   mapping(fe_degree),
   time(0.0),
@@ -3900,7 +3899,7 @@ public:
   computing_times[4] += timer.wall_time();
 
 #ifdef FLOW_PAST_CYLINDER
-  compute_lift_and_drag();
+  compute_lift_and_drag(time_step_number == 1);
   compute_pressure_difference();
   if(time_step_number == 1)
     clear_files = false;
@@ -3997,7 +3996,7 @@ public:
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-  compute_lift_and_drag()
+  compute_lift_and_drag(const bool clear_files)
   {
   FEFaceEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> fe_eval_velocity(data,true,0,0);
   FEFaceEvaluation<dim,fe_degree_p,fe_degree+1,1,value_type> fe_eval_pressure(data,true,1,0);
@@ -5388,13 +5387,17 @@ public:
 
     //initialize routine for non-enriched elements
     FEEvaluation<dim,fe_degree,fe_degree+1,1,value_type> phi(data,0,0);
-    FEEvaluation<dim,fe_degree,n_q_points_1d_xwall,1,value_type> fe_eval (data,0,3);
+
 //    VectorizedArray<value_type> coefficients[FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type>::tensor_dofs_per_cell]
     AlignedVector<VectorizedArray<value_type> > coefficients(phi.dofs_per_cell);
     MatrixFreeOperators::CellwiseInverseMassMatrix<dim, fe_degree, 1, value_type> inverse(phi);
-
+#ifdef XWALL
+    FEEvaluation<dim,fe_degree,n_q_points_1d_xwall,1,value_type> fe_eval (data,0,3);
     FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall (data,xwallstatevec[0],xwallstatevec[1],0,3);
-
+#else
+    FEEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval (data,0,0);
+    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall (data,xwallstatevec[0],xwallstatevec[1],0,0);
+#endif
 
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
   {
@@ -5550,7 +5553,7 @@ public:
     phi.reinit(cell);
     velocity.reinit(cell);
     const unsigned int total_dofs_per_cell = phi.dofs_per_cell * dim;
-    velocity.read_dof_values(src,0,src,dim);
+    velocity.read_dof_values(solution_n,0,solution_n,dim);
     velocity.evaluate (true,false);
     VectorizedArray<value_type> volume;
     VectorizedArray<value_type> normmeanvel;
@@ -5567,14 +5570,21 @@ public:
       meanvel /=volume;
       normmeanvel = meanvel.norm();
     }
+    velocity.reinit(cell);
+    velocity.read_dof_values(src,0,src,dim);
 
     for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
       matrices[v].reinit(total_dofs_per_cell, total_dofs_per_cell);
 
     // compute grad-div parameter
     //use definition Ohlhanskii et al. (2009)
-    const VectorizedArray<value_type> tau =
-      K*normmeanvel*std::pow(volume,1./(double)dim);
+//#ifdef STOKES
+    const VectorizedArray<value_type> tau = K*normmeanvel*std::pow(volume,1./(double)dim) + make_vectorized_array<value_type>(VISCOSITY*K);
+//    const VectorizedArray<value_type> tau = make_vectorized_array<value_type>(VISCOSITY*K);
+//#else
+//    const VectorizedArray<value_type> tau =
+//      K*normmeanvel*std::pow(volume,1./(double)dim);
+//#endif
 
 //    std::cout << "tau" << tau[0] << "  " << tau[1] << std::endl;
 //    std::cout << "vel  " << normmeanvel[0] << "  " << normmeanvel[1] << std::endl;
@@ -5910,8 +5920,11 @@ public:
                 const std::vector<parallel::distributed::Vector<value_type> >  &source,
                 const std::pair<unsigned int,unsigned int>            &cell_range)
   {
-
+#ifdef XWALL
+  FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> phi(data,xwallstatevec[0],xwallstatevec[1],0,3);
+#else
   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> phi(data,xwallstatevec[0],xwallstatevec[1],0,0);
+#endif
   AlignedVector<VectorizedArray<value_type> > JxW_values(phi.n_q_points);
   VectorizedArray<value_type> div_vec = make_vectorized_array(0.);
   VectorizedArray<value_type> vol_vec = make_vectorized_array(0.);
@@ -5961,7 +5974,7 @@ public:
    {
      velocity.reinit(cell);
      const unsigned int total_dofs_per_cell = velocity.dofs_per_cell * dim;
-     velocity.read_dof_values(src,0,src,dim);
+     velocity.read_dof_values(solution_n,0,solution_n,dim);
      velocity.evaluate (true,false);
      VectorizedArray<value_type> volume;
      VectorizedArray<value_type> normmeanvel;
@@ -5978,7 +5991,8 @@ public:
        meanvel /=volume;
        normmeanvel = meanvel.norm();
      }
-
+     velocity.reinit(cell);
+     velocity.read_dof_values(src,0,src,dim);
      for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
        if (matrices[v].m() != total_dofs_per_cell)
          matrices[v].reinit(total_dofs_per_cell, total_dofs_per_cell);
@@ -5987,8 +6001,13 @@ public:
 
      // compute grad-div parameter
      //use definition Ohlhanskii et al. (2009)
-     const VectorizedArray<value_type> tau =
-       K*normmeanvel*std::pow(volume,1./(double)dim);
+//#ifdef STOKES
+     const VectorizedArray<value_type> tau = K*normmeanvel*std::pow(volume,1./(double)dim) + make_vectorized_array<value_type>(VISCOSITY*K);
+//     const VectorizedArray<value_type> tau = make_vectorized_array<value_type>(VISCOSITY*K);
+//#else
+//     const VectorizedArray<value_type> tau =
+//       K*normmeanvel*std::pow(volume,1./(double)dim);
+//#endif
 
      //now apply vectors to inverse matrix
 //     for (unsigned int q=0; q<velocity.n_q_points; ++q)
@@ -7535,7 +7554,7 @@ public:
     numchsamp++;
 
     std::vector<double > dummy(2,0.0);
-    nsoperation.get_data().cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, 1>::local_compute_divu_for_channel_stats,&nsoperation, dummy, vel_hathat);
+    nsoperation.get_data().cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats,&nsoperation, dummy, vel_hathat);
     double div = Utilities::MPI::sum (dummy.at(0), MPI_COMM_WORLD);
     double vol = Utilities::MPI::sum (dummy.at(1), MPI_COMM_WORLD);
     udiv_samp += div/vol;
@@ -7560,7 +7579,7 @@ public:
   write_divu(std::vector<parallel::distributed::Vector<value_type> >   &vel_hathat, NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> & nsoperation, double time, unsigned int time_step_number)
   {
     std::vector<double > dummy(2,0.0);
-    nsoperation.get_data().cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, 1>::local_compute_divu_for_channel_stats,&nsoperation, dummy, vel_hathat);
+    nsoperation.get_data().cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats,&nsoperation, dummy, vel_hathat);
     double div = Utilities::MPI::sum (dummy.at(0), MPI_COMM_WORLD);
     double vol = Utilities::MPI::sum (dummy.at(1), MPI_COMM_WORLD);
     double udiv = div/vol;
@@ -7726,7 +7745,9 @@ public:
 #endif
           output_number);
     pcout << std::endl << "Write output at START_TIME t = " << START_TIME << std::endl;
+#ifndef FLOW_PAST_CYLINDER
     calculate_error(navier_stokes_operation.solution_n);
+#endif
   }
   output_number++;
 
