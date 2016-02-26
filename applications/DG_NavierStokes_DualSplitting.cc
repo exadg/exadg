@@ -70,12 +70,12 @@
 #define CONSCONVPBC
 //#define SKEWSYMMVISC
 
-//#define VORTEX
+#define VORTEX
 //#define STOKES
 //#define POISEUILLE
 //#define KOVASZNAY
 //#define BELTRAMI
-#define FLOW_PAST_CYLINDER
+//#define FLOW_PAST_CYLINDER
 //#define CHANNEL
 
 namespace DG_NavierStokes
@@ -83,13 +83,13 @@ namespace DG_NavierStokes
   using namespace dealii;
 
 #ifdef VORTEX
-  const unsigned int fe_degree = 3; //2
+  const unsigned int fe_degree = 2; //2
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
   const unsigned int dimension = 2; // dimension >= 2
-  const unsigned int refine_steps_min = 1; //1
-  const unsigned int refine_steps_max = 1;
+  const unsigned int refine_steps_min = 3; //1
+  const unsigned int refine_steps_max = 3;
 
   const double START_TIME = 0.0;
   const double END_TIME = 1.0;
@@ -100,11 +100,11 @@ namespace DG_NavierStokes
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.05; //0.001
 
-  const double VISCOSITY = 0.025;
+  const double VISCOSITY = 0.01;
 
   const double MAX_VELOCITY = 1.4;
   const double stab_factor = 1.0;
-  const double K=0.0e2; //1.0e2; //grad-div stabilization/penalty parameter
+  const double K=1.0e2; //1.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -1170,6 +1170,11 @@ public:
         tensor_dofs_per_cell = fe_eval[0].tensor_dofs_per_cell;
 #endif
       }
+
+      VectorizedArray<double> * begin_dof_values()
+    {
+        return fe_eval[0].begin_dof_values();
+    }
 
       void read_dof_values (const parallel::distributed::Vector<double> &src, const parallel::distributed::Vector<double> &src_xwall)
       {
@@ -3057,7 +3062,7 @@ public:
   typedef double value_type;
   static const unsigned int number_vorticity_components = (dim==2) ? 1 : dim;
 
-  NavierStokesOperation(const DoFHandler<dim> &dof_handler,const DoFHandler<dim> &dof_handler_p, const DoFHandler<dim> &dof_handler_xwall, const double time_step_size,
+  NavierStokesOperation(const Mapping<dim> &mapping, const DoFHandler<dim> &dof_handler,const DoFHandler<dim> &dof_handler_p, const DoFHandler<dim> &dof_handler_xwall, const double time_step_size,
       const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
       std::set<types::boundary_id> dirichlet_bc_indicator, std::set<types::boundary_id> neumann_bc_indicator);
 
@@ -3094,6 +3099,12 @@ public:
   void  apply_projection (const std::vector<parallel::distributed::Vector<value_type> >     &src,
                    std::vector<parallel::distributed::Vector<value_type> >      &dst);
 
+  void  rhs_projection (const std::vector<parallel::distributed::Vector<value_type> >     &src,
+                   std::vector<parallel::distributed::Vector<value_type> >      &dst);
+
+  void  solve_projection (const std::vector<parallel::distributed::Vector<value_type> >     &src,
+                   std::vector<parallel::distributed::Vector<value_type> >      &dst);
+
   void compute_vorticity (const std::vector<parallel::distributed::Vector<value_type> >     &src,
                       std::vector<parallel::distributed::Vector<value_type> >      &dst);
 
@@ -3101,7 +3112,7 @@ public:
 
   std::vector<parallel::distributed::Vector<value_type> > solution_nm2, solution_nm, solution_n, velocity_temp, solution_np;
   std::vector<parallel::distributed::Vector<value_type> > vorticity_nm2, vorticity_nm, vorticity_n;
-  std::vector<parallel::distributed::Vector<value_type> > rhs_convection_nm2, rhs_convection_nm, rhs_convection_n;
+  std::vector<parallel::distributed::Vector<value_type> > rhs_convection_nm2, rhs_convection_nm, rhs_convection_n, rhs_proj;
   std::vector<parallel::distributed::Vector<value_type> > f;
   std::vector<parallel::distributed::Vector<value_type> > xwallstatevec;
   parallel::distributed::BlockVector<value_type> rhs_visc;
@@ -3123,6 +3134,8 @@ public:
 
   private:
   MatrixFree<dim,value_type> data;
+
+  MappingQ<dim> mapping;
 
   double time, time_step;
   const double viscosity;
@@ -3148,6 +3161,8 @@ public:
 
   std::set<types::boundary_id> dirichlet_boundary;
   std::set<types::boundary_id> neumann_boundary;
+
+  bool clear_files;
 
   void update_time_integrator(unsigned int time_step_number);
   void check_time_integrator(unsigned int time_step_number);
@@ -3261,17 +3276,18 @@ public:
                       const std::pair<unsigned int,unsigned int>          &cell_range);
 
   // projection step
-  void local_projection (const MatrixFree<dim,value_type>                &data,
+
+  void local_rhs_projection (const MatrixFree<dim,value_type>                &data,
                     std::vector<parallel::distributed::Vector<double> >      &dst,
                     const std::vector<parallel::distributed::Vector<double> >    &src,
                     const std::pair<unsigned int,unsigned int>          &cell_range) const;
 
-  void local_projection_face (const MatrixFree<dim,value_type>              &data,
+  void local_rhs_projection_face (const MatrixFree<dim,value_type>              &data,
                 std::vector<parallel::distributed::Vector<double> >      &dst,
                 const std::vector<parallel::distributed::Vector<double> >  &src,
                 const std::pair<unsigned int,unsigned int>          &face_range) const;
 //
-  void local_projection_boundary_face (const MatrixFree<dim,value_type>              &data,
+  void local_rhs_projection_boundary_face (const MatrixFree<dim,value_type>              &data,
                 std::vector<parallel::distributed::Vector<double> >      &dst,
                 const std::vector<parallel::distributed::Vector<double> >  &src,
                 const std::pair<unsigned int,unsigned int>          &face_range) const;
@@ -3296,12 +3312,23 @@ public:
                             const std::vector<parallel::distributed::Vector<double> >    &src,
                             const std::pair<unsigned int,unsigned int>          &cell_range) const;
 
+  void local_solve_projection (const MatrixFree<dim,value_type>                &data,
+                            std::vector<parallel::distributed::Vector<double> >      &dst,
+                            const std::vector<parallel::distributed::Vector<double> >    &src,
+                            const std::pair<unsigned int,unsigned int>          &cell_range);
+
   //penalty parameter
   void calculate_penalty_parameter(double &factor) const;
 
   void compute_lift_and_drag();
 
   void compute_pressure_difference();
+
+  void my_point_value(const Mapping<dim> &mapping,
+                 const DoFHandler<dim> &dof_handler,
+                 const parallel::distributed::Vector<double> &solution,
+                 const std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> > &cell_point,
+                 Vector<double> &value);
   public:
   void local_compute_divu_for_channel_stats (const MatrixFree<dim,value_type>                &data,
                             std::vector<double >      &test,
@@ -3310,7 +3337,9 @@ public:
   };
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-  NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::NavierStokesOperation(const DoFHandler<dim> &dof_handler,
+  NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::NavierStokesOperation(
+                                                                       const Mapping<dim> &mapping,
+                                                                       const DoFHandler<dim> &dof_handler,
                                                                        const DoFHandler<dim> &dof_handler_p,
                                                                        const DoFHandler<dim> &dof_handler_xwall,
                                                                        const double time_step_size,
@@ -3324,6 +3353,7 @@ public:
   rhs_visc(3),
   solution_temp_visc(3),
 #endif
+  mapping(fe_degree),
   time(0.0),
   time_step(time_step_size),
   viscosity(VISCOSITY),
@@ -3336,7 +3366,8 @@ public:
   element_volume(0),
   xwall(dof_handler,&data,viscosity,element_volume),
   dirichlet_boundary(dirichlet_bc_indicator),
-  neumann_boundary(neumann_bc_indicator)
+  neumann_boundary(neumann_bc_indicator),
+  clear_files(true)
   {
     alpha[0] = beta[0] = 1.;
     alpha[1] = alpha[2] = beta[1] = beta[2] = 0.;
@@ -3382,7 +3413,7 @@ public:
   quadratures.push_back(QGauss<1>(fe_degree + (fe_degree+2)/2));
   quadratures.push_back(QGauss<1>(n_q_points_1d_xwall));
 
-  const MappingQ<dim> mapping(fe_degree);
+//  const MappingQ<dim> mapping(fe_degree);
 
   data.reinit (mapping, dof_handler_vec, constraint_matrix_vec,
                quadratures, additional_data);
@@ -3426,6 +3457,13 @@ public:
   solution_nm = solution_n;
   solution_np = solution_n;
   rhs_p = solution_n[dim];
+
+  rhs_proj.resize(dim);
+  data.initialize_dof_vector(rhs_proj[0], 0);
+  for (unsigned int d=1;d<dim;++d)
+  {
+    rhs_proj[d] = rhs_proj[0];
+  }
 
   velocity_temp.resize(2*dim);
   data.initialize_dof_vector(velocity_temp[0],0);
@@ -3776,7 +3814,10 @@ public:
   /********************** STEP 3: projection *******************************/
   timer.restart();
 
-  apply_projection(solution_np,velocity_temp);
+//  apply_projection(solution_np,velocity_temp);
+
+  rhs_projection(solution_np,rhs_proj);
+  solve_projection(rhs_proj,velocity_temp);
 
   computing_times[2] += timer.wall_time();
   /*************************************************************************/
@@ -3861,6 +3902,8 @@ public:
 #ifdef FLOW_PAST_CYLINDER
   compute_lift_and_drag();
   compute_pressure_difference();
+  if(time_step_number == 1)
+    clear_files = false;
 #endif
 
   if(START_WITH_LOW_ORDER  == true)
@@ -3993,36 +4036,38 @@ public:
   }
   Force = Utilities::MPI::sum(Force,MPI_COMM_WORLD);
 
-//  // compute lift and drag coefficients (c = (F/rho)/(1/2 U² D)
-//  const double U = Um * (dim==2 ? 2./3. : 4./9.);
-//  const double H = 0.41;
-//  if(dim == 2)
-//    Force *= 2.0/pow(U,2.0)/D;
-//  else if(dim == 3)
-//    Force *= 2.0/pow(U,2.0)/D/H;
-//
-//  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
-//  {
-//    std::string filename_drag, filename_lift;
-//    filename_drag = "output/drag_refine" + Utilities::int_to_string(data.get_dof_handler(1).get_triangulation().n_levels()-1) + "_fedegree" + Utilities::int_to_string(fe_degree) + ".txt"; //filename_drag = "drag.txt";
-//    filename_lift = "output/lift_refine" + Utilities::int_to_string(data.get_dof_handler(1).get_triangulation().n_levels()-1) + "_fedegree" + Utilities::int_to_string(fe_degree) + ".txt"; //filename_lift = "lift.txt";
-//
-//    std::ofstream f_drag,f_lift;
-//    if(clear_files)
-//    {
-//      f_drag.open(filename_drag.c_str(),std::ios::trunc);
-//      f_lift.open(filename_lift.c_str(),std::ios::trunc);
-//    }
-//    else
-//    {
-//      f_drag.open(filename_drag.c_str(),std::ios::app);
-//      f_lift.open(filename_lift.c_str(),std::ios::app);
-//    }
-//    f_drag<<std::scientific<<std::setprecision(6)<<time+time_step<<"\t"<<Force[0]<<std::endl;
-//    f_drag.close();
-//    f_lift<<std::scientific<<std::setprecision(6)<<time+time_step<<"\t"<<Force[1]<<std::endl;
-//    f_lift.close();
-//  }
+  // compute lift and drag coefficients (c = (F/rho)/(1/2 U² D)
+#ifdef FLOW_PAST_CYLINDER
+  const double U = Um * (dim==2 ? 2./3. : 4./9.);
+  const double H = 0.41;
+  if(dim == 2)
+    Force *= 2.0/pow(U,2.0)/D;
+  else if(dim == 3)
+    Force *= 2.0/pow(U,2.0)/D/H;
+#endif
+
+  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+  {
+    std::string filename_drag, filename_lift;
+    filename_drag = "output/drag_refine" + Utilities::int_to_string(data.get_dof_handler(1).get_triangulation().n_levels()-1) + "_fedegree" + Utilities::int_to_string(fe_degree) + ".txt"; //filename_drag = "drag.txt";
+    filename_lift = "output/lift_refine" + Utilities::int_to_string(data.get_dof_handler(1).get_triangulation().n_levels()-1) + "_fedegree" + Utilities::int_to_string(fe_degree) + ".txt"; //filename_lift = "lift.txt";
+
+    std::ofstream f_drag,f_lift;
+    if(clear_files)
+    {
+      f_drag.open(filename_drag.c_str(),std::ios::trunc);
+      f_lift.open(filename_lift.c_str(),std::ios::trunc);
+    }
+    else
+    {
+      f_drag.open(filename_drag.c_str(),std::ios::app);
+      f_lift.open(filename_lift.c_str(),std::ios::app);
+    }
+    f_drag<<std::scientific<<std::setprecision(6)<<time+time_step<<"\t"<<Force[0]<<std::endl;
+    f_drag.close();
+    f_lift<<std::scientific<<std::setprecision(6)<<time+time_step<<"\t"<<Force[1]<<std::endl;
+    f_lift.close();
+  }
   }
 
 //  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -4132,52 +4177,75 @@ public:
 //  pressure_2 = value_2(0);
 
   // parallel computation
-//  const std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> >
-//  cell_point_1 = GridTools::find_active_cell_around_point (mapping,data.get_dof_handler(1), point_1);
-//  if(cell_point_1.first->is_locally_owned())
-//  {
-//    counter_1 = 1;
-//    //std::cout<< "Point 1 found on Processor "<<Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)<<std::endl;
-//
-//    Vector<double> value(1);
-//    my_point_value(mapping,data.get_dof_handler(1),solution_n[dim],cell_point_1,value);
-//    pressure_1 = value(0);
-//  }
-//  counter_1 = Utilities::MPI::sum(counter_1,MPI_COMM_WORLD);
-//  pressure_1 = Utilities::MPI::sum(pressure_1,MPI_COMM_WORLD);
-//  pressure_1 = pressure_1/counter_1;
-//
-//  const std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> >
-//  cell_point_2 = GridTools::find_active_cell_around_point (mapping,data.get_dof_handler(1), point_2);
-//  if(cell_point_2.first->is_locally_owned())
-//  {
-//    counter_2 = 1;
-//    //std::cout<< "Point 2 found on Processor "<<Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)<<std::endl;
-//
-//    Vector<double> value(1);
-//    my_point_value(mapping,data.get_dof_handler(1),solution_n[dim],cell_point_2,value);
-//    pressure_2 = value(0);
-//  }
-//  counter_2 = Utilities::MPI::sum(counter_2,MPI_COMM_WORLD);
-//  pressure_2 = Utilities::MPI::sum(pressure_2,MPI_COMM_WORLD);
-//  pressure_2 = pressure_2/counter_2;
-//
-//  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
-//  {
-//    std::string filename = "output/pressure_difference_refine" + Utilities::int_to_string(data.get_dof_handler(1).get_triangulation().n_levels()-1) + "_fedegree" + Utilities::int_to_string(fe_degree) + ".txt"; // filename = "pressure_difference.txt";
-//
-//    std::ofstream f;
-//    if(clear_files)
-//    {
-//      f.open(filename.c_str(),std::ios::trunc);
-//    }
-//    else
-//    {
-//      f.open(filename.c_str(),std::ios::app);
-//    }
-//    f << std::scientific << std::setprecision(6) << time+time_step << "\t" << pressure_1-pressure_2 << std::endl;
-//    f.close();
-//  }
+  const std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> >
+  cell_point_1 = GridTools::find_active_cell_around_point (mapping,data.get_dof_handler(1), point_1);
+  if(cell_point_1.first->is_locally_owned())
+  {
+    counter_1 = 1;
+    //std::cout<< "Point 1 found on Processor "<<Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)<<std::endl;
+
+    Vector<double> value(1);
+    my_point_value(mapping,data.get_dof_handler(1),solution_n[dim],cell_point_1,value);
+    pressure_1 = value(0);
+  }
+  counter_1 = Utilities::MPI::sum(counter_1,MPI_COMM_WORLD);
+  pressure_1 = Utilities::MPI::sum(pressure_1,MPI_COMM_WORLD);
+  pressure_1 = pressure_1/counter_1;
+
+  const std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> >
+  cell_point_2 = GridTools::find_active_cell_around_point (mapping,data.get_dof_handler(1), point_2);
+  if(cell_point_2.first->is_locally_owned())
+  {
+    counter_2 = 1;
+    //std::cout<< "Point 2 found on Processor "<<Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)<<std::endl;
+
+    Vector<double> value(1);
+    my_point_value(mapping,data.get_dof_handler(1),solution_n[dim],cell_point_2,value);
+    pressure_2 = value(0);
+  }
+  counter_2 = Utilities::MPI::sum(counter_2,MPI_COMM_WORLD);
+  pressure_2 = Utilities::MPI::sum(pressure_2,MPI_COMM_WORLD);
+  pressure_2 = pressure_2/counter_2;
+
+  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+  {
+    std::string filename = "output/pressure_difference_refine" + Utilities::int_to_string(data.get_dof_handler(1).get_triangulation().n_levels()-1) + "_fedegree" + Utilities::int_to_string(fe_degree) + ".txt"; // filename = "pressure_difference.txt";
+
+    std::ofstream f;
+    if(clear_files)
+    {
+      f.open(filename.c_str(),std::ios::trunc);
+    }
+    else
+    {
+      f.open(filename.c_str(),std::ios::app);
+    }
+    f << std::scientific << std::setprecision(6) << time+time_step << "\t" << pressure_1-pressure_2 << std::endl;
+    f.close();
+  }
+  }
+
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  my_point_value(const Mapping<dim> &mapping,
+              const DoFHandler<dim> &dof_handler,
+              const parallel::distributed::Vector<double> &solution,
+              const std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> > &cell_point,
+              Vector<double> &value)
+  {
+  const FiniteElement<dim> &fe = dof_handler.get_fe();
+  Assert(GeometryInfo<dim>::distance_to_unit_cell(cell_point.second) < 1e-10,ExcInternalError());
+
+  const Quadrature<dim> quadrature (GeometryInfo<dim>::project_to_unit_cell(cell_point.second));
+
+  FEValues<dim> fe_values(mapping, fe, quadrature, update_values);
+  fe_values.reinit(cell_point.first);
+
+  // then use this to get at the values of
+  // the given fe_function at this point
+  std::vector<Vector<double> > u_value(1, Vector<double> (fe.n_components()));
+  fe_values.get_function_values(solution, u_value);
+  value = u_value[0];
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -5467,8 +5535,6 @@ public:
                 const std::vector<parallel::distributed::Vector<value_type> >  &src,
                 const std::pair<unsigned int,unsigned int>            &cell_range) const
   {
-
-//
 #ifdef XWALL
     FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> velocity(data,xwallstatevec[0],xwallstatevec[1],0,3);
     FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> phi(data,xwallstatevec[0],xwallstatevec[1],0,3);
@@ -5574,6 +5640,195 @@ public:
   }
   }
 
+  template<typename Matrix, typename value_type>
+  class SolverCGmod
+  {
+  public:
+    SolverCGmod(const unsigned int unknowns, const double abs_tol=1.e-12,const double rel_tol=1.e-8,const unsigned int max_iter = 1e5);
+    void solve(Matrix *matrix,  value_type *solution, value_type *rhs);
+
+  private:
+    const double ABS_TOL;
+    const double REL_TOL;
+    const unsigned int MAX_ITER;
+    AlignedVector<value_type> p,r,v;
+    const unsigned int M;
+    value_type l2_norm(value_type *vector);
+
+    void vector_init(value_type *dst);
+    void equ(value_type *dst, value_type scalar, value_type *in_vector);
+    void equ(value_type *dst, value_type scalar1, value_type *in_vector1, value_type scalar2, value_type *in_vector2);
+
+    void add(value_type *dst, value_type scalar, value_type *in_vector);
+    value_type inner_product(value_type *vector1, value_type *vector2);
+
+  };
+  template<typename Matrix, typename value_type>
+  SolverCGmod<Matrix,value_type>::SolverCGmod(const unsigned int unknowns, const double abs_tol,const double rel_tol, const unsigned int max_iter):
+  ABS_TOL(abs_tol),
+  REL_TOL(rel_tol),
+  MAX_ITER(max_iter),
+  M(unknowns)
+  {
+    p.resize(M);
+    r.resize(M);
+    v.resize(M);
+  }
+
+  template<typename Matrix, typename value_type>
+  value_type SolverCGmod<Matrix, value_type>::l2_norm(value_type *vector)
+  {
+    value_type norm = 0.0;
+    for(unsigned int i=0;i<M;++i)
+      norm += vector[i]*vector[i];
+    norm = sqrt(norm);
+
+    return norm;
+  }
+
+  template<typename Matrix, typename value_type>
+  void SolverCGmod<Matrix, value_type>::vector_init(value_type *vector)
+  {
+    for(unsigned int i=0;i<M;++i)
+      vector[i] = 0.0;
+  }
+
+  template<typename Matrix, typename value_type>
+  void SolverCGmod<Matrix, value_type>::equ(value_type *dst, value_type scalar, value_type *in_vector)
+  {
+    for(unsigned int i=0;i<M;++i)
+      dst[i] = scalar*in_vector[i];
+  }
+
+  template<typename Matrix, typename value_type>
+  void SolverCGmod<Matrix, value_type>::equ(value_type *dst, value_type scalar1, value_type *in_vector1, value_type scalar2, value_type *in_vector2)
+  {
+    for(unsigned int i=0;i<M;++i)
+      dst[i] = scalar1*in_vector1[i]+scalar2*in_vector2[i];
+  }
+
+  template<typename Matrix, typename value_type>
+  void SolverCGmod<Matrix, value_type>::add(value_type *dst, value_type scalar, value_type *in_vector)
+  {
+    for(unsigned int i=0;i<M;++i)
+      dst[i] += scalar*in_vector[i];
+  }
+
+  template<typename Matrix, typename value_type>
+  value_type SolverCGmod<Matrix, value_type>::inner_product(value_type *vector1, value_type *vector2)
+  {
+    value_type result = 0.0;
+    for(unsigned int i=0;i<M;++i)
+      result += vector1[i]*vector2[i];
+
+    return result;
+  }
+
+  template<typename Matrix, typename value_type>
+  void SolverCGmod<Matrix, value_type>::solve(Matrix *matrix, value_type *solution, value_type *rhs)
+  {
+    // guess initial solution
+    vector_init(solution);
+
+    // apply matrix vector product: v = A*solution
+    (*matrix).vmult(v.begin(),solution);
+
+    // compute residual: r = rhs-A*solution
+    equ(r.begin(),1.,rhs,-1.,v.begin());
+    equ(p.begin(),1.,r.begin());
+
+    // compute norm of residual
+    value_type norm_r0 = l2_norm(r.begin());
+    value_type norm_r_abs = norm_r0;
+    value_type norm_r_rel = 1.;
+
+    unsigned int n_iter = 0;
+
+    while((norm_r_abs > ABS_TOL) && (norm_r_rel > REL_TOL) && (n_iter < MAX_ITER))
+    {
+      // v = A*p
+      (*matrix).vmult(v.begin(),p.begin());
+
+      // alpha = (p^T*r) / (p^T*v)
+      value_type alpha = (inner_product(p.begin(),r.begin()))/(inner_product(p.begin(),v.begin()));
+
+      // solution <- solution + alpha*p
+      add(solution,alpha,p.begin());
+
+      // r <- r - alpha*v
+      add(r.begin(),-alpha,v.begin());
+
+      // beta = (v^T*r) / (p^T*v)
+      value_type beta = (inner_product(v.begin(),r.begin()))/(inner_product(p.begin(),v.begin()));
+
+      // p <- r -beta*p
+      equ(p.begin(),1.,r.begin(),-beta,p.begin());
+
+      // calculate norm_r_abs, norm_r_rel
+      norm_r_abs = l2_norm(r.begin());
+      norm_r_rel = norm_r_abs/norm_r0;
+
+      // increment iteration counter
+      ++n_iter;
+    }
+
+    if(n_iter > MAX_ITER)
+    {
+      std::cout << "Solution of grad-div stabilized projection step:" << std::endl
+                << "Maximum number of iterations exceeded" << std::endl
+                << "Norm r: " << norm_r_abs  << std::endl;
+    }
+    else
+    {
+      std::cout << "Solution of grad-div stabilized projection step:" << std::endl
+                << "Number of iterations: " << n_iter << std::endl
+                << "Norm r: " << norm_r_abs  << std::endl;
+    }
+  }
+
+  template<typename FEEval, typename value_type, int dim>
+  class MatrixProjectionStep
+  {
+  public:
+    MatrixProjectionStep(FEEval &fe_evaluation):fe_eval(fe_evaluation){};
+    void vmult(value_type *dst, value_type *src);
+    void setup(unsigned int vec_comp, value_type tau_grad_div_stab)
+    {
+      this->v = vec_comp;
+      this->tau = tau_grad_div_stab;
+    }
+
+  private:
+    FEEval fe_eval;
+    unsigned int v;
+    value_type tau;
+  };
+  template<typename FEEval, typename value_type, int dim>
+  void MatrixProjectionStep<FEEval,value_type, dim>::
+  vmult(value_type *dst, value_type *src)
+  {
+    // copy data from src to fe_eval
+    for (unsigned int i=0; i<dim*fe_eval.dofs_per_cell; ++i)
+      fe_eval.begin_dof_values()[i][v] = src[i];
+
+    // compute matrix vector product on element
+    fe_eval.evaluate (true,true,false);
+    for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+    {
+      VectorizedArray<value_type> tau_times_div = tau * fe_eval.get_divergence(q);
+      Tensor<2,dim,VectorizedArray<value_type> > test;
+      for (unsigned int d=0; d<dim; ++d)
+        test[d][d] = tau_times_div;
+      fe_eval.submit_gradient(test, q);
+      fe_eval.submit_value (fe_eval.get_value(q), q);
+    }
+    fe_eval.integrate (true,true);
+
+    // copy data from fe_eval to dst
+    for (unsigned int i=0; i<dim*fe_eval.dofs_per_cell; ++i)
+      dst[i] = fe_eval.begin_dof_values()[i][v];
+  }
+
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   local_precompute_grad_div_projection(const MatrixFree<dim,value_type>                  &data,
@@ -5581,8 +5836,6 @@ public:
                 const std::vector<parallel::distributed::Vector<value_type> >  &,
                 const std::pair<unsigned int,unsigned int>            &cell_range)
   {
-
-//
   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> phi(data,xwallstatevec[0],xwallstatevec[1],0,0);
 
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
@@ -6050,19 +6303,14 @@ public:
     {
       Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_xwall.get_normal_vector(q);
 #ifdef DIVUPARTIAL
-      Tensor<1,dim,VectorizedArray<value_type> > meanvel_in = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q));
-      Tensor<1,dim,VectorizedArray<value_type> > meanvel_out = meanvel_in;
+      Tensor<1,dim,VectorizedArray<value_type> > meanvel = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q));
 #else
-//      Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
-      //TODO: use strong formulation, i.e. integrate by parts once again
-      Tensor<1,dim,VectorizedArray<value_type> > meanvel_in = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q))-fe_eval_xwall.get_value(q);
-      Tensor<1,dim,VectorizedArray<value_type> > meanvel_out = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q))-fe_eval_xwall_neighbor.get_value(q);
+      Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
 #endif
-      VectorizedArray<value_type> submitvalue_in = normal * meanvel_in;
-      VectorizedArray<value_type> submitvalue_out = normal * meanvel_out;
+      VectorizedArray<value_type> submitvalue = normal * meanvel;
 
-      pressure.submit_value ((-submitvalue_in)/time_step, q);
-      pressure_neighbor.submit_value (submitvalue_out/time_step, q);
+      pressure.submit_value ((-submitvalue)/time_step, q);
+      pressure_neighbor.submit_value (submitvalue/time_step, q);
     }
     pressure.integrate (true,false);
     pressure_neighbor.integrate (true,false);
@@ -6222,24 +6470,7 @@ public:
         }
         Tensor<1,dim,VectorizedArray<value_type> > meanvel = make_vectorized_array<value_type>(gamma0)*g_np;
 #else
-//        Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
-
-        //TODO: use strong formulation, i.e. integrate by parts once again
-        Tensor<1,dim,VectorizedArray<value_type> > g_np;
-        for(unsigned int d=0;d<dim;++d)
-        {
-          AnalyticalSolution<dim> dirichlet_boundary(d,time+time_step);
-          value_type array [VectorizedArray<value_type>::n_array_elements];
-          for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
-          {
-            Point<dim> q_point;
-            for (unsigned int d=0; d<dim; ++d)
-            q_point[d] = q_points[d][n];
-            array[n] = dirichlet_boundary.value(q_point);
-          }
-          g_np[d].load(&array[0]);
-        }
-        Tensor<1,dim,VectorizedArray<value_type> > meanvel = make_vectorized_array<value_type>(gamma0)*g_np-fe_eval_xwall.get_value(q);
+        Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
 #endif
         VectorizedArray<value_type> submitvalue;
         submitvalue = normal[0]*meanvel[0];
@@ -6288,6 +6519,101 @@ public:
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  rhs_projection (const std::vector<parallel::distributed::Vector<value_type> >     &src,
+                  std::vector<parallel::distributed::Vector<value_type> >      &dst)
+  {
+  for(unsigned int d=0;d<dim;++d)
+  {
+    dst[d] = 0;
+#ifdef XWALL
+    dst[d+dim] = 0;
+#endif
+  }
+  data.loop (  &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_rhs_projection,
+            &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_rhs_projection_face,
+            &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_rhs_projection_boundary_face,
+            this, dst, src);
+  }
+
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  solve_projection (const std::vector<parallel::distributed::Vector<value_type> >     &rhs,
+                  std::vector<parallel::distributed::Vector<value_type> >      &sol)
+  {
+    if(K>0.0+1.0e-9)
+    {
+      data.cell_loop(&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_solve_projection,
+                                 this, sol, rhs);
+    }
+    else
+    {
+      data.cell_loop(&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_mass_matrix,
+                                 this, sol, rhs);
+    }
+  }
+
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  local_solve_projection(const MatrixFree<dim,value_type>                               &data,
+                         std::vector<parallel::distributed::Vector<value_type> >        &dst,
+                         const std::vector<parallel::distributed::Vector<value_type> >  &src,
+                         const std::pair<unsigned int,unsigned int>                     &cell_range)
+  {
+#ifdef XWALL
+    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval(data,xwallstatevec[0],xwallstatevec[1],0,3);
+#else
+   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval(data,xwallstatevec[0],xwallstatevec[1],0,0);
+#endif
+
+  AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval.n_q_points);
+  for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+  {
+    fe_eval.reinit(cell);
+    const unsigned int total_dofs_per_cell = fe_eval.dofs_per_cell * dim;
+    fe_eval.read_dof_values(solution_n,0,solution_n,dim);
+    fe_eval.evaluate (true,false);
+    VectorizedArray<value_type> volume;
+    VectorizedArray<value_type> normmeanvel;
+
+    Tensor<1,dim,VectorizedArray<value_type> > meanvel;
+    fe_eval.fill_JxW_values(JxW_values);
+    meanvel = JxW_values[0]*fe_eval.get_value(0);
+    volume = JxW_values[0];
+    for (unsigned int q=1; q<fe_eval.n_q_points; ++q)
+    {
+      meanvel += JxW_values[q]*fe_eval.get_value(q);
+      volume += JxW_values[q];
+    }
+    meanvel /=volume;
+    normmeanvel = meanvel.norm();
+
+    fe_eval.read_dof_values(src,0,src,dim);
+
+    // compute grad-div parameter: use definition Ohlhanskii et al. (2009)
+    const VectorizedArray<value_type> tau = K*normmeanvel*std::pow(volume,1./(double)dim) + make_vectorized_array<value_type>(VISCOSITY*K);
+
+    for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
+    {
+      Vector<value_type> rhs(total_dofs_per_cell), solution(total_dofs_per_cell);
+
+      for (unsigned int j=0; j<total_dofs_per_cell; ++j)
+        rhs(j)=(fe_eval.read_cellwise_dof_value(j))[v];
+
+      // solve projection step locally
+      MatrixProjectionStep<FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type>,value_type, dim> matrix_projection_step(fe_eval);
+      matrix_projection_step.setup(v,tau[v]);
+      SolverCGmod< MatrixProjectionStep<FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type>,value_type,dim>, value_type> cg_solver(total_dofs_per_cell,1.e-12,1.e-8,1e4);
+      cg_solver.solve(&matrix_projection_step,&solution(0),&rhs(0));
+
+      for (unsigned int j=0; j<total_dofs_per_cell; ++j)
+        fe_eval.write_cellwise_dof_value(j,solution(j),v);
+    }
+    fe_eval.set_dof_values (dst,0,dst,dim);
+  }
+  }
+
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   apply_projection (const std::vector<parallel::distributed::Vector<value_type> >     &src,
                   std::vector<parallel::distributed::Vector<value_type> >      &dst)
   {
@@ -6298,9 +6624,9 @@ public:
     dst[d+dim] = 0;
 #endif
   }
-  data.loop (  &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_projection,
-            &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_projection_face,
-            &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_projection_boundary_face,
+  data.loop (  &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_rhs_projection,
+            &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_rhs_projection_face,
+            &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_rhs_projection_boundary_face,
             this, dst, src);
 
 #ifdef COMPDIV
@@ -6334,7 +6660,7 @@ public:
 
   template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-  local_projection (const MatrixFree<dim,value_type>              &data,
+  local_rhs_projection (const MatrixFree<dim,value_type>              &data,
           std::vector<parallel::distributed::Vector<double> >      &dst,
           const std::vector<parallel::distributed::Vector<double> >  &src,
           const std::pair<unsigned int,unsigned int>           &cell_range) const
@@ -6382,7 +6708,7 @@ public:
 
   template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-  local_projection_face (const MatrixFree<dim,value_type>               &data,
+  local_rhs_projection_face (const MatrixFree<dim,value_type>               &data,
                 std::vector<parallel::distributed::Vector<double> >      &dst,
                 const std::vector<parallel::distributed::Vector<double> >  &src,
                 const std::pair<unsigned int,unsigned int>          &face_range) const
@@ -6432,7 +6758,7 @@ public:
 
   template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-  local_projection_boundary_face (const MatrixFree<dim,value_type>               &data,
+  local_rhs_projection_boundary_face (const MatrixFree<dim,value_type>               &data,
                 std::vector<parallel::distributed::Vector<double> >      &dst,
                 const std::vector<parallel::distributed::Vector<double> >  &src,
                 const std::pair<unsigned int,unsigned int>          &face_range) const
@@ -6529,6 +6855,7 @@ public:
   FE_DGQArbitraryNodes<dim>  fe;
   FE_DGQArbitraryNodes<dim>  fe_p;
   FE_DGQArbitraryNodes<dim>  fe_xwall;
+  MappingQ<dim>   mapping;
   DoFHandler<dim>  dof_handler;
   DoFHandler<dim>  dof_handler_p;
   DoFHandler<dim>  dof_handler_xwall;
@@ -6553,6 +6880,7 @@ public:
       dealii::Triangulation<dim>::none,parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
   fe(QGaussLobatto<1>(fe_degree+1)),
   fe_p(QGaussLobatto<1>(fe_degree_p+1)),
+  mapping(fe_degree),
   fe_xwall(QGaussLobatto<1>(fe_degree_xwall+1)),
   dof_handler(triangulation),
   dof_handler_p(triangulation),
@@ -7164,7 +7492,7 @@ public:
              << output_number
              << ".vtu";
 
-    data_out.build_patches (5);
+    data_out.build_patches (mapping,5);
 
     std::ofstream output (filename.str().c_str());
     data_out.write_vtu (output);
@@ -7267,7 +7595,7 @@ public:
   for(unsigned int d=0;d<dim;++d)
   {
     Vector<double> norm_per_cell (triangulation.n_active_cells());
-    VectorTools::integrate_difference (dof_handler,
+    VectorTools::integrate_difference (mapping, dof_handler,
                        solution_n[d],
                        AnalyticalSolution<dim>(d,time+delta_t),
                        norm_per_cell,
@@ -7280,7 +7608,7 @@ public:
         << std::endl;
   }
   Vector<double> norm_per_cell (triangulation.n_active_cells());
-  VectorTools::integrate_difference (dof_handler_p,
+  VectorTools::integrate_difference (mapping, dof_handler_p,
                      solution_n[dim],
                      AnalyticalSolution<dim>(dim,time+delta_t),
                      norm_per_cell,
@@ -7350,24 +7678,24 @@ public:
 
   calculate_time_step();
 
-  NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>  navier_stokes_operation(dof_handler, dof_handler_p, dof_handler_xwall, time_step, periodic_faces, dirichlet_boundary, neumann_boundary);
+  NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>  navier_stokes_operation(mapping,dof_handler, dof_handler_p, dof_handler_xwall, time_step, periodic_faces, dirichlet_boundary, neumann_boundary);
 
   // prescribe initial conditions
   for(unsigned int d=0;d<dim;++d)
-    VectorTools::interpolate(dof_handler, AnalyticalSolution<dim>(d,time), navier_stokes_operation.solution_n[d]);
-  VectorTools::interpolate(dof_handler_p, AnalyticalSolution<dim>(dim,time), navier_stokes_operation.solution_n[dim]);
+    VectorTools::interpolate(mapping, dof_handler, AnalyticalSolution<dim>(d,time), navier_stokes_operation.solution_n[d]);
+  VectorTools::interpolate(mapping, dof_handler_p, AnalyticalSolution<dim>(dim,time), navier_stokes_operation.solution_n[dim]);
   for(unsigned int d=0;d<dim;++d)
-    VectorTools::interpolate(dof_handler_xwall, AnalyticalSolution<dim>(d+dim+1,time), navier_stokes_operation.solution_n[d+dim+1]);
+    VectorTools::interpolate(mapping, dof_handler_xwall, AnalyticalSolution<dim>(d+dim+1,time), navier_stokes_operation.solution_n[d+dim+1]);
 
 //  navier_stokes_operation.solution_nm = navier_stokes_operation.solution_n;
 //  navier_stokes_operation.solution_nm2 = navier_stokes_operation.solution_n;
 
   for(unsigned int d=0;d<dim;++d)
-      VectorTools::interpolate(dof_handler, AnalyticalSolution<dim>(d,time-time_step), navier_stokes_operation.solution_nm[d]);
-    VectorTools::interpolate(dof_handler_p, AnalyticalSolution<dim>(dim,time-time_step), navier_stokes_operation.solution_nm[dim]);
+      VectorTools::interpolate(mapping, dof_handler, AnalyticalSolution<dim>(d,time-time_step), navier_stokes_operation.solution_nm[d]);
+    VectorTools::interpolate(mapping, dof_handler_p, AnalyticalSolution<dim>(dim,time-time_step), navier_stokes_operation.solution_nm[dim]);
   for(unsigned int d=0;d<dim;++d)
-    VectorTools::interpolate(dof_handler, AnalyticalSolution<dim>(d,time-time_step*2.0), navier_stokes_operation.solution_nm2[d]);
-  VectorTools::interpolate(dof_handler_p, AnalyticalSolution<dim>(dim,time-time_step*2.0), navier_stokes_operation.solution_nm2[dim]);
+    VectorTools::interpolate(mapping, dof_handler, AnalyticalSolution<dim>(d,time-time_step*2.0), navier_stokes_operation.solution_nm2[d]);
+  VectorTools::interpolate(mapping, dof_handler_p, AnalyticalSolution<dim>(dim,time-time_step*2.0), navier_stokes_operation.solution_nm2[dim]);
 
   // compute vorticity from initial data at time t = START_TIME
   {
