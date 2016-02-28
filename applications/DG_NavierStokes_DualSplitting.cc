@@ -17,6 +17,7 @@
 #include <deal.II/lac/lapack_full_matrix.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/solver_gmres.h>
+#include <deal.II/lac/solver_bicgstab.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
 
@@ -63,21 +64,21 @@
 
 //#define XWALL
 #define COMPDIV
-#define LOWMEMORY //compute grad-div matrices directly instead of saving them
-//#define PRESPARTIAL
-//#define DIVUPARTIAL
+#define LOWMEMORY 2 //compute grad-div matrices directly instead of saving them
+#define PRESPARTIAL
+#define DIVUPARTIAL
 
 
 #define CONSCONVPBC
 //#define SKEWSYMMVISC
 
-#define VORTEX
+//#define VORTEX
 //#define STOKES
 //#define POISEUILLE
 //#define KOVASZNAY
 //#define BELTRAMI
 //#define FLOW_PAST_CYLINDER
-//#define CHANNEL
+#define CHANNEL
 
 namespace DG_NavierStokes
 {
@@ -371,14 +372,14 @@ namespace DG_NavierStokes
   const double OUTPUT_START_TIME = 50.0;
   const double STATISTICS_START_TIME = 50.0;
   const bool DIVU_TIMESERIES = false; //true;
-  const int MAX_NUM_STEPS = 1000000;
+  const int MAX_NUM_STEPS = 1000;
   const double CFL = 1.0;
 
   const double VISCOSITY = 1./180.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
 
   const double MAX_VELOCITY = 15.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
   const double stab_factor = 1.0;
-  const double K=0.0; //grad-div stabilization/penalty parameter
+  const double K=1.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -3098,12 +3099,6 @@ public:
   void  apply_projection (const std::vector<parallel::distributed::Vector<value_type> >     &src,
                    std::vector<parallel::distributed::Vector<value_type> >      &dst);
 
-  void  rhs_projection (const std::vector<parallel::distributed::Vector<value_type> >     &src,
-                   std::vector<parallel::distributed::Vector<value_type> >      &dst);
-
-  void  solve_projection (const std::vector<parallel::distributed::Vector<value_type> >     &src,
-                   std::vector<parallel::distributed::Vector<value_type> >      &dst);
-
   void compute_vorticity (const std::vector<parallel::distributed::Vector<value_type> >     &src,
                       std::vector<parallel::distributed::Vector<value_type> >      &dst);
 
@@ -3813,10 +3808,7 @@ public:
   /********************** STEP 3: projection *******************************/
   timer.restart();
 
-//  apply_projection(solution_np,velocity_temp);
-
-  rhs_projection(solution_np,rhs_proj);
-  solve_projection(rhs_proj,velocity_temp);
+  apply_projection(solution_np,velocity_temp);
 
   computing_times[2] += timer.wall_time();
   /*************************************************************************/
@@ -5650,194 +5642,282 @@ public:
   }
   }
 
-  template<typename Matrix, typename value_type>
+  namespace internal
+  {
+    template <typename Number, typename Number2>
+    bool all_smaller (const Number a, const Number2 b)
+    {
+      return a<b;
+    }
+    template <typename Number, typename Number2>
+    bool all_smaller (const VectorizedArray<Number> a, const Number2 b)
+    {
+      for (unsigned int i=0; i<VectorizedArray<Number>::n_array_elements; ++i)
+        if (a[i] >= b)
+          return false;
+      return true;
+    }
+    template <typename Number>
+    void adjust_division_by_zero (Number &)
+    {}
+    template <typename Number>
+    void adjust_division_by_zero (VectorizedArray<Number> &x)
+    {
+      for (unsigned int i=0; i<VectorizedArray<Number>::n_array_elements; ++i)
+        if (x[i] < 1e-30)
+          x[i] = 1;
+    }
+  }
+
+  template<typename value_type>
   class SolverCGmod
   {
   public:
-    SolverCGmod(const unsigned int unknowns, const double abs_tol=1.e-12,const double rel_tol=1.e-8,const unsigned int max_iter = 1e5);
-    void solve(Matrix *matrix,  value_type *solution, value_type *rhs);
+    SolverCGmod(const unsigned int unknowns,
+                const double abs_tol=1.e-12,
+                const double rel_tol=1.e-8,
+                const unsigned int max_iter = 1e5);
+
+    template <typename Matrix>
+    void solve(const Matrix *matrix,  value_type *solution, const value_type *rhs);
 
   private:
     const double ABS_TOL;
     const double REL_TOL;
     const unsigned int MAX_ITER;
-    AlignedVector<value_type> p,r,v;
+    AlignedVector<value_type> storage;
+    value_type *p,*r,*v;
     const unsigned int M;
-    value_type l2_norm(value_type *vector);
+    value_type l2_norm(const value_type *vector);
 
     void vector_init(value_type *dst);
-    void equ(value_type *dst, value_type scalar, value_type *in_vector);
-    void equ(value_type *dst, value_type scalar1, value_type *in_vector1, value_type scalar2, value_type *in_vector2);
+    void equ(value_type *dst, const value_type scalar, const value_type *in_vector);
+    void equ(value_type *dst, const value_type scalar1, const value_type *in_vector1, const value_type scalar2, const value_type *in_vector2);
 
-    void add(value_type *dst, value_type scalar, value_type *in_vector);
-    value_type inner_product(value_type *vector1, value_type *vector2);
-
+    void add(value_type *dst, const value_type scalar, const value_type *in_vector);
+    value_type inner_product(const value_type *vector1, const value_type *vector2);
   };
-  template<typename Matrix, typename value_type>
-  SolverCGmod<Matrix,value_type>::SolverCGmod(const unsigned int unknowns, const double abs_tol,const double rel_tol, const unsigned int max_iter):
+  template<typename value_type>
+  SolverCGmod<value_type>::SolverCGmod(const unsigned int unknowns,
+                                       const double abs_tol,
+                                       const double rel_tol,
+                                       const unsigned int max_iter):
   ABS_TOL(abs_tol),
   REL_TOL(rel_tol),
   MAX_ITER(max_iter),
   M(unknowns)
   {
-    p.resize(M);
-    r.resize(M);
-    v.resize(M);
+    storage.resize(3*M);
+    p = storage.begin();
+    r = storage.begin()+M;
+    v = storage.begin()+2*M;
   }
 
-  template<typename Matrix, typename value_type>
-  value_type SolverCGmod<Matrix, value_type>::l2_norm(value_type *vector)
+  template<typename value_type>
+  value_type SolverCGmod< value_type>::l2_norm(const value_type *vector)
   {
-    value_type norm = 0.0;
-    for(unsigned int i=0;i<M;++i)
-      norm += vector[i]*vector[i];
-    norm = sqrt(norm);
-
-    return norm;
+    return std::sqrt(inner_product(vector, vector));
   }
 
-  template<typename Matrix, typename value_type>
-  void SolverCGmod<Matrix, value_type>::vector_init(value_type *vector)
+  template<typename value_type>
+  void SolverCGmod< value_type>::vector_init(value_type *vector)
   {
     for(unsigned int i=0;i<M;++i)
       vector[i] = 0.0;
   }
 
-  template<typename Matrix, typename value_type>
-  void SolverCGmod<Matrix, value_type>::equ(value_type *dst, value_type scalar, value_type *in_vector)
+  template<typename value_type>
+  void SolverCGmod< value_type>::equ(value_type *dst, const value_type scalar, const value_type *in_vector)
   {
     for(unsigned int i=0;i<M;++i)
       dst[i] = scalar*in_vector[i];
   }
 
-  template<typename Matrix, typename value_type>
-  void SolverCGmod<Matrix, value_type>::equ(value_type *dst, value_type scalar1, value_type *in_vector1, value_type scalar2, value_type *in_vector2)
+  template<typename value_type>
+  void SolverCGmod< value_type>::equ(value_type *dst, const value_type scalar1, const value_type *in_vector1, const value_type scalar2, const value_type *in_vector2)
   {
     for(unsigned int i=0;i<M;++i)
       dst[i] = scalar1*in_vector1[i]+scalar2*in_vector2[i];
   }
 
-  template<typename Matrix, typename value_type>
-  void SolverCGmod<Matrix, value_type>::add(value_type *dst, value_type scalar, value_type *in_vector)
+  template<typename value_type>
+  void SolverCGmod< value_type>::add(value_type *dst, const value_type scalar, const value_type *in_vector)
   {
     for(unsigned int i=0;i<M;++i)
       dst[i] += scalar*in_vector[i];
   }
 
-  template<typename Matrix, typename value_type>
-  value_type SolverCGmod<Matrix, value_type>::inner_product(value_type *vector1, value_type *vector2)
+  template<typename value_type>
+  value_type SolverCGmod< value_type>::inner_product(const value_type *vector1, const value_type *vector2)
   {
-    value_type result = 0.0;
+    value_type result = value_type();
     for(unsigned int i=0;i<M;++i)
       result += vector1[i]*vector2[i];
 
     return result;
   }
 
-  template<typename Matrix, typename value_type>
-  void SolverCGmod<Matrix, value_type>::solve(Matrix *matrix, value_type *solution, value_type *rhs)
+  template<typename value_type>
+  template<typename Matrix>
+  void SolverCGmod<value_type>::solve(const Matrix *matrix,
+                                      value_type *solution,
+                                      const value_type *rhs)
   {
+    value_type one;
+    one = 1.0;
+
     // guess initial solution
     vector_init(solution);
 
     // apply matrix vector product: v = A*solution
-    (*matrix).vmult(v.begin(),solution);
+    matrix->vmult(v,solution);
 
     // compute residual: r = rhs-A*solution
-    equ(r.begin(),1.,rhs,-1.,v.begin());
-    equ(p.begin(),1.,r.begin());
+    equ(r,one,rhs,-one,v);
+    value_type norm_r0 = l2_norm(r);
+
+    // precondition
+    matrix->precondition(p,r);
+    // else
+    //   equ(p,1.,r);
 
     // compute norm of residual
-    value_type norm_r0 = l2_norm(r.begin());
     value_type norm_r_abs = norm_r0;
-    value_type norm_r_rel = 1.;
+    value_type norm_r_rel = one;
+    value_type r_times_y = inner_product(p, r);
 
     unsigned int n_iter = 0;
 
-    while((norm_r_abs > ABS_TOL) && (norm_r_rel > REL_TOL) && (n_iter < MAX_ITER))
+    while(true)
     {
       // v = A*p
-      (*matrix).vmult(v.begin(),p.begin());
+      (*matrix).vmult(v,p);
 
-      // alpha = (p^T*r) / (p^T*v)
-      value_type alpha = (inner_product(p.begin(),r.begin()))/(inner_product(p.begin(),v.begin()));
+      value_type p_times_v = inner_product(p,v);
+      internal::adjust_division_by_zero(p_times_v);
+      internal::adjust_division_by_zero(r_times_y);
+
+      // alpha = (r^T*y) / (p^T*v)
+      value_type alpha = (r_times_y)/(p_times_v);
 
       // solution <- solution + alpha*p
-      add(solution,alpha,p.begin());
+      add(solution,alpha,p);
 
       // r <- r - alpha*v
-      add(r.begin(),-alpha,v.begin());
+      add(r,-alpha,v);
 
-      // beta = (v^T*r) / (p^T*v)
-      value_type beta = (inner_product(v.begin(),r.begin()))/(inner_product(p.begin(),v.begin()));
-
-      // p <- r -beta*p
-      equ(p.begin(),1.,r.begin(),-beta,p.begin());
-
-      // calculate norm_r_abs, norm_r_rel
-      norm_r_abs = l2_norm(r.begin());
-      norm_r_rel = norm_r_abs/norm_r0;
+      // calculate residual norm
+      norm_r_abs = l2_norm(r);
+      norm_r_rel = norm_r_abs / norm_r0;
 
       // increment iteration counter
       ++n_iter;
+
+      if (internal::all_smaller(norm_r_abs, ABS_TOL) ||
+          internal::all_smaller(norm_r_rel, REL_TOL) || (n_iter > MAX_ITER))
+        break;
+
+      // precondition
+      matrix->precondition(v,r);
+
+      value_type r_times_y_new = inner_product(r,v);
+
+      // beta = (v^T*r) / (p^T*v)
+      value_type beta = r_times_y_new / r_times_y;
+
+      // p <- r -beta*p
+      equ(p,one,v,beta,p);
+
+      r_times_y = r_times_y_new;
     }
 
-    if(n_iter > MAX_ITER)
-    {
-      std::cout << "Solution of grad-div stabilized projection step:" << std::endl
-                << "Maximum number of iterations exceeded" << std::endl
-                << "Norm r: " << norm_r_abs  << std::endl;
-    }
-    else
-    {
-      std::cout << "Solution of grad-div stabilized projection step:" << std::endl
-                << "Number of iterations: " << n_iter << std::endl
-                << "Norm r: " << norm_r_abs  << std::endl;
-    }
+    Assert(n_iter <= MAX_ITER,
+           ExcMessage("No convergence of solver in " + Utilities::to_string(MAX_ITER)
+                      + "iterations. Residual was " + std::to_string(norm_r_abs)));
   }
 
-  template<typename FEEval, typename value_type, int dim>
+  template<int dim, int fe_degree>
   class MatrixProjectionStep
   {
   public:
-    MatrixProjectionStep(FEEval &fe_evaluation):fe_eval(fe_evaluation){};
-    void vmult(value_type *dst, value_type *src);
-    void setup(unsigned int vec_comp, value_type tau_grad_div_stab)
+    static const unsigned int dimension = dim;
+    static const unsigned int degree = fe_degree;
+    typedef FEEvaluation<dim,fe_degree,fe_degree+1,dim,double> EvalType;
+
+    MatrixProjectionStep(const MatrixFree<dim,double> &matrix_free,
+                         const unsigned int fe_no,
+                         const unsigned int quad_no)
+      :
+      fe_eval(matrix_free, fe_no, quad_no),
+      inverse(fe_eval)
     {
-      this->v = vec_comp;
+      coefficients.resize(fe_eval.n_q_points);
+    }
+
+    void setup(const unsigned int cell,
+               const VectorizedArray<double> tau_grad_div_stab)
+    {
       this->tau = tau_grad_div_stab;
+      fe_eval.reinit(cell);
+      inverse.fill_inverse_JxW_values(coefficients);
+    }
+
+    void precondition(VectorizedArray<double> *dst,
+                      const VectorizedArray<double> *src) const
+    {
+      inverse.apply(coefficients, dim, src, dst);
+    }
+
+    void vmult(VectorizedArray<double> *dst,
+               VectorizedArray<double> *src) const
+    {
+      Assert(fe_eval.get_shape_info().element_type ==
+             dealii::internal::MatrixFreeFunctions::tensor_symmetric ||
+             fe_eval.get_shape_info().element_type ==
+             dealii::internal::MatrixFreeFunctions::tensor_gausslobatto,
+             ExcNotImplemented());
+
+      // get internal evaluator in order to avoid copying data around
+      dealii::internal::FEEvaluationImpl<dealii::internal::MatrixFreeFunctions::tensor_symmetric,
+                                         dim, fe_degree, fe_degree+1, double> evaluator;
+      VectorizedArray<double> *unit_values[dim], *unit_gradients[dim][dim],
+        *unit_hessians[dim][dim*(dim+1)/2];
+      for (unsigned int c=0; c<dim; ++c)
+        {
+          unit_values[c] = &fe_eval.begin_values()[c*fe_eval.n_q_points];
+          for (unsigned int d=0; d<dim; ++d)
+            unit_gradients[c][d] = &fe_eval.begin_gradients()[(c*dim+d)*fe_eval.n_q_points];
+          for (unsigned int d=0; d<dim*(dim+1)/2; ++d)
+            unit_hessians[c][d] = 0;
+        }
+
+      // compute matrix vector product on element
+      for (unsigned int c=0; c<dim; ++c)
+        evaluator.evaluate(fe_eval.get_shape_info(),
+                           &src[c*fe_eval.dofs_per_cell], unit_values[c],
+                           unit_gradients[c], unit_hessians[c],
+                           true, true, false);
+      for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+        {
+          VectorizedArray<double> tau_times_div = tau * fe_eval.get_divergence(q);
+          fe_eval.submit_divergence(tau_times_div, q);
+          fe_eval.submit_value (fe_eval.get_value(q), q);
+        }
+      for (unsigned int c=0; c<dim; ++c)
+        evaluator.integrate(fe_eval.get_shape_info(),
+                           &dst[c*fe_eval.dofs_per_cell], unit_values[c],
+                           unit_gradients[c],
+                           true, true);
     }
 
   private:
-    FEEval fe_eval;
-    unsigned int v;
-    value_type tau;
+    mutable FEEvaluation<dim,fe_degree,fe_degree+1,dim,double> fe_eval;
+    VectorizedArray<double> tau;
+    AlignedVector<VectorizedArray<double> > coefficients;
+    MatrixFreeOperators::CellwiseInverseMassMatrix<dim,fe_degree,dim,double> inverse;
   };
-  template<typename FEEval, typename value_type, int dim>
-  void MatrixProjectionStep<FEEval,value_type, dim>::
-  vmult(value_type *dst, value_type *src)
-  {
-    // copy data from src to fe_eval
-    for (unsigned int i=0; i<dim*fe_eval.dofs_per_cell; ++i)
-      fe_eval.begin_dof_values()[i][v] = src[i];
 
-    // compute matrix vector product on element
-    fe_eval.evaluate (true,true,false);
-    for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
-    {
-      VectorizedArray<value_type> tau_times_div = tau * fe_eval.get_divergence(q);
-      Tensor<2,dim,VectorizedArray<value_type> > test;
-      for (unsigned int d=0; d<dim; ++d)
-        test[d][d] = tau_times_div;
-      fe_eval.submit_gradient(test, q);
-      fe_eval.submit_value (fe_eval.get_value(q), q);
-    }
-    fe_eval.integrate (true,true);
 
-    // copy data from fe_eval to dst
-    for (unsigned int i=0; i<dim*fe_eval.dofs_per_cell; ++i)
-      dst[i] = fe_eval.begin_dof_values()[i][v];
-  }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
@@ -6537,41 +6617,6 @@ public:
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-  void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-  rhs_projection (const std::vector<parallel::distributed::Vector<value_type> >     &src,
-                  std::vector<parallel::distributed::Vector<value_type> >      &dst)
-  {
-  for(unsigned int d=0;d<dim;++d)
-  {
-    dst[d] = 0;
-#ifdef XWALL
-    dst[d+dim] = 0;
-#endif
-  }
-  data.loop (  &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_rhs_projection,
-            &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_rhs_projection_face,
-            &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_rhs_projection_boundary_face,
-            this, dst, src);
-  }
-
-  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-  void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-  solve_projection (const std::vector<parallel::distributed::Vector<value_type> >     &rhs,
-                  std::vector<parallel::distributed::Vector<value_type> >      &sol)
-  {
-    if(K>0.0+1.0e-9)
-    {
-      data.cell_loop(&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_solve_projection,
-                                 this, sol, rhs);
-    }
-    else
-    {
-      data.cell_loop(&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_mass_matrix,
-                                 this, sol, rhs);
-    }
-  }
-
-  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   local_solve_projection(const MatrixFree<dim,value_type>                               &data,
                          std::vector<parallel::distributed::Vector<value_type> >        &dst,
@@ -6579,56 +6624,47 @@ public:
                          const std::pair<unsigned int,unsigned int>                     &cell_range)
   {
 #ifdef XWALL
-    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval(data,xwallstatevec[0],xwallstatevec[1],0,3);
-#else
-   FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval(data,xwallstatevec[0],xwallstatevec[1],0,0);
+    AssertThrow(false,
+                ExcMessage("XWall should not arrive in iterative projection solver"));
 #endif
-
-  AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval.n_q_points);
-  for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
-  {
-    fe_eval.reinit(cell);
+    FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> fe_eval(data, 0, 0);
     const unsigned int total_dofs_per_cell = fe_eval.dofs_per_cell * dim;
-    fe_eval.read_dof_values(solution_n,0,solution_n,dim);
-    fe_eval.evaluate (true,false);
-    VectorizedArray<value_type> volume;
-    VectorizedArray<value_type> normmeanvel;
 
-    Tensor<1,dim,VectorizedArray<value_type> > meanvel;
-    fe_eval.fill_JxW_values(JxW_values);
-    meanvel = JxW_values[0]*fe_eval.get_value(0);
-    volume = JxW_values[0];
-    for (unsigned int q=1; q<fe_eval.n_q_points; ++q)
-    {
-      meanvel += JxW_values[q]*fe_eval.get_value(q);
-      volume += JxW_values[q];
-    }
-    meanvel /=volume;
-    normmeanvel = meanvel.norm();
+    AlignedVector<VectorizedArray<value_type> > solution(total_dofs_per_cell);
+    MatrixProjectionStep<dim,fe_degree> matrix_projection_step(data,0,0);
+    SolverCGmod<VectorizedArray<double> > cg_solver(total_dofs_per_cell, 1e-14, 1e-10, 1e4);
+    AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval.n_q_points);
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+      {
+        fe_eval.reinit(cell);
+        fe_eval.read_dof_values(solution_n,0);
+        fe_eval.evaluate (true,false);
+        VectorizedArray<value_type> volume;
+        VectorizedArray<value_type> normmeanvel;
 
-    fe_eval.read_dof_values(src,0,src,dim);
+        Tensor<1,dim,VectorizedArray<value_type> > meanvel;
+        fe_eval.fill_JxW_values(JxW_values);
+        meanvel = JxW_values[0]*fe_eval.get_value(0);
+        volume = JxW_values[0];
+        for (unsigned int q=1; q<fe_eval.n_q_points; ++q)
+          {
+            meanvel += JxW_values[q]*fe_eval.get_value(q);
+            volume += JxW_values[q];
+          }
+        meanvel /=volume;
+        normmeanvel = meanvel.norm();
 
-    // compute grad-div parameter: use definition Ohlhanskii et al. (2009)
-    const VectorizedArray<value_type> tau = K*normmeanvel*std::pow(volume,1./(double)dim) + make_vectorized_array<value_type>(VISCOSITY*K);
+        fe_eval.read_dof_values(src,0);
 
-    for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
-    {
-      Vector<value_type> rhs(total_dofs_per_cell), solution(total_dofs_per_cell);
+        // compute grad-div parameter: use definition Ohlhanskii et al. (2009)
+        const VectorizedArray<value_type> tau = K*normmeanvel*std::pow(volume,1./(double)dim) + make_vectorized_array<value_type>(VISCOSITY*K);
 
-      for (unsigned int j=0; j<total_dofs_per_cell; ++j)
-        rhs(j)=(fe_eval.read_cellwise_dof_value(j))[v];
-
-      // solve projection step locally
-      MatrixProjectionStep<FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type>,value_type, dim> matrix_projection_step(fe_eval);
-      matrix_projection_step.setup(v,tau[v]);
-      SolverCGmod< MatrixProjectionStep<FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type>,value_type,dim>, value_type> cg_solver(total_dofs_per_cell,1.e-12,1.e-8,1e4);
-      cg_solver.solve(&matrix_projection_step,&solution(0),&rhs(0));
-
-      for (unsigned int j=0; j<total_dofs_per_cell; ++j)
-        fe_eval.write_cellwise_dof_value(j,solution(j),v);
-    }
-    fe_eval.set_dof_values (dst,0,dst,dim);
-  }
+        matrix_projection_step.setup(cell, tau);
+        cg_solver.solve(&matrix_projection_step, solution.begin(), fe_eval.begin_dof_values());
+        for (unsigned int j=0; j<total_dofs_per_cell; ++j)
+          fe_eval.begin_dof_values()[j] = solution[j];
+        fe_eval.set_dof_values (dst,0);
+      }
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -6656,10 +6692,12 @@ public:
 #endif
 
 
-    if(K>0.0+1.0e-9)
+    if(K>0.0+1.0e-14)
     {
-#if defined(LOWMEMORY) || defined(XWALL)
+#if LOWMEMORY == 1 || defined(XWALL)
     data.cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_grad_div_projection,this, dst, dst);
+#elif LOWMEMORY == 2
+    data.cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_solve_projection,this, dst, dst);
 #else
     data.cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_fast_grad_div_projection,this, dst, dst);
 #endif
@@ -6899,8 +6937,8 @@ public:
       dealii::Triangulation<dim>::none,parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
   fe(QGaussLobatto<1>(fe_degree+1)),
   fe_p(QGaussLobatto<1>(fe_degree_p+1)),
-  mapping(fe_degree),
   fe_xwall(QGaussLobatto<1>(fe_degree_xwall+1)),
+  mapping(fe_degree),
   dof_handler(triangulation),
   dof_handler_p(triangulation),
   dof_handler_xwall(triangulation),
@@ -7108,7 +7146,7 @@ public:
 //    //  if ((std::fabs(cell->face(face_number)->center()(0) - left)< 1e-12)||
 //    //      (std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12))
 //     if ((std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12))
-//        cell->face(face_number)->set_boundary_indicator (1);
+//        cell->face(face_number)->set_boundary_id (1);
 //    }
 //    }
     //periodicity in x- and z-direction
@@ -7146,7 +7184,7 @@ public:
            ((std::fabs(cell->face(face_number)->center()(0) - left)< 1e-12) && (cell->face(face_number)->center()(1)>0))||
            ((std::fabs(cell->face(face_number)->center()(1) - left)< 1e-12) && (cell->face(face_number)->center()(0)<0))||
            ((std::fabs(cell->face(face_number)->center()(1) - right)< 1e-12) && (cell->face(face_number)->center()(0)>0)))
-          cell->face(face_number)->set_boundary_indicator (1);
+          cell->face(face_number)->set_boundary_id (1);
       }
     }
     triangulation.refine_global(n_refinements);
@@ -7167,7 +7205,7 @@ public:
       for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
       {
        if ((std::fabs(cell->face(face_number)->center()(0) - 4.0)< 1e-12))
-          cell->face(face_number)->set_boundary_indicator (1);
+          cell->face(face_number)->set_boundary_id (1);
       }
     }
     triangulation.refine_global(n_refinements);
@@ -7186,7 +7224,7 @@ public:
       for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
       {
        if ((std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12))
-          cell->face(face_number)->set_boundary_indicator (1);
+          cell->face(face_number)->set_boundary_id (1);
       }
     }
     triangulation.refine_global(n_refinements);
