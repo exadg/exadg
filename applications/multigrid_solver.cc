@@ -52,8 +52,6 @@
 
 #include <deal.II/integrators/laplace.h>
 
-//#define USE_FEQ
-
 #include <fstream>
 #include <sstream>
 
@@ -64,11 +62,10 @@ namespace Step37
   using namespace dealii;
 
 
-  const unsigned int degree_finite_element = 3;
   const unsigned int dimension = 3;
   const bool run_variable_sizes = true;
   const bool do_adaptive = false;
-  const unsigned int n_tests = 2;
+  const unsigned int n_tests = 10;
 
 
   // Definition of analytic solution for testing the Poisson solver
@@ -117,10 +114,10 @@ namespace Step37
     Solution () : Function<dim>() {}
 
     virtual double value (const Point<dim>   &p,
-			  const unsigned int  component = 0) const;
+                          const unsigned int  component = 0) const;
 
     virtual Tensor<1,dim> gradient (const Point<dim>   &p,
-				    const unsigned int  component = 0) const;
+                                    const unsigned int  component = 0) const;
   };
 
 
@@ -288,7 +285,8 @@ namespace Step37
   public:
     typedef float Number;
 
-    LaplaceProblem ();
+    LaplaceProblem (const unsigned int degree_finite_element,
+                    const bool use_dg);
     void run ();
 
   private:
@@ -298,11 +296,7 @@ namespace Step37
     void output_results (const unsigned int cycle) const;
 
     parallel::distributed::Triangulation<dim>               triangulation;
-#ifndef USE_FEQ
-    FE_DGQArbitraryNodes<dim>        fe;
-#else
-    FE_Q<dim>                        fe;
-#endif
+    std_cxx11::shared_ptr<FiniteElement<dim> > fe;
     MappingQ<dim>                    mapping;
     DoFHandler<dim>                  dof_handler;
     ConstraintMatrix                 constraints;
@@ -322,18 +316,23 @@ namespace Step37
 
 
   template <int dim>
-  LaplaceProblem<dim>::LaplaceProblem ()
+  LaplaceProblem<dim>::LaplaceProblem (const unsigned int degree_finite_element,
+                                       const bool use_dg)
     :
     triangulation(MPI_COMM_WORLD,
                   Triangulation<dim>::none,
                   parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
-    fe (QGaussLobatto<1>(degree_finite_element+1)),
     mapping (degree_finite_element),
     dof_handler (triangulation),
     pcout (std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0),
     time_details (std::cout, true &&
                   Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
-  {}
+  {
+    if (!use_dg)
+      fe.reset(new FE_Q<dim>(QGaussLobatto<1>(degree_finite_element+1)));
+    else
+      fe.reset(new FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(degree_finite_element+1)));
+  }
 
 
 
@@ -345,8 +344,8 @@ namespace Step37
     time.start ();
     setup_time = 0;
 
-    dof_handler.distribute_dofs (fe);
-    dof_handler.distribute_mg_dofs (fe);
+    dof_handler.distribute_dofs (*fe);
+    dof_handler.distribute_mg_dofs (*fe);
 
     pcout << "Number of active cells:       "
           << triangulation.n_global_active_cells() << std::endl;
@@ -361,6 +360,7 @@ namespace Step37
     DoFTools::make_hanging_node_constraints(dof_handler, constraints);
     VectorTools::interpolate_boundary_values(dof_handler, 1, ZeroFunction<dim>(),
                                              constraints);
+    //constraints.add_line(0);
     constraints.close();
 
     setup_time += time.wall_time();
@@ -402,17 +402,19 @@ namespace Step37
     solution.update_ghost_values();
 
     system_rhs = 0;
-    QGauss<dim>  quadrature_formula(fe.degree+1);
-    QGauss<dim-1> quadrature_face(fe.degree+1);
-    FEValues<dim> fe_values (fe, quadrature_formula,
+    QGauss<dim>  quadrature_formula(fe->degree+1);
+    QGauss<dim-1> quadrature_face(fe->degree+1);
+    FEValues<dim> fe_values (*fe, quadrature_formula,
                              update_values | update_gradients | update_JxW_values
                              | update_quadrature_points);
-    FEFaceValues<dim> fe_face_values(fe, quadrature_face,
+    FEFaceValues<dim> fe_face_values(*fe, quadrature_face,
                                      update_values | update_gradients |
                                      update_quadrature_points |
                                      update_normal_vectors);
 
-    const unsigned int   dofs_per_cell = fe.dofs_per_cell;
+    const bool use_feq = fe->dofs_per_vertex > 0;
+
+    const unsigned int   dofs_per_cell = fe->dofs_per_cell;
     const unsigned int   n_q_points    = quadrature_formula.size();
 
     std::vector<types::global_dof_index> local_dof_indices (dofs_per_cell);
@@ -428,41 +430,45 @@ namespace Step37
           typename DoFHandler<dim>::cell_iterator cell =
             matrix_free.get_cell_iterator(c, v);
           fe_values.reinit (cell);
-#ifdef USE_FEQ
-          fe_values.get_function_gradients(solution, solution_gradients);
-#endif
+          if (use_feq)
+            fe_values.get_function_gradients(solution, solution_gradients);
+
           right_hand_side.value_list(fe_values.get_quadrature_points(), rhs_values);
           for (unsigned int i=0; i<dofs_per_cell; ++i)
             {
               double rhs_val = 0;
-              for (unsigned int q=0; q<n_q_points; ++q)
-                rhs_val += ((fe_values.shape_value(i,q) * rhs_values[q]
-#ifdef USE_FEQ
-                             - fe_values.shape_grad(i,q) * solution_gradients[q]
-#endif
-                             ) *
-                            fe_values.JxW(q));
+              if (use_feq)
+                for (unsigned int q=0; q<n_q_points; ++q)
+                  rhs_val += ((fe_values.shape_value(i,q) * rhs_values[q]
+                               - fe_values.shape_grad(i,q) * solution_gradients[q]
+                               ) *
+                              fe_values.JxW(q));
+              else
+                for (unsigned int q=0; q<n_q_points; ++q)
+                  rhs_val += ((fe_values.shape_value(i,q) * rhs_values[q]
+                               ) *
+                              fe_values.JxW(q));
               local_rhs(i) = rhs_val;
             }
-#ifndef USE_FEQ
-          for (unsigned int face=0; face<GeometryInfo<dim>::faces_per_cell; ++face)
-            if (cell->at_boundary(face))
-              {
-                fe_face_values.reinit(cell, face);
-                const double sigmaF = solver.get_matrix().get_penalty_factor() *
-                  solver.get_matrix().get_array_penalty_parameter()[c][v] * 2.;
-                for (unsigned int q=0; q<quadrature_face.size(); ++q)
-                  {
-                    const double solution_value = solution_function.value(fe_face_values.quadrature_point(q));
-                    for (unsigned int i=0; i<dofs_per_cell; ++i)
-                      local_rhs(i) +=
-                        (sigmaF *fe_face_values.shape_value(i,q)-
-                         fe_face_values.shape_grad(i,q) *
-                         fe_face_values.normal_vector(q)) * solution_value
-                        * fe_face_values.JxW(q);
-                  }
-              }
-#endif
+          if (!use_feq)
+            for (unsigned int face=0; face<GeometryInfo<dim>::faces_per_cell; ++face)
+              if (cell->at_boundary(face))
+                {
+                  fe_face_values.reinit(cell, face);
+                  const double sigmaF = solver.get_matrix().get_penalty_factor() *
+                    solver.get_matrix().get_array_penalty_parameter()[c][v] * 2.;
+                  for (unsigned int q=0; q<quadrature_face.size(); ++q)
+                    {
+                      const double solution_value = solution_function.value(fe_face_values.quadrature_point(q));
+                      for (unsigned int i=0; i<dofs_per_cell; ++i)
+                        local_rhs(i) +=
+                          (sigmaF *fe_face_values.shape_value(i,q)-
+                           fe_face_values.shape_grad(i,q) *
+                           fe_face_values.normal_vector(q)) * solution_value
+                          * fe_face_values.JxW(q);
+                    }
+                }
+
           cell->get_dof_indices (local_dof_indices);
           constraints.distribute_local_to_global(local_rhs,
                                                  local_dof_indices,
@@ -484,28 +490,35 @@ namespace Step37
 
     PoissonSolverData<dim> solver_data;
     solver_data.dirichlet_boundaries.insert(1);
+    solver_data.neumann_boundaries.insert(0);
     solver_data.penalty_factor = 0.25;
-    solver_data.solver_tolerance = 1e-9;
+    solver_data.solver_tolerance = 1e-8;
     solver_data.smoother_smoothing_range = 15;
-    solver_data.smoother_poly_degree = 5;
+    solver_data.smoother_poly_degree = 4;
     PoissonSolver<dim> solver;
     solver.initialize(mapping, matrix_free, solver_data);
-    /*
-    PoissonSolver<dim,degree_finite_element> solver;
-    solver.initialize(mapping, matrix_free, 0, 0,
-                      std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >(),
-                      1., false, 1e-9);
-    */
 
     setup_time += time.wall_time();
     pcout << "Initialize multigrid solver(CPU/wall) " << time() << "s/"
           << time.wall_time() << "s\n";
 
     assemble_system(solver);
+    solver.get_matrix().apply_nullspace_projection(system_rhs);
 
     pcout << "Total setup time               (wall) " << setup_time << "s\n";
     pcout << "Number of multigrid levels: " << triangulation.n_global_levels()
           << std::endl;
+
+    for (unsigned int i=0; i<n_tests; ++i)
+      {
+        solution_update = 0;
+        time.restart();
+
+        solver.apply_precondition(solution_update, system_rhs);
+
+        pcout << "Time V-cycle precondition  (CPU/wall) " << time() << "s/"
+              << time.wall_time() << "s\n";
+      }
 
     double sol_time = 1e10;
     for (unsigned int i=0; i<n_tests; ++i)
@@ -520,9 +533,8 @@ namespace Step37
               << " iterations)  (CPU/wall) " << time() << "s/"
               << time.wall_time() << "s\n";
       }
-#ifdef USE_FEQ
-    constraints.distribute(solution_update);
-#endif
+    if (fe->dofs_per_vertex > 0)
+      constraints.distribute(solution_update);
     solution += solution_update;
 
     solution.update_ghost_values();
@@ -542,7 +554,7 @@ namespace Step37
                                        solution,
                                        Solution<dim>(),
                                        difference_per_cell,
-                                       QGauss<dim>(fe.degree+2),
+                                       QGauss<dim>(fe->degree+2),
                                        VectorTools::L2_norm);
     const double L2_error = std::sqrt(Utilities::MPI::sum(difference_per_cell.norm_sqr(),
                                                           MPI_COMM_WORLD));
@@ -553,7 +565,7 @@ namespace Step37
                                        solution,
                                        Solution<dim>(),
                                        difference_per_cell,
-                                       QGauss<dim>(fe.degree+2),
+                                       QGauss<dim>(fe->degree+2),
                                        VectorTools::H1_seminorm);
     const double H1_error = std::sqrt(Utilities::MPI::sum(difference_per_cell.norm_sqr(),
                                                           MPI_COMM_WORLD));
@@ -598,7 +610,7 @@ namespace Step37
   void LaplaceProblem<dim>::run ()
   {
     pcout << "Number of MPI processes: " << Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) << std::endl;
-    pcout << "Testing " << fe.get_name() << std::endl << std::endl;
+    pcout << "Testing " << fe->get_name() << std::endl << std::endl;
 
     unsigned int n_cycles = 5;
     unsigned int sizes [] = {1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20, 24, 28, 32, 40, 48, 56, 64, 80, 96, 112, 128};
@@ -622,12 +634,12 @@ namespace Step37
             if (dim == 2)
               n_refinements += 3;
             if (Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) > 16)
-              n_refinements += 2;
+              n_refinements += 1;
             if (Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) > 512)
               n_refinements += 4-dim;
             if (Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) > 2048)
               n_refinements += 1;
-            if (Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) > 4096)
+            if (Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) > 16384)
               n_refinements += 1;
             GridGenerator::subdivided_hyper_cube (triangulation, n_subdiv, -1, 1);
             triangulation.refine_global(n_refinements);
@@ -671,7 +683,7 @@ namespace Step37
         solve ();
         output_results (cycle);
         pcout << std::endl;
-        if (dof_handler.n_dofs() > types::global_dof_index(8000000)*Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
+        if (dof_handler.n_dofs() > types::global_dof_index(4000000)*Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
           break;
       };
 
@@ -701,8 +713,16 @@ int main (int argc, char** argv)
       Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
       deallog.depth_console(0);
-      LaplaceProblem<dimension> laplace_problem;
-      laplace_problem.run ();
+      unsigned int degree = 3;
+      bool do_dg = true;
+      if (argc > 1)
+        degree = atoi(argv[1]);
+      if (argc > 2)
+        do_dg = atoi(argv[2]);
+      {
+        LaplaceProblem<dimension> laplace_problem(degree, do_dg);
+        laplace_problem.run ();
+      }
     }
   catch (std::exception &exc)
     {

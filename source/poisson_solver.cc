@@ -379,6 +379,14 @@ void LaplaceOperator<dim,Number>::compute_array_penalty_parameter(const Mapping<
 
 
 template <int dim, typename Number>
+void LaplaceOperator<dim,Number>::disable_mean_value_constraint()
+{
+  this->apply_mean_value_constraint = false;
+}
+
+
+
+template <int dim, typename Number>
 void LaplaceOperator<dim,Number>::vmult(parallel::distributed::Vector<Number> &dst,
                                         const parallel::distributed::Vector<Number> &src) const
 {
@@ -1241,6 +1249,10 @@ void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
           smoother_data[level].smoothing_range = solver_data.smoother_smoothing_range;
           smoother_data[level].degree = solver_data.smoother_poly_degree;
           smoother_data[level].eig_cg_n_iterations = 20;
+
+          // we do not need the mean value constraint for smoothers on the
+          // multigrid levels, so we can disable it
+          mg_matrices[level].disable_mean_value_constraint();
         }
       else
         {
@@ -1325,28 +1337,40 @@ void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
 
 
 template <int dim>
+void
+PoissonSolver<dim>::apply_precondition (parallel::distributed::Vector<double> &dst,
+                                        const parallel::distributed::Vector<double> &src) const
+{
+  Assert(preconditioner.get() != 0,
+         ExcNotInitialized());
+  preconditioner->vmult(dst, src);
+}
+
+
+
+template <int dim>
 unsigned int
 PoissonSolver<dim>::solve (parallel::distributed::Vector<double> &dst,
                            const parallel::distributed::Vector<double> &src) const
-  {
-    Assert(preconditioner.get() != 0,
-           ExcNotInitialized());
-    ReductionControl solver_control (1e5, 1.e-12, global_matrix.get_solver_data().solver_tolerance); //1.e-5
-    GrowingVectorMemory<parallel::distributed::Vector<double> > solver_memory;
-    SolverCG<parallel::distributed::Vector<double> > solver (solver_control, solver_memory);
-    try
-      {
-        solver.solve(global_matrix, dst, src, *preconditioner);
-      }
-    catch (SolverControl::NoConvergence)
-      {
-        if(Utilities::MPI::this_mpi_process(mpi_communicator)==0)
-          std::cout<<"Multigrid failed trying to solve the pressure poisson equation." << std::endl;
-      }
-    AssertThrow(std::isfinite(solver_control.last_value()),
-                ExcMessage("Poisson solver contained NaN of Inf values"));
-    return solver_control.last_step();
-  }
+{
+  Assert(preconditioner.get() != 0,
+         ExcNotInitialized());
+  ReductionControl solver_control (1e5, 1.e-12, global_matrix.get_solver_data().solver_tolerance); //1.e-5
+  GrowingVectorMemory<parallel::distributed::Vector<double> > solver_memory;
+  SolverCG<parallel::distributed::Vector<double> > solver (solver_control, solver_memory);
+  try
+    {
+      solver.solve(global_matrix, dst, src, *preconditioner);
+    }
+  catch (SolverControl::NoConvergence)
+    {
+      if(Utilities::MPI::this_mpi_process(mpi_communicator)==0)
+        std::cout<<"Multigrid failed trying to solve the pressure poisson equation." << std::endl;
+    }
+  AssertThrow(std::isfinite(solver_control.last_value()),
+              ExcMessage("Poisson solver contained NaN of Inf values"));
+  return solver_control.last_step();
+}
 
 
 // explicit instantiations

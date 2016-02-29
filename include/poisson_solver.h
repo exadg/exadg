@@ -147,6 +147,10 @@ public:
   // the subspace of zero mean
   void apply_nullspace_projection(parallel::distributed::Vector<Number> &vec) const;
 
+  // This allows to disable the mean value constraint on the matrix even
+  // though a zero mode has been detected. Handle this with care.
+  void disable_mean_value_constraint();
+
   // Returns the number of global rows of this matrix
   types::global_dof_index m() const;
 
@@ -355,6 +359,11 @@ public:
   // initialize() has been called.
   unsigned int solve (parallel::distributed::Vector<double> &dst,
                       const parallel::distributed::Vector<double> &src) const;
+
+  // Applies a V-cycle on the given vector, storing the result in dst. The
+  // prerequisite for this function is that initialize() has been called.
+  void apply_precondition (parallel::distributed::Vector<double> &dst,
+                           const parallel::distributed::Vector<double> &src) const;
 
   // Returns a reference to the underlying matrix object. The object only
   // makes sense after a call to initialize().
