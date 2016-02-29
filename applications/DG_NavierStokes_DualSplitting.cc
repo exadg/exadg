@@ -62,22 +62,22 @@
 #include "poisson_solver.h"
 
 //#define XWALL
-#define COMPDIV
+//#define COMPDIV
 #define LOWMEMORY //compute grad-div matrices directly instead of saving them
-//#define PRESPARTIAL
-//#define DIVUPARTIAL
+#define PRESPARTIAL
+#define DIVUPARTIAL
 
 
 #define CONSCONVPBC
 //#define SKEWSYMMVISC
 
-#define VORTEX
+//#define VORTEX
 //#define STOKES
 //#define POISEUILLE
 //#define KOVASZNAY
 //#define BELTRAMI
 //#define FLOW_PAST_CYLINDER
-//#define CHANNEL
+#define CHANNEL
 
 namespace DG_NavierStokes
 {
@@ -371,14 +371,14 @@ namespace DG_NavierStokes
   const double OUTPUT_START_TIME = 50.0;
   const double STATISTICS_START_TIME = 50.0;
   const bool DIVU_TIMESERIES = false; //true;
-  const int MAX_NUM_STEPS = 1000000;
-  const double CFL = 1.0;
+  const int MAX_NUM_STEPS = 100;
+  const double CFL = 0.1;
 
-  const double VISCOSITY = 1./180.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
+  const double VISCOSITY = 1./40.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
 
-  const double MAX_VELOCITY = 15.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
+  const double MAX_VELOCITY = 22.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
   const double stab_factor = 1.0;
-  const double K=0.0; //grad-div stabilization/penalty parameter
+  const double K=100.0; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -390,11 +390,11 @@ namespace DG_NavierStokes
 
   const double REL_TOL_PRESSURE = 1.0e-5;
   const double ABS_TOL_VISCOUS = 1.0e-12;
-  const double REL_TOL_VISCOUS = 1.0e-8;
+  const double REL_TOL_VISCOUS = 1.0e-6;
 
-  const std::string output_prefix = "ch180_4_p4_gt18_partp_k0_partu_sf1_cfl1";
+  const std::string output_prefix = "ch40_4_p4_gt18_partp_k0_partu_sf1_cfl1";
 
-  const unsigned int output_solver_info_every_timesteps = 5;
+  const unsigned int output_solver_info_every_timesteps = 100;
   const unsigned int output_solver_info_details = 1e4;
 
   const unsigned int ORDER_TIME_INTEGRATOR = 3;
@@ -466,7 +466,7 @@ namespace DG_NavierStokes
     if(component == 0)
     {
       if(p[1]<0.9999&&p[1]>-0.9999)
-        result = -22.0*(pow(p[1],2.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*1.0);//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
+        result = -22.0*(pow(p[1],2.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*0.0);//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
       else
         result = 0.0;
     }
@@ -3813,10 +3813,10 @@ public:
   /********************** STEP 3: projection *******************************/
   timer.restart();
 
-//  apply_projection(solution_np,velocity_temp);
+  apply_projection(solution_np,velocity_temp);
 
-  rhs_projection(solution_np,rhs_proj);
-  solve_projection(rhs_proj,velocity_temp);
+//  rhs_projection(solution_np,rhs_proj);
+//  solve_projection(rhs_proj,velocity_temp);
 
   computing_times[2] += timer.wall_time();
   /*************************************************************************/
@@ -6925,7 +6925,7 @@ public:
 #ifdef XWALL    //wall-model
     out[1] =  2.*in(1)-1.;
 #else    //no wall model
-    out[1] =  std::tanh(GRID_STRETCH_FAC*(2.*in(1)-1.))/std::tanh(GRID_STRETCH_FAC);
+//    out[1] =  std::tanh(GRID_STRETCH_FAC*(2.*in(1)-1.))/std::tanh(GRID_STRETCH_FAC);
 #endif
     out[2] = in(2)-0.5*numbers::PI;
     return out;
