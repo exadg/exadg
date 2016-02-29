@@ -370,12 +370,12 @@ namespace DG_NavierStokes
   const double END_TIME = 70.0; // Poisseuille 5.0;  Kovasznay 1.0
   const double OUTPUT_INTERVAL_TIME = 1.0;
   const double OUTPUT_START_TIME = 50.0;
-  const double STATISTICS_START_TIME = 50.0;
+  const double STATISTICS_START_TIME = 0.0;
   const bool DIVU_TIMESERIES = false; //true;
-  const int MAX_NUM_STEPS = 100;
+  const int MAX_NUM_STEPS = 200;
   const double CFL = 0.1;
 
-  const double VISCOSITY = 1./40.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
+  const double VISCOSITY = 1./590.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
 
   const double MAX_VELOCITY = 22.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
   const double stab_factor = 1.0;
@@ -386,7 +386,7 @@ namespace DG_NavierStokes
   const double DTAUW = 1.0;
 
   const double MAX_WDIST_XWALL = 0.2;
-  const double GRID_STRETCH_FAC = 1.8;
+  const double GRID_STRETCH_FAC = 1.0;
   const bool pure_dirichlet_bc = true;
 
   const double REL_TOL_PRESSURE = 1.0e-5;
@@ -395,8 +395,8 @@ namespace DG_NavierStokes
 
   const std::string output_prefix = "ch40_4_p4_gt18_partp_k0_partu_sf1_cfl1";
 
-  const unsigned int output_solver_info_every_timesteps = 100;
-  const unsigned int output_solver_info_details = 1e4;
+  const unsigned int output_solver_info_every_timesteps = 10;
+  const unsigned int output_solver_info_details = 10;
 
   const unsigned int ORDER_TIME_INTEGRATOR = 3;
   const bool START_WITH_LOW_ORDER = true;
@@ -3963,27 +3963,32 @@ public:
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   analyse_computing_times()
   {
-    double total_avg_time = 0;
-
-    std::string names [5] = {"Convection","Pressure","Projection","Viscous   ","Other    "};
-    if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-      std::cout << std::endl << "Computing times:    \t [min/avg/max] \t\t [p_min/p_max]" << std::endl;
-    for (unsigned int i=0; i<computing_times.size(); ++i)
-      {
-        Utilities::MPI::MinMaxAvg data =
-          Utilities::MPI::min_max_avg (computing_times[i], MPI_COMM_WORLD);
-        if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-          std::cout << "Step " << i+1 <<  ": " << names[i] << "\t " << data.min << "/" << data.avg << "/" << data.max << " \t " << data.min_index << "/" << data.max_index << std::endl;
-        total_avg_time += data.avg;
-      }
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
-      {
-        std::cout  <<"Time (Step 1-5):\t "<<total_avg_time<<std::endl;
-      }
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
-      {
-        std::cout  <<"Total Time:\t\t "<<total_time.wall_time()<<std::endl;
-      }
+    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+    std::string names [5] = {"Convection","Pressure","Projection","Viscous  ","Other   "};
+  pcout << std::endl << "Computing times:    \t       min       avg       max    p_min  p_max" << std::endl;
+  double total_avg_time = 0;
+  for (unsigned int i=0; i<computing_times.size(); ++i)
+    {
+      Utilities::MPI::MinMaxAvg data =
+        Utilities::MPI::min_max_avg (computing_times[i], MPI_COMM_WORLD);
+      pcout << "Step " << i+1 <<  ": " << names[i] << "\t "
+            << std::setprecision(4) << std::setw(9) << data.min << " "
+            << std::setprecision(4) << std::setw(9) << data.avg << " "
+            << std::setprecision(4) << std::setw(9) << data.max << "   "
+            << std::setw(6) << data.min_index << " "
+            << std::setw(6) << data.max_index << std::endl;
+      total_avg_time += data.avg;
+    }
+  pcout  <<"Time in steps 1-" << computing_times.size() << ":\t           "
+         << std::setprecision(4) << std::setw(9) << total_avg_time << std::endl;
+  Utilities::MPI::MinMaxAvg data =
+    Utilities::MPI::min_max_avg (total_time.wall_time(), MPI_COMM_WORLD);
+  pcout  <<"Global time since setup: "
+         << std::setprecision(4) << std::setw(9) << data.min << " "
+         << std::setprecision(4) << std::setw(9) << data.avg << " "
+         << std::setprecision(4) << std::setw(9) << data.max << "   "
+         << std::setw(6) << data.min_index << " "
+         << std::setw(6) << data.max_index << std::endl;
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -6643,7 +6648,7 @@ public:
 
     AlignedVector<VectorizedArray<value_type> > solution(total_dofs_per_cell);
     MatrixProjectionStep<dim,fe_degree> matrix_projection_step(data,0,0);
-    SolverCGmod<VectorizedArray<double> > cg_solver(total_dofs_per_cell, 1e-14, 1e-10, 1e4);
+    SolverCGmod<VectorizedArray<double> > cg_solver(total_dofs_per_cell, 1e-12, 1e-9, 1e4);
     AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval.n_q_points);
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
       {
@@ -6974,7 +6979,7 @@ public:
 #ifdef XWALL    //wall-model
     out[1] =  2.*in(1)-1.;
 #else    //no wall model
-//    out[1] =  std::tanh(GRID_STRETCH_FAC*(2.*in(1)-1.))/std::tanh(GRID_STRETCH_FAC);
+    out[1] =  std::tanh(GRID_STRETCH_FAC*(2.*in(1)-1.))/std::tanh(GRID_STRETCH_FAC);
 #endif
     out[2] = in(2)-0.5*numbers::PI;
     return out;
@@ -7826,7 +7831,7 @@ public:
     }
     else if((time+time_step-START_TIME) > (output_number*OUTPUT_INTERVAL_TIME-EPSILON))
       output_number++;
-    if((time+time_step) > STATISTICS_START_TIME-EPSILON)
+    if((time+time_step) > STATISTICS_START_TIME-EPSILON && time_step_number % 50 == 0)
     {
 #ifdef CHANNEL
       statistics.evaluate(navier_stokes_operation.solution_n);
