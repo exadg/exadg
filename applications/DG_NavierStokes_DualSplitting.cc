@@ -3135,6 +3135,9 @@ public:
   const double viscosity;
   double gamma0;
   double alpha[3], beta[3];
+
+  Timer total_time;
+
   std::vector<double> computing_times;
   std::vector<double> times_cg_velo;
   std::vector<unsigned int> iterations_cg_velo;
@@ -3365,6 +3368,7 @@ public:
   {
     alpha[0] = beta[0] = 1.;
     alpha[1] = alpha[2] = beta[1] = beta[2] = 0.;
+    total_time.restart();
 
   // use this gamma0 when initializing the multigrid solver (in function calculate_diagonal_viscous())
   if(ORDER_TIME_INTEGRATOR == 2)
@@ -3975,6 +3979,10 @@ public:
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
       {
         std::cout  <<"Time (Step 1-5):\t "<<total_avg_time<<std::endl;
+      }
+    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+      {
+        std::cout  <<"Total Time:\t\t "<<total_time.wall_time()<<std::endl;
       }
   }
 
@@ -7830,7 +7838,7 @@ public:
     if(DIVU_TIMESERIES)
       write_divu(navier_stokes_operation.velocity_temp, navier_stokes_operation,time+time_step,time_step_number);
   }
-    navier_stokes_operation.analyse_computing_times();
+  navier_stokes_operation.analyse_computing_times();
   }
 }
 
