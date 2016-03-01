@@ -372,12 +372,12 @@ namespace DG_NavierStokes
   const double OUTPUT_START_TIME = 50.0;
   const double STATISTICS_START_TIME = 50.0;
   const bool DIVU_TIMESERIES = false; //true;
-  const int MAX_NUM_STEPS = 1e7;
-  const double CFL = 1.0;
+  const int MAX_NUM_STEPS = 200;
+  const double CFL = 0.1;
 
-  const double VISCOSITY = 1./180.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
+  const double VISCOSITY = 1./590.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
 
-  const double MAX_VELOCITY = 15.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
+  const double MAX_VELOCITY = 22.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
   const double stab_factor = 1.0;
   const double K=1.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
@@ -386,14 +386,14 @@ namespace DG_NavierStokes
   const double DTAUW = 1.0;
 
   const double MAX_WDIST_XWALL = 0.2;
-  const double GRID_STRETCH_FAC = 1.8;
+  const double GRID_STRETCH_FAC = 1.0;
   const bool pure_dirichlet_bc = true;
 
   const double REL_TOL_PRESSURE = 1.0e-5;
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-6;
 
-  const std::string output_prefix = "ch180_4_p4_gt18_partp_k100_partu_sf1_cfl1";
+  const std::string output_prefix = "ch40_4_p4_gt18_partp_k100_partu_sf1_cfl1";
 
   const unsigned int output_solver_info_every_timesteps = 10;
   const unsigned int output_solver_info_details = 10;
@@ -467,7 +467,7 @@ namespace DG_NavierStokes
     if(component == 0)
     {
       if(p[1]<0.9999&&p[1]>-0.9999)
-        result = -22.0*(pow(p[1],2.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*1.0);//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
+        result = -22.0*(pow(p[1],2.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*0.0);//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
       else
         result = 0.0;
     }
