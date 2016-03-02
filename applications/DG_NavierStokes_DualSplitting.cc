@@ -3787,7 +3787,6 @@ public:
     // the solver
     solution_np[dim].equ(beta[0], solution_n[dim]);
     solution_np[dim].add(beta[1], solution_nm[dim], beta[2], solution_nm2[dim]);
-    pressure_poisson_solver.get_matrix().vmult(tmp, solution_np[dim]);
 
     unsigned int pres_niter = pressure_poisson_solver.solve(solution_np[dim], rhs_p);
 
