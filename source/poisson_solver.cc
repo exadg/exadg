@@ -15,7 +15,8 @@ LaplaceOperator<dim,Number>::LaplaceOperator ()
   :
   data (0),
   fe_degree (numbers::invalid_unsigned_int),
-  apply_mean_value_constraint (false)
+  needs_mean_value_constraint (false),
+  apply_mean_value_constraint_in_matvec (false)
 {}
 
 
@@ -26,7 +27,8 @@ void LaplaceOperator<dim,Number>::clear()
   solver_data = PoissonSolverData<dim>();
   data = 0;
   fe_degree = numbers::invalid_unsigned_int;
-  apply_mean_value_constraint = false;
+  needs_mean_value_constraint = false;
+  apply_mean_value_constraint_in_matvec = false;
   own_matrix_free_storage.clear();
   tmp_projection_vector.reinit(0);
   have_interface_matrices = false;
@@ -71,8 +73,9 @@ void LaplaceOperator<dim,Number>::reinit(const MatrixFree<dim,Number>       &mf_
 
   // use mean value constraint if the infty norm with the one vector is very
   // small
-  apply_mean_value_constraint =
+  needs_mean_value_constraint =
     linfty_norm / linfty_norm_compare < std::pow(std::numeric_limits<Number>::epsilon(), 2./3.);
+  apply_mean_value_constraint_in_matvec = needs_mean_value_constraint;
 }
 
 
@@ -381,7 +384,7 @@ void LaplaceOperator<dim,Number>::compute_array_penalty_parameter(const Mapping<
 template <int dim, typename Number>
 void LaplaceOperator<dim,Number>::disable_mean_value_constraint()
 {
-  this->apply_mean_value_constraint = false;
+  this->apply_mean_value_constraint_in_matvec = false;
 }
 
 
@@ -420,7 +423,7 @@ void LaplaceOperator<dim,Number>::vmult_add(parallel::distributed::Vector<Number
                                             const parallel::distributed::Vector<Number> &src) const
 {
   const parallel::distributed::Vector<Number> *actual_src = &src;
-  if(apply_mean_value_constraint)
+  if(apply_mean_value_constraint_in_matvec)
     {
       tmp_projection_vector = src;
       apply_nullspace_projection(tmp_projection_vector);
@@ -433,7 +436,7 @@ void LaplaceOperator<dim,Number>::vmult_add(parallel::distributed::Vector<Number
   // Neumann problems.
   for (unsigned int i=0; i<edge_constrained_indices.size(); ++i)
     {
-      Assert(!apply_mean_value_constraint, ExcInternalError());
+      Assert(!apply_mean_value_constraint_in_matvec, ExcInternalError());
 
       edge_constrained_values[i] =
         std::pair<Number,Number>(src.local_element(edge_constrained_indices[i]),
@@ -460,7 +463,7 @@ void LaplaceOperator<dim,Number>::vmult_add(parallel::distributed::Vector<Number
       dst.local_element(edge_constrained_indices[i]) = edge_constrained_values[i].second + edge_constrained_values[i].first;
     }
 
-  if (apply_mean_value_constraint)
+  if (apply_mean_value_constraint_in_matvec)
     apply_nullspace_projection(dst);
 }
 
@@ -620,7 +623,7 @@ void LaplaceOperator<dim,Number>
 template <int dim, typename Number>
 void LaplaceOperator<dim,Number>::apply_nullspace_projection(parallel::distributed::Vector<Number> &vec) const
 {
-  if (apply_mean_value_constraint)
+  if (needs_mean_value_constraint)
     {
       const Number mean_val = vec.mean_value();
       vec.add(-mean_val);
@@ -742,7 +745,7 @@ void LaplaceOperator<dim,Number>
       AssertThrow(false, ExcMessage("Only polynomial degrees 0 up to 10 instantiated"));
     }
 
-  if(apply_mean_value_constraint)
+  if(apply_mean_value_constraint_in_matvec)
     {
       parallel::distributed::Vector<Number> vec1;
       vec1.reinit(inverse_diagonal_entries, true);
@@ -1211,6 +1214,159 @@ public:
 
 
 
+// This is a modification of MGSmootherPrecondition from deal.II but
+// re-written in order to avoid global communication
+template<typename MatrixType, typename PreconditionerType, typename VectorType>
+class MGSmootherPreconditionMF : public MGSmoother<VectorType>
+{
+public:
+  /**
+   * Constructor. Sets smoothing parameters.
+   */
+  MGSmootherPreconditionMF(const MGLevelObject<MatrixType> &matrices,
+                           const MGLevelObject<PreconditionerType> &preconditioners,
+                           const bool is_pre_smoother,
+                           const unsigned int steps = 1,
+                           const bool variable = false,
+                           const bool symmetric = false,
+                           const bool transpose = false)
+    :
+    MGSmoother<VectorType>(steps, variable, symmetric, transpose),
+    matrices (&matrices),
+    smoothers (&preconditioners),
+    is_pre_smoother (is_pre_smoother)
+  {}
+
+  virtual void clear()
+  {
+    matrices = 0;
+    smoothers = 0;
+  }
+
+  /**
+   * The actual smoothing method.
+   */
+  virtual void smooth (const unsigned int level,
+                       VectorType         &u,
+                       const VectorType   &rhs) const
+  {
+    unsigned int maxlevel = matrices->max_level();
+    unsigned int steps2 = this->steps;
+
+    if (this->variable)
+      steps2 *= (1<<(maxlevel-level));
+
+    typename VectorMemory<VectorType>::Pointer r(this->vector_memory);
+    typename VectorMemory<VectorType>::Pointer d(this->vector_memory);
+
+    if (!is_pre_smoother || steps2 > 1)
+      {
+        r->reinit(u,true);
+        d->reinit(u,true);
+      }
+
+    bool T = this->transpose;
+    if (this->symmetric && (steps2 % 2 == 0))
+      T = false;
+
+    for (unsigned int i=0; i<steps2; ++i)
+      {
+        if (T)
+          {
+            if (steps2 == 1 && is_pre_smoother)
+              (*smoothers)[level].Tvmult(u, rhs);
+            else
+              {
+                (*matrices)[level].Tvmult(*r,u);
+                r->sadd(-1.,1.,rhs);
+                (*smoothers)[level].Tvmult(*d, *r);
+              }
+          }
+        else
+          {
+            if (steps2 == 1 && is_pre_smoother)
+              (*smoothers)[level].vmult(u, rhs);
+            else
+              {
+                (*matrices)[level].vmult(*r,u);
+                r->sadd(-1.,rhs);
+                (*smoothers)[level].vmult(*d, *r);
+              }
+          }
+        if (steps2 > 1 || !is_pre_smoother)
+          u += *d;
+        if (this->symmetric)
+          T = !T;
+      }
+  }
+
+private:
+  /**
+   * Pointer to the matrices.
+   */
+  const MGLevelObject<MatrixType> *matrices;
+
+  /**
+   * Object containing relaxation methods.
+   */
+  const MGLevelObject<PreconditionerType> *smoothers;
+
+  /**
+   * Sets whether we are pre- or post-smoothing. In pre-smoothing with only
+   * one step, we will have a zero input vector and not need to compute the
+   * initial matrix-vector product.
+   */
+  const bool is_pre_smoother;
+};
+
+
+
+namespace
+{
+  // manually compute eigenvalues for the coarsest level for proper setup of
+  // the Chebyshev iteration
+  template <typename Operator>
+  std::pair<double,double>
+  compute_eigenvalues(const Operator &op,
+                      const parallel::distributed::Vector<typename Operator::value_type> &inverse_diagonal)
+  {
+    typedef typename Operator::value_type value_type;
+    JacobiPreconditioner<value_type> preconditioner(inverse_diagonal);
+    parallel::distributed::Vector<value_type> left, right;
+    left.reinit(inverse_diagonal);
+    right.reinit(inverse_diagonal, true);
+    for (unsigned int i=0; i<right.local_size(); ++i)
+      right.local_element(i) = (double)rand()/RAND_MAX;
+    op.apply_nullspace_projection(right);
+
+    SolverControl control(10000, right.l2_norm()*1e-5);
+    internal::PreconditionChebyshev::EigenvalueTracker eigenvalue_tracker;
+    SolverCG<parallel::distributed::Vector<value_type> > solver (control);
+    solver.connect_eigenvalues_slot(std_cxx11::bind(&internal::PreconditionChebyshev::EigenvalueTracker::slot,
+                                                    &eigenvalue_tracker,
+                                                    std_cxx11::_1));
+    try
+      {
+        solver.solve(op, left, right, preconditioner);
+      }
+    catch (SolverControl::NoConvergence &)
+      {
+      }
+
+    std::pair<double,double> eigenvalues;
+    if (eigenvalue_tracker.values.empty())
+        eigenvalues.first = eigenvalues.second = 1;
+    else
+      {
+        eigenvalues.first = eigenvalue_tracker.values.front();
+        eigenvalues.second = eigenvalue_tracker.values.back();
+      }
+    return eigenvalues;
+  }
+}
+
+
+
 template <int dim>
 void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
                                      const MatrixFree<dim,double> &matrix_free,
@@ -1235,54 +1391,58 @@ void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
 
   mg_matrices.resize(0, tria->n_global_levels()-1);
   mg_interface_matrices.resize(0, tria->n_global_levels()-1);
+  chebyshev_smoothers.resize(0, tria->n_global_levels()-1);
 
-  MGLevelObject<typename SMOOTHER::AdditionalData> smoother_data;
-  smoother_data.resize(0, dof_handler.get_triangulation().n_global_levels()-1);
+  typename SMOOTHER::AdditionalData smoother_data_l0;
   for (unsigned int level = 0; level<tria->n_global_levels(); ++level)
     {
       mg_matrices[level].reinit(dof_handler, mapping, solver_data,
                                 mg_constrained_dofs, level);
       mg_interface_matrices[level].initialize(mg_matrices[level]);
+      typename SMOOTHER::AdditionalData smoother_data;
 
+      // we do not need the mean value constraint for smoothers on the
+      // multigrid levels, so we can disable it
+      mg_matrices[level].disable_mean_value_constraint();
+      mg_matrices[level].compute_inverse_diagonal(smoother_data.matrix_diagonal_inverse);
       if (level > 0)
         {
-          smoother_data[level].smoothing_range = solver_data.smoother_smoothing_range;
-          smoother_data[level].degree = solver_data.smoother_poly_degree;
-          smoother_data[level].eig_cg_n_iterations = 20;
-
-          // we do not need the mean value constraint for smoothers on the
-          // multigrid levels, so we can disable it
-          mg_matrices[level].disable_mean_value_constraint();
+          smoother_data.smoothing_range = solver_data.smoother_smoothing_range;
+          smoother_data.degree = solver_data.smoother_poly_degree;
+          smoother_data.eig_cg_n_iterations = 20;
         }
       else
         {
-          smoother_data[level].smoothing_range = 0.;
+          smoother_data.smoothing_range = 0.;
           if (solver_data.coarse_solver != PoissonSolverData<dim>::coarse_chebyshev_smoother)
           {
-            smoother_data[level].eig_cg_n_iterations = 0;
+            smoother_data.eig_cg_n_iterations = 0;
           }
-          // TODO: here we would like to have an adaptive choice...
-          else if (dof_handler.n_dofs(0) > 2000)
-            {
-              smoother_data[level].degree = 100;
-              smoother_data[level].eig_cg_n_iterations = 200;
-            }
           else
             {
-              smoother_data[level].degree = 40;
-              smoother_data[level].eig_cg_n_iterations = 100;
+              std::pair<double,double> eigenvalues = compute_eigenvalues(mg_matrices[0],
+                                                                         smoother_data.matrix_diagonal_inverse);
+              smoother_data.max_eigenvalue = 1.1 * eigenvalues.second;
+              smoother_data.smoothing_range = eigenvalues.second/eigenvalues.first*1.1;
+              double sigma = (1.-std::sqrt(1./smoother_data.smoothing_range))/(1.+std::sqrt(1./smoother_data.smoothing_range));
+              const double eps = 1e-2;
+              smoother_data.degree = std::log(1./eps+std::sqrt(1./eps/eps-1))/std::log(1./sigma);
+              smoother_data.eig_cg_n_iterations = 0;
             }
         }
-      mg_matrices[level].compute_inverse_diagonal(smoother_data[level].matrix_diagonal_inverse);
+      chebyshev_smoothers[level].initialize(mg_matrices[level], smoother_data);
+      if (level == 0)
+        smoother_data_l0.matrix_diagonal_inverse = smoother_data.matrix_diagonal_inverse;
     }
 
-  mg_smoother.initialize(mg_matrices, smoother_data);
+  mg_pre_smoother.reset(new MGSmootherPreconditionMF<LevelMatrixType,SMOOTHER,parallel::distributed::Vector<Number> >(mg_matrices, chebyshev_smoothers, true));
+  mg_post_smoother.reset(new MGSmootherPreconditionMF<LevelMatrixType,SMOOTHER,parallel::distributed::Vector<Number> >(mg_matrices, chebyshev_smoothers, false));
 
   switch (solver_data.coarse_solver)
     {
     case PoissonSolverData<dim>::coarse_chebyshev_smoother:
       {
-        mg_coarse.reset(new MGCoarseFromSmoother<parallel::distributed::Vector<Number> >(mg_smoother));
+        mg_coarse.reset(new MGCoarseFromSmoother<parallel::distributed::Vector<Number> >(*mg_pre_smoother));
         break;
       }
     case PoissonSolverData<dim>::coarse_iterative_noprec:
@@ -1292,7 +1452,7 @@ void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
       }
     case PoissonSolverData<dim>::coarse_iterative_jacobi:
       {
-        mg_coarse.reset(new MGCoarseIterative<LevelMatrixType>(mg_matrices[0], &smoother_data[0].matrix_diagonal_inverse));
+        mg_coarse.reset(new MGCoarseIterative<LevelMatrixType>(mg_matrices[0], &smoother_data_l0.matrix_diagonal_inverse));
         break;
       }
     default:
@@ -1311,8 +1471,8 @@ void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
                                                                   *mg_matrix,
                                                                   *mg_coarse,
                                                                   mg_transfer,
-                                                                  mg_smoother,
-                                                                  mg_smoother));
+                                                                  *mg_pre_smoother,
+                                                                  *mg_post_smoother));
   mg->set_edge_matrices(*mg_interface, *mg_interface);
 
   preconditioner.reset(new PreconditionMG<dim, parallel::distributed::Vector<Number>,

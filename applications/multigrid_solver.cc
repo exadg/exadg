@@ -495,7 +495,7 @@ namespace Step37
     solver_data.solver_tolerance = 1e-8;
     solver_data.smoother_smoothing_range = 15;
     solver_data.smoother_poly_degree = 4;
-    solver_data.coarse_solver = PoissonSolverData<dim>::coarse_iterative_jacobi;
+    solver_data.coarse_solver = PoissonSolverData<dim>::coarse_chebyshev_smoother;
     PoissonSolver<dim> solver;
     solver.initialize(mapping, matrix_free, solver_data);
 

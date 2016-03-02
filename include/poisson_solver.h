@@ -258,7 +258,8 @@ private:
   MatrixFree<dim,Number> own_matrix_free_storage;
   PoissonSolverData<dim> solver_data;
   unsigned int fe_degree;
-  bool apply_mean_value_constraint;
+  bool needs_mean_value_constraint;
+  bool apply_mean_value_constraint_in_matvec;
   AlignedVector<VectorizedArray<Number> > array_penalty_parameter;
   mutable parallel::distributed::Vector<Number> tmp_projection_vector;
 
@@ -386,8 +387,11 @@ private:
   MGTransferMF<dim,LevelMatrixType> mg_transfer;
 
   typedef PreconditionChebyshev<LevelMatrixType,parallel::distributed::Vector<Number> > SMOOTHER;
-  MGSmootherPrecondition<LevelMatrixType, SMOOTHER, parallel::distributed::Vector<Number> >
-  mg_smoother;
+  MGLevelObject<SMOOTHER> chebyshev_smoothers;
+  std_cxx11::shared_ptr<MGSmoother<parallel::distributed::Vector<Number> > >
+  mg_pre_smoother;
+  std_cxx11::shared_ptr<MGSmoother<parallel::distributed::Vector<Number> > >
+  mg_post_smoother;
 
   std_cxx11::shared_ptr<MGCoarseGridBase<parallel::distributed::Vector<Number> > > mg_coarse;
 
