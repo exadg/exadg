@@ -1321,6 +1321,52 @@ private:
 
 
 
+namespace
+{
+  // manually compute eigenvalues for the coarsest level for proper setup of
+  // the Chebyshev iteration
+  template <typename Operator>
+  std::pair<double,double>
+  compute_eigenvalues(const Operator &op,
+                      const parallel::distributed::Vector<typename Operator::value_type> &inverse_diagonal)
+  {
+    typedef typename Operator::value_type value_type;
+    JacobiPreconditioner<value_type> preconditioner(inverse_diagonal);
+    parallel::distributed::Vector<value_type> left, right;
+    left.reinit(inverse_diagonal);
+    right.reinit(inverse_diagonal, true);
+    for (unsigned int i=0; i<right.local_size(); ++i)
+      right.local_element(i) = (double)rand()/RAND_MAX;
+    op.apply_nullspace_projection(right);
+
+    SolverControl control(10000, right.l2_norm()*1e-5);
+    internal::PreconditionChebyshev::EigenvalueTracker eigenvalue_tracker;
+    SolverCG<parallel::distributed::Vector<value_type> > solver (control);
+    solver.connect_eigenvalues_slot(std_cxx11::bind(&internal::PreconditionChebyshev::EigenvalueTracker::slot,
+                                                    &eigenvalue_tracker,
+                                                    std_cxx11::_1));
+    try
+      {
+        solver.solve(op, left, right, preconditioner);
+      }
+    catch (SolverControl::NoConvergence &)
+      {
+      }
+
+    std::pair<double,double> eigenvalues;
+    if (eigenvalue_tracker.values.empty())
+        eigenvalues.first = eigenvalues.second = 1;
+    else
+      {
+        eigenvalues.first = eigenvalue_tracker.values.front();
+        eigenvalues.second = eigenvalue_tracker.values.back();
+      }
+    return eigenvalues;
+  }
+}
+
+
+
 template <int dim>
 void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
                                      const MatrixFree<dim,double> &matrix_free,
@@ -1358,6 +1404,7 @@ void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
       // we do not need the mean value constraint for smoothers on the
       // multigrid levels, so we can disable it
       mg_matrices[level].disable_mean_value_constraint();
+      mg_matrices[level].compute_inverse_diagonal(smoother_data.matrix_diagonal_inverse);
       if (level > 0)
         {
           smoother_data.smoothing_range = solver_data.smoother_smoothing_range;
@@ -1371,19 +1418,18 @@ void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
           {
             smoother_data.eig_cg_n_iterations = 0;
           }
-          // TODO: here we would like to have an adaptive choice...
-          else if (dof_handler.n_dofs(0) > 2000)
-            {
-              smoother_data.degree = 100;
-              smoother_data.eig_cg_n_iterations = 200;
-            }
           else
             {
-              smoother_data.degree = 40;
-              smoother_data.eig_cg_n_iterations = 100;
+              std::pair<double,double> eigenvalues = compute_eigenvalues(mg_matrices[0],
+                                                                         smoother_data.matrix_diagonal_inverse);
+              smoother_data.max_eigenvalue = 1.1 * eigenvalues.second;
+              smoother_data.smoothing_range = eigenvalues.second/eigenvalues.first*1.1;
+              double sigma = (1.-std::sqrt(1./smoother_data.smoothing_range))/(1.+std::sqrt(1./smoother_data.smoothing_range));
+              const double eps = 1e-2;
+              smoother_data.degree = std::log(1./eps+std::sqrt(1./eps/eps-1))/std::log(1./sigma);
+              smoother_data.eig_cg_n_iterations = 0;
             }
         }
-      mg_matrices[level].compute_inverse_diagonal(smoother_data.matrix_diagonal_inverse);
       chebyshev_smoothers[level].initialize(mg_matrices[level], smoother_data);
       if (level == 0)
         smoother_data_l0.matrix_diagonal_inverse = smoother_data.matrix_diagonal_inverse;
