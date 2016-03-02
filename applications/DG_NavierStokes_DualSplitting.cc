@@ -363,8 +363,8 @@ namespace DG_NavierStokes
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
   const unsigned int dimension = 3; // dimension >= 2
-  const unsigned int refine_steps_min = 2;
-  const unsigned int refine_steps_max = 2;
+  const unsigned int refine_steps_min = 4;
+  const unsigned int refine_steps_max = 4;
 
   const double START_TIME = 0.0;
   const double END_TIME = 70.0; // Poisseuille 5.0;  Kovasznay 1.0
@@ -372,7 +372,7 @@ namespace DG_NavierStokes
   const double OUTPUT_START_TIME = 50.0;
   const double STATISTICS_START_TIME = 50.0;
   const bool DIVU_TIMESERIES = false; //true;
-  const int MAX_NUM_STEPS = 1e7;
+  const int MAX_NUM_STEPS = 200;
   const double CFL = 1.0;
 
   const double VISCOSITY = 1./180.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
@@ -389,7 +389,7 @@ namespace DG_NavierStokes
   const double GRID_STRETCH_FAC = 1.8;
   const bool pure_dirichlet_bc = true;
 
-  const double REL_TOL_PRESSURE = 1.0e-5;
+  const double REL_TOL_PRESSURE = 5.0e-3;
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-6;
 
@@ -467,7 +467,7 @@ namespace DG_NavierStokes
     if(component == 0)
     {
       if(p[1]<0.9999&&p[1]>-0.9999)
-        result = -22.0*(pow(p[1],2.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*1.0);//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
+        result = -22.0*(pow(p[1],2.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*0.0);//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
       else
         result = 0.0;
     }
@@ -3429,7 +3429,7 @@ public:
   solver_data.solver_tolerance = REL_TOL_PRESSURE;
   solver_data.dirichlet_boundaries = neumann_boundary;
   solver_data.neumann_boundaries = dirichlet_boundary;
-  solver_data.coarse_solver = PoissonSolverData<dim>::coarse_iterative_jacobi;
+  solver_data.coarse_solver = PoissonSolverData<dim>::coarse_chebyshev_smoother;
   pressure_poisson_solver.initialize(mapping, data, solver_data);
 
 //  smoother_data_viscous.smoothing_range = 30;
@@ -3783,6 +3783,15 @@ public:
 
     rhs_pressure(solution_np,rhs_p);
 
+    // extrapolate from the oldest solution to get a good initial estimate for
+    // the solver
+    solution_np[dim].equ(beta[0], solution_n[dim]);
+    solution_np[dim].add(beta[1], solution_nm[dim], beta[2], solution_nm2[dim]);
+    parallel::distributed::Vector<double> tmp;
+    tmp = solution_np[dim];
+    pressure_poisson_solver.get_matrix().vmult(tmp, solution_np[dim]);
+    tmp -= rhs_p;
+
     unsigned int pres_niter = pressure_poisson_solver.solve(solution_np[dim], rhs_p);
 
     if(pure_dirichlet_bc)
@@ -3841,8 +3850,12 @@ public:
     for (unsigned int i=0; i<dim;i++)
     {
       solution_temp_visc.block(i) = solution_n[i];
+      solution_temp_visc.block(i).sadd(beta[0]*gamma0, beta[1]*gamma0, solution_nm[i]);
+      solution_temp_visc.block(i).add(beta[2]*gamma0, solution_nm2[i]);
 #ifdef XWALL
       solution_temp_visc.block(i+dim) = solution_n[i+dim+1];
+      solution_temp_visc.block(i+dim).sadd(beta[0]*gamma0, beta[1]*gamma0, solution_nm[i+dim+1]);
+      solution_temp_visc.block(i+dim).add(beta[2]*gamma0, solution_nm2[i+dim+1]);
 #endif
     }
     solution_temp_visc.collect_sizes();
