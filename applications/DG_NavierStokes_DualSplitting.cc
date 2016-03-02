@@ -3787,10 +3787,7 @@ public:
     // the solver
     solution_np[dim].equ(beta[0], solution_n[dim]);
     solution_np[dim].add(beta[1], solution_nm[dim], beta[2], solution_nm2[dim]);
-    parallel::distributed::Vector<double> tmp;
-    tmp = solution_np[dim];
     pressure_poisson_solver.get_matrix().vmult(tmp, solution_np[dim]);
-    tmp -= rhs_p;
 
     unsigned int pres_niter = pressure_poisson_solver.solve(solution_np[dim], rhs_p);
 
@@ -6991,11 +6988,11 @@ public:
     Point<dim> out = in;
 
     out[0] = in(0)-numbers::PI;
-#ifdef XWALL    //wall-model
+//#ifdef XWALL    //wall-model
     out[1] =  2.*in(1)-1.;
-#else    //no wall model
-    out[1] =  std::tanh(GRID_STRETCH_FAC*(2.*in(1)-1.))/std::tanh(GRID_STRETCH_FAC);
-#endif
+//#else    //no wall model
+//    out[1] =  std::tanh(GRID_STRETCH_FAC*(2.*in(1)-1.))/std::tanh(GRID_STRETCH_FAC);
+//#endif
     out[2] = in(2)-0.5*numbers::PI;
     return out;
   }
@@ -7155,10 +7152,10 @@ public:
     //turbulent channel flow
 #ifdef CHANNEL
     Point<dim> coordinates;
-    coordinates[0] = 2*numbers::PI;
+    coordinates[0] = 2.0;//*numbers::PI;
     coordinates[1] = 1.;
     if (dim == 3)
-      coordinates[2] = numbers::PI;
+      coordinates[2] = 2.0;//numbers::PI;
     // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
 //    const double left = -1.0, right = 1.0;
 //    GridGenerator::hyper_cube(triangulation,left,right);
