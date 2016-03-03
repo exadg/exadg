@@ -373,11 +373,11 @@ namespace DG_NavierStokes
   const double STATISTICS_START_TIME = 50.0;
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 200;
-  const double CFL = 1.0;
+  const double CFL = 0.1;
 
-  const double VISCOSITY = 1./180.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
+  const double VISCOSITY = 1./590.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
 
-  const double MAX_VELOCITY = 15.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
+  const double MAX_VELOCITY = 22.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
   const double stab_factor = 1.0;
   const double K=1.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
@@ -386,14 +386,14 @@ namespace DG_NavierStokes
   const double DTAUW = 1.0;
 
   const double MAX_WDIST_XWALL = 0.2;
-  const double GRID_STRETCH_FAC = 1.8;
+  const double GRID_STRETCH_FAC = 1.0;
   const bool pure_dirichlet_bc = true;
 
   const double REL_TOL_PRESSURE = 5.0e-3;
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-6;
 
-  const std::string output_prefix = "ch180_4_p4_gt18_partp_k100_partu_sf1_cfl1";
+  const std::string output_prefix = "ch40_4_p4_gt18_partp_k100_partu_sf1_cfl1";
 
   const unsigned int output_solver_info_every_timesteps = 10;
   const unsigned int output_solver_info_details = 10;
@@ -3787,10 +3787,6 @@ public:
     // the solver
     solution_np[dim].equ(beta[0], solution_n[dim]);
     solution_np[dim].add(beta[1], solution_nm[dim], beta[2], solution_nm2[dim]);
-    parallel::distributed::Vector<double> tmp;
-    tmp = solution_np[dim];
-    pressure_poisson_solver.get_matrix().vmult(tmp, solution_np[dim]);
-    tmp -= rhs_p;
 
     unsigned int pres_niter = pressure_poisson_solver.solve(solution_np[dim], rhs_p);
 
@@ -6582,23 +6578,23 @@ public:
 #endif
 
 #ifdef DIVUPARTIAL
-//        Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q);
-
-        Tensor<1,dim,VectorizedArray<value_type> > g_np;
-        for(unsigned int d=0;d<dim;++d)
-        {
-          AnalyticalSolution<dim> dirichlet_boundary(d,time+time_step);
-          value_type array [VectorizedArray<value_type>::n_array_elements];
-          for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
-          {
-            Point<dim> q_point;
-            for (unsigned int d=0; d<dim; ++d)
-            q_point[d] = q_points[d][n];
-            array[n] = dirichlet_boundary.value(q_point);
-          }
-          g_np[d].load(&array[0]);
-        }
-        Tensor<1,dim,VectorizedArray<value_type> > meanvel = make_vectorized_array<value_type>(gamma0)*g_np;
+        Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q);
+//
+//      Tensor<1,dim,VectorizedArray<value_type> > g_np;
+//        for(unsigned int d=0;d<dim;++d)
+//        {
+//          AnalyticalSolution<dim> dirichlet_boundary(d,time+time_step);
+//          value_type array [VectorizedArray<value_type>::n_array_elements];
+//          for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+//          {
+//            Point<dim> q_point;
+//            for (unsigned int d=0; d<dim; ++d)
+//            q_point[d] = q_points[d][n];
+//            array[n] = dirichlet_boundary.value(q_point);
+//          }
+//          g_np[d].load(&array[0]);
+//        }
+//        Tensor<1,dim,VectorizedArray<value_type> > meanvel = make_vectorized_array<value_type>(gamma0)*g_np;
 #else
         Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q)*0.;
 #endif
@@ -6991,11 +6987,11 @@ public:
     Point<dim> out = in;
 
     out[0] = in(0)-numbers::PI;
-#ifdef XWALL    //wall-model
+//#ifdef XWALL    //wall-model
     out[1] =  2.*in(1)-1.;
-#else    //no wall model
-    out[1] =  std::tanh(GRID_STRETCH_FAC*(2.*in(1)-1.))/std::tanh(GRID_STRETCH_FAC);
-#endif
+//#else    //no wall model
+//    out[1] =  std::tanh(GRID_STRETCH_FAC*(2.*in(1)-1.))/std::tanh(GRID_STRETCH_FAC);
+//#endif
     out[2] = in(2)-0.5*numbers::PI;
     return out;
   }
@@ -7155,10 +7151,10 @@ public:
     //turbulent channel flow
 #ifdef CHANNEL
     Point<dim> coordinates;
-    coordinates[0] = 2*numbers::PI;
+    coordinates[0] = 2.0;//*numbers::PI;
     coordinates[1] = 1.;
     if (dim == 3)
-      coordinates[2] = numbers::PI;
+      coordinates[2] = 2.0;//numbers::PI;
     // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
 //    const double left = -1.0, right = 1.0;
 //    GridGenerator::hyper_cube(triangulation,left,right);
