@@ -90,8 +90,8 @@ namespace DG_NavierStokes
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
   const unsigned int dimension = 2; // dimension >= 2
-  const unsigned int refine_steps_min = 3; //1
-  const unsigned int refine_steps_max = 3;
+  const unsigned int refine_steps_min = 1; //1
+  const unsigned int refine_steps_max = 1;
 
   const double START_TIME = 0.0;
   const double END_TIME = 1.0;
@@ -99,7 +99,7 @@ namespace DG_NavierStokes
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
   const int STATISTICS_EVERY = 1;
-  const bool DIVU_TIMESERIES = false; //true;
+  const bool DIVU_TIMESERIES = true; //true;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.05; //0.001
 
@@ -121,7 +121,7 @@ namespace DG_NavierStokes
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-8;
 
-  const std::string output_prefix = "vortex";
+  const std::string output_prefix = "v001_4_p2_k100_sf1_cfl005";
 
   const unsigned int output_solver_info_every_timesteps = 1e4;
   const unsigned int output_solver_info_details = 1e4;
@@ -378,7 +378,7 @@ namespace DG_NavierStokes
   const double OUTPUT_START_TIME = 50.0;
   const double STATISTICS_START_TIME = 50.0;
   const int STATISTICS_EVERY = 1;
-  const bool DIVU_TIMESERIES = false; //true;
+  const bool DIVU_TIMESERIES = true; //true;
   const int MAX_NUM_STEPS = 1e7;
   const double CFL = 1.0;
 
@@ -386,7 +386,7 @@ namespace DG_NavierStokes
 
   const double MAX_VELOCITY = 15.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
   const double stab_factor = 1.0;
-  const double K=1.0e2; //grad-div stabilization/penalty parameter
+  const double K=1.0e3; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -400,7 +400,7 @@ namespace DG_NavierStokes
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-3;
 
-  const std::string output_prefix = "ch180_4_p4_gt18_partp_k100_partu_sf1_cfl1";
+  const std::string output_prefix = "ch180_4_p4_gt18_partp_k1000_partu_sf1_cfl1";
 
   const unsigned int output_solver_info_every_timesteps = 10;
   const unsigned int output_solver_info_details = 10;
@@ -2462,6 +2462,12 @@ public:
 
         return;
       }
+
+      void fill_JxW_values(AlignedVector<VectorizedArray<Number> > &JxW_values) const
+      {
+        fe_eval.fill_JxW_values(JxW_values);
+      }
+
     private:
       FEFaceEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number> fe_eval;
       FEFaceEvaluation<dim,fe_degree_xwall,n_q_points_1d,n_components_,Number> fe_eval_xwall;
@@ -3338,6 +3344,14 @@ public:
                             std::vector<double >      &test,
                             const std::vector<parallel::distributed::Vector<double> >    &source,
                             const std::pair<unsigned int,unsigned int>          &cell_range);
+      void local_compute_divu_for_channel_stats_face (const MatrixFree<dim,double>              &data,
+                  std::vector<double >      &test,
+                  const std::vector<parallel::distributed::Vector<double> >  &source,
+                  const std::pair<unsigned int,unsigned int>          &face_range) ;
+    void local_compute_divu_for_channel_stats_boundary_face (const MatrixFree<dim,double>              &data,
+                  std::vector<double >      &test,
+                  const std::vector<parallel::distributed::Vector<double> >  &source,
+                  const std::pair<unsigned int,unsigned int>          &face_range) ;
   };
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -6052,7 +6066,7 @@ public:
     for (unsigned int q=0; q<phi.n_q_points; ++q)
     {
       vol_vec += JxW_values[q];
-      div_vec += std::abs(phi.get_divergence(q));
+      div_vec += JxW_values[q]*std::abs(phi.get_divergence(q));
     }
   }
   value_type div = 0.;
@@ -6065,6 +6079,61 @@ public:
   test.at(0)+=div;
   test.at(1)+=vol;
 
+  }
+
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+      local_compute_divu_for_channel_stats_face (const MatrixFree<dim,double>              &data,
+                  std::vector<double >      &test,
+                  const std::vector<parallel::distributed::Vector<double> >  &source,
+                  const std::pair<unsigned int,unsigned int>          &face_range)
+  {
+#ifdef XWALL
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,3);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall_neighbor(data,xwallstatevec[0],xwallstatevec[1],false,0,3);
+#else
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,0);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall_neighbor(data,xwallstatevec[0],xwallstatevec[1],false,0,0);
+#endif  
+AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval_xwall.n_q_points);
+  VectorizedArray<value_type> div_vec = make_vectorized_array(0.);
+  VectorizedArray<value_type> vol_vec = make_vectorized_array(0.);
+  for (unsigned int face=face_range.first; face<face_range.second; ++face)
+  {
+    fe_eval_xwall.reinit(face);
+    fe_eval_xwall.read_dof_values(source,0,source,dim+1);
+    fe_eval_xwall.evaluate(true,false);
+    fe_eval_xwall_neighbor.reinit(face);
+    fe_eval_xwall_neighbor.read_dof_values(source,0,source,dim+1);
+    fe_eval_xwall_neighbor.evaluate(true,false);
+    fe_eval_xwall.fill_JxW_values(JxW_values);
+
+    for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
+    {
+      vol_vec += JxW_values[q];
+      div_vec += JxW_values[q]*std::abs((fe_eval_xwall.get_value(q)-fe_eval_xwall_neighbor.get_value(q))*fe_eval_xwall.get_normal_vector(q));
+    }
+  }
+  value_type div = 0.;
+  value_type vol = 0.;
+  for (unsigned int v=0;v<VectorizedArray<value_type>::n_array_elements;v++)
+  {
+    div += div_vec[v];
+    vol += vol_vec[v];
+  }
+  test.at(2)+=div;
+  test.at(3)+=vol;
+
+  }
+
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+      local_compute_divu_for_channel_stats_boundary_face (const MatrixFree<dim,double>              &data,
+                  std::vector<double >      &test,
+                  const std::vector<parallel::distributed::Vector<double> >  &source,
+                  const std::pair<unsigned int,unsigned int>          &face_range)
+  {
+     ;
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -6929,6 +6998,7 @@ public:
 
   int numchsamp;
   double udiv_samp;
+  double udiff_samp;
   void init_channel_statistics();
   void compute_divu_statistics(std::vector<parallel::distributed::Vector<value_type> >   &vel_hat, NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> & nsoperation);
   void write_divu(std::vector<parallel::distributed::Vector<value_type> >   &vel_hat, NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> & nsoperation, double time, unsigned int time_step_number);
@@ -7616,6 +7686,7 @@ public:
   init_channel_statistics()
   {
     udiv_samp = 0;
+    udiff_samp = 0;
     numchsamp = 0;
   }
 
@@ -7625,11 +7696,17 @@ public:
   {
     numchsamp++;
 
-    std::vector<double > dummy(2,0.0);
-    nsoperation.get_data().cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats,&nsoperation, dummy, vel_hathat);
+    std::vector<double > dummy(4,0.0);
+    nsoperation.get_data().loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats,
+    &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats_face,
+    &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats_boundary_face,
+                         &nsoperation, dummy, vel_hathat);
     double div = Utilities::MPI::sum (dummy.at(0), MPI_COMM_WORLD);
     double vol = Utilities::MPI::sum (dummy.at(1), MPI_COMM_WORLD);
+    double udiff = Utilities::MPI::sum (dummy.at(2), MPI_COMM_WORLD);
+    double area = Utilities::MPI::sum (dummy.at(3), MPI_COMM_WORLD);
     udiv_samp += div/vol;
+    udiff_samp += udiff/area;
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
     {
       std::ostringstream filename;
@@ -7642,6 +7719,7 @@ public:
       f<<"average divergence over space and time"<<std::endl;
       f<<"number of samples:   " << numchsamp << std::endl;
       f<<"mean div u_hathat:   " << udiv_samp/numchsamp*6.0/11.0 << std::endl;//the factor 6/11 is gamma0^-1, which is the factor u_hathat is scaled compared to solution_n
+      f<<"mean diff u_hathat:  " << udiff_samp/numchsamp*6.0/11.0 << std::endl;
       f.close();
     }
    }
@@ -7650,11 +7728,17 @@ public:
   void NavierStokesProblem<dim>::
   write_divu(std::vector<parallel::distributed::Vector<value_type> >   &vel_hathat, NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> & nsoperation, double time, unsigned int time_step_number)
   {
-    std::vector<double > dummy(2,0.0);
-    nsoperation.get_data().cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats,&nsoperation, dummy, vel_hathat);
+    std::vector<double > dummy(4,0.0);
+    nsoperation.get_data().loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats,
+    &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats_face,
+    &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats_boundary_face,
+                         &nsoperation, dummy, vel_hathat);
     double div = Utilities::MPI::sum (dummy.at(0), MPI_COMM_WORLD);
     double vol = Utilities::MPI::sum (dummy.at(1), MPI_COMM_WORLD);
+    double udiff = Utilities::MPI::sum (dummy.at(2), MPI_COMM_WORLD);
+    double area = Utilities::MPI::sum (dummy.at(3), MPI_COMM_WORLD);
     double udiv = div/vol;
+    double udiffx = udiff/area;
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
     {
       std::ostringstream filename;
@@ -7665,13 +7749,14 @@ public:
       if(time_step_number==1)
       {
         f.open(filename.str().c_str(),std::ios::trunc);
-        f<< "       n       |       t      |     divu     " << std::endl;
+        f<< "       n       |       t      |     divu     |  (um - up )*n" << std::endl;
       }
       else
         f.open(filename.str().c_str(),std::ios::app);
       f << std::setw(15) <<time_step_number;
       f << std::scientific<<std::setprecision(7) << std::setw(15) << time ;
-      f << std::scientific<<std::setprecision(7) << std::setw(15) << udiv*6.0/11.0 << std::endl;
+      f << std::scientific<<std::setprecision(7) << std::setw(15) << udiv*6.0/11.0;
+      f << std::scientific<<std::setprecision(7) << std::setw(15) << udiffx*6.0/11.0 << std::endl;
       //the factor 6/11 is gamma0^-1, which is the factor u_hathat is scaled compared to solution_n
       f.close();
     }
