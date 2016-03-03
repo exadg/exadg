@@ -98,6 +98,7 @@ namespace DG_NavierStokes
   const double OUTPUT_INTERVAL_TIME = 0.1;
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
+  const int STATISTICS_EVERY = 1;
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.05; //0.001
@@ -143,6 +144,7 @@ namespace DG_NavierStokes
   const double OUTPUT_INTERVAL_TIME = 0.1;
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
+  const int STATISTICS_EVERY = 1;
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.005;
@@ -188,6 +190,7 @@ namespace DG_NavierStokes
   const double OUTPUT_INTERVAL_TIME = 0.1;
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
+  const int STATISTICS_EVERY = 1;
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.01;
@@ -233,6 +236,7 @@ namespace DG_NavierStokes
   const double OUTPUT_INTERVAL_TIME = 0.1;
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
+  const int STATISTICS_EVERY = 1;
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.01;
@@ -278,6 +282,7 @@ namespace DG_NavierStokes
   const double OUTPUT_INTERVAL_TIME = 0.1;
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
+  const int STATISTICS_EVERY = 1;
   const bool DIVU_TIMESERIES = false;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.2; // CFL number irrelevant for Stokes flow problem
@@ -324,6 +329,7 @@ namespace DG_NavierStokes
   const double OUTPUT_INTERVAL_TIME = 1.;
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
+  const int STATISTICS_EVERY = 1;
   const bool DIVU_TIMESERIES = true;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.2;
@@ -363,21 +369,22 @@ namespace DG_NavierStokes
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
   const unsigned int dimension = 3; // dimension >= 2
-  const unsigned int refine_steps_min = 4;
-  const unsigned int refine_steps_max = 4;
+  const unsigned int refine_steps_min = 2;
+  const unsigned int refine_steps_max = 2;
 
   const double START_TIME = 0.0;
   const double END_TIME = 70.0; // Poisseuille 5.0;  Kovasznay 1.0
   const double OUTPUT_INTERVAL_TIME = 1.0;
   const double OUTPUT_START_TIME = 50.0;
   const double STATISTICS_START_TIME = 50.0;
+  const int STATISTICS_EVERY = 1;
   const bool DIVU_TIMESERIES = false; //true;
-  const int MAX_NUM_STEPS = 200;
-  const double CFL = 0.1;
+  const int MAX_NUM_STEPS = 1e7;
+  const double CFL = 1.0;
 
-  const double VISCOSITY = 1./590.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
+  const double VISCOSITY = 1./180.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
 
-  const double MAX_VELOCITY = 22.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
+  const double MAX_VELOCITY = 15.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
   const double stab_factor = 1.0;
   const double K=1.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
@@ -386,14 +393,14 @@ namespace DG_NavierStokes
   const double DTAUW = 1.0;
 
   const double MAX_WDIST_XWALL = 0.2;
-  const double GRID_STRETCH_FAC = 1.0;
+  const double GRID_STRETCH_FAC = 1.8;
   const bool pure_dirichlet_bc = true;
 
-  const double REL_TOL_PRESSURE = 5.0e-3;
+  const double REL_TOL_PRESSURE = 1.0e-3;
   const double ABS_TOL_VISCOUS = 1.0e-12;
-  const double REL_TOL_VISCOUS = 1.0e-6;
+  const double REL_TOL_VISCOUS = 1.0e-3;
 
-  const std::string output_prefix = "ch40_4_p4_gt18_partp_k100_partu_sf1_cfl1";
+  const std::string output_prefix = "ch180_4_p4_gt18_partp_k100_partu_sf1_cfl1";
 
   const unsigned int output_solver_info_every_timesteps = 10;
   const unsigned int output_solver_info_details = 10;
@@ -467,7 +474,7 @@ namespace DG_NavierStokes
     if(component == 0)
     {
       if(p[1]<0.9999&&p[1]>-0.9999)
-        result = -22.0*(pow(p[1],2.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*0.0);//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
+        result = -22.0*(pow(p[1],2.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*1.0);//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
       else
         result = 0.0;
     }
@@ -3846,12 +3853,12 @@ public:
     for (unsigned int i=0; i<dim;i++)
     {
       solution_temp_visc.block(i) = solution_n[i];
-      solution_temp_visc.block(i).sadd(beta[0]*gamma0, beta[1]*gamma0, solution_nm[i]);
-      solution_temp_visc.block(i).add(beta[2]*gamma0, solution_nm2[i]);
+      solution_temp_visc.block(i).sadd(beta[0], beta[1], solution_nm[i]);
+      solution_temp_visc.block(i).add(beta[2], solution_nm2[i]);
 #ifdef XWALL
       solution_temp_visc.block(i+dim) = solution_n[i+dim+1];
-      solution_temp_visc.block(i+dim).sadd(beta[0]*gamma0, beta[1]*gamma0, solution_nm[i+dim+1]);
-      solution_temp_visc.block(i+dim).add(beta[2]*gamma0, solution_nm2[i+dim+1]);
+      solution_temp_visc.block(i+dim).sadd(beta[0], beta[1], solution_nm[i+dim+1]);
+      solution_temp_visc.block(i+dim).add(beta[2], solution_nm2[i+dim+1]);
 #endif
     }
     solution_temp_visc.collect_sizes();
@@ -6987,11 +6994,11 @@ public:
     Point<dim> out = in;
 
     out[0] = in(0)-numbers::PI;
-//#ifdef XWALL    //wall-model
+#ifdef XWALL    //wall-model
     out[1] =  2.*in(1)-1.;
-//#else    //no wall model
-//    out[1] =  std::tanh(GRID_STRETCH_FAC*(2.*in(1)-1.))/std::tanh(GRID_STRETCH_FAC);
-//#endif
+#else    //no wall model
+    out[1] =  std::tanh(GRID_STRETCH_FAC*(2.*in(1)-1.))/std::tanh(GRID_STRETCH_FAC);
+#endif
     out[2] = in(2)-0.5*numbers::PI;
     return out;
   }
@@ -7151,10 +7158,10 @@ public:
     //turbulent channel flow
 #ifdef CHANNEL
     Point<dim> coordinates;
-    coordinates[0] = 2.0;//*numbers::PI;
+    coordinates[0] = 2*numbers::PI;
     coordinates[1] = 1.;
     if (dim == 3)
-      coordinates[2] = 2.0;//numbers::PI;
+      coordinates[2] = numbers::PI;
     // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
 //    const double left = -1.0, right = 1.0;
 //    GridGenerator::hyper_cube(triangulation,left,right);
@@ -7842,7 +7849,7 @@ public:
     }
     else if((time+time_step-START_TIME) > (output_number*OUTPUT_INTERVAL_TIME-EPSILON))
       output_number++;
-    if((time+time_step) > STATISTICS_START_TIME-EPSILON && time_step_number % 50 == 0)
+    if((time+time_step) > STATISTICS_START_TIME-EPSILON && time_step_number % STATISTICS_EVERY == 0)
     {
 #ifdef CHANNEL
       statistics.evaluate(navier_stokes_operation.solution_n);
