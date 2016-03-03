@@ -17,6 +17,8 @@
 using namespace dealii;
 
 
+template<int dim, typename Number> class MultigridPreconditioner;
+
 template <int dim>
 struct PoissonSolverData
 {
@@ -199,6 +201,11 @@ public:
   get_solver_data() const
   {
     return solver_data;
+  }
+
+  bool is_empty_locally() const
+  {
+    return data->n_macro_cells() == 0;
   }
 
 private:
@@ -389,19 +396,13 @@ private:
   typedef PreconditionChebyshev<LevelMatrixType,parallel::distributed::Vector<Number> > SMOOTHER;
   MGLevelObject<SMOOTHER> chebyshev_smoothers;
   std_cxx11::shared_ptr<MGSmoother<parallel::distributed::Vector<Number> > >
-  mg_pre_smoother;
-  std_cxx11::shared_ptr<MGSmoother<parallel::distributed::Vector<Number> > >
-  mg_post_smoother;
+  mg_smoother;
 
   std_cxx11::shared_ptr<MGCoarseGridBase<parallel::distributed::Vector<Number> > > mg_coarse;
 
-  std_cxx11::shared_ptr<mg::Matrix<parallel::distributed::Vector<Number> > > mg_matrix;
   std_cxx11::shared_ptr<mg::Matrix<parallel::distributed::Vector<Number> > > mg_interface;
 
-  std_cxx11::shared_ptr<Multigrid<parallel::distributed::Vector<Number> > > mg;
-
-  std_cxx11::shared_ptr<PreconditionMG<dim, parallel::distributed::Vector<Number>,
-                                       MGTransferMF<dim,LevelMatrixType> > > preconditioner;
+  std_cxx11::shared_ptr<MultigridPreconditioner<dim,Number> > preconditioner;
 };
 
 

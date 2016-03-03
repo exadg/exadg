@@ -1197,19 +1197,24 @@ template<typename VECTOR>
 class MGCoarseFromSmoother : public MGCoarseGridBase<VECTOR>
 {
 public:
-  MGCoarseFromSmoother(const MGSmootherBase<VECTOR> &mg_smoother)
-    : smoother(mg_smoother)
+  MGCoarseFromSmoother(const MGSmootherBase<VECTOR> &mg_smoother,
+                       const bool is_empty)
+    : smoother(mg_smoother),
+      is_empty(is_empty)
   {}
 
   virtual void operator() (const unsigned int   level,
                            VECTOR &dst,
                            const VECTOR &src) const
   {
+    if (is_empty)
+      return;
     Assert(level == 0, ExcNotImplemented());
     smoother.smooth(level, dst, src);
   }
 
   const MGSmootherBase<VECTOR> &smoother;
+  const bool is_empty;
 };
 
 
@@ -1225,7 +1230,6 @@ public:
    */
   MGSmootherPreconditionMF(const MGLevelObject<MatrixType> &matrices,
                            const MGLevelObject<PreconditionerType> &preconditioners,
-                           const bool is_pre_smoother,
                            const unsigned int steps = 1,
                            const bool variable = false,
                            const bool symmetric = false,
@@ -1233,9 +1237,10 @@ public:
     :
     MGSmoother<VectorType>(steps, variable, symmetric, transpose),
     matrices (&matrices),
-    smoothers (&preconditioners),
-    is_pre_smoother (is_pre_smoother)
-  {}
+    smoothers (&preconditioners)
+  {
+    AssertThrow(this->steps == 1, ExcNotImplemented());
+  }
 
   virtual void clear()
   {
@@ -1250,53 +1255,13 @@ public:
                        VectorType         &u,
                        const VectorType   &rhs) const
   {
-    unsigned int maxlevel = matrices->max_level();
-    unsigned int steps2 = this->steps;
-
-    if (this->variable)
-      steps2 *= (1<<(maxlevel-level));
-
-    typename VectorMemory<VectorType>::Pointer r(this->vector_memory);
-    typename VectorMemory<VectorType>::Pointer d(this->vector_memory);
-
-    if (!is_pre_smoother || steps2 > 1)
+    if (this->transpose)
       {
-        r->reinit(u,true);
-        d->reinit(u,true);
+        (*smoothers)[level].Tvmult(u, rhs);
       }
-
-    bool T = this->transpose;
-    if (this->symmetric && (steps2 % 2 == 0))
-      T = false;
-
-    for (unsigned int i=0; i<steps2; ++i)
+    else
       {
-        if (T)
-          {
-            if (steps2 == 1 && is_pre_smoother)
-              (*smoothers)[level].Tvmult(u, rhs);
-            else
-              {
-                (*matrices)[level].Tvmult(*r,u);
-                r->sadd(-1.,1.,rhs);
-                (*smoothers)[level].Tvmult(*d, *r);
-              }
-          }
-        else
-          {
-            if (steps2 == 1 && is_pre_smoother)
-              (*smoothers)[level].vmult(u, rhs);
-            else
-              {
-                (*matrices)[level].vmult(*r,u);
-                r->sadd(-1.,rhs);
-                (*smoothers)[level].vmult(*d, *r);
-              }
-          }
-        if (steps2 > 1 || !is_pre_smoother)
-          u += *d;
-        if (this->symmetric)
-          T = !T;
+        (*smoothers)[level].vmult(u, rhs);
       }
   }
 
@@ -1310,13 +1275,6 @@ private:
    * Object containing relaxation methods.
    */
   const MGLevelObject<PreconditionerType> *smoothers;
-
-  /**
-   * Sets whether we are pre- or post-smoothing. In pre-smoothing with only
-   * one step, we will have a zero input vector and not need to compute the
-   * initial matrix-vector product.
-   */
-  const bool is_pre_smoother;
 };
 
 
@@ -1364,6 +1322,206 @@ namespace
     return eigenvalues;
   }
 }
+
+
+
+// re-implement the multigrid preconditioner in order to have more direct
+// control over its individual components and avoid inner products and other
+// expensive stuff
+template <int dim, typename Number>
+class MultigridPreconditioner
+{
+public:
+  typedef parallel::distributed::Vector<Number> VectorType;
+
+  MultigridPreconditioner(const DoFHandler<dim>          &mg_dof_handler,
+                          const MGLevelObject<LaplaceOperator<dim,Number> > &matrix,
+                          const MGCoarseGridBase<VectorType> &coarse,
+                          const MGTransferMF<dim,LaplaceOperator<dim,Number> >  &transfer,
+                          const MGSmootherBase<VectorType>   &smooth,
+                          const unsigned int                  n_cycles = 1)
+    :
+    dof_handler(&mg_dof_handler),
+    minlevel(0),
+    maxlevel(mg_dof_handler.get_triangulation().n_global_levels()-1),
+    defect(minlevel,maxlevel),
+    solution(minlevel,maxlevel),
+    t(minlevel,maxlevel),
+    defect2(minlevel,maxlevel),
+    matrix(&matrix, typeid(*this).name()),
+    coarse(&coarse, typeid(*this).name()),
+    transfer(&transfer, typeid(*this).name()),
+    smooth(&smooth, typeid(*this).name()),
+    edge_down(0, typeid(*this).name()),
+    edge_up(0, typeid(*this).name()),
+    n_cycles (n_cycles)
+  {
+    AssertThrow(n_cycles == 1, ExcNotImplemented());
+    for (unsigned int level=minlevel; level <= maxlevel; ++level)
+      {
+        matrix[level].initialize_dof_vector(solution[level]);
+        defect[level] = solution[level];
+        t[level] = solution[level];
+        if (n_cycles > 1)
+          defect2[level] = solution[level];
+      }
+  }
+
+  /**
+   * Set additional matrices to correct residual computation at refinement
+   * edges. Since we only smoothen in the interior of the refined part of the
+   * mesh, the coupling across the refinement edge is missing. This coupling
+   * is provided by these two matrices.
+   *
+   * @note While <tt>edge_out.vmult</tt> is used, for the second argument, we
+   * use <tt>edge_in.Tvmult</tt>. Thus, <tt>edge_in</tt> should be assembled
+   * in transposed form. This saves a second sparsity pattern for
+   * <tt>edge_in</tt>. In particular, for symmetric operators, both arguments
+   * can refer to the same matrix, saving assembling of one of them.
+   */
+  void set_edge_matrices (const MGMatrixBase<VectorType> &edge_out,
+                          const MGMatrixBase<VectorType> &edge_in)
+  {
+    this->edge_out = &edge_out;
+    this->edge_in = &edge_in;
+  }
+
+  template<class OtherVectorType>
+  void vmult (OtherVectorType       &dst,
+              const OtherVectorType &src) const
+  {
+    transfer->copy_to_mg(*dof_handler,
+                         defect,
+                         src);
+    v_cycle(maxlevel);
+    transfer->copy_from_mg(*dof_handler,
+                           dst,
+                           solution);
+  }
+
+
+private:
+  /**
+   * A pointer to the DoFHandler object
+   */
+  const SmartPointer<const DoFHandler<dim> > dof_handler;
+
+  /**
+   * Lowest level of cells.
+   */
+  unsigned int minlevel;
+
+  /**
+   * Highest level of cells.
+   */
+  unsigned int maxlevel;
+
+  /**
+   * Input vector for the cycle. Contains the defect of the outer method
+   * projected to the multilevel vectors.
+   */
+  mutable MGLevelObject<VectorType> defect;
+
+  /**
+   * The solution update after the multigrid step.
+   */
+  mutable MGLevelObject<VectorType> solution;
+
+  /**
+   * Auxiliary vector.
+   */
+  mutable MGLevelObject<VectorType> t;
+
+  /**
+   * Auxiliary vector if more than 1 cycle is needed
+   */
+  mutable MGLevelObject<VectorType> defect2;
+
+  /**
+   * The matrix for each level.
+   */
+  SmartPointer<const MGLevelObject<LaplaceOperator<dim,Number> > > matrix;
+
+  /**
+   * The matrix for each level.
+   */
+  SmartPointer<const MGCoarseGridBase<VectorType> > coarse;
+
+  /**
+   * Object for grid tranfer.
+   */
+  SmartPointer<const MGTransferMF<dim, LaplaceOperator<dim,Number> > > transfer;
+
+  /**
+   * The smoothing object.
+   */
+  SmartPointer<const MGSmootherBase<VectorType> > smooth;
+
+  /**
+   * Edge matrix from the interior of the refined part to the refinement edge.
+   *
+   * @note Only <tt>vmult</tt> is used for these matrices.
+   */
+  SmartPointer<const MGMatrixBase<VectorType> > edge_out;
+
+  /**
+   * Transpose edge matrix from the refinement edge to the interior of the
+   * refined part.
+   *
+   * @note Only <tt>Tvmult</tt> is used for these matrices.
+   */
+  SmartPointer<const MGMatrixBase<VectorType> > edge_in;
+
+  /**
+   * Edge matrix from fine to coarse.
+   *
+   * @note Only <tt>vmult</tt> is used for these matrices.
+   */
+  SmartPointer<const MGMatrixBase<VectorType> > edge_down;
+
+  /**
+   * Transpose edge matrix from coarse to fine.
+   *
+   * @note Only <tt>Tvmult</tt> is used for these matrices.
+   */
+  SmartPointer<const MGMatrixBase<VectorType> > edge_up;
+
+  const unsigned int n_cycles;
+
+  /**
+   * Implements the v-cycle
+   */
+  void v_cycle(const unsigned int level) const
+  {
+    if (level==minlevel)
+      {
+        (*coarse)(level, solution[level], defect[level]);
+        return;
+      }
+
+    smooth->smooth(level, solution[level], defect[level]);
+    (*matrix)[level].vmult(t[level], solution[level]);
+    if (edge_out != 0)
+      edge_out->vmult_add(level, t[level], solution[level]);
+    t[level].sadd(-1.0, 1.0, defect[level]);
+
+    // transfer to next level
+    transfer->restrict_and_add(level, defect[level-1], t[level]);
+
+    v_cycle(level-1);
+
+    transfer->prolongate(level, t[level], solution[level-1]);
+    solution[level] += t[level];
+    defect[level] *= -1.0;
+    (*matrix)[level].vmult_add(defect[level], solution[level]);
+    if (edge_in != 0)
+      {
+        edge_in->Tvmult_add(level, defect[level], solution[level]);
+      }
+    smooth->smooth(level, t[level], defect [level]);
+    solution[level] -= t[level];
+  }
+};
 
 
 
@@ -1425,7 +1583,7 @@ void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
               smoother_data.max_eigenvalue = 1.1 * eigenvalues.second;
               smoother_data.smoothing_range = eigenvalues.second/eigenvalues.first*1.1;
               double sigma = (1.-std::sqrt(1./smoother_data.smoothing_range))/(1.+std::sqrt(1./smoother_data.smoothing_range));
-              const double eps = 1e-2;
+              const double eps = 1e-3;
               smoother_data.degree = std::log(1./eps+std::sqrt(1./eps/eps-1))/std::log(1./sigma);
               smoother_data.eig_cg_n_iterations = 0;
             }
@@ -1435,14 +1593,13 @@ void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
         smoother_data_l0.matrix_diagonal_inverse = smoother_data.matrix_diagonal_inverse;
     }
 
-  mg_pre_smoother.reset(new MGSmootherPreconditionMF<LevelMatrixType,SMOOTHER,parallel::distributed::Vector<Number> >(mg_matrices, chebyshev_smoothers, true));
-  mg_post_smoother.reset(new MGSmootherPreconditionMF<LevelMatrixType,SMOOTHER,parallel::distributed::Vector<Number> >(mg_matrices, chebyshev_smoothers, false));
+  mg_smoother.reset(new MGSmootherPreconditionMF<LevelMatrixType,SMOOTHER,parallel::distributed::Vector<Number> >(mg_matrices, chebyshev_smoothers));
 
   switch (solver_data.coarse_solver)
     {
     case PoissonSolverData<dim>::coarse_chebyshev_smoother:
       {
-        mg_coarse.reset(new MGCoarseFromSmoother<parallel::distributed::Vector<Number> >(*mg_pre_smoother));
+        mg_coarse.reset(new MGCoarseFromSmoother<parallel::distributed::Vector<Number> >(*mg_smoother, false));
         break;
       }
     case PoissonSolverData<dim>::coarse_iterative_noprec:
@@ -1463,10 +1620,16 @@ void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
   mg_transfer.initialize_constraints(mg_constrained_dofs);
   mg_transfer.add_periodicity(solver_data.periodic_face_pairs_level0);
   mg_transfer.build(dof_handler);
+  mg_transfer.set_restriction_type(false);
 
-  mg_matrix.reset(new mg::Matrix<parallel::distributed::Vector<Number> > (mg_matrices));
+  //mg_matrix.reset(new mg::Matrix<parallel::distributed::Vector<Number> > (mg_matrices));
   mg_interface.reset(new  mg::Matrix<parallel::distributed::Vector<Number> >(mg_interface_matrices));
 
+  preconditioner.reset(new MultigridPreconditioner<dim,Number>
+                       (dof_handler, mg_matrices, *mg_coarse, mg_transfer,
+                        *mg_smoother));
+  preconditioner->set_edge_matrices(*mg_interface, *mg_interface);
+  /*
   mg.reset(new Multigrid<parallel::distributed::Vector<Number> > (dof_handler,
                                                                   *mg_matrix,
                                                                   *mg_coarse,
@@ -1478,7 +1641,7 @@ void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
   preconditioner.reset(new PreconditionMG<dim, parallel::distributed::Vector<Number>,
                        MGTransferMF<dim,LevelMatrixType> >
                        (dof_handler, *mg, mg_transfer));
-
+  */
   {
     Utilities::System::MemoryStats stats;
     Utilities::System::get_memory_stats(stats);
