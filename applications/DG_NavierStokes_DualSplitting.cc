@@ -90,8 +90,8 @@ namespace DG_NavierStokes
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
   const unsigned int dimension = 2; // dimension >= 2
-  const unsigned int refine_steps_min = 3; //1
-  const unsigned int refine_steps_max = 3;
+  const unsigned int refine_steps_min = 0; //1
+  const unsigned int refine_steps_max = 0;
 
   const double START_TIME = 0.0;
   const double END_TIME = 1.0;
@@ -100,12 +100,13 @@ namespace DG_NavierStokes
   const double STATISTICS_START_TIME = 50.0;
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 1e6;
-  const double CFL = 0.05; //0.001
+  const double CFL = 0.001; //0.001
 
   const double VISCOSITY = 0.01;
 
   const double MAX_VELOCITY = 1.4;
-  const double stab_factor = 1.0;
+  const double stab_factor_pressure = 1.0;
+  const double stab_factor_viscous = stab_factor_pressure;
   const double K=1.0e2; //1.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
@@ -150,7 +151,8 @@ namespace DG_NavierStokes
   const double VISCOSITY = 0.1;
 
   const double MAX_VELOCITY = 1.0;
-  const double stab_factor = 1.0;
+  const double stab_factor_pressure = 1.0;
+  const double stab_factor_viscous = stab_factor_pressure;
   const double K=1.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
@@ -195,7 +197,8 @@ namespace DG_NavierStokes
   const double VISCOSITY = 0.025;
 
   const double MAX_VELOCITY = 3.6;
-  const double stab_factor = 1.0;
+  const double stab_factor_pressure = 1.0;
+  const double stab_factor_viscous = stab_factor_pressure;
   const double K=1.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
@@ -240,7 +243,8 @@ namespace DG_NavierStokes
   const double VISCOSITY = 0.1;
 
   const double MAX_VELOCITY = 3.5;
-  const double stab_factor = 1.0;
+  const double stab_factor_pressure = 1.0;
+  const double stab_factor_viscous = stab_factor_pressure;
   const double K=0.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
@@ -286,7 +290,8 @@ namespace DG_NavierStokes
   const double VISCOSITY = 1.0;
 
   const double MAX_VELOCITY = 2.65; // MAX_VELOCITY also irrelevant
-  const double stab_factor = 1.0;
+  const double stab_factor_pressure = 1.0;
+  const double stab_factor_viscous = stab_factor_pressure;
   const double K=1.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
@@ -320,21 +325,22 @@ namespace DG_NavierStokes
   const unsigned int refine_steps_max = 0;
 
   const double START_TIME = 0.0;
-  const double END_TIME = 16.0;
-  const double OUTPUT_INTERVAL_TIME = 1.;
+  const double END_TIME = 10.0;
+  const double OUTPUT_INTERVAL_TIME = 0.5;
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
   const bool DIVU_TIMESERIES = true;
   const int MAX_NUM_STEPS = 1e6;
-  const double CFL = 0.2;
+  const double CFL = 0.05;
 
   const double VISCOSITY = 0.001;
   const double Um = 0.3;//(dimension == 2 ? 1.5 : 2.25); //2D-1: 0.3; 3D-1: 0.45;
   const double D = 0.1;
 
   const double MAX_VELOCITY = Um;
-  const double stab_factor = 1.0;
-  const double K=1.0e8; //grad-div stabilization/penalty parameter
+  const double stab_factor_pressure = 1.0;
+  const double stab_factor_viscous = 2.0;//stab_factor_pressure;
+  const double K=1.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -353,7 +359,7 @@ namespace DG_NavierStokes
   const unsigned int output_solver_info_every_timesteps = 1e2;
   const unsigned int output_solver_info_details = 1e4;
 
-  const unsigned int ORDER_TIME_INTEGRATOR = 3;
+  const unsigned int ORDER_TIME_INTEGRATOR = 2;
   const bool START_WITH_LOW_ORDER = true;
 #endif
 
@@ -363,37 +369,38 @@ namespace DG_NavierStokes
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
   const unsigned int dimension = 3; // dimension >= 2
-  const unsigned int refine_steps_min = 4;
-  const unsigned int refine_steps_max = 4;
+  const unsigned int refine_steps_min = 2;
+  const unsigned int refine_steps_max = 2;
 
   const double START_TIME = 0.0;
   const double END_TIME = 70.0; // Poisseuille 5.0;  Kovasznay 1.0
   const double OUTPUT_INTERVAL_TIME = 1.0;
-  const double OUTPUT_START_TIME = 50.0;
+  const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
   const bool DIVU_TIMESERIES = false; //true;
-  const int MAX_NUM_STEPS = 200;
-  const double CFL = 0.1;
+  const int MAX_NUM_STEPS = 1e7;
+  const double CFL = 1.0;
 
-  const double VISCOSITY = 1./590.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
+  const double VISCOSITY = 1./180.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
 
-  const double MAX_VELOCITY = 22.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
-  const double stab_factor = 1.0;
-  const double K=1.0e2; //grad-div stabilization/penalty parameter
+  const double MAX_VELOCITY = 15.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
+  const double stab_factor_pressure = 1.0;
+  const double stab_factor_viscous = 8.0 * stab_factor_pressure;
+  const double K = 1.0e3; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
   const double DTAUW = 1.0;
 
   const double MAX_WDIST_XWALL = 0.2;
-  const double GRID_STRETCH_FAC = 1.0;
+  const double GRID_STRETCH_FAC = 1.8;
   const bool pure_dirichlet_bc = true;
 
-  const double REL_TOL_PRESSURE = 5.0e-3;
+  const double REL_TOL_PRESSURE = 1.0e-3;
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-6;
 
-  const std::string output_prefix = "ch40_4_p4_gt18_partp_k100_partu_sf1_cfl1";
+  const std::string output_prefix = "ch40_4_p4_gt18_partp_k100_partu_sf1_cfl1_stab_fac_vis_8";
 
   const unsigned int output_solver_info_every_timesteps = 10;
   const unsigned int output_solver_info_details = 10;
@@ -467,7 +474,7 @@ namespace DG_NavierStokes
     if(component == 0)
     {
       if(p[1]<0.9999&&p[1]>-0.9999)
-        result = -22.0*(pow(p[1],2.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*0.0);//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
+        result = -22.0*(pow(p[1],2.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*1.0);//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
       else
         result = 0.0;
     }
@@ -560,7 +567,7 @@ namespace DG_NavierStokes
     if(component == 0 && std::abs(p[0]-(dim==2 ? 0.3 : 0.0))<1.e-12)
     {
       const double pi = numbers::PI;
-      const double T = 0.2;
+      const double T = 0.5;
       const double H = 0.41;
       double coefficient = Utilities::fixed_power<dim-1>(4.) * Um / Utilities::fixed_power<2*dim-2>(H);
       result = coefficient * p[1] * (H-p[1]) * ( (t/T)<1.0 ? std::sin(pi/2.*t/T) : 1.0);//( (t/T)<1.0 ? std::sin(pi/2.*t/T) : 1.0); //( (t/T)<1.0 ? t/T : 1.0); //std::sin(pi*t/END_TIME);
@@ -3425,11 +3432,11 @@ public:
   solver_data.poisson_dof_index = 1;
   solver_data.poisson_quad_index = 1;
   solver_data.periodic_face_pairs_level0 = periodic_face_pairs;
-  solver_data.penalty_factor = stab_factor; //stab_factor/nu*delta_t;
+  solver_data.penalty_factor = stab_factor_pressure; //stab_factor/nu*delta_t;
   solver_data.solver_tolerance = REL_TOL_PRESSURE;
   solver_data.dirichlet_boundaries = neumann_boundary;
   solver_data.neumann_boundaries = dirichlet_boundary;
-  solver_data.coarse_solver = PoissonSolverData<dim>::coarse_chebyshev_smoother;
+  solver_data.coarse_solver = PoissonSolverData<dim>::coarse_chebyshev_smoother;//coarse_chebyshev_smoother;//coarse_iterative_jacobi;
   pressure_poisson_solver.initialize(mapping, data, solver_data);
 
 //  smoother_data_viscous.smoothing_range = 30;
@@ -4005,10 +4012,10 @@ public:
   calculate_penalty_parameter(double &factor) const
   {
     // triangular/tetrahedral elements: penalty parameter = stab_factor*(p+1)(p+d)/dim * surface/volume
-//  factor = stab_factor * (fe_degree +1.0) * (fe_degree + dim) / dim;
+//  factor = stab_factor_viscous * (fe_degree +1.0) * (fe_degree + dim) / dim;
 
     // quadrilateral/hexahedral elements: penalty parameter = stab_factor*(p+1)(p+1) * surface/volume
-    factor = stab_factor * (fe_degree +1.0) * (fe_degree + 1.0);
+    factor = stab_factor_viscous * (fe_degree +1.0) * (fe_degree + 1.0);
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -4883,10 +4890,6 @@ public:
       fe_eval_xwall_neighbor.read_dof_values(src,0,src,dim);
       fe_eval_xwall_neighbor.evaluate(true,true);
 
-//      VectorizedArray<value_type> sigmaF = (std::abs(fe_eval.get_normal_volume_fraction()) +
-//               std::abs(fe_eval_neighbor.get_normal_volume_fraction())) *
-//        (value_type)(fe_degree * (fe_degree + 1.0)) * 0.5    *stab_factor;
-
       double factor = 1.;
       calculate_penalty_parameter(factor);
       //VectorizedArray<value_type> sigmaF = std::abs(fe_eval_xwall.get_normal_volume_fraction()) * (value_type)factor;
@@ -4957,9 +4960,6 @@ public:
 
       fe_eval_xwall.read_dof_values(src,0,src,dim);
       fe_eval_xwall.evaluate(true,true);
-
-//    VectorizedArray<value_type> sigmaF = (std::abs( fe_eval.get_normal_volume_fraction()) ) *
-//      (value_type)(fe_degree * (fe_degree + 1.0))   *stab_factor;
 
       double factor = 1.;
       calculate_penalty_parameter(factor);
@@ -6503,8 +6503,6 @@ public:
     omega_nm2.reinit (face);
     omega_nm2.read_dof_values(vorticity_nm2,0,vorticity_nm2,number_vorticity_components);
     omega_nm2.evaluate (false,true);
-    //VectorizedArray<value_type> sigmaF = (std::abs( pressure.get_normal_volume_fraction()) ) *
-    //  (value_type)(fe_degree * (fe_degree + 1.0)) *stab_factor;
 
     double factor = pressure_poisson_solver.get_matrix().get_penalty_factor();
     //VectorizedArray<value_type> sigmaF = std::abs(pressure.get_normal_volume_fraction()) * (value_type)factor;
@@ -6579,7 +6577,7 @@ public:
 
 #ifdef DIVUPARTIAL
         Tensor<1,dim,VectorizedArray<value_type> > meanvel = fe_eval_xwall.get_value(q);
-//
+
 //      Tensor<1,dim,VectorizedArray<value_type> > g_np;
 //        for(unsigned int d=0;d<dim;++d)
 //        {
@@ -6987,11 +6985,11 @@ public:
     Point<dim> out = in;
 
     out[0] = in(0)-numbers::PI;
-//#ifdef XWALL    //wall-model
+#ifdef XWALL    //wall-model
     out[1] =  2.*in(1)-1.;
-//#else    //no wall model
-//    out[1] =  std::tanh(GRID_STRETCH_FAC*(2.*in(1)-1.))/std::tanh(GRID_STRETCH_FAC);
-//#endif
+#else    //no wall model
+    out[1] =  std::tanh(GRID_STRETCH_FAC*(2.*in(1)-1.))/std::tanh(GRID_STRETCH_FAC);
+#endif
     out[2] = in(2)-0.5*numbers::PI;
     return out;
   }
@@ -7151,10 +7149,10 @@ public:
     //turbulent channel flow
 #ifdef CHANNEL
     Point<dim> coordinates;
-    coordinates[0] = 2.0;//*numbers::PI;
+    coordinates[0] = 2.0*numbers::PI;
     coordinates[1] = 1.;
     if (dim == 3)
-      coordinates[2] = 2.0;//numbers::PI;
+      coordinates[2] = numbers::PI;
     // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
 //    const double left = -1.0, right = 1.0;
 //    GridGenerator::hyper_cube(triangulation,left,right);
@@ -7746,7 +7744,8 @@ public:
     pcout << std::endl << "further parameters:" << std::endl;
     pcout << " - number of quad points for xwall:     " << n_q_points_1d_xwall << std::endl;
     pcout << " - viscosity:                           " << VISCOSITY << std::endl;
-    pcout << " - stab_factor:                         " << stab_factor << std::endl;
+    pcout << " - stab_factor_pressure:                " << stab_factor_pressure << std::endl;
+    pcout << " - stab_factor_viscous:                 " << stab_factor_viscous << std::endl;
     pcout << " - penalty factor K:                    " << K << std::endl;
     pcout << " - Smagorinsky constant                 " << CS << std::endl;
     pcout << " - fix tauw to 1.0:                     " << not variabletauw << std::endl;
