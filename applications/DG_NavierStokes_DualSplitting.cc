@@ -65,8 +65,8 @@
 //#define XWALL
 //#define COMPDIV
 #define LOWMEMORY 2 //compute grad-div matrices directly instead of saving them
-#define PRESPARTIAL
-#define DIVUPARTIAL
+//#define PRESPARTIAL
+//#define DIVUPARTIAL
 
 
 #define CONSCONVPBC
@@ -77,8 +77,8 @@
 //#define POISEUILLE
 //#define KOVASZNAY
 //#define BELTRAMI
-//#define FLOW_PAST_CYLINDER
-#define CHANNEL
+#define FLOW_PAST_CYLINDER
+//#define CHANNEL
 
 namespace DG_NavierStokes
 {
@@ -319,7 +319,7 @@ namespace DG_NavierStokes
   const unsigned int fe_degree = 2;
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
-  const unsigned int n_q_points_1d_xwall = 1;
+  const unsigned int n_q_points_1d_xwall = fe_degree*4;
   const unsigned int dimension = 2; // dimension >= 2
   const unsigned int refine_steps_min = 0;
   const unsigned int refine_steps_max = 0;
@@ -340,13 +340,13 @@ namespace DG_NavierStokes
 
   const double MAX_VELOCITY = Um;
   const double stab_factor = 1.0;
-  const double K=1.0e8; //grad-div stabilization/penalty parameter
+  const double K=1.0e2; //grad-div stabilization/penalty parameter
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
   const double DTAUW = 1.0;
 
-  const double MAX_WDIST_XWALL = 0.2;
+  const double MAX_WDIST_XWALL =-10.0;
   const double GRID_STRETCH_FAC = 1.8;
   const bool pure_dirichlet_bc = false;
 
@@ -4085,25 +4085,43 @@ public:
 
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
   {
-    std::string filename_drag, filename_lift;
-    filename_drag = "output/drag_refine" + Utilities::int_to_string(data.get_dof_handler(1).get_triangulation().n_levels()-1) + "_fedegree" + Utilities::int_to_string(fe_degree) + ".txt"; //filename_drag = "drag.txt";
-    filename_lift = "output/lift_refine" + Utilities::int_to_string(data.get_dof_handler(1).get_triangulation().n_levels()-1) + "_fedegree" + Utilities::int_to_string(fe_degree) + ".txt"; //filename_lift = "lift.txt";
-
-    std::ofstream f_drag,f_lift;
+    std::ostringstream filename;
+    filename << output_prefix
+             << ".lift_and_drag";
+    std::ofstream f;
     if(clear_files)
     {
-      f_drag.open(filename_drag.c_str(),std::ios::trunc);
-      f_lift.open(filename_lift.c_str(),std::ios::trunc);
+      f.open(filename.str().c_str(),std::ios::trunc);
+      f<< "       t       |      drag     |     lift     " << std::endl;
     }
     else
     {
-      f_drag.open(filename_drag.c_str(),std::ios::app);
-      f_lift.open(filename_lift.c_str(),std::ios::app);
+      f.open(filename.str().c_str(),std::ios::app);
     }
-    f_drag<<std::scientific<<std::setprecision(6)<<time+time_step<<"\t"<<Force[0]<<std::endl;
-    f_drag.close();
-    f_lift<<std::scientific<<std::setprecision(6)<<time+time_step<<"\t"<<Force[1]<<std::endl;
-    f_lift.close();
+    f << std::scientific<<std::setprecision(7) << std::setw(15)<<time+time_step;
+    f << std::scientific<<std::setprecision(7) << std::setw(15)<<Force[0];
+    f << std::scientific<<std::setprecision(7) << std::setw(15)<<Force[1]<<std::endl;
+    f.close();
+
+//    std::string filename_drag, filename_lift;
+//    filename_drag = "output/drag_refine" + Utilities::int_to_string(data.get_dof_handler(1).get_triangulation().n_levels()-1) + "_fedegree" + Utilities::int_to_string(fe_degree) + ".txt"; //filename_drag = "drag.txt";
+//    filename_lift = "output/lift_refine" + Utilities::int_to_string(data.get_dof_handler(1).get_triangulation().n_levels()-1) + "_fedegree" + Utilities::int_to_string(fe_degree) + ".txt"; //filename_lift = "lift.txt";
+//
+//    std::ofstream f_drag,f_lift;
+//    if(clear_files)
+//    {
+//      f_drag.open(filename_drag.c_str(),std::ios::trunc);
+//      f_lift.open(filename_lift.c_str(),std::ios::trunc);
+//    }
+//    else
+//    {
+//      f_drag.open(filename_drag.c_str(),std::ios::app);
+//      f_lift.open(filename_lift.c_str(),std::ios::app);
+//    }
+//    f_drag<<std::scientific<<std::setprecision(6)<<time+time_step<<"\t"<<Force[0]<<std::endl;
+//    f_drag.close();
+//    f_lift<<std::scientific<<std::setprecision(6)<<time+time_step<<"\t"<<Force[1]<<std::endl;
+//    f_lift.close();
   }
   }
 
@@ -5591,7 +5609,7 @@ public:
     phi.reinit(cell);
     velocity.reinit(cell);
     const unsigned int total_dofs_per_cell = phi.dofs_per_cell * dim;
-    velocity.read_dof_values(solution_n,0,solution_n,dim);
+    velocity.read_dof_values(solution_n,0,solution_n,dim+1);
     velocity.evaluate (true,false);
     VectorizedArray<value_type> volume;
     VectorizedArray<value_type> normmeanvel;
@@ -6059,7 +6077,7 @@ public:
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
   {
     phi.reinit(cell);
-    phi.read_dof_values(source,0,source,dim+1);
+    phi.read_dof_values(source,0,source,dim);
     phi.evaluate(false,true);
     phi.fill_JxW_values(JxW_values);
 
@@ -6101,10 +6119,10 @@ AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval_xwall.n_q_points)
   for (unsigned int face=face_range.first; face<face_range.second; ++face)
   {
     fe_eval_xwall.reinit(face);
-    fe_eval_xwall.read_dof_values(source,0,source,dim+1);
+    fe_eval_xwall.read_dof_values(source,0,source,dim);
     fe_eval_xwall.evaluate(true,false);
     fe_eval_xwall_neighbor.reinit(face);
-    fe_eval_xwall_neighbor.read_dof_values(source,0,source,dim+1);
+    fe_eval_xwall_neighbor.read_dof_values(source,0,source,dim);
     fe_eval_xwall_neighbor.evaluate(true,false);
     fe_eval_xwall.fill_JxW_values(JxW_values);
 
