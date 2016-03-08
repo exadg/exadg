@@ -17,7 +17,8 @@
 using namespace dealii;
 
 
-template<int dim, typename Number> class MultigridPreconditioner;
+template<int dim, typename VectorType, typename MatrixType, typename TransferType,
+         typename PreconditionerType> class MultigridPreconditioner;
 
 template <int dim>
 struct PoissonSolverData
@@ -132,17 +133,17 @@ public:
   void vmult_add(parallel::distributed::Vector<Number> &dst,
                  const parallel::distributed::Vector<Number> &src) const;
 
-  // Performs the part of the matrix-vector multiplication on refinement edges
+  // Performs the matrix-vector multiplication including the refinement edges
   // that distributes the residual to the refinement edge (used in the
   // restriction phase)
   void vmult_interface_down(parallel::distributed::Vector<Number> &dst,
                             const parallel::distributed::Vector<Number> &src) const;
 
-  // Performs the part of the matrix-vector multiplication on refinement edges
+  // Performs the matrix-vector multiplication including the refinement edges
   // that takes an input from the refinement edge to the interior (used in the
   // prolongation phase)
-  void vmult_interface_up(parallel::distributed::Vector<Number> &dst,
-                          const parallel::distributed::Vector<Number> &src) const;
+  void vmult_add_interface_up(parallel::distributed::Vector<Number> &dst,
+                              const parallel::distributed::Vector<Number> &src) const;
 
   // For a pure Neumann problem, this call subtracts the mean value of 'vec'
   // from all entries, ensuring that all operations with this matrix lie in
@@ -272,7 +273,6 @@ private:
 
   std::vector<unsigned int> edge_constrained_indices;
   mutable std::vector<std::pair<Number,Number> > edge_constrained_values;
-  bool have_interface_matrices;
 };
 
 
@@ -312,33 +312,6 @@ public:
 
 private:
   const MGLevelObject<Operator> *laplace_operator;
-};
-
-
-
-template <typename LAPLACEOPERATOR>
-class MGInterfaceMatrix : public Subscriptor
-{
-public:
-  void initialize (const LAPLACEOPERATOR &laplace)
-  {
-    this->laplace = &laplace;
-  }
-
-  void vmult (parallel::distributed::Vector<typename LAPLACEOPERATOR::value_type> &dst,
-              const parallel::distributed::Vector<typename LAPLACEOPERATOR::value_type> &src) const
-  {
-    laplace->vmult_interface_down(dst, src);
-  }
-
-  void Tvmult (parallel::distributed::Vector<typename LAPLACEOPERATOR::value_type> &dst,
-               const parallel::distributed::Vector<typename LAPLACEOPERATOR::value_type> &src) const
-  {
-    laplace->vmult_interface_up(dst, src);
-  }
-
-private:
-  SmartPointer<const LAPLACEOPERATOR> laplace;
 };
 
 
@@ -390,19 +363,14 @@ private:
 
   MGConstrainedDoFs mg_constrained_dofs;
   MGLevelObject<LevelMatrixType> mg_matrices;
-  MGLevelObject<MGInterfaceMatrix<LevelMatrixType> > mg_interface_matrices;
   MGTransferMF<dim,LevelMatrixType> mg_transfer;
 
   typedef PreconditionChebyshev<LevelMatrixType,parallel::distributed::Vector<Number> > SMOOTHER;
-  MGLevelObject<SMOOTHER> chebyshev_smoothers;
-  std_cxx11::shared_ptr<MGSmoother<parallel::distributed::Vector<Number> > >
-  mg_smoother;
+  MGLevelObject<SMOOTHER> mg_smoother;
 
   std_cxx11::shared_ptr<MGCoarseGridBase<parallel::distributed::Vector<Number> > > mg_coarse;
 
-  std_cxx11::shared_ptr<mg::Matrix<parallel::distributed::Vector<Number> > > mg_interface;
-
-  std_cxx11::shared_ptr<MultigridPreconditioner<dim,Number> > preconditioner;
+  std_cxx11::shared_ptr<MultigridPreconditioner<dim,parallel::distributed::Vector<Number>,LevelMatrixType, MGTransferMF<dim,LevelMatrixType>, SMOOTHER> > preconditioner;
 };
 
 

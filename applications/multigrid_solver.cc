@@ -645,31 +645,29 @@ namespace Step37
                 }
             if (dim == 2)
               n_refinements += 3;
-            if (Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) > 16)
-              n_refinements += 1;
-            if (Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) > 512)
-              n_refinements += 4-dim;
-            if (Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) > 2048)
-              n_refinements += 1;
-            if (Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) > 16384)
-              n_refinements += 1;
+            unsigned int njobs = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+            while (njobs > 0)
+              {
+                njobs >>= dim;
+                n_refinements++;
+              }
             GridGenerator::subdivided_hyper_cube (triangulation, n_subdiv, -1, 1);
             triangulation.refine_global(n_refinements);
             if (do_adaptive)
               {
                 for (typename Triangulation<dim>::active_cell_iterator cell=triangulation.begin_active(); cell != triangulation.end(); ++cell)
                   if (cell->is_locally_owned() &&
-                      cell->center().norm() < 0.5)
+                      cell->center().norm() < 0.55)
                     cell->set_refine_flag();
                 triangulation.execute_coarsening_and_refinement();
                 for (typename Triangulation<dim>::active_cell_iterator cell=triangulation.begin_active(); cell != triangulation.end(); ++cell)
                   if (cell->is_locally_owned() &&
-                      cell->center().norm() > 0.3 && cell->center().norm() < 0.4)
+                      cell->center().norm() > 0.3 && cell->center().norm() < 0.42)
                     cell->set_refine_flag();
                 triangulation.execute_coarsening_and_refinement();
                 for (typename Triangulation<dim>::active_cell_iterator cell=triangulation.begin_active(); cell != triangulation.end(); ++cell)
                   if (cell->is_locally_owned() &&
-                      cell->center().norm() > 0.33 && cell->center().norm() < 0.37)
+                      cell->center().norm() > 0.335 && cell->center().norm() < 0.39)
                     cell->set_refine_flag();
                 triangulation.execute_coarsening_and_refinement();
               }
