@@ -64,10 +64,11 @@
 
 //#define XWALL
 //#define COMPDIV
-#define LOWMEMORY 2 //compute grad-div matrices directly instead of saving them
+#define LOWMEMORY 1 //compute grad-div matrices directly instead of saving them
 #define PRESPARTIAL
 #define DIVUPARTIAL
 
+//#define WEAK_PROJECTION
 
 #define CONSCONVPBC
 //#define SKEWSYMMVISC
@@ -94,20 +95,21 @@ namespace DG_NavierStokes
   const unsigned int refine_steps_max = 0;
 
   const double START_TIME = 0.0;
-  const double END_TIME = 1.0;
+  const double END_TIME = 2.0;
   const double OUTPUT_INTERVAL_TIME = 0.1;
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
-  const bool DIVU_TIMESERIES = false; //true;
+  const int STATISTICS_EVERY = 1;
+  const bool DIVU_TIMESERIES = true; //true;
   const int MAX_NUM_STEPS = 1e6;
-  const double CFL = 0.001; //0.001
+  const double CFL = 0.01; //0.001
 
-  const double VISCOSITY = 0.01;
+  const double VISCOSITY = 0.005;
 
   const double MAX_VELOCITY = 1.4;
   const double stab_factor_pressure = 1.0;
   const double stab_factor_viscous = stab_factor_pressure;
-  const double K=1.0e2; //1.0e2; //grad-div stabilization/penalty parameter
+  const double K=1.5e-3; //1.0e2; //stabilization parameter null-space projection
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -120,8 +122,10 @@ namespace DG_NavierStokes
   const double REL_TOL_PRESSURE = 1.0e-8;
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-8;
+  const double ABS_TOL_PROJECTION = 1.0e-12;
+  const double REL_TOL_PROJECTION = 1.0e-6;
 
-  const std::string output_prefix = "vortex";
+  const std::string output_prefix = "v001_4_p2_k100_sf1_cfl005";
 
   const unsigned int output_solver_info_every_timesteps = 1e4;
   const unsigned int output_solver_info_details = 1e4;
@@ -144,6 +148,7 @@ namespace DG_NavierStokes
   const double OUTPUT_INTERVAL_TIME = 0.1;
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
+  const int STATISTICS_EVERY = 1;
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.005;
@@ -153,7 +158,7 @@ namespace DG_NavierStokes
   const double MAX_VELOCITY = 1.0;
   const double stab_factor_pressure = 1.0;
   const double stab_factor_viscous = stab_factor_pressure;
-  const double K=1.0e2; //grad-div stabilization/penalty parameter
+  const double K=1.0e2; //stabilization parameter null-space projection
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -166,6 +171,8 @@ namespace DG_NavierStokes
   const double REL_TOL_PRESSURE = 1.0e-8;
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-8;
+  const double ABS_TOL_PROJECTION = 1.0e-12;
+  const double REL_TOL_PROJECTION = 1.0e-6;
 
   const std::string output_prefix = "vortex";
 
@@ -190,6 +197,7 @@ namespace DG_NavierStokes
   const double OUTPUT_INTERVAL_TIME = 0.1;
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
+  const int STATISTICS_EVERY = 1;
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.01;
@@ -199,7 +207,7 @@ namespace DG_NavierStokes
   const double MAX_VELOCITY = 3.6;
   const double stab_factor_pressure = 1.0;
   const double stab_factor_viscous = stab_factor_pressure;
-  const double K=1.0e2; //grad-div stabilization/penalty parameter
+  const double K=1.0e2; //stabilization parameter null-space projection
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -212,6 +220,8 @@ namespace DG_NavierStokes
   const double REL_TOL_PRESSURE = 1.0e-8;
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-8;
+  const double ABS_TOL_PROJECTION = 1.0e-12;
+  const double REL_TOL_PROJECTION = 1.0e-6;
 
   const std::string output_prefix = "kovasznay";
 
@@ -236,6 +246,7 @@ namespace DG_NavierStokes
   const double OUTPUT_INTERVAL_TIME = 0.1;
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
+  const int STATISTICS_EVERY = 1;
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.01;
@@ -245,7 +256,7 @@ namespace DG_NavierStokes
   const double MAX_VELOCITY = 3.5;
   const double stab_factor_pressure = 1.0;
   const double stab_factor_viscous = stab_factor_pressure;
-  const double K=0.0e2; //grad-div stabilization/penalty parameter
+  const double K=0.0e2; //stabilization parameter null-space projection
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -258,6 +269,8 @@ namespace DG_NavierStokes
   const double REL_TOL_PRESSURE = 1.0e-8;
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-8;
+  const double ABS_TOL_PROJECTION = 1.0e-12;
+  const double REL_TOL_PROJECTION = 1.0e-6;
 
   const std::string output_prefix = "beltrami";
 
@@ -282,6 +295,7 @@ namespace DG_NavierStokes
   const double OUTPUT_INTERVAL_TIME = 0.1;
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
+  const int STATISTICS_EVERY = 1;
   const bool DIVU_TIMESERIES = false;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.2; // CFL number irrelevant for Stokes flow problem
@@ -292,7 +306,7 @@ namespace DG_NavierStokes
   const double MAX_VELOCITY = 2.65; // MAX_VELOCITY also irrelevant
   const double stab_factor_pressure = 1.0;
   const double stab_factor_viscous = stab_factor_pressure;
-  const double K=1.0e2; //grad-div stabilization/penalty parameter
+  const double K=1.0e2; //stabilization parameter null-space projection
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -305,6 +319,8 @@ namespace DG_NavierStokes
   const double REL_TOL_PRESSURE = 1.0e-8;
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-8;
+  const double ABS_TOL_PROJECTION = 1.0e-12;
+  const double REL_TOL_PROJECTION = 1.0e-6;
 
   const std::string output_prefix = "stokes";
 
@@ -316,22 +332,23 @@ namespace DG_NavierStokes
 #endif
 
 #ifdef FLOW_PAST_CYLINDER
-  const unsigned int fe_degree = 2;
+  const unsigned int fe_degree = 1;
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
   const unsigned int dimension = 2; // dimension >= 2
-  const unsigned int refine_steps_min = 0;
-  const unsigned int refine_steps_max = 0;
+  const unsigned int refine_steps_min = 1;
+  const unsigned int refine_steps_max = 1;
 
   const double START_TIME = 0.0;
   const double END_TIME = 10.0;
   const double OUTPUT_INTERVAL_TIME = 0.5;
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
+  const int STATISTICS_EVERY = 1;
   const bool DIVU_TIMESERIES = true;
   const int MAX_NUM_STEPS = 1e6;
-  const double CFL = 0.05;
+  const double CFL = 0.1;
 
   const double VISCOSITY = 0.001;
   const double Um = 0.3;//(dimension == 2 ? 1.5 : 2.25); //2D-1: 0.3; 3D-1: 0.45;
@@ -339,8 +356,8 @@ namespace DG_NavierStokes
 
   const double MAX_VELOCITY = Um;
   const double stab_factor_pressure = 1.0;
-  const double stab_factor_viscous = 2.0;//stab_factor_pressure;
-  const double K=1.0e2; //grad-div stabilization/penalty parameter
+  const double stab_factor_viscous = stab_factor_pressure;
+  const double K=1.0e1; //stabilization parameter null-space projection
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -353,10 +370,12 @@ namespace DG_NavierStokes
   const double REL_TOL_PRESSURE = 1.0e-8;
   const double ABS_TOL_VISCOUS = 1.0e-16;
   const double REL_TOL_VISCOUS = 1.0e-8;
+  const double ABS_TOL_PROJECTION = 1.0e-12;
+  const double REL_TOL_PROJECTION = 1.0e-6;
 
   const std::string output_prefix = "fpc_r0_p2_k1";
 
-  const unsigned int output_solver_info_every_timesteps = 1e2;
+  const unsigned int output_solver_info_every_timesteps = 1e4;
   const unsigned int output_solver_info_details = 1e4;
 
   const unsigned int ORDER_TIME_INTEGRATOR = 2;
@@ -375,9 +394,10 @@ namespace DG_NavierStokes
   const double START_TIME = 0.0;
   const double END_TIME = 70.0; // Poisseuille 5.0;  Kovasznay 1.0
   const double OUTPUT_INTERVAL_TIME = 1.0;
-  const double OUTPUT_START_TIME = 0.0;
+  const double OUTPUT_START_TIME = 50.0;
   const double STATISTICS_START_TIME = 50.0;
   const bool DIVU_TIMESERIES = false; //true;
+  const int STATISTICS_EVERY = 1;
   const int MAX_NUM_STEPS = 1e7;
   const double CFL = 1.0;
 
@@ -385,8 +405,8 @@ namespace DG_NavierStokes
 
   const double MAX_VELOCITY = 15.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
   const double stab_factor_pressure = 1.0;
-  const double stab_factor_viscous = 8.0 * stab_factor_pressure;
-  const double K = 1.0e3; //grad-div stabilization/penalty parameter
+  const double stab_factor_viscous = 1.0 * stab_factor_pressure;
+  const double K=1.0e-3; //stabilization parameter null-space projection
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -398,9 +418,11 @@ namespace DG_NavierStokes
 
   const double REL_TOL_PRESSURE = 1.0e-3;
   const double ABS_TOL_VISCOUS = 1.0e-12;
-  const double REL_TOL_VISCOUS = 1.0e-6;
+  const double REL_TOL_VISCOUS = 1.0e-3;
+  const double ABS_TOL_PROJECTION = 1.0e-12;
+  const double REL_TOL_PROJECTION = 1.0e-6;
 
-  const std::string output_prefix = "ch40_4_p4_gt18_partp_k100_partu_sf1_cfl1_stab_fac_vis_8";
+  const std::string output_prefix = "ch180_4_p4_weak_projection_method";
 
   const unsigned int output_solver_info_every_timesteps = 10;
   const unsigned int output_solver_info_details = 10;
@@ -567,7 +589,7 @@ namespace DG_NavierStokes
     if(component == 0 && std::abs(p[0]-(dim==2 ? 0.3 : 0.0))<1.e-12)
     {
       const double pi = numbers::PI;
-      const double T = 0.5;
+      const double T = 0.2;
       const double H = 0.41;
       double coefficient = Utilities::fixed_power<dim-1>(4.) * Um / Utilities::fixed_power<2*dim-2>(H);
       result = coefficient * p[1] * (H-p[1]) * ( (t/T)<1.0 ? std::sin(pi/2.*t/T) : 1.0);//( (t/T)<1.0 ? std::sin(pi/2.*t/T) : 1.0); //( (t/T)<1.0 ? t/T : 1.0); //std::sin(pi*t/END_TIME);
@@ -809,6 +831,7 @@ namespace DG_NavierStokes
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall> struct NavierStokesViscousMatrix;
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall> struct WeakProjectionMatrix;
 
   struct SimpleSpaldingsLaw
   {
@@ -2462,6 +2485,12 @@ public:
 
         return;
       }
+
+      void fill_JxW_values(AlignedVector<VectorizedArray<Number> > &JxW_values) const
+      {
+        fe_eval.fill_JxW_values(JxW_values);
+      }
+
     private:
       FEFaceEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number> fe_eval;
       FEFaceEvaluation<dim,fe_degree_xwall,n_q_points_1d,n_components_,Number> fe_eval_xwall;
@@ -3065,7 +3094,7 @@ public:
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   class NavierStokesOperation
   {
-  public:
+public:
   typedef double value_type;
   static const unsigned int number_vorticity_components = (dim==2) ? 1 : dim;
 
@@ -3103,6 +3132,12 @@ public:
   void  rhs_pressure (const std::vector<parallel::distributed::Vector<value_type> >     &src,
                 parallel::distributed::Vector<value_type>      &dst);
 
+  void rhs_projection (const std::vector<parallel::distributed::Vector<value_type> > &src,
+			std::vector<parallel::distributed::Vector<value_type> > &dst);
+
+  void  apply_weak_projection (const parallel::distributed::BlockVector<value_type>      &src,
+                   parallel::distributed::BlockVector<value_type>       &dst);
+
   void  apply_projection (const std::vector<parallel::distributed::Vector<value_type> >     &src,
                    std::vector<parallel::distributed::Vector<value_type> >      &dst);
 
@@ -3118,6 +3153,10 @@ public:
   std::vector<parallel::distributed::Vector<value_type> > xwallstatevec;
   parallel::distributed::BlockVector<value_type> rhs_visc;
   parallel::distributed::BlockVector<value_type> solution_temp_visc;
+
+  parallel::distributed::BlockVector<value_type> rhs_proj_block;
+  parallel::distributed::BlockVector<value_type> solution_proj_block;
+
   parallel::distributed::Vector<value_type> rhs_p;
 #ifdef COMPDIV
   parallel::distributed::Vector<value_type> divergence_old, divergence_new;
@@ -3128,12 +3167,11 @@ public:
     return data;
   }
 
-  void calculate_diagonal_viscous(std::vector<parallel::distributed::Vector<value_type> > &diagonal,
- unsigned int level) const;
+  void calculate_diagonal_viscous(std::vector<parallel::distributed::Vector<value_type> > &diagonal, unsigned int level) const;
 
   XWall<dim,fe_degree,fe_degree_xwall>* ReturnXWall(){return &xwall;}
 
-  private:
+private:
   MatrixFree<dim,value_type> data;
 
   MappingQ<dim> mapping;
@@ -3153,6 +3191,7 @@ public:
   PoissonSolver<dim> pressure_poisson_solver;
 
   AlignedVector<VectorizedArray<value_type> > element_volume;
+  AlignedVector<VectorizedArray<value_type> > array_stab_fac_weak_projection;
 
   Point<dim> first_point;
   types::global_dof_index dof_index_first_point;
@@ -3165,8 +3204,6 @@ public:
 
   std::set<types::boundary_id> dirichlet_boundary;
   std::set<types::boundary_id> neumann_boundary;
-
-  bool clear_files;
 
   void update_time_integrator(unsigned int time_step_number);
   void check_time_integrator(unsigned int time_step_number);
@@ -3191,6 +3228,21 @@ public:
                         std::vector<parallel::distributed::Vector<double> >     &dst,
                         const std::vector<parallel::distributed::Vector<double> >   &,
                         const std::pair<unsigned int,unsigned int>          &cell_range) const;
+
+  void local_apply_weak_projection (const MatrixFree<dim,value_type>        &data,
+                        parallel::distributed::BlockVector<double>       &dst,
+                        const parallel::distributed::BlockVector<double>  &src,
+                        const std::pair<unsigned int,unsigned int>  &cell_range) const;
+
+  void local_apply_weak_projection_face (const MatrixFree<dim,value_type>      &data,
+                  parallel::distributed::BlockVector<double>       &dst,
+                  const parallel::distributed::BlockVector<double>   &src,
+                  const std::pair<unsigned int,unsigned int>  &face_range) const;
+
+  void local_apply_weak_projection_boundary_face(const MatrixFree<dim,value_type>      &data,
+                      parallel::distributed::BlockVector<double>       &dst,
+                      const parallel::distributed::BlockVector<double>   &src,
+                      const std::pair<unsigned int,unsigned int>  &face_range) const;
 
   void local_apply_viscous (const MatrixFree<dim,value_type>        &data,
                         parallel::distributed::BlockVector<double>      &dst,
@@ -3280,7 +3332,6 @@ public:
                       const std::pair<unsigned int,unsigned int>          &cell_range);
 
   // projection step
-
   void local_rhs_projection (const MatrixFree<dim,value_type>                &data,
                     std::vector<parallel::distributed::Vector<double> >      &dst,
                     const std::vector<parallel::distributed::Vector<double> >    &src,
@@ -3290,7 +3341,7 @@ public:
                 std::vector<parallel::distributed::Vector<double> >      &dst,
                 const std::vector<parallel::distributed::Vector<double> >  &src,
                 const std::pair<unsigned int,unsigned int>          &face_range) const;
-//
+
   void local_rhs_projection_boundary_face (const MatrixFree<dim,value_type>              &data,
                 std::vector<parallel::distributed::Vector<double> >      &dst,
                 const std::vector<parallel::distributed::Vector<double> >  &src,
@@ -3326,7 +3377,14 @@ public:
 
   void compute_lift_and_drag(const bool clear_files);
 
-  void compute_pressure_difference();
+  void compute_pressure_difference(const bool clear_files);
+
+  void calculate_stab_fac_weak_projection();
+
+  void local_calculate_stab_fac_weak_projection(const MatrixFree<dim,value_type>        &data,
+                                                std::vector<parallel::distributed::Vector<value_type> > &,
+                                                const std::vector<parallel::distributed::Vector<value_type> > &,
+                                                const std::pair<unsigned int,unsigned int>   &cell_range);
 
   void my_point_value(const Mapping<dim> &mapping,
                  const DoFHandler<dim> &dof_handler,
@@ -3338,6 +3396,14 @@ public:
                             std::vector<double >      &test,
                             const std::vector<parallel::distributed::Vector<double> >    &source,
                             const std::pair<unsigned int,unsigned int>          &cell_range);
+  void local_compute_divu_for_channel_stats_face (const MatrixFree<dim,double>              &data,
+                  std::vector<double >      &test,
+                  const std::vector<parallel::distributed::Vector<double> >  &source,
+                  const std::pair<unsigned int,unsigned int>          &face_range) ;
+  void local_compute_divu_for_channel_stats_boundary_face (const MatrixFree<dim,double>              &data,
+                  std::vector<double >      &test,
+                  const std::vector<parallel::distributed::Vector<double> >  &source,
+                  const std::pair<unsigned int,unsigned int>          &face_range) ;
   };
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -3357,6 +3423,8 @@ public:
   rhs_visc(dim),
   solution_temp_visc(dim),
 #endif
+  rhs_proj_block(dim),
+  solution_proj_block(dim),
   mapping(fe_degree),
   time(0.0),
   time_step(time_step_size),
@@ -3368,10 +3436,10 @@ public:
   times_cg_pressure(2),
   iterations_cg_pressure(2),
   element_volume(0),
+  array_stab_fac_weak_projection(0),
   xwall(dof_handler,&data,viscosity,element_volume),
   dirichlet_boundary(dirichlet_bc_indicator),
-  neumann_boundary(neumann_bc_indicator),
-  clear_files(true)
+  neumann_boundary(neumann_bc_indicator)
   {
     alpha[0] = beta[0] = 1.;
     alpha[1] = alpha[2] = beta[1] = beta[2] = 0.;
@@ -3469,6 +3537,11 @@ public:
   {
     rhs_proj[d] = rhs_proj[0];
   }
+  for (unsigned int d=0;d<dim;++d)
+  {
+    rhs_proj_block.block(d) = rhs_proj[d];
+    solution_proj_block.block(d) = rhs_proj[d];
+  } 
 
   velocity_temp.resize(2*dim);
   data.initialize_dof_vector(velocity_temp[0],0);
@@ -3592,7 +3665,23 @@ public:
         element_volume[i][v] = volume;
         //pcout << "surface to volume ratio: " << pressure_poisson_solver.get_matrix().get_array_penalty_parameter()[i][v] << std::endl;
       }
+  array_stab_fac_weak_projection.resize(data.n_macro_cells()+data.n_macro_ghost_cells());
   }
+
+  template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  struct WeakProjectionMatrix : public Subscriptor
+  {
+    void initialize(NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> &ns_op)
+    {
+      ns_operation = &ns_op;
+    }
+    void vmult (parallel::distributed::BlockVector<double> &dst,
+        const parallel::distributed::BlockVector<double> &src) const
+    {
+      ns_operation->apply_weak_projection(src,dst);
+    }
+    NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> *ns_operation;
+  };
 
   template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   struct NavierStokesViscousMatrix : public Subscriptor
@@ -3697,7 +3786,7 @@ public:
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-  do_timestep (const double  &cur_time,const double  &delta_t, const unsigned int &time_step_number)
+  do_timestep (const double &cur_time, const double  &delta_t, const unsigned int &time_step_number)
   {
     time = cur_time;
     time_step = delta_t;
@@ -3715,9 +3804,10 @@ public:
       // reset time
       time = cur_time;
     }
-
+    /*
     if(time_step_number < ORDER_TIME_INTEGRATOR+1)
       check_time_integrator(time_step_number);
+    */
 
     //important because I am using this on element level without giving it as argument to element loop
     for (unsigned int d=0; d<dim; ++d)
@@ -3728,7 +3818,7 @@ public:
 #endif
     }
 #ifdef CHANNEL
-  /***************** STEP 0: xwall update **********************************/
+  /***************** STEP 0: xwall update ***********************************/
     {
       xwall.UpdateTauW(solution_n);
       xwallstatevec[1]=*xwall.ReturnTauW();
@@ -3753,7 +3843,7 @@ public:
 #endif
     }
 #endif
-  /*************************************************************************/
+  /**************************************************************************/
 
   /***************** STEP 1: convective (nonlinear) term ********************/
     Timer timer;
@@ -3786,37 +3876,36 @@ public:
   /*************************************************************************/
 
   /************ STEP 2: solve poisson equation for pressure ****************/
-    timer.restart();
+  timer.restart();
 
-    rhs_pressure(solution_np,rhs_p);
+  rhs_pressure(solution_np,rhs_p);
 
-    // extrapolate from the oldest solution to get a good initial estimate for
-    // the solver
-    solution_np[dim].equ(beta[0], solution_n[dim]);
-    solution_np[dim].add(beta[1], solution_nm[dim], beta[2], solution_nm2[dim]);
+  // extrapolate from the oldest solution to get a good initial estimate for the solver
+  solution_np[dim].equ(beta[0], solution_n[dim]);
+  solution_np[dim].add(beta[1], solution_nm[dim], beta[2], solution_nm2[dim]);
 
-    unsigned int pres_niter = pressure_poisson_solver.solve(solution_np[dim], rhs_p);
+  unsigned int pres_niter = pressure_poisson_solver.solve(solution_np[dim], rhs_p);
 
-    if(pure_dirichlet_bc)
+  if(pure_dirichlet_bc)
+  {
+    shift_pressure(solution_np[dim]);
+  }
+
+  if(time_step_number%output_solver_info_every_timesteps == 0)
+  {
+    Utilities::System::MemoryStats stats;
+    Utilities::System::get_memory_stats(stats);
+    Utilities::MPI::MinMaxAvg memory =
+      Utilities::MPI::min_max_avg (stats.VmRSS/1024., MPI_COMM_WORLD);
+    if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && time_step_number%output_solver_info_every_timesteps == 0)
     {
-      shift_pressure(solution_np[dim]);
+      std::cout << std::endl << "Number of timesteps: " << time_step_number << std::endl;
+      std::cout << "Solve Poisson equation for p: PCG iterations: " << std::setw(3) << pres_niter << "  Wall time: " << timer.wall_time() << std::endl;
+      std::cout << "Memory stats [MB]: " << memory.min << " [p" << memory.min_index << "] "
+                << memory.avg << " " << memory.max << " [p" << memory.max_index << "]"
+                << std::endl;
     }
-
-    if(time_step_number%output_solver_info_every_timesteps == 0)
-      {
-        Utilities::System::MemoryStats stats;
-        Utilities::System::get_memory_stats(stats);
-        Utilities::MPI::MinMaxAvg memory =
-          Utilities::MPI::min_max_avg (stats.VmRSS/1024., MPI_COMM_WORLD);
-        if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && time_step_number%output_solver_info_every_timesteps == 0)
-          {
-            std::cout << std::endl << "Number of timesteps: " << time_step_number << std::endl;
-            std::cout << "Solve Poisson equation for p: PCG iterations: " << std::setw(3) << pres_niter << "  Wall time: " << timer.wall_time() << std::endl;
-            std::cout << "Memory stats [MB]: " << memory.min << " [p" << memory.min_index << "] "
-                      << memory.avg << " " << memory.max << " [p" << memory.max_index << "]"
-                      << std::endl;
-          }
-      }
+  }
 
   computing_times[1] += timer.wall_time();
   /*************************************************************************/
@@ -3824,11 +3913,42 @@ public:
   /********************** STEP 3: projection *******************************/
   timer.restart();
 
+#ifdef WEAK_PROJECTION
+  // so-called weak projection: solve global system of equations enforcing
+  // both divergence-free constraint and continuity of velocity
+  rhs_projection(solution_np,rhs_proj);
+  for (unsigned int d=0; d<dim;++d)
+  {
+    rhs_proj_block.block(d) = rhs_proj[d];
+    solution_proj_block.block(d) = velocity_temp[d];
+  }
+  solution_proj_block.collect_sizes();
+  rhs_proj_block.collect_sizes();
+  calculate_stab_fac_weak_projection();
+
+  ReductionControl solver_control (1e5, ABS_TOL_PROJECTION, REL_TOL_PROJECTION);
+  SolverCG<parallel::distributed::BlockVector<value_type> > solver (solver_control);
+  WeakProjectionMatrix<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> weak_projection_matrix;
+  weak_projection_matrix.initialize(*this);
+  PreconditionerInverseMassMatrix<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> preconditioner_proj(*this);
+  try
+  {
+    solver.solve (weak_projection_matrix, solution_proj_block, rhs_proj_block, preconditioner_proj);//PreconditionIdentity());
+  }
+  catch (SolverControl::NoConvergence)
+  {
+    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+      std::cout<<"Weak projection solver failed to solve to given tolerance." << std::endl;
+  }
+  for(unsigned int d=0;d<dim;++d)
+  {
+    velocity_temp[d] = solution_proj_block.block(d);
+  }
+#else
+  // local element-by-element projection
   apply_projection(solution_np,velocity_temp);
-
-//  rhs_projection(solution_np,rhs_proj);
-//  solve_projection(rhs_proj,velocity_temp);
-
+#endif
+  
   computing_times[2] += timer.wall_time();
   /*************************************************************************/
 
@@ -3848,61 +3968,47 @@ public:
   NavierStokesViscousMatrix<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> ns_viscous_matrix;
   ns_viscous_matrix.initialize(*this);
 
+  // extrapolate from the oldest solution to get a good initial estimate for the solver
+  for (unsigned int i=0; i<dim;i++)
   {
-    // start CG-iterations with solution_n
-    for (unsigned int i=0; i<dim;i++)
-    {
-      solution_temp_visc.block(i) = solution_n[i];
-      solution_temp_visc.block(i).sadd(beta[0]*gamma0, beta[1]*gamma0, solution_nm[i]);
-      solution_temp_visc.block(i).add(beta[2]*gamma0, solution_nm2[i]);
+    solution_temp_visc.block(i) = solution_n[i];
+    solution_temp_visc.block(i).sadd(beta[0], beta[1], solution_nm[i]);
+    solution_temp_visc.block(i).add(beta[2], solution_nm2[i]);
 #ifdef XWALL
-      solution_temp_visc.block(i+dim) = solution_n[i+dim+1];
-      solution_temp_visc.block(i+dim).sadd(beta[0]*gamma0, beta[1]*gamma0, solution_nm[i+dim+1]);
-      solution_temp_visc.block(i+dim).add(beta[2]*gamma0, solution_nm2[i+dim+1]);
+    solution_temp_visc.block(i+dim) = solution_n[i+dim+1];
+    solution_temp_visc.block(i+dim).sadd(beta[0], beta[1], solution_nm[i+dim+1]);
+    solution_temp_visc.block(i+dim).add(beta[2], solution_nm2[i+dim+1]);
 #endif
-    }
-    solution_temp_visc.collect_sizes();
-    rhs_visc.collect_sizes();
-
-    PreconditionerInverseMassMatrix<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> preconditioner(*this);
-
-    try
-    {
-      solver_velocity.solve (ns_viscous_matrix, solution_temp_visc, rhs_visc, preconditioner);//PreconditionIdentity());
-    }
-    catch (SolverControl::NoConvergence)
-    {
-      if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
-        std::cout<<"Viscous solver failed to solve to given convergence." << std::endl;
-    }
-
-
-//    times_cg_velo[2] += cg_timer_viscous.wall_time();
-//    iterations_cg_velo[2] += solver_control_velocity.last_step();
-    for (unsigned int i=0; i<dim;i++)
-    {
-      solution_np[i] = solution_temp_visc.block(i);
-#ifdef XWALL
-      solution_np[i+dim+1] = solution_temp_visc.block(i+dim);
-#endif
-    }
-
-//    if(time_step_number%output_solver_info_every_timesteps == 0)
-//    {
-//    std::cout << "Solve viscous step for u" << d+1 <<":    PCG iterations: " << std::setw(3) << solver_control_velocity.last_step() << "  Wall time: " << timer.wall_time()-wall_time_temp << std::endl;
-//    }
   }
-//  if(time_step_number%10 == 0)
-//    std::cout << "Solve viscous step for u: Number of timesteps: " << time_step_number << std::endl
-//          << "CG (no preconditioning):  wall time: " << times_cg_velo[0]/time_step_number << " Iterations: " << (double)iterations_cg_velo[0]/time_step_number/dim << std::endl
-//          << "PCG (inv mass precond.):  wall time: " << times_cg_velo[1]/time_step_number << " Iterations: " << (double)iterations_cg_velo[1]/time_step_number/dim << std::endl
-//          << "PCG (GMG with Chebyshev): wall time: " << times_cg_velo[2]/time_step_number << " Iterations: " << (double)iterations_cg_velo[2]/time_step_number/dim << std::endl
-//          << std::endl;
+  solution_temp_visc.collect_sizes();
+  rhs_visc.collect_sizes();
+
+  PreconditionerInverseMassMatrix<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> preconditioner(*this);
+
+  try
+  {
+    solver_velocity.solve (ns_viscous_matrix, solution_temp_visc, rhs_visc, preconditioner);//PreconditionIdentity());
+  }
+  catch (SolverControl::NoConvergence)
+  {
+    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+      std::cout<<"Viscous solver failed to solve to given tolerance." << std::endl;
+  }
+
+  for (unsigned int i=0; i<dim;i++)
+  {
+    solution_np[i] = solution_temp_visc.block(i);
+#ifdef XWALL
+    solution_np[i+dim+1] = solution_temp_visc.block(i+dim);
+#endif
+  }
 
   computing_times[3] += timer.wall_time();
   /*************************************************************************/
+
   timer.restart();
-  // solution at t_n -> solution at t_n-1    and    solution at t_n+1 -> solution at t_n
+
+  // solution at t_n-1 -> solution at t_n-2, solution at t_n -> solution at t_n-1  and   solution at t_n+1 -> solution at t_n
   solution_nm2.swap(solution_nm);
   solution_nm.swap(solution_n);
   solution_n.swap(solution_np);
@@ -3915,9 +4021,7 @@ public:
 
 #ifdef FLOW_PAST_CYLINDER
   compute_lift_and_drag(time_step_number == 1);
-  compute_pressure_difference();
-  if(time_step_number == 1)
-    clear_files = false;
+  compute_pressure_difference(time_step_number == 1);
 #endif
 
   if(START_WITH_LOW_ORDER  == true)
@@ -4173,7 +4277,7 @@ public:
 //  }
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-  compute_pressure_difference()
+  compute_pressure_difference(const bool clear_files)
   {
   double pressure_1 = 0.0, pressure_2 = 0.0;
   unsigned int counter_1 = 0, counter_2 = 0;
@@ -4274,7 +4378,7 @@ public:
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   calculate_diagonal_viscous(std::vector<parallel::distributed::Vector<value_type> > &diagonal,
- unsigned int level) const
+  unsigned int level) const
   {
 
     std::vector<parallel::distributed::Vector<double> >  src_tmp;
@@ -5861,7 +5965,8 @@ public:
        message << " v: " << v << "  " << norm_r_abs[v] << " ";
     Assert(n_iter <= MAX_ITER,
            ExcMessage("No convergence of solver in " + Utilities::to_string(MAX_ITER)
-                      + "iterations. Residual was " + message.str().c_str()));}
+                      + "iterations. Residual was " + message.str().c_str()));
+  }
 
   template<int dim, int fe_degree>
   class MatrixProjectionStep
@@ -6045,7 +6150,7 @@ public:
     for (unsigned int q=0; q<phi.n_q_points; ++q)
     {
       vol_vec += JxW_values[q];
-      div_vec += std::abs(phi.get_divergence(q));
+      div_vec += JxW_values[q]*std::abs(phi.get_divergence(q));
     }
   }
   value_type div = 0.;
@@ -6058,6 +6163,61 @@ public:
   test.at(0)+=div;
   test.at(1)+=vol;
 
+  }
+
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+      local_compute_divu_for_channel_stats_face (const MatrixFree<dim,double>              &data,
+                  std::vector<double >      &test,
+                  const std::vector<parallel::distributed::Vector<double> >  &source,
+                  const std::pair<unsigned int,unsigned int>          &face_range)
+  {
+#ifdef XWALL
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,3);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall_neighbor(data,xwallstatevec[0],xwallstatevec[1],false,0,3);
+#else
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,0);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall_neighbor(data,xwallstatevec[0],xwallstatevec[1],false,0,0);
+#endif  
+AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval_xwall.n_q_points);
+  VectorizedArray<value_type> div_vec = make_vectorized_array(0.);
+  VectorizedArray<value_type> vol_vec = make_vectorized_array(0.);
+  for (unsigned int face=face_range.first; face<face_range.second; ++face)
+  {
+    fe_eval_xwall.reinit(face);
+    fe_eval_xwall.read_dof_values(source,0,source,dim+1);
+    fe_eval_xwall.evaluate(true,false);
+    fe_eval_xwall_neighbor.reinit(face);
+    fe_eval_xwall_neighbor.read_dof_values(source,0,source,dim+1);
+    fe_eval_xwall_neighbor.evaluate(true,false);
+    fe_eval_xwall.fill_JxW_values(JxW_values);
+
+    for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
+    {
+      vol_vec += JxW_values[q];
+      div_vec += JxW_values[q]*std::abs((fe_eval_xwall.get_value(q)-fe_eval_xwall_neighbor.get_value(q))*fe_eval_xwall.get_normal_vector(q));
+    }
+  }
+  value_type div = 0.;
+  value_type vol = 0.;
+  for (unsigned int v=0;v<VectorizedArray<value_type>::n_array_elements;v++)
+  {
+    div += div_vec[v];
+    vol += vol_vec[v];
+  }
+  test.at(2)+=div;
+  test.at(3)+=vol;
+
+  }
+
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+      local_compute_divu_for_channel_stats_boundary_face (const MatrixFree<dim,double>              &data,
+                  std::vector<double >      &test,
+                  const std::vector<parallel::distributed::Vector<double> >  &source,
+                  const std::pair<unsigned int,unsigned int>          &face_range)
+  {
+     ;
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -6657,7 +6817,7 @@ public:
 
     AlignedVector<VectorizedArray<value_type> > solution(total_dofs_per_cell);
     MatrixProjectionStep<dim,fe_degree> matrix_projection_step(data,0,0);
-    SolverCGmod<VectorizedArray<double> > cg_solver(total_dofs_per_cell, 1e-12, 1e-9, 1e4);
+    SolverCGmod<VectorizedArray<double> > cg_solver(total_dofs_per_cell, 1e-12, 1e-9, 1e4); //cg_solver(total_dofs_per_cell, 1e-12, 1e-9, 1e4);
     AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval.n_q_points);
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
       {
@@ -6690,6 +6850,187 @@ public:
           fe_eval.begin_dof_values()[j] = solution[j];
         fe_eval.set_dof_values (dst,0);
       }
+  }
+
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  rhs_projection (const std::vector<parallel::distributed::Vector<value_type> >     &src,
+             std::vector<parallel::distributed::Vector<value_type> >      &dst)
+  {
+  
+  for(unsigned int d=0;d<dim;++d)
+  {
+    dst[d] = 0;
+  }
+  // data.loop
+  data.loop (  &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_rhs_projection,
+        &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_rhs_projection_face,
+        &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_rhs_projection_boundary_face,
+        this, dst, src);
+  }
+
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  apply_weak_projection (const parallel::distributed::BlockVector<value_type>      &src,
+                  parallel::distributed::BlockVector<value_type>       &dst)
+  {
+    for(unsigned int d=0;d<dim;++d)
+    {
+      dst.block(d)=0;
+    }
+    data.loop (  &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_weak_projection,
+            &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_weak_projection_face,
+            &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_weak_projection_boundary_face,
+            this, dst, src);
+  }
+
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  calculate_stab_fac_weak_projection()
+  {
+    std::vector<parallel::distributed::Vector<value_type> > dummy;
+    data.cell_loop(&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_calculate_stab_fac_weak_projection,
+                               this, dummy, dummy);
+  }
+
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  local_calculate_stab_fac_weak_projection(const MatrixFree<dim,value_type>        &data,
+                                            std::vector<parallel::distributed::Vector<value_type> > &,
+                                            const std::vector<parallel::distributed::Vector<value_type> > &,
+                                            const std::pair<unsigned int,unsigned int>   &cell_range)
+  {
+    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval(data,xwallstatevec[0],xwallstatevec[1],0,0);
+
+    AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval.n_q_points);
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval.reinit(cell);
+      fe_eval.read_dof_values(solution_n,0,solution_n,dim);
+      fe_eval.evaluate (true,false);
+      VectorizedArray<value_type> volume;
+      VectorizedArray<value_type> norm_U_mean;
+      {
+        Tensor<1,dim,VectorizedArray<value_type> > U_mean;
+        fe_eval.fill_JxW_values(JxW_values);
+        U_mean = JxW_values[0]*fe_eval.get_value(0);
+        volume = JxW_values[0];
+        for (unsigned int q=1; q<fe_eval.n_q_points; ++q)
+        {
+          U_mean += JxW_values[q]*fe_eval.get_value(q);
+          volume += JxW_values[q];
+        }
+        U_mean /=volume;
+        norm_U_mean = U_mean.norm();
+      }
+//      array_stab_fac_weak_projection[cell] = K*norm_U_mean*std::pow(volume,1./(double)dim)/VISCOSITY;
+      array_stab_fac_weak_projection[cell] = K*norm_U_mean*std::pow(volume,1./(double)dim);
+    }
+  }
+
+  template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  local_apply_weak_projection (const MatrixFree<dim,value_type>        &data,
+            parallel::distributed::BlockVector<double>       &dst,
+            const parallel::distributed::BlockVector<double>  &src,
+            const std::pair<unsigned int,unsigned int>   &cell_range) const
+  {
+    FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],0,0);
+
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval_xwall.reinit(cell);
+      fe_eval_xwall.read_dof_values(src,0,src,dim+1);
+      fe_eval_xwall.evaluate (true,true,false);
+  
+      for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
+      {
+        VectorizedArray<value_type> tau = array_stab_fac_weak_projection[cell];
+        Tensor<1,dim,VectorizedArray<value_type> > velocity = fe_eval_xwall.get_value(q);
+        VectorizedArray<value_type > divergence = fe_eval_xwall.get_divergence(q);
+        Tensor<2,dim,VectorizedArray<value_type> > unit_times_divU;
+          for (unsigned int d=0; d<dim; ++d)
+            unit_times_divU[d][d] = divergence;
+        fe_eval_xwall.submit_value(velocity, q);
+        fe_eval_xwall.submit_gradient(tau*unit_times_divU, q);
+      }
+      fe_eval_xwall.integrate (true,true);
+      fe_eval_xwall.distribute_local_to_global (dst,0,dst,dim);
+    }
+  }
+
+  template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  local_apply_weak_projection_face (const MatrixFree<dim,value_type>       &data,
+                parallel::distributed::BlockVector<double>      &dst,
+                const parallel::distributed::BlockVector<double>   &src,
+                const std::pair<unsigned int,unsigned int>  &face_range) const
+  {
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,0);
+    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall_neighbor(data,xwallstatevec[0],xwallstatevec[1],false,0,0);
+   
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval_xwall.reinit (face);
+      fe_eval_xwall_neighbor.reinit (face);
+      fe_eval_xwall.read_dof_values(src,0,src,dim+1);
+      fe_eval_xwall.evaluate(true,false);
+      fe_eval_xwall_neighbor.read_dof_values(src,0,src,dim+1);
+      fe_eval_xwall_neighbor.evaluate(true,false);
+     
+      for(unsigned int q=0;q<fe_eval_xwall.n_q_points;++q)
+      {
+        VectorizedArray<value_type> tau = 0.5 * (fe_eval_xwall.read_cell_data(array_stab_fac_weak_projection)+fe_eval_xwall_neighbor.read_cell_data(array_stab_fac_weak_projection));
+        Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_xwall.get_value(q);
+        Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_xwall_neighbor.get_value(q);
+        Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
+
+        fe_eval_xwall.submit_value(tau*jump_value,q);
+        fe_eval_xwall_neighbor.submit_value(-tau*jump_value,q);
+      }
+      fe_eval_xwall.integrate(true,false);
+      fe_eval_xwall.distribute_local_to_global(dst,0,dst,dim);
+      fe_eval_xwall_neighbor.integrate(true,false);
+      fe_eval_xwall_neighbor.distribute_local_to_global(dst,0,dst,dim);
+    }
+  }
+
+  template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  local_apply_weak_projection_boundary_face (const MatrixFree<dim,value_type>       &data,
+                    parallel::distributed::BlockVector<double>     &dst,
+                    const parallel::distributed::BlockVector<double>   &src,
+                    const std::pair<unsigned int,unsigned int>  &face_range) const
+  {
+//    FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,0);
+//    for(unsigned int face=face_range.first; face<face_range.second; face++)
+//    {
+//      fe_eval_xwall.reinit (face);
+//      fe_eval_xwall.read_dof_values(src,0,src,dim+1);
+//      fe_eval_xwall.evaluate(true,false);
+//
+//      for(unsigned int q=0;q<fe_eval_xwall.n_q_points;++q)
+//      {
+//        if (dirichlet_boundary.find(data.get_boundary_indicator(face)) != dirichlet_boundary.end()) // Infow and wall boundaries
+//        {
+//          // on Dirichlet boundaries use u⁺ = - u⁻ + 2g
+//          VectorizedArray<value_type> tau = fe_eval_xwall.read_cell_data(array_stab_fac_weak_projection);
+//          // jump value = u⁻ - u⁺ = 2u⁻ - 2g
+//          Tensor<1,dim,VectorizedArray<value_type> > jump_value =
+//              make_vectorized_array<value_type>(2.0)*fe_eval_xwall.get_value(q);
+//          fe_eval_xwall.submit_value(tau*jump_value,q);
+//        }
+//        else if (neumann_boundary.find(data.get_boundary_indicator(face)) != neumann_boundary.end()) // Outflow boundary
+//        {
+//          // on Neumann boundaries use u⁺ = u⁻
+//          // jump_value = 0 -> do-nothing
+//          Tensor<1,dim,VectorizedArray<value_type> > jump_value;
+//          fe_eval_xwall.submit_value(jump_value,q);
+//        }
+//      }
+//      fe_eval_xwall.integrate(true,false);
+//      fe_eval_xwall.distribute_local_to_global(dst,0,dst,dim);
+//    }
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -6824,7 +7165,7 @@ public:
 #ifdef PRESPARTIAL
       VectorizedArray<value_type> meanpres = 0.5*(pressure.get_value(q)+pressure_neighbor.get_value(q));
 #else
-      VectorizedArray<value_type> meanpres =make_vectorized_array(0.);
+      VectorizedArray<value_type> meanpres = make_vectorized_array(0.);
 #endif
       normal*=meanpres;
 
@@ -6845,6 +7186,8 @@ public:
                 const std::vector<parallel::distributed::Vector<double> >  &src,
                 const std::pair<unsigned int,unsigned int>          &face_range) const
   {
+#ifdef PRESPARTIAL
+
 #ifdef XWALL
     FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,3);
     FEFaceEvaluation<dim,fe_degree_p,n_q_points_1d_xwall,1,value_type> pressure (data,true,1,3);
@@ -6863,19 +7206,61 @@ public:
     for (unsigned int q=0; q<fe_eval_xwall.n_q_points; ++q)
     {
       Tensor<1,dim,VectorizedArray<value_type> > normal = fac*pressure.get_normal_vector(q);
-//      Tensor<1,dim,VectorizedArray<value_type> > meanvel = 0.5*(fe_eval_xwall.get_value(q)+fe_eval_xwall_neighbor.get_value(q));
-#ifdef PRESPARTIAL
       VectorizedArray<value_type> meanpres = pressure.get_value(q);
-#else
-      VectorizedArray<value_type> meanpres =make_vectorized_array(0.);
-#endif
       normal*=meanpres;
-
       fe_eval_xwall.submit_value (-normal, q);
     }
     fe_eval_xwall.integrate (true,false);
     fe_eval_xwall.distribute_local_to_global (dst,0,dst,dim);
   }
+#endif
+
+#ifdef WEAK_PROJECTION
+//  FEFaceEvaluationXWall<dim,fe_degree,fe_degree_xwall,fe_degree+1,dim,value_type> fe_eval_xwall(data,xwallstatevec[0],xwallstatevec[1],true,0,0);
+//  for(unsigned int face=face_range.first; face<face_range.second; face++)
+//  {
+//    fe_eval_xwall.reinit (face);
+//    fe_eval_xwall.read_dof_values(src,0,src,dim+1);
+//    fe_eval_xwall.evaluate(true,false);
+//
+//    for(unsigned int q=0;q<fe_eval_xwall.n_q_points;++q)
+//    {
+//      if (dirichlet_boundary.find(data.get_boundary_indicator(face)) != dirichlet_boundary.end()) // Infow and wall boundaries
+//      {
+//        VectorizedArray<value_type> tau = fe_eval_xwall.read_cell_data(array_stab_fac_weak_projection);
+//
+//        Point<dim,VectorizedArray<value_type> > q_points = fe_eval_xwall.quadrature_point(q);
+//        Tensor<1,dim,VectorizedArray<value_type> > g_np;
+//        for(unsigned int d=0;d<dim;++d)
+//        {
+//          AnalyticalSolution<dim> dirichlet_boundary(d,time+time_step);
+//          value_type array [VectorizedArray<value_type>::n_array_elements];
+//          for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+//          {
+//            Point<dim> q_point;
+//            for (unsigned int d=0; d<dim; ++d)
+//            q_point[d] = q_points[d][n];
+//            array[n] = dirichlet_boundary.value(q_point);
+//          }
+//          g_np[d].load(&array[0]);
+//        }
+//        Tensor<1,dim,VectorizedArray<value_type> > jump_value = -make_vectorized_array<value_type>(2.0)*g_np;
+//        jump_value = gamma0 * jump_value;
+//        // minus sign in following expression is due to the fact that the term has been moved to the right hand side
+//        fe_eval_xwall.submit_value(-tau*jump_value,q);
+//      }
+//      else if (neumann_boundary.find(data.get_boundary_indicator(face)) != neumann_boundary.end()) // Outflow boundary
+//      {
+//        // on Neumann boundaries use velocity + = velocity -
+//        // jump_value = 0 -> do-nothing
+//        Tensor<1,dim,VectorizedArray<value_type> > jump_value;
+//        fe_eval_xwall.submit_value(jump_value,q);
+//      }
+//    }
+//    fe_eval_xwall.integrate(true,false);
+//    fe_eval_xwall.distribute_local_to_global(dst,0,dst,dim);
+//  }
+#endif
   }
 
   namespace
@@ -6920,6 +7305,7 @@ public:
 
   int numchsamp;
   double udiv_samp;
+  double udiff_samp;
   void init_channel_statistics();
   void compute_divu_statistics(std::vector<parallel::distributed::Vector<value_type> >   &vel_hat, NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> & nsoperation);
   void write_divu(std::vector<parallel::distributed::Vector<value_type> >   &vel_hat, NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> & nsoperation, double time, unsigned int time_step_number);
@@ -7579,27 +7965,25 @@ public:
     std::ofstream output (filename.str().c_str());
     data_out.write_vtu (output);
 
-  if ( Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-  {
-
-    std::vector<std::string> filenames;
-    for (unsigned int i=0;i<Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);++i)
+    if ( Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
-      std::ostringstream filename;
-      filename << "output/"
-               << output_prefix
-               << "_Proc"
-               << i
-               << "_"
-               << output_number
-               << ".vtu";
+      std::vector<std::string> filenames;
+      for (unsigned int i=0;i<Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);++i)
+      {
+        std::ostringstream filename;
+        filename << output_prefix
+                 << "_Proc"
+                 << i
+                 << "_"
+                 << output_number
+                 << ".vtu";
 
-        filenames.push_back(filename.str().c_str());
+          filenames.push_back(filename.str().c_str());
+      }
+      std::string master_name = "output/" + output_prefix + "_" + Utilities::int_to_string(output_number) + ".pvtu";
+      std::ofstream master_output (master_name.c_str());
+      data_out.write_pvtu_record (master_output, filenames);
     }
-    std::string master_name = output_prefix + "_" + Utilities::int_to_string(output_number) + ".pvtu";
-    std::ofstream master_output (master_name.c_str());
-    data_out.write_pvtu_record (master_output, filenames);
-  }
   }
 
   template<int dim>
@@ -7607,6 +7991,7 @@ public:
   init_channel_statistics()
   {
     udiv_samp = 0;
+    udiff_samp = 0;
     numchsamp = 0;
   }
 
@@ -7616,15 +8001,22 @@ public:
   {
     numchsamp++;
 
-    std::vector<double > dummy(2,0.0);
-    nsoperation.get_data().cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats,&nsoperation, dummy, vel_hathat);
+    std::vector<double > dummy(4,0.0);
+    nsoperation.get_data().loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats,
+    &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats_face,
+    &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats_boundary_face,
+                         &nsoperation, dummy, vel_hathat);
     double div = Utilities::MPI::sum (dummy.at(0), MPI_COMM_WORLD);
     double vol = Utilities::MPI::sum (dummy.at(1), MPI_COMM_WORLD);
+    double udiff = Utilities::MPI::sum (dummy.at(2), MPI_COMM_WORLD);
+    double area = Utilities::MPI::sum (dummy.at(3), MPI_COMM_WORLD);
     udiv_samp += div/vol;
+    udiff_samp += udiff/area;
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
     {
       std::ostringstream filename;
-      filename << output_prefix
+      filename << "output/"
+               << output_prefix
                << ".flow_statistics_divu";
 
       std::ofstream f;
@@ -7633,6 +8025,7 @@ public:
       f<<"average divergence over space and time"<<std::endl;
       f<<"number of samples:   " << numchsamp << std::endl;
       f<<"mean div u_hathat:   " << udiv_samp/numchsamp*6.0/11.0 << std::endl;//the factor 6/11 is gamma0^-1, which is the factor u_hathat is scaled compared to solution_n
+      f<<"mean diff u_hathat:  " << udiff_samp/numchsamp*6.0/11.0 << std::endl;
       f.close();
     }
    }
@@ -7641,28 +8034,36 @@ public:
   void NavierStokesProblem<dim>::
   write_divu(std::vector<parallel::distributed::Vector<value_type> >   &vel_hathat, NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> & nsoperation, double time, unsigned int time_step_number)
   {
-    std::vector<double > dummy(2,0.0);
-    nsoperation.get_data().cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats,&nsoperation, dummy, vel_hathat);
+    std::vector<double > dummy(4,0.0);
+    nsoperation.get_data().loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats,
+    &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats_face,
+    &NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divu_for_channel_stats_boundary_face,
+                         &nsoperation, dummy, vel_hathat);
     double div = Utilities::MPI::sum (dummy.at(0), MPI_COMM_WORLD);
     double vol = Utilities::MPI::sum (dummy.at(1), MPI_COMM_WORLD);
+    double udiff = Utilities::MPI::sum (dummy.at(2), MPI_COMM_WORLD);
+    double area = Utilities::MPI::sum (dummy.at(3), MPI_COMM_WORLD);
     double udiv = div/vol;
+    double udiffx = udiff/area;
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
     {
       std::ostringstream filename;
-      filename << output_prefix
+      filename << "output/"
+               << output_prefix
                << ".flow_statistics_divu_timeseries";
 
       std::ofstream f;
       if(time_step_number==1)
       {
         f.open(filename.str().c_str(),std::ios::trunc);
-        f<< "       n       |       t      |     divu     " << std::endl;
+        f<< "       n       |       t      |     divu     |  (um - up )*n" << std::endl;
       }
       else
         f.open(filename.str().c_str(),std::ios::app);
       f << std::setw(15) <<time_step_number;
       f << std::scientific<<std::setprecision(7) << std::setw(15) << time ;
-      f << std::scientific<<std::setprecision(7) << std::setw(15) << udiv*6.0/11.0 << std::endl;
+      f << std::scientific<<std::setprecision(7) << std::setw(15) << udiv*6.0/11.0;
+      f << std::scientific<<std::setprecision(7) << std::setw(15) << udiffx*6.0/11.0 << std::endl;
       //the factor 6/11 is gamma0^-1, which is the factor u_hathat is scaled compared to solution_n
       f.close();
     }
@@ -7828,6 +8229,24 @@ public:
 
     if( (time+time_step-START_TIME) > (output_number*OUTPUT_INTERVAL_TIME-EPSILON) && (time+time_step) > OUTPUT_START_TIME-EPSILON)
     {
+//      std::vector<parallel::distributed::Vector<value_type>> output_vector;
+//      output_vector.resize(2*dim+1);
+//      for(unsigned int d=0;d<dim;++d)
+//      {
+//        output_vector[d].reinit(navier_stokes_operation.velocity_temp[d]);
+//        output_vector[d] = navier_stokes_operation.velocity_temp[d];
+//        output_vector[d+dim+1].reinit(navier_stokes_operation.velocity_temp[d]);
+//        output_vector[d+dim+1] = navier_stokes_operation.velocity_temp[d];
+//      }
+//      output_vector[dim] = navier_stokes_operation.solution_n[dim];
+//      write_output(output_vector,
+//              navier_stokes_operation.ReturnXWall(),
+//  #ifdef COMPDIV
+//              navier_stokes_operation.divergence_old,
+//              navier_stokes_operation.divergence_new,
+//  #endif
+//              output_number++);
+
     write_output(navier_stokes_operation.solution_n,
             navier_stokes_operation.vorticity_n,
             navier_stokes_operation.ReturnXWall(),
@@ -7841,7 +8260,7 @@ public:
     }
     else if((time+time_step-START_TIME) > (output_number*OUTPUT_INTERVAL_TIME-EPSILON))
       output_number++;
-    if((time+time_step) > STATISTICS_START_TIME-EPSILON && time_step_number % 50 == 0)
+    if((time+time_step) > STATISTICS_START_TIME-EPSILON && time_step_number % STATISTICS_EVERY == 0)
     {
 #ifdef CHANNEL
       statistics.evaluate(navier_stokes_operation.solution_n);
