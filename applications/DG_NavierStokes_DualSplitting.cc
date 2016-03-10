@@ -64,11 +64,11 @@
 
 //#define XWALL
 //#define COMPDIV
-#define LOWMEMORY 1 //compute grad-div matrices directly instead of saving them
-#define PRESPARTIAL
-#define DIVUPARTIAL
+//#define LOWMEMORY 1 //compute grad-div matrices directly instead of saving them
+//#define PRESPARTIAL
+//#define DIVUPARTIAL
 
-//#define WEAK_PROJECTION
+#define WEAK_PROJECTION
 
 #define CONSCONVPBC
 //#define SKEWSYMMVISC
@@ -86,30 +86,31 @@ namespace DG_NavierStokes
   using namespace dealii;
 
 #ifdef VORTEX
-  const unsigned int fe_degree = 2; //2
+  const unsigned int fe_degree = 5; //2
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
-  const unsigned int dimension = 2; // dimension >= 2
-  const unsigned int refine_steps_min = 0; //1
-  const unsigned int refine_steps_max = 0;
+  const unsigned int dimension = 2;
+  const unsigned int refine_steps_min = 3; //1
+  const unsigned int refine_steps_max = 3;
 
   const double START_TIME = 0.0;
-  const double END_TIME = 2.0;
-  const double OUTPUT_INTERVAL_TIME = 0.1;
+  const double END_TIME = 1.0;
+  const double OUTPUT_INTERVAL_TIME = 0.05;
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
   const int STATISTICS_EVERY = 1;
-  const bool DIVU_TIMESERIES = true; //true;
-  const int MAX_NUM_STEPS = 1e6;
+  const bool DIVU_TIMESERIES = true;
+  const int MAX_NUM_STEPS = 1e7;
   const double CFL = 0.01; //0.001
 
-  const double VISCOSITY = 0.005;
+  const double VISCOSITY = 0.01;
+  const double U_X_MAX = 1.0;
 
-  const double MAX_VELOCITY = 1.4;
+  const double MAX_VELOCITY = 1.4*U_X_MAX;
   const double stab_factor_pressure = 1.0;
   const double stab_factor_viscous = stab_factor_pressure;
-  const double K=1.5e-3; //1.0e2; //stabilization parameter null-space projection
+  const double K = 0.1; //1.0e2; //stabilization parameter null-space projection
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -119,9 +120,9 @@ namespace DG_NavierStokes
   const double GRID_STRETCH_FAC = 1.8;
   const bool pure_dirichlet_bc = false;
 
-  const double REL_TOL_PRESSURE = 1.0e-8;
+  const double REL_TOL_PRESSURE = 1.0e-6;
   const double ABS_TOL_VISCOUS = 1.0e-12;
-  const double REL_TOL_VISCOUS = 1.0e-8;
+  const double REL_TOL_VISCOUS = 1.0e-6;
   const double ABS_TOL_PROJECTION = 1.0e-12;
   const double REL_TOL_PROJECTION = 1.0e-6;
 
@@ -139,26 +140,28 @@ namespace DG_NavierStokes
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
-  const unsigned int dimension = 2; // dimension >= 2
-  const unsigned int refine_steps_min = 3;
-  const unsigned int refine_steps_max = 3;
+  const unsigned int dimension = 2;
+  const unsigned int refine_steps_min = 2;
+  const unsigned int refine_steps_max = 2;
 
   const double START_TIME = 0.0;
-  const double END_TIME = 1.0;
-  const double OUTPUT_INTERVAL_TIME = 0.1;
+  const double END_TIME = 20.0;
+  const double OUTPUT_INTERVAL_TIME = 1.0;
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
   const int STATISTICS_EVERY = 1;
-  const bool DIVU_TIMESERIES = false; //true;
+  const bool DIVU_TIMESERIES = true; //true;
   const int MAX_NUM_STEPS = 1e6;
-  const double CFL = 0.005;
+  const double CFL = 0.05;
 
-  const double VISCOSITY = 0.1;
+  const double VISCOSITY = 0.01;
+  const double H = 1.0;
+  const double L = 4.0;
 
-  const double MAX_VELOCITY = 1.0;
+  const double MAX_VELOCITY = 1.5;
   const double stab_factor_pressure = 1.0;
   const double stab_factor_viscous = stab_factor_pressure;
-  const double K=1.0e2; //stabilization parameter null-space projection
+  const double K=1.0e0; //stabilization parameter null-space projection
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -168,19 +171,19 @@ namespace DG_NavierStokes
   const double GRID_STRETCH_FAC = 1.8;
   const bool pure_dirichlet_bc = false;
 
-  const double REL_TOL_PRESSURE = 1.0e-8;
+  const double REL_TOL_PRESSURE = 1.0e-6;
   const double ABS_TOL_VISCOUS = 1.0e-12;
-  const double REL_TOL_VISCOUS = 1.0e-8;
+  const double REL_TOL_VISCOUS = 1.0e-6;
   const double ABS_TOL_PROJECTION = 1.0e-12;
   const double REL_TOL_PROJECTION = 1.0e-6;
 
-  const std::string output_prefix = "vortex";
+  const std::string output_prefix = "poiseuille";
 
   const unsigned int output_solver_info_every_timesteps = 1e4;
   const unsigned int output_solver_info_details = 1e4;
 
   const unsigned int ORDER_TIME_INTEGRATOR = 3;
-  const bool START_WITH_LOW_ORDER = false;
+  const bool START_WITH_LOW_ORDER = true;
 #endif
 
 #ifdef KOVASZNAY
@@ -188,7 +191,7 @@ namespace DG_NavierStokes
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
-  const unsigned int dimension = 2; // dimension >= 2
+  const unsigned int dimension = 2;
   const unsigned int refine_steps_min = 3;
   const unsigned int refine_steps_max = 3;
 
@@ -237,7 +240,7 @@ namespace DG_NavierStokes
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
-  const unsigned int dimension = 3; // dimension >= 2
+  const unsigned int dimension = 3;
   const unsigned int refine_steps_min = 2;
   const unsigned int refine_steps_max = 2;
 
@@ -286,7 +289,7 @@ namespace DG_NavierStokes
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
   const unsigned int n_q_points_1d_xwall = 1;
-  const unsigned int dimension = 2; // dimension >= 2
+  const unsigned int dimension = 2;
   const unsigned int refine_steps_min = 3;//2
   const unsigned int refine_steps_max = 3;
 
@@ -332,32 +335,33 @@ namespace DG_NavierStokes
 #endif
 
 #ifdef FLOW_PAST_CYLINDER
-  const unsigned int fe_degree = 1;
+  const unsigned int fe_degree = 2;
   const unsigned int fe_degree_p = fe_degree;//fe_degree-1;
   const unsigned int fe_degree_xwall = 1;
-  const unsigned int n_q_points_1d_xwall = fe_degree*4;
-  const unsigned int dimension = 2; // dimension >= 2
-  const unsigned int refine_steps_min = 1;
-  const unsigned int refine_steps_max = 1;
+  const unsigned int n_q_points_1d_xwall = 1;
+  const unsigned int dimension = 2;
+  const unsigned int refine_steps_min = 2;
+  const unsigned int refine_steps_max = 2;
 
   const double START_TIME = 0.0;
-  const double END_TIME = 10.0;
-  const double OUTPUT_INTERVAL_TIME = 0.5;
+  const double END_TIME = 8.0;
+  const double OUTPUT_INTERVAL_TIME = 0.4;
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
   const int STATISTICS_EVERY = 1;
   const bool DIVU_TIMESERIES = true;
   const int MAX_NUM_STEPS = 1e6;
-  const double CFL = 0.1;
+  const double CFL = 0.3;
 
   const double VISCOSITY = 0.001;
-  const double Um = 0.3;//(dimension == 2 ? 1.5 : 2.25); //2D-1: 0.3; 3D-1: 0.45;
+  const unsigned int TEST_CASE = 3; // 1, 2 or 3
+  const double Um = (dimension == 2 ? (TEST_CASE==1 ? 0.3 : 1.5) : (TEST_CASE==1 ? 0.45 : 2.25)); //2D-1: 0.3; 3D-1: 0.45;
   const double D = 0.1;
 
   const double MAX_VELOCITY = Um;
   const double stab_factor_pressure = 1.0;
   const double stab_factor_viscous = stab_factor_pressure;
-  const double K=1.0e1; //stabilization parameter null-space projection
+  const double K=1.0e-2; //stabilization parameter null-space projection
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
   const bool variabletauw = false;
@@ -367,9 +371,9 @@ namespace DG_NavierStokes
   const double GRID_STRETCH_FAC = 1.8;
   const bool pure_dirichlet_bc = false;
 
-  const double REL_TOL_PRESSURE = 1.0e-8;
-  const double ABS_TOL_VISCOUS = 1.0e-16;
-  const double REL_TOL_VISCOUS = 1.0e-8;
+  const double REL_TOL_PRESSURE = 1.0e-6;
+  const double ABS_TOL_VISCOUS = 1.0e-12;
+  const double REL_TOL_VISCOUS = 1.0e-6;
   const double ABS_TOL_PROJECTION = 1.0e-12;
   const double REL_TOL_PROJECTION = 1.0e-6;
 
@@ -392,7 +396,7 @@ namespace DG_NavierStokes
   const unsigned int refine_steps_max = 2;
 
   const double START_TIME = 0.0;
-  const double END_TIME = 70.0; // Poisseuille 5.0;  Kovasznay 1.0
+  const double END_TIME = 70.0;
   const double OUTPUT_INTERVAL_TIME = 1.0;
   const double OUTPUT_START_TIME = 50.0;
   const double STATISTICS_START_TIME = 50.0;
@@ -401,9 +405,9 @@ namespace DG_NavierStokes
   const int MAX_NUM_STEPS = 1e7;
   const double CFL = 1.0;
 
-  const double VISCOSITY = 1./180.0;//0.005; // Taylor vortex: 0.01; vortex problem (Hesthaven): 0.025; Poisseuille 0.005; Kovasznay 0.025; Stokes 1.0
+  const double VISCOSITY = 1./180.0;
 
-  const double MAX_VELOCITY = 15.0; // Taylor vortex: 1; vortex problem (Hesthaven): 1.5; Poisseuille 1.0; Kovasznay 4.0
+  const double MAX_VELOCITY = 15.0;
   const double stab_factor_pressure = 1.0;
   const double stab_factor_viscous = 1.0 * stab_factor_pressure;
   const double K=1.0e-3; //stabilization parameter null-space projection
@@ -526,11 +530,11 @@ namespace DG_NavierStokes
 #ifdef VORTEX
     const double pi = numbers::PI;
     if(component == 0)
-      result = -std::sin(2.0*pi*p[1])*std::exp(-4.0*pi*pi*VISCOSITY*t);
+      result = -U_X_MAX*std::sin(2.0*pi*p[1])*std::exp(-4.0*pi*pi*VISCOSITY*t);
     else if(component == 1)
-      result = std::sin(2.0*pi*p[0])*std::exp(-4.0*pi*pi*VISCOSITY*t);
+      result = U_X_MAX*std::sin(2.0*pi*p[0])*std::exp(-4.0*pi*pi*VISCOSITY*t);
     else if(component == dim)
-      result = -std::cos(2*pi*p[0])*std::cos(2*pi*p[1])*std::exp(-8.0*pi*pi*VISCOSITY*t);
+      result = -U_X_MAX*std::cos(2*pi*p[0])*std::cos(2*pi*p[1])*std::exp(-8.0*pi*pi*VISCOSITY*t);
 #endif
     /********************************************************************/
 
@@ -592,7 +596,10 @@ namespace DG_NavierStokes
       const double T = 0.2;
       const double H = 0.41;
       double coefficient = Utilities::fixed_power<dim-1>(4.) * Um / Utilities::fixed_power<2*dim-2>(H);
-      result = coefficient * p[1] * (H-p[1]) * ( (t/T)<1.0 ? std::sin(pi/2.*t/T) : 1.0);//( (t/T)<1.0 ? std::sin(pi/2.*t/T) : 1.0); //( (t/T)<1.0 ? t/T : 1.0); //std::sin(pi*t/END_TIME);
+      if(TEST_CASE < 3)
+      result = coefficient * p[1] * ( (t/T)<1.0 ? std::sin(pi/2.*t/T) : 1.0);
+      if(TEST_CASE == 3)
+        result = coefficient * p[1] * (H-p[1]) * std::sin(pi*t/END_TIME);
       if (dim == 3)
         result *= p[2] * (H-p[2]);
     }
@@ -657,32 +664,32 @@ namespace DG_NavierStokes
 //    if(component==0)
 //    {
 //      if( (std::abs(p[1]+0.5)< 1e-12) && (p[0]<0) )
-//        result = 2.0*pi*std::cos(2.0*pi*p[1])*std::exp(-4.0*pi*pi*VISCOSITY*t);
+//        result = U_X_MAX*2.0*pi*std::cos(2.0*pi*p[1])*std::exp(-4.0*pi*pi*VISCOSITY*t);
 //      else if( (std::abs(p[1]-0.5)< 1e-12) && (p[0]>0) )
-//        result = -2.0*pi*std::cos(2.0*pi*p[1])*std::exp(-4.0*pi*pi*VISCOSITY*t);
+//        result = -U_X_MAX*2.0*pi*std::cos(2.0*pi*p[1])*std::exp(-4.0*pi*pi*VISCOSITY*t);
 //    }
 //    else if(component==1)
 //    {
 //      if( (std::abs(p[0]+0.5)< 1e-12) && (p[1]>0) )
-//        result = -2.0*pi*std::cos(2.0*pi*p[0])*std::exp(-4.0*pi*pi*VISCOSITY*t);
+//        result = -U_X_MAX*2.0*pi*std::cos(2.0*pi*p[0])*std::exp(-4.0*pi*pi*VISCOSITY*t);
 //      else if((std::abs(p[0]-0.5)< 1e-12) && (p[1]<0) )
-//        result = 2.0*pi*std::cos(2.0*pi*p[0])*std::exp(-4.0*pi*pi*VISCOSITY*t);
+//        result = U_X_MAX*2.0*pi*std::cos(2.0*pi*p[0])*std::exp(-4.0*pi*pi*VISCOSITY*t);
 //    }
     // Divergence formulation of viscous term -> prescribe (grad U + (grad U) ^T)*n on Gamma_N
     const double pi = numbers::PI;
     if(component==0)
     {
       if( (std::abs(p[1]+0.5)< 1e-12) && (p[0]<0) )
-        result = -2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);
+        result = -U_X_MAX*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);
       else if( (std::abs(p[1]-0.5)< 1e-12) && (p[0]>0) )
-        result = 2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);
+        result = U_X_MAX*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);
     }
     else if(component==1)
     {
       if( (std::abs(p[0]+0.5)< 1e-12) && (p[1]>0) )
-        result = -2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);
+        result = -U_X_MAX*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);
       else if((std::abs(p[0]-0.5)< 1e-12) && (p[1]<0) )
-        result = 2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);
+        result = U_X_MAX*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);
     }
 #endif
 
@@ -782,9 +789,9 @@ namespace DG_NavierStokes
 //   vortex problem (Hesthaven)
   const double pi = numbers::PI;
   if(component == 0)
-    result = 4.0*pi*pi*VISCOSITY*std::sin(2.0*pi*p[1])*std::exp(-4.0*pi*pi*VISCOSITY*t);
+    result = U_X_MAX*4.0*pi*pi*VISCOSITY*std::sin(2.0*pi*p[1])*std::exp(-4.0*pi*pi*VISCOSITY*t);
   else if(component == 1)
-    result = -4.0*pi*pi*VISCOSITY*std::sin(2.0*pi*p[0])*std::exp(-4.0*pi*pi*VISCOSITY*t);
+    result = -U_X_MAX*4.0*pi*pi*VISCOSITY*std::sin(2.0*pi*p[0])*std::exp(-4.0*pi*pi*VISCOSITY*t);
 #endif
 
   // Beltrami flow
@@ -816,15 +823,15 @@ namespace DG_NavierStokes
 
   // flow past cylinder
 #ifdef FLOW_PAST_CYLINDER
-//  if(component == 0 && std::abs(p[0]-(dim==2 ? 0.3 : 0.0))<1.e-12)
-//  {
-//    const double pi = numbers::PI;
-//    const double H = 0.41;
-//    double coefficient = Utilities::fixed_power<dim-1>(4.) * Um / Utilities::fixed_power<2*dim-2>(H);
-//    result = coefficient * p[1] * (H-p[1]) * std::cos(pi*t/END_TIME)*pi/END_TIME;
-//      if (dim == 3)
-//        result *= p[2] * (H-p[2]);
-//  }
+  if(TEST_CASE==3 && component == 0 && std::abs(p[0]-(dim==2 ? 0.3 : 0.0))<1.e-12)
+  {
+    const double pi = numbers::PI;
+    const double H = 0.41;
+    double coefficient = Utilities::fixed_power<dim-1>(4.) * Um / Utilities::fixed_power<2*dim-2>(H);
+    result = coefficient * p[1] * (H-p[1]) * std::cos(pi*t/END_TIME)*pi/END_TIME;
+      if (dim == 3)
+        result *= p[2] * (H-p[2]);
+  }
 #endif
 
   return result;
@@ -3500,11 +3507,11 @@ private:
   solver_data.poisson_dof_index = 1;
   solver_data.poisson_quad_index = 1;
   solver_data.periodic_face_pairs_level0 = periodic_face_pairs;
-  solver_data.penalty_factor = stab_factor_pressure; //stab_factor/nu*delta_t;
+  solver_data.penalty_factor = stab_factor_pressure;
   solver_data.solver_tolerance = REL_TOL_PRESSURE;
   solver_data.dirichlet_boundaries = neumann_boundary;
   solver_data.neumann_boundaries = dirichlet_boundary;
-  solver_data.coarse_solver = PoissonSolverData<dim>::coarse_chebyshev_smoother;//coarse_chebyshev_smoother;//coarse_iterative_jacobi;
+  solver_data.coarse_solver = PoissonSolverData<dim>::coarse_iterative_jacobi;//coarse_chebyshev_smoother;//coarse_iterative_jacobi;
   pressure_poisson_solver.initialize(mapping, data, solver_data);
 
 //  smoother_data_viscous.smoothing_range = 30;
@@ -3782,8 +3789,6 @@ private:
     NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> &ns_op;
   };
 
-
-
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
   do_timestep (const double &cur_time, const double  &delta_t, const unsigned int &time_step_number)
@@ -3875,7 +3880,7 @@ private:
     computing_times[0] += timer.wall_time();
   /*************************************************************************/
 
-  /************ STEP 2: solve poisson equation for pressure ****************/
+  /************ STEP 2: solve Poisson equation for pressure ****************/
   timer.restart();
 
   rhs_pressure(solution_np,rhs_p);
@@ -3925,7 +3930,6 @@ private:
   solution_proj_block.collect_sizes();
   rhs_proj_block.collect_sizes();
   calculate_stab_fac_weak_projection();
-
   ReductionControl solver_control (1e5, ABS_TOL_PROJECTION, REL_TOL_PROJECTION);
   SolverCG<parallel::distributed::BlockVector<value_type> > solver (solver_control);
   WeakProjectionMatrix<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> weak_projection_matrix;
@@ -3933,7 +3937,7 @@ private:
   PreconditionerInverseMassMatrix<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> preconditioner_proj(*this);
   try
   {
-    solver.solve (weak_projection_matrix, solution_proj_block, rhs_proj_block, preconditioner_proj);//PreconditionIdentity());
+    solver.solve (weak_projection_matrix, solution_proj_block, rhs_proj_block, preconditioner_proj); //PreconditionIdentity());//preconditioner_proj);
   }
   catch (SolverControl::NoConvergence)
   {
@@ -5664,10 +5668,9 @@ private:
   compute_vorticity (const std::vector<parallel::distributed::Vector<value_type> >   &src,
               std::vector<parallel::distributed::Vector<value_type> >      &dst)
   {
-  for(unsigned int d=0;d<2*number_vorticity_components;++d)
-    dst[d] = 0;
-  // data.loop
-  data.cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_vorticity,this, dst, src);
+    for(unsigned int d=0;d<2*number_vorticity_components;++d)
+      dst[d] = 0;
+    data.cell_loop (&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_vorticity,this, dst, src);
   }
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -5715,18 +5718,8 @@ private:
     for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
       matrices[v].reinit(total_dofs_per_cell, total_dofs_per_cell);
 
-    // compute grad-div parameter
-    //use definition Ohlhanskii et al. (2009)
-//#ifdef STOKES
-    const VectorizedArray<value_type> tau = K*normmeanvel*std::pow(volume,1./(double)dim) + make_vectorized_array<value_type>(VISCOSITY*K);
-//    const VectorizedArray<value_type> tau = make_vectorized_array<value_type>(VISCOSITY*K);
-//#else
-//    const VectorizedArray<value_type> tau =
-//      K*normmeanvel*std::pow(volume,1./(double)dim);
-//#endif
-
-//    std::cout << "tau" << tau[0] << "  " << tau[1] << std::endl;
-//    std::cout << "vel  " << normmeanvel[0] << "  " << normmeanvel[1] << std::endl;
+    // compute grad-div parameter use definition Ohlhanskii et al. (2009)
+    const VectorizedArray<value_type> tau = K*normmeanvel*std::exp(std::log(volume)/(double)dim);// + make_vectorized_array<value_type>(VISCOSITY*K);
 
     for (unsigned int j=0; j<total_dofs_per_cell; ++j)
     {
@@ -6284,15 +6277,8 @@ AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval_xwall.n_q_points)
        else
          matrices[v] = 0;
 
-     // compute grad-div parameter
-     //use definition Ohlhanskii et al. (2009)
-//#ifdef STOKES
-     const VectorizedArray<value_type> tau = K*normmeanvel*std::pow(volume,1./(double)dim) + make_vectorized_array<value_type>(VISCOSITY*K);
-//     const VectorizedArray<value_type> tau = make_vectorized_array<value_type>(VISCOSITY*K);
-//#else
-//     const VectorizedArray<value_type> tau =
-//       K*normmeanvel*std::pow(volume,1./(double)dim);
-//#endif
+     // compute grad-div parameter use definition Ohlhanskii et al. (2009)
+     const VectorizedArray<value_type> tau = K*normmeanvel*std::exp(std::log(volume)/(double)dim);// + make_vectorized_array<value_type>(VISCOSITY*K);
 
      //now apply vectors to inverse matrix
 //     for (unsigned int q=0; q<velocity.n_q_points; ++q)
@@ -6860,7 +6846,7 @@ AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval_xwall.n_q_points)
         fe_eval.read_dof_values(src,0);
 
         // compute grad-div parameter: use definition Ohlhanskii et al. (2009)
-        const VectorizedArray<value_type> tau = K*normmeanvel*std::pow(volume,1./(double)dim) + make_vectorized_array<value_type>(VISCOSITY*K);
+        const VectorizedArray<value_type> tau = K*normmeanvel*std::exp(std::log(volume)/(double)dim);// + make_vectorized_array<value_type>(VISCOSITY*K);
 
         matrix_projection_step.setup(cell, tau);
         cg_solver.solve(&matrix_projection_step, solution.begin(), fe_eval.begin_dof_values());
@@ -6941,8 +6927,9 @@ AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval_xwall.n_q_points)
         U_mean /=volume;
         norm_U_mean = U_mean.norm();
       }
-//      array_stab_fac_weak_projection[cell] = K*norm_U_mean*std::pow(volume,1./(double)dim)/VISCOSITY;
-      array_stab_fac_weak_projection[cell] = K*norm_U_mean*std::pow(volume,1./(double)dim);
+      array_stab_fac_weak_projection[cell] = K*norm_U_mean*std::exp(std::log(volume)/(double)dim);
+//      array_stab_fac_weak_projection[cell] = K*std::exp(std::log(volume)/(double)dim);
+
     }
   }
 
@@ -7624,7 +7611,7 @@ AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval_xwall.n_q_points)
 
 #ifdef POISEUILLE
     std::vector<unsigned int> repetitions({2,1});
-    Point<dim> point1(0.0,-1.0), point2(4.0,1.0);
+    Point<dim> point1(0.0,-H/2.), point2(L,H/2.);
     GridGenerator::subdivided_hyper_rectangle(triangulation,repetitions,point1,point2);
 
     // set boundary indicator
@@ -7633,7 +7620,7 @@ AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval_xwall.n_q_points)
     {
       for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
       {
-       if ((std::fabs(cell->face(face_number)->center()(0) - 4.0)< 1e-12))
+       if ((std::fabs(cell->face(face_number)->center()(0) - L)< 1e-12))
           cell->face(face_number)->set_boundary_id (1);
       }
     }
@@ -8156,7 +8143,7 @@ AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval_xwall.n_q_points)
     // decrease time_step in order to exactly hit END_TIME
     time_step = (END_TIME-START_TIME)/(1+int((END_TIME-START_TIME)/time_step));
 #ifdef STOKES
-    time_step = TIME_STEP_SIZE; // 0.1/pow(2.0,8);
+    time_step = TIME_STEP_SIZE;
 #endif
     pcout << std::endl << "time step size:\t" << std::setw(10) << time_step << std::endl;
 
@@ -8188,10 +8175,6 @@ AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval_xwall.n_q_points)
   VectorTools::interpolate(mapping, dof_handler_p, AnalyticalSolution<dim>(dim,time), navier_stokes_operation.solution_n[dim]);
   for(unsigned int d=0;d<dim;++d)
     VectorTools::interpolate(mapping, dof_handler_xwall, AnalyticalSolution<dim>(d+dim+1,time), navier_stokes_operation.solution_n[d+dim+1]);
-
-//  navier_stokes_operation.solution_nm = navier_stokes_operation.solution_n;
-//  navier_stokes_operation.solution_nm2 = navier_stokes_operation.solution_n;
-
   for(unsigned int d=0;d<dim;++d)
       VectorTools::interpolate(mapping, dof_handler, AnalyticalSolution<dim>(d,time-time_step), navier_stokes_operation.solution_nm[d]);
     VectorTools::interpolate(mapping, dof_handler_p, AnalyticalSolution<dim>(dim,time-time_step), navier_stokes_operation.solution_nm[dim]);
@@ -8202,13 +8185,9 @@ AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval_xwall.n_q_points)
   // compute vorticity from initial data at time t = START_TIME
   {
     navier_stokes_operation.compute_vorticity(navier_stokes_operation.solution_n,navier_stokes_operation.vorticity_n);
-//    navier_stokes_operation.compute_eddy_viscosity(navier_stokes_operation.solution_n);
-
-//    navier_stokes_operation.vorticity_nm = navier_stokes_operation.vorticity_n;
-//    navier_stokes_operation.vorticity_nm2 = navier_stokes_operation.vorticity_n;
-
     navier_stokes_operation.compute_vorticity(navier_stokes_operation.solution_nm,navier_stokes_operation.vorticity_nm);
     navier_stokes_operation.compute_vorticity(navier_stokes_operation.solution_nm2,navier_stokes_operation.vorticity_nm2);
+    //    navier_stokes_operation.compute_eddy_viscosity(navier_stokes_operation.solution_n);
   }
 
 #ifdef CHANNEL
@@ -8247,24 +8226,6 @@ AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval_xwall.n_q_points)
 
     if( (time+time_step-START_TIME) > (output_number*OUTPUT_INTERVAL_TIME-EPSILON) && (time+time_step) > OUTPUT_START_TIME-EPSILON)
     {
-//      std::vector<parallel::distributed::Vector<value_type>> output_vector;
-//      output_vector.resize(2*dim+1);
-//      for(unsigned int d=0;d<dim;++d)
-//      {
-//        output_vector[d].reinit(navier_stokes_operation.velocity_temp[d]);
-//        output_vector[d] = navier_stokes_operation.velocity_temp[d];
-//        output_vector[d+dim+1].reinit(navier_stokes_operation.velocity_temp[d]);
-//        output_vector[d+dim+1] = navier_stokes_operation.velocity_temp[d];
-//      }
-//      output_vector[dim] = navier_stokes_operation.solution_n[dim];
-//      write_output(output_vector,
-//              navier_stokes_operation.ReturnXWall(),
-//  #ifdef COMPDIV
-//              navier_stokes_operation.divergence_old,
-//              navier_stokes_operation.divergence_new,
-//  #endif
-//              output_number++);
-
     write_output(navier_stokes_operation.solution_n,
             navier_stokes_operation.vorticity_n,
             navier_stokes_operation.ReturnXWall(),
