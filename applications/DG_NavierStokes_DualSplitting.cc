@@ -462,7 +462,6 @@ namespace DG_NavierStokes
   const double STATISTICS_START_TIME = 50000.0;
   const int STATISTICS_EVERY = 1;
   const bool ANALYTICAL_SOLUTION = false;
-  const bool DIVU_TIMESERIES = true;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.1;
 
@@ -8305,8 +8304,7 @@ AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval_xwall.n_q_points)
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
     {
       std::ostringstream filename;
-      filename << "output/"
-               << output_prefix
+      filename << output_prefix
                << ".flow_statistics_divu";
 
       std::ofstream f;
@@ -8340,8 +8338,7 @@ AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval_xwall.n_q_points)
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
     {
       std::ostringstream filename;
-      filename << "output/"
-               << output_prefix
+      filename << output_prefix
                << ".flow_statistics_divu_timeseries";
 
       std::ofstream f;
