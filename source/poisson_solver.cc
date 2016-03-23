@@ -1523,7 +1523,7 @@ PoissonSolver<dim>::solve (parallel::distributed::Vector<double> &dst,
 {
   Assert(preconditioner.get() != 0,
          ExcNotInitialized());
-  ReductionControl solver_control (1e5, 1.e-12, global_matrix.get_solver_data().solver_tolerance); //1.e-5
+  ReductionControl solver_control (1e5, global_matrix.get_solver_data().solver_tolerance_abs, global_matrix.get_solver_data().solver_tolerance);
   GrowingVectorMemory<parallel::distributed::Vector<double> > solver_memory;
   SolverCG<parallel::distributed::Vector<double> > solver (solver_control, solver_memory);
   try

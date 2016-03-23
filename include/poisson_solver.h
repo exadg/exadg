@@ -29,6 +29,7 @@ struct PoissonSolverData
     poisson_quad_index(0),
     penalty_factor(1.),
     solver_tolerance(1e-5),
+    solver_tolerance_abs(1e-12),
     smoother_poly_degree(5),
     smoother_smoothing_range(20),
     coarse_solver(coarse_chebyshev_smoother)
@@ -61,6 +62,9 @@ struct PoissonSolverData
 
   // Sets the tolerance for the linear solver
   double solver_tolerance;
+
+  // Sets the tolerance for the linear solver
+  double solver_tolerance_abs;
 
   // Sets the polynomial degree of the Chebyshev smoother (Chebyshev
   // accelerated Jacobi smoother)
