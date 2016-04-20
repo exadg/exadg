@@ -6941,10 +6941,8 @@ private:
     void vmult(VectorizedArray<double> *dst,
                VectorizedArray<double> *src) const
     {
-      Assert(fe_eval.get_shape_info().element_type ==
-             dealii::internal::MatrixFreeFunctions::tensor_symmetric ||
-             fe_eval.get_shape_info().element_type ==
-             dealii::internal::MatrixFreeFunctions::tensor_gausslobatto,
+      Assert(fe_eval.get_shape_info().element_type <=
+             dealii::internal::MatrixFreeFunctions::tensor_symmetric,
              ExcNotImplemented());
 
       // get internal evaluator in order to avoid copying data around
