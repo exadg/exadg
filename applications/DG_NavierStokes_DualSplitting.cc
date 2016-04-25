@@ -3620,7 +3620,7 @@ private:
                       const std::vector<parallel::distributed::Vector<value_type> >  &src,
                       const std::pair<unsigned int,unsigned int>          &cell_range) const;
   // inverse mass matrix velocity
-  void local_apply_mass_matrix(const MatrixFree<dim,value_type>                &data,
+  void local_apply_mass_matrix_block(const MatrixFree<dim,value_type>                &data,
                       parallel::distributed::BlockVector<value_type>    &dst,
                       const parallel::distributed::BlockVector<value_type>  &src,
                       const std::pair<unsigned int,unsigned int>          &cell_range) const;
@@ -6387,7 +6387,7 @@ private:
 #endif
     }
 
-  data.cell_loop(&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_mass_matrix,
+  data.cell_loop(&NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_apply_mass_matrix_block,
                    this, dst, src);
 
   for (unsigned int i = 0; i<dim; ++i)
@@ -6401,7 +6401,7 @@ private:
   }
   template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
   void NavierStokesOperation<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-  local_apply_mass_matrix (const MatrixFree<dim,value_type>        &data,
+  local_apply_mass_matrix_block (const MatrixFree<dim,value_type>        &data,
                 parallel::distributed::BlockVector<value_type>    &dst,
                 const parallel::distributed::BlockVector<value_type>  &src,
                 const std::pair<unsigned int,unsigned int>   &cell_range) const
