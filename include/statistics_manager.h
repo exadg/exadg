@@ -14,8 +14,12 @@ public:
   // initially distributed from [0,1] to the actual grid. This must match the
   // transform applied to the triangulation, otherwise the identification of
   // data will fail
-  StatisticsManager(const DoFHandler<dim> &dof_handler_velocity,
-                    const std_cxx11::function<Point<dim>(const Point<dim> &)> &grid_tranform);
+//  StatisticsManager(const DoFHandler<dim> &dof_handler_velocity,
+//                    const std_cxx11::function<Point<dim>(const Point<dim> &)> &grid_tranform);
+
+  StatisticsManager(const DoFHandler<dim> &dof_handler_velocity);
+
+  void setup(const std_cxx11::function<Point<dim>(const Point<dim> &)> &grid_tranform);
 
   void evaluate(const parallel::distributed::Vector<double> &velocity);
 

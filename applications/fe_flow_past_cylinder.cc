@@ -32,7 +32,7 @@ private:
 
   parallel::distributed::Triangulation<dim>   triangulation;
 
-  FENavierStokesSolver<dim> solver;
+  FENavierStokesSolver<dim> solver; //std_cxx11::shared_ptr<FluidBaseAlgorithm<dim> > solver;
 };
 
 template <int dim>

@@ -3,15 +3,75 @@
 #include <deal.II/distributed/tria_base.h>
 #include <statistics_manager.h>
 
+//template <int dim>
+//StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> &dof_handler_velocity,
+//                                          const std_cxx11::function<Point<dim>(const Point<dim> &)> &grid_transform)
 template <int dim>
-StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> &dof_handler_velocity,
-                                          const std_cxx11::function<Point<dim>(const Point<dim> &)> &grid_transform)
+StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> &dof_handler_velocity)
   :
   dof_handler (dof_handler_velocity),
   communicator (dynamic_cast<const parallel::Triangulation<dim>*>(&dof_handler_velocity.get_triangulation()) ?
                 (dynamic_cast<const parallel::Triangulation<dim>*>(&dof_handler_velocity.get_triangulation())
                  ->get_communicator()) :
                 MPI_COMM_SELF)
+{
+//  AssertThrow(dim == 3, ExcNotImplemented());
+//
+//  // note: this code only works on structured meshes where the faces in
+//  // y-direction are faces 2 and 3
+//
+//  // find the number of refinements in the mesh, first the number of coarse
+//  // cells in y-direction and then the number of refinements.
+//  unsigned int n_cells_y_dir = 1;
+//  typename Triangulation<dim>::cell_iterator cell = dof_handler.get_triangulation().begin(0);
+//  while (cell != dof_handler.get_triangulation().end(0) && !cell->at_boundary(2))
+//    ++cell;
+//  while (!cell->at_boundary(3))
+//    {
+//      ++n_cells_y_dir;
+//      cell = cell->neighbor(3);
+//    }
+//
+//  n_cells_y_dir *= std::pow(2, dof_handler.get_triangulation().n_global_levels()-1);
+//
+//  const unsigned int n_points_y_glob =  n_cells_y_dir*(n_points_y-1)+1;
+//
+//  velx_glob.resize(n_points_y_glob);
+//  vely_glob.resize(n_points_y_glob);
+//  velz_glob.resize(n_points_y_glob);
+//  velxsq_glob.resize(n_points_y_glob);
+//  velysq_glob.resize(n_points_y_glob);
+//  velzsq_glob.resize(n_points_y_glob);
+//  veluv_glob.resize(n_points_y_glob);
+//  numchsamp = 0;
+//
+//  y_glob.reserve(n_points_y_glob);
+//  for (unsigned int ele = 0; ele < n_cells_y_dir;ele++)
+//    {
+//      double elelower = 1./(double)n_cells_y_dir*(double)ele;
+//      double eleupper = 1./(double)n_cells_y_dir*(double)(ele+1);
+//      Point<dim> pointlower;
+//      pointlower[1]=elelower;
+//      Point<dim> pointupper;
+//      pointupper[1]=eleupper;
+//      double ylower = grid_transform(pointlower)[1];
+//      double yupper = grid_transform(pointupper)[1];
+//      for (unsigned int plane = 0; plane<n_points_y-1;plane++)
+//        {
+//          double coord = ylower + (yupper-ylower)/(n_points_y-1)*plane;
+//          y_glob.push_back(coord);
+//        }
+//    }
+//  //push back last missing coordinate at upper wall
+//  Point<dim> upper;
+//  upper[1] = 1.;
+//  y_glob.push_back(grid_transform(upper)[1]);
+//  AssertThrow(y_glob.size() == n_points_y_glob, ExcInternalError());
+}
+
+
+template <int dim>
+void StatisticsManager<dim>::setup(const std_cxx11::function<Point<dim>(const Point<dim> &)> &grid_transform)
 {
   AssertThrow(dim == 3, ExcNotImplemented());
 

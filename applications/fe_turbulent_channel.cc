@@ -160,7 +160,10 @@ void run_channel_flow ()
   solver.setup_problem(InitialChannel<dim>(0.));
   solver.set_time_step(time_step*0.03);
 
-  StatisticsManager<dim> statistics (solver.dof_handler_u, grid_transform<dim>);
+//  StatisticsManager<dim> statistics (solver.dof_handler_u, grid_transform<dim>);
+
+  StatisticsManager<dim> statistics (solver.dof_handler_u);
+      statistics.setup(grid_transform<dim>);
 
   solver.output_solution(output_base + Utilities::to_string(0, 4), 1);
   solver.time_step_output_frequency = 1;

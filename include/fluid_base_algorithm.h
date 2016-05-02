@@ -66,8 +66,9 @@ namespace helpers
  * additional information is necessary.
  */
 template <int dim>
-struct FluidBaseAlgorithm
+class FluidBaseAlgorithm
 {
+  public:
   /**
    * Constructor.
    */
@@ -289,7 +290,7 @@ protected:
   double viscosity;
 
   /**
-   * The time chosen step size
+   * The chosen time step size
    */
   double time_step_size;
 };
