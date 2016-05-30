@@ -73,7 +73,7 @@ StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> &dof_handler_vel
 template <int dim>
 void StatisticsManager<dim>::setup(const std_cxx11::function<Point<dim>(const Point<dim> &)> &grid_transform)
 {
-  AssertThrow(dim == 3, ExcNotImplemented());
+  AssertThrow(dim == 3, ExcNotImplemented()); //TODO: implement for 2D problems
 
   // note: this code only works on structured meshes where the faces in
   // y-direction are faces 2 and 3

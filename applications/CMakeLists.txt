@@ -10,7 +10,9 @@ INCLUDE_DIRECTORIES(
         )
 
 SET( SOURCE_FILES
-     DG_NavierStokes_DualSplitting.cc
+     #DG_NavierStokes_DualSplitting_160509.cc
+     #DG_NavierStokes_DualSplitting.cc
+     DGNavierStokesProblem.cc
      multigrid_solver.cc
      fe_flow_past_cylinder.cc
      fe_turbulent_channel.cc

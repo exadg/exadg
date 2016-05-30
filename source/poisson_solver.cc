@@ -1493,7 +1493,8 @@ void PoissonSolver<dim>::initialize (const Mapping<dim> &mapping,
     Utilities::MPI::MinMaxAvg memory =
       Utilities::MPI::min_max_avg (stats.VmRSS/1024., tria->get_communicator());
     if (Utilities::MPI::this_mpi_process(tria->get_communicator()) == 0)
-      std::cout << "Memory stats [MB]: " << memory.min
+      std::cout << std::endl
+                << "Memory stats [MB]: " << memory.min
                 << " [p" << memory.min_index << "] "
                 << memory.avg << " " << memory.max
                 << " [p" << memory.max_index << "]"
