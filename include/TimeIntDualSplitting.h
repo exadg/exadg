@@ -485,8 +485,6 @@ set_adaptive_time_integrator_constants (unsigned int const current_order)
     beta_local[0] = bethas(0);
     beta_local[1] = bethas(1);
     beta_local[2] = 0.0;
-
-    set_alpha_and_beta(alpha_local,beta_local);
   }
   else if(current_order == 3) // BDF 3
   {
