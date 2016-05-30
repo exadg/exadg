@@ -130,7 +130,8 @@ void LaplaceOperator<dim,Number>::reinit (const DoFHandler<dim> &dof_handler,
   const QGauss<1> quad(dof_handler.get_fe().degree+1);
   typename MatrixFree<dim,Number>::AdditionalData addit_data;
   addit_data.tasks_parallel_scheme = MatrixFree<dim,Number>::AdditionalData::none;
-  addit_data.build_face_info = true;
+  if (dof_handler.get_fe().dofs_per_vertex == 0)
+    addit_data.build_face_info = true;
   addit_data.level_mg_handler = level;
   addit_data.mpi_communicator =
     dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()) ?
