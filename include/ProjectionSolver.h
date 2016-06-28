@@ -164,26 +164,8 @@ public:
         dealii::internal::MatrixFreeFunctions::tensor_symmetric,
            ExcNotImplemented());
 
-    // get internal evaluator in order to avoid copying data around
-    dealii::internal::FEEvaluationImpl<dealii::internal::MatrixFreeFunctions::tensor_symmetric,
-                                       dim, fe_degree, fe_degree+1, double> evaluator;
-    VectorizedArray<double> *unit_values[dim], *unit_gradients[dim][dim], *unit_hessians[dim][dim*(dim+1)/2];
-
-    for (unsigned int c=0; c<dim; ++c)
-    {
-      unit_values[c] = &fe_eval[0].begin_values()[c*fe_eval[0].n_q_points];
-      for (unsigned int d=0; d<dim; ++d)
-        unit_gradients[c][d] = &fe_eval[0].begin_gradients()[(c*dim+d)*fe_eval[0].n_q_points];
-      for (unsigned int d=0; d<dim*(dim+1)/2; ++d)
-        unit_hessians[c][d] = 0;
-    }
-
     // compute matrix vector product on element
-    for (unsigned int c=0; c<dim; ++c)
-      evaluator.evaluate(fe_eval[0].get_shape_info(),
-                         &src[c*fe_eval[0].dofs_per_cell], unit_values[c],
-                         unit_gradients[c], unit_hessians[c], fe_eval[0].begin_temporary_data_array(),
-                         true, true, false);
+    fe_eval[0].evaluate(src, true, true, false);
 
     for (unsigned int q=0; q<fe_eval[0].n_q_points; ++q)
     {
@@ -192,11 +174,7 @@ public:
       fe_eval[0].submit_value (fe_eval[0].get_value(q), q);
     }
 
-    for (unsigned int c=0; c<dim; ++c)
-      evaluator.integrate(fe_eval[0].get_shape_info(),
-                         &dst[c*fe_eval[0].dofs_per_cell], unit_values[c],
-                         unit_gradients[c], fe_eval[0].begin_temporary_data_array(),
-                         true, true);
+    fe_eval[0].integrate(true, true, dst);
   }
 
 private:

@@ -158,5 +158,5 @@ FluidBaseAlgorithm<dim>::set_viscosity(const double viscosity)
 }
 
 
-template struct FluidBaseAlgorithm<2>;
-template struct FluidBaseAlgorithm<3>;
+template class FluidBaseAlgorithm<2>;
+template class FluidBaseAlgorithm<3>;
