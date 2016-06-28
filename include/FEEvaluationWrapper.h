@@ -16,8 +16,21 @@
 #include "FE_Parameters.h"
 
 
+/*
+template <int dim, int fe_degree, int fe_degree_xwall = 1, int n_q_points_1d = fe_degree+1,
+	  int n_components_ = 1, typename Number = double, bool is_enriched = false>
+  struct FEEvaluationTemplates
+  {
+    static const int dimension = dim;
+    static const int fe_degree = fe_degree;
+      ...
+    typedef Number value_type;
+  };
+*/
+
+//template <typename Template>
 template <int dim, int fe_degree = 1, int fe_degree_xwall = 1, int n_q_points_1d = fe_degree+1,
-              int n_components_ = 1, typename Number = double, bool is_enriched = false>
+	    int n_components_ = 1, typename Number = double, bool is_enriched = false>
 class FEEvaluationWrapper : public FEEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number>
 {
 private:
@@ -41,10 +54,11 @@ private:
 public:
   FEEvaluationWrapper (
   const MatrixFree<dim,Number> &matrix_free,
-  const FEParameters<Number> & in_fe_param,
+  const FEParameters & in_fe_param,
   const unsigned int            fe_no = 0,
   const int            quad_no = -1)
     :
+    //    FEEvaluation<Templates::dimension,....,dim,fe_degree,n_q_points_1d,n_components_,Number>(matrix_free,fe_no,find_quadrature_slot(matrix_free,quad_no)),
     FEEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number>(matrix_free,fe_no,find_quadrature_slot(matrix_free,quad_no)),
     fe_param(in_fe_param)
   {
@@ -132,7 +146,7 @@ public:
 
   AlignedVector<VectorizedArray<Number> > eddyvisc;
   unsigned int std_dofs_per_cell;
-  const FEParameters<Number> & fe_param;
+  const FEParameters & fe_param;
 };
 
 template <int dim, int fe_degree = 1, int fe_degree_xwall = 1, int n_q_points_1d = fe_degree+1,
@@ -159,7 +173,7 @@ private:
 public:
   FEFaceEvaluationWrapper (
   const MatrixFree<dim,Number> &matrix_free,
-  const FEParameters<Number> & in_fe_param,
+  const FEParameters & in_fe_param,
   const bool                    is_left_face = true,
   const unsigned int            fe_no = 0,
   const int            quad_no = -1)
@@ -241,7 +255,7 @@ public:
 
   AlignedVector<VectorizedArray<Number> > eddyvisc;
   unsigned int std_dofs_per_cell;
-  const FEParameters<Number> & fe_param;
+  const FEParameters & fe_param;
 };
 
 #endif /* INCLUDE_FEEVALUATIONWRAPPER_H_ */

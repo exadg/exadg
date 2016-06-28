@@ -8,6 +8,9 @@
 #ifndef INCLUDE_INVERSEMASSMATRIX_H_
 #define INCLUDE_INVERSEMASSMATRIX_H_
 
+#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/operators.h>
+
 // Collect all data for the inverse mass matrix operation in a struct in order to avoid allocating the memory repeatedly.
 template <int dim, int fe_degree, typename Number>
 struct InverseMassMatrixData
@@ -55,8 +58,8 @@ public:
             (InverseMassMatrixData<dim,fe_degree,value_type>(*matrix_free_data, dof_index, quad_index)));
   }
 
-  void apply_inverse_mass_matrix (const parallel::distributed::BlockVector<value_type>  &src,
-                                  parallel::distributed::BlockVector<value_type>        &dst) const
+  void apply_inverse_mass_matrix (parallel::distributed::Vector<value_type>        &dst,
+                                  const parallel::distributed::Vector<value_type>  &src) const
   {
     /*
      * the function "local_apply_inverse_mass_matrix" uses
@@ -83,8 +86,8 @@ public:
     matrix_free_data->cell_loop(&InverseMassMatrixOperator<dim,fe_degree,value_type>::local_apply_inverse_mass_matrix, this, dst, src);
   }
 
-  void apply_inverse_mass_matrix (const std::vector<parallel::distributed::Vector<value_type> >  &src,
-                                  std::vector<parallel::distributed::Vector<value_type> >        &dst) const
+  void apply_inverse_mass_matrix (std::vector<parallel::distributed::Vector<value_type> >        &dst,
+                                  const std::vector<parallel::distributed::Vector<value_type> >  &src) const
   {
     matrix_free_data->cell_loop(&InverseMassMatrixOperator<dim,fe_degree,value_type>::local_apply_inverse_mass_matrix, this, dst, src);
   }
@@ -93,10 +96,10 @@ private:
   MatrixFree<dim,value_type> const * matrix_free_data;
   mutable std_cxx11::shared_ptr<Threads::ThreadLocalStorage<InverseMassMatrixData<dim,fe_degree,value_type> > > mass_matrix_data;
 
-  void local_apply_inverse_mass_matrix (const MatrixFree<dim,value_type>                      &,
-                                        parallel::distributed::BlockVector<value_type>        &dst,
-                                        const parallel::distributed::BlockVector<value_type>  &src,
-                                        const std::pair<unsigned int,unsigned int>            &cell_range) const
+  void local_apply_inverse_mass_matrix (const MatrixFree<dim,value_type>                 &,
+                                        parallel::distributed::Vector<value_type>        &dst,
+                                        const parallel::distributed::Vector<value_type>  &src,
+                                        const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
     InverseMassMatrixData<dim,fe_degree,value_type>& mass_data = mass_matrix_data->get();
 

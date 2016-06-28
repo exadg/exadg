@@ -126,7 +126,9 @@ void FENavierStokesSolver<dim>::setup_problem
   pcout << "Time distribute dofs: " << timer.wall_time() << std::endl;
   timer.restart();
 
-  PoissonSolverData<dim> poisson_data;
+  //TODO
+//  PoissonSolverData<dim> poisson_data;
+  LaplaceOperatorData<dim> laplace_operator_data;
 
   // no-slip boundaries directly filled into velocity system
   constraints_u.clear();
@@ -194,7 +196,7 @@ void FENavierStokesSolver<dim>::setup_problem
                                                             constraints_u);
   DoFTools::make_periodicity_constraints<DoFHandler<dim> > (periodic_faces_p,
                                                             constraints_p);
-  poisson_data.periodic_face_pairs_level0 = this->boundary->periodic_face_pairs_level0;
+  laplace_operator_data.periodic_face_pairs_level0 = this->boundary->periodic_face_pairs_level0;
 
   for (typename std::set<types::boundary_id>::const_iterator it =
          this->boundary->symmetry.begin();
@@ -205,7 +207,7 @@ void FENavierStokesSolver<dim>::setup_problem
                    this->boundary->dirichlet_conditions_u.find(*it) == this->boundary->dirichlet_conditions_u.end(),
                    ExcMessage("Cannot mix symmetry boundary conditions with "
                               "other boundary conditions on same boundary!"));
-      poisson_data.neumann_boundaries.insert(*it);
+      laplace_operator_data.neumann_boundaries.insert(*it);
     }
 
   VectorTools::compute_no_normal_flux_constraints (dof_handler_u, 0,
@@ -228,7 +230,7 @@ void FENavierStokesSolver<dim>::setup_problem
                      ExcMessage("Cannot mix velocity Dirichlet conditions with "
                                 "open/pressure boundary conditions on same "
                                 "boundary!"));
-        poisson_data.neumann_boundaries.insert(it->first);
+        laplace_operator_data.neumann_boundaries.insert(it->first);
 
         // we don't add this to the list of Dirichlet boundaries on the
         // velocity because we will manually set the appropriate boundary
@@ -246,7 +248,7 @@ void FENavierStokesSolver<dim>::setup_problem
                                 "open/pressure boundary conditions on same "
                                 "boundary!"));
         homogeneous_dirichlet[*it] = &zero_func;
-        poisson_data.neumann_boundaries.insert(*it);
+        laplace_operator_data.neumann_boundaries.insert(*it);
       }
 
     VectorTools::interpolate_boundary_values(this->mapping, dof_handler_u,
@@ -273,7 +275,7 @@ void FENavierStokesSolver<dim>::setup_problem
          it != this->boundary->open_conditions_p.end(); ++it)
       {
         homogeneous_dirichlet[it->first] = &zero_func;
-        poisson_data.dirichlet_boundaries.insert(it->first);
+        laplace_operator_data.dirichlet_boundaries.insert(it->first);
       }
 
     VectorTools::interpolate_boundary_values(this->mapping, dof_handler_p,
@@ -308,12 +310,15 @@ void FENavierStokesSolver<dim>::setup_problem
     matrix_free.reinit (this->mapping, dofs, constraints, quadratures, data);
   }
 
-  poisson_data.poisson_dof_index = 2;
-  poisson_data.poisson_quad_index = 1;
-  poisson_data.smoother_smoothing_range = 25;
-  poisson_data.solver_tolerance = 5e-5;
-  poisson_data.coarse_solver = PoissonSolverData<dim>::coarse_iterative_jacobi;
-  poisson_solver.initialize(this->mapping, matrix_free, poisson_data);
+  laplace_operator_data.laplace_dof_index = 2;
+  laplace_operator_data.laplace_quad_index = 1;
+  laplace_operator.reinit(matrix_free, this->mapping,laplace_operator_data);
+
+  PoissonSolverData poisson_solver_data;
+  poisson_solver_data.smoother_smoothing_range = 25;
+  poisson_solver_data.solver_tolerance_rel = 5e-5;
+  poisson_solver_data.coarse_solver = MultigridCoarseGridSolver::coarse_iterative_jacobi;
+  poisson_solver.initialize(laplace_operator,this->mapping, matrix_free, poisson_solver_data);
 
   // compute diagonal vectors of velocity/pressure mass matrix needed for time
   // stepping

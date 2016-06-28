@@ -93,6 +93,8 @@ private:
   MatrixFree<dim>          matrix_free;
   PoissonSolver<dim>       poisson_solver;
 
+  LaplaceOperator<dim,double> laplace_operator;
+
   parallel::distributed::Vector<double> velocity_diagonal_mass;
   parallel::distributed::Vector<double> pressure_diagonal_mass;
 

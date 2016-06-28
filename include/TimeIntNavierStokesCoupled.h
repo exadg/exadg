@@ -1,32 +1,32 @@
 /*
- * TimeIntDualSplitting.h
+ * TimeIntNavierStokesCoupled.h
  *
- *  Created on: May 23, 2016
+ *  Created on: Jun 8, 2016
  *      Author: fehn
  */
 
-#ifndef INCLUDE_TIMEINTDUALSPLITTING_H_
-#define INCLUDE_TIMEINTDUALSPLITTING_H_
+#ifndef INCLUDE_TIMEINTNAVIERSTOKESCOUPLED_H_
+#define INCLUDE_TIMEINTNAVIERSTOKESCOUPLED_H_
+
 
 #include "TimeStepCalculation.h"
 
 template<int dim> class PostProcessor;
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class TimeIntDualSplitting
+class TimeIntNavierStokesCoupled
 {
 public:
   static const unsigned int number_vorticity_components = (dim==2) ? 1 : dim;
 
-  TimeIntDualSplitting(NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> &ns_operation_in,
-                       PostProcessor<dim> &postprocessor_in,
-                       InputParameters const & param_in,
-                       unsigned int const n_refine_time_in)
+  TimeIntNavierStokesCoupled(NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> &ns_operation_in,
+                             PostProcessor<dim> &postprocessor_in,
+                             InputParameters const & param_in,
+                             unsigned int const n_refine_time_in)
     :
     ns_operation(ns_operation_in),
     postprocessor(postprocessor_in),
     param(param_in),
-    computing_times(5),
     total_time(0.0),
     order(param.order_time_integrator),
     time(param.start_time),
@@ -37,9 +37,10 @@ public:
     gamma0(1.0),
     alpha(order),
     beta(order),
-    velocity(order),
-    pressure(order),
-    vorticity(order),
+//    velocity(order),
+//    pressure(order),
+    solution(order),
+//    vorticity(order),
     vec_convective_term(order)
   {}
 
@@ -69,26 +70,21 @@ private:
   void initialize_vectors();
   void initialize_current_solution();
   void initialize_former_solution();
-  void initialize_vorticity();
+  void calculate_vorticity();
+//  void initialize_vorticity();
   void initialize_vec_convective_term();
 
-  void convective_step();
-  void pressure_step();
-  void projection_step();
-  void viscous_step();
-  void rhs_pressure (const parallel::distributed::BlockVector<value_type>  &src,
-                     parallel::distributed::Vector<value_type>             &dst);
 
   void prepare_vectors_for_next_timestep();
   void push_back_solution();
-  void push_back_vorticity();
+//  void push_back_vorticity();
+//  void push_back_rhs_vec_convection();
   void push_back_vec_convective_term();
 
   NavierStokesOperation<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> &ns_operation;
   PostProcessor<dim> &postprocessor;
   InputParameters const & param;
 
-  std::vector<value_type> computing_times;
   Timer global_timer;
   value_type total_time;
 
@@ -102,35 +98,30 @@ private:
   value_type gamma0;
   std::vector<value_type> alpha, beta;
 
-  parallel::distributed::BlockVector<value_type> velocity_np;
-  std::vector<parallel::distributed::BlockVector<value_type> > velocity;
+//  parallel::distributed::BlockVector<value_type> velocity_np;
+//  std::vector<parallel::distributed::BlockVector<value_type> > velocity;
+//
+//  parallel::distributed::Vector<value_type> pressure_np;
+//  std::vector<parallel::distributed::Vector<value_type> > pressure;
 
-  parallel::distributed::Vector<value_type> pressure_np;
-  std::vector<parallel::distributed::Vector<value_type> > pressure;
+  parallel::distributed::BlockVector<value_type> solution_np;
+  std::vector<parallel::distributed::BlockVector<value_type> > solution;
 
-  parallel::distributed::BlockVector<value_type> vorticity_extrapolated;
-  std::vector<parallel::distributed::BlockVector<value_type> > vorticity;
+  parallel::distributed::BlockVector<value_type> sum_alphai_ui;
+  parallel::distributed::BlockVector<value_type> rhs_vector;
 
   std::vector<parallel::distributed::BlockVector<value_type> > vec_convective_term;
 
-  // solve convective step implicitly
-  parallel::distributed::BlockVector<value_type> res_convection;
-  parallel::distributed::BlockVector<value_type> delta_u_tilde;
-  parallel::distributed::BlockVector<value_type> sum_alphai_ui;
+  parallel::distributed::BlockVector<value_type> vorticity;
 
-  parallel::distributed::Vector<value_type> rhs_vec_pressure;
-  parallel::distributed::Vector<value_type> rhs_vec_pressure_temp;
-  parallel::distributed::BlockVector<value_type> dummy;
-
-  parallel::distributed::BlockVector<value_type> rhs_vec_projection;
-  parallel::distributed::BlockVector<value_type> rhs_vec_viscous;
+//  std::vector<parallel::distributed::BlockVector<value_type> > rhs_vec_convection;
 
   // postprocessing: divergence of intermediate velocity u_hathat
   parallel::distributed::Vector<value_type> divergence;
 };
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 setup()
 {
   initialize_time_integrator_constants();
@@ -154,67 +145,57 @@ setup()
   ns_operation.set_time_step(time_steps[0]);
   ns_operation.set_gamma0(gamma0);
 
-  initialize_vorticity();
+  calculate_vorticity();
 
-  if(param.solve_stokes_equations == false && param.start_with_low_order == false)
+  if(param.solve_stokes_equations == false && param.convective_step_implicit == false &&
+     param.start_with_low_order == false)
     initialize_vec_convective_term();
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 initialize_time_integrator_constants()
 {
   AssertThrow(order == 1 || order == 2 || order == 3,
       ExcMessage("Specified order of time integration scheme is not implemented."));
 
   // the default case is start_with_low_order == false
-  // in case of start_with_low_order == true the time integrator constants have to be adjusted in before solving the timestep
+  // in case of start_with_low_order == true the time integrator constants have to be adjusted in do_timestep
   set_time_integrator_constants(order);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 initialize_vectors()
 {
-  // velocity
-  for(unsigned int i=0;i<velocity.size();++i)
-    ns_operation.initialize_block_vector_velocity(velocity[i]);
-  ns_operation.initialize_block_vector_velocity(velocity_np);
+  // solution
+  for(unsigned int i=0;i<solution.size();++i)
+    ns_operation.initialize_block_vector_velocity_pressure(solution[i]);
+  ns_operation.initialize_block_vector_velocity_pressure(solution_np);
 
-  // pressure
-  for(unsigned int i=0;i<pressure.size();++i)
-    ns_operation.initialize_vector_pressure(pressure[i]);
-  ns_operation.initialize_vector_pressure(pressure_np);
-
-  // vorticity
-  for(unsigned int i=0;i<vorticity.size();++i)
-    ns_operation.initialize_block_vector_vorticity(vorticity[i]);
-  ns_operation.initialize_block_vector_vorticity(vorticity_extrapolated);
-
-  // rhs_vec_convection
-  if(param.solve_stokes_equations == false)
+  // convective term
+  if(param.solve_stokes_equations == false && param.convective_step_implicit == false)
   {
     for(unsigned int i=0;i<vec_convective_term.size();++i)
       ns_operation.initialize_block_vector_velocity(vec_convective_term[i]);
   }
 
-  // Sum_i (alpha_i/dt * u_i)
+  // temporal derivative term: sum (alpha_i * u_i)
   ns_operation.initialize_block_vector_velocity(sum_alphai_ui);
+  // rhs_vector
+  ns_operation.initialize_block_vector_velocity_pressure(rhs_vector);
 
-  // implicit convective step
-  if(param.convective_step_implicit == true)
-  {
-    ns_operation.initialize_block_vector_velocity(res_convection);
-    ns_operation.initialize_block_vector_velocity(delta_u_tilde);
-  }
+//  // velocity
+//  for(unsigned int i=0;i<velocity.size();++i)
+//    ns_operation.initialize_block_vector_velocity(velocity[i]);
+//  ns_operation.initialize_block_vector_velocity(velocity_np);
+//  // pressure
+//  for(unsigned int i=0;i<pressure.size();++i)
+//    ns_operation.initialize_vector_pressure(pressure[i]);
+//  ns_operation.initialize_vector_pressure(pressure_np);
 
-  // rhs vector pressure
-  ns_operation.initialize_vector_pressure(rhs_vec_pressure);
-  ns_operation.initialize_vector_pressure(rhs_vec_pressure_temp);
-
-  // rhs vector projection, viscous
-  ns_operation.initialize_block_vector_velocity(rhs_vec_projection);
-  ns_operation.initialize_block_vector_velocity(rhs_vec_viscous);
+  // vorticity
+  ns_operation.initialize_block_vector_vorticity(vorticity);
 
   // divergence
   if(param.compute_divergence == true)
@@ -224,7 +205,7 @@ initialize_vectors()
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 calculate_time_step()
 {
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
@@ -254,7 +235,7 @@ calculate_time_step()
                                                                   param.end_time);
 
     value_type adaptive_time_step = calculate_adaptive_time_step_cfl<dim, fe_degree, value_type>(ns_operation.get_data(),
-                                                                                                 velocity[0],
+                                                                                                 solution[0],
                                                                                                  cfl,
                                                                                                  time_steps[0],
                                                                                                  false);
@@ -275,7 +256,7 @@ calculate_time_step()
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 recalculate_adaptive_time_step()
 {
   /*
@@ -295,54 +276,47 @@ recalculate_adaptive_time_step()
     time_steps[i] = time_steps[i-1];
 
   time_steps[0] = calculate_adaptive_time_step_cfl<dim, fe_degree, value_type>(ns_operation.get_data(),
-                                                                               velocity[0],
+                                                                               solution[0],
                                                                                cfl,
                                                                                time_steps[0]);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 initialize_current_solution()
 {
-  ns_operation.prescribe_initial_conditions(velocity[0],pressure[0],time);
+  ns_operation.prescribe_initial_conditions(solution[0],solution[0].block(dim),time);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 initialize_former_solution()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
-  for(unsigned int i=1;i<velocity.size();++i)
-    ns_operation.prescribe_initial_conditions(velocity[i],pressure[i],time - value_type(i)*time_steps[0]);
+  for(unsigned int i=1;i<solution.size();++i)
+    ns_operation.prescribe_initial_conditions(solution[i],solution[i].block(dim),time - value_type(i)*time_steps[0]);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
-initialize_vorticity()
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+calculate_vorticity()
 {
-  ns_operation.compute_vorticity(velocity[0],vorticity[0]);
-
-  if(param.start_with_low_order == false)
-  {
-    for(unsigned int i=1;i<vorticity.size();++i)
-      ns_operation.compute_vorticity(velocity[i],vorticity[i]);
-  }
+  ns_operation.compute_vorticity(solution[0],vorticity);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 initialize_vec_convective_term()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i=1;i<vec_convective_term.size();++i)
   {
-    ns_operation.evaluate_convective_term(vec_convective_term[i],velocity[i],time - value_type(i)*time_steps[0]);
-    ns_operation.apply_inverse_mass_matrix(vec_convective_term[i],vec_convective_term[i]);
+    ns_operation.evaluate_convective_term(vec_convective_term[i],solution[i],time - value_type(i)*time_steps[0]);
   }
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 timeloop()
 {
   global_timer.restart();
@@ -352,7 +326,7 @@ timeloop()
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     std::cout << std::endl << "Starting time loop ..." << std::endl;
 
-  const value_type EPSILON = 1.0e-10; // EPSILON is a small number which is much smaller than the time step size
+  const value_type EPSILON = 1.0e-10; // epsilon is a small number which is much smaller than the time step size
   while(time<(param.end_time-EPSILON) && time_step_number<=param.max_number_of_steps)
   {
     update_time_integrator_constants();
@@ -374,7 +348,7 @@ timeloop()
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 set_time_integrator_constants (unsigned int const current_order)
 {
   AssertThrow(current_order <= order,
@@ -425,7 +399,7 @@ set_time_integrator_constants (unsigned int const current_order)
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 set_adaptive_time_integrator_constants (unsigned int const current_order)
 {
   AssertThrow(current_order <= order,
@@ -434,7 +408,7 @@ set_adaptive_time_integrator_constants (unsigned int const current_order)
   unsigned int const MAX_ORDER = 3;
   std::vector<value_type> alpha_local(MAX_ORDER);
   std::vector<value_type> beta_local(MAX_ORDER);
- 
+
   if(current_order == 1)   // BDF 1
   {
     gamma0 = 1.0;
@@ -549,7 +523,7 @@ set_adaptive_time_integrator_constants (unsigned int const current_order)
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 set_alpha_and_beta (std::vector<value_type> const &alpha_local,
                     std::vector<value_type> const &beta_local)
 {
@@ -564,7 +538,7 @@ set_alpha_and_beta (std::vector<value_type> const &alpha_local,
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 update_time_integrator_constants()
 {
   if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified ||
@@ -594,69 +568,55 @@ update_time_integrator_constants()
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 check_time_integrator_constants(unsigned int current_time_step_number) const
 {
   if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
   {
     std::cout << "Time integrator constants: time step " << current_time_step_number << std::endl;
-    
-    std::cout << "Gamma0 = " << gamma0   << std::endl;
-    
+
+    std::cout << "Gamma0   = " << gamma0   << std::endl;
+
     for(unsigned int i=0;i<order;++i)
       std::cout << "Alpha[" << i <<"] = " << alpha[i] << std::endl;
-    
+
     for(unsigned int i=0;i<order;++i)
-      std::cout << "Beta[" << i <<"] = " << beta[i] << std::endl;
+      std::cout << "Beta[" << i <<"]  = " << beta[i] << std::endl;
   }
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 postprocessing()
 {
-  postprocessor.do_postprocessing(velocity[0],pressure[0],vorticity[0],divergence,time,time_step_number);
+  postprocessor.do_postprocessing(solution[0],solution[0].block(dim),vorticity,divergence,time,time_step_number);
 }
 
 //template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-//void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+//void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 //do_timestep()
 //{
 //  // set the new time integrator constants gamma0, alpha_i, beta_i
 //  update_time_integrator_constants();
 //
-//  // solve time step using the Navier-Stokes dual-splitting approach
+//  // solve coupled Navier-Stokes equations
 //  solve_timestep();
 //
 //  // prepare global vectors for the next time step
-//  push_back_vectors();
+//  prepare_vectors_for_next_timestep();
 //}
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 solve_timestep()
 {
+  Timer timer;
+  timer.restart();
+
   // set the parameters that NavierStokesOperation depends on
   ns_operation.set_time(time);
   ns_operation.set_time_step(time_steps[0]);
   ns_operation.set_gamma0(gamma0);
-
-  // perform the four substeps of the dual-splitting method
-  convective_step();
-
-  pressure_step();
-
-  projection_step();
-
-  viscous_step();
-}
-
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
-convective_step()
-{
-  Timer timer;
-  timer.restart();
 
   // write output
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && time_step_number%param.output_solver_info_every_timesteps == 0)
@@ -667,243 +627,81 @@ convective_step()
                            << "______________________________________________________________________" << std::endl;
   }
 
-  // compute body force vector
-  ns_operation.calculate_body_force(velocity_np,time+time_steps[0]);
+  // extrapolate old solution to obtain a good initial guess for the solver
+  // 1st order extrapolation
+  solution_np.equ(1.0,solution[0]);
 
-  // compute convective term and extrapolate convective term (if not Stokes equations)
-  if(param.solve_stokes_equations == false)
-  {
-    ns_operation.evaluate_convective_term(vec_convective_term[0],velocity[0],time);
-    ns_operation.apply_inverse_mass_matrix(vec_convective_term[0],vec_convective_term[0]);
-    for(unsigned int i=0;i<vec_convective_term.size();++i)
-      velocity_np.add(-beta[i],vec_convective_term[i]);
-  }
+  // higher order extrapolation
+//  solution_np.equ(beta[0],solution[0]);
+//  for(unsigned int i=1;i<solution.size();++i)
+//    solution_np.add(beta[i],solution[i]);
 
   // calculate sum (alpha_i/dt * u_i)
-  sum_alphai_ui.equ(alpha[0]/time_steps[0],velocity[0]);
-  for (unsigned int i=1;i<velocity.size();++i)
-    sum_alphai_ui.add(alpha[i]/time_steps[0],velocity[i]);
-
-  // solve discrete temporal derivative term for intermediate velocity u_hat (if not STS approach)
-  if(param.small_time_steps_stability == false)
+  for(unsigned int d=0;d<dim;++d)
+    sum_alphai_ui.block(d).equ(alpha[0]/time_steps[0],solution[0].block(d));
+  for (unsigned int i=1;i<solution.size();++i)
   {
-    velocity_np.add(1.0,sum_alphai_ui);
-    velocity_np *= time_steps[0]/gamma0;
+    for(unsigned int d=0;d<dim;++d)
+      sum_alphai_ui.block(d).add(alpha[i]/time_steps[0],solution[i].block(d));
   }
 
-  if(param.convective_step_implicit == false)
+  if(param.solve_stokes_equations == true || param.convective_step_implicit == false)
   {
-    // write output explicit case
+    // calculate rhs vector
+    ns_operation.rhs_stokes_problem(rhs_vector,sum_alphai_ui);
+
+    // evaluate convective term and add extrapolation of convective term to the rhs (-> minus sign!)
+    if(param.solve_stokes_equations == false)
+    {
+      ns_operation.evaluate_convective_term(vec_convective_term[0],solution[0],time);
+
+      for(unsigned int i=0;i<vec_convective_term.size();++i)
+      {
+        for(unsigned int d=0;d<dim;++d)
+          rhs_vector.block(d).add(-beta[i],vec_convective_term[i].block(d));
+      }
+    }
+
+    // solve coupled system of equations
+    unsigned int iterations = ns_operation.solve_linearized_problem(solution_np,rhs_vector);
+
+    // write output
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && time_step_number%param.output_solver_info_every_timesteps == 0)
     {
-      std::cout << std::endl << "Solve nonlinear convective problem explicitly:" << std::endl
-                << "  iterations:        " << std::setw(4) << std::right << "-" << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+      std::cout << std::endl << "Solve linear Navier-Stokes problem:" << std::endl
+                             << "  Iterations: " << std::setw(6) << std::right << iterations
+                             << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
     }
   }
-  else // param.convective_step_implicit == true
+  else
   {
-    AssertThrow(param.convective_step_implicit && !(param.solve_stokes_equations || param.small_time_steps_stability),
-        ExcMessage("Use CONVECTIVE_STEP_IMPLICIT = false when solving the Stokes equations or when using the STS approach."));
+    // Newton solver
+    unsigned int iterations = ns_operation.solve_nonlinear_problem(solution_np,sum_alphai_ui);
 
-    // solve nonlinear convective problem
-//    unsigned int iterations_implicit_convection = ns_operation.solve_implicit_convective_step(velocity_np,
-//                                                                                              res_convection,
-//                                                                                              delta_u_tilde,
-//                                                                                              sum_alphai_ui);
-
-    unsigned int iterations_implicit_convection = ns_operation.solve_nonlinear_convective_problem(velocity_np,sum_alphai_ui);
-
-    // write output implicit case
+    // write output
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && time_step_number%param.output_solver_info_every_timesteps == 0)
     {
-      std::cout << std::endl << "Solve nonlinear convective problem for intermediate velocity:" << std::endl
-                << "  Newton iterations: " << std::setw(4) << std::right << iterations_implicit_convection
-                << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+      std::cout << std::endl << "Solve nonlinear Navier-Stokes problem:" << std::endl
+                             << "  Newton iterations: " << std::setw(6) << std::right << iterations
+                             << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
     }
   }
-
-  computing_times[0] += timer.wall_time();
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
-pressure_step()
-{
-  Timer timer;
-  timer.restart();
-
-  // compute right-hand-side vector
-  rhs_pressure(velocity_np,rhs_vec_pressure);
-
-  // extrapolate old solution to get a good initial estimate for the solver
-  pressure_np = 0;
-  for(unsigned int i=0;i<pressure.size();++i)
-  {
-    pressure_np.add(beta[i],pressure[i]);
-  }
-
-  // solve linear system of equations
-  unsigned int pres_niter = ns_operation.solve_pressure(pressure_np, rhs_vec_pressure);
-
-  if(param.pure_dirichlet_bc)
-  {
-    ns_operation.shift_pressure(pressure_np);
-  }
-
-  // write output
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && time_step_number%param.output_solver_info_every_timesteps == 0)
-  {
-    std::cout << std::endl << "Solve Poisson equation for pressure p:" << std::endl
-              << "  PCG iterations:    " << std::setw(4) << std::right << pres_niter << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
-  }
-  /*
-  if(time_step_number%param.output_solver_info_every_timesteps == 0)
-  {
-    Utilities::System::MemoryStats stats;
-    Utilities::System::get_memory_stats(stats);
-    Utilities::MPI::MinMaxAvg memory = Utilities::MPI::min_max_avg (stats.VmRSS/1024., MPI_COMM_WORLD);
-    if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    {
-      std::cout << "  Memory [MB]: " << memory.min << " (proc" << memory.min_index << ") <= "
-                << memory.avg << " (avg)" << " <= " << memory.max << " (proc" << memory.max_index << ")" << std::endl;
-    }
-  }
-  */
-  computing_times[1] += timer.wall_time();
-}
-
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
-rhs_pressure (const parallel::distributed::BlockVector<value_type>  &src,
-              parallel::distributed::Vector<value_type>             &dst)
-{
-  /******************************** I. calculate divergence term ********************************/
-//  dst = 0;
-//  ns_operation.rhs_pressure_divergence_term(src,dst);
-
-  ns_operation.rhs_pressure_divergence_term(dst,src,time+time_steps[0]);
-  /**********************************************************************************************/
-
-  /***** II. calculate terms originating from inhomogeneous parts of boundary face integrals ****/
-
-  // II.1. BC terms depending on prescribed boundary data,
-  //       i.e. pressure Dirichlet boundary conditions on Gamma_N and
-  //       body force vector, temporal derivative of velocity on Gamma_D
-  ns_operation.rhs_pressure_BC_term(dummy,dst);
-
-  // II.2. viscous term of pressure Neumann boundary condition on Gamma_D
-  //       extrapolate vorticity and subsequently evaluate boundary face integral
-  //       (this is possible since pressure Neumann BC is linear in vorticity)
-  vorticity_extrapolated = 0;
-  for(unsigned int i=0;i<vorticity.size();++i)
-    vorticity_extrapolated.add(beta[i],vorticity[i]);
-
-  ns_operation.rhs_pressure_viscous_term(vorticity_extrapolated, dst);
-
-  // II.3. convective term of pressure Neumann boundary condition on Gamma_D
-  //       (only if we do not solve the Stokes equations)
-  //       evaluate convective term and subsequently extrapolate rhs vectors
-  //       (the convective term is nonlinear!)
-  if(!param.solve_stokes_equations)
-  {
-    for(unsigned int i=0;i<velocity.size();++i)
-    {
-      rhs_vec_pressure_temp = 0;
-      ns_operation.rhs_pressure_convective_term(velocity[i], rhs_vec_pressure_temp);
-      dst.add(beta[i],rhs_vec_pressure_temp);
-    }
-  }
-  /**********************************************************************************************/
-
-  if(param.pure_dirichlet_bc)
-    ns_operation.apply_nullspace_projection(dst);
-}
-
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
-projection_step()
-{
-  Timer timer;
-  timer.restart();
-
-  // when using the STS stability approach vector updates have to be performed to obtain the
-  // intermediate velocity u_hat which is used to calculate the rhs of the projection step
-  if(param.small_time_steps_stability == true)
-  {
-    velocity_np.add(1.0,sum_alphai_ui);
-    velocity_np *= time_steps[0]/gamma0;
-  }
-
-  // compute right-hand-side vector
-  ns_operation.rhs_projection(velocity_np,pressure_np,rhs_vec_projection);
-
-  // solve linear system of equations
-  unsigned int iterations_projection = ns_operation.solve_projection(velocity_np,rhs_vec_projection,velocity[0],cfl);
-
-  // write output
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && time_step_number%param.output_solver_info_every_timesteps == 0)
-  {
-    std::cout << std::endl << "Solve projection step for intermediate velocity:" << std::endl
-              << "  PCG iterations:    " << std::setw(4) << std::right << iterations_projection << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
-  }
-
-  // postprocessing related to the analysis of different projection algorithms
-  if(param.compute_divergence == true)
-  {
-    postprocessor.analyze_divergence_error(velocity_np,time,time_step_number);
-    ns_operation.compute_divergence(velocity_np,divergence,false);
-  }
-
-  computing_times[2] += timer.wall_time();
-}
-
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
-viscous_step()
-{
-  Timer timer;
-  timer.restart();
-
-  // compute right-hand-side vector
-  ns_operation.rhs_viscous(velocity_np,rhs_vec_viscous);
-
-  // extrapolate old solution to get a good initial estimate for the solver
-  velocity_np = 0;
-  for (unsigned int i=0; i<velocity.size(); ++i)
-    velocity_np.add(beta[i],velocity[i]);
-
-  // solve linear system of equations
-  unsigned int iterations_viscous = ns_operation.solve_viscous(velocity_np, rhs_vec_viscous);
-
-  // write output
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && time_step_number%param.output_solver_info_every_timesteps == 0)
-  {
-    std::cout << std::endl << "Solve viscous step for velocity u:" << std::endl
-              << "  PCG iterations:    " << std::setw(4) << std::right << iterations_viscous << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
-  }
-
-  computing_times[3] += timer.wall_time();
-}
-
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 prepare_vectors_for_next_timestep()
 {
-  Timer timer;
-  timer.restart();
-
   push_back_solution();
 
-  push_back_vorticity();
+  calculate_vorticity();
 
-  if(param.solve_stokes_equations == false)
+  if(param.solve_stokes_equations == false && param.convective_step_implicit == false)
     push_back_vec_convective_term();
-
-  computing_times[4] += timer.wall_time();
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 push_back_solution()
 {
   /*
@@ -920,29 +718,27 @@ push_back_solution()
    */
 
   // solution at t_{n-i} <-- solution at t_{n-i+1}
-  for(unsigned int i=velocity.size()-1; i>0; --i)
+  for(unsigned int i=solution.size()-1; i>0; --i)
   {
-    velocity[i].swap(velocity[i-1]);
-    pressure[i].swap(pressure[i-1]);
+    solution[i].swap(solution[i-1]);
   }
-  velocity[0].swap(velocity_np);
-  pressure[0].swap(pressure_np);
+  solution[0].swap(solution_np);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
-push_back_vorticity()
-{
-  // solution at t_{n-i} <-- solution at t_{n-i+1}
-  for(unsigned int i=vorticity.size()-1; i>0; --i)
-  {
-    vorticity[i].swap(vorticity[i-1]);
-  }
-  ns_operation.compute_vorticity(velocity[0],vorticity[0]);
-}
+//template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+//void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+//push_back_vorticity()
+//{
+//  // solution at t_{n-i} <-- solution at t_{n-i+1}
+//  for(unsigned int i=vorticity.size()-1; i>0; --i)
+//  {
+//    vorticity[i].swap(vorticity[i-1]);
+//  }
+//  ns_operation.compute_vorticity(solution[0],vorticity[0]);
+//}
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 push_back_vec_convective_term()
 {
   // solution at t_{n-i} <-- solution at t_{n-i+1}
@@ -953,34 +749,13 @@ push_back_vec_convective_term()
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+void TimeIntNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 analyze_computing_times() const
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-  std::string names[5] = {"Convection   ","Pressure     ","Projection   ","Viscous      ","Other        "};
   pcout << std::endl << "_________________________________________________________________________________" << std::endl
         << std::endl << "Computing times:          min        avg        max        rel      p_min  p_max" << std::endl;
-  value_type total_avg_time = 0.0;
-  for (unsigned int i=0; i<computing_times.size(); ++i)
-  {
-    Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg (computing_times[i], MPI_COMM_WORLD);
-        total_avg_time += data.avg;
-  }
-  for (unsigned int i=0; i<computing_times.size(); ++i)
-  {
-    Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg (computing_times[i], MPI_COMM_WORLD);
-    pcout << "  Step " << i+1 <<  ": " << names[i]  << std::scientific
-          << std::setprecision(4) << std::setw(10) << data.min << " "
-          << std::setprecision(4) << std::setw(10) << data.avg << " "
-          << std::setprecision(4) << std::setw(10) << data.max << " "
-          << std::setprecision(4) << std::setw(10) << data.avg/total_avg_time << "  "
-          << std::setw(6) << std::left << data.min_index << " "
-          << std::setw(6) << std::left << data.max_index << std::endl;
-  }
-  pcout  << "  Time in steps 1-" << computing_times.size() << ":              "
-         << std::setprecision(4) << std::setw(10) << total_avg_time
-         << "            "
-         << std::setprecision(4) << std::setw(10) << total_avg_time/total_avg_time << std::endl;
+
   Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg (total_time, MPI_COMM_WORLD);
   pcout  << "  Global time:         " << std::scientific
          << std::setprecision(4) << std::setw(10) << data.min << " "
@@ -994,4 +769,4 @@ analyze_computing_times() const
 }
 
 
-#endif /* INCLUDE_TIMEINTDUALSPLITTING_H_ */
+#endif /* INCLUDE_TIMEINTNAVIERSTOKESCOUPLED_H_ */

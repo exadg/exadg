@@ -10,10 +10,20 @@
 
 #include "InputParameters.h"
 
-template<typename value_type>
 class FEParameters
 {
 public:
+  FEParameters()
+    :
+    viscosity(1.0),
+    cs(1.0),
+    ml(1.0),
+    variabletauw(false),
+    dtauw(1.0)
+  {
+    xwallstatevec.resize(2);
+  }
+
   FEParameters(InputParameters const & param)
     :
     viscosity(param.viscosity),
@@ -30,7 +40,7 @@ public:
   double const ml;
   bool const variabletauw;
   double const dtauw;
-  std::vector<parallel::distributed::Vector<value_type> > xwallstatevec;
+  std::vector<parallel::distributed::Vector<double> > xwallstatevec;
 };
 
 #endif /* INCLUDE_FE_PARAMETERS_H_ */

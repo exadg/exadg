@@ -60,12 +60,12 @@ double calculate_const_time_step_cfl(Triangulation<dim> const &triangulation,
 }
 
 template<int dim, int fe_degree, typename value_type>
-double calculate_adaptive_time_step_cfl(MatrixFree<dim,value_type> const                     &data,
-                                        parallel::distributed::BlockVector<value_type> const &velocity,
-                                        double const                                         cfl,
-                                        double const                                         last_time_step,
-                                        bool const                                           use_limiter = true,
-                                        double const                                         exponent_fe_degree = 1.5)
+double calculate_adaptive_time_step_cfl(MatrixFree<dim,value_type> const                &data,
+                                        parallel::distributed::Vector<value_type> const &velocity,
+                                        double const                                    cfl,
+                                        double const                                    last_time_step,
+                                        bool const                                      use_limiter = true,
+                                        double const                                    exponent_fe_degree = 1.5)
 {
   FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> fe_eval(data,
       static_cast <typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::velocity),
@@ -84,7 +84,7 @@ double calculate_adaptive_time_step_cfl(MatrixFree<dim,value_type> const        
     Tensor<1,dim,VectorizedArray<value_type> > ut_xi;
 
     fe_eval.reinit(cell);
-    fe_eval.read_dof_values(velocity,0);
+    fe_eval.read_dof_values(velocity);
     fe_eval.evaluate(true,false);
 
     // loop over quadrature points

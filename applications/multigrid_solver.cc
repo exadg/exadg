@@ -489,16 +489,20 @@ namespace Step37
   {
     Timer time;
 
-    PoissonSolverData<dim> solver_data;
-    solver_data.dirichlet_boundaries.insert(1);
-    solver_data.neumann_boundaries.insert(0);
-    solver_data.penalty_factor = 0.25;
-    solver_data.solver_tolerance = 1e-8;
+    LaplaceOperatorData<dim> laplace_operator_data;
+    laplace_operator_data.dirichlet_boundaries.insert(1);
+    laplace_operator_data.neumann_boundaries.insert(0);
+    laplace_operator_data.penalty_factor = 0.25;
+    LaplaceOperator<dim,double> laplace_operator;
+    laplace_operator.reinit(matrix_free, mapping, laplace_operator_data);
+
+    PoissonSolverData solver_data;
+    solver_data.solver_tolerance_rel = 1e-8;
     solver_data.smoother_smoothing_range = 15;
     solver_data.smoother_poly_degree = 4;
-    solver_data.coarse_solver = PoissonSolverData<dim>::coarse_chebyshev_smoother;
+    solver_data.coarse_solver = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
     PoissonSolver<dim> solver;
-    solver.initialize(mapping, matrix_free, solver_data);
+    solver.initialize(laplace_operator, mapping, matrix_free, solver_data);
 
     setup_time += time.wall_time();
     pcout << "Initialize multigrid solver(CPU/wall) " << time() << "s/"

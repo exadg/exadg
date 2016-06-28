@@ -61,9 +61,11 @@
 #include <sstream>
 
 #include "../include/DGNavierStokesDualSplitting.h"
-#include "../include/InputParameters.h"
-#include "TimeIntDualSplitting.h"
+#include "../include/DGNavierStokesCoupled.h"
 
+#include "../include/InputParameters.h"
+#include "TimeIntBDFDualSplitting.h"
+#include "TimeIntBDFCoupled.h"
 
 using namespace dealii;
 
@@ -87,22 +89,47 @@ bool const CONVECTIVE_STEP_IMPLICIT = false;
 
 bool const STS_STABILITY = false;
 
-bool const DIVU_INTEGRATED_BY_PARTS = false;
-bool const GRADP_INTEGRATED_BY_PARTS = false;
+bool const DIVU_INTEGRATED_BY_PARTS = false;//true;
+bool const DIVU_USE_BOUNDARY_DATA = false;//true;
+bool const GRADP_INTEGRATED_BY_PARTS = false;//true;
+bool const GRADP_USE_BOUNDARY_DATA = false;//true;
+
+/************* temporal discretization ***********/
+// which temporal discretization approach
+TemporalDiscretization TEMPORAL_DISCRETIZATION = TemporalDiscretization::BDFDualSplittingScheme; //BDFDualSplittingScheme // BDFCoupledSolution
+
+// type of time step calculation
+TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified; //ConstTimeStepCFL; //AdaptiveTimeStepCFL;
+/*************************************************/
+
+/******** high-order dual splitting scheme *******/
+// pressure Poisson equation
+SolverPoisson SOLVER_POISSON = SolverPoisson::PCG; //PCG;
+PreconditionerPoisson PRECONDITIONER_POISSON = PreconditionerPoisson::GeometricMultigrid; // None; //Jacobi; //GeometricMultigrid;
+
+// multigrid pressure Poisson
+MultigridSmoother MULTIGRID_SMOOTHER = MultigridSmoother::Chebyshev; //Chebyshev;
+MultigridCoarseGridSolver MULTIGRID_COARSE_GRID_SOLVER = MultigridCoarseGridSolver::coarse_chebyshev_smoother; //coarse_iterative_nopreconditioner; //coarse_iterative_jacobi;
 
 // projection step
-ProjectionType PROJECTION_TYPE = ProjectionType::DivergencePenalty;  //NoPenalty; //DivergencePenalty; //DivergenceAndContinuityPenalty;
+ProjectionType PROJECTION_TYPE = ProjectionType::DivergencePenalty; //NoPenalty; //DivergencePenalty; //DivergenceAndContinuityPenalty;
 SolverProjection SOLVER_PROJECTION = SolverProjection::PCG; //LU; //PCG;
-PreconditionerProjection PRECONDITIONER_PROJECTION = PreconditionerProjection::InverseMassMatrix; //None; //Jacobi //InverseMassMatrix;
+PreconditionerProjection PRECONDITIONER_PROJECTION = PreconditionerProjection::InverseMassMatrix; //None; //Jacobi; //InverseMassMatrix;
 
 // viscous step
 FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::DivergenceFormulation; //DivergenceFormulation; //LaplaceFormulation;
 InteriorPenaltyFormulationViscous IP_FORMULATION_VISCOUS = InteriorPenaltyFormulationViscous::SIPG; //SIPG; //NIPG;
 SolverViscous SOLVER_VISCOUS = SolverViscous::PCG; //PCG; //GMRES;
-PreconditionerViscous PRECONDITIONER_VISCOUS = PreconditionerViscous::InverseMassMatrix; //None; //Jacobi; //InverseMassMatrix;
+PreconditionerViscous PRECONDITIONER_VISCOUS = PreconditionerViscous::InverseMassMatrix;//GeometricMultigrid; //None; //Jacobi; //InverseMassMatrix; //GeometricMultigrid;
 
-// time step calculation
-TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified; //ConstTimeStepCFL; //AdaptiveTimeStepCFL;
+// multigrid viscous step
+MultigridSmoother MULTIGRID_SMOOTHER_VISCOUS = MultigridSmoother::Chebyshev; //Chebyshev;
+MultigridCoarseGridSolver MULTIGRID_COARSE_GRID_SOLVER_VISCOUS = MultigridCoarseGridSolver::coarse_chebyshev_smoother;//coarse_chebyshev_smoother; //coarse_iterative_nopreconditioner; //coarse_iterative_jacobi;
+/************************************************/
+
+/************ coupled solver ********************/
+const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = false;
+/************************************************/
 
 #ifdef VORTEX
   const unsigned int FE_DEGREE = 2; //2
@@ -128,7 +155,7 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   const double CFL = 0.1; //0.1;
   const double U_X_MAX = 1.0;
   const double MAX_VELOCITY = 1.4*U_X_MAX;
-  const double TIME_STEP_SIZE = 1.e-2;
+  const double TIME_STEP_SIZE = 1.e-1;//1.e-2;
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
@@ -150,14 +177,19 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   const double GRID_STRETCH_FAC = 1.8;
   const bool PURE_DIRICHLET_BC = false;
 
+  const double ABS_TOL_NEWTON = 1.0e-12;
+  const double REL_TOL_NEWTON = 1.0e-6;
+  unsigned int const MAX_ITER_NEWTON = 1e2;
+  const double ABS_TOL_LINEAR = 1.0e-12;
+  const double REL_TOL_LINEAR = 1.0e-6;
+  unsigned int const MAX_ITER_LINEAR = 1e6;
+
   const double ABS_TOL_PRESSURE = 1.0e-18;
   const double REL_TOL_PRESSURE = 1.0e-12;
   const double ABS_TOL_PROJECTION = 1.0e-18;
   const double REL_TOL_PROJECTION = 1.0e-12;
   const double ABS_TOL_VISCOUS = 1.0e-18;
   const double REL_TOL_VISCOUS = 1.0e-12;
-
-  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e2;
 
 //  const double ABS_TOL_PRESSURE = 1.0e-12;
 //  const double REL_TOL_PRESSURE = 1.0e-6;
@@ -166,6 +198,8 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 //  const double ABS_TOL_PROJECTION = 1.0e-12;
 //  const double REL_TOL_PROJECTION = 1.0e-6;
 
+  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e6;
+
   const std::string OUTPUT_PREFIX = "vortex_flow";
 
   const unsigned int ORDER_TIME_INTEGRATOR = 3;
@@ -173,8 +207,8 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 #endif
 
 #ifdef POISEUILLE
-  const unsigned int FE_DEGREE = 1;
-  const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
+  const unsigned int FE_DEGREE = 3;
+  const unsigned int FE_DEGREE_P = FE_DEGREE-1; //FE_DEGREE; //FE_DEGREE-1;
   const unsigned int FE_DEGREE_XWALL = 1;
   const unsigned int N_Q_POINTS_1D_XWALL = 1;
   const unsigned int DIMENSION = 2;
@@ -185,16 +219,20 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   const double END_TIME = 10.0;
   const double OUTPUT_INTERVAL_TIME = 0.5;
   const double OUTPUT_START_TIME = 0.0;
+  const double ERROR_CALC_INTERVAL_TIME = OUTPUT_INTERVAL_TIME;
+  const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
   const double STATISTICS_START_TIME = 50.0;
   const int STATISTICS_EVERY = 1;
   const bool ANALYTICAL_SOLUTION = true; 
-  const bool DIVU_TIMESERIES = true; //true;
+  const bool DIVU_TIMESERIES = false; //true;
+  const bool COMPUTE_DIVERGENCE = false;
   const int MAX_NUM_STEPS = 1e6;
-  const double CFL = 0.1;
+  const double CFL = 2.0; //0.1;
+  const double TIME_STEP_SIZE = 1.0e-1;
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
-  const double VISCOSITY = 0.01;
+  const double VISCOSITY = 0.1;
   const double H = 1.0;
   const double L = 4.0;
 
@@ -214,6 +252,13 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   const double GRID_STRETCH_FAC = 1.8;
   const bool PURE_DIRICHLET_BC = false;
 
+  const double ABS_TOL_NEWTON = 1.0e-12;
+  const double REL_TOL_NEWTON = 1.0e-6;
+  unsigned int const MAX_ITER_NEWTON = 1e2;
+  const double ABS_TOL_LINEAR = 1.0e-12;
+  const double REL_TOL_LINEAR = 1.0e-6;
+  unsigned int const MAX_ITER_LINEAR = 1e6;
+
   const double ABS_TOL_PRESSURE = 1.0e-12;
   const double REL_TOL_PRESSURE = 1.0e-6;
   const double ABS_TOL_VISCOUS = 1.0e-12;
@@ -221,34 +266,37 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   const double ABS_TOL_PROJECTION = 1.0e-12;
   const double REL_TOL_PROJECTION = 1.0e-6;
 
-  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e5;
+  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e0;
 
   const std::string OUTPUT_PREFIX = "poiseuille";
 
-
   const unsigned int ORDER_TIME_INTEGRATOR = 3;
-  const bool START_WITH_LOW_ORDER = false;
+  const bool START_WITH_LOW_ORDER = true;
 #endif
 
 #ifdef CUETTE
-  const unsigned int FE_DEGREE = 1;
-  const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
+  const unsigned int FE_DEGREE = 2;
+  const unsigned int FE_DEGREE_P = FE_DEGREE-1;//FE_DEGREE-1;
   const unsigned int FE_DEGREE_XWALL = 1;
   const unsigned int N_Q_POINTS_1D_XWALL = 1;
   const unsigned int DIMENSION = 2;
   const unsigned int REFINE_STEPS_SPACE_MIN = 2;
-  const unsigned intREFINE_STEPS_SPACE_MAX = 2;
+  const unsigned int REFINE_STEPS_SPACE_MAX = 2;
 
   const double START_TIME = 0.0;
   const double END_TIME = 10.0;
   const double OUTPUT_INTERVAL_TIME = 0.5;
   const double OUTPUT_START_TIME = 0.0;
+  const double ERROR_CALC_INTERVAL_TIME = OUTPUT_INTERVAL_TIME;
+  const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
   const double STATISTICS_START_TIME = 50.0;
   const int STATISTICS_EVERY = 1;
   const bool ANALYTICAL_SOLUTION = true;
   const bool DIVU_TIMESERIES = true; //true;
+  const bool COMPUTE_DIVERGENCE = false;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.1;
+  const double TIME_STEP_SIZE = 1.e-1;
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
@@ -280,11 +328,11 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   const double REL_TOL_PROJECTION = 1.0e-6;
 
   // show solver performance (wall time, number of iterations) every ... timesteps
-  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e5;
+  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e0;
 
   const std::string OUTPUT_PREFIX = "cuette";
 
-  const unsigned int ORDER_TIME_INTEGRATOR = 2;
+  const unsigned int ORDER_TIME_INTEGRATOR = 3;
   const bool START_WITH_LOW_ORDER = true;
 #endif
 
@@ -457,8 +505,8 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 #endif
 
 #ifdef STOKES_GUERMOND
-  const unsigned int FE_DEGREE = 6;//3
-  const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
+  const unsigned int FE_DEGREE = 3;//3
+  const unsigned int FE_DEGREE_P = FE_DEGREE-1;//FE_DEGREE-1;
   const unsigned int FE_DEGREE_XWALL = 1;
   const unsigned int N_Q_POINTS_1D_XWALL = 1;
   const unsigned int DIMENSION = 2;
@@ -467,28 +515,29 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 
   const double START_TIME = 0.0;
   const double END_TIME = 1.0;
-  const double OUTPUT_INTERVAL_TIME = 1.0;
+  const double OUTPUT_INTERVAL_TIME = 0.1;
   const double OUTPUT_START_TIME = 0.0;
   const double ERROR_CALC_INTERVAL_TIME = OUTPUT_INTERVAL_TIME;
   const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
   const double STATISTICS_START_TIME = 50.0;
   const int STATISTICS_EVERY = 1;
   const bool ANALYTICAL_SOLUTION = true;
-  const bool DIVU_TIMESERIES = true;
+  const bool DIVU_TIMESERIES = false;
+  const bool COMPUTE_DIVERGENCE = false;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.2; // CFL number irrelevant for Stokes flow problem
-  const double TIME_STEP_SIZE = 1.e-3;//1.e-1;///std::pow(2.,13); //5.0e-4
+  const double TIME_STEP_SIZE = 0.1;//2.e-4;//1.e-1;///std::pow(2.,13); //5.0e-4
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
-  const double VISCOSITY = 0.01;
+  const double VISCOSITY = 0.01;//0.01;
 
   const double MAX_VELOCITY = 2.65; // MAX_VELOCITY also irrelevant
   const double IP_FACTOR_PRESSURE = 1.0;
   const double IP_FACTOR_VISCOUS = IP_FACTOR_PRESSURE;
 
   // projection step - divergence and continuity penalty factors
-  const double PENALTY_FACTOR_DIVERGENCE = 1.0e2;
+  const double PENALTY_FACTOR_DIVERGENCE = 1.0e0; //1.0e0;
   const double PENALTY_FACTOR_CONTINUITY = 0.0e0;//PENALTY_FACTOR_DIVERGENCE;//0.0e0;
 
   const double CS = 0.0; // Smagorinsky constant
@@ -500,6 +549,13 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   const double GRID_STRETCH_FAC = 1.8;
   const bool PURE_DIRICHLET_BC = true;
 
+  const double ABS_TOL_NEWTON = 1.0e-12;
+  const double REL_TOL_NEWTON = 1.0e-6;
+  unsigned int const MAX_ITER_NEWTON = 1e2;
+  const double ABS_TOL_LINEAR = 1.0e-12;
+  const double REL_TOL_LINEAR = 1.0e-6;
+  unsigned int const MAX_ITER_LINEAR = 1e6;
+
   const double ABS_TOL_PRESSURE = 1.0e-12;
   const double REL_TOL_PRESSURE = 1.0e-6;
   const double ABS_TOL_VISCOUS = 1.0e-12;
@@ -508,31 +564,34 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   const double REL_TOL_PROJECTION = 1.0e-6;
 
   // show solver performance (wall time, number of iterations) every ... timesteps
-  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e5;
+  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e0;
 
   const std::string OUTPUT_PREFIX = "stokes";
 
-  const unsigned int ORDER_TIME_INTEGRATOR = 2;
+  const unsigned int ORDER_TIME_INTEGRATOR = 1;
   const bool START_WITH_LOW_ORDER = false;
 #endif
 
 #ifdef STOKES_SHAHBAZI
-  const unsigned int FE_DEGREE = 1;//3
+  const unsigned int FE_DEGREE = 2;//3
   const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
   const unsigned int FE_DEGREE_XWALL = 1;
   const unsigned int N_Q_POINTS_1D_XWALL = 1;
   const unsigned int DIMENSION = 2;
   const unsigned int REFINE_STEPS_SPACE_MIN = 3;//2
-  const unsigned int REFINE_STEPS_SPACE_MAX = 7;
+  const unsigned int REFINE_STEPS_SPACE_MAX = 3;
 
   const double START_TIME = 0.0;
   const double END_TIME = 0.1;
   const double OUTPUT_INTERVAL_TIME = 0.1;
   const double OUTPUT_START_TIME = 0.0;
+  const double ERROR_CALC_INTERVAL_TIME = OUTPUT_INTERVAL_TIME;
+  const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
   const double STATISTICS_START_TIME = 50.0;
   const int STATISTICS_EVERY = 1;
   const bool ANALYTICAL_SOLUTION = true;
   const bool DIVU_TIMESERIES = false;
+  const bool COMPUTE_DIVERGENCE = false;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.2; // CFL number irrelevant for Stokes flow problem
   const double TIME_STEP_SIZE = 1.e-4;///std::pow(2.,13); //5.0e-4
@@ -546,7 +605,7 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   const double IP_FACTOR_VISCOUS = IP_FACTOR_PRESSURE;
 
   // projection step - divergence and continuity penalty factors
-  const double PENALTY_FACTOR_DIVERGENCE = 0.0e0;
+  const double PENALTY_FACTOR_DIVERGENCE = 1.0e0;
   const double PENALTY_FACTOR_CONTINUITY = 0.0e0;//PENALTY_FACTOR_DIVERGENCE;//0.0e0;
 
   const double CS = 0.0; // Smagorinsky constant
@@ -557,6 +616,20 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   const double MAX_WDIST_XWALL = 0.2;
   const double GRID_STRETCH_FAC = 1.8;
   const bool PURE_DIRICHLET_BC = true;
+
+  const double ABS_TOL_NEWTON = 1.0e-12;
+  const double REL_TOL_NEWTON = 1.0e-6;
+  unsigned int const MAX_ITER_NEWTON = 1e2;
+  const double ABS_TOL_LINEAR = 1.0e-12;
+  const double REL_TOL_LINEAR = 1.0e-6;
+  unsigned int const MAX_ITER_LINEAR = 1e6;
+
+//  const double ABS_TOL_PRESSURE = 1.0e-16;
+//  const double REL_TOL_PRESSURE = 1.0e-12;
+//  const double ABS_TOL_VISCOUS = 1.0e-16;
+//  const double REL_TOL_VISCOUS = 1.0e-12;
+//  const double ABS_TOL_PROJECTION = 1.0e-16;
+//  const double REL_TOL_PROJECTION = 1.0e-12;
 
   const double ABS_TOL_PRESSURE = 1.0e-12;
   const double REL_TOL_PRESSURE = 1.0e-6;
@@ -576,7 +649,7 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 
 #ifdef FLOW_PAST_CYLINDER
   const unsigned int FE_DEGREE = 2;
-  const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
+  const unsigned int FE_DEGREE_P = FE_DEGREE-1;//FE_DEGREE-1;
   const unsigned int FE_DEGREE_XWALL = 1;
   const unsigned int N_Q_POINTS_1D_XWALL = 1;
   const unsigned int DIMENSION = 2;
@@ -595,8 +668,8 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   const bool DIVU_TIMESERIES = true;
   const bool COMPUTE_DIVERGENCE = true;
   const int MAX_NUM_STEPS = 1e6;
-  const double TIME_STEP_SIZE = 1.e-2;
-  const double CFL = 0.3;
+  const double TIME_STEP_SIZE = 0.1;//1.e-2;
+  const double CFL = 0.05;
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
@@ -615,8 +688,8 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   const double IP_FACTOR_VISCOUS = IP_FACTOR_PRESSURE;
 
   // projection step - divergence and continuity penalty factors
-  const double PENALTY_FACTOR_DIVERGENCE = 1.0e0;
-  const double PENALTY_FACTOR_CONTINUITY = 0.0e0;//PENALTY_FACTOR_DIVERGENCE;//0.0e0;
+  const double PENALTY_FACTOR_DIVERGENCE = 1.0e1;
+  const double PENALTY_FACTOR_CONTINUITY = PENALTY_FACTOR_DIVERGENCE;//0.0e0;
 
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
@@ -627,6 +700,13 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   const double GRID_STRETCH_FAC = 1.8;
   const bool PURE_DIRICHLET_BC = false;
 
+  const double ABS_TOL_NEWTON = 1.0e-12;
+  const double REL_TOL_NEWTON = 1.0e-6;
+  unsigned int const MAX_ITER_NEWTON = 1e2;
+  const double ABS_TOL_LINEAR = 1.0e-12;
+  const double REL_TOL_LINEAR = 1.0e-6;
+  unsigned int const MAX_ITER_LINEAR = 1e6;
+
   const double ABS_TOL_PRESSURE = 1.0e-12;
   const double REL_TOL_PRESSURE = 1.0e-6;
   const double ABS_TOL_VISCOUS = 1.0e-12;
@@ -635,9 +715,9 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   const double REL_TOL_PROJECTION = 1.0e-6;
 
   // show solver performance (wall time, number of iterations) every ... timesteps
-  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e3;
+  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e0;//1e3;
 
-  const std::string OUTPUT_PREFIX = "fpc_r0_p2_k1";
+  const std::string OUTPUT_PREFIX = "fpc_r0_p2";
 
   const unsigned int ORDER_TIME_INTEGRATOR = 2;
   const bool START_WITH_LOW_ORDER = true;
@@ -713,9 +793,11 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   max_velocity(MAX_VELOCITY),
   time_step_size(TIME_STEP_SIZE),
   viscosity(VISCOSITY),
+  temporal_discretization(TEMPORAL_DISCRETIZATION),
   order_time_integrator(ORDER_TIME_INTEGRATOR),
   start_with_low_order(START_WITH_LOW_ORDER),
   solve_stokes_equations(SOLVE_STOKES_EQUATIONS),
+  use_symmetric_saddle_point_matrix(USE_SYMMETRIC_SADDLE_POINT_MATRIX),
   convective_step_implicit(CONVECTIVE_STEP_IMPLICIT),
   small_time_steps_stability(STS_STABILITY),
   pure_dirichlet_bc(PURE_DIRICHLET_BC),
@@ -723,15 +805,27 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   penalty_factor_continuity(PENALTY_FACTOR_CONTINUITY),
   compute_divergence(COMPUTE_DIVERGENCE),
   divu_integrated_by_parts(DIVU_INTEGRATED_BY_PARTS),
+  divu_use_boundary_data(DIVU_USE_BOUNDARY_DATA),
   gradp_integrated_by_parts(GRADP_INTEGRATED_BY_PARTS),
+  gradp_use_boundary_data(GRADP_USE_BOUNDARY_DATA),
   IP_factor_pressure(IP_FACTOR_PRESSURE),
   IP_factor_viscous(IP_FACTOR_VISCOUS),
+  abs_tol_newton(ABS_TOL_NEWTON),
+  rel_tol_newton(REL_TOL_NEWTON),
+  max_iter_newton(MAX_ITER_NEWTON),
+  abs_tol_linear(ABS_TOL_LINEAR),
+  rel_tol_linear(REL_TOL_LINEAR),
+  max_iter_linear(MAX_ITER_LINEAR),
   abs_tol_pressure(ABS_TOL_PRESSURE),
   rel_tol_pressure(REL_TOL_PRESSURE),
   abs_tol_projection(ABS_TOL_PROJECTION),
   rel_tol_projection(REL_TOL_PROJECTION),
   abs_tol_viscous(ABS_TOL_VISCOUS),
   rel_tol_viscous(REL_TOL_VISCOUS),
+  solver_poisson(SOLVER_POISSON),
+  preconditioner_poisson(PRECONDITIONER_POISSON),
+  multigrid_smoother(MULTIGRID_SMOOTHER),
+  multigrid_coarse_grid_solver(MULTIGRID_COARSE_GRID_SOLVER),
   projection_type(PROJECTION_TYPE),
   solver_projection(SOLVER_PROJECTION),
   preconditioner_projection(PRECONDITIONER_PROJECTION),
@@ -739,6 +833,8 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   IP_formulation_viscous(IP_FORMULATION_VISCOUS),
   solver_viscous(SOLVER_VISCOUS),
   preconditioner_viscous(PRECONDITIONER_VISCOUS),
+  multigrid_smoother_viscous(MULTIGRID_SMOOTHER_VISCOUS),
+  multigrid_coarse_grid_solver_viscous(MULTIGRID_COARSE_GRID_SOLVER_VISCOUS),
   output_solver_info_every_timesteps(OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS),
   output_start_time(OUTPUT_START_TIME),
   output_interval_time(OUTPUT_INTERVAL_TIME),
@@ -758,20 +854,26 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   class AnalyticalSolution : public Function<dim>
   {
   public:
-    AnalyticalSolution (const unsigned int   component,
-              const double     time = 0.) : Function<dim>(1, time),component(component) {}
+    AnalyticalSolution (const bool    is_velocity,
+                        const double  time = 0.)
+      :
+      Function<dim>(is_velocity ? dim : 1, time),
+      is_velocity(is_velocity)
+    {}
 
     virtual ~AnalyticalSolution(){};
 
     virtual double value (const Point<dim> &p,const unsigned int component = 0) const;
 
   private:
-    const unsigned int component;
+    const bool is_velocity;
   };
 
   template<int dim>
-  double AnalyticalSolution<dim>::value(const Point<dim> &p,const unsigned int /* component */) const
+  double AnalyticalSolution<dim>::value(const Point<dim> &p,const unsigned int given_component) const
   {
+    const unsigned int component = is_velocity ? given_component : dim;
+
     double t = this->get_time();
     double result = 0.0;
     (void)t;
@@ -808,7 +910,7 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 //    if(component == 0 && (std::abs(p[0])<1.0e-12))
 //      result = MAX_VELOCITY * (t<T ? std::sin(pi/2.*t/T) : 1.0);
 
-    // parabolic velocity profile at inflow - stationary
+    // parabolic velocity profile at inflow - steady
 //    const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
 //    if(component == 0)
 //      result = 1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0;
@@ -818,11 +920,12 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
     // parabolic velocity profile at inflow - unsteady
     const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
     const double pi = numbers::PI;
-    double T = 0.5;
+    double T = 1.0e0; //0.5;
     if(component == 0)
       result = 1.0/VISCOSITY * pressure_gradient * (pow(p[1],2.0)-1.0)/2.0 * (t<T ? std::sin(pi/2.*t/T) : 1.0);
     if(component == dim)
       result = (p[0]-4.0) * pressure_gradient * (t<T ? std::sin(pi/2.*t/T) : 1.0);
+
 #endif
     /********************************************************************/
 
@@ -915,7 +1018,9 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
     else if (component == 1)
       result = -pi*sint*sin2x*std::pow(siny,2.);
     else if (component == dim)
+    {
       result = cosx*siny*sint;
+    }
 #endif
 
 #ifdef STOKES_SHAHBAZI
@@ -964,19 +1069,18 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   class NeumannBoundaryVelocity : public Function<dim>
   {
   public:
-    NeumannBoundaryVelocity (const unsigned int   component,
-            const double     time = 0.) : Function<dim>(1, time),component(component) {}
+    NeumannBoundaryVelocity (const double time = 0.)
+      :
+      Function<dim>(dim, time)
+    {}
 
     virtual ~NeumannBoundaryVelocity(){};
 
     virtual double value (const Point<dim> &p,const unsigned int component = 0) const;
-
-  private:
-    const unsigned int component;
   };
 
   template<int dim>
-  double NeumannBoundaryVelocity<dim>::value(const Point<dim> &p,const unsigned int /* component */) const
+  double NeumannBoundaryVelocity<dim>::value(const Point<dim> &p,const unsigned int component) const
   {
     double t = this->get_time();
     double result = 0.0;
@@ -1074,8 +1178,10 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   class RHS : public Function<dim>
   {
   public:
-    RHS (const unsigned int   component,
-      const double     time = 0.) : Function<dim>(1, time),time(time),component(component) {}
+    RHS (const double time = 0.)
+      :
+      Function<dim>(dim, time),time(time)
+    {}
 
     virtual ~RHS(){};
 
@@ -1083,11 +1189,10 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 
   private:
     const double time;
-    const unsigned int component;
   };
 
   template<int dim>
-  double RHS<dim>::value(const Point<dim> &p,const unsigned int /* component */) const
+  double RHS<dim>::value(const Point<dim> &p,const unsigned int component) const
   {
 #ifdef CHANNEL
     //channel flow with periodic bc
@@ -1132,19 +1237,18 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   class PressureBC_dudt : public Function<dim>
   {
   public:
-    PressureBC_dudt (const unsigned int   component,
-            const double     time = 0.) : Function<dim>(1, time),component(component) {}
+    PressureBC_dudt (const double time = 0.)
+      :
+      Function<dim>(dim, time)
+    {}
 
     virtual ~PressureBC_dudt(){};
 
     virtual double value (const Point<dim> &p,const unsigned int component = 0) const;
-
-  private:
-    const unsigned int component;
   };
 
   template<int dim>
-  double PressureBC_dudt<dim>::value(const Point<dim> &p,const unsigned int /* component */) const
+  double PressureBC_dudt<dim>::value(const Point<dim> &p,const unsigned int component) const
   {
   double t = this->get_time();
   (void)t;
@@ -1356,11 +1460,13 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   class PostProcessor
   {
   public:
-    typedef typename NavierStokesOperation<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>::value_type value_type;
-    PostProcessor(NavierStokesOperation<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> const & ns_operation,
-                  InputParameters const & param_in):
+    typedef typename DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>::value_type value_type;
+
+    PostProcessor(//DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> const &ns_operation,
+                  std_cxx11::shared_ptr< const DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> >  ns_operation,
+                  InputParameters const &param_in):
       ns_operation_(ns_operation),
-      statistics(ns_operation.get_dof_handler_u()),
+      statistics(ns_operation->get_dof_handler_u()),
       param(param_in),
       time_(0.0),
       time_step_number_(1),
@@ -1380,9 +1486,9 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 #endif
     }
 
-    void do_postprocessing(parallel::distributed::BlockVector<double> const &velocity,
+    void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
                            parallel::distributed::Vector<double> const &pressure,
-                           parallel::distributed::BlockVector<double> const &vorticity,
+                           parallel::distributed::Vector<double> const &vorticity,
                            parallel::distributed::Vector<double> const &divergence,
                            double const time,
                            unsigned int const time_step_number)
@@ -1419,7 +1525,7 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 #endif
     };
 
-    void analyze_divergence_error(parallel::distributed::BlockVector<double> const &velocity_temp,
+    void analyze_divergence_error(parallel::distributed::Vector<double> const &velocity_temp,
                                   double const time,
                                   unsigned int const time_step_number)
     {
@@ -1436,7 +1542,7 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
     }
 
   private:
-    NavierStokesOperation<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> const & ns_operation_;
+    std_cxx11::shared_ptr< const DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> >  ns_operation_;
     StatisticsManager<dim> statistics;
     InputParameters const & param;
 
@@ -1449,245 +1555,252 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
     double div_samp_;
     double mass_samp_;
 
-    void calculate_error(parallel::distributed::BlockVector<double> const &velocity,
+    void calculate_error(parallel::distributed::Vector<double> const &velocity,
                          parallel::distributed::Vector<double> const      &pressure);
 
-    void write_output(parallel::distributed::BlockVector<double> const &velocity,
-                      parallel::distributed::Vector<double> const      &pressure,
-                      parallel::distributed::BlockVector<double> const &vorticity,
+    void write_output(parallel::distributed::Vector<double> const &velocity,
+                      parallel::distributed::Vector<double> const &pressure,
+                      parallel::distributed::Vector<double> const &vorticity,
                       parallel::distributed::Vector<double> const &divergence);
 
-    void compute_lift_and_drag(parallel::distributed::BlockVector<double> const &velocity,
+    void compute_lift_and_drag(parallel::distributed::Vector<double> const &velocity,
                                parallel::distributed::Vector<double> const &pressure,
-                               bool const clear_files) const;
+                               bool const                                  clear_files) const;
 
     void compute_pressure_difference(parallel::distributed::Vector<double> const &pressure,
-                                     bool const clear_files) const;
+                                     bool const                                  clear_files) const;
 
-    void my_point_value(const Mapping<dim> &mapping,
-                        const DoFHandler<dim> &dof_handler,
-                        const parallel::distributed::Vector<double> &solution,
-                        const std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> > &cell_point,
-                        Vector<double> &value) const;
+    void my_point_value(const Mapping<dim>                                                            &mapping,
+                        const DoFHandler<dim>                                                         &dof_handler,
+                        const parallel::distributed::Vector<double>                                   &solution,
+                        const std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> >  &cell_point,
+                        Vector<double>                                                                &value) const;
 
-    void write_divu_statistics(parallel::distributed::BlockVector<double> const &velocity_temp);
-    void write_divu_timeseries(parallel::distributed::BlockVector<double> const &velocity_temp);
+    void write_divu_statistics(parallel::distributed::Vector<double> const &velocity_temp);
+    void write_divu_timeseries(parallel::distributed::Vector<double> const &velocity_temp);
 
-    void local_compute_divu_for_channel_stats(const MatrixFree<dim,value_type>                     &data,
-                                              std::vector<double >                                 &test,
-                                              const parallel::distributed::BlockVector<value_type> &source,
-                                              const std::pair<unsigned int,unsigned int>           &cell_range) const;
+    void local_compute_divu_for_channel_stats(const MatrixFree<dim,value_type>                &data,
+                                              std::vector<double >                            &test,
+                                              const parallel::distributed::Vector<value_type> &source,
+                                              const std::pair<unsigned int,unsigned int>      &cell_range) const;
 
-    void local_compute_divu_for_channel_stats_face (const MatrixFree<dim,double>                         &data,
-                                                    std::vector<double >                                 &test,
-                                                    const parallel::distributed::BlockVector<value_type> &source,
-                                                    const std::pair<unsigned int,unsigned int>           &face_range) const;
+    void local_compute_divu_for_channel_stats_face (const MatrixFree<dim,double>                    &data,
+                                                    std::vector<double >                            &test,
+                                                    const parallel::distributed::Vector<value_type> &source,
+                                                    const std::pair<unsigned int,unsigned int>      &face_range) const;
 
-    void local_compute_divu_for_channel_stats_boundary_face (const MatrixFree<dim,double>                         &data,
-                                                             std::vector<double >                                 &test,
-                                                             const parallel::distributed::BlockVector<value_type> &source,
-                                                             const std::pair<unsigned int,unsigned int>           &face_range) const;
+    void local_compute_divu_for_channel_stats_boundary_face (const MatrixFree<dim,double>                    &data,
+                                                             std::vector<double >                            &test,
+                                                             const parallel::distributed::Vector<value_type> &source,
+                                                             const std::pair<unsigned int,unsigned int>       &face_range) const;
 
   };
 
   template<int dim>
   void PostProcessor<dim>::
-  calculate_error(parallel::distributed::BlockVector<double> const  &velocity,
-                  parallel::distributed::Vector<double> const       &pressure)
+  calculate_error(parallel::distributed::Vector<double> const  &velocity,
+                  parallel::distributed::Vector<double> const  &pressure)
   {
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
     pcout << std::endl << "Calculate error at time t = " << std::scientific << std::setprecision(4) << time_ << ":" << std::endl;
 
-    double norm_error_u=0.0;
-    double norm_u_exact=0.0;
-    for(unsigned int d=0;d<dim;++d)
-    {
-      Vector<double> error_norm_per_cell (ns_operation_.get_dof_handler_u().get_triangulation().n_active_cells());
-      Vector<double> solution_norm_per_cell (ns_operation_.get_dof_handler_u().get_triangulation().n_active_cells());
-      VectorTools::integrate_difference (ns_operation_.get_mapping(), ns_operation_.get_dof_handler_u(),
-                         velocity.block(d),
-                         AnalyticalSolution<dim>(d,time_),
-                         error_norm_per_cell,
-                         QGauss<dim>(ns_operation_.get_fe_u().degree+4),//(fe().degree+2),
-                         VectorTools::L2_norm);
-      parallel::distributed::Vector<double> dummy;
-      dummy.reinit(velocity.block(d));
-      VectorTools::integrate_difference (ns_operation_.get_mapping(), ns_operation_.get_dof_handler_u(),
-                         dummy,
-                         AnalyticalSolution<dim>(d,time_),
-                         solution_norm_per_cell,
-                         QGauss<dim>(ns_operation_.get_fe_u().degree+4), //(fe().degree+2),
-                         VectorTools::L2_norm);
-      double error_norm = std::sqrt(Utilities::MPI::sum (error_norm_per_cell.norm_sqr(), MPI_COMM_WORLD));
-      double solution_norm = std::sqrt(Utilities::MPI::sum (solution_norm_per_cell.norm_sqr(), MPI_COMM_WORLD));
-      if(solution_norm > 1.e-12)
-        pcout << "  Relative error (L2-norm) velocity u" << d+1 << ": "
-              << std::scientific << std::setprecision(5) << error_norm/solution_norm << std::endl;
-      else
-        pcout << "  ABSOLUTE error (L2-norm) velocity u" << d+1 << ": "
-              << std::scientific << std::setprecision(5) << error_norm << std::endl;
-
-      norm_error_u += std::pow(error_norm,2.);
-      norm_u_exact += std::pow(solution_norm,2.);
-    }
-    norm_error_u = sqrt(norm_error_u);
-    norm_u_exact = sqrt(norm_u_exact);
-    if(norm_u_exact > 1.e-12)
-      pcout << "  Relative error (L2-norm) velocity u:  "
-            << std::scientific << std::setprecision(5) << norm_error_u/norm_u_exact << std::endl;
+    Vector<double> error_norm_per_cell_u (ns_operation_->get_dof_handler_u().get_triangulation().n_active_cells());
+    Vector<double> solution_norm_per_cell_u (ns_operation_->get_dof_handler_u().get_triangulation().n_active_cells());
+    VectorTools::integrate_difference (ns_operation_->get_mapping(),
+                                       ns_operation_->get_dof_handler_u(),
+                                       velocity,
+                                       AnalyticalSolution<dim>(true,time_),
+                                       error_norm_per_cell_u,
+                                       QGauss<dim>(ns_operation_->get_fe_u().degree+4),//(fe().degree+2),
+                                       VectorTools::L2_norm);
+    parallel::distributed::Vector<double> dummy_u;
+    dummy_u.reinit(velocity);
+    VectorTools::integrate_difference (ns_operation_->get_mapping(),
+                                       ns_operation_->get_dof_handler_u(),
+                                       dummy_u,
+                                       AnalyticalSolution<dim>(true,time_),
+                                       solution_norm_per_cell_u,
+                                       QGauss<dim>(ns_operation_->get_fe_u().degree+4), //(fe().degree+2),
+                                       VectorTools::L2_norm);
+    double error_norm_u = std::sqrt(Utilities::MPI::sum (error_norm_per_cell_u.norm_sqr(), MPI_COMM_WORLD));
+    double solution_norm_u = std::sqrt(Utilities::MPI::sum (solution_norm_per_cell_u.norm_sqr(), MPI_COMM_WORLD));
+    if(solution_norm_u > 1.e-12)
+      pcout << "  Relative error (L2-norm) velocity u: "
+            << std::scientific << std::setprecision(5) << error_norm_u/solution_norm_u << std::endl;
     else
-      pcout << "  ABSOLUTE error (L2-norm) velocity u:  "
-            << std::scientific << std::setprecision(5) << norm_error_u << std::endl;
+      pcout << "  ABSOLUTE error (L2-norm) velocity u: "
+            << std::scientific << std::setprecision(5) << error_norm_u << std::endl;
 
-    Vector<double> error_norm_per_cell (ns_operation_.get_dof_handler_u().get_triangulation().n_active_cells());
-    Vector<double> solution_norm_per_cell (ns_operation_.get_dof_handler_u().get_triangulation().n_active_cells());
-    VectorTools::integrate_difference (ns_operation_.get_mapping(), ns_operation_.get_dof_handler_p(),
-                       pressure,
-                       AnalyticalSolution<dim>(dim,time_),
-                       error_norm_per_cell,
-                       QGauss<dim>(ns_operation_.get_fe_p().degree+4), //(fe_p.degree+2),
-                       VectorTools::L2_norm);
-    parallel::distributed::Vector<double> dummy;
-    dummy.reinit(pressure);
-    VectorTools::integrate_difference (ns_operation_.get_mapping(), ns_operation_.get_dof_handler_p(),
-                       dummy,
-                       AnalyticalSolution<dim>(dim,time_),
-                       solution_norm_per_cell,
-                       QGauss<dim>(ns_operation_.get_fe_p().degree+4), //(fe_p.degree+2),
-                       VectorTools::L2_norm);
-    double error_norm = std::sqrt(Utilities::MPI::sum (error_norm_per_cell.norm_sqr(), MPI_COMM_WORLD));
-    double solution_norm = std::sqrt(Utilities::MPI::sum (solution_norm_per_cell.norm_sqr(), MPI_COMM_WORLD));
-    if(solution_norm > 1.e-12)
-      pcout << "  Relative error (L2-norm) pressure p:  "
-            << std::scientific << std::setprecision(5) << error_norm/solution_norm << std::endl;
+    Vector<double> error_norm_per_cell_p (ns_operation_->get_dof_handler_u().get_triangulation().n_active_cells());
+    Vector<double> solution_norm_per_cell_p (ns_operation_->get_dof_handler_u().get_triangulation().n_active_cells());
+    VectorTools::integrate_difference (ns_operation_->get_mapping(),
+                                       ns_operation_->get_dof_handler_p(),
+                                       pressure,
+                                       AnalyticalSolution<dim>(false,time_),
+                                       error_norm_per_cell_p,
+                                       QGauss<dim>(ns_operation_->get_fe_p().degree+4), //(fe_p.degree+2),
+                                       VectorTools::L2_norm);
+
+    parallel::distributed::Vector<double> dummy_p;
+    dummy_p.reinit(pressure);
+    VectorTools::integrate_difference (ns_operation_->get_mapping(),
+                                       ns_operation_->get_dof_handler_p(),
+                                       dummy_p,
+                                       AnalyticalSolution<dim>(false,time_),
+                                       solution_norm_per_cell_p,
+                                       QGauss<dim>(ns_operation_->get_fe_p().degree+4), //(fe_p.degree+2),
+                                       VectorTools::L2_norm);
+
+    double error_norm_p = std::sqrt(Utilities::MPI::sum (error_norm_per_cell_p.norm_sqr(), MPI_COMM_WORLD));
+    double solution_norm_p = std::sqrt(Utilities::MPI::sum (solution_norm_per_cell_p.norm_sqr(), MPI_COMM_WORLD));
+    if(solution_norm_p > 1.e-12)
+      pcout << "  Relative error (L2-norm) pressure p: "
+            << std::scientific << std::setprecision(5) << error_norm_p/solution_norm_p << std::endl;
     else
-      pcout << "  ABSOLUTE error (L2-norm) pressure p:  "
-            << std::scientific << std::setprecision(5) << error_norm << std::endl;
+      pcout << "  ABSOLUTE error (L2-norm) pressure p: "
+            << std::scientific << std::setprecision(5) << error_norm_p << std::endl;
   }
 
   template<int dim>
   void PostProcessor<dim>::
-  write_output(parallel::distributed::BlockVector<double> const &velocity,
-               parallel::distributed::Vector<double> const      &pressure,
-               parallel::distributed::BlockVector<double> const &vorticity,
+  write_output(parallel::distributed::Vector<double> const &velocity,
+               parallel::distributed::Vector<double> const &pressure,
+               parallel::distributed::Vector<double> const &vorticity,
                parallel::distributed::Vector<double> const &divergence)
   {
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
     pcout << std::endl << "OUTPUT << Write data at time t = " << std::scientific << std::setprecision(4) << time_ << std::endl;
 
-    const unsigned int number_vorticity_components = (dim==2) ? 1 : dim;
-    // velocity + xwall dofs
-    const FESystem<dim> joint_fe (ns_operation_.get_fe_u(), dim,
-#ifdef CHANNEL
-                                  ns_operation_.get_XWall().ReturnFE(), 1,
-                                  ns_operation_.get_fe_xwall(), dim,
-#endif
-                                  ns_operation_.get_fe_u(), number_vorticity_components
-#ifdef CHANNEL
-                                  ,ns_operation_.get_fe_xwall(), number_vorticity_components
-#endif
-                                  );
-    DoFHandler<dim> joint_dof_handler (ns_operation_.get_dof_handler_u().get_triangulation());
-    joint_dof_handler.distribute_dofs (joint_fe);
-    IndexSet joint_relevant_set;
-    DoFTools::extract_locally_relevant_dofs(joint_dof_handler, joint_relevant_set);
-    parallel::distributed::Vector<double>
-      joint_solution (joint_dof_handler.locally_owned_dofs(), joint_relevant_set, MPI_COMM_WORLD);
-    std::vector<types::global_dof_index> loc_joint_dof_indices (joint_fe.dofs_per_cell),
-      loc_vel_dof_indices (ns_operation_.get_fe_u().dofs_per_cell)
-#ifdef CHANNEL
-      , loc_pre_dof_indices(ns_operation_.get_XWall().ReturnFE().dofs_per_cell),
-      loc_vel_xwall_dof_indices(ns_operation_.get_fe_xwall().dofs_per_cell)
-#endif
-      ;
-    typename DoFHandler<dim>::active_cell_iterator
-      joint_cell = joint_dof_handler.begin_active(),
-      joint_endc = joint_dof_handler.end(),
-      vel_cell = ns_operation_.get_dof_handler_u().begin_active()
-#ifdef CHANNEL
-      ,pre_cell = ns_operation_.get_XWall().ReturnDofHandlerWallDistance().begin_active(),
-      vel_cell_xwall = ns_operation_.get_dof_handler_xwall().begin_active()
-#endif
-;
-
-    for (; joint_cell != joint_endc; ++joint_cell, ++vel_cell
-#ifdef CHANNEL
-    , ++ pre_cell, ++vel_cell_xwall
-#endif
-    )
-      if (joint_cell->is_locally_owned())
-      {
-        joint_cell->get_dof_indices (loc_joint_dof_indices);
-        vel_cell->get_dof_indices (loc_vel_dof_indices);
-#ifdef CHANNEL
-        pre_cell->get_dof_indices (loc_pre_dof_indices);
-        vel_cell_xwall->get_dof_indices (loc_vel_xwall_dof_indices);
-#endif
-        for (unsigned int i=0; i<joint_fe.dofs_per_cell; ++i)
-          switch (joint_fe.system_to_base_index(i).first.first)
-            {
-            case 0: //velocity
-              Assert (joint_fe.system_to_base_index(i).first.second < dim,
-                      ExcInternalError());
-              joint_solution (loc_joint_dof_indices[i]) =
-                velocity.block(joint_fe.system_to_base_index(i).first.second)
-                (loc_vel_dof_indices[ joint_fe.system_to_base_index(i).second ]);
-              break;
-#ifdef CHANNEL
-            case 1: //tauw, necessary to reconstruct velocity
-              Assert (joint_fe.system_to_base_index(i).first.second == 0,
-                      ExcInternalError());
-              joint_solution (loc_joint_dof_indices[i]) =
-                  (ns_operation_.get_fe_parameters().xwallstatevec[1])
-                (loc_pre_dof_indices[ joint_fe.system_to_base_index(i).second ]);
-              break;
-            case 2: //velocity_xwall
-              Assert (joint_fe.system_to_base_index(i).first.second < dim,
-                      ExcInternalError());
-              joint_solution (loc_joint_dof_indices[i]) =
-                velocity.block( dim + joint_fe.system_to_base_index(i).first.second ) //TODO: Benjamin: check indices
-                (loc_vel_xwall_dof_indices[ joint_fe.system_to_base_index(i).second ]);
-              break;
-            case 3: //vorticity
-#else
-            case 1:
-#endif
-              Assert (joint_fe.system_to_base_index(i).first.second < dim,
-                      ExcInternalError());
-              joint_solution (loc_joint_dof_indices[i]) =
-                vorticity.block(joint_fe.system_to_base_index(i).first.second)
-                (loc_vel_dof_indices[ joint_fe.system_to_base_index(i).second ]);
-              break;
-#ifdef CHANNEL
-            case 4: //vorticity_xwall
-              Assert (joint_fe.system_to_base_index(i).first.second < dim,
-                      ExcInternalError());
-              joint_solution (loc_joint_dof_indices[i]) =
-                vorticity.block(dim + joint_fe.system_to_base_index(i).first.second) //TODO: Benjamin: check indices
-                (loc_vel_xwall_dof_indices[ joint_fe.system_to_base_index(i).second ]);
-              break;
-#endif
-            default:
-              Assert (false, ExcInternalError());
-              break;
-            }
-      }
-
-  joint_solution.update_ghost_values();
-
-  Postprocessor<dim> postprocessor (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD));
+//    const unsigned int number_vorticity_components = (dim==2) ? 1 : dim;
+//    // velocity + xwall dofs
+//    const FESystem<dim> joint_fe (ns_operation_.get_fe_u(), dim,
+//#ifdef CHANNEL
+//                                  ns_operation_.get_XWall().ReturnFE(), 1,
+//                                  ns_operation_.get_fe_xwall(), dim,
+//#endif
+//                                  ns_operation_.get_fe_u(), number_vorticity_components
+//#ifdef CHANNEL
+//                                  ,ns_operation_.get_fe_xwall(), number_vorticity_components
+//#endif
+//                                  );
+//    DoFHandler<dim> joint_dof_handler (ns_operation_.get_dof_handler_u().get_triangulation());
+//    joint_dof_handler.distribute_dofs (joint_fe);
+//    IndexSet joint_relevant_set;
+//    DoFTools::extract_locally_relevant_dofs(joint_dof_handler, joint_relevant_set);
+//    parallel::distributed::Vector<double>
+//      joint_solution (joint_dof_handler.locally_owned_dofs(), joint_relevant_set, MPI_COMM_WORLD);
+//    std::vector<types::global_dof_index> loc_joint_dof_indices (joint_fe.dofs_per_cell),
+//      loc_vel_dof_indices (ns_operation_.get_fe_u().dofs_per_cell)
+//#ifdef CHANNEL
+//      , loc_pre_dof_indices(ns_operation_.get_XWall().ReturnFE().dofs_per_cell),
+//      loc_vel_xwall_dof_indices(ns_operation_.get_fe_xwall().dofs_per_cell)
+//#endif
+//      ;
+//    typename DoFHandler<dim>::active_cell_iterator
+//      joint_cell = joint_dof_handler.begin_active(),
+//      joint_endc = joint_dof_handler.end(),
+//      vel_cell = ns_operation_.get_dof_handler_u().begin_active()
+//#ifdef CHANNEL
+//      ,pre_cell = ns_operation_.get_XWall().ReturnDofHandlerWallDistance().begin_active(),
+//      vel_cell_xwall = ns_operation_.get_dof_handler_xwall().begin_active()
+//#endif
+//;
+//
+//    for (; joint_cell != joint_endc; ++joint_cell, ++vel_cell
+//#ifdef CHANNEL
+//    , ++ pre_cell, ++vel_cell_xwall
+//#endif
+//    )
+//      if (joint_cell->is_locally_owned())
+//      {
+//        joint_cell->get_dof_indices (loc_joint_dof_indices);
+//        vel_cell->get_dof_indices (loc_vel_dof_indices);
+//#ifdef CHANNEL
+//        pre_cell->get_dof_indices (loc_pre_dof_indices);
+//        vel_cell_xwall->get_dof_indices (loc_vel_xwall_dof_indices);
+//#endif
+//        for (unsigned int i=0; i<joint_fe.dofs_per_cell; ++i)
+//          switch (joint_fe.system_to_base_index(i).first.first)
+//            {
+//            case 0: //velocity
+//              Assert (joint_fe.system_to_base_index(i).first.second < dim,
+//                      ExcInternalError());
+//              joint_solution (loc_joint_dof_indices[i]) =
+//                velocity.block(joint_fe.system_to_base_index(i).first.second)
+//                (loc_vel_dof_indices[ joint_fe.system_to_base_index(i).second ]);
+//              break;
+//#ifdef CHANNEL
+//            case 1: //tauw, necessary to reconstruct velocity
+//              Assert (joint_fe.system_to_base_index(i).first.second == 0,
+//                      ExcInternalError());
+//              joint_solution (loc_joint_dof_indices[i]) =
+//                  (ns_operation_.get_fe_parameters().xwallstatevec[1])
+//                (loc_pre_dof_indices[ joint_fe.system_to_base_index(i).second ]);
+//              break;
+//            case 2: //velocity_xwall
+//              Assert (joint_fe.system_to_base_index(i).first.second < dim,
+//                      ExcInternalError());
+//              joint_solution (loc_joint_dof_indices[i]) =
+//                velocity.block( dim + joint_fe.system_to_base_index(i).first.second ) //TODO: Benjamin: check indices
+//                (loc_vel_xwall_dof_indices[ joint_fe.system_to_base_index(i).second ]);
+//              break;
+//            case 3: //vorticity
+//#else
+//            case 1:
+//#endif
+//              Assert (joint_fe.system_to_base_index(i).first.second < dim,
+//                      ExcInternalError());
+//              joint_solution (loc_joint_dof_indices[i]) =
+//                vorticity.block(joint_fe.system_to_base_index(i).first.second)
+//                (loc_vel_dof_indices[ joint_fe.system_to_base_index(i).second ]);
+//              break;
+//#ifdef CHANNEL
+//            case 4: //vorticity_xwall
+//              Assert (joint_fe.system_to_base_index(i).first.second < dim,
+//                      ExcInternalError());
+//              joint_solution (loc_joint_dof_indices[i]) =
+//                vorticity.block(dim + joint_fe.system_to_base_index(i).first.second) //TODO: Benjamin: check indices
+//                (loc_vel_xwall_dof_indices[ joint_fe.system_to_base_index(i).second ]);
+//              break;
+//#endif
+//            default:
+//              Assert (false, ExcInternalError());
+//              break;
+//            }
+//      }
+//
+//  joint_solution.update_ghost_values();
+//
+//  Postprocessor<dim> postprocessor (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD));
+//
+//  DataOut<dim> data_out;
+//  data_out.attach_dof_handler(joint_dof_handler);
+//  data_out.add_data_vector(joint_solution, postprocessor);
+//#ifdef CHANNEL
+//  data_out.add_data_vector (ns_operation_.get_XWall().ReturnDofHandlerWallDistance(),ns_operation_.get_fe_parameters().xwallstatevec[0], "wdist");
+//#endif
 
   DataOut<dim> data_out;
-  data_out.attach_dof_handler(joint_dof_handler);
-  data_out.add_data_vector(joint_solution, postprocessor);
-#ifdef CHANNEL
-  data_out.add_data_vector (ns_operation_.get_XWall().ReturnDofHandlerWallDistance(),ns_operation_.get_fe_parameters().xwallstatevec[0], "wdist");
-#endif
+  std::vector<std::string> velocity_names (dim, "velocity");
+  std::vector<DataComponentInterpretation::DataComponentInterpretation>
+    velocity_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
+  data_out.add_data_vector (ns_operation_->get_dof_handler_u(),velocity, velocity_names, velocity_component_interpretation);
+
+  std::vector<std::string> vorticity_names (dim, "vorticity");
+  std::vector<DataComponentInterpretation::DataComponentInterpretation>
+    vorticity_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
+  data_out.add_data_vector (ns_operation_->get_dof_handler_u(),vorticity, vorticity_names, vorticity_component_interpretation);
+
   pressure.update_ghost_values();
-  data_out.add_data_vector (ns_operation_.get_dof_handler_p(),pressure, "p");
+  data_out.add_data_vector (ns_operation_->get_dof_handler_p(),pressure, "p");
 
   if(COMPUTE_DIVERGENCE == true)
-    data_out.add_data_vector (ns_operation_.get_dof_handler_u(),divergence, "div_u_hathat");
+  {
+    std::vector<std::string> divergence_names (dim, "divergence");
+    std::vector<DataComponentInterpretation::DataComponentInterpretation>
+      divergence_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
+    data_out.add_data_vector (ns_operation_->get_dof_handler_u(),divergence, divergence_names, divergence_component_interpretation);
+  }
 
   std::ostringstream filename;
   filename << "output/"
@@ -1698,7 +1811,7 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
            << output_counter_
            << ".vtu";
 
-  data_out.build_patches (ns_operation_.get_mapping(),5);
+  data_out.build_patches (ns_operation_->get_mapping(),5);
 
   std::ofstream output (filename.str().c_str());
   data_out.write_vtu (output);
@@ -1726,7 +1839,7 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 
   template<int dim>
   void PostProcessor<dim>::
-  compute_lift_and_drag(parallel::distributed::BlockVector<double> const &velocity,
+  compute_lift_and_drag(parallel::distributed::Vector<double> const &velocity,
                         parallel::distributed::Vector<double> const &pressure,
                         const bool clear_files) const
   {
@@ -1741,7 +1854,7 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
     for(unsigned int face=ns_operation_.get_data().n_macro_inner_faces(); face<(ns_operation_.get_data().n_macro_inner_faces()+ns_operation_.get_data().n_macro_boundary_faces()); face++)
     {
       fe_eval_velocity.reinit (face);
-      fe_eval_velocity.read_dof_values(velocity,0);
+      fe_eval_velocity.read_dof_values(velocity);
       fe_eval_velocity.evaluate(false,true);
 
       fe_eval_pressure.reinit (face);
@@ -1803,7 +1916,7 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   template<int dim>
   void PostProcessor<dim>::
   compute_pressure_difference(parallel::distributed::Vector<double> const &pressure,
-                              const bool clear_files) const
+                              const bool                                  clear_files) const
   {
 #ifdef FLOW_PAST_CYLINDER
     double pressure_1 = 0.0, pressure_2 = 0.0;
@@ -1897,12 +2010,12 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 
   template<int dim>
   void PostProcessor<dim>::
-  write_divu_statistics(parallel::distributed::BlockVector<double> const &velocity_temp)
+  write_divu_statistics(parallel::distributed::Vector<double> const &velocity_temp)
   {
     ++num_samp_;
 
     std::vector<double > dst(4,0.0);
-    ns_operation_.get_data().loop (&PostProcessor<dim>::local_compute_divu_for_channel_stats,
+    ns_operation_->get_data().loop (&PostProcessor<dim>::local_compute_divu_for_channel_stats,
                                    &PostProcessor<dim>::local_compute_divu_for_channel_stats_face,
                                    &PostProcessor<dim>::local_compute_divu_for_channel_stats_boundary_face,
                                    this, dst, velocity_temp);
@@ -1931,10 +2044,10 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 
   template<int dim>
   void PostProcessor<dim>::
-  write_divu_timeseries(parallel::distributed::BlockVector<double> const &velocity_temp)
+  write_divu_timeseries(parallel::distributed::Vector<double> const &velocity_temp)
   {
     std::vector<double> dst(4,0.0);
-    ns_operation_.get_data().loop (&PostProcessor<dim>::local_compute_divu_for_channel_stats,
+    ns_operation_->get_data().loop (&PostProcessor<dim>::local_compute_divu_for_channel_stats,
                                    &PostProcessor<dim>::local_compute_divu_for_channel_stats_face,
                                    &PostProcessor<dim>::local_compute_divu_for_channel_stats_boundary_face,
                                    this, dst, velocity_temp);
@@ -1971,15 +2084,16 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 
   template<int dim>
   void PostProcessor<dim>::
-  local_compute_divu_for_channel_stats(const MatrixFree<dim,value_type>                     &data,
-                                       std::vector<double>                                  &dst,
-                                       const parallel::distributed::BlockVector<value_type> &source,
-                                       const std::pair<unsigned int,unsigned int>           &cell_range) const
+  local_compute_divu_for_channel_stats(const MatrixFree<dim,value_type>                &data,
+                                       std::vector<double>                             &dst,
+                                       const parallel::distributed::Vector<value_type> &source,
+                                       const std::pair<unsigned int,unsigned int>      &cell_range) const
   {
 #ifdef XWALL
     FEEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,dim,value_type> phi(data,ns_operation_.get_xwallstatevec()[0],ns_operation_.get_xwallstatevec()[1],0,3);
 #else
-    FEEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,FE_DEGREE+1,dim,value_type> phi(data,ns_operation_.get_fe_parameters(),0,0);
+//    FEEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,FE_DEGREE+1,dim,value_type> phi(data,ns_operation_.get_fe_parameters(),0,0);
+    FEEvaluation<dim,FE_DEGREE,FE_DEGREE+1,dim,value_type> phi(data,0,0);
 #endif
     AlignedVector<VectorizedArray<value_type> > JxW_values(phi.n_q_points);
     VectorizedArray<value_type> div_vec = make_vectorized_array(0.);
@@ -1987,7 +2101,7 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
       phi.reinit(cell);
-      phi.read_dof_values(source,0,source,dim);
+      phi.read_dof_values(source);
       phi.evaluate(false,true);
       phi.fill_JxW_values(JxW_values);
 
@@ -2010,17 +2124,19 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 
   template<int dim>
   void PostProcessor<dim>::
-  local_compute_divu_for_channel_stats_face (const MatrixFree<dim,double>                         &data,
-                                             std::vector<double >                                 &dst,
-                                             const parallel::distributed::BlockVector<value_type> &source,
-                                             const std::pair<unsigned int,unsigned int>           &face_range) const
+  local_compute_divu_for_channel_stats_face (const MatrixFree<dim,double>                    &data,
+                                             std::vector<double >                            &dst,
+                                             const parallel::distributed::Vector<value_type> &source,
+                                             const std::pair<unsigned int,unsigned int>      &face_range) const
   {
 #ifdef XWALL
     FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,dim,value_type> fe_eval_xwall(data,ns_operation_.get_xwallstatevec()[0],ns_operation_.get_xwallstatevec()[1],true,0,3);
     FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,dim,value_type> fe_eval_xwall_neighbor(data,ns_operation_.get_xwallstatevec()[0],ns_operation_.get_xwallstatevec()[1],false,0,3);
 #else
-    FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,FE_DEGREE+1,dim,value_type> fe_eval_xwall(data,ns_operation_.get_fe_parameters(),true,0,0);
-    FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,FE_DEGREE+1,dim,value_type> fe_eval_xwall_neighbor(data,ns_operation_.get_fe_parameters(),false,0,0);
+//    FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,FE_DEGREE+1,dim,value_type> fe_eval_xwall(data,ns_operation_.get_fe_parameters(),true,0,0);
+//    FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,FE_DEGREE+1,dim,value_type> fe_eval_xwall_neighbor(data,ns_operation_.get_fe_parameters(),false,0,0);
+    FEFaceEvaluation<dim,FE_DEGREE,FE_DEGREE+1,dim,value_type> fe_eval_xwall(data,true,0,0);
+    FEFaceEvaluation<dim,FE_DEGREE,FE_DEGREE+1,dim,value_type> fe_eval_xwall_neighbor(data,false,0,0);
 #endif
     AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval_xwall.n_q_points);
     VectorizedArray<value_type> diff_mass_flux_vec = make_vectorized_array(0.);
@@ -2028,10 +2144,10 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
     for (unsigned int face=face_range.first; face<face_range.second; ++face)
     {
       fe_eval_xwall.reinit(face);
-      fe_eval_xwall.read_dof_values(source,0,source,dim);
+      fe_eval_xwall.read_dof_values(source);
       fe_eval_xwall.evaluate(true,false);
       fe_eval_xwall_neighbor.reinit(face);
-      fe_eval_xwall_neighbor.read_dof_values(source,0,source,dim);
+      fe_eval_xwall_neighbor.read_dof_values(source);
       fe_eval_xwall_neighbor.evaluate(true,false);
       fe_eval_xwall.fill_JxW_values(JxW_values);
 
@@ -2055,10 +2171,10 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 
   template<int dim>
   void PostProcessor<dim>::
-  local_compute_divu_for_channel_stats_boundary_face (const MatrixFree<dim,double>                          &,
-                                                      std::vector<double >                                  &,
-                                                      const parallel::distributed::BlockVector<value_type>  &,
-                                                      const std::pair<unsigned int,unsigned int>            &) const
+  local_compute_divu_for_channel_stats_boundary_face (const MatrixFree<dim,double>                     &,
+                                                      std::vector<double >                             &,
+                                                      const parallel::distributed::Vector<value_type>  &,
+                                                      const std::pair<unsigned int,unsigned int>       &) const
   {
 
   }
@@ -2067,15 +2183,13 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
   class NavierStokesProblem
   {
   public:
-    typedef typename NavierStokesOperation<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>::value_type value_type;
+    typedef typename DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>::value_type value_type;
     NavierStokesProblem(const unsigned int refine_steps_space, const unsigned int refine_steps_time=0);
     void solve_problem();
 
   private:
     void create_grid();
-    void calculate_time_step();
     void print_parameters() const;
-    void timeloop();
 
     ConditionalOStream pcout;
 
@@ -2089,19 +2203,18 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 
     InputParameters param;
 
-    NavierStokesOperation<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>  navier_stokes_operation;
-    PostProcessor<dim> postprocessor;
-    TimeIntDualSplitting<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type> time_integrator;
+    std_cxx11::shared_ptr<DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> > navier_stokes_operation;
+
+    std_cxx11::shared_ptr<PostProcessor<dim> > postprocessor;
+
+    std_cxx11::shared_ptr<TimeIntBDF<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type> > time_integrator;
   };
 
   template<int dim>
   NavierStokesProblem<dim>::NavierStokesProblem(const unsigned int refine_steps_space, const unsigned int refine_steps_time):
   pcout (std::cout,Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0),
   triangulation(MPI_COMM_WORLD,dealii::Triangulation<dim>::none,parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
-  n_refine_space(refine_steps_space),
-  navier_stokes_operation(triangulation,param),
-  postprocessor(navier_stokes_operation,param),
-  time_integrator(navier_stokes_operation,postprocessor,param,refine_steps_time)
+  n_refine_space(refine_steps_space)
   {
     pcout << std::endl << std::endl << std::endl
     << "_________________________________________________________________________________" << std::endl
@@ -2111,6 +2224,33 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
     << "                based on a semi-explicit dual-splitting approach                 " << std::endl
     << "_________________________________________________________________________________" << std::endl
     << std::endl;
+
+    // initialize navier_stokes_operation
+    if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      navier_stokes_operation.reset(new DGNavierStokesDualSplitting<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
+          (triangulation,param));
+    }
+    else if(param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+    {
+      navier_stokes_operation.reset(new DGNavierStokesCoupled<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
+          (triangulation,param));
+    }
+
+    // initialize postprocessor after initializing navier_stokes_operation
+    postprocessor.reset(new PostProcessor<dim>(navier_stokes_operation,param));
+
+    // initialize time integrator that depends on both navier_stokes_operation and postprocessor
+    if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      time_integrator.reset(new TimeIntBDFDualSplitting<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
+          navier_stokes_operation,postprocessor,param,refine_steps_time));
+    }
+    else if(param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+    {
+      time_integrator.reset(new TimeIntBDFCoupled<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
+          navier_stokes_operation,postprocessor,param,refine_steps_time));
+    }
   }
 
   template <int dim>
@@ -2475,21 +2615,22 @@ void NavierStokesProblem<dim>::solve_problem()
 {
   create_grid();
 
-  navier_stokes_operation.setup(periodic_faces, dirichlet_boundary, neumann_boundary);
+  navier_stokes_operation->setup(periodic_faces, dirichlet_boundary, neumann_boundary);
 
-  // setup time integrator before calling setup_solvers (this is necessary since the setup of the solvers
-  // depends on quantities such as the time_step_size or gamma0
-  time_integrator.setup();
+  // setup time integrator before calling setup_solvers
+  // (this is necessary since the setup of the solvers
+  // depends on quantities such as the time_step_size or gamma0!!!)
+  time_integrator->setup();
 
-  navier_stokes_operation.setup_solvers(periodic_faces);
+  navier_stokes_operation->setup_solvers(periodic_faces);
 
   print_parameters();
 
-  postprocessor.setup();
+  postprocessor->setup();
 
-  time_integrator.timeloop();
+  time_integrator->timeloop();
 
-  time_integrator.analyze_computing_times();
+  time_integrator->analyze_computing_times();
 }
 
 int main (int argc, char** argv)

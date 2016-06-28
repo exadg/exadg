@@ -8,7 +8,12 @@
 #ifndef INCLUDE_INPUTPARAMETERS_H_
 #define INCLUDE_INPUTPARAMETERS_H_
 
+#include "PoissonSolverInputParameters.h"
+#include "MultigridInputParameters.h"
+
 enum class TimeStepCalculation { ConstTimeStepUserSpecified, ConstTimeStepCFL, AdaptiveTimeStepCFL };
+
+enum class TemporalDiscretization { BDFDualSplittingScheme, BDFCoupledSolution };
 
 enum class ProjectionType { NoPenalty, DivergencePenalty, DivergenceAndContinuityPenalty };
 enum class SolverProjection { LU, PCG };
@@ -17,7 +22,7 @@ enum class PreconditionerProjection { None, Jacobi, InverseMassMatrix };
 enum class FormulationViscousTerm { DivergenceFormulation, LaplaceFormulation };
 enum class InteriorPenaltyFormulationViscous { SIPG, NIPG };
 enum class SolverViscous { PCG, GMRES };
-enum class PreconditionerViscous { None, Jacobi, InverseMassMatrix };
+enum class PreconditionerViscous { None, Jacobi, InverseMassMatrix, GeometricMultigrid };
 
 class InputParameters
 {
@@ -49,6 +54,9 @@ public:
   // kinematic viscosity nu
   double const viscosity;
 
+  // temporal discretization method
+  TemporalDiscretization temporal_discretization;
+
   // order of BDF time integration scheme and extrapolation scheme
   unsigned int const order_time_integrator;
   // start time integrator with low order time integrator, i.e. first order Euler method
@@ -56,6 +64,11 @@ public:
 
   // solve unsteady Stokes equations
   bool const solve_stokes_equations;
+
+  // use symmetric saddle point matrix for coupled solver:
+  // continuity equation formulated as: - div(u) = 0 -> symmetric formulation
+  //                                      div(u) = 0 -> non-symmetric formulation
+  bool const use_symmetric_saddle_point_matrix;
 
   // solve convective step implicitly
   bool const convective_step_implicit;
@@ -76,13 +89,27 @@ public:
 
   // integration by parts of div(U_tilde) on rhs of pressure Poisson equation
   bool const divu_integrated_by_parts;
+  // use boundary data if integrated by parts
+  bool const divu_use_boundary_data;
   // integration by parts of grad(P) on rhs projection step
   bool const gradp_integrated_by_parts;
+  // use boundary data if integrated by parts
+  bool const gradp_use_boundary_data;
 
   // interior penalty parameter scaling factor for pressure Poisson equation
   double const IP_factor_pressure;
   // interior penalty parameter scaling factor for Helmholtz equation of viscous step
   double const IP_factor_viscous;
+
+  // solver tolerances Newton solver
+  double const abs_tol_newton;
+  double const rel_tol_newton;
+  unsigned int const max_iter_newton;
+
+  // solver tolerances for linearized problem of Newton solver
+  double const abs_tol_linear;
+  double const rel_tol_linear;
+  unsigned int const max_iter_linear;
 
   // solver tolerances for pressure Poisson equation
   double const abs_tol_pressure;
@@ -95,6 +122,15 @@ public:
   // solver tolerances for Helmholtz equation of viscous step
   double const abs_tol_viscous;
   double const rel_tol_viscous;
+
+  // type of pressure Poisson solver
+  SolverPoisson solver_poisson;
+  // preconditioner type for solution of pressure Poisson equation
+  PreconditionerPoisson preconditioner_poisson;
+  // multigrid smoother pressure Poisson equation
+  MultigridSmoother multigrid_smoother;
+  // multigrid coarse grid solver pressure Poisson equation
+  MultigridCoarseGridSolver multigrid_coarse_grid_solver;
 
   // projection type: standard projection (no penalty term), divergence penalty term, divergence and continuity penalty term (weak projection)
   ProjectionType projection_type;
@@ -111,6 +147,10 @@ public:
   SolverViscous solver_viscous;
   // Preconditioner type for solution of viscous step
   PreconditionerViscous preconditioner_viscous;
+  // multigrid smoother pressure Poisson equation
+  MultigridSmoother multigrid_smoother_viscous;
+  // multigrid coarse grid solver pressure Poisson equation
+  MultigridCoarseGridSolver multigrid_coarse_grid_solver_viscous;
 
   // show solver performance (wall time, number of iterations) every ... timesteps
   unsigned int const output_solver_info_every_timesteps;

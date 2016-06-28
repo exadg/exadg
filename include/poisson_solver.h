@@ -13,37 +13,31 @@
 #include <deal.II/multigrid/mg_coarse.h>
 #include <deal.II/multigrid/mg_smoother.h>
 #include <deal.II/multigrid/mg_matrix.h>
+#include <deal.II/lac/parallel_vector.h>
 
 using namespace dealii;
 
+#include "FE_Parameters.h"
 
-template<int dim, typename VectorType, typename MatrixType, typename TransferType,
-         typename PreconditionerType> class MultigridPreconditioner;
-
-template <int dim>
-struct PoissonSolverData
+template<int dim>
+struct LaplaceOperatorData
 {
-  PoissonSolverData ()
+  LaplaceOperatorData ()
     :
-    poisson_dof_index(0),
-    poisson_quad_index(0),
-    penalty_factor(1.),
-    solver_tolerance(1e-5),
-    solver_tolerance_abs(1e-12),
-    smoother_poly_degree(5),
-    smoother_smoothing_range(20),
-    coarse_solver(coarse_chebyshev_smoother)
+    laplace_dof_index(0),
+    laplace_quad_index(0),
+    penalty_factor(1.)
   {}
 
   // If an external MatrixFree object is given which can contain other
   // components than the variable for which the Poisson equation should be
   // solved, this selects the correct DoFHandler component
-  unsigned int poisson_dof_index;
+  unsigned int laplace_dof_index;
 
   // If an external MatrixFree object is given which can contain other
   // quadrature formulas than the quadrature formula which should be used by
   // the Poisson solver, this selects the correct quadrature index
-  unsigned int poisson_quad_index;
+  unsigned int laplace_quad_index;
 
   // The penalty parameter for the symmetric interior penalty method is
   // computed as penalty_factor * (fe_degree+1)^2 /
@@ -59,26 +53,7 @@ struct PoissonSolverData
   // If periodic boundaries are present, this variable collects matching faces
   // on the two sides of the domain
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs_level0;
-
-  // Sets the tolerance for the linear solver
-  double solver_tolerance;
-
-  // Sets the tolerance for the linear solver
-  double solver_tolerance_abs;
-
-  // Sets the polynomial degree of the Chebyshev smoother (Chebyshev
-  // accelerated Jacobi smoother)
-  double smoother_poly_degree;
-
-  // Sets the smoothing range of the Chebyshev smoother
-  double smoother_smoothing_range;
-
-  // Sets the coarse grid solver
-  enum CoarseSolveSelector { coarse_chebyshev_smoother , coarse_iterative_noprec,
-                             coarse_iterative_jacobi } coarse_solver;
 };
-
-
 
 // Generic implementation of Laplace operator for both continuous elements
 // (FE_Q) and discontinuous elements (FE_DGQ).
@@ -97,56 +72,58 @@ public:
   // mf_data.
   void reinit(const MatrixFree<dim,Number>       &mf_data,
               const Mapping<dim>                 &mapping,
-              const PoissonSolverData<dim>       &solver_data);
+              const LaplaceOperatorData<dim>     &operator_data,
+              FEParameters const                 &fe_param = FEParameters());
 
   // Initialization given a DoFHandler object. This internally creates a
   // MatrixFree object. Note that the integration routines and loop bounds
   // from MatrixFree cannot be combined with evaluators from another
   // MatrixFree object.
-  void reinit (const DoFHandler<dim> &dof_handler,
-               const Mapping<dim> &mapping,
-               const PoissonSolverData<dim> &solver_data,
-               const MGConstrainedDoFs &mg_constrained_dofs,
-               const unsigned int level = numbers::invalid_unsigned_int);
+  void reinit (const DoFHandler<dim>          &dof_handler,
+               const Mapping<dim>             &mapping,
+               const LaplaceOperatorData<dim> &operator_data,
+               const MGConstrainedDoFs        &mg_constrained_dofs,
+               const unsigned int             level = numbers::invalid_unsigned_int,
+               FEParameters const             &fe_param = FEParameters());
 
   // Checks whether the boundary conditions are consistent, i.e., no overlap
   // between the Dirichlet, Neumann, and periodic parts. The return value of
   // this function indicates whether a pure Neumann problem is detected (and
   // additional measures for making the linear system non-singular are
   // necessary).
-  static bool verify_boundary_conditions(const DoFHandler<dim>        &dof_handler,
-                                         const PoissonSolverData<dim> &solver_data);
+  static bool verify_boundary_conditions(const DoFHandler<dim>          &dof_handler,
+                                         const LaplaceOperatorData<dim> &operator_data);
 
   // Performs a matrix-vector multiplication
-  void vmult(parallel::distributed::Vector<Number> &dst,
+  void vmult(parallel::distributed::Vector<Number>       &dst,
              const parallel::distributed::Vector<Number> &src) const;
 
   // Performs a transpose matrix-vector multiplication. Since the Poisson
   // operator is symmetric, this simply redirects to the vmult call.
-  void Tvmult(parallel::distributed::Vector<Number> &dst,
+  void Tvmult(parallel::distributed::Vector<Number>       &dst,
               const parallel::distributed::Vector<Number> &src) const;
 
   // Performs a transpose matrix-vector multiplication, adding the result in
   // the previous content of dst. Since the Poisson operator is symmetric,
   // this simply redirects to the vmult_add call.
-  void Tvmult_add(parallel::distributed::Vector<Number> &dst,
+  void Tvmult_add(parallel::distributed::Vector<Number>       &dst,
                   const parallel::distributed::Vector<Number> &src) const;
 
   // Performs a matrix-vector multiplication, adding the result in
   // the previous content of dst
-  void vmult_add(parallel::distributed::Vector<Number> &dst,
+  void vmult_add(parallel::distributed::Vector<Number>       &dst,
                  const parallel::distributed::Vector<Number> &src) const;
 
   // Performs the matrix-vector multiplication including the refinement edges
   // that distributes the residual to the refinement edge (used in the
   // restriction phase)
-  void vmult_interface_down(parallel::distributed::Vector<Number> &dst,
+  void vmult_interface_down(parallel::distributed::Vector<Number>       &dst,
                             const parallel::distributed::Vector<Number> &src) const;
 
   // Performs the matrix-vector multiplication including the refinement edges
   // that takes an input from the refinement edge to the interior (used in the
   // prolongation phase)
-  void vmult_add_interface_up(parallel::distributed::Vector<Number> &dst,
+  void vmult_add_interface_up(parallel::distributed::Vector<Number>       &dst,
                               const parallel::distributed::Vector<Number> &src) const;
 
   // For a pure Neumann problem, this call subtracts the mean value of 'vec'
@@ -182,7 +159,7 @@ public:
   // vector needs not be correctly set at entry as it will be sized
   // appropriately by initialize_dof_vector internally.
   void
-  compute_inverse_diagonal (parallel::distributed::Vector<Number> &inverse_diagonal_entries);
+  calculate_inverse_diagonal (parallel::distributed::Vector<Number> &inverse_diagonal_entries) const;
 
   // Returns a reference to the ratio between the element surface and the
   // element volume for the symmetric interior penalty method (only available
@@ -198,19 +175,23 @@ public:
   // get_array_penalty_parameter()[cell] * get_penalty_factor().
   Number get_penalty_factor() const
   {
-    return solver_data.penalty_factor * (fe_degree + 1.0) * (fe_degree + 1.0);
+    return operator_data.penalty_factor * (fe_degree + 1.0) * (fe_degree + 1.0);
   }
 
-  // Returns a reference to the data in use.
-  const PoissonSolverData<dim> &
-  get_solver_data() const
+  const LaplaceOperatorData<dim> &
+  get_operator_data() const
   {
-    return solver_data;
+    return operator_data;
   }
 
   bool is_empty_locally() const
   {
     return data->n_macro_cells() == 0;
+  }
+
+  const MatrixFree<dim,Number> & get_data() const
+  {
+    return *data;
   }
 
 private:
@@ -221,7 +202,7 @@ private:
 
   // Runs the loop over all cells and faces for use in matrix-vector
   // multiplication, adding the result in the previous content of dst
-  void run_vmult_loop(parallel::distributed::Vector<Number> &dst,
+  void run_vmult_loop(parallel::distributed::Vector<Number>       &dst,
                       const parallel::distributed::Vector<Number> &src) const;
 
   template <int degree>
@@ -249,26 +230,28 @@ private:
   void
   local_diagonal_cell (const MatrixFree<dim,Number>                &data,
                        parallel::distributed::Vector<Number>       &dst,
-                       const unsigned int  &,
+                       const unsigned int                          &,
                        const std::pair<unsigned int,unsigned int>  &cell_range) const;
 
   template <int degree>
   void
   local_diagonal_face (const MatrixFree<dim,Number>                &data,
                        parallel::distributed::Vector<Number>       &dst,
-                       const unsigned int  &,
+                       const unsigned int                          &,
                        const std::pair<unsigned int,unsigned int>  &face_range) const;
 
   template <int degree>
   void
   local_diagonal_boundary (const MatrixFree<dim,Number>                &data,
                            parallel::distributed::Vector<Number>       &dst,
-                           const unsigned int  &,
+                           const unsigned int                          &,
                            const std::pair<unsigned int,unsigned int>  &face_range) const;
 
   const MatrixFree<dim,Number> *data;
   MatrixFree<dim,Number> own_matrix_free_storage;
-  PoissonSolverData<dim> solver_data;
+
+  LaplaceOperatorData<dim> operator_data;
+
   unsigned int fe_degree;
   bool needs_mean_value_constraint;
   bool apply_mean_value_constraint_in_matvec;
@@ -279,102 +262,103 @@ private:
   mutable std::vector<std::pair<Number,Number> > edge_constrained_values;
 };
 
+#include "PoissonSolverInputParameters.h"
+#include "MultigridInputParameters.h"
 
-
-// Specialized matrix-free implementation that overloads the copy_to_mg
-// function for proper initialization of the vectors in matrix-vector
-// products.
-template <int dim, typename Operator>
-class MGTransferMF : public MGTransferMatrixFree<dim, typename Operator::value_type>
+struct PoissonSolverData
 {
-public:
-  MGTransferMF()
+  PoissonSolverData ()
     :
-    laplace_operator (0)
+    max_iter(1e4),
+    solver_tolerance_rel(1e-5),
+    solver_tolerance_abs(1e-12),
+    solver_poisson(SolverPoisson::PCG),
+    preconditioner_poisson(PreconditionerPoisson::GeometricMultigrid),
+    smoother_poly_degree(5),
+    smoother_smoothing_range(20),
+    multigrid_smoother(MultigridSmoother::Chebyshev),
+    coarse_solver(MultigridCoarseGridSolver::coarse_chebyshev_smoother)
   {}
 
-  void set_laplace_operator(const MGLevelObject<Operator> &laplace)
-  {
-    laplace_operator = &laplace;
-  }
+  // maximum number of iterations
+  unsigned int max_iter;
 
-  /**
-   * Overload copy_to_mg from MGTransferMatrixFree
-   */
-  template <class InVector, int spacedim>
-  void
-  copy_to_mg (const DoFHandler<dim,spacedim> &mg_dof,
-              MGLevelObject<parallel::distributed::Vector<typename Operator::value_type> > &dst,
-              const InVector &src) const
-  {
-    AssertThrow(laplace_operator != 0, ExcNotInitialized());
-    for (unsigned int level=dst.min_level();
-         level<=dst.max_level(); ++level)
-      (*laplace_operator)[level].initialize_dof_vector(dst[level]);
-    MGLevelGlobalTransfer<parallel::distributed::Vector<typename Operator::value_type> >::copy_to_mg(mg_dof, dst, src);
-  }
+  // Sets the tolerance for the linear solver
+  double solver_tolerance_rel;
 
-private:
-  const MGLevelObject<Operator> *laplace_operator;
+  // Sets the tolerance for the linear solver
+  double solver_tolerance_abs;
+
+  // solver type
+  SolverPoisson solver_poisson;
+
+  // preconditioner type
+  PreconditionerPoisson preconditioner_poisson;
+
+  // Sets the polynomial degree of the Chebyshev smoother (Chebyshev
+  // accelerated Jacobi smoother)
+  double smoother_poly_degree;
+
+  // Sets the smoothing range of the Chebyshev smoother
+  double smoother_smoothing_range;
+
+  // multigrid smoother
+  MultigridSmoother multigrid_smoother;
+
+  // Sets the coarse grid solver
+  MultigridCoarseGridSolver coarse_solver;
 };
 
-
+#include "Preconditioner.h"
 
 // Implementation of a Poisson solver class that wraps around the matrix-free
 // implementation in LaplaceOperator.
-template <int dim>
+template <int dim, typename value_type=double>
 class PoissonSolver
 {
 public:
   typedef float Number;
 
   // Constructor. Does nothing.
-  PoissonSolver() {}
+  PoissonSolver()
+    :
+    global_matrix(nullptr)
+  {}
 
   // Initialize the LaplaceOperator implementing the matrix-vector product and
   // the multigird preconditioner object given a mapping object and a
   // matrix_free object defining the active cells. Adaptive meshes with
   // hanging nodes are allowed but currently only the case of continuous
   // elements is implemented. (The DG case is not very difficult.)
-  void initialize (const Mapping<dim> &mapping,
-                   const MatrixFree<dim,double> &matrix_free,
-                   const PoissonSolverData<dim> &solver_data);
+  void initialize (const LaplaceOperator<dim,value_type> &laplace_operator,
+                   const Mapping<dim>                    &mapping,
+                   const MatrixFree<dim,value_type>      &matrix_free,
+                   const PoissonSolverData               &solver_data);
 
   // Solves a linear system. The prerequisite for this function is that
   // initialize() has been called.
-  unsigned int solve (parallel::distributed::Vector<double> &dst,
-                      const parallel::distributed::Vector<double> &src) const;
+  unsigned int solve (parallel::distributed::Vector<value_type>       &dst,
+                      const parallel::distributed::Vector<value_type> &src) const;
 
   // Applies a V-cycle on the given vector, storing the result in dst. The
   // prerequisite for this function is that initialize() has been called.
-  void apply_precondition (parallel::distributed::Vector<double> &dst,
-                           const parallel::distributed::Vector<double> &src) const;
+  void apply_precondition (parallel::distributed::Vector<value_type>       &dst,
+                           const parallel::distributed::Vector<value_type> &src) const;
 
   // Returns a reference to the underlying matrix object. The object only
   // makes sense after a call to initialize().
-  const LaplaceOperator<dim,double> &
+  const LaplaceOperator<dim,value_type> &
   get_matrix() const
   {
-    return global_matrix;
+    return *global_matrix;
   }
 
 private:
   MPI_Comm mpi_communicator;
 
-  LaplaceOperator<dim,double> global_matrix;
-
-  typedef LaplaceOperator<dim,Number> LevelMatrixType;
-
-  MGConstrainedDoFs mg_constrained_dofs;
-  MGLevelObject<LevelMatrixType> mg_matrices;
-  MGTransferMF<dim,LevelMatrixType> mg_transfer;
-
-  typedef PreconditionChebyshev<LevelMatrixType,parallel::distributed::Vector<Number> > SMOOTHER;
-  MGLevelObject<SMOOTHER> mg_smoother;
-
-  std_cxx11::shared_ptr<MGCoarseGridBase<parallel::distributed::Vector<Number> > > mg_coarse;
-
-  std_cxx11::shared_ptr<MultigridPreconditioner<dim,parallel::distributed::Vector<Number>,LevelMatrixType, MGTransferMF<dim,LevelMatrixType>, SMOOTHER> > preconditioner;
+  LaplaceOperator<dim,value_type> const *global_matrix;
+  PoissonSolverData solver_data;
+  std_cxx11::shared_ptr<PreconditionerBase<value_type> > preconditioner;
 };
 
 

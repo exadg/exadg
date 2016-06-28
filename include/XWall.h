@@ -253,7 +253,7 @@ template <int dim, int fe_degree = 1, int fe_degree_xwall = 1, int n_q_points_1d
 
 public:
   FEEvaluationXWall (const MatrixFree<dim,Number> &matrix_free,
-                      FEParameters<Number> const & in_fe_params,
+                      FEParameters const & in_fe_params,
                       const unsigned int            fe_no = 0,
                       const unsigned int            quad_no = 0):
                         EvaluationXWall<dim,n_q_points_1d, Number>::EvaluationXWall(matrix_free, in_fe_params.xwallstatevec[0], in_fe_params.xwallstatevec[1],in_fe_params.viscosity),
@@ -920,7 +920,7 @@ public:
     return;
   }
   private:
-    FEParameters<Number> const & fe_params;
+    FEParameters const & fe_params;
     AlignedVector<FEEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number> > fe_eval;
     AlignedVector<FEEvaluation<dim,fe_degree_xwall,n_q_points_1d,n_components_,Number> > fe_eval_xwall;
     AlignedVector<FEEvaluation<dim,1,n_q_points_1d,1,double> > fe_eval_tauw;
@@ -950,7 +950,7 @@ template <int dim, int fe_degree = 1, int fe_degree_xwall = 1, int n_q_points_1d
     typedef typename BaseClass::gradient_type gradient_type;
 
     FEFaceEvaluationXWall (const MatrixFree<dim,Number> &matrix_free,
-                      FEParameters<Number> const & in_fe_params,
+                      FEParameters const & in_fe_params,
                       const bool                    is_left_face = true,
                       const unsigned int            fe_no = 0,
                       const unsigned int            quad_no = 0,
@@ -1668,7 +1668,7 @@ template <int dim, int fe_degree = 1, int fe_degree_xwall = 1, int n_q_points_1d
     }
 
   private:
-    FEParameters<Number> const & fe_params;
+    FEParameters const & fe_params;
     FEFaceEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number> fe_eval;
     FEFaceEvaluation<dim,fe_degree_xwall,n_q_points_1d,n_components_,Number> fe_eval_xwall;
     FEFaceEvaluation<dim,1,n_q_points_1d,1,Number> fe_eval_tauw;
@@ -1696,7 +1696,7 @@ public:
   XWall(const DoFHandler<dim> &dof_handler,
       MatrixFree<dim,double>* data,
       AlignedVector<VectorizedArray<double> > &element_volume,
-      FEParameters<double> & fe_params);
+      FEParameters & fe_params);
 
   //initialize everything, e.g.
   //setup of wall distance
@@ -1772,7 +1772,7 @@ private:
   //continuous vectors with linear interpolation
   FE_Q<dim> fe_wall_distance;
   DoFHandler<dim> dof_handler_wall_distance;
-  FEParameters<double> & fe_params;
+  FEParameters & fe_params;
   parallel::distributed::Vector<double> tauw_boundary;
   std::vector<unsigned int> vector_to_tauw_boundary;
   parallel::distributed::Vector<double> tauw_n;
@@ -1789,7 +1789,7 @@ template<int dim, int fe_degree, int fe_degree_xwall>
 XWall<dim,fe_degree,fe_degree_xwall>::XWall(const DoFHandler<dim> &dof_handler,
     MatrixFree<dim,double>* data,
     AlignedVector<VectorizedArray<double> > &element_volume,
-    FEParameters<double> & fe_params)
+    FEParameters & fe_params)
 :fe_wall_distance(QGaussLobatto<1>(1+1)),
  fe_params(fe_params),
  dof_handler_wall_distance(dof_handler.get_triangulation()),
