@@ -99,7 +99,7 @@ setup_derived()
 {
   initialize_vorticity();
 
-  if(this->param.solve_stokes_equations == false && this->param.start_with_low_order == false)
+  if(this->param.equation_type == EquationType::NavierStokes && this->param.start_with_low_order == false)
     initialize_vec_convective_term();
 }
 
@@ -123,7 +123,7 @@ initialize_vectors()
   ns_operation_splitting->initialize_vector_vorticity(vorticity_extrapolated);
 
   // vec_convective_term
-  if(this->param.solve_stokes_equations == false)
+  if(this->param.equation_type == EquationType::NavierStokes)
   {
     for(unsigned int i=0;i<vec_convective_term.size();++i)
       ns_operation_splitting->initialize_vector_velocity(vec_convective_term[i]);
@@ -211,7 +211,7 @@ solve_timestep()
   // set the parameters that NavierStokesOperation depends on
   ns_operation_splitting->set_time(this->time);
   ns_operation_splitting->set_time_step(this->time_steps[0]);
-  ns_operation_splitting->set_gamma0(this->gamma0);
+  ns_operation_splitting->set_scaling_factor_time_derivative_term(this->gamma0/this->time_steps[0]);
 
   // perform the four substeps of the dual-splitting method
   convective_step();
@@ -243,7 +243,7 @@ convective_step()
   ns_operation_splitting->calculate_body_force(velocity_np,this->time+this->time_steps[0]);
 
   // compute convective term and extrapolate convective term (if not Stokes equations)
-  if(this->param.solve_stokes_equations == false)
+  if(this->param.equation_type == EquationType::NavierStokes)
   {
     ns_operation_splitting->evaluate_convective_term(vec_convective_term[0],velocity[0],this->time);
     ns_operation_splitting->apply_inverse_mass_matrix(vec_convective_term[0],vec_convective_term[0]);
@@ -263,7 +263,7 @@ convective_step()
     velocity_np *= this->time_steps[0]/this->gamma0;
   }
 
-  if(this->param.convective_step_implicit == false)
+  if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     // write output explicit case
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
@@ -272,10 +272,11 @@ convective_step()
                 << "  iterations:        " << std::setw(4) << std::right << "-" << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
     }
   }
-  else // param.convective_step_implicit == true
+  else // param.formulation_of_convective_term == Implicit
   {
-    AssertThrow(this->param.convective_step_implicit && !(this->param.solve_stokes_equations || this->param.small_time_steps_stability),
-        ExcMessage("Use CONVECTIVE_STEP_IMPLICIT = false when solving the Stokes equations or when using the STS approach."));
+    AssertThrow(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit &&
+                !(this->param.equation_type == EquationType::Stokes || this->param.small_time_steps_stability),
+        ExcMessage("Use TREATMENT_OF_CONVECTIVE_TERM = Explicit when solving the Stokes equations or when using the STS approach."));
 
     unsigned int iterations_implicit_convection = ns_operation_splitting->solve_nonlinear_convective_problem(velocity_np,sum_alphai_ui);
 
@@ -367,7 +368,7 @@ rhs_pressure (const parallel::distributed::Vector<value_type>  &src,
   //       (only if we do not solve the Stokes equations)
   //       evaluate convective term and subsequently extrapolate rhs vectors
   //       (the convective term is nonlinear!)
-  if(!this->param.solve_stokes_equations)
+  if(this->param.equation_type == EquationType::NavierStokes)
   {
     for(unsigned int i=0;i<velocity.size();++i)
     {
@@ -459,7 +460,7 @@ prepare_vectors_for_next_timestep()
 
   push_back_vorticity();
 
-  if(this->param.solve_stokes_equations == false)
+  if(this->param.equation_type == EquationType::NavierStokes)
     push_back_vec_convective_term();
 
   computing_times[4] += timer.wall_time();

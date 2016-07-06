@@ -733,18 +733,18 @@ void LaplaceOperator<dim,Number>
     }
 
   if(apply_mean_value_constraint_in_matvec)
-    {
-      parallel::distributed::Vector<Number> vec1;
-      vec1.reinit(inverse_diagonal_entries, true);
-      for(unsigned int i=0;i<vec1.local_size();++i)
-        vec1.local_element(i) = 1.;
-      parallel::distributed::Vector<Number> d;
-      d.reinit(inverse_diagonal_entries, true);
-      vmult(d,vec1);
-      double length = vec1*vec1;
-      double factor = vec1*d;
-      inverse_diagonal_entries.add(-2./length,d,factor/pow(length,2.),vec1);
-    }
+  {
+    parallel::distributed::Vector<Number> vec1;
+    vec1.reinit(inverse_diagonal_entries, true);
+    for(unsigned int i=0;i<vec1.local_size();++i)
+      vec1.local_element(i) = 1.;
+    parallel::distributed::Vector<Number> d;
+    d.reinit(inverse_diagonal_entries, true);
+    vmult(d,vec1);
+    double length = vec1*vec1;
+    double factor = vec1*d;
+    inverse_diagonal_entries.add(-2./length,d,factor/pow(length,2.),vec1);
+  }
 
   const std::vector<unsigned int> &
     constrained_dofs = data->get_constrained_dofs();

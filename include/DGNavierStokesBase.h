@@ -74,7 +74,7 @@ public:
     dof_handler_xwall(triangulation),
     time(0.0),
     time_step(1.0),
-    gamma0(1.0),
+    scaling_factor_time_derivative_term(1.0),
     viscosity(parameter.viscosity),
     dof_index_first_point(0),
     param(parameter),
@@ -93,7 +93,7 @@ public:
               std::set<types::boundary_id> dirichlet_bc_indicator,
               std::set<types::boundary_id> neumann_bc_indicator);
 
-  virtual void setup_solvers (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs) = 0;
+  virtual void setup_solvers () = 0;
 
   void prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
                                     parallel::distributed::Vector<value_type> &pressure,
@@ -103,6 +103,26 @@ public:
   MatrixFree<dim,value_type> const & get_data() const
   {
     return data;
+  }
+
+  unsigned int get_dof_index_velocity() const
+  {
+    return static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
+  }
+
+  unsigned int get_quad_index_velocity_linear() const
+  {
+    return static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity);
+  }
+
+  unsigned int get_dof_index_pressure() const
+  {
+    return static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure);
+  }
+
+  unsigned int get_quad_index_pressure() const
+  {
+    return static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::pressure);
   }
 
   MappingQ<dim> const & get_mapping() const
@@ -160,10 +180,40 @@ public:
     return fe_param;
   }
 
-  // setters
-  void set_gamma0(double const gamma0_in)
+  value_type get_scaling_factor_time_derivative_term() const
   {
-    gamma0 = gamma0_in;
+    return scaling_factor_time_derivative_term;
+  }
+
+  std::set<types::boundary_id> get_dirichlet_boundary() const
+  {
+    return dirichlet_boundary;
+  }
+
+  std::set<types::boundary_id> get_neumann_boundary() const
+  {
+    return neumann_boundary;
+  }
+
+  const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > get_periodic_face_pairs() const
+  {
+    return periodic_face_pairs;
+  }
+
+  MassMatrixOperatorData const & get_mass_matrix_operator_data() const
+  {
+    return mass_matrix_operator_data;
+  }
+
+  ViscousOperatorData<dim> const & get_viscous_operator_data() const
+  {
+    return viscous_operator_data;
+  }
+
+  // setters
+  void set_scaling_factor_time_derivative_term(double const value)
+  {
+    scaling_factor_time_derivative_term = value;
   }
 
   void set_time(double const current_time)
@@ -180,13 +230,13 @@ public:
   void initialize_vector_velocity(parallel::distributed::Vector<value_type> &src) const
   {
     this->data.initialize_dof_vector(src,
-        static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::velocity));
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
   }
 
   void initialize_vector_vorticity(parallel::distributed::Vector<value_type> &src) const
   {
     this->data.initialize_dof_vector(src,
-        static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::velocity));
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
   }
 
   //shift pressure (pure Dirichlet BC case)
@@ -218,7 +268,8 @@ protected:
   DoFHandler<dim>  dof_handler_xwall;
 
   double time, time_step;
-  double gamma0;
+  double scaling_factor_time_derivative_term;
+
   const double viscosity;
 
   Point<dim> first_point;
@@ -226,12 +277,16 @@ protected:
 
   std::set<types::boundary_id> dirichlet_boundary;
   std::set<types::boundary_id> neumann_boundary;
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs;
 
   InputParameters const &param;
 
   AlignedVector<VectorizedArray<value_type> > element_volume;
   FEParameters fe_param;
   XWall<dim,fe_degree,fe_degree_xwall> xwall;
+
+  MassMatrixOperatorData mass_matrix_operator_data;
+  ViscousOperatorData<dim> viscous_operator_data;
 
   MassMatrixOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type> mass_matrix_operator;
   ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type> convective_operator;
@@ -264,8 +319,9 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
        std::set<types::boundary_id> dirichlet_bc_indicator,
        std::set<types::boundary_id> neumann_bc_indicator)
 {
-  dirichlet_boundary = dirichlet_bc_indicator;
-  neumann_boundary = neumann_bc_indicator;
+  this->dirichlet_boundary = dirichlet_bc_indicator;
+  this->neumann_boundary = neumann_bc_indicator;
+  this->periodic_face_pairs = periodic_face_pairs;
 
   create_dofs();
 
@@ -283,11 +339,11 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
 
   std::vector<const DoFHandler<dim> * >  dof_handler_vec;
 
-  dof_handler_vec.resize(static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::n_variants));
-  dof_handler_vec[static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::velocity)] = &dof_handler_u;
-  dof_handler_vec[static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::pressure)] = &dof_handler_p;
-  dof_handler_vec[static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::wdist_tauw)] = &xwall.ReturnDofHandlerWallDistance();
-  dof_handler_vec[static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::enriched)] = &dof_handler_xwall;
+  dof_handler_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::n_variants));
+  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity)] = &dof_handler_u;
+  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure)] = &dof_handler_p;
+  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::wdist_tauw)] = &xwall.ReturnDofHandlerWallDistance();
+  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::enriched)] = &dof_handler_xwall;
 
   ConstraintMatrix constraint, constraint_p;
   constraint.close();
@@ -301,42 +357,42 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   std::vector<Quadrature<1> > quadratures;
 
   // resize quadratures
-  quadratures.resize(static_cast<typename std::underlying_type_t<QuadratureSelector> >(QuadratureSelector::n_variants));
+  quadratures.resize(static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::n_variants));
 
   // velocity
-  quadratures[static_cast<typename std::underlying_type_t<QuadratureSelector> >(QuadratureSelector::velocity)]
+  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity)]
               = QGauss<1>(fe_degree+1);
   // pressure
-  quadratures[static_cast<typename std::underlying_type_t<QuadratureSelector> >(QuadratureSelector::pressure)]
+  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::pressure)]
               = QGauss<1>(fe_degree_p+1);
   // exact integration of nonlinear convective term
-  quadratures[static_cast<typename std::underlying_type_t<QuadratureSelector> >(QuadratureSelector::velocity_nonlinear)]
+  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity_nonlinear)]
               = QGauss<1>(fe_degree + (fe_degree+2)/2);
   // enrichment
-  quadratures[static_cast<typename std::underlying_type_t<QuadratureSelector> >(QuadratureSelector::enriched)]
+  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::enriched)]
               = QGauss<1>(n_q_points_1d_xwall);
 
   data.reinit (mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 
   // mass matrix operator
-  MassMatrixOperatorData mass_matrix_operator_data;
-  mass_matrix_operator_data.dof_index = static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::velocity);
+//  MassMatrixOperatorData mass_matrix_operator_data;
+  mass_matrix_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
   mass_matrix_operator.initialize(data,fe_param,mass_matrix_operator_data);
 
   // inverse mass matrix operator
   inverse_mass_matrix_operator.initialize(data,
-          static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::velocity),
-          static_cast<typename std::underlying_type_t<QuadratureSelector> >(QuadratureSelector::velocity));
+          static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity),
+          static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity));
 
   // body force operator
   BodyForceOperatorData body_force_operator_data;
-  body_force_operator_data.dof_index = static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::velocity);
+  body_force_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
   body_force_operator.initialize(data,fe_param,body_force_operator_data);
 
   // gradient operator
   GradientOperatorData gradient_operator_data;
-  gradient_operator_data.dof_index_velocity = static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::velocity);
-  gradient_operator_data.dof_index_pressure = static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::pressure);
+  gradient_operator_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
+  gradient_operator_data.dof_index_pressure = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure);
   gradient_operator_data.integration_by_parts_of_gradP = param.gradp_integrated_by_parts;
   gradient_operator_data.use_boundary_data = param.gradp_use_boundary_data;
   gradient_operator_data.dirichlet_boundaries = dirichlet_boundary;
@@ -345,8 +401,8 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
 
   // divergence operator
   DivergenceOperatorData divergence_operator_data;
-  divergence_operator_data.dof_index_velocity = static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::velocity);
-  divergence_operator_data.dof_index_pressure = static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::pressure);
+  divergence_operator_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
+  divergence_operator_data.dof_index_pressure = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure);
   divergence_operator_data.integration_by_parts_of_divU = param.divu_integrated_by_parts;
   divergence_operator_data.use_boundary_data = param.divu_use_boundary_data;
   divergence_operator_data.dirichlet_boundaries = dirichlet_boundary;
@@ -355,21 +411,23 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
 
   // convective operator
   ConvectiveOperatorData convective_operator_data;
-  convective_operator_data.dof_index = static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::velocity);
+  convective_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
   convective_operator_data.dirichlet_boundaries = dirichlet_boundary;
   convective_operator_data.neumann_boundaries = neumann_boundary;
   convective_operator.initialize(data,fe_param,convective_operator_data);
 
   // viscous operator
-  ViscousOperatorData viscous_operator_data;
+//  ViscousOperatorData viscous_operator_data;
   viscous_operator_data.formulation_viscous_term = param.formulation_viscous_term;
   viscous_operator_data.IP_formulation_viscous = param.IP_formulation_viscous;
   viscous_operator_data.IP_factor_viscous = param.IP_factor_viscous;
   viscous_operator_data.dirichlet_boundaries = dirichlet_boundary;
   viscous_operator_data.neumann_boundaries = neumann_boundary;
-  viscous_operator_data.dof_index = static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::velocity);
+  viscous_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
+  viscous_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
+  viscous_operator_data.viscosity = param.viscosity;
   viscous_operator.initialize(mapping,data,fe_param,viscous_operator_data);
-  viscous_operator.set_constant_viscosity(viscosity);
+  // viscous_operator.set_constant_viscosity(viscosity);
   // viscous_operator.set_variable_viscosity(viscosity);
 
   dof_index_first_point = 0;
@@ -400,7 +458,9 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   }
   dof_index_first_point = Utilities::MPI::sum(dof_index_first_point,MPI_COMM_WORLD);
   for(unsigned int d=0;d<dim;++d)
+  {
     first_point[d] = Utilities::MPI::sum(first_point[d],MPI_COMM_WORLD);
+  }
 
   QGauss<dim> quadrature(fe_degree+1);
   FEValues<dim> fe_values(mapping, dof_handler_u.get_fe(), quadrature, update_JxW_values);
@@ -497,7 +557,7 @@ local_compute_vorticity(const MatrixFree<dim,value_type>                 &data,
                         const std::pair<unsigned int,unsigned int>       &cell_range) const
 {
   FEEval_Velocity_Velocity_linear velocity(data,fe_param,
-      static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::velocity));
+      static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
 
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
   {
@@ -542,7 +602,7 @@ local_compute_divergence (const MatrixFree<dim,value_type>                 &data
                           const std::pair<unsigned int,unsigned int>       &cell_range) const
 {
   FEEval_Velocity_Velocity_linear fe_eval_velocity(data,fe_param,
-      static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::velocity));
+      static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
 
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
   {

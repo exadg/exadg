@@ -97,7 +97,8 @@ initialize_vectors()
   ns_operation_coupled->initialize_block_vector_velocity_pressure(solution_np);
 
   // convective term
-  if(this->param.solve_stokes_equations == false && this->param.convective_step_implicit == false)
+  if(this->param.equation_type == EquationType::NavierStokes &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     for(unsigned int i=0;i<vec_convective_term.size();++i)
       ns_operation_coupled->initialize_vector_velocity(vec_convective_term[i]);
@@ -105,17 +106,18 @@ initialize_vectors()
 
   // temporal derivative term: sum_i (alpha_i * u_i)
   ns_operation_coupled->initialize_vector_velocity(sum_alphai_ui);
+
   // rhs_vector
-  ns_operation_coupled->initialize_block_vector_velocity_pressure(rhs_vector);
+  if(this->param.equation_type == EquationType::Stokes ||
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+    ns_operation_coupled->initialize_block_vector_velocity_pressure(rhs_vector);
 
   // vorticity
   ns_operation_coupled->initialize_vector_vorticity(vorticity);
 
   // divergence
   if(this->param.compute_divergence == true)
-  {
     ns_operation_coupled->initialize_vector_velocity(divergence);
-  }
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
@@ -141,7 +143,8 @@ setup_derived()
   calculate_vorticity();
   calculate_divergence();
 
-  if(this->param.solve_stokes_equations == false && this->param.convective_step_implicit == false &&
+  if(this->param.equation_type == EquationType::NavierStokes &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit &&
      this->param.start_with_low_order == false)
     initialize_vec_convective_term();
 }
@@ -191,7 +194,7 @@ solve_timestep()
   // set the parameters that NavierStokesOperation depends on
   ns_operation_coupled->set_time(this->time);
   ns_operation_coupled->set_time_step(this->time_steps[0]);
-  ns_operation_coupled->set_gamma0(this->gamma0);
+  ns_operation_coupled->set_scaling_factor_time_derivative_term(this->gamma0/this->time_steps[0]);
 
   // write output
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
@@ -208,6 +211,8 @@ solve_timestep()
   for(unsigned int i=1;i<solution.size();++i)
     solution_np.add(this->beta[i],solution[i]);
 
+//  solution_np.equ(1.0,solution[0]);
+
   // calculate sum (alpha_i/dt * u_i)
   sum_alphai_ui.equ(this->alpha[0]/this->time_steps[0],solution[0].block(0));
   for (unsigned int i=1;i<solution.size();++i)
@@ -215,20 +220,29 @@ solve_timestep()
     sum_alphai_ui.add(this->alpha[i]/this->time_steps[0],solution[i].block(0));
   }
 
-  if(this->param.solve_stokes_equations == true || this->param.convective_step_implicit == false)
+  // if the problem to be solved is linear
+  if(this->param.equation_type == EquationType::Stokes ||
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
-    // calculate rhs vector
-    ns_operation_coupled->rhs_stokes_problem(rhs_vector,sum_alphai_ui);
+    // calculate rhs vector for the Stokes problem, i.e., the convective term is neglected in this step
+    ns_operation_coupled->rhs_stokes_problem(rhs_vector,&sum_alphai_ui);
+
+//    double l2_norm = rhs_vector.l2_norm();
+//    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+//      std::cout<<"L2 norm of RHS = "<<std::setprecision(14)<<l2_norm<<std::endl;
+
     // evaluate convective term and add extrapolation of convective term to the rhs (-> minus sign!)
-    if(this->param.solve_stokes_equations == false)
+    if(this->param.equation_type == EquationType::NavierStokes)
     {
       ns_operation_coupled->evaluate_convective_term(vec_convective_term[0],solution[0].block(0),this->time);
 
       for(unsigned int i=0;i<vec_convective_term.size();++i)
         rhs_vector.block(0).add(-this->beta[i],vec_convective_term[i]);
     }
+
     // solve coupled system of equations
-    unsigned int iterations = ns_operation_coupled->solve_linearized_problem(solution_np,rhs_vector);
+    unsigned int iterations = ns_operation_coupled->solve_linear_stokes_problem(solution_np,rhs_vector);
+
     // write output
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
     {
@@ -237,10 +251,10 @@ solve_timestep()
                 << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
     }
   }
-  else
+  else // a nonlinear system of equations has to be solved
   {
     // Newton solver
-    unsigned int iterations = ns_operation_coupled->solve_nonlinear_problem(solution_np,sum_alphai_ui);
+    unsigned int iterations = ns_operation_coupled->solve_nonlinear_problem(solution_np,&sum_alphai_ui);
 
     // write output
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
@@ -273,7 +287,8 @@ prepare_vectors_for_next_timestep()
   calculate_vorticity();
   calculate_divergence();
 
-  if(this->param.solve_stokes_equations == false && this->param.convective_step_implicit == false)
+  if(this->param.equation_type == EquationType::NavierStokes &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
     push_back_vec_convective_term();
 }
 

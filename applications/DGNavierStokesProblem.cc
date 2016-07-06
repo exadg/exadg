@@ -67,6 +67,8 @@
 #include "TimeIntBDFDualSplitting.h"
 #include "TimeIntBDFCoupled.h"
 
+#include "DriverSteadyProblems.h"
+
 using namespace dealii;
 
 //#define XWALL
@@ -83,9 +85,10 @@ using namespace dealii;
 //#define FLOW_PAST_CYLINDER
 //#define CHANNEL
 
-bool const SOLVE_STOKES_EQUATIONS = false;
 
-bool const CONVECTIVE_STEP_IMPLICIT = false;
+ProblemType PROBLEM_TYPE = ProblemType::Unsteady; //Steady; //Unsteady;
+EquationType EQUATION_TYPE = EquationType::NavierStokes; // Stokes; // NavierStokes;
+TreatmentOfConvectiveTerm TREATMENT_OF_CONVECTIVE_TERM = TreatmentOfConvectiveTerm::Explicit; // Explicit; // Implicit;
 
 bool const STS_STABILITY = false;
 
@@ -120,7 +123,7 @@ PreconditionerProjection PRECONDITIONER_PROJECTION = PreconditionerProjection::I
 FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::DivergenceFormulation; //DivergenceFormulation; //LaplaceFormulation;
 InteriorPenaltyFormulationViscous IP_FORMULATION_VISCOUS = InteriorPenaltyFormulationViscous::SIPG; //SIPG; //NIPG;
 SolverViscous SOLVER_VISCOUS = SolverViscous::PCG; //PCG; //GMRES;
-PreconditionerViscous PRECONDITIONER_VISCOUS = PreconditionerViscous::InverseMassMatrix;//GeometricMultigrid; //None; //Jacobi; //InverseMassMatrix; //GeometricMultigrid;
+PreconditionerViscous PRECONDITIONER_VISCOUS = PreconditionerViscous::GeometricMultigrid; //None; //Jacobi; //InverseMassMatrix; //GeometricMultigrid;
 
 // multigrid viscous step
 MultigridSmoother MULTIGRID_SMOOTHER_VISCOUS = MultigridSmoother::Chebyshev; //Chebyshev;
@@ -128,7 +131,13 @@ MultigridCoarseGridSolver MULTIGRID_COARSE_GRID_SOLVER_VISCOUS = MultigridCoarse
 /************************************************/
 
 /************ coupled solver ********************/
-const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = false;
+const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = true;
+
+// preconditioner
+PreconditionerLinearizedNavierStokes PRECONDITIONER_LINEARIZED_NAVIER_STOKES =
+    PreconditionerLinearizedNavierStokes::BlockTriangular; //None; //BlockDiagonal; //BlockTriangular;
+PreconditionerMomentum PRECONDITIONER_MOMENTUM = PreconditionerMomentum::InverseMassMatrix; //None; //InverseMassMatrix; //GeometricMultigrid;
+PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT = PreconditionerSchurComplement::GeometricMultigrid; //None; //InverseMassMatrix; //GeometricMultigrid;
 /************************************************/
 
 #ifdef VORTEX
@@ -166,7 +175,7 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = false;
 
   // projection step - divergence and continuity penalty factors
   const double PENALTY_FACTOR_DIVERGENCE = 1.0e0;
-  const double PENALTY_FACTOR_CONTINUITY = 0.0e0;//PENALTY_FACTOR_DIVERGENCE;//0.0e0;
+  const double PENALTY_FACTOR_CONTINUITY = 0.0e0; //PENALTY_FACTOR_DIVERGENCE;//0.0e0;
 
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
@@ -228,7 +237,7 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = false;
   const bool COMPUTE_DIVERGENCE = false;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 2.0; //0.1;
-  const double TIME_STEP_SIZE = 1.0e-1;
+  const double TIME_STEP_SIZE = 1.0e-3;
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
@@ -515,7 +524,7 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = false;
 
   const double START_TIME = 0.0;
   const double END_TIME = 1.0;
-  const double OUTPUT_INTERVAL_TIME = 0.1;
+  const double OUTPUT_INTERVAL_TIME = (END_TIME-START_TIME)/10.0;
   const double OUTPUT_START_TIME = 0.0;
   const double ERROR_CALC_INTERVAL_TIME = OUTPUT_INTERVAL_TIME;
   const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
@@ -524,9 +533,9 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = false;
   const bool ANALYTICAL_SOLUTION = true;
   const bool DIVU_TIMESERIES = false;
   const bool COMPUTE_DIVERGENCE = false;
-  const int MAX_NUM_STEPS = 1e6;
+  const int MAX_NUM_STEPS = 1;//1e6;
   const double CFL = 0.2; // CFL number irrelevant for Stokes flow problem
-  const double TIME_STEP_SIZE = 0.1;//2.e-4;//1.e-1;///std::pow(2.,13); //5.0e-4
+  const double TIME_STEP_SIZE = 1.e-1;//2.e-4;//1.e-1;///std::pow(2.,13); //5.0e-4
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
@@ -568,7 +577,7 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = false;
 
   const std::string OUTPUT_PREFIX = "stokes";
 
-  const unsigned int ORDER_TIME_INTEGRATOR = 1;
+  const unsigned int ORDER_TIME_INTEGRATOR = 3;
   const bool START_WITH_LOW_ORDER = false;
 #endif
 
@@ -785,6 +794,9 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = false;
 #endif
 
   InputParameters::InputParameters():
+  problem_type(PROBLEM_TYPE),
+  equation_type(EQUATION_TYPE),
+  treatment_of_convective_term(TREATMENT_OF_CONVECTIVE_TERM),
   start_time(START_TIME),
   end_time(END_TIME),
   max_number_of_steps(MAX_NUM_STEPS),
@@ -796,9 +808,7 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = false;
   temporal_discretization(TEMPORAL_DISCRETIZATION),
   order_time_integrator(ORDER_TIME_INTEGRATOR),
   start_with_low_order(START_WITH_LOW_ORDER),
-  solve_stokes_equations(SOLVE_STOKES_EQUATIONS),
   use_symmetric_saddle_point_matrix(USE_SYMMETRIC_SADDLE_POINT_MATRIX),
-  convective_step_implicit(CONVECTIVE_STEP_IMPLICIT),
   small_time_steps_stability(STS_STABILITY),
   pure_dirichlet_bc(PURE_DIRICHLET_BC),
   penalty_factor_divergence(PENALTY_FACTOR_DIVERGENCE),
@@ -835,6 +845,9 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = false;
   preconditioner_viscous(PRECONDITIONER_VISCOUS),
   multigrid_smoother_viscous(MULTIGRID_SMOOTHER_VISCOUS),
   multigrid_coarse_grid_solver_viscous(MULTIGRID_COARSE_GRID_SOLVER_VISCOUS),
+  preconditioner_linearized_navier_stokes(PRECONDITIONER_LINEARIZED_NAVIER_STOKES),
+  preconditioner_momentum(PRECONDITIONER_MOMENTUM),
+  preconditioner_schur_complement(PRECONDITIONER_SCHUR_COMPLEMENT),
   output_solver_info_every_timesteps(OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS),
   output_start_time(OUTPUT_START_TIME),
   output_interval_time(OUTPUT_INTERVAL_TIME),
@@ -1525,6 +1538,21 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = false;
 #endif
     };
 
+    // postprocessing for steady-state problems
+    void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
+                           parallel::distributed::Vector<double> const &pressure,
+                           parallel::distributed::Vector<double> const &vorticity,
+                           parallel::distributed::Vector<double> const &divergence)
+    {
+      write_output(velocity,pressure,vorticity,divergence);
+      ++output_counter_;
+
+      if(param.analytical_solution_available == true)
+      {
+        calculate_error(velocity,pressure);
+      }
+    };
+
     void analyze_divergence_error(parallel::distributed::Vector<double> const &velocity_temp,
                                   double const time,
                                   unsigned int const time_step_number)
@@ -1844,14 +1872,14 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = false;
                         const bool clear_files) const
   {
 #ifdef FLOW_PAST_CYLINDER
-    FEFaceEvaluation<dim,FE_DEGREE,FE_DEGREE+1,dim,value_type> fe_eval_velocity(ns_operation_.get_data(),true,0,0);
-    FEFaceEvaluation<dim,FE_DEGREE_P,FE_DEGREE+1,1,value_type> fe_eval_pressure(ns_operation_.get_data(),true,1,0);
+    FEFaceEvaluation<dim,FE_DEGREE,FE_DEGREE+1,dim,value_type> fe_eval_velocity(ns_operation_->get_data(),true,0,0);
+    FEFaceEvaluation<dim,FE_DEGREE_P,FE_DEGREE+1,1,value_type> fe_eval_pressure(ns_operation_->get_data(),true,1,0);
 
     Tensor<1,dim,value_type> Force;
     for(unsigned int d=0;d<dim;++d)
       Force[d] = 0.0;
 
-    for(unsigned int face=ns_operation_.get_data().n_macro_inner_faces(); face<(ns_operation_.get_data().n_macro_inner_faces()+ns_operation_.get_data().n_macro_boundary_faces()); face++)
+    for(unsigned int face=ns_operation_->get_data().n_macro_inner_faces(); face<(ns_operation_->get_data().n_macro_inner_faces()+ns_operation_->get_data().n_macro_boundary_faces()); face++)
     {
       fe_eval_velocity.reinit (face);
       fe_eval_velocity.read_dof_values(velocity);
@@ -1861,14 +1889,14 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = false;
       fe_eval_pressure.read_dof_values(pressure);
       fe_eval_pressure.evaluate(true,false);
 
-      if (ns_operation_.get_data().get_boundary_indicator(face) == 2)
+      if (ns_operation_->get_data().get_boundary_indicator(face) == 2)
       {
         for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
         {
           VectorizedArray<value_type> pressure = fe_eval_pressure.get_value(q);
           Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_velocity.get_normal_vector(q);
           Tensor<2,dim,VectorizedArray<value_type> > velocity_gradient = fe_eval_velocity.get_gradient(q);
-          fe_eval_velocity.submit_value(pressure*normal -  make_vectorized_array<value_type>(ns_operation_.get_viscosity())*
+          fe_eval_velocity.submit_value(pressure*normal -  make_vectorized_array<value_type>(ns_operation_->get_viscosity())*
               (velocity_gradient+transpose(velocity_gradient))*normal,q);
         }
         Tensor<1,dim,VectorizedArray<value_type> > Force_local = fe_eval_velocity.integrate_value();
@@ -1891,8 +1919,8 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = false;
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
     {
       std::string filename_drag, filename_lift;
-      filename_drag = "output/drag_refine" + Utilities::int_to_string(ns_operation_.get_dof_handler_u().get_triangulation().n_levels()-1) + "_fedegree" + Utilities::int_to_string(FE_DEGREE) + ".txt";
-      filename_lift = "output/lift_refine" + Utilities::int_to_string(ns_operation_.get_dof_handler_u().get_triangulation().n_levels()-1) + "_fedegree" + Utilities::int_to_string(FE_DEGREE) + ".txt";
+      filename_drag = "output/drag_refine" + Utilities::int_to_string(ns_operation_->get_dof_handler_u().get_triangulation().n_levels()-1) + "_fedegree" + Utilities::int_to_string(FE_DEGREE) + ".txt";
+      filename_lift = "output/lift_refine" + Utilities::int_to_string(ns_operation_->get_dof_handler_u().get_triangulation().n_levels()-1) + "_fedegree" + Utilities::int_to_string(FE_DEGREE) + ".txt";
 
       std::ofstream f_drag,f_lift;
       if(clear_files)
@@ -1938,14 +1966,14 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = false;
 
     // parallel computation
     const std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> >
-    cell_point_1 = GridTools::find_active_cell_around_point (ns_operation_.get_mapping(),ns_operation_.get_dof_handler_p(), point_1);
+    cell_point_1 = GridTools::find_active_cell_around_point (ns_operation_->get_mapping(),ns_operation_->get_dof_handler_p(), point_1);
     if(cell_point_1.first->is_locally_owned())
     {
       counter_1 = 1;
       //std::cout<< "Point 1 found on Processor "<<Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)<<std::endl;
 
       Vector<double> value(1);
-      my_point_value(ns_operation_.get_mapping(),ns_operation_.get_dof_handler_p(),pressure,cell_point_1,value);
+      my_point_value(ns_operation_->get_mapping(),ns_operation_->get_dof_handler_p(),pressure,cell_point_1,value);
       pressure_1 = value(0);
     }
     counter_1 = Utilities::MPI::sum(counter_1,MPI_COMM_WORLD);
@@ -1953,14 +1981,14 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = false;
     pressure_1 = pressure_1/counter_1;
 
     const std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> >
-    cell_point_2 = GridTools::find_active_cell_around_point (ns_operation_.get_mapping(),ns_operation_.get_dof_handler_p(), point_2);
+    cell_point_2 = GridTools::find_active_cell_around_point (ns_operation_->get_mapping(),ns_operation_->get_dof_handler_p(), point_2);
     if(cell_point_2.first->is_locally_owned())
     {
       counter_2 = 1;
       //std::cout<< "Point 2 found on Processor "<<Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)<<std::endl;
 
       Vector<double> value(1);
-      my_point_value(ns_operation_.get_mapping(),ns_operation_.get_dof_handler_p(),pressure,cell_point_2,value);
+      my_point_value(ns_operation_->get_mapping(),ns_operation_->get_dof_handler_p(),pressure,cell_point_2,value);
       pressure_2 = value(0);
     }
     counter_2 = Utilities::MPI::sum(counter_2,MPI_COMM_WORLD);
@@ -1969,7 +1997,7 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = false;
 
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
     {
-      std::string filename = "output/pressure_difference_refine" + Utilities::int_to_string(ns_operation_.get_dof_handler_u().get_triangulation().n_levels()-1) + "_fedegree" + Utilities::int_to_string(FE_DEGREE) + ".txt";
+      std::string filename = "output/pressure_difference_refine" + Utilities::int_to_string(ns_operation_->get_dof_handler_u().get_triangulation().n_levels()-1) + "_fedegree" + Utilities::int_to_string(FE_DEGREE) + ".txt";
 
       std::ofstream f;
       if(clear_files)
@@ -2208,6 +2236,8 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = false;
     std_cxx11::shared_ptr<PostProcessor<dim> > postprocessor;
 
     std_cxx11::shared_ptr<TimeIntBDF<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type> > time_integrator;
+
+    std_cxx11::shared_ptr<DriverSteadyProblems<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type> > driver_steady;
   };
 
   template<int dim>
@@ -2225,29 +2255,39 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = false;
     << "_________________________________________________________________________________" << std::endl
     << std::endl;
 
-    // initialize navier_stokes_operation
-    if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    if(param.problem_type == ProblemType::Steady)
     {
-      navier_stokes_operation.reset(new DGNavierStokesDualSplitting<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
-          (triangulation,param));
-    }
-    else if(param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-    {
+      // initialize navier_stokes_operation
       navier_stokes_operation.reset(new DGNavierStokesCoupled<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
           (triangulation,param));
+      // initialize postprocessor after initializing navier_stokes_operation
+      postprocessor.reset(new PostProcessor<dim>(navier_stokes_operation,param));
+      // initialize driver for steady state problem that depends on both navier_stokes_operation and postprocessor
+      driver_steady.reset(new DriverSteadyProblems<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>
+          (navier_stokes_operation,postprocessor,param));
+
     }
-
-    // initialize postprocessor after initializing navier_stokes_operation
-    postprocessor.reset(new PostProcessor<dim>(navier_stokes_operation,param));
-
-    // initialize time integrator that depends on both navier_stokes_operation and postprocessor
-    if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    else if(param.problem_type == ProblemType::Unsteady &&
+            param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
+      // initialize navier_stokes_operation
+      navier_stokes_operation.reset(new DGNavierStokesDualSplitting<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
+          (triangulation,param));
+      // initialize postprocessor after initializing navier_stokes_operation
+      postprocessor.reset(new PostProcessor<dim>(navier_stokes_operation,param));
+      // initialize time integrator that depends on both navier_stokes_operation and postprocessor
       time_integrator.reset(new TimeIntBDFDualSplitting<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
           navier_stokes_operation,postprocessor,param,refine_steps_time));
     }
-    else if(param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+    else if(param.problem_type == ProblemType::Unsteady &&
+            param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
     {
+      // initialize navier_stokes_operation
+      navier_stokes_operation.reset(new DGNavierStokesCoupled<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
+          (triangulation,param));
+      // initialize postprocessor after initializing navier_stokes_operation
+      postprocessor.reset(new PostProcessor<dim>(navier_stokes_operation,param));
+      // initialize time integrator that depends on both navier_stokes_operation and postprocessor
       time_integrator.reset(new TimeIntBDFCoupled<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
           navier_stokes_operation,postprocessor,param,refine_steps_time));
     }
@@ -2617,20 +2657,31 @@ void NavierStokesProblem<dim>::solve_problem()
 
   navier_stokes_operation->setup(periodic_faces, dirichlet_boundary, neumann_boundary);
 
-  // setup time integrator before calling setup_solvers
-  // (this is necessary since the setup of the solvers
-  // depends on quantities such as the time_step_size or gamma0!!!)
-  time_integrator->setup();
+  if(param.problem_type == ProblemType::Unsteady)
+  {
+    // setup time integrator before calling setup_solvers
+    // (this is necessary since the setup of the solvers
+    // depends on quantities such as the time_step_size or gamma0!!!)
+    time_integrator->setup();
 
-  navier_stokes_operation->setup_solvers(periodic_faces);
+    navier_stokes_operation->setup_solvers();
 
-  print_parameters();
+    print_parameters();
 
-  postprocessor->setup();
+    postprocessor->setup();
 
-  time_integrator->timeloop();
+    time_integrator->timeloop();
+  }
+  else if(param.problem_type == ProblemType::Steady)
+  {
+    driver_steady->setup();
 
-  time_integrator->analyze_computing_times();
+    navier_stokes_operation->setup_solvers();
+
+    postprocessor->setup();
+
+    driver_steady->solve_steady_problem();
+  }
 }
 
 int main (int argc, char** argv)
