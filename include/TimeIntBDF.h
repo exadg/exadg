@@ -103,6 +103,9 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 void TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 setup(bool do_restart)
 {
+  AssertThrow(param.problem_type == ProblemType::Unsteady,
+              ExcMessage("In order to apply the BDF time integration scheme the problem_type has to be ProblemType::Unsteady !"));
+
   // initialize time integrator constants assuming that the time integrator uses a high-order method in first time step,
   // i.e., the default case is start_with_low_order = false
   initialize_time_integrator_constants();
@@ -115,7 +118,7 @@ setup(bool do_restart)
   // set the parameters that NavierStokesOperation depends on
   ns_operation->set_time(time);
   ns_operation->set_time_step(time_steps[0]);
-  ns_operation->set_gamma0(gamma0);
+  ns_operation->set_scaling_factor_time_derivative_term(gamma0/time_steps[0]);
 
   // this is where the setup of deriving classes is performed
   setup_derived();
@@ -307,6 +310,8 @@ timeloop()
   }
 
   total_time += global_timer.wall_time();
+
+  analyze_computing_times();
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>

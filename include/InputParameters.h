@@ -11,6 +11,10 @@
 #include "PoissonSolverInputParameters.h"
 #include "MultigridInputParameters.h"
 
+enum class ProblemType { Steady, Unsteady };
+enum class EquationType { Stokes, NavierStokes };
+enum class TreatmentOfConvectiveTerm { Explicit, Implicit };
+
 enum class TimeStepCalculation { ConstTimeStepUserSpecified, ConstTimeStepCFL, AdaptiveTimeStepCFL };
 
 enum class TemporalDiscretization { BDFDualSplittingScheme, BDFCoupledSolution };
@@ -24,11 +28,24 @@ enum class InteriorPenaltyFormulationViscous { SIPG, NIPG };
 enum class SolverViscous { PCG, GMRES };
 enum class PreconditionerViscous { None, Jacobi, InverseMassMatrix, GeometricMultigrid };
 
+enum class PreconditionerLinearizedNavierStokes { None, BlockDiagonal, BlockTriangular };
+enum class PreconditionerMomentum { None, InverseMassMatrix, GeometricMultigrid };
+enum class PreconditionerSchurComplement {None, InverseMassMatrix, GeometricMultigrid };
+
 class InputParameters
 {
 public:
   // standard constructor that initializes parameters
   InputParameters();
+
+  // describes whether a steady state problem or unsteady problem is solved
+  ProblemType const problem_type;
+
+  // describes the physical/mathematical model that has to be solved, i.e. Stokes vs. NavierStokes
+  EquationType const equation_type;
+
+  // the convective term can be either treated explicitly or implicitly
+  TreatmentOfConvectiveTerm const treatment_of_convective_term;
 
   // start and end time of time interval
   double const start_time;
@@ -38,7 +55,7 @@ public:
   unsigned int const max_number_of_steps;
 
   // calculation of time step size
-  TimeStepCalculation calculation_of_time_step_size;
+  TimeStepCalculation const  calculation_of_time_step_size;
 
   // cfl number: note that this cfl number is the first in a series of cfl numbers when performing temporal convergence tests,
   // i.e., cfl_real = cfl, cfl/2, cfl/4, cfl/8, ...
@@ -62,16 +79,10 @@ public:
   // start time integrator with low order time integrator, i.e. first order Euler method
   bool const start_with_low_order;
 
-  // solve unsteady Stokes equations
-  bool const solve_stokes_equations;
-
   // use symmetric saddle point matrix for coupled solver:
   // continuity equation formulated as: - div(u) = 0 -> symmetric formulation
   //                                      div(u) = 0 -> non-symmetric formulation
   bool const use_symmetric_saddle_point_matrix;
-
-  // solve convective step implicitly
-  bool const convective_step_implicit;
 
   // use small time steps stability approach (similar to approach of Leriche et al.)
   bool const small_time_steps_stability;
@@ -124,33 +135,40 @@ public:
   double const rel_tol_viscous;
 
   // type of pressure Poisson solver
-  SolverPoisson solver_poisson;
+  SolverPoisson const solver_poisson;
   // preconditioner type for solution of pressure Poisson equation
-  PreconditionerPoisson preconditioner_poisson;
+  PreconditionerPoisson const preconditioner_poisson;
   // multigrid smoother pressure Poisson equation
-  MultigridSmoother multigrid_smoother;
+  MultigridSmoother const multigrid_smoother;
   // multigrid coarse grid solver pressure Poisson equation
-  MultigridCoarseGridSolver multigrid_coarse_grid_solver;
+  MultigridCoarseGridSolver const multigrid_coarse_grid_solver;
 
   // projection type: standard projection (no penalty term), divergence penalty term, divergence and continuity penalty term (weak projection)
-  ProjectionType projection_type;
+  ProjectionType const projection_type;
   // type of projections solver
-  SolverProjection solver_projection;
+  SolverProjection const solver_projection;
   // preconditioner type for solution of projection step
-  PreconditionerProjection preconditioner_projection;
+  PreconditionerProjection const preconditioner_projection;
 
   // formulation of viscous term: divergence formulation or Laplace formulation
-  FormulationViscousTerm formulation_viscous_term;
+  FormulationViscousTerm const formulation_viscous_term;
   // interior penalty formulation of viscous term: SIPG (symmetric IP) or NIPG (non-symmetric IP)
-  InteriorPenaltyFormulationViscous IP_formulation_viscous;
+  InteriorPenaltyFormulationViscous const IP_formulation_viscous;
   // Solver type for solution of viscous step
-  SolverViscous solver_viscous;
+  SolverViscous const solver_viscous;
   // Preconditioner type for solution of viscous step
-  PreconditionerViscous preconditioner_viscous;
+  PreconditionerViscous const preconditioner_viscous;
   // multigrid smoother pressure Poisson equation
-  MultigridSmoother multigrid_smoother_viscous;
+  MultigridSmoother const multigrid_smoother_viscous;
   // multigrid coarse grid solver pressure Poisson equation
-  MultigridCoarseGridSolver multigrid_coarse_grid_solver_viscous;
+  MultigridCoarseGridSolver const multigrid_coarse_grid_solver_viscous;
+
+  // preconditioner linearized Navier-Stokes problem
+  PreconditionerLinearizedNavierStokes const preconditioner_linearized_navier_stokes;
+  // preconditioner for (1,1) velocity/momentum block in case of block preconditioning
+  PreconditionerMomentum const preconditioner_momentum;
+  // preconditioner for (2,2) pressure/Schur complement block in case of block preconditioning
+  PreconditionerSchurComplement const preconditioner_schur_complement;
 
   // show solver performance (wall time, number of iterations) every ... timesteps
   unsigned int const output_solver_info_every_timesteps;

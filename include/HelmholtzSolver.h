@@ -17,22 +17,37 @@ struct HelmholtzOperatorData
   HelmholtzOperatorData ()
     :
     dof_index(0),
-    formulation_viscous_term(FormulationViscousTerm::DivergenceFormulation),
-    IP_formulation_viscous(InteriorPenaltyFormulationViscous::SIPG),
-    IP_factor_viscous(1.0),
-    viscosity(1.0),
     mass_matrix_coefficient(1.0)
   {}
 
   unsigned int dof_index;
-  FormulationViscousTerm formulation_viscous_term;
-  InteriorPenaltyFormulationViscous IP_formulation_viscous;
-  double IP_factor_viscous;
-  std::set<types::boundary_id> dirichlet_boundaries;
-  std::set<types::boundary_id> neumann_boundaries;
-  double viscosity;
+
+  MassMatrixOperatorData mass_matrix_operator_data;
+  ViscousOperatorData<dim> viscous_operator_data;
+
+  /*
+   * This variable 'mass_matrix_coefficient' is only used when initializing the HelmholtzOperator.
+   * In order to change/update this coefficient during the simulation (e.g., varying time step sizes)
+   * use the element variable 'mass_matrix_coefficient' of HelmholtzOperator and the corresponding setter
+   * set_mass_matrix_coefficient().
+   */
   double mass_matrix_coefficient;
+
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs_level0;
+
+  std::set<types::boundary_id> const & get_dirichlet_boundaries() const
+  {
+    return viscous_operator_data.get_dirichlet_boundaries();
+  }
+
+  void set_dof_index(unsigned int dof_index_in)
+  {
+    this->dof_index = dof_index_in;
+
+    // don't forget to set the dof_indices of the mass_matrix_operator_data and viscous_operator_data
+    mass_matrix_operator_data.dof_index = dof_index_in;
+    viscous_operator_data.dof_index = dof_index_in;
+  }
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall,typename Number = double>
@@ -44,67 +59,28 @@ public:
   HelmholtzOperator()
     :
     data(nullptr),
-    mass_matrix_coefficient(1.0),
-    needs_mean_value_constraint (false),
-    apply_mean_value_constraint_in_matvec (false)
+    mass_matrix_operator(nullptr),
+    viscous_operator(nullptr),
+    mass_matrix_coefficient(1.0)
   {}
 
-  void reinit(MatrixFree<dim,Number> const     &mf_data,
-              Mapping<dim> const               &mapping,
-              HelmholtzOperatorData<dim> const &operator_data,
-              FEParameters const               &fe_param)
+  void initialize(MatrixFree<dim,Number> const                                                            &mf_data_in,
+                  HelmholtzOperatorData<dim> const                                                        &helmholtz_operator_data_in,
+                  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>  const &mass_matrix_operator_in,
+                  ViscousOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number> const     &viscous_operator_in)
   {
-    this->data = &mf_data;
-    this->helmholtz_operator_data = operator_data;
-    // set mass matrix coefficient !
+    // copy parameters into element variables
+    this->data = &mf_data_in;
+    this->helmholtz_operator_data = helmholtz_operator_data_in;
+    this->mass_matrix_operator = &mass_matrix_operator_in;
+    this->viscous_operator = &viscous_operator_in;
+
+    // set mass matrix coefficient!
     this->mass_matrix_coefficient = helmholtz_operator_data.mass_matrix_coefficient;
-
-    // MassMatrixOperator
-    MassMatrixOperatorData mass_matrix_operator_data;
-    mass_matrix_operator_data.dof_index = helmholtz_operator_data.dof_index;
-    mass_matrix_operator.initialize(*data, fe_param, mass_matrix_operator_data);
-
-    // ViscousOperator
-    ViscousOperatorData viscous_operator_data;
-    viscous_operator_data.dof_index = helmholtz_operator_data.dof_index;
-    viscous_operator_data.formulation_viscous_term = helmholtz_operator_data.formulation_viscous_term;
-    viscous_operator_data.IP_formulation_viscous = helmholtz_operator_data.IP_formulation_viscous;
-    viscous_operator_data.IP_factor_viscous = helmholtz_operator_data.IP_factor_viscous;
-    viscous_operator_data.dirichlet_boundaries = helmholtz_operator_data.dirichlet_boundaries;
-    viscous_operator_data.neumann_boundaries = helmholtz_operator_data.neumann_boundaries;
-    viscous_operator.initialize(mapping,*data,fe_param,viscous_operator_data);
-    viscous_operator.set_constant_viscosity(helmholtz_operator_data.viscosity);
 
     // initialize temp vector
     initialize_dof_vector(temp);
-
-    // Check whether the matrix is singular when applied to a vector
-    // consisting of only ones (except for constrained entries)
-    parallel::distributed::Vector<Number> in_vec, out_vec;
-    initialize_dof_vector(in_vec);
-    initialize_dof_vector(out_vec);
-    in_vec = 1;
-    const std::vector<unsigned int> &constrained_entries =
-      mf_data.get_constrained_dofs(operator_data.dof_index);
-    for (unsigned int i=0; i<constrained_entries.size(); ++i)
-      in_vec.local_element(constrained_entries[i]) = 0;
-    vmult_add(out_vec, in_vec);
-    const double linfty_norm = out_vec.linfty_norm();
-
-    // since we cannot know the magnitude of the entries at this point (the
-    // diagonal entries would be a guideline but they are not available here),
-    // we instead multiply by a random vector
-    for (unsigned int i=0; i<in_vec.local_size(); ++i)
-      in_vec.local_element(i) = (double)rand()/RAND_MAX;
-    vmult(out_vec, in_vec);
-    const double linfty_norm_compare = out_vec.linfty_norm();
-
-    // use mean value constraint if the infty norm with the one vector is very small
-    needs_mean_value_constraint =
-      linfty_norm / linfty_norm_compare < std::pow(std::numeric_limits<Number>::epsilon(), 2./3.);
-    apply_mean_value_constraint_in_matvec = needs_mean_value_constraint;
   }
-
 
   void reinit (const DoFHandler<dim>            &dof_handler,
                const Mapping<dim>               &mapping,
@@ -113,8 +89,12 @@ public:
                const unsigned int               level = numbers::invalid_unsigned_int,
                FEParameters const               &fe_param = FEParameters())
   {
-    this->helmholtz_operator_data = operator_data;
+    // set the dof index to zero (for the HelmholtzOperator and also
+    // for the basic Operators (MassMatrixOperator and ViscousOperator))
+    HelmholtzOperatorData<dim> my_operator_data = operator_data;
+    my_operator_data.set_dof_index(0);
 
+    // setup own matrix free object
     const QGauss<1> quad(dof_handler.get_fe().degree+1);
     typename MatrixFree<dim,Number>::AdditionalData addit_data;
     addit_data.tasks_parallel_scheme = MatrixFree<dim,Number>::AdditionalData::none;
@@ -126,13 +106,19 @@ public:
       (dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()))->get_communicator() : MPI_COMM_SELF;
     addit_data.periodic_face_pairs_level_0 = operator_data.periodic_face_pairs_level0;
 
-    HelmholtzOperatorData<dim> my_operator_data = operator_data;
-    my_operator_data.dof_index = 0;
-
     ConstraintMatrix constraints;
     own_matrix_free_storage.reinit(mapping, dof_handler, constraints, quad, addit_data);
 
-    reinit(own_matrix_free_storage, mapping, my_operator_data,fe_param);
+    // setup own mass matrix operator
+    MassMatrixOperatorData mass_matrix_operator_data = my_operator_data.mass_matrix_operator_data;
+    own_mass_matrix_operator_storage.initialize(own_matrix_free_storage,fe_param,mass_matrix_operator_data);
+
+    // setup own viscous operator
+    ViscousOperatorData<dim> viscous_operator_data = my_operator_data.viscous_operator_data;
+    own_viscous_operator_storage.initialize(mapping,own_matrix_free_storage,fe_param,viscous_operator_data);
+
+    // setup Helmholtz operator
+    initialize(own_matrix_free_storage, my_operator_data, own_mass_matrix_operator_storage, own_viscous_operator_storage);
   }
 
   void set_mass_matrix_coefficient(Number const coefficient_in)
@@ -140,13 +126,11 @@ public:
     mass_matrix_coefficient = coefficient_in;
   }
 
-  void apply_nullspace_projection(parallel::distributed::Vector<Number> &vec) const
+  void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const
   {
-    if (needs_mean_value_constraint)
-      {
-        const Number mean_val = vec.mean_value();
-        vec.add(-mean_val);
-      }
+    // does nothing in case of the Helmholtz equation
+    // this function is only necessary due to the interface of the multigrid preconditioner
+    // and especially the coarse grid solver that calls this function
   }
 
   // apply matrix vector multiplication
@@ -154,10 +138,10 @@ public:
               const parallel::distributed::Vector<Number> &src) const
   {
     // helmholtz operator = mass_matrix_operator + viscous_operator
-    mass_matrix_operator.apply(dst,src);
+    mass_matrix_operator->apply(dst,src);
     dst *= mass_matrix_coefficient;
 
-    viscous_operator.apply_add(dst,src);
+    viscous_operator->apply_add(dst,src);
   }
 
   void Tvmult(parallel::distributed::Vector<Number>       &dst,
@@ -176,11 +160,11 @@ public:
                  const parallel::distributed::Vector<Number> &src) const
   {
     // helmholtz operator = mass_matrix_operator + viscous_operator
-    mass_matrix_operator.apply(temp,src);
+    mass_matrix_operator->apply(temp,src);
     temp *= mass_matrix_coefficient;
     dst += temp;
 
-    viscous_operator.apply_add(dst,src);
+    viscous_operator->apply_add(dst,src);
   }
 
   void vmult_interface_down(parallel::distributed::Vector<Number>       &dst,
@@ -221,12 +205,17 @@ public:
     return helmholtz_operator_data;
   }
 
+  unsigned int get_dof_index() const
+  {
+    return helmholtz_operator_data.dof_index;
+  }
+
   void calculate_diagonal(parallel::distributed::Vector<Number> &diagonal) const
   {
-    mass_matrix_operator.calculate_diagonal(diagonal);
+    mass_matrix_operator->calculate_diagonal(diagonal);
     diagonal *= mass_matrix_coefficient;
 
-    viscous_operator.add_diagonal(diagonal);
+    viscous_operator->add_diagonal(diagonal);
 
     // verify_calculation_of_diagonal(diagonal);
   }
@@ -271,19 +260,29 @@ public:
 
   void initialize_dof_vector(parallel::distributed::Vector<Number> &vector) const
   {
-    data->initialize_dof_vector(vector,helmholtz_operator_data.dof_index);
+    data->initialize_dof_vector(vector,get_dof_index());
   }
 
 private:
   MatrixFree<dim,Number> const * data;
-  MatrixFree<dim,Number> own_matrix_free_storage;
-  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number> mass_matrix_operator;
-  ViscousOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number> viscous_operator;
+  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>  const *mass_matrix_operator;
+  ViscousOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>  const *viscous_operator;
   HelmholtzOperatorData<dim> helmholtz_operator_data;
   parallel::distributed::Vector<Number> mutable temp;
   Number mass_matrix_coefficient;
-  bool needs_mean_value_constraint;
-  bool apply_mean_value_constraint_in_matvec;
+
+  /*
+   * The following variables are necessary when applying the multigrid preconditioner to the Helmholtz equation:
+   * In that case, the HelmholtzOperator has to be generated for each level of the multigrid algorithm.
+   * Accordingly, in a first step one has to setup own objects of MatrixFree, MassMatrixOperator, ViscousOperator,
+   *  e.g., own_matrix_free_storage.reinit(...);
+   * and later initialize the HelmholtzOperator with these ojects by setting the above pointers to the own_objects_storage,
+   *  e.g., data = &own_matrix_free_storage;
+   */
+  MatrixFree<dim,Number> own_matrix_free_storage;
+  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number> own_mass_matrix_operator_storage;
+  ViscousOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number> own_viscous_operator_storage;
+
 };
 
 struct HelmholtzSolverData
@@ -346,7 +345,7 @@ public:
     this->global_matrix = &helmholtz_operator;
     this->solver_data = solver_data;
 
-    const DoFHandler<dim> &dof_handler = matrix_free.get_dof_handler(global_matrix->get_operator_data().dof_index);
+    const DoFHandler<dim> &dof_handler = matrix_free.get_dof_handler(global_matrix->get_dof_index());
 
     if(solver_data.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix)
       preconditioner.reset(new InverseMassMatrixPreconditioner<dim,fe_degree,value_type>(matrix_free,dof_index,quad_index));
@@ -360,7 +359,7 @@ public:
       mg_data.smoother_poly_degree = solver_data.smoother_poly_degree;
       mg_data.smoother_smoothing_range = solver_data.smoother_smoothing_range;
 
-      preconditioner.reset(new MyMultigridPreconditioner<dim,value_type,HelmholtzOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall,Number>, HelmholtzOperatorData<dim> >
+      preconditioner.reset(new MyMultigridPreconditioner<dim,value_type,HelmholtzOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>, HelmholtzOperatorData<dim> >
                            (mg_data, dof_handler, mapping, global_matrix->get_operator_data(),fe_param));
     }
   }

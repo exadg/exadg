@@ -10,6 +10,106 @@
 
 using namespace dealii;
 
+#include "PreconditionerNavierStokes.h"
+#include "NewtonSolver.h"
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+class DGNavierStokesCoupled;
+
+template<class NUMBER>
+void output_eigenvalues(const std::vector<NUMBER> &eigenvalues,const std::string &text)
+{
+//    deallog << text << std::endl;
+//    for (unsigned int j = 0; j < eigenvalues.size(); ++j)
+//      {
+//        deallog << ' ' << eigenvalues.at(j) << std::endl;
+//      }
+//    deallog << std::endl;
+
+  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  {
+    std::cout << text << std::endl;
+    for (unsigned int j = 0; j < eigenvalues.size(); ++j)
+    {
+      std::cout << ' ' << eigenvalues.at(j) << std::endl;
+    }
+    std::cout << std::endl;
+  }
+}
+
+struct LinearSolverData
+{
+  double abs_tol;
+  double rel_tol;
+  unsigned int max_iter;
+  PreconditionerDataLinearSolver preconditioner_data;
+};
+
+template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall,typename value_type>
+class SolverLinearizedProblem
+{
+public:
+  void initialize(LinearSolverData                                     solver_data_in,
+                  DGNavierStokesCoupled<dim, fe_degree,
+                    fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> *underlying_operator_in)
+  {
+    solver_data = solver_data_in;
+    underlying_operator = underlying_operator_in;
+
+    if(solver_data.preconditioner_data.preconditioner_type == PreconditionerLinearizedNavierStokes::BlockDiagonal ||
+       solver_data.preconditioner_data.preconditioner_type == PreconditionerLinearizedNavierStokes::BlockTriangular )
+      preconditioner.reset(new BlockPreconditionerNavierStokes<dim, fe_degree,
+          fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(underlying_operator,solver_data.preconditioner_data));
+
+  }
+
+  unsigned int solve(parallel::distributed::BlockVector<value_type>       &dst,
+                     parallel::distributed::BlockVector<value_type> const &src,
+                     parallel::distributed::BlockVector<value_type> const *solution_linearization = nullptr)
+  {
+    if(solution_linearization != nullptr)
+      underlying_operator->set_solution_linearization(solution_linearization);
+
+    ReductionControl solver_control (solver_data.max_iter, solver_data.abs_tol, solver_data.rel_tol);
+    typename SolverGMRES<parallel::distributed::BlockVector<value_type> >::AdditionalData additional_data;
+    additional_data.max_n_tmp_vectors = 30;
+    additional_data.right_preconditioning = true;
+    SolverGMRES<parallel::distributed::BlockVector<value_type> > solver (solver_control, additional_data);
+
+//    IterationNumberControl solver_control (100);
+//    SolverGMRES<parallel::distributed::BlockVector<value_type> > solver (solver_control,additional_data);
+//    typename SolverGMRES<parallel::distributed::BlockVector<value_type> >::AdditionalData additional_data;
+//    additional_data.max_n_tmp_vectors = 30;
+//    SolverGMRES<parallel::distributed::BlockVector<value_type> > solver (solver_control, additional_data);
+
+    if(false)
+    {
+      solver.connect_eigenvalues_slot(std_cxx11::bind(output_eigenvalues<std::complex<double> >,std_cxx11::_1,"Eigenvalues: "),true);
+    }
+
+//    underlying_operator->vmult(dst,src);
+//    double l2_norm = dst.l2_norm();
+//    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+//      std::cout<<"L2 norm of Matrix Vector Product = "<<std::setprecision(14)<<l2_norm<<std::endl;
+
+    if(solver_data.preconditioner_data.preconditioner_type == PreconditionerLinearizedNavierStokes::None)
+    {
+      solver.solve (*underlying_operator, dst, src, PreconditionIdentity());
+    }
+    else
+    {
+      solver.solve (*underlying_operator, dst, src, *preconditioner);
+    }
+
+    return solver_control.last_step();
+  }
+
+private:
+  LinearSolverData solver_data;
+  DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> *underlying_operator;
+  std_cxx11::shared_ptr<PreconditionerNavierStokesBase<value_type> > preconditioner;
+};
+
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 class DGNavierStokesCoupled : public DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>
 {
@@ -19,10 +119,11 @@ public:
   DGNavierStokesCoupled(parallel::distributed::Triangulation<dim> const &triangulation,
                         InputParameters const                           &parameter)
     :
-    DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>(triangulation,parameter)
+    DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>(triangulation,parameter),
+    sum_alphai_ui(nullptr)
   {}
 
-  void setup_solvers (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs);
+  void setup_solvers ();
 
   // initialization of vectors
   void initialize_block_vector_velocity_pressure(parallel::distributed::BlockVector<value_type> &src) const
@@ -31,140 +132,149 @@ public:
     src.reinit(2);
 
     this->data.initialize_dof_vector(src.block(0),
-        static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::velocity));
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
 
     this->data.initialize_dof_vector(src.block(1),
-        static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::pressure));
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure));
 
     src.collect_sizes();
   }
 
-  unsigned int solve_linearized_problem (parallel::distributed::BlockVector<value_type>       &dst,
-                                         parallel::distributed::BlockVector<value_type> const &src,
-                                         parallel::distributed::Vector<value_type> const      *vector_linearization = nullptr);
+  void initialize_vector_for_newton_solver(parallel::distributed::BlockVector<value_type> &src) const
+  {
+    initialize_block_vector_velocity_pressure(src);
+  }
+
+  bool nonlinear_problem_has_to_be_solved() const
+  {
+      return (this->param.equation_type == EquationType::NavierStokes &&
+              (this->param.problem_type == ProblemType::Steady ||
+               this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit) );
+  }
+
+  bool unsteady_problem_has_to_be_solved() const
+  {
+    return ( this->param.problem_type == ProblemType::Unsteady );
+  }
+
+  unsigned int solve_linear_stokes_problem (parallel::distributed::BlockVector<value_type>       &dst,
+                                            parallel::distributed::BlockVector<value_type> const &src);
 
   unsigned int solve_nonlinear_problem (parallel::distributed::BlockVector<value_type>  &dst,
-                                        parallel::distributed::Vector<value_type> const &sum_alphai_ui);
+                                        parallel::distributed::Vector<value_type> const *sum_alphai_ui = nullptr);
 
   void apply_linearized_problem (parallel::distributed::BlockVector<value_type> &dst,
                                  parallel::distributed::BlockVector<value_type> const &src) const;
 
+  void vmult (parallel::distributed::BlockVector<value_type> &dst,
+              parallel::distributed::BlockVector<value_type> const &src) const;
+
   void rhs_stokes_problem (parallel::distributed::BlockVector<value_type>  &dst,
-                           parallel::distributed::Vector<value_type> const &src) const;
+                           parallel::distributed::Vector<value_type> const *src = nullptr) const;
 
   void evaluate_convective_term (parallel::distributed::Vector<value_type>       &dst,
                                  parallel::distributed::Vector<value_type> const &src,
                                  value_type const                                evaluation_time) const;
 
   void evaluate_nonlinear_residual (parallel::distributed::BlockVector<value_type>       &dst,
-                                    parallel::distributed::BlockVector<value_type> const &src,
-                                    parallel::distributed::Vector<value_type> const      &sum_alphai_ui);
+                                    parallel::distributed::BlockVector<value_type> const &src);
 
+  void set_solution_linearization(parallel::distributed::BlockVector<value_type> const *solution_linearization)
+  {
+    vector_linearization = *solution_linearization;
+  }
 
 private:
-  parallel::distributed::BlockVector<value_type> residual;
-  parallel::distributed::BlockVector<value_type> increment;
-  parallel::distributed::Vector<value_type> temp;
-  parallel::distributed::Vector<value_type> velocity_linear;
+  friend class BlockPreconditionerNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>;
+
+  parallel::distributed::Vector<value_type> mutable temp;
+  parallel::distributed::Vector<value_type> const *sum_alphai_ui;
+  parallel::distributed::BlockVector<value_type> vector_linearization;
+
+  SolverLinearizedProblem<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> linear_solver;
+  NewtonSolver<parallel::distributed::BlockVector<value_type>,
+               DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>,
+               SolverLinearizedProblem<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> >
+    newton_solver;
 };
+
+
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-setup_solvers (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > /*periodic_face_pairs*/)
+setup_solvers ()
 {
-  if(this->param.solve_stokes_equations == false && this->param.convective_step_implicit == true)
+  // temp has to be initialized whenever an unsteady problem has to be solved
+  if(unsteady_problem_has_to_be_solved())
   {
-    initialize_block_vector_velocity_pressure(residual);
-    initialize_block_vector_velocity_pressure(increment);
     this->initialize_vector_velocity(temp);
-    this->initialize_vector_velocity(velocity_linear);
+  }
+  // vector_linearization has to be initialized whenever a nonliner system of equations has to be solved
+  if(nonlinear_problem_has_to_be_solved())
+  {
+    this->initialize_block_vector_velocity_pressure(vector_linearization);
   }
 
-//  // Laplace Operator
-//  LaplaceOperatorData<dim> laplace_operator_data;
-//  laplace_operator_data.laplace_dof_index = static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::pressure);
-//  laplace_operator_data.laplace_quad_index = static_cast<typename std::underlying_type_t<QuadratureSelector> >(QuadratureSelector::pressure);
-//  laplace_operator_data.penalty_factor = param.IP_factor_pressure;
-//
-//  // TODO
-//  /*
-//   * approach of Ferrer et al.: increase penalty parameter when reducing the time step
-//   * in order to improve stability in the limit of small time steps
-//   */
-//
-//  /*
-//  double dt_ref = 0.1;
-//  laplace_operator_data.penalty_factor = param.IP_factor_pressure/time_step*dt_ref;
-//  */
-//  laplace_operator_data.dirichlet_boundaries = neumann_boundary;
-//  laplace_operator_data.neumann_boundaries = dirichlet_boundary;
-//  laplace_operator_data.periodic_face_pairs_level0 = periodic_face_pairs;
-//  laplace_operator.reinit(data,mapping,laplace_operator_data);
-//
-//  // Pressure Poisson solver
-//  PoissonSolverData poisson_solver_data;
-//  poisson_solver_data.solver_tolerance_rel = param.rel_tol_pressure;
-//  poisson_solver_data.solver_tolerance_abs = param.abs_tol_pressure;
-//  poisson_solver_data.solver_poisson = param.solver_poisson;
-//  poisson_solver_data.preconditioner_poisson = param.preconditioner_poisson;
-//  poisson_solver_data.multigrid_smoother = param.multigrid_smoother;
-//  poisson_solver_data.coarse_solver = param.multigrid_coarse_grid_solver;
-//  pressure_poisson_solver.initialize(laplace_operator,mapping,data,poisson_solver_data);
+  // linear solver that is used to solve the linear Stokes problem and the linearized Navier-Stokes problem
+  LinearSolverData linear_solver_data;
+  linear_solver_data.abs_tol = this->param.abs_tol_linear;
+  linear_solver_data.rel_tol = this->param.rel_tol_linear;
+  linear_solver_data.max_iter = this->param.max_iter_linear;
 
-//  // helmholtz operator
-//  HelmholtzOperatorData<dim> helmholtz_operator_data;
-//  helmholtz_operator_data.dof_index = static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::velocity);
-//  helmholtz_operator_data.formulation_viscous_term = param.formulation_viscous_term;
-//  helmholtz_operator_data.IP_formulation_viscous = param.IP_formulation_viscous;
-//  helmholtz_operator_data.IP_factor_viscous = param.IP_factor_viscous;
-//  helmholtz_operator_data.dirichlet_boundaries = dirichlet_boundary;
-//  helmholtz_operator_data.neumann_boundaries = neumann_boundary;
-//  helmholtz_operator_data.viscosity = viscosity;
-//  helmholtz_operator_data.mass_matrix_coefficient = gamma0/time_step;
-//  helmholtz_operator.reinit(data, mapping, helmholtz_operator_data,fe_param);
-//
-//  HelmholtzSolverData helmholtz_solver_data;
-//  helmholtz_solver_data.solver_viscous = param.solver_viscous;
-//  helmholtz_solver_data.preconditioner_viscous = param.preconditioner_viscous;
-//  helmholtz_solver_data.solver_tolerance_abs = param.abs_tol_viscous;
-//  helmholtz_solver_data.solver_tolerance_rel = param.rel_tol_viscous;
-//  helmholtz_solver_data.multigrid_smoother = param.multigrid_smoother_viscous;
-//  helmholtz_solver_data.coarse_solver = param.multigrid_coarse_grid_solver_viscous;
-//
-//  helmholtz_solver.initialize(helmholtz_operator, mapping, data, helmholtz_solver_data,
-//      static_cast<typename std::underlying_type_t<DofHandlerSelector> >(DofHandlerSelector::velocity),
-//      static_cast<typename std::underlying_type_t<QuadratureSelector> >(QuadratureSelector::velocity),
-//      fe_param);
+  PreconditionerDataLinearSolver preconditioner_data;
+  preconditioner_data.preconditioner_type = this->param.preconditioner_linearized_navier_stokes;
+  preconditioner_data.preconditioner_momentum = this->param.preconditioner_momentum;
+  preconditioner_data.preconditioner_schur_complement = this->param.preconditioner_schur_complement;
+
+  linear_solver_data.preconditioner_data = preconditioner_data;
+
+  linear_solver.initialize(linear_solver_data,this);
+
+  // Newton solver
+  if(nonlinear_problem_has_to_be_solved())
+  {
+    NewtonSolverData newton_solver_data;
+    newton_solver_data.abs_tol = this->param.abs_tol_newton;
+    newton_solver_data.rel_tol = this->param.rel_tol_newton;
+    newton_solver_data.max_iter = this->param.max_iter_newton;
+
+    newton_solver.initialize(newton_solver_data,this,&linear_solver);
+  }
 }
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall,typename value_type>
-struct NavierStokesCoupledMatrix : public Subscriptor
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+vmult (parallel::distributed::BlockVector<value_type>       &dst,
+       parallel::distributed::BlockVector<value_type> const &src) const
 {
-  void initialize(DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> &ns_op)
-  {
-    ns_operation = &ns_op;
-  }
-  void vmult (parallel::distributed::BlockVector<value_type>        &dst,
-              const parallel::distributed::BlockVector<value_type>  &src) const
-  {
-    ns_operation->apply_linearized_problem(dst,src);
-  }
-  DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> *ns_operation;
-};
+  apply_linearized_problem(dst,src);
+}
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 apply_linearized_problem (parallel::distributed::BlockVector<value_type>       &dst,
                           parallel::distributed::BlockVector<value_type> const &src) const
 {
+//  // (1,1) block of saddle point matrix
+//  this->mass_matrix_operator.apply(dst.block(0),src.block(0));
+//  dst.block(0) *= this->scaling_factor_time_derivative_term;
+//
+//  if(nonlinear_problem_has_to_be_solved())
+//    this->convective_operator.apply_linearized_add(dst.block(0),src.block(0),&vector_linearization.block(0),this->time+this->time_step);
+//
+//  this->viscous_operator.apply_add(dst.block(0),src.block(0));
+
   // (1,1) block of saddle point matrix
-  this->mass_matrix_operator.apply(dst.block(0),src.block(0));
-  dst.block(0) *= this->gamma0/this->time_step;
+  this->viscous_operator.apply(dst.block(0),src.block(0));
 
-  if(this->param.solve_stokes_equations == false && this->param.convective_step_implicit == true)
-    this->convective_operator.apply_linearized_add(dst.block(0),src.block(0),&velocity_linear,this->time+this->time_step);
+  if(unsteady_problem_has_to_be_solved())
+  {
+    temp.equ(this->scaling_factor_time_derivative_term,src.block(0));
+    this->mass_matrix_operator.apply_add(dst.block(0),temp);
+  }
 
-  this->viscous_operator.apply_add(dst.block(0),src.block(0));
+  if(nonlinear_problem_has_to_be_solved())
+    this->convective_operator.apply_linearized_add(dst.block(0),src.block(0),&vector_linearization.block(0),this->time+this->time_step);
 
   // (1,2) block of saddle point matrix
   // gradient operator: dst = velocity, src = pressure
@@ -179,14 +289,16 @@ apply_linearized_problem (parallel::distributed::BlockVector<value_type>       &
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-rhs_stokes_problem (parallel::distributed::BlockVector<value_type>       &dst,
-                    parallel::distributed::Vector<value_type> const      &src) const
+rhs_stokes_problem (parallel::distributed::BlockVector<value_type>  &dst,
+                    parallel::distributed::Vector<value_type> const *src) const
 {
   // velocity-block
-  this->mass_matrix_operator.apply(dst.block(0),src);
-  this->body_force_operator.evaluate_add(dst.block(0),this->time+this->time_step);
+  this->body_force_operator.evaluate(dst.block(0),this->time+this->time_step);
   this->viscous_operator.rhs_add(dst.block(0),this->time+this->time_step);
   this->gradient_operator.rhs_add(dst.block(0),this->time+this->time_step);
+
+  if(unsteady_problem_has_to_be_solved())
+    this->mass_matrix_operator.apply_add(dst.block(0),*src);
 
   // pressure-block
   this->divergence_operator.rhs(dst.block(1),this->time+this->time_step);
@@ -206,17 +318,19 @@ evaluate_convective_term (parallel::distributed::Vector<value_type>       &dst,
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 evaluate_nonlinear_residual (parallel::distributed::BlockVector<value_type>       &dst,
-                             parallel::distributed::BlockVector<value_type> const &src,
-                             parallel::distributed::Vector<value_type> const      &sum_alphai_ui)
+                             parallel::distributed::BlockVector<value_type> const &src)
 {
   // velocity-block
   this->body_force_operator.evaluate(dst.block(0),this->time+this->time_step);
   // shift body force term to the left-hand side of the equation
   dst.block(0) *= -1.0;
 
-  temp.equ(this->gamma0/this->time_step,src.block(0));
-  temp.add(-1.0,sum_alphai_ui);
-  this->mass_matrix_operator.apply_add(dst.block(0),temp);
+  if(unsteady_problem_has_to_be_solved())
+  {
+    temp.equ(this->scaling_factor_time_derivative_term,src.block(0));
+    temp.add(-1.0,*sum_alphai_ui);
+    this->mass_matrix_operator.apply_add(dst.block(0),temp);
+  }
 
   this->convective_operator.evaluate_add(dst.block(0),src.block(0),this->time+this->time_step);
   this->viscous_operator.evaluate_add(dst.block(0),src.block(0),this->time+this->time_step);
@@ -228,80 +342,21 @@ evaluate_nonlinear_residual (parallel::distributed::BlockVector<value_type>     
     dst.block(1) *= -1.0;
 }
 
-//  template<class NUMBER>
-//  void output_eigenvalues(const std::vector<NUMBER> &eigenvalues,const std::string &text)
-//  {
-//    deallog<< text;
-//    for (unsigned int j = 0; j < eigenvalues.size(); ++j)
-//      {
-//        deallog<< ' ' << eigenvalues.at(j);
-//      }
-//    deallog << std::endl;
-//  }
-
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 unsigned int DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-solve_linearized_problem (parallel::distributed::BlockVector<value_type>       &dst,
-                          parallel::distributed::BlockVector<value_type> const &src,
-                          parallel::distributed::Vector<value_type> const      *solution_linearization)
+solve_linear_stokes_problem (parallel::distributed::BlockVector<value_type>       &dst,
+                             parallel::distributed::BlockVector<value_type> const &src)
 {
-  if(solution_linearization != nullptr)
-  {
-    velocity_linear = *solution_linearization;
-  }
-
-  ReductionControl solver_control (this->param.max_iter_linear, this->param.abs_tol_linear, this->param.rel_tol_linear);
-  SolverGMRES<parallel::distributed::BlockVector<value_type> > solver (solver_control);
-  NavierStokesCoupledMatrix<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> global_matrix;
-  global_matrix.initialize(*this);
-
-//    solver.connect_eigenvalues_slot(std_cxx11::bind(output_eigenvalues<std::complex<double> >,std_cxx11::_1,"Eigenvalues: "),true);
-
-  solver.solve (global_matrix, dst, src, PreconditionIdentity());
-
-  return solver_control.last_step();
+  return linear_solver.solve(dst,src);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-unsigned int DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-solve_nonlinear_problem (parallel::distributed::BlockVector<value_type>       &dst,
-                         parallel::distributed::Vector<value_type> const      &sum_alphai_ui)
+unsigned int DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+solve_nonlinear_problem (parallel::distributed::BlockVector<value_type>  &dst,
+                         parallel::distributed::Vector<value_type> const *sum_alphai_ui)
 {
-  evaluate_nonlinear_residual(residual,dst,sum_alphai_ui);
-
-  value_type norm_r = residual.l2_norm();
-  value_type norm_r_0 = norm_r;
-
-  // Newton iteration
-  unsigned int n_iter = 0;
-  while(norm_r > this->param.abs_tol_newton && norm_r/norm_r_0 > this->param.rel_tol_newton && n_iter < this->param.max_iter_newton)
-  {
-    // reset increment
-    increment = 0.0;
-
-    residual *= -1.0;
-    unsigned int linear_iterations = solve_linearized_problem(increment, residual, &dst.block(0));
-
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-      std::cout << "  Number of linear solver iterations: " << linear_iterations << std::endl;
-
-    // update solution
-    dst.add(1.0, increment);
-
-    evaluate_nonlinear_residual(residual,dst,sum_alphai_ui);
-
-    norm_r = residual.l2_norm();
-
-    ++n_iter;
-  }
-
-  if(n_iter >= this->param.max_iter_newton)
-  {
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
-      std::cout<<"Newton solver failed to solve nonlinear problem to given tolerance. Maximum number of iterations exceeded!" << std::endl;
-  }
-
-  return n_iter;
+  this->sum_alphai_ui = sum_alphai_ui;
+  return newton_solver.solve(dst);
 }
 
 #endif /* INCLUDE_DGNAVIERSTOKESCOUPLED_H_ */

@@ -274,6 +274,7 @@ private:
   MassMatrixOperatorData mass_matrix_operator_data;
 };
 
+template<int dim>
 struct ViscousOperatorData
 {
   ViscousOperatorData ()
@@ -281,7 +282,8 @@ struct ViscousOperatorData
     formulation_viscous_term(FormulationViscousTerm::DivergenceFormulation),
     IP_formulation_viscous(InteriorPenaltyFormulationViscous::SIPG),
     IP_factor_viscous(1.0),
-    dof_index(0)
+    dof_index(0),
+    viscosity(1.0)
   {}
 
   FormulationViscousTerm formulation_viscous_term;
@@ -290,12 +292,33 @@ struct ViscousOperatorData
   unsigned int dof_index;
   std::set<types::boundary_id> dirichlet_boundaries;
   std::set<types::boundary_id> neumann_boundaries;
+
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs_level0;
+
+  /*
+   * This variable 'viscosity' is only used when initializing the ViscousOperator.
+   * In order to change/update this coefficient during the simulation (e.g., varying viscosity/turbulence)
+   * use the element variable 'const_viscosity' of ViscousOperator and the corresponding setter
+   * set_constant_viscosity().
+   */
+  double viscosity;
+
+  void set_dof_index(unsigned int dof_index_in)
+  {
+    this->dof_index = dof_index_in;
+  }
+  std::set<types::boundary_id> const & get_dirichlet_boundaries() const
+  {
+    return dirichlet_boundaries;
+  }
 };
 
-template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class ViscousOperator
+template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename Number=double>
+class ViscousOperator : public Subscriptor
 {
 public:
+  typedef Number value_type;
+
   ViscousOperator()
     :
     data(nullptr),
@@ -306,22 +329,54 @@ public:
 
   static const bool is_xwall = false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
-  typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
-  typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEFaceEval_Velocity_Velocity_linear;
+  typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,Number,is_xwall> FEEval_Velocity_Velocity_linear;
+  typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,Number,is_xwall> FEFaceEval_Velocity_Velocity_linear;
 
-  void initialize(Mapping<dim> const                &mapping,
-                  MatrixFree<dim,value_type> const  &mf_data,
-                  FEParameters const                &fe_param,
-                  ViscousOperatorData const         &operator_data)
+  void initialize(Mapping<dim> const              &mapping,
+                  MatrixFree<dim,Number> const    &mf_data,
+                  FEParameters const              &fe_param,
+                  ViscousOperatorData<dim> const  &operator_data)
   {
     this->data = &mf_data;
     this->fe_param = &fe_param;
     this->viscous_operator_data = operator_data;
 
     compute_array_penalty_parameter(mapping);
+
+    const_viscosity = viscous_operator_data.viscosity;
   }
 
-  value_type get_penalty_factor() const
+  void reinit (const DoFHandler<dim>            &dof_handler,
+               const Mapping<dim>               &mapping,
+               const ViscousOperatorData<dim>   &operator_data,
+               const MGConstrainedDoFs          &/*mg_constrained_dofs*/,
+               const unsigned int               level = numbers::invalid_unsigned_int,
+               FEParameters const               &fe_param = FEParameters())
+  {
+    // set the dof index to zero
+    ViscousOperatorData<dim> my_operator_data = operator_data;
+    my_operator_data.set_dof_index(0);
+
+    // setup own matrix free object
+    const QGauss<1> quad(dof_handler.get_fe().degree+1);
+    typename MatrixFree<dim,Number>::AdditionalData addit_data;
+    addit_data.tasks_parallel_scheme = MatrixFree<dim,Number>::AdditionalData::none;
+    if (dof_handler.get_fe().dofs_per_vertex == 0)
+      addit_data.build_face_info = true;
+    addit_data.level_mg_handler = level;
+    addit_data.mpi_communicator =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()) ?
+      (dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()))->get_communicator() : MPI_COMM_SELF;
+    addit_data.periodic_face_pairs_level_0 = operator_data.periodic_face_pairs_level0;
+
+    ConstraintMatrix constraints;
+    own_matrix_free_storage.reinit(mapping, dof_handler, constraints, quad, addit_data);
+
+    // setup viscous operator
+    initialize(mapping, own_matrix_free_storage, fe_param, my_operator_data);
+  }
+
+  Number get_penalty_factor() const
   {
     return viscous_operator_data.IP_factor_viscous * (fe_degree + 1.0) * (fe_degree + 1.0);
   }
@@ -336,15 +391,15 @@ public:
     const_viscosity = constant_viscosity_in;
     FEEval_Velocity_Velocity_linear fe_eval_velocity_cell(*data,*fe_param,viscous_operator_data.dof_index);
     viscous_coefficient_cell.reinit(data->n_macro_cells(), fe_eval_velocity_cell.n_q_points);
-    viscous_coefficient_cell.fill(make_vectorized_array<value_type>(const_viscosity));
+    viscous_coefficient_cell.fill(make_vectorized_array<Number>(const_viscosity));
 
     FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_face(*data,*fe_param,true,viscous_operator_data.dof_index);
     viscous_coefficient_face.reinit(data->n_macro_inner_faces()+data->n_macro_boundary_faces(), fe_eval_velocity_face.n_q_points);
-    viscous_coefficient_face.fill(make_vectorized_array<value_type>(const_viscosity));
+    viscous_coefficient_face.fill(make_vectorized_array<Number>(const_viscosity));
 
     FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_face_neighbor(*data,*fe_param,false,viscous_operator_data.dof_index);
     viscous_coefficient_face_neighbor.reinit(data->n_macro_inner_faces()+data->n_macro_boundary_faces(), fe_eval_velocity_face.n_q_points);
-    viscous_coefficient_face_neighbor.fill(make_vectorized_array<value_type>(const_viscosity));
+    viscous_coefficient_face_neighbor.fill(make_vectorized_array<Number>(const_viscosity));
   }
 
   // returns true if viscous_coefficient table has been filled with spatially varying viscosity values
@@ -358,61 +413,126 @@ public:
     return const_viscosity;
   }
 
-  Table<2,VectorizedArray<value_type> > const & get_viscous_coefficient_face() const
+  Table<2,VectorizedArray<Number> > const & get_viscous_coefficient_face() const
   {
     return viscous_coefficient_face;
   }
 
+  unsigned int get_dof_index() const
+  {
+    return viscous_operator_data.dof_index;
+  }
+
+  void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const
+  {
+    // does nothing in case of the Helmholtz equation
+    // this function is only necessary due to the interface of the multigrid preconditioner
+    // and especially the coarse grid solver that calls this function
+  }
+
   // apply matrix vector multiplication
-  void apply (parallel::distributed::Vector<value_type>       &dst,
-              const parallel::distributed::Vector<value_type> &src) const
+  void vmult (parallel::distributed::Vector<Number>       &dst,
+              const parallel::distributed::Vector<Number> &src) const
+  {
+    apply(dst,src);
+  }
+
+  void Tvmult(parallel::distributed::Vector<Number>       &dst,
+              const parallel::distributed::Vector<Number> &src) const
+  {
+    vmult(dst,src);
+  }
+
+  void Tvmult_add(parallel::distributed::Vector<Number>       &dst,
+                  const parallel::distributed::Vector<Number> &src) const
+  {
+    vmult_add(dst,src);
+  }
+
+  void vmult_add(parallel::distributed::Vector<Number>       &dst,
+                 const parallel::distributed::Vector<Number> &src) const
+  {
+    apply_add(dst,src);
+  }
+
+  void vmult_interface_down(parallel::distributed::Vector<Number>       &dst,
+                            const parallel::distributed::Vector<Number> &src) const
+  {
+    vmult(dst,src);
+  }
+
+  void vmult_add_interface_up(parallel::distributed::Vector<Number>       &dst,
+                              const parallel::distributed::Vector<Number> &src) const
+  {
+    vmult_add(dst,src);
+  }
+
+  types::global_dof_index m() const
+  {
+    return data->get_vector_partitioner(viscous_operator_data.dof_index)->size();
+  }
+
+  types::global_dof_index n() const
+  {
+    return data->get_vector_partitioner(viscous_operator_data.dof_index)->size();
+  }
+
+  Number el (const unsigned int,  const unsigned int) const
+  {
+    AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
+    return Number();
+  }
+
+  // apply matrix vector multiplication
+  void apply (parallel::distributed::Vector<Number>       &dst,
+              const parallel::distributed::Vector<Number> &src) const
   {
     dst = 0;
     apply_add(dst,src);
   }
 
-  void apply_add (parallel::distributed::Vector<value_type>       &dst,
-                  const parallel::distributed::Vector<value_type> &src) const
+  void apply_add (parallel::distributed::Vector<Number>       &dst,
+                  const parallel::distributed::Vector<Number> &src) const
   {
     apply_viscous(dst,src);
   }
 
-  void rhs (parallel::distributed::Vector<value_type> &dst,
-            value_type const                          evaluation_time) const
+  void rhs (parallel::distributed::Vector<Number> &dst,
+            Number const                          evaluation_time) const
   {
     dst = 0;
     rhs_add(dst,evaluation_time);
   }
 
-  void rhs_add (parallel::distributed::Vector<value_type> &dst,
-                value_type const                          evaluation_time) const
+  void rhs_add (parallel::distributed::Vector<Number> &dst,
+                Number const                          evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
-    parallel::distributed::Vector<value_type> src;
-    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_rhs_viscous,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_rhs_viscous_face,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_rhs_viscous_boundary_face,
+    parallel::distributed::Vector<Number> src;
+    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_rhs_viscous,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_rhs_viscous_face,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_rhs_viscous_boundary_face,
                this, dst, src);
   }
 
-  void evaluate (parallel::distributed::Vector<value_type>       &dst,
-                 const parallel::distributed::Vector<value_type> &src,
-                 value_type const                                evaluation_time) const
+  void evaluate (parallel::distributed::Vector<Number>       &dst,
+                 const parallel::distributed::Vector<Number> &src,
+                 Number const                                evaluation_time) const
   {
     dst = 0;
     evaluate_add(dst,src,evaluation_time);
   }
 
-  void evaluate_add (parallel::distributed::Vector<value_type>       &dst,
-                     const parallel::distributed::Vector<value_type> &src,
-                     value_type const                                evaluation_time) const
+  void evaluate_add (parallel::distributed::Vector<Number>       &dst,
+                     const parallel::distributed::Vector<Number> &src,
+                     Number const                                evaluation_time) const
   {
     this->eval_time = evaluation_time;
     evaluate_viscous(dst,src);
   }
 
-  void calculate_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
+  void calculate_diagonal(parallel::distributed::Vector<Number> &diagonal) const
   {
     diagonal = 0;
 
@@ -421,22 +541,22 @@ public:
     // verify_calculation_of_diagonal(diagonal);
   }
 
-  void add_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
+  void add_diagonal(parallel::distributed::Vector<Number> &diagonal) const
   {
-    parallel::distributed::Vector<value_type>  src_dummy(diagonal);
+    parallel::distributed::Vector<Number>  src_dummy(diagonal);
 
-    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_diagonal,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_diagonal_face,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_diagonal_boundary_face,
+    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_diagonal,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_diagonal_face,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_diagonal_boundary_face,
                this, diagonal, src_dummy);
   }
 
-  void verify_calculation_of_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
+  void verify_calculation_of_diagonal(parallel::distributed::Vector<Number> &diagonal) const
   {
-      parallel::distributed::Vector<value_type>  diagonal2(diagonal);
+      parallel::distributed::Vector<Number>  diagonal2(diagonal);
       diagonal2 = 0.0;
-      parallel::distributed::Vector<value_type>  src(diagonal2);
-      parallel::distributed::Vector<value_type>  dst(diagonal2);
+      parallel::distributed::Vector<Number>  src(diagonal2);
+      parallel::distributed::Vector<Number>  dst(diagonal2);
       for (unsigned int i=0;i<diagonal.local_size();++i)
       {
         src.local_element(i) = 1.0;
@@ -451,7 +571,7 @@ public:
       std::cout<<"L2 error diagonal: "<<diagonal2.l2_norm()<<std::endl;
   }
 
-  void invert_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
+  void invert_diagonal(parallel::distributed::Vector<Number> &diagonal) const
   {
     for (unsigned int i=0;i<diagonal.local_size();++i)
     {
@@ -462,11 +582,16 @@ public:
     }
   }
 
-  void calculate_inverse_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
+  void calculate_inverse_diagonal(parallel::distributed::Vector<Number> &diagonal) const
   {
     calculate_diagonal(diagonal);
 
     invert_diagonal(diagonal);
+  }
+
+  void initialize_dof_vector(parallel::distributed::Vector<Number> &vector) const
+  {
+    data->initialize_dof_vector(vector,get_dof_index());
   }
 
 private:
@@ -501,18 +626,18 @@ private:
     }
   }
 
-  void apply_viscous (parallel::distributed::Vector<value_type>        &dst,
-                      const parallel::distributed::Vector<value_type>  &src) const
+  void apply_viscous (parallel::distributed::Vector<Number>        &dst,
+                      const parallel::distributed::Vector<Number>  &src) const
   {
-    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_apply_viscous,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_apply_viscous_face,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_apply_viscous_boundary_face,
+    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_apply_viscous,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_apply_viscous_face,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_apply_viscous_boundary_face,
                this, dst, src);
   }
 
-  void local_apply_viscous (const MatrixFree<dim,value_type>                 &data,
-                            parallel::distributed::Vector<value_type>        &dst,
-                            const parallel::distributed::Vector<value_type>  &src,
+  void local_apply_viscous (const MatrixFree<dim,Number>                 &data,
+                            parallel::distributed::Vector<Number>        &dst,
+                            const parallel::distributed::Vector<Number>  &src,
                             const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
     AssertThrow(const_viscosity>0.0,ExcMessage("Constant viscosity has not been set!"));
@@ -527,13 +652,13 @@ private:
 
       for (unsigned int q=0; q<fe_eval_velocity.n_q_points; ++q)
       {
-        VectorizedArray<value_type> viscosity = make_vectorized_array<value_type>(const_viscosity);
+        VectorizedArray<Number> viscosity = make_vectorized_array<Number>(const_viscosity);
         if(viscosity_is_variable())
           viscosity = viscous_coefficient_cell[cell][q];
 
         if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
         {
-          fe_eval_velocity.submit_gradient (viscosity*make_vectorized_array<value_type>(2.)*fe_eval_velocity.get_symmetric_gradient(q), q);
+          fe_eval_velocity.submit_gradient (viscosity*make_vectorized_array<Number>(2.)*fe_eval_velocity.get_symmetric_gradient(q), q);
         }
         else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
         {
@@ -549,9 +674,9 @@ private:
     }
   }
 
-  void local_apply_viscous_face (const MatrixFree<dim,value_type>                &data,
-                                 parallel::distributed::Vector<value_type>       &dst,
-                                 const parallel::distributed::Vector<value_type> &src,
+  void local_apply_viscous_face (const MatrixFree<dim,Number>                &data,
+                                 parallel::distributed::Vector<Number>       &dst,
+                                 const parallel::distributed::Vector<Number> &src,
                                  const std::pair<unsigned int,unsigned int>      &face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,viscous_operator_data.dof_index);
@@ -566,24 +691,24 @@ private:
       fe_eval_velocity_neighbor.read_dof_values(src);
       fe_eval_velocity_neighbor.evaluate(true,true);
 
-      VectorizedArray<value_type> tau_IP = std::max(fe_eval_velocity.read_cell_data(array_penalty_parameter),fe_eval_velocity_neighbor.read_cell_data(array_penalty_parameter))
+      VectorizedArray<Number> tau_IP = std::max(fe_eval_velocity.read_cell_data(array_penalty_parameter),fe_eval_velocity_neighbor.read_cell_data(array_penalty_parameter))
                                               * get_penalty_factor();
 
       for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
       {
-        Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_velocity.get_value(q);
-        Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_velocity_neighbor.get_value(q);
-        VectorizedArray<value_type> average_viscosity = make_vectorized_array<value_type>(const_viscosity);
-        VectorizedArray<value_type> max_viscosity = make_vectorized_array<value_type>(const_viscosity);
+        Tensor<1,dim,VectorizedArray<Number> > uM = fe_eval_velocity.get_value(q);
+        Tensor<1,dim,VectorizedArray<Number> > uP = fe_eval_velocity_neighbor.get_value(q);
+        VectorizedArray<Number> average_viscosity = make_vectorized_array<Number>(const_viscosity);
+        VectorizedArray<Number> max_viscosity = make_vectorized_array<Number>(const_viscosity);
         if(viscosity_is_variable())
         {
           average_viscosity = 0.5*(viscous_coefficient_face[face][q] + viscous_coefficient_face_neighbor[face][q]);
           max_viscosity = std::max(viscous_coefficient_face[face][q] , viscous_coefficient_face_neighbor[face][q]);
         }
 
-        Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
+        Tensor<1,dim,VectorizedArray<Number> > jump_value = uM - uP;
 
-        Tensor<2,dim,VectorizedArray<value_type> > average_gradient_tensor;
+        Tensor<2,dim,VectorizedArray<Number> > average_gradient_tensor;
         if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
         {
           // {{F}} = (F⁻ + F⁺)/2 where F = 2 * nu * symmetric_gradient -> nu * (symmetric_gradient⁻ + symmetric_gradient⁺)
@@ -591,18 +716,18 @@ private:
         }
         else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
         {
-          average_gradient_tensor = ( fe_eval_velocity.get_gradient(q) + fe_eval_velocity_neighbor.get_gradient(q)) * make_vectorized_array<value_type>(0.5);
+          average_gradient_tensor = ( fe_eval_velocity.get_gradient(q) + fe_eval_velocity_neighbor.get_gradient(q)) * make_vectorized_array<Number>(0.5);
         }
         else
         {
           AssertThrow(false, ExcMessage("FORMULATION_VISCOUS_TERM is not specified - possibilities are DivergenceFormulation and LaplaceFormulation"));
         }
-        Tensor<2,dim,VectorizedArray<value_type> > jump_tensor =
+        Tensor<2,dim,VectorizedArray<Number> > jump_tensor =
             outer_product(jump_value,fe_eval_velocity.get_normal_vector(q));
 
         //we do not want to symmetrize the penalty part
         average_gradient_tensor = average_viscosity*average_gradient_tensor - max_viscosity * jump_tensor * tau_IP;
-        Tensor<1,dim,VectorizedArray<value_type> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
+        Tensor<1,dim,VectorizedArray<Number> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
 
         if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
         {
@@ -648,10 +773,10 @@ private:
     }
   }
 
-  void local_apply_viscous_boundary_face (const MatrixFree<dim,value_type>                 &data,
-                                          parallel::distributed::Vector<value_type>        &dst,
-                                          const parallel::distributed::Vector<value_type>  &src,
-                                          const std::pair<unsigned int,unsigned int>       &face_range) const
+  void local_apply_viscous_boundary_face (const MatrixFree<dim,Number>                 &data,
+                                          parallel::distributed::Vector<Number>        &dst,
+                                          const parallel::distributed::Vector<Number>  &src,
+                                          const std::pair<unsigned int,unsigned int>   &face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,viscous_operator_data.dof_index);
 
@@ -661,12 +786,12 @@ private:
       fe_eval_velocity.read_dof_values(src);
       fe_eval_velocity.evaluate(true,true);
 
-      VectorizedArray<value_type> tau_IP = fe_eval_velocity.read_cell_data(array_penalty_parameter)
+      VectorizedArray<Number> tau_IP = fe_eval_velocity.read_cell_data(array_penalty_parameter)
                                              * get_penalty_factor();
 
       for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
       {
-        VectorizedArray<value_type> viscosity = make_vectorized_array<value_type>(const_viscosity);
+        VectorizedArray<Number> viscosity = make_vectorized_array<Number>(const_viscosity);
         if(viscosity_is_variable())
           viscosity = viscous_coefficient_face[face][q];
 
@@ -674,14 +799,14 @@ private:
             != viscous_operator_data.dirichlet_boundaries.end()) // Infow and wall boundaries
         {
           // applying inhomogeneous Dirichlet BC (value+ = - value- + 2g , grad+ = grad-)
-          Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_velocity.get_value(q);
-          Tensor<1,dim,VectorizedArray<value_type> > uP = -uM;
-          Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
+          Tensor<1,dim,VectorizedArray<Number> > uM = fe_eval_velocity.get_value(q);
+          Tensor<1,dim,VectorizedArray<Number> > uP = -uM;
+          Tensor<1,dim,VectorizedArray<Number> > jump_value = uM - uP;
 
-          Tensor<2,dim,VectorizedArray<value_type> > average_gradient_tensor;
+          Tensor<2,dim,VectorizedArray<Number> > average_gradient_tensor;
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
-            average_gradient_tensor = make_vectorized_array<value_type>(2.) * fe_eval_velocity.get_symmetric_gradient(q);
+            average_gradient_tensor = make_vectorized_array<Number>(2.) * fe_eval_velocity.get_symmetric_gradient(q);
           }
           else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
@@ -691,13 +816,13 @@ private:
           {
             AssertThrow(false, ExcMessage("FORMULATION_VISCOUS_TERM is not specified - possibilities are DivergenceFormulation and LaplaceFormulation"));
           }
-          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor
+          Tensor<2,dim,VectorizedArray<Number> > jump_tensor
             = outer_product(jump_value,fe_eval_velocity.get_normal_vector(q));
 
           //we do not want to symmetrize the penalty part
           average_gradient_tensor = viscosity*(average_gradient_tensor - jump_tensor * tau_IP);
 
-          Tensor<1,dim,VectorizedArray<value_type> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
+          Tensor<1,dim,VectorizedArray<Number> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
 
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
@@ -735,9 +860,9 @@ private:
             != viscous_operator_data.neumann_boundaries.end()) // Outflow boundary
         {
           // applying inhomogeneous Neumann BC (value+ = value- , grad+ =  - grad- +2h)
-          Tensor<1,dim,VectorizedArray<value_type> > jump_value;
-          Tensor<1,dim,VectorizedArray<value_type> > average_gradient;
-          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor
+          Tensor<1,dim,VectorizedArray<Number> > jump_value;
+          Tensor<1,dim,VectorizedArray<Number> > average_gradient;
+          Tensor<2,dim,VectorizedArray<Number> > jump_tensor
             = outer_product(jump_value,fe_eval_velocity.get_normal_vector(q));
 
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
@@ -778,35 +903,35 @@ private:
     }
   }
 
-  void local_diagonal (const MatrixFree<dim,value_type>                 &data,
-                       parallel::distributed::Vector<value_type>        &dst,
-                       const parallel::distributed::Vector<value_type>  &,
-                       const std::pair<unsigned int,unsigned int>       &cell_range) const
+  void local_diagonal (const MatrixFree<dim,Number>                 &data,
+                       parallel::distributed::Vector<Number>        &dst,
+                       const parallel::distributed::Vector<Number>  &,
+                       const std::pair<unsigned int,unsigned int>   &cell_range) const
   {
     FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,viscous_operator_data.dof_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
       fe_eval_velocity.reinit (cell);
-      VectorizedArray<value_type> local_diagonal_vector[fe_eval_velocity.tensor_dofs_per_cell*dim];
+      VectorizedArray<Number> local_diagonal_vector[fe_eval_velocity.tensor_dofs_per_cell*dim];
       for (unsigned int j=0; j<fe_eval_velocity.dofs_per_cell*dim; ++j)
       {
         for (unsigned int i=0; i<fe_eval_velocity.dofs_per_cell*dim; ++i)
-          fe_eval_velocity.write_cellwise_dof_value(i,make_vectorized_array<value_type>(0.));
-        fe_eval_velocity.write_cellwise_dof_value(j,make_vectorized_array<value_type>(1.));
+          fe_eval_velocity.write_cellwise_dof_value(i,make_vectorized_array<Number>(0.));
+        fe_eval_velocity.write_cellwise_dof_value(j,make_vectorized_array<Number>(1.));
 
         // copied from local_apply_viscous
         fe_eval_velocity.evaluate (false,true,false);
 
         for (unsigned int q=0; q<fe_eval_velocity.n_q_points; ++q)
         {
-          VectorizedArray<value_type> viscosity = make_vectorized_array<value_type>(const_viscosity);
+          VectorizedArray<Number> viscosity = make_vectorized_array<Number>(const_viscosity);
           if(viscosity_is_variable())
             viscosity = viscous_coefficient_cell[cell][q];
 
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
-            fe_eval_velocity.submit_gradient (viscosity*make_vectorized_array<value_type>(2.)*fe_eval_velocity.get_symmetric_gradient(q), q);
+            fe_eval_velocity.submit_gradient (viscosity*make_vectorized_array<Number>(2.)*fe_eval_velocity.get_symmetric_gradient(q), q);
           }
           else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
@@ -827,10 +952,10 @@ private:
     }
   }
 
-  void local_diagonal_face (const MatrixFree<dim,value_type>                &data,
-                            parallel::distributed::Vector<value_type>       &dst,
-                            const parallel::distributed::Vector<value_type> &,
-                            const std::pair<unsigned int,unsigned int>      &face_range) const
+  void local_diagonal_face (const MatrixFree<dim,Number>                &data,
+                            parallel::distributed::Vector<Number>       &dst,
+                            const parallel::distributed::Vector<Number> &,
+                            const std::pair<unsigned int,unsigned int>  &face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,viscous_operator_data.dof_index);
     FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,*fe_param,false,viscous_operator_data.dof_index);
@@ -840,20 +965,20 @@ private:
       fe_eval_velocity.reinit (face);
       fe_eval_velocity_neighbor.reinit (face);
 
-      VectorizedArray<value_type> tau_IP = std::max(fe_eval_velocity.read_cell_data(array_penalty_parameter),fe_eval_velocity_neighbor.read_cell_data(array_penalty_parameter))
+      VectorizedArray<Number> tau_IP = std::max(fe_eval_velocity.read_cell_data(array_penalty_parameter),fe_eval_velocity_neighbor.read_cell_data(array_penalty_parameter))
                                               * get_penalty_factor();
 
       // element-
-      VectorizedArray<value_type> local_diagonal_vector[fe_eval_velocity.tensor_dofs_per_cell*dim];
+      VectorizedArray<Number> local_diagonal_vector[fe_eval_velocity.tensor_dofs_per_cell*dim];
       for (unsigned int j=0; j<fe_eval_velocity.dofs_per_cell*dim; ++j)
       {
         // set dof value j of element- to 1 and all other dof values of element- to zero
         for (unsigned int i=0; i<fe_eval_velocity.dofs_per_cell*dim; ++i)
-          fe_eval_velocity.write_cellwise_dof_value(i,make_vectorized_array<value_type>(0.));
-        fe_eval_velocity.write_cellwise_dof_value(j,make_vectorized_array<value_type>(1.));
+          fe_eval_velocity.write_cellwise_dof_value(i,make_vectorized_array<Number>(0.));
+        fe_eval_velocity.write_cellwise_dof_value(j,make_vectorized_array<Number>(1.));
         // set all dof values of element+ to zero
         for (unsigned int i=0; i<fe_eval_velocity_neighbor.dofs_per_cell*dim; ++i)
-          fe_eval_velocity_neighbor.write_cellwise_dof_value(i, make_vectorized_array<value_type>(0.));
+          fe_eval_velocity_neighbor.write_cellwise_dof_value(i, make_vectorized_array<Number>(0.));
 
         fe_eval_velocity.evaluate(true,true);
         fe_eval_velocity_neighbor.evaluate(true,true);
@@ -861,19 +986,19 @@ private:
         for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
         {
           // copied from local_apply_viscous_face (note that fe_eval_neighbor.submit... has to be removed) //TODO
-          Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_velocity.get_value(q);
-          Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_velocity_neighbor.get_value(q);
-          VectorizedArray<value_type> average_viscosity = make_vectorized_array<value_type>(const_viscosity);
-          VectorizedArray<value_type> max_viscosity = make_vectorized_array<value_type>(const_viscosity);
+          Tensor<1,dim,VectorizedArray<Number> > uM = fe_eval_velocity.get_value(q);
+          Tensor<1,dim,VectorizedArray<Number> > uP = fe_eval_velocity_neighbor.get_value(q);
+          VectorizedArray<Number> average_viscosity = make_vectorized_array<Number>(const_viscosity);
+          VectorizedArray<Number> max_viscosity = make_vectorized_array<Number>(const_viscosity);
           if(viscosity_is_variable())
           {
             average_viscosity = 0.5*(viscous_coefficient_face[face][q] + viscous_coefficient_face_neighbor[face][q]);
             max_viscosity = std::max(viscous_coefficient_face[face][q] , viscous_coefficient_face_neighbor[face][q]);
           }
 
-          Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
+          Tensor<1,dim,VectorizedArray<Number> > jump_value = uM - uP;
 
-          Tensor<2,dim,VectorizedArray<value_type> > average_gradient_tensor;
+          Tensor<2,dim,VectorizedArray<Number> > average_gradient_tensor;
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
             // {{F}} = (F⁻ + F⁺)/2 where F = 2 * nu * symmetric_gradient -> nu * (symmetric_gradient⁻ + symmetric_gradient⁺)
@@ -881,18 +1006,18 @@ private:
           }
           else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
-            average_gradient_tensor = ( fe_eval_velocity.get_gradient(q) + fe_eval_velocity_neighbor.get_gradient(q)) * make_vectorized_array<value_type>(0.5);
+            average_gradient_tensor = ( fe_eval_velocity.get_gradient(q) + fe_eval_velocity_neighbor.get_gradient(q)) * make_vectorized_array<Number>(0.5);
           }
           else
           {
             AssertThrow(false, ExcMessage("FORMULATION_VISCOUS_TERM is not specified - possibilities are DivergenceFormulation and LaplaceFormulation"));
           }
-          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor =
+          Tensor<2,dim,VectorizedArray<Number> > jump_tensor =
               outer_product(jump_value,fe_eval_velocity.get_normal_vector(q));
 
           //we do not want to symmetrize the penalty part
           average_gradient_tensor = average_viscosity*average_gradient_tensor - max_viscosity * jump_tensor * tau_IP;
-          Tensor<1,dim,VectorizedArray<value_type> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
+          Tensor<1,dim,VectorizedArray<Number> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
 
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
@@ -936,16 +1061,16 @@ private:
       fe_eval_velocity.distribute_local_to_global(dst);
 
       // neighbor (element+)
-      VectorizedArray<value_type> local_diagonal_vector_neighbor[fe_eval_velocity_neighbor.tensor_dofs_per_cell*dim];
+      VectorizedArray<Number> local_diagonal_vector_neighbor[fe_eval_velocity_neighbor.tensor_dofs_per_cell*dim];
       for (unsigned int j=0; j<fe_eval_velocity_neighbor.dofs_per_cell*dim; ++j)
       {
         // set all dof values of element- to zero
         for (unsigned int i=0; i<fe_eval_velocity.dofs_per_cell*dim; ++i)
-          fe_eval_velocity.write_cellwise_dof_value(i,make_vectorized_array<value_type>(0.));
+          fe_eval_velocity.write_cellwise_dof_value(i,make_vectorized_array<Number>(0.));
         // set dof value j of element+ to 1 and all other dof values of element+ to zero
         for (unsigned int i=0; i<fe_eval_velocity_neighbor.dofs_per_cell*dim; ++i)
-          fe_eval_velocity_neighbor.write_cellwise_dof_value(i, make_vectorized_array<value_type>(0.));
-        fe_eval_velocity_neighbor.write_cellwise_dof_value(j,make_vectorized_array<value_type>(1.));
+          fe_eval_velocity_neighbor.write_cellwise_dof_value(i, make_vectorized_array<Number>(0.));
+        fe_eval_velocity_neighbor.write_cellwise_dof_value(j,make_vectorized_array<Number>(1.));
 
         fe_eval_velocity.evaluate(true,true);
         fe_eval_velocity_neighbor.evaluate(true,true);
@@ -953,19 +1078,19 @@ private:
         for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
         {
           // copied from local_apply_viscous_face (note that fe_eval.submit... has to be removed)//TODO
-          Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_velocity.get_value(q);
-          Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_velocity_neighbor.get_value(q);
-          VectorizedArray<value_type> average_viscosity = make_vectorized_array<value_type>(const_viscosity);
-          VectorizedArray<value_type> max_viscosity = make_vectorized_array<value_type>(const_viscosity);
+          Tensor<1,dim,VectorizedArray<Number> > uM = fe_eval_velocity.get_value(q);
+          Tensor<1,dim,VectorizedArray<Number> > uP = fe_eval_velocity_neighbor.get_value(q);
+          VectorizedArray<Number> average_viscosity = make_vectorized_array<Number>(const_viscosity);
+          VectorizedArray<Number> max_viscosity = make_vectorized_array<Number>(const_viscosity);
           if(viscosity_is_variable())
           {
             average_viscosity = 0.5*(viscous_coefficient_face[face][q] + viscous_coefficient_face_neighbor[face][q]);
             max_viscosity = std::max(viscous_coefficient_face[face][q] , viscous_coefficient_face_neighbor[face][q]);
           }
 
-          Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
+          Tensor<1,dim,VectorizedArray<Number> > jump_value = uM - uP;
 
-          Tensor<2,dim,VectorizedArray<value_type> > average_gradient_tensor;
+          Tensor<2,dim,VectorizedArray<Number> > average_gradient_tensor;
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
             // {{F}} = (F⁻ + F⁺)/2 where F = 2 * nu * symmetric_gradient -> nu * (symmetric_gradient⁻ + symmetric_gradient⁺)
@@ -973,18 +1098,18 @@ private:
           }
           else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
-            average_gradient_tensor = ( fe_eval_velocity.get_gradient(q) + fe_eval_velocity_neighbor.get_gradient(q)) * make_vectorized_array<value_type>(0.5);
+            average_gradient_tensor = ( fe_eval_velocity.get_gradient(q) + fe_eval_velocity_neighbor.get_gradient(q)) * make_vectorized_array<Number>(0.5);
           }
           else
           {
             AssertThrow(false, ExcMessage("FORMULATION_VISCOUS_TERM is not specified - possibilities are DivergenceFormulation and LaplaceFormulation"));
           }
-          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor =
+          Tensor<2,dim,VectorizedArray<Number> > jump_tensor =
               outer_product(jump_value,fe_eval_velocity.get_normal_vector(q));
 
           //we do not want to symmetrize the penalty part
           average_gradient_tensor = average_viscosity*average_gradient_tensor - max_viscosity * jump_tensor * tau_IP;
-          Tensor<1,dim,VectorizedArray<value_type> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
+          Tensor<1,dim,VectorizedArray<Number> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
 
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
@@ -1029,10 +1154,10 @@ private:
     }
   }
 
-  void local_diagonal_boundary_face (const MatrixFree<dim,value_type>                 &data,
-                                     parallel::distributed::Vector<value_type>        &dst,
-                                     const parallel::distributed::Vector<value_type>  &,
-                                     const std::pair<unsigned int,unsigned int>       &face_range) const
+  void local_diagonal_boundary_face (const MatrixFree<dim,Number>                 &data,
+                                     parallel::distributed::Vector<Number>        &dst,
+                                     const parallel::distributed::Vector<Number>  &,
+                                     const std::pair<unsigned int,unsigned int>   &face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,viscous_operator_data.dof_index);
 
@@ -1040,23 +1165,23 @@ private:
     {
       fe_eval_velocity.reinit (face);
 
-      VectorizedArray<value_type> tau_IP = fe_eval_velocity.read_cell_data(array_penalty_parameter)
+      VectorizedArray<Number> tau_IP = fe_eval_velocity.read_cell_data(array_penalty_parameter)
                                              * get_penalty_factor();
 
-      VectorizedArray<value_type> local_diagonal_vector[fe_eval_velocity.tensor_dofs_per_cell*dim];
+      VectorizedArray<Number> local_diagonal_vector[fe_eval_velocity.tensor_dofs_per_cell*dim];
       for (unsigned int j=0; j<fe_eval_velocity.dofs_per_cell*dim; ++j)
       {
         // set dof value j of element- to 1 and all other dof values of element- to zero
         for (unsigned int i=0; i<fe_eval_velocity.dofs_per_cell*dim; ++i)
-          fe_eval_velocity.write_cellwise_dof_value(i, make_vectorized_array<value_type>(0.));
-        fe_eval_velocity.write_cellwise_dof_value(j, make_vectorized_array<value_type>(1.));
+          fe_eval_velocity.write_cellwise_dof_value(i, make_vectorized_array<Number>(0.));
+        fe_eval_velocity.write_cellwise_dof_value(j, make_vectorized_array<Number>(1.));
 
         fe_eval_velocity.evaluate(true,true);
 
         for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
         {
           // copied from local_apply_viscous__boundary_face
-          VectorizedArray<value_type> viscosity = make_vectorized_array<value_type>(const_viscosity);
+          VectorizedArray<Number> viscosity = make_vectorized_array<Number>(const_viscosity);
           if(viscosity_is_variable())
             viscosity = viscous_coefficient_face[face][q];
 
@@ -1064,14 +1189,14 @@ private:
               != viscous_operator_data.dirichlet_boundaries.end()) // Infow and wall boundaries
           {
             // applying inhomogeneous Dirichlet BC (value+ = - value- + 2g , grad+ = grad-)
-            Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_velocity.get_value(q);
-            Tensor<1,dim,VectorizedArray<value_type> > uP = -uM;
-            Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
+            Tensor<1,dim,VectorizedArray<Number> > uM = fe_eval_velocity.get_value(q);
+            Tensor<1,dim,VectorizedArray<Number> > uP = -uM;
+            Tensor<1,dim,VectorizedArray<Number> > jump_value = uM - uP;
 
-            Tensor<2,dim,VectorizedArray<value_type> > average_gradient_tensor;
+            Tensor<2,dim,VectorizedArray<Number> > average_gradient_tensor;
             if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
             {
-              average_gradient_tensor = make_vectorized_array<value_type>(2.) * fe_eval_velocity.get_symmetric_gradient(q);
+              average_gradient_tensor = make_vectorized_array<Number>(2.) * fe_eval_velocity.get_symmetric_gradient(q);
             }
             else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
             {
@@ -1081,13 +1206,13 @@ private:
             {
               AssertThrow(false, ExcMessage("FORMULATION_VISCOUS_TERM is not specified - possibilities are DivergenceFormulation and LaplaceFormulation"));
             }
-            Tensor<2,dim,VectorizedArray<value_type> > jump_tensor
+            Tensor<2,dim,VectorizedArray<Number> > jump_tensor
               = outer_product(jump_value,fe_eval_velocity.get_normal_vector(q));
 
             //we do not want to symmetrize the penalty part
             average_gradient_tensor = viscosity*(average_gradient_tensor - jump_tensor * tau_IP);
 
-            Tensor<1,dim,VectorizedArray<value_type> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
+            Tensor<1,dim,VectorizedArray<Number> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
 
             if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
             {
@@ -1125,9 +1250,9 @@ private:
               != viscous_operator_data.neumann_boundaries.end()) // Outflow boundary
           {
             // applying inhomogeneous Neumann BC (value+ = value- , grad+ =  - grad- +2h)
-            Tensor<1,dim,VectorizedArray<value_type> > jump_value;
-            Tensor<1,dim,VectorizedArray<value_type> > average_gradient;
-            Tensor<2,dim,VectorizedArray<value_type> > jump_tensor
+            Tensor<1,dim,VectorizedArray<Number> > jump_value;
+            Tensor<1,dim,VectorizedArray<Number> > average_gradient;
+            Tensor<2,dim,VectorizedArray<Number> > jump_tensor
               = outer_product(jump_value,fe_eval_velocity.get_normal_vector(q));
 
             if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
@@ -1173,19 +1298,19 @@ private:
     }
   }
 
-  void evaluate_viscous (parallel::distributed::Vector<value_type>        &dst,
-                         const parallel::distributed::Vector<value_type>  &src) const
+  void evaluate_viscous (parallel::distributed::Vector<Number>        &dst,
+                         const parallel::distributed::Vector<Number>  &src) const
   {
-    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_apply_viscous,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_apply_viscous_face,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_evaluate_viscous_boundary_face,
+    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_apply_viscous,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_apply_viscous_face,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_evaluate_viscous_boundary_face,
                this, dst, src);
   }
 
-  void local_evaluate_viscous_boundary_face (const MatrixFree<dim,value_type>                 &data,
-                                             parallel::distributed::Vector<value_type>        &dst,
-                                             const parallel::distributed::Vector<value_type>  &src,
-                                             const std::pair<unsigned int,unsigned int>       &face_range) const
+  void local_evaluate_viscous_boundary_face (const MatrixFree<dim,Number>                 &data,
+                                             parallel::distributed::Vector<Number>        &dst,
+                                             const parallel::distributed::Vector<Number>  &src,
+                                             const std::pair<unsigned int,unsigned int>   &face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,viscous_operator_data.dof_index);
 
@@ -1195,12 +1320,12 @@ private:
       fe_eval_velocity.read_dof_values(src);
       fe_eval_velocity.evaluate(true,true);
 
-      VectorizedArray<value_type> tau_IP = fe_eval_velocity.read_cell_data(array_penalty_parameter)
+      VectorizedArray<Number> tau_IP = fe_eval_velocity.read_cell_data(array_penalty_parameter)
                                              * get_penalty_factor();
 
       for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
       {
-        VectorizedArray<value_type> viscosity = make_vectorized_array<value_type>(const_viscosity);
+        VectorizedArray<Number> viscosity = make_vectorized_array<Number>(const_viscosity);
         if(viscosity_is_variable())
           viscosity = viscous_coefficient_face[face][q];
 
@@ -1208,15 +1333,15 @@ private:
             != viscous_operator_data.dirichlet_boundaries.end())
         {
           // applying inhomogeneous Dirichlet BC (value+ = - value- + 2g , grad+ = grad-)
-          Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_velocity.get_value(q);
+          Tensor<1,dim,VectorizedArray<Number> > uM = fe_eval_velocity.get_value(q);
 
-          Point<dim,VectorizedArray<value_type> > q_points = fe_eval_velocity.quadrature_point(q);
-          Tensor<1,dim,VectorizedArray<value_type> > g;
+          Point<dim,VectorizedArray<Number> > q_points = fe_eval_velocity.quadrature_point(q);
+          Tensor<1,dim,VectorizedArray<Number> > g;
           AnalyticalSolution<dim> dirichlet_boundary(true,eval_time);
           for(unsigned int d=0;d<dim;++d)
           {
-            value_type array [VectorizedArray<value_type>::n_array_elements];
-            for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+            Number array [VectorizedArray<Number>::n_array_elements];
+            for (unsigned int n=0; n<VectorizedArray<Number>::n_array_elements; ++n)
             {
               Point<dim> q_point;
               for (unsigned int d=0; d<dim; ++d)
@@ -1226,13 +1351,13 @@ private:
             g[d].load(&array[0]);
           }
 
-          Tensor<1,dim,VectorizedArray<value_type> > uP = -uM + make_vectorized_array<value_type>(2.) * g;
-          Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
+          Tensor<1,dim,VectorizedArray<Number> > uP = -uM + make_vectorized_array<Number>(2.) * g;
+          Tensor<1,dim,VectorizedArray<Number> > jump_value = uM - uP;
 
-          Tensor<2,dim,VectorizedArray<value_type> > average_gradient_tensor;
+          Tensor<2,dim,VectorizedArray<Number> > average_gradient_tensor;
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
-            average_gradient_tensor = make_vectorized_array<value_type>(2.) * fe_eval_velocity.get_symmetric_gradient(q);
+            average_gradient_tensor = make_vectorized_array<Number>(2.) * fe_eval_velocity.get_symmetric_gradient(q);
           }
           else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
@@ -1242,13 +1367,13 @@ private:
           {
             AssertThrow(false, ExcMessage("FORMULATION_VISCOUS_TERM is not specified - possibilities are DivergenceFormulation and LaplaceFormulation"));
           }
-          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor
+          Tensor<2,dim,VectorizedArray<Number> > jump_tensor
             = outer_product(jump_value,fe_eval_velocity.get_normal_vector(q));
 
           //we do not want to symmetrize the penalty part
           average_gradient_tensor = viscosity*(average_gradient_tensor - jump_tensor * tau_IP);
 
-          Tensor<1,dim,VectorizedArray<value_type> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
+          Tensor<1,dim,VectorizedArray<Number> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
 
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
@@ -1286,18 +1411,18 @@ private:
             != viscous_operator_data.neumann_boundaries.end())
         {
           // applying inhomogeneous Neumann BC (value+ = value- , grad+ =  - grad- +2h)
-          Tensor<1,dim,VectorizedArray<value_type> > jump_value;
+          Tensor<1,dim,VectorizedArray<Number> > jump_value;
 
-          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor
+          Tensor<2,dim,VectorizedArray<Number> > jump_tensor
             = outer_product(jump_value,fe_eval_velocity.get_normal_vector(q));
 
-          Point<dim,VectorizedArray<value_type> > q_points = fe_eval_velocity.quadrature_point(q);
-          Tensor<1,dim,VectorizedArray<value_type> > h;
+          Point<dim,VectorizedArray<Number> > q_points = fe_eval_velocity.quadrature_point(q);
+          Tensor<1,dim,VectorizedArray<Number> > h;
           NeumannBoundaryVelocity<dim> neumann_boundary(eval_time);
           for(unsigned int d=0;d<dim;++d)
           {
-            value_type array [VectorizedArray<value_type>::n_array_elements];
-            for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+            Number array [VectorizedArray<Number>::n_array_elements];
+            for (unsigned int n=0; n<VectorizedArray<Number>::n_array_elements; ++n)
             {
               Point<dim> q_point;
               for (unsigned int d=0; d<dim; ++d)
@@ -1307,7 +1432,7 @@ private:
             h[d].load(&array[0]);
           }
 
-          Tensor<1,dim,VectorizedArray<value_type> > average_gradient = viscosity*h;
+          Tensor<1,dim,VectorizedArray<Number> > average_gradient = viscosity*h;
 
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
@@ -1347,26 +1472,26 @@ private:
     }
   }
 
-  void local_rhs_viscous (const MatrixFree<dim,value_type>                 &,
-                          parallel::distributed::Vector<value_type>        &,
-                          const parallel::distributed::Vector<value_type>  &,
-                          const std::pair<unsigned int,unsigned int>       &) const
+  void local_rhs_viscous (const MatrixFree<dim,Number>                 &,
+                          parallel::distributed::Vector<Number>        &,
+                          const parallel::distributed::Vector<Number>  &,
+                          const std::pair<unsigned int,unsigned int>   &) const
   {
 
   }
 
-  void local_rhs_viscous_face (const MatrixFree<dim,value_type>                 &,
-                               parallel::distributed::Vector<value_type>        &,
-                               const parallel::distributed::Vector<value_type>  &,
-                               const std::pair<unsigned int,unsigned int>       &) const
+  void local_rhs_viscous_face (const MatrixFree<dim,Number>                 &,
+                               parallel::distributed::Vector<Number>        &,
+                               const parallel::distributed::Vector<Number>  &,
+                               const std::pair<unsigned int,unsigned int>   &) const
   {
 
   }
 
-  void local_rhs_viscous_boundary_face (const MatrixFree<dim,value_type>                &data,
-                                        parallel::distributed::Vector<value_type>       &dst,
-                                        const parallel::distributed::Vector<value_type> &,
-                                        const std::pair<unsigned int,unsigned int>      &face_range) const
+  void local_rhs_viscous_boundary_face (const MatrixFree<dim,Number>                &data,
+                                        parallel::distributed::Vector<Number>       &dst,
+                                        const parallel::distributed::Vector<Number> &,
+                                        const std::pair<unsigned int,unsigned int>  &face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,viscous_operator_data.dof_index);
 
@@ -1374,25 +1499,25 @@ private:
     {
       fe_eval_velocity.reinit (face);
 
-      VectorizedArray<value_type> tau_IP = fe_eval_velocity.read_cell_data(array_penalty_parameter) * get_penalty_factor();
+      VectorizedArray<Number> tau_IP = fe_eval_velocity.read_cell_data(array_penalty_parameter) * get_penalty_factor();
 
       for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
       {
-        VectorizedArray<value_type> viscosity = make_vectorized_array<value_type>(const_viscosity);
+        VectorizedArray<Number> viscosity = make_vectorized_array<Number>(const_viscosity);
         if(viscosity_is_variable())
           viscosity = viscous_coefficient_face[face][q];
 
         if (viscous_operator_data.dirichlet_boundaries.find(data.get_boundary_indicator(face)) != viscous_operator_data.dirichlet_boundaries.end()) // Infow and wall boundaries
         {
           // applying inhomogeneous Dirichlet BC (value+ = - value- + 2g , grad+ = grad-)
-          Point<dim,VectorizedArray<value_type> > q_points = fe_eval_velocity.quadrature_point(q);
-          Tensor<1,dim,VectorizedArray<value_type> > g_np;
+          Point<dim,VectorizedArray<Number> > q_points = fe_eval_velocity.quadrature_point(q);
+          Tensor<1,dim,VectorizedArray<Number> > g_np;
 
           AnalyticalSolution<dim> dirichlet_boundary(true,eval_time);
           for(unsigned int d=0;d<dim;++d)
           {
-            value_type array [VectorizedArray<value_type>::n_array_elements];
-            for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+            Number array [VectorizedArray<Number>::n_array_elements];
+            for (unsigned int n=0; n<VectorizedArray<Number>::n_array_elements; ++n)
             {
               Point<dim> q_point;
               for (unsigned int d=0; d<dim; ++d)
@@ -1402,11 +1527,11 @@ private:
             g_np[d].load(&array[0]);
           }
 
-          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor
+          Tensor<2,dim,VectorizedArray<Number> > jump_tensor
             = outer_product(2.*g_np,fe_eval_velocity.get_normal_vector(q));
 
-          Tensor<2,dim,VectorizedArray<value_type> > average_gradient_tensor = -viscosity * tau_IP * jump_tensor;
-          Tensor<1,dim,VectorizedArray<value_type> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
+          Tensor<2,dim,VectorizedArray<Number> > average_gradient_tensor = -viscosity * tau_IP * jump_tensor;
+          Tensor<1,dim,VectorizedArray<Number> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
 
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
@@ -1436,14 +1561,14 @@ private:
         else if (viscous_operator_data.neumann_boundaries.find(data.get_boundary_indicator(face)) != viscous_operator_data.neumann_boundaries.end()) // Outflow boundary
         {
           // applying inhomogeneous Neumann BC (value+ = value- , grad+ = - grad- +2h)
-          Point<dim,VectorizedArray<value_type> > q_points = fe_eval_velocity.quadrature_point(q);
-          Tensor<1,dim,VectorizedArray<value_type> > h;
+          Point<dim,VectorizedArray<Number> > q_points = fe_eval_velocity.quadrature_point(q);
+          Tensor<1,dim,VectorizedArray<Number> > h;
 
           NeumannBoundaryVelocity<dim> neumann_boundary(eval_time);
           for(unsigned int d=0;d<dim;++d)
           {
-            value_type array [VectorizedArray<value_type>::n_array_elements];
-            for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+            Number array [VectorizedArray<Number>::n_array_elements];
+            for (unsigned int n=0; n<VectorizedArray<Number>::n_array_elements; ++n)
             {
               Point<dim> q_point;
               for (unsigned int d=0; d<dim; ++d)
@@ -1452,12 +1577,12 @@ private:
             }
             h[d].load(&array[0]);
           }
-          Tensor<1,dim,VectorizedArray<value_type> > jump_value;
+          Tensor<1,dim,VectorizedArray<Number> > jump_value;
 
-          Tensor<2,dim,VectorizedArray<value_type> > jump_tensor
+          Tensor<2,dim,VectorizedArray<Number> > jump_tensor
             = outer_product(jump_value,fe_eval_velocity.get_normal_vector(q));
 
-          Tensor<1,dim,VectorizedArray<value_type> > average_gradient = -viscosity*h;
+          Tensor<1,dim,VectorizedArray<Number> > average_gradient = -viscosity*h;
 
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
@@ -1490,15 +1615,25 @@ private:
     }
   }
 
-  MatrixFree<dim,value_type> const * data;
+  MatrixFree<dim,Number> const * data;
   FEParameters const * fe_param;
-  ViscousOperatorData viscous_operator_data;
-  AlignedVector<VectorizedArray<value_type> > array_penalty_parameter;
-  value_type const_viscosity;
-  Table<2,VectorizedArray<value_type> > viscous_coefficient_cell;
-  Table<2,VectorizedArray<value_type> > viscous_coefficient_face;
-  Table<2,VectorizedArray<value_type> > viscous_coefficient_face_neighbor;
-  value_type mutable eval_time;
+  ViscousOperatorData<dim> viscous_operator_data;
+  AlignedVector<VectorizedArray<Number> > array_penalty_parameter;
+  Number const_viscosity;
+  Table<2,VectorizedArray<Number> > viscous_coefficient_cell;
+  Table<2,VectorizedArray<Number> > viscous_coefficient_face;
+  Table<2,VectorizedArray<Number> > viscous_coefficient_face_neighbor;
+  Number mutable eval_time;
+
+  /*
+   * The following variables are necessary when applying the multigrid preconditioner to the viscous operator
+   * In that case, the ViscousOperator has to be generated for each level of the multigrid algorithm.
+   * Accordingly, in a first step one has to setup own objects of MatrixFree
+   *  e.g., own_matrix_free_storage.reinit(...);
+   * and later initialize the ViccousOperator with this oject by setting the above pointers to the own_objects_storage,
+   *  e.g., data = &own_matrix_free_storage;
+   */
+  MatrixFree<dim,Number> own_matrix_free_storage;
 };
 
 struct GradientOperatorData

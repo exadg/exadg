@@ -20,13 +20,34 @@ public:
 
 #include "InverseMassMatrix.h"
 
-template<int dim, int fe_degree, typename value_type>
+//template<int dim, int fe_degree, typename value_type>
+//class InverseMassMatrixPreconditioner : public PreconditionerBase<value_type>
+//{
+//public:
+//  InverseMassMatrixPreconditioner(MatrixFree<dim,value_type> const &mf_data,
+//                                  const unsigned int               dof_index,
+//                                  const unsigned int               quad_index)
+//  {
+//    inverse_mass_matrix_operator.initialize(mf_data,dof_index,quad_index);
+//  }
+//
+//  void vmult (parallel::distributed::Vector<value_type>        &dst,
+//              const parallel::distributed::Vector<value_type>  &src) const
+//  {
+//    inverse_mass_matrix_operator.apply_inverse_mass_matrix(dst,src);
+//  }
+//
+//private:
+//  InverseMassMatrixOperator<dim,fe_degree,value_type> inverse_mass_matrix_operator;
+//};
+
+template<int dim, int fe_degree, typename value_type, int n_components=dim>
 class InverseMassMatrixPreconditioner : public PreconditionerBase<value_type>
 {
 public:
   InverseMassMatrixPreconditioner(MatrixFree<dim,value_type> const &mf_data,
-                                  const unsigned int               dof_index,
-                                  const unsigned int               quad_index)
+                                        const unsigned int         dof_index,
+                                        const unsigned int         quad_index)
   {
     inverse_mass_matrix_operator.initialize(mf_data,dof_index,quad_index);
   }
@@ -37,7 +58,8 @@ public:
     inverse_mass_matrix_operator.apply_inverse_mass_matrix(dst,src);
   }
 
-  InverseMassMatrixOperator<dim,fe_degree,value_type> inverse_mass_matrix_operator;
+private:
+  InverseMassMatrixOperator<dim,fe_degree,value_type,n_components> inverse_mass_matrix_operator;
 };
 
 
@@ -428,8 +450,8 @@ public:
     mg_constrained_dofs.clear();
     ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
     typename FunctionMap<dim>::type dirichlet_boundary;
-    for (std::set<types::boundary_id>::const_iterator it = operator_data_in.dirichlet_boundaries.begin();
-         it != operator_data_in.dirichlet_boundaries.end(); ++it)
+    for (std::set<types::boundary_id>::const_iterator it = operator_data_in.get_dirichlet_boundaries().begin();
+         it != operator_data_in.get_dirichlet_boundaries().end(); ++it)
       dirichlet_boundary[*it] = &zero_function;
     mg_constrained_dofs.initialize(dof_handler, dirichlet_boundary);
 
