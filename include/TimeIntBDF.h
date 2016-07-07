@@ -10,6 +10,7 @@
 
 
 #include "TimeStepCalculation.h"
+#include "Restart.h"
 
 template<int dim> class PostProcessor;
 
@@ -40,7 +41,7 @@ public:
 
   virtual ~TimeIntBDF(){}
 
-  void setup();
+  void setup(bool do_restart);
 
   void timeloop();
 
@@ -52,6 +53,12 @@ private:
   virtual void initialize_vectors() = 0;
   virtual void initialize_current_solution() = 0;
   virtual void initialize_former_solution() = 0;
+  void initialize_solution(bool do_restart);
+
+  void resume_from_restart();
+  void write_restart();
+  virtual void read_restart_vectors(boost::archive::binary_iarchive & ia) = 0;
+  virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) = 0;
 
   void initialize_time_integrator_constants();
   void update_time_integrator_constants();
@@ -94,7 +101,7 @@ protected:
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 void TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
-setup()
+setup(bool do_restart)
 {
   // initialize time integrator constants assuming that the time integrator uses a high-order method in first time step,
   // i.e., the default case is start_with_low_order = false
@@ -103,17 +110,7 @@ setup()
   // initialize global solution vectors (allocation)
   initialize_vectors();
 
-  // when using time step adaptivity the time_step depends on the velocity field. Therefore, first prescribe
-  // initial conditions before calculating the time step size
-  initialize_current_solution();
-
-  // initializing the solution at former time instants, e.g. t = start_time - time_step, requires the time step size.
-  // Therefore, first calculate the time step size
-  calculate_time_step();
-
-  // now: prescribe initial conditions at former time instants t = time - time_step, time - 2.0*time_step, etc.
-  if(param.start_with_low_order == false)
-    initialize_former_solution();
+  initialize_solution(do_restart);
 
   // set the parameters that NavierStokesOperation depends on
   ns_operation->set_time(time);
@@ -122,6 +119,70 @@ setup()
 
   // this is where the setup of deriving classes is performed
   setup_derived();
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+void TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+initialize_solution(bool do_restart)
+{
+  if(do_restart)
+  {
+    resume_from_restart();
+
+    if(param.start_with_low_order)
+      calculate_time_step();
+  }
+  else
+  {
+    // when using time step adaptivity the time_step depends on the velocity field. Therefore, first prescribe
+    // initial conditions before calculating the time step size
+    initialize_current_solution();
+
+    // initializing the solution at former time instants, e.g. t = start_time - time_step, requires the time step size.
+    // Therefore, first calculate the time step size
+    calculate_time_step();
+
+    // now: prescribe initial conditions at former time instants t = time - time_step, time - 2.0*time_step, etc.
+    if(param.start_with_low_order == false)
+      initialize_former_solution();
+  }
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+void TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+resume_from_restart()
+{
+
+  const std::string filename = restart_filename(param);
+  std::ifstream in (filename.c_str());
+  check_file(in, filename);
+  boost::archive::binary_iarchive ia (in);
+  resume_restart<dim,value_type>(ia, param, time, postprocessor, time_steps, order);
+
+  read_restart_vectors(ia);
+
+  finished_reading_restart_output();
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+void TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+write_restart()
+{
+  const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
+
+  const double wall_time = global_timer.wall_time();
+  if( std::fmod(time ,param.restart_interval_time) < time_steps[0] + EPSILON
+   || std::fmod(wall_time, param.restart_interval_wall_time) < wall_time-total_time
+   || time_step_number % param.restart_interval_step == 0)
+  {
+    std::ostringstream oss;
+
+    boost::archive::binary_oarchive oa(oss);
+    write_restart_preamble<value_type>(oa, param, time_steps, time, postprocessor->get_output_counter(), order);
+    write_restart_vectors(oa);
+    write_restart_file(oss, param);
+
+  }
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
@@ -237,6 +298,7 @@ timeloop()
     ++time_step_number;
 
     postprocessing();
+    write_restart();
 
     if(param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
        recalculate_adaptive_time_step();

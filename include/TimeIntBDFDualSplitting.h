@@ -63,6 +63,9 @@ private:
 
   virtual parallel::distributed::Vector<value_type> const & get_velocity();
 
+  virtual void read_restart_vectors(boost::archive::binary_iarchive & ia);
+  virtual void write_restart_vectors(boost::archive::binary_oarchive & oa);
+
   std::vector<value_type> computing_times;
 
   parallel::distributed::Vector<value_type> velocity_np;
@@ -196,6 +199,45 @@ get_velocity()
   return velocity[0];
 }
 
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+read_restart_vectors(boost::archive::binary_iarchive & ia)
+{
+  Vector<double> tmp;
+  for (unsigned int i=0; i<velocity.size(); i++)
+  {
+    ia >> tmp;
+    std::copy(tmp.begin(), tmp.end(),
+              velocity[i].begin());
+  }
+  for (unsigned int i=0; i<pressure.size(); i++)
+  {
+    ia >> tmp;
+    std::copy(tmp.begin(), tmp.end(),
+              pressure[i].begin());
+  }
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+write_restart_vectors(boost::archive::binary_oarchive & oa)
+{
+  VectorView<double> tmp(velocity[0].local_size(),
+                         velocity[0].begin());
+  oa << tmp;
+  for (unsigned int i=1; i<velocity.size(); i++)
+  {
+    tmp.reinit(velocity[i].local_size(),
+               velocity[i].begin());
+    oa << tmp;
+  }
+  for (unsigned int i=0; i<pressure.size(); i++)
+  {
+    tmp.reinit(pressure[i].local_size(),
+               pressure[i].begin());
+    oa << tmp;
+  }
+}
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
