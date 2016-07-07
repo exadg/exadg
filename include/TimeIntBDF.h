@@ -129,6 +129,8 @@ initialize_solution(bool do_restart)
   {
     resume_from_restart();
 
+    // if anything in the temporal discretization is changed, start_with_low_order has to be set to true
+    // otherwise the old solutions would not fit the time step increments, etc.
     if(param.start_with_low_order)
       calculate_time_step();
   }
