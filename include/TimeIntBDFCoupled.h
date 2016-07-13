@@ -21,8 +21,7 @@ public:
                     unsigned int const                                      n_refine_time_in)
     :
     TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
-            (ns_operation_in,param_in,n_refine_time_in),
-    postprocessor(postprocessor_in),
+            (ns_operation_in,postprocessor_in,param_in,n_refine_time_in),
     solution(this->order),
     vec_convective_term(this->order),
     ns_operation_coupled (std::dynamic_pointer_cast<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in)),
@@ -53,8 +52,6 @@ private:
   void push_back_vec_convective_term();
 
   virtual parallel::distributed::Vector<value_type> const & get_velocity();
-
-  std_cxx11::shared_ptr<PostProcessor<dim> > postprocessor;
 
   virtual void read_restart_vectors(boost::archive::binary_iarchive & ia);
   virtual void write_restart_vectors(boost::archive::binary_oarchive & oa);

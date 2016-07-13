@@ -33,7 +33,7 @@ public:
     eval_time(0.0)
   {}
 
-  static const bool is_xwall = false;
+  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
@@ -125,7 +125,7 @@ public:
     fe_param(nullptr)
   {}
 
-  static const bool is_xwall = false;
+  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
@@ -327,7 +327,7 @@ public:
     eval_time(0.0)
   {}
 
-  static const bool is_xwall = false;
+  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,Number,is_xwall> FEEval_Velocity_Velocity_linear;
   typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,Number,is_xwall> FEFaceEval_Velocity_Velocity_linear;
@@ -1665,7 +1665,7 @@ public:
     eval_time(0.0)
   {}
 
-  static const bool is_xwall = false;
+  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
   typedef FEEvaluationWrapper<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,false> FEEval_Pressure_Velocity_linear;
@@ -2073,7 +2073,7 @@ public:
     eval_time(0.0)
   {}
 
-  static const bool is_xwall = false;
+  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
 
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
@@ -2485,7 +2485,7 @@ public:
     velocity_linearization(nullptr)
   {}
 
-  static const bool is_xwall = false;
+  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_nonlinear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+(fe_degree+2)/2;
 
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_nonlinear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_nonlinear;

@@ -61,17 +61,17 @@
 #include <sstream>
 
 #include "../include/DGNavierStokesDualSplitting.h"
+#include "../include/DGNavierStokesDualSplittingXWall.h"
 #include "../include/DGNavierStokesCoupled.h"
 
 #include "../include/InputParameters.h"
 #include "TimeIntBDFDualSplitting.h"
+#include "TimeIntBDFDualSplittingXWall.h"
 #include "TimeIntBDFCoupled.h"
 
 #include "DriverSteadyProblems.h"
 
 using namespace dealii;
-
-//#define XWALL
 
 // specify flow problem that has to be solved
 //#define VORTEX
@@ -98,6 +98,8 @@ bool const GRADP_USE_BOUNDARY_DATA = true; //false;//true;
 /************* temporal discretization ***********/
 // which temporal discretization approach
 TemporalDiscretization TEMPORAL_DISCRETIZATION = TemporalDiscretization::BDFCoupledSolution; //BDFDualSplittingScheme // BDFCoupledSolution
+
+SpatialDiscretization SPATIAL_DISCRETIZATION = SpatialDiscretization::DG; //DG //DGXWall
 
 // type of time step calculation
 TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepUserSpecified; //ConstTimeStepCFL; //AdaptiveTimeStepCFL;
@@ -850,6 +852,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   time_step_size(TIME_STEP_SIZE),
   viscosity(VISCOSITY),
   temporal_discretization(TEMPORAL_DISCRETIZATION),
+  spatial_discretization(SPATIAL_DISCRETIZATION),
   order_time_integrator(ORDER_TIME_INTEGRATOR),
   start_with_low_order(START_WITH_LOW_ORDER),
   use_symmetric_saddle_point_matrix(USE_SYMMETRIC_SADDLE_POINT_MATRIX),
@@ -907,7 +910,8 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   cs(CS),
   ml(ML),
   variabletauw(VARIABLETAUW),
-  dtauw(DTAUW)
+  dtauw(DTAUW),
+  max_wdist_xwall(MAX_WDIST_XWALL)
   {}
 
   template<int dim>
@@ -1534,25 +1538,16 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
                   std_cxx11::shared_ptr< const DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> >  ns_operation,
                   InputParameters const &param_in):
       ns_operation_(ns_operation),
-      statistics(ns_operation->get_dof_handler_u()),
       param(param_in),
       time_(0.0),
       time_step_number_(1),
       output_counter_(0),
-      error_counter_(0),
-      num_samp_(0),
-      div_samp_(0.0),
-      mass_samp_(0.0)
+      error_counter_(0)
     {
 
     }
 
-    void setup()
-    {
-#ifdef CHANNEL
-      statistics.setup(&grid_transform<dim>);
-#endif
-    }
+    virtual void setup(){};
 
     void init_from_restart(unsigned int o_counter)
     {
@@ -1590,14 +1585,6 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
       compute_pressure_difference(pressure,time_step_number_ == 1);
 #endif
 
-#ifdef CHANNEL
-      if(time > param.statistics_start_time-EPSILON && time_step_number % param.statistics_every == 0)
-      {
-        statistics.evaluate(velocity);
-        if(time_step_number % 100 == 0 || time > (param.end_time-EPSILON))
-          statistics.write_output(param.output_prefix,ns_operation_.get_viscosity());
-      }
-#endif
     };
 
     // postprocessing for steady-state problems
@@ -1615,35 +1602,24 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
       }
     };
 
-    void analyze_divergence_error(parallel::distributed::Vector<double> const &velocity_temp,
+    virtual void analyze_divergence_error(parallel::distributed::Vector<double> const &velocity_temp,
                                   double const time,
                                   unsigned int const time_step_number)
     {
       time_ = time;
       time_step_number_ = time_step_number;
 
-      const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
-      if(time > param.statistics_start_time-EPSILON && time_step_number % param.statistics_every == 0)
-      {
-          write_divu_statistics(velocity_temp);
-      }
-
       write_divu_timeseries(velocity_temp);
     }
 
-  private:
+  protected:
     std_cxx11::shared_ptr< const DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> >  ns_operation_;
-    StatisticsManager<dim> statistics;
     InputParameters const & param;
 
     double time_;
     unsigned int time_step_number_;
     unsigned int output_counter_;
     unsigned int error_counter_;
-
-    int num_samp_;
-    double div_samp_;
-    double mass_samp_;
 
     void calculate_error(parallel::distributed::Vector<double> const &velocity,
                          parallel::distributed::Vector<double> const      &pressure);
@@ -1666,20 +1642,22 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
                         const std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> >  &cell_point,
                         Vector<double>                                                                &value) const;
 
-    void write_divu_statistics(parallel::distributed::Vector<double> const &velocity_temp);
+    virtual void write_divu_statistics(parallel::distributed::Vector<double> const &){};
     void write_divu_timeseries(parallel::distributed::Vector<double> const &velocity_temp);
+    void evaluate_mass_error(parallel::distributed::Vector<double> const &velocity_temp,
+    double & divergence, double & volume, double & diff_mass, double & mean_mass);
 
-    void local_compute_divu_for_channel_stats(const MatrixFree<dim,value_type>                &data,
+    void local_compute_divu(const MatrixFree<dim,value_type>                &data,
                                               std::vector<double >                            &test,
                                               const parallel::distributed::Vector<value_type> &source,
                                               const std::pair<unsigned int,unsigned int>      &cell_range) const;
 
-    void local_compute_divu_for_channel_stats_face (const MatrixFree<dim,double>                    &data,
+    void local_compute_divu_face (const MatrixFree<dim,double>                    &data,
                                                     std::vector<double >                            &test,
                                                     const parallel::distributed::Vector<value_type> &source,
                                                     const std::pair<unsigned int,unsigned int>      &face_range) const;
 
-    void local_compute_divu_for_channel_stats_boundary_face (const MatrixFree<dim,double>                    &data,
+    void local_compute_divu_boundary_face (const MatrixFree<dim,double>                    &data,
                                                              std::vector<double >                            &test,
                                                              const parallel::distributed::Vector<value_type> &source,
                                                              const std::pair<unsigned int,unsigned int>       &face_range) const;
@@ -2100,52 +2078,31 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 
   template<int dim>
   void PostProcessor<dim>::
-  write_divu_statistics(parallel::distributed::Vector<double> const &velocity_temp)
+  evaluate_mass_error(parallel::distributed::Vector<double> const &velocity_temp,
+      double & divergence, double & volume, double & diff_mass, double & mean_mass)
   {
-    ++num_samp_;
-
-    std::vector<double > dst(4,0.0);
-    ns_operation_->get_data().loop (&PostProcessor<dim>::local_compute_divu_for_channel_stats,
-                                   &PostProcessor<dim>::local_compute_divu_for_channel_stats_face,
-                                   &PostProcessor<dim>::local_compute_divu_for_channel_stats_boundary_face,
+    std::vector<double> dst(4,0.0);
+    ns_operation_->get_data().loop (&PostProcessor<dim>::local_compute_divu,
+                                   &PostProcessor<dim>::local_compute_divu_face,
+                                   &PostProcessor<dim>::local_compute_divu_boundary_face,
                                    this, dst, velocity_temp);
 
-    double divergence = Utilities::MPI::sum (dst.at(0), MPI_COMM_WORLD);
-    double volume = Utilities::MPI::sum (dst.at(1), MPI_COMM_WORLD);
-    double diff_mass = Utilities::MPI::sum (dst.at(2), MPI_COMM_WORLD);
-    double mean_mass = Utilities::MPI::sum (dst.at(3), MPI_COMM_WORLD);
-    div_samp_ += divergence/volume;
-    mass_samp_ += diff_mass/mean_mass;
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
-    {
-      std::ostringstream filename;
-      filename << param.output_prefix << ".divu_statistics";
-
-      std::ofstream f;
-
-      f.open(filename.str().c_str(),std::ios::trunc);
-      f << "average divergence over space and time" << std::endl;
-      f << "number of samples:   " << num_samp_ << std::endl;
-      f << "Mean error incompressibility constraint:   " << div_samp_/num_samp_ << std::endl;
-      f << "Mean error mass flux over interior element faces:  " << mass_samp_/num_samp_ << std::endl;
-      f.close();
-    }
+    divergence = Utilities::MPI::sum (dst.at(0), MPI_COMM_WORLD);
+    volume = Utilities::MPI::sum (dst.at(1), MPI_COMM_WORLD);
+    diff_mass = Utilities::MPI::sum (dst.at(2), MPI_COMM_WORLD);
+    mean_mass = Utilities::MPI::sum (dst.at(3), MPI_COMM_WORLD);
   }
 
   template<int dim>
   void PostProcessor<dim>::
   write_divu_timeseries(parallel::distributed::Vector<double> const &velocity_temp)
   {
-    std::vector<double> dst(4,0.0);
-    ns_operation_->get_data().loop (&PostProcessor<dim>::local_compute_divu_for_channel_stats,
-                                   &PostProcessor<dim>::local_compute_divu_for_channel_stats_face,
-                                   &PostProcessor<dim>::local_compute_divu_for_channel_stats_boundary_face,
-                                   this, dst, velocity_temp);
 
-    double divergence = Utilities::MPI::sum (dst.at(0), MPI_COMM_WORLD);
-    double volume = Utilities::MPI::sum (dst.at(1), MPI_COMM_WORLD);
-    double diff_mass = Utilities::MPI::sum (dst.at(2), MPI_COMM_WORLD);
-    double mean_mass = Utilities::MPI::sum (dst.at(3), MPI_COMM_WORLD);
+    double divergence = 0.;
+    double volume = 0.;
+    double diff_mass = 0.;
+    double mean_mass = 0.;
+    evaluate_mass_error(velocity_temp, divergence, volume, diff_mass, mean_mass);
     double div_normalized = divergence/volume;
     double diff_mass_normalized = diff_mass/mean_mass;
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
@@ -2174,13 +2131,13 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 
   template<int dim>
   void PostProcessor<dim>::
-  local_compute_divu_for_channel_stats(const MatrixFree<dim,value_type>                &data,
+  local_compute_divu(const MatrixFree<dim,value_type>                &data,
                                        std::vector<double>                             &dst,
                                        const parallel::distributed::Vector<value_type> &source,
                                        const std::pair<unsigned int,unsigned int>      &cell_range) const
   {
 #ifdef XWALL
-    FEEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,dim,value_type> phi(data,ns_operation_.get_xwallstatevec()[0],ns_operation_.get_xwallstatevec()[1],0,3);
+    FEEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,dim,value_type> phi(data,ns_operation_.get_fe_parameters().wdist,ns_operation_.get_fe_parameters().tauw,0,3);
 #else
 //    FEEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,FE_DEGREE+1,dim,value_type> phi(data,ns_operation_.get_fe_parameters(),0,0);
     FEEvaluation<dim,FE_DEGREE,FE_DEGREE+1,dim,value_type> phi(data,0,0);
@@ -2214,14 +2171,14 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 
   template<int dim>
   void PostProcessor<dim>::
-  local_compute_divu_for_channel_stats_face (const MatrixFree<dim,double>                    &data,
+  local_compute_divu_face (const MatrixFree<dim,double>                    &data,
                                              std::vector<double >                            &dst,
                                              const parallel::distributed::Vector<value_type> &source,
                                              const std::pair<unsigned int,unsigned int>      &face_range) const
   {
 #ifdef XWALL
-    FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,dim,value_type> fe_eval_xwall(data,ns_operation_.get_xwallstatevec()[0],ns_operation_.get_xwallstatevec()[1],true,0,3);
-    FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,dim,value_type> fe_eval_xwall_neighbor(data,ns_operation_.get_xwallstatevec()[0],ns_operation_.get_xwallstatevec()[1],false,0,3);
+    FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,dim,value_type> fe_eval_xwall(data,ns_operation_.get_fe_parameters().wdist,ns_operation_.get_fe_parameters().tauw,true,0,3);
+    FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,dim,value_type> fe_eval_xwall_neighbor(data,ns_operation_.get_fe_parameters().wdist,ns_operation_.get_fe_parameters().tauw,false,0,3);
 #else
 //    FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,FE_DEGREE+1,dim,value_type> fe_eval_xwall(data,ns_operation_.get_fe_parameters(),true,0,0);
 //    FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,FE_DEGREE+1,dim,value_type> fe_eval_xwall_neighbor(data,ns_operation_.get_fe_parameters(),false,0,0);
@@ -2261,12 +2218,112 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 
   template<int dim>
   void PostProcessor<dim>::
-  local_compute_divu_for_channel_stats_boundary_face (const MatrixFree<dim,double>                     &,
+  local_compute_divu_boundary_face (const MatrixFree<dim,double>                     &,
                                                       std::vector<double >                             &,
                                                       const parallel::distributed::Vector<value_type>  &,
                                                       const std::pair<unsigned int,unsigned int>       &) const
   {
 
+  }
+
+  template<int dim>
+  class PostProcessorStatistics: public PostProcessor<dim>
+  {
+  public:
+    typedef typename DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>::value_type value_type;
+
+    PostProcessorStatistics(//DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> const &ns_operation,
+                  std_cxx11::shared_ptr< const DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> >  ns_operation,
+                  InputParameters const &param_in):
+      PostProcessor<dim>(ns_operation,param_in),
+      statistics(ns_operation->get_dof_handler_u()),
+      num_samp_(0),
+      div_samp_(0.0),
+      mass_samp_(0.0)
+    {
+
+    }
+
+    void setup()
+    {
+      PostProcessor<dim>::setup();
+#ifdef CHANNEL
+      statistics.setup(&grid_transform<dim>);
+#endif
+    }
+
+    void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
+                           parallel::distributed::Vector<double> const &pressure,
+                           parallel::distributed::Vector<double> const &vorticity,
+                           parallel::distributed::Vector<double> const &divergence,
+                           double const time,
+                           unsigned int const time_step_number)
+    {
+      PostProcessor<dim>::do_postprocessing(velocity,pressure,vorticity,divergence,time,time_step_number);
+      const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
+
+#ifdef CHANNEL
+      if(time > this->param.statistics_start_time-EPSILON && time_step_number % this->param.statistics_every == 0)
+      {
+        statistics.evaluate(velocity);
+        if(time_step_number % 100 == 0 || time > (this->param.end_time-EPSILON))
+          statistics.write_output(this->param.output_prefix,this->ns_operation_.get_viscosity());
+      }
+#endif
+    };
+
+    virtual void analyze_divergence_error(parallel::distributed::Vector<double> const &velocity_temp,
+                                  double const time,
+                                  unsigned int const time_step_number)
+    {
+      PostProcessor<dim>::analyze_divergence_error(velocity_temp,time,time_step_number);
+      const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
+      if(time > this->param.statistics_start_time-EPSILON && time_step_number % this->param.statistics_every == 0)
+      {
+          write_divu_statistics(velocity_temp);
+      }
+    }
+
+  private:
+    StatisticsManager<dim> statistics;
+
+    int num_samp_;
+    double div_samp_;
+    double mass_samp_;
+
+
+    virtual void write_divu_statistics(parallel::distributed::Vector<double> const &velocity_temp);
+
+  };
+
+  template<int dim>
+  void PostProcessorStatistics<dim>::
+  write_divu_statistics(parallel::distributed::Vector<double> const &velocity_temp)
+  {
+    ++num_samp_;
+
+    double divergence = 0.;
+    double volume = 0.;
+    double diff_mass = 0.;
+    double mean_mass = 0.;
+    this->evaluate_mass_error(velocity_temp, divergence, volume, diff_mass, mean_mass);
+
+    div_samp_ += divergence/volume;
+    mass_samp_ += diff_mass/mean_mass;
+    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+    {
+      std::ostringstream filename;
+      filename << this->param.output_prefix << ".divu_statistics";
+
+      std::ofstream f;
+
+      f.open(filename.str().c_str(),std::ios::trunc);
+      f << "average divergence over space and time" << std::endl;
+      f << "number of samples:   " << num_samp_ << std::endl;
+      f << "Mean error incompressibility constraint:   " << div_samp_/num_samp_ << std::endl;
+      f << "Mean error mass flux over interior element faces:  " << mass_samp_/num_samp_ << std::endl;
+      f.close();
+    }
   }
 
   template<int dim>
@@ -2317,42 +2374,65 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
     << "_________________________________________________________________________________" << std::endl
     << std::endl;
 
-    if(param.problem_type == ProblemType::Steady)
+    if(param.spatial_discretization == SpatialDiscretization::DGXWall)
     {
-      // initialize navier_stokes_operation
-      navier_stokes_operation.reset(new DGNavierStokesCoupled<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
-          (triangulation,param));
-      // initialize postprocessor after initializing navier_stokes_operation
-      postprocessor.reset(new PostProcessor<dim>(navier_stokes_operation,param));
-      // initialize driver for steady state problem that depends on both navier_stokes_operation and postprocessor
-      driver_steady.reset(new DriverSteadyProblems<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>
-          (navier_stokes_operation,postprocessor,param));
+      if(param.problem_type == ProblemType::Unsteady &&
+              param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+      {
+        // initialize navier_stokes_operation
+        navier_stokes_operation.reset(new DGNavierStokesDualSplittingXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
+            (triangulation,param));
+        // initialize postprocessor after initializing navier_stokes_operation
+        postprocessor.reset(new PostProcessorStatistics<dim>(navier_stokes_operation,param));
+        // initialize time integrator that depends on both navier_stokes_operation and postprocessor
+        time_integrator.reset(new TimeIntBDFDualSplitting<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
+            navier_stokes_operation,postprocessor,param,refine_steps_time));
+      }
+      else
+      {
+        AssertThrow(false,ExcMessage("XWall only implemented for the unsteady DualSplitting case up to now"));
+      }
+    }
+    else if(param.spatial_discretization == SpatialDiscretization::DG)
+    {
+      if(param.problem_type == ProblemType::Steady)
+      {
+        // initialize navier_stokes_operation
+        navier_stokes_operation.reset(new DGNavierStokesCoupled<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
+            (triangulation,param));
+        // initialize postprocessor after initializing navier_stokes_operation
+        postprocessor.reset(new PostProcessor<dim>(navier_stokes_operation,param));
+        // initialize driver for steady state problem that depends on both navier_stokes_operation and postprocessor
+        driver_steady.reset(new DriverSteadyProblems<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>
+            (navier_stokes_operation,postprocessor,param));
 
+      }
+      else if(param.problem_type == ProblemType::Unsteady &&
+              param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+      {
+        // initialize navier_stokes_operation
+        navier_stokes_operation.reset(new DGNavierStokesDualSplitting<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
+            (triangulation,param));
+        // initialize postprocessor after initializing navier_stokes_operation
+        postprocessor.reset(new PostProcessorStatistics<dim>(navier_stokes_operation,param));
+        // initialize time integrator that depends on both navier_stokes_operation and postprocessor
+        time_integrator.reset(new TimeIntBDFDualSplitting<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
+            navier_stokes_operation,postprocessor,param,refine_steps_time));
+      }
+      else if(param.problem_type == ProblemType::Unsteady &&
+              param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+      {
+        // initialize navier_stokes_operation
+        navier_stokes_operation.reset(new DGNavierStokesCoupled<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
+            (triangulation,param));
+        // initialize postprocessor after initializing navier_stokes_operation
+        postprocessor.reset(new PostProcessorStatistics<dim>(navier_stokes_operation,param));
+        // initialize time integrator that depends on both navier_stokes_operation and postprocessor
+        time_integrator.reset(new TimeIntBDFCoupled<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
+            navier_stokes_operation,postprocessor,param,refine_steps_time));
+      }
     }
-    else if(param.problem_type == ProblemType::Unsteady &&
-            param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-    {
-      // initialize navier_stokes_operation
-      navier_stokes_operation.reset(new DGNavierStokesDualSplitting<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
-          (triangulation,param));
-      // initialize postprocessor after initializing navier_stokes_operation
-      postprocessor.reset(new PostProcessor<dim>(navier_stokes_operation,param));
-      // initialize time integrator that depends on both navier_stokes_operation and postprocessor
-      time_integrator.reset(new TimeIntBDFDualSplitting<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
-          navier_stokes_operation,postprocessor,param,refine_steps_time));
-    }
-    else if(param.problem_type == ProblemType::Unsteady &&
-            param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-    {
-      // initialize navier_stokes_operation
-      navier_stokes_operation.reset(new DGNavierStokesCoupled<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
-          (triangulation,param));
-      // initialize postprocessor after initializing navier_stokes_operation
-      postprocessor.reset(new PostProcessor<dim>(navier_stokes_operation,param));
-      // initialize time integrator that depends on both navier_stokes_operation and postprocessor
-      time_integrator.reset(new TimeIntBDFCoupled<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
-          navier_stokes_operation,postprocessor,param,refine_steps_time));
-    }
+
   }
 
   template <int dim>

@@ -23,7 +23,7 @@ template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_
 class ProjectionOperatorBase
 {
 public:
-  static const bool is_xwall = false;
+  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
@@ -188,7 +188,7 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 class ProjectionOperatorDivergenceAndContinuityPenalty : public ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
 {
 public:
-  static const bool is_xwall = false;
+  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
   typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEFaceEval_Velocity_Velocity_linear;
@@ -548,7 +548,7 @@ template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_
 class DirectProjectionSolverDivergencePenalty : public ProjectionSolverBase<value_type>
 {
 public:
-  static const bool is_xwall = false;
+  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
@@ -638,7 +638,7 @@ public:
 
       fe_eval_velocity.reinit(cell);
 //      fe_eval_velocity.read_dof_values(src,0,dim);
-      fe_eval_velocity.read_dof_values(src,0);
+      fe_eval_velocity.read_dof_values(src);
 
       for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
       {
@@ -654,7 +654,7 @@ public:
           fe_eval_velocity.write_cellwise_dof_value(j,vector_input(j),v);
       }
 //      fe_eval_velocity.set_dof_values (dst,0,dim);
-      fe_eval_velocity.set_dof_values (dst,0);
+      fe_eval_velocity.set_dof_values (dst);
     }
   }
 

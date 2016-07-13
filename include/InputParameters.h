@@ -11,13 +11,14 @@
 #include "PoissonSolverInputParameters.h"
 #include "MultigridInputParameters.h"
 
-enum class ProblemType { Steady, Unsteady };
+enum class ProblemType { Steady, Unsteady};
 enum class EquationType { Stokes, NavierStokes };
 enum class TreatmentOfConvectiveTerm { Explicit, Implicit };
 
 enum class TimeStepCalculation { ConstTimeStepUserSpecified, ConstTimeStepCFL, AdaptiveTimeStepCFL };
 
 enum class TemporalDiscretization { BDFDualSplittingScheme, BDFCoupledSolution };
+enum class SpatialDiscretization { DG, DGXWall};
 
 enum class ProjectionType { NoPenalty, DivergencePenalty, DivergenceAndContinuityPenalty };
 enum class SolverProjection { LU, PCG };
@@ -73,6 +74,9 @@ public:
 
   // temporal discretization method
   TemporalDiscretization temporal_discretization;
+
+  // spatial discretization method
+  SpatialDiscretization spatial_discretization;
 
   // order of BDF time integration scheme and extrapolation scheme
   unsigned int const order_time_integrator;
@@ -209,6 +213,8 @@ public:
   bool const variabletauw;
   // delta tauw if adaptive between 0 and 1
   double const dtauw;
+  // max wall distance of enriched elements
+  double const max_wdist_xwall;
 };
 
 #endif /* INCLUDE_INPUTPARAMETERS_H_ */

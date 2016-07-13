@@ -11,7 +11,7 @@
 #include <deal.II/matrix_free/operators.h>
 
 #include "FEEvaluationWrapper.h"
-#include "XWall.h"
+//#include "XWall.h"
 #include "FE_Parameters.h"
 
 #include "InputParameters.h"
@@ -23,21 +23,20 @@ using namespace dealii;
 
 //forward declarations
 template<int dim> class AnalyticalSolution;
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+class DGNavierStokesDualSplittingXWall;
 
 enum class DofHandlerSelector{
   velocity = 0,
   pressure = 1,
-  wdist_tauw = 2,
-  enriched = 3,
-  n_variants = enriched+1
+  wdist_tauw = 2
 };
 
 enum class QuadratureSelector{
   velocity = 0,
   pressure = 1,
   velocity_nonlinear = 2,
-  enriched = 3,
-  n_variants = enriched+1
+  enriched = 3
 };
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -46,7 +45,7 @@ class DGNavierStokesBase
 public:
   typedef double value_type;
   static const unsigned int number_vorticity_components = (dim==2) ? 1 : dim;
-  static const bool is_xwall = false;//(fe_degree_xwall>0) ? true : false;
+  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
 
   /*
@@ -65,13 +64,12 @@ public:
                      InputParameters const                           &parameter)
     :
     //    fe_u(FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(fe_degree+1)),dim/*,FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(fe_degree_xwall+1)), dim*/),
-    fe_u(FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(fe_degree+1)),dim),
+//    fe_u(FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(fe_degree+1)),dim),
+    fe_u(nullptr),
     fe_p(QGaussLobatto<1>(fe_degree_p+1)),
-    fe_xwall(QGaussLobatto<1>(fe_degree_xwall+1)),
     mapping(fe_degree),
     dof_handler_u(triangulation),
     dof_handler_p(triangulation),
-    dof_handler_xwall(triangulation),
     time(0.0),
     time_step(1.0),
     scaling_factor_time_derivative_term(1.0),
@@ -79,9 +77,10 @@ public:
     dof_index_first_point(0),
     param(parameter),
     element_volume(0),
-    fe_param(param),
-    xwall(dof_handler_u,&data,element_volume,fe_param)
-  {}
+    fe_param(param)
+  {
+    fe_u.reset(new FESystem<dim>(FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(fe_degree+1)),dim));
+  }
 
   // destructor
   virtual ~DGNavierStokesBase()
@@ -89,7 +88,7 @@ public:
     data.clear();
   }
 
-  void setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
+  virtual void setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
               std::set<types::boundary_id> dirichlet_bc_indicator,
               std::set<types::boundary_id> neumann_bc_indicator);
 
@@ -132,7 +131,7 @@ public:
 
   FESystem<dim> const & get_fe_u() const
   {
-    return fe_u;
+    return *fe_u;
   }
 
   FE_DGQArbitraryNodes<dim> const & get_fe_p() const
@@ -140,9 +139,12 @@ public:
     return fe_p;
   }
 
-  FE_DGQArbitraryNodes<dim> const & get_fe_xwall() const
+  FESystem<dim> const & get_fe_xwall() const
   {
-    return fe_xwall;
+    DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> * dg_ns_xwall
+    = dynamic_cast<DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>* >(&this);
+    AssertThrow(dg_ns_xwall, ExcMessage("wrong call"));
+    return (*dg_ns_xwall).fe_xwall;
   }
 
   DoFHandler<dim> const & get_dof_handler_u() const
@@ -157,17 +159,10 @@ public:
 
   DoFHandler<dim> const & get_dof_handler_xwall() const
   {
-    return dof_handler_xwall;
-  }
-
-  std::vector<parallel::distributed::Vector<value_type> > const & get_xwallstatevec() const
-  {
-    return fe_param.xwallstatevec;
-  }
-
-  XWall<dim,fe_degree,fe_degree_xwall> const & get_XWall() const
-  {
-    return xwall;
+    DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> * dg_ns_xwall
+    = dynamic_cast<DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>* >(&this);
+    AssertThrow(dg_ns_xwall, ExcMessage("wrong call"));
+    return (*dg_ns_xwall).dof_handler_xwall;
   }
 
   double get_viscosity() const
@@ -263,15 +258,13 @@ public:
 protected:
   MatrixFree<dim,value_type> data;
 
-  FESystem<dim>              fe_u; //  FE_DGQArbitraryNodes<dim>  fe_u;
+  std_cxx11::shared_ptr< FESystem<dim> >              fe_u;
   FE_DGQArbitraryNodes<dim>  fe_p;
-  FE_DGQArbitraryNodes<dim>  fe_xwall;
 
   MappingQ<dim> mapping;
 
   DoFHandler<dim>  dof_handler_u;
   DoFHandler<dim>  dof_handler_p;
-  DoFHandler<dim>  dof_handler_xwall;
 
   double time, time_step;
   double scaling_factor_time_derivative_term;
@@ -289,7 +282,6 @@ protected:
 
   AlignedVector<VectorizedArray<value_type> > element_volume;
   FEParameters fe_param;
-  XWall<dim,fe_degree,fe_degree_xwall> xwall;
 
   MassMatrixOperatorData mass_matrix_operator_data;
   ViscousOperatorData<dim> viscous_operator_data;
@@ -302,9 +294,12 @@ protected:
   GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> gradient_operator;
   DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> divergence_operator;
 
-private:
-  void create_dofs();
+protected:
+  virtual void create_dofs();
 
+  virtual void data_reinit(typename MatrixFree<dim,value_type>::AdditionalData & additional_data);
+
+private:
   // compute vorticity
   void local_compute_vorticity (const MatrixFree<dim,value_type>                 &data,
                                 parallel::distributed::Vector<value_type>        &dst,
@@ -331,8 +326,6 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
 
   create_dofs();
 
-  xwall.initialize_constraints(periodic_face_pairs);
-
   // initialize matrix_free_data
   typename MatrixFree<dim,value_type>::AdditionalData additional_data;
   additional_data.mpi_communicator = MPI_COMM_WORLD;
@@ -343,42 +336,7 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
                                           update_values);
   additional_data.periodic_face_pairs_level_0 = periodic_face_pairs;
 
-  std::vector<const DoFHandler<dim> * >  dof_handler_vec;
-
-  dof_handler_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::n_variants));
-  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity)] = &dof_handler_u;
-  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure)] = &dof_handler_p;
-  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::wdist_tauw)] = &xwall.ReturnDofHandlerWallDistance();
-  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::enriched)] = &dof_handler_xwall;
-
-  ConstraintMatrix constraint, constraint_p;
-  constraint.close();
-  constraint_p.close();
-  std::vector<const ConstraintMatrix *> constraint_matrix_vec;
-  constraint_matrix_vec.push_back(&constraint);
-  constraint_matrix_vec.push_back(&constraint_p);
-  constraint_matrix_vec.push_back(&xwall.ReturnConstraintMatrix());
-  constraint_matrix_vec.push_back(&constraint);
-
-  std::vector<Quadrature<1> > quadratures;
-
-  // resize quadratures
-  quadratures.resize(static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::n_variants));
-
-  // velocity
-  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity)]
-              = QGauss<1>(fe_degree+1);
-  // pressure
-  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::pressure)]
-              = QGauss<1>(fe_degree_p+1);
-  // exact integration of nonlinear convective term
-  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity_nonlinear)]
-              = QGauss<1>(fe_degree + (fe_degree+2)/2);
-  // enrichment
-  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::enriched)]
-              = QGauss<1>(n_q_points_1d_xwall);
-
-  data.reinit (mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
+  data_reinit(additional_data);
 
   // mass matrix operator
 //  MassMatrixOperatorData mass_matrix_operator_data;
@@ -491,30 +449,52 @@ void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points
 create_dofs()
 {
   // enumerate degrees of freedom
-  dof_handler_u.distribute_dofs(fe_u);
+  dof_handler_u.distribute_dofs(*fe_u);
   dof_handler_p.distribute_dofs(fe_p);
-  dof_handler_xwall.distribute_dofs(fe_xwall);
   dof_handler_p.distribute_mg_dofs(fe_p);
-  dof_handler_u.distribute_mg_dofs(fe_u);
+  dof_handler_u.distribute_mg_dofs(*fe_u);
 
-  float ndofs_per_cell_velocity = pow(float(fe_degree+1),dim)*dim;
-  float ndofs_per_cell_pressure = pow(float(fe_degree_p+1),dim);
-  float ndofs_per_cell_xwall    = pow(float(fe_degree_xwall+1),dim)*dim;
+  unsigned int ndofs_per_cell_velocity    = Utilities::fixed_int_power<fe_degree+1,dim>::value*dim;
+  unsigned int ndofs_per_cell_pressure    = Utilities::fixed_int_power<fe_degree_p+1,dim>::value;
 
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Discontinuous finite element discretization:" << std::endl << std::endl
     << "Velocity:" << std::endl
     << "  degree of 1D polynomials:\t"  << std::fixed << std::setw(10) << std::right << fe_degree << std::endl
-    << "  number of dofs per cell:\t"   << std::fixed << std::setw(10) << std::right << (int)ndofs_per_cell_velocity << std::endl
+    << "  number of dofs per cell:\t"   << std::fixed << std::setw(10) << std::right << ndofs_per_cell_velocity << std::endl
     << "  number of dofs (velocity):\t" << std::fixed << std::setw(10) << std::right << dof_handler_u.n_dofs() << std::endl
     << "Pressure:" << std::endl
     << "  degree of 1D polynomials:\t"  << std::fixed << std::setw(10) << std::right << fe_degree_p << std::endl
-    << "  number of dofs per cell:\t"   << std::fixed << std::setw(10) << std::right << (int)ndofs_per_cell_pressure << std::endl
-    << "  number of dofs (pressure):\t" << std::fixed << std::setw(10) << std::right << dof_handler_p.n_dofs() << std::endl
-    << "Enrichment:" << std::endl
-    << "  degree of 1D polynomials:\t" << std::fixed << std::setw(10) << std::right << fe_degree_xwall << std::endl
-    << "  number of dofs per cell:\t"  << std::fixed << std::setw(10) << std::right << (int)ndofs_per_cell_xwall << std::endl
-    << "  number of dofs (xwall):\t"   << std::fixed << std::setw(10) << std::right << dof_handler_xwall.n_dofs()*dim << std::endl;
+    << "  number of dofs per cell:\t"   << std::fixed << std::setw(10) << std::right << ndofs_per_cell_pressure << std::endl
+    << "  number of dofs (pressure):\t" << std::fixed << std::setw(10) << std::right << dof_handler_p.n_dofs() << std::endl;
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+data_reinit(typename MatrixFree<dim,value_type>::AdditionalData & additional_data)
+{
+  std::vector<const DoFHandler<dim> * >  dof_handler_vec;
+
+  dof_handler_vec.push_back(&dof_handler_u);
+  dof_handler_vec.push_back(&dof_handler_p);
+
+  std::vector<const ConstraintMatrix *> constraint_matrix_vec;
+  ConstraintMatrix constraint, constraint_p;
+  constraint.close();
+  constraint_p.close();
+  constraint_matrix_vec.push_back(&constraint);
+  constraint_matrix_vec.push_back(&constraint_p);
+
+  std::vector<Quadrature<1> > quadratures;
+
+  // velocity
+  quadratures.push_back(QGauss<1>(fe_degree+1));
+  // pressure
+  quadratures.push_back(QGauss<1>(fe_degree_p+1));
+  // exact integration of nonlinear convective term
+  quadratures.push_back(QGauss<1>(fe_degree + (fe_degree+2)/2));
+
+  data.reinit (mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
