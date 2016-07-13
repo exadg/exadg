@@ -178,6 +178,13 @@ public:
   // specifies the time interval in which output is written
   double const output_interval_time;
 
+  // specifies the time interval in which restarts are written, starting from start_time
+  double const restart_interval_time;
+  // specifies the wall time interwal in which restarts are written
+  double const restart_interval_wall_time;
+  // specifies the restart interval via number of time steps
+  unsigned int const restart_interval_step;
+
   // name of generated output files
   std::string const output_prefix;
 

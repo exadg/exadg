@@ -56,6 +56,9 @@ private:
 
   std_cxx11::shared_ptr<PostProcessor<dim> > postprocessor;
 
+  virtual void read_restart_vectors(boost::archive::binary_iarchive & ia);
+  virtual void write_restart_vectors(boost::archive::binary_oarchive & oa);
+
   parallel::distributed::BlockVector<value_type> solution_np;
   std::vector<parallel::distributed::BlockVector<value_type> > solution;
 
@@ -195,6 +198,46 @@ parallel::distributed::Vector<value_type> const & TimeIntBDFCoupled<dim, fe_degr
 get_velocity()
 {
   return solution[0].block(0);
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+read_restart_vectors(boost::archive::binary_iarchive & ia)
+{
+  Vector<double> tmp;
+  for (unsigned int i=0; i<solution.size(); i++)
+  {
+    ia >> tmp;
+    std::copy(tmp.begin(), tmp.end(),
+              solution[i].block(0).begin());
+  }
+  for (unsigned int i=0; i<solution.size(); i++)
+  {
+    ia >> tmp;
+    std::copy(tmp.begin(), tmp.end(),
+              solution[i].block(1).begin());
+  }
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+write_restart_vectors(boost::archive::binary_oarchive & oa)
+{
+  VectorView<double> tmp(solution[0].block(0).local_size(),
+                         solution[0].block(0).begin());
+  oa << tmp;
+  for (unsigned int i=1; i<solution.size(); i++)
+  {
+    tmp.reinit(solution[i].block(0).local_size(),
+        solution[i].block(0).begin());
+    oa << tmp;
+  }
+  for (unsigned int i=0; i<solution.size(); i++)
+  {
+    tmp.reinit(solution[i].block(1).local_size(),
+        solution[i].block(1).begin());
+    oa << tmp;
+  }
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>

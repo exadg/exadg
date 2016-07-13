@@ -160,6 +160,9 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
   const double STATISTICS_START_TIME = 0.0;
   const int STATISTICS_EVERY = 1;
+  const double RESTART_INTERVAL_TIME = 100.;
+  const double RESTART_INTERVAL_WALL_TIME = 1000.;
+  const unsigned int RESTART_INTERVAL_STEP = 1e6;
   const bool DIVU_TIMESERIES = true;
   const bool COMPUTE_DIVERGENCE = true;
   const bool ANALYTICAL_SOLUTION = true;
@@ -235,6 +238,9 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
   const double STATISTICS_START_TIME = 50.0;
   const int STATISTICS_EVERY = 1;
+  const double RESTART_INTERVAL_TIME = 100.;
+  const double RESTART_INTERVAL_WALL_TIME = 1000.;
+  const unsigned int RESTART_INTERVAL_STEP = 1e6;
   const bool ANALYTICAL_SOLUTION = true; 
   const bool DIVU_TIMESERIES = false; //true;
   const bool COMPUTE_DIVERGENCE = false;
@@ -303,6 +309,9 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
   const double STATISTICS_START_TIME = 50.0;
   const int STATISTICS_EVERY = 1;
+  const double RESTART_INTERVAL_TIME = 100.;
+  const double RESTART_INTERVAL_WALL_TIME = 1000.;
+  const unsigned int RESTART_INTERVAL_STEP = 1e6;
   const bool ANALYTICAL_SOLUTION = true;
   const bool DIVU_TIMESERIES = true; //true;
   const bool COMPUTE_DIVERGENCE = false;
@@ -365,6 +374,9 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
   const double STATISTICS_START_TIME = 50.0;
   const int STATISTICS_EVERY = 1;
+  const double RESTART_INTERVAL_TIME = 100.;
+  const double RESTART_INTERVAL_WALL_TIME = 1000.;
+  const unsigned int RESTART_INTERVAL_STEP = 1e6;
   const bool ANALYTICAL_SOLUTION = false;
   const bool DIVU_TIMESERIES = false; //true;
   const bool COMPUTE_DIVERGENCE = false;
@@ -431,6 +443,9 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
   const int STATISTICS_EVERY = 1;
+  const double RESTART_INTERVAL_TIME = 100.;
+  const double RESTART_INTERVAL_WALL_TIME = 1000.;
+  const unsigned int RESTART_INTERVAL_STEP = 1e6;
   const bool ANALYTICAL_SOLUTION = true;
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 1e6;
@@ -487,6 +502,9 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double OUTPUT_START_TIME = 0.0;
   const double STATISTICS_START_TIME = 50.0;
   const int STATISTICS_EVERY = 1;
+  const double RESTART_INTERVAL_TIME = 100.;
+  const double RESTART_INTERVAL_WALL_TIME = 1000.;
+  const unsigned int RESTART_INTERVAL_STEP = 1e6;
   const bool ANALYTICAL_SOLUTION = true;
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 1e6;
@@ -544,6 +562,9 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
   const double STATISTICS_START_TIME = 50.0;
   const int STATISTICS_EVERY = 1;
+  const double RESTART_INTERVAL_TIME = 100.;
+  const double RESTART_INTERVAL_WALL_TIME = 1000.;
+  const unsigned int RESTART_INTERVAL_STEP = 1e6;
   const bool ANALYTICAL_SOLUTION = true;
   const bool DIVU_TIMESERIES = false;
   const bool COMPUTE_DIVERGENCE = false;
@@ -612,6 +633,9 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
   const double STATISTICS_START_TIME = 50.0;
   const int STATISTICS_EVERY = 1;
+  const double RESTART_INTERVAL_TIME = 100.;
+  const double RESTART_INTERVAL_WALL_TIME = 1000.;
+  const unsigned int RESTART_INTERVAL_STEP = 1e6;
   const bool ANALYTICAL_SOLUTION = true;
   const bool DIVU_TIMESERIES = false;
   const bool COMPUTE_DIVERGENCE = false;
@@ -687,6 +711,9 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
   const double STATISTICS_START_TIME = 50000.0;
   const int STATISTICS_EVERY = 1;
+  const double RESTART_INTERVAL_TIME = 100.;
+  const double RESTART_INTERVAL_WALL_TIME = 1000.;
+  const unsigned int RESTART_INTERVAL_STEP = 1e6;
   const bool ANALYTICAL_SOLUTION = true;
   const bool DIVU_TIMESERIES = true;
   const bool COMPUTE_DIVERGENCE = true;
@@ -766,6 +793,9 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const bool COMPUTE_DIVERGENCE = true;
   const bool DIVU_TIMESERIES = true;
   const int STATISTICS_EVERY = 1;
+  const double RESTART_INTERVAL_TIME = 100.;
+  const double RESTART_INTERVAL_WALL_TIME = 1000.;
+  const unsigned int RESTART_INTERVAL_STEP = 1e6;
   const int MAX_NUM_STEPS = 1e7;
   const double CFL = 1.0;
   const double TIME_STEP_SIZE = 1.e-3;
@@ -865,6 +895,9 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   output_solver_info_every_timesteps(OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS),
   output_start_time(OUTPUT_START_TIME),
   output_interval_time(OUTPUT_INTERVAL_TIME),
+  restart_interval_time(RESTART_INTERVAL_TIME),
+  restart_interval_wall_time(RESTART_INTERVAL_WALL_TIME),
+  restart_interval_step(RESTART_INTERVAL_STEP),
   output_prefix(OUTPUT_PREFIX),
   error_calc_start_time(ERROR_CALC_START_TIME),
   error_calc_interval_time(ERROR_CALC_INTERVAL_TIME),
@@ -1520,6 +1553,13 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
       statistics.setup(&grid_transform<dim>);
 #endif
     }
+
+    void init_from_restart(unsigned int o_counter)
+    {
+      output_counter_ = o_counter;
+    }
+
+    unsigned int const get_output_counter(){return output_counter_;}
 
     void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
                            parallel::distributed::Vector<double> const &pressure,
@@ -2235,7 +2275,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   public:
     typedef typename DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>::value_type value_type;
     NavierStokesProblem(const unsigned int refine_steps_space, const unsigned int refine_steps_time=0);
-    void solve_problem();
+    void solve_problem(bool do_restart);
 
   private:
     void create_grid();
@@ -2673,7 +2713,7 @@ void NavierStokesProblem<dim>::print_parameters() const
 }
 
 template<int dim>
-void NavierStokesProblem<dim>::solve_problem()
+void NavierStokesProblem<dim>::solve_problem(bool do_restart)
 {
   create_grid();
 
@@ -2684,7 +2724,7 @@ void NavierStokesProblem<dim>::solve_problem()
     // setup time integrator before calling setup_solvers
     // (this is necessary since the setup of the solvers
     // depends on quantities such as the time_step_size or gamma0!!!)
-    time_integrator->setup();
+    time_integrator->setup(do_restart);
 
     navier_stokes_operation->setup_solvers();
 
@@ -2714,6 +2754,21 @@ int main (int argc, char** argv)
 
     deallog.depth_console(0);
 
+    bool do_restart = false;
+    if (argc > 1)
+    {
+      do_restart = std::atoi(argv[1]);
+      if(do_restart)
+      {
+        AssertThrow(REFINE_STEPS_SPACE_MIN == REFINE_STEPS_SPACE_MAX, ExcMessage("Spatial refinement with restart not possible!"));
+
+        //this does in principle work
+        //although it doesn't make much sense
+        if(REFINE_STEPS_TIME_MIN != REFINE_STEPS_TIME_MAX && Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+          std::cout << "Warning: you are starting from a restart and refine the time steps!" << std::endl;
+      }
+    }
+
     //mesh refinements in order to perform spatial convergence tests
     for(unsigned int refine_steps_space = REFINE_STEPS_SPACE_MIN;refine_steps_space <= REFINE_STEPS_SPACE_MAX;++refine_steps_space)
     {
@@ -2721,7 +2776,7 @@ int main (int argc, char** argv)
       for(unsigned int refine_steps_time = REFINE_STEPS_TIME_MIN;refine_steps_time <= REFINE_STEPS_TIME_MAX;++refine_steps_time)
       {
         NavierStokesProblem<DIMENSION> navier_stokes_problem(refine_steps_space,refine_steps_time);
-        navier_stokes_problem.solve_problem();
+        navier_stokes_problem.solve_problem(do_restart);
       }
     }
   }
