@@ -21,13 +21,14 @@ public:
                           unsigned int const                                      n_refine_time_in)
     :
     TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
-            (ns_operation_in,postprocessor_in,param_in,n_refine_time_in),
+            (ns_operation_in,param_in,n_refine_time_in),
+    postprocessor(postprocessor_in),
     computing_times(5),
     velocity(this->order),
     pressure(this->order),
     vorticity(this->order),
     vec_convective_term(this->order),
-    ns_operation_splitting (std::dynamic_pointer_cast<DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (this->ns_operation))
+    ns_operation_splitting (std::dynamic_pointer_cast<DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in))
   {}
 
   virtual ~TimeIntBDFDualSplitting(){}
@@ -62,6 +63,8 @@ private:
   void push_back_vec_convective_term();
 
   virtual parallel::distributed::Vector<value_type> const & get_velocity();
+
+  std_cxx11::shared_ptr<PostProcessor<dim> > postprocessor;
 
   std::vector<value_type> computing_times;
 

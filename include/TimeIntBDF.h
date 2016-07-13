@@ -19,13 +19,10 @@ class TimeIntBDF
 public:
   TimeIntBDF(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
                fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation_in,
-             std_cxx11::shared_ptr<PostProcessor<dim> >             postprocessor_in,
              InputParameters const                                  &param_in,
              unsigned int const                                     n_refine_time_in)
     :
     n_refine_time(n_refine_time_in),
-    ns_operation(ns_operation_in),
-    postprocessor(postprocessor_in),
     param(param_in),
     total_time(0.0),
     time(param.start_time),
@@ -35,7 +32,8 @@ public:
     cfl(param.cfl/std::pow(2.0,n_refine_time)),
     gamma0(1.0),
     alpha(order),
-    beta(order)
+    beta(order),
+    ns_operation(ns_operation_in)
   {}
 
   virtual ~TimeIntBDF(){}
@@ -74,9 +72,6 @@ private:
   unsigned int const n_refine_time;
 
 protected:
-  std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation;
-
-  std_cxx11::shared_ptr<PostProcessor<dim> > postprocessor;
   InputParameters const & param;
 
   Timer global_timer;
@@ -90,6 +85,9 @@ protected:
   value_type const cfl;
   value_type gamma0;
   std::vector<value_type> alpha, beta;
+
+private:
+  std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation;
 };
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>

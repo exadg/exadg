@@ -21,10 +21,13 @@ public:
                     unsigned int const                                      n_refine_time_in)
     :
     TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
-            (ns_operation_in,postprocessor_in,param_in,n_refine_time_in),
+            (ns_operation_in,param_in,n_refine_time_in),
+    postprocessor(postprocessor_in),
     solution(this->order),
     vec_convective_term(this->order),
-    ns_operation_coupled (std::dynamic_pointer_cast<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (this->ns_operation))
+    ns_operation_coupled (std::dynamic_pointer_cast<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in)),
+    N_iter_average(0),
+    solver_time_average(0.0)
   {}
 
   virtual ~TimeIntBDFCoupled(){}
@@ -51,6 +54,8 @@ private:
 
   virtual parallel::distributed::Vector<value_type> const & get_velocity();
 
+  std_cxx11::shared_ptr<PostProcessor<dim> > postprocessor;
+
   parallel::distributed::BlockVector<value_type> solution_np;
   std::vector<parallel::distributed::BlockVector<value_type> > solution;
 
@@ -65,6 +70,10 @@ private:
 
   std_cxx11::shared_ptr<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >
      ns_operation_coupled;
+
+  // performance analysis: average number of iterations and solver time
+  unsigned int N_iter_average;
+  double solver_time_average;
 };
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
@@ -72,6 +81,10 @@ void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_
 analyze_computing_times() const
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  pcout << std::endl << "Number of time steps = " << (this->time_step_number-1) << std::endl
+                     << "Average number of iterations = " << N_iter_average/(this->time_step_number-1) << std::endl
+                     << "Average wall time per time step = " << solver_time_average/(this->time_step_number-1) << std::endl;
+
   pcout << std::endl << "_________________________________________________________________________________" << std::endl
         << std::endl << "Computing times:          min        avg        max        rel      p_min  p_max" << std::endl;
 
@@ -242,6 +255,9 @@ solve_timestep()
 
     // solve coupled system of equations
     unsigned int iterations = ns_operation_coupled->solve_linear_stokes_problem(solution_np,rhs_vector);
+
+    N_iter_average += iterations;
+    solver_time_average += timer.wall_time();
 
     // write output
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && this->time_step_number%this->param.output_solver_info_every_timesteps == 0)

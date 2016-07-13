@@ -28,9 +28,9 @@ enum class InteriorPenaltyFormulationViscous { SIPG, NIPG };
 enum class SolverViscous { PCG, GMRES };
 enum class PreconditionerViscous { None, Jacobi, InverseMassMatrix, GeometricMultigrid };
 
-enum class PreconditionerLinearizedNavierStokes { None, BlockDiagonal, BlockTriangular };
+enum class PreconditionerLinearizedNavierStokes { None, BlockDiagonal, BlockTriangular, BlockTriangularFactorization };
 enum class PreconditionerMomentum { None, InverseMassMatrix, GeometricMultigrid };
-enum class PreconditionerSchurComplement {None, InverseMassMatrix, GeometricMultigrid };
+enum class PreconditionerSchurComplement {None, InverseMassMatrix, GeometricMultigrid, CahouetChabard };
 
 class InputParameters
 {

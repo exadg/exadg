@@ -239,6 +239,12 @@ public:
         static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
   }
 
+  void initialize_vector_pressure(parallel::distributed::Vector<value_type> &src) const
+  {
+    this->data.initialize_dof_vector(src,
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure));
+  }
+
   //shift pressure (pure Dirichlet BC case)
   void  shift_pressure (parallel::distributed::Vector<value_type> &pressure) const;
 
@@ -500,7 +506,7 @@ create_dofs()
     << "Velocity:" << std::endl
     << "  degree of 1D polynomials:\t"  << std::fixed << std::setw(10) << std::right << fe_degree << std::endl
     << "  number of dofs per cell:\t"   << std::fixed << std::setw(10) << std::right << (int)ndofs_per_cell_velocity << std::endl
-    << "  number of dofs (velocity):\t" << std::fixed << std::setw(10) << std::right << dof_handler_u.n_dofs()*dim << std::endl
+    << "  number of dofs (velocity):\t" << std::fixed << std::setw(10) << std::right << dof_handler_u.n_dofs() << std::endl
     << "Pressure:" << std::endl
     << "  degree of 1D polynomials:\t"  << std::fixed << std::setw(10) << std::right << fe_degree_p << std::endl
     << "  number of dofs per cell:\t"   << std::fixed << std::setw(10) << std::right << (int)ndofs_per_cell_pressure << std::endl
