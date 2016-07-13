@@ -184,7 +184,6 @@ write_restart()
     write_restart_preamble<value_type>(oa, param, time_steps, time, postprocessor->get_output_counter(), order);
     write_restart_vectors(oa);
     write_restart_file(oss, param);
-
   }
 }
 
