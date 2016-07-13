@@ -170,12 +170,6 @@ public:
 
 
   // initialization of vectors
-  void initialize_vector_pressure(parallel::distributed::Vector<value_type> &src) const
-  {
-    this->data.initialize_dof_vector(src,
-        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure));
-  }
-
   void initialize_vector_for_newton_solver(parallel::distributed::Vector<value_type> &src) const
   {
     this->initialize_vector_velocity(src);

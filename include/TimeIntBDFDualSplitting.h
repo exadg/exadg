@@ -27,7 +27,7 @@ public:
     pressure(this->order),
     vorticity(this->order),
     vec_convective_term(this->order),
-    ns_operation_splitting (std::dynamic_pointer_cast<DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (this->ns_operation))
+    ns_operation_splitting (std::dynamic_pointer_cast<DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in))
   {}
 
   virtual ~TimeIntBDFDualSplitting(){}

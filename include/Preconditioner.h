@@ -20,27 +20,6 @@ public:
 
 #include "InverseMassMatrix.h"
 
-//template<int dim, int fe_degree, typename value_type>
-//class InverseMassMatrixPreconditioner : public PreconditionerBase<value_type>
-//{
-//public:
-//  InverseMassMatrixPreconditioner(MatrixFree<dim,value_type> const &mf_data,
-//                                  const unsigned int               dof_index,
-//                                  const unsigned int               quad_index)
-//  {
-//    inverse_mass_matrix_operator.initialize(mf_data,dof_index,quad_index);
-//  }
-//
-//  void vmult (parallel::distributed::Vector<value_type>        &dst,
-//              const parallel::distributed::Vector<value_type>  &src) const
-//  {
-//    inverse_mass_matrix_operator.apply_inverse_mass_matrix(dst,src);
-//  }
-//
-//private:
-//  InverseMassMatrixOperator<dim,fe_degree,value_type> inverse_mass_matrix_operator;
-//};
-
 template<int dim, int fe_degree, typename value_type, int n_components=dim>
 class InverseMassMatrixPreconditioner : public PreconditionerBase<value_type>
 {
@@ -551,6 +530,5 @@ private:
   std_cxx11::shared_ptr<MultigridPreconditioner<dim, VECTOR_TYPE, Operator, MG_TRANSFER, SMOOTHER> > multigrid_preconditioner;
 
 };
-
 
 #endif /* INCLUDE_PRECONDITIONER_H_ */

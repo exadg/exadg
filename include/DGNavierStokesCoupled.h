@@ -57,7 +57,8 @@ public:
     underlying_operator = underlying_operator_in;
 
     if(solver_data.preconditioner_data.preconditioner_type == PreconditionerLinearizedNavierStokes::BlockDiagonal ||
-       solver_data.preconditioner_data.preconditioner_type == PreconditionerLinearizedNavierStokes::BlockTriangular )
+       solver_data.preconditioner_data.preconditioner_type == PreconditionerLinearizedNavierStokes::BlockTriangular ||
+       solver_data.preconditioner_data.preconditioner_type == PreconditionerLinearizedNavierStokes::BlockTriangularFactorization)
       preconditioner.reset(new BlockPreconditionerNavierStokes<dim, fe_degree,
           fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(underlying_operator,solver_data.preconditioner_data));
 
@@ -72,7 +73,8 @@ public:
 
     ReductionControl solver_control (solver_data.max_iter, solver_data.abs_tol, solver_data.rel_tol);
     typename SolverGMRES<parallel::distributed::BlockVector<value_type> >::AdditionalData additional_data;
-    additional_data.max_n_tmp_vectors = 30;
+    additional_data.max_n_tmp_vectors = 60;
+    // use right preconditioning A*P^{-1}
     additional_data.right_preconditioning = true;
     SolverGMRES<parallel::distributed::BlockVector<value_type> > solver (solver_control, additional_data);
 
@@ -255,15 +257,6 @@ void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_poin
 apply_linearized_problem (parallel::distributed::BlockVector<value_type>       &dst,
                           parallel::distributed::BlockVector<value_type> const &src) const
 {
-//  // (1,1) block of saddle point matrix
-//  this->mass_matrix_operator.apply(dst.block(0),src.block(0));
-//  dst.block(0) *= this->scaling_factor_time_derivative_term;
-//
-//  if(nonlinear_problem_has_to_be_solved())
-//    this->convective_operator.apply_linearized_add(dst.block(0),src.block(0),&vector_linearization.block(0),this->time+this->time_step);
-//
-//  this->viscous_operator.apply_add(dst.block(0),src.block(0));
-
   // (1,1) block of saddle point matrix
   this->viscous_operator.apply(dst.block(0),src.block(0));
 

@@ -74,8 +74,8 @@
 using namespace dealii;
 
 // specify flow problem that has to be solved
-#define VORTEX
-//#define STOKES_GUERMOND
+//#define VORTEX
+#define STOKES_GUERMOND
 //#define STOKES_SHAHBAZI
 //#define POISEUILLE
 //#define CUETTE
@@ -87,27 +87,28 @@ using namespace dealii;
 
 
 ProblemType PROBLEM_TYPE = ProblemType::Unsteady; //Steady; //Unsteady;
-EquationType EQUATION_TYPE = EquationType::NavierStokes; // Stokes; // NavierStokes;
+EquationType EQUATION_TYPE = EquationType::Stokes; // Stokes; // NavierStokes;
 TreatmentOfConvectiveTerm TREATMENT_OF_CONVECTIVE_TERM = TreatmentOfConvectiveTerm::Explicit; // Explicit; // Implicit;
 
-bool const STS_STABILITY = false;
-
-bool const DIVU_INTEGRATED_BY_PARTS = false;//true;
-bool const DIVU_USE_BOUNDARY_DATA = false;//true;
-bool const GRADP_INTEGRATED_BY_PARTS = false;//true;
-bool const GRADP_USE_BOUNDARY_DATA = false;//true;
+bool const DIVU_INTEGRATED_BY_PARTS = true; //false;//true;
+bool const DIVU_USE_BOUNDARY_DATA = true; //false;//true;
+bool const GRADP_INTEGRATED_BY_PARTS = true; //false;//true;
+bool const GRADP_USE_BOUNDARY_DATA = true; //false;//true;
 
 /************* temporal discretization ***********/
 // which temporal discretization approach
-TemporalDiscretization TEMPORAL_DISCRETIZATION = TemporalDiscretization::BDFDualSplittingScheme; //BDFDualSplittingScheme // BDFCoupledSolution
+TemporalDiscretization TEMPORAL_DISCRETIZATION = TemporalDiscretization::BDFCoupledSolution; //BDFDualSplittingScheme // BDFCoupledSolution
 
 SpatialDiscretization SPATIAL_DISCRETIZATION = SpatialDiscretization::DG; //DG //DGXWall
 
 // type of time step calculation
-TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified; //ConstTimeStepCFL; //AdaptiveTimeStepCFL;
+TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepUserSpecified; //ConstTimeStepCFL; //AdaptiveTimeStepCFL;
 /*************************************************/
 
 /******** high-order dual splitting scheme *******/
+// approach of Leriche et al. to obtain stability in the limit of small time steps
+bool const STS_STABILITY = false;
+
 // pressure Poisson equation
 SolverPoisson SOLVER_POISSON = SolverPoisson::PCG; //PCG;
 PreconditionerPoisson PRECONDITIONER_POISSON = PreconditionerPoisson::GeometricMultigrid; // None; //Jacobi; //GeometricMultigrid;
@@ -137,9 +138,11 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = true;
 
 // preconditioner
 PreconditionerLinearizedNavierStokes PRECONDITIONER_LINEARIZED_NAVIER_STOKES =
-    PreconditionerLinearizedNavierStokes::BlockTriangular; //None; //BlockDiagonal; //BlockTriangular;
-PreconditionerMomentum PRECONDITIONER_MOMENTUM = PreconditionerMomentum::InverseMassMatrix; //None; //InverseMassMatrix; //GeometricMultigrid;
-PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT = PreconditionerSchurComplement::GeometricMultigrid; //None; //InverseMassMatrix; //GeometricMultigrid;
+    PreconditionerLinearizedNavierStokes::BlockTriangularFactorization; //None; //BlockDiagonal; //BlockTriangular; //BlockTriangularFactorization;
+PreconditionerMomentum PRECONDITIONER_MOMENTUM =
+    PreconditionerMomentum::InverseMassMatrix; //None; //InverseMassMatrix; //GeometricMultigrid;
+PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
+    PreconditionerSchurComplement::CahouetChabard; //None; //InverseMassMatrix; //GeometricMultigrid; //CahouetChabard;
 /************************************************/
 
 #ifdef VORTEX
@@ -358,30 +361,34 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT = PreconditionerSc
 
 #ifdef CAVITY
   const unsigned int FE_DEGREE = 5;
-  const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
-  const unsigned int FE_DEGREE_XWALL = 0;
+  const unsigned int FE_DEGREE_P = FE_DEGREE-1;//FE_DEGREE-1;
+  const unsigned int FE_DEGREE_XWALL = 1;
   const unsigned int N_Q_POINTS_1D_XWALL = 1;
   const unsigned int DIMENSION = 2;
-  const unsigned int REFINE_STEPS_SPACE_MIN = 3;
-  const unsigned int REFINE_STEPS_SPACE_MAX = 3;
+  const unsigned int REFINE_STEPS_SPACE_MIN = 4;
+  const unsigned int REFINE_STEPS_SPACE_MAX = 4;
 
   const double START_TIME = 0.0;
   const double END_TIME = 40.0;
   const double OUTPUT_INTERVAL_TIME = 2.0;
   const double OUTPUT_START_TIME = 0.0;
+  const double ERROR_CALC_INTERVAL_TIME = OUTPUT_INTERVAL_TIME;
+  const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
   const double STATISTICS_START_TIME = 50.0;
   const int STATISTICS_EVERY = 1;
   const double RESTART_INTERVAL_TIME = 100.;
   const double RESTART_INTERVAL_WALL_TIME = 1000.;
   const unsigned int RESTART_INTERVAL_STEP = 1e6;
   const bool ANALYTICAL_SOLUTION = false;
-  const bool DIVU_TIMESERIES = true; //true;
+  const bool DIVU_TIMESERIES = false; //true;
+  const bool COMPUTE_DIVERGENCE = false;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.1;
+  const double TIME_STEP_SIZE = 1.e-1;
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
-  const double VISCOSITY = 0.0002;
+  const double VISCOSITY = 1.0e0;//0.0002;
   const double L = 1.0;
 
   const double MAX_VELOCITY = 1.0;
@@ -399,6 +406,13 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT = PreconditionerSc
   const double MAX_WDIST_XWALL = 0.2;
   const double GRID_STRETCH_FAC = 1.8;
   const bool PURE_DIRICHLET_BC = true;
+
+  const double ABS_TOL_NEWTON = 1.0e-12;
+  const double REL_TOL_NEWTON = 1.0e-6;
+  unsigned int const MAX_ITER_NEWTON = 1e2;
+  const double ABS_TOL_LINEAR = 1.0e-12;
+  const double REL_TOL_LINEAR = 1.0e-6;
+  unsigned int const MAX_ITER_LINEAR = 1e6;
 
   const double ABS_TOL_PRESSURE = 1.0e-12;
   const double REL_TOL_PRESSURE = 1.0e-6;
@@ -534,7 +548,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT = PreconditionerSc
 #endif
 
 #ifdef STOKES_GUERMOND
-  const unsigned int FE_DEGREE = 3;//3
+  const unsigned int FE_DEGREE = 4;//3
   const unsigned int FE_DEGREE_P = FE_DEGREE-1;//FE_DEGREE-1;
   const unsigned int FE_DEGREE_XWALL = 1;
   const unsigned int N_Q_POINTS_1D_XWALL = 1;
@@ -544,7 +558,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT = PreconditionerSc
 
   const double START_TIME = 0.0;
   const double END_TIME = 1.0;
-  const double OUTPUT_INTERVAL_TIME = (END_TIME-START_TIME)/10.0;
+  const double OUTPUT_INTERVAL_TIME = 1.0;//(END_TIME-START_TIME)/10.0;
   const double OUTPUT_START_TIME = 0.0;
   const double ERROR_CALC_INTERVAL_TIME = OUTPUT_INTERVAL_TIME;
   const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
@@ -556,13 +570,13 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT = PreconditionerSc
   const bool ANALYTICAL_SOLUTION = true;
   const bool DIVU_TIMESERIES = false;
   const bool COMPUTE_DIVERGENCE = false;
-  const int MAX_NUM_STEPS = 1;//1e6;
+  const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.2; // CFL number irrelevant for Stokes flow problem
   const double TIME_STEP_SIZE = 1.e-1;//2.e-4;//1.e-1;///std::pow(2.,13); //5.0e-4
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
-  const double VISCOSITY = 0.01;//0.01;
+  const double VISCOSITY = 1.0e-6;//0.01;
 
   const double MAX_VELOCITY = 2.65; // MAX_VELOCITY also irrelevant
   const double IP_FACTOR_PRESSURE = 1.0;
@@ -596,7 +610,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT = PreconditionerSc
   const double REL_TOL_PROJECTION = 1.0e-6;
 
   // show solver performance (wall time, number of iterations) every ... timesteps
-  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e0;
+  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e4;
 
   const std::string OUTPUT_PREFIX = "stokes";
 
@@ -931,10 +945,18 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT = PreconditionerSc
     /*********************** cavity flow ********************************/
 #ifdef CAVITY
     // constant velocity
-    const double T = 0.5;
-    const double pi = numbers::PI;
-    if(component == 0 && (std::abs(p[1]-1.0)<1.0e-15))
-      result = t<T ? std::sin(pi/2.*t/T) : 1.0;
+    if(PROBLEM_TYPE == ProblemType::Steady)
+    {
+      if(component == 0 && (std::abs(p[1]-1.0)<1.0e-15))
+        result = 1.0;
+    }
+    else if(PROBLEM_TYPE == ProblemType::Unsteady)
+    {
+      const double T = 0.5;
+      const double pi = numbers::PI;
+      if(component == 0 && (std::abs(p[1]-1.0)<1.0e-15))
+        result = t<T ? std::sin(pi/2.*t/T) : 1.0;
+    }
 #endif
     /********************************************************************/
 
@@ -2225,7 +2247,9 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT = PreconditionerSc
     void setup()
     {
       PostProcessor<dim>::setup();
+#ifdef CHANNEL
       statistics.setup(&grid_transform<dim>);
+#endif
     }
 
     void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
@@ -2238,12 +2262,14 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT = PreconditionerSc
       PostProcessor<dim>::do_postprocessing(velocity,pressure,vorticity,divergence,time,time_step_number);
       const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
 
+#ifdef CHANNEL
       if(time > this->param.statistics_start_time-EPSILON && time_step_number % this->param.statistics_every == 0)
       {
         statistics.evaluate(velocity);
         if(time_step_number % 100 == 0 || time > (this->param.end_time-EPSILON))
           statistics.write_output(this->param.output_prefix,this->ns_operation_.get_viscosity());
       }
+#endif
     };
 
     virtual void analyze_divergence_error(parallel::distributed::Vector<double> const &velocity_temp,

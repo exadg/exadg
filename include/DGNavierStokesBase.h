@@ -234,6 +234,12 @@ public:
         static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
   }
 
+  void initialize_vector_pressure(parallel::distributed::Vector<value_type> &src) const
+  {
+    this->data.initialize_dof_vector(src,
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure));
+  }
+
   //shift pressure (pure Dirichlet BC case)
   void  shift_pressure (parallel::distributed::Vector<value_type> &pressure) const;
 
