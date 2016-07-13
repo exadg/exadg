@@ -19,9 +19,11 @@ public:
     cs(1.0),
     ml(1.0),
     variabletauw(false),
-    dtauw(1.0)
+    dtauw(1.0),
+    max_wdist_xwall(1.0)
+//    wdist(nullptr),
+//    tauw(nullptr)
   {
-    xwallstatevec.resize(2);
   }
 
   FEParameters(InputParameters const & param)
@@ -30,9 +32,11 @@ public:
     cs(param.cs),
     ml(param.ml),
     variabletauw(param.variabletauw),
-    dtauw(param.dtauw)
+    dtauw(param.dtauw),
+    max_wdist_xwall(param.max_wdist_xwall)
+//    wdist(nullptr),
+//    tauw(nullptr)
   {
-    xwallstatevec.resize(2);
   }
 
   double const viscosity;
@@ -40,7 +44,9 @@ public:
   double const ml;
   bool const variabletauw;
   double const dtauw;
-  std::vector<parallel::distributed::Vector<double> > xwallstatevec;
+  double const max_wdist_xwall;
+  parallel::distributed::Vector<double> wdist;
+  parallel::distributed::Vector<double> tauw;
 };
 
 #endif /* INCLUDE_FE_PARAMETERS_H_ */
