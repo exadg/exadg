@@ -74,25 +74,25 @@
 using namespace dealii;
 
 // specify flow problem that has to be solved
-#define VORTEX
+//#define VORTEX
 //#define STOKES_GUERMOND
 //#define STOKES_SHAHBAZI
 //#define POISEUILLE
 //#define CUETTE
-//#define CAVITY
+#define CAVITY
 //#define KOVASZNAY
 //#define BELTRAMI
 //#define FLOW_PAST_CYLINDER
 //#define CHANNEL
 
 
-ProblemType PROBLEM_TYPE = ProblemType::Unsteady; //Steady; //Unsteady;
+ProblemType PROBLEM_TYPE = ProblemType::Steady; //Steady; //Unsteady;
 EquationType EQUATION_TYPE = EquationType::NavierStokes; // Stokes; // NavierStokes;
-TreatmentOfConvectiveTerm TREATMENT_OF_CONVECTIVE_TERM = TreatmentOfConvectiveTerm::Explicit; // Explicit; // Implicit;
+TreatmentOfConvectiveTerm TREATMENT_OF_CONVECTIVE_TERM = TreatmentOfConvectiveTerm::Implicit; // Explicit; // Implicit;
 
 /************* temporal discretization ***********/
 // which temporal discretization approach
-TemporalDiscretization TEMPORAL_DISCRETIZATION = TemporalDiscretization::BDFDualSplittingScheme; //BDFDualSplittingScheme // BDFCoupledSolution
+TemporalDiscretization TEMPORAL_DISCRETIZATION = TemporalDiscretization::BDFCoupledSolution; //BDFDualSplittingScheme // BDFCoupledSolution
 
 // type of time step calculation
 TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified; //ConstTimeStepCFL; //AdaptiveTimeStepCFL;
@@ -101,10 +101,10 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 /************* spatial discretization ************/
 SpatialDiscretization SPATIAL_DISCRETIZATION = SpatialDiscretization::DG; //DG //DGXWall
 
-bool const DIVU_INTEGRATED_BY_PARTS = false;//true;
-bool const DIVU_USE_BOUNDARY_DATA = false;//true;
-bool const GRADP_INTEGRATED_BY_PARTS = false;//true;
-bool const GRADP_USE_BOUNDARY_DATA = false;//true;
+bool const DIVU_INTEGRATED_BY_PARTS = true;//false;//true;
+bool const DIVU_USE_BOUNDARY_DATA = true;//false;//true;
+bool const GRADP_INTEGRATED_BY_PARTS = true;//false;//true;
+bool const GRADP_USE_BOUNDARY_DATA = true;//false;//true;
 /*************************************************/
 
 /******** high-order dual splitting scheme *******/
@@ -367,8 +367,8 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const unsigned int FE_DEGREE_XWALL = 1;
   const unsigned int N_Q_POINTS_1D_XWALL = 1;
   const unsigned int DIMENSION = 2;
-  const unsigned int REFINE_STEPS_SPACE_MIN = 2;
-  const unsigned int REFINE_STEPS_SPACE_MAX = 2;
+  const unsigned int REFINE_STEPS_SPACE_MIN = 1;
+  const unsigned int REFINE_STEPS_SPACE_MAX = 5;
 
   const double START_TIME = 0.0;
   const double END_TIME = 40.0;
@@ -390,7 +390,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
-  const double VISCOSITY =5.0e-3;//0.0002;
+  const double VISCOSITY = 4.0e-3;//0.0002;
   const double L = 1.0;
 
   const double MAX_VELOCITY = 1.0;
@@ -409,11 +409,11 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double GRID_STRETCH_FAC = 1.8;
   const bool PURE_DIRICHLET_BC = true;
 
-  const double ABS_TOL_NEWTON = 1.0e-12;
+  const double ABS_TOL_NEWTON = 1.0e-20;
   const double REL_TOL_NEWTON = 1.0e-6;
   unsigned int const MAX_ITER_NEWTON = 1e2;
-  const double ABS_TOL_LINEAR = 1.0e-12;
-  const double REL_TOL_LINEAR = 1.0e-6;
+  const double ABS_TOL_LINEAR = 1.0e-20;
+  const double REL_TOL_LINEAR = 1.0e-8;
   unsigned int const MAX_ITER_LINEAR = 1e4;
 
   const double ABS_TOL_PRESSURE = 1.0e-12;
