@@ -54,7 +54,7 @@ private:
   virtual parallel::distributed::Vector<value_type> const & get_velocity();
 
   virtual void read_restart_vectors(boost::archive::binary_iarchive & ia);
-  virtual void write_restart_vectors(boost::archive::binary_oarchive & oa);
+  virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const;
 
   parallel::distributed::BlockVector<value_type> solution_np;
   std::vector<parallel::distributed::BlockVector<value_type> > solution;
@@ -218,7 +218,7 @@ read_restart_vectors(boost::archive::binary_iarchive & ia)
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
-write_restart_vectors(boost::archive::binary_oarchive & oa)
+write_restart_vectors(boost::archive::binary_oarchive & oa) const
 {
   VectorView<double> tmp(solution[0].block(0).local_size(),
                          solution[0].block(0).begin());
@@ -310,13 +310,16 @@ solve_timestep()
   else // a nonlinear system of equations has to be solved
   {
     // Newton solver
-    unsigned int iterations = ns_operation_coupled->solve_nonlinear_problem(solution_np,&sum_alphai_ui);
+    unsigned int newton_iterations;
+    double average_linear_iterations;
+    ns_operation_coupled->solve_nonlinear_problem(solution_np,newton_iterations,average_linear_iterations,&sum_alphai_ui);
 
     // write output
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
     {
       std::cout << "Solve nonlinear Navier-Stokes problem:" << std::endl
-                << "  Newton iterations: " << std::setw(6) << std::right << iterations
+                << "  Linear iterations (avg): " << std::setw(6) << std::right << average_linear_iterations << std::endl
+                << "  Newton iterations:       " << std::setw(6) << std::right << newton_iterations
                 << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
     }
   }

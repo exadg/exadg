@@ -71,7 +71,7 @@ private:
   virtual parallel::distributed::Vector<value_type> const & get_velocity();
 
   virtual void read_restart_vectors(boost::archive::binary_iarchive & ia);
-  virtual void write_restart_vectors(boost::archive::binary_oarchive & oa);
+  virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const;
 
   std::vector<value_type> computing_times;
 
@@ -223,7 +223,7 @@ read_restart_vectors(boost::archive::binary_iarchive & ia)
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
-write_restart_vectors(boost::archive::binary_oarchive & oa)
+write_restart_vectors(boost::archive::binary_oarchive & oa) const
 {
   VectorView<double> tmp(velocity[0].local_size(),
                          velocity[0].begin());
@@ -323,13 +323,16 @@ convective_step()
                 !(this->param.equation_type == EquationType::Stokes || this->param.small_time_steps_stability),
         ExcMessage("Use TREATMENT_OF_CONVECTIVE_TERM = Explicit when solving the Stokes equations or when using the STS approach."));
 
-    unsigned int iterations_implicit_convection = ns_operation_splitting->solve_nonlinear_convective_problem(velocity_np,sum_alphai_ui);
+    unsigned int newton_iterations;
+    double average_linear_iterations;
+    ns_operation_splitting->solve_nonlinear_convective_problem(velocity_np,newton_iterations,average_linear_iterations,sum_alphai_ui);
 
     // write output implicit case
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
     {
       std::cout << std::endl << "Solve nonlinear convective problem for intermediate velocity:" << std::endl
-                << "  Newton iterations: " << std::setw(4) << std::right << iterations_implicit_convection
+                << "  Linear iterations (avg): " << std::setw(6) << std::right << average_linear_iterations << std::endl
+                << "  Newton iterations: " << std::setw(4) << std::right << newton_iterations
                 << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
     }
   }

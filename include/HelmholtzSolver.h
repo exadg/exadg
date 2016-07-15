@@ -293,11 +293,7 @@ struct HelmholtzSolverData
     solver_tolerance_abs(1.e-12),
     solver_tolerance_rel(1.e-6),
     solver_viscous(SolverViscous::PCG),
-    preconditioner_viscous(PreconditionerViscous::None),
-    smoother_poly_degree(5),
-    smoother_smoothing_range(20),
-    multigrid_smoother(MultigridSmoother::Chebyshev),
-    coarse_solver(MultigridCoarseGridSolver::coarse_chebyshev_smoother)
+    preconditioner_viscous(PreconditionerViscous::None)
     {}
 
   unsigned int max_iter;
@@ -305,17 +301,6 @@ struct HelmholtzSolverData
   double solver_tolerance_rel;
   SolverViscous solver_viscous;
   PreconditionerViscous preconditioner_viscous;
-
-  // Sets the polynomial degree of the Chebyshev smoother (Chebyshev
-  // accelerated Jacobi smoother)
-  double smoother_poly_degree;
-  // Sets the smoothing range of the Chebyshev smoother
-  double smoother_smoothing_range;
-
-  // multigrid smoother
-  MultigridSmoother multigrid_smoother;
-  // Sets the coarse grid solver
-  MultigridCoarseGridSolver coarse_solver;
 };
 
 
@@ -323,8 +308,6 @@ template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, 
 class HelmholtzSolver
 {
 public:
-  typedef float Number;
-
   HelmholtzSolver()
     :
     global_matrix(nullptr),
@@ -335,33 +318,12 @@ public:
   {}
 
   void initialize(const HelmholtzOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall> &helmholtz_operator,
-                  const Mapping<dim>                                                         &mapping,
-                  const MatrixFree<dim,value_type>                                           &matrix_free,
-                  const HelmholtzSolverData                                                  &solver_data,
-                  const unsigned int                                                         dof_index,
-                  const unsigned int                                                         quad_index,
-                  FEParameters const                                                         &fe_param)
+                  std_cxx11::shared_ptr<PreconditionerBase<value_type> >                     helmholtz_preconditioner,
+                  const HelmholtzSolverData                                                  &solver_data)
   {
     this->global_matrix = &helmholtz_operator;
     this->solver_data = solver_data;
-
-    const DoFHandler<dim> &dof_handler = matrix_free.get_dof_handler(global_matrix->get_dof_index());
-
-    if(solver_data.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix)
-      preconditioner.reset(new InverseMassMatrixPreconditioner<dim,fe_degree,value_type>(matrix_free,dof_index,quad_index));
-    else if(solver_data.preconditioner_viscous == PreconditionerViscous::Jacobi)
-      preconditioner.reset(new JacobiPreconditioner<value_type, HelmholtzOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall, value_type> >(*global_matrix));
-    else if(solver_data.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
-    {
-      MultigridData mg_data;
-      mg_data.multigrid_smoother = solver_data.multigrid_smoother;
-      mg_data.coarse_solver = solver_data.coarse_solver;
-      mg_data.smoother_poly_degree = solver_data.smoother_poly_degree;
-      mg_data.smoother_smoothing_range = solver_data.smoother_smoothing_range;
-
-      preconditioner.reset(new MyMultigridPreconditioner<dim,value_type,HelmholtzOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>, HelmholtzOperatorData<dim> >
-                           (mg_data, dof_handler, mapping, global_matrix->get_operator_data(),fe_param));
-    }
+    this->preconditioner = helmholtz_preconditioner;
   }
 
   unsigned int solve(parallel::distributed::Vector<value_type>       &dst,
@@ -387,75 +349,71 @@ solve(parallel::distributed::Vector<value_type>       &dst,
     {
       SolverCG<parallel::distributed::Vector<value_type> > solver (solver_control);
       if(solver_data.preconditioner_viscous == PreconditionerViscous::None)
-        solver.solve (*global_matrix, dst, src, PreconditionIdentity());
-      else if(solver_data.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix)
-        solver.solve (*global_matrix, dst, src, *preconditioner);
-      else if(solver_data.preconditioner_viscous == PreconditionerViscous::Jacobi)
       {
-        // TODO: recalculate diagonal (say every 10, 100 time steps) in case of varying parameters
-        // of mass matrix term or viscous term, e.g. strongly varying time step sizes (adaptive time step control)
-        // or strongly varying viscosity (turbulence)
-//        std_cxx11::shared_ptr<JacobiPreconditioner<value_type,HelmholtzOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall> > >
-//          jacobi_preconditioner = std::dynamic_pointer_cast<JacobiPreconditioner<value_type,HelmholtzOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall> > >(preconditioner);
-//        jacobi_preconditioner->recalculate_diagonal(*global_matrix);
-
-        solver.solve (*global_matrix, dst, src, *preconditioner);
+        solver.solve (*global_matrix, dst, src, PreconditionIdentity());
       }
+      /*
       else if(solver_data.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
       {
-//        parallel::distributed::Vector<value_type> check1;
-//        global_matrix->initialize_dof_vector(check1);
-//        parallel::distributed::Vector<value_type> check2(check1), tmp(check1);
-//        parallel::distributed::Vector<Number> check3;
-//        check3 = check1;
-//        for (unsigned int i=0; i<check1.size(); ++i)
-//          check1(i) = (double)rand()/RAND_MAX;
-//        global_matrix->vmult(tmp, check1);
-//        tmp *= -1.0;
-//        preconditioner->vmult(check2, tmp);
-//        check2 += check1;
-//
-//        parallel::distributed::Vector<Number> tmp_float, check1_float;
-//        tmp_float = tmp;
-//        check1_float = check1;
-//        std_cxx11::shared_ptr<MyMultigridPreconditioner<dim,value_type,HelmholtzOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall,Number>, HelmholtzOperatorData<dim> > >
-//          my_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditioner<dim,value_type,HelmholtzOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall,Number>, HelmholtzOperatorData<dim> > >(preconditioner);
-//        my_preconditioner->mg_smoother[my_preconditioner->mg_smoother.max_level()].vmult(check3,tmp_float);
-//        check3 += check1_float;
-//        /*
-//        my_preconditioner->mg_matrices[my_preconditioner->mg_matrices.max_level()].vmult(tmp_float,check1_float);
-//        check1_float = tmp;
-//        tmp_float *= -1.0;
-//        std::cout<<"L2 norm tmp = "<<tmp_float.l2_norm()<<std::endl;
-//        std::cout<<"L2 norm check = "<<check1_float.l2_norm()<<std::endl;
-//        */
-//        DataOut<dim> data_out;
-//        data_out.attach_dof_handler (global_matrix->get_data().get_dof_handler(global_matrix->get_operator_data().dof_index));
-//
-//        std::vector<std::string> initial (dim, "initial");
-//        std::vector<DataComponentInterpretation::DataComponentInterpretation>
-//          initial_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
-//        data_out.add_data_vector (global_matrix->get_data().get_dof_handler(global_matrix->get_operator_data().dof_index),check1, initial, initial_component_interpretation);
-//
-//        std::vector<std::string> mg_cycle (dim, "mg_cycle");
-//        std::vector<DataComponentInterpretation::DataComponentInterpretation>
-//          mg_cylce_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
-//        data_out.add_data_vector (global_matrix->get_data().get_dof_handler(global_matrix->get_operator_data().dof_index),check2, mg_cycle, mg_cylce_component_interpretation);
-//
-//        std::vector<std::string> smoother (dim, "smoother");
-//        std::vector<DataComponentInterpretation::DataComponentInterpretation>
-//          smoother_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
-//        data_out.add_data_vector (global_matrix->get_data().get_dof_handler(global_matrix->get_operator_data().dof_index),check3, smoother, smoother_component_interpretation);
-//
-//        data_out.build_patches (global_matrix->get_data().get_dof_handler(global_matrix->get_operator_data().dof_index).get_fe().degree*3);
-//        std::ostringstream filename;
-//        filename << "smoothing.vtk";
-//
-//        std::ofstream output (filename.str().c_str());
-//        data_out.write_vtk(output);
-//        std::abort();
+
+        parallel::distributed::Vector<value_type> check1;
+        global_matrix->initialize_dof_vector(check1);
+        parallel::distributed::Vector<value_type> check2(check1), tmp(check1);
+        parallel::distributed::Vector<Number> check3;
+        check3 = check1;
+        for (unsigned int i=0; i<check1.size(); ++i)
+          check1(i) = (double)rand()/RAND_MAX;
+        global_matrix->vmult(tmp, check1);
+        tmp *= -1.0;
+        preconditioner->vmult(check2, tmp);
+        check2 += check1;
+
+        parallel::distributed::Vector<Number> tmp_float, check1_float;
+        tmp_float = tmp;
+        check1_float = check1;
+        std_cxx11::shared_ptr<MyMultigridPreconditioner<dim,value_type,HelmholtzOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall,Number>, HelmholtzOperatorData<dim> > >
+          my_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditioner<dim,value_type,HelmholtzOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall,Number>, HelmholtzOperatorData<dim> > >(preconditioner);
+        my_preconditioner->mg_smoother[my_preconditioner->mg_smoother.max_level()].vmult(check3,tmp_float);
+        check3 += check1_float;
+
+        //my_preconditioner->mg_matrices[my_preconditioner->mg_matrices.max_level()].vmult(tmp_float,check1_float);
+        //check1_float = tmp;
+        //tmp_float *= -1.0;
+        //std::cout<<"L2 norm tmp = "<<tmp_float.l2_norm()<<std::endl;
+        //std::cout<<"L2 norm check = "<<check1_float.l2_norm()<<std::endl;
+
+        DataOut<dim> data_out;
+        data_out.attach_dof_handler (global_matrix->get_data().get_dof_handler(global_matrix->get_operator_data().dof_index));
+
+        std::vector<std::string> initial (dim, "initial");
+        std::vector<DataComponentInterpretation::DataComponentInterpretation>
+          initial_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
+        data_out.add_data_vector (global_matrix->get_data().get_dof_handler(global_matrix->get_operator_data().dof_index),check1, initial, initial_component_interpretation);
+
+        std::vector<std::string> mg_cycle (dim, "mg_cycle");
+        std::vector<DataComponentInterpretation::DataComponentInterpretation>
+          mg_cylce_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
+        data_out.add_data_vector (global_matrix->get_data().get_dof_handler(global_matrix->get_operator_data().dof_index),check2, mg_cycle, mg_cylce_component_interpretation);
+
+        std::vector<std::string> smoother (dim, "smoother");
+        std::vector<DataComponentInterpretation::DataComponentInterpretation>
+          smoother_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
+        data_out.add_data_vector (global_matrix->get_data().get_dof_handler(global_matrix->get_operator_data().dof_index),check3, smoother, smoother_component_interpretation);
+
+        data_out.build_patches (global_matrix->get_data().get_dof_handler(global_matrix->get_operator_data().dof_index).get_fe().degree*3);
+        std::ostringstream filename;
+        filename << "smoothing.vtk";
+
+        std::ofstream output (filename.str().c_str());
+        data_out.write_vtk(output);
+        std::abort();
 
         // TODO: update multigrid preconditioner (diagonals) in case of varying parameters
+        solver.solve (*global_matrix, dst, src, *preconditioner);
+      }
+      */
+      else
+      {
         solver.solve (*global_matrix, dst, src, *preconditioner);
       }
     }
@@ -463,28 +421,18 @@ solve(parallel::distributed::Vector<value_type>       &dst,
     {
       SolverGMRES<parallel::distributed::Vector<value_type> > solver (solver_control);
       if(solver_data.preconditioner_viscous == PreconditionerViscous::None)
+      {
         solver.solve (*global_matrix, dst, src, PreconditionIdentity());
-      else if(solver_data.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix)
-        solver.solve (*global_matrix, dst, src, *preconditioner);
-      else if(solver_data.preconditioner_viscous == PreconditionerViscous::Jacobi)
-      {
-        // TODO: recalculate diagonal (say every 10, 100 time steps) in case of varying parameters
-        // of mass matrix term or viscous term, e.g. strongly varying time step sizes (adaptive time step control)
-        // or strongly varying viscosity (turbulence)
-//        std_cxx11::shared_ptr<JacobiPreconditioner<value_type,HelmholtzOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall> > >
-//          jacobi_preconditioner = std::dynamic_pointer_cast<JacobiPreconditioner<value_type,HelmholtzOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall> > >(preconditioner);
-//        jacobi_preconditioner->recalculate_diagonal(*global_matrix);
-
-        solver.solve (*global_matrix, dst, src, *preconditioner);
       }
-      else if(solver_data.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
+      else
       {
-        // TODO: update multigrid preconditioner (diagonals) in case of varying parameters
         solver.solve (*global_matrix, dst, src, *preconditioner);
       }
     }
     else
+    {
       AssertThrow(false,ExcMessage("Specified Viscous Solver not implemented - possibilities are PCG and GMRES"));
+    }
   }
   catch (SolverControl::NoConvergence &)
   {
