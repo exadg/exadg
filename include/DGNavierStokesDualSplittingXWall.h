@@ -94,6 +94,8 @@ private:
 
   void initialize_constraints(const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > &periodic_face_pairs);
 
+  void setup_helmholtz_preconditioner(HelmholtzOperatorData<dim> &helmholtz_operator_data);
+
   FE_Q<dim>                  fe_wdist;
   DoFHandler<dim>  dof_handler_wdist;
   parallel::distributed::Vector<double>  wdist;
@@ -783,6 +785,26 @@ initialize_constraints(const std::vector<GridTools::PeriodicFacePair<typename Tr
                                           constraint_periodic);
 
   constraint_periodic.close();
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+setup_helmholtz_preconditioner(HelmholtzOperatorData<dim> &)
+{
+
+  if(this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix)
+  {
+    this->helmholtz_preconditioner.reset(new InverseMassMatrixPreconditionerPtr<dim,fe_degree,value_type>(
+    this->inverse_mass_matrix_operator));
+  }
+  else if(this->param.preconditioner_viscous == PreconditionerViscous::Jacobi)
+  {
+    AssertThrow(false,ExcMessage("Jacobi is currently not supported as Helmholtz preconditioner"));
+  }
+  else if(this->param.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
+  {
+    AssertThrow(false,ExcMessage("GeometricMultigrid is currently not supported as Helmholtz preconditioner"));
+  }
 }
 
 #endif /* INCLUDE_DGNAVIERSTOKESDUALSPLITTINGXWALL_H_ */
