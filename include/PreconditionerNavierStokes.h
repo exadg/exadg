@@ -127,6 +127,9 @@ public:
     }
     else if(preconditioner_data.preconditioner_schur_complement == PreconditionerSchurComplement::CahouetChabard)
     {
+      AssertThrow(underlying_operator->param.problem_type == ProblemType::Unsteady,
+          ExcMessage("CahouetChabard preconditioner only makes sense for unsteady problems."));
+
       // Geometric multigrid V-cycle performed on negative Laplace operator to include the part of the preconditioner
       // that is beneficial when using small time steps and small viscosities
       LaplaceOperatorData<dim> laplace_operator_data;
@@ -149,7 +152,7 @@ public:
       // inverse mass matrix to also include the part of the preconditioner that is beneficial when using large time steps
       // and large viscosities. By definition this part of the preconditioner is called preconditioner_..._cahouet_chabard.
       // This definition is, of course, arbitrary. Actually, the Cahouet-Chabard preconditioner is the preconditioner
-      // that includes both parts (mass matrix and multigrid).
+      // that includes both parts (mass matrix and multigrid for negative Laplace operator).
       preconditioner_schur_complement_cahouet_chabard.reset(new InverseMassMatrixPreconditioner<dim,fe_degree_p,value_type,1>(
                                                   underlying_operator->get_data(),
                                                   underlying_operator->get_dof_index_pressure(),
@@ -195,9 +198,9 @@ public:
      *   -> P_tria-factor = |      |  |                  |
      *                      \ B  S /  \ 0        I       /
      *
-     *                            / I  - A^{-1} B^{T} \   / I      0    \   / I  0 \   / A^{-1}  0 \
-     *    -> P_tria-factor^{-1} = |                   | * |             | * |      | * |           |
-     *                            \ 0          I      /   \ 0   -S^{-1} /   \ B  I /   \   0    -I /
+     *                            / I  - A^{-1} B^{T} \   / I      0    \   / I   0 \   / A^{-1}  0 \
+     *    -> P_tria-factor^{-1} = |                   | * |             | * |       | * |           |
+     *                            \ 0          I      /   \ 0   -S^{-1} /   \ B  -I /   \   0     I /
      *
      * Approximations to A and S:
      *
@@ -289,21 +292,23 @@ public:
       /*
       *        / A^{-1}  0 \
       *  dst = |           | * src
-      *        \   0    -I /
+      *        \   0     I /
       */
-
-      // multiply pressure/Schur-complement block with -1.0
-      dst.block(1).equ(-1.0,src.block(1));
+      dst.block(1) = src.block(1);
       // apply preconditioner for velocity/momentum block
       vmult_velocity_block(dst.block(0),src.block(0));
 
       /*
-      *        / I  0 \
-      *  dst = |      | * dst
-      *        \ B  I /
+      *        / I   0 \
+      *  dst = |       | * dst
+      *        \ B  -I /
       */
-      // dst.block(1) += B*dst.block(0);
+      // dst.block(1) = B*dst.block(0) - dst.block(1) = -1.0 * ( dst.block(1) + (-B) * dst.block(0) );
+      // I. dst.block(1) += (-B) * dst.block(0);
+      // note that B represents NEGATIVE divergence operator, i.e., applying the divergence operator means appyling -B
       underlying_operator->divergence_operator.apply_add(dst.block(1),dst.block(0));
+      // II. dst.block(1) = -dst.block(1);
+      dst.block(1) *= -1.0;
 
 
       /*
@@ -311,7 +316,6 @@ public:
       *  dst = |             | * dst
       *        \ 0   -S^{-1} /
       */
-
       // apply preconditioner for pressure/Schur-complement block
       vmult_pressure_block(dst.block(1),dst.block(1));
 

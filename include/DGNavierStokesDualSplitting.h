@@ -106,8 +106,10 @@ public:
   void setup_solvers ();
 
   // convective step
-  unsigned int solve_nonlinear_convective_problem (parallel::distributed::Vector<value_type>       &dst,
-                                                   parallel::distributed::Vector<value_type> const &sum_alphai_ui);
+  void solve_nonlinear_convective_problem (parallel::distributed::Vector<value_type>       &dst,
+                                           unsigned int                                    &newton_iterations,
+                                           double                                          &average_linear_iterations,
+                                           parallel::distributed::Vector<value_type> const &sum_alphai_ui);
 
   unsigned int solve_linearized_convective_problem (parallel::distributed::Vector<value_type>       &dst,
                                                     parallel::distributed::Vector<value_type> const &src,
@@ -181,13 +183,14 @@ public:
   }
 
 private:
-  PoissonSolver<dim> pressure_poisson_solver;
   LaplaceOperator<dim,value_type> laplace_operator;
+  PoissonSolver<dim> pressure_poisson_solver;
 
-  std_cxx11::shared_ptr<ProjectionSolverBase<value_type> > projection_solver;
   ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> * projection_operator;
+  std_cxx11::shared_ptr<ProjectionSolverBase<value_type> > projection_solver;
 
   HelmholtzOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type> helmholtz_operator;
+  std_cxx11::shared_ptr<PreconditionerBase<value_type> > helmholtz_preconditioner;
   HelmholtzSolver<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type> helmholtz_solver;
 
   parallel::distributed::Vector<value_type> velocity_linear;
@@ -196,6 +199,15 @@ private:
 
   SolverLinearizedConvectiveProblem<dim,fe_degree, value_type,DGNavierStokesDualSplitting<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > linear_solver;
   NewtonSolver<parallel::distributed::Vector<value_type>, DGNavierStokesDualSplitting<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>, SolverLinearizedConvectiveProblem<dim,fe_degree,value_type,DGNavierStokesDualSplitting<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > > newton_solver;
+
+  // setup of solvers
+  void setup_convective_solver();
+
+  void setup_pressure_poisson_solver();
+
+  void setup_projection_solver();
+
+  void setup_helmholtz_solver();
 
   // rhs pressure: BC term
   void local_rhs_pressure_BC_term (const MatrixFree<dim,value_type>                &data,
@@ -254,28 +266,45 @@ setup_solvers ()
   if(this->param.equation_type == EquationType::NavierStokes
       && this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
   {
-    this->initialize_vector_velocity(velocity_linear);
-    this->initialize_vector_velocity(temp);
-    this->initialize_vector_velocity(sum_alphai_ui);
-
-    // linear solver that is used to solve the linear Stokes problem and the linearized Navier-Stokes problem
-    LinearizedConvectiveSolverData linear_solver_data;
-    linear_solver_data.abs_tol = this->param.abs_tol_linear;
-    linear_solver_data.rel_tol = this->param.rel_tol_linear;
-    linear_solver_data.max_iter = this->param.max_iter_linear;
-
-    linear_solver.initialize(linear_solver_data,this);
-
-    // Newton solver
-    NewtonSolverData newton_solver_data;
-    newton_solver_data.abs_tol = this->param.abs_tol_newton;
-    newton_solver_data.rel_tol = this->param.rel_tol_newton;
-    newton_solver_data.max_iter = this->param.max_iter_newton;
-
-    newton_solver.initialize(newton_solver_data,this,&linear_solver);
+    setup_convective_solver();
   }
 
+  setup_pressure_poisson_solver();
 
+  setup_projection_solver();
+
+  setup_helmholtz_solver();
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+setup_convective_solver ()
+{
+  this->initialize_vector_velocity(velocity_linear);
+  this->initialize_vector_velocity(temp);
+  this->initialize_vector_velocity(sum_alphai_ui);
+
+  // linear solver that is used to solve the linear Stokes problem and the linearized Navier-Stokes problem
+  LinearizedConvectiveSolverData linear_solver_data;
+  linear_solver_data.abs_tol = this->param.abs_tol_linear;
+  linear_solver_data.rel_tol = this->param.rel_tol_linear;
+  linear_solver_data.max_iter = this->param.max_iter_linear;
+
+  linear_solver.initialize(linear_solver_data,this);
+
+  // Newton solver
+  NewtonSolverData newton_solver_data;
+  newton_solver_data.abs_tol = this->param.abs_tol_newton;
+  newton_solver_data.rel_tol = this->param.rel_tol_newton;
+  newton_solver_data.max_iter = this->param.max_iter_newton;
+
+  newton_solver.initialize(newton_solver_data,this,&linear_solver);
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+setup_pressure_poisson_solver ()
+{
   // Laplace Operator
   LaplaceOperatorData<dim> laplace_operator_data;
   laplace_operator_data.laplace_dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure);
@@ -306,7 +335,12 @@ setup_solvers ()
   poisson_solver_data.multigrid_smoother = this->param.multigrid_smoother;
   poisson_solver_data.coarse_solver = this->param.multigrid_coarse_grid_solver;
   pressure_poisson_solver.initialize(laplace_operator,this->mapping,this->data,poisson_solver_data);
+}
 
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+setup_projection_solver ()
+{
   // initialize projection solver
   ProjectionOperatorData projection_operator_data;
   projection_operator_data.penalty_parameter_divergence = this->param.penalty_factor_divergence;
@@ -390,7 +424,12 @@ setup_solvers ()
                               projection_operator,
                               projection_solver_data));
   }
+}
 
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+setup_helmholtz_solver ()
+{
   // helmholtz operator
   HelmholtzOperatorData<dim> helmholtz_operator_data;
 
@@ -408,13 +447,34 @@ setup_solvers ()
   helmholtz_solver_data.preconditioner_viscous = this->param.preconditioner_viscous;
   helmholtz_solver_data.solver_tolerance_abs = this->param.abs_tol_viscous;
   helmholtz_solver_data.solver_tolerance_rel = this->param.rel_tol_viscous;
-  helmholtz_solver_data.multigrid_smoother = this->param.multigrid_smoother_viscous;
-  helmholtz_solver_data.coarse_solver = this->param.multigrid_coarse_grid_solver_viscous;
 
-  helmholtz_solver.initialize(helmholtz_operator, this->mapping, this->data, helmholtz_solver_data,
-      static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity),
-      static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity),
-      this->fe_param);
+  if(this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix)
+  {
+    helmholtz_preconditioner.reset(new InverseMassMatrixPreconditioner<dim,fe_degree,value_type>(
+        this->data,
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity)));
+  }
+  else if(this->param.preconditioner_viscous == PreconditionerViscous::Jacobi)
+  {
+    helmholtz_preconditioner.reset(new JacobiPreconditioner<value_type,
+        HelmholtzOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall, value_type> >(helmholtz_operator));
+  }
+  else if(this->param.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
+  {
+    MultigridData mg_data;
+    // currently use default parameters of MultigridData for smoother_poly_degree and smoother_smoothing_range
+    mg_data.multigrid_smoother = this->param.multigrid_smoother_viscous;
+    mg_data.coarse_solver = this->param.multigrid_coarse_grid_solver_viscous;
+
+    // use single precision for multigrid
+    typedef float Number;
+
+    helmholtz_preconditioner.reset(new MyMultigridPreconditioner<dim,value_type,HelmholtzOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>, HelmholtzOperatorData<dim> >
+                         (mg_data, this->dof_handler_u, this->mapping, helmholtz_operator_data,this->fe_param));
+  }
+
+  helmholtz_solver.initialize(helmholtz_operator, helmholtz_preconditioner, helmholtz_solver_data);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -438,12 +498,14 @@ apply_linearized_convective_problem (parallel::distributed::Vector<value_type>  
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-unsigned int DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-solve_nonlinear_convective_problem (parallel::distributed::Vector<value_type>        &dst,
-                                    parallel::distributed::Vector<value_type> const  &sum_alphai_ui)
+void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+solve_nonlinear_convective_problem (parallel::distributed::Vector<value_type>       &dst,
+                                    unsigned int                                    &newton_iterations,
+                                    double                                          &average_linear_iterations,
+                                    parallel::distributed::Vector<value_type> const &sum_alphai_ui)
 {
   this->sum_alphai_ui = sum_alphai_ui;
-  return newton_solver.solve(dst);
+  newton_solver.solve(dst,newton_iterations,average_linear_iterations);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -815,9 +877,86 @@ unsigned int DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_
 solve_viscous (parallel::distributed::Vector<value_type>       &dst,
                const parallel::distributed::Vector<value_type> &src)
 {
+  // update helmholtz_operator
   helmholtz_operator.set_mass_matrix_coefficient(this->scaling_factor_time_derivative_term);
   // viscous_operator.set_constant_viscosity(viscosity);
   // viscous_operator.set_variable_viscosity(viscosity);
+
+  // update preconditioner
+  if(this->param.preconditioner_viscous == PreconditionerViscous::Jacobi)
+  {
+    // TODO: recalculate diagonal (say every 10, 100 time steps) in case of varying parameters
+    // of mass matrix term or viscous term, e.g. strongly varying time step sizes (adaptive time step control)
+    // or strongly varying viscosity (turbulence)
+    /*
+    std_cxx11::shared_ptr<JacobiPreconditioner<value_type,HelmholtzOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall> > >
+      jacobi_preconditioner = std::dynamic_pointer_cast<JacobiPreconditioner<value_type,HelmholtzOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall> > >(helmholtz_preconditioner);
+    jacobi_preconditioner->recalculate_diagonal(helmholtz_operator);
+    */
+  }
+  else if(this->param.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
+  {
+    // TODO: update multigrid preconditioner (diagonals) in case of varying parameters
+
+    // check multigrid smoothing
+    /*
+    typedef float Number;
+
+    parallel::distributed::Vector<value_type> check1;
+    helmholtz_operator.initialize_dof_vector(check1);
+    parallel::distributed::Vector<value_type> check2(check1), tmp(check1);
+    parallel::distributed::Vector<Number> check3;
+    check3 = check1;
+    for (unsigned int i=0; i<check1.size(); ++i)
+      check1(i) = (double)rand()/RAND_MAX;
+    helmholtz_operator.vmult(tmp, check1);
+    tmp *= -1.0;
+    helmholtz_preconditioner->vmult(check2, tmp);
+    check2 += check1;
+
+    parallel::distributed::Vector<Number> tmp_float, check1_float;
+    tmp_float = tmp;
+    check1_float = check1;
+    std_cxx11::shared_ptr<MyMultigridPreconditioner<dim,value_type,HelmholtzOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall,Number>, HelmholtzOperatorData<dim> > >
+      my_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditioner<dim,value_type,HelmholtzOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall,Number>, HelmholtzOperatorData<dim> > >(helmholtz_preconditioner);
+    // mg_smoother is private in MyMultigridPreconditioner -> make mg_smoother public when using this function to test the multigrid method
+    my_preconditioner->mg_smoother[my_preconditioner->mg_smoother.max_level()].vmult(check3,tmp_float);
+    check3 += check1_float;
+
+    //my_preconditioner->mg_matrices[my_preconditioner->mg_matrices.max_level()].vmult(tmp_float,check1_float);
+    //check1_float = tmp;
+    //tmp_float *= -1.0;
+    //std::cout<<"L2 norm tmp = "<<tmp_float.l2_norm()<<std::endl;
+    //std::cout<<"L2 norm check = "<<check1_float.l2_norm()<<std::endl;
+
+    DataOut<dim> data_out;
+    data_out.attach_dof_handler (helmholtz_operator.get_data().get_dof_handler(helmholtz_operator.get_operator_data().dof_index));
+
+    std::vector<std::string> initial (dim, "initial");
+    std::vector<DataComponentInterpretation::DataComponentInterpretation>
+      initial_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
+    data_out.add_data_vector (helmholtz_operator.get_data().get_dof_handler(helmholtz_operator.get_operator_data().dof_index),check1, initial, initial_component_interpretation);
+
+    std::vector<std::string> mg_cycle (dim, "mg_cycle");
+    std::vector<DataComponentInterpretation::DataComponentInterpretation>
+      mg_cylce_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
+    data_out.add_data_vector (helmholtz_operator.get_data().get_dof_handler(helmholtz_operator.get_operator_data().dof_index),check2, mg_cycle, mg_cylce_component_interpretation);
+
+    std::vector<std::string> smoother (dim, "smoother");
+    std::vector<DataComponentInterpretation::DataComponentInterpretation>
+      smoother_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
+    data_out.add_data_vector (helmholtz_operator.get_data().get_dof_handler(helmholtz_operator.get_operator_data().dof_index),check3, smoother, smoother_component_interpretation);
+
+    data_out.build_patches (helmholtz_operator.get_data().get_dof_handler(helmholtz_operator.get_operator_data().dof_index).get_fe().degree*3);
+    std::ostringstream filename;
+    filename << "smoothing.vtk";
+
+    std::ofstream output (filename.str().c_str());
+    data_out.write_vtk(output);
+    std::abort();
+    */
+  }
+
   unsigned int n_iter = helmholtz_solver.solve(dst,src);
 
   return n_iter;

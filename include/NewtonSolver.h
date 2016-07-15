@@ -32,13 +32,16 @@ public:
     underlying_operator->initialize_vector_for_newton_solver(increment);
   }
 
-  unsigned int solve(Vector &dst)
+  void solve(Vector &dst, unsigned int &newton_iterations, double &average_linear_iterations)
   {
     // evaluate residual using the given estimate of the solution
     underlying_operator->evaluate_nonlinear_residual(residual,dst);
 
     double norm_r = residual.l2_norm();
     double norm_r_0 = norm_r;
+
+    // reset average_linear_iterations
+    average_linear_iterations = 0.0;
 
     // Newton iteration
     unsigned int n_iter = 0;
@@ -51,10 +54,12 @@ public:
       residual *= -1.0;
 
       // solve linear problem
-      unsigned int linear_iterations = linear_solver->solve(increment, residual, &dst);
+      unsigned int linear_iterations =  linear_solver->solve(increment, residual, &dst);
 
       if(true)//(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
         std::cout << "  Number of linear solver iterations: " << linear_iterations << std::endl;
+
+      average_linear_iterations += linear_iterations;
 
       // update solution
       dst.add(1.0, increment);
@@ -73,7 +78,11 @@ public:
         std::cout<<"Newton solver failed to solve nonlinear problem to given tolerance. Maximum number of iterations exceeded!" << std::endl;
     }
 
-    return n_iter;
+    newton_iterations = n_iter;
+    if(n_iter > 0)
+      average_linear_iterations /= n_iter;
+
+    return;
   }
 
 private:

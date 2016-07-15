@@ -56,9 +56,9 @@ private:
   void initialize_solution(bool do_restart);
 
   void resume_from_restart();
-  void write_restart();
+  void write_restart() const;
   virtual void read_restart_vectors(boost::archive::binary_iarchive & ia) = 0;
-  virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) = 0;
+  virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const = 0;
 
   void initialize_time_integrator_constants();
   void update_time_integrator_constants();
@@ -173,7 +173,7 @@ resume_from_restart()
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 void TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
-write_restart()
+write_restart() const
 {
   const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
 

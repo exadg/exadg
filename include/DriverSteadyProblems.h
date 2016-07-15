@@ -118,14 +118,20 @@ solve()
   }
   else // Steady Navier-Stokes equations
   {
+    AssertThrow(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit,
+        ExcMessage("Use 'treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit' when solving the STEADY Navier-Stokes equations."));
+
     // Newton solver
-    unsigned int iterations = ns_operation->solve_nonlinear_problem(solution);
+    unsigned int newton_iterations;
+    double average_linear_iterations;
+    ns_operation->solve_nonlinear_problem(solution,newton_iterations,average_linear_iterations);
 
     // write output
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
       std::cout << "Solve nonlinear Navier-Stokes problem:" << std::endl
-                << "  Newton iterations: " << std::setw(6) << std::right << iterations
+                << "  Linear iterations (avg): " << std::setw(6) << std::right << average_linear_iterations << std::endl
+                << "  Newton iterations: " << std::setw(6) << std::right << newton_iterations
                 << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
     }
   }

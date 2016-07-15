@@ -76,13 +76,8 @@ public:
     additional_data.max_n_tmp_vectors = 60;
     // use right preconditioning A*P^{-1}
     additional_data.right_preconditioning = true;
-    SolverGMRES<parallel::distributed::BlockVector<value_type> > solver (solver_control, additional_data);
 
-//    IterationNumberControl solver_control (100);
-//    SolverGMRES<parallel::distributed::BlockVector<value_type> > solver (solver_control,additional_data);
-//    typename SolverGMRES<parallel::distributed::BlockVector<value_type> >::AdditionalData additional_data;
-//    additional_data.max_n_tmp_vectors = 30;
-//    SolverGMRES<parallel::distributed::BlockVector<value_type> > solver (solver_control, additional_data);
+    SolverGMRES<parallel::distributed::BlockVector<value_type> > solver (solver_control, additional_data);
 
     if(false)
     {
@@ -103,6 +98,9 @@ public:
       solver.solve (*underlying_operator, dst, src, *preconditioner);
     }
 
+    if(solution_linearization != nullptr)
+      underlying_operator->set_solution_linearization(nullptr);
+
     return solver_control.last_step();
   }
 
@@ -122,7 +120,8 @@ public:
                         InputParameters const                           &parameter)
     :
     DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>(triangulation,parameter),
-    sum_alphai_ui(nullptr)
+    sum_alphai_ui(nullptr),
+    vector_linearization(nullptr)
   {}
 
   void setup_solvers ();
@@ -162,8 +161,10 @@ public:
   unsigned int solve_linear_stokes_problem (parallel::distributed::BlockVector<value_type>       &dst,
                                             parallel::distributed::BlockVector<value_type> const &src);
 
-  unsigned int solve_nonlinear_problem (parallel::distributed::BlockVector<value_type>  &dst,
-                                        parallel::distributed::Vector<value_type> const *sum_alphai_ui = nullptr);
+  void solve_nonlinear_problem (parallel::distributed::BlockVector<value_type>  &dst,
+                                unsigned int                                    &newton_iterations,
+                                double                                          &average_linear_iterations,
+                                parallel::distributed::Vector<value_type> const *sum_alphai_ui = nullptr);
 
   void apply_linearized_problem (parallel::distributed::BlockVector<value_type> &dst,
                                  parallel::distributed::BlockVector<value_type> const &src) const;
@@ -183,7 +184,7 @@ public:
 
   void set_solution_linearization(parallel::distributed::BlockVector<value_type> const *solution_linearization)
   {
-    vector_linearization = *solution_linearization;
+    vector_linearization = solution_linearization;
   }
 
 private:
@@ -191,7 +192,7 @@ private:
 
   parallel::distributed::Vector<value_type> mutable temp;
   parallel::distributed::Vector<value_type> const *sum_alphai_ui;
-  parallel::distributed::BlockVector<value_type> vector_linearization;
+  parallel::distributed::BlockVector<value_type> const *vector_linearization;
 
   SolverLinearizedProblem<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> linear_solver;
   NewtonSolver<parallel::distributed::BlockVector<value_type>,
@@ -210,11 +211,6 @@ setup_solvers ()
   if(unsteady_problem_has_to_be_solved())
   {
     this->initialize_vector_velocity(temp);
-  }
-  // vector_linearization has to be initialized whenever a nonliner system of equations has to be solved
-  if(nonlinear_problem_has_to_be_solved())
-  {
-    this->initialize_block_vector_velocity_pressure(vector_linearization);
   }
 
   // linear solver that is used to solve the linear Stokes problem and the linearized Navier-Stokes problem
@@ -267,7 +263,7 @@ apply_linearized_problem (parallel::distributed::BlockVector<value_type>       &
   }
 
   if(nonlinear_problem_has_to_be_solved())
-    this->convective_operator.apply_linearized_add(dst.block(0),src.block(0),&vector_linearization.block(0),this->time+this->time_step);
+    this->convective_operator.apply_linearized_add(dst.block(0),src.block(0),&vector_linearization->block(0),this->time+this->time_step);
 
   // (1,2) block of saddle point matrix
   // gradient operator: dst = velocity, src = pressure
@@ -344,12 +340,14 @@ solve_linear_stokes_problem (parallel::distributed::BlockVector<value_type>     
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-unsigned int DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+void DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 solve_nonlinear_problem (parallel::distributed::BlockVector<value_type>  &dst,
+                         unsigned int                                    &newton_iterations,
+                         double                                          &average_linear_iterations,
                          parallel::distributed::Vector<value_type> const *sum_alphai_ui)
 {
   this->sum_alphai_ui = sum_alphai_ui;
-  return newton_solver.solve(dst);
+  newton_solver.solve(dst,newton_iterations,average_linear_iterations);
 }
 
 #endif /* INCLUDE_DGNAVIERSTOKESCOUPLED_H_ */

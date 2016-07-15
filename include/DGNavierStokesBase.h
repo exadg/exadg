@@ -63,9 +63,8 @@ public:
   DGNavierStokesBase(parallel::distributed::Triangulation<dim> const &triangulation,
                      InputParameters const                           &parameter)
     :
-    //    fe_u(FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(fe_degree+1)),dim/*,FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(fe_degree_xwall+1)), dim*/),
-//    fe_u(FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(fe_degree+1)),dim),
-    fe_u(nullptr),
+    // fe_u(FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(fe_degree+1)),dim),
+    fe_u(new FESystem<dim>(FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(fe_degree+1)),dim)),
     fe_p(QGaussLobatto<1>(fe_degree_p+1)),
     mapping(fe_degree),
     dof_handler_u(triangulation),
@@ -78,9 +77,7 @@ public:
     param(parameter),
     element_volume(0),
     fe_param(param)
-  {
-    fe_u.reset(new FESystem<dim>(FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(fe_degree+1)),dim));
-  }
+  {}
 
   // destructor
   virtual ~DGNavierStokesBase()
@@ -258,8 +255,8 @@ public:
 protected:
   MatrixFree<dim,value_type> data;
 
-  std_cxx11::shared_ptr< FESystem<dim> >              fe_u;
-  FE_DGQArbitraryNodes<dim>  fe_p;
+  std_cxx11::shared_ptr< FESystem<dim> > fe_u;
+  FE_DGQArbitraryNodes<dim> fe_p;
 
   MappingQ<dim> mapping;
 
@@ -294,12 +291,11 @@ protected:
   GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> gradient_operator;
   DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> divergence_operator;
 
-protected:
+private:
   virtual void create_dofs();
 
   virtual void data_reinit(typename MatrixFree<dim,value_type>::AdditionalData & additional_data);
 
-private:
   // compute vorticity
   void local_compute_vorticity (const MatrixFree<dim,value_type>                 &data,
                                 parallel::distributed::Vector<value_type>        &dst,
