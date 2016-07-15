@@ -63,6 +63,7 @@ public:
       VectorizedArray<value_type> volume = make_vectorized_array<value_type>(0.0);
       Tensor<1,dim,VectorizedArray<value_type> > U_mean;
       VectorizedArray<value_type> norm_U_mean;
+      JxW_values.resize(fe_eval.n_q_points);
       fe_eval.fill_JxW_values(JxW_values);
       for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
       {
@@ -573,14 +574,13 @@ public:
                    const std::pair<unsigned int,unsigned int>      &cell_range) const
   {
     FEEval_Velocity_Velocity_linear fe_eval_velocity(data,projection_operator->get_fe_param(), projection_operator->get_dof_index());
-    FEEval_Velocity_Velocity_linear fe_eval_phi(data,projection_operator->get_fe_param(), projection_operator->get_dof_index());
 
     std::vector<LAPACKFullMatrix<value_type> > matrices(VectorizedArray<value_type>::n_array_elements);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
-      fe_eval_phi.reinit(cell);
-      const unsigned int total_dofs_per_cell = fe_eval_phi.dofs_per_cell * dim;
+      fe_eval_velocity.reinit(cell);
+      const unsigned int total_dofs_per_cell = fe_eval_velocity.dofs_per_cell * dim;
 
       for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
         matrices[v].reinit(total_dofs_per_cell, total_dofs_per_cell);
@@ -591,53 +591,40 @@ public:
       for (unsigned int j=0; j<total_dofs_per_cell; ++j)
       {
         for (unsigned int i=0; i<total_dofs_per_cell; ++i)
-          fe_eval_phi.write_cellwise_dof_value(i,make_vectorized_array(0.));
-        fe_eval_phi.write_cellwise_dof_value(j,make_vectorized_array(1.));
+          fe_eval_velocity.write_cellwise_dof_value(i,make_vectorized_array(0.));
+        fe_eval_velocity.write_cellwise_dof_value(j,make_vectorized_array(1.));
 
-        fe_eval_phi.evaluate (true,true,false);
-        for (unsigned int q=0; q<fe_eval_phi.n_q_points; ++q)
+        fe_eval_velocity.evaluate (true,true,false);
+        for (unsigned int q=0; q<fe_eval_velocity.n_q_points; ++q)
         {
-          const VectorizedArray<value_type> tau_times_div = tau * fe_eval_phi.get_divergence(q);
+          const VectorizedArray<value_type> tau_times_div = tau * fe_eval_velocity.get_divergence(q);
           Tensor<2,dim,VectorizedArray<value_type> > test;
           for (unsigned int d=0; d<dim; ++d)
             test[d][d] = tau_times_div;
-          fe_eval_phi.submit_gradient(test, q);
-          fe_eval_phi.submit_value (fe_eval_phi.get_value(q), q);
+          fe_eval_velocity.submit_gradient(test, q);
+          fe_eval_velocity.submit_value (fe_eval_velocity.get_value(q), q);
         }
-        fe_eval_phi.integrate (true,true);
+        fe_eval_velocity.integrate (true,true);
 
         for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
         {
-          if(fe_eval_phi.component_enriched(v))
+          if(fe_eval_velocity.component_enriched(v))
           {
             for (unsigned int i=0; i<total_dofs_per_cell; ++i)
-              (matrices[v])(i,j) = (fe_eval_phi.read_cellwise_dof_value(i))[v];
+              (matrices[v])(i,j) = (fe_eval_velocity.read_cellwise_dof_value(i))[v];
           }
           else//this is a non-enriched element
           {
-            if(j<fe_eval_phi.std_dofs_per_cell*dim)
-              for (unsigned int i=0; i<fe_eval_phi.std_dofs_per_cell*dim; ++i)
-                (matrices[v])(i,j) = (fe_eval_phi.read_cellwise_dof_value(i))[v];
+            if(j<fe_eval_velocity.std_dofs_per_cell*dim)
+              for (unsigned int i=0; i<fe_eval_velocity.std_dofs_per_cell*dim; ++i)
+                (matrices[v])(i,j) = (fe_eval_velocity.read_cellwise_dof_value(i))[v];
             else //diagonal
               (matrices[v])(j,j) = 1.0;
           }
         }
       }
 
-    //      for (unsigned int i=0; i<10; ++i)
-    //        std::cout << std::endl;
-    //      for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
-    //        matrices[v].print(std::cout,14,8);
-
-      //now apply vectors to inverse matrix
-    //    for (unsigned int q=0; q<fe_eval_phi.n_q_points; ++q)
-    //    {
-    //      fe_eval_velocity.submit_value (fe_eval_velocity.get_value(q), q);
-    //    }
-    //    fe_eval_velocity.integrate (true,false);
-
       fe_eval_velocity.reinit(cell);
-//      fe_eval_velocity.read_dof_values(src,0,dim);
       fe_eval_velocity.read_dof_values(src);
 
       for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
@@ -647,13 +634,10 @@ public:
         for (unsigned int j=0; j<total_dofs_per_cell; ++j)
           vector_input(j)=(fe_eval_velocity.read_cellwise_dof_value(j))[v];
 
-    //        Vector<value_type> vector_result(total_dofs_per_cell);
         (matrices[v]).apply_lu_factorization(vector_input,false);
-    //        (matrices[v]).vmult(vector_result,vector_input);
         for (unsigned int j=0; j<total_dofs_per_cell; ++j)
           fe_eval_velocity.write_cellwise_dof_value(j,vector_input(j),v);
       }
-//      fe_eval_velocity.set_dof_values (dst,0,dim);
       fe_eval_velocity.set_dof_values (dst);
     }
   }

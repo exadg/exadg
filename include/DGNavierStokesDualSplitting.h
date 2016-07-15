@@ -469,7 +469,7 @@ void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n
 apply_inverse_mass_matrix (parallel::distributed::Vector<value_type>       &dst,
                            parallel::distributed::Vector<value_type> const &src) const
 {
-  this->inverse_mass_matrix_operator.apply_inverse_mass_matrix(dst,src);
+  this->inverse_mass_matrix_operator->apply_inverse_mass_matrix(dst,src);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -479,7 +479,7 @@ calculate_body_force (parallel::distributed::Vector<value_type>  &dst,
 {
   this->body_force_operator.evaluate(dst,evaluation_time);
 
-  this->inverse_mass_matrix_operator.apply_inverse_mass_matrix(dst,dst);
+  this->inverse_mass_matrix_operator->apply_inverse_mass_matrix(dst,dst);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>

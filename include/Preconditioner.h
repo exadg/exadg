@@ -41,6 +41,25 @@ private:
   InverseMassMatrixOperator<dim,fe_degree,value_type,n_components> inverse_mass_matrix_operator;
 };
 
+template<int dim, int fe_degree, typename value_type, int n_components=dim>
+class InverseMassMatrixPreconditionerPtr : public PreconditionerBase<value_type>
+{
+public:
+  InverseMassMatrixPreconditionerPtr(std_cxx11::shared_ptr<InverseMassMatrixOperator<dim,fe_degree,value_type,n_components> > inv_mass_operator)
+    :
+    inverse_mass_matrix_operator(inv_mass_operator)
+  {}
+
+  void vmult (parallel::distributed::Vector<value_type>        &dst,
+              const parallel::distributed::Vector<value_type>  &src) const
+  {
+    inverse_mass_matrix_operator->apply_inverse_mass_matrix(dst,src);
+  }
+
+private:
+  std_cxx11::shared_ptr<InverseMassMatrixOperator<dim,fe_degree,value_type,n_components> > inverse_mass_matrix_operator;
+};
+
 
 template<typename value_type, typename Operator>
 class JacobiPreconditioner : public PreconditionerBase<value_type>
@@ -191,7 +210,7 @@ public:
   {
     if (is_empty)
       return;
-    Assert(level == 0, ExcNotImplemented());
+    AssertThrow(level == 0, ExcNotImplemented());
     smoother.vmult(dst, src);
   }
 

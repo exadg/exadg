@@ -77,7 +77,8 @@ public:
     dof_index_first_point(0),
     param(parameter),
     element_volume(0),
-    fe_param(param)
+    fe_param(param),
+    inverse_mass_matrix_operator(nullptr)
   {
     fe_u.reset(new FESystem<dim>(FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(fe_degree+1)),dim));
   }
@@ -94,7 +95,7 @@ public:
 
   virtual void setup_solvers () = 0;
 
-  void prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
+  virtual void prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
                                     parallel::distributed::Vector<value_type> &pressure,
                                     double const                              evaluation_time) const;
 
@@ -288,7 +289,7 @@ protected:
 
   MassMatrixOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type> mass_matrix_operator;
   ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type> convective_operator;
-  InverseMassMatrixOperator<dim,fe_degree,value_type> inverse_mass_matrix_operator;
+  std_cxx11::shared_ptr< InverseMassMatrixOperator<dim,fe_degree,value_type> > inverse_mass_matrix_operator;
   ViscousOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type> viscous_operator;
   BodyForceOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type> body_force_operator;
   GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> gradient_operator;
@@ -344,7 +345,8 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   mass_matrix_operator.initialize(data,fe_param,mass_matrix_operator_data);
 
   // inverse mass matrix operator
-  inverse_mass_matrix_operator.initialize(data,
+  inverse_mass_matrix_operator.reset(new InverseMassMatrixOperator<dim,fe_degree,value_type>());
+  inverse_mass_matrix_operator->initialize(data,
           static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity),
           static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity));
 
@@ -532,7 +534,7 @@ compute_vorticity (parallel::distributed::Vector<value_type>       &dst,
 
   data.cell_loop (&DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_vorticity,this, dst, src);
 
-  inverse_mass_matrix_operator.apply_inverse_mass_matrix(dst,dst);
+  inverse_mass_matrix_operator->apply_inverse_mass_matrix(dst,dst);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -577,7 +579,7 @@ compute_divergence (parallel::distributed::Vector<value_type>       &dst,
   data.cell_loop(&DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divergence,
                              this, dst, src);
 
-  inverse_mass_matrix_operator.apply_inverse_mass_matrix(dst,dst);
+  inverse_mass_matrix_operator->apply_inverse_mass_matrix(dst,dst);
 }
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
