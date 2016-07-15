@@ -121,14 +121,14 @@ MultigridCoarseGridSolver MULTIGRID_COARSE_GRID_SOLVER = MultigridCoarseGridSolv
 
 // projection step
 ProjectionType PROJECTION_TYPE = ProjectionType::DivergencePenalty; //NoPenalty; //DivergencePenalty; //DivergenceAndContinuityPenalty;
-SolverProjection SOLVER_PROJECTION = SolverProjection::PCG; //LU; //PCG;
-PreconditionerProjection PRECONDITIONER_PROJECTION = PreconditionerProjection::InverseMassMatrix; //None; //Jacobi; //InverseMassMatrix;
+SolverProjection SOLVER_PROJECTION = SolverProjection::LU; //LU; //PCG;
+PreconditionerProjection PRECONDITIONER_PROJECTION = PreconditionerProjection::None; //None; //Jacobi; //InverseMassMatrix;
 
 // viscous step
 FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::DivergenceFormulation; //DivergenceFormulation; //LaplaceFormulation;
-InteriorPenaltyFormulationViscous IP_FORMULATION_VISCOUS = InteriorPenaltyFormulationViscous::SIPG; //SIPG; //NIPG;
-SolverViscous SOLVER_VISCOUS = SolverViscous::PCG; //PCG; //GMRES;
-PreconditionerViscous PRECONDITIONER_VISCOUS = PreconditionerViscous::GeometricMultigrid; //None; //Jacobi; //InverseMassMatrix; //GeometricMultigrid;
+InteriorPenaltyFormulationViscous IP_FORMULATION_VISCOUS = InteriorPenaltyFormulationViscous::NIPG; //SIPG; //NIPG;
+SolverViscous SOLVER_VISCOUS = SolverViscous::GMRES; //PCG; //GMRES;
+PreconditionerViscous PRECONDITIONER_VISCOUS = PreconditionerViscous::InverseMassMatrix; //None; //Jacobi; //InverseMassMatrix; //GeometricMultigrid;
 
 // multigrid viscous step
 MultigridSmoother MULTIGRID_SMOOTHER_VISCOUS = MultigridSmoother::Chebyshev; //Chebyshev;
@@ -778,10 +778,10 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 #endif
 
 #ifdef CHANNEL
-  const unsigned int FE_DEGREE = 4;
+  const unsigned int FE_DEGREE = 3;
   const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
   const unsigned int FE_DEGREE_XWALL = 1;
-  const unsigned int N_Q_POINTS_1D_XWALL = 1;
+  const unsigned int N_Q_POINTS_1D_XWALL = 12;
   const unsigned int DIMENSION = 3; // DIMENSION >= 2
   const unsigned int REFINE_STEPS_SPACE_MIN = 2;
   const unsigned int REFINE_STEPS_SPACE_MAX = 2;
@@ -801,7 +801,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double RESTART_INTERVAL_WALL_TIME = 1000.;
   const unsigned int RESTART_INTERVAL_STEP = 1e6;
   const int MAX_NUM_STEPS = 1e7;
-  const double CFL = 1.0;
+  const double CFL = 0.1;
   const double TIME_STEP_SIZE = 1.e-3;
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
@@ -818,12 +818,19 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall
-  const bool VARIABLETAUW = false;
-  const double DTAUW = 1.0;
+  const bool VARIABLETAUW = true;
+  const double DTAUW = 0.5;
 
-  const double MAX_WDIST_XWALL = 0.2;
-  const double GRID_STRETCH_FAC = 1.8;
+  const double MAX_WDIST_XWALL = 0.5;
+  const double GRID_STRETCH_FAC = 0.01;
   const bool PURE_DIRICHLET_BC = true;
+
+  const double ABS_TOL_NEWTON = 1.0e-12;
+  const double REL_TOL_NEWTON = 1.0e-6;
+  unsigned int const MAX_ITER_NEWTON = 1e2;
+  const double ABS_TOL_LINEAR = 1.0e-12;
+  const double REL_TOL_LINEAR = 1.0e-6;
+  unsigned int const MAX_ITER_LINEAR = 1e6;
 
   const double ABS_TOL_PRESSURE = 1.0e-12;
   const double REL_TOL_PRESSURE = 1.0e-4;
@@ -924,6 +931,14 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
                         const double  time = 0.)
       :
       Function<dim>(is_velocity ? dim : 1, time),
+      is_velocity(is_velocity)
+    {}
+
+    AnalyticalSolution (const bool    is_velocity,
+                        const double  time,
+                        unsigned int n_components)
+      :
+      Function<dim>(is_velocity ? n_components : 1, time),
       is_velocity(is_velocity)
     {}
 
@@ -1478,6 +1493,14 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 #ifdef CHANNEL
       Assert (uh[0].size() == 4*dim+1,                            ExcInternalError());
 
+      AlignedVector<double> wdist;
+      wdist.resize(n_quadrature_points,1.);
+      AlignedVector<double> tauw;
+      tauw.resize(n_quadrature_points,1.);
+      SpaldingsLawEvaluation<dim, double, double > spalding(VISCOSITY);
+      std::vector<bool> enriched;
+      enriched.resize(1,true);
+      spalding.reinit(wdist,tauw,enriched);
       for (unsigned int q=0; q<n_quadrature_points; ++q)
         {
           // TODO: fill in wall distance function
@@ -1487,7 +1510,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
           else
             wdist = 1.0-evaluation_points[q][1];
           //todo: add correct utau
-          const double enrichment_func = SimpleSpaldingsLaw::SpaldingsLaw(wdist,sqrt(uh[q](dim)),VISCOSITY);
+          const double enrichment_func = spalding.enrichment(q);
           for (unsigned int d=0; d<dim; ++d)
             computed_quantities[q](d)
               = (uh[q](d) + uh[q](dim+1+d) * enrichment_func);
@@ -2390,7 +2413,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
         // initialize postprocessor after initializing navier_stokes_operation
         postprocessor.reset(new PostProcessorStatistics<dim>(navier_stokes_operation,param));
         // initialize time integrator that depends on both navier_stokes_operation and postprocessor
-        time_integrator.reset(new TimeIntBDFDualSplitting<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
+        time_integrator.reset(new TimeIntBDFDualSplittingXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
             navier_stokes_operation,postprocessor,param,refine_steps_time));
       }
       else
@@ -2446,11 +2469,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
     Point<dim> out = in;
 
     out[0] = in(0)-numbers::PI;
-#ifdef XWALL    //wall-model
-    out[1] =  2.*in(1)-1.;
-#else    //no wall model
     out[1] =  std::tanh(GRID_STRETCH_FAC*(2.*in(1)-1.))/std::tanh(GRID_STRETCH_FAC);
-#endif
     out[2] = in(2)-0.5*numbers::PI;
     return out;
   }
@@ -2592,47 +2611,20 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
     if (dim == 3)
       coordinates[2] = numbers::PI;
     // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
-//    const double left = -1.0, right = 1.0;
-//    GridGenerator::hyper_cube(triangulation,left,right);
-//    const unsigned int base_refinements = n_refine_space;
     std::vector<unsigned int> refinements(dim, 1);
-    //refinements[0] *= 3;
     GridGenerator::subdivided_hyper_rectangle (triangulation, refinements,Point<dim>(),coordinates);
 
-//    std::vector<unsigned int> repetitions({2,1,1});
-//    GridGenerator::subdivided_hyper_rectangle(triangulation,repetitions,Point<dim>(),coordinates);
-
-    // set boundary indicator
-//    typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
-//    for(;cell!=endc;++cell)
-//    {
-//      for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-//      {
-//        if ((std::fabs(cell->face(face_number)->center()(0) - 0.)< 1e-12))
-//          cell->face(face_number)->set_boundary_id(10);
-//        if ((std::fabs(cell->face(face_number)->center()(0) - 2.*numbers::PI)< 1e-12))
-//          cell->face(face_number)->set_boundary_id(11);
-//        if ((std::fabs(cell->face(face_number)->center()(2) - 0.)< 1e-12))
-//          cell->face(face_number)->set_boundary_id(12);
-//        if ((std::fabs(cell->face(face_number)->center()(2) - numbers::PI)< 1e-12))
-//          cell->face(face_number)->set_boundary_id(13);
-//      // if ((std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12))
-//      //    cell->face(face_number)->set_boundary_id (1);
-//      }
-//    }
     //periodicity in x- and z-direction
     //add 10 to avoid conflicts with dirichlet boundary, which is 0
     triangulation.begin()->face(0)->set_all_boundary_ids(0+10);
     triangulation.begin()->face(1)->set_all_boundary_ids(1+10);
-    //periodicity in z-direction, if dim==3
-//    for (unsigned int face=4; face<GeometryInfo<dim>::faces_per_cell; ++face)
+    //periodicity in z-direction
     triangulation.begin()->face(4)->set_all_boundary_ids(2+10);
     triangulation.begin()->face(5)->set_all_boundary_ids(3+10);
 
     GridTools::collect_periodic_faces(triangulation, 0+10, 1+10, 0, periodic_faces);
     GridTools::collect_periodic_faces(triangulation, 2+10, 3+10, 2, periodic_faces);
-//    for (unsigned int d=2; d<dim; ++d)
-//      GridTools::collect_periodic_faces(triangulation, 2*d+10, 2*d+1+10, d, periodic_faces);
+
     triangulation.add_periodicity(periodic_faces);
     triangulation.refine_global(n_refine_space);
 

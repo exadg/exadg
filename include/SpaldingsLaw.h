@@ -83,7 +83,7 @@ namespace internalSpalding
   }
 }
 
-template <int dim, int n_q_points_1d, typename Number, typename V >
+template <int dim, typename Number, typename V >
 class SpaldingsLawEvaluation
 {
 public:
@@ -126,6 +126,20 @@ public:
 //      }
     }
 
+  };
+
+  void reinit(AlignedVector<V> qp_wdist,
+      AlignedVector<V> qp_tauw,
+      unsigned int n_q_points)
+  {
+    qp_enrichment.resize(n_q_points);
+    std::vector<bool> enriched_components;
+    enriched_components.resize(1,true);
+    for(unsigned int q=0;q<n_q_points;++q)
+    {
+      const V utau=std::sqrt(qp_tauw[q]*internalSpalding::vectorize_or_not<Number,V>((Number)1.0)/density);
+      qp_enrichment[q] = SpaldingsLaw(qp_wdist[q], utau, enriched_components);
+    }
   };
 
   V enrichment(unsigned int q){return qp_enrichment[q];}
@@ -174,13 +188,9 @@ private:
     return psigp;
   }
 
-  V SpaldingsLaw(V dist, V utau, std::vector<bool> enriched_components)
+  void initial_value(VectorizedArray<Number> &psi,const VectorizedArray<Number> &yplus, const std::vector<bool> & enriched_components)
   {
-    //watch out, this is not exactly Spalding's law but psi=u_+*k, which saves quite some multiplications
-    const V yplus=dist*utau*internalSpalding::vectorize_or_not<Number,V>((Number)1.0/viscosity);
-    V psi=internalSpalding::vectorize_or_not<Number,V>((Number)0.0);
-
-    for (unsigned int v=0; v<V::n_array_elements; ++v)
+    for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
     {
       if(enriched_components.at(v))
       {
@@ -192,6 +202,23 @@ private:
       else
         psi[v] = 0.0;
     }
+  }
+
+  void initial_value(Number &psi,const Number &yplus, const std::vector<bool> & enriched_components)
+  {
+    if(yplus>11.0)//this is approximately where the intersection of log law and linear region lies
+      psi=log(yplus)+B*k;
+    else
+      psi=yplus*k;
+  }
+
+  V SpaldingsLaw(V dist, V utau, std::vector<bool> enriched_components)
+  {
+    //watch out, this is not exactly Spalding's law but psi=u_+*k, which saves quite some multiplications
+    const V yplus=dist*utau*internalSpalding::vectorize_or_not<Number,V>((Number)1.0/viscosity);
+    V psi=internalSpalding::vectorize_or_not<Number,V>((Number)0.0);
+
+    initial_value(psi, yplus, enriched_components);
 
     V inc=internalSpalding::vectorize_or_not<Number,V>((Number)10.0);
     V fn=internalSpalding::vectorize_or_not<Number,V>((Number)10.0);

@@ -47,6 +47,8 @@ public:
     matrix_free_data(nullptr)
   {}
 
+  virtual ~InverseMassMatrixOperator(){};
+
   void initialize(MatrixFree<dim,value_type> const &mf_data,
                   const unsigned int dof_index,
                   const unsigned int quad_index)
@@ -74,11 +76,12 @@ public:
     matrix_free_data->cell_loop(&InverseMassMatrixOperator<dim,fe_degree,value_type,n_components>::local_apply_inverse_mass_matrix, this, dst, src);
   }
 
-private:
+protected:
   MatrixFree<dim,value_type> const * matrix_free_data;
   mutable std_cxx11::shared_ptr<Threads::ThreadLocalStorage<InverseMassMatrixData<dim,fe_degree,value_type,n_components> > > mass_matrix_data;
 
-  void local_apply_inverse_mass_matrix (const MatrixFree<dim,value_type>                 &,
+private:
+  virtual void local_apply_inverse_mass_matrix (const MatrixFree<dim,value_type>                 &,
                                         parallel::distributed::Vector<value_type>        &dst,
                                         const parallel::distributed::Vector<value_type>  &src,
                                         const std::pair<unsigned int,unsigned int>       &cell_range) const

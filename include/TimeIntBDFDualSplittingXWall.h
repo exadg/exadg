@@ -22,7 +22,7 @@ public:
     :
     TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
             (ns_operation_in,postprocessor_in,param_in,n_refine_time_in),
-    ns_operation_xwall (std::dynamic_pointer_cast<DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (this->ns_operation))
+    ns_operation_xwall (std::dynamic_pointer_cast<DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in))
   {
     AssertThrow(this->param.start_with_low_order == true, ExcMessage("Start with low order for xwall"));
   }
@@ -44,12 +44,11 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 void TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 setup_derived()
 {
-  if(not this->param.variabletauw)
-  {
-    ns_operation_xwall->precompute_inverse_mass_matrix();
-  }
+std::cout << "test" << std::endl;
+  ns_operation_xwall->precompute_inverse_mass_matrix();
 
-  this->setup_derived();
+
+  TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::setup_derived();
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
@@ -57,31 +56,22 @@ void TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, 
 solve_timestep()
 {
   // set the parameters that NavierStokesOperation depends on
-  ns_operation_xwall->set_time(this->time);
-  ns_operation_xwall->set_time_step(this->time_steps[0]);
-  ns_operation_xwall->set_scaling_factor_time_derivative_term(this->gamma0/this->time_steps[0]);
 
-  ns_operation_xwall->update_tauw(this->velocity);
+  ns_operation_xwall->update_tauw(this->velocity[0]);
+
   if(this->param.variabletauw)
   {
     ns_operation_xwall->precompute_inverse_mass_matrix();
-    ns_operation_xwall->xwall_projection();
-    for (unsigned int o = 1; o < this->param.order; o++)
+    for (unsigned int o=0; o < this->order; o++)
+      ns_operation_xwall->xwall_projection(this->velocity[o]);
+    for (unsigned int o = 1; o < this->param.order_time_integrator; o++)
     {
       ns_operation_xwall->evaluate_convective_term(this->vec_convective_term[o],this->velocity[o],this->time - this->time_steps[o]);
       ns_operation_xwall->compute_vorticity(this->vorticity[o], this->velocity[o]);
     }
   }
 
-
-  // perform the four substeps of the dual-splitting method
-  this->convective_step();
-
-  this->pressure_step();
-
-  this->projection_step();
-
-  this->viscous_step();
+  TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::solve_timestep();
 }
 
 #endif /* INCLUDE_TIMEINTBDFDUALSPLITTINGXWALL_H_ */

@@ -20,9 +20,9 @@ public:
     ml(1.0),
     variabletauw(false),
     dtauw(1.0),
-    max_wdist_xwall(1.0)
-//    wdist(nullptr),
-//    tauw(nullptr)
+    max_wdist_xwall(1.0),
+    wdist(nullptr),
+    tauw(nullptr)
   {
   }
 
@@ -33,10 +33,17 @@ public:
     ml(param.ml),
     variabletauw(param.variabletauw),
     dtauw(param.dtauw),
-    max_wdist_xwall(param.max_wdist_xwall)
-//    wdist(nullptr),
-//    tauw(nullptr)
+    max_wdist_xwall(param.max_wdist_xwall),
+    wdist(nullptr),
+    tauw(nullptr)
   {
+  }
+
+  void setup(parallel::distributed::Vector<double> * wd,
+             parallel::distributed::Vector<double> * tw)
+  {
+    wdist = wd;
+    tauw = tw;
   }
 
   double const viscosity;
@@ -45,8 +52,8 @@ public:
   bool const variabletauw;
   double const dtauw;
   double const max_wdist_xwall;
-  parallel::distributed::Vector<double> wdist;
-  parallel::distributed::Vector<double> tauw;
+  parallel::distributed::Vector<double> * wdist;
+  parallel::distributed::Vector<double> * tauw;
 };
 
 #endif /* INCLUDE_FE_PARAMETERS_H_ */

@@ -22,11 +22,11 @@ public:
     :
     TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
             (ns_operation_in,postprocessor_in,param_in,n_refine_time_in),
-    computing_times(5),
     velocity(this->order),
-    pressure(this->order),
     vorticity(this->order),
     vec_convective_term(this->order),
+    computing_times(5),
+    pressure(this->order),
     ns_operation_splitting (std::dynamic_pointer_cast<DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in))
   {}
 
@@ -34,11 +34,18 @@ public:
 
   virtual void analyze_computing_times() const;
 
-private:
+protected:
   virtual void setup_derived();
 
   virtual void solve_timestep();
 
+  std::vector<parallel::distributed::Vector<value_type> > velocity;
+
+  std::vector<parallel::distributed::Vector<value_type> > vorticity;
+
+  std::vector<parallel::distributed::Vector<value_type> > vec_convective_term;
+
+private:
   virtual void postprocessing() const;
 
   virtual void initialize_vectors();
@@ -69,15 +76,11 @@ private:
   std::vector<value_type> computing_times;
 
   parallel::distributed::Vector<value_type> velocity_np;
-  std::vector<parallel::distributed::Vector<value_type> > velocity;
 
   parallel::distributed::Vector<value_type> pressure_np;
   std::vector<parallel::distributed::Vector<value_type> > pressure;
 
   parallel::distributed::Vector<value_type> vorticity_extrapolated;
-  std::vector<parallel::distributed::Vector<value_type> > vorticity;
-
-  std::vector<parallel::distributed::Vector<value_type> > vec_convective_term;
 
   // solve convective step implicitly
   parallel::distributed::Vector<value_type> sum_alphai_ui;
