@@ -781,11 +781,11 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 #ifdef CHANNEL
   const unsigned int FE_DEGREE = 3;
   const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
-  const unsigned int FE_DEGREE_XWALL = 1;
+  const unsigned int FE_DEGREE_XWALL = 3;
   const unsigned int N_Q_POINTS_1D_XWALL = 12;
   const unsigned int DIMENSION = 3; // DIMENSION >= 2
-  const unsigned int REFINE_STEPS_SPACE_MIN = 2;
-  const unsigned int REFINE_STEPS_SPACE_MAX = 2;
+  const unsigned int REFINE_STEPS_SPACE_MIN = 3;
+  const unsigned int REFINE_STEPS_SPACE_MAX = 3;
 
   const double START_TIME = 0.0;
   const double END_TIME = 70.0;

@@ -182,6 +182,9 @@ public:
     velocity_linear = *solution_linearization;
   }
 
+protected:
+  std_cxx11::shared_ptr<PreconditionerBase<value_type> > helmholtz_preconditioner;
+
 private:
   LaplaceOperator<dim,value_type> laplace_operator;
   PoissonSolver<dim> pressure_poisson_solver;
@@ -190,7 +193,6 @@ private:
   std_cxx11::shared_ptr<ProjectionSolverBase<value_type> > projection_solver;
 
   HelmholtzOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type> helmholtz_operator;
-  std_cxx11::shared_ptr<PreconditionerBase<value_type> > helmholtz_preconditioner;
   HelmholtzSolver<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type> helmholtz_solver;
 
   parallel::distributed::Vector<value_type> velocity_linear;
@@ -208,6 +210,8 @@ private:
   void setup_projection_solver();
 
   void setup_helmholtz_solver();
+
+  virtual void setup_helmholtz_preconditioner(HelmholtzOperatorData<dim> &helmholtz_operator_data);
 
   // rhs pressure: BC term
   void local_rhs_pressure_BC_term (const MatrixFree<dim,value_type>                &data,
@@ -448,6 +452,15 @@ setup_helmholtz_solver ()
   helmholtz_solver_data.solver_tolerance_abs = this->param.abs_tol_viscous;
   helmholtz_solver_data.solver_tolerance_rel = this->param.rel_tol_viscous;
 
+  setup_helmholtz_preconditioner(helmholtz_operator_data);
+
+  helmholtz_solver.initialize(helmholtz_operator, helmholtz_preconditioner, helmholtz_solver_data);
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+setup_helmholtz_preconditioner (HelmholtzOperatorData<dim> &helmholtz_operator_data)
+{
   if(this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix)
   {
     helmholtz_preconditioner.reset(new InverseMassMatrixPreconditioner<dim,fe_degree,value_type>(
@@ -473,8 +486,6 @@ setup_helmholtz_solver ()
     helmholtz_preconditioner.reset(new MyMultigridPreconditioner<dim,value_type,HelmholtzOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>, HelmholtzOperatorData<dim> >
                          (mg_data, this->dof_handler_u, this->mapping, helmholtz_operator_data,this->fe_param));
   }
-
-  helmholtz_solver.initialize(helmholtz_operator, helmholtz_preconditioner, helmholtz_solver_data);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
