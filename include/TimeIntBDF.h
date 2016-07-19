@@ -234,6 +234,8 @@ calculate_time_step()
                                                                   param.end_time);
 
     value_type adaptive_time_step = calculate_adaptive_time_step_cfl<dim, fe_degree, value_type>(ns_operation->get_data(),
+                                                                                                 ns_operation->get_dof_index_velocity(),
+                                                                                                 ns_operation->get_quad_index_velocity_linear(),
                                                                                                  get_velocity(),
                                                                                                  cfl,
                                                                                                  time_steps[0],
@@ -274,6 +276,8 @@ recalculate_adaptive_time_step()
     time_steps[i] = time_steps[i-1];
 
   time_steps[0] = calculate_adaptive_time_step_cfl<dim, fe_degree, value_type>(ns_operation->get_data(),
+                                                                               ns_operation->get_dof_index_velocity(),
+                                                                               ns_operation->get_quad_index_velocity_linear(),
                                                                                get_velocity(),
                                                                                cfl,
                                                                                time_steps[0]);

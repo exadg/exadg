@@ -9,6 +9,7 @@
 #define INCLUDE_PRECONDITIONERNAVIERSTOKES_H_
 
 #include "Preconditioner.h"
+#include "CompatibleLaplaceOperator.h"
 
 // forward declaration
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -64,7 +65,7 @@ public:
         helmholtz_operator_data.mass_matrix_operator_data = underlying_operator->get_mass_matrix_operator_data();
         helmholtz_operator_data.viscous_operator_data = underlying_operator->get_viscous_operator_data();
 
-        helmholtz_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
+        helmholtz_operator_data.dof_index = underlying_operator->get_dof_index_velocity();//static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
         helmholtz_operator_data.mass_matrix_coefficient = underlying_operator->get_scaling_factor_time_derivative_term();
         helmholtz_operator_data.periodic_face_pairs_level0 = underlying_operator->get_periodic_face_pairs();
 
@@ -107,6 +108,65 @@ public:
     }
     else if(preconditioner_data.preconditioner_schur_complement == PreconditionerSchurComplement::GeometricMultigrid)
     {
+      setup_multigrid_schur_complement();
+    }
+    else if(preconditioner_data.preconditioner_schur_complement == PreconditionerSchurComplement::CahouetChabard)
+    {
+      AssertThrow(underlying_operator->param.problem_type == ProblemType::Unsteady,
+          ExcMessage("CahouetChabard preconditioner only makes sense for unsteady problems."));
+
+      setup_multigrid_schur_complement();
+
+      // inverse mass matrix to also include the part of the preconditioner that is beneficial when using large time steps
+      // and large viscosities. By definition this part of the preconditioner is called preconditioner_..._cahouet_chabard.
+      // This definition is, of course, arbitrary. Actually, the Cahouet-Chabard preconditioner is the preconditioner
+      // that includes both parts (i.e. the combination of mass matrix and multigrid for negative Laplace operator).
+      preconditioner_schur_complement_cahouet_chabard.reset(new InverseMassMatrixPreconditioner<dim,fe_degree_p,value_type,1>(
+                                                  underlying_operator->get_data(),
+                                                  underlying_operator->get_dof_index_pressure(),
+                                                  underlying_operator->get_quad_index_pressure()));
+
+      // initialize_temp vector
+      underlying_operator->initialize_vector_pressure(temp);
+
+    }
+    /****** preconditioner pressure/Schur-complement block ********/
+
+    if(preconditioner_data.preconditioner_type == PreconditionerLinearizedNavierStokes::BlockTriangularFactorization)
+    {
+      underlying_operator->initialize_vector_velocity(temp_velocity);
+    }
+  }
+
+  void setup_multigrid_schur_complement()
+  {
+    bool compatible_discretization = false;
+
+    if(compatible_discretization)
+    {
+      // compatible discretization of Laplacian
+      CompatibleLaplaceOperatorData<dim> compatible_laplace_operator_data;
+      compatible_laplace_operator_data.dof_index_velocity = underlying_operator->get_dof_index_velocity();
+      compatible_laplace_operator_data.dof_index_pressure = underlying_operator->get_dof_index_pressure();
+      compatible_laplace_operator_data.gradient_operator_data = underlying_operator->get_gradient_operator_data();
+      compatible_laplace_operator_data.divergence_operator_data = underlying_operator->get_divergence_operator_data();
+      compatible_laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->get_periodic_face_pairs();
+
+      // currently use default parameters of MultigridData!
+      MultigridData mg_data_compatible_pressure;
+
+      preconditioner_schur_complement.reset(
+          new MyMultigridPreconditioner<dim,value_type,
+                CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, Number>,
+                CompatibleLaplaceOperatorData<dim> >
+          (mg_data_compatible_pressure,
+           underlying_operator->get_dof_handler_p(),
+           underlying_operator->get_dof_handler_u(),
+           underlying_operator->get_mapping(),
+           compatible_laplace_operator_data));
+    }
+    else
+    {
       // Geometric multigrid V-cycle performed on negative Laplace operator
       LaplaceOperatorData<dim> laplace_operator_data;
       laplace_operator_data.laplace_dof_index = underlying_operator->get_dof_index_pressure();
@@ -124,49 +184,6 @@ public:
                                                  underlying_operator->get_dof_handler_p(),
                                                  underlying_operator->get_mapping(),
                                                  laplace_operator_data));
-    }
-    else if(preconditioner_data.preconditioner_schur_complement == PreconditionerSchurComplement::CahouetChabard)
-    {
-      AssertThrow(underlying_operator->param.problem_type == ProblemType::Unsteady,
-          ExcMessage("CahouetChabard preconditioner only makes sense for unsteady problems."));
-
-      // Geometric multigrid V-cycle performed on negative Laplace operator to include the part of the preconditioner
-      // that is beneficial when using small time steps and small viscosities
-      LaplaceOperatorData<dim> laplace_operator_data;
-      laplace_operator_data.laplace_dof_index = underlying_operator->get_dof_index_pressure();
-      laplace_operator_data.laplace_quad_index = underlying_operator->get_quad_index_pressure();
-      laplace_operator_data.penalty_factor = 1.0;
-      laplace_operator_data.neumann_boundaries = underlying_operator->get_dirichlet_boundary();
-      laplace_operator_data.dirichlet_boundaries = underlying_operator->get_neumann_boundary();
-      laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->get_periodic_face_pairs();
-
-      // currently use default parameters of MultigridData!
-      MultigridData mg_data_pressure;
-
-      preconditioner_schur_complement.reset(new MyMultigridPreconditioner<dim,value_type,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> >
-                                                (mg_data_pressure,
-                                                 underlying_operator->get_dof_handler_p(),
-                                                 underlying_operator->get_mapping(),
-                                                 laplace_operator_data));
-
-      // inverse mass matrix to also include the part of the preconditioner that is beneficial when using large time steps
-      // and large viscosities. By definition this part of the preconditioner is called preconditioner_..._cahouet_chabard.
-      // This definition is, of course, arbitrary. Actually, the Cahouet-Chabard preconditioner is the preconditioner
-      // that includes both parts (mass matrix and multigrid for negative Laplace operator).
-      preconditioner_schur_complement_cahouet_chabard.reset(new InverseMassMatrixPreconditioner<dim,fe_degree_p,value_type,1>(
-                                                  underlying_operator->get_data(),
-                                                  underlying_operator->get_dof_index_pressure(),
-                                                  underlying_operator->get_quad_index_pressure()));
-
-      // initialize_temp vector
-      underlying_operator->initialize_vector_pressure(temp);
-
-    }
-    /****** preconditioner pressure/Schur-complement block ********/
-
-    if(preconditioner_data.preconditioner_type == PreconditionerLinearizedNavierStokes::BlockTriangularFactorization)
-    {
-      underlying_operator->initialize_vector_velocity(temp_velocity);
     }
   }
 

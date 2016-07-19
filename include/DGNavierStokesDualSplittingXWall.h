@@ -20,6 +20,22 @@ public:
   typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::FEFaceEval_Velocity_Velocity_linear FEFaceEval_Velocity_Velocity_linear;
   typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::FEEval_Velocity_Velocity_linear FEEval_Velocity_Velocity_linear;
 
+
+  enum class DofHandlerSelector{
+    velocity = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity,
+    pressure = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::pressure,
+    wdist_tauw = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::n_variants,
+    n_variants = wdist_tauw+1
+  };
+
+  enum class QuadratureSelector{
+    velocity = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity,
+    pressure = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::pressure,
+    velocity_nonlinear = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity_nonlinear,
+    enriched = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::n_variants,
+    n_variants = enriched+1
+  };
+
   DGNavierStokesDualSplittingXWall(parallel::distributed::Triangulation<dim> const &triangulation,
                                    InputParameters const                           &parameter)
     :
@@ -179,9 +195,14 @@ data_reinit(typename MatrixFree<dim,value_type>::AdditionalData & additional_dat
 {
   std::vector<const DoFHandler<dim> * >  dof_handler_vec;
 
-  dof_handler_vec.push_back(&this->dof_handler_u);
-  dof_handler_vec.push_back(&this->dof_handler_p);
-  dof_handler_vec.push_back(&dof_handler_wdist);
+//  dof_handler_vec.push_back(&this->dof_handler_u);
+//  dof_handler_vec.push_back(&this->dof_handler_p);
+//  dof_handler_vec.push_back(&dof_handler_wdist);
+
+  dof_handler_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::n_variants));
+  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity)] = &this->dof_handler_u;
+  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure)] = &this->dof_handler_p;
+  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::wdist_tauw)] = &dof_handler_wdist;
 
   std::vector<const ConstraintMatrix *> constraint_matrix_vec;
   ConstraintMatrix constraint, constraint_p;

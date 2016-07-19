@@ -50,8 +50,8 @@ public:
     ReductionControl solver_control (solver_data.max_iter, solver_data.abs_tol, solver_data.rel_tol);
     SolverGMRES<parallel::distributed::Vector<value_type> > solver (solver_control);
     InverseMassMatrixPreconditioner<dim,fe_degree,value_type> preconditioner(underlying_operator->get_data(),
-        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity));
+        static_cast<typename std::underlying_type<typename Operator::DofHandlerSelector>::type >(Operator::DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<typename Operator::QuadratureSelector>::type >(Operator::QuadratureSelector::velocity));
 
     try
     {
@@ -97,7 +97,7 @@ public:
     projection_operator(nullptr)
   {}
 
-  ~DGNavierStokesDualSplitting()
+  virtual ~DGNavierStokesDualSplitting()
   {
     delete projection_operator;
     projection_operator = nullptr;
@@ -311,8 +311,10 @@ setup_pressure_poisson_solver ()
 {
   // Laplace Operator
   LaplaceOperatorData<dim> laplace_operator_data;
-  laplace_operator_data.laplace_dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure);
-  laplace_operator_data.laplace_quad_index = static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::pressure);
+  laplace_operator_data.laplace_dof_index = static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
+  (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::pressure);
+  laplace_operator_data.laplace_quad_index = static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector>::type >
+  (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::pressure);
   laplace_operator_data.penalty_factor = this->param.IP_factor_pressure;
 
   // TODO
@@ -354,8 +356,10 @@ setup_projection_solver ()
   if(this->param.projection_type == ProjectionType::NoPenalty)
   {
     projection_solver.reset(new ProjectionSolverNoPenalty<dim, fe_degree, value_type>(this->data,
-        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity)));
+        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
+          (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector>::type >
+          (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity)));
   }
   else if(this->param.projection_type == ProjectionType::DivergencePenalty &&
           this->param.solver_projection == SolverProjection::LU)
@@ -369,8 +373,10 @@ setup_projection_solver ()
     projection_operator = new ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(
         this->data,
         this->fe_param,
-        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity),
+        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
+          (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector>::type >
+          (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity),
         projection_operator_data);
 
     projection_solver.reset(new DirectProjectionSolverDivergencePenalty
@@ -388,8 +394,10 @@ setup_projection_solver ()
     projection_operator = new ProjectionOperatorDivergencePenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(
         this->data,
         this->fe_param,
-        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity),
+        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
+          (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector>::type >
+          (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity),
         projection_operator_data);
 
     ProjectionSolverData projection_solver_data;
@@ -414,8 +422,10 @@ setup_projection_solver ()
     projection_operator = new ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(
         this->data,
         this->fe_param,
-        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity),
+        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
+          (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector>::type >
+          (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity),
         projection_operator_data);
 
     ProjectionSolverData projection_solver_data;
@@ -440,7 +450,8 @@ setup_helmholtz_solver ()
   helmholtz_operator_data.mass_matrix_operator_data = this->mass_matrix_operator_data;
   helmholtz_operator_data.viscous_operator_data = this->viscous_operator_data;
 
-  helmholtz_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
+  helmholtz_operator_data.dof_index = static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
+                                        (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity);
   helmholtz_operator_data.mass_matrix_coefficient = this->scaling_factor_time_derivative_term;
   helmholtz_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
 
@@ -465,8 +476,10 @@ setup_helmholtz_preconditioner (HelmholtzOperatorData<dim> &helmholtz_operator_d
   {
     helmholtz_preconditioner.reset(new InverseMassMatrixPreconditioner<dim,fe_degree,value_type>(
         this->data,
-        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity)));
+        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
+          (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector>::type >
+          (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity)));
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::Jacobi)
   {
@@ -626,7 +639,8 @@ local_rhs_pressure_BC_term_boundary_face (const MatrixFree<dim,value_type>      
                                           const std::pair<unsigned int,unsigned int>       &face_range) const
 {
   FEFaceEval_Pressure_Velocity_nonlinear fe_eval_pressure(data,this->fe_param,true,
-      static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure));
+      static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
+        (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::pressure));
 
   //TODO: quadrature formula
 //    FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,true,
@@ -737,10 +751,12 @@ local_rhs_pressure_convective_term_boundary_face (const MatrixFree<dim,value_typ
 {
 
   FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,this->fe_param,true,
-      static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
+      static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
+        (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity));
 
   FEFaceEval_Pressure_Velocity_nonlinear fe_eval_pressure(data,this->fe_param,true,
-      static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure));
+      static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
+        (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::pressure));
 
   for(unsigned int face=face_range.first; face<face_range.second; face++)
   {
@@ -814,10 +830,12 @@ local_rhs_pressure_viscous_term_boundary_face (const MatrixFree<dim,value_type> 
                                                const std::pair<unsigned int,unsigned int>      &face_range) const
 {
   FEFaceEval_Velocity_Velocity_nonlinear fe_eval_omega(data,this->fe_param,true,
-      static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
+      static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
+        (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity));
 
   FEFaceEval_Pressure_Velocity_nonlinear fe_eval_pressure(data,this->fe_param,true,
-      static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure));
+      static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
+        (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::pressure));
 
   for(unsigned int face=face_range.first; face<face_range.second; face++)
   {

@@ -74,25 +74,25 @@
 using namespace dealii;
 
 // specify flow problem that has to be solved
-//#define VORTEX
+#define VORTEX
 //#define STOKES_GUERMOND
 //#define STOKES_SHAHBAZI
 //#define POISEUILLE
 //#define CUETTE
-#define CAVITY
+//#define CAVITY
 //#define KOVASZNAY
 //#define BELTRAMI
 //#define FLOW_PAST_CYLINDER
 //#define CHANNEL
 
 
-ProblemType PROBLEM_TYPE = ProblemType::Steady; //Steady; //Unsteady;
+ProblemType PROBLEM_TYPE = ProblemType::Unsteady; //Steady; //Unsteady;
 EquationType EQUATION_TYPE = EquationType::NavierStokes; // Stokes; // NavierStokes;
-TreatmentOfConvectiveTerm TREATMENT_OF_CONVECTIVE_TERM = TreatmentOfConvectiveTerm::Implicit; // Explicit; // Implicit;
+TreatmentOfConvectiveTerm TREATMENT_OF_CONVECTIVE_TERM = TreatmentOfConvectiveTerm::Explicit; // Explicit; // Implicit;
 
 /************* temporal discretization ***********/
 // which temporal discretization approach
-TemporalDiscretization TEMPORAL_DISCRETIZATION = TemporalDiscretization::BDFCoupledSolution; //BDFDualSplittingScheme // BDFCoupledSolution
+TemporalDiscretization TEMPORAL_DISCRETIZATION = TemporalDiscretization::BDFDualSplittingScheme; //BDFDualSplittingScheme // BDFCoupledSolution
 
 // type of time step calculation
 TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified; //ConstTimeStepCFL; //AdaptiveTimeStepCFL;
@@ -101,10 +101,13 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 /************* spatial discretization ************/
 SpatialDiscretization SPATIAL_DISCRETIZATION = SpatialDiscretization::DG; //DG //DGXWall
 
-bool const DIVU_INTEGRATED_BY_PARTS = true;//false;//true;
-bool const DIVU_USE_BOUNDARY_DATA = true;//false;//true;
-bool const GRADP_INTEGRATED_BY_PARTS = true;//false;//true;
-bool const GRADP_USE_BOUNDARY_DATA = true;//false;//true;
+FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::DivergenceFormulation; //DivergenceFormulation; //LaplaceFormulation;
+InteriorPenaltyFormulationViscous IP_FORMULATION_VISCOUS = InteriorPenaltyFormulationViscous::SIPG; //SIPG; //NIPG;
+
+bool const DIVU_INTEGRATED_BY_PARTS = false;//true;
+bool const DIVU_USE_BOUNDARY_DATA = false;//true;
+bool const GRADP_INTEGRATED_BY_PARTS = false;//true;
+bool const GRADP_USE_BOUNDARY_DATA = false;//true;
 /*************************************************/
 
 /******** high-order dual splitting scheme *******/
@@ -125,9 +128,7 @@ SolverProjection SOLVER_PROJECTION = SolverProjection::LU; //LU; //PCG;
 PreconditionerProjection PRECONDITIONER_PROJECTION = PreconditionerProjection::None; //None; //Jacobi; //InverseMassMatrix;
 
 // viscous step
-FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::DivergenceFormulation; //DivergenceFormulation; //LaplaceFormulation;
-InteriorPenaltyFormulationViscous IP_FORMULATION_VISCOUS = InteriorPenaltyFormulationViscous::NIPG; //SIPG; //NIPG;
-SolverViscous SOLVER_VISCOUS = SolverViscous::GMRES; //PCG; //GMRES;
+SolverViscous SOLVER_VISCOUS = SolverViscous::PCG; //PCG; //GMRES;
 PreconditionerViscous PRECONDITIONER_VISCOUS = PreconditionerViscous::InverseMassMatrix; //None; //Jacobi; //InverseMassMatrix; //GeometricMultigrid;
 
 // multigrid viscous step
@@ -140,11 +141,11 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = true;
 
 // preconditioner
 PreconditionerLinearizedNavierStokes PRECONDITIONER_LINEARIZED_NAVIER_STOKES =
-    PreconditionerLinearizedNavierStokes::BlockTriangular; //None; //BlockDiagonal; //BlockTriangular; //BlockTriangularFactorization;
+    PreconditionerLinearizedNavierStokes::BlockTriangularFactorization; //None; //BlockDiagonal; //BlockTriangular; //BlockTriangularFactorization;
 PreconditionerMomentum PRECONDITIONER_MOMENTUM =
-    PreconditionerMomentum::GeometricMultigrid; //None; //InverseMassMatrix; //GeometricMultigrid;
+    PreconditionerMomentum::InverseMassMatrix; //None; //InverseMassMatrix; //GeometricMultigrid;
 PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
-    PreconditionerSchurComplement::InverseMassMatrix; //None; //InverseMassMatrix; //GeometricMultigrid; //CahouetChabard;
+    PreconditionerSchurComplement::CahouetChabard; //None; //InverseMassMatrix; //GeometricMultigrid; //CahouetChabard;
 /************************************************/
 
 #ifdef VORTEX
@@ -170,7 +171,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const bool DIVU_TIMESERIES = true;
   const bool COMPUTE_DIVERGENCE = true;
   const bool ANALYTICAL_SOLUTION = true;
-  const int MAX_NUM_STEPS = 1e7;
+  const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.1; //0.1;
   const double U_X_MAX = 1.0;
   const double MAX_VELOCITY = 1.4*U_X_MAX;
@@ -362,13 +363,13 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 #endif
 
 #ifdef CAVITY
-  const unsigned int FE_DEGREE = 5;
+  const unsigned int FE_DEGREE = 6;
   const unsigned int FE_DEGREE_P = FE_DEGREE-1;//FE_DEGREE-1;
   const unsigned int FE_DEGREE_XWALL = 1;
   const unsigned int N_Q_POINTS_1D_XWALL = 1;
   const unsigned int DIMENSION = 2;
-  const unsigned int REFINE_STEPS_SPACE_MIN = 1;
-  const unsigned int REFINE_STEPS_SPACE_MAX = 5;
+  const unsigned int REFINE_STEPS_SPACE_MIN = 3;
+  const unsigned int REFINE_STEPS_SPACE_MAX = 3;
 
   const double START_TIME = 0.0;
   const double END_TIME = 40.0;
@@ -578,7 +579,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
-  const double VISCOSITY = 1.0e-3;//0.01;
+  const double VISCOSITY = 1.0e-6;//0.01;
 
   const double MAX_VELOCITY = 2.65; // MAX_VELOCITY also irrelevant
   const double IP_FACTOR_PRESSURE = 1.0;
@@ -586,7 +587,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 
   // projection step - divergence and continuity penalty factors
   const double PENALTY_FACTOR_DIVERGENCE = 1.0e0; //1.0e0;
-  const double PENALTY_FACTOR_CONTINUITY = 0.0e0;//PENALTY_FACTOR_DIVERGENCE;//0.0e0;
+  const double PENALTY_FACTOR_CONTINUITY = 0.0e0; //PENALTY_FACTOR_DIVERGENCE;//0.0e0;
 
   const double CS = 0.0; // Smagorinsky constant
   const double ML = 0.0; // mixing-length model for xwall

@@ -26,23 +26,23 @@ template<int dim> class AnalyticalSolution;
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 class DGNavierStokesDualSplittingXWall;
 
-enum class DofHandlerSelector{
-  velocity = 0,
-  pressure = 1,
-  wdist_tauw = 2
-};
-
-enum class QuadratureSelector{
-  velocity = 0,
-  pressure = 1,
-  velocity_nonlinear = 2,
-  enriched = 3
-};
-
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 class DGNavierStokesBase
 {
 public:
+  enum class DofHandlerSelector {
+    velocity = 0,
+    pressure = 1,
+    n_variants = pressure+1
+  };
+
+  enum class QuadratureSelector {
+    velocity = 0,
+    pressure = 1,
+    velocity_nonlinear = 2,
+    n_variants = velocity_nonlinear+1
+  };
+
   typedef double value_type;
   static const unsigned int number_vorticity_components = (dim==2) ? 1 : dim;
   static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
@@ -87,14 +87,14 @@ public:
   }
 
   virtual void setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
-              std::set<types::boundary_id> dirichlet_bc_indicator,
-              std::set<types::boundary_id> neumann_bc_indicator);
+                      std::set<types::boundary_id>                                                                dirichlet_bc_indicator,
+                      std::set<types::boundary_id>                                                                neumann_bc_indicator);
 
   virtual void setup_solvers () = 0;
 
   virtual void prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
-                                    parallel::distributed::Vector<value_type> &pressure,
-                                    double const                              evaluation_time) const;
+                                            parallel::distributed::Vector<value_type> &pressure,
+                                            double const                              evaluation_time) const;
 
   // getters
   MatrixFree<dim,value_type> const & get_data() const
@@ -203,6 +203,16 @@ public:
     return viscous_operator_data;
   }
 
+  GradientOperatorData const & get_gradient_operator_data() const
+  {
+    return gradient_operator_data;
+  }
+
+  DivergenceOperatorData const & get_divergence_operator_data() const
+  {
+    return divergence_operator_data;
+  }
+
   // setters
   void set_scaling_factor_time_derivative_term(double const value)
   {
@@ -283,6 +293,8 @@ protected:
 
   MassMatrixOperatorData mass_matrix_operator_data;
   ViscousOperatorData<dim> viscous_operator_data;
+  GradientOperatorData gradient_operator_data;
+  DivergenceOperatorData divergence_operator_data;
 
   MassMatrixOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type> mass_matrix_operator;
   ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type> convective_operator;
@@ -352,7 +364,7 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   body_force_operator.initialize(data,fe_param,body_force_operator_data);
 
   // gradient operator
-  GradientOperatorData gradient_operator_data;
+//  GradientOperatorData gradient_operator_data;
   gradient_operator_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
   gradient_operator_data.dof_index_pressure = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure);
   gradient_operator_data.integration_by_parts_of_gradP = param.gradp_integrated_by_parts;
@@ -362,7 +374,7 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   gradient_operator.initialize(data,fe_param,gradient_operator_data);
 
   // divergence operator
-  DivergenceOperatorData divergence_operator_data;
+//  DivergenceOperatorData divergence_operator_data;
   divergence_operator_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
   divergence_operator_data.dof_index_pressure = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure);
   divergence_operator_data.integration_by_parts_of_divU = param.divu_integrated_by_parts;
@@ -452,8 +464,8 @@ create_dofs()
   dof_handler_p.distribute_mg_dofs(fe_p);
   dof_handler_u.distribute_mg_dofs(*fe_u);
 
-  unsigned int ndofs_per_cell_velocity    = Utilities::fixed_int_power<fe_degree+1,dim>::value*dim;
-  unsigned int ndofs_per_cell_pressure    = Utilities::fixed_int_power<fe_degree_p+1,dim>::value;
+  unsigned int ndofs_per_cell_velocity = Utilities::fixed_int_power<fe_degree+1,dim>::value*dim;
+  unsigned int ndofs_per_cell_pressure = Utilities::fixed_int_power<fe_degree_p+1,dim>::value;
 
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Discontinuous finite element discretization:" << std::endl << std::endl
@@ -469,28 +481,35 @@ create_dofs()
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-data_reinit(typename MatrixFree<dim,value_type>::AdditionalData & additional_data)
+data_reinit(typename MatrixFree<dim,value_type>::AdditionalData &additional_data)
 {
   std::vector<const DoFHandler<dim> * >  dof_handler_vec;
 
-  dof_handler_vec.push_back(&dof_handler_u);
-  dof_handler_vec.push_back(&dof_handler_p);
+  dof_handler_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::n_variants));
+  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity)] = &dof_handler_u;
+  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure)] = &dof_handler_p;
 
   std::vector<const ConstraintMatrix *> constraint_matrix_vec;
-  ConstraintMatrix constraint, constraint_p;
-  constraint.close();
+  constraint_matrix_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::n_variants));
+  ConstraintMatrix constraint_u, constraint_p;
+  constraint_u.close();
   constraint_p.close();
-  constraint_matrix_vec.push_back(&constraint);
-  constraint_matrix_vec.push_back(&constraint_p);
+  constraint_matrix_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity)] = &constraint_u;
+  constraint_matrix_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure)] = &constraint_p;
 
   std::vector<Quadrature<1> > quadratures;
 
+  // resize quadratures
+  quadratures.resize(static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::n_variants));
   // velocity
-  quadratures.push_back(QGauss<1>(fe_degree+1));
+  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity)]
+              = QGauss<1>(fe_degree+1);
   // pressure
-  quadratures.push_back(QGauss<1>(fe_degree_p+1));
+  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::pressure)]
+              = QGauss<1>(fe_degree_p+1);
   // exact integration of nonlinear convective term
-  quadratures.push_back(QGauss<1>(fe_degree + (fe_degree+2)/2));
+  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity_nonlinear)]
+              = QGauss<1>(fe_degree + (fe_degree+2)/2);
 
   data.reinit (mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 }
