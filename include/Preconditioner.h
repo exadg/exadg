@@ -445,6 +445,7 @@ public:
     const parallel::Triangulation<dim> *tria =
       dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
 
+    // needed for continuous elements
     mg_constrained_dofs.clear();
     ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
     typename FunctionMap<dim>::type dirichlet_boundary;
@@ -452,6 +453,7 @@ public:
          it != operator_data_in.get_dirichlet_boundaries().end(); ++it)
       dirichlet_boundary[*it] = &zero_function;
     mg_constrained_dofs.initialize(dof_handler, dirichlet_boundary);
+    // needed for continuous elements
 
     mg_matrices.resize(0, tria->n_global_levels()-1);
     mg_smoother.resize(0, tria->n_global_levels()-1);
@@ -459,6 +461,101 @@ public:
     for (unsigned int level = 0; level<tria->n_global_levels(); ++level)
     {
       mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, mg_constrained_dofs, level,fe_param);
+
+      typename SMOOTHER::AdditionalData smoother_data;
+
+      mg_matrices[level].initialize_dof_vector(smoother_data.matrix_diagonal_inverse);
+      mg_matrices[level].calculate_inverse_diagonal(smoother_data.matrix_diagonal_inverse);
+      /*
+      std::pair<double,double> eigenvalues = compute_eigenvalues(mg_matrices[level], smoother_data.matrix_diagonal_inverse);
+      std::cout<<"Max EW = "<< eigenvalues.second <<" : Min EW = "<<eigenvalues.first<<std::endl;
+      */
+      if (level > 0)
+      {
+        smoother_data.smoothing_range = mg_data.smoother_smoothing_range;
+        smoother_data.degree = mg_data.smoother_poly_degree;
+        smoother_data.eig_cg_n_iterations = 20;
+      }
+      else
+      {
+        smoother_data.smoothing_range = 0.;
+        if (mg_data.coarse_solver != MultigridCoarseGridSolver::coarse_chebyshev_smoother)
+        {
+          smoother_data.eig_cg_n_iterations = 0;
+        }
+        else // use Chebyshev smoother of high degree to solve the coarse grid problem approximately
+        {
+          std::pair<double,double> eigenvalues = compute_eigenvalues(mg_matrices[0], smoother_data.matrix_diagonal_inverse);
+          smoother_data.max_eigenvalue = 1.1 * eigenvalues.second;
+          smoother_data.smoothing_range = eigenvalues.second/eigenvalues.first*1.1;
+          double sigma = (1.-std::sqrt(1./smoother_data.smoothing_range))/(1.+std::sqrt(1./smoother_data.smoothing_range));
+          const double eps = 1e-3;
+          smoother_data.degree = std::log(1./eps+std::sqrt(1./eps/eps-1))/std::log(1./sigma);
+          smoother_data.eig_cg_n_iterations = 0;
+        }
+      }
+      mg_smoother[level].initialize(mg_matrices[level], smoother_data);
+    }
+
+    switch (mg_data.coarse_solver)
+    {
+      case MultigridCoarseGridSolver::coarse_chebyshev_smoother:
+      {
+        mg_coarse.reset(new MGCoarseFromSmoother<parallel::distributed::Vector<typename Operator::value_type>, SMOOTHER>(mg_smoother[0], false));
+        break;
+      }
+      case MultigridCoarseGridSolver::coarse_iterative_nopreconditioner:
+      {
+        mg_coarse.reset(new MGCoarseIterative<Operator>(mg_matrices[0],false)); // false: no Jacobi preconditioner
+        break;
+      }
+      case MultigridCoarseGridSolver::coarse_iterative_jacobi:
+      {
+        mg_coarse.reset(new MGCoarseIterative<Operator>(mg_matrices[0],true)); // true: use Jacobi preconditioner
+        break;
+      }
+      default:
+        AssertThrow(false, ExcMessage("Unknown coarse-grid solver given"));
+    }
+
+    mg_transfer.set_operator(mg_matrices);
+    mg_transfer.initialize_constraints(mg_constrained_dofs);
+    mg_transfer.add_periodicity(operator_data_in.periodic_face_pairs_level0);
+    mg_transfer.build(dof_handler);
+    mg_transfer.set_restriction_type(false);
+
+    multigrid_preconditioner.reset(new MultigridPreconditioner<dim, VECTOR_TYPE, Operator, MG_TRANSFER, SMOOTHER>
+                                   (dof_handler, mg_matrices, *mg_coarse, mg_transfer, mg_smoother));
+  }
+
+  MyMultigridPreconditioner(const MultigridData     &mg_data_in,
+                            const DoFHandler<dim>   &dof_handler,
+                            const DoFHandler<dim>   &dof_handler_additional,
+                            const Mapping<dim>      &mapping,
+                            const OperatorData      &operator_data_in,
+                            FEParameters<dim> const &fe_param = FEParameters<dim>())
+  {
+    this->mg_data = mg_data_in;
+
+    const parallel::Triangulation<dim> *tria =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+
+    // needed for continuous elements
+    mg_constrained_dofs.clear();
+    ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
+    typename FunctionMap<dim>::type dirichlet_boundary;
+    for (std::set<types::boundary_id>::const_iterator it = operator_data_in.get_dirichlet_boundaries().begin();
+         it != operator_data_in.get_dirichlet_boundaries().end(); ++it)
+      dirichlet_boundary[*it] = &zero_function;
+    mg_constrained_dofs.initialize(dof_handler, dirichlet_boundary);
+    // needed for continuous elements
+
+    mg_matrices.resize(0, tria->n_global_levels()-1);
+    mg_smoother.resize(0, tria->n_global_levels()-1);
+
+    for (unsigned int level = 0; level<tria->n_global_levels(); ++level)
+    {
+      mg_matrices[level].reinit(dof_handler, dof_handler_additional, mapping, operator_data_in, mg_constrained_dofs, level,fe_param);
 
       typename SMOOTHER::AdditionalData smoother_data;
 

@@ -29,10 +29,10 @@ public:
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
   ProjectionOperatorBase(MatrixFree<dim,value_type> const & data_in,
-                         FEParameters<dim> & fe_param_in,
-                         const unsigned int dof_index_in,
-                         const unsigned int quad_index_in,
-                         ProjectionOperatorData const projection_operator_data_in)
+                         FEParameters<dim>                & fe_param_in,
+                         const unsigned int               dof_index_in,
+                         const unsigned int               quad_index_in,
+                         ProjectionOperatorData const     projection_operator_data_in)
     :
     data(data_in),
     fe_param(fe_param_in),
@@ -195,11 +195,11 @@ public:
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
   ProjectionOperatorDivergencePenaltyXWall(MatrixFree<dim,value_type> const & data_in,
-                                      FEParameters<dim> & fe_param_in,
-                                      const unsigned int dof_index_in,
-                                      const unsigned int quad_index_in,
-                                      ProjectionOperatorData const projection_operator_data_in,
-                                      std_cxx11::shared_ptr< InverseMassMatrixXWallOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type> > inv_mass_xw)
+                                           FEParameters<dim> & fe_param_in,
+                                           const unsigned int dof_index_in,
+                                           const unsigned int quad_index_in,
+                                           ProjectionOperatorData const projection_operator_data_in,
+                                           std_cxx11::shared_ptr< InverseMassMatrixXWallOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type> > inv_mass_xw)
     :
     ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(data_in,fe_param_in, dof_index_in,quad_index_in,projection_operator_data_in),
     fe_eval(1,FEEval_Velocity_Velocity_linear(data_in, fe_param_in, dof_index_in, quad_index_in)),

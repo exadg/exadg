@@ -38,7 +38,7 @@ public:
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  FEParameters<dim>                     &fe_param,
+                  FEParameters<dim>                &fe_param,
                   BodyForceOperatorData const      &body_force_operator_data_in)
   {
     this->data = &mf_data;
@@ -130,7 +130,7 @@ public:
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  FEParameters<dim> const               &fe_param,
+                  FEParameters<dim> const          &fe_param,
                   MassMatrixOperatorData const     &mass_matrix_operator_data_in)
   {
     this->data = &mf_data;
@@ -334,7 +334,7 @@ public:
 
   void initialize(Mapping<dim> const              &mapping,
                   MatrixFree<dim,Number> const    &mf_data,
-                  FEParameters<dim> const              &fe_param,
+                  FEParameters<dim> const         &fe_param,
                   ViscousOperatorData<dim> const  &operator_data)
   {
     this->data = &mf_data;
@@ -1652,6 +1652,11 @@ struct GradientOperatorData
   bool use_boundary_data;
   std::set<types::boundary_id> dirichlet_boundaries;
   std::set<types::boundary_id> neumann_boundaries;
+
+  std::set<types::boundary_id> const & get_dirichlet_boundaries() const
+  {
+    return dirichlet_boundaries;
+  }
 };
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
@@ -1674,7 +1679,7 @@ public:
   typedef FEFaceEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,is_xwall> FEFaceEval_Pressure_Velocity_linear;
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  FEParameters<dim>                     &fe_param,
+                  FEParameters<dim> const          &fe_param,
                   GradientOperatorData const       &gradient_operator_data_in)
   {
     this->data = &mf_data;
@@ -2083,7 +2088,7 @@ public:
   typedef FEFaceEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,is_xwall> FEFaceEval_Pressure_Velocity_linear;
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  FEParameters<dim>                     &fe_param,
+                  FEParameters<dim> const          &fe_param,
                   DivergenceOperatorData const     &divergence_operator_data_in)
   {
     this->data = &mf_data;

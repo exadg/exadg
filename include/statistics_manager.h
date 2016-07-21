@@ -24,9 +24,9 @@ public:
   void evaluate(const std::vector<parallel::distributed::Vector<double> > &velocity);
 
   void evaluate_xwall(const parallel::distributed::Vector<double> &velocity,
-                      const DoFHandler<dim> &dof_handler_wdist,
-                      const FEParameters<dim> & fe_param,
-                      const double viscosity);
+                      const DoFHandler<dim>                       &dof_handler_wdist,
+                      const FEParameters<dim>                     &fe_param,
+                      const double                                viscosity);
 
   void write_output(const std::string output_prefix,
                     const double      viscosity);
@@ -39,9 +39,9 @@ private:
   void do_evaluate(const std::vector<const parallel::distributed::Vector<double> *> &velocity);
 
   void do_evaluate_xwall(const std::vector<const parallel::distributed::Vector<double> *> &velocity,
-                         const DoFHandler<dim> &dof_handler_wdist,
-                         const FEParameters<dim> & fe_param,
-                         const double viscosity);
+                         const DoFHandler<dim>                                            &dof_handler_wdist,
+                         const FEParameters<dim>                                          &fe_param,
+                         const double                                                     viscosity);
 
   const DoFHandler<dim> &dof_handler;
   MPI_Comm communicator;

@@ -293,9 +293,9 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const parallel::distribute
 template <int dim>
 void
 StatisticsManager<dim>::evaluate_xwall(const parallel::distributed::Vector<double> &velocity,
-                                       const DoFHandler<dim> &dof_handler_wdist,
-                                       const FEParameters<dim> & fe_param,
-                                       const double viscosity)
+                                       const DoFHandler<dim>                       &dof_handler_wdist,
+                                       const FEParameters<dim>                     &fe_param,
+                                       const double                                viscosity)
 {
   std::vector<const parallel::distributed::Vector<double> *> vecs;
   vecs.push_back(&velocity);
@@ -305,9 +305,9 @@ StatisticsManager<dim>::evaluate_xwall(const parallel::distributed::Vector<doubl
 template <int dim>
 void
 StatisticsManager<dim>::do_evaluate_xwall(const std::vector<const parallel::distributed::Vector<double> *> &velocity,
-                                          const DoFHandler<dim> &dof_handler_wdist,
-                                          const FEParameters<dim> & fe_param,
-                                          const double viscosity)
+                                          const DoFHandler<dim>                                            &dof_handler_wdist,
+                                          const FEParameters<dim>                                          &fe_param,
+                                          const double                                                     viscosity)
 {
   std::vector<double> area_loc(velx_glob.size());
   std::vector<double> velx_loc(velx_glob.size());

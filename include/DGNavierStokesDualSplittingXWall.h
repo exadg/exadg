@@ -20,6 +20,22 @@ public:
   typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::FEFaceEval_Velocity_Velocity_linear FEFaceEval_Velocity_Velocity_linear;
   typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::FEEval_Velocity_Velocity_linear FEEval_Velocity_Velocity_linear;
 
+
+  enum class DofHandlerSelector{
+    velocity = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity,
+    pressure = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::pressure,
+    wdist_tauw = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::n_variants,
+    n_variants = wdist_tauw+1
+  };
+
+  enum class QuadratureSelector{
+    velocity = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity,
+    pressure = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::pressure,
+    velocity_nonlinear = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity_nonlinear,
+    enriched = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::n_variants,
+    n_variants = enriched+1
+  };
+
   DGNavierStokesDualSplittingXWall(parallel::distributed::Triangulation<dim> const &triangulation,
                                    InputParameters const                           &parameter)
     :
@@ -217,28 +233,36 @@ data_reinit(typename MatrixFree<dim,value_type>::AdditionalData & additional_dat
 {
   std::vector<const DoFHandler<dim> * >  dof_handler_vec;
 
-  dof_handler_vec.push_back(&this->dof_handler_u);
-  dof_handler_vec.push_back(&this->dof_handler_p);
-  dof_handler_vec.push_back(&dof_handler_wdist);
+  dof_handler_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::n_variants));
+  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity)] = &this->dof_handler_u;
+  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure)] = &this->dof_handler_p;
+  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::wdist_tauw)] = &dof_handler_wdist;
 
   std::vector<const ConstraintMatrix *> constraint_matrix_vec;
-  ConstraintMatrix constraint, constraint_p;
-  constraint.close();
+  constraint_matrix_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::n_variants));
+  ConstraintMatrix constraint_u, constraint_p;
+  constraint_u.close();
   constraint_p.close();
-  constraint_matrix_vec.push_back(&constraint);
-  constraint_matrix_vec.push_back(&constraint_p);
-  constraint_matrix_vec.push_back(&constraint_periodic);
+  constraint_matrix_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity)] = &constraint_u;
+  constraint_matrix_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure)] = &constraint_p;
+  constraint_matrix_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::wdist_tauw)] = &constraint_periodic;
 
   std::vector<Quadrature<1> > quadratures;
 
+  // resize quadratures
+  quadratures.resize(static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::n_variants));
   // velocity
-  quadratures.push_back(QGauss<1>(fe_degree+1));
+  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity)]
+              = QGauss<1>(fe_degree+1);
   // pressure
-  quadratures.push_back(QGauss<1>(fe_degree_p+1));
+  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::pressure)]
+              = QGauss<1>(fe_degree_p+1);
   // exact integration of nonlinear convective term
-  quadratures.push_back(QGauss<1>(fe_degree + (fe_degree+2)/2));
-  // enrichment
-  quadratures.push_back(QGauss<1>(n_q_points_1d_xwall));
+  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity_nonlinear)]
+              = QGauss<1>(fe_degree + (fe_degree+2)/2);
+  // high-order integration of enrichment
+  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::enriched)]
+              = QGauss<1>(n_q_points_1d_xwall);
 
   this->data.reinit (this->mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 }

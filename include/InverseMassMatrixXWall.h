@@ -17,9 +17,9 @@ template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d, typena
 struct InverseMassMatrixXWallData: public InverseMassMatrixData<dim,fe_degree,Number,n_components>
 {
   InverseMassMatrixXWallData(const MatrixFree<dim,Number> &data,
-                        FEParameters<dim> & fe_param,
-                        const unsigned int fe_index = 0,
-                        const unsigned int quad_index = 0)
+                        FEParameters<dim>                 &fe_param,
+                        const unsigned int                fe_index = 0,
+                        const unsigned int                quad_index = 0)
     :
       InverseMassMatrixData<dim,fe_degree,Number,n_components>(data,fe_index,quad_index),
       fe_eval_scalar(1,FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,1,Number,true>(data,fe_param,fe_index)),
@@ -53,9 +53,9 @@ public:
   {}
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  FEParameters<dim> &     fe_param,
-                  const unsigned int dof_index,
-                  const unsigned int quad_index)
+                  FEParameters<dim> &              fe_param,
+                  const unsigned int               dof_index,
+                  const unsigned int               quad_index)
   {
     InverseMassMatrixOperator<dim,fe_degree,value_type,n_components>::initialize(mf_data,dof_index,quad_index);
     //initialize matrices and compute them

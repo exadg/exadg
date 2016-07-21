@@ -128,8 +128,7 @@ public:
   const unsigned int           fe_no = 0,
   const int                    quad_no = -1)
     :
-    //    FEEvaluation<Templates::dimension,....,dim,fe_degree,n_q_points_1d,n_components_,Number>(matrix_free,fe_no,find_quadrature_slot(matrix_free,quad_no)),
-    FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,n_components_,Number,is_enriched>(matrix_free,in_fe_param,fe_no)
+    FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,n_components_,Number,is_enriched>(matrix_free,in_fe_param,fe_no,quad_no)
     {
     }
 };
@@ -158,10 +157,10 @@ private:
 public:
   FEFaceEvaluationWrapper (
   const MatrixFree<dim,Number> &matrix_free,
-  const FEParameters<dim> & in_fe_param,
-  const bool                    is_left_face = true,
-  const unsigned int            fe_no = 0,
-  const int            quad_no = -1)
+  const FEParameters<dim>      & in_fe_param,
+  const bool                   is_left_face = true,
+  const unsigned int           fe_no = 0,
+  const int                    quad_no = -1)
     :
   FEFaceEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number>(matrix_free,is_left_face,fe_no,find_quadrature_slot(matrix_free,quad_no)),
   fe_param(in_fe_param)
@@ -228,9 +227,9 @@ public:
   const FEParameters<dim>      &in_fe_param,
   const bool                   is_left_face = true,
   const unsigned int           fe_no = 0,
-  const int            quad_no = -1)
+  const int                    quad_no = -1)
     :
-  FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,n_components_,Number,is_enriched>(matrix_free,is_left_face,fe_no)
+  FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,n_components_,Number,is_enriched>(matrix_free,in_fe_param,is_left_face,fe_no,quad_no)
   {
   }
 };
@@ -1880,9 +1879,9 @@ private:
 public:
   FEFaceEvaluationWrapperPressure  ( const MatrixFree<dim,Number> &matrix_free,
   const FEParameters<dim>            & in_fe_param,
-  const bool                    is_left_face = true,
-  const unsigned int            fe_no = 0,
-  const int                     = -1):
+  const bool                         is_left_face = true,
+  const unsigned int                 fe_no = 0,
+  const int                          = -1):
     FEFaceEvaluationWrapper<dim, fe_degree, fe_degree_xwall, n_q_points_1d, n_components_, Number, true>(matrix_free,in_fe_param,is_left_face,fe_no)
   {
   };

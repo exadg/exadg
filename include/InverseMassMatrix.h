@@ -82,9 +82,9 @@ protected:
 
 private:
   virtual void local_apply_inverse_mass_matrix (const MatrixFree<dim,value_type>                 &,
-                                        parallel::distributed::Vector<value_type>        &dst,
-                                        const parallel::distributed::Vector<value_type>  &src,
-                                        const std::pair<unsigned int,unsigned int>       &cell_range) const
+                                                parallel::distributed::Vector<value_type>        &dst,
+                                                const parallel::distributed::Vector<value_type>  &src,
+                                                const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
     InverseMassMatrixData<dim,fe_degree,value_type,n_components>& mass_data = mass_matrix_data->get();
 
