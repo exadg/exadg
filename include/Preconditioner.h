@@ -438,7 +438,7 @@ public:
                             const DoFHandler<dim>          &dof_handler,
                             const Mapping<dim>             &mapping,
                             const OperatorData             &operator_data_in,
-                            FEParameters const             &fe_param = FEParameters())
+                            FEParameters<dim> const        &fe_param = FEParameters<dim>())
   {
     this->mg_data = mg_data_in;
 

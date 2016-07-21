@@ -184,13 +184,12 @@ public:
 
 protected:
   std_cxx11::shared_ptr<PreconditionerBase<value_type> > helmholtz_preconditioner;
+  ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> * projection_operator;
+  std_cxx11::shared_ptr<ProjectionSolverBase<value_type> > projection_solver;
 
 private:
   LaplaceOperator<dim,value_type> laplace_operator;
   PoissonSolver<dim> pressure_poisson_solver;
-
-  ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> * projection_operator;
-  std_cxx11::shared_ptr<ProjectionSolverBase<value_type> > projection_solver;
 
   HelmholtzOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type> helmholtz_operator;
   HelmholtzSolver<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type> helmholtz_solver;
@@ -207,7 +206,7 @@ private:
 
   void setup_pressure_poisson_solver();
 
-  void setup_projection_solver();
+  virtual void setup_projection_solver();
 
   void setup_helmholtz_solver();
 

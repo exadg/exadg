@@ -41,6 +41,9 @@ protected:
 
   std::vector<parallel::distributed::Vector<value_type> > velocity;
 
+
+  parallel::distributed::Vector<value_type> velocity_np;
+
   std::vector<parallel::distributed::Vector<value_type> > vorticity;
 
   std::vector<parallel::distributed::Vector<value_type> > vec_convective_term;
@@ -74,8 +77,6 @@ private:
   virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const;
 
   std::vector<value_type> computing_times;
-
-  parallel::distributed::Vector<value_type> velocity_np;
 
   parallel::distributed::Vector<value_type> pressure_np;
   std::vector<parallel::distributed::Vector<value_type> > pressure;

@@ -42,11 +42,24 @@ public:
 
   void precompute_inverse_mass_matrix();
 
+  void rhs_for_inverse_mass_matrix(parallel::distributed::Vector<value_type> &velocity);
+
   void xwall_projection(parallel::distributed::Vector<value_type> & velocity);
 
   void prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
                                     parallel::distributed::Vector<value_type> &pressure,
                                     double const                              evaluation_time) const;
+
+  FE_Q<dim> const & get_fe_wdist() const
+  {
+    return fe_wdist;
+  }
+
+  DoFHandler<dim> const & get_dof_handler_wdist() const
+  {
+    return  dof_handler_wdist;
+  }
+
 
 private:
   virtual void create_dofs();
@@ -57,8 +70,7 @@ private:
 
   void init_wdist();
 
-  void calculate_wall_shear_stress(const parallel::distributed::Vector<value_type> &src,
-                                         parallel::distributed::Vector<value_type> &dst);
+  void calculate_wall_shear_stress(const parallel::distributed::Vector<value_type> &src);
 
   void local_rhs_dummy (const MatrixFree<dim,value_type>                &,
                         parallel::distributed::Vector<value_type>      &,
@@ -80,6 +92,12 @@ private:
                                               const parallel::distributed::Vector<value_type>  &,
                                               const std::pair<unsigned int,unsigned int>   &face_range) const;
 
+  void precompute_spaldings_law();
+
+  void local_precompute_spaldings_law (const MatrixFree<dim,value_type>        &data,
+                                       parallel::distributed::Vector<value_type>    &,
+                                       const parallel::distributed::Vector<value_type>  &,
+                                       const std::pair<unsigned int,unsigned int>   &cell_range);
 //  // inverse mass matrix velocity
 //  void local_precompute_mass_matrix(const MatrixFree<dim,value_type>                &data,
 //                                    parallel::distributed::Vector<value_type>    &,
@@ -92,9 +110,17 @@ private:
                       const parallel::distributed::Vector<value_type>  &src,
                       const std::pair<unsigned int,unsigned int>          &cell_range);
 
+  // inverse mass matrix velocity
+  void local_rhs_for_inverse_mass_matrix(const MatrixFree<dim,value_type>                &data,
+                      parallel::distributed::Vector<value_type>    &dst,
+                      const parallel::distributed::Vector<value_type>  &src,
+                      const std::pair<unsigned int,unsigned int>          &cell_range);
+
   void initialize_constraints(const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > &periodic_face_pairs);
 
   void setup_helmholtz_preconditioner(HelmholtzOperatorData<dim> &helmholtz_operator_data);
+
+  void setup_projection_solver();
 
   FE_Q<dim>                  fe_wdist;
   DoFHandler<dim>  dof_handler_wdist;
@@ -102,11 +128,15 @@ private:
   parallel::distributed::Vector<double>  tauw;
   parallel::distributed::Vector<double>  tauw_n;
   parallel::distributed::Vector<double> tauw_boundary;
+  parallel::distributed::Vector<value_type> normalization;
+  parallel::distributed::Vector<value_type> force;
   std::vector<unsigned int> vector_to_tauw_boundary;
   ConstraintMatrix constraint_periodic;
 //  std::vector<std::vector<LAPACKFullMatrix<value_type> > > matrices;
-  FEParameters fe_param_n;
+  FEParameters<dim> fe_param_n;
   std_cxx11::shared_ptr< InverseMassMatrixXWallOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type> > inverse_mass_matrix_operator_xwall;
+  AlignedVector<AlignedVector<VectorizedArray<value_type> > > enrichment;
+  AlignedVector<AlignedVector<Tensor<1,dim,VectorizedArray<value_type> > > > enrichment_gradient;
 };
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -131,9 +161,17 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   this->data.initialize_dof_vector(tauw, 2);
   tauw = 1.0;
   tauw_n =tauw;
+  normalization = tauw;
+  force = tauw;
+  tauw.update_ghost_values();
+  tauw_n.update_ghost_values();
 
-  this->fe_param.setup(&wdist,&tauw);
+  this->fe_param.setup(&wdist,&tauw,&enrichment,&enrichment_gradient);
   fe_param_n.setup(&wdist,&tauw_n);
+
+  enrichment.resize(this->data.n_macro_cells());
+  enrichment_gradient.resize(this->data.n_macro_cells());
+  this->precompute_spaldings_law();
 
   this->inverse_mass_matrix_operator.reset(new InverseMassMatrixXWallOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>());
   inverse_mass_matrix_operator_xwall = std::dynamic_pointer_cast<InverseMassMatrixXWallOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type> > (this->inverse_mass_matrix_operator);
@@ -450,6 +488,43 @@ precompute_inverse_mass_matrix()
 //                  this, dummy, dummy);
 }
 
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+rhs_for_inverse_mass_matrix(parallel::distributed::Vector<value_type> & velocity)
+{
+  this->data.cell_loop(&DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_rhs_for_inverse_mass_matrix,
+                  this, velocity, velocity);
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+local_rhs_for_inverse_mass_matrix (const MatrixFree<dim,value_type>        &data,
+                     parallel::distributed::Vector<value_type>    &dst,
+                     const parallel::distributed::Vector<value_type>  &src,
+                     const std::pair<unsigned int,unsigned int>   &cell_range)
+{
+  FEEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,
+      static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
+
+  for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+  {
+    //first, check if we have an enriched element
+    //if so, perform the routine for the enriched elements
+    fe_eval_velocity.reinit (cell);
+    fe_eval_velocity.reinit (cell);
+  //  if(fe_eval_velocity.enriched)
+    {
+      Vector<value_type> vector_result(fe_eval_velocity.dofs_per_cell);
+      fe_eval_velocity.read_dof_values(src);
+      fe_eval_velocity.evaluate(true,false);
+      for (unsigned int q=0; q<fe_eval_velocity.n_q_points; q++)
+        fe_eval_velocity.submit_value(fe_eval_velocity.get_value(q),q);
+      fe_eval_velocity.integrate(true,false);
+      fe_eval_velocity.set_dof_values (dst);
+    }
+  }
+}
+
 //template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 //void DGNavierStokesDualSplittingXWall<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 //local_precompute_mass_matrix (const MatrixFree<dim,value_type>        &data,
@@ -534,43 +609,27 @@ local_project_xwall (const MatrixFree<dim,value_type>        &data,
 
   FEEval_Velocity_Velocity_linear fe_eval_velocity_n(data,this->fe_param_n,
       static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
-//FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type> fe_eval_xwall_n (data,xwallstatevec[0],*xwall.ReturnTauWN(),0,3);
-FEEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,
-    static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
+  //FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type> fe_eval_xwall_n (data,xwallstatevec[0],*xwall.ReturnTauWN(),0,3);
+  FEEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,
+      static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
 
-for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
-{
-  //first, check if we have an enriched element
-  //if so, perform the routine for the enriched elements
-  fe_eval_velocity_n.reinit (cell);
-  fe_eval_velocity.reinit (cell);
-//  if(fe_eval_velocity.enriched)
+  for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
   {
-    Vector<value_type> vector_result(fe_eval_velocity.dofs_per_cell);
-    fe_eval_velocity_n.read_dof_values(src);
-    fe_eval_velocity_n.evaluate(true,false);
-    for (unsigned int q=0; q<fe_eval_velocity.n_q_points; q++)
-      fe_eval_velocity.submit_value(fe_eval_velocity_n.get_value(q),q);
-    fe_eval_velocity.integrate(true,false);
-//    now apply vectors to factorized matrix
-//    for (unsigned int idim = 0; idim < dim; ++idim)
-//    {
-//      for (unsigned int v = 0; v < this->data.n_components_filled(cell); ++v)
-//      {
-//        vector_result = 0;
-//        for (unsigned int i=0; i<fe_eval_velocity.dofs_per_cell; ++i)
-//          vector_result[i] = fe_eval_velocity.read_cellwise_dof_value(i,idim)[v];
-//        (matrices[cell][v]).apply_lu_factorization(vector_result,false);
-//        for (unsigned int i=0; i<fe_eval_velocity.dofs_per_cell; ++i)
-//          fe_eval_velocity.write_cellwise_dof_value(i,idim,vector_result[i],v);
-//      }
-//    }
-    fe_eval_velocity.set_dof_values (dst);
+    //first, check if we have an enriched element
+    //if so, perform the routine for the enriched elements
+    fe_eval_velocity_n.reinit (cell);
+    fe_eval_velocity.reinit (cell);
+  //  if(fe_eval_velocity.enriched)
+    {
+      Vector<value_type> vector_result(fe_eval_velocity.dofs_per_cell);
+      fe_eval_velocity_n.read_dof_values(src);
+      fe_eval_velocity_n.evaluate(true,false);
+      for (unsigned int q=0; q<fe_eval_velocity.n_q_points; q++)
+        fe_eval_velocity.submit_value(fe_eval_velocity_n.get_value(q),q);
+      fe_eval_velocity.integrate(true,false);
+      fe_eval_velocity.set_dof_values (dst);
+    }
   }
-}
-//
-
-
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -578,15 +637,13 @@ void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwa
 update_tauw(parallel::distributed::Vector<value_type> &velocity)
 {
 
-  //store old wall shear stress
-  tauw_n.swap(tauw);
-
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     std::cout << "\nCompute new tauw: ";
-  calculate_wall_shear_stress(velocity,tauw);
+  calculate_wall_shear_stress(velocity);
   //mean does not work currently because of all off-wall nodes in the vector
-//    double tauwmean = tauw.mean_value();
-//    std::cout << "mean = " << tauwmean << " ";
+  double tauwmean = tauw.mean_value();
+  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    std::cout << "mean applied = " << tauwmean << " ";
 
   value_type tauwmax = tauw.linfty_norm();
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
@@ -615,24 +672,19 @@ update_tauw(parallel::distributed::Vector<value_type> &velocity)
     std::cout << std::endl;
   tauw.update_ghost_values();
 
+  this->precompute_spaldings_law();
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-calculate_wall_shear_stress (const parallel::distributed::Vector<value_type>      &src,
-                                   parallel::distributed::Vector<value_type>      &dst)
+calculate_wall_shear_stress (const parallel::distributed::Vector<value_type>      &src)
 {
-
-  parallel::distributed::Vector<value_type> normalization;
-  this->data.initialize_dof_vector(normalization, 2);
-  parallel::distributed::Vector<value_type> force;
-  this->data.initialize_dof_vector(force, 2);
-
   // initialize
   force = 0.0;
   normalization = 0.0;
 
   // run loop to compute the local integrals
+  // here, we still need tauw, so it should first be swapped with tauw_n afterwards
   this->data.loop (&DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_rhs_dummy,
       &DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_rhs_dummy_face,
       &DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_rhs_wss_boundary_face,
@@ -646,9 +698,10 @@ calculate_wall_shear_stress (const parallel::distributed::Vector<value_type>    
   // run normalization
   value_type mean = 0.0;
   unsigned int count = 0;
+  const double EPSILON = 1e-12;
   for(unsigned int i = 0; i < force.local_size(); ++i)
   {
-    if(normalization.local_element(i)>0.0)
+    if(normalization.local_element(i)>EPSILON)
     {
       tauw_boundary.local_element(i) = force.local_element(i) / normalization.local_element(i);
       mean += tauw_boundary.local_element(i);
@@ -667,9 +720,45 @@ calculate_wall_shear_stress (const parallel::distributed::Vector<value_type>    
   // field
   tauw_boundary.update_ghost_values();
 
+  //store old wall shear stress
+  tauw_n.swap(tauw);
+
   for (unsigned int i=0; i<tauw.local_size(); ++i)
-    dst.local_element(i) = (1.-this->param.dtauw)*tauw_n.local_element(i)+this->param.dtauw*tauw_boundary.local_element(vector_to_tauw_boundary[i]);
-  dst.update_ghost_values();
+    tauw.local_element(i) = (1.-this->param.dtauw)*tauw_n.local_element(i)+this->param.dtauw*tauw_boundary.local_element(vector_to_tauw_boundary[i]);
+
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+precompute_spaldings_law()
+{
+  parallel::distributed::Vector<value_type> dummy;
+  this->data.cell_loop (&DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_precompute_spaldings_law,
+            this, dummy, dummy);
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+local_precompute_spaldings_law (const MatrixFree<dim,value_type>        &data,
+                                     parallel::distributed::Vector<value_type>    &,
+                                     const parallel::distributed::Vector<value_type>  &,
+                                     const std::pair<unsigned int,unsigned int>   &cell_range)
+{
+  FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type,true> fe_eval(data,this->fe_param,
+                              static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
+  AlignedVector<VectorizedArray<value_type> > enrichment_cell;
+  AlignedVector<Tensor<1,dim,VectorizedArray<value_type> > > enrichment_gradient_cell;
+  for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+  {
+    fe_eval.reinit(cell,enrichment_cell,enrichment_gradient_cell);
+    enrichment[cell].resize(enrichment_cell.size());
+    enrichment_gradient[cell].resize(enrichment_cell.size());
+    for(unsigned int i = 0; i< enrichment_cell.size(); i++)
+    {
+      enrichment[cell][i] = enrichment_cell[i];
+      enrichment_gradient[cell][i] = enrichment_gradient_cell[i];
+    }
+  }
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -791,7 +880,6 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 setup_helmholtz_preconditioner(HelmholtzOperatorData<dim> &)
 {
-
   if(this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix)
   {
     this->helmholtz_preconditioner.reset(new InverseMassMatrixPreconditionerPtr<dim,fe_degree,value_type>(
@@ -804,6 +892,71 @@ setup_helmholtz_preconditioner(HelmholtzOperatorData<dim> &)
   else if(this->param.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
   {
     AssertThrow(false,ExcMessage("GeometricMultigrid is currently not supported as Helmholtz preconditioner"));
+  }
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+setup_projection_solver ()
+{
+  // initialize projection solver
+  ProjectionOperatorData projection_operator_data;
+  projection_operator_data.penalty_parameter_divergence = this->param.penalty_factor_divergence;
+  projection_operator_data.penalty_parameter_continuity = this->param.penalty_factor_continuity;
+  projection_operator_data.solve_stokes_equations = (this->param.equation_type == EquationType::Stokes);
+
+  if(this->param.projection_type == ProjectionType::NoPenalty)
+  {
+    this->projection_solver.reset(new ProjectionSolverNoPenalty<dim, fe_degree, value_type>(this->data,
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity)));
+  }
+  else if(this->param.projection_type == ProjectionType::DivergencePenalty &&
+          this->param.solver_projection == SolverProjection::LU)
+  {
+    if(this->projection_operator != nullptr)
+    {
+      delete this->projection_operator;
+      this->projection_operator = nullptr;
+    }
+
+    this->projection_operator = new ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(
+        this->data,
+        this->fe_param,
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity),
+        projection_operator_data);
+
+    this->projection_solver.reset(new DirectProjectionSolverDivergencePenalty
+        <dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(this->projection_operator));
+  }
+  else if(this->param.projection_type == ProjectionType::DivergencePenalty &&
+          this->param.solver_projection == SolverProjection::PCG)
+  {
+    if(this->projection_operator != nullptr)
+    {
+      delete this->projection_operator;
+      this->projection_operator = nullptr;
+    }
+
+    this->projection_operator = new ProjectionOperatorDivergencePenaltyXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(
+        this->data,
+        this->fe_param,
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity),
+        projection_operator_data,
+        inverse_mass_matrix_operator_xwall);
+
+    ProjectionSolverData projection_solver_data;
+    projection_solver_data.solver_tolerance_abs = this->param.abs_tol_projection;
+    projection_solver_data.solver_tolerance_rel = this->param.rel_tol_projection;
+    projection_solver_data.solver_projection = this->param.solver_projection;
+    projection_solver_data.preconditioner_projection = this->param.preconditioner_projection;
+
+    this->projection_solver.reset(new IterativeProjectionSolverDivergencePenaltyXWall
+        <dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(
+                            this->projection_operator,
+                              projection_solver_data));
   }
 }
 

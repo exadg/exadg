@@ -17,13 +17,14 @@ template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d, typena
 struct InverseMassMatrixXWallData: public InverseMassMatrixData<dim,fe_degree,Number,n_components>
 {
   InverseMassMatrixXWallData(const MatrixFree<dim,Number> &data,
-                        FEParameters & fe_param,
+                        FEParameters<dim> & fe_param,
                         const unsigned int fe_index = 0,
                         const unsigned int quad_index = 0)
     :
       InverseMassMatrixData<dim,fe_degree,Number,n_components>(data,fe_index,quad_index),
       fe_eval_scalar(1,FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,1,Number,true>(data,fe_param,fe_index)),
-      fe_eval_components(1,FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,n_components,Number,true>(data,fe_param,fe_index))
+      fe_eval_components(1,FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,n_components,Number,true>(data,fe_param,fe_index)),
+      vector_result(0)
   {
 
   }
@@ -33,11 +34,13 @@ struct InverseMassMatrixXWallData: public InverseMassMatrixData<dim,fe_degree,Nu
     :
       InverseMassMatrixData<dim,fe_degree,Number,n_components>(other),
       fe_eval_scalar(other.fe_eval_scalar),
-      fe_eval_components(other.fe_eval_components)
+      fe_eval_components(other.fe_eval_components),
+      vector_result(other.vector_result)
   {}
 
   AlignedVector<FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,1,Number,true> > fe_eval_scalar;
   AlignedVector<FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,n_components,Number,true> > fe_eval_components;
+  Vector<Number> vector_result;
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d, typename value_type, int n_components=dim>
@@ -50,7 +53,7 @@ public:
   {}
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  FEParameters &     fe_param,
+                  FEParameters<dim> &     fe_param,
                   const unsigned int dof_index,
                   const unsigned int quad_index)
   {
@@ -71,10 +74,50 @@ public:
     this->matrix_free_data->cell_loop(&InverseMassMatrixXWallOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d,value_type,n_components>::local_precompute_mass_matrix, this, dummy, dummy);
   }
 
+  void local_apply_inverse_mass_matrix (unsigned int cell,
+      VectorizedArray<value_type> * dst,
+      const VectorizedArray<value_type> * src) const
+  {
+
+    InverseMassMatrixXWallData<dim,fe_degree,fe_degree_xwall,n_q_points_1d,value_type,n_components> & mass_data = this->mass_matrix_data_xwall->get();
+    mass_data.fe_eval_components[0].reinit (cell);
+    if(not mass_data.fe_eval_components[0].enriched)
+      mass_data.fe_eval[0].reinit(cell);
+    //first, check if we have an enriched element
+    //if so, perform the routine for the enriched elements
+    if(mass_data.fe_eval_components[0].enriched)
+    {
+      mass_data.vector_result.reinit(mass_data.fe_eval_components[0].dofs_per_cell,true);
+      for (unsigned int j=0; j<mass_data.fe_eval_components[0].dofs_per_cell * dim; ++j)
+        mass_data.fe_eval_components[0].write_cellwise_dof_value(j,src[j]);
+
+      //now apply vectors to factorized matrix
+      for (unsigned int idim = 0; idim < n_components; ++idim)
+      {
+        for (unsigned int v = 0; v < this->matrix_free_data->n_components_filled(cell); ++v)
+        {
+          mass_data.vector_result = 0;
+          for (unsigned int i=0; i<mass_data.fe_eval_components[0].dofs_per_cell; ++i)
+            mass_data.vector_result[i] = mass_data.fe_eval_components[0].read_cellwise_dof_value(i,idim)[v];
+          (matrices[cell][v]).apply_lu_factorization(mass_data.vector_result,false);
+          for (unsigned int i=0; i<mass_data.fe_eval_components[0].dofs_per_cell; ++i)
+            mass_data.fe_eval_components[0].write_cellwise_dof_value(i,idim,mass_data.vector_result[i],v);
+        }
+      }
+      for (unsigned int j=0; j<mass_data.fe_eval_components[0].dofs_per_cell * dim; ++j)
+        dst[j] = mass_data.fe_eval_components[0].read_cellwise_dof_value(j);
+    }
+    else //perform the cheap way, if none of the elements are enriched
+    {
+      mass_data.inverse.fill_inverse_JxW_values(mass_data.coefficients);
+      mass_data.inverse.apply(mass_data.coefficients, n_components,
+                              src, dst);
+    }
+  }
+
 private:
   mutable std_cxx11::shared_ptr<Threads::ThreadLocalStorage<InverseMassMatrixXWallData<dim,fe_degree,fe_degree_xwall,n_q_points_1d,value_type,n_components> > > mass_matrix_data_xwall;
   AlignedVector<AlignedVector<LAPACKFullMatrix<value_type> > > matrices;
-
   void local_apply_inverse_mass_matrix (const MatrixFree<dim,value_type>                 &,
                                         parallel::distributed::Vector<value_type>        &dst,
                                         const parallel::distributed::Vector<value_type>  &src,
@@ -89,7 +132,7 @@ private:
       mass_data.fe_eval_components[0].reinit (cell);
       if(mass_data.fe_eval_components[0].enriched)
       {
-        Vector<value_type> vector_result(mass_data.fe_eval_components[0].dofs_per_cell);
+        mass_data.vector_result.reinit(mass_data.fe_eval_components[0].dofs_per_cell,true);
         mass_data.fe_eval_components[0].read_dof_values(src);
 
         //now apply vectors to factorized matrix
@@ -97,12 +140,12 @@ private:
         {
           for (unsigned int v = 0; v < this->matrix_free_data->n_components_filled(cell); ++v)
           {
-            vector_result = 0;
+            mass_data.vector_result = 0;
             for (unsigned int i=0; i<mass_data.fe_eval_components[0].dofs_per_cell; ++i)
-              vector_result[i] = mass_data.fe_eval_components[0].read_cellwise_dof_value(i,idim)[v];
-            (matrices[cell][v]).apply_lu_factorization(vector_result,false);
+              mass_data.vector_result[i] = mass_data.fe_eval_components[0].read_cellwise_dof_value(i,idim)[v];
+            (matrices[cell][v]).apply_lu_factorization(mass_data.vector_result,false);
             for (unsigned int i=0; i<mass_data.fe_eval_components[0].dofs_per_cell; ++i)
-              mass_data.fe_eval_components[0].write_cellwise_dof_value(i,idim,vector_result[i],v);
+              mass_data.fe_eval_components[0].write_cellwise_dof_value(i,idim,mass_data.vector_result[i],v);
           }
         }
         mass_data.fe_eval_components[0].set_dof_values (dst);
@@ -164,7 +207,9 @@ private:
           for (unsigned int i=0; i<mass_data.fe_eval_scalar[0].dofs_per_cell; ++i)
             for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
               if(mass_data.fe_eval_scalar[0].component_enriched(v))
+              {
                 (matrices[cell][v])(i,j) = (mass_data.fe_eval_scalar[0].read_cellwise_dof_value(i))[v];
+              }
               else//this is a non-enriched element
               {
                 if(i<mass_data.fe_eval_scalar[0].std_dofs_per_cell && j<mass_data.fe_eval_scalar[0].std_dofs_per_cell)
@@ -176,6 +221,8 @@ private:
 
         for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
         {
+//          std::cout << "is enriched: " << mass_data.fe_eval_scalar[0].component_enriched(v) << " vector component: " << v << std::endl;
+//          (matrices[cell][v]).print_formatted(std::cout,3,true,0,"x",1.,0.);
           (matrices[cell][v]).compute_lu_factorization();
         }
       }
