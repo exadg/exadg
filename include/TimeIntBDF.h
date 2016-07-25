@@ -20,9 +20,9 @@ class TimeIntBDF
 public:
   TimeIntBDF(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
                fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation_in,
-               std_cxx11::shared_ptr<PostProcessor<dim> >              postprocessor_in,
-               InputParameters const                                  &param_in,
-               unsigned int const                                     n_refine_time_in)
+               std_cxx11::shared_ptr<PostProcessor<dim> >           postprocessor_in,
+               InputParameters const                                &param_in,
+               unsigned int const                                   n_refine_time_in)
     :
     n_refine_time(n_refine_time_in),
     postprocessor(postprocessor_in),
@@ -115,6 +115,7 @@ setup(bool do_restart)
   // initialize global solution vectors (allocation)
   initialize_vectors();
 
+  // initializes the solution and calculates the time step size!
   initialize_solution(do_restart);
 
   // set the parameters that NavierStokesOperation depends on

@@ -25,7 +25,8 @@ public:
     solution(this->order),
     vec_convective_term(this->order),
     ns_operation_coupled (std::dynamic_pointer_cast<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in)),
-    N_iter_average(0),
+    N_iter_linear_average(0.0),
+    N_iter_newton_average(0.0),
     solver_time_average(0.0)
   {}
 
@@ -37,6 +38,7 @@ private:
   virtual void setup_derived();
 
   virtual void initialize_vectors();
+
   virtual void initialize_current_solution();
   virtual void initialize_former_solution();
 
@@ -72,7 +74,7 @@ private:
      ns_operation_coupled;
 
   // performance analysis: average number of iterations and solver time
-  unsigned int N_iter_average;
+  double N_iter_linear_average, N_iter_newton_average;
   double solver_time_average;
 };
 
@@ -81,9 +83,20 @@ void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_
 analyze_computing_times() const
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-  pcout << std::endl << "Number of time steps = " << (this->time_step_number-1) << std::endl
-                     << "Average number of iterations = " << N_iter_average/(this->time_step_number-1) << std::endl
-                     << "Average wall time per time step = " << solver_time_average/(this->time_step_number-1) << std::endl;
+  if(this->param.equation_type == EquationType::Stokes ||
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
+    pcout << std::endl << "Number of time steps = " << (this->time_step_number-1) << std::endl
+                       << "Average number of iterations = " << std::scientific << std::setprecision(3) << N_iter_linear_average/(this->time_step_number-1) << std::endl
+                       << "Average wall time per time step = " << std::scientific << std::setprecision(3) << solver_time_average/(this->time_step_number-1) << std::endl;
+  }
+  else
+  {
+    pcout << std::endl << "Number of time steps = " << (this->time_step_number-1) << std::endl
+                           << "Average number of linear iterations = " << std::fixed << std::setprecision(3) << N_iter_linear_average/(this->time_step_number-1) << std::endl
+                           << "Average number of Newton iterations = " << std::fixed << std::setprecision(3) << N_iter_newton_average/(this->time_step_number-1) << std::endl
+                           << "Average wall time per time step = " << std::scientific << std::setprecision(3) << solver_time_average/(this->time_step_number-1) << std::endl;
+  }
 
   pcout << std::endl << "_________________________________________________________________________________" << std::endl
         << std::endl << "Computing times:          min        avg        max        rel      p_min  p_max" << std::endl;
@@ -296,7 +309,7 @@ solve_timestep()
     // solve coupled system of equations
     unsigned int iterations = ns_operation_coupled->solve_linear_stokes_problem(solution_np,rhs_vector);
 
-    N_iter_average += iterations;
+    N_iter_linear_average += iterations;
     solver_time_average += timer.wall_time();
 
     // write output
@@ -310,9 +323,13 @@ solve_timestep()
   else // a nonlinear system of equations has to be solved
   {
     // Newton solver
-    unsigned int newton_iterations;
-    double average_linear_iterations;
+    unsigned int newton_iterations = 0;
+    double average_linear_iterations = 0.0;
     ns_operation_coupled->solve_nonlinear_problem(solution_np,newton_iterations,average_linear_iterations,&sum_alphai_ui);
+
+    N_iter_newton_average += newton_iterations;
+    N_iter_linear_average += average_linear_iterations;
+    solver_time_average += timer.wall_time();
 
     // write output
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && this->time_step_number%this->param.output_solver_info_every_timesteps == 0)

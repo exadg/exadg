@@ -88,14 +88,14 @@ using namespace dealii;
 
 ProblemType PROBLEM_TYPE = ProblemType::Unsteady; //Steady; //Unsteady;
 EquationType EQUATION_TYPE = EquationType::NavierStokes; // Stokes; // NavierStokes;
-TreatmentOfConvectiveTerm TREATMENT_OF_CONVECTIVE_TERM = TreatmentOfConvectiveTerm::Explicit; // Explicit; // Implicit;
+TreatmentOfConvectiveTerm TREATMENT_OF_CONVECTIVE_TERM = TreatmentOfConvectiveTerm::Implicit; // Explicit; // Implicit;
 
 /************* temporal discretization ***********/
 // which temporal discretization approach
-TemporalDiscretization TEMPORAL_DISCRETIZATION = TemporalDiscretization::BDFDualSplittingScheme; //BDFDualSplittingScheme // BDFCoupledSolution
+TemporalDiscretization TEMPORAL_DISCRETIZATION = TemporalDiscretization::BDFCoupledSolution; //BDFDualSplittingScheme // BDFCoupledSolution
 
 // type of time step calculation
-TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified; //ConstTimeStepCFL; //AdaptiveTimeStepCFL;
+TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepUserSpecified; //ConstTimeStepCFL; //AdaptiveTimeStepCFL;
 /*************************************************/
 
 /************* spatial discretization ************/
@@ -104,10 +104,10 @@ SpatialDiscretization SPATIAL_DISCRETIZATION = SpatialDiscretization::DG; //DG /
 FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::DivergenceFormulation; //DivergenceFormulation; //LaplaceFormulation;
 InteriorPenaltyFormulationViscous IP_FORMULATION_VISCOUS = InteriorPenaltyFormulationViscous::SIPG; //SIPG; //NIPG;
 
-bool const DIVU_INTEGRATED_BY_PARTS = false;//true;
-bool const DIVU_USE_BOUNDARY_DATA = false;//true;
-bool const GRADP_INTEGRATED_BY_PARTS = false;//true;
-bool const GRADP_USE_BOUNDARY_DATA = false;//true;
+bool const DIVU_INTEGRATED_BY_PARTS = true; //false;//true;
+bool const DIVU_USE_BOUNDARY_DATA = true; //false;//true;
+bool const GRADP_INTEGRATED_BY_PARTS = true; //false;//true;
+bool const GRADP_USE_BOUNDARY_DATA = true; //false;//true;
 /*************************************************/
 
 /******** high-order dual splitting scheme *******/
@@ -141,16 +141,16 @@ const bool USE_SYMMETRIC_SADDLE_POINT_MATRIX = true;
 
 // preconditioner
 PreconditionerLinearizedNavierStokes PRECONDITIONER_LINEARIZED_NAVIER_STOKES =
-    PreconditionerLinearizedNavierStokes::BlockTriangularFactorization; //None; //BlockDiagonal; //BlockTriangular; //BlockTriangularFactorization;
+    PreconditionerLinearizedNavierStokes::BlockTriangular; //None; //BlockDiagonal; //BlockTriangular; //BlockTriangularFactorization;
 PreconditionerMomentum PRECONDITIONER_MOMENTUM =
-    PreconditionerMomentum::InverseMassMatrix; //None; //InverseMassMatrix; //GeometricMultigrid;
+    PreconditionerMomentum::GeometricMultigrid; //None; //InverseMassMatrix; //GeometricMultigrid;
 PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
     PreconditionerSchurComplement::CahouetChabard; //None; //InverseMassMatrix; //GeometricMultigrid; //CahouetChabard;
 /************************************************/
 
 #ifdef VORTEX
-  const unsigned int FE_DEGREE = 2; //2
-  const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
+  const unsigned int FE_DEGREE = 5; //2
+  const unsigned int FE_DEGREE_P = FE_DEGREE-1;//FE_DEGREE-1;
   const unsigned int FE_DEGREE_XWALL = 1;
   const unsigned int N_Q_POINTS_1D_XWALL = 1;
   const unsigned int DIMENSION = 2;
@@ -159,14 +159,14 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 
   const double START_TIME = 0.0;
   const double END_TIME = 1.0;
-  const double OUTPUT_INTERVAL_TIME = 0.1;
+  const double OUTPUT_INTERVAL_TIME = 1.0;
   const double OUTPUT_START_TIME = 0.0;
   const double ERROR_CALC_INTERVAL_TIME = OUTPUT_INTERVAL_TIME;
   const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
   const double STATISTICS_START_TIME = 0.0;
   const int STATISTICS_EVERY = 1;
   const double RESTART_INTERVAL_TIME = 100.;
-  const double RESTART_INTERVAL_WALL_TIME = 1000.;
+  const double RESTART_INTERVAL_WALL_TIME = 1e6;
   const unsigned int RESTART_INTERVAL_STEP = 1e6;
   const bool DIVU_TIMESERIES = true;
   const bool COMPUTE_DIVERGENCE = true;
@@ -175,7 +175,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double CFL = 0.1; //0.1;
   const double U_X_MAX = 1.0;
   const double MAX_VELOCITY = 1.4*U_X_MAX;
-  const double TIME_STEP_SIZE = 1.e-1;//1.e-2;
+  const double TIME_STEP_SIZE = 1.e-3;//1.e-2;
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
@@ -197,10 +197,10 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double GRID_STRETCH_FAC = 1.8;
   const bool PURE_DIRICHLET_BC = false;
 
-  const double ABS_TOL_NEWTON = 1.0e-12;
+  const double ABS_TOL_NEWTON = 1.0e-20;
   const double REL_TOL_NEWTON = 1.0e-6;
   unsigned int const MAX_ITER_NEWTON = 1e2;
-  const double ABS_TOL_LINEAR = 1.0e-12;
+  const double ABS_TOL_LINEAR = 1.0e-20;
   const double REL_TOL_LINEAR = 1.0e-6;
   unsigned int const MAX_ITER_LINEAR = 1e6;
 
@@ -218,7 +218,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 //  const double ABS_TOL_PROJECTION = 1.0e-12;
 //  const double REL_TOL_PROJECTION = 1.0e-6;
 
-  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1;//1e6;
+  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e6;
 
   const std::string OUTPUT_PREFIX = "vortex_flow";
 
@@ -556,8 +556,8 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const unsigned int FE_DEGREE_XWALL = 1;
   const unsigned int N_Q_POINTS_1D_XWALL = 1;
   const unsigned int DIMENSION = 2;
-  const unsigned int REFINE_STEPS_SPACE_MIN = 2;//2
-  const unsigned int REFINE_STEPS_SPACE_MAX = 2;
+  const unsigned int REFINE_STEPS_SPACE_MIN = 4;//2
+  const unsigned int REFINE_STEPS_SPACE_MAX = 4;
 
   const double START_TIME = 0.0;
   const double END_TIME = 1.0;

@@ -248,6 +248,17 @@ vmult (parallel::distributed::BlockVector<value_type>       &dst,
        parallel::distributed::BlockVector<value_type> const &src) const
 {
   apply_linearized_problem(dst,src);
+
+  //TODO
+//  {
+//  double l2_norm = src.l2_norm();
+//  std::cout<< "L2 norm vmult src = "<<std::scientific<<std::setprecision(14)<<l2_norm<<std::endl;
+//  }
+//  {
+//  double l2_norm = dst.l2_norm();
+//  std::cout<< "L2 norm vmult dst = "<<std::scientific<<std::setprecision(14)<<l2_norm<<std::endl;
+//  }
+  //TODO
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
