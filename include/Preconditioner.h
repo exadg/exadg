@@ -435,11 +435,11 @@ template<int dim, typename value_type, typename Operator, typename OperatorData>
 class MyMultigridPreconditioner : public PreconditionerBase<value_type>
 {
 public:
-  MyMultigridPreconditioner(const MultigridData   &mg_data_in,
-                            const DoFHandler<dim> &dof_handler,
-                            const Mapping<dim>    &mapping,
-                            const OperatorData    &operator_data_in,
-                            FEParameters const    &fe_param = FEParameters())
+  MyMultigridPreconditioner(const MultigridData            &mg_data_in,
+                            const DoFHandler<dim>          &dof_handler,
+                            const Mapping<dim>             &mapping,
+                            const OperatorData             &operator_data_in,
+                            FEParameters<dim> const        &fe_param = FEParameters<dim>())
   {
     this->mg_data = mg_data_in;
 
@@ -529,12 +529,12 @@ public:
                                    (dof_handler, mg_matrices, *mg_coarse, mg_transfer, mg_smoother));
   }
 
-  MyMultigridPreconditioner(const MultigridData   &mg_data_in,
-                            const DoFHandler<dim> &dof_handler,
-                            const DoFHandler<dim> &dof_handler_additional,
-                            const Mapping<dim>    &mapping,
-                            const OperatorData    &operator_data_in,
-                            FEParameters const    &fe_param = FEParameters())
+  MyMultigridPreconditioner(const MultigridData     &mg_data_in,
+                            const DoFHandler<dim>   &dof_handler,
+                            const DoFHandler<dim>   &dof_handler_additional,
+                            const Mapping<dim>      &mapping,
+                            const OperatorData      &operator_data_in,
+                            FEParameters<dim> const &fe_param = FEParameters<dim>())
   {
     this->mg_data = mg_data_in;
 

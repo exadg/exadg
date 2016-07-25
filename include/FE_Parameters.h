@@ -9,7 +9,10 @@
 #define INCLUDE_FE_PARAMETERS_H_
 
 #include "InputParameters.h"
+#include <deal.II/base/vectorization.h>
+#include <deal.II/base/aligned_vector.h>
 
+template<int dim>
 class FEParameters
 {
 public:
@@ -22,7 +25,9 @@ public:
     dtauw(1.0),
     max_wdist_xwall(1.0),
     wdist(nullptr),
-    tauw(nullptr)
+    tauw(nullptr),
+    enrichment(nullptr),
+    enrichment_gradient(nullptr)
   {
   }
 
@@ -35,15 +40,28 @@ public:
     dtauw(param.dtauw),
     max_wdist_xwall(param.max_wdist_xwall),
     wdist(nullptr),
-    tauw(nullptr)
+    tauw(nullptr),
+    enrichment(nullptr),
+    enrichment_gradient(nullptr)
   {
   }
 
-  void setup(parallel::distributed::Vector<double> * wd,
+    void setup(parallel::distributed::Vector<double> * wd,
              parallel::distributed::Vector<double> * tw)
   {
     wdist = wd;
     tauw = tw;
+  }
+
+  void setup(parallel::distributed::Vector<double> * wd,
+             parallel::distributed::Vector<double> * tw,
+             AlignedVector<AlignedVector<VectorizedArray<double> > > * enr,
+             AlignedVector<AlignedVector<Tensor<1,dim,VectorizedArray<double> > > > * enr_grad)
+  {
+    wdist = wd;
+    tauw = tw;
+    enrichment = enr;
+    enrichment_gradient = enr_grad;
   }
 
   double const viscosity;
@@ -54,6 +72,8 @@ public:
   double const max_wdist_xwall;
   parallel::distributed::Vector<double> * wdist;
   parallel::distributed::Vector<double> * tauw;
+  AlignedVector<AlignedVector<VectorizedArray<double> > > * enrichment;
+  AlignedVector<AlignedVector<Tensor<1,dim,VectorizedArray<double> > > > * enrichment_gradient;
 };
 
 #endif /* INCLUDE_FE_PARAMETERS_H_ */

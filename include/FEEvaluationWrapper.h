@@ -54,8 +54,8 @@ private:
 
 public:
   FEEvaluationWrapper (
-  const MatrixFree<dim,Number> &matrix_free,
-  const FEParameters & in_fe_param,
+  const MatrixFree<dim,Number>  &matrix_free,
+  const FEParameters<dim>       & in_fe_param,
   const unsigned int            fe_no = 0,
   const int            quad_no = -1)
     :
@@ -113,7 +113,24 @@ public:
 
   AlignedVector<VectorizedArray<Number> > eddyvisc;
   unsigned int std_dofs_per_cell;
-  const FEParameters & fe_param;
+  const FEParameters<dim> & fe_param;
+};
+
+//template <typename Template>
+template <int dim, int fe_degree = 1, int fe_degree_xwall = 1, int n_q_points_1d = fe_degree+1,
+      int n_components_ = 1, typename Number = double, bool is_enriched = false>
+class FEEvaluationWrapperPressure : public FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,n_components_,Number,is_enriched>
+{
+public:
+  FEEvaluationWrapperPressure (
+  const MatrixFree<dim,Number> &matrix_free,
+  const FEParameters<dim>      &in_fe_param,
+  const unsigned int           fe_no = 0,
+  const int                    quad_no = -1)
+    :
+    FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,n_components_,Number,is_enriched>(matrix_free,in_fe_param,fe_no,quad_no)
+    {
+    }
 };
 
 template <int dim, int fe_degree = 1, int fe_degree_xwall = 1, int n_q_points_1d = fe_degree+1,
@@ -140,10 +157,10 @@ private:
 public:
   FEFaceEvaluationWrapper (
   const MatrixFree<dim,Number> &matrix_free,
-  const FEParameters & in_fe_param,
-  const bool                    is_left_face = true,
-  const unsigned int            fe_no = 0,
-  const int            quad_no = -1)
+  const FEParameters<dim>      & in_fe_param,
+  const bool                   is_left_face = true,
+  const unsigned int           fe_no = 0,
+  const int                    quad_no = -1)
     :
   FEFaceEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number>(matrix_free,is_left_face,fe_no,find_quadrature_slot(matrix_free,quad_no)),
   fe_param(in_fe_param)
@@ -197,10 +214,25 @@ public:
 
   AlignedVector<VectorizedArray<Number> > eddyvisc;
   unsigned int std_dofs_per_cell;
-  const FEParameters & fe_param;
+  const FEParameters<dim> & fe_param;
 };
 
-
+template <int dim, int fe_degree = 1, int fe_degree_xwall = 1, int n_q_points_1d = fe_degree+1,
+            int n_components_ = 1, typename Number = double, bool is_enriched = false>
+class FEFaceEvaluationWrapperPressure : public FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,n_components_,Number,is_enriched>
+{
+public:
+  FEFaceEvaluationWrapperPressure (
+  const MatrixFree<dim,Number> &matrix_free,
+  const FEParameters<dim>      &in_fe_param,
+  const bool                   is_left_face = true,
+  const unsigned int           fe_no = 0,
+  const int                    quad_no = -1)
+    :
+  FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,n_components_,Number,is_enriched>(matrix_free,in_fe_param,is_left_face,fe_no,quad_no)
+  {
+  }
+};
 
 
 
@@ -219,9 +251,9 @@ private:
 public:
   FEEvaluationWrapper (
   const MatrixFree<dim,Number>  &matrix_free,
-  const FEParameters            & in_fe_param,
+  const FEParameters<dim>       & in_fe_param,
   const unsigned int            fe_no = 0,
-  const int                     quad_no = -1)
+  const int                     = -1)
   :
   data(matrix_free),
   fe_param(in_fe_param),
@@ -229,8 +261,8 @@ public:
   fe_eval_q0(matrix_free,fe_no,2,0),
   fe_eval_q1(matrix_free,fe_no,3,0),
   fe_eval(),
-  fe_eval_xwall_q0(matrix_free,fe_no,2,dim),
-  fe_eval_xwall_q1(matrix_free,fe_no,3,dim),
+  fe_eval_xwall_q0(matrix_free,0,2,dim),
+  fe_eval_xwall_q1(matrix_free,0,3,dim),
   fe_eval_xwall(),
   fe_eval_tauw_q0(matrix_free,2,2),
   fe_eval_tauw_q1(matrix_free,2,3),
@@ -289,24 +321,29 @@ public:
     fe_eval_tauw.push_back(dynamic_cast<FEEvaluationAccess<dim,1,Number,false>* >(&fe_eval_tauw_q1));
   }
 
-  void reinit(const unsigned int cell)
+  virtual ~FEEvaluationWrapper(){}
+
+  virtual void reinit(const unsigned int cell, const bool do_not_use_precomputed_enrichment = false)
   {
     enriched = false;
-    enriched_components.resize(VectorizedArray<Number>::n_array_elements,false);
+    enriched_components.resize(VectorizedArray<Number>::n_array_elements);
+    for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements;v++)
+      enriched_components[v] = false;
     quad_type = 0; //0: standard quadrature rule, 1: high-order quadrature rule
 //        decide if we have an enriched element via the y component of the cell center
     for (unsigned int v=0; v<data.n_components_filled(cell); ++v)
     {
       typename DoFHandler<dim>::cell_iterator dcell = data.get_cell_iterator(cell, v);
-//            std::cout << ((dcell->center()[1] > (1.0-MAX_WDIST_XWALL)) || (dcell->center()[1] <(-1.0 + MAX_WDIST_XWALL))) << std::endl;
       if ((dcell->center()[1] > (1.0-fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + fe_param.max_wdist_xwall)))
       {
         enriched = true;
+        enriched_components[v] = true;
         quad_type = 1;
       }
     }
     fe_eval_xwall[quad_type]->reinit(cell);
     fe_eval[quad_type]->reinit(cell);
+
     if(quad_type == 0)
       n_q_points = fe_eval_q0.n_q_points;
     else if(quad_type == 1)
@@ -318,15 +355,9 @@ public:
 
     if(enriched)
     {
-      //store, exactly which component of the vectorized array is enriched
-      for (unsigned int v=0; v<data.n_components_filled(cell); ++v)
-      {
-        typename DoFHandler<dim>::cell_iterator dcell = data.get_cell_iterator(cell, v);
-        if ((dcell->center()[1] > (1.0-fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + fe_param.max_wdist_xwall)))
-            enriched_components.at(v) = true;
-      }
-
       //initialize the enrichment function
+      //the enrichment is available if fe_params has a vector and if this is no ghost cell
+      if(fe_param.enrichment == nullptr || (*fe_param.enrichment).size()-1 < cell || do_not_use_precomputed_enrichment)
       {
         fe_eval_tauw[quad_type]->reinit(cell);
         //get wall distance and wss at quadrature points
@@ -358,13 +389,19 @@ public:
           cell_tauw[q] = fe_eval_tauw[quad_type]->get_value(q);
           for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
           {
-            if(enriched_components.at(v))
+            if(enriched_components[v])
               AssertThrow( fe_eval_tauw[quad_type]->get_value(q)[v] > 1.0e-9 ,ExcMessage("Wall shear stress has to be above zero for Spalding's law"));
           }
 
           cell_gradtauw[q] = fe_eval_tauw[quad_type]->get_gradient(q);
         }
         spalding.reinit(cell_wdist, cell_tauw, cell_gradwdist, cell_gradtauw, n_q_points,enriched_components);
+      }
+      else
+      {
+        AssertThrow(fe_param.enrichment != nullptr, ExcInternalError());
+        AssertThrow(fe_param.enrichment_gradient != nullptr, ExcInternalError());
+        spalding.reinit((*fe_param.enrichment)[cell],(*fe_param.enrichment_gradient)[cell],n_q_points);
       }
       dofs_per_cell = fe_eval_q0.dofs_per_cell + fe_eval_xwall_q0.dofs_per_cell;
     }
@@ -376,6 +413,28 @@ public:
 
   }
 
+  void reinit(const unsigned int cell, AlignedVector<VectorizedArray<Number> > & enrichment_cell,
+                       AlignedVector<Tensor<1,dim,VectorizedArray<Number> > > & enrichment_gradient_cell)
+  {
+    reinit(cell,true);
+
+    if(enriched)
+    {
+      enrichment_cell.resize(n_q_points);
+      enrichment_gradient_cell.resize(n_q_points);
+      for(unsigned int q = 0; q<n_q_points; q++)
+      {
+        enrichment_cell[q] = spalding.enrichment(q);
+        enrichment_gradient_cell[q] = spalding.enrichment_gradient(q);
+      }
+    }
+    else
+    {
+      enrichment_cell.resize(0);
+      enrichment_gradient_cell.resize(0);
+    }
+  }
+
   VectorizedArray<Number> * begin_dof_values() DEAL_II_DEPRECATED
   {
     return fe_eval[quad_type]->begin_dof_values();
@@ -384,7 +443,18 @@ public:
   void read_dof_values (const parallel::distributed::Vector<Number> &src)
   {
     fe_eval[quad_type]->read_dof_values(src);
-    fe_eval_xwall[quad_type]->read_dof_values(src);
+    if(enriched)
+      fe_eval_xwall[quad_type]->read_dof_values(src);
+  }
+
+  void evaluate(VectorizedArray<Number> * src,
+                const bool evaluate_val,
+                const bool evaluate_grad,
+                const bool evaluate_hess = false)
+  {
+    for (unsigned int j = 0; j< dofs_per_cell*n_components_;j++)
+      write_cellwise_dof_value(j,src[j]);
+    evaluate(evaluate_val,evaluate_grad,evaluate_hess);
   }
 
   void evaluate(const bool evaluate_val,
@@ -413,7 +483,7 @@ public:
           //delete enrichment part where not needed
           //this is essential, code won't work otherwise
           for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-            if(enriched_components.at(v))
+            if(enriched_components[v])
               add_array_component_to_gradient(submitgradient,gradient,v);
           gradients[q] = submitgradient;
         }
@@ -427,7 +497,7 @@ public:
           //delete enrichment part where not needed
           //this is essential, code won't work otherwise
           for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-            if(enriched_components.at(v))
+            if(enriched_components[v])
               add_array_component_to_value(submitvalue,finalvalue,v);
           values[q]=submitvalue;
         }
@@ -520,6 +590,14 @@ public:
     return symgrad;
   }
 
+  void integrate (const bool integrate_val,
+                  const bool integrate_grad,
+                  VectorizedArray<Number> * dst)
+  {
+    integrate(integrate_val,integrate_grad);
+    for(unsigned int j = 0; j < dofs_per_cell*dim; j++)
+      dst[j] = read_cellwise_dof_value(j);
+  }
   void integrate (const bool integrate_val,
                   const bool integrate_grad)
   {
@@ -692,7 +770,7 @@ public:
     if(not enriched)
       return false;
     // else
-    return enriched_components.at(v);
+    return enriched_components[v];
   }
 
   void evaluate_eddy_viscosity(const std::vector<parallel::distributed::Vector<double> > &solution_n, unsigned int cell)
@@ -823,6 +901,12 @@ public:
 
     return;
   }
+
+  const internal::MatrixFreeFunctions::ShapeInfo<Number> &
+  get_shape_info() const
+  {
+    return fe_eval[quad_type]->get_shape_info();
+  }
 private:
   // some heler-functions
   void fe_eval_evaluate(bool evaluate_val, bool evaluate_grad)
@@ -917,8 +1001,9 @@ private:
     }
   }
 
+protected:
   const MatrixFree<dim,Number> & data;
-  const FEParameters & fe_param;
+  const FEParameters<dim> & fe_param;
   SpaldingsLawEvaluation<dim, Number, VectorizedArray<Number> > spalding;
   FEEvaluation<dim,fe_degree,fe_degree+(fe_degree+2)/2,n_components_,Number> fe_eval_q0;
   FEEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number> fe_eval_q1;
@@ -945,6 +1030,58 @@ public:
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d,
+      int n_components_, typename Number>
+class FEEvaluationWrapperPressure<dim, fe_degree, fe_degree_xwall, n_q_points_1d, n_components_, Number, true>: public FEEvaluationWrapper<dim, fe_degree, fe_degree_xwall, n_q_points_1d, n_components_, Number, true>
+{
+private:
+  typedef FEEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number> BaseClass;
+  typedef Number                            number_type;
+  typedef typename BaseClass::value_type    value_type;
+  typedef typename BaseClass::gradient_type gradient_type;
+public:
+  FEEvaluationWrapperPressure (
+  const MatrixFree<dim,Number>  &matrix_free,
+  const FEParameters<dim>       & in_fe_param,
+  const unsigned int            fe_no = 0,
+  const int                     = -1)
+  :
+    FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,n_components_,Number,true>(matrix_free,in_fe_param,fe_no)
+  {
+  };
+
+ void reinit(const unsigned int cell, const bool = false)
+  {
+    this->enriched = false;
+    this->enriched_components.resize(VectorizedArray<Number>::n_array_elements,false);
+    this->quad_type = 0; //0: standard quadrature rule, 1: high-order quadrature rule
+//        decide if we have an enriched element via the y component of the cell center
+    for (unsigned int v=0; v<this->data.n_components_filled(cell); ++v)
+    {
+      typename DoFHandler<dim>::cell_iterator dcell = this->data.get_cell_iterator(cell, v);
+//            std::cout << ((dcell->center()[1] > (1.0-MAX_WDIST_XWALL)) || (dcell->center()[1] <(-1.0 + MAX_WDIST_XWALL))) << std::endl;
+      if ((dcell->center()[1] > (1.0-this->fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + this->fe_param.max_wdist_xwall)))
+      {
+        this->quad_type = 1;
+      }
+    }
+    this->fe_eval[this->quad_type]->reinit(cell);
+    if(this->quad_type == 0)
+      this->n_q_points = this->fe_eval_q0.n_q_points;
+    else if(this->quad_type == 1)
+      this->n_q_points = this->fe_eval_q1.n_q_points;
+    else
+      AssertThrow(false,ExcMessage("only 0 or 1 allowed"));
+    this->values.resize(this->n_q_points,value_type());
+    this->gradients.resize(this->n_q_points,gradient_type());
+
+    this->dofs_per_cell = this->fe_eval_q0.dofs_per_cell;
+
+    this->std_dofs_per_cell = this->fe_eval_q0.dofs_per_cell;
+
+  }
+};
+
+template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d,
             int n_components_, typename Number>
 class FEFaceEvaluationWrapper<dim, fe_degree, fe_degree_xwall, n_q_points_1d, n_components_, Number, true>
 {
@@ -957,18 +1094,18 @@ private:
 
 public:
   FEFaceEvaluationWrapper  ( const MatrixFree<dim,Number> &matrix_free,
-  const FEParameters            & in_fe_param,
+  const FEParameters<dim>       & in_fe_param,
   const bool                    is_left_face = true,
   const unsigned int            fe_no = 0,
-  const int                     quad_no = -1):
+  const int                     = -1):
     data(matrix_free),
     fe_param(in_fe_param),
     spalding(fe_param.viscosity),
     fe_eval_q0(matrix_free,is_left_face,fe_no,2,0),
     fe_eval_q1(matrix_free,is_left_face,fe_no,3,0),
     fe_eval(),
-    fe_eval_xwall_q0(matrix_free,is_left_face,fe_no,2,dim),
-    fe_eval_xwall_q1(matrix_free,is_left_face,fe_no,3,dim),
+    fe_eval_xwall_q0(matrix_free,is_left_face,0,2,dim),
+    fe_eval_xwall_q1(matrix_free,is_left_face,0,3,dim),
     fe_eval_xwall(),
     fe_eval_tauw_q0(matrix_free,is_left_face,2,2),
     fe_eval_tauw_q1(matrix_free,is_left_face,2,3),
@@ -996,10 +1133,14 @@ public:
     enriched_components.resize(VectorizedArray<Number>::n_array_elements,false);
   };
 
-  void reinit(const unsigned int f)
+  virtual ~FEFaceEvaluationWrapper(){}
+
+  virtual void reinit(const unsigned int f)
   {
     enriched = false;
-    enriched_components.resize(VectorizedArray<Number>::n_array_elements,false);
+    enriched_components.resize(VectorizedArray<Number>::n_array_elements);
+    for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements;v++)
+      enriched_components[v] = false;
     quad_type = 0;
     if(is_left_face)
     {
@@ -1013,9 +1154,11 @@ public:
             if ((dcell->center()[1] > (1.0-fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + fe_param.max_wdist_xwall)))
             {
               enriched = true;
-              enriched_components.at(v)=(true);
+              enriched_components.at(v)=true;
               quad_type = 1;
             }
+            else
+              enriched_components.at(v)=false;
       }
       //there may be interface elements that need a high-order quadrature despite that they are not enriched
       //in that case, the other element is enriched
@@ -1042,9 +1185,11 @@ public:
             if ((dcell->center()[1] > (1.0-fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + fe_param.max_wdist_xwall)))
             {
               enriched = true;
-              enriched_components.at(v)=(true);
+              enriched_components.at(v)=true;
               quad_type = 1;
             }
+            else
+              enriched_components.at(v)=false;
       }
       //there may be interface elements that need a high-order quadrature despite that they are not enriched
       //in that case, the other element is enriched
@@ -1061,7 +1206,6 @@ public:
       }
     }
     fe_eval_xwall[quad_type]->reinit(f);
-
     fe_eval[quad_type]->reinit(f);
     if(quad_type == 0)
       n_q_points = fe_eval_q0.n_q_points;
@@ -1100,7 +1244,7 @@ public:
           face_tauw[q] = fe_eval_tauw[quad_type]->get_value(q);
           for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
           {
-            if(enriched_components.at(v))
+            if(enriched_components[v])
               AssertThrow( fe_eval_tauw[quad_type]->get_value(q)[v] > 1.0e-9 ,ExcInternalError());
           }
 
@@ -1120,7 +1264,8 @@ public:
   void read_dof_values (const parallel::distributed::Vector<Number> &src)
   {
     fe_eval[quad_type]->read_dof_values(src);
-    fe_eval_xwall[quad_type]->read_dof_values(src);
+    if(enriched)
+      fe_eval_xwall[quad_type]->read_dof_values(src);
   }
 
   void evaluate(const bool evaluate_val,
@@ -1148,7 +1293,7 @@ public:
           //delete enrichment part where not needed
           //this is essential, code won't work otherwise
           for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-            if(enriched_components.at(v))
+            if(enriched_components[v])
               add_array_component_to_gradient(submitgradient,gradient,v);
 
           gradients[q] = submitgradient;
@@ -1163,7 +1308,7 @@ public:
           //delete enrichment part where not needed
           //this is essential, code won't work otherwise
           for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-            if(enriched_components.at(v))
+            if(enriched_components[v])
               add_array_component_to_value(submitvalue,finalvalue,v);
           values[q]=submitvalue;
         }
@@ -1346,7 +1491,7 @@ public:
         for (unsigned int d=0; d<dim; ++d)
           for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
           {
-            if(enriched_components.at(v))
+            if(enriched_components[v])
             {
               gradients[q][comp][d][v] = grad_in[comp][v] *
               fe_eval[quad_type]->get_normal_vector(q)[d][v];
@@ -1368,7 +1513,7 @@ public:
       for (unsigned int d=0; d<dim; ++d)
         for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
         {
-          if(enriched_components.at(v))
+          if(enriched_components[v])
           {
             gradients[q][d][v] = grad_in[v] *
             fe_eval[quad_type]->get_normal_vector(q)[d][v];
@@ -1690,8 +1835,9 @@ private:
     }
   }
 
+protected:
   const MatrixFree<dim,Number> & data;
-  const FEParameters & fe_param;
+  const FEParameters<dim> & fe_param;
   SpaldingsLawEvaluation<dim, Number, VectorizedArray<Number> > spalding;
   FEFaceEvaluation<dim,fe_degree,fe_degree+(fe_degree+2)/2,n_components_,Number> fe_eval_q0;
   FEFaceEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number> fe_eval_q1;
@@ -1717,6 +1863,102 @@ public:
   unsigned int quad_type;
   std::vector<bool> enriched_components;
   AlignedVector<VectorizedArray<Number> > eddyvisc;
+};
+
+template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d,
+            int n_components_, typename Number>
+class FEFaceEvaluationWrapperPressure<dim, fe_degree, fe_degree_xwall, n_q_points_1d, n_components_, Number, true>: public FEFaceEvaluationWrapper<dim, fe_degree, fe_degree_xwall, n_q_points_1d, n_components_, Number, true>
+{
+public:
+  typedef Number                            number_type;
+private:
+  typedef FEFaceEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number> BaseClass;
+  typedef typename BaseClass::value_type    value_type;
+  typedef typename BaseClass::gradient_type gradient_type;
+
+public:
+  FEFaceEvaluationWrapperPressure  ( const MatrixFree<dim,Number> &matrix_free,
+  const FEParameters<dim>            & in_fe_param,
+  const bool                         is_left_face = true,
+  const unsigned int                 fe_no = 0,
+  const int                          = -1):
+    FEFaceEvaluationWrapper<dim, fe_degree, fe_degree_xwall, n_q_points_1d, n_components_, Number, true>(matrix_free,in_fe_param,is_left_face,fe_no)
+  {
+  };
+
+  void reinit(const unsigned int f)
+  {
+    this->enriched = false;
+    this->enriched_components.resize(VectorizedArray<Number>::n_array_elements,false);
+    this->quad_type = 0;
+    if(this->is_left_face)
+    {
+//        decide if we have an enriched element via the y component of the cell center
+      for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements &&
+      this->data.faces.at(f).left_cell[v] != numbers::invalid_unsigned_int; ++v)
+      {
+        typename DoFHandler<dim>::cell_iterator dcell =  this->data.get_cell_iterator(
+            this->data.faces.at(f).left_cell[v] / VectorizedArray<Number>::n_array_elements,
+            this->data.faces.at(f).left_cell[v] % VectorizedArray<Number>::n_array_elements);
+            if ((dcell->center()[1] > (1.0-this->fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + this->fe_param.max_wdist_xwall)))
+            {
+              this->quad_type = 1;
+            }
+      }
+      //there may be interface elements that need a high-order quadrature despite that they are not enriched
+      //in that case, the other element is enriched
+      for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements &&
+      this->data.faces.at(f).right_cell[v] != numbers::invalid_unsigned_int; ++v)
+      {
+        typename DoFHandler<dim>::cell_iterator dcell =  this->data.get_cell_iterator(
+            this->data.faces.at(f).right_cell[v] / VectorizedArray<Number>::n_array_elements,
+            this->data.faces.at(f).right_cell[v] % VectorizedArray<Number>::n_array_elements);
+            if ((dcell->center()[1] > (1.0-this->fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + this->fe_param.max_wdist_xwall)))
+            {
+              this->quad_type = 1;
+            }
+      }
+    }
+    else
+    {
+      for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements &&
+      this->data.faces.at(f).right_cell[v] != numbers::invalid_unsigned_int; ++v)
+      {
+        typename DoFHandler<dim>::cell_iterator dcell =  this->data.get_cell_iterator(
+            this->data.faces.at(f).right_cell[v] / VectorizedArray<Number>::n_array_elements,
+            this->data.faces.at(f).right_cell[v] % VectorizedArray<Number>::n_array_elements);
+            if ((dcell->center()[1] > (1.0-this->fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + this->fe_param.max_wdist_xwall)))
+            {
+              this->quad_type = 1;
+            }
+      }
+      //there may be interface elements that need a high-order quadrature despite that they are not enriched
+      //in that case, the other element is enriched
+      for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements &&
+      this->data.faces.at(f).left_cell[v] != numbers::invalid_unsigned_int; ++v)
+      {
+        typename DoFHandler<dim>::cell_iterator dcell =  this->data.get_cell_iterator(
+            this->data.faces.at(f).left_cell[v] / VectorizedArray<Number>::n_array_elements,
+            this->data.faces.at(f).left_cell[v] % VectorizedArray<Number>::n_array_elements);
+            if ((dcell->center()[1] > (1.0-this->fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + this->fe_param.max_wdist_xwall)))
+            {
+              this->quad_type = 1;
+            }
+      }
+    }
+    this->fe_eval_xwall[this->quad_type]->reinit(f);
+
+    this->fe_eval[this->quad_type]->reinit(f);
+    if(this->quad_type == 0)
+      this->n_q_points = this->fe_eval_q0.n_q_points;
+    else if(this->quad_type == 1)
+      this->n_q_points = this->fe_eval_q1.n_q_points;
+    this->values.resize(this->n_q_points,value_type());
+    this->gradients.resize(this->n_q_points,gradient_type());
+
+    this->dofs_per_cell = this->fe_eval_q0.dofs_per_cell;
+    this->std_dofs_per_cell = this->fe_eval_q0.dofs_per_cell;
+  }
 };
 
 

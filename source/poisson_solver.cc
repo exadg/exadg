@@ -39,7 +39,7 @@ template <int dim, typename Number>
 void LaplaceOperator<dim,Number>::reinit(const MatrixFree<dim,Number>       &mf_data,
                                          const Mapping<dim>                 &mapping,
                                          const LaplaceOperatorData<dim>     &operator_data,
-                                         FEParameters const                 &fe_param)
+                                         FEParameters<dim> const            &fe_param)
 {
   this->data = &mf_data;
   this->operator_data = operator_data;
@@ -123,7 +123,7 @@ void LaplaceOperator<dim,Number>::reinit (const DoFHandler<dim>           &dof_h
                                           const LaplaceOperatorData<dim>  &operator_data,
                                           const MGConstrainedDoFs         &mg_constrained_dofs,
                                           const unsigned int              level,
-                                          FEParameters const              &fe_param)
+                                          FEParameters<dim> const         &fe_param)
 {
   clear();
   this->operator_data = operator_data;

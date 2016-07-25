@@ -87,7 +87,7 @@ public:
                const HelmholtzOperatorData<dim> &operator_data,
                const MGConstrainedDoFs          &/*mg_constrained_dofs*/,
                const unsigned int               level = numbers::invalid_unsigned_int,
-               FEParameters const               &fe_param = FEParameters())
+               FEParameters<dim> const          &fe_param = FEParameters<dim>())
   {
     // set the dof index to zero (for the HelmholtzOperator and also
     // for the basic Operators (MassMatrixOperator and ViscousOperator))

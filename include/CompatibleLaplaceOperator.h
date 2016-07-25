@@ -70,7 +70,7 @@ public:
                const CompatibleLaplaceOperatorData<dim> &operator_data,
                const MGConstrainedDoFs                  &/*mg_constrained_dofs*/,
                const unsigned int                       level = numbers::invalid_unsigned_int,
-               FEParameters const                       &fe_param = FEParameters())
+               FEParameters<dim> const                  &fe_param = FEParameters<dim>())
   {
     CompatibleLaplaceOperatorData<dim> my_operator_data = operator_data;
 

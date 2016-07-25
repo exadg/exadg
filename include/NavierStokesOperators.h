@@ -38,7 +38,7 @@ public:
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  FEParameters                     &fe_param,
+                  FEParameters<dim>                &fe_param,
                   BodyForceOperatorData const      &body_force_operator_data_in)
   {
     this->data = &mf_data;
@@ -100,7 +100,7 @@ private:
   }
 
   MatrixFree<dim,value_type> const * data;
-  FEParameters const * fe_param;
+  FEParameters<dim> const * fe_param;
   BodyForceOperatorData body_force_operator_data;
   value_type mutable eval_time;
 };
@@ -130,7 +130,7 @@ public:
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  FEParameters const               &fe_param,
+                  FEParameters<dim> const          &fe_param,
                   MassMatrixOperatorData const     &mass_matrix_operator_data_in)
   {
     this->data = &mf_data;
@@ -270,7 +270,7 @@ private:
   }
 
   MatrixFree<dim,value_type> const * data;
-  FEParameters const * fe_param;
+  FEParameters<dim> const * fe_param;
   MassMatrixOperatorData mass_matrix_operator_data;
 };
 
@@ -334,7 +334,7 @@ public:
 
   void initialize(Mapping<dim> const              &mapping,
                   MatrixFree<dim,Number> const    &mf_data,
-                  FEParameters const              &fe_param,
+                  FEParameters<dim> const         &fe_param,
                   ViscousOperatorData<dim> const  &operator_data)
   {
     this->data = &mf_data;
@@ -351,7 +351,7 @@ public:
                const ViscousOperatorData<dim>   &operator_data,
                const MGConstrainedDoFs          &/*mg_constrained_dofs*/,
                const unsigned int               level = numbers::invalid_unsigned_int,
-               FEParameters const               &fe_param = FEParameters())
+               FEParameters<dim> const          &fe_param = FEParameters<dim>())
   {
     // set the dof index to zero
     ViscousOperatorData<dim> my_operator_data = operator_data;
@@ -1616,7 +1616,7 @@ private:
   }
 
   MatrixFree<dim,Number> const * data;
-  FEParameters const * fe_param;
+  FEParameters<dim> const * fe_param;
   ViscousOperatorData<dim> viscous_operator_data;
   AlignedVector<VectorizedArray<Number> > array_penalty_parameter;
   Number const_viscosity;
@@ -1673,13 +1673,13 @@ public:
   static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
-  typedef FEEvaluationWrapper<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,false> FEEval_Pressure_Velocity_linear;
+  typedef FEEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,is_xwall> FEEval_Pressure_Velocity_linear;
 
   typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEFaceEval_Velocity_Velocity_linear;
-  typedef FEFaceEvaluationWrapper<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,false> FEFaceEval_Pressure_Velocity_linear;
+  typedef FEFaceEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,is_xwall> FEFaceEval_Pressure_Velocity_linear;
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  FEParameters const               &fe_param,
+                  FEParameters<dim> const          &fe_param,
                   GradientOperatorData const       &gradient_operator_data_in)
   {
     this->data = &mf_data;
@@ -2044,7 +2044,7 @@ private:
   }
 
   MatrixFree<dim,value_type> const * data;
-  FEParameters const * fe_param;
+  FEParameters<dim> const * fe_param;
   GradientOperatorData gradient_operator_data;
   value_type mutable eval_time;
 };
@@ -2082,13 +2082,13 @@ public:
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
 
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
-  typedef FEEvaluationWrapper<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,false> FEEval_Pressure_Velocity_linear;
+  typedef FEEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,is_xwall> FEEval_Pressure_Velocity_linear;
 
   typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEFaceEval_Velocity_Velocity_linear;
-  typedef FEFaceEvaluationWrapper<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,false> FEFaceEval_Pressure_Velocity_linear;
+  typedef FEFaceEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,is_xwall> FEFaceEval_Pressure_Velocity_linear;
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  FEParameters const               &fe_param,
+                  FEParameters<dim> const          &fe_param,
                   DivergenceOperatorData const     &divergence_operator_data_in)
   {
     this->data = &mf_data;
@@ -2459,7 +2459,7 @@ private:
   }
 
   MatrixFree<dim,value_type> const * data;
-  FEParameters const * fe_param;
+  FEParameters<dim> const * fe_param;
   DivergenceOperatorData divergence_operator_data;
   value_type mutable eval_time;
 };
@@ -2497,7 +2497,7 @@ public:
   typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_nonlinear,dim,value_type,is_xwall> FEFaceEval_Velocity_Velocity_nonlinear;
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  FEParameters                     &fe_param,
+                  FEParameters<dim>                &fe_param,
                   ConvectiveOperatorData const     &convective_operator_data_in)
   {
     this->data = &mf_data;
@@ -2883,7 +2883,7 @@ private:
   }
 
   MatrixFree<dim,value_type> const * data;
-  FEParameters const * fe_param;
+  FEParameters<dim> const * fe_param;
   ConvectiveOperatorData convective_operator_data;
   mutable value_type eval_time;
   mutable parallel::distributed::Vector<value_type> const * velocity_linearization;

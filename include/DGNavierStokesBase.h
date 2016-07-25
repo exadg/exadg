@@ -75,7 +75,6 @@ public:
     viscosity(parameter.viscosity),
     dof_index_first_point(0),
     param(parameter),
-    element_volume(0),
     fe_param(param),
     inverse_mass_matrix_operator(nullptr)
   {}
@@ -137,14 +136,6 @@ public:
     return fe_p;
   }
 
-  FESystem<dim> const & get_fe_xwall() const
-  {
-    DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> * dg_ns_xwall
-    = dynamic_cast<DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>* >(&this);
-    AssertThrow(dg_ns_xwall, ExcMessage("wrong call"));
-    return (*dg_ns_xwall).fe_xwall;
-  }
-
   DoFHandler<dim> const & get_dof_handler_u() const
   {
     return dof_handler_u;
@@ -155,20 +146,12 @@ public:
     return dof_handler_p;
   }
 
-  DoFHandler<dim> const & get_dof_handler_xwall() const
-  {
-    DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> * dg_ns_xwall
-    = dynamic_cast<DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>* >(&this);
-    AssertThrow(dg_ns_xwall, ExcMessage("wrong call"));
-    return (*dg_ns_xwall).dof_handler_xwall;
-  }
-
   double get_viscosity() const
   {
     return viscosity;
   }
 
-  FEParameters const & get_fe_parameters() const
+  FEParameters<dim> const & get_fe_parameters() const
   {
     return fe_param;
   }
@@ -288,8 +271,7 @@ protected:
 
   InputParameters const &param;
 
-  AlignedVector<VectorizedArray<value_type> > element_volume;
-  FEParameters fe_param;
+  FEParameters<dim> fe_param;
 
   MassMatrixOperatorData mass_matrix_operator_data;
   ViscousOperatorData<dim> viscous_operator_data;
@@ -434,23 +416,6 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   for(unsigned int d=0;d<dim;++d)
   {
     first_point[d] = Utilities::MPI::sum(first_point[d],MPI_COMM_WORLD);
-  }
-
-  QGauss<dim> quadrature(fe_degree+1);
-  FEValues<dim> fe_values(mapping, dof_handler_u.get_fe(), quadrature, update_JxW_values);
-  element_volume.resize(data.n_macro_cells()+data.n_macro_ghost_cells());
-  for (unsigned int i=0; i<data.n_macro_cells()+data.n_macro_ghost_cells(); ++i)
-  {
-    for (unsigned int v=0; v<data.n_components_filled(i); ++v)
-    {
-      typename DoFHandler<dim>::cell_iterator cell = data.get_cell_iterator(i,v);
-      fe_values.reinit(cell);
-      double volume = 0.;
-      for (unsigned int q=0; q<quadrature.size(); ++q)
-        volume += fe_values.JxW(q);
-      element_volume[i][v] = volume;
-      //pcout << "surface to volume ratio: " << pressure_poisson_solver.get_matrix().get_array_penalty_parameter()[i][v] << std::endl;
-    }
   }
 }
 
