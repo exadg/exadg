@@ -74,7 +74,7 @@
 using namespace dealii;
 
 // specify flow problem that has to be solved
-#define VORTEX
+//#define VORTEX
 //#define STOKES_GUERMOND
 //#define STOKES_SHAHBAZI
 //#define POISEUILLE
@@ -83,7 +83,7 @@ using namespace dealii;
 //#define KOVASZNAY
 //#define BELTRAMI
 //#define FLOW_PAST_CYLINDER
-//#define CHANNEL
+#define CHANNEL
 
 
 ProblemType PROBLEM_TYPE = ProblemType::Unsteady; //Steady; //Unsteady;
@@ -99,14 +99,14 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 /*************************************************/
 
 /************* spatial discretization ************/
-SpatialDiscretization SPATIAL_DISCRETIZATION = SpatialDiscretization::DG; //DG //DGXWall
+SpatialDiscretization SPATIAL_DISCRETIZATION = SpatialDiscretization::DGXWall; //DG //DGXWall
 
 FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::DivergenceFormulation; //DivergenceFormulation; //LaplaceFormulation;
-InteriorPenaltyFormulationViscous IP_FORMULATION_VISCOUS = InteriorPenaltyFormulationViscous::SIPG; //SIPG; //NIPG;
+InteriorPenaltyFormulationViscous IP_FORMULATION_VISCOUS = InteriorPenaltyFormulationViscous::NIPG; //SIPG; //NIPG;
 
-bool const DIVU_INTEGRATED_BY_PARTS = false;//true;
+bool const DIVU_INTEGRATED_BY_PARTS = true;//true;
 bool const DIVU_USE_BOUNDARY_DATA = false;//true;
-bool const GRADP_INTEGRATED_BY_PARTS = false;//true;
+bool const GRADP_INTEGRATED_BY_PARTS = true;//true;
 bool const GRADP_USE_BOUNDARY_DATA = false;//true;
 /*************************************************/
 
@@ -128,7 +128,7 @@ SolverProjection SOLVER_PROJECTION = SolverProjection::PCG; //LU; //PCG;
 PreconditionerProjection PRECONDITIONER_PROJECTION = PreconditionerProjection::InverseMassMatrix; //None; //Jacobi; //InverseMassMatrix;
 
 // viscous step
-SolverViscous SOLVER_VISCOUS = SolverViscous::PCG; //PCG; //GMRES;
+SolverViscous SOLVER_VISCOUS = SolverViscous::GMRES; //PCG; //GMRES;
 PreconditionerViscous PRECONDITIONER_VISCOUS = PreconditionerViscous::InverseMassMatrix; //None; //Jacobi; //InverseMassMatrix; //GeometricMultigrid;
 
 // multigrid viscous step
@@ -779,17 +779,17 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 #endif
 
 #ifdef CHANNEL
-  const unsigned int FE_DEGREE = 2;
+  const unsigned int FE_DEGREE = 4;
   const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
   const unsigned int FE_DEGREE_XWALL = 2;
   const unsigned int N_Q_POINTS_1D_XWALL = 12;
   const unsigned int DIMENSION = 3; // DIMENSION >= 2
-  const unsigned int REFINE_STEPS_SPACE_MIN = 3;
-  const unsigned int REFINE_STEPS_SPACE_MAX = 3;
+  const unsigned int REFINE_STEPS_SPACE_MIN = 2;
+  const unsigned int REFINE_STEPS_SPACE_MAX = 2;
 
   const double START_TIME = 0.0;
-  const double END_TIME = 70.0;
-  const double OUTPUT_INTERVAL_TIME = 1.;
+  const double END_TIME = 50.0;
+  const double OUTPUT_INTERVAL_TIME = 0.0;
   const double OUTPUT_START_TIME = 0.0;
   const double ERROR_CALC_INTERVAL_TIME = OUTPUT_INTERVAL_TIME;
   const double ERROR_CALC_START_TIME = 100.;
@@ -802,12 +802,12 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double RESTART_INTERVAL_WALL_TIME = 1e7;
   const unsigned int RESTART_INTERVAL_STEP = 1e6;
   const int MAX_NUM_STEPS = 1e7;
-  const double CFL = 0.15;
+  const double CFL = 1.0;
   const double TIME_STEP_SIZE = 1.e-3;
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
-  const double VISCOSITY = 1./590.0;
+  const double VISCOSITY = 1./180.0;
 
   const double MAX_VELOCITY = 15.0;
   const double IP_FACTOR_PRESSURE = 1.0;
@@ -823,7 +823,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double DTAUW = 0.2;
 
   const double MAX_WDIST_XWALL = 0.25;
-  const double GRID_STRETCH_FAC = 0.0001;
+  const double GRID_STRETCH_FAC = 1.8;
   const bool PURE_DIRICHLET_BC = true;
 
   const double ABS_TOL_NEWTON = 1.0e-12;
@@ -835,15 +835,15 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 
   const double ABS_TOL_PRESSURE = 1.0e-12;
   const double REL_TOL_PRESSURE = 1.0e-4;
-  const double ABS_TOL_VISCOUS = 1.0e-9;
-  const double REL_TOL_VISCOUS = 1.0e-3;
+  const double ABS_TOL_VISCOUS = 1.0e-12;
+  const double REL_TOL_VISCOUS = 1.0e-4;
   const double ABS_TOL_PROJECTION = 1.0e-12;
   const double REL_TOL_PROJECTION = 1.0e-4;
 
-  // show solver performance (wall time, number of iterations) every ... timesteps
+// show solver performance (wall time, number of iterations) every ... timesteps
   const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e1;
 
-  const std::string OUTPUT_PREFIX = "ch590_l2_k2k2"; //"ch180_l2_p4_test";
+  const std::string OUTPUT_PREFIX = "ch180_l2_k4k2_gt18"; //"ch180_l2_p4_test";
 
   const unsigned int ORDER_TIME_INTEGRATOR = 3;
   const bool START_WITH_LOW_ORDER = true;
@@ -1023,8 +1023,10 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 #ifdef CHANNEL
     if(component == 0)
     {
-      if(p[1]<0.9999 && p[1]>-0.9999)
-        result = -22.0*(pow(p[1],2.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*0.5);//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
+      if(component == 0)
+        result = -22.0*(pow(p[1],6.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*0.5-2./22.*std::sin(p[2]*8.));//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
+      else if(component ==2)
+        result = (pow(p[1],6.0)-1.0)*std::sin(p[0]*8.)*2.;
       else
         result = 0.0;
     }

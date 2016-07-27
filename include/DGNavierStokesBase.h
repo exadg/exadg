@@ -11,7 +11,6 @@
 #include <deal.II/matrix_free/operators.h>
 
 #include "FEEvaluationWrapper.h"
-//#include "XWall.h"
 #include "FE_Parameters.h"
 
 #include "InputParameters.h"
@@ -330,7 +329,6 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   data_reinit(additional_data);
 
   // mass matrix operator
-//  MassMatrixOperatorData mass_matrix_operator_data;
   mass_matrix_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
   mass_matrix_operator.initialize(data,fe_param,mass_matrix_operator_data);
 
@@ -346,7 +344,6 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   body_force_operator.initialize(data,fe_param,body_force_operator_data);
 
   // gradient operator
-//  GradientOperatorData gradient_operator_data;
   gradient_operator_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
   gradient_operator_data.dof_index_pressure = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure);
   gradient_operator_data.integration_by_parts_of_gradP = param.gradp_integrated_by_parts;
@@ -356,7 +353,6 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   gradient_operator.initialize(data,fe_param,gradient_operator_data);
 
   // divergence operator
-//  DivergenceOperatorData divergence_operator_data;
   divergence_operator_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
   divergence_operator_data.dof_index_pressure = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure);
   divergence_operator_data.integration_by_parts_of_divU = param.divu_integrated_by_parts;
@@ -373,7 +369,6 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   convective_operator.initialize(data,fe_param,convective_operator_data);
 
   // viscous operator
-//  ViscousOperatorData viscous_operator_data;
   viscous_operator_data.formulation_viscous_term = param.formulation_viscous_term;
   viscous_operator_data.IP_formulation_viscous = param.IP_formulation_viscous;
   viscous_operator_data.IP_factor_viscous = param.IP_factor_viscous;
@@ -383,8 +378,6 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   viscous_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
   viscous_operator_data.viscosity = param.viscosity;
   viscous_operator.initialize(mapping,data,fe_param,viscous_operator_data);
-  // viscous_operator.set_constant_viscosity(viscosity);
-  // viscous_operator.set_variable_viscosity(viscosity);
 
   dof_index_first_point = 0;
   for(unsigned int d=0;d<dim;++d)

@@ -199,7 +199,6 @@ private:
           mass_data.fe_eval_scalar[0].evaluate (true,false,false);
           for (unsigned int q=0; q<mass_data.fe_eval_scalar[0].n_q_points; ++q)
           {
-    //        std::cout << fe_eval_xwall.get_value(q)[0] << std::endl;
             mass_data.fe_eval_scalar[0].submit_value (mass_data.fe_eval_scalar[0].get_value(q), q);
           }
           mass_data.fe_eval_scalar[0].integrate (true,false);

@@ -8,6 +8,8 @@
 #ifndef INCLUDE_TIMESTEPCALCULATION_H_
 #define INCLUDE_TIMESTEPCALCULATION_H_
 
+#define CFL_BASED_ON_MINIMUM_COMPONENT
+
 
 double calculate_const_time_step(double const dt,
                                  unsigned int const n_refine_time)
@@ -95,7 +97,12 @@ double calculate_adaptive_time_step_cfl(MatrixFree<dim,value_type> const        
       invJ = transpose(invJ);
       ut_xi = invJ*u_x;
 
+#ifdef CFL_BASED_ON_MINIMUM_COMPONENT
+      for (unsigned int d = 0; d < dim; ++d)
+        delta_t_cell = std::min(delta_t_cell,cfl_p/(std::abs(ut_xi[d])));
+#else
       delta_t_cell = std::min(delta_t_cell,cfl_p/ut_xi.norm());
+#endif
     }
 
     // loop over vectorized array
