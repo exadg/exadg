@@ -220,8 +220,7 @@ public:
 
 namespace
 {
-  // manually compute eigenvalues for the coarsest level for proper setup of
-  // the Chebyshev iteration
+  // manually compute eigenvalues for the coarsest level for proper setup of the Chebyshev iteration
   template <typename Operator>
   std::pair<double,double>
   compute_eigenvalues(const Operator &op,
@@ -231,6 +230,8 @@ namespace
     parallel::distributed::Vector<value_type> left, right;
     left.reinit(inverse_diagonal);
     right.reinit(inverse_diagonal, true);
+    // NB: initialize rand in order to obtain "reproducible" results !!!
+    srand(1);
     for (unsigned int i=0; i<right.local_size(); ++i)
       right.local_element(i) = (double)rand()/RAND_MAX;
     op.apply_nullspace_projection(right);

@@ -56,7 +56,7 @@ public:
       // solve linear problem
       unsigned int linear_iterations =  linear_solver->solve(increment, residual, &dst);
 
-      if(true)//(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+      if(false)//(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
         std::cout << "  Number of linear solver iterations: " << linear_iterations << std::endl;
 
       average_linear_iterations += linear_iterations;
