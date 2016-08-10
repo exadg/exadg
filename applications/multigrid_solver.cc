@@ -292,7 +292,8 @@ namespace Step37
 
   private:
     void setup_system ();
-    void assemble_system (const PoissonSolver<dim> &solver);
+//    void assemble_system (const PoissonSolver<dim> &solver);
+    void assemble_system (const LaplaceOperator<dim,double> &laplace_operator);
     void solve ();
     void output_results (const unsigned int cycle) const;
 
@@ -390,8 +391,10 @@ namespace Step37
 
 
 
+//  template <int dim>
+//  void LaplaceProblem<dim>::assemble_system (const PoissonSolver<dim> &solver)
   template <int dim>
-  void LaplaceProblem<dim>::assemble_system (const PoissonSolver<dim> &solver)
+  void LaplaceProblem<dim>::assemble_system (const LaplaceOperator<dim,double> &laplace_operator)
   {
     Timer time;
     std::map<types::global_dof_index, double> boundary_values;
@@ -456,8 +459,8 @@ namespace Step37
               if (cell->at_boundary(face))
                 {
                   fe_face_values.reinit(cell, face);
-                  const double sigmaF = solver.get_matrix().get_penalty_factor() *
-                    solver.get_matrix().get_array_penalty_parameter()[c][v] * 2.;
+                  const double sigmaF = laplace_operator.get_penalty_factor() *
+                    laplace_operator.get_array_penalty_parameter()[c][v] * 2.;
                   for (unsigned int q=0; q<quadrature_face.size(); ++q)
                     {
                       const double solution_value = solution_function.value(fe_face_values.quadrature_point(q));
@@ -496,20 +499,29 @@ namespace Step37
     LaplaceOperator<dim,double> laplace_operator;
     laplace_operator.reinit(matrix_free, mapping, laplace_operator_data);
 
+    MultigridData mg_data;
+    mg_data.smoother_smoothing_range = 15;
+    mg_data.smoother_poly_degree = 4;
+    mg_data.coarse_solver = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
+
+    typedef float Number;
+    std_cxx11::shared_ptr<PreconditionerBase<double> > preconditioner;
+    preconditioner.reset(new MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> >
+        (mg_data, dof_handler, mapping, laplace_operator_data));
+
     PoissonSolverData solver_data;
     solver_data.solver_tolerance_rel = 1e-8;
-    solver_data.smoother_smoothing_range = 15;
-    solver_data.smoother_poly_degree = 4;
-    solver_data.coarse_solver = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
+    solver_data.use_preconditioner = true;
     PoissonSolver<dim> solver;
-    solver.initialize(laplace_operator, mapping, matrix_free, solver_data);
+    solver.initialize(laplace_operator, *preconditioner, matrix_free, solver_data);
 
     setup_time += time.wall_time();
     pcout << "Initialize multigrid solver(CPU/wall) " << time() << "s/"
           << time.wall_time() << "s\n";
 
-    assemble_system(solver);
-    solver.get_matrix().apply_nullspace_projection(system_rhs);
+//    assemble_system(solver);
+    assemble_system(laplace_operator);
+    laplace_operator.apply_nullspace_projection(system_rhs);
 
     pcout << "Total setup time               (wall) " << setup_time << "s\n";
     pcout << "Number of multigrid levels: " << triangulation.n_global_levels()
@@ -520,7 +532,8 @@ namespace Step37
         solution_update = 0;
         time.restart();
 
-        solver.apply_precondition(solution_update, system_rhs);
+//        solver.apply_precondition(solution_update, system_rhs);
+        preconditioner->vmult(solution_update, system_rhs);
 
         pcout << "Time V-cycle precondition  (CPU/wall) " << time() << "s/"
               << time.wall_time() << "s\n";
@@ -531,7 +544,7 @@ namespace Step37
         solution_update = 0;
         time.restart();
 
-        solver.get_matrix().vmult(solution_update, system_rhs);
+        laplace_operator.vmult(solution_update, system_rhs);
 
         pcout << "Time matrix-vector         (CPU/wall) " << time() << "s/"
               << time.wall_time() << "s\n";

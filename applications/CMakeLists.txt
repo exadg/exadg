@@ -17,6 +17,7 @@ SET( SOURCE_FILES
      fe_flow_past_cylinder.cc
      fe_turbulent_channel.cc
      fe_poiseuille.cc
+     DGConvectionDiffusionProblem.cc
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )

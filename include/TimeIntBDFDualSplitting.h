@@ -27,7 +27,9 @@ public:
     vec_convective_term(this->order),
     computing_times(5),
     pressure(this->order),
-    ns_operation_splitting (std::dynamic_pointer_cast<DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in))
+    ns_operation_splitting (std::dynamic_pointer_cast<DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in)),
+    N_iter_pressure_average(0.0),
+    N_iter_viscous_average(0.0)
   {}
 
   virtual ~TimeIntBDFDualSplitting(){}
@@ -98,6 +100,8 @@ private:
 
   std_cxx11::shared_ptr<DGNavierStokesDualSplitting<dim, fe_degree,
     fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation_splitting;
+
+  double N_iter_pressure_average, N_iter_viscous_average;
 };
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
@@ -386,6 +390,8 @@ pressure_step()
   }
   */
   computing_times[1] += timer.wall_time();
+
+  N_iter_pressure_average += pres_niter;
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
@@ -496,6 +502,8 @@ viscous_step()
   }
 
   computing_times[3] += timer.wall_time();
+
+  N_iter_viscous_average += iterations_viscous;
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
@@ -570,6 +578,14 @@ void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_p
 analyze_computing_times() const
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  if(true)
+  {
+    pcout << std::endl << "Number of time steps = " << (this->time_step_number-1) << std::endl
+                       << "Average number of iterations pressure Poisson = " << std::scientific << std::setprecision(3) << N_iter_pressure_average/(this->time_step_number-1) << std::endl
+                       << "Average number of iterations viscous step = " << std::scientific << std::setprecision(3) << N_iter_viscous_average/(this->time_step_number-1) << std::endl
+                       << "Average wall time per time step = " << std::scientific << std::setprecision(3) << this->total_time/(this->time_step_number-1) << std::endl;
+  }
+
   std::string names[5] = {"Convection   ","Pressure     ","Projection   ","Viscous      ","Other        "};
   pcout << std::endl << "_________________________________________________________________________________" << std::endl
         << std::endl << "Computing times:          min        avg        max        rel      p_min  p_max" << std::endl;

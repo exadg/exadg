@@ -275,6 +275,7 @@ protected:
 
   MassMatrixOperatorData mass_matrix_operator_data;
   ViscousOperatorData<dim> viscous_operator_data;
+  ConvectiveOperatorData convective_operator_data;
   GradientOperatorData gradient_operator_data;
   DivergenceOperatorData divergence_operator_data;
 
@@ -366,7 +367,7 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   divergence_operator.initialize(data,fe_param,divergence_operator_data);
 
   // convective operator
-  ConvectiveOperatorData convective_operator_data;
+//  ConvectiveOperatorData convective_operator_data;
   convective_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
   convective_operator_data.dirichlet_boundaries = dirichlet_boundary;
   convective_operator_data.neumann_boundaries = neumann_boundary;

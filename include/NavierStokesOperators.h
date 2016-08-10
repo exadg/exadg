@@ -280,14 +280,14 @@ struct ViscousOperatorData
   ViscousOperatorData ()
     :
     formulation_viscous_term(FormulationViscousTerm::DivergenceFormulation),
-    IP_formulation_viscous(InteriorPenaltyFormulationViscous::SIPG),
+    IP_formulation_viscous(InteriorPenaltyFormulation::SIPG),
     IP_factor_viscous(1.0),
     dof_index(0),
     viscosity(1.0)
   {}
 
   FormulationViscousTerm formulation_viscous_term;
-  InteriorPenaltyFormulationViscous IP_formulation_viscous;
+  InteriorPenaltyFormulation IP_formulation_viscous;
   double IP_factor_viscous;
   unsigned int dof_index;
   std::set<types::boundary_id> dirichlet_boundaries;
@@ -376,11 +376,6 @@ public:
     initialize(mapping, own_matrix_free_storage, fe_param, my_operator_data);
   }
 
-  Number get_penalty_factor() const
-  {
-    return viscous_operator_data.IP_factor_viscous * (fe_degree + 1.0) * (fe_degree + 1.0);
-  }
-
   void set_constant_viscosity(double const viscosity_in)
   {
     const_viscosity = viscosity_in;
@@ -425,9 +420,9 @@ public:
 
   void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const
   {
-    // does nothing in case of the Helmholtz equation
+    // does nothing in case of the viscous operator for the velocity
     // this function is only necessary due to the interface of the multigrid preconditioner
-    // and especially the coarse grid solver that calls this function
+    // and especially the coarse grid solver that calls this function (needed when solving the pressure Poisson equation)
   }
 
   // apply matrix vector multiplication
@@ -626,6 +621,11 @@ private:
     }
   }
 
+  Number get_penalty_factor() const
+  {
+    return viscous_operator_data.IP_factor_viscous * (fe_degree + 1.0) * (fe_degree + 1.0);
+  }
+
   void apply_viscous (parallel::distributed::Vector<Number>        &dst,
                       const parallel::distributed::Vector<Number>  &src) const
   {
@@ -677,7 +677,7 @@ private:
   void local_apply_viscous_face (const MatrixFree<dim,Number>                &data,
                                  parallel::distributed::Vector<Number>       &dst,
                                  const parallel::distributed::Vector<Number> &src,
-                                 const std::pair<unsigned int,unsigned int>      &face_range) const
+                                 const std::pair<unsigned int,unsigned int>  &face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,viscous_operator_data.dof_index);
     FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,*fe_param,false,viscous_operator_data.dof_index);
@@ -731,12 +731,12 @@ private:
 
         if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
         {
-          if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+          if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
           {
             fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
             fe_eval_velocity_neighbor.submit_gradient(fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
           }
-          else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+          else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
           {
             fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
             fe_eval_velocity_neighbor.submit_gradient(-fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
@@ -746,12 +746,12 @@ private:
         }
         else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
         {
-          if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+          if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
           {
             fe_eval_velocity.submit_gradient(0.5*average_viscosity*jump_tensor,q);
             fe_eval_velocity_neighbor.submit_gradient(0.5*average_viscosity*jump_tensor,q);
           }
-          else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+          else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
           {
             fe_eval_velocity.submit_gradient(-0.5*average_viscosity*jump_tensor,q);
             fe_eval_velocity_neighbor.submit_gradient(-0.5*average_viscosity*jump_tensor,q);
@@ -826,11 +826,11 @@ private:
 
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             }
@@ -839,11 +839,11 @@ private:
           }
           else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(0.5*viscosity*jump_tensor,q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-0.5*viscosity*jump_tensor,q);
             }
@@ -867,11 +867,11 @@ private:
 
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             }
@@ -880,11 +880,11 @@ private:
           }
           else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(0.5*viscosity*jump_tensor,q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-0.5*viscosity*jump_tensor,q);
             }
@@ -1021,11 +1021,11 @@ private:
 
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
             }
@@ -1034,11 +1034,11 @@ private:
           }
           else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(0.5*average_viscosity*jump_tensor,q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-0.5*average_viscosity*jump_tensor,q);
             }
@@ -1113,11 +1113,11 @@ private:
 
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity_neighbor.submit_gradient(fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity_neighbor.submit_gradient(-fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
             }
@@ -1126,11 +1126,11 @@ private:
           }
           else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity_neighbor.submit_gradient(0.5*average_viscosity*jump_tensor,q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity_neighbor.submit_gradient(-0.5*average_viscosity*jump_tensor,q);
             }
@@ -1216,11 +1216,11 @@ private:
 
             if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
             {
-              if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+              if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
               {
                 fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
               }
-              else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+              else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
               {
                 fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric( viscosity*jump_tensor),q);
               }
@@ -1229,11 +1229,11 @@ private:
             }
             else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
             {
-              if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+              if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
               {
                 fe_eval_velocity.submit_gradient(0.5*viscosity*jump_tensor,q);
               }
-              else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+              else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
               {
                 fe_eval_velocity.submit_gradient(-0.5*viscosity*jump_tensor,q);
               }
@@ -1257,11 +1257,11 @@ private:
 
             if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
             {
-              if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+              if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
               {
                 fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
               }
-              else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+              else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
               {
                 fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
               }
@@ -1270,11 +1270,11 @@ private:
             }
             else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
             {
-              if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+              if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
               {
                 fe_eval_velocity.submit_gradient(0.5*viscosity*jump_tensor,q);
               }
-              else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+              else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
               {
                 fe_eval_velocity.submit_gradient(-0.5*viscosity*jump_tensor,q);
               }
@@ -1345,7 +1345,7 @@ private:
             {
               Point<dim> q_point;
               for (unsigned int d=0; d<dim; ++d)
-              q_point[d] = q_points[d][n];
+                q_point[d] = q_points[d][n];
               array[n] = dirichlet_boundary.value(q_point,d);
             }
             g[d].load(&array[0]);
@@ -1377,11 +1377,11 @@ private:
 
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             }
@@ -1390,11 +1390,11 @@ private:
           }
           else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(0.5*viscosity*jump_tensor,q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-0.5*viscosity*jump_tensor,q);
             }
@@ -1436,11 +1436,11 @@ private:
 
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             }
@@ -1449,11 +1449,11 @@ private:
           }
           else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(0.5*viscosity*jump_tensor,q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-0.5*viscosity*jump_tensor,q);
             }
@@ -1535,18 +1535,18 @@ private:
 
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
               fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
               fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             else
               AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
           }
           else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
               fe_eval_velocity.submit_gradient(0.5*viscosity*jump_tensor,q);
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
               fe_eval_velocity.submit_gradient(-0.5*viscosity*jump_tensor,q);
             else
               AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
@@ -1586,18 +1586,18 @@ private:
 
           if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
               fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
               fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             else
               AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
           }
           else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG)
+            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
               fe_eval_velocity.submit_gradient(0.5*viscosity*jump_tensor,q);
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulationViscous::SIPG)
+            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
               fe_eval_velocity.submit_gradient(-0.5*viscosity*jump_tensor,q);
             else
               AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));

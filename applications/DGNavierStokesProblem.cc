@@ -74,19 +74,19 @@
 using namespace dealii;
 
 // specify flow problem that has to be solved
-#define VORTEX
+//#define VORTEX
 //#define STOKES_GUERMOND
 //#define STOKES_SHAHBAZI
 //#define POISEUILLE
 //#define CUETTE
-//#define CAVITY
+#define CAVITY
 //#define KOVASZNAY
 //#define BELTRAMI
 //#define FLOW_PAST_CYLINDER
 //#define CHANNEL
 
 
-ProblemType PROBLEM_TYPE = ProblemType::Unsteady; //Steady; //Unsteady;
+ProblemType PROBLEM_TYPE = ProblemType::Steady; //Steady; //Unsteady;
 EquationType EQUATION_TYPE = EquationType::NavierStokes; // Stokes; // NavierStokes;
 TreatmentOfConvectiveTerm TREATMENT_OF_CONVECTIVE_TERM = TreatmentOfConvectiveTerm::Implicit; // Explicit; // Implicit;
 
@@ -95,14 +95,14 @@ TreatmentOfConvectiveTerm TREATMENT_OF_CONVECTIVE_TERM = TreatmentOfConvectiveTe
 TemporalDiscretization TEMPORAL_DISCRETIZATION = TemporalDiscretization::BDFCoupledSolution; //BDFDualSplittingScheme // BDFCoupledSolution
 
 // type of time step calculation
-TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepUserSpecified; //ConstTimeStepCFL; //AdaptiveTimeStepCFL;
+TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified; //ConstTimeStepCFL; //AdaptiveTimeStepCFL;
 /*************************************************/
 
 /************* spatial discretization ************/
 SpatialDiscretization SPATIAL_DISCRETIZATION = SpatialDiscretization::DG; //DG //DGXWall
 
 FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::DivergenceFormulation; //DivergenceFormulation; //LaplaceFormulation;
-InteriorPenaltyFormulationViscous IP_FORMULATION_VISCOUS = InteriorPenaltyFormulationViscous::SIPG; //SIPG; //NIPG;
+InteriorPenaltyFormulation IP_FORMULATION_VISCOUS = InteriorPenaltyFormulation::SIPG; //SIPG; //NIPG;
 
 bool const DIVU_INTEGRATED_BY_PARTS = true; //false;//true;
 bool const DIVU_USE_BOUNDARY_DATA = true; //false;//true;
@@ -115,7 +115,6 @@ bool const GRADP_USE_BOUNDARY_DATA = true; //false;//true;
 bool const STS_STABILITY = false;
 
 // pressure Poisson equation
-SolverPoisson SOLVER_POISSON = SolverPoisson::PCG; //PCG;
 PreconditionerPoisson PRECONDITIONER_POISSON = PreconditionerPoisson::GeometricMultigrid; // None; //Jacobi; //GeometricMultigrid;
 
 // multigrid pressure Poisson
@@ -145,12 +144,14 @@ PreconditionerLinearizedNavierStokes PRECONDITIONER_LINEARIZED_NAVIER_STOKES =
 PreconditionerMomentum PRECONDITIONER_MOMENTUM =
     PreconditionerMomentum::GeometricMultigrid; //None; //InverseMassMatrix; //GeometricMultigrid;
 PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
-    PreconditionerSchurComplement::CahouetChabard; //None; //InverseMassMatrix; //GeometricMultigrid; //CahouetChabard;
+    PreconditionerSchurComplement::InverseMassMatrix; //None; //InverseMassMatrix; //GeometricMultigrid; //CahouetChabard; //Elman; //PressureConvectionDiffusion;
+DiscretizationOfLaplacian DISCRETIZATION_OF_LAPLACIAN =
+    DiscretizationOfLaplacian::Classical; //Classical; //Compatible;
 /************************************************/
 
 #ifdef VORTEX
-  const unsigned int FE_DEGREE = 5; //2
-  const unsigned int FE_DEGREE_P = FE_DEGREE-1;//FE_DEGREE-1;
+  const unsigned int FE_DEGREE = 2; //2
+  const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
   const unsigned int FE_DEGREE_XWALL = 1;
   const unsigned int N_Q_POINTS_1D_XWALL = 1;
   const unsigned int DIMENSION = 2;
@@ -165,17 +166,17 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
   const double STATISTICS_START_TIME = 0.0;
   const int STATISTICS_EVERY = 1;
-  const double RESTART_INTERVAL_TIME = 100.;
+  const double RESTART_INTERVAL_TIME = 100;
   const double RESTART_INTERVAL_WALL_TIME = 1e6;
   const unsigned int RESTART_INTERVAL_STEP = 1e6;
   const bool DIVU_TIMESERIES = true;
   const bool COMPUTE_DIVERGENCE = true;
   const bool ANALYTICAL_SOLUTION = true;
   const int MAX_NUM_STEPS = 1e6;
-  const double CFL = 0.1; //0.1;
+  const double CFL = 0.1;
   const double U_X_MAX = 1.0;
   const double MAX_VELOCITY = 1.4*U_X_MAX;
-  const double TIME_STEP_SIZE = 1.e-3;//1.e-2;
+  const double TIME_STEP_SIZE = 1.0;//1.e-3;//1.e-2;
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
@@ -204,21 +205,21 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double REL_TOL_LINEAR = 1.0e-6;
   unsigned int const MAX_ITER_LINEAR = 1e6;
 
-  const double ABS_TOL_PRESSURE = 1.0e-18;
-  const double REL_TOL_PRESSURE = 1.0e-12;
-  const double ABS_TOL_PROJECTION = 1.0e-18;
+//  const double ABS_TOL_PRESSURE = 1.0e-18;
+//  const double REL_TOL_PRESSURE = 1.0e-12;
+//  const double ABS_TOL_PROJECTION = 1.0e-18;
+//  const double REL_TOL_PROJECTION = 1.0e-12;
+//  const double ABS_TOL_VISCOUS = 1.0e-18;
+//  const double REL_TOL_VISCOUS = 1.0e-12;
+
+  const double ABS_TOL_PRESSURE = 1.0e-20;
+  const double REL_TOL_PRESSURE = 1.0e-6;
+  const double ABS_TOL_VISCOUS = 1.0e-20;
+  const double REL_TOL_VISCOUS = 1.0e-6;
+  const double ABS_TOL_PROJECTION = 1.0e-20;
   const double REL_TOL_PROJECTION = 1.0e-12;
-  const double ABS_TOL_VISCOUS = 1.0e-18;
-  const double REL_TOL_VISCOUS = 1.0e-12;
 
-//  const double ABS_TOL_PRESSURE = 1.0e-12;
-//  const double REL_TOL_PRESSURE = 1.0e-6;
-//  const double ABS_TOL_VISCOUS = 1.0e-12;
-//  const double REL_TOL_VISCOUS = 1.0e-6;
-//  const double ABS_TOL_PROJECTION = 1.0e-12;
-//  const double REL_TOL_PROJECTION = 1.0e-6;
-
-  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e6;
+  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e1; //1e6;
 
   const std::string OUTPUT_PREFIX = "vortex_flow";
 
@@ -285,7 +286,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double ABS_TOL_PRESSURE = 1.0e-12;
   const double REL_TOL_PRESSURE = 1.0e-6;
   const double ABS_TOL_VISCOUS = 1.0e-12;
-  const double REL_TOL_VISCOUS = 1.0e-6;
+  const double REL_TOL_VISCOUS = 11.0e-6;
   const double ABS_TOL_PROJECTION = 1.0e-12;
   const double REL_TOL_PROJECTION = 1.0e-6;
 
@@ -313,7 +314,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double ERROR_CALC_INTERVAL_TIME = OUTPUT_INTERVAL_TIME;
   const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
   const double STATISTICS_START_TIME = 50.0;
-  const int STATISTICS_EVERY = 1;
+  const int STATISTICS_EVE2RY = 1;
   const double RESTART_INTERVAL_TIME = 100.;
   const double RESTART_INTERVAL_WALL_TIME = 1000.;
   const unsigned int RESTART_INTERVAL_STEP = 1e6;
@@ -363,13 +364,13 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 #endif
 
 #ifdef CAVITY
-  const unsigned int FE_DEGREE = 6;
+  const unsigned int FE_DEGREE = 5;
   const unsigned int FE_DEGREE_P = FE_DEGREE-1;//FE_DEGREE-1;
   const unsigned int FE_DEGREE_XWALL = 1;
   const unsigned int N_Q_POINTS_1D_XWALL = 1;
   const unsigned int DIMENSION = 2;
-  const unsigned int REFINE_STEPS_SPACE_MIN = 3;
-  const unsigned int REFINE_STEPS_SPACE_MAX = 3;
+  const unsigned int REFINE_STEPS_SPACE_MIN = 1;
+  const unsigned int REFINE_STEPS_SPACE_MAX = 5;
 
   const double START_TIME = 0.0;
   const double END_TIME = 40.0;
@@ -391,7 +392,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
-  const double VISCOSITY = 4.0e-3;//0.0002;
+  const double VISCOSITY = 4.0e-3;//4.0e-3;//0.0002;
   const double L = 1.0;
 
   const double MAX_VELOCITY = 1.0;
@@ -510,7 +511,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double RESTART_INTERVAL_TIME = 100.;
   const double RESTART_INTERVAL_WALL_TIME = 1000.;
   const unsigned int RESTART_INTERVAL_STEP = 1e6;
-  const bool ANALYTICAL_SOLUTION = true;
+  const bool ANALYTICAL_SOLUTION = true;apply
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.01;
@@ -556,8 +557,8 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const unsigned int FE_DEGREE_XWALL = 1;
   const unsigned int N_Q_POINTS_1D_XWALL = 1;
   const unsigned int DIMENSION = 2;
-  const unsigned int REFINE_STEPS_SPACE_MIN = 4;//2
-  const unsigned int REFINE_STEPS_SPACE_MAX = 4;
+  const unsigned int REFINE_STEPS_SPACE_MIN = 2;//2
+  const unsigned int REFINE_STEPS_SPACE_MAX = 2;
 
   const double START_TIME = 0.0;
   const double END_TIME = 1.0;
@@ -575,11 +576,11 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const bool COMPUTE_DIVERGENCE = false;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.2; // CFL number irrelevant for Stokes flow problem
-  const double TIME_STEP_SIZE = 1.0e-1;//2.e-4;//1.e-1;///std::pow(2.,13); //5.0e-4
+  const double TIME_STEP_SIZE = 1.0e-3;//1.0e-3;//2.e-4;//1.e-1;///std::pow(2.,13); //5.0e-4
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
-  const double VISCOSITY = 1.0e-6;//0.01;
+  const double VISCOSITY = 1.0e-2;//0.01;
 
   const double MAX_VELOCITY = 2.65; // MAX_VELOCITY also irrelevant
   const double IP_FACTOR_PRESSURE = 1.0;
@@ -603,7 +604,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   unsigned int const MAX_ITER_NEWTON = 1e2;
   const double ABS_TOL_LINEAR = 1.0e-12;
   const double REL_TOL_LINEAR = 1.0e-6;
-  unsigned int const MAX_ITER_LINEAR = 1e6;
+  unsigned int const MAX_ITER_LINEAR = 1e3;
 
   const double ABS_TOL_PRESSURE = 1.0e-12;
   const double REL_TOL_PRESSURE = 1.0e-6;
@@ -700,13 +701,13 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 #endif
 
 #ifdef FLOW_PAST_CYLINDER
-  const unsigned int FE_DEGREE = 2;
-  const unsigned int FE_DEGREE_P = FE_DEGREE-1;//FE_DEGREE-1;
+  const unsigned int FE_DEGREE = 3;
+  const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
   const unsigned int FE_DEGREE_XWALL = 1;
   const unsigned int N_Q_POINTS_1D_XWALL = 1;
   const unsigned int DIMENSION = 2;
-  const unsigned int REFINE_STEPS_SPACE_MIN = 0;
-  const unsigned int REFINE_STEPS_SPACE_MAX = 0;
+  const unsigned int REFINE_STEPS_SPACE_MIN = 4;
+  const unsigned int REFINE_STEPS_SPACE_MAX = 4;
 
   const double START_TIME = 0.0;
   const double END_TIME = 8.0;
@@ -717,19 +718,19 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double STATISTICS_START_TIME = 50000.0;
   const int STATISTICS_EVERY = 1;
   const double RESTART_INTERVAL_TIME = 100.;
-  const double RESTART_INTERVAL_WALL_TIME = 1000.;
+  const double RESTART_INTERVAL_WALL_TIME = 1e6;
   const unsigned int RESTART_INTERVAL_STEP = 1e6;
   const bool ANALYTICAL_SOLUTION = true;
   const bool DIVU_TIMESERIES = true;
   const bool COMPUTE_DIVERGENCE = true;
   const int MAX_NUM_STEPS = 1e6;
   const double TIME_STEP_SIZE = 0.1;//1.e-2;
-  const double CFL = 0.05;
+  const double CFL = 0.3;
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
-  const double VISCOSITY = 0.001;
-  const unsigned int TEST_CASE = 1; // 1, 2 or 3
+  const double VISCOSITY = 0.001; //0.001;
+  const unsigned int TEST_CASE = 2; // 1, 2 or 3
   const double Um = (DIMENSION == 2 ? (TEST_CASE==1 ? 0.3 : 1.5) : (TEST_CASE==1 ? 0.45 : 2.25));
   const double D = 0.1;
   const double H = 0.41;
@@ -766,11 +767,11 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double REL_TOL_PRESSURE = 1.0e-6;
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-6;
-  const double ABS_TOL_PROJECTION = 1.0e-12;
-  const double REL_TOL_PROJECTION = 1.0e-6;
+  const double ABS_TOL_PROJECTION = 1.0e-20;
+  const double REL_TOL_PROJECTION = 1.0e-12;
 
   // show solver performance (wall time, number of iterations) every ... timesteps
-  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e0;//1e3;
+  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e1;//1e3;
 
   const std::string OUTPUT_PREFIX = "fpc_r0_p2";
 
@@ -779,13 +780,13 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 #endif
 
 #ifdef CHANNEL
-  const unsigned int FE_DEGREE = 2;
-  const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
-  const unsigned int FE_DEGREE_XWALL = 2;
-  const unsigned int N_Q_POINTS_1D_XWALL = 12;
+  const unsigned int FE_DEGREE = 4;
+  const unsigned int FE_DEGREE_P = FE_DEGREE-1;//FE_DEGREE-1;
+  const unsigned int FE_DEGREE_XWALL = 1;
+  const unsigned int N_Q_POINTS_1D_XWALL = 1;
   const unsigned int DIMENSION = 3; // DIMENSION >= 2
-  const unsigned int REFINE_STEPS_SPACE_MIN = 3;
-  const unsigned int REFINE_STEPS_SPACE_MAX = 3;
+  const unsigned int REFINE_STEPS_SPACE_MIN = 2;
+  const unsigned int REFINE_STEPS_SPACE_MAX = 2;
 
   const double START_TIME = 0.0;
   const double END_TIME = 70.0;
@@ -802,12 +803,12 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double RESTART_INTERVAL_WALL_TIME = 1e7;
   const unsigned int RESTART_INTERVAL_STEP = 1e6;
   const int MAX_NUM_STEPS = 1e7;
-  const double CFL = 0.15;
+  const double CFL = 0.3;//1.0; //0.15;
   const double TIME_STEP_SIZE = 1.e-3;
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
-  const double VISCOSITY = 1./590.0;
+  const double VISCOSITY = 1./180.0; //1./590.0;
 
   const double MAX_VELOCITY = 15.0;
   const double IP_FACTOR_PRESSURE = 1.0;
@@ -822,12 +823,12 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const bool VARIABLETAUW = true;
   const double DTAUW = 0.2;
 
-  const double MAX_WDIST_XWALL = 0.25;
-  const double GRID_STRETCH_FAC = 0.0001;
+  const double MAX_WDIST_XWALL = 0.2;
+  const double GRID_STRETCH_FAC = 1.8;
   const bool PURE_DIRICHLET_BC = true;
 
   const double ABS_TOL_NEWTON = 1.0e-12;
-  const double REL_TOL_NEWTON = 1.0e-6;
+  const double REL_TOL_NEWTON = 1.0e-4;
   unsigned int const MAX_ITER_NEWTON = 1e2;
   const double ABS_TOL_LINEAR = 1.0e-12;
   const double REL_TOL_LINEAR = 1.0e-6;
@@ -836,14 +837,14 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double ABS_TOL_PRESSURE = 1.0e-12;
   const double REL_TOL_PRESSURE = 1.0e-4;
   const double ABS_TOL_VISCOUS = 1.0e-9;
-  const double REL_TOL_VISCOUS = 1.0e-3;
+  const double REL_TOL_VISCOUS = 1.0e-4;
   const double ABS_TOL_PROJECTION = 1.0e-12;
   const double REL_TOL_PROJECTION = 1.0e-4;
 
   // show solver performance (wall time, number of iterations) every ... timesteps
   const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e1;
 
-  const std::string OUTPUT_PREFIX = "ch590_l2_k2k2"; //"ch180_l2_p4_test";
+  const std::string OUTPUT_PREFIX = "ch180_l2_p4_test"; // "ch590_l2_k2k2"; //"ch180_l2_p4_test";
 
   const unsigned int ORDER_TIME_INTEGRATOR = 3;
   const bool START_WITH_LOW_ORDER = true;
@@ -889,7 +890,6 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   rel_tol_projection(REL_TOL_PROJECTION),
   abs_tol_viscous(ABS_TOL_VISCOUS),
   rel_tol_viscous(REL_TOL_VISCOUS),
-  solver_poisson(SOLVER_POISSON),
   preconditioner_poisson(PRECONDITIONER_POISSON),
   multigrid_smoother(MULTIGRID_SMOOTHER),
   multigrid_coarse_grid_solver(MULTIGRID_COARSE_GRID_SOLVER),
@@ -905,6 +905,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   preconditioner_linearized_navier_stokes(PRECONDITIONER_LINEARIZED_NAVIER_STOKES),
   preconditioner_momentum(PRECONDITIONER_MOMENTUM),
   preconditioner_schur_complement(PRECONDITIONER_SCHUR_COMPLEMENT),
+  discretization_of_laplacian(DISCRETIZATION_OF_LAPLACIAN),
   output_solver_info_every_timesteps(OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS),
   output_start_time(OUTPUT_START_TIME),
   output_interval_time(OUTPUT_INTERVAL_TIME),
@@ -937,7 +938,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 
     AnalyticalSolution (const bool    is_velocity,
                         const double  time,
-                        unsigned int n_components)
+                        unsigned int  n_components)
       :
       Function<dim>(is_velocity ? n_components : 1, time),
       is_velocity(is_velocity)
@@ -1433,6 +1434,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
       :
       partition (partition)
     {}
+
     virtual ~Postprocessor(){};
 
     virtual
@@ -1536,8 +1538,6 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   class PostProcessor
   {
   public:
-    typedef typename DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>::value_type value_type;
-
     PostProcessor(//DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> const &ns_operation,
                   std_cxx11::shared_ptr< const DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> >  ns_operation,
                   InputParameters const &param_in):
@@ -1563,11 +1563,11 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
     unsigned int get_output_counter() const {return output_counter_;}
 
     virtual void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
-                           parallel::distributed::Vector<double> const &pressure,
-                           parallel::distributed::Vector<double> const &vorticity,
-                           parallel::distributed::Vector<double> const &divergence,
-                           double const time,
-                           unsigned int const time_step_number)
+                                   parallel::distributed::Vector<double> const &pressure,
+                                   parallel::distributed::Vector<double> const &vorticity,
+                                   parallel::distributed::Vector<double> const &divergence,
+                                   double const                                time,
+                                   unsigned int const                          time_step_number)
     {
       time_ = time;
       time_step_number_ = time_step_number;
@@ -1609,8 +1609,8 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
     };
 
     virtual void analyze_divergence_error(parallel::distributed::Vector<double> const &velocity_temp,
-                                  double const time,
-                                  unsigned int const time_step_number)
+                                          double const                                time,
+                                          unsigned int const                          time_step_number)
     {
       time_ = time;
       time_step_number_ = time_step_number;
@@ -1631,9 +1631,9 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
                          parallel::distributed::Vector<double> const      &pressure);
 
     virtual void write_output(parallel::distributed::Vector<double> const &velocity,
-                      parallel::distributed::Vector<double> const &pressure,
-                      parallel::distributed::Vector<double> const &vorticity,
-                      parallel::distributed::Vector<double> const &divergence);
+                              parallel::distributed::Vector<double> const &pressure,
+                              parallel::distributed::Vector<double> const &vorticity,
+                              parallel::distributed::Vector<double> const &divergence);
 
     void compute_lift_and_drag(parallel::distributed::Vector<double> const &velocity,
                                parallel::distributed::Vector<double> const &pressure,
@@ -1653,20 +1653,20 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
     void evaluate_mass_error(parallel::distributed::Vector<double> const &velocity_temp,
     double & divergence, double & volume, double & diff_mass, double & mean_mass);
 
-    void local_compute_divu(const MatrixFree<dim,value_type>                &data,
-                                              std::vector<double >                            &test,
-                                              const parallel::distributed::Vector<value_type> &source,
-                                              const std::pair<unsigned int,unsigned int>      &cell_range) const;
+    void local_compute_divu(const MatrixFree<dim,double>                &data,
+                            std::vector<double>                         &test,
+                            const parallel::distributed::Vector<double> &source,
+                            const std::pair<unsigned int,unsigned int>  &cell_range) const;
 
-    void local_compute_divu_face (const MatrixFree<dim,double>                    &data,
-                                                    std::vector<double >                            &test,
-                                                    const parallel::distributed::Vector<value_type> &source,
-                                                    const std::pair<unsigned int,unsigned int>      &face_range) const;
+    void local_compute_divu_face (const MatrixFree<dim,double>                &data,
+                                  std::vector<double>                         &test,
+                                  const parallel::distributed::Vector<double> &source,
+                                  const std::pair<unsigned int,unsigned int>  &face_range) const;
 
-    void local_compute_divu_boundary_face (const MatrixFree<dim,double>                    &data,
-                                                             std::vector<double >                            &test,
-                                                             const parallel::distributed::Vector<value_type> &source,
-                                                             const std::pair<unsigned int,unsigned int>       &face_range) const;
+    void local_compute_divu_boundary_face (const MatrixFree<dim,double>                &data,
+                                           std::vector<double >                        &test,
+                                           const parallel::distributed::Vector<double> &source,
+                                           const std::pair<unsigned int,unsigned int>  &face_range) const;
 
   };
 
@@ -1745,74 +1745,74 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
     pcout << std::endl << "OUTPUT << Write data at time t = " << std::scientific << std::setprecision(4) << time_ << std::endl;
 
-  DataOut<dim> data_out;
-  std::vector<std::string> velocity_names (dim, "velocity");
-  std::vector<DataComponentInterpretation::DataComponentInterpretation>
-    velocity_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
-  data_out.add_data_vector (ns_operation_->get_dof_handler_u(),velocity, velocity_names, velocity_component_interpretation);
-
-  std::vector<std::string> vorticity_names (dim, "vorticity");
-  std::vector<DataComponentInterpretation::DataComponentInterpretation>
-    vorticity_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
-  data_out.add_data_vector (ns_operation_->get_dof_handler_u(),vorticity, vorticity_names, vorticity_component_interpretation);
-
-  pressure.update_ghost_values();
-  data_out.add_data_vector (ns_operation_->get_dof_handler_p(),pressure, "p");
-
-  if(COMPUTE_DIVERGENCE == true)
-  {
-    std::vector<std::string> divergence_names (dim, "divergence");
+    DataOut<dim> data_out;
+    std::vector<std::string> velocity_names (dim, "velocity");
     std::vector<DataComponentInterpretation::DataComponentInterpretation>
-      divergence_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
-    data_out.add_data_vector (ns_operation_->get_dof_handler_u(),divergence, divergence_names, divergence_component_interpretation);
-  }
+      velocity_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
+    data_out.add_data_vector (ns_operation_->get_dof_handler_u(),velocity, velocity_names, velocity_component_interpretation);
 
-  std::ostringstream filename;
-  filename << "output/"
-           << param.output_prefix
-           << "_Proc"
-           << Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)
-           << "_"
-           << output_counter_
-           << ".vtu";
+    std::vector<std::string> vorticity_names (dim, "vorticity");
+    std::vector<DataComponentInterpretation::DataComponentInterpretation>
+      vorticity_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
+    data_out.add_data_vector (ns_operation_->get_dof_handler_u(),vorticity, vorticity_names, vorticity_component_interpretation);
 
-  data_out.build_patches (ns_operation_->get_mapping(),5);
+    pressure.update_ghost_values();
+    data_out.add_data_vector (ns_operation_->get_dof_handler_p(),pressure, "p");
 
-  std::ofstream output (filename.str().c_str());
-  data_out.write_vtu (output);
-
-  if ( Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-  {
-    std::vector<std::string> filenames;
-    for (unsigned int i=0;i<Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);++i)
+    if(COMPUTE_DIVERGENCE == true)
     {
-      std::ostringstream filename;
-      filename << param.output_prefix
-               << "_Proc"
-               << i
-               << "_"
-               << output_counter_
-               << ".vtu";
-
-        filenames.push_back(filename.str().c_str());
+      std::vector<std::string> divergence_names (dim, "divergence");
+      std::vector<DataComponentInterpretation::DataComponentInterpretation>
+        divergence_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
+      data_out.add_data_vector (ns_operation_->get_dof_handler_u(),divergence, divergence_names, divergence_component_interpretation);
     }
-    std::string master_name = "output/" + param.output_prefix + "_" + Utilities::int_to_string(output_counter_) + ".pvtu";
-    std::ofstream master_output (master_name.c_str());
-    data_out.write_pvtu_record (master_output, filenames);
-  }
+
+    std::ostringstream filename;
+    filename << "output/"
+             << param.output_prefix
+             << "_Proc"
+             << Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)
+             << "_"
+             << output_counter_
+             << ".vtu";
+
+    data_out.build_patches (ns_operation_->get_mapping(),5);
+
+    std::ofstream output (filename.str().c_str());
+    data_out.write_vtu (output);
+
+    if ( Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    {
+      std::vector<std::string> filenames;
+      for (unsigned int i=0;i<Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);++i)
+      {
+        std::ostringstream filename;
+        filename << param.output_prefix
+                 << "_Proc"
+                 << i
+                 << "_"
+                 << output_counter_
+                 << ".vtu";
+
+          filenames.push_back(filename.str().c_str());
+      }
+      std::string master_name = "output/" + param.output_prefix + "_" + Utilities::int_to_string(output_counter_) + ".pvtu";
+      std::ofstream master_output (master_name.c_str());
+      data_out.write_pvtu_record (master_output, filenames);
+    }
   }
 
   template<int dim>
   void PostProcessor<dim>::
   compute_lift_and_drag(parallel::distributed::Vector<double> const &velocity,
                         parallel::distributed::Vector<double> const &pressure,
-                        const bool clear_files) const
+                        bool const                                  clear_files) const
   {
 #ifdef FLOW_PAST_CYLINDER
-    FEFaceEvaluation<dim,FE_DEGREE,FE_DEGREE+1,dim,value_type> fe_eval_velocity(ns_operation_->get_data(),true,0,0);
-    FEFaceEvaluation<dim,FE_DEGREE_P,FE_DEGREE+1,1,value_type> fe_eval_pressure(ns_operation_->get_data(),true,1,0);
+    FEFaceEvaluation<dim,FE_DEGREE,FE_DEGREE+1,dim,double> fe_eval_velocity(ns_operation_->get_data(),true,0,0);
+    FEFaceEvaluation<dim,FE_DEGREE_P,FE_DEGREE+1,1,double> fe_eval_pressure(ns_operation_->get_data(),true,1,0);
 
-    Tensor<1,dim,value_type> Force;
+    Tensor<1,dim,double> Force;
     for(unsigned int d=0;d<dim;++d)
       Force[d] = 0.0;
 
@@ -1830,17 +1830,17 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
       {
         for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
         {
-          VectorizedArray<value_type> pressure = fe_eval_pressure.get_value(q);
-          Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_velocity.get_normal_vector(q);
-          Tensor<2,dim,VectorizedArray<value_type> > velocity_gradient = fe_eval_velocity.get_gradient(q);
-          fe_eval_velocity.submit_value(pressure*normal -  make_vectorized_array<value_type>(ns_operation_->get_viscosity())*
+          VectorizedArray<double> pressure = fe_eval_pressure.get_value(q);
+          Tensor<1,dim,VectorizedArray<double> > normal = fe_eval_velocity.get_normal_vector(q);
+          Tensor<2,dim,VectorizedArray<double> > velocity_gradient = fe_eval_velocity.get_gradient(q);
+          fe_eval_velocity.submit_value(pressure*normal -  make_vectorized_array<double>(ns_operation_->get_viscosity())*
               (velocity_gradient+transpose(velocity_gradient))*normal,q);
         }
-        Tensor<1,dim,VectorizedArray<value_type> > Force_local = fe_eval_velocity.integrate_value();
+        Tensor<1,dim,VectorizedArray<double> > Force_local = fe_eval_velocity.integrate_value();
 
         // sum over all entries of VectorizedArray
         for (unsigned int d=0; d<dim;++d)
-          for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+          for (unsigned int n=0; n<VectorizedArray<double>::n_array_elements; ++n)
             Force[d] += Force_local[d][n];
       }
     }
@@ -1980,9 +1980,9 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   {
     std::vector<double> dst(4,0.0);
     ns_operation_->get_data().loop (&PostProcessor<dim>::local_compute_divu,
-                                   &PostProcessor<dim>::local_compute_divu_face,
-                                   &PostProcessor<dim>::local_compute_divu_boundary_face,
-                                   this, dst, velocity_temp);
+                                    &PostProcessor<dim>::local_compute_divu_face,
+                                    &PostProcessor<dim>::local_compute_divu_boundary_face,
+                                    this, dst, velocity_temp);
 
     divergence = Utilities::MPI::sum (dst.at(0), MPI_COMM_WORLD);
     volume = Utilities::MPI::sum (dst.at(1), MPI_COMM_WORLD);
@@ -1994,7 +1994,6 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   void PostProcessor<dim>::
   write_divu_timeseries(parallel::distributed::Vector<double> const &velocity_temp)
   {
-
     double divergence = 0.;
     double volume = 0.;
     double diff_mass = 0.;
@@ -2028,20 +2027,20 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 
   template<int dim>
   void PostProcessor<dim>::
-  local_compute_divu(const MatrixFree<dim,value_type>                &data,
-                                       std::vector<double>                             &dst,
-                                       const parallel::distributed::Vector<value_type> &source,
-                                       const std::pair<unsigned int,unsigned int>      &cell_range) const
+  local_compute_divu(const MatrixFree<dim,double>                &data,
+                     std::vector<double>                         &dst,
+                     const parallel::distributed::Vector<double> &source,
+                     const std::pair<unsigned int,unsigned int>  &cell_range) const
   {
 #ifdef XWALL
-    FEEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,dim,value_type> phi(data,ns_operation_.get_fe_parameters().wdist,ns_operation_.get_fe_parameters().tauw,0,3);
+    FEEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,dim,double> phi(data,ns_operation_.get_fe_parameters().wdist,ns_operation_.get_fe_parameters().tauw,0,3);
 #else
-//    FEEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,FE_DEGREE+1,dim,value_type> phi(data,ns_operation_.get_fe_parameters(),0,0);
-    FEEvaluation<dim,FE_DEGREE,FE_DEGREE+1,dim,value_type> phi(data,0,0);
+//    FEEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,FE_DEGREE+1,dim,double> phi(data,ns_operation_.get_fe_parameters(),0,0);
+    FEEvaluation<dim,FE_DEGREE,FE_DEGREE+1,dim,double> phi(data,0,0);
 #endif
-    AlignedVector<VectorizedArray<value_type> > JxW_values(phi.n_q_points);
-    VectorizedArray<value_type> div_vec = make_vectorized_array(0.);
-    VectorizedArray<value_type> vol_vec = make_vectorized_array(0.);
+    AlignedVector<VectorizedArray<double> > JxW_values(phi.n_q_points);
+    VectorizedArray<double> div_vec = make_vectorized_array(0.);
+    VectorizedArray<double> vol_vec = make_vectorized_array(0.);
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
       phi.reinit(cell);
@@ -2055,9 +2054,9 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
         div_vec += JxW_values[q]*std::abs(phi.get_divergence(q));
       }
     }
-    value_type div = 0.;
-    value_type vol = 0.;
-    for (unsigned int v=0;v<VectorizedArray<value_type>::n_array_elements;v++)
+    double div = 0.;
+    double vol = 0.;
+    for (unsigned int v=0;v<VectorizedArray<double>::n_array_elements;v++)
     {
       div += div_vec[v];
       vol += vol_vec[v];
@@ -2068,23 +2067,23 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 
   template<int dim>
   void PostProcessor<dim>::
-  local_compute_divu_face (const MatrixFree<dim,double>                    &data,
-                                             std::vector<double >                            &dst,
-                                             const parallel::distributed::Vector<value_type> &source,
-                                             const std::pair<unsigned int,unsigned int>      &face_range) const
+  local_compute_divu_face (const MatrixFree<dim,double>                &data,
+                           std::vector<double >                        &dst,
+                           const parallel::distributed::Vector<double> &source,
+                           const std::pair<unsigned int,unsigned int>  &face_range) const
   {
 #ifdef XWALL
-    FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,dim,value_type> fe_eval_xwall(data,ns_operation_.get_fe_parameters().wdist,ns_operation_.get_fe_parameters().tauw,true,0,3);
-    FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,dim,value_type> fe_eval_xwall_neighbor(data,ns_operation_.get_fe_parameters().wdist,ns_operation_.get_fe_parameters().tauw,false,0,3);
+    FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,dim,double> fe_eval_xwall(data,ns_operation_.get_fe_parameters().wdist,ns_operation_.get_fe_parameters().tauw,true,0,3);
+    FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,dim,double> fe_eval_xwall_neighbor(data,ns_operation_.get_fe_parameters().wdist,ns_operation_.get_fe_parameters().tauw,false,0,3);
 #else
-//    FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,FE_DEGREE+1,dim,value_type> fe_eval_xwall(data,ns_operation_.get_fe_parameters(),true,0,0);
-//    FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,FE_DEGREE+1,dim,value_type> fe_eval_xwall_neighbor(data,ns_operation_.get_fe_parameters(),false,0,0);
-    FEFaceEvaluation<dim,FE_DEGREE,FE_DEGREE+1,dim,value_type> fe_eval_xwall(data,true,0,0);
-    FEFaceEvaluation<dim,FE_DEGREE,FE_DEGREE+1,dim,value_type> fe_eval_xwall_neighbor(data,false,0,0);
+//    FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,FE_DEGREE+1,dim,double> fe_eval_xwall(data,ns_operation_.get_fe_parameters(),true,0,0);
+//    FEFaceEvaluationXWall<dim,FE_DEGREE,FE_DEGREE_XWALL,FE_DEGREE+1,dim,double> fe_eval_xwall_neighbor(data,ns_operation_.get_fe_parameters(),false,0,0);
+    FEFaceEvaluation<dim,FE_DEGREE,FE_DEGREE+1,dim,double> fe_eval_xwall(data,true,0,0);
+    FEFaceEvaluation<dim,FE_DEGREE,FE_DEGREE+1,dim,double> fe_eval_xwall_neighbor(data,false,0,0);
 #endif
-    AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval_xwall.n_q_points);
-    VectorizedArray<value_type> diff_mass_flux_vec = make_vectorized_array(0.);
-    VectorizedArray<value_type> mean_mass_flux_vec = make_vectorized_array(0.);
+    AlignedVector<VectorizedArray<double> > JxW_values(fe_eval_xwall.n_q_points);
+    VectorizedArray<double> diff_mass_flux_vec = make_vectorized_array(0.);
+    VectorizedArray<double> mean_mass_flux_vec = make_vectorized_array(0.);
     for (unsigned int face=face_range.first; face<face_range.second; ++face)
     {
       fe_eval_xwall.reinit(face);
@@ -2102,9 +2101,9 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
         diff_mass_flux_vec += JxW_values[q]*std::abs((fe_eval_xwall.get_value(q)-fe_eval_xwall_neighbor.get_value(q))*fe_eval_xwall.get_normal_vector(q));
       }
     }
-    value_type diff_mass_flux = 0.;
-    value_type mean_mass_flux = 0.;
-    for (unsigned int v=0;v<VectorizedArray<value_type>::n_array_elements;v++)
+    double diff_mass_flux = 0.;
+    double mean_mass_flux = 0.;
+    for (unsigned int v=0;v<VectorizedArray<double>::n_array_elements;v++)
     {
       diff_mass_flux += diff_mass_flux_vec[v];
       mean_mass_flux += mean_mass_flux_vec[v];
@@ -2115,10 +2114,10 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 
   template<int dim>
   void PostProcessor<dim>::
-  local_compute_divu_boundary_face (const MatrixFree<dim,double>                     &,
-                                                      std::vector<double >                             &,
-                                                      const parallel::distributed::Vector<value_type>  &,
-                                                      const std::pair<unsigned int,unsigned int>       &) const
+  local_compute_divu_boundary_face (const MatrixFree<dim,double>                 &,
+                                    std::vector<double >                         &,
+                                    const parallel::distributed::Vector<double>  &,
+                                    const std::pair<unsigned int,unsigned int>   &) const
   {
 
   }
@@ -2127,8 +2126,6 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   class PostProcessorStatistics: public PostProcessor<dim>
   {
   public:
-    typedef typename DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>::value_type value_type;
-
     PostProcessorStatistics(//DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> const &ns_operation,
                   std_cxx11::shared_ptr< const DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> >  ns_operation,
                   InputParameters const &param_in):
@@ -2140,6 +2137,8 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
     {
 
     }
+
+    virtual ~PostProcessorStatistics(){}
 
     void setup()
     {
@@ -2162,7 +2161,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 #ifdef CHANNEL
       if(time > this->param.statistics_start_time-EPSILON && time_step_number % this->param.statistics_every == 0)
       {
-        statistics.evaluate(velocity);
+	statistics.evaluate(velocity);
         if(time_step_number % 100 == 0 || time > (this->param.end_time-EPSILON))
           statistics.write_output(this->param.output_prefix,this->ns_operation_->get_viscosity());
       }
@@ -2227,8 +2226,6 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   class PostProcessorXWall: public PostProcessorStatistics<dim>
   {
   public:
-    typedef typename DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>::value_type value_type;
-
     PostProcessorXWall(//DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> const &ns_operation,
                   std_cxx11::shared_ptr<DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> >  ns_operation,
                   InputParameters const &param_in):
@@ -2285,7 +2282,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
     pcout << std::endl << "OUTPUT << Write data at time t = " << std::scientific << std::setprecision(4) << this->time_ << std::endl;
 
-    const unsigned int number_vorticity_components = (dim==2) ? 1 : dim;
+    //const unsigned int number_vorticity_components = (dim==2) ? 1 : dim;
     // velocity + xwall dofs
     const FESystem<dim> joint_fe (this->ns_operation_->get_fe_u(), 1, //velocity
                                   ns_operation_xw_->get_fe_wdist(), 1, //wdist

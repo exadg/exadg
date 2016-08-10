@@ -25,13 +25,14 @@ enum class SolverProjection { LU, PCG };
 enum class PreconditionerProjection { None, Jacobi, InverseMassMatrix };
 
 enum class FormulationViscousTerm { DivergenceFormulation, LaplaceFormulation };
-enum class InteriorPenaltyFormulationViscous { SIPG, NIPG };
+enum class InteriorPenaltyFormulation { SIPG, NIPG };
 enum class SolverViscous { PCG, GMRES };
 enum class PreconditionerViscous { None, Jacobi, InverseMassMatrix, GeometricMultigrid };
 
 enum class PreconditionerLinearizedNavierStokes { None, BlockDiagonal, BlockTriangular, BlockTriangularFactorization };
 enum class PreconditionerMomentum { None, InverseMassMatrix, GeometricMultigrid };
-enum class PreconditionerSchurComplement {None, InverseMassMatrix, GeometricMultigrid, CahouetChabard };
+enum class PreconditionerSchurComplement { None, InverseMassMatrix, GeometricMultigrid, CahouetChabard, Elman, PressureConvectionDiffusion };
+enum class DiscretizationOfLaplacian { Classical, Compatible };
 
 class InputParameters
 {
@@ -138,8 +139,8 @@ public:
   double const abs_tol_viscous;
   double const rel_tol_viscous;
 
-  // type of pressure Poisson solver
-  SolverPoisson const solver_poisson;
+  // type of pressure Poisson solver = PCG (preconditioned conjugate gradient)
+
   // preconditioner type for solution of pressure Poisson equation
   PreconditionerPoisson const preconditioner_poisson;
   // multigrid smoother pressure Poisson equation
@@ -157,14 +158,14 @@ public:
   // formulation of viscous term: divergence formulation or Laplace formulation
   FormulationViscousTerm const formulation_viscous_term;
   // interior penalty formulation of viscous term: SIPG (symmetric IP) or NIPG (non-symmetric IP)
-  InteriorPenaltyFormulationViscous const IP_formulation_viscous;
+  InteriorPenaltyFormulation const IP_formulation_viscous;
   // Solver type for solution of viscous step
   SolverViscous const solver_viscous;
   // Preconditioner type for solution of viscous step
   PreconditionerViscous const preconditioner_viscous;
-  // multigrid smoother pressure Poisson equation
+  // multigrid smoother Helmholtz equation
   MultigridSmoother const multigrid_smoother_viscous;
-  // multigrid coarse grid solver pressure Poisson equation
+  // multigrid coarse grid solver Helmholtz equation
   MultigridCoarseGridSolver const multigrid_coarse_grid_solver_viscous;
 
   // preconditioner linearized Navier-Stokes problem
@@ -173,6 +174,8 @@ public:
   PreconditionerMomentum const preconditioner_momentum;
   // preconditioner for (2,2) pressure/Schur complement block in case of block preconditioning
   PreconditionerSchurComplement const preconditioner_schur_complement;
+  // discretization of Laplacian: classical (BB^T), compatible (BM^{-1}B^T)
+  DiscretizationOfLaplacian const discretization_of_laplacian;
 
   // show solver performance (wall time, number of iterations) every ... timesteps
   unsigned int const output_solver_info_every_timesteps;
@@ -215,6 +218,61 @@ public:
   double const dtauw;
   // max wall distance of enriched elements
   double const max_wdist_xwall;
+};
+
+enum class EquationTypeConvDiff { Convection, Diffusion, ConvectionDiffusion };
+
+class InputParametersConvDiff
+{
+public:
+  // standard constructor that initializes parameters
+  InputParametersConvDiff();
+
+  // which type of equatio is solved?
+  EquationTypeConvDiff const equation_type;
+  // if the rhs f is unequal zero, set right_hand_side = true
+  bool const right_hand_side;
+
+  // runtime optimization: evaluate volume and surface integrals of convective term, diffusive term and rhs term in
+  // one function (local_apply, local_apply_face, local_apply_boundary_face) instead of
+  // implementing each operator seperately and subsequently looping over all operators
+  // if an operator is not used (e.g. purely diffusive problem) the volume and surface integrals of this operator are
+  // simply not evaluated
+  // Note: if runtime_optimization == true:
+  //   ensure that the rhs-function, velocity-field and that the diffusivity is zero
+  //   if the rhs operator, convective operator or diffusive operator is "inactive" because the volume and surface integrals
+  //   of these operators will always be evaluated
+  bool const runtime_optimization;
+
+  // start and end time of time interval
+  double const start_time;
+  double const end_time;
+
+  // order of BDF time integration scheme and extrapolation scheme
+  unsigned int const order_time_integrator;
+
+  // cfl number
+  double const cfl_number;
+
+  // diffusion number (relevant number for limitation of time step size when treating the diffusive term explicitly)
+  double const diffusion_number;
+
+
+  // before then no output will be written
+  double const output_start_time;
+  // specifies the time interval in which output is written
+  double const output_interval_time;
+
+  // before then no error calculation will be performed
+  double const error_calc_start_time;
+  // specifies the time interval in which error calculation is performed
+  double const error_calc_interval_time;
+
+  // kinematic diffusivity
+  double const diffusivity;
+
+  // interior penalty parameter scaling factor: default value is 1.0
+  double const IP_factor;
 };
 
 #endif /* INCLUDE_INPUTPARAMETERS_H_ */

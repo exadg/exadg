@@ -110,6 +110,8 @@ setup(bool do_restart)
 
   // initialize time integrator constants assuming that the time integrator uses a high-order method in first time step,
   // i.e., the default case is start_with_low_order = false
+  // this is reasonable since DGNavierStokes used these time integrator constants for the setup of solvers
+  // in case of start_with_low_order == true the time integrator constants have to be adjusted in timeloop
   initialize_time_integrator_constants();
 
   // initialize global solution vectors (allocation)
@@ -200,7 +202,7 @@ initialize_time_integrator_constants()
       ExcMessage("Specified order of time integration scheme is not implemented."));
 
   // the default case is start_with_low_order == false
-  // in case of start_with_low_order == true the time integrator constants have to be adjusted in do_timestep
+  // in case of start_with_low_order == true the time integrator constants have to be adjusted in timeloop
   set_time_integrator_constants(order);
 }
 
@@ -312,7 +314,7 @@ timeloop()
     write_restart();
 
     if(param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
-       recalculate_adaptive_time_step();
+      recalculate_adaptive_time_step();
   }
 
   total_time += global_timer.wall_time();

@@ -71,23 +71,30 @@ public:
     if(solution_linearization != nullptr)
       underlying_operator->set_solution_linearization(solution_linearization);
 
-    ReductionControl solver_control (solver_data.max_iter, solver_data.abs_tol, solver_data.rel_tol);
-    typename SolverGMRES<parallel::distributed::BlockVector<value_type> >::AdditionalData additional_data;
-    additional_data.max_n_tmp_vectors = 60;
-    // use right preconditioning A*P^{-1}
-    additional_data.right_preconditioning = true;
-
-    SolverGMRES<parallel::distributed::BlockVector<value_type> > solver (solver_control, additional_data);
-
-    if(false)
-    {
-      solver.connect_eigenvalues_slot(std_cxx11::bind(output_eigenvalues<std::complex<double> >,std_cxx11::_1,"Eigenvalues: "),true);
-    }
+    //TODO: GMRES solver
+//    ReductionControl solver_control (solver_data.max_iter, solver_data.abs_tol, solver_data.rel_tol);
+//    typename SolverGMRES<parallel::distributed::BlockVector<value_type> >::AdditionalData additional_data;
+//    additional_data.max_n_tmp_vectors = 60;
+//    // use right preconditioning A*P^{-1}
+//    additional_data.right_preconditioning = true;
+//
+//    SolverGMRES<parallel::distributed::BlockVector<value_type> > solver (solver_control, additional_data);
+//
+//    if(false)
+//    {
+//      solver.connect_eigenvalues_slot(std_cxx11::bind(output_eigenvalues<std::complex<double> >,std_cxx11::_1,"Eigenvalues: "),true);
+//    }
+    //TODO: GMRES solver
 
 //    underlying_operator->vmult(dst,src);
 //    double l2_norm = dst.l2_norm();
 //    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
 //      std::cout<<"L2 norm of Matrix Vector Product = "<<std::setprecision(14)<<l2_norm<<std::endl;
+
+    //TODO: FGMRES solver when using Krylov method inside preconditioner of this linearized problem
+    ReductionControl solver_control (solver_data.max_iter, solver_data.abs_tol, solver_data.rel_tol);
+    SolverFGMRES<parallel::distributed::BlockVector<value_type> > solver (solver_control);
+    //TODO: FGMRES solver when using Krylov method inside preconditioner of this linearized problem
 
     if(solver_data.preconditioner_data.preconditioner_type == PreconditionerLinearizedNavierStokes::None)
     {
@@ -189,6 +196,14 @@ public:
     vector_linearization = solution_linearization;
   }
 
+  parallel::distributed::Vector<value_type> const * get_velocity_linearization() const
+  {
+    if(vector_linearization != nullptr)
+      return &vector_linearization->block(0);
+    else
+      return nullptr;
+  }
+
 private:
   friend class BlockPreconditionerNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>;
 
@@ -225,6 +240,7 @@ setup_solvers ()
   preconditioner_data.preconditioner_type = this->param.preconditioner_linearized_navier_stokes;
   preconditioner_data.preconditioner_momentum = this->param.preconditioner_momentum;
   preconditioner_data.preconditioner_schur_complement = this->param.preconditioner_schur_complement;
+  preconditioner_data.discretization_of_laplacian = this->param.discretization_of_laplacian;
 
   linear_solver_data.preconditioner_data = preconditioner_data;
 

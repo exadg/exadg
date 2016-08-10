@@ -933,9 +933,9 @@ public:
   }
 
   virtual void local_solve(const MatrixFree<dim,value_type>                &data,
-                   parallel::distributed::Vector<value_type>       &dst,
-                   const parallel::distributed::Vector<value_type> &src,
-                   const std::pair<unsigned int,unsigned int>      &cell_range) const
+                           parallel::distributed::Vector<value_type>       &dst,
+                           const parallel::distributed::Vector<value_type> &src,
+                           const std::pair<unsigned int,unsigned int>      &cell_range) const
   {
     AssertThrow(solver_data.preconditioner_projection == PreconditionerProjection::InverseMassMatrix,
                         ExcMessage("Specified preconditioner is not available for projection_type = ProjectionType::DivergencePenalty and solver_projection = SolverProjection::PCG"));
@@ -1046,6 +1046,7 @@ public:
   ~IterativeProjectionSolverDivergenceAndContinuityPenalty()
   {
     delete preconditioner;
+    preconditioner = nullptr;
   }
 
   unsigned int solve(parallel::distributed::Vector<value_type>       &dst,
