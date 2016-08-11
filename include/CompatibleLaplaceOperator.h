@@ -22,15 +22,10 @@ struct CompatibleLaplaceOperatorData
   unsigned int dof_index_velocity;
   unsigned int dof_index_pressure;
 
-  GradientOperatorData gradient_operator_data;
-  DivergenceOperatorData divergence_operator_data;
+  GradientOperatorData<dim> gradient_operator_data;
+  DivergenceOperatorData<dim> divergence_operator_data;
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs_level0;
-
-  std::set<types::boundary_id> const & get_dirichlet_boundaries() const
-  {
-    return gradient_operator_data.get_dirichlet_boundaries();
-  }
 };
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall,typename Number = double>
@@ -82,8 +77,9 @@ public:
     dof_handler_vec[my_operator_data.dof_index_pressure] = &dof_handler_p;
 
     // quadrature formula with (fe_degree_velocity+1) quadrature points: this is the quadrature formula that is used for
-    // the gradient operator and the divergence operator
+    // the gradient operator and the divergence operator (and the inverse velocity mass matrix operator)
     const QGauss<1> quad(dof_handler_u.get_fe().degree+1);
+
     typename MatrixFree<dim,Number>::AdditionalData addit_data;
     addit_data.tasks_parallel_scheme = MatrixFree<dim,Number>::AdditionalData::none;
     // continuous or discontinuous elements: discontinuous == 0
@@ -107,15 +103,16 @@ public:
     own_matrix_free_storage.reinit(mapping, dof_handler_vec, constraint_matrix_vec, quad, addit_data);
 
     // setup own gradient operator
-    GradientOperatorData gradient_operator_data = my_operator_data.gradient_operator_data;
+    GradientOperatorData<dim> gradient_operator_data = my_operator_data.gradient_operator_data;
     own_gradient_operator_storage.initialize(own_matrix_free_storage,fe_param,gradient_operator_data);
 
     // setup own divergence operator
-    DivergenceOperatorData divergence_operator_data = my_operator_data.divergence_operator_data;
+    DivergenceOperatorData<dim> divergence_operator_data = my_operator_data.divergence_operator_data;
     own_divergence_operator_storage.initialize(own_matrix_free_storage,fe_param,divergence_operator_data);
 
     // setup own inverse mass matrix operator
-    // NOTE: use quad_index = 0 since matrix_free contains only one quadrature formula (also if quad_index_velocity would be 1 !)
+    // NOTE: use quad_index = 0 since matrix_free contains only one quadrature formula
+    // (use quad_index = 0 also if quad_index_velocity would be 1 !)
     unsigned int quad_index = 0;
     own_inv_mass_matrix_operator_storage.initialize(own_matrix_free_storage,
                                                     my_operator_data.dof_index_velocity,

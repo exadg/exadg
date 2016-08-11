@@ -115,7 +115,7 @@ void InputParameters::set_input_parameters()
 
   //xwall specific
   spatial_discretization = SpatialDiscretization::DGXWall;
-  IP_formulation_viscous = InteriorPenaltyFormulationViscous::NIPG;
+  IP_formulation_viscous = InteriorPenaltyFormulation::NIPG;
   solver_viscous = SolverViscous::GMRES;
 
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;//AdaptiveTimeStepCFL;
@@ -311,42 +311,29 @@ void InputParameters::set_input_parameters()
   }
 
   template<int dim>
-  class AnalyticalSolution : public Function<dim>
+  class AnalyticalSolutionVelocity : public Function<dim>
   {
   public:
-    AnalyticalSolution (const bool    is_velocity,
-                        const double  time = 0.)
+    AnalyticalSolutionVelocity (const unsigned int  n_components = dim,
+                                const double        time = 0.)
       :
-      Function<dim>(is_velocity ? dim : 1, time),
-      is_velocity(is_velocity)
+      Function<dim>(n_components, time)
     {}
 
-    AnalyticalSolution (const bool    is_velocity,
-                        const double  time,
-                        unsigned int n_components)
-      :
-      Function<dim>(is_velocity ? n_components : 1, time),
-      is_velocity(is_velocity)
-    {}
+    virtual ~AnalyticalSolutionVelocity(){};
 
-    virtual ~AnalyticalSolution(){};
-
-    virtual double value (const Point<dim> &p,const unsigned int component = 0) const;
-
-  private:
-    const bool is_velocity;
+    virtual double value (const Point<dim>    &p,
+                          const unsigned int  component = 0) const;
   };
 
   template<int dim>
-  double AnalyticalSolution<dim>::value(const Point<dim> &p,const unsigned int given_component) const
+  double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
+                                                const unsigned int component) const
   {
-    const unsigned int component = is_velocity ? given_component : dim;
-
     double t = this->get_time();
     double result = 0.0;
     (void)t;
 
-    /****************** periodic hill flow **************************/
     PullBack<dim> pull_back_function_PH;
 
     if(component == 0)
@@ -367,20 +354,31 @@ void InputParameters::set_input_parameters()
       else
         result = 0.0;
     }
-
-    if(component == 1 || component == 2)
-    {
-      result = 0.;
-    }
-    if(component == dim && not is_velocity)
-      result = 0.00001;//(p[0]-1.0)*pressure_gradient*(t<T? (t/T) : 1.0);
-    if(component >dim)
-      result = 0.0;
-    /********************************************************************/
-
     return result;
   }
 
+  template<int dim>
+  class AnalyticalSolutionPressure : public Function<dim>
+  {
+  public:
+    AnalyticalSolutionPressure (const double time = 0.)
+      :
+      Function<dim>(1 /*n_components*/, time)
+    {}
+
+    virtual ~AnalyticalSolutionPressure(){};
+
+    virtual double value (const Point<dim>   &p,
+                          const unsigned int component = 0) const;
+  };
+
+  template<int dim>
+  double AnalyticalSolutionPressure<dim>::value(const Point<dim>    &,
+                                                const unsigned int  /* component */) const
+  {
+    double result = 0.;
+    return result;
+  }
   template<int dim>
   class NeumannBoundaryVelocity : public Function<dim>
   {
@@ -403,21 +401,20 @@ void InputParameters::set_input_parameters()
   }
 
   template<int dim>
-  class RHS : public Function<dim>
+  class RightHandSide : public Function<dim>
   {
   public:
-    RHS (const double time = 0.)
+    RightHandSide (const double time = 0.)
       :
-      Function<dim>(dim, time),time(time)
+      Function<dim>(dim, time)
     {}
 
-    virtual ~RHS(){};
+    virtual ~RightHandSide(){};
 
     virtual double value (const Point<dim> &p,const unsigned int component = 0) const;
 
     void setup(const double* massflows, double oldforce, double integrand);
   private:
-    const double time;
     std::vector<double> massflows_;
     double oldforce_;
     double integrand_;
@@ -425,7 +422,7 @@ void InputParameters::set_input_parameters()
 
 
   template<int dim>
-  void RHS<dim>::setup(const double* massflows, double oldforce, double integrand)
+  void RightHandSide<dim>::setup(const double* massflows, double oldforce, double integrand)
   {
     massflows_.resize(2);
     massflows_[0] = massflows[0];
@@ -436,7 +433,7 @@ void InputParameters::set_input_parameters()
 
 
   template<int dim>
-  double RHS<dim>::value(const Point<dim> &,const unsigned int component) const
+  double RightHandSide<dim>::value(const Point<dim> &,const unsigned int component) const
   {
     // use a controller for calculating the source term fx such that the massflow is the ideal massflow
     if (USE_SOURCE_TERM_CONTROLLER)
@@ -447,7 +444,7 @@ void InputParameters::set_input_parameters()
         const double massflow_id = 40.38e-3;
 //        double force = 13.5;
 
-        if(time > 0.000)
+        if(this->get_time() > 0.000)
         {
           //new estimated force
           //first contribution makes the system want to get back to the ideal value (spring)
@@ -473,7 +470,7 @@ void InputParameters::set_input_parameters()
     else
     {
       if(component==0)
-        if(time<0.01)
+        if(this->get_time()<0.01)
           return 13.5;//*(1.0+((double)rand()/RAND_MAX)*0.0);
         else
           return 13.5;
@@ -530,8 +527,9 @@ void InputParameters::set_input_parameters()
 
     const unsigned int n_refine_space;
 
-    std::set<types::boundary_id> dirichlet_boundary;
-    std::set<types::boundary_id> neumann_boundary;
+    std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions;
+    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity;
+    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure;
 
     InputParameters param;
 
@@ -661,8 +659,27 @@ void InputParameters::set_input_parameters()
     param.set_input_parameters();
     param.check_parameters();
 
+    // initialize functions (analytical solution, rhs, boundary conditions)
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_velocity;
+    analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>(dim,param.start_time));
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_pressure;
+    analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>(param.start_time));
+
+    std_cxx11::shared_ptr<Function<dim> > right_hand_side;
+    right_hand_side.reset(new RightHandSide<dim>(param.start_time));
+
+    field_functions.reset(new FieldFunctionsNavierStokes<dim>());
+    field_functions->analytical_solution_velocity = analytical_solution_velocity;
+    field_functions->analytical_solution_pressure = analytical_solution_pressure;
+    field_functions->right_hand_side = right_hand_side;
+
+    boundary_descriptor_velocity.reset(new BoundaryDescriptorNavierStokes<dim>());
+    boundary_descriptor_pressure.reset(new BoundaryDescriptorNavierStokes<dim>());
+
     if(param.spatial_discretization == SpatialDiscretization::DGXWall)
     {
+      analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>(2*dim,param.start_time));
+      field_functions->analytical_solution_velocity = analytical_solution_velocity;
       if(param.problem_type == ProblemType::Unsteady &&
               param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
       {
@@ -767,8 +784,31 @@ void InputParameters::set_input_parameters()
 
     triangulation.refine_global(n_refine_space);
 
-    dirichlet_boundary.insert(0);
-    neumann_boundary.insert(1);
+    // fill boundary descriptor velocity
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_velocity;
+    analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>(dim,param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                      (0,analytical_solution_velocity));
+
+    std_cxx11::shared_ptr<Function<dim> > neumann_bc_velocity;
+    neumann_bc_velocity.reset(new NeumannBoundaryVelocity<dim>(param.start_time));
+    // Neumann boundaris: ID = 1
+    boundary_descriptor_velocity->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                    (1,neumann_bc_velocity));
+
+    // fill boundary descriptor pressure
+    std_cxx11::shared_ptr<Function<dim> > pressure_bc_dudt;
+    pressure_bc_dudt.reset(new PressureBC_dudt<dim>(param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                      (0,pressure_bc_dudt));
+
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_pressure;
+    analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>(param.start_time));
+    // Neumann boundaries: ID = 1
+    boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                    (1,analytical_solution_pressure));
 
     PrintInputParams::print_spatial_discretization(pcout,dim,n_refine_space,
         triangulation.n_global_active_cells(),triangulation.n_active_faces(),triangulation.n_vertices() );
@@ -779,7 +819,10 @@ void NavierStokesProblem<dim>::solve_problem(bool do_restart)
 {
   create_grid();
 
-  navier_stokes_operation->setup(periodic_faces, dirichlet_boundary, neumann_boundary);
+  navier_stokes_operation->setup(periodic_faces,
+                                 boundary_descriptor_velocity,
+                                 boundary_descriptor_pressure,
+                                 field_functions);
 
   // setup time integrator before calling setup_solvers
   // (this is necessary since the setup of the solvers

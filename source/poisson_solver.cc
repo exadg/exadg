@@ -1108,14 +1108,14 @@ local_diagonal_boundary (const MatrixFree<dim,Number>                &data,
     }
 }
 
-
 template <int dim, typename value_type>
 void PoissonSolver<dim, value_type>::initialize (const LaplaceOperator<dim,value_type>  &laplace_operator,
-                                                 const Mapping<dim>                     &mapping,
+                                                 const PreconditionerBase<value_type>   &preconditioner_in,
                                                  const MatrixFree<dim,value_type>       &matrix_free,
                                                  const PoissonSolverData                &solver_data)
 {
   this->global_matrix = &laplace_operator;
+  this->preconditioner = &preconditioner_in;
   this->solver_data = solver_data;
 
   const DoFHandler<dim> &dof_handler = matrix_free.get_dof_handler(global_matrix->get_operator_data().laplace_dof_index);
@@ -1123,22 +1123,6 @@ void PoissonSolver<dim, value_type>::initialize (const LaplaceOperator<dim,value
     dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
   AssertThrow(tria != 0, ExcMessage("Only works for distributed triangulations"));
   mpi_communicator = tria->get_communicator();
-
-  if(solver_data.preconditioner_poisson == PreconditionerPoisson::Jacobi)
-  {
-    preconditioner.reset(new JacobiPreconditioner<value_type, LaplaceOperator<dim,value_type> >(laplace_operator));
-  }
-  else if(solver_data.preconditioner_poisson == PreconditionerPoisson::GeometricMultigrid)
-  {
-    MultigridData mg_data;
-    mg_data.multigrid_smoother = solver_data.multigrid_smoother;
-    mg_data.coarse_solver = solver_data.coarse_solver;
-    mg_data.smoother_poly_degree = solver_data.smoother_poly_degree;
-    mg_data.smoother_smoothing_range = solver_data.smoother_smoothing_range;
-
-    preconditioner.reset(new MyMultigridPreconditioner<dim,value_type,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> >
-                         (mg_data, dof_handler, mapping, global_matrix->get_operator_data()));
-  }
 
   {
     Utilities::System::MemoryStats stats;
@@ -1154,23 +1138,12 @@ void PoissonSolver<dim, value_type>::initialize (const LaplaceOperator<dim,value
   }
 }
 
-
-template <int dim, typename value_type>
-void
-PoissonSolver<dim, value_type>::apply_precondition (parallel::distributed::Vector<value_type>       &dst,
-                                                    const parallel::distributed::Vector<value_type> &src) const
-{
-  Assert(preconditioner.get() != 0,
-         ExcNotInitialized());
-  preconditioner->vmult(dst, src);
-}
-
 template <int dim, typename value_type>
 unsigned int
 PoissonSolver<dim, value_type>::solve (parallel::distributed::Vector<value_type>       &dst,
                                        const parallel::distributed::Vector<value_type> &src) const
 {
-  Assert(preconditioner.get() != 0,
+  Assert(preconditioner != nullptr,
          ExcNotInitialized());
 
   ReductionControl solver_control (1e5, solver_data.solver_tolerance_abs, solver_data.solver_tolerance_rel);
@@ -1178,7 +1151,7 @@ PoissonSolver<dim, value_type>::solve (parallel::distributed::Vector<value_type>
   SolverCG<parallel::distributed::Vector<value_type> > solver (solver_control, solver_memory);
   try
   {
-    if(solver_data.preconditioner_poisson == PreconditionerPoisson::None)
+    if(solver_data.use_preconditioner == false)
       solver.solve(*global_matrix, dst, src, PreconditionIdentity());
     else
     {

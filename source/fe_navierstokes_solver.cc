@@ -314,11 +314,19 @@ void FENavierStokesSolver<dim>::setup_problem
   laplace_operator_data.laplace_quad_index = 1;
   laplace_operator.reinit(matrix_free, this->mapping,laplace_operator_data);
 
+  MultigridData mg_data;
+  mg_data.smoother_smoothing_range = 25;
+  mg_data.coarse_solver = MultigridCoarseGridSolver::coarse_iterative_jacobi;
+
+  typedef float Number;
+  preconditioner.reset(new MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> >
+      (mg_data, this->dof_handler_p, this->mapping, laplace_operator.get_operator_data(),laplace_operator_data.dirichlet_boundaries));
+
   PoissonSolverData poisson_solver_data;
-  poisson_solver_data.smoother_smoothing_range = 25;
   poisson_solver_data.solver_tolerance_rel = 5e-5;
-  poisson_solver_data.coarse_solver = MultigridCoarseGridSolver::coarse_iterative_jacobi;
-  poisson_solver.initialize(laplace_operator,this->mapping, matrix_free, poisson_solver_data);
+  poisson_solver_data.use_preconditioner = true;
+
+  poisson_solver.initialize(laplace_operator, *preconditioner, matrix_free, poisson_solver_data);
 
   // compute diagonal vectors of velocity/pressure mass matrix needed for time
   // stepping
@@ -645,7 +653,7 @@ FENavierStokesSolver<dim>::advance_time_step()
          it = boundary_values.begin(); it != boundary_values.end(); ++it)
     if (pres_part.in_local_range(it->first))
       updates2.block(1).local_element(it->first-pres_part.local_range().first) = 0;
-  poisson_solver.get_matrix().apply_nullspace_projection(updates2.block(1));
+  laplace_operator.apply_nullspace_projection(updates2.block(1));
 
   computing_times[1] += time.wall_time();
   time.restart();

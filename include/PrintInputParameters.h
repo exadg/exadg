@@ -50,8 +50,6 @@ namespace PrintInputParams
   {
     pcout << std::endl << "turbulence parameters:" << std::endl;
     pcout << " - Smagorinsky constant                 " << param.cs << std::endl;
-    pcout << " - fix tauw to 1.0:                     " << not param.variabletauw << std::endl;
-    pcout << " - max wall distance of xwall:          " << param.max_wdist_xwall << std::endl;
     pcout << " - grid stretching:                     " << grid_stretch_fac << std::endl;
     pcout << " - statistics start time:               " << param.statistics_start_time << std::endl;
     pcout << " - statistics every:                    " << param.statistics_every << std::endl;

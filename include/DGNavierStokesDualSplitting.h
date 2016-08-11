@@ -10,17 +10,13 @@
 
 #include "DGNavierStokesBase.h"
 
-#include "HelmholtzSolver.h"
 #include "ProjectionSolver.h"
 #include "poisson_solver.h"
 #include "CurlCompute.h"
+#include "HelmholtzOperator.h"
 
 #include "NewtonSolver.h"
-
-//forward declarations
-template<int dim> class RHS;
-template<int dim> class NeumannBoundaryVelocity;
-template<int dim> class PressureBC_dudt;
+#include "IterativeSolvers.h"
 
 struct LinearizedConvectiveSolverData
 {
@@ -191,10 +187,12 @@ protected:
 
 private:
   LaplaceOperator<dim,value_type> laplace_operator;
-  PoissonSolver<dim> pressure_poisson_solver;
+
+  std_cxx11::shared_ptr<PreconditionerBase<value_type> > preconditioner_pressure_poisson;
+  std_cxx11::shared_ptr<CGSolver<LaplaceOperator<dim,value_type>, PreconditionerBase<value_type>,parallel::distributed::Vector<value_type> > > pressure_poisson_solver;
 
   HelmholtzOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type> helmholtz_operator;
-  HelmholtzSolver<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type> helmholtz_solver;
+  std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > helmholtz_solver;
 
   parallel::distributed::Vector<value_type> velocity_linear;
   parallel::distributed::Vector<value_type> temp;
@@ -310,12 +308,12 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 setup_pressure_poisson_solver ()
 {
-  // Laplace Operator
+  // setup Laplace operator
   LaplaceOperatorData<dim> laplace_operator_data;
   laplace_operator_data.laplace_dof_index = static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
-  (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::pressure);
+    (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::pressure);
   laplace_operator_data.laplace_quad_index = static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector>::type >
-  (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::pressure);
+    (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::pressure);
   laplace_operator_data.penalty_factor = this->param.IP_factor_pressure;
 
   // TODO
@@ -328,20 +326,59 @@ setup_pressure_poisson_solver ()
   double dt_ref = 0.1;
   laplace_operator_data.penalty_factor = this->param.IP_factor_pressure/time_step*dt_ref;
   */
+
   laplace_operator_data.dirichlet_boundaries = this->neumann_boundary;
   laplace_operator_data.neumann_boundaries = this->dirichlet_boundary;
   laplace_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
   laplace_operator.reinit(this->data,this->mapping,laplace_operator_data);
 
-  // Pressure Poisson solver
-  PoissonSolverData poisson_solver_data;
-  poisson_solver_data.solver_tolerance_rel = this->param.rel_tol_pressure;
-  poisson_solver_data.solver_tolerance_abs = this->param.abs_tol_pressure;
-  poisson_solver_data.solver_poisson = this->param.solver_poisson;
-  poisson_solver_data.preconditioner_poisson = this->param.preconditioner_poisson;
-  poisson_solver_data.multigrid_smoother = this->param.multigrid_smoother;
-  poisson_solver_data.coarse_solver = this->param.multigrid_coarse_grid_solver;
-  pressure_poisson_solver.initialize(laplace_operator,this->mapping,this->data,poisson_solver_data);
+  // setup preconditioner
+  if(this->param.preconditioner_poisson == PreconditionerPoisson::Jacobi)
+  {
+    preconditioner_pressure_poisson.reset(new JacobiPreconditioner<value_type, LaplaceOperator<dim,value_type> >(laplace_operator));
+  }
+  else if(this->param.preconditioner_poisson == PreconditionerPoisson::GeometricMultigrid)
+  {
+    MultigridData mg_data;
+    // currently use default parameters of MultigridData for smoother_poly_degree and smoother_smoothing_range
+    mg_data.multigrid_smoother = this->param.multigrid_smoother;
+    mg_data.coarse_solver = this->param.multigrid_coarse_grid_solver;
+
+    // use single precision for multigrid
+    typedef float Number;
+
+    preconditioner_pressure_poisson.reset(new MyMultigridPreconditioner<dim,value_type,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> >(
+        mg_data,
+        this->dof_handler_p,
+        this->mapping,
+        laplace_operator_data,
+        laplace_operator_data.dirichlet_boundaries));
+  }
+  else
+  {
+    AssertThrow(this->param.preconditioner_poisson == PreconditionerPoisson::None ||
+                this->param.preconditioner_poisson == PreconditionerPoisson::Jacobi ||
+                this->param.preconditioner_poisson == PreconditionerPoisson::GeometricMultigrid,
+                ExcMessage("Specified preconditioner for pressure Poisson equation not implemented"));
+  }
+
+  // setup solver data
+  CGSolverData solver_data;
+  // use default value of max_iter
+  solver_data.solver_tolerance_abs = this->param.abs_tol_pressure;
+  solver_data.solver_tolerance_rel = this->param.rel_tol_pressure;
+  // default value of use_preconditioner = false
+  if(this->param.preconditioner_poisson == PreconditionerPoisson::Jacobi ||
+     this->param.preconditioner_poisson == PreconditionerPoisson::GeometricMultigrid)
+  {
+    solver_data.use_preconditioner = true;
+  }
+
+  // setup solver
+  pressure_poisson_solver.reset(new CGSolver<LaplaceOperator<dim,value_type>, PreconditionerBase<value_type>, parallel::distributed::Vector<value_type> >(
+      laplace_operator,
+      *preconditioner_pressure_poisson,
+      solver_data));
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -356,7 +393,8 @@ setup_projection_solver ()
 
   if(this->param.projection_type == ProjectionType::NoPenalty)
   {
-    projection_solver.reset(new ProjectionSolverNoPenalty<dim, fe_degree, value_type>(this->data,
+    projection_solver.reset(new ProjectionSolverNoPenalty<dim, fe_degree, value_type>(
+        this->data,
         static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
           (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity),
         static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector>::type >
@@ -407,10 +445,9 @@ setup_projection_solver ()
     projection_solver_data.solver_projection = this->param.solver_projection;
     projection_solver_data.preconditioner_projection = this->param.preconditioner_projection;
 
-    projection_solver.reset(new IterativeProjectionSolverDivergencePenalty
-        <dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(
-                              projection_operator,
-                              projection_solver_data));
+    projection_solver.reset(new IterativeProjectionSolverDivergencePenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(
+        projection_operator,
+        projection_solver_data));
   }
   else if(this->param.projection_type == ProjectionType::DivergenceAndContinuityPenalty)
   {
@@ -445,7 +482,7 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 setup_helmholtz_solver ()
 {
-  // helmholtz operator
+  // setup helmholtz operator
   HelmholtzOperatorData<dim> helmholtz_operator_data;
 
   helmholtz_operator_data.mass_matrix_operator_data = this->mass_matrix_operator_data;
@@ -458,15 +495,58 @@ setup_helmholtz_solver ()
 
   helmholtz_operator.initialize(this->data,helmholtz_operator_data,this->mass_matrix_operator,this->viscous_operator);
 
-  HelmholtzSolverData helmholtz_solver_data;
-  helmholtz_solver_data.solver_viscous = this->param.solver_viscous;
-  helmholtz_solver_data.preconditioner_viscous = this->param.preconditioner_viscous;
-  helmholtz_solver_data.solver_tolerance_abs = this->param.abs_tol_viscous;
-  helmholtz_solver_data.solver_tolerance_rel = this->param.rel_tol_viscous;
-
+  // setup helmholtz preconditioner
   setup_helmholtz_preconditioner(helmholtz_operator_data);
 
-  helmholtz_solver.initialize(helmholtz_operator, helmholtz_preconditioner, helmholtz_solver_data);
+  if(this->param.solver_viscous == SolverViscous::PCG)
+  {
+    // setup solver data
+    CGSolverData solver_data;
+    // use default value of max_iter
+    solver_data.solver_tolerance_abs = this->param.abs_tol_viscous;
+    solver_data.solver_tolerance_rel = this->param.rel_tol_viscous;
+    // default value of use_preconditioner = false
+    if(this->param.preconditioner_viscous == PreconditionerViscous::Jacobi ||
+       this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix ||
+       this->param.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
+    {
+      solver_data.use_preconditioner = true;
+    }
+
+    // setup helmholtz solver
+    helmholtz_solver.reset(new CGSolver<HelmholtzOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>, PreconditionerBase<value_type>, parallel::distributed::Vector<value_type> >(
+        helmholtz_operator,
+        *helmholtz_preconditioner,
+        solver_data));
+  }
+  else if(this->param.solver_viscous == SolverViscous::GMRES)
+  {
+    // setup solver data
+    GMRESSolverData solver_data;
+    // use default value of max_iter
+    solver_data.solver_tolerance_abs = this->param.abs_tol_viscous;
+    solver_data.solver_tolerance_rel = this->param.rel_tol_viscous;
+    // default value of use_preconditioner = false
+    if(this->param.preconditioner_viscous == PreconditionerViscous::Jacobi ||
+       this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix ||
+       this->param.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
+    {
+      solver_data.use_preconditioner = true;
+    }
+    // use default values for right_preconditioning (=true) and max_n_tmp_vectors (=30)
+
+    // setup helmholtz solver
+    helmholtz_solver.reset(new GMRESSolver<HelmholtzOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>, PreconditionerBase<value_type>, parallel::distributed::Vector<value_type> >(
+        helmholtz_operator,
+        *helmholtz_preconditioner,
+        solver_data));
+  }
+  else
+  {
+    AssertThrow(this->param.solver_viscous == SolverViscous::PCG ||
+                this->param.solver_viscous == SolverViscous::GMRES,
+                ExcMessage("Specified Viscous Solver not implemented - possibilities are PCG and GMRES"));
+  }
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -497,8 +577,13 @@ setup_helmholtz_preconditioner (HelmholtzOperatorData<dim> &helmholtz_operator_d
     // use single precision for multigrid
     typedef float Number;
 
-    helmholtz_preconditioner.reset(new MyMultigridPreconditioner<dim,value_type,HelmholtzOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>, HelmholtzOperatorData<dim> >
-                         (mg_data, this->dof_handler_u, this->mapping, helmholtz_operator_data,this->fe_param));
+    helmholtz_preconditioner.reset(new MyMultigridPreconditioner<dim,value_type,HelmholtzOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>, HelmholtzOperatorData<dim> >(
+        mg_data,
+        this->dof_handler_u,
+        this->mapping,
+        helmholtz_operator_data,
+        this->dirichlet_boundary,
+        this->fe_param));
   }
 }
 
@@ -574,7 +659,7 @@ unsigned int DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_
 solve_pressure (parallel::distributed::Vector<value_type>        &dst,
                 const parallel::distributed::Vector<value_type>  &src) const
 {
-  unsigned int n_iter = pressure_poisson_solver.solve(dst,src);
+  unsigned int n_iter = pressure_poisson_solver->solve(dst,src);
 
   return n_iter;
 }
@@ -583,7 +668,7 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 apply_nullspace_projection (parallel::distributed::Vector<value_type>  &dst) const
 {
-  pressure_poisson_solver.get_matrix().apply_nullspace_projection(dst);
+  laplace_operator.apply_nullspace_projection(dst);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -598,7 +683,6 @@ rhs_pressure_divergence_term (parallel::distributed::Vector<value_type>        &
     dst *= -1.0;
   else
     dst *= -this->scaling_factor_time_derivative_term;
-
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -647,22 +731,30 @@ local_rhs_pressure_BC_term_boundary_face (const MatrixFree<dim,value_type>      
 //    FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,true,
 //        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure));
 
+  // set the correct time for the evaluation of the right_hand_side - function
+  this->field_functions->right_hand_side->set_time(this->time+this->time_step);
+
   for(unsigned int face=face_range.first; face<face_range.second; face++)
   {
     fe_eval_pressure.reinit (face);
 
-    double factor = pressure_poisson_solver.get_matrix().get_penalty_factor();
-    VectorizedArray<value_type> tau_IP = fe_eval_pressure.read_cell_data(pressure_poisson_solver.get_matrix().get_array_penalty_parameter()) * (value_type)factor;
+    double factor = laplace_operator.get_penalty_factor();
+    VectorizedArray<value_type> tau_IP = fe_eval_pressure.read_cell_data(laplace_operator.get_array_penalty_parameter()) * (value_type)factor;
+
+    typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+    types::boundary_id boundary_id = data.get_boundary_indicator(face);
 
     for(unsigned int q=0;q<fe_eval_pressure.n_q_points;++q)
     {
-      if (this->dirichlet_boundary.find(data.get_boundary_indicator(face)) != this->dirichlet_boundary.end())
+      it = this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id);
+      if(it != this->boundary_descriptor_pressure->dirichlet_bc.end())
       {
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval_pressure.quadrature_point(q);
 
         Tensor<1,dim,VectorizedArray<value_type> > dudt_np, rhs_np;
-        PressureBC_dudt<dim> neumann_boundary_pressure(this->time+this->time_step);
-        RHS<dim> f(this->time+this->time_step);
+        // set time for the correct evaluation of boundary conditions
+        it->second->set_time(this->time+this->time_step);
+
         for(unsigned int d=0;d<dim;++d)
         {
           value_type array_dudt [VectorizedArray<value_type>::n_array_elements];
@@ -672,8 +764,8 @@ local_rhs_pressure_BC_term_boundary_face (const MatrixFree<dim,value_type>      
             Point<dim> q_point;
             for (unsigned int d=0; d<dim; ++d)
             q_point[d] = q_points[d][n];
-            array_dudt[n] = neumann_boundary_pressure.value(q_point,d);
-            array_f[n] = f.value(q_point,d);
+            array_dudt[n] = it->second->value(q_point,d);
+            array_f[n] = this->field_functions->right_hand_side->value(q_point,d);
           }
           dudt_np[d].load(&array_dudt[0]);
           rhs_np[d].load(&array_f[0]);
@@ -687,19 +779,23 @@ local_rhs_pressure_BC_term_boundary_face (const MatrixFree<dim,value_type>      
         fe_eval_pressure.submit_normal_gradient(make_vectorized_array<value_type>(0.0),q);
         fe_eval_pressure.submit_value(h,q);
       }
-      else if (this->neumann_boundary.find(data.get_boundary_indicator(face)) != this->neumann_boundary.end())
+
+      it = this->boundary_descriptor_pressure->neumann_bc.find(boundary_id);
+      if (it != this->boundary_descriptor_pressure->neumann_bc.end())
       {
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval_pressure.quadrature_point(q);
         VectorizedArray<value_type> g;
 
-        AnalyticalSolution<dim> dirichlet_boundary(false,this->time+this->time_step);
+        // set time for the correct evaluation of boundary conditions
+        it->second->set_time(this->time+this->time_step);
+
         value_type array [VectorizedArray<value_type>::n_array_elements];
         for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
         {
           Point<dim> q_point;
           for (unsigned int d=0; d<dim; ++d)
             q_point[d] = q_points[d][n];
-          array[n] = dirichlet_boundary.value(q_point);
+          array[n] = it->second->value(q_point);
         }
         g.load(&array[0]);
 
@@ -767,9 +863,13 @@ local_rhs_pressure_convective_term_boundary_face (const MatrixFree<dim,value_typ
 
     fe_eval_pressure.reinit (face);
 
+    typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+    types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
     for(unsigned int q=0;q<fe_eval_pressure.n_q_points;++q)
     {
-      if (this->dirichlet_boundary.find(data.get_boundary_indicator(face)) != this->dirichlet_boundary.end())
+      it = this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id);
+      if(it != this->boundary_descriptor_pressure->dirichlet_bc.end())
       {
         VectorizedArray<value_type> h;
         Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_pressure.get_normal_vector(q);
@@ -782,7 +882,9 @@ local_rhs_pressure_convective_term_boundary_face (const MatrixFree<dim,value_typ
 
         fe_eval_pressure.submit_value(h,q);
       }
-      else if (this->neumann_boundary.find(data.get_boundary_indicator(face)) != this->neumann_boundary.end())
+
+      it = this->boundary_descriptor_pressure->neumann_bc.find(boundary_id);
+      if (it != this->boundary_descriptor_pressure->neumann_bc.end())
       {
         fe_eval_pressure.submit_value(make_vectorized_array<value_type>(0.0),q);
       }
@@ -846,6 +948,9 @@ local_rhs_pressure_viscous_term_boundary_face (const MatrixFree<dim,value_type> 
     fe_eval_omega.read_dof_values(src);
     fe_eval_omega.evaluate (false,true);
 
+    typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+    types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
     for(unsigned int q=0;q<fe_eval_pressure.n_q_points;++q)
     {
       VectorizedArray<value_type> viscosity;
@@ -854,7 +959,8 @@ local_rhs_pressure_viscous_term_boundary_face (const MatrixFree<dim,value_type> 
       else
         viscosity = make_vectorized_array<value_type>(this->viscous_operator.get_const_viscosity());
 
-      if (this->dirichlet_boundary.find(data.get_boundary_indicator(face)) != this->dirichlet_boundary.end())
+      it = this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id);
+      if(it != this->boundary_descriptor_pressure->dirichlet_bc.end())
       {
         VectorizedArray<value_type> h;
         Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_pressure.get_normal_vector(q);
@@ -864,7 +970,9 @@ local_rhs_pressure_viscous_term_boundary_face (const MatrixFree<dim,value_type> 
 
         fe_eval_pressure.submit_value(h,q);
       }
-      else if (this->neumann_boundary.find(data.get_boundary_indicator(face)) != this->neumann_boundary.end())
+
+      it = this->boundary_descriptor_pressure->neumann_bc.find(boundary_id);
+      if (it != this->boundary_descriptor_pressure->neumann_bc.end())
       {
         fe_eval_pressure.submit_value(make_vectorized_array<value_type>(0.0),q);
       }
@@ -987,7 +1095,7 @@ solve_viscous (parallel::distributed::Vector<value_type>       &dst,
     */
   }
 
-  unsigned int n_iter = helmholtz_solver.solve(dst,src);
+  unsigned int n_iter = helmholtz_solver->solve(dst,src);
 
   return n_iter;
 }

@@ -603,13 +603,13 @@ public:
   }
 
   void setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
-              std::set<types::boundary_id> dirichlet_bc_indicator,
-              std::set<types::boundary_id> neumann_bc_indicator);
+              std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
+              std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
+              std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions);
 
   void prescribe_initial_condition_vt(parallel::distributed::Vector<value_type> &vt) const
   {
-//    vt = 0.;
-    VectorTools::interpolate(this->mapping, dof_handler_vt, AnalyticalSolution<dim>(false,0.), vt);
+    vt = 0.00001;
   };
 
   // initialization of vectors
@@ -645,12 +645,17 @@ private:
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
-       std::set<types::boundary_id> dirichlet_bc_indicator,
-       std::set<types::boundary_id> neumann_bc_indicator)
+        std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
+        std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
+        std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
 {
-  DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::setup(periodic_face_pairs,dirichlet_bc_indicator,neumann_bc_indicator);
+  DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  setup(periodic_face_pairs,
+  boundary_descriptor_velocity,
+  boundary_descriptor_pressure,
+  field_functions);
 
-  spalart_allmaras.setup(this->data,this->mapping,dirichlet_bc_indicator,neumann_bc_indicator);
+  spalart_allmaras.setup(this->data,this->mapping,this->dirichlet_boundary,this->neumann_boundary);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>

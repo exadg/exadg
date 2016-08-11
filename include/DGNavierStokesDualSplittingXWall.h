@@ -51,8 +51,9 @@ public:
   virtual ~DGNavierStokesDualSplittingXWall(){}
 
   void setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
-              std::set<types::boundary_id> dirichlet_bc_indicator,
-              std::set<types::boundary_id> neumann_bc_indicator);
+              std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
+              std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
+              std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> >     field_functions);
 
   void update_tauw(parallel::distributed::Vector<value_type> &velocity);
 
@@ -62,9 +63,11 @@ public:
 
   void xwall_projection(parallel::distributed::Vector<value_type> & velocity);
 
-  void prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
-                                    parallel::distributed::Vector<value_type> &pressure,
-                                    double const                              evaluation_time) const;
+  // TODO Benjamin: with the new boundary descriptor this function should not be necessary, please check this!
+
+//  void prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
+//                                    parallel::distributed::Vector<value_type> &pressure,
+//                                    double const                              evaluation_time) const;
 
   FE_Q<dim> const & get_fe_wdist() const
   {
@@ -158,10 +161,11 @@ private:
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
-       std::set<types::boundary_id> dirichlet_bc_indicator,
-       std::set<types::boundary_id> neumann_bc_indicator)
+        std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
+        std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
+        std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
 {
-  DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::setup(periodic_face_pairs,dirichlet_bc_indicator,neumann_bc_indicator);
+  DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::setup(periodic_face_pairs,boundary_descriptor_velocity,boundary_descriptor_pressure,field_functions);
 
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     std::cout << "\nXWall Initialization:" << std::endl;
@@ -268,15 +272,17 @@ data_reinit(typename MatrixFree<dim,value_type>::AdditionalData & additional_dat
   this->data.reinit (this->mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
-                             parallel::distributed::Vector<value_type> &pressure,
-                             double const                              evaluation_time) const
-{
-  VectorTools::interpolate(this->mapping, this->dof_handler_u, AnalyticalSolution<dim>(true,evaluation_time,2*dim), velocity);
-  VectorTools::interpolate(this->mapping, this->dof_handler_p, AnalyticalSolution<dim>(false,evaluation_time), pressure);
-}
+// TODO Benjamin: with the new boundary descriptor this function should not be necessary, please check this!
+
+//template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+//void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+//prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
+//                             parallel::distributed::Vector<value_type> &pressure,
+//                             double const                              evaluation_time) const
+//{
+//  VectorTools::interpolate(this->mapping, this->dof_handler_u, AnalyticalSolution<dim>(true,evaluation_time,2*dim), velocity);
+//  VectorTools::interpolate(this->mapping, this->dof_handler_p, AnalyticalSolution<dim>(false,evaluation_time), pressure);
+//}
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
@@ -885,7 +891,7 @@ setup_helmholtz_preconditioner(HelmholtzOperatorData<dim> &)
 
   //some further safety checks
   AssertThrow(this->param.solver_viscous == SolverViscous::GMRES,ExcMessage("only gmres allowed"));
-  AssertThrow(this->param.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG,ExcMessage("need non-symmetric formulation of viscous part for stability"));
+  AssertThrow(this->param.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG,ExcMessage("need non-symmetric formulation of viscous part for stability"));
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>

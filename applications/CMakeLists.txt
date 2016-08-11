@@ -19,6 +19,7 @@ SET( SOURCE_FILES
      fe_poiseuille.cc
      dg_turbulent_channel.cc
      dg_periodic_hill.cc
+     DGConvectionDiffusionProblem.cc
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )

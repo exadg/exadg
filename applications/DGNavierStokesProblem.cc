@@ -71,6 +71,9 @@
 
 #include "DriverSteadyProblems.h"
 
+#include "../include/BoundaryDescriptorNavierStokes.h"
+#include "../include/FieldFunctionsNavierStokes.h"
+
 using namespace dealii;
 
 // specify flow problem that has to be solved
@@ -101,11 +104,11 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 SpatialDiscretization SPATIAL_DISCRETIZATION = SpatialDiscretization::DG; //DG //DGXWall
 
 FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::DivergenceFormulation; //DivergenceFormulation; //LaplaceFormulation;
-InteriorPenaltyFormulationViscous IP_FORMULATION_VISCOUS = InteriorPenaltyFormulationViscous::SIPG; //SIPG; //NIPG;
+InteriorPenaltyFormulation IP_FORMULATION_VISCOUS = InteriorPenaltyFormulation::SIPG; //SIPG; //NIPG;
 
-bool const DIVU_INTEGRATED_BY_PARTS = true;//true;
+bool const DIVU_INTEGRATED_BY_PARTS = false;//true;
 bool const DIVU_USE_BOUNDARY_DATA = false;//true;
-bool const GRADP_INTEGRATED_BY_PARTS = true;//true;
+bool const GRADP_INTEGRATED_BY_PARTS = false;//true;
 bool const GRADP_USE_BOUNDARY_DATA = false;//true;
 /*************************************************/
 
@@ -114,7 +117,6 @@ bool const GRADP_USE_BOUNDARY_DATA = false;//true;
 bool const STS_STABILITY = false;
 
 // pressure Poisson equation
-SolverPoisson SOLVER_POISSON = SolverPoisson::PCG; //PCG;
 PreconditionerPoisson PRECONDITIONER_POISSON = PreconditionerPoisson::GeometricMultigrid; // None; //Jacobi; //GeometricMultigrid;
 
 // multigrid pressure Poisson
@@ -128,7 +130,7 @@ PreconditionerProjection PRECONDITIONER_PROJECTION = PreconditionerProjection::I
 
 // viscous step
 SolverViscous SOLVER_VISCOUS = SolverViscous::PCG; //PCG; //GMRES;
-PreconditionerViscous PRECONDITIONER_VISCOUS = PreconditionerViscous::InverseMassMatrix; //None; //Jacobi; //InverseMassMatrix; //GeometricMultigrid;
+PreconditionerViscous PRECONDITIONER_VISCOUS = PreconditionerViscous::GeometricMultigrid; //None; //Jacobi; //InverseMassMatrix; //GeometricMultigrid;
 
 // multigrid viscous step
 MultigridSmoother MULTIGRID_SMOOTHER_VISCOUS = MultigridSmoother::Chebyshev; //Chebyshev;
@@ -144,12 +146,14 @@ PreconditionerLinearizedNavierStokes PRECONDITIONER_LINEARIZED_NAVIER_STOKES =
 PreconditionerMomentum PRECONDITIONER_MOMENTUM =
     PreconditionerMomentum::InverseMassMatrix; //None; //InverseMassMatrix; //GeometricMultigrid;
 PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
-    PreconditionerSchurComplement::CahouetChabard; //None; //InverseMassMatrix; //GeometricMultigrid; //CahouetChabard;
+    PreconditionerSchurComplement::PressureConvectionDiffusion; //None; //InverseMassMatrix; //GeometricMultigrid; //CahouetChabard; //Elman; //PressureConvectionDiffusion;
+DiscretizationOfLaplacian DISCRETIZATION_OF_LAPLACIAN =
+    DiscretizationOfLaplacian::Classical; //Classical; //Compatible;
 /************************************************/
 
 #ifdef VORTEX
-  const unsigned int FE_DEGREE = 5; //2
-  const unsigned int FE_DEGREE_P = FE_DEGREE-1;//FE_DEGREE-1;
+  const unsigned int FE_DEGREE = 2; //2
+  const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
   const unsigned int FE_DEGREE_XWALL = 1;
   const unsigned int N_Q_POINTS_1D_XWALL = 1;
   const unsigned int DIMENSION = 2;
@@ -162,17 +166,17 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double OUTPUT_START_TIME = 0.0;
   const double ERROR_CALC_INTERVAL_TIME = OUTPUT_INTERVAL_TIME;
   const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
-  const double RESTART_INTERVAL_TIME = 100.;
+  const double RESTART_INTERVAL_TIME = 100;
   const double RESTART_INTERVAL_WALL_TIME = 1e6;
   const unsigned int RESTART_INTERVAL_STEP = 1e6;
   const bool DIVU_TIMESERIES = true;
   const bool COMPUTE_DIVERGENCE = true;
   const bool ANALYTICAL_SOLUTION = true;
   const int MAX_NUM_STEPS = 1e6;
-  const double CFL = 0.1; //0.1;
+  const double CFL = 0.1;
   const double U_X_MAX = 1.0;
   const double MAX_VELOCITY = 1.4*U_X_MAX;
-  const double TIME_STEP_SIZE = 1.e-3;//1.e-2;
+  const double TIME_STEP_SIZE = 1.0;//1.e-3;//1.e-2;
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
@@ -194,21 +198,21 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double REL_TOL_LINEAR = 1.0e-6;
   unsigned int const MAX_ITER_LINEAR = 1e6;
 
-  const double ABS_TOL_PRESSURE = 1.0e-18;
-  const double REL_TOL_PRESSURE = 1.0e-12;
-  const double ABS_TOL_PROJECTION = 1.0e-18;
+//  const double ABS_TOL_PRESSURE = 1.0e-18;
+//  const double REL_TOL_PRESSURE = 1.0e-12;
+//  const double ABS_TOL_PROJECTION = 1.0e-18;
+//  const double REL_TOL_PROJECTION = 1.0e-12;
+//  const double ABS_TOL_VISCOUS = 1.0e-18;
+//  const double REL_TOL_VISCOUS = 1.0e-12;
+
+  const double ABS_TOL_PRESSURE = 1.0e-20;
+  const double REL_TOL_PRESSURE = 1.0e-6;
+  const double ABS_TOL_VISCOUS = 1.0e-20;
+  const double REL_TOL_VISCOUS = 1.0e-6;
+  const double ABS_TOL_PROJECTION = 1.0e-20;
   const double REL_TOL_PROJECTION = 1.0e-12;
-  const double ABS_TOL_VISCOUS = 1.0e-18;
-  const double REL_TOL_VISCOUS = 1.0e-12;
 
-//  const double ABS_TOL_PRESSURE = 1.0e-12;
-//  const double REL_TOL_PRESSURE = 1.0e-6;
-//  const double ABS_TOL_VISCOUS = 1.0e-12;
-//  const double REL_TOL_VISCOUS = 1.0e-6;
-//  const double ABS_TOL_PROJECTION = 1.0e-12;
-//  const double REL_TOL_PROJECTION = 1.0e-6;
-
-  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e6;
+  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1; //1e6;
 
   const std::string OUTPUT_PREFIX = "vortex_flow";
 
@@ -266,7 +270,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double ABS_TOL_PRESSURE = 1.0e-12;
   const double REL_TOL_PRESSURE = 1.0e-6;
   const double ABS_TOL_VISCOUS = 1.0e-12;
-  const double REL_TOL_VISCOUS = 1.0e-6;
+  const double REL_TOL_VISCOUS = 11.0e-6;
   const double ABS_TOL_PROJECTION = 1.0e-12;
   const double REL_TOL_PROJECTION = 1.0e-6;
 
@@ -293,6 +297,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double OUTPUT_START_TIME = 0.0;
   const double ERROR_CALC_INTERVAL_TIME = OUTPUT_INTERVAL_TIME;
   const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
+  const int STATISTICS_EVE2RY = 1;
   const double RESTART_INTERVAL_TIME = 100.;
   const double RESTART_INTERVAL_WALL_TIME = 1000.;
   const unsigned int RESTART_INTERVAL_STEP = 1e6;
@@ -335,13 +340,13 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 #endif
 
 #ifdef CAVITY
-  const unsigned int FE_DEGREE = 6;
+  const unsigned int FE_DEGREE = 5;
   const unsigned int FE_DEGREE_P = FE_DEGREE-1;//FE_DEGREE-1;
   const unsigned int FE_DEGREE_XWALL = 1;
   const unsigned int N_Q_POINTS_1D_XWALL = 1;
   const unsigned int DIMENSION = 2;
-  const unsigned int REFINE_STEPS_SPACE_MIN = 3;
-  const unsigned int REFINE_STEPS_SPACE_MAX = 3;
+  const unsigned int REFINE_STEPS_SPACE_MIN = 1;
+  const unsigned int REFINE_STEPS_SPACE_MAX = 5;
 
   const double START_TIME = 0.0;
   const double END_TIME = 40.0;
@@ -361,7 +366,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
-  const double VISCOSITY = 4.0e-3;//0.0002;
+  const double VISCOSITY = 1.0e-1;//4.0e-3;//0.0002;
   const double L = 1.0;
 
   const double MAX_VELOCITY = 1.0;
@@ -462,7 +467,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double RESTART_INTERVAL_TIME = 100.;
   const double RESTART_INTERVAL_WALL_TIME = 1000.;
   const unsigned int RESTART_INTERVAL_STEP = 1e6;
-  const bool ANALYTICAL_SOLUTION = true;
+  const bool ANALYTICAL_SOLUTION = true;apply
   const bool DIVU_TIMESERIES = false; //true;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.01;
@@ -497,12 +502,12 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 
 #ifdef STOKES_GUERMOND
   const unsigned int FE_DEGREE = 4;//3
-  const unsigned int FE_DEGREE_P = FE_DEGREE-1;//FE_DEGREE-1;
+  const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
   const unsigned int FE_DEGREE_XWALL = 1;
   const unsigned int N_Q_POINTS_1D_XWALL = 1;
   const unsigned int DIMENSION = 2;
-  const unsigned int REFINE_STEPS_SPACE_MIN = 4;//2
-  const unsigned int REFINE_STEPS_SPACE_MAX = 4;
+  const unsigned int REFINE_STEPS_SPACE_MIN = 2;//2
+  const unsigned int REFINE_STEPS_SPACE_MAX = 2;
 
   const double START_TIME = 0.0;
   const double END_TIME = 1.0;
@@ -518,11 +523,11 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const bool COMPUTE_DIVERGENCE = false;
   const int MAX_NUM_STEPS = 1e6;
   const double CFL = 0.2; // CFL number irrelevant for Stokes flow problem
-  const double TIME_STEP_SIZE = 1.0e-1;//2.e-4;//1.e-1;///std::pow(2.,13); //5.0e-4
+  const double TIME_STEP_SIZE = 1.0e-2;//1.0e-3;//2.e-4;//1.e-1;///std::pow(2.,13); //5.0e-4
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
-  const double VISCOSITY = 1.0e-6;//0.01;
+  const double VISCOSITY = 1.0e-2;//0.01;
 
   const double MAX_VELOCITY = 2.65; // MAX_VELOCITY also irrelevant
   const double IP_FACTOR_PRESSURE = 1.0;
@@ -539,7 +544,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   unsigned int const MAX_ITER_NEWTON = 1e2;
   const double ABS_TOL_LINEAR = 1.0e-12;
   const double REL_TOL_LINEAR = 1.0e-6;
-  unsigned int const MAX_ITER_LINEAR = 1e6;
+  unsigned int const MAX_ITER_LINEAR = 1e3;
 
   const double ABS_TOL_PRESSURE = 1.0e-12;
   const double REL_TOL_PRESSURE = 1.0e-6;
@@ -632,8 +637,8 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const unsigned int FE_DEGREE_XWALL = 1;
   const unsigned int N_Q_POINTS_1D_XWALL = 1;
   const unsigned int DIMENSION = 2;
-  const unsigned int REFINE_STEPS_SPACE_MIN = 0;
-  const unsigned int REFINE_STEPS_SPACE_MAX = 0;
+  const unsigned int REFINE_STEPS_SPACE_MIN = 1;
+  const unsigned int REFINE_STEPS_SPACE_MAX = 1;
 
   const double START_TIME = 0.0;
   const double END_TIME = 8.0;
@@ -642,18 +647,18 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double ERROR_CALC_INTERVAL_TIME = OUTPUT_INTERVAL_TIME;
   const double ERROR_CALC_START_TIME = OUTPUT_START_TIME;
   const double RESTART_INTERVAL_TIME = 100.;
-  const double RESTART_INTERVAL_WALL_TIME = 1000.;
+  const double RESTART_INTERVAL_WALL_TIME = 1e6;
   const unsigned int RESTART_INTERVAL_STEP = 1e6;
   const bool ANALYTICAL_SOLUTION = true;
   const bool DIVU_TIMESERIES = true;
   const bool COMPUTE_DIVERGENCE = true;
   const int MAX_NUM_STEPS = 1e6;
   const double TIME_STEP_SIZE = 0.1;//1.e-2;
-  const double CFL = 0.05;
+  const double CFL = 0.3;
   const unsigned int REFINE_STEPS_TIME_MIN = 0;
   const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
-  const double VISCOSITY = 0.001;
+  const double VISCOSITY = 0.001; //0.001;
   const unsigned int TEST_CASE = 1; // 1, 2 or 3
   const double Um = (DIMENSION == 2 ? (TEST_CASE==1 ? 0.3 : 1.5) : (TEST_CASE==1 ? 0.45 : 2.25));
   const double D = 0.1;
@@ -684,13 +689,13 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   const double REL_TOL_PRESSURE = 1.0e-6;
   const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-6;
-  const double ABS_TOL_PROJECTION = 1.0e-12;
-  const double REL_TOL_PROJECTION = 1.0e-6;
+  const double ABS_TOL_PROJECTION = 1.0e-20;
+  const double REL_TOL_PROJECTION = 1.0e-12;
 
   // show solver performance (wall time, number of iterations) every ... timesteps
-  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e0;//1e3;
+  const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e1;//1e3;
 
-  const std::string OUTPUT_PREFIX = "fpc_r0_p2";
+  const std::string OUTPUT_PREFIX = "fpc_test";
 
   const unsigned int ORDER_TIME_INTEGRATOR = 2;
   const bool START_WITH_LOW_ORDER = true;
@@ -737,7 +742,6 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
     rel_tol_projection = REL_TOL_PROJECTION;
     abs_tol_viscous = ABS_TOL_VISCOUS;
     rel_tol_viscous = REL_TOL_VISCOUS;
-    solver_poisson = SOLVER_POISSON;
     preconditioner_poisson = PRECONDITIONER_POISSON;
     multigrid_smoother = MULTIGRID_SMOOTHER;
     multigrid_coarse_grid_solver = MULTIGRID_COARSE_GRID_SOLVER;
@@ -763,6 +767,290 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
     error_calc_start_time = ERROR_CALC_START_TIME;
     error_calc_interval_time = ERROR_CALC_INTERVAL_TIME;
     analytical_solution_available = ANALYTICAL_SOLUTION;
+    discretization_of_laplacian = DISCRETIZATION_OF_LAPLACIAN;
+  }
+
+  template<int dim>
+  class AnalyticalSolutionVelocity : public Function<dim>
+  {
+  public:
+    AnalyticalSolutionVelocity (const unsigned int  n_components = dim,
+                                const double        time = 0.)
+      :
+      Function<dim>(n_components, time)
+    {}
+
+    virtual ~AnalyticalSolutionVelocity(){};
+
+    virtual double value (const Point<dim>    &p,
+                          const unsigned int  component = 0) const;
+  };
+
+  template<int dim>
+  double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
+                                                const unsigned int component) const
+  {
+    double t = this->get_time();
+    double result = 0.0;
+    (void)t;
+
+    /*********************** cavity flow ********************************/
+#ifdef CAVITY
+    // constant velocity
+    if(PROBLEM_TYPE == ProblemType::Steady)
+    {
+      if(component == 0 && (std::abs(p[1]-1.0)<1.0e-15))
+        result = 1.0;
+    }
+    else if(PROBLEM_TYPE == ProblemType::Unsteady)
+    {
+      const double T = 0.5;
+      const double pi = numbers::PI;
+      if(component == 0 && (std::abs(p[1]-1.0)<1.0e-15))
+        result = t<T ? std::sin(pi/2.*t/T) : 1.0;
+    }
+#endif
+    /********************************************************************/
+
+    /*********************** Cuette flow problem ************************/
+#ifdef CUETTE
+    // steady
+//    if(component == 0)
+//          result = ((p[1]+ H/2.)*MAX_VELOCITY);
+
+    // unsteady
+    const double T = 1.0;
+    const double pi = numbers::PI;
+    if(component == 0)
+      result = ((p[1]+H/2.)*MAX_VELOCITY)*(t<T ? std::sin(pi/2.*t/T) : 1.0);
+#endif
+    /********************************************************************/
+
+    /****************** Poisseuille flow problem ************************/
+#ifdef POISEUILLE
+    // constant velocity profile at inflow
+//    double T = 0.5;
+//    const double pi = numbers::PI;
+//    if(component == 0 && (std::abs(p[0])<1.0e-12))
+//      result = MAX_VELOCITY * (t<T ? std::sin(pi/2.*t/T) : 1.0);
+
+    // parabolic velocity profile at inflow - steady
+//    const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
+//    if(component == 0)
+//      result = 1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0;
+
+    // parabolic velocity profile at inflow - unsteady
+    const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
+    const double pi = numbers::PI;
+    double T = 1.0e0; //0.5;
+    if(component == 0)
+      result = 1.0/VISCOSITY * pressure_gradient * (pow(p[1],2.0)-1.0)/2.0 * (t<T ? std::sin(pi/2.*t/T) : 1.0);
+#endif
+    /********************************************************************/
+
+    /************************* vortex problem ***************************/
+    //Taylor vortex problem (Shahbazi et al.,2007)
+//    const double pi = numbers::PI;
+//    if(component == 0)
+//      result = (-std::cos(pi*p[0])*std::sin(pi*p[1]))*std::exp(-2.0*pi*pi*t*VISCOSITY);
+//    else if(component == 1)
+//      result = (+std::sin(pi*p[0])*std::cos(pi*p[1]))*std::exp(-2.0*pi*pi*t*VISCOSITY);
+
+    // vortex problem (Hesthaven)
+#ifdef VORTEX
+    const double pi = numbers::PI;
+    if(component == 0)
+      result = -U_X_MAX*std::sin(2.0*pi*p[1])*std::exp(-4.0*pi*pi*VISCOSITY*t);
+    else if(component == 1)
+      result = U_X_MAX*std::sin(2.0*pi*p[0])*std::exp(-4.0*pi*pi*VISCOSITY*t);
+#endif
+    /********************************************************************/
+
+    /************************* Kovasznay flow ***************************/
+#ifdef KOVASZNAY
+    const double pi = numbers::PI;
+    const double lambda = 0.5/VISCOSITY - std::pow(0.25/std::pow(VISCOSITY,2.0)+4.0*std::pow(numbers::PI,2.0),0.5);
+    if (component == 0)
+      result = 1.0 - std::exp(lambda*p[0])*std::cos(2*pi*p[1]);
+    else if (component == 1)
+      result = lambda/2.0/pi*std::exp(lambda*p[0])*std::sin(2*pi*p[1]);
+#endif
+    /********************************************************************/
+
+    /************************* Beltrami flow ****************************/
+#ifdef BELTRAMI
+    const double pi = numbers::PI;
+    const double a = 0.25*pi;
+    const double d = 2*a;
+    if (component == 0)
+      result = -a*(std::exp(a*p[0])*std::sin(a*p[1]+d*p[2]) + std::exp(a*p[2])*std::cos(a*p[0]+d*p[1]))*std::exp(-VISCOSITY*d*d*t);
+    else if (component == 1)
+      result = -a*(std::exp(a*p[1])*std::sin(a*p[2]+d*p[0]) + std::exp(a*p[0])*std::cos(a*p[1]+d*p[2]))*std::exp(-VISCOSITY*d*d*t);
+    else if (component == 2)
+      result = -a*(std::exp(a*p[2])*std::sin(a*p[0]+d*p[1]) + std::exp(a*p[1])*std::cos(a*p[2]+d*p[0]))*std::exp(-VISCOSITY*d*d*t);
+#endif
+    /********************************************************************/
+
+    /************* Stokes problem (Guermond,2003 & 2006) ****************/
+#ifdef STOKES_GUERMOND
+    const double pi = numbers::PI;
+    double sint = std::sin(t);
+    double sinx = std::sin(pi*p[0]);
+    double siny = std::sin(pi*p[1]);
+    double sin2x = std::sin(2.*pi*p[0]);
+    double sin2y = std::sin(2.*pi*p[1]);
+    if (component == 0)
+      result = pi*sint*sin2y*std::pow(sinx,2.);
+    else if (component == 1)
+      result = -pi*sint*sin2x*std::pow(siny,2.);
+#endif
+
+#ifdef STOKES_SHAHBAZI
+    const double pi = numbers::PI;
+    const double a = 2.883356;
+    const double lambda = VISCOSITY*(1.+a*a);
+
+    double exp_t = std::exp(-lambda*t);
+    double sin_x = std::sin(p[0]);
+    double cos_x = std::cos(p[0]);
+    double cos_a = std::cos(a);
+    double sin_ay = std::sin(a*p[1]);
+    double cos_ay = std::cos(a*p[1]);
+    double sinh_y = std::sinh(p[1]);
+    double cosh_y = std::cosh(p[1]);
+    if (component == 0)
+      result = exp_t*sin_x*(a*sin_ay-cos_a*sinh_y);
+    else if (component == 1)
+      result = exp_t*cos_x*(cos_ay+cos_a*cosh_y);
+#endif
+    /********************************************************************/
+
+    /********************** flow past cylinder **************************/
+#ifdef FLOW_PAST_CYLINDER
+    if(component == 0 && std::abs(p[0]-(dim==2 ? L1: 0.0))<1.e-12)
+    {
+      const double pi = numbers::PI;
+      const double T = 1.0;
+      double coefficient = Utilities::fixed_power<dim-1>(4.) * Um / Utilities::fixed_power<2*dim-2>(H);
+      if(TEST_CASE < 3)
+        result = coefficient * p[1] * (H-p[1]) * ( (t/T)<1.0 ? std::sin(pi/2.*t/T) : 1.0);
+      if(TEST_CASE == 3)
+        result = coefficient * p[1] * (H-p[1]) * std::sin(pi*t/END_TIME);
+      if (dim == 3)
+        result *= p[2] * (H-p[2]);
+    }
+#endif
+    /********************************************************************/
+
+    return result;
+  }
+
+  template<int dim>
+  class AnalyticalSolutionPressure : public Function<dim>
+  {
+  public:
+    AnalyticalSolutionPressure (const double time = 0.)
+      :
+      Function<dim>(1 /*n_components*/, time)
+    {}
+
+    virtual ~AnalyticalSolutionPressure(){};
+
+    virtual double value (const Point<dim>   &p,
+                          const unsigned int component = 0) const;
+  };
+
+  template<int dim>
+  double AnalyticalSolutionPressure<dim>::value(const Point<dim>    &p,
+                                                const unsigned int  /* component */) const
+  {
+    double t = this->get_time();
+    double result = 0.0;
+    (void)t;
+
+    /****************** Poisseuille flow problem ************************/
+#ifdef POISEUILLE
+    // parabolic velocity profile at inflow - steady
+//    const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
+//    result = (p[0]-4.0)*pressure_gradient;
+
+    // parabolic velocity profile at inflow - unsteady
+    const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
+    const double pi = numbers::PI;
+    double T = 1.0e0; //0.5;
+    result = (p[0]-4.0) * pressure_gradient * (t<T ? std::sin(pi/2.*t/T) : 1.0);
+#endif
+    /********************************************************************/
+
+    /****************** turbulent channel flow **************************/
+#ifdef CHANNEL
+    result = 0.0;//(p[0]-1.0)*pressure_gradient*(t<T? (t/T) : 1.0);
+#endif
+
+    /********************************************************************/
+
+    /************************* vortex problem ***************************/
+    //Taylor vortex problem (Shahbazi et al.,2007)
+//    const double pi = numbers::PI;
+//    result = -0.25*(std::cos(2*pi*p[0])+std::cos(2*pi*p[1]))*std::exp(-4.0*pi*pi*t*VISCOSITY);
+
+#ifdef VORTEX
+    // vortex problem (Hesthaven)
+    const double pi = numbers::PI;
+    result = -U_X_MAX*std::cos(2*pi*p[0])*std::cos(2*pi*p[1])*std::exp(-8.0*pi*pi*VISCOSITY*t);
+#endif
+    /********************************************************************/
+
+    /************************* Kovasznay flow ***************************/
+#ifdef KOVASZNAY
+    const double pi = numbers::PI;
+    const double lambda = 0.5/VISCOSITY - std::pow(0.25/std::pow(VISCOSITY,2.0)+4.0*std::pow(numbers::PI,2.0),0.5);
+    result = 0.5*(1.0-std::exp(2.0*lambda*p[0]));
+#endif
+    /********************************************************************/
+
+    /************************* Beltrami flow ****************************/
+#ifdef BELTRAMI
+    const double pi = numbers::PI;
+    const double a = 0.25*pi;
+    const double d = 2*a;
+    result = -a*a*0.5*(std::exp(2*a*p[0]) + std::exp(2*a*p[1]) + std::exp(2*a*p[2]) +
+                       2*std::sin(a*p[0]+d*p[1])*std::cos(a*p[2]+d*p[0])*std::exp(a*(p[1]+p[2])) +
+                       2*std::sin(a*p[1]+d*p[2])*std::cos(a*p[0]+d*p[1])*std::exp(a*(p[2]+p[0])) +
+                       2*std::sin(a*p[2]+d*p[0])*std::cos(a*p[1]+d*p[2])*std::exp(a*(p[0]+p[1]))) * std::exp(-2*VISCOSITY*d*d*t);
+#endif
+    /********************************************************************/
+
+    /************* Stokes problem (Guermond,2003 & 2006) ****************/
+#ifdef STOKES_GUERMOND
+    const double pi = numbers::PI;
+    double sint = std::sin(t);
+    double siny = std::sin(pi*p[1]);
+    double cosx = std::cos(pi*p[0]);
+    result = cosx*siny*sint;
+#endif
+
+#ifdef STOKES_SHAHBAZI
+    const double pi = numbers::PI;
+    const double a = 2.883356;
+    const double lambda = VISCOSITY*(1.+a*a);
+
+    double exp_t = std::exp(-lambda*t);
+    double cos_x = std::cos(p[0]);
+    double cos_a = std::cos(a);
+    double sinh_y = std::sinh(p[1]);
+    result = lambda*cos_a*cos_x*sinh_y*exp_t;
+#endif
+    /********************************************************************/
+
+    /********************** flow past cylinder **************************/
+#ifdef FLOW_PAST_CYLINDER
+    // do nothing
+    // pressure = 0
+#endif
+    /********************************************************************/
+
+    return result;
   }
 
   template<int dim>
@@ -778,7 +1066,7 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 
     AnalyticalSolution (const bool    is_velocity,
                         const double  time,
-                        unsigned int n_components)
+                        unsigned int  n_components)
       :
       Function<dim>(is_velocity ? n_components : 1, time),
       is_velocity(is_velocity)
@@ -1087,6 +1375,56 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   }
 
   template<int dim>
+  class RightHandSide : public Function<dim>
+  {
+  public:
+    RightHandSide (const double time = 0.)
+      :
+      Function<dim>(dim, time)
+    {}
+
+    virtual ~RightHandSide(){};
+
+    virtual double value (const Point<dim>    &p,
+                          const unsigned int  component = 0) const;
+    void setup(const double* massflows, double oldforce, double integrand);
+  };
+
+  template<int dim>
+  double RightHandSide<dim>::value(const Point<dim>   &p,
+                                   const unsigned int component) const
+  {
+    double t = this->get_time();
+    double result = 0.0;
+    (void)t;
+
+  (void)p;
+  (void)component;
+#ifdef STOKES_GUERMOND
+    // Stokes problem (Guermond,2003 & 2006)
+    const double pi = numbers::PI;
+    double sint = std::sin(t);
+    double cost = std::cos(t);
+    double sinx = std::sin(pi*p[0]);
+    double siny = std::sin(pi*p[1]);
+    double cosx = std::cos(pi*p[0]);
+    double cosy = std::cos(pi*p[1]);
+    double sin2x = std::sin(2.*pi*p[0]);
+    double sin2y = std::sin(2.*pi*p[1]);
+    if (component == 0)
+      result = pi*cost*sin2y*std::pow(sinx,2.)
+          - 2.*std::pow(pi,3.)*sint*sin2y*(1.-4.*std::pow(sinx,2.))*VISCOSITY
+          - pi*sint*sinx*siny;
+    else if (component == 1)
+      result = -pi*cost*sin2x*std::pow(siny,2.)
+          + 2.*std::pow(pi,3.)*sint*sin2x*(1.-4.*std::pow(siny,2.))*VISCOSITY
+          + pi*sint*cosx*cosy;
+#endif
+
+    return result;
+  }
+
+  template<int dim>
   class RHS : public Function<dim>
   {
   public:
@@ -1099,7 +1437,6 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 
     virtual double value (const Point<dim> &p,const unsigned int component = 0) const;
 
-    void setup(const double* massflows, double oldforce, double integrand);
   private:
     const double time;
   };
@@ -1107,31 +1444,40 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   template<int dim>
   double RHS<dim>::value(const Point<dim> &p,const unsigned int component) const
   {
+#ifdef CHANNEL
+    //channel flow with periodic bc
+    if(component==0)
+      if(time<0.01)
+        return 1.0*(1.0+((double)rand()/RAND_MAX)*0.0);
+      else
+        return 1.0;
+    else
+      return 0.0;
+#endif
+
   double t = this->get_time();
   double result = 0.0;
   (void)t;
-  (void)p;
-  (void)component;
 
 #ifdef STOKES_GUERMOND
-  // Stokes problem (Guermond,2003 & 2006)
-  const double pi = numbers::PI;
-  double sint = std::sin(t);
-  double cost = std::cos(t);
-  double sinx = std::sin(pi*p[0]);
-  double siny = std::sin(pi*p[1]);
-  double cosx = std::cos(pi*p[0]);
-  double cosy = std::cos(pi*p[1]);
-  double sin2x = std::sin(2.*pi*p[0]);
-  double sin2y = std::sin(2.*pi*p[1]);
-  if (component == 0)
-    result = pi*cost*sin2y*std::pow(sinx,2.)
-        - 2.*std::pow(pi,3.)*sint*sin2y*(1.-4.*std::pow(sinx,2.))*VISCOSITY
-        - pi*sint*sinx*siny;
-  else if (component == 1)
-    result = -pi*cost*sin2x*std::pow(siny,2.)
-        + 2.*std::pow(pi,3.)*sint*sin2x*(1.-4.*std::pow(siny,2.))*VISCOSITY
-        + pi*sint*cosx*cosy;
+//  // Stokes problem (Guermond,2003 & 2006)
+//  const double pi = numbers::PI;
+//  double sint = std::sin(t);
+//  double cost = std::cos(t);
+//  double sinx = std::sin(pi*p[0]);
+//  double siny = std::sin(pi*p[1]);
+//  double cosx = std::cos(pi*p[0]);
+//  double cosy = std::cos(pi*p[1]);
+//  double sin2x = std::sin(2.*pi*p[0]);
+//  double sin2y = std::sin(2.*pi*p[1]);
+//  if (component == 0)
+//    result = pi*cost*sin2y*std::pow(sinx,2.)
+//        - 2.*std::pow(pi,3.)*sint*sin2y*(1.-4.*std::pow(sinx,2.))*VISCOSITY
+//        - pi*sint*sinx*siny;
+//  else if (component == 1)
+//    result = -pi*cost*sin2x*std::pow(siny,2.)
+//        + 2.*std::pow(pi,3.)*sint*sin2x*(1.-4.*std::pow(siny,2.))*VISCOSITY
+//        + pi*sint*cosx*cosy;
 #endif
 
   return result;
@@ -1148,56 +1494,58 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 
     virtual ~PressureBC_dudt(){};
 
-    virtual double value (const Point<dim> &p,const unsigned int component = 0) const;
+    virtual double value (const Point<dim>    &p,
+                          const unsigned int  component = 0) const;
   };
 
   template<int dim>
-  double PressureBC_dudt<dim>::value(const Point<dim> &p,const unsigned int component) const
+  double PressureBC_dudt<dim>::value(const Point<dim>   &p,
+                                     const unsigned int component) const
   {
-  double t = this->get_time();
-  (void)t;
-  double result = 0.0;
+    double t = this->get_time();
+    (void)t;
+    double result = 0.0;
 
-  //Taylor vortex (Shahbazi et al.,2007)
+    // Taylor vortex (Shahbazi et al.,2007)
 //  const double pi = numbers::PI;
 //  if(component == 0)
 //    result = (2.0*pi*pi*VISCOSITY*std::cos(pi*p[0])*std::sin(pi*p[1]))*std::exp(-2.0*pi*pi*t*VISCOSITY);
 //  else if(component == 1)
 //    result = (-2.0*pi*pi*VISCOSITY*std::sin(pi*p[0])*std::cos(pi*p[1]))*std::exp(-2.0*pi*pi*t*VISCOSITY);
+
 #ifdef VORTEX
-//   vortex problem (Hesthaven)
-  const double pi = numbers::PI;
-  if(component == 0)
-    result = U_X_MAX*4.0*pi*pi*VISCOSITY*std::sin(2.0*pi*p[1])*std::exp(-4.0*pi*pi*VISCOSITY*t);
-  else if(component == 1)
-    result = -U_X_MAX*4.0*pi*pi*VISCOSITY*std::sin(2.0*pi*p[0])*std::exp(-4.0*pi*pi*VISCOSITY*t);
+    // vortex problem (Hesthaven)
+    const double pi = numbers::PI;
+    if(component == 0)
+      result = U_X_MAX*4.0*pi*pi*VISCOSITY*std::sin(2.0*pi*p[1])*std::exp(-4.0*pi*pi*VISCOSITY*t);
+    else if(component == 1)
+      result = -U_X_MAX*4.0*pi*pi*VISCOSITY*std::sin(2.0*pi*p[0])*std::exp(-4.0*pi*pi*VISCOSITY*t);
 #endif
 
-  // Beltrami flow
 #ifdef BELTRAMI
-  const double pi = numbers::PI;
-  const double a = 0.25*pi;
-  const double d = 2*a;
-  if (component == 0)
-    result = a*VISCOSITY*d*d*(std::exp(a*p[0])*std::sin(a*p[1]+d*p[2]) + std::exp(a*p[2])*std::cos(a*p[0]+d*p[1]))*std::exp(-VISCOSITY*d*d*t);
-  else if (component == 1)
-    result = a*VISCOSITY*d*d*(std::exp(a*p[1])*std::sin(a*p[2]+d*p[0]) + std::exp(a*p[0])*std::cos(a*p[1]+d*p[2]))*std::exp(-VISCOSITY*d*d*t);
-  else if (component == 2)
-    result = a*VISCOSITY*d*d*(std::exp(a*p[2])*std::sin(a*p[0]+d*p[1]) + std::exp(a*p[1])*std::cos(a*p[2]+d*p[0]))*std::exp(-VISCOSITY*d*d*t);
+    const double pi = numbers::PI;
+    const double a = 0.25*pi;
+    const double d = 2*a;
+    if (component == 0)
+      result = a*VISCOSITY*d*d*(std::exp(a*p[0])*std::sin(a*p[1]+d*p[2]) + std::exp(a*p[2])*std::cos(a*p[0]+d*p[1]))*std::exp(-VISCOSITY*d*d*t);
+    else if (component == 1)
+      result = a*VISCOSITY*d*d*(std::exp(a*p[1])*std::sin(a*p[2]+d*p[0]) + std::exp(a*p[0])*std::cos(a*p[1]+d*p[2]))*std::exp(-VISCOSITY*d*d*t);
+    else if (component == 2)
+      result = a*VISCOSITY*d*d*(std::exp(a*p[2])*std::sin(a*p[0]+d*p[1]) + std::exp(a*p[1])*std::cos(a*p[2]+d*p[0]))*std::exp(-VISCOSITY*d*d*t);
 #endif
 
-  // Stokes problem (Guermond,2003 & 2006)
 #ifdef STOKES_GUERMOND
-  const double pi = numbers::PI;
-  double cost = std::cos(t);
-  double sinx = std::sin(pi*p[0]);
-  double siny = std::sin(pi*p[1]);
-  double sin2x = std::sin(2.*pi*p[0]);
-  double sin2y = std::sin(2.*pi*p[1]);
-  if (component == 0)
-    result = pi*cost*sin2y*std::pow(sinx,2.);
-  else if (component == 1)
-    result = -pi*cost*sin2x*std::pow(siny,2.);
+    // Stokes problem (Guermond,2003 & 2006)
+    const double pi = numbers::PI;
+    double cost = std::cos(t);
+    double sinx = std::sin(pi*p[0]);
+    double siny = std::sin(pi*p[1]);
+    double sin2x = std::sin(2.*pi*p[0]);
+    double sin2y = std::sin(2.*pi*p[1]);
+    if (component == 0)
+      result = pi*cost*sin2y*std::pow(sinx,2.);
+    else if (component == 1)
+      result = -pi*cost*sin2x*std::pow(siny,2.);
 #endif
 
 #ifdef STOKES_SHAHBAZI
@@ -1219,23 +1567,22 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
       result = -lambda*exp_t*cos_x*(cos_ay+cos_a*cosh_y);
 #endif
 
-  // flow past cylinder
 #ifdef FLOW_PAST_CYLINDER
-  if(component == 0 && std::abs(p[0]-(dim==2 ? L1 : 0.0))<1.e-12)
-  {
-    const double pi = numbers::PI;
-    const double T = 1.0;
-    double coefficient = Utilities::fixed_power<dim-1>(4.) * Um / Utilities::fixed_power<2*dim-2>(H);
-    if(TEST_CASE < 3)
-      result = coefficient * p[1] * (H-p[1]) * ( (t/T)<1.0 ? (pi/2./T)*std::cos(pi/2.*t/T) : 0.0);
-    if(TEST_CASE == 3)
-      result = coefficient * p[1] * (H-p[1]) * std::cos(pi*t/END_TIME)*pi/END_TIME;
-    if (dim == 3)
-      result *= p[2] * (H-p[2]);
-  }
+    if(component == 0 && std::abs(p[0]-(dim==2 ? L1 : 0.0))<1.e-12)
+    {
+      const double pi = numbers::PI;
+      const double T = 1.0;
+      double coefficient = Utilities::fixed_power<dim-1>(4.) * Um / Utilities::fixed_power<2*dim-2>(H);
+      if(TEST_CASE < 3)
+        result = coefficient * p[1] * (H-p[1]) * ( (t/T)<1.0 ? (pi/2./T)*std::cos(pi/2.*t/T) : 0.0);
+      if(TEST_CASE == 3)
+        result = coefficient * p[1] * (H-p[1]) * std::cos(pi*t/END_TIME)*pi/END_TIME;
+      if (dim == 3)
+        result *= p[2] * (H-p[2]);
+    }
 #endif
 
-  return result;
+    return result;
   }
 
   template<int dim>
@@ -1257,8 +1604,9 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
 
     const unsigned int n_refine_space;
 
-    std::set<types::boundary_id> dirichlet_boundary;
-    std::set<types::boundary_id> neumann_boundary;
+    std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions;
+    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity;
+    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure;
 
     InputParameters param;
 
@@ -1282,8 +1630,27 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
     param.set_input_parameters();
     param.check_parameters();
 
+    // initialize functions (analytical solution, rhs, boundary conditions)
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_velocity;
+    analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>(dim,param.start_time));
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_pressure;
+    analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>(param.start_time));
+
+    std_cxx11::shared_ptr<Function<dim> > right_hand_side;
+    right_hand_side.reset(new RightHandSide<dim>(param.start_time));
+
+    field_functions.reset(new FieldFunctionsNavierStokes<dim>());
+    field_functions->analytical_solution_velocity = analytical_solution_velocity;
+    field_functions->analytical_solution_pressure = analytical_solution_pressure;
+    field_functions->right_hand_side = right_hand_side;
+
+    boundary_descriptor_velocity.reset(new BoundaryDescriptorNavierStokes<dim>());
+    boundary_descriptor_pressure.reset(new BoundaryDescriptorNavierStokes<dim>());
+
     if(param.spatial_discretization == SpatialDiscretization::DGXWall)
     {
+      analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>(2*dim,param.start_time));
+      field_functions->analytical_solution_velocity = analytical_solution_velocity;
       if(param.problem_type == ProblemType::Unsteady &&
               param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
       {
@@ -1471,8 +1838,6 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
   template<int dim>
   void NavierStokesProblem<dim>::create_grid ()
   {
-    /* --------------- Generate grid ------------------- */
-
 #ifdef VORTEX
     const double left = -0.5, right = 0.5;
     GridGenerator::subdivided_hyper_cube(triangulation,2,left,right);
@@ -1491,8 +1856,28 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
     }
     triangulation.refine_global(n_refine_space);
 
-    dirichlet_boundary.insert(0);
-    neumann_boundary.insert(1);
+    // fill boundary descriptor velocity
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_velocity;
+    analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>(dim,param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >(0,analytical_solution_velocity));
+
+    std_cxx11::shared_ptr<Function<dim> > neumann_bc_velocity;
+    neumann_bc_velocity.reset(new NeumannBoundaryVelocity<dim>(param.start_time));
+    // Neumann boundaris: ID = 1
+    boundary_descriptor_velocity->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >(1,neumann_bc_velocity));
+
+    // fill boundary descriptor pressure
+    std_cxx11::shared_ptr<Function<dim> > pressure_bc_dudt;
+    pressure_bc_dudt.reset(new PressureBC_dudt<dim>(param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >(0,pressure_bc_dudt));
+
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_pressure;
+    analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>(param.start_time));
+    // Neumann boundaries: ID = 1
+    boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >(1,analytical_solution_pressure));
+
 #endif
 
 #ifdef POISEUILLE
@@ -1511,8 +1896,32 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
       }
     }
     triangulation.refine_global(n_refine_space);
-    dirichlet_boundary.insert(0);
-    neumann_boundary.insert(1);
+
+    // fill boundary descriptor velocity
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_velocity;
+    analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>(dim,param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                       (0,analytical_solution_velocity));
+
+    std_cxx11::shared_ptr<Function<dim> > neumann_bc_velocity;
+    neumann_bc_velocity.reset(new NeumannBoundaryVelocity<dim>(param.start_time));
+    // Neumann boundaris: ID = 1
+    boundary_descriptor_velocity->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                     (1,neumann_bc_velocity));
+
+    // fill boundary descriptor pressure
+    std_cxx11::shared_ptr<Function<dim> > pressure_bc_dudt;
+    pressure_bc_dudt.reset(new PressureBC_dudt<dim>(param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                       (0,pressure_bc_dudt));
+
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_pressure;
+    analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>(param.start_time));
+    // Neumann boundaries: ID = 1
+    boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                     (1,analytical_solution_pressure));
 #endif
 
 #ifdef CUETTE
@@ -1531,16 +1940,54 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
       }
     }
     triangulation.refine_global(n_refine_space);
-    dirichlet_boundary.insert(0);
-    neumann_boundary.insert(1);
+
+    // fill boundary descriptor velocity
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_velocity;
+    analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>(dim,param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                       (0,analytical_solution_velocity));
+
+    std_cxx11::shared_ptr<Function<dim> > neumann_bc_velocity;
+    neumann_bc_velocity.reset(new NeumannBoundaryVelocity<dim>(param.start_time));
+    // Neumann boundaris: ID = 1
+    boundary_descriptor_velocity->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                     (1,neumann_bc_velocity));
+
+    // fill boundary descriptor pressure
+    std_cxx11::shared_ptr<Function<dim> > pressure_bc_dudt;
+    pressure_bc_dudt.reset(new PressureBC_dudt<dim>(param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                       (0,pressure_bc_dudt));
+
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_pressure;
+    analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>(param.start_time));
+    // Neumann boundaries: ID = 1
+    boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                     (1,analytical_solution_pressure));
 #endif
 
 #ifdef CAVITY
     Point<dim> point1(0.0,0.0), point2(L,L);
     GridGenerator::hyper_rectangle(triangulation,point1,point2);
     triangulation.refine_global(n_refine_space);
-    dirichlet_boundary.insert(0);
-    neumann_boundary.insert(1);
+
+    // all boundaries have ID = 0 by default -> Dirichlet boundaries
+
+    // fill boundary descriptor velocity
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_velocity;
+    analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>(dim,param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                      (0,analytical_solution_velocity));
+
+    // fill boundary descriptor pressure
+    std_cxx11::shared_ptr<Function<dim> > pressure_bc_dudt;
+    pressure_bc_dudt.reset(new PressureBC_dudt<dim>(param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                      (0,pressure_bc_dudt));
 #endif
 
 #ifdef KOVASZNAY
@@ -1558,29 +2005,102 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
       }
     }
     triangulation.refine_global(n_refine_space);
-    dirichlet_boundary.insert(0);
-    neumann_boundary.insert(1);
+
+    // fill boundary descriptor velocity
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_velocity;
+    analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>(dim,param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                       (0,analytical_solution_velocity));
+
+    std_cxx11::shared_ptr<Function<dim> > neumann_bc_velocity;
+    neumann_bc_velocity.reset(new NeumannBoundaryVelocity<dim>(param.start_time));
+    // Neumann boundaris: ID = 1
+    boundary_descriptor_velocity->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                     (1,neumann_bc_velocity));
+
+    // fill boundary descriptor pressure
+    std_cxx11::shared_ptr<Function<dim> > pressure_bc_dudt;
+    pressure_bc_dudt.reset(new PressureBC_dudt<dim>(param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                       (0,pressure_bc_dudt));
+
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_pressure;
+    analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>(param.start_time));
+    // Neumann boundaries: ID = 1
+    boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                     (1,analytical_solution_pressure));
+
 #endif
 
 #ifdef BELTRAMI
     const double left = -1.0, right = 1.0;
     GridGenerator::hyper_cube(triangulation,left,right);
     triangulation.refine_global(n_refine_space);
-    dirichlet_boundary.insert(0);
+
+    // test case with pure Dirichlet BC
+    // all boundaries have ID = 0 by default
+
+    // fill boundary descriptor velocity
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_velocity;
+    analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>(dim,param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                      (0,analytical_solution_velocity));
+
+    // fill boundary descriptor pressure
+    std_cxx11::shared_ptr<Function<dim> > pressure_bc_dudt;
+    pressure_bc_dudt.reset(new PressureBC_dudt<dim>(param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                      (0,pressure_bc_dudt));
 #endif
 
 #ifdef STOKES_GUERMOND
     const double left = 0.0, right = 1.0;
     GridGenerator::hyper_cube(triangulation,left,right);
     triangulation.refine_global(n_refine_space);
-    dirichlet_boundary.insert(0);
+
+    // test case with pure Dirichlet BC
+    // all boundaries have ID = 0 by default
+
+    // fill boundary descriptor velocity
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_velocity;
+    analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>(dim,param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                      (0,analytical_solution_velocity));
+
+    // fill boundary descriptor pressure
+    std_cxx11::shared_ptr<Function<dim> > pressure_bc_dudt;
+    pressure_bc_dudt.reset(new PressureBC_dudt<dim>(param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                      (0,pressure_bc_dudt));
 #endif
 
 #ifdef STOKES_SHAHBAZI
     const double left = -1.0, right = 1.0;
     GridGenerator::hyper_cube(triangulation,left,right);
     triangulation.refine_global(n_refine_space);
-    dirichlet_boundary.insert(0);
+
+    // test case with pure Dirichlet BC
+    // all boundaries have ID = 0 by default
+
+    // fill boundary descriptor velocity
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_velocity;
+    analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>(dim,param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                      (0,analytical_solution_velocity));
+
+    // fill boundary descriptor pressure
+    std_cxx11::shared_ptr<Function<dim> > pressure_bc_dudt;
+    pressure_bc_dudt.reset(new PressureBC_dudt<dim>(param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                      (0,pressure_bc_dudt));
 #endif
 
 #ifdef FLOW_PAST_CYLINDER
@@ -1598,9 +2118,36 @@ PreconditionerSchurComplement PRECONDITIONER_SCHUR_COMPLEMENT =
     triangulation.set_manifold(10, *cylinder_manifold);
 
     triangulation.refine_global(n_refine_space);
-    dirichlet_boundary.insert(0);
-    dirichlet_boundary.insert(2);
-    neumann_boundary.insert(1);
+
+    // fill boundary descriptor velocity
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_velocity;
+    analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>(dim,param.start_time));
+    // Dirichlet boundaries: ID = 0, 2
+    boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                       (0,analytical_solution_velocity));
+    boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                       (2,analytical_solution_velocity));
+
+    std_cxx11::shared_ptr<Function<dim> > neumann_bc_velocity;
+    neumann_bc_velocity.reset(new NeumannBoundaryVelocity<dim>(param.start_time));
+    // Neumann boundaris: ID = 1
+    boundary_descriptor_velocity->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                     (1,neumann_bc_velocity));
+
+    // fill boundary descriptor pressure
+    std_cxx11::shared_ptr<Function<dim> > pressure_bc_dudt;
+    pressure_bc_dudt.reset(new PressureBC_dudt<dim>(param.start_time));
+    // Dirichlet boundaries: ID = 0, 2
+    boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                       (0,pressure_bc_dudt));
+    boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                       (2,pressure_bc_dudt));
+
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_pressure;
+    analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>(param.start_time));
+    // Neumann boundaries: ID = 1
+    boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                     (1,analytical_solution_pressure));
 #endif
 
     pcout << std::endl
@@ -1616,7 +2163,10 @@ void NavierStokesProblem<dim>::solve_problem(bool do_restart)
 {
   create_grid();
 
-  navier_stokes_operation->setup(periodic_faces, dirichlet_boundary, neumann_boundary);
+  navier_stokes_operation->setup(periodic_faces,
+                                 boundary_descriptor_velocity,
+                                 boundary_descriptor_pressure,
+                                 field_functions);
 
   if(param.problem_type == ProblemType::Unsteady)
   {

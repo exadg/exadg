@@ -18,10 +18,12 @@
 #include "InverseMassMatrix.h"
 #include "NavierStokesOperators.h"
 
+#include "../include/BoundaryDescriptorNavierStokes.h"
+#include "../include/FieldFunctionsNavierStokes.h"
+
 using namespace dealii;
 
 //forward declarations
-template<int dim> class AnalyticalSolution;
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 class DGNavierStokesDualSplittingXWall;
 
@@ -84,9 +86,13 @@ public:
     data.clear();
   }
 
-  virtual void setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
-                      std::set<types::boundary_id>                                                                dirichlet_bc_indicator,
-                      std::set<types::boundary_id>                                                                neumann_bc_indicator);
+  void fill_dbc_and_nbc_sets(std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor);
+
+  virtual void setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
+                                                                                  periodic_face_pairs,
+                      std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
+                      std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
+                      std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> >     field_functions);
 
   virtual void setup_solvers () = 0;
 
@@ -185,12 +191,12 @@ public:
     return viscous_operator_data;
   }
 
-  GradientOperatorData const & get_gradient_operator_data() const
+  GradientOperatorData<dim> const & get_gradient_operator_data() const
   {
     return gradient_operator_data;
   }
 
-  DivergenceOperatorData const & get_divergence_operator_data() const
+  DivergenceOperatorData<dim> const & get_divergence_operator_data() const
   {
     return divergence_operator_data;
   }
@@ -264,9 +270,14 @@ protected:
   Point<dim> first_point;
   types::global_dof_index dof_index_first_point;
 
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs;
+
+  std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity;
+  std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure;
+  std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions;
+
   std::set<types::boundary_id> dirichlet_boundary;
   std::set<types::boundary_id> neumann_boundary;
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs;
 
   InputParameters const &param;
 
@@ -274,8 +285,9 @@ protected:
 
   MassMatrixOperatorData mass_matrix_operator_data;
   ViscousOperatorData<dim> viscous_operator_data;
-  GradientOperatorData gradient_operator_data;
-  DivergenceOperatorData divergence_operator_data;
+  ConvectiveOperatorData<dim> convective_operator_data;
+  GradientOperatorData<dim> gradient_operator_data;
+  DivergenceOperatorData<dim> divergence_operator_data;
 
   MassMatrixOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type> mass_matrix_operator;
   ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type> convective_operator;
@@ -306,13 +318,39 @@ private:
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
-       std::set<types::boundary_id> dirichlet_bc_indicator,
-       std::set<types::boundary_id> neumann_bc_indicator)
+fill_dbc_and_nbc_sets(std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor)
 {
-  this->dirichlet_boundary = dirichlet_bc_indicator;
-  this->neumann_boundary = neumann_bc_indicator;
+  // Dirichlet boundary conditions: copy Dirichlet boundary ID's from boundary_descriptor.dirichlet_bc (map) to dirichlet_boundary (set)
+  for (typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::
+       const_iterator it = boundary_descriptor->dirichlet_bc.begin();
+       it != boundary_descriptor->dirichlet_bc.end(); ++it)
+  {
+    dirichlet_boundary.insert(it->first);
+  }
+
+  // Neumann boundary conditions: copy Neumann boundary ID's from boundary_descriptor.neumann_bc (map) to neumann_boundary (set)
+  for (typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::
+       const_iterator it = boundary_descriptor->neumann_bc.begin();
+       it != boundary_descriptor->neumann_bc.end(); ++it)
+  {
+    neumann_boundary.insert(it->first);
+  }
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
+                                                                   periodic_face_pairs,
+       std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity_in,
+       std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure_in,
+       std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> >     field_functions_in)
+{
   this->periodic_face_pairs = periodic_face_pairs;
+  this->boundary_descriptor_velocity = boundary_descriptor_velocity_in;
+  this->boundary_descriptor_pressure = boundary_descriptor_pressure_in;
+  this->field_functions = field_functions_in;
+
+  fill_dbc_and_nbc_sets(this->boundary_descriptor_velocity);
 
   create_dofs();
 
@@ -339,8 +377,9 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
           static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity));
 
   // body force operator
-  BodyForceOperatorData body_force_operator_data;
+  BodyForceOperatorData<dim> body_force_operator_data;
   body_force_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
+  body_force_operator_data.rhs = field_functions->right_hand_side;
   body_force_operator.initialize(data,fe_param,body_force_operator_data);
 
   // gradient operator
@@ -348,8 +387,7 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   gradient_operator_data.dof_index_pressure = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure);
   gradient_operator_data.integration_by_parts_of_gradP = param.gradp_integrated_by_parts;
   gradient_operator_data.use_boundary_data = param.gradp_use_boundary_data;
-  gradient_operator_data.dirichlet_boundaries = dirichlet_boundary;
-  gradient_operator_data.neumann_boundaries = neumann_boundary;
+  gradient_operator_data.bc = boundary_descriptor_pressure;
   gradient_operator.initialize(data,fe_param,gradient_operator_data);
 
   // divergence operator
@@ -357,23 +395,19 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   divergence_operator_data.dof_index_pressure = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure);
   divergence_operator_data.integration_by_parts_of_divU = param.divu_integrated_by_parts;
   divergence_operator_data.use_boundary_data = param.divu_use_boundary_data;
-  divergence_operator_data.dirichlet_boundaries = dirichlet_boundary;
-  divergence_operator_data.neumann_boundaries = neumann_boundary;
+  divergence_operator_data.bc = boundary_descriptor_velocity;
   divergence_operator.initialize(data,fe_param,divergence_operator_data);
 
   // convective operator
-  ConvectiveOperatorData convective_operator_data;
   convective_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
-  convective_operator_data.dirichlet_boundaries = dirichlet_boundary;
-  convective_operator_data.neumann_boundaries = neumann_boundary;
+  convective_operator_data.bc = boundary_descriptor_velocity;
   convective_operator.initialize(data,fe_param,convective_operator_data);
 
   // viscous operator
   viscous_operator_data.formulation_viscous_term = param.formulation_viscous_term;
   viscous_operator_data.IP_formulation_viscous = param.IP_formulation_viscous;
   viscous_operator_data.IP_factor_viscous = param.IP_factor_viscous;
-  viscous_operator_data.dirichlet_boundaries = dirichlet_boundary;
-  viscous_operator_data.neumann_boundaries = neumann_boundary;
+  viscous_operator_data.bc = boundary_descriptor_velocity;
   viscous_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
   viscous_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
   viscous_operator_data.viscosity = param.viscosity;
@@ -478,8 +512,11 @@ prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity
                              parallel::distributed::Vector<value_type> &pressure,
                              double const                              evaluation_time) const
 {
-  VectorTools::interpolate(mapping, dof_handler_u, AnalyticalSolution<dim>(true,evaluation_time), velocity);
-  VectorTools::interpolate(mapping, dof_handler_p, AnalyticalSolution<dim>(false,evaluation_time), pressure);
+  this->field_functions->analytical_solution_velocity->set_time(evaluation_time);
+  this->field_functions->analytical_solution_pressure->set_time(evaluation_time);
+
+  VectorTools::interpolate(mapping, dof_handler_u, *(this->field_functions->analytical_solution_velocity), velocity);
+  VectorTools::interpolate(mapping, dof_handler_p, *(this->field_functions->analytical_solution_pressure), pressure);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -489,8 +526,8 @@ shift_pressure (parallel::distributed::Vector<value_type>  &pressure) const
   parallel::distributed::Vector<value_type> vec1(pressure);
   for(unsigned int i=0;i<vec1.local_size();++i)
     vec1.local_element(i) = 1.;
-  AnalyticalSolution<dim> analytical_solution(false,time+time_step);
-  double exact = analytical_solution.value(first_point);
+  this->field_functions->analytical_solution_pressure->set_time(time+time_step);
+  double exact = this->field_functions->analytical_solution_pressure->value(first_point);
   double current = 0.;
   if (pressure.locally_owned_elements().is_element(dof_index_first_point))
     current = pressure(dof_index_first_point);

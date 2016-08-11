@@ -53,11 +53,6 @@ struct LaplaceOperatorData
   // If periodic boundaries are present, this variable collects matching faces
   // on the two sides of the domain
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs_level0;
-
-  std::set<types::boundary_id> const & get_dirichlet_boundaries() const
-  {
-    return dirichlet_boundaries;
-  }
 };
 
 // Generic implementation of Laplace operator for both continuous elements
@@ -277,41 +272,17 @@ struct PoissonSolverData
     max_iter(1e4),
     solver_tolerance_rel(1e-5),
     solver_tolerance_abs(1e-12),
-    solver_poisson(SolverPoisson::PCG),
-    preconditioner_poisson(PreconditionerPoisson::GeometricMultigrid),
-    smoother_poly_degree(5),
-    smoother_smoothing_range(20),
-    multigrid_smoother(MultigridSmoother::Chebyshev),
-    coarse_solver(MultigridCoarseGridSolver::coarse_chebyshev_smoother)
+    use_preconditioner(false)
   {}
 
   // maximum number of iterations
   unsigned int max_iter;
-
   // Sets the tolerance for the linear solver
   double solver_tolerance_rel;
-
   // Sets the tolerance for the linear solver
   double solver_tolerance_abs;
 
-  // solver type
-  SolverPoisson solver_poisson;
-
-  // preconditioner type
-  PreconditionerPoisson preconditioner_poisson;
-
-  // Sets the polynomial degree of the Chebyshev smoother (Chebyshev
-  // accelerated Jacobi smoother)
-  double smoother_poly_degree;
-
-  // Sets the smoothing range of the Chebyshev smoother
-  double smoother_smoothing_range;
-
-  // multigrid smoother
-  MultigridSmoother multigrid_smoother;
-
-  // Sets the coarse grid solver
-  MultigridCoarseGridSolver coarse_solver;
+  bool use_preconditioner;
 };
 
 #include "Preconditioner.h"
@@ -327,7 +298,8 @@ public:
   // Constructor. Does nothing.
   PoissonSolver()
     :
-    global_matrix(nullptr)
+    global_matrix(nullptr),
+    preconditioner(nullptr)
   {}
 
   // Initialize the LaplaceOperator implementing the matrix-vector product and
@@ -335,35 +307,23 @@ public:
   // matrix_free object defining the active cells. Adaptive meshes with
   // hanging nodes are allowed but currently only the case of continuous
   // elements is implemented. (The DG case is not very difficult.)
-  void initialize (const LaplaceOperator<dim,value_type> &laplace_operator,
-                   const Mapping<dim>                    &mapping,
-                   const MatrixFree<dim,value_type>      &matrix_free,
-                   const PoissonSolverData               &solver_data);
+  void initialize (const LaplaceOperator<dim,value_type>  &laplace_operator,
+                   const PreconditionerBase<value_type>   &preconditioner_in,
+                   const MatrixFree<dim,value_type>       &matrix_free,
+                   const PoissonSolverData                &solver_data);
 
   // Solves a linear system. The prerequisite for this function is that
   // initialize() has been called.
   unsigned int solve (parallel::distributed::Vector<value_type>       &dst,
                       const parallel::distributed::Vector<value_type> &src) const;
 
-  // Applies a V-cycle on the given vector, storing the result in dst. The
-  // prerequisite for this function is that initialize() has been called.
-  void apply_precondition (parallel::distributed::Vector<value_type>       &dst,
-                           const parallel::distributed::Vector<value_type> &src) const;
-
-  // Returns a reference to the underlying matrix object. The object only
-  // makes sense after a call to initialize().
-  const LaplaceOperator<dim,value_type> &
-  get_matrix() const
-  {
-    return *global_matrix;
-  }
-
 private:
   MPI_Comm mpi_communicator;
 
   LaplaceOperator<dim,value_type> const *global_matrix;
+  PreconditionerBase<value_type> const *preconditioner;
+
   PoissonSolverData solver_data;
-  std_cxx11::shared_ptr<PreconditionerBase<value_type> > preconditioner;
 };
 
 

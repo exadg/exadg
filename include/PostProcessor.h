@@ -9,7 +9,8 @@
 #define INCLUDE_POSTPROCESSOR_H_
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall> class DGNavierStokesBase;
-
+template<int dim> class AnalyticalSolutionVelocity;
+template<int dim> class AnalyticalSolutionPressure;
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 class PostProcessor
 {
@@ -174,7 +175,7 @@ calculate_error(parallel::distributed::Vector<double> const  &velocity,
   VectorTools::integrate_difference (ns_operation_->get_mapping(),
                                      ns_operation_->get_dof_handler_u(),
                                      velocity,
-                                     AnalyticalSolution<dim>(true,time_),
+                                     AnalyticalSolutionVelocity<dim>(dim,time_),
                                      error_norm_per_cell_u,
                                      QGauss<dim>(ns_operation_->get_fe_u().degree+4),//(fe().degree+2),
                                      VectorTools::L2_norm);
@@ -183,7 +184,7 @@ calculate_error(parallel::distributed::Vector<double> const  &velocity,
   VectorTools::integrate_difference (ns_operation_->get_mapping(),
                                      ns_operation_->get_dof_handler_u(),
                                      dummy_u,
-                                     AnalyticalSolution<dim>(true,time_),
+                                     AnalyticalSolutionVelocity<dim>(dim,time_),
                                      solution_norm_per_cell_u,
                                      QGauss<dim>(ns_operation_->get_fe_u().degree+4), //(fe().degree+2),
                                      VectorTools::L2_norm);
@@ -201,7 +202,7 @@ calculate_error(parallel::distributed::Vector<double> const  &velocity,
   VectorTools::integrate_difference (ns_operation_->get_mapping(),
                                      ns_operation_->get_dof_handler_p(),
                                      pressure,
-                                     AnalyticalSolution<dim>(false,time_),
+                                     AnalyticalSolutionPressure<dim>(time_),
                                      error_norm_per_cell_p,
                                      QGauss<dim>(ns_operation_->get_fe_p().degree+4), //(fe_p.degree+2),
                                      VectorTools::L2_norm);
@@ -211,7 +212,7 @@ calculate_error(parallel::distributed::Vector<double> const  &velocity,
   VectorTools::integrate_difference (ns_operation_->get_mapping(),
                                      ns_operation_->get_dof_handler_p(),
                                      dummy_p,
-                                     AnalyticalSolution<dim>(false,time_),
+                                     AnalyticalSolutionPressure<dim>(time_),
                                      solution_norm_per_cell_p,
                                      QGauss<dim>(ns_operation_->get_fe_p().degree+4), //(fe_p.degree+2),
                                      VectorTools::L2_norm);

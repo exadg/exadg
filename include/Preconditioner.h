@@ -435,11 +435,12 @@ template<int dim, typename value_type, typename Operator, typename OperatorData>
 class MyMultigridPreconditioner : public PreconditionerBase<value_type>
 {
 public:
-  MyMultigridPreconditioner(const MultigridData            &mg_data_in,
-                            const DoFHandler<dim>          &dof_handler,
-                            const Mapping<dim>             &mapping,
-                            const OperatorData             &operator_data_in,
-                            FEParameters<dim> const        &fe_param = FEParameters<dim>())
+  MyMultigridPreconditioner(const MultigridData                &mg_data_in,
+                            const DoFHandler<dim>              &dof_handler,
+                            const Mapping<dim>                 &mapping,
+                            const OperatorData                 &operator_data_in,
+                            std::set<types::boundary_id> const &dirichlet_boundaries,
+                            FEParameters<dim> const            &fe_param = FEParameters<dim>())
   {
     this->mg_data = mg_data_in;
 
@@ -450,8 +451,8 @@ public:
     mg_constrained_dofs.clear();
     ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
     typename FunctionMap<dim>::type dirichlet_boundary;
-    for (std::set<types::boundary_id>::const_iterator it = operator_data_in.get_dirichlet_boundaries().begin();
-         it != operator_data_in.get_dirichlet_boundaries().end(); ++it)
+    for (std::set<types::boundary_id>::const_iterator it = dirichlet_boundaries.begin();
+         it != dirichlet_boundaries.end(); ++it)
       dirichlet_boundary[*it] = &zero_function;
     mg_constrained_dofs.initialize(dof_handler, dirichlet_boundary);
     // needed for continuous elements
@@ -529,34 +530,42 @@ public:
                                    (dof_handler, mg_matrices, *mg_coarse, mg_transfer, mg_smoother));
   }
 
-  MyMultigridPreconditioner(const MultigridData     &mg_data_in,
-                            const DoFHandler<dim>   &dof_handler,
-                            const DoFHandler<dim>   &dof_handler_additional,
-                            const Mapping<dim>      &mapping,
-                            const OperatorData      &operator_data_in,
-                            FEParameters<dim> const &fe_param = FEParameters<dim>())
+  // multigrid preconditioner for compatible discretization of Laplace operator B * M^{-1} * B^{T} = (-div) * M^{-1} * grad
+  MyMultigridPreconditioner(const MultigridData                &mg_data_in,
+                            const DoFHandler<dim>              &dof_handler,
+                            const DoFHandler<dim>              &dof_handler_additional,
+                            const Mapping<dim>                 &mapping,
+                            const OperatorData                 &operator_data_in,
+                            FEParameters<dim> const            &fe_param = FEParameters<dim>())
   {
     this->mg_data = mg_data_in;
 
     const parallel::Triangulation<dim> *tria =
       dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
 
-    // needed for continuous elements
-    mg_constrained_dofs.clear();
-    ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
-    typename FunctionMap<dim>::type dirichlet_boundary;
-    for (std::set<types::boundary_id>::const_iterator it = operator_data_in.get_dirichlet_boundaries().begin();
-         it != operator_data_in.get_dirichlet_boundaries().end(); ++it)
-      dirichlet_boundary[*it] = &zero_function;
-    mg_constrained_dofs.initialize(dof_handler, dirichlet_boundary);
-    // needed for continuous elements
+    // TODO
+    /*function reinit of compatible laplace operator does not use mg_constrained_dofs*/
+    // only needed for continuous elements
+//    mg_constrained_dofs.clear();
+//    ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
+//    typename FunctionMap<dim>::type dirichlet_boundary;
+//    for (std::set<types::boundary_id>::const_iterator it = dirichlet_boundaries.begin();
+//         it != dirichlet_boundaries.end(); ++it)
+//      dirichlet_boundary[*it] = &zero_function;
+//    mg_constrained_dofs.initialize(dof_handler, dirichlet_boundary);
+    // only needed for continuous elements
 
     mg_matrices.resize(0, tria->n_global_levels()-1);
     mg_smoother.resize(0, tria->n_global_levels()-1);
 
     for (unsigned int level = 0; level<tria->n_global_levels(); ++level)
     {
-      mg_matrices[level].reinit(dof_handler, dof_handler_additional, mapping, operator_data_in, mg_constrained_dofs, level,fe_param);
+      mg_matrices[level].reinit(dof_handler,
+                                dof_handler_additional,
+                                mapping,
+                                operator_data_in,
+                                mg_constrained_dofs /*function reinit of compatible laplace operator does not use mg_constrained_dofs*/,
+                                level,fe_param);
 
       typename SMOOTHER::AdditionalData smoother_data;
 
