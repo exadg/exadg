@@ -51,8 +51,9 @@ public:
   virtual ~DGNavierStokesDualSplittingXWall(){}
 
   void setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
-              std::set<types::boundary_id> dirichlet_bc_indicator,
-              std::set<types::boundary_id> neumann_bc_indicator);
+              std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
+              std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
+              std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> >     field_functions);
 
   void update_tauw(parallel::distributed::Vector<value_type> &velocity);
 
@@ -132,23 +133,25 @@ private:
                       const parallel::distributed::Vector<value_type>  &src,
                       const std::pair<unsigned int,unsigned int>          &cell_range);
 
-  void initialize_constraints(const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > &periodic_face_pairs);
-
   void setup_helmholtz_preconditioner(HelmholtzOperatorData<dim> &helmholtz_operator_data);
 
   void setup_projection_solver();
 
-  FE_Q<dim>                  fe_wdist;
+protected:
+  void initialize_constraints(const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > &periodic_face_pairs);
+
+  FE_Q<dim>        fe_wdist;
   DoFHandler<dim>  dof_handler_wdist;
-  parallel::distributed::Vector<double>  wdist;
-  parallel::distributed::Vector<double>  tauw;
-  parallel::distributed::Vector<double>  tauw_n;
+  ConstraintMatrix constraint_periodic;
+private:
+  parallel::distributed::Vector<double> wdist;
+  parallel::distributed::Vector<double> tauw;
+  parallel::distributed::Vector<double> tauw_n;
   parallel::distributed::Vector<double> tauw_boundary;
   parallel::distributed::Vector<value_type> normalization;
   parallel::distributed::Vector<value_type> force;
   std::vector<unsigned int> vector_to_tauw_boundary;
-  ConstraintMatrix constraint_periodic;
-//  std::vector<std::vector<LAPACKFullMatrix<value_type> > > matrices;
+
   FEParameters<dim> fe_param_n;
   std_cxx11::shared_ptr< InverseMassMatrixXWallOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type> > inverse_mass_matrix_operator_xwall;
   AlignedVector<AlignedVector<VectorizedArray<value_type> > > enrichment;
@@ -158,10 +161,11 @@ private:
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
-       std::set<types::boundary_id> dirichlet_bc_indicator,
-       std::set<types::boundary_id> neumann_bc_indicator)
+        std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
+        std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
+        std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
 {
-  DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::setup(periodic_face_pairs,dirichlet_bc_indicator,neumann_bc_indicator);
+  DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::setup(periodic_face_pairs,boundary_descriptor_velocity,boundary_descriptor_pressure,field_functions);
 
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     std::cout << "\nXWall Initialization:" << std::endl;
@@ -744,30 +748,65 @@ local_rhs_wss_boundary_face (const MatrixFree<dim,value_type>             &data,
                        const parallel::distributed::Vector<value_type>  &src,
                        const std::pair<unsigned int,unsigned int>          &face_range) const
 {
-  FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_face(data,this->fe_param,true,0);
-  //these faces should always be enriched, therefore quadrature rule enriched (3)
-  FEFaceEvaluation<dim,1,n_q_points_1d_xwall,1,value_type> fe_eval_tauw(data,true,2,3);
-
-  for(unsigned int face=face_range.first; face<face_range.second; face++)
+  const double EPSILON = 1e-10;
+  //this case is difficult to handle in a general way and would require another template parameter
+  //for the case that we are running through here but actually do not have an enriched element
+  if(this->fe_param.max_wdist_xwall > EPSILON)
   {
-    if (data.get_boundary_indicator(face) == 0) // Infow and wall boundaries
-    {
-      fe_eval_velocity_face.reinit (face);
-      fe_eval_tauw.reinit (face);
-      fe_eval_velocity_face.read_dof_values(src);
-      fe_eval_velocity_face.evaluate(false,true);
-      AssertThrow(fe_eval_velocity_face.n_q_points == fe_eval_tauw.n_q_points,ExcMessage("\nwrong number of quadrature points"));
-      for(unsigned int q=0;q<fe_eval_velocity_face.n_q_points;++q)
-      {
-        Tensor<1, dim, VectorizedArray<value_type> > average_gradient = fe_eval_velocity_face.get_normal_gradient(q);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_face(data,this->fe_param,true,0);
+    //these faces should always be enriched, therefore quadrature rule enriched (3)
+    FEFaceEvaluation<dim,1,n_q_points_1d_xwall,1,value_type> fe_eval_tauw(data,true,2,3);
 
-        VectorizedArray<value_type> tauwsc = make_vectorized_array<value_type>(0.0);
-        tauwsc = average_gradient.norm();
-        tauwsc = tauwsc * this->get_viscosity();
-        fe_eval_tauw.submit_value(tauwsc,q);
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      if (data.get_boundary_indicator(face) == 0) // Infow and wall boundaries
+      {
+        fe_eval_velocity_face.reinit (face);
+        fe_eval_tauw.reinit (face);
+        fe_eval_velocity_face.read_dof_values(src);
+        fe_eval_velocity_face.evaluate(false,true);
+        AssertThrow(fe_eval_velocity_face.n_q_points == fe_eval_tauw.n_q_points,ExcMessage("\nwrong number of quadrature points"));
+        for(unsigned int q=0;q<fe_eval_velocity_face.n_q_points;++q)
+        {
+          Tensor<1, dim, VectorizedArray<value_type> > average_gradient = fe_eval_velocity_face.get_normal_gradient(q);
+
+          VectorizedArray<value_type> tauwsc = make_vectorized_array<value_type>(0.0);
+          tauwsc = average_gradient.norm();
+          tauwsc = tauwsc * this->get_viscosity();
+          fe_eval_tauw.submit_value(tauwsc,q);
+        }
+        fe_eval_tauw.integrate(true,false);
+        fe_eval_tauw.distribute_local_to_global(dst);
       }
-      fe_eval_tauw.integrate(true,false);
-      fe_eval_tauw.distribute_local_to_global(dst);
+    }
+  }
+  else
+  {
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_face(data,this->fe_param,true,0);
+    //these faces should always be enriched, therefore quadrature rule enriched (3)
+    FEFaceEvaluation<dim,1,fe_degree+(fe_degree+2)/2,1,value_type> fe_eval_tauw(data,true,2,2);
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      if (data.get_boundary_indicator(face) == 0) // Infow and wall boundaries
+      {
+        fe_eval_velocity_face.reinit (face);
+        fe_eval_tauw.reinit (face);
+        fe_eval_velocity_face.read_dof_values(src);
+        fe_eval_velocity_face.evaluate(false,true);
+        AssertThrow(fe_eval_velocity_face.n_q_points == fe_eval_tauw.n_q_points,ExcMessage("\nwrong number of quadrature points"));
+        for(unsigned int q=0;q<fe_eval_velocity_face.n_q_points;++q)
+        {
+          Tensor<1, dim, VectorizedArray<value_type> > average_gradient = fe_eval_velocity_face.get_normal_gradient(q);
+
+          VectorizedArray<value_type> tauwsc = make_vectorized_array<value_type>(0.0);
+          tauwsc = average_gradient.norm();
+          tauwsc = tauwsc * this->get_viscosity();
+          fe_eval_tauw.submit_value(tauwsc,q);
+        }
+        fe_eval_tauw.integrate(true,false);
+        fe_eval_tauw.distribute_local_to_global(dst);
+      }
     }
   }
 }

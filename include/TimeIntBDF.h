@@ -12,7 +12,7 @@
 #include "TimeStepCalculation.h"
 #include "Restart.h"
 
-template<int dim> class PostProcessor;
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall> class PostProcessor;
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 class TimeIntBDF
@@ -20,7 +20,8 @@ class TimeIntBDF
 public:
   TimeIntBDF(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
                fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation_in,
-               std_cxx11::shared_ptr<PostProcessor<dim> >           postprocessor_in,
+               std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
+               fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > postprocessor_in,
                InputParameters const                                &param_in,
                unsigned int const                                   n_refine_time_in)
     :
@@ -81,7 +82,8 @@ private:
   unsigned int const n_refine_time;
 
 protected:
-  std_cxx11::shared_ptr<PostProcessor<dim> > postprocessor;
+  std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
+  fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > postprocessor;
 
   InputParameters const & param;
 
@@ -167,7 +169,7 @@ resume_from_restart()
   std::ifstream in (filename.c_str());
   check_file(in, filename);
   boost::archive::binary_iarchive ia (in);
-  resume_restart<dim,value_type>(ia, param, time, postprocessor, time_steps, order);
+  resume_restart<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>(ia, param, time, postprocessor, time_steps, order);
 
   read_restart_vectors(ia);
 

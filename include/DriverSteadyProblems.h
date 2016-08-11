@@ -9,7 +9,7 @@
 #define INCLUDE_DRIVERSTEADYPROBLEMS_H_
 
 
-template<int dim> class PostProcessor;
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall> class PostProcessor;
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 class DriverSteadyProblems
@@ -17,7 +17,8 @@ class DriverSteadyProblems
 public:
   DriverSteadyProblems(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
                                 fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation_in,
-                                std_cxx11::shared_ptr<PostProcessor<dim> >           postprocessor_in,
+                                std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
+                                fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > postprocessor_in,
                                 InputParameters const                                &param_in)
     :
     ns_operation(std::dynamic_pointer_cast<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in)),
@@ -41,7 +42,8 @@ private:
 
   std_cxx11::shared_ptr<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation;
 
-  std_cxx11::shared_ptr<PostProcessor<dim> > postprocessor;
+  std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
+      fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > postprocessor;
   InputParameters const &param;
 
   Timer global_timer;

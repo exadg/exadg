@@ -342,6 +342,47 @@ public:
     compute_array_penalty_parameter(mapping);
 
     const_viscosity = operator_data.viscosity;
+
+    QGauss<dim> quadrature(fe_degree+1);
+    FEValues<dim> fe_values(mapping, this->data->get_dof_handler().get_fe(), quadrature, update_JxW_values);
+    element_length.resize(this->data->n_macro_cells()+this->data->n_macro_ghost_cells());
+    Number hfac = 1.0/(Number)fe_degree;
+    for (unsigned int i=0; i<this->data->n_macro_cells()+this->data->n_macro_ghost_cells(); ++i)
+      for (unsigned int v=0; v<this->data->n_components_filled(i); ++v)
+        {
+          typename DoFHandler<dim>::cell_iterator cell = this->data->get_cell_iterator(i,v);
+          fe_values.reinit(cell);
+          double volume = 0.;
+          for (unsigned int q=0; q<quadrature.size(); ++q)
+            volume += fe_values.JxW(q);
+          element_length[i][v] = std::exp(std::log(volume)/(Number)dim)*hfac;;
+        }
+
+    if(this->fe_param->ml > 0.1)
+    {
+      Assert(n_q_points_1d_xwall > fe_degree +1, ExcMessage("this may cause a memory error"));
+      this->viscous_coefficient_cell.reinit(this->data->n_macro_cells(), Utilities::fixed_int_power<n_q_points_1d_xwall,dim>::value);
+      this->viscous_coefficient_cell.fill(make_vectorized_array<Number>(this->fe_param->viscosity));
+
+      this->viscous_coefficient_face.reinit(this->data->n_macro_inner_faces()+this->data->n_macro_boundary_faces(), Utilities::fixed_int_power<n_q_points_1d_xwall,dim-1>::value);
+      this->viscous_coefficient_face.fill(make_vectorized_array<Number>(this->fe_param->viscosity));
+      this->viscous_coefficient_face_neighbor.reinit(this->data->n_macro_inner_faces()+this->data->n_macro_boundary_faces(), Utilities::fixed_int_power<n_q_points_1d_xwall,dim-1>::value);
+      this->viscous_coefficient_face_neighbor.fill(make_vectorized_array<Number>(this->fe_param->viscosity));
+      {
+        Utilities::System::MemoryStats stats;
+        Utilities::System::get_memory_stats(stats);
+        const parallel::Triangulation<dim> *tria =
+          dynamic_cast<const parallel::Triangulation<dim> *>(&this->data->get_dof_handler().get_triangulation());
+        Utilities::MPI::MinMaxAvg memory = Utilities::MPI::min_max_avg (stats.VmRSS/1024., tria->get_communicator());
+        if (Utilities::MPI::this_mpi_process(tria->get_communicator()) == 0)
+          std::cout << std::endl
+                    << "Memory stats RANS [MB]: " << memory.min
+                    << " [p" << memory.min_index << "] "
+                    << memory.avg << " " << memory.max
+                    << " [p" << memory.max_index << "]"
+                    << std::endl;
+      }
+    }
   }
 
   void reinit (const DoFHandler<dim>            &dof_handler,
@@ -379,20 +420,12 @@ public:
     const_viscosity = viscosity_in;
   }
 
-  void set_variable_viscosity(double const constant_viscosity_in)
+  void set_variable_viscosity(double const constant_viscosity_in,const parallel::distributed::Vector<Number>  &src)
   {
-    const_viscosity = constant_viscosity_in;
-    FEEval_Velocity_Velocity_linear fe_eval_velocity_cell(*data,*fe_param,operator_data.dof_index);
-    viscous_coefficient_cell.reinit(data->n_macro_cells(), fe_eval_velocity_cell.n_q_points);
-    viscous_coefficient_cell.fill(make_vectorized_array<Number>(const_viscosity));
+    this->const_viscosity = constant_viscosity_in;
 
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_face(*data,*fe_param,true,operator_data.dof_index);
-    viscous_coefficient_face.reinit(data->n_macro_inner_faces()+data->n_macro_boundary_faces(), fe_eval_velocity_face.n_q_points);
-    viscous_coefficient_face.fill(make_vectorized_array<Number>(const_viscosity));
-
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_face_neighbor(*data,*fe_param,false,operator_data.dof_index);
-    viscous_coefficient_face_neighbor.reinit(data->n_macro_inner_faces()+data->n_macro_boundary_faces(), fe_eval_velocity_face.n_q_points);
-    viscous_coefficient_face_neighbor.fill(make_vectorized_array<Number>(const_viscosity));
+    if(this->fe_param->ml > 0.1)
+      set_eddy_viscosity(src);
   }
 
   // returns true if viscous_coefficient table has been filled with spatially varying viscosity values
@@ -700,8 +733,10 @@ private:
         VectorizedArray<Number> max_viscosity = make_vectorized_array<Number>(const_viscosity);
         if(viscosity_is_variable())
         {
-          average_viscosity = 0.5*(viscous_coefficient_face[face][q] + viscous_coefficient_face_neighbor[face][q]);
-          max_viscosity = std::max(viscous_coefficient_face[face][q] , viscous_coefficient_face_neighbor[face][q]);
+          // harmonic weighting according to Schott and Rasthofer et al (2015)
+          average_viscosity = 2. * viscous_coefficient_face[face][q] * viscous_coefficient_face_neighbor[face][q] /
+                             (viscous_coefficient_face[face][q] + viscous_coefficient_face_neighbor[face][q]);
+          max_viscosity = average_viscosity;
         }
 
         Tensor<1,dim,VectorizedArray<Number> > jump_value = uM - uP;
@@ -994,8 +1029,10 @@ private:
           VectorizedArray<Number> max_viscosity = make_vectorized_array<Number>(const_viscosity);
           if(viscosity_is_variable())
           {
-            average_viscosity = 0.5*(viscous_coefficient_face[face][q] + viscous_coefficient_face_neighbor[face][q]);
-            max_viscosity = std::max(viscous_coefficient_face[face][q] , viscous_coefficient_face_neighbor[face][q]);
+            // harmonic weighting according to Schott and Rasthofer et al (2015)
+            average_viscosity = 2. * viscous_coefficient_face[face][q] * viscous_coefficient_face_neighbor[face][q] /
+                               (viscous_coefficient_face[face][q] + viscous_coefficient_face_neighbor[face][q]);
+            max_viscosity = average_viscosity;
           }
 
           Tensor<1,dim,VectorizedArray<Number> > jump_value = uM - uP;
@@ -1086,8 +1123,10 @@ private:
           VectorizedArray<Number> max_viscosity = make_vectorized_array<Number>(const_viscosity);
           if(viscosity_is_variable())
           {
-            average_viscosity = 0.5*(viscous_coefficient_face[face][q] + viscous_coefficient_face_neighbor[face][q]);
-            max_viscosity = std::max(viscous_coefficient_face[face][q] , viscous_coefficient_face_neighbor[face][q]);
+            // harmonic weighting according to Schott and Rasthofer et al (2015)
+            average_viscosity = 2. * viscous_coefficient_face[face][q] * viscous_coefficient_face_neighbor[face][q] /
+                               (viscous_coefficient_face[face][q] + viscous_coefficient_face_neighbor[face][q]);
+            max_viscosity = average_viscosity;
           }
 
           Tensor<1,dim,VectorizedArray<Number> > jump_value = uM - uP;
@@ -1635,6 +1674,100 @@ private:
     }
   }
 
+  void set_eddy_viscosity(const parallel::distributed::Vector<Number>  &src)
+  {
+    parallel::distributed::Vector<Number> dummy;
+    this->data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_set_eddyviscosity,
+                     &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_set_eddyviscosity_face,
+                     &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_set_eddyviscosity_boundary_face,
+                     this, dummy, src);
+  }
+
+  void local_set_eddyviscosity (const MatrixFree<dim,Number>                 &data,
+                       parallel::distributed::Vector<Number>        &,
+                       const parallel::distributed::Vector<Number>  &src,
+                       const std::pair<unsigned int,unsigned int>   &cell_range)
+  {
+    FEEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,Number,true> fe_eval_vt(data,*this->fe_param,3);
+
+//    AlignedVector<VectorizedArray<Number> > wdist;
+//    AlignedVector<VectorizedArray<Number> > tauw;
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval_vt.reinit(cell);
+      fe_eval_vt.read_dof_values(src);
+      fe_eval_vt.evaluate(true,false);
+//      fe_eval_vt.fill_wdist_and_tauw(cell,wdist,tauw);
+      for(unsigned int q=0; q< fe_eval_vt.n_q_points; q++)
+      {
+        VectorizedArray<Number>  vt = std::max(fe_eval_vt.get_value(q),make_vectorized_array<Number>(0.));
+        VectorizedArray<Number>  chi = vt/this->const_viscosity;
+        VectorizedArray<Number>  fv1 = chi * chi * chi / (chi * chi * chi + 7.1 * 7.1 * 7.1);
+        this->viscous_coefficient_cell[cell][q] = vt * fv1 + this->const_viscosity;
+      }
+    }
+  }
+
+  void local_set_eddyviscosity_face (const MatrixFree<dim,Number>                 &data,
+                            parallel::distributed::Vector<Number>        &,
+                            const parallel::distributed::Vector<Number>  &src,
+                            const std::pair<unsigned int,unsigned int>   &face_range)
+  {
+    FEFaceEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,Number,true> fe_eval_vt(data,*this->fe_param,true,3);
+    FEFaceEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,Number,true> fe_eval_vt_neighbor(data,*this->fe_param,false,3);
+
+//    AlignedVector<VectorizedArray<Number> > wdist;
+//    AlignedVector<VectorizedArray<Number> > tauw;
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval_vt.reinit(face);
+      fe_eval_vt_neighbor.reinit(face);
+      fe_eval_vt.read_dof_values(src);
+      fe_eval_vt_neighbor.read_dof_values(src);
+      fe_eval_vt.evaluate(true,false);
+      fe_eval_vt_neighbor.evaluate(true,false);
+//      fe_eval_vt.fill_wdist_and_tauw(face,wdist,tauw);
+      for(unsigned int q=0; q< fe_eval_vt.n_q_points; q++)
+      {
+        VectorizedArray<Number>  vt = std::max(fe_eval_vt.get_value(q),make_vectorized_array<Number>(0.));
+        VectorizedArray<Number>  chi = vt/this->const_viscosity;
+        VectorizedArray<Number>  fv1 = chi * chi * chi / (chi * chi * chi + 7.1 * 7.1 * 7.1);
+        this->viscous_coefficient_face[face][q] = vt * fv1 + this->const_viscosity;
+      }
+//      fe_eval_vt_neighbor.fill_wdist_and_tauw(face,wdist,tauw);
+      for(unsigned int q=0; q< fe_eval_vt_neighbor.n_q_points; q++)
+      {
+        VectorizedArray<Number>  vt = std::max(fe_eval_vt_neighbor.get_value(q),make_vectorized_array<Number>(0.));
+        VectorizedArray<Number>  chi = vt/this->const_viscosity;
+        VectorizedArray<Number>  fv1 = chi * chi * chi / (chi * chi * chi + 7.1 * 7.1 * 7.1);
+        this->viscous_coefficient_face_neighbor[face][q] = vt * fv1 + this->const_viscosity;
+      }
+    }
+  }
+
+  void local_set_eddyviscosity_boundary_face (const MatrixFree<dim,Number>                 & data,
+                                     parallel::distributed::Vector<Number>        &,
+                                     const parallel::distributed::Vector<Number>  &src,
+                                     const std::pair<unsigned int,unsigned int>   &face_range)
+  {
+    FEFaceEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,Number,true> fe_eval_vt(data,*this->fe_param,true,3);
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval_vt.reinit(face);
+      fe_eval_vt.read_dof_values(src);
+      fe_eval_vt.evaluate(true,false);
+      for(unsigned int q=0; q< fe_eval_vt.n_q_points; q++)
+      {
+        VectorizedArray<Number>  vt = std::max(fe_eval_vt.get_value(q),make_vectorized_array<Number>(0.));
+        VectorizedArray<Number>  chi = vt/this->const_viscosity;
+        VectorizedArray<Number>  fv1 = chi * chi * chi / (chi * chi * chi + 7.1 * 7.1 * 7.1);
+        this->viscous_coefficient_face[face][q] = vt * fv1 + this->const_viscosity;
+      }
+    }
+  }
+
+private:
   MatrixFree<dim,Number> const * data;
   FEParameters<dim> const * fe_param;
   ViscousOperatorData<dim> operator_data;
@@ -1644,6 +1777,7 @@ private:
   Table<2,VectorizedArray<Number> > viscous_coefficient_face;
   Table<2,VectorizedArray<Number> > viscous_coefficient_face_neighbor;
   Number mutable eval_time;
+  AlignedVector<VectorizedArray<Number> > element_length;
 
   /*
    * The following variables are necessary when applying the multigrid preconditioner to the viscous operator

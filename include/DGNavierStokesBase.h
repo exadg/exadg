@@ -126,7 +126,7 @@ public:
     return static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::pressure);
   }
 
-  MappingQ<dim> const & get_mapping() const
+  MappingQGeneric<dim> const & get_mapping() const
   {
     return mapping;
   }
@@ -257,7 +257,7 @@ protected:
   std_cxx11::shared_ptr< FESystem<dim> > fe_u;
   FE_DGQArbitraryNodes<dim> fe_p;
 
-  MappingQ<dim> mapping;
+  MappingQGeneric<dim> mapping;
 
   DoFHandler<dim>  dof_handler_u;
   DoFHandler<dim>  dof_handler_p;

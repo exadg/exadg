@@ -83,8 +83,10 @@ public:
   static const unsigned int n_actual_q_points_vel_nonlinear = (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::is_xwall) ? n_q_points_1d_xwall : fe_degree+(fe_degree+2)/2;
 
   typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_nonlinear,dim,value_type,DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::is_xwall> FEFaceEval_Velocity_Velocity_nonlinear;
-  typedef FEFaceEvaluationWrapper<dim,fe_degree_p,fe_degree_xwall,DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::n_actual_q_points_vel_linear,1,value_type,false> FEFaceEval_Pressure_Velocity_linear;
-  typedef FEFaceEvaluationWrapper<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_nonlinear,1,value_type,false> FEFaceEval_Pressure_Velocity_nonlinear;
+  typedef FEFaceEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::n_actual_q_points_vel_linear,1,value_type,
+      DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::is_xwall> FEFaceEval_Pressure_Velocity_linear;
+  typedef FEFaceEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_nonlinear,1,value_type,
+      DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::is_xwall> FEFaceEval_Pressure_Velocity_nonlinear;
 
   DGNavierStokesDualSplitting(parallel::distributed::Triangulation<dim> const &triangulation,
                               InputParameters const                           &parameter)
@@ -161,10 +163,10 @@ public:
 
   // viscous step
   void  rhs_viscous (parallel::distributed::Vector<value_type>       &dst,
-                     const parallel::distributed::Vector<value_type> &src) const;
+                     const parallel::distributed::Vector<value_type> &src);
 
   unsigned int solve_viscous (parallel::distributed::Vector<value_type>       &dst,
-                              const parallel::distributed::Vector<value_type> &src);
+                                      const parallel::distributed::Vector<value_type> &src);
 
 
   // initialization of vectors
@@ -1101,7 +1103,7 @@ solve_viscous (parallel::distributed::Vector<value_type>       &dst,
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 rhs_viscous (parallel::distributed::Vector<value_type>       &dst,
-             const parallel::distributed::Vector<value_type> &src) const
+             const parallel::distributed::Vector<value_type> &src)
 {
   this->mass_matrix_operator.apply(dst,src);
   dst *= this->scaling_factor_time_derivative_term;

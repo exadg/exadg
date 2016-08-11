@@ -16,17 +16,18 @@ class TimeIntBDFDualSplitting : public TimeIntBDF<dim,fe_degree,fe_degree_p,fe_d
 public:
   TimeIntBDFDualSplitting(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
                             fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
-                          std_cxx11::shared_ptr<PostProcessor<dim> >              postprocessor_in,
+                          std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
+                          fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >    postprocessor_in,
                           InputParameters const                                   &param_in,
                           unsigned int const                                      n_refine_time_in)
     :
     TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
             (ns_operation_in,postprocessor_in,param_in,n_refine_time_in),
     velocity(this->order),
+    pressure(this->order),
     vorticity(this->order),
     vec_convective_term(this->order),
     computing_times(5),
-    pressure(this->order),
     ns_operation_splitting (std::dynamic_pointer_cast<DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in)),
     N_iter_pressure_average(0.0),
     N_iter_viscous_average(0.0)
@@ -41,8 +42,13 @@ protected:
 
   virtual void solve_timestep();
 
+  virtual void initialize_vectors();
+
+  virtual void prepare_vectors_for_next_timestep();
+
   std::vector<parallel::distributed::Vector<value_type> > velocity;
 
+  std::vector<parallel::distributed::Vector<value_type> > pressure;
 
   parallel::distributed::Vector<value_type> velocity_np;
 
@@ -50,10 +56,13 @@ protected:
 
   std::vector<parallel::distributed::Vector<value_type> > vec_convective_term;
 
-private:
+  std::vector<value_type> computing_times;
+
+  parallel::distributed::Vector<value_type> rhs_vec_viscous;
+
   virtual void postprocessing() const;
 
-  virtual void initialize_vectors();
+private:
   virtual void initialize_current_solution();
   virtual void initialize_former_solution();
   
@@ -63,12 +72,11 @@ private:
   void convective_step();
   void pressure_step();
   void projection_step();
-  void viscous_step();
+  virtual void viscous_step();
   
   void rhs_pressure (const parallel::distributed::Vector<value_type>  &src,
                      parallel::distributed::Vector<value_type>        &dst);
 
-  virtual void prepare_vectors_for_next_timestep();
   void push_back_solution();
   void push_back_vorticity();
   void push_back_vec_convective_term();
@@ -78,10 +86,7 @@ private:
   virtual void read_restart_vectors(boost::archive::binary_iarchive & ia);
   virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const;
 
-  std::vector<value_type> computing_times;
-
   parallel::distributed::Vector<value_type> pressure_np;
-  std::vector<parallel::distributed::Vector<value_type> > pressure;
 
   parallel::distributed::Vector<value_type> vorticity_extrapolated;
 
@@ -93,7 +98,6 @@ private:
   parallel::distributed::Vector<value_type> dummy;
 
   parallel::distributed::Vector<value_type> rhs_vec_projection;
-  parallel::distributed::Vector<value_type> rhs_vec_viscous;
 
   // postprocessing: divergence of intermediate velocity u_hathat
   parallel::distributed::Vector<value_type> divergence;

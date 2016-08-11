@@ -282,7 +282,7 @@ protected:
   /**
    * The mapping used for representing curved boundaries.
    */
-  MappingQ<dim> mapping;
+  MappingQGeneric<dim> mapping;
 
   /**
    * The viscosity of the underlying fluid

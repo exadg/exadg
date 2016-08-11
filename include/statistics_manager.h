@@ -34,7 +34,7 @@ public:
   void reset();
 
 private:
-  static const int n_points_y = 21;
+  static const int n_points_y = 201;
 
   void do_evaluate(const std::vector<const parallel::distributed::Vector<double> *> &velocity);
 
@@ -47,12 +47,8 @@ private:
   MPI_Comm communicator;
 
   std::vector<double> y_glob;
-  std::vector<double> velx_glob;
-  std::vector<double> vely_glob;
-  std::vector<double> velz_glob;
-  std::vector<double> velxsq_glob;
-  std::vector<double> velysq_glob;
-  std::vector<double> velzsq_glob;
+  std::vector<std::vector<double> > vel_glob;
+  std::vector<std::vector<double> > velsq_glob;
   std::vector<double> veluv_glob;
   int numchsamp;
 };
