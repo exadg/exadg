@@ -10,7 +10,7 @@
 
 
 template<int dim>
-struct FieldFunctions
+struct FieldFunctionsConvDiff
 {
   std_cxx11::shared_ptr<Function<dim> > analytical_solution;
   std_cxx11::shared_ptr<Function<dim> > right_hand_side;

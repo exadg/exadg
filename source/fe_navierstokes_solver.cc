@@ -320,7 +320,7 @@ void FENavierStokesSolver<dim>::setup_problem
 
   typedef float Number;
   preconditioner.reset(new MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> >
-      (mg_data, this->dof_handler_p, this->mapping, laplace_operator.get_operator_data()));
+      (mg_data, this->dof_handler_p, this->mapping, laplace_operator.get_operator_data(),laplace_operator_data.dirichlet_boundaries));
 
   PoissonSolverData poisson_solver_data;
   poisson_solver_data.solver_tolerance_rel = 5e-5;

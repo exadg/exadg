@@ -18,11 +18,6 @@
 #include "NewtonSolver.h"
 #include "IterativeSolvers.h"
 
-//forward declarations
-template<int dim> class RHS;
-template<int dim> class NeumannBoundaryVelocity;
-template<int dim> class PressureBC_dudt;
-
 struct LinearizedConvectiveSolverData
 {
   double abs_tol;
@@ -190,7 +185,6 @@ protected:
 
 private:
   LaplaceOperator<dim,value_type> laplace_operator;
-//  PoissonSolver<dim> pressure_poisson_solver;
 
   std_cxx11::shared_ptr<PreconditionerBase<value_type> > preconditioner_pressure_poisson;
   std_cxx11::shared_ptr<CGSolver<LaplaceOperator<dim,value_type>, PreconditionerBase<value_type>,parallel::distributed::Vector<value_type> > > pressure_poisson_solver;
@@ -330,20 +324,11 @@ setup_pressure_poisson_solver ()
   double dt_ref = 0.1;
   laplace_operator_data.penalty_factor = this->param.IP_factor_pressure/time_step*dt_ref;
   */
+
   laplace_operator_data.dirichlet_boundaries = this->neumann_boundary;
   laplace_operator_data.neumann_boundaries = this->dirichlet_boundary;
   laplace_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
   laplace_operator.reinit(this->data,this->mapping,laplace_operator_data);
-
-  // Pressure Poisson solver
-//  PoissonSolverData poisson_solver_data;
-//  poisson_solver_data.solver_tolerance_rel = this->param.rel_tol_pressure;
-//  poisson_solver_data.solver_tolerance_abs = this->param.abs_tol_pressure;
-//  poisson_solver_data.solver_poisson = this->param.solver_poisson;
-//  poisson_solver_data.preconditioner_poisson = this->param.preconditioner_poisson;
-//  poisson_solver_data.multigrid_smoother = this->param.multigrid_smoother;
-//  poisson_solver_data.coarse_solver = this->param.multigrid_coarse_grid_solver;
-//  pressure_poisson_solver.initialize(laplace_operator,this->mapping,this->data,poisson_solver_data);
 
   // setup preconditioner
   if(this->param.preconditioner_poisson == PreconditionerPoisson::Jacobi)
@@ -364,7 +349,8 @@ setup_pressure_poisson_solver ()
         mg_data,
         this->dof_handler_p,
         this->mapping,
-        laplace_operator_data));
+        laplace_operator_data,
+        laplace_operator_data.dirichlet_boundaries));
   }
   else
   {
@@ -594,6 +580,7 @@ setup_helmholtz_preconditioner (HelmholtzOperatorData<dim> &helmholtz_operator_d
         this->dof_handler_u,
         this->mapping,
         helmholtz_operator_data,
+        this->dirichlet_boundary,
         this->fe_param));
   }
 }
@@ -742,6 +729,9 @@ local_rhs_pressure_BC_term_boundary_face (const MatrixFree<dim,value_type>      
 //    FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,true,
 //        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure));
 
+  // set the correct time for the evaluation of the right_hand_side - function
+  this->field_functions->right_hand_side->set_time(this->time+this->time_step);
+
   for(unsigned int face=face_range.first; face<face_range.second; face++)
   {
     fe_eval_pressure.reinit (face);
@@ -749,15 +739,20 @@ local_rhs_pressure_BC_term_boundary_face (const MatrixFree<dim,value_type>      
     double factor = laplace_operator.get_penalty_factor();
     VectorizedArray<value_type> tau_IP = fe_eval_pressure.read_cell_data(laplace_operator.get_array_penalty_parameter()) * (value_type)factor;
 
+    typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+    types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
     for(unsigned int q=0;q<fe_eval_pressure.n_q_points;++q)
     {
-      if (this->dirichlet_boundary.find(data.get_boundary_indicator(face)) != this->dirichlet_boundary.end())
+      it = this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id);
+      if(it != this->boundary_descriptor_pressure->dirichlet_bc.end())
       {
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval_pressure.quadrature_point(q);
 
         Tensor<1,dim,VectorizedArray<value_type> > dudt_np, rhs_np;
-        PressureBC_dudt<dim> neumann_boundary_pressure(this->time+this->time_step);
-        RHS<dim> f(this->time+this->time_step);
+        // set time for the correct evaluation of boundary conditions
+        it->second->set_time(this->time+this->time_step);
+
         for(unsigned int d=0;d<dim;++d)
         {
           value_type array_dudt [VectorizedArray<value_type>::n_array_elements];
@@ -767,8 +762,8 @@ local_rhs_pressure_BC_term_boundary_face (const MatrixFree<dim,value_type>      
             Point<dim> q_point;
             for (unsigned int d=0; d<dim; ++d)
             q_point[d] = q_points[d][n];
-            array_dudt[n] = neumann_boundary_pressure.value(q_point,d);
-            array_f[n] = f.value(q_point,d);
+            array_dudt[n] = it->second->value(q_point,d);
+            array_f[n] = this->field_functions->right_hand_side->value(q_point,d);
           }
           dudt_np[d].load(&array_dudt[0]);
           rhs_np[d].load(&array_f[0]);
@@ -782,19 +777,23 @@ local_rhs_pressure_BC_term_boundary_face (const MatrixFree<dim,value_type>      
         fe_eval_pressure.submit_normal_gradient(make_vectorized_array<value_type>(0.0),q);
         fe_eval_pressure.submit_value(h,q);
       }
-      else if (this->neumann_boundary.find(data.get_boundary_indicator(face)) != this->neumann_boundary.end())
+
+      it = this->boundary_descriptor_pressure->neumann_bc.find(boundary_id);
+      if (it != this->boundary_descriptor_pressure->neumann_bc.end())
       {
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval_pressure.quadrature_point(q);
         VectorizedArray<value_type> g;
 
-        AnalyticalSolution<dim> dirichlet_boundary(false,this->time+this->time_step);
+        // set time for the correct evaluation of boundary conditions
+        it->second->set_time(this->time+this->time_step);
+
         value_type array [VectorizedArray<value_type>::n_array_elements];
         for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
         {
           Point<dim> q_point;
           for (unsigned int d=0; d<dim; ++d)
             q_point[d] = q_points[d][n];
-          array[n] = dirichlet_boundary.value(q_point);
+          array[n] = it->second->value(q_point);
         }
         g.load(&array[0]);
 
@@ -862,9 +861,13 @@ local_rhs_pressure_convective_term_boundary_face (const MatrixFree<dim,value_typ
 
     fe_eval_pressure.reinit (face);
 
+    typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+    types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
     for(unsigned int q=0;q<fe_eval_pressure.n_q_points;++q)
     {
-      if (this->dirichlet_boundary.find(data.get_boundary_indicator(face)) != this->dirichlet_boundary.end())
+      it = this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id);
+      if(it != this->boundary_descriptor_pressure->dirichlet_bc.end())
       {
         VectorizedArray<value_type> h;
         Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_pressure.get_normal_vector(q);
@@ -877,7 +880,9 @@ local_rhs_pressure_convective_term_boundary_face (const MatrixFree<dim,value_typ
 
         fe_eval_pressure.submit_value(h,q);
       }
-      else if (this->neumann_boundary.find(data.get_boundary_indicator(face)) != this->neumann_boundary.end())
+
+      it = this->boundary_descriptor_pressure->neumann_bc.find(boundary_id);
+      if (it != this->boundary_descriptor_pressure->neumann_bc.end())
       {
         fe_eval_pressure.submit_value(make_vectorized_array<value_type>(0.0),q);
       }
@@ -941,6 +946,9 @@ local_rhs_pressure_viscous_term_boundary_face (const MatrixFree<dim,value_type> 
     fe_eval_omega.read_dof_values(src);
     fe_eval_omega.evaluate (false,true);
 
+    typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+    types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
     for(unsigned int q=0;q<fe_eval_pressure.n_q_points;++q)
     {
       VectorizedArray<value_type> viscosity;
@@ -949,7 +957,8 @@ local_rhs_pressure_viscous_term_boundary_face (const MatrixFree<dim,value_type> 
       else
         viscosity = make_vectorized_array<value_type>(this->viscous_operator.get_const_viscosity());
 
-      if (this->dirichlet_boundary.find(data.get_boundary_indicator(face)) != this->dirichlet_boundary.end())
+      it = this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id);
+      if(it != this->boundary_descriptor_pressure->dirichlet_bc.end())
       {
         VectorizedArray<value_type> h;
         Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_pressure.get_normal_vector(q);
@@ -959,7 +968,9 @@ local_rhs_pressure_viscous_term_boundary_face (const MatrixFree<dim,value_type> 
 
         fe_eval_pressure.submit_value(h,q);
       }
-      else if (this->neumann_boundary.find(data.get_boundary_indicator(face)) != this->neumann_boundary.end())
+
+      it = this->boundary_descriptor_pressure->neumann_bc.find(boundary_id);
+      if (it != this->boundary_descriptor_pressure->neumann_bc.end())
       {
         fe_eval_pressure.submit_value(make_vectorized_array<value_type>(0.0),q);
       }

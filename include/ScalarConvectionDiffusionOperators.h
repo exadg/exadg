@@ -203,7 +203,7 @@ struct DiffusiveOperatorData
   InteriorPenaltyFormulation IP_formulation;
   double IP_factor;
 
-  std_cxx11::shared_ptr<BoundaryDescriptor<dim> > bc;
+  std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > bc;
 
   double diffusivity;
 };
@@ -665,7 +665,7 @@ struct ConvectiveOperatorData
   unsigned int dof_index;
   unsigned int quad_index;
 
-  std_cxx11::shared_ptr<BoundaryDescriptor<dim> > bc;
+  std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > bc;
   std_cxx11::shared_ptr<Function<dim> > velocity;
 };
 
@@ -1112,7 +1112,7 @@ struct ConvectiveOperatorDataDiscontinuousVelocity
   unsigned int dof_index_velocity;
   unsigned int quad_index;
 
-  std_cxx11::shared_ptr<BoundaryDescriptor<dim> > bc;
+  std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > bc;
 };
 
 template <int dim, int fe_degree, int fe_degree_velocity, typename value_type>

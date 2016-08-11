@@ -30,8 +30,8 @@ public:
     param(param_in)
   {}
 
-  void setup(std_cxx11::shared_ptr<BoundaryDescriptor<dim> > boundary_descriptor_in,
-             std_cxx11::shared_ptr<FieldFunctions<dim> >     field_functions_in)
+  void setup(std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor_in,
+             std_cxx11::shared_ptr<FieldFunctionsConvDiff<dim> >     field_functions_in)
   {
     boundary_descriptor = boundary_descriptor_in;
     field_functions = field_functions_in;
@@ -187,8 +187,8 @@ private:
 
   InputParametersConvDiff const &param;
 
-  std_cxx11::shared_ptr<BoundaryDescriptor<dim> > boundary_descriptor;
-  std_cxx11::shared_ptr<FieldFunctions<dim> > field_functions;
+  std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor;
+  std_cxx11::shared_ptr<FieldFunctionsConvDiff<dim> > field_functions;
 
   InverseMassMatrixOperator<dim,fe_degree,value_type> inverse_mass_matrix_operator;
 //  ScalarConvDiffOperators::MassMatrixOperator<dim, fe_degree, value_type> mass_matrix_operator;

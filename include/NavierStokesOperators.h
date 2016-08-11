@@ -8,10 +8,9 @@
 #ifndef INCLUDE_NAVIERSTOKESOPERATORS_H_
 #define INCLUDE_NAVIERSTOKESOPERATORS_H_
 
-template<int dim> class RHS;
-template<int dim> class AnalyticalSolution;
-template<int dim> class NeumannBoundaryVelocity;
+#include "../include/BoundaryDescriptorNavierStokes.h"
 
+template<int dim>
 struct BodyForceOperatorData
 {
   BodyForceOperatorData ()
@@ -20,6 +19,7 @@ struct BodyForceOperatorData
   {}
 
   unsigned int dof_index;
+  std_cxx11::shared_ptr<Function<dim> > rhs;
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
@@ -39,11 +39,11 @@ public:
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
                   FEParameters<dim>                &fe_param,
-                  BodyForceOperatorData const      &body_force_operator_data_in)
+                  BodyForceOperatorData<dim> const &operator_data_in)
   {
     this->data = &mf_data;
     this->fe_param = &fe_param;
-    this->body_force_operator_data = body_force_operator_data_in;
+    this->operator_data = operator_data_in;
   }
 
   void evaluate(parallel::distributed::Vector<value_type> &dst,
@@ -68,7 +68,10 @@ private:
                        const parallel::distributed::Vector<value_type>  &,
                        const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,body_force_operator_data.dof_index);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,operator_data.dof_index);
+
+    // set correct evaluation time for the evaluation of the rhs-function
+    operator_data.rhs->set_time(eval_time);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -79,7 +82,6 @@ private:
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval_velocity.quadrature_point(q);
         Tensor<1,dim,VectorizedArray<value_type> > rhs;
 
-        RHS<dim> f(eval_time);
         for(unsigned int d=0;d<dim;++d)
         {
           value_type array [VectorizedArray<value_type>::n_array_elements];
@@ -88,7 +90,7 @@ private:
             Point<dim> q_point;
             for (unsigned int d=0; d<dim; ++d)
             q_point[d] = q_points[d][n];
-            array[n] = f.value(q_point,d);
+            array[n] = operator_data.rhs->value(q_point,d);
           }
           rhs[d].load(&array[0]);
         }
@@ -101,7 +103,7 @@ private:
 
   MatrixFree<dim,value_type> const * data;
   FEParameters<dim> const * fe_param;
-  BodyForceOperatorData body_force_operator_data;
+  BodyForceOperatorData<dim> operator_data;
   value_type mutable eval_time;
 };
 
@@ -158,7 +160,7 @@ public:
 
     add_diagonal(diagonal);
 
-    // verify_calculation_of_diagonal(diagonal);
+//     verify_calculation_of_diagonal(diagonal);
   }
 
   void add_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
@@ -181,8 +183,8 @@ public:
       diagonal2.local_element(i) = dst.local_element(i);
       src.local_element(i) = 0.0;
     }
-    std::cout<<"L2 norm diagonal - Variant 1: "<<diagonal.l2_norm()<<std::endl;
-    std::cout<<"L2 norm diagonal - Variant 2: "<<diagonal2.l2_norm()<<std::endl;
+    std::cout<<"L2 norm diagonal - Variant 1: "<<std::setprecision(10)<<diagonal.l2_norm()<<std::endl;
+    std::cout<<"L2 norm diagonal - Variant 2: "<<std::setprecision(10)<<diagonal2.l2_norm()<<std::endl;
     diagonal2.add(-1.0,diagonal);
     std::cout<<"L2 error diagonal: "<<diagonal2.l2_norm()<<std::endl;
   }
@@ -290,8 +292,8 @@ struct ViscousOperatorData
   InteriorPenaltyFormulation IP_formulation_viscous;
   double IP_factor_viscous;
   unsigned int dof_index;
-  std::set<types::boundary_id> dirichlet_boundaries;
-  std::set<types::boundary_id> neumann_boundaries;
+
+  std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs_level0;
 
@@ -306,10 +308,6 @@ struct ViscousOperatorData
   void set_dof_index(unsigned int dof_index_in)
   {
     this->dof_index = dof_index_in;
-  }
-  std::set<types::boundary_id> const & get_dirichlet_boundaries() const
-  {
-    return dirichlet_boundaries;
   }
 };
 
@@ -335,15 +333,15 @@ public:
   void initialize(Mapping<dim> const              &mapping,
                   MatrixFree<dim,Number> const    &mf_data,
                   FEParameters<dim> const         &fe_param,
-                  ViscousOperatorData<dim> const  &operator_data)
+                  ViscousOperatorData<dim> const  &operator_data_in)
   {
     this->data = &mf_data;
     this->fe_param = &fe_param;
-    this->viscous_operator_data = operator_data;
+    this->operator_data = operator_data_in;
 
     compute_array_penalty_parameter(mapping);
 
-    const_viscosity = viscous_operator_data.viscosity;
+    const_viscosity = operator_data.viscosity;
   }
 
   void reinit (const DoFHandler<dim>            &dof_handler,
@@ -384,15 +382,15 @@ public:
   void set_variable_viscosity(double const constant_viscosity_in)
   {
     const_viscosity = constant_viscosity_in;
-    FEEval_Velocity_Velocity_linear fe_eval_velocity_cell(*data,*fe_param,viscous_operator_data.dof_index);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity_cell(*data,*fe_param,operator_data.dof_index);
     viscous_coefficient_cell.reinit(data->n_macro_cells(), fe_eval_velocity_cell.n_q_points);
     viscous_coefficient_cell.fill(make_vectorized_array<Number>(const_viscosity));
 
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_face(*data,*fe_param,true,viscous_operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_face(*data,*fe_param,true,operator_data.dof_index);
     viscous_coefficient_face.reinit(data->n_macro_inner_faces()+data->n_macro_boundary_faces(), fe_eval_velocity_face.n_q_points);
     viscous_coefficient_face.fill(make_vectorized_array<Number>(const_viscosity));
 
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_face_neighbor(*data,*fe_param,false,viscous_operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_face_neighbor(*data,*fe_param,false,operator_data.dof_index);
     viscous_coefficient_face_neighbor.reinit(data->n_macro_inner_faces()+data->n_macro_boundary_faces(), fe_eval_velocity_face.n_q_points);
     viscous_coefficient_face_neighbor.fill(make_vectorized_array<Number>(const_viscosity));
   }
@@ -415,7 +413,7 @@ public:
 
   unsigned int get_dof_index() const
   {
-    return viscous_operator_data.dof_index;
+    return operator_data.dof_index;
   }
 
   void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const
@@ -464,12 +462,12 @@ public:
 
   types::global_dof_index m() const
   {
-    return data->get_vector_partitioner(viscous_operator_data.dof_index)->size();
+    return data->get_vector_partitioner(operator_data.dof_index)->size();
   }
 
   types::global_dof_index n() const
   {
-    return data->get_vector_partitioner(viscous_operator_data.dof_index)->size();
+    return data->get_vector_partitioner(operator_data.dof_index)->size();
   }
 
   Number el (const unsigned int,  const unsigned int) const
@@ -595,15 +593,15 @@ private:
     // Compute penalty parameter for each cell
     array_penalty_parameter.resize(data->n_macro_cells()+data->n_macro_ghost_cells());
     QGauss<dim> quadrature(fe_degree+1);
-    FEValues<dim> fe_values(mapping,data->get_dof_handler(viscous_operator_data.dof_index).get_fe(),quadrature, update_JxW_values);
+    FEValues<dim> fe_values(mapping,data->get_dof_handler(operator_data.dof_index).get_fe(),quadrature, update_JxW_values);
     QGauss<dim-1> face_quadrature(fe_degree+1);
-    FEFaceValues<dim> fe_face_values(mapping, data->get_dof_handler(viscous_operator_data.dof_index).get_fe(), face_quadrature, update_JxW_values);
+    FEFaceValues<dim> fe_face_values(mapping, data->get_dof_handler(operator_data.dof_index).get_fe(), face_quadrature, update_JxW_values);
 
     for (unsigned int i=0; i<data->n_macro_cells()+data->n_macro_ghost_cells(); ++i)
     {
       for (unsigned int v=0; v<data->n_components_filled(i); ++v)
       {
-        typename DoFHandler<dim>::cell_iterator cell = data->get_cell_iterator(i,v,viscous_operator_data.dof_index);
+        typename DoFHandler<dim>::cell_iterator cell = data->get_cell_iterator(i,v,operator_data.dof_index);
         fe_values.reinit(cell);
         double volume = 0;
         for (unsigned int q=0; q<quadrature.size(); ++q)
@@ -623,7 +621,7 @@ private:
 
   Number get_penalty_factor() const
   {
-    return viscous_operator_data.IP_factor_viscous * (fe_degree + 1.0) * (fe_degree + 1.0);
+    return operator_data.IP_factor_viscous * (fe_degree + 1.0) * (fe_degree + 1.0);
   }
 
   void apply_viscous (parallel::distributed::Vector<Number>        &dst,
@@ -642,7 +640,7 @@ private:
   {
     AssertThrow(const_viscosity>0.0,ExcMessage("Constant viscosity has not been set!"));
 
-    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,viscous_operator_data.dof_index);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,operator_data.dof_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -656,11 +654,11 @@ private:
         if(viscosity_is_variable())
           viscosity = viscous_coefficient_cell[cell][q];
 
-        if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+        if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
         {
           fe_eval_velocity.submit_gradient (viscosity*make_vectorized_array<Number>(2.)*fe_eval_velocity.get_symmetric_gradient(q), q);
         }
-        else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+        else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
         {
           fe_eval_velocity.submit_gradient (viscosity*fe_eval_velocity.get_gradient(q), q);
         }
@@ -679,8 +677,8 @@ private:
                                  const parallel::distributed::Vector<Number> &src,
                                  const std::pair<unsigned int,unsigned int>  &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,viscous_operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,*fe_param,false,viscous_operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,*fe_param,false,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -709,12 +707,12 @@ private:
         Tensor<1,dim,VectorizedArray<Number> > jump_value = uM - uP;
 
         Tensor<2,dim,VectorizedArray<Number> > average_gradient_tensor;
-        if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+        if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
         {
           // {{F}} = (F⁻ + F⁺)/2 where F = 2 * nu * symmetric_gradient -> nu * (symmetric_gradient⁻ + symmetric_gradient⁺)
           average_gradient_tensor = ( fe_eval_velocity.get_symmetric_gradient(q) + fe_eval_velocity_neighbor.get_symmetric_gradient(q));
         }
-        else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+        else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
         {
           average_gradient_tensor = ( fe_eval_velocity.get_gradient(q) + fe_eval_velocity_neighbor.get_gradient(q)) * make_vectorized_array<Number>(0.5);
         }
@@ -729,14 +727,14 @@ private:
         average_gradient_tensor = average_viscosity*average_gradient_tensor - max_viscosity * jump_tensor * tau_IP;
         Tensor<1,dim,VectorizedArray<Number> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
 
-        if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+        if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
         {
-          if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+          if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
           {
             fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
             fe_eval_velocity_neighbor.submit_gradient(fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
           }
-          else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+          else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
           {
             fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
             fe_eval_velocity_neighbor.submit_gradient(-fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
@@ -744,14 +742,14 @@ private:
           else
             AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
         }
-        else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+        else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
         {
-          if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+          if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
           {
             fe_eval_velocity.submit_gradient(0.5*average_viscosity*jump_tensor,q);
             fe_eval_velocity_neighbor.submit_gradient(0.5*average_viscosity*jump_tensor,q);
           }
-          else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+          else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
           {
             fe_eval_velocity.submit_gradient(-0.5*average_viscosity*jump_tensor,q);
             fe_eval_velocity_neighbor.submit_gradient(-0.5*average_viscosity*jump_tensor,q);
@@ -778,7 +776,7 @@ private:
                                           const parallel::distributed::Vector<Number>  &src,
                                           const std::pair<unsigned int,unsigned int>   &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,viscous_operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -789,14 +787,17 @@ private:
       VectorizedArray<Number> tau_IP = fe_eval_velocity.read_cell_data(array_penalty_parameter)
                                              * get_penalty_factor();
 
+      typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+      types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
       for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
       {
         VectorizedArray<Number> viscosity = make_vectorized_array<Number>(const_viscosity);
         if(viscosity_is_variable())
           viscosity = viscous_coefficient_face[face][q];
 
-        if (viscous_operator_data.dirichlet_boundaries.find(data.get_boundary_indicator(face))
-            != viscous_operator_data.dirichlet_boundaries.end()) // Infow and wall boundaries
+        it = operator_data.bc->dirichlet_bc.find(boundary_id);
+        if(it != operator_data.bc->dirichlet_bc.end())
         {
           // applying inhomogeneous Dirichlet BC (value+ = - value- + 2g , grad+ = grad-)
           Tensor<1,dim,VectorizedArray<Number> > uM = fe_eval_velocity.get_value(q);
@@ -804,11 +805,11 @@ private:
           Tensor<1,dim,VectorizedArray<Number> > jump_value = uM - uP;
 
           Tensor<2,dim,VectorizedArray<Number> > average_gradient_tensor;
-          if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+          if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
             average_gradient_tensor = make_vectorized_array<Number>(2.) * fe_eval_velocity.get_symmetric_gradient(q);
           }
-          else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+          else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
             average_gradient_tensor = fe_eval_velocity.get_gradient(q);
           }
@@ -824,26 +825,26 @@ private:
 
           Tensor<1,dim,VectorizedArray<Number> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
 
-          if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+          if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+            if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+            else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             }
             else
               AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
           }
-          else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+          else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+            if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(0.5*viscosity*jump_tensor,q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+            else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-0.5*viscosity*jump_tensor,q);
             }
@@ -856,8 +857,9 @@ private:
           }
           fe_eval_velocity.submit_value(-average_gradient,q);
         }
-        else if (viscous_operator_data.neumann_boundaries.find(data.get_boundary_indicator(face))
-            != viscous_operator_data.neumann_boundaries.end()) // Outflow boundary
+
+        it = operator_data.bc->neumann_bc.find(boundary_id);
+        if(it != operator_data.bc->neumann_bc.end())
         {
           // applying inhomogeneous Neumann BC (value+ = value- , grad+ =  - grad- +2h)
           Tensor<1,dim,VectorizedArray<Number> > jump_value;
@@ -865,26 +867,26 @@ private:
           Tensor<2,dim,VectorizedArray<Number> > jump_tensor
             = outer_product(jump_value,fe_eval_velocity.get_normal_vector(q));
 
-          if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+          if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+            if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+            else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             }
             else
               AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
           }
-          else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+          else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+            if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(0.5*viscosity*jump_tensor,q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+            else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-0.5*viscosity*jump_tensor,q);
             }
@@ -908,7 +910,7 @@ private:
                        const parallel::distributed::Vector<Number>  &,
                        const std::pair<unsigned int,unsigned int>   &cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,viscous_operator_data.dof_index);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,operator_data.dof_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -929,11 +931,11 @@ private:
           if(viscosity_is_variable())
             viscosity = viscous_coefficient_cell[cell][q];
 
-          if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+          if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
             fe_eval_velocity.submit_gradient (viscosity*make_vectorized_array<Number>(2.)*fe_eval_velocity.get_symmetric_gradient(q), q);
           }
-          else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+          else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
             fe_eval_velocity.submit_gradient (viscosity*fe_eval_velocity.get_gradient(q), q);
           }
@@ -957,8 +959,8 @@ private:
                             const parallel::distributed::Vector<Number> &,
                             const std::pair<unsigned int,unsigned int>  &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,viscous_operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,*fe_param,false,viscous_operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,*fe_param,false,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -999,12 +1001,12 @@ private:
           Tensor<1,dim,VectorizedArray<Number> > jump_value = uM - uP;
 
           Tensor<2,dim,VectorizedArray<Number> > average_gradient_tensor;
-          if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+          if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
             // {{F}} = (F⁻ + F⁺)/2 where F = 2 * nu * symmetric_gradient -> nu * (symmetric_gradient⁻ + symmetric_gradient⁺)
             average_gradient_tensor = ( fe_eval_velocity.get_symmetric_gradient(q) + fe_eval_velocity_neighbor.get_symmetric_gradient(q));
           }
-          else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+          else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
             average_gradient_tensor = ( fe_eval_velocity.get_gradient(q) + fe_eval_velocity_neighbor.get_gradient(q)) * make_vectorized_array<Number>(0.5);
           }
@@ -1019,26 +1021,26 @@ private:
           average_gradient_tensor = average_viscosity*average_gradient_tensor - max_viscosity * jump_tensor * tau_IP;
           Tensor<1,dim,VectorizedArray<Number> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
 
-          if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+          if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+            if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+            else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
             }
             else
               AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
           }
-          else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+          else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+            if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(0.5*average_viscosity*jump_tensor,q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+            else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-0.5*average_viscosity*jump_tensor,q);
             }
@@ -1091,12 +1093,12 @@ private:
           Tensor<1,dim,VectorizedArray<Number> > jump_value = uM - uP;
 
           Tensor<2,dim,VectorizedArray<Number> > average_gradient_tensor;
-          if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+          if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
             // {{F}} = (F⁻ + F⁺)/2 where F = 2 * nu * symmetric_gradient -> nu * (symmetric_gradient⁻ + symmetric_gradient⁺)
             average_gradient_tensor = ( fe_eval_velocity.get_symmetric_gradient(q) + fe_eval_velocity_neighbor.get_symmetric_gradient(q));
           }
-          else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+          else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
             average_gradient_tensor = ( fe_eval_velocity.get_gradient(q) + fe_eval_velocity_neighbor.get_gradient(q)) * make_vectorized_array<Number>(0.5);
           }
@@ -1111,26 +1113,26 @@ private:
           average_gradient_tensor = average_viscosity*average_gradient_tensor - max_viscosity * jump_tensor * tau_IP;
           Tensor<1,dim,VectorizedArray<Number> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
 
-          if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+          if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+            if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity_neighbor.submit_gradient(fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+            else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity_neighbor.submit_gradient(-fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
             }
             else
               AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
           }
-          else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+          else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+            if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity_neighbor.submit_gradient(0.5*average_viscosity*jump_tensor,q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+            else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity_neighbor.submit_gradient(-0.5*average_viscosity*jump_tensor,q);
             }
@@ -1159,7 +1161,7 @@ private:
                                      const parallel::distributed::Vector<Number>  &,
                                      const std::pair<unsigned int,unsigned int>   &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,viscous_operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -1167,6 +1169,9 @@ private:
 
       VectorizedArray<Number> tau_IP = fe_eval_velocity.read_cell_data(array_penalty_parameter)
                                              * get_penalty_factor();
+
+      typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+      types::boundary_id boundary_id = data.get_boundary_indicator(face);
 
       VectorizedArray<Number> local_diagonal_vector[fe_eval_velocity.tensor_dofs_per_cell*dim];
       for (unsigned int j=0; j<fe_eval_velocity.dofs_per_cell*dim; ++j)
@@ -1180,13 +1185,13 @@ private:
 
         for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
         {
-          // copied from local_apply_viscous__boundary_face
+          // copied from local_apply_viscous_boundary_face
           VectorizedArray<Number> viscosity = make_vectorized_array<Number>(const_viscosity);
           if(viscosity_is_variable())
             viscosity = viscous_coefficient_face[face][q];
 
-          if (viscous_operator_data.dirichlet_boundaries.find(data.get_boundary_indicator(face))
-              != viscous_operator_data.dirichlet_boundaries.end()) // Infow and wall boundaries
+          it = operator_data.bc->dirichlet_bc.find(boundary_id);
+          if(it != operator_data.bc->dirichlet_bc.end())
           {
             // applying inhomogeneous Dirichlet BC (value+ = - value- + 2g , grad+ = grad-)
             Tensor<1,dim,VectorizedArray<Number> > uM = fe_eval_velocity.get_value(q);
@@ -1194,11 +1199,11 @@ private:
             Tensor<1,dim,VectorizedArray<Number> > jump_value = uM - uP;
 
             Tensor<2,dim,VectorizedArray<Number> > average_gradient_tensor;
-            if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+            if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
             {
               average_gradient_tensor = make_vectorized_array<Number>(2.) * fe_eval_velocity.get_symmetric_gradient(q);
             }
-            else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+            else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
             {
               average_gradient_tensor = fe_eval_velocity.get_gradient(q);
             }
@@ -1214,26 +1219,26 @@ private:
 
             Tensor<1,dim,VectorizedArray<Number> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
 
-            if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+            if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
             {
-              if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+              if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
               {
                 fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
               }
-              else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+              else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
               {
                 fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric( viscosity*jump_tensor),q);
               }
               else
                 AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
             }
-            else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+            else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
             {
-              if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+              if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
               {
                 fe_eval_velocity.submit_gradient(0.5*viscosity*jump_tensor,q);
               }
-              else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+              else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
               {
                 fe_eval_velocity.submit_gradient(-0.5*viscosity*jump_tensor,q);
               }
@@ -1246,8 +1251,9 @@ private:
             }
             fe_eval_velocity.submit_value(-average_gradient,q);
           }
-          else if (viscous_operator_data.neumann_boundaries.find(data.get_boundary_indicator(face))
-              != viscous_operator_data.neumann_boundaries.end()) // Outflow boundary
+
+          it = operator_data.bc->neumann_bc.find(boundary_id);
+          if(it != operator_data.bc->neumann_bc.end())
           {
             // applying inhomogeneous Neumann BC (value+ = value- , grad+ =  - grad- +2h)
             Tensor<1,dim,VectorizedArray<Number> > jump_value;
@@ -1255,26 +1261,26 @@ private:
             Tensor<2,dim,VectorizedArray<Number> > jump_tensor
               = outer_product(jump_value,fe_eval_velocity.get_normal_vector(q));
 
-            if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+            if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
             {
-              if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+              if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
               {
                 fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
               }
-              else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+              else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
               {
                 fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
               }
               else
                 AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
             }
-            else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+            else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
             {
-              if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+              if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
               {
                 fe_eval_velocity.submit_gradient(0.5*viscosity*jump_tensor,q);
               }
-              else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+              else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
               {
                 fe_eval_velocity.submit_gradient(-0.5*viscosity*jump_tensor,q);
               }
@@ -1312,7 +1318,7 @@ private:
                                              const parallel::distributed::Vector<Number>  &src,
                                              const std::pair<unsigned int,unsigned int>   &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,viscous_operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -1323,21 +1329,25 @@ private:
       VectorizedArray<Number> tau_IP = fe_eval_velocity.read_cell_data(array_penalty_parameter)
                                              * get_penalty_factor();
 
+      typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+      types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
       for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
       {
         VectorizedArray<Number> viscosity = make_vectorized_array<Number>(const_viscosity);
         if(viscosity_is_variable())
           viscosity = viscous_coefficient_face[face][q];
 
-        if (viscous_operator_data.dirichlet_boundaries.find(data.get_boundary_indicator(face))
-            != viscous_operator_data.dirichlet_boundaries.end())
+        it = operator_data.bc->dirichlet_bc.find(boundary_id);
+        if(it != operator_data.bc->dirichlet_bc.end())
         {
           // applying inhomogeneous Dirichlet BC (value+ = - value- + 2g , grad+ = grad-)
           Tensor<1,dim,VectorizedArray<Number> > uM = fe_eval_velocity.get_value(q);
 
           Point<dim,VectorizedArray<Number> > q_points = fe_eval_velocity.quadrature_point(q);
           Tensor<1,dim,VectorizedArray<Number> > g;
-          AnalyticalSolution<dim> dirichlet_boundary(true,eval_time);
+          //set correct time for the evaluation of boundary conditions
+          it->second->set_time(eval_time);
           for(unsigned int d=0;d<dim;++d)
           {
             Number array [VectorizedArray<Number>::n_array_elements];
@@ -1346,7 +1356,7 @@ private:
               Point<dim> q_point;
               for (unsigned int d=0; d<dim; ++d)
                 q_point[d] = q_points[d][n];
-              array[n] = dirichlet_boundary.value(q_point,d);
+              array[n] = it->second->value(q_point,d);
             }
             g[d].load(&array[0]);
           }
@@ -1355,11 +1365,11 @@ private:
           Tensor<1,dim,VectorizedArray<Number> > jump_value = uM - uP;
 
           Tensor<2,dim,VectorizedArray<Number> > average_gradient_tensor;
-          if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+          if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
             average_gradient_tensor = make_vectorized_array<Number>(2.) * fe_eval_velocity.get_symmetric_gradient(q);
           }
-          else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+          else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
             average_gradient_tensor = fe_eval_velocity.get_gradient(q);
           }
@@ -1375,26 +1385,26 @@ private:
 
           Tensor<1,dim,VectorizedArray<Number> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
 
-          if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+          if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+            if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+            else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             }
             else
               AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
           }
-          else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+          else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+            if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(0.5*viscosity*jump_tensor,q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+            else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-0.5*viscosity*jump_tensor,q);
             }
@@ -1407,8 +1417,9 @@ private:
           }
           fe_eval_velocity.submit_value(-average_gradient,q);
         }
-        else if (viscous_operator_data.neumann_boundaries.find(data.get_boundary_indicator(face))
-            != viscous_operator_data.neumann_boundaries.end())
+
+        it = operator_data.bc->neumann_bc.find(boundary_id);
+        if(it != operator_data.bc->neumann_bc.end())
         {
           // applying inhomogeneous Neumann BC (value+ = value- , grad+ =  - grad- +2h)
           Tensor<1,dim,VectorizedArray<Number> > jump_value;
@@ -1418,7 +1429,8 @@ private:
 
           Point<dim,VectorizedArray<Number> > q_points = fe_eval_velocity.quadrature_point(q);
           Tensor<1,dim,VectorizedArray<Number> > h;
-          NeumannBoundaryVelocity<dim> neumann_boundary(eval_time);
+          // set correct time for the evaluation of boundary conditions
+          it->second->set_time(eval_time);
           for(unsigned int d=0;d<dim;++d)
           {
             Number array [VectorizedArray<Number>::n_array_elements];
@@ -1427,33 +1439,33 @@ private:
               Point<dim> q_point;
               for (unsigned int d=0; d<dim; ++d)
                 q_point[d] = q_points[d][n];
-              array[n] = neumann_boundary.value(q_point,d);
+              array[n] = it->second->value(q_point,d);
             }
             h[d].load(&array[0]);
           }
 
           Tensor<1,dim,VectorizedArray<Number> > average_gradient = viscosity*h;
 
-          if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+          if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+            if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+            else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             }
             else
               AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
           }
-          else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+          else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+            if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
             {
               fe_eval_velocity.submit_gradient(0.5*viscosity*jump_tensor,q);
             }
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+            else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
             {
               fe_eval_velocity.submit_gradient(-0.5*viscosity*jump_tensor,q);
             }
@@ -1493,7 +1505,7 @@ private:
                                         const parallel::distributed::Vector<Number> &,
                                         const std::pair<unsigned int,unsigned int>  &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,viscous_operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -1501,19 +1513,24 @@ private:
 
       VectorizedArray<Number> tau_IP = fe_eval_velocity.read_cell_data(array_penalty_parameter) * get_penalty_factor();
 
+      typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+      types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
       for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
       {
         VectorizedArray<Number> viscosity = make_vectorized_array<Number>(const_viscosity);
         if(viscosity_is_variable())
           viscosity = viscous_coefficient_face[face][q];
 
-        if (viscous_operator_data.dirichlet_boundaries.find(data.get_boundary_indicator(face)) != viscous_operator_data.dirichlet_boundaries.end()) // Infow and wall boundaries
+        it = operator_data.bc->dirichlet_bc.find(boundary_id);
+        if(it != operator_data.bc->dirichlet_bc.end())
         {
           // applying inhomogeneous Dirichlet BC (value+ = - value- + 2g , grad+ = grad-)
           Point<dim,VectorizedArray<Number> > q_points = fe_eval_velocity.quadrature_point(q);
-          Tensor<1,dim,VectorizedArray<Number> > g_np;
+          Tensor<1,dim,VectorizedArray<Number> > g;
 
-          AnalyticalSolution<dim> dirichlet_boundary(true,eval_time);
+          // set correct time for the evaluation of boundary conditions
+          it->second->set_time(eval_time);
           for(unsigned int d=0;d<dim;++d)
           {
             Number array [VectorizedArray<Number>::n_array_elements];
@@ -1522,31 +1539,31 @@ private:
               Point<dim> q_point;
               for (unsigned int d=0; d<dim; ++d)
               q_point[d] = q_points[d][n];
-              array[n] = dirichlet_boundary.value(q_point,d);
+              array[n] = it->second->value(q_point,d);
             }
-            g_np[d].load(&array[0]);
+            g[d].load(&array[0]);
           }
 
           Tensor<2,dim,VectorizedArray<Number> > jump_tensor
-            = outer_product(2.*g_np,fe_eval_velocity.get_normal_vector(q));
+            = outer_product(2.*g,fe_eval_velocity.get_normal_vector(q));
 
           Tensor<2,dim,VectorizedArray<Number> > average_gradient_tensor = -viscosity * tau_IP * jump_tensor;
           Tensor<1,dim,VectorizedArray<Number> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
 
-          if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+          if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+            if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
               fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+            else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
               fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             else
               AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
           }
-          else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+          else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+            if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
               fe_eval_velocity.submit_gradient(0.5*viscosity*jump_tensor,q);
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+            else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
               fe_eval_velocity.submit_gradient(-0.5*viscosity*jump_tensor,q);
             else
               AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
@@ -1558,13 +1575,16 @@ private:
           fe_eval_velocity.submit_value(-average_gradient,q);
 
         }
-        else if (viscous_operator_data.neumann_boundaries.find(data.get_boundary_indicator(face)) != viscous_operator_data.neumann_boundaries.end()) // Outflow boundary
+
+        it = operator_data.bc->neumann_bc.find(boundary_id);
+        if(it != operator_data.bc->neumann_bc.end())
         {
           // applying inhomogeneous Neumann BC (value+ = value- , grad+ = - grad- +2h)
           Point<dim,VectorizedArray<Number> > q_points = fe_eval_velocity.quadrature_point(q);
           Tensor<1,dim,VectorizedArray<Number> > h;
 
-          NeumannBoundaryVelocity<dim> neumann_boundary(eval_time);
+          // set correct time for the evaluation of boundary conditions
+          it->second->set_time(eval_time);
           for(unsigned int d=0;d<dim;++d)
           {
             Number array [VectorizedArray<Number>::n_array_elements];
@@ -1573,7 +1593,7 @@ private:
               Point<dim> q_point;
               for (unsigned int d=0; d<dim; ++d)
                 q_point[d] = q_points[d][n];
-              array[n] = neumann_boundary.value(q_point,d);
+              array[n] = it->second->value(q_point,d);
             }
             h[d].load(&array[0]);
           }
@@ -1584,20 +1604,20 @@ private:
 
           Tensor<1,dim,VectorizedArray<Number> > average_gradient = -viscosity*h;
 
-          if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+          if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+            if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
               fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+            else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
               fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric(viscosity*jump_tensor),q);
             else
               AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
           }
-          else if(viscous_operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+          else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
           {
-            if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+            if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
               fe_eval_velocity.submit_gradient(0.5*viscosity*jump_tensor,q);
-            else if(viscous_operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+            else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
               fe_eval_velocity.submit_gradient(-0.5*viscosity*jump_tensor,q);
             else
               AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
@@ -1617,7 +1637,7 @@ private:
 
   MatrixFree<dim,Number> const * data;
   FEParameters<dim> const * fe_param;
-  ViscousOperatorData<dim> viscous_operator_data;
+  ViscousOperatorData<dim> operator_data;
   AlignedVector<VectorizedArray<Number> > array_penalty_parameter;
   Number const_viscosity;
   Table<2,VectorizedArray<Number> > viscous_coefficient_cell;
@@ -1636,6 +1656,7 @@ private:
   MatrixFree<dim,Number> own_matrix_free_storage;
 };
 
+template<int dim>
 struct GradientOperatorData
 {
   GradientOperatorData ()
@@ -1650,13 +1671,8 @@ struct GradientOperatorData
   unsigned int dof_index_pressure;
   bool integration_by_parts_of_gradP;
   bool use_boundary_data;
-  std::set<types::boundary_id> dirichlet_boundaries;
-  std::set<types::boundary_id> neumann_boundaries;
 
-  std::set<types::boundary_id> const & get_dirichlet_boundaries() const
-  {
-    return dirichlet_boundaries;
-  }
+  std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
 };
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
@@ -1680,11 +1696,11 @@ public:
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
                   FEParameters<dim> const          &fe_param,
-                  GradientOperatorData const       &gradient_operator_data_in)
+                  GradientOperatorData<dim> const  &operator_data_in)
   {
     this->data = &mf_data;
     this->fe_param = &fe_param;
-    this->gradient_operator_data = gradient_operator_data_in;
+    this->operator_data = operator_data_in;
   }
 
   void apply (parallel::distributed::Vector<value_type>       &dst,
@@ -1763,8 +1779,8 @@ private:
                              const parallel::distributed::Vector<value_type>  &src,
                              const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,gradient_operator_data.dof_index_velocity);
-    FEEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,gradient_operator_data.dof_index_pressure);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,operator_data.dof_index_velocity);
+    FEEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,operator_data.dof_index_pressure);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -1772,7 +1788,7 @@ private:
       fe_eval_pressure.reinit (cell);
       fe_eval_pressure.read_dof_values(src);
 
-      if(gradient_operator_data.integration_by_parts_of_gradP == true)
+      if(operator_data.integration_by_parts_of_gradP == true)
       {
         fe_eval_pressure.evaluate (true,false);
         for (unsigned int q=0; q<fe_eval_velocity.n_q_points; ++q)
@@ -1804,13 +1820,13 @@ private:
                                   const parallel::distributed::Vector<value_type>  &src,
                                   const std::pair<unsigned int,unsigned int>       &face_range) const
   {
-    if(gradient_operator_data.integration_by_parts_of_gradP == true)
+    if(operator_data.integration_by_parts_of_gradP == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,gradient_operator_data.dof_index_velocity);
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,*fe_param,false,gradient_operator_data.dof_index_velocity);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,*fe_param,false,operator_data.dof_index_velocity);
 
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,gradient_operator_data.dof_index_pressure);
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure_neighbor(data,*fe_param,false,gradient_operator_data.dof_index_pressure);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure_neighbor(data,*fe_param,false,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -1845,10 +1861,10 @@ private:
                                            const parallel::distributed::Vector<value_type> &src,
                                            const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    if(gradient_operator_data.integration_by_parts_of_gradP == true)
+    if(operator_data.integration_by_parts_of_gradP == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,gradient_operator_data.dof_index_velocity);
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,gradient_operator_data.dof_index_pressure);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -1856,12 +1872,16 @@ private:
         fe_eval_pressure.reinit (face);
         fe_eval_pressure.read_dof_values(src);
         fe_eval_pressure.evaluate (true,false);
+
+        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
         for (unsigned int q=0; q<fe_eval_velocity.n_q_points; ++q)
         {
-          if(gradient_operator_data.use_boundary_data == true)
+          if(operator_data.use_boundary_data == true)
           {
-            if (gradient_operator_data.dirichlet_boundaries.find(data.get_boundary_indicator(face))
-                != gradient_operator_data.dirichlet_boundaries.end())
+            it = operator_data.bc->dirichlet_bc.find(boundary_id);
+            if(it != operator_data.bc->dirichlet_bc.end())
             {
               // on GammaD: p⁺ =  p⁻ -> {{p}} = p⁻
               // homogeneous part: p⁺ = p⁻ -> {{p}} = p⁻
@@ -1871,8 +1891,9 @@ private:
               normal *= meanpres;
               fe_eval_velocity.submit_value (normal, q);
             }
-            else if (gradient_operator_data.neumann_boundaries.find(data.get_boundary_indicator(face))
-                     != gradient_operator_data.neumann_boundaries.end())
+
+            it = operator_data.bc->neumann_bc.find(boundary_id);
+            if(it != operator_data.bc->neumann_bc.end())
             {
               // on GammaN: p⁺ = - p⁻ + 2g -> {{p}} = g
               // homogeneous part: p⁺ = - p⁻ -> {{p}} = 0
@@ -1903,10 +1924,10 @@ private:
                                               const parallel::distributed::Vector<value_type> &src,
                                               const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    if(gradient_operator_data.integration_by_parts_of_gradP == true)
+    if(operator_data.integration_by_parts_of_gradP == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,gradient_operator_data.dof_index_velocity);
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,gradient_operator_data.dof_index_pressure);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -1914,12 +1935,16 @@ private:
         fe_eval_pressure.reinit (face);
         fe_eval_pressure.read_dof_values(src);
         fe_eval_pressure.evaluate (true,false);
+
+        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
         for (unsigned int q=0; q<fe_eval_velocity.n_q_points; ++q)
         {
-          if(gradient_operator_data.use_boundary_data == true)
+          if(operator_data.use_boundary_data == true)
           {
-            if (gradient_operator_data.dirichlet_boundaries.find(data.get_boundary_indicator(face))
-                != gradient_operator_data.dirichlet_boundaries.end())
+            it = operator_data.bc->dirichlet_bc.find(boundary_id);
+            if(it != operator_data.bc->dirichlet_bc.end())
             {
               // on GammaD: p⁺ =  p⁻ -> {{p}} = p⁻
               // homogeneous part: p⁺ = p⁻ -> {{p}} = p⁻
@@ -1929,8 +1954,9 @@ private:
               normal *= meanpres;
               fe_eval_velocity.submit_value (normal, q);
             }
-            else if (gradient_operator_data.neumann_boundaries.find(data.get_boundary_indicator(face))
-                     != gradient_operator_data.neumann_boundaries.end())
+
+            it = operator_data.bc->neumann_bc.find(boundary_id);
+            if(it != operator_data.bc->neumann_bc.end())
             {
               // on GammaN: p⁺ = - p⁻ + 2g -> {{p}} = g
               // homogeneous part: p⁺ = - p⁻ -> {{p}} = 0
@@ -1939,14 +1965,15 @@ private:
 
               Point<dim,VectorizedArray<value_type> > q_points = fe_eval_pressure.quadrature_point(q);
               VectorizedArray<value_type> meanpres;
-              AnalyticalSolution<dim> dirichlet_boundary(false,eval_time);
+              // set correct time for the evaluation of boundary conditions
+              it->second->set_time(eval_time);
               value_type array [VectorizedArray<value_type>::n_array_elements];
               for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
               {
                 Point<dim> q_point;
                 for (unsigned int d=0; d<dim; ++d)
                   q_point[d] = q_points[d][n];
-                array[n] = dirichlet_boundary.value(q_point);
+                array[n] = it->second->value(q_point);
               }
               meanpres.load(&array[0]);
 
@@ -1990,19 +2017,22 @@ private:
                                          const parallel::distributed::Vector<value_type> &,
                                          const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    if(gradient_operator_data.integration_by_parts_of_gradP == true &&
-       gradient_operator_data.use_boundary_data == true)
+    if(operator_data.integration_by_parts_of_gradP == true &&
+       operator_data.use_boundary_data == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,gradient_operator_data.dof_index_velocity);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
         fe_eval_velocity.reinit (face);
 
+        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
         for (unsigned int q=0; q<fe_eval_velocity.n_q_points; ++q)
         {
-          if (gradient_operator_data.dirichlet_boundaries.find(data.get_boundary_indicator(face))
-              != gradient_operator_data.dirichlet_boundaries.end())
+          it = operator_data.bc->dirichlet_bc.find(boundary_id);
+          if(it != operator_data.bc->dirichlet_bc.end())
           {
             // on GammaD: p⁺ =  p⁻ -> {{p}} = p⁻
             // homogeneous part: p⁺ = p⁻ -> {{p}} = p⁻
@@ -2012,8 +2042,9 @@ private:
             normal *= meanpres;
             fe_eval_velocity.submit_value (-normal, q); // minus sign since this term occurs on the rhs of the equation
           }
-          else if (gradient_operator_data.neumann_boundaries.find(data.get_boundary_indicator(face))
-                   != gradient_operator_data.neumann_boundaries.end())
+
+          it = operator_data.bc->neumann_bc.find(boundary_id);
+          if(it != operator_data.bc->neumann_bc.end())
           {
             // on GammaN: p⁺ = - p⁻ + 2g -> {{p}} = g
             // homogeneous part: p⁺ = - p⁻ -> {{p}} = 0
@@ -2022,14 +2053,15 @@ private:
 
             Point<dim,VectorizedArray<value_type> > q_points = fe_eval_velocity.quadrature_point(q);
             VectorizedArray<value_type> meanpres;
-            AnalyticalSolution<dim> dirichlet_boundary(false,eval_time);
+            // set correct time for the evaluation of boundary conditions
+            it->second->set_time(eval_time);
             value_type array [VectorizedArray<value_type>::n_array_elements];
             for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
             {
               Point<dim> q_point;
               for (unsigned int d=0; d<dim; ++d)
                 q_point[d] = q_points[d][n];
-              array[n] = dirichlet_boundary.value(q_point);
+              array[n] = it->second->value(q_point);
             }
             meanpres.load(&array[0]);
 
@@ -2045,10 +2077,11 @@ private:
 
   MatrixFree<dim,value_type> const * data;
   FEParameters<dim> const * fe_param;
-  GradientOperatorData gradient_operator_data;
+  GradientOperatorData<dim> operator_data;
   value_type mutable eval_time;
 };
 
+template<int dim>
 struct DivergenceOperatorData
 {
   DivergenceOperatorData ()
@@ -2063,8 +2096,8 @@ struct DivergenceOperatorData
   unsigned int dof_index_pressure;
   bool integration_by_parts_of_divU;
   bool use_boundary_data;
-  std::set<types::boundary_id> dirichlet_boundaries;
-  std::set<types::boundary_id> neumann_boundaries;
+
+  std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
 };
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
@@ -2087,13 +2120,13 @@ public:
   typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEFaceEval_Velocity_Velocity_linear;
   typedef FEFaceEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,is_xwall> FEFaceEval_Pressure_Velocity_linear;
 
-  void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  FEParameters<dim> const          &fe_param,
-                  DivergenceOperatorData const     &divergence_operator_data_in)
+  void initialize(MatrixFree<dim,value_type> const  &mf_data,
+                  FEParameters<dim> const           &fe_param,
+                  DivergenceOperatorData<dim> const &operator_data_in)
   {
     this->data = &mf_data;
     this->fe_param = &fe_param;
-    this->divergence_operator_data = divergence_operator_data_in;
+    this->operator_data = operator_data_in;
   }
 
   void apply (parallel::distributed::Vector<value_type>       &dst,
@@ -2172,8 +2205,8 @@ private:
                                const parallel::distributed::Vector<value_type> &src,
                                const std::pair<unsigned int,unsigned int>      &cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,divergence_operator_data.dof_index_velocity);
-    FEEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,divergence_operator_data.dof_index_pressure);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,operator_data.dof_index_velocity);
+    FEEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,operator_data.dof_index_pressure);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -2182,7 +2215,7 @@ private:
       fe_eval_velocity.reinit (cell);
       fe_eval_velocity.read_dof_values(src);
 
-      if(divergence_operator_data.integration_by_parts_of_divU == true)
+      if(operator_data.integration_by_parts_of_divU == true)
       {
         fe_eval_velocity.evaluate (true,false,false);
         for (unsigned int q=0; q<fe_eval_velocity.n_q_points; ++q)
@@ -2209,13 +2242,13 @@ private:
                                     const parallel::distributed::Vector<value_type>  &src,
                                     const std::pair<unsigned int,unsigned int>       &face_range) const
   {
-    if(divergence_operator_data.integration_by_parts_of_divU == true)
+    if(operator_data.integration_by_parts_of_divU == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,divergence_operator_data.dof_index_velocity);
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,*fe_param,false,divergence_operator_data.dof_index_velocity);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,*fe_param,false,operator_data.dof_index_velocity);
 
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,divergence_operator_data.dof_index_pressure);
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure_neighbor(data,*fe_param,false,divergence_operator_data.dof_index_pressure);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure_neighbor(data,*fe_param,false,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -2250,10 +2283,10 @@ private:
                                              const parallel::distributed::Vector<value_type> &src,
                                              const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    if(divergence_operator_data.integration_by_parts_of_divU == true)
+    if(operator_data.integration_by_parts_of_divU == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,divergence_operator_data.dof_index_velocity);
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,divergence_operator_data.dof_index_pressure);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -2263,12 +2296,15 @@ private:
         fe_eval_velocity.read_dof_values(src);
         fe_eval_velocity.evaluate (true,false);
 
+        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
         for(unsigned int q=0;q<fe_eval_pressure.n_q_points;++q)
         {
-          if(divergence_operator_data.use_boundary_data == true)
+          if(operator_data.use_boundary_data == true)
           {
-            if (divergence_operator_data.dirichlet_boundaries.find(data.get_boundary_indicator(face))
-                != divergence_operator_data.dirichlet_boundaries.end())
+            it = operator_data.bc->dirichlet_bc.find(boundary_id);
+            if(it != operator_data.bc->dirichlet_bc.end())
             {
               // on GammaD: u⁺ = -u⁻ + 2g -> {{u}} = g
               // homogeneous part: u⁺ = -u⁻ -> {{u}} = 0
@@ -2278,8 +2314,9 @@ private:
               VectorizedArray<value_type> submitvalue = normal * meanvel;
               fe_eval_pressure.submit_value(submitvalue,q);
             }
-            else if (divergence_operator_data.neumann_boundaries.find(data.get_boundary_indicator(face))
-                     != divergence_operator_data.neumann_boundaries.end())
+
+            it = operator_data.bc->neumann_bc.find(boundary_id);
+            if(it != operator_data.bc->neumann_bc.end())
             {
               // on GammaN: u⁺ = u⁻ -> {{u}} = u⁻
               // homogeneous part: u⁺ = u⁻ -> {{u}} = u⁻
@@ -2310,10 +2347,10 @@ private:
                                                 const parallel::distributed::Vector<value_type> &src,
                                                 const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    if(divergence_operator_data.integration_by_parts_of_divU == true)
+    if(operator_data.integration_by_parts_of_divU == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,divergence_operator_data.dof_index_velocity);
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,divergence_operator_data.dof_index_pressure);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -2323,12 +2360,15 @@ private:
         fe_eval_velocity.read_dof_values(src);
         fe_eval_velocity.evaluate (true,false);
 
+        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
         for(unsigned int q=0;q<fe_eval_pressure.n_q_points;++q)
         {
-          if(divergence_operator_data.use_boundary_data == true)
+          if(operator_data.use_boundary_data == true)
           {
-            if (divergence_operator_data.dirichlet_boundaries.find(data.get_boundary_indicator(face))
-               != divergence_operator_data.dirichlet_boundaries.end())
+            it = operator_data.bc->dirichlet_bc.find(boundary_id);
+            if(it != operator_data.bc->dirichlet_bc.end())
             {
               // on GammaD: u⁺ = -u⁻ + 2g -> {{u}} = g
               // homogeneous part: u⁺ = -u⁻ -> {{u}} = 0
@@ -2337,7 +2377,8 @@ private:
               Tensor<1,dim,VectorizedArray<value_type> > meanvel;
 
               Point<dim,VectorizedArray<value_type> > q_points = fe_eval_pressure.quadrature_point(q);
-              AnalyticalSolution<dim> dirichlet_boundary(true,eval_time);
+              // set correct time for the evaluation of boundary conditions
+              it->second->set_time(eval_time);
               for(unsigned int d=0;d<dim;++d)
               {
                 value_type array [VectorizedArray<value_type>::n_array_elements];
@@ -2346,7 +2387,7 @@ private:
                   Point<dim> q_point;
                   for (unsigned int d=0; d<dim; ++d)
                     q_point[d] = q_points[d][n];
-                  array[n] = dirichlet_boundary.value(q_point,d);
+                  array[n] = it->second->value(q_point,d);
                 }
                 meanvel[d].load(&array[0]);
               }
@@ -2354,8 +2395,9 @@ private:
               VectorizedArray<value_type> submitvalue = normal * meanvel;
               fe_eval_pressure.submit_value(submitvalue,q);
             }
-            else if (divergence_operator_data.neumann_boundaries.find(data.get_boundary_indicator(face))
-                    != divergence_operator_data.neumann_boundaries.end())
+
+            it = operator_data.bc->neumann_bc.find(boundary_id);
+            if(it != operator_data.bc->neumann_bc.end())
             {
               // on GammaN: u⁺ = u⁻ -> {{u}} = u⁻
               // homogeneous part: u⁺ = u⁻ -> {{u}} = u⁻
@@ -2402,19 +2444,22 @@ private:
                                            const parallel::distributed::Vector<value_type> &,
                                            const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    if(divergence_operator_data.integration_by_parts_of_divU == true &&
-       divergence_operator_data.use_boundary_data == true)
+    if(operator_data.integration_by_parts_of_divU == true &&
+       operator_data.use_boundary_data == true)
     {
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,divergence_operator_data.dof_index_pressure);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
         fe_eval_pressure.reinit (face);
 
+        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
         for(unsigned int q=0;q<fe_eval_pressure.n_q_points;++q)
         {
-          if (divergence_operator_data.dirichlet_boundaries.find(data.get_boundary_indicator(face))
-             != divergence_operator_data.dirichlet_boundaries.end())
+          it = operator_data.bc->dirichlet_bc.find(boundary_id);
+          if(it != operator_data.bc->dirichlet_bc.end())
           {
             // on GammaD: u⁺ = -u⁻ + 2g -> {{u}} = g
             // homogeneous part: u⁺ = -u⁻ -> {{u}} = 0
@@ -2423,7 +2468,8 @@ private:
             Tensor<1,dim,VectorizedArray<value_type> > meanvel;
 
             Point<dim,VectorizedArray<value_type> > q_points = fe_eval_pressure.quadrature_point(q);
-            AnalyticalSolution<dim> dirichlet_boundary(true,eval_time);
+            // set correct time for the evaluation of boundary conditions
+            it->second->set_time(eval_time);
             for(unsigned int d=0;d<dim;++d)
             {
               value_type array [VectorizedArray<value_type>::n_array_elements];
@@ -2432,7 +2478,7 @@ private:
                 Point<dim> q_point;
                 for (unsigned int d=0; d<dim; ++d)
                   q_point[d] = q_points[d][n];
-                array[n] = dirichlet_boundary.value(q_point,d);
+                array[n] = it->second->value(q_point,d);
               }
               meanvel[d].load(&array[0]);
             }
@@ -2440,8 +2486,9 @@ private:
             VectorizedArray<value_type> submitvalue = normal * meanvel;
             fe_eval_pressure.submit_value(-submitvalue,q); // minus sign since this term occurs on the rhs of the equation
           }
-          else if (divergence_operator_data.neumann_boundaries.find(data.get_boundary_indicator(face))
-                  != divergence_operator_data.neumann_boundaries.end())
+
+          it = operator_data.bc->neumann_bc.find(boundary_id);
+          if(it != operator_data.bc->neumann_bc.end())
           {
             // on GammaN: u⁺ = u⁻ -> {{u}} = u⁻
             // homogeneous part: u⁺ = u⁻ -> {{u}} = u⁻
@@ -2460,10 +2507,11 @@ private:
 
   MatrixFree<dim,value_type> const * data;
   FEParameters<dim> const * fe_param;
-  DivergenceOperatorData divergence_operator_data;
+  DivergenceOperatorData<dim> operator_data;
   value_type mutable eval_time;
 };
 
+template<int dim>
 struct ConvectiveOperatorData
 {
   ConvectiveOperatorData ()
@@ -2472,8 +2520,8 @@ struct ConvectiveOperatorData
   {}
 
   unsigned int dof_index;
-  std::set<types::boundary_id> dirichlet_boundaries;
-  std::set<types::boundary_id> neumann_boundaries;
+
+  std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
 };
 
 
@@ -2496,13 +2544,13 @@ public:
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_nonlinear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_nonlinear;
   typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_nonlinear,dim,value_type,is_xwall> FEFaceEval_Velocity_Velocity_nonlinear;
 
-  void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  FEParameters<dim>                &fe_param,
-                  ConvectiveOperatorData const     &convective_operator_data_in)
+  void initialize(MatrixFree<dim,value_type> const  &mf_data,
+                  FEParameters<dim>                 &fe_param,
+                  ConvectiveOperatorData<dim> const &operator_data_in)
   {
     this->data = &mf_data;
     this->fe_param = &fe_param;
-    this->convective_operator_data = convective_operator_data_in;
+    this->operator_data = operator_data_in;
   }
 
   void evaluate (parallel::distributed::Vector<value_type>       &dst,
@@ -2560,7 +2608,7 @@ private:
                                        const parallel::distributed::Vector<value_type>  &src,
                                        const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
-    FEEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,*fe_param,convective_operator_data.dof_index);
+    FEEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,*fe_param,operator_data.dof_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -2585,8 +2633,8 @@ private:
                                             const parallel::distributed::Vector<value_type> &src,
                                             const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,*fe_param,true,convective_operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity_neighbor(data,*fe_param,false,convective_operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity_neighbor(data,*fe_param,false,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -2633,7 +2681,7 @@ private:
                                                      const parallel::distributed::Vector<value_type> &src,
                                                      const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,*fe_param,true,convective_operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -2641,17 +2689,21 @@ private:
       fe_eval_velocity.read_dof_values(src);
       fe_eval_velocity.evaluate(true,false);
 
+      typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+      types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
       for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
       {
-        if (convective_operator_data.dirichlet_boundaries.find(data.get_boundary_indicator(face))
-            != convective_operator_data.dirichlet_boundaries.end())
+        it = operator_data.bc->dirichlet_bc.find(boundary_id);
+        if(it != operator_data.bc->dirichlet_bc.end())
         {
           // on GammaD: u⁺ = -u⁻ + 2g
           Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_velocity.get_value(q);
 
           Point<dim,VectorizedArray<value_type> > q_points = fe_eval_velocity.quadrature_point(q);
-          Tensor<1,dim,VectorizedArray<value_type> > g_n;
-          AnalyticalSolution<dim> dirichlet_boundary(true,eval_time);
+          Tensor<1,dim,VectorizedArray<value_type> > g;
+          // set correct time for the evaluation of boundary conditions
+          it->second->set_time(eval_time);
           for(unsigned int d=0;d<dim;++d)
           {
             value_type array [VectorizedArray<value_type>::n_array_elements];
@@ -2660,12 +2712,12 @@ private:
               Point<dim> q_point;
               for (unsigned int d=0; d<dim; ++d)
                 q_point[d] = q_points[d][n];
-              array[n] = dirichlet_boundary.value(q_point,d);
+              array[n] = it->second->value(q_point,d);
             }
-            g_n[d].load(&array[0]);
+            g[d].load(&array[0]);
           }
 
-          Tensor<1,dim,VectorizedArray<value_type> > uP = -uM + make_vectorized_array<value_type>(2.0)*g_n;
+          Tensor<1,dim,VectorizedArray<value_type> > uP = -uM + make_vectorized_array<value_type>(2.0)*g;
           Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_velocity.get_normal_vector(q);
           const VectorizedArray<value_type> uM_n = uM*normal;
           const VectorizedArray<value_type> uP_n = uP*normal;
@@ -2678,8 +2730,9 @@ private:
 
           fe_eval_velocity.submit_value(lf_flux,q);
         }
-        else if (convective_operator_data.neumann_boundaries.find(data.get_boundary_indicator(face))
-                  != convective_operator_data.neumann_boundaries.end())
+
+        it = operator_data.bc->neumann_bc.find(boundary_id);
+        if(it != operator_data.bc->neumann_bc.end())
         {
           // on GammaN: u⁺ = u⁻
           Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_velocity.get_value(q);
@@ -2712,8 +2765,8 @@ private:
                                               const parallel::distributed::Vector<value_type> &src,
                                               const std::pair<unsigned int,unsigned int>      &cell_range) const
   {
-    FEEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,convective_operator_data.dof_index);
-    FEEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,convective_operator_data.dof_index);
+    FEEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,operator_data.dof_index);
+    FEEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,operator_data.dof_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -2742,11 +2795,11 @@ private:
                                                     const parallel::distributed::Vector<value_type> &src,
                                                     const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,true,convective_operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_neighbor(data,*fe_param,false,convective_operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_neighbor(data,*fe_param,false,operator_data.dof_index);
 
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,true,convective_operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization_neighbor(data,*fe_param,false,convective_operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization_neighbor(data,*fe_param,false,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -2803,8 +2856,8 @@ private:
                                                             const parallel::distributed::Vector<value_type> &src,
                                                             const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,true,convective_operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,true,convective_operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -2816,17 +2869,21 @@ private:
       fe_eval_linearization.read_dof_values(*velocity_linearization);
       fe_eval_linearization.evaluate(true,false);
 
+      typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+      types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
       for(unsigned int q=0;q<fe_eval.n_q_points;++q)
       {
-        if (convective_operator_data.dirichlet_boundaries.find(data.get_boundary_indicator(face))
-            != convective_operator_data.dirichlet_boundaries.end())
+        it = operator_data.bc->dirichlet_bc.find(boundary_id);
+        if(it != operator_data.bc->dirichlet_bc.end())
         {
           // on GammaD: u⁺ = -u⁻ + 2g
           Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_linearization.get_value(q);
 
           Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
           Tensor<1,dim,VectorizedArray<value_type> > g;
-          AnalyticalSolution<dim> dirichlet_boundary(true,eval_time);
+          // set correct time for the evaluation of boundary conditions
+          it->second->set_time(eval_time);
           for(unsigned int d=0;d<dim;++d)
           {
             value_type array [VectorizedArray<value_type>::n_array_elements];
@@ -2835,7 +2892,7 @@ private:
               Point<dim> q_point;
               for (unsigned int d=0; d<dim; ++d)
               q_point[d] = q_points[d][n];
-              array[n] = dirichlet_boundary.value(q_point,d);
+              array[n] = it->second->value(q_point,d);
             }
             g[d].load(&array[0]);
           }
@@ -2860,8 +2917,9 @@ private:
 
           fe_eval.submit_value(lf_flux,q);
         }
-        else if (convective_operator_data.neumann_boundaries.find(data.get_boundary_indicator(face))
-                  != convective_operator_data.neumann_boundaries.end())
+
+        it = operator_data.bc->neumann_bc.find(boundary_id);
+        if(it != operator_data.bc->neumann_bc.end())
         {
           // on GammaN: u⁺ = u⁻
           Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_linearization.get_value(q);
@@ -2884,7 +2942,7 @@ private:
 
   MatrixFree<dim,value_type> const * data;
   FEParameters<dim> const * fe_param;
-  ConvectiveOperatorData convective_operator_data;
+  ConvectiveOperatorData<dim> operator_data;
   mutable value_type eval_time;
   mutable parallel::distributed::Vector<value_type> const * velocity_linearization;
 };

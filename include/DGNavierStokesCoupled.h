@@ -157,9 +157,9 @@ public:
 
   bool nonlinear_problem_has_to_be_solved() const
   {
-      return (this->param.equation_type == EquationType::NavierStokes &&
-              (this->param.problem_type == ProblemType::Steady ||
-               this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit) );
+      return ( this->param.equation_type == EquationType::NavierStokes &&
+               (this->param.problem_type == ProblemType::Steady ||
+                this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit) );
   }
 
   bool unsteady_problem_has_to_be_solved() const

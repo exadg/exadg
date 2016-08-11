@@ -88,6 +88,7 @@ public:
             underlying_operator->get_dof_handler_u(),
             underlying_operator->get_mapping(),
             helmholtz_operator_data,
+            underlying_operator->dirichlet_boundary,
             underlying_operator->get_fe_parameters()));
       }
       // Steady problem -> consider viscous operator
@@ -103,6 +104,7 @@ public:
             underlying_operator->get_dof_handler_u(),
             underlying_operator->get_mapping(),
             viscous_operator_data,
+            underlying_operator->dirichlet_boundary,
             underlying_operator->get_fe_parameters()));
       }
 
@@ -244,8 +246,8 @@ public:
       mass_matrix_operator_data.dof_index = underlying_operator->get_dof_index_pressure();
       mass_matrix_operator_data.quad_index = underlying_operator->get_quad_index_pressure();
 
-      std_cxx11::shared_ptr<BoundaryDescriptor<dim> > boundary_descriptor;
-      boundary_descriptor.reset(new BoundaryDescriptor<dim>());
+      std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor;
+      boundary_descriptor.reset(new BoundaryDescriptorConvDiff<dim>());
 
       // for the pressure convection-diffusion operator the homogeneous operators (convective, diffusive) are applied,
       // so there is no need to specify functions for boundary conditions since they will not be used (must not be used)
@@ -253,16 +255,24 @@ public:
       std_cxx11::shared_ptr<Function<dim> > dummy;
       dummy.reset(new ConstantFunction<dim>(NAN));
 
-      // TODO
-      // currently we only have Dirichlet BC with boundary_id = 0, but this might be different for more complex examples!!!
+      // set boundary ID's for pressure convection-diffusion operator
+
       // Dirichlet BC for velocity -> Neumann BC for pressure
-      types::boundary_id boundary_id_nbc_pressure = 0;
-      boundary_descriptor->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >(boundary_id_nbc_pressure, dummy));
-      // currently we only have Neumann BC with boundary_id = 1, but this might be different for more complex examples!!!
+      for (typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::
+           const_iterator it = underlying_operator->boundary_descriptor_velocity->dirichlet_bc.begin();
+           it != underlying_operator->boundary_descriptor_velocity->dirichlet_bc.end(); ++it)
+      {
+        boundary_descriptor->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                (it->first, dummy));
+      }
       // Neumann BC for velocity -> Dirichlet BC for pressure
-      types::boundary_id boundary_id_dbc_pressure = 1;
-      boundary_descriptor->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >(boundary_id_dbc_pressure, dummy));
-      // TODO
+      for (typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::
+           const_iterator it = underlying_operator->boundary_descriptor_velocity->neumann_bc.begin();
+           it != underlying_operator->boundary_descriptor_velocity->neumann_bc.end(); ++it)
+      {
+        boundary_descriptor->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                  (it->first, dummy));
+      }
 
       // II.b) diffusive operator
       ScalarConvDiffOperators::DiffusiveOperatorData<dim> diffusive_operator_data;
@@ -360,7 +370,8 @@ public:
                                                 (mg_data_pressure,
                                                  underlying_operator->get_dof_handler_p(),
                                                  underlying_operator->get_mapping(),
-                                                 laplace_operator_data));
+                                                 laplace_operator_data,
+                                                 laplace_operator_data.dirichlet_boundaries));
     }
     else
     {

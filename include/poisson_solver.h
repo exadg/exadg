@@ -53,11 +53,6 @@ struct LaplaceOperatorData
   // If periodic boundaries are present, this variable collects matching faces
   // on the two sides of the domain
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs_level0;
-
-  std::set<types::boundary_id> const & get_dirichlet_boundaries() const
-  {
-    return dirichlet_boundaries;
-  }
 };
 
 // Generic implementation of Laplace operator for both continuous elements

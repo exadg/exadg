@@ -10,7 +10,7 @@
 
 
 template<int dim>
-struct BoundaryDescriptor
+struct BoundaryDescriptorConvDiff
 {
   std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > > dirichlet_bc;
   std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > > neumann_bc;

@@ -507,7 +507,7 @@ namespace Step37
     typedef float Number;
     std_cxx11::shared_ptr<PreconditionerBase<double> > preconditioner;
     preconditioner.reset(new MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> >
-        (mg_data, dof_handler, mapping, laplace_operator_data));
+        (mg_data, dof_handler, mapping, laplace_operator_data, laplace_operator_data.dirichlet_boundaries));
 
     PoissonSolverData solver_data;
     solver_data.solver_tolerance_rel = 1e-8;

@@ -62,9 +62,11 @@ public:
 
   void xwall_projection(parallel::distributed::Vector<value_type> & velocity);
 
-  void prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
-                                    parallel::distributed::Vector<value_type> &pressure,
-                                    double const                              evaluation_time) const;
+  // TODO Benjamin: with the new boundary descriptor this function should not be necessary, please check this!
+
+//  void prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
+//                                    parallel::distributed::Vector<value_type> &pressure,
+//                                    double const                              evaluation_time) const;
 
   FE_Q<dim> const & get_fe_wdist() const
   {
@@ -267,15 +269,17 @@ data_reinit(typename MatrixFree<dim,value_type>::AdditionalData & additional_dat
   this->data.reinit (this->mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
-                             parallel::distributed::Vector<value_type> &pressure,
-                             double const                              evaluation_time) const
-{
-  VectorTools::interpolate(this->mapping, this->dof_handler_u, AnalyticalSolution<dim>(true,evaluation_time,2*dim), velocity);
-  VectorTools::interpolate(this->mapping, this->dof_handler_p, AnalyticalSolution<dim>(false,evaluation_time), pressure);
-}
+// TODO Benjamin: with the new boundary descriptor this function should not be necessary, please check this!
+
+//template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+//void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+//prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
+//                             parallel::distributed::Vector<value_type> &pressure,
+//                             double const                              evaluation_time) const
+//{
+//  VectorTools::interpolate(this->mapping, this->dof_handler_u, AnalyticalSolution<dim>(true,evaluation_time,2*dim), velocity);
+//  VectorTools::interpolate(this->mapping, this->dof_handler_p, AnalyticalSolution<dim>(false,evaluation_time), pressure);
+//}
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::

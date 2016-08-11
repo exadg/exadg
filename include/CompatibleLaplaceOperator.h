@@ -22,15 +22,10 @@ struct CompatibleLaplaceOperatorData
   unsigned int dof_index_velocity;
   unsigned int dof_index_pressure;
 
-  GradientOperatorData gradient_operator_data;
-  DivergenceOperatorData divergence_operator_data;
+  GradientOperatorData<dim> gradient_operator_data;
+  DivergenceOperatorData<dim> divergence_operator_data;
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs_level0;
-
-  std::set<types::boundary_id> const & get_dirichlet_boundaries() const
-  {
-    return gradient_operator_data.get_dirichlet_boundaries();
-  }
 };
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall,typename Number = double>
@@ -108,11 +103,11 @@ public:
     own_matrix_free_storage.reinit(mapping, dof_handler_vec, constraint_matrix_vec, quad, addit_data);
 
     // setup own gradient operator
-    GradientOperatorData gradient_operator_data = my_operator_data.gradient_operator_data;
+    GradientOperatorData<dim> gradient_operator_data = my_operator_data.gradient_operator_data;
     own_gradient_operator_storage.initialize(own_matrix_free_storage,fe_param,gradient_operator_data);
 
     // setup own divergence operator
-    DivergenceOperatorData divergence_operator_data = my_operator_data.divergence_operator_data;
+    DivergenceOperatorData<dim> divergence_operator_data = my_operator_data.divergence_operator_data;
     own_divergence_operator_storage.initialize(own_matrix_free_storage,fe_param,divergence_operator_data);
 
     // setup own inverse mass matrix operator
