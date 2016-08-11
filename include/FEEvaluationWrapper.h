@@ -341,7 +341,6 @@ public:
         quad_type = 1;
       }
     }
-    fe_eval_xwall[quad_type]->reinit(cell);
     fe_eval[quad_type]->reinit(cell);
 
     if(quad_type == 0)
@@ -355,6 +354,8 @@ public:
 
     if(enriched)
     {
+      fe_eval_xwall[quad_type]->reinit(cell);
+      spalding.reinit_zero(n_q_points);
       //initialize the enrichment function
       //the enrichment is available if fe_params has a vector and if this is no ghost cell
       if(fe_param.enrichment == nullptr || (*fe_param.enrichment).size()-1 < cell || do_not_use_precomputed_enrichment)
@@ -407,10 +408,20 @@ public:
     }
     else
     {
+      spalding.reinit_zero(n_q_points);
       dofs_per_cell = fe_eval_q0.dofs_per_cell;
     }
     std_dofs_per_cell = fe_eval_q0.dofs_per_cell;
 
+//    for(unsigned int q=0;q<n_q_points;q++)
+//      for(unsigned int v=0;v<data.n_components_filled(cell);v++)
+//        if(not enriched_components.at(v))
+//          for(unsigned int i = 0; i<dim;i++)
+//          if(std::abs(spalding.enrichment_gradient(q)[i][v])>1e-8)
+//          {
+//            std::cout << std::abs(spalding.enrichment_gradient(q)[i][v]) << " enriched " <<  enriched << " component_enriched  " << enriched_components[v]<< std::endl;
+//            AssertThrow(false,ExcInternalError());
+//          }
   }
 
   void reinit(const unsigned int cell, AlignedVector<VectorizedArray<Number> > & enrichment_cell,
@@ -445,6 +456,15 @@ public:
     fe_eval[quad_type]->read_dof_values(src);
     if(enriched)
       fe_eval_xwall[quad_type]->read_dof_values(src);
+//    else if (n_components_ ==dim)
+//    {
+//      fe_eval_xwall[quad_type]->read_dof_values(src);
+//      for (unsigned int i=0; i < fe_eval_xwall_q0.dofs_per_cell;i++)
+//        for(unsigned int v=0;v<VectorizedArray<Number>::n_array_elements;v++)
+//          if(not enriched_components[v])
+//            AssertThrow((fe_eval_xwall[quad_type]->begin_dof_values()[i][v] < 1e-9),ExcMessage("out"));
+//    }
+
   }
 
   void evaluate(VectorizedArray<Number> * src,
@@ -580,9 +600,9 @@ public:
     for (unsigned int i = 0; i<dim; i++)
       for (unsigned int j = 0; j<dim; j++)
         symgrad[i][j] =  grad[i][j] + grad[j][i];
+    symgrad *= make_vectorized_array<Number>(0.5);
     return symgrad;
   }
-
   Tensor<1,dim,VectorizedArray<Number> > make_symmetric(const Tensor<1,dim,VectorizedArray<Number> >& grad)
   {
     Tensor<1,dim,VectorizedArray<Number> > symgrad;
@@ -920,6 +940,7 @@ private:
   }
   void fe_eval_xwall_evaluate(bool evaluate_val, bool evaluate_grad)
   {
+    Assert(enriched,ExcMessage("fe_eval_xwall not initialized"));
     if(quad_type == 0)
     {
       fe_eval_xwall_q0.evaluate(evaluate_val, evaluate_grad);
@@ -947,6 +968,7 @@ private:
   }
   void fe_eval_xwall_integrate(bool integrate_val, bool integrate_grad)
   {
+    Assert(enriched,ExcMessage("fe_eval_xwall not initialized"));
     if(quad_type == 0)
     {
       fe_eval_xwall_q0.integrate(integrate_val, integrate_grad);
@@ -1205,7 +1227,6 @@ public:
             }
       }
     }
-    fe_eval_xwall[quad_type]->reinit(f);
     fe_eval[quad_type]->reinit(f);
     if(quad_type == 0)
       n_q_points = fe_eval_q0.n_q_points;
@@ -1216,6 +1237,8 @@ public:
 
     if(enriched)
     {
+      fe_eval_xwall[quad_type]->reinit(f);
+      spalding.reinit_zero(n_q_points);
       //initialize the enrichment function
       {
         fe_eval_tauw[quad_type]->reinit(f);
@@ -1256,6 +1279,7 @@ public:
     }
     else
     {
+      spalding.reinit_zero(n_q_points);
       dofs_per_cell = fe_eval_q0.dofs_per_cell;
     }
     std_dofs_per_cell = fe_eval_q0.dofs_per_cell;
@@ -1363,9 +1387,9 @@ public:
     for (unsigned int i = 0; i<dim; i++)
       for (unsigned int j = 0; j<dim; j++)
         symgrad[i][j] = grad[i][j] + grad[j][i];
+    symgrad *= make_vectorized_array<Number>(0.5);
     return symgrad;
   }
-
   Tensor<1,dim,VectorizedArray<Number> > make_symmetric(const Tensor<1,dim,VectorizedArray<Number> >& grad)
   {
     Tensor<1,dim,VectorizedArray<Number> > symgrad;
@@ -1730,6 +1754,7 @@ private:
 
   void fe_eval_xwall_evaluate(bool evaluate_val, bool evaluate_grad)
   {
+    Assert(enriched,ExcMessage("fe_eval_xwall not initialized"));
     if(quad_type == 0)
     {
       fe_eval_xwall_q0.evaluate(evaluate_val, evaluate_grad);
@@ -1760,6 +1785,7 @@ private:
 
   void fe_eval_xwall_integrate(bool integrate_val, bool integrate_grad)
   {
+    Assert(enriched,ExcMessage("fe_eval_xwall not initialized"));
     if(quad_type == 0)
     {
       fe_eval_xwall_q0.integrate(integrate_val, integrate_grad);
@@ -1946,7 +1972,6 @@ public:
             }
       }
     }
-    this->fe_eval_xwall[this->quad_type]->reinit(f);
 
     this->fe_eval[this->quad_type]->reinit(f);
     if(this->quad_type == 0)

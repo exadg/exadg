@@ -26,35 +26,35 @@ namespace internalSpalding
   }
 
   template <int dim, typename Number>
-  void zero_out(AlignedVector<Number> &, std::vector<bool> & , const unsigned int )
+  void zero_out(Number &, std::vector<bool> &)
   {
     ;
   }
   template <int dim, typename Number>
-  void zero_out(AlignedVector<Tensor<1,dim,Number> > &, std::vector<bool> & , const unsigned int )
+  void zero_out(Tensor<1,dim,Number> &, std::vector<bool> &)
   {
     ;
   }
   template <int dim, typename Number>
-  void zero_out(AlignedVector<VectorizedArray<Number> > & qp_enrichment, const std::vector<bool> & enriched_components, const unsigned int q)
+  void zero_out(VectorizedArray<Number> & qp_enrichment, const std::vector<bool> & enriched_components)
   {
     for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
     {
       if(not enriched_components[v])
       {
-        qp_enrichment[q][v] = 0.0;
+        qp_enrichment[v] = 0.0;
       }
     }
   }
   template <int dim, typename Number>
-  void zero_out(AlignedVector<Tensor<1,dim,VectorizedArray<Number> > > & qp_grad_enrichment, const std::vector<bool> & enriched_components, const unsigned int q)
+  void zero_out(Tensor<1,dim,VectorizedArray<Number> > & qp_grad_enrichment, const std::vector<bool> & enriched_components)
   {
     for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
     {
       if(not enriched_components[v])
       {
         for (unsigned int d = 0; d<dim; d++)
-          qp_grad_enrichment[q][d][v] = 0.0;
+          qp_grad_enrichment[d][v] = 0.0;
       }
     }
   }
@@ -99,11 +99,25 @@ public:
       AssertThrow((not std::is_same<Number,float>::value),ExcMessage("If you are using float, the tolerances would probalby have to be adjusted"));
     };
 
+  void reinit_zero(const unsigned int n_q_points)
+  {
+    qp_enrichment.resize(n_q_points);
+    qp_grad_enrichment.resize(n_q_points);
+    std::vector<bool> enriched_components(VectorizedArray<Number>::n_array_elements);
+    for (unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; v++)
+      enriched_components[v] = false;
+    for(unsigned int q=0;q<n_q_points;++q)
+    {
+      internalSpalding::zero_out<dim, Number>(qp_enrichment[q], enriched_components);
+      internalSpalding::zero_out<dim, Number>(qp_grad_enrichment[q], enriched_components);
+    }
+  }
+
   void reinit(const AlignedVector<V > & qp_wdist,
       const AlignedVector<V > & qp_tauw,
       const AlignedVector<Tensor<1,dim,V > > & qp_gradwdist,
       const AlignedVector<Tensor<1,dim,V > > & qp_gradtauw,
-      unsigned int n_q_points,
+      const unsigned int n_q_points,
       const std::vector<bool> & enriched_components)
   {
     qp_enrichment.resize(n_q_points);
@@ -113,15 +127,15 @@ public:
       qp_enrichment[q] =  EnrichmentShapeDer(qp_wdist[q], qp_tauw[q],
           qp_gradwdist[q], qp_gradtauw[q],qp_grad_enrichment[q], enriched_components);
 
-      internalSpalding::zero_out<dim, Number>(qp_enrichment, enriched_components, q);
-      internalSpalding::zero_out<dim, Number>(qp_grad_enrichment, enriched_components, q);
+      internalSpalding::zero_out<dim, Number>(qp_enrichment[q], enriched_components);
+      internalSpalding::zero_out<dim, Number>(qp_grad_enrichment[q], enriched_components);
     }
 
   };
 
   void reinit(const AlignedVector<V> & qp_wdist,
       const AlignedVector<V> & qp_tauw,
-      unsigned int n_q_points)
+      const unsigned int n_q_points)
   {
     qp_enrichment.resize(n_q_points);
     std::vector<bool> enriched_components;

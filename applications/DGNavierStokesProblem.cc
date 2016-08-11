@@ -77,7 +77,7 @@
 using namespace dealii;
 
 // specify flow problem that has to be solved
-#define VORTEX
+//#define VORTEX
 //#define STOKES_GUERMOND
 //#define STOKES_SHAHBAZI
 //#define POISEUILLE
@@ -86,7 +86,7 @@ using namespace dealii;
 //#define KOVASZNAY
 //#define BELTRAMI
 //#define FLOW_PAST_CYLINDER
-//#define CHANNEL
+#define CHANNEL
 
 
 ProblemType PROBLEM_TYPE = ProblemType::Unsteady; //Steady; //Unsteady;
@@ -102,7 +102,7 @@ TimeStepCalculation TIME_STEP_CALCULATION = TimeStepCalculation::ConstTimeStepCF
 /*************************************************/
 
 /************* spatial discretization ************/
-SpatialDiscretization SPATIAL_DISCRETIZATION = SpatialDiscretization::DG; //DG //DGXWall
+SpatialDiscretization SPATIAL_DISCRETIZATION = SpatialDiscretization::DGXWall; //DG //DGXWall
 
 FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::DivergenceFormulation; //DivergenceFormulation; //LaplaceFormulation;
 InteriorPenaltyFormulation IP_FORMULATION_VISCOUS = InteriorPenaltyFormulation::SIPG; //SIPG; //NIPG;
@@ -130,7 +130,7 @@ SolverProjection SOLVER_PROJECTION = SolverProjection::PCG; //LU; //PCG;
 PreconditionerProjection PRECONDITIONER_PROJECTION = PreconditionerProjection::InverseMassMatrix; //None; //Jacobi; //InverseMassMatrix;
 
 // viscous step
-SolverViscous SOLVER_VISCOUS = SolverViscous::PCG; //PCG; //GMRES;
+SolverViscous SOLVER_VISCOUS = SolverViscous::GMRES; //PCG; //GMRES;
 PreconditionerViscous PRECONDITIONER_VISCOUS = PreconditionerViscous::GeometricMultigrid; //None; //Jacobi; //InverseMassMatrix; //GeometricMultigrid;
 
 // multigrid viscous step
@@ -792,8 +792,8 @@ DiscretizationOfLaplacian DISCRETIZATION_OF_LAPLACIAN =
   const unsigned int REFINE_STEPS_SPACE_MAX = 2;
 
   const double START_TIME = 0.0;
-  const double END_TIME = 70.0;
-  const double OUTPUT_INTERVAL_TIME = 1.;
+  const double END_TIME = 50.0;
+  const double OUTPUT_INTERVAL_TIME = 0.0;
   const double OUTPUT_START_TIME = 0.0;
   const double ERROR_CALC_INTERVAL_TIME = OUTPUT_INTERVAL_TIME;
   const double ERROR_CALC_START_TIME = 100.;
@@ -839,12 +839,12 @@ DiscretizationOfLaplacian DISCRETIZATION_OF_LAPLACIAN =
 
   const double ABS_TOL_PRESSURE = 1.0e-12;
   const double REL_TOL_PRESSURE = 1.0e-4;
-  const double ABS_TOL_VISCOUS = 1.0e-9;
+  const double ABS_TOL_VISCOUS = 1.0e-12;
   const double REL_TOL_VISCOUS = 1.0e-4;
   const double ABS_TOL_PROJECTION = 1.0e-12;
   const double REL_TOL_PROJECTION = 1.0e-4;
 
-  // show solver performance (wall time, number of iterations) every ... timesteps
+// show solver performance (wall time, number of iterations) every ... timesteps
   const unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 1e1;
 
   const std::string OUTPUT_PREFIX = "ch180_l2_p4_test"; // "ch590_l2_k2k2"; //"ch180_l2_p4_test";
@@ -1330,8 +1330,10 @@ DiscretizationOfLaplacian DISCRETIZATION_OF_LAPLACIAN =
 #ifdef CHANNEL
     if(component == 0)
     {
-      if(p[1]<0.9999 && p[1]>-0.9999)
-        result = -22.0*(pow(p[1],2.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*0.5);//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
+      if(component == 0)
+        result = -22.0*(pow(p[1],6.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*0.5-2./22.*std::sin(p[2]*8.));//*1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0*(t<T? (t/T) : 1.0);
+      else if(component ==2)
+        result = (pow(p[1],6.0)-1.0)*std::sin(p[0]*8.)*2.;
       else
         result = 0.0;
     }

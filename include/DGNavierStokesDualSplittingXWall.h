@@ -84,8 +84,6 @@ private:
 
   virtual void data_reinit(typename MatrixFree<dim,value_type>::AdditionalData & additional_data);
 
-  virtual void push_back_constraint_matrix(std::vector<const ConstraintMatrix *> & constraint_matrix_vec);
-
   void init_wdist();
 
   void calculate_wall_shear_stress(const parallel::distributed::Vector<value_type> &src);
@@ -245,6 +243,7 @@ data_reinit(typename MatrixFree<dim,value_type>::AdditionalData & additional_dat
   ConstraintMatrix constraint_u, constraint_p;
   constraint_u.close();
   constraint_p.close();
+  initialize_constraints(additional_data.periodic_face_pairs_level_0);
   constraint_matrix_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity)] = &constraint_u;
   constraint_matrix_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure)] = &constraint_p;
   constraint_matrix_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::wdist_tauw)] = &constraint_periodic;
@@ -280,16 +279,6 @@ data_reinit(typename MatrixFree<dim,value_type>::AdditionalData & additional_dat
 //  VectorTools::interpolate(this->mapping, this->dof_handler_u, AnalyticalSolution<dim>(true,evaluation_time,2*dim), velocity);
 //  VectorTools::interpolate(this->mapping, this->dof_handler_p, AnalyticalSolution<dim>(false,evaluation_time), pressure);
 //}
-
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-push_back_constraint_matrix(std::vector<const ConstraintMatrix *> & constraint_matrix_vec)
-{
-  ConstraintMatrix constraint;
-  constraint.close();
-  constraint_matrix_vec.push_back(&constraint_periodic);
-  constraint_matrix_vec.push_back(&constraint);
-}
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
@@ -511,9 +500,6 @@ void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwa
 precompute_inverse_mass_matrix()
 {
   inverse_mass_matrix_operator_xwall->reinit();
-//  parallel::distributed::Vector<value_type> dummy;
-//  this->data.cell_loop(&DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_precompute_mass_matrix,
-//                  this, dummy, dummy);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -553,69 +539,6 @@ local_rhs_for_inverse_mass_matrix (const MatrixFree<dim,value_type>        &data
   }
 }
 
-//template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-//void DGNavierStokesDualSplittingXWall<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-//local_precompute_mass_matrix (const MatrixFree<dim,value_type>        &data,
-//                              parallel::distributed::Vector<value_type>    &,
-//                              const parallel::distributed::Vector<value_type>  &,
-//                              const std::pair<unsigned int,unsigned int>   &cell_range)
-//{
-//  // build mass matrix only for a scalar (usual mass matrix is block-diagonal)
-//  FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type,true> fe_eval_scalar(data,this->fe_param,
-//      static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
-//
-//  for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
-//  {
-//    //first, check if we have an enriched element
-//    //if so, perform the routine for the enriched elements
-//    fe_eval_scalar.reinit (cell);
-//
-//    if(fe_eval_scalar.enriched)
-//    {
-//      if(matrices[cell].size()==0)
-//        matrices[cell].resize(data.n_components_filled(cell));
-//
-//      for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
-//      {
-//        if (matrices[cell][v].m() != fe_eval_scalar.dofs_per_cell)
-//          matrices[cell][v].reinit(fe_eval_scalar.dofs_per_cell, fe_eval_scalar.dofs_per_cell);// = onematrix;
-//        else
-//          matrices[cell][v]=0;
-//      }
-//      for (unsigned int j=0; j<fe_eval_scalar.dofs_per_cell; ++j)
-//      {
-//        for (unsigned int i=0; i<fe_eval_scalar.dofs_per_cell; ++i)
-//          fe_eval_scalar.write_cellwise_dof_value(i,make_vectorized_array(0.));
-//        fe_eval_scalar.write_cellwise_dof_value(j,make_vectorized_array(1.));
-//
-//        fe_eval_scalar.evaluate (true,false,false);
-//        for (unsigned int q=0; q<fe_eval_scalar.n_q_points; ++q)
-//        {
-//  //        std::cout << fe_eval_xwall.get_value(q)[0] << std::endl;
-//          fe_eval_scalar.submit_value (fe_eval_scalar.get_value(q), q);
-//        }
-//        fe_eval_scalar.integrate (true,false);
-//
-//        for (unsigned int i=0; i<fe_eval_scalar.dofs_per_cell; ++i)
-//          for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
-//            if(fe_eval_scalar.component_enriched(v))
-//              (matrices[cell][v])(i,j) = (fe_eval_scalar.read_cellwise_dof_value(i))[v];
-//            else//this is a non-enriched element
-//            {
-//              if(i<fe_eval_scalar.std_dofs_per_cell && j<fe_eval_scalar.std_dofs_per_cell)
-//                (matrices[cell][v])(i,j) = (fe_eval_scalar.read_cellwise_dof_value(i))[v];
-//              else if(i == j)//diagonal
-//                (matrices[cell][v])(i,j) = 1.0;
-//            }
-//      }
-//
-//      for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
-//      {
-//        (matrices[cell][v]).compute_lu_factorization();
-//      }
-//    }
-//  }
-//}
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
@@ -696,11 +619,14 @@ update_tauw(parallel::distributed::Vector<value_type> &velocity)
       std::cout << "(manually set to 1.0) ";
     tauw = 1.0;
   }
+
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     std::cout << std::endl;
+
   tauw.update_ghost_values();
 
-  this->precompute_spaldings_law();
+  if(this->param.variabletauw)
+    this->precompute_spaldings_law();
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -727,6 +653,8 @@ calculate_wall_shear_stress (const parallel::distributed::Vector<value_type>    
   value_type mean = 0.0;
   unsigned int count = 0;
   const double EPSILON = 1e-12;
+
+
   for(unsigned int i = 0; i < force.local_size(); ++i)
   {
     if(normalization.local_element(i)>EPSILON)
@@ -921,6 +849,10 @@ setup_helmholtz_preconditioner(HelmholtzOperatorData<dim> &)
   {
     AssertThrow(false,ExcMessage("GeometricMultigrid is currently not supported as Helmholtz preconditioner"));
   }
+
+  //some further safety checks
+  AssertThrow(this->param.solver_viscous == SolverViscous::GMRES,ExcMessage("only gmres allowed"));
+  AssertThrow(this->param.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG,ExcMessage("need non-symmetric formulation of viscous part for stability"));
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>

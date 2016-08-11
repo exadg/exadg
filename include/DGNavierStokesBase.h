@@ -412,8 +412,6 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   viscous_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
   viscous_operator_data.viscosity = param.viscosity;
   viscous_operator.initialize(mapping,data,fe_param,viscous_operator_data);
-  // viscous_operator.set_constant_viscosity(viscosity);
-  // viscous_operator.set_variable_viscosity(viscosity);
 
   dof_index_first_point = 0;
   for(unsigned int d=0;d<dim;++d)
