@@ -1143,7 +1143,7 @@ unsigned int
 PoissonSolver<dim, value_type>::solve (parallel::distributed::Vector<value_type>       &dst,
                                        const parallel::distributed::Vector<value_type> &src) const
 {
-  Assert(preconditioner.get() != 0,
+  Assert(preconditioner != nullptr,
          ExcNotInitialized());
 
   ReductionControl solver_control (1e5, solver_data.solver_tolerance_abs, solver_data.solver_tolerance_rel);
