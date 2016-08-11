@@ -11,16 +11,18 @@
 #include "PoissonSolverInputParameters.h"
 #include "MultigridInputParameters.h"
 
-enum class ProblemType { Steady, Unsteady};
-enum class EquationType { Stokes, NavierStokes };
-enum class TreatmentOfConvectiveTerm { Explicit, Implicit };
+using namespace dealii;
 
-enum class TimeStepCalculation { ConstTimeStepUserSpecified, ConstTimeStepCFL, AdaptiveTimeStepCFL };
+enum class ProblemType { Undefined, Steady, Unsteady};
+enum class EquationType { Undefined, Stokes, NavierStokes };
+enum class TreatmentOfConvectiveTerm { Undefined, Explicit, Implicit };
 
-enum class TemporalDiscretization { BDFDualSplittingScheme, BDFCoupledSolution };
+enum class TimeStepCalculation { Undefined, ConstTimeStepUserSpecified, ConstTimeStepCFL, AdaptiveTimeStepCFL };
+
+enum class TemporalDiscretization { Undefined, BDFDualSplittingScheme, BDFCoupledSolution };
 enum class SpatialDiscretization { DG, DGXWall};
 
-enum class ProjectionType { NoPenalty, DivergencePenalty, DivergenceAndContinuityPenalty };
+enum class ProjectionType { Undefined, NoPenalty, DivergencePenalty, DivergenceAndContinuityPenalty };
 enum class SolverProjection { LU, PCG };
 enum class PreconditionerProjection { None, Jacobi, InverseMassMatrix };
 
@@ -29,48 +31,155 @@ enum class InteriorPenaltyFormulationViscous { SIPG, NIPG };
 enum class SolverViscous { PCG, GMRES };
 enum class PreconditionerViscous { None, Jacobi, InverseMassMatrix, GeometricMultigrid };
 
-enum class PreconditionerLinearizedNavierStokes { None, BlockDiagonal, BlockTriangular, BlockTriangularFactorization };
-enum class PreconditionerMomentum { None, InverseMassMatrix, GeometricMultigrid };
-enum class PreconditionerSchurComplement {None, InverseMassMatrix, GeometricMultigrid, CahouetChabard };
+enum class PreconditionerLinearizedNavierStokes { Undefined, None, BlockDiagonal, BlockTriangular, BlockTriangularFactorization };
+enum class PreconditionerMomentum { Undefined, None, InverseMassMatrix, GeometricMultigrid };
+enum class PreconditionerSchurComplement { Undefined, None, InverseMassMatrix, GeometricMultigrid, CahouetChabard };
 
 class InputParameters
 {
 public:
   // standard constructor that initializes parameters
-  InputParameters();
+  InputParameters()
+:
+  problem_type(ProblemType::Undefined),
+  equation_type(EquationType::Undefined),
+  treatment_of_convective_term(TreatmentOfConvectiveTerm::Undefined),
+  start_time(0.),
+  end_time(-1.),
+  max_number_of_steps(std::numeric_limits<unsigned int>::max()),
+  calculation_of_time_step_size(TimeStepCalculation::Undefined),
+  cfl(-1.),
+  max_velocity(-1.),
+  time_step_size(-1.),
+  viscosity(-1.),
+  temporal_discretization(TemporalDiscretization::Undefined),
+  spatial_discretization(SpatialDiscretization::DG),
+  order_time_integrator(1),
+  start_with_low_order(true),
+  use_symmetric_saddle_point_matrix(true),
+  small_time_steps_stability(false),
+  pure_dirichlet_bc(false),
+  penalty_factor_divergence(1.),
+  penalty_factor_continuity(1.),
+  compute_divergence(false),
+  divu_integrated_by_parts(false),
+  divu_use_boundary_data(false),
+  gradp_integrated_by_parts(false),
+  gradp_use_boundary_data(false),
+  IP_factor_pressure(1.),
+  IP_factor_viscous(1.),
+  abs_tol_newton(1.e-20),
+  rel_tol_newton(1.e-12),
+  max_iter_newton(std::numeric_limits<unsigned int>::max()),
+  abs_tol_linear(1.e-20),
+  rel_tol_linear(1.e-12),
+  max_iter_linear(std::numeric_limits<unsigned int>::max()),
+  abs_tol_pressure(1.e-20),
+  rel_tol_pressure(1.e-12),
+  abs_tol_projection(1.e-20),
+  rel_tol_projection(1.e-12),
+  abs_tol_viscous(1.e-20),
+  rel_tol_viscous(1.e-12),
+  solver_poisson(SolverPoisson::PCG),
+  preconditioner_poisson(PreconditionerPoisson::GeometricMultigrid),
+  multigrid_smoother(MultigridSmoother::Chebyshev),
+  multigrid_coarse_grid_solver(MultigridCoarseGridSolver::coarse_chebyshev_smoother),
+  projection_type(ProjectionType::Undefined),
+  solver_projection(SolverProjection::PCG),
+  preconditioner_projection(PreconditionerProjection::InverseMassMatrix),
+  formulation_viscous_term(FormulationViscousTerm::DivergenceFormulation),
+  IP_formulation_viscous(InteriorPenaltyFormulationViscous::SIPG),
+  solver_viscous(SolverViscous::PCG),
+  preconditioner_viscous(PreconditionerViscous::InverseMassMatrix),
+  multigrid_smoother_viscous(MultigridSmoother::Chebyshev),
+  multigrid_coarse_grid_solver_viscous(MultigridCoarseGridSolver::coarse_chebyshev_smoother),
+  preconditioner_linearized_navier_stokes(PreconditionerLinearizedNavierStokes::Undefined),
+  preconditioner_momentum(PreconditionerMomentum::Undefined),
+  preconditioner_schur_complement(PreconditionerSchurComplement::Undefined),
+  output_solver_info_every_timesteps(1),
+  output_start_time(std::numeric_limits<double>::max()),
+  output_interval_time(std::numeric_limits<double>::max()),
+  restart_interval_time(std::numeric_limits<double>::max()),
+  restart_interval_wall_time(std::numeric_limits<double>::max()),
+  restart_interval_step(std::numeric_limits<unsigned int>::max()),
+  output_prefix("indexa"),
+  error_calc_start_time(std::numeric_limits<double>::max()),
+  error_calc_interval_time(std::numeric_limits<double>::max()),
+  analytical_solution_available(false),
+  statistics_start_time(std::numeric_limits<double>::max()),
+  statistics_every(1),
+  cs(0.),
+  ml(0.),
+  variabletauw(true),
+  dtauw(1.),
+  max_wdist_xwall(-1.)
+  {
+  };
+
+  void set_input_parameters();
+
+  void check_parameters()
+  {
+    AssertThrow(problem_type != ProblemType::Undefined,ExcMessage("parameter must be defined"));
+    AssertThrow(equation_type != EquationType::Undefined,ExcMessage("parameter must be defined"));
+    AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::Undefined,ExcMessage("parameter must be defined"));
+    AssertThrow(end_time > start_time,ExcMessage("parameter end_time must be defined"));
+    AssertThrow(calculation_of_time_step_size != TimeStepCalculation::Undefined,ExcMessage("parameter must be defined"));
+    if(calculation_of_time_step_size != TimeStepCalculation::ConstTimeStepUserSpecified)
+    {
+      AssertThrow(cfl > 0.,ExcMessage("parameter must be defined"));
+      AssertThrow(max_velocity > 0.,ExcMessage("parameter must be defined"));
+    }
+    if(calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified)
+      AssertThrow(time_step_size > 0.,ExcMessage("parameter must be defined"));
+    AssertThrow(viscosity > 0.,ExcMessage("parameter must be defined"));
+    AssertThrow(temporal_discretization != TemporalDiscretization::Undefined,ExcMessage("parameter must be defined"));
+
+    if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      AssertThrow(projection_type !=ProjectionType::Undefined,ExcMessage("parameter must be defined"));
+    }
+
+    if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+    {
+      AssertThrow(preconditioner_linearized_navier_stokes != PreconditionerLinearizedNavierStokes::Undefined,ExcMessage("parameter must be defined"));
+      AssertThrow(preconditioner_momentum != PreconditionerMomentum::Undefined,ExcMessage("parameter must be defined"));
+      AssertThrow(preconditioner_schur_complement != PreconditionerSchurComplement::Undefined,ExcMessage("parameter must be defined"));
+    }
+  }
 
   // describes whether a steady state problem or unsteady problem is solved
-  ProblemType const problem_type;
+  ProblemType problem_type;
 
   // describes the physical/mathematical model that has to be solved, i.e. Stokes vs. NavierStokes
-  EquationType const equation_type;
+  EquationType equation_type;
 
   // the convective term can be either treated explicitly or implicitly
-  TreatmentOfConvectiveTerm const treatment_of_convective_term;
+  TreatmentOfConvectiveTerm treatment_of_convective_term;
 
   // start and end time of time interval
-  double const start_time;
-  double const end_time;
+  double start_time;
+  double end_time;
 
   // maximum number of time steps
-  unsigned int const max_number_of_steps;
+  unsigned int max_number_of_steps;
 
   // calculation of time step size
-  TimeStepCalculation const  calculation_of_time_step_size;
+  TimeStepCalculation  calculation_of_time_step_size;
 
   // cfl number: note that this cfl number is the first in a series of cfl numbers when performing temporal convergence tests,
   // i.e., cfl_real = cfl, cfl/2, cfl/4, cfl/8, ...
-  double const cfl;
+  double cfl;
 
   // maximum velocity needed when calculating the time step size according to cfl condition
-  double const max_velocity;
+  double max_velocity;
 
   // user specified time step size: note that this time_step_size is the first in a series of time_step_size's when
   // performing temporal convergence tests, i.e., time_step_size_real = time_step_size, time_step_size/2, ...
-  double const time_step_size;
+  double time_step_size;
 
   // kinematic viscosity nu
-  double const viscosity;
+  double viscosity;
 
   // temporal discretization method
   TemporalDiscretization temporal_discretization;
@@ -79,142 +188,143 @@ public:
   SpatialDiscretization spatial_discretization;
 
   // order of BDF time integration scheme and extrapolation scheme
-  unsigned int const order_time_integrator;
+  unsigned int order_time_integrator;
   // start time integrator with low order time integrator, i.e. first order Euler method
-  bool const start_with_low_order;
+  bool start_with_low_order;
 
   // use symmetric saddle point matrix for coupled solver:
   // continuity equation formulated as: - div(u) = 0 -> symmetric formulation
   //                                      div(u) = 0 -> non-symmetric formulation
-  bool const use_symmetric_saddle_point_matrix;
+  bool use_symmetric_saddle_point_matrix;
 
   // use small time steps stability approach (similar to approach of Leriche et al.)
-  bool const small_time_steps_stability;
+  bool small_time_steps_stability;
 
   // special case of pure Dirichlet BCs on whole boundary
-  bool const pure_dirichlet_bc;
+  bool pure_dirichlet_bc;
 
   // penalty factor of divergence penalty term in projection step
-  double const penalty_factor_divergence;
+  double penalty_factor_divergence;
   // penalty factor of divergence penalty term in projection step
-  double const penalty_factor_continuity;
+  double penalty_factor_continuity;
 
   // compute divergence of intermediate velocity field to verify divergence penalty method
-  bool const compute_divergence;
+  bool compute_divergence;
 
   // integration by parts of div(U_tilde) on rhs of pressure Poisson equation
-  bool const divu_integrated_by_parts;
+  bool divu_integrated_by_parts;
   // use boundary data if integrated by parts
-  bool const divu_use_boundary_data;
+  bool divu_use_boundary_data;
   // integration by parts of grad(P) on rhs projection step
-  bool const gradp_integrated_by_parts;
+  bool gradp_integrated_by_parts;
   // use boundary data if integrated by parts
-  bool const gradp_use_boundary_data;
+  bool gradp_use_boundary_data;
 
   // interior penalty parameter scaling factor for pressure Poisson equation
-  double const IP_factor_pressure;
+  double IP_factor_pressure;
   // interior penalty parameter scaling factor for Helmholtz equation of viscous step
-  double const IP_factor_viscous;
+  double IP_factor_viscous;
 
   // solver tolerances Newton solver
-  double const abs_tol_newton;
-  double const rel_tol_newton;
-  unsigned int const max_iter_newton;
+  double abs_tol_newton;
+  double rel_tol_newton;
+  unsigned int max_iter_newton;
 
   // solver tolerances for linearized problem of Newton solver
-  double const abs_tol_linear;
-  double const rel_tol_linear;
-  unsigned int const max_iter_linear;
+  double abs_tol_linear;
+  double rel_tol_linear;
+  unsigned int max_iter_linear;
 
   // solver tolerances for pressure Poisson equation
-  double const abs_tol_pressure;
-  double const rel_tol_pressure;
+  double abs_tol_pressure;
+  double rel_tol_pressure;
 
   // solver tolerances for projection step
-  double const abs_tol_projection;
-  double const rel_tol_projection;
+  double abs_tol_projection;
+  double rel_tol_projection;
 
   // solver tolerances for Helmholtz equation of viscous step
-  double const abs_tol_viscous;
-  double const rel_tol_viscous;
+  double abs_tol_viscous;
+  double rel_tol_viscous;
 
   // type of pressure Poisson solver
-  SolverPoisson const solver_poisson;
+  SolverPoisson solver_poisson;
   // preconditioner type for solution of pressure Poisson equation
-  PreconditionerPoisson const preconditioner_poisson;
+  PreconditionerPoisson preconditioner_poisson;
   // multigrid smoother pressure Poisson equation
-  MultigridSmoother const multigrid_smoother;
+  MultigridSmoother multigrid_smoother;
   // multigrid coarse grid solver pressure Poisson equation
-  MultigridCoarseGridSolver const multigrid_coarse_grid_solver;
+  MultigridCoarseGridSolver multigrid_coarse_grid_solver;
 
   // projection type: standard projection (no penalty term), divergence penalty term, divergence and continuity penalty term (weak projection)
-  ProjectionType const projection_type;
+  ProjectionType projection_type;
   // type of projections solver
-  SolverProjection const solver_projection;
+  SolverProjection solver_projection;
   // preconditioner type for solution of projection step
-  PreconditionerProjection const preconditioner_projection;
+  PreconditionerProjection preconditioner_projection;
 
   // formulation of viscous term: divergence formulation or Laplace formulation
-  FormulationViscousTerm const formulation_viscous_term;
+  FormulationViscousTerm formulation_viscous_term;
   // interior penalty formulation of viscous term: SIPG (symmetric IP) or NIPG (non-symmetric IP)
-  InteriorPenaltyFormulationViscous const IP_formulation_viscous;
+  InteriorPenaltyFormulationViscous IP_formulation_viscous;
   // Solver type for solution of viscous step
-  SolverViscous const solver_viscous;
+  SolverViscous solver_viscous;
   // Preconditioner type for solution of viscous step
-  PreconditionerViscous const preconditioner_viscous;
+  PreconditionerViscous preconditioner_viscous;
   // multigrid smoother pressure Poisson equation
-  MultigridSmoother const multigrid_smoother_viscous;
+  MultigridSmoother multigrid_smoother_viscous;
   // multigrid coarse grid solver pressure Poisson equation
-  MultigridCoarseGridSolver const multigrid_coarse_grid_solver_viscous;
+  MultigridCoarseGridSolver multigrid_coarse_grid_solver_viscous;
 
   // preconditioner linearized Navier-Stokes problem
-  PreconditionerLinearizedNavierStokes const preconditioner_linearized_navier_stokes;
+  PreconditionerLinearizedNavierStokes preconditioner_linearized_navier_stokes;
   // preconditioner for (1,1) velocity/momentum block in case of block preconditioning
-  PreconditionerMomentum const preconditioner_momentum;
+  PreconditionerMomentum preconditioner_momentum;
   // preconditioner for (2,2) pressure/Schur complement block in case of block preconditioning
-  PreconditionerSchurComplement const preconditioner_schur_complement;
+  PreconditionerSchurComplement preconditioner_schur_complement;
 
   // show solver performance (wall time, number of iterations) every ... timesteps
-  unsigned int const output_solver_info_every_timesteps;
+  unsigned int output_solver_info_every_timesteps;
 
   // before then no output will be written
-  double const output_start_time;
+  double output_start_time;
   // specifies the time interval in which output is written
-  double const output_interval_time;
+  double output_interval_time;
 
   // specifies the time interval in which restarts are written, starting from start_time
-  double const restart_interval_time;
+  double restart_interval_time;
   // specifies the wall time interwal in which restarts are written
-  double const restart_interval_wall_time;
+  double restart_interval_wall_time;
   // specifies the restart interval via number of time steps
-  unsigned int const restart_interval_step;
+  unsigned int restart_interval_step;
 
   // name of generated output files
-  std::string const output_prefix;
+  std::string output_prefix;
 
   // before then no error calculation will be performed
-  double const error_calc_start_time;
+  double error_calc_start_time;
   // specifies the time interval in which error calculation is performed
-  double const error_calc_interval_time;
+  double error_calc_interval_time;
 
   // to calculate the error an analytical solution to the problem has to be available
-  bool const analytical_solution_available;
+  bool analytical_solution_available;
 
   // before then no statistics calculation will be performed
-  double const statistics_start_time;
+  double statistics_start_time;
   // calculate statistics every "statistics_every" time steps
-  unsigned int const statistics_every;
+  unsigned int statistics_every;
 
   // Smagorinsky constant
-  double const cs;
+  double cs;
   // mixing-length model for xwall
-  double const ml;
+  double ml;
   // xwall with adaptive wall shear stress
-  bool const variabletauw;
+  bool variabletauw;
   // delta tauw if adaptive between 0 and 1
-  double const dtauw;
+  double dtauw;
   // max wall distance of enriched elements
-  double const max_wdist_xwall;
+  double max_wdist_xwall;
+
 };
 
 #endif /* INCLUDE_INPUTPARAMETERS_H_ */

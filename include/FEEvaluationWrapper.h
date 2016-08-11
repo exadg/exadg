@@ -87,10 +87,6 @@ public:
 
   using FEEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number>::set_dof_values;
 
-  void evaluate_eddy_viscosity(const std::vector<parallel::distributed::Vector<double> > &solution_n, unsigned int cell)
-  {
-    eddyvisc.resize(FEEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number>::n_q_points,make_vectorized_array<Number>(fe_param.viscosity));
-  }
   Tensor<2,dim,VectorizedArray<Number> > make_symmetric(const Tensor<2,dim,VectorizedArray<Number> >& grad)
   {
     Tensor<2,dim,VectorizedArray<Number> > symgrad;
@@ -111,7 +107,6 @@ public:
     return false;
   }
 
-  AlignedVector<VectorizedArray<Number> > eddyvisc;
   unsigned int std_dofs_per_cell;
   const FEParameters<dim> & fe_param;
 };
@@ -187,10 +182,6 @@ public:
 
   using FEFaceEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number>::distribute_local_to_global;
 
-  void evaluate_eddy_viscosity(const parallel::distributed::BlockVector<double> &velocity_n, unsigned int face, const VectorizedArray<Number> volume)
-  {
-    eddyvisc.resize(FEEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number>::n_q_points,make_vectorized_array<Number>(fe_param.viscosity));
-  }
   Tensor<2,dim,VectorizedArray<Number> > make_symmetric(const Tensor<2,dim,VectorizedArray<Number> >& grad)
   {
     Tensor<2,dim,VectorizedArray<Number> > symgrad;
@@ -212,7 +203,6 @@ public:
     return false;
   }
 
-  AlignedVector<VectorizedArray<Number> > eddyvisc;
   unsigned int std_dofs_per_cell;
   const FEParameters<dim> & fe_param;
 };
@@ -306,8 +296,7 @@ public:
   n_q_points(other.n_q_points),
   enriched(other.enriched),
   quad_type(other.quad_type),
-  enriched_components(other.enriched_components),
-  eddyvisc(other.eddyvisc)
+  enriched_components(other.enriched_components)
   {
     // use non-linear quadrature rule for now for all terms... small speed-up possible through better choice of standard quadrature rule
     // (via additional template argument)
@@ -444,6 +433,23 @@ public:
       enrichment_cell.resize(0);
       enrichment_gradient_cell.resize(0);
     }
+  }
+
+  void fill_wdist_and_tauw(unsigned int cell, AlignedVector<VectorizedArray<Number> > & wdist, AlignedVector<VectorizedArray<Number> > & tauw)
+  {
+    fe_eval_tauw[quad_type]->reinit(cell);
+
+    fe_eval_tauw[quad_type]->read_dof_values(*fe_param.wdist);
+    fe_eval_tauw_evaluate(true, false);
+    wdist.resize(n_q_points);
+    for(unsigned int q=0;q<n_q_points;++q)
+      wdist[q] = fe_eval_tauw[quad_type]->get_value(q);
+
+    fe_eval_tauw[quad_type]->read_dof_values(*fe_param.tauw);
+    fe_eval_tauw_evaluate(true, false);
+    tauw.resize(n_q_points);
+    for(unsigned int q=0;q<n_q_points;++q)
+      tauw[q] = fe_eval_tauw[quad_type]->get_value(q);
   }
 
   VectorizedArray<Number> * begin_dof_values() DEAL_II_DEPRECATED
@@ -793,135 +799,6 @@ public:
     return enriched_components[v];
   }
 
-  void evaluate_eddy_viscosity(const std::vector<parallel::distributed::Vector<double> > &solution_n, unsigned int cell)
-  {
-    eddyvisc.resize(n_q_points);
-    if(fe_param.cs > 1e-10)
-    {
-      const VectorizedArray<Number> Cs = make_vectorized_array<Number>(fe_param.cs);
-      VectorizedArray<Number> hfac = make_vectorized_array<Number>(1.0/(Number)fe_degree);
-      fe_eval_tauw[quad_type]->reinit(cell);
-      {
-        VectorizedArray<Number> volume = make_vectorized_array<Number>((Number)0.);
-        {
-          AlignedVector<VectorizedArray<Number> > JxW_values;
-          JxW_values.resize(fe_eval_tauw[quad_type]->n_q_points);
-          fe_eval_tauw[quad_type]->fill_JxW_values(JxW_values);
-          for (unsigned int q=0; q<fe_eval_tauw[quad_type]->n_q_points; ++q)
-            volume += JxW_values[q];
-        }
-        reinit(cell);
-        read_dof_values(solution_n,0,solution_n,dim+1);
-        evaluate (false,true,false);
-        AlignedVector<VectorizedArray<Number> > wdist;
-        wdist.resize(fe_eval_tauw[quad_type]->n_q_points);
-        fe_eval_tauw[quad_type]->read_dof_values(*fe_param.wdist);
-        fe_eval_tauw[quad_type]->evaluate(true,false,false);
-        for (unsigned int q=0; q<fe_eval_tauw[quad_type]->n_q_points; ++q)
-          wdist[q] = fe_eval_tauw[quad_type]->get_value(q);
-        fe_eval_tauw[quad_type]->reinit(cell);
-        fe_eval_tauw[quad_type]->read_dof_values(*fe_param.tauw);
-        fe_eval_tauw[quad_type]->evaluate(true,false,false);
-
-        const VectorizedArray<Number> hvol = std::pow(volume, 1./(double)dim) * hfac;
-
-        for (unsigned int q=0; q<n_q_points; ++q)
-        {
-          Tensor<2,dim,VectorizedArray<Number> > s = get_symmetric_gradient(q);
-
-          VectorizedArray<Number> snorm = make_vectorized_array<Number>((Number)0.);
-          for (unsigned int i = 0; i<dim ; i++)
-            for (unsigned int j = 0; j<dim ; j++)
-              snorm += (s[i][j])*(s[i][j]);
-          snorm *= make_vectorized_array<Number>(0.5);
-          //simple wall correction
-          VectorizedArray<Number> fmu = (1.-std::exp(-wdist[q]/fe_param.viscosity*std::sqrt(fe_eval_tauw[quad_type]->get_value(q))*0.04));
-          VectorizedArray<Number> lm = Cs*hvol*fmu;
-          eddyvisc[q]= make_vectorized_array<Number>(fe_param.viscosity) + lm*lm*std::sqrt(snorm);
-        }
-      }
-      //initialize again to get a clean version
-      reinit(cell);
-    }
-    else if (fe_param.ml>0.1)//&& enriched)
-    {
-      fe_eval_tauw[quad_type]->reinit(cell);
-      {
-        VectorizedArray<Number> h ;
-        {
-          VectorizedArray<Number> hfac = make_vectorized_array<Number>(1.0/(Number)fe_degree);
-          VectorizedArray<Number> volume = make_vectorized_array<Number>((Number)0.);
-          AlignedVector<VectorizedArray<Number> > JxW_values;
-          JxW_values.resize(fe_eval_tauw[quad_type]->n_q_points);
-          fe_eval_tauw[quad_type]->fill_JxW_values(JxW_values);
-          for (unsigned int q=0; q<fe_eval_tauw[quad_type]->n_q_points; ++q)
-            volume += JxW_values[q];
-          h=std::exp(std::log(volume)/3.)*hfac;
-        }
-        read_dof_values(solution_n,0,solution_n,dim+1);
-        evaluate (false,true,false);
-        AlignedVector<VectorizedArray<Number> > wdist;
-        AlignedVector<Tensor<1,dim,VectorizedArray<Number> > > derwdist;
-        wdist.resize(fe_eval_tauw[quad_type]->n_q_points);
-        derwdist.resize(fe_eval_tauw[quad_type]->n_q_points);
-        fe_eval_tauw[quad_type]->read_dof_values(*fe_param.wdist);
-        fe_eval_tauw[quad_type]->evaluate(true,true,false);
-        for (unsigned int q=0; q<fe_eval_tauw[quad_type]->n_q_points; ++q)
-        {
-          wdist[q] = fe_eval_tauw[quad_type]->get_value(q);
-          derwdist[q] = fe_eval_tauw[quad_type]->get_gradient(q);
-          VectorizedArray<Number> sum = std::sqrt(derwdist[q]*derwdist[q]);//normalize to 1
-          derwdist[q] /= sum;
-        }
-        fe_eval_tauw[quad_type]->reinit(cell);
-        fe_eval_tauw[quad_type]->read_dof_values(*fe_param.tauw);
-        fe_eval_tauw[quad_type]->evaluate(true,false,false);
-
-        for (unsigned int q=0; q<n_q_points; ++q)
-        {
-          Tensor<2,dim,VectorizedArray<Number> > du = get_gradient(q);
-          Tensor<1,dim,VectorizedArray<Number> > dudy = du * derwdist[q];
-          VectorizedArray<Number> dudynorm = std::sqrt(dudy*dudy);
-
-          //simple wall correction
-          VectorizedArray<Number> yp = wdist[q]/fe_param.viscosity*std::sqrt(fe_eval_tauw[quad_type]->get_value(q));
-          const double HMIN = 0.6;
-          const double KAPPA = 0.41;
-          const double Ainv = 1./30.;
-          VectorizedArray<Number> lssst=KAPPA*wdist[q]*(1.-std::exp(-yp*Ainv))*std::min(2.*std::exp(-9.*(0.25-wdist[q]/h*HMIN)*(0.25-wdist[q]/h*HMIN)),make_vectorized_array<Number>((Number)1.));
-          VectorizedArray<Number> vt = lssst*lssst*dudynorm;
-          //VectorizedArray<Number> l = KAPPA*std::min(wdist[q],HMIN*h)*(1.-std::exp(-yp*Ainv));
-          //VectorizedArray<Number> vt = l*l*dudynorm;
-          //VectorizedArray<Number> lssstl=KAPPA*wdist[q]*(1.-std::exp(-yp*Ainv));
-          //VectorizedArray<Number> vt = lssst*lssstl*dudynorm;
-          //VectorizedArray<Number> vtch = 0.41*std::sqrt(fe_eval_tauw[0].get_value(q))*std::min(wdist[q],1.5*h)*(1.-std::exp(-yp*0.05))*(1.-std::exp(-yp*0.05));
-          for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-          {
-            //vt = std::min(vt,make_vectorized_array(38.7*VISCOSITY));
-           // if(enriched_components.at(v))
-            //if(wdist[q][v]<MAX_ML_DIST)
-            {
-            //  if(yp[v]>1.)
-                //vt[v] *= std::exp(-BETA*std::pow(wdist[q][v]/h[v],EXPON));
-             // if(wdist[q][v] > MAX_ML_DIST)
-             //   vt[v] *= 1.-(wdist[q][v]-MAX_ML_DIST)/(MAX_WDIST_XWALL-MAX_ML_DIST);
-              eddyvisc[q][v]= fe_param.viscosity + vt[v];
-            }
-           // else
-           //   eddyvisc[q][v]= VISCOSITY;
-          }
-        }
-      }
-      //initialize again to get a clean version
-      reinit(cell);
-  }
-    else
-      for (unsigned int q=0; q<n_q_points; ++q)
-        eddyvisc[q]= make_vectorized_array<Number>(fe_param.viscosity);
-
-    return;
-  }
-
   const internal::MatrixFreeFunctions::ShapeInfo<Number> &
   get_shape_info() const
   {
@@ -1048,7 +925,6 @@ public:
   bool enriched;
   unsigned int quad_type;
   std::vector<bool> enriched_components;
-  AlignedVector<VectorizedArray<Number> > eddyvisc;
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d,
@@ -1071,7 +947,7 @@ public:
   {
   };
 
- void reinit(const unsigned int cell, const bool = false)
+  void reinit(const unsigned int cell, const bool = false)
   {
     this->enriched = false;
     this->enriched_components.resize(VectorizedArray<Number>::n_array_elements,false);
@@ -1285,6 +1161,23 @@ public:
     std_dofs_per_cell = fe_eval_q0.dofs_per_cell;
   }
 
+  void fill_wdist_and_tauw(unsigned int face, AlignedVector<VectorizedArray<Number> > & wdist, AlignedVector<VectorizedArray<Number> > & tauw)
+  {
+    fe_eval_tauw[quad_type]->reinit(face);
+
+    fe_eval_tauw[quad_type]->read_dof_values(*fe_param.wdist);
+    fe_eval_tauw_evaluate(true, false);
+    wdist.resize(n_q_points);
+    for(unsigned int q=0;q<n_q_points;++q)
+      wdist[q] = fe_eval_tauw[quad_type]->get_value(q);
+
+    fe_eval_tauw[quad_type]->read_dof_values(*fe_param.tauw);
+    fe_eval_tauw_evaluate(true, false);
+    tauw.resize(n_q_points);
+    for(unsigned int q=0;q<n_q_points;++q)
+      tauw[q] = fe_eval_tauw[quad_type]->get_value(q);
+  }
+
   void read_dof_values (const parallel::distributed::Vector<Number> &src)
   {
     fe_eval[quad_type]->read_dof_values(src);
@@ -1486,17 +1379,12 @@ public:
     return fe_eval[quad_type]->get_normal_gradient(q_point);
   }
 
-  VectorizedArray<Number> get_normal_gradient(const unsigned int q_point,bool test) const
+  VectorizedArray<Number> get_normal_gradient(const unsigned int q_point,bool) const
   {
     if(enriched)
     {
       VectorizedArray<Number> grad_out;
-        grad_out = gradients[q_point][0] *
-                         fe_eval[quad_type]->get_normal_vector(q_point)[0];
-        for (unsigned int d=1; d<dim; ++d)
-          grad_out += gradients[q_point][d] *
-                           fe_eval[quad_type]->get_normal_vector(q_point)[d];
-
+        grad_out = gradients[q_point] * fe_eval[quad_type]->get_normal_vector(q_point);
         grad_out +=  fe_eval[quad_type]->get_normal_gradient(q_point);
       return grad_out;
     }
@@ -1622,120 +1510,6 @@ public:
       fe_eval[quad_type]->begin_dof_values()[j]=value;
     return;
   }
-  void evaluate_eddy_viscosity(const std::vector<parallel::distributed::Vector<double> > &solution_n, unsigned int face, const VectorizedArray<Number> volume)
-  {
-    eddyvisc.resize(n_q_points);
-    if(fe_param.cs > 1e-10)
-    {
-      const VectorizedArray<Number> Cs = make_vectorized_array<Number>(fe_param.cs);
-      VectorizedArray<Number> hfac = make_vectorized_array<Number>(1.0/(Number)fe_degree);
-      fe_eval_tauw[quad_type]->reinit(face);
-      {
-        reinit(face);
-        read_dof_values(solution_n,0,solution_n,dim+1);
-        evaluate (false,true,false);
-        AlignedVector<VectorizedArray<Number> > wdist;
-        wdist.resize(fe_eval_tauw[quad_type]->n_q_points);
-        fe_eval_tauw[quad_type]->read_dof_values(*fe_param.wdist);
-        fe_eval_tauw[quad_type]->evaluate(true,false);
-        for (unsigned int q=0; q<fe_eval_tauw[quad_type]->n_q_points; ++q)
-          wdist[q] = fe_eval_tauw[quad_type]->get_value(q);
-        fe_eval_tauw[quad_type]->reinit(face);
-        fe_eval_tauw[quad_type]->read_dof_values(*fe_param.tauw);
-        fe_eval_tauw[quad_type]->evaluate(true,false);
-
-        const VectorizedArray<Number> hvol = hfac * std::pow(volume, 1./(double)dim);
-
-        for (unsigned int q=0; q<n_q_points; ++q)
-        {
-          Tensor<2,dim,VectorizedArray<Number> > s = get_symmetric_gradient(q);
-
-          VectorizedArray<Number> snorm = make_vectorized_array<Number>((Number)0.);
-          for (unsigned int i = 0; i<dim ; i++)
-            for (unsigned int j = 0; j<dim ; j++)
-              snorm += (s[i][j])*(s[i][j]);
-          snorm *= make_vectorized_array<Number>(0.5);
-          //simple wall correction
-          VectorizedArray<Number> fmu = (1.-std::exp(-wdist[q]/fe_param.viscosity*std::sqrt(fe_eval_tauw[quad_type]->get_value(q))*0.04));
-          VectorizedArray<Number> lm = Cs*hvol*fmu;
-          eddyvisc[q]= make_vectorized_array<Number>(fe_param.viscosity) + lm*lm*std::sqrt(snorm);
-        }
-      }
-      //initialize again to get a clean version
-      reinit(face);
-    }
-  else if (fe_param.ml>0.1)// && enriched)
-  {
-    fe_eval_tauw[quad_type]->reinit(face);
-    VectorizedArray<Number> h ;
-    {
-      VectorizedArray<Number> hfac = make_vectorized_array<Number>(1.0/(Number)fe_degree);
-      h=std::exp(std::log(volume)/3.)*hfac;
-    }
-    {
-      read_dof_values(solution_n,0,solution_n,dim+1);
-      evaluate (false,true,false);
-      AlignedVector<VectorizedArray<Number> > wdist;
-      AlignedVector<Tensor<1,dim,VectorizedArray<Number> > > derwdist;
-      wdist.resize(fe_eval_tauw[quad_type]->n_q_points);
-      derwdist.resize(fe_eval_tauw[quad_type]->n_q_points);
-      fe_eval_tauw[quad_type]->read_dof_values(*fe_param.wdist);
-      fe_eval_tauw[quad_type]->evaluate(true,true);
-      for (unsigned int q=0; q<fe_eval_tauw[quad_type]->n_q_points; ++q)
-      {
-        wdist[q] = fe_eval_tauw[quad_type]->get_value(q);
-        derwdist[q] = fe_eval_tauw[quad_type]->get_gradient(q);
-        VectorizedArray<Number> sum = std::sqrt(derwdist[q]*derwdist[q]);//normalize to 1
-        derwdist[q] /= sum;
-      }
-      fe_eval_tauw[quad_type]->reinit(face);
-      fe_eval_tauw[quad_type]->read_dof_values(*fe_param.tauw);
-      fe_eval_tauw[quad_type]->evaluate(true,false);
-
-      for (unsigned int q=0; q<n_q_points; ++q)
-      {
-        Tensor<2,dim,VectorizedArray<Number> > du = get_gradient(q);
-        Tensor<1,dim,VectorizedArray<Number> > dudy = du * derwdist[q];
-        VectorizedArray<Number> dudynorm = std::sqrt(dudy*dudy);
-        const double HMIN = 0.6;
-        const double KAPPA = 0.41;
-        const double Ainv = 1./30.;
-        VectorizedArray<Number> yp = wdist[q]/fe_param.viscosity*std::sqrt(fe_eval_tauw[quad_type]->get_value(q));
-        VectorizedArray<Number> lssst=KAPPA*wdist[q]*(1.-std::exp(-yp*Ainv))*std::min(2.*std::exp(-9.*(0.25-wdist[q]/h*HMIN)*(0.25-wdist[q]/h*HMIN)),make_vectorized_array<Number>((Number)1.));
-        VectorizedArray<Number> vt = lssst*lssst*dudynorm;
-        //VectorizedArray<Number> l = KAPPA*std::min(wdist[q],HMIN*h)*(1.-std::exp(-yp*Ainv));
-        //VectorizedArray<Number> vt = l*l*dudynorm;
-        //VectorizedArray<Number> lssstl = KAPPA*wdist[q]*(1.-std::exp(-yp*Ainv));
-        //VectorizedArray<Number> vt = lssstl*lssst*dudynorm;
-        //VectorizedArray<Number> vtch = 0.41*std::sqrt(fe_eval_tauw[quad_type]->get_value(q))*std::min(wdist[q],1.5*h)*(1.-std::exp(-yp*0.05))*(1.-std::exp(-yp*0.05));
-       // eps *= 0.5*vt;
-        //eps =std::pow(fe_eval_tauw[0].get_value(q),1.5)/(0.41*wdist[q]);
-        for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
-        {
-        //  if(enriched_components.at(v))
-          {
-            //vt = std::min(vt,make_vectorized_array(38.7*VISCOSITY));
-            //if(yp[v]>1.)
-              //vt[v] *= std::exp(-BETA*std::pow(wdist[q][v]/h[v],EXPON));
-        //    if(wdist[q][v] > MAX_ML_DIST)
-        //      vt[v] *= 1.-(wdist[q][v]-MAX_ML_DIST)/(MAX_WDIST_XWALL-MAX_ML_DIST);
-            eddyvisc[q][v]= fe_param.viscosity + vt[v];
-          }
-        //  else
-        //    eddyvisc[q][v]= VISCOSITY;
-        }
-      }
-    }
-    //initialize again to get a clean version
-    reinit(face);
-}
-    else
-      for (unsigned int q=0; q<n_q_points; ++q)
-        eddyvisc[q]= make_vectorized_array<Number>(fe_param.viscosity);
-
-    return;
-  }
-
   void fill_JxW_values(AlignedVector<VectorizedArray<Number> > &JxW_values) const
   {
     fe_eval[quad_type]->fill_JxW_values(JxW_values);
@@ -1888,7 +1662,6 @@ public:
   bool enriched;
   unsigned int quad_type;
   std::vector<bool> enriched_components;
-  AlignedVector<VectorizedArray<Number> > eddyvisc;
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d,

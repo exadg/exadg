@@ -298,7 +298,7 @@ namespace Step37
 
     parallel::distributed::Triangulation<dim>               triangulation;
     std_cxx11::shared_ptr<FiniteElement<dim> > fe;
-    MappingQ<dim>                    mapping;
+    MappingQGeneric<dim>             mapping;
     DoFHandler<dim>                  dof_handler;
     ConstraintMatrix                 constraints;
     MatrixFree<dim,double>           matrix_free;

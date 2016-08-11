@@ -12,7 +12,7 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 
-template<int dim> class PostProcessor;
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall> class PostProcessor;
 
 const std::string restart_filename(InputParameters const & param)
 {
@@ -34,9 +34,10 @@ void check_file(std::ifstream const & in, const std::string filename)
                              "!"));
 }
 
-template<int dim, typename value_type>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall,typename value_type>
 void resume_restart(boost::archive::binary_iarchive & ia, InputParameters const & param, double & time,
-    std_cxx11::shared_ptr<PostProcessor<dim> > & postprocessor, std::vector<value_type> & time_steps, unsigned int const order)
+    std_cxx11::shared_ptr<PostProcessor<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > & postprocessor,
+    std::vector<value_type> & time_steps, unsigned int const order)
 {
 
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
