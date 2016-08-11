@@ -1592,20 +1592,20 @@ DiscretizationOfLaplacian DISCRETIZATION_OF_LAPLACIAN =
   double RightHandSide<dim>::value(const Point<dim>   &p,
                                    const unsigned int component) const
   {
+    double t = this->get_time();
+    double result = 0.0;
+    (void)t;
+
 #ifdef CHANNEL
     //channel flow with periodic bc
     if(component==0)
-      if(time<0.01)
+      if(t<0.01)
         return 1.0*(1.0+((double)rand()/RAND_MAX)*0.0);
       else
         return 1.0;
     else
       return 0.0;
 #endif
-
-    double t = this->get_time();
-    double result = 0.0;
-    (void)t;
 
 #ifdef STOKES_GUERMOND
     // Stokes problem (Guermond,2003 & 2006)
@@ -3062,8 +3062,31 @@ DiscretizationOfLaplacian DISCRETIZATION_OF_LAPLACIAN =
 
     GridTools::transform (&grid_transform<dim>, triangulation);
 
-    dirichlet_boundary.insert(0);
-    neumann_boundary.insert(1);
+    // fill boundary descriptor velocity
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_velocity;
+    analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>(dim,param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                      (0,analytical_solution_velocity));
+
+    std_cxx11::shared_ptr<Function<dim> > neumann_bc_velocity;
+    neumann_bc_velocity.reset(new NeumannBoundaryVelocity<dim>(param.start_time));
+    // Neumann boundaris: ID = 1
+    boundary_descriptor_velocity->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                    (1,neumann_bc_velocity));
+
+    // fill boundary descriptor pressure
+    std_cxx11::shared_ptr<Function<dim> > pressure_bc_dudt;
+    pressure_bc_dudt.reset(new PressureBC_dudt<dim>(param.start_time));
+    // Dirichlet boundaries: ID = 0
+    boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                      (0,pressure_bc_dudt));
+
+    std_cxx11::shared_ptr<Function<dim> > analytical_solution_pressure;
+    analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>(param.start_time));
+    // Neumann boundaries: ID = 1
+    boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+                                                    (1,analytical_solution_pressure));
 #endif
 
 #ifdef VORTEX

@@ -852,7 +852,7 @@ setup_helmholtz_preconditioner(HelmholtzOperatorData<dim> &)
 
   //some further safety checks
   AssertThrow(this->param.solver_viscous == SolverViscous::GMRES,ExcMessage("only gmres allowed"));
-  AssertThrow(this->param.IP_formulation_viscous == InteriorPenaltyFormulationViscous::NIPG,ExcMessage("need non-symmetric formulation of viscous part for stability"));
+  AssertThrow(this->param.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG,ExcMessage("need non-symmetric formulation of viscous part for stability"));
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
