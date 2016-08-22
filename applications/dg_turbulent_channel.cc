@@ -74,10 +74,10 @@
 #include "PostProcessorXWall.h"
 #include "PrintInputParameters.h"
 
-const unsigned int FE_DEGREE = 4;
+const unsigned int FE_DEGREE = 5;
 const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
-const unsigned int FE_DEGREE_XWALL = 2;
-const unsigned int N_Q_POINTS_1D_XWALL = 18;
+const unsigned int FE_DEGREE_XWALL = 1;
+const unsigned int N_Q_POINTS_1D_XWALL = 25;
 const unsigned int DIMENSION = 2; // DIMENSION >= 2
 const unsigned int REFINE_STEPS_SPACE_MIN = 3;
 const unsigned int REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
@@ -87,7 +87,7 @@ const double GRID_STRETCH_FAC = 0.001;
 
 void InputParametersNavierStokes::set_input_parameters()
 {
-  output_prefix = "ch395_l4_k4_gt0_sa";
+  output_prefix = "ch395_l3_k5k1_gt0_sa";
   cfl = 0.1;
   viscosity = 1./395.;
 
@@ -166,7 +166,7 @@ void InputParametersNavierStokes::set_input_parameters()
         else if(component ==2)
           result = (pow(p[1],6.0)-1.0)*std::sin(p[0]*8.)*2.;
       }
-      else
+      else if(component == 0)
         result = -23.0*(pow(p[1],6.0)-1.0);
     }
 
@@ -222,7 +222,7 @@ void InputParametersNavierStokes::set_input_parameters()
   public:
     RightHandSide (const double time = 0.)
       :
-      Function<dim>(dim, time),time(time)
+      Function<dim>(dim, time)
     {}
 
     virtual ~RightHandSide(){};
@@ -230,8 +230,6 @@ void InputParametersNavierStokes::set_input_parameters()
     virtual double value (const Point<dim> &p,const unsigned int component = 0) const;
 
     void setup(const double* , double , double );
-  private:
-    const double time;
   };
 
 
@@ -245,10 +243,7 @@ void InputParametersNavierStokes::set_input_parameters()
   {
     //channel flow with periodic bc
     if(component==0)
-      if(time<0.01)
-        return 1.0*(1.0+((double)rand()/RAND_MAX)*0.0);
-      else
-        return 1.0;
+      return 1.0;
     else
       return 0.0;
 

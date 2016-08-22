@@ -76,11 +76,10 @@
 
 #include "DriverSteadyProblems.h"
 
-
 const unsigned int FE_DEGREE = 3;//3
 const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
 const unsigned int FE_DEGREE_XWALL = 1;
-const unsigned int N_Q_POINTS_1D_XWALL = 5;
+const unsigned int N_Q_POINTS_1D_XWALL = 6;
 const unsigned int DIMENSION = 2; // DIMENSION >= 2
 const unsigned int REFINE_STEPS_SPACE_MIN = 4;//4
 const unsigned int REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
@@ -111,6 +110,7 @@ void InputParametersNavierStokes::set_input_parameters()
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   projection_type = ProjectionType::DivergencePenalty;
+  penalty_factor_divergence = 1e0;
   order_time_integrator = 3;
 
   //xwall specific
