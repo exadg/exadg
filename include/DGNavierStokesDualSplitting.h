@@ -89,7 +89,7 @@ public:
       DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::is_xwall> FEFaceEval_Pressure_Velocity_nonlinear;
 
   DGNavierStokesDualSplitting(parallel::distributed::Triangulation<dim> const &triangulation,
-                              InputParameters const                           &parameter)
+                              InputParametersNavierStokes const               &parameter)
     :
     DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>(triangulation,parameter),
     projection_operator(nullptr)
@@ -143,9 +143,6 @@ public:
 
   void rhs_pressure_viscous_term (parallel::distributed::Vector<value_type>       &dst,
                                   const parallel::distributed::Vector<value_type> &src) const;
-
-  // nullspace projection (in case of pure Dirichlet BC)
-  void apply_nullspace_projection (parallel::distributed::Vector<value_type>  &dst) const;
 
   // solve pressure step
   unsigned int solve_pressure (parallel::distributed::Vector<value_type>        &dst,
@@ -265,6 +262,9 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 setup_solvers ()
 {
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  pcout << std::endl << "Setup solvers ..." << std::endl;
+
   // initialize vectors that are needed by the nonlinear solver
   if(this->param.equation_type == EquationType::NavierStokes
       && this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
@@ -277,6 +277,8 @@ setup_solvers ()
   setup_projection_solver();
 
   setup_helmholtz_solver();
+
+  pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -316,16 +318,14 @@ setup_pressure_poisson_solver ()
     (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::pressure);
   laplace_operator_data.penalty_factor = this->param.IP_factor_pressure;
 
-  // TODO
-  /*
-   * approach of Ferrer et al.: increase penalty parameter when reducing the time step
-   * in order to improve stability in the limit of small time steps
-   */
+  if(this->param.use_approach_of_ferrer == true)
+  {
+    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+    pcout << "Approach of Ferrer et al. is applied: IP_factor_pressure is scaled by time_step_size/time_step_size_ref!"
+          << std::endl;
 
-  /*
-  double dt_ref = 0.1;
-  laplace_operator_data.penalty_factor = this->param.IP_factor_pressure/time_step*dt_ref;
-  */
+    laplace_operator_data.penalty_factor = this->param.IP_factor_pressure/this->time_step*this->param.deltat_ref;
+  }
 
   laplace_operator_data.dirichlet_boundaries = this->neumann_boundary;
   laplace_operator_data.neumann_boundaries = this->dirichlet_boundary;
@@ -333,16 +333,15 @@ setup_pressure_poisson_solver ()
   laplace_operator.reinit(this->data,this->mapping,laplace_operator_data);
 
   // setup preconditioner
-  if(this->param.preconditioner_poisson == PreconditionerPoisson::Jacobi)
+  if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Jacobi)
   {
     preconditioner_pressure_poisson.reset(new JacobiPreconditioner<value_type, LaplaceOperator<dim,value_type> >(laplace_operator));
   }
-  else if(this->param.preconditioner_poisson == PreconditionerPoisson::GeometricMultigrid)
+  else if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::GeometricMultigrid)
   {
     MultigridData mg_data;
     // currently use default parameters of MultigridData for smoother_poly_degree and smoother_smoothing_range
-    mg_data.multigrid_smoother = this->param.multigrid_smoother;
-    mg_data.coarse_solver = this->param.multigrid_coarse_grid_solver;
+    mg_data.coarse_solver = this->param.multigrid_coarse_grid_solver_pressure_poisson;
 
     // use single precision for multigrid
     typedef float Number;
@@ -356,9 +355,9 @@ setup_pressure_poisson_solver ()
   }
   else
   {
-    AssertThrow(this->param.preconditioner_poisson == PreconditionerPoisson::None ||
-                this->param.preconditioner_poisson == PreconditionerPoisson::Jacobi ||
-                this->param.preconditioner_poisson == PreconditionerPoisson::GeometricMultigrid,
+    AssertThrow(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::None ||
+                this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Jacobi ||
+                this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::GeometricMultigrid,
                 ExcMessage("Specified preconditioner for pressure Poisson equation not implemented"));
   }
 
@@ -368,8 +367,8 @@ setup_pressure_poisson_solver ()
   solver_data.solver_tolerance_abs = this->param.abs_tol_pressure;
   solver_data.solver_tolerance_rel = this->param.rel_tol_pressure;
   // default value of use_preconditioner = false
-  if(this->param.preconditioner_poisson == PreconditionerPoisson::Jacobi ||
-     this->param.preconditioner_poisson == PreconditionerPoisson::GeometricMultigrid)
+  if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Jacobi ||
+     this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::GeometricMultigrid)
   {
     solver_data.use_preconditioner = true;
   }
@@ -571,7 +570,6 @@ setup_helmholtz_preconditioner (HelmholtzOperatorData<dim> &helmholtz_operator_d
   {
     MultigridData mg_data;
     // currently use default parameters of MultigridData for smoother_poly_degree and smoother_smoothing_range
-    mg_data.multigrid_smoother = this->param.multigrid_smoother_viscous;
     mg_data.coarse_solver = this->param.multigrid_coarse_grid_solver_viscous;
 
     // use single precision for multigrid
@@ -623,9 +621,18 @@ void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n
 evaluate_nonlinear_residual (parallel::distributed::Vector<value_type>             &dst,
                              const parallel::distributed::Vector<value_type>       &src)
 {
-  this->body_force_operator.evaluate(dst,this->time+this->time_step);
-  // shift body force term to the left-hand side of the equation
-  dst *= -1.0;
+  if(this->param.right_hand_side == true)
+  {
+    this->body_force_operator.evaluate(dst,this->time+this->time_step);
+    // shift body force term to the left-hand side of the equation
+    dst *= -1.0;
+  }
+  else // right_hand_side == false
+  {
+    // set dst to zero. This is necessary since the subsequent operators
+    // call functions of type ..._add
+    dst = 0.0;
+  }
 
   // temp, src, sum_alphai_ui have the same number of blocks
   temp.equ(this->scaling_factor_time_derivative_term,src);
@@ -662,13 +669,6 @@ solve_pressure (parallel::distributed::Vector<value_type>        &dst,
   unsigned int n_iter = pressure_poisson_solver->solve(dst,src);
 
   return n_iter;
-}
-
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-apply_nullspace_projection (parallel::distributed::Vector<value_type>  &dst) const
-{
-  laplace_operator.apply_nullspace_projection(dst);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -732,7 +732,8 @@ local_rhs_pressure_BC_term_boundary_face (const MatrixFree<dim,value_type>      
 //        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure));
 
   // set the correct time for the evaluation of the right_hand_side - function
-  this->field_functions->right_hand_side->set_time(this->time+this->time_step);
+  if(this->param.right_hand_side == true)
+    this->field_functions->right_hand_side->set_time(this->time+this->time_step);
 
   for(unsigned int face=face_range.first; face<face_range.second; face++)
   {
@@ -751,24 +752,41 @@ local_rhs_pressure_BC_term_boundary_face (const MatrixFree<dim,value_type>      
       {
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval_pressure.quadrature_point(q);
 
-        Tensor<1,dim,VectorizedArray<value_type> > dudt_np, rhs_np;
+        // evaluate right-hand side
+        Tensor<1,dim,VectorizedArray<value_type> > rhs_np;
+
+        if(this->param.right_hand_side == true)
+        {
+          for(unsigned int d=0;d<dim;++d)
+          {
+            value_type array_rhs [VectorizedArray<value_type>::n_array_elements];
+            for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+            {
+              Point<dim> q_point;
+              for (unsigned int d=0; d<dim; ++d)
+              q_point[d] = q_points[d][n];
+              array_rhs[n] = this->field_functions->right_hand_side->value(q_point,d);
+            }
+            rhs_np[d].load(&array_rhs[0]);
+          }
+        }
+
+        // evaluate boundary condition
+        Tensor<1,dim,VectorizedArray<value_type> > dudt_np;
         // set time for the correct evaluation of boundary conditions
         it->second->set_time(this->time+this->time_step);
 
         for(unsigned int d=0;d<dim;++d)
         {
           value_type array_dudt [VectorizedArray<value_type>::n_array_elements];
-          value_type array_f [VectorizedArray<value_type>::n_array_elements];
           for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
           {
             Point<dim> q_point;
             for (unsigned int d=0; d<dim; ++d)
             q_point[d] = q_points[d][n];
             array_dudt[n] = it->second->value(q_point,d);
-            array_f[n] = this->field_functions->right_hand_side->value(q_point,d);
           }
           dudt_np[d].load(&array_dudt[0]);
-          rhs_np[d].load(&array_f[0]);
         }
 
         Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_pressure.get_normal_vector(q);

@@ -14,7 +14,7 @@ class StatisticsManagerPH //: public StatisticsManager<dim>
 {
 public:
 
-  StatisticsManagerPH(const DoFHandler<dim> &dof_handler_velocity, const DoFHandler<dim> &dof_handler_pressure, const MappingQGeneric<dim> &mapping):
+  StatisticsManagerPH(const DoFHandler<dim> &dof_handler_velocity, const DoFHandler<dim> &dof_handler_pressure, const Mapping<dim> &mapping):
   dof_handler (dof_handler_velocity),
   dof_handler_p (dof_handler_pressure),
   communicator (dynamic_cast<const parallel::Triangulation<dim>*>(&dof_handler_velocity.get_triangulation()) ?
@@ -25,7 +25,7 @@ public:
                 y_max(3.036*h),
                 y_min(h),
                 x_max(9.0*h),
-                mapping_(mapping),
+                mapping_(dynamic_cast<MappingQGeneric<dim> const &>(mapping)),
                 numchsamp(0),
                 n_points_y(0),
                 n_points_y_glob(0),

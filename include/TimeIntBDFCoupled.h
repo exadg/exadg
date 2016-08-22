@@ -18,7 +18,7 @@ public:
                       fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
                     std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
                     fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >    postprocessor_in,
-                    InputParameters const                                   &param_in,
+                    InputParametersNavierStokes const                       &param_in,
                     unsigned int const                                      n_refine_time_in)
     :
     TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
@@ -342,9 +342,13 @@ solve_timestep()
     }
   }
 
+  // special case: pure Dirichlet BC's
   if(this->param.pure_dirichlet_bc)
   {
-    ns_operation_coupled->shift_pressure(solution_np.block(1));
+    if(this->param.analytical_solution_available == true)
+      ns_operation_coupled->shift_pressure(solution_np.block(1));
+    else // analytical_solution_available == false
+      ns_operation_coupled->apply_zero_mean(solution_np.block(1));
   }
 }
 

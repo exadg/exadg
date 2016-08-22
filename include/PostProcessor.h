@@ -11,14 +11,15 @@
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall> class DGNavierStokesBase;
 template<int dim> class AnalyticalSolutionVelocity;
 template<int dim> class AnalyticalSolutionPressure;
+
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 class PostProcessor
 {
 public:
 
-  PostProcessor(
-                std_cxx11::shared_ptr< const DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> >  ns_operation,
-                InputParameters const &param_in):
+  PostProcessor(std_cxx11::shared_ptr< const DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> >  ns_operation,
+                InputParametersNavierStokes const &param_in)
+    :
     ns_operation_(ns_operation),
     param(param_in),
     time_(0.0),
@@ -28,9 +29,7 @@ public:
     num_samp_(0),
     div_samp_(0.0),
     mass_samp_(0.0)
-  {
-
-  }
+  {}
 
   virtual ~PostProcessor(){}
 
@@ -107,7 +106,7 @@ public:
 
 protected:
   std_cxx11::shared_ptr< const DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> >  ns_operation_;
-  InputParameters const & param;
+  InputParametersNavierStokes const & param;
 
   double time_;
   unsigned int time_step_number_;
@@ -237,61 +236,61 @@ write_output(parallel::distributed::Vector<double> const &velocity,
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "OUTPUT << Write data at time t = " << std::scientific << std::setprecision(4) << time_ << std::endl;
 
-DataOut<dim> data_out;
-std::vector<std::string> velocity_names (dim, "velocity");
-std::vector<DataComponentInterpretation::DataComponentInterpretation>
-  velocity_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
-data_out.add_data_vector (ns_operation_->get_dof_handler_u(),velocity, velocity_names, velocity_component_interpretation);
-
-std::vector<std::string> vorticity_names (dim, "vorticity");
-std::vector<DataComponentInterpretation::DataComponentInterpretation>
-  vorticity_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
-data_out.add_data_vector (ns_operation_->get_dof_handler_u(),vorticity, vorticity_names, vorticity_component_interpretation);
-
-pressure.update_ghost_values();
-data_out.add_data_vector (ns_operation_->get_dof_handler_p(),pressure, "p");
-
-if(param.compute_divergence == true)
-{
-  std::vector<std::string> divergence_names (dim, "divergence");
+  DataOut<dim> data_out;
+  std::vector<std::string> velocity_names (dim, "velocity");
   std::vector<DataComponentInterpretation::DataComponentInterpretation>
-    divergence_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
-  data_out.add_data_vector (ns_operation_->get_dof_handler_u(),divergence, divergence_names, divergence_component_interpretation);
-}
+    velocity_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
+  data_out.add_data_vector (ns_operation_->get_dof_handler_u(),velocity, velocity_names, velocity_component_interpretation);
 
-std::ostringstream filename;
-filename << "output/"
-         << param.output_prefix
-         << "_Proc"
-         << Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)
-         << "_"
-         << output_counter_
-         << ".vtu";
+  std::vector<std::string> vorticity_names (dim, "vorticity");
+  std::vector<DataComponentInterpretation::DataComponentInterpretation>
+    vorticity_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
+  data_out.add_data_vector (ns_operation_->get_dof_handler_u(),vorticity, vorticity_names, vorticity_component_interpretation);
 
-data_out.build_patches (ns_operation_->get_mapping(),5, DataOut<dim>::curved_inner_cells);
+  pressure.update_ghost_values();
+  data_out.add_data_vector (ns_operation_->get_dof_handler_p(),pressure, "p");
 
-std::ofstream output (filename.str().c_str());
-data_out.write_vtu (output);
-
-if ( Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-{
-  std::vector<std::string> filenames;
-  for (unsigned int i=0;i<Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);++i)
+  if(param.compute_divergence == true)
   {
-    std::ostringstream filename;
-    filename << param.output_prefix
-             << "_Proc"
-             << i
-             << "_"
-             << output_counter_
-             << ".vtu";
-
-      filenames.push_back(filename.str().c_str());
+    std::vector<std::string> divergence_names (dim, "divergence");
+    std::vector<DataComponentInterpretation::DataComponentInterpretation>
+      divergence_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
+    data_out.add_data_vector (ns_operation_->get_dof_handler_u(),divergence, divergence_names, divergence_component_interpretation);
   }
-  std::string master_name = "output/" + param.output_prefix + "_" + Utilities::int_to_string(output_counter_) + ".pvtu";
-  std::ofstream master_output (master_name.c_str());
-  data_out.write_pvtu_record (master_output, filenames);
-}
+
+  std::ostringstream filename;
+  filename << "output/"
+           << param.output_prefix
+           << "_Proc"
+           << Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)
+           << "_"
+           << output_counter_
+           << ".vtu";
+
+  data_out.build_patches (ns_operation_->get_mapping(),5, DataOut<dim>::curved_inner_cells);
+
+  std::ofstream output (filename.str().c_str());
+  data_out.write_vtu (output);
+
+  if ( Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  {
+    std::vector<std::string> filenames;
+    for (unsigned int i=0;i<Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);++i)
+    {
+      std::ostringstream filename;
+      filename << param.output_prefix
+               << "_Proc"
+               << i
+               << "_"
+               << output_counter_
+               << ".vtu";
+
+        filenames.push_back(filename.str().c_str());
+    }
+    std::string master_name = "output/" + param.output_prefix + "_" + Utilities::int_to_string(output_counter_) + ".pvtu";
+    std::ofstream master_output (master_name.c_str());
+    data_out.write_pvtu_record (master_output, filenames);
+  }
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>

@@ -16,6 +16,8 @@ using namespace dealii;
 #include "../include/BoundaryDescriptorConvDiff.h"
 #include "../include/FieldFunctionsConvDiff.h"
 
+#include "InputParametersConvDiff.h"
+
 template<int dim, int fe_degree, typename value_type>
 class DGConvDiffOperation
 {
@@ -33,6 +35,9 @@ public:
   void setup(std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor_in,
              std_cxx11::shared_ptr<FieldFunctionsConvDiff<dim> >     field_functions_in)
   {
+    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+    pcout << std::endl << "Setup convection-diffusion operation ..." << std::endl;
+
     boundary_descriptor = boundary_descriptor_in;
     field_functions = field_functions_in;
 
@@ -41,6 +46,8 @@ public:
     initialize_matrix_free();
 
     setup_operators();
+
+    pcout << std::endl << "... done!" << std::endl;
   }
 
   void initialize_solution_vector(parallel::distributed::Vector<value_type> &src) const
@@ -105,6 +112,12 @@ public:
     inverse_mass_matrix_operator.apply_inverse_mass_matrix(dst,dst);
   }
 
+  void vmult(parallel::distributed::Vector<value_type>       &dst,
+             parallel::distributed::Vector<value_type> const &src)
+  {
+    apply(dst,src);
+  }
+
 private:
   void create_dofs()
   {
@@ -114,10 +127,13 @@ private:
     unsigned int ndofs_per_cell = Utilities::fixed_int_power<fe_degree+1,dim>::value;
 
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-    pcout << std::endl << "Discontinuous finite element discretization:" << std::endl << std::endl
-      << "  degree of 1D polynomials:\t"  << std::fixed << std::setw(10) << std::right << fe_degree << std::endl
-      << "  number of dofs per cell:\t"   << std::fixed << std::setw(10) << std::right << ndofs_per_cell << std::endl
-      << "  number of dofs (total):\t" << std::fixed << std::setw(10) << std::right << dof_handler.n_dofs() << std::endl;
+
+    pcout << std::endl
+          << "Discontinuous Galerkin finite element discretization:" << std::endl << std::endl;
+
+    print_parameter(pcout,"degree of 1D polynomials",fe_degree);
+    print_parameter(pcout,"number of dofs per cell",ndofs_per_cell);
+    print_parameter(pcout,"number of dofs (total)",dof_handler.n_dofs());
   }
 
   void initialize_matrix_free()
@@ -142,6 +158,12 @@ private:
 
   void setup_operators()
   {
+    // mass matrix operator
+    ScalarConvDiffOperators::MassMatrixOperatorData mass_matrix_operator_data;
+    mass_matrix_operator_data.dof_index = 0;
+    mass_matrix_operator_data.quad_index = 0;
+    mass_matrix_operator.initialize(data,mass_matrix_operator_data);
+
     // inverse mass matrix operator
     // dof_index = 0, quad_index = 0
     inverse_mass_matrix_operator.initialize(data,0,0);
@@ -150,6 +172,7 @@ private:
     ScalarConvDiffOperators::ConvectiveOperatorData<dim> convective_operator_data;
     convective_operator_data.dof_index = 0;
     convective_operator_data.quad_index = 0;
+    convective_operator_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
     convective_operator_data.bc = boundary_descriptor;
     convective_operator_data.velocity = field_functions->velocity;
     convective_operator.initialize(data,convective_operator_data);
@@ -158,7 +181,6 @@ private:
     ScalarConvDiffOperators::DiffusiveOperatorData<dim> diffusive_operator_data;
     diffusive_operator_data.dof_index = 0;
     diffusive_operator_data.quad_index = 0;
-    diffusive_operator_data.IP_formulation = InteriorPenaltyFormulation::SIPG;
     diffusive_operator_data.IP_factor = param.IP_factor;
     diffusive_operator_data.diffusivity = param.diffusivity;
     diffusive_operator_data.bc = boundary_descriptor;
@@ -179,8 +201,53 @@ private:
     convection_diffusion_operator.initialize(mapping, data, conv_diff_operator_data);
   }
 
+  void apply(parallel::distributed::Vector<value_type>       &dst,
+             parallel::distributed::Vector<value_type> const &src) const
+  {
+//    // mass matrix operator
+//    if(param.problem_type == ProblemType::Steady)
+//    {
+//      dst = 0;
+//    }
+//    else if(param.problem_type == ProblemType::Unsteady)
+//    {
+//      mass_matrix_operator.apply(dst,src);
+//      dst *= scaling_factor_time_derivative_term;
+//    }
+//    else
+//    {
+//      AssertThrow(param.problem_type == ProblemType::Steady ||
+//                  param.problem == ProblemType::Unsteady,
+//                  ExcMessage("Specified problem type for convection-diffusion equation not implemented."));
+//    }
+//
+//    // diffusive and convective operator
+//    if(param.equation_type == EquationTypeConvDiff::Diffusion)
+//    {
+//      diffusive_operator.apply_add(dst,src);
+//    }
+//    else if(param.equation_type == EquationTypeConvDiff::Convection)
+//    {
+//      // TODO: ensure that evaluation_time is set correctly
+//      convective_operator.apply_add(dst,src,evaluation_time);
+//    }
+//    else if(param.equation_type == EquationTypeConvDiff::ConvectionDiffusion)
+//    {
+//      diffusive_operator.apply_add(dst,src);
+//      // TODO: ensure that evaluation_time is set correctly
+//      convective_operator.apply_add(dst,src,evaluation_time);
+//    }
+//    else
+//    {
+//      AssertThrow(param.equation_type == EquationTypeConvDiff::Diffusion ||
+//                  param.equation_type == EquationTypeConvDiff::Convection ||
+//                  param.equation_type == EquationTypeConvDiff::ConvectionDiffusion,
+//                  ExcMessage("Specified equation type for convection-diffusion problem not implemented."));
+//    }
+  }
+
   FE_DGQArbitraryNodes<dim> fe;
-  MappingQ<dim> mapping;
+  MappingQGeneric<dim> mapping;
   DoFHandler<dim> dof_handler;
 
   MatrixFree<dim,value_type> data;
@@ -190,13 +257,13 @@ private:
   std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor;
   std_cxx11::shared_ptr<FieldFunctionsConvDiff<dim> > field_functions;
 
+  ScalarConvDiffOperators::MassMatrixOperator<dim, fe_degree, value_type> mass_matrix_operator;
   InverseMassMatrixOperator<dim,fe_degree,value_type> inverse_mass_matrix_operator;
-//  ScalarConvDiffOperators::MassMatrixOperator<dim, fe_degree, value_type> mass_matrix_operator;
   ScalarConvDiffOperators::ConvectiveOperator<dim, fe_degree, value_type> convective_operator;
   ScalarConvDiffOperators::DiffusiveOperator<dim, fe_degree, value_type> diffusive_operator;
   ScalarConvDiffOperators::RHSOperator<dim, fe_degree, value_type> rhs_operator;
 
-  // convection-diffusion operator (also includes rhs operator) for runtime optimization
+  // convection-diffusion operator for runtime optimization (also includes rhs operator)
   ScalarConvDiffOperators::ConvectionDiffusionOperator<dim, fe_degree, value_type> convection_diffusion_operator;
 };
 

@@ -13,13 +13,12 @@
 #include "FEEvaluationWrapper.h"
 #include "FE_Parameters.h"
 
-#include "InputParameters.h"
-
 #include "InverseMassMatrix.h"
 #include "NavierStokesOperators.h"
 
 #include "../include/BoundaryDescriptorNavierStokes.h"
 #include "../include/FieldFunctionsNavierStokes.h"
+#include "InputParametersNavierStokes.h"
 
 using namespace dealii;
 
@@ -62,7 +61,7 @@ public:
 
   // constructor
   DGNavierStokesBase(parallel::distributed::Triangulation<dim> const &triangulation,
-                     InputParameters const                           &parameter)
+                     InputParametersNavierStokes const               &parameter)
     :
     // fe_u(FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(fe_degree+1)),dim),
     fe_u(new FESystem<dim>(FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(fe_degree+1)),dim)),
@@ -126,7 +125,7 @@ public:
     return static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::pressure);
   }
 
-  MappingQGeneric<dim> const & get_mapping() const
+  Mapping<dim> const & get_mapping() const
   {
     return mapping;
   }
@@ -236,8 +235,14 @@ public:
         static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure));
   }
 
-  //shift pressure (pure Dirichlet BC case)
+  // special case: pure Dirichlet boundary conditions
+  // if analytical solution is available: shift pressure so that the numerical pressure solution
+  // coincides the the analytical pressure solution in an arbitrary point
   void  shift_pressure (parallel::distributed::Vector<value_type> &pressure) const;
+
+  // special case: pure Dirichlet boundary conditions
+  // if no analytical solution is available: set mean value of pressure vector to zero
+  void apply_zero_mean (parallel::distributed::Vector<value_type>  &dst) const;
 
   // vorticity
   void compute_vorticity (parallel::distributed::Vector<value_type>       &dst,
@@ -279,7 +284,7 @@ protected:
   std::set<types::boundary_id> dirichlet_boundary;
   std::set<types::boundary_id> neumann_boundary;
 
-  InputParameters const &param;
+  InputParametersNavierStokes const &param;
 
   FEParameters<dim> fe_param;
 
@@ -345,6 +350,9 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
        std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure_in,
        std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> >     field_functions_in)
 {
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  pcout << std::endl << "Setup Navier-Stokes operation ..." << std::endl;
+
   this->periodic_face_pairs = periodic_face_pairs;
   this->boundary_descriptor_velocity = boundary_descriptor_velocity_in;
   this->boundary_descriptor_pressure = boundary_descriptor_pressure_in;
@@ -444,6 +452,8 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   {
     first_point[d] = Utilities::MPI::sum(first_point[d],MPI_COMM_WORLD);
   }
+
+  pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -460,15 +470,21 @@ create_dofs()
   unsigned int ndofs_per_cell_pressure = Utilities::fixed_int_power<fe_degree_p+1,dim>::value;
 
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-  pcout << std::endl << "Discontinuous finite element discretization:" << std::endl << std::endl
-    << "Velocity:" << std::endl
-    << "  degree of 1D polynomials:\t"  << std::fixed << std::setw(10) << std::right << fe_degree << std::endl
-    << "  number of dofs per cell:\t"   << std::fixed << std::setw(10) << std::right << ndofs_per_cell_velocity << std::endl
-    << "  number of dofs (velocity):\t" << std::fixed << std::setw(10) << std::right << dof_handler_u.n_dofs() << std::endl
-    << "Pressure:" << std::endl
-    << "  degree of 1D polynomials:\t"  << std::fixed << std::setw(10) << std::right << fe_degree_p << std::endl
-    << "  number of dofs per cell:\t"   << std::fixed << std::setw(10) << std::right << ndofs_per_cell_pressure << std::endl
-    << "  number of dofs (pressure):\t" << std::fixed << std::setw(10) << std::right << dof_handler_p.n_dofs() << std::endl;
+
+  pcout << std::endl
+        << "Discontinuous Galerkin finite element discretization:" << std::endl << std::endl;
+
+  pcout << "Velocity:" << std::endl;
+  print_parameter(pcout,"degree of 1D polynomials",fe_degree);
+  print_parameter(pcout,"number of dofs per cell",ndofs_per_cell_velocity);
+  print_parameter(pcout,"number of dofs (total)",dof_handler_u.n_dofs());
+
+  pcout << "Pressure:" << std::endl;
+  print_parameter(pcout,"degree of 1D polynomials",fe_degree_p);
+  print_parameter(pcout,"number of dofs per cell",ndofs_per_cell_pressure);
+  print_parameter(pcout,"number of dofs (total)",dof_handler_p.n_dofs());
+
+
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -512,17 +528,20 @@ prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity
                              parallel::distributed::Vector<value_type> &pressure,
                              double const                              evaluation_time) const
 {
-  this->field_functions->analytical_solution_velocity->set_time(evaluation_time);
-  this->field_functions->analytical_solution_pressure->set_time(evaluation_time);
+  this->field_functions->initial_solution_velocity->set_time(evaluation_time);
+  this->field_functions->initial_solution_pressure->set_time(evaluation_time);
 
-  VectorTools::interpolate(mapping, dof_handler_u, *(this->field_functions->analytical_solution_velocity), velocity);
-  VectorTools::interpolate(mapping, dof_handler_p, *(this->field_functions->analytical_solution_pressure), pressure);
+  VectorTools::interpolate(mapping, dof_handler_u, *(this->field_functions->initial_solution_velocity), velocity);
+  VectorTools::interpolate(mapping, dof_handler_p, *(this->field_functions->initial_solution_pressure), pressure);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 shift_pressure (parallel::distributed::Vector<value_type>  &pressure) const
 {
+  AssertThrow(this->param.analytical_solution_available == true,
+              ExcMessage("The function shift_pressure is intended to be used only if an analytical solution is available!"));
+
   parallel::distributed::Vector<value_type> vec1(pressure);
   for(unsigned int i=0;i<vec1.local_size();++i)
     vec1.local_element(i) = 1.;
@@ -533,6 +552,14 @@ shift_pressure (parallel::distributed::Vector<value_type>  &pressure) const
     current = pressure(dof_index_first_point);
   current = Utilities::MPI::sum(current, MPI_COMM_WORLD);
   pressure.add(exact-current,vec1);
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+apply_zero_mean (parallel::distributed::Vector<value_type>  &vector) const
+{
+  const value_type mean_value = vector.mean_value();
+  vector.add(-mean_value);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>

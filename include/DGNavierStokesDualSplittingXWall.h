@@ -37,7 +37,7 @@ public:
   };
 
   DGNavierStokesDualSplittingXWall(parallel::distributed::Triangulation<dim> const &triangulation,
-                                   InputParameters const                           &parameter)
+                                    InputParametersNavierStokes const              &parameter)
     :
       DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>(triangulation,parameter),
       fe_wdist(QGaussLobatto<1>(1+1)),

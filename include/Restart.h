@@ -14,7 +14,7 @@
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall> class PostProcessor;
 
-const std::string restart_filename(InputParameters const & param)
+const std::string restart_filename(InputParametersNavierStokes const & param)
 {
   const std::string filename = param.output_prefix + "." +
     Utilities::int_to_string(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)) +
@@ -35,7 +35,7 @@ void check_file(std::ifstream const & in, const std::string filename)
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall,typename value_type>
-void resume_restart(boost::archive::binary_iarchive & ia, InputParameters const & param, double & time,
+void resume_restart(boost::archive::binary_iarchive & ia, InputParametersNavierStokes const & param, double & time,
     std_cxx11::shared_ptr<PostProcessor<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > & postprocessor,
     std::vector<value_type> & time_steps, unsigned int const order)
 {
@@ -94,7 +94,7 @@ void resume_restart(boost::archive::binary_iarchive & ia, InputParameters const 
 }
 
 template<typename value_type>
-void write_restart_preamble(boost::archive::binary_oarchive & oa, InputParameters const & param, std::vector<value_type> const & time_steps,
+void write_restart_preamble(boost::archive::binary_oarchive & oa, InputParametersNavierStokes const & param, std::vector<value_type> const & time_steps,
                    double const time, unsigned int const output_counter, unsigned int const order)
 {
 
@@ -136,7 +136,7 @@ void write_restart_preamble(boost::archive::binary_oarchive & oa, InputParameter
   }
 }
 
-void write_restart_file(std::ostringstream & oss, InputParameters const & param)
+void write_restart_file(std::ostringstream & oss, InputParametersNavierStokes const & param)
 {
   const std::string filename = restart_filename(param);
   std::ofstream stream(filename.c_str());

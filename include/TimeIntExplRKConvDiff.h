@@ -8,14 +8,16 @@
 #ifndef INCLUDE_TIMEINTEXPLRKCONVDIFF_H_
 #define INCLUDE_TIMEINTEXPLRKCONVDIFF_H_
 
-template<int dim> class PostProcessor;
+#include "InputParametersConvDiff.h"
+
+template<int dim, int fe_degree> class PostProcessor;
 
 template<int dim, int fe_degree, typename value_type>
 class TimeIntExplRKConvDiff
 {
 public:
   TimeIntExplRKConvDiff(std_cxx11::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation_in,
-                        std_cxx11::shared_ptr<PostProcessor<dim> >                              postprocessor_in,
+                        std_cxx11::shared_ptr<PostProcessor<dim, fe_degree> >                   postprocessor_in,
                         InputParametersConvDiff const                                           &param_in,
                         std_cxx11::shared_ptr<Function<dim> >                                   velocity_in,
                         unsigned int const                                                      n_refine_time_in)
@@ -46,7 +48,7 @@ private:
   void analyze_computing_times() const;
 
   std_cxx11::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation;
-  std_cxx11::shared_ptr<PostProcessor<dim> > postprocessor;
+  std_cxx11::shared_ptr<PostProcessor<dim, fe_degree> > postprocessor;
   InputParametersConvDiff const & param;
   std_cxx11::shared_ptr<Function<dim> > velocity;
 
@@ -66,6 +68,9 @@ private:
 template<int dim, int fe_degree, typename value_type>
 void TimeIntExplRKConvDiff<dim,fe_degree,value_type>::setup()
 {
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  pcout << std::endl << "Setup time integrator ..." << std::endl;
+
   // initialize global solution vectors (allocation)
   initialize_vectors();
 
@@ -74,6 +79,8 @@ void TimeIntExplRKConvDiff<dim,fe_degree,value_type>::setup()
 
   // initializes the solution by interpolation of analytical solution
   initialize_solution();
+
+  pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, int fe_degree, typename value_type>
@@ -162,6 +169,9 @@ void TimeIntExplRKConvDiff<dim,fe_degree,value_type>::calculate_timestep()
 template<int dim, int fe_degree, typename value_type>
 void TimeIntExplRKConvDiff<dim,fe_degree,value_type>::timeloop()
 {
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  pcout << std::endl << "Starting time loop ..." << std::endl;
+
   global_timer.restart();
 
   postprocessing();
@@ -179,6 +189,8 @@ void TimeIntExplRKConvDiff<dim,fe_degree,value_type>::timeloop()
   }
 
   total_time += global_timer.wall_time();
+
+  pcout << std::endl << "... done!" << std::endl;
 
   analyze_computing_times();
 }
@@ -201,32 +213,31 @@ template<int dim, int fe_degree, typename value_type>
 void TimeIntExplRKConvDiff<dim,fe_degree,value_type>::
 solve_timestep()
 {
-  // RK4
-  solution_np = solution_n;
-  // stage 1
-  conv_diff_operation->evaluate(vec_temp,solution_n,time);
-  solution_np.add(time_step/6., vec_temp);
+  if(order == 4)
+  {
+    solution_np = solution_n;
+    // stage 1
+    conv_diff_operation->evaluate(vec_temp,solution_n,time);
+    solution_np.add(time_step/6., vec_temp);
 
-  // stage 2
-//  vec_rhs.equ(1., solution_n, time_step/2., vec_temp);
-  vec_rhs.equ(1.,solution_n);
-  vec_rhs.add(time_step/2., vec_temp);
-  conv_diff_operation->evaluate(vec_temp,vec_rhs,time+time_step/2.);
-  solution_np.add(time_step/3., vec_temp);
+    // stage 2
+    vec_rhs.equ(1.,solution_n);
+    vec_rhs.add(time_step/2., vec_temp);
+    conv_diff_operation->evaluate(vec_temp,vec_rhs,time+time_step/2.);
+    solution_np.add(time_step/3., vec_temp);
 
-  // stage 3
-//  vec_rhs.equ(1., solution_n, time_step/2., vec_temp);
-  vec_rhs.equ(1., solution_n);
-  vec_rhs.add(time_step/2., vec_temp);
-  conv_diff_operation->evaluate(vec_temp,vec_rhs,time+time_step/2.);
-  solution_np.add(time_step/3., vec_temp);
+    // stage 3
+    vec_rhs.equ(1., solution_n);
+    vec_rhs.add(time_step/2., vec_temp);
+    conv_diff_operation->evaluate(vec_temp,vec_rhs,time+time_step/2.);
+    solution_np.add(time_step/3., vec_temp);
 
-  // stage 4
-//  vec_rhs.equ(1., solution_n, time_step, vec_temp);
-  vec_rhs.equ(1., solution_n);
-  vec_rhs.add(time_step, vec_temp);
-  conv_diff_operation->evaluate(vec_temp,vec_rhs,time+time_step);
-  solution_np.add(time_step/6., vec_temp);
+    // stage 4
+    vec_rhs.equ(1., solution_n);
+    vec_rhs.add(time_step, vec_temp);
+    conv_diff_operation->evaluate(vec_temp,vec_rhs,time+time_step);
+    solution_np.add(time_step/6., vec_temp);
+  }
 }
 
 template<int dim, int fe_degree, typename value_type>

@@ -412,7 +412,7 @@ struct MultigridData
     :
     smoother_poly_degree(5),
     smoother_smoothing_range(20),
-    multigrid_smoother(MultigridSmoother::Chebyshev),
+    // multigrid_smoother(MultigridSmoother::Chebyshev),
     coarse_solver(MultigridCoarseGridSolver::coarse_chebyshev_smoother)
   {}
 
@@ -423,7 +423,7 @@ struct MultigridData
   double smoother_smoothing_range;
 
   // Sets the multigrid smoother
-  MultigridSmoother multigrid_smoother;
+  // MultigridSmoother multigrid_smoother;
 
   // Sets the coarse grid solver
   MultigridCoarseGridSolver coarse_solver;
@@ -544,15 +544,14 @@ public:
       dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
 
     // TODO
-    /*function reinit of compatible laplace operator does not use mg_constrained_dofs*/
     // only needed for continuous elements
-//    mg_constrained_dofs.clear();
-//    ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
-//    typename FunctionMap<dim>::type dirichlet_boundary;
+    mg_constrained_dofs.clear();
+    ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
+    typename FunctionMap<dim>::type dirichlet_boundary;
 //    for (std::set<types::boundary_id>::const_iterator it = dirichlet_boundaries.begin();
 //         it != dirichlet_boundaries.end(); ++it)
 //      dirichlet_boundary[*it] = &zero_function;
-//    mg_constrained_dofs.initialize(dof_handler, dirichlet_boundary);
+    mg_constrained_dofs.initialize(dof_handler, dirichlet_boundary);
     // only needed for continuous elements
 
     mg_matrices.resize(0, tria->n_global_levels()-1);

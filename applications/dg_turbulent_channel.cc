@@ -64,8 +64,8 @@
 #include "../include/DGNavierStokesDualSplitting.h"
 #include "../include/DGNavierStokesDualSplittingXWall.h"
 #include "../include/DGNavierStokesCoupled.h"
+#include "../include/InputParametersNavierStokes.h"
 
-#include "InputParameters.h"
 #include "TimeIntBDFDualSplitting.h"
 #include "TimeIntBDFDualSplittingXWall.h"
 #include "TimeIntBDFDualSplittingXWallSpalartAllmaras.h"
@@ -85,7 +85,7 @@ const unsigned int REFINE_STEPS_TIME_MIN = 0;
 const unsigned int REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 const double GRID_STRETCH_FAC = 0.001;
 
-void InputParameters::set_input_parameters()
+void InputParametersNavierStokes::set_input_parameters()
 {
   output_prefix = "ch395_l4_k4_gt0_sa";
   cfl = 0.1;
@@ -121,7 +121,7 @@ void InputParameters::set_input_parameters()
   output_start_time = 0.;
   output_interval_time = 1.;
   statistics_start_time = 49.;
-  restart_interval_step = 1e9;
+  restart_every_timesteps = 1e9;
   restart_interval_time = 1.e9;
 
   max_velocity = 15.;
@@ -286,7 +286,7 @@ void InputParameters::set_input_parameters()
 
     PostProcessorChannel(
                   std_cxx11::shared_ptr< const DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> >  ns_operation,
-                  InputParameters const &param_in):
+                  InputParametersNavierStokes const &param_in):
       PostProcessor<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>(ns_operation,param_in),
       statistics_ch(ns_operation->get_dof_handler_u())
     {
@@ -331,7 +331,7 @@ void InputParameters::set_input_parameters()
 
     PostProcessorChannelXWall(
                   std_cxx11::shared_ptr< DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> >  ns_operation,
-                  InputParameters const &param_in):
+                  InputParametersNavierStokes const &param_in):
       PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>(ns_operation,param_in),
       statistics_ch(ns_operation->get_dof_handler_u())
     {
@@ -392,7 +392,7 @@ void InputParameters::set_input_parameters()
     std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity;
     std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure;
 
-    InputParameters param;
+    InputParametersNavierStokes param;
 
     std_cxx11::shared_ptr<DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> > navier_stokes_operation;
 
@@ -410,7 +410,7 @@ void InputParameters::set_input_parameters()
     PrintInputParams::Header(pcout);
 
     param.set_input_parameters();
-    param.check_parameters();
+    param.check_input_parameters();
 
     // initialize functions (analytical solution, rhs, boundary conditions)
     std_cxx11::shared_ptr<Function<dim> > analytical_solution_velocity;
@@ -422,7 +422,8 @@ void InputParameters::set_input_parameters()
     right_hand_side.reset(new RightHandSide<dim>(param.start_time));
 
     field_functions.reset(new FieldFunctionsNavierStokes<dim>());
-    field_functions->analytical_solution_velocity = analytical_solution_velocity;
+    field_functions->initial_solution_velocity = analytical_solution_velocity;
+    field_functions->initial_solution_pressure = analytical_solution_pressure;
     field_functions->analytical_solution_pressure = analytical_solution_pressure;
     field_functions->right_hand_side = right_hand_side;
 
@@ -432,7 +433,7 @@ void InputParameters::set_input_parameters()
     if(param.spatial_discretization == SpatialDiscretization::DGXWall)
     {
       analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>(2*dim,param.start_time));
-      field_functions->analytical_solution_velocity = analytical_solution_velocity;
+      field_functions->initial_solution_velocity = analytical_solution_velocity;
       if(param.problem_type == ProblemType::Unsteady &&
               param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
       {

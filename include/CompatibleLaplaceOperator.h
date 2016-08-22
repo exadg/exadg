@@ -39,7 +39,9 @@ public:
     data(nullptr),
     gradient_operator(nullptr),
     divergence_operator(nullptr),
-    inv_mass_matrix_operator(nullptr)
+    inv_mass_matrix_operator(nullptr),
+    needs_mean_value_constraint (false),
+    apply_mean_value_constraint_in_matvec (false)
   {}
 
   void initialize(MatrixFree<dim,Number> const                                                                        &mf_data_in,
@@ -55,8 +57,31 @@ public:
     this->divergence_operator = &divergence_operator_in;
     this->inv_mass_matrix_operator = &inv_mass_matrix_operator_in;
 
-    // initialize temp vector
-    initialize_dof_vector_velocity(temp);
+    // initialize tmp vector
+    initialize_dof_vector_velocity(tmp);
+
+
+
+    // Check whether the Laplace matrix is singular when applied to a vector
+    // consisting of only ones (except for constrained entries)
+    parallel::distributed::Vector<Number> in_vec, out_vec;
+    initialize_dof_vector(in_vec);
+    initialize_dof_vector(out_vec);
+    in_vec = 1;
+    vmult_add(out_vec, in_vec);
+    const double linfty_norm = out_vec.linfty_norm();
+
+    // since we cannot know the magnitude of the entries at this point (the
+    // diagonal entries would be a guideline but they are not available here),
+    // we instead multiply by a random vector
+    for (unsigned int i=0; i<in_vec.local_size(); ++i)
+      in_vec.local_element(i) = (double)rand()/RAND_MAX;
+    vmult(out_vec, in_vec);
+    const double linfty_norm_compare = out_vec.linfty_norm();
+
+    // use mean value constraint if the infty norm with the one vector is very small
+    needs_mean_value_constraint = linfty_norm / linfty_norm_compare < std::pow(std::numeric_limits<Number>::epsilon(), 2./3.);
+    apply_mean_value_constraint_in_matvec = needs_mean_value_constraint;
   }
 
   void reinit (const DoFHandler<dim>                    &dof_handler_p,
@@ -124,12 +149,24 @@ public:
               own_gradient_operator_storage,
               own_divergence_operator_storage,
               own_inv_mass_matrix_operator_storage);
+
+    // we do not need the mean value constraint for smoothers on the
+    // multigrid levels, so we can disable it
+    disable_mean_value_constraint();
   }
 
-  void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const
+  void apply_nullspace_projection(parallel::distributed::Vector<Number> &vec) const
   {
-    // this function is necessary due to the interface of the multigrid preconditioner
-    // and especially the coarse grid solver that calls this function
+    if (needs_mean_value_constraint)
+    {
+      const Number mean_val = vec.mean_value();
+      vec.add(-mean_val);
+    }
+  }
+
+  void disable_mean_value_constraint()
+  {
+    this->apply_mean_value_constraint_in_matvec = false;
   }
 
   // apply matrix vector multiplication
@@ -155,12 +192,23 @@ public:
   void vmult_add(parallel::distributed::Vector<Number>       &dst,
                  const parallel::distributed::Vector<Number> &src) const
   {
+    const parallel::distributed::Vector<Number> *actual_src = &src;
+    if(apply_mean_value_constraint_in_matvec)
+    {
+      tmp_projection_vector = src;
+      apply_nullspace_projection(tmp_projection_vector);
+      actual_src = &tmp_projection_vector;
+    }
+
     // compatible Laplace operator = B * M^{-1} * B^{T} = (-div) * M^{-1} * grad
-    gradient_operator->apply(temp,src);
-    inv_mass_matrix_operator->apply_inverse_mass_matrix(temp,temp);
+    gradient_operator->apply(tmp,*actual_src);
+    inv_mass_matrix_operator->apply_inverse_mass_matrix(tmp,tmp);
     // NEGATIVE divergence operator
-    temp *= -1.0;
-    divergence_operator->apply_add(dst,temp);
+    tmp *= -1.0;
+    divergence_operator->apply_add(dst,tmp);
+
+    if(apply_mean_value_constraint_in_matvec)
+      apply_nullspace_projection(dst);
   }
 
   void vmult_interface_down(parallel::distributed::Vector<Number>       &dst,
@@ -218,6 +266,20 @@ public:
       diagonal.local_element(i) = dst.local_element(i);
       src.local_element(i) = 0.0;
     }
+
+    if(apply_mean_value_constraint_in_matvec)
+    {
+      parallel::distributed::Vector<Number> vec1;
+      vec1.reinit(diagonal, true);
+      for(unsigned int i=0;i<vec1.local_size();++i)
+        vec1.local_element(i) = 1.;
+      parallel::distributed::Vector<Number> d;
+      d.reinit(diagonal, true);
+      vmult(d,vec1);
+      double length = vec1*vec1;
+      double factor = vec1*d;
+      diagonal.add(-2./length,d,factor/pow(length,2.),vec1);
+    }
   }
 
   void invert_diagonal(parallel::distributed::Vector<Number> &diagonal) const
@@ -259,7 +321,7 @@ private:
   DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, Number>  const *divergence_operator;
   InverseMassMatrixOperator<dim,fe_degree, Number> const *inv_mass_matrix_operator;
   CompatibleLaplaceOperatorData<dim> compatible_laplace_operator_data;
-  parallel::distributed::Vector<Number> mutable temp;
+  parallel::distributed::Vector<Number> mutable tmp;
 
   /*
    * The following variables are necessary when applying the multigrid preconditioner to the compatible Laplace operator
@@ -273,6 +335,10 @@ private:
   GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, Number> own_gradient_operator_storage;
   DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, Number> own_divergence_operator_storage;
   InverseMassMatrixOperator<dim,fe_degree, Number> own_inv_mass_matrix_operator_storage;
+
+  bool needs_mean_value_constraint;
+  bool apply_mean_value_constraint_in_matvec;
+  mutable parallel::distributed::Vector<Number> tmp_projection_vector;
 };
 
 

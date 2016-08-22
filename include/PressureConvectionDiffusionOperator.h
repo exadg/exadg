@@ -8,8 +8,8 @@
 #ifndef INCLUDE_PRESSURECONVECTIONDIFFUSIONOPERATOR_H_
 #define INCLUDE_PRESSURECONVECTIONDIFFUSIONOPERATOR_H_
 
+#include "InputParametersNavierStokes.h"
 #include "ScalarConvectionDiffusionOperators.h"
-#include "InputParameters.h"
 
 template<int dim>
 struct PressureConvectionDiffusionOperatorData
@@ -73,6 +73,7 @@ public:
     {
       dst = 0.0;
     }
+
     // diffusive term
     diffusive_operator.apply_add(dst,src);
 

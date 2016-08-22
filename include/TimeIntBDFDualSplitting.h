@@ -18,7 +18,7 @@ public:
                             fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
                           std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
                           fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >    postprocessor_in,
-                          InputParameters const                                   &param_in,
+                          InputParametersNavierStokes const                       &param_in,
                           unsigned int const                                      n_refine_time_in)
     :
     TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
@@ -294,7 +294,10 @@ convective_step()
   }
 
   // compute body force vector
-  ns_operation_splitting->calculate_body_force(velocity_np,this->time+this->time_steps[0]);
+  if(this->param.right_hand_side == true)
+    ns_operation_splitting->calculate_body_force(velocity_np,this->time+this->time_steps[0]);
+  else // right_hand_side == false
+    velocity_np = 0.0;
 
   // compute convective term and extrapolate convective term (if not Stokes equations)
   if(this->param.equation_type == EquationType::NavierStokes)
@@ -322,7 +325,7 @@ convective_step()
     // write output explicit case
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
     {
-      std::cout << std::endl << "Solve nonlinear convective problem explicitly:" << std::endl
+      std::cout << std::endl << "Solve nonlinear convective term explicitly:" << std::endl
                 << "  iterations:        " << std::setw(4) << std::right << "-" << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
     }
   }
@@ -369,9 +372,13 @@ pressure_step()
   // solve linear system of equations
   unsigned int pres_niter = ns_operation_splitting->solve_pressure(pressure_np, rhs_vec_pressure);
 
+  // special case: pure Dirichlet BC's
   if(this->param.pure_dirichlet_bc)
   {
-    ns_operation_splitting->shift_pressure(pressure_np);
+    if(this->param.analytical_solution_available == true)
+      ns_operation_splitting->shift_pressure(pressure_np);
+    else // analytical_solution_available == false
+      ns_operation_splitting->apply_zero_mean(pressure_np);
   }
 
   // write output
@@ -438,8 +445,9 @@ rhs_pressure (const parallel::distributed::Vector<value_type>  &src,
   }
   /**********************************************************************************************/
 
+  // special case: pure Dirichlet BC's
   if(this->param.pure_dirichlet_bc)
-    ns_operation_splitting->apply_nullspace_projection(dst);
+    ns_operation_splitting->apply_zero_mean(dst);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>

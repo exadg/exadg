@@ -8,9 +8,9 @@
 #ifndef INCLUDE_FE_PARAMETERS_H_
 #define INCLUDE_FE_PARAMETERS_H_
 
-#include "InputParameters.h"
 #include <deal.II/base/vectorization.h>
 #include <deal.II/base/aligned_vector.h>
+#include "InputParametersNavierStokes.h"
 
 using namespace dealii;
 
@@ -33,7 +33,7 @@ public:
   {
   }
 
-  FEParameters(InputParameters const & param)
+  FEParameters(InputParametersNavierStokes const & param)
     :
     viscosity(param.viscosity),
     cs(param.cs),

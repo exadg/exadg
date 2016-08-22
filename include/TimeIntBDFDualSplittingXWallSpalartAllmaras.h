@@ -18,7 +18,7 @@ public:
                             fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
                           std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
                           fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >    postprocessor_in,
-                          InputParameters const                                   &param_in,
+                          InputParametersNavierStokes const                       &param_in,
                           unsigned int const                                      n_refine_time_in)
     :
     TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>

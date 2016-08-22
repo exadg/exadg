@@ -22,7 +22,7 @@ public:
                fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation_in,
                std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
                fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > postprocessor_in,
-               InputParameters const                                &param_in,
+               InputParametersNavierStokes const                    &param_in,
                unsigned int const                                   n_refine_time_in)
     :
     n_refine_time(n_refine_time_in),
@@ -85,7 +85,7 @@ protected:
   std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
   fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > postprocessor;
 
-  InputParameters const & param;
+  InputParametersNavierStokes const & param;
 
   Timer global_timer;
   value_type total_time;
@@ -107,12 +107,15 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 void TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 setup(bool do_restart)
 {
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  pcout << std::endl << "Setup time integrator ..." << std::endl << std::endl;
+
   AssertThrow(param.problem_type == ProblemType::Unsteady,
               ExcMessage("In order to apply the BDF time integration scheme the problem_type has to be ProblemType::Unsteady !"));
 
   // initialize time integrator constants assuming that the time integrator uses a high-order method in first time step,
   // i.e., the default case is start_with_low_order = false
-  // this is reasonable since DGNavierStokes used these time integrator constants for the setup of solvers
+  // this is reasonable since DGNavierStokes uses these time integrator constants for the setup of solvers
   // in case of start_with_low_order == true the time integrator constants have to be adjusted in timeloop
   initialize_time_integrator_constants();
 
@@ -129,6 +132,8 @@ setup(bool do_restart)
 
   // this is where the setup of deriving classes is performed
   setup_derived();
+
+  pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
@@ -184,8 +189,8 @@ write_restart() const
 
   const double wall_time = global_timer.wall_time();
   if( (std::fmod(time ,param.restart_interval_time) < time_steps[0] + EPSILON && time > param.restart_interval_time - EPSILON)
-   || std::fmod(wall_time, param.restart_interval_wall_time) < wall_time-total_time
-   || (time_step_number % param.restart_interval_step == 0))
+      || (std::fmod(wall_time, param.restart_interval_wall_time) < wall_time-total_time)
+      || (time_step_number % param.restart_every_timesteps == 0))
   {
     std::ostringstream oss;
 
@@ -212,31 +217,42 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 void TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 calculate_time_step()
 {
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    std::cout << std::endl
-              << "Temporal discretization:" << std::endl << std::endl
-              << "  High order dual splitting scheme of temporal order " << param.order_time_integrator << std::endl << std::endl;
-
-
   if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified)
   {
     time_steps[0] = calculate_const_time_step(param.time_step_size,n_refine_time);
+
+    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+    std::cout << "User specified time step size:" << std::endl << std::endl;
+    print_parameter(pcout,"time step size",time_steps[0]);
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL)
   {
-    time_steps[0] = calculate_const_time_step_cfl<dim, fe_degree>(ns_operation->get_dof_handler_u().get_triangulation(),
-                                                                  cfl,
-                                                                  param.max_velocity,
-                                                                  param.start_time,
-                                                                  param.end_time);
+    double global_min_cell_diameter = calculate_min_cell_diameter(ns_operation->get_dof_handler_u().get_triangulation());
+
+    double time_step = calculate_const_time_step_cfl(cfl,
+                                                     param.max_velocity,
+                                                     global_min_cell_diameter,
+                                                     fe_degree);
+
+    // decrease time_step in order to exactly hit end_time
+    time_steps[0] = (param.end_time-param.start_time)/(1+int((param.end_time-param.start_time)/time_step));
+
+    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+    pcout << "Calculation of time step size according to CFL condition:" << std::endl << std::endl;
+
+    print_parameter(pcout,"h_min",global_min_cell_diameter);
+    print_parameter(pcout,"U_max",param.max_velocity);
+    print_parameter(pcout,"CFL",cfl);
+    print_parameter(pcout,"Time step size",time_steps[0]);
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
   {
-    time_steps[0] = calculate_const_time_step_cfl<dim, fe_degree>(ns_operation->get_dof_handler_u().get_triangulation(),
-                                                                  cfl,
-                                                                  param.max_velocity,
-                                                                  param.start_time,
-                                                                  param.end_time);
+    double global_min_cell_diameter = calculate_min_cell_diameter(ns_operation->get_dof_handler_u().get_triangulation());
+
+    time_steps[0] = calculate_const_time_step_cfl(cfl,
+                                                  param.max_velocity,
+                                                  global_min_cell_diameter,
+                                                  fe_degree);
 
     value_type adaptive_time_step = calculate_adaptive_time_step_cfl<dim, fe_degree, value_type>(ns_operation->get_data(),
                                                                                                  ns_operation->get_dof_index_velocity(),
@@ -293,15 +309,15 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 void TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 timeloop()
 {
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  pcout << std::endl << "Starting time loop ..." << std::endl;
+
   global_timer.restart();
 
   postprocessing();
 
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    std::cout << std::endl << "Starting time loop ..." << std::endl;
-
   const value_type EPSILON = 1.0e-10; // epsilon is a small number which is much smaller than the time step size
-  while(time<(param.end_time-EPSILON) && time_step_number<=param.max_number_of_steps)
+  while(time<(param.end_time-EPSILON) && time_step_number<=param.max_number_of_time_steps)
   {
     update_time_integrator_constants();
 
@@ -313,13 +329,17 @@ timeloop()
     ++time_step_number;
 
     postprocessing();
-    write_restart();
+
+    if(param.write_restart == true)
+      write_restart();
 
     if(param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
       recalculate_adaptive_time_step();
   }
 
   total_time += global_timer.wall_time();
+
+  pcout << std::endl << "... done!" << std::endl;
 
   analyze_computing_times();
 }

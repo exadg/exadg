@@ -8,8 +8,8 @@
 #ifndef INCLUDE_SCALARCONVECTIONDIFFUSIONOPERATORS_H_
 #define INCLUDE_SCALARCONVECTIONDIFFUSIONOPERATORS_H_
 
-#include "InputParameters.h"
 #include "../include/BoundaryDescriptorConvDiff.h"
+#include "InputParametersConvDiff.h"
 
 namespace ScalarConvDiffOperators
 {
@@ -192,7 +192,6 @@ struct DiffusiveOperatorData
     :
     dof_index(0),
     quad_index(0),
-    IP_formulation(InteriorPenaltyFormulation::SIPG),
     IP_factor(1.0),
     diffusivity(1.0)
   {}
@@ -200,7 +199,6 @@ struct DiffusiveOperatorData
   unsigned int dof_index;
   unsigned int quad_index;
 
-  InteriorPenaltyFormulation IP_formulation;
   double IP_factor;
 
   std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > bc;
@@ -323,8 +321,6 @@ private:
                                  const parallel::distributed::Vector<value_type>  &src) const
   {
     AssertThrow(diffusivity > 0.0,ExcMessage("Diffusivity has not been set!"));
-    AssertThrow(operator_data.IP_formulation == InteriorPenaltyFormulation::SIPG,
-        ExcMessage("Only symmetric interior penalty method (SIPG) implemented for scalar diffusive operator!"));
 
     data->loop(&DiffusiveOperator<dim,fe_degree, value_type>::local_apply_cell,
                &DiffusiveOperator<dim,fe_degree, value_type>::local_apply_face,
@@ -659,11 +655,13 @@ struct ConvectiveOperatorData
   ConvectiveOperatorData ()
     :
     dof_index(0),
-    quad_index(0)
+    quad_index(0),
+    numerical_flux_formulation(NumericalFluxConvectiveOperator::Undefined)
   {}
 
   unsigned int dof_index;
   unsigned int quad_index;
+  NumericalFluxConvectiveOperator numerical_flux_formulation;
 
   std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > bc;
   std_cxx11::shared_ptr<Function<dim> > velocity;
@@ -804,10 +802,10 @@ private:
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       fe_eval.reinit (face);
-      fe_eval_neighbor.reinit (face);
-
       fe_eval.read_dof_values(src);
       fe_eval.evaluate(true,false);
+
+      fe_eval_neighbor.reinit (face);
       fe_eval_neighbor.read_dof_values(src);
       fe_eval_neighbor.evaluate(true,false);
 
@@ -834,14 +832,23 @@ private:
         VectorizedArray<value_type> average_value = 0.5*(value_m + value_p);
         VectorizedArray<value_type> jump_value = value_m - value_p;
         VectorizedArray<value_type> lambda = std::abs(u_n);
-        VectorizedArray<value_type> lf_flux = u_n*average_value + 0.5*lambda*jump_value;
+        VectorizedArray<value_type> lf_flux;
+
+        if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
+          lf_flux = u_n*average_value;
+        else if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+          lf_flux = u_n*average_value + 0.5*lambda*jump_value;
+        else
+          AssertThrow(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux ||
+                      this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux,
+                      ExcMessage("Specified numerical flux function for convective operator is not implemented!"));
 
         fe_eval.submit_value(lf_flux,q);
         fe_eval_neighbor.submit_value(-lf_flux,q);
       }
-
       fe_eval.integrate(true,false);
       fe_eval.distribute_local_to_global(dst);
+
       fe_eval_neighbor.integrate(true,false);
       fe_eval_neighbor.distribute_local_to_global(dst);
     }
@@ -860,7 +867,6 @@ private:
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       fe_eval.reinit (face);
-
       fe_eval.read_dof_values(src);
       fe_eval.evaluate(true,false);
 
@@ -907,7 +913,16 @@ private:
         VectorizedArray<value_type> average_value = 0.5*(value_m + value_p);
         VectorizedArray<value_type> jump_value = value_m - value_p;
         VectorizedArray<value_type> lambda = std::abs(u_n);
-        VectorizedArray<value_type> lf_flux = u_n*average_value + 0.5*lambda*jump_value;
+        VectorizedArray<value_type> lf_flux;
+
+        if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
+          lf_flux = u_n*average_value;
+        else if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+          lf_flux = u_n*average_value + 0.5*lambda*jump_value;
+        else
+          AssertThrow(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux ||
+                      this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux,
+                      ExcMessage("Specified numerical flux function for convective operator is not implemented!"));
 
         fe_eval.submit_value(lf_flux,q);
       }
@@ -929,7 +944,6 @@ private:
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       fe_eval.reinit (face);
-
       fe_eval.read_dof_values(src);
       fe_eval.evaluate(true,false);
 
@@ -990,7 +1004,16 @@ private:
         VectorizedArray<value_type> average_value = 0.5*(value_m + value_p);
         VectorizedArray<value_type> jump_value = value_m - value_p;
         VectorizedArray<value_type> lambda = std::abs(u_n);
-        VectorizedArray<value_type> lf_flux = u_n*average_value + 0.5*lambda*jump_value;
+        VectorizedArray<value_type> lf_flux;
+
+        if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
+          lf_flux = u_n*average_value;
+        else if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+          lf_flux = u_n*average_value + 0.5*lambda*jump_value;
+        else
+          AssertThrow(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux ||
+                      this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux,
+                      ExcMessage("Specified numerical flux function for convective operator is not implemented!"));
 
         fe_eval.submit_value(lf_flux,q);
       }
@@ -1084,7 +1107,16 @@ private:
         }
 
         VectorizedArray<value_type> lambda = std::abs(u_n);
-        VectorizedArray<value_type> lf_flux = u_n*average_value + 0.5*lambda*jump_value;
+        VectorizedArray<value_type> lf_flux;
+
+        if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
+          lf_flux = u_n*average_value;
+        else if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+          lf_flux = u_n*average_value + 0.5*lambda*jump_value;
+        else
+          AssertThrow(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux ||
+                      this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux,
+                      ExcMessage("Specified numerical flux function for convective operator is not implemented!"));
 
         fe_eval.submit_value(-lf_flux,q); // -lf_flux since this term appears on the rhs of the equation
       }
@@ -1180,7 +1212,7 @@ private:
 
       fe_eval_velocity.reinit(cell);
       fe_eval_velocity.read_dof_values(*velocity);
-      fe_eval.evaluate(true,false,false);
+      fe_eval_velocity.evaluate(true,false,false);
 
       for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
       {
@@ -1243,9 +1275,9 @@ private:
         fe_eval.submit_value(lf_flux,q);
         fe_eval_neighbor.submit_value(-lf_flux,q);
       }
-
       fe_eval.integrate(true,false);
       fe_eval.distribute_local_to_global(dst);
+
       fe_eval_neighbor.integrate(true,false);
       fe_eval_neighbor.distribute_local_to_global(dst);
     }
@@ -1265,9 +1297,12 @@ private:
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       fe_eval.reinit (face);
-
       fe_eval.read_dof_values(src);
       fe_eval.evaluate(true,false);
+
+      fe_eval_velocity.reinit(face);
+      fe_eval_velocity.read_dof_values(*velocity);
+      fe_eval_velocity.evaluate(true,false);
 
       typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
       types::boundary_id boundary_id = data.get_boundary_indicator(face);
@@ -1315,6 +1350,27 @@ private:
   ConvectiveOperatorDataDiscontinuousVelocity<dim> operator_data;
   mutable parallel::distributed::Vector<value_type> const * velocity;
 };
+
+
+
+// Convection-diffusion operator for runtime optimization:
+// Evaluate volume and surface integrals of convective term, diffusive term and
+// rhs term in one function (local_apply, local_apply_face, local_evaluate_boundary_face)
+// instead of implementing each operator seperately and subsequently looping over all operators.
+//
+// Note: to obtain meaningful results, ensure that ...
+//   ... the rhs-function, velocity-field and that the diffusivity is zero
+//   if the rhs operator, convective operator or diffusive operator is "inactive"
+//   The reason behind is that the volume and surface integrals of these operators
+//   will always be evaluated for this "runtime optimization" implementation of the
+//   convection-diffusion operator
+//
+// Note: This operator is only implemented for the special case of explicit time integration,
+//   i.e., when "evaluating" the operators for a given input-vector, at a given time and given
+//   boundary conditions. Accordingly, the convective and diffusive operators a multiplied by
+//   a factor of -1.0 since these terms are shifted to the right hand side of the equation.
+//   The implicit solution of linear systems of equations (in case of implicit time integration)
+//   is currently not available for this implementation.
 
 template<int dim>
 struct ConvectionDiffusionOperatorData
@@ -1510,7 +1566,16 @@ private:
         VectorizedArray<value_type> average_value = 0.5*(value_m + value_p);
         VectorizedArray<value_type> jump_value = value_m - value_p;
         VectorizedArray<value_type> lambda = std::abs(u_n);
-        VectorizedArray<value_type> lf_flux = u_n*average_value + 0.5*lambda*jump_value;
+        VectorizedArray<value_type> lf_flux;
+
+        if(this->operator_data.conv_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
+          lf_flux = u_n*average_value;
+        else if(this->operator_data.conv_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+          lf_flux = u_n*average_value + 0.5*lambda*jump_value;
+        else
+          AssertThrow(this->operator_data.conv_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux ||
+                      this->operator_data.conv_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux,
+                      ExcMessage("Specified numerical flux function for convective operator is not implemented!"));
 
         VectorizedArray<value_type> gradient_flux = ( fe_eval.get_normal_gradient(q) +
                                                       fe_eval_neighbor.get_normal_gradient(q) ) * 0.5;
@@ -1641,7 +1706,16 @@ private:
           VectorizedArray<value_type> average_value = 0.5*(value_m + value_p);
           VectorizedArray<value_type> jump_value = value_m - value_p;
           VectorizedArray<value_type> lambda = std::abs(u_n);
-          VectorizedArray<value_type> lf_flux = u_n*average_value + 0.5*lambda*jump_value;
+          VectorizedArray<value_type> lf_flux;
+
+          if(this->operator_data.conv_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
+            lf_flux = u_n*average_value;
+          else if(this->operator_data.conv_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+            lf_flux = u_n*average_value + 0.5*lambda*jump_value;
+          else
+            AssertThrow(this->operator_data.conv_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux ||
+                        this->operator_data.conv_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux,
+                        ExcMessage("Specified numerical flux function for convective operator is not implemented!"));
 
           VectorizedArray<value_type> gradient_flux;
 

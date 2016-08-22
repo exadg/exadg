@@ -16,20 +16,11 @@ double calculate_const_time_step(double const dt,
 {
   double time_step = dt/std::pow(2.,n_refine_time);
 
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    std::cout << "User specified time step size:" << std::endl << std::endl
-              << "  time step size:" << std::scientific << std::setprecision(4) << std::setw(14) << std::right << time_step << std::endl;
-
   return time_step;
 }
 
-template<int dim, int fe_degree>
-double calculate_const_time_step_cfl(Triangulation<dim> const &triangulation,
-                                     double const cfl,
-                                     double const max_velocity,
-                                     double const start_time,
-                                     double const end_time,
-                                     double const exponent_fe_degree = 2.0)
+template<int dim>
+double calculate_min_cell_diameter(Triangulation<dim> const &triangulation)
 {
   typename Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(), endc = triangulation.end();
 
@@ -45,18 +36,17 @@ double calculate_const_time_step_cfl(Triangulation<dim> const &triangulation,
   }
   const double global_min_cell_diameter = -Utilities::MPI::max(-min_cell_diameter, MPI_COMM_WORLD);
 
+  return global_min_cell_diameter;
+}
+
+double calculate_const_time_step_cfl(double const       cfl,
+                                     double const       max_velocity,
+                                     double const       global_min_cell_diameter,
+                                     unsigned int const fe_degree,
+                                     double const       exponent_fe_degree = 2.0)
+{
   // cfl/p^{exponent_fe_degree} = || U || * time_step / h
   double time_step = cfl/pow(fe_degree,exponent_fe_degree) * global_min_cell_diameter / max_velocity;
-
-  // decrease time_step in order to exactly hit END_TIME
-  time_step = (end_time-start_time)/(1+int((end_time-start_time)/time_step));
-
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    std::cout << "Calculation of time step size according to CFL condition:" << std::endl << std::endl
-              << "  h_min:         " << std::scientific << std::setprecision(4) << std::setw(14) << std::right << global_min_cell_diameter << std::endl
-              << "  u_max:         " << std::scientific << std::setprecision(4) << std::setw(14) << std::right << max_velocity << std::endl
-              << "  CFL:           " << std::scientific << std::setprecision(4) << std::setw(14) << std::right << cfl  << std::endl
-              << "  time step size:" << std::scientific << std::setprecision(4) << std::setw(14) << std::right << time_step << std::endl;
 
   return time_step;
 }
@@ -131,7 +121,6 @@ double calculate_adaptive_time_step_cfl(MatrixFree<dim,value_type> const        
     {
       new_time_step = last_time_step/fac;
     }
-
   }
 
   return new_time_step;

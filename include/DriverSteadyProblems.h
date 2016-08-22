@@ -17,11 +17,12 @@ class DriverSteadyProblems
 public:
   DriverSteadyProblems(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
                                 fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation_in,
-                                std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
+                       std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
                                 fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > postprocessor_in,
-                                InputParameters const                                &param_in)
+                       InputParametersNavierStokes const                             &param_in)
     :
-    ns_operation(std::dynamic_pointer_cast<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in)),
+    ns_operation(std::dynamic_pointer_cast<DGNavierStokesCoupled<dim, fe_degree,
+                    fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in)),
     postprocessor(postprocessor_in),
     param(param_in),
     total_time(0.0)
@@ -42,9 +43,8 @@ private:
 
   std_cxx11::shared_ptr<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation;
 
-  std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
-      fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > postprocessor;
-  InputParameters const &param;
+  std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > postprocessor;
+  InputParametersNavierStokes const &param;
 
   Timer global_timer;
   value_type total_time;
@@ -63,7 +63,7 @@ setup()
   initialize_vectors();
 
   // initialize solution by using the analytical solution or a guess of the velocity and pressure field
-//  initialize_solution();
+  initialize_solution();
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
@@ -91,7 +91,8 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 initialize_solution()
 {
-  ns_operation->prescribe_initial_conditions(solution.block(0),solution.block(1),0);
+  double time = 0.0;
+  ns_operation->prescribe_initial_conditions(solution.block(0),solution.block(1),time);
 }
 
 
@@ -101,6 +102,9 @@ solve()
 {
   Timer timer;
   timer.restart();
+
+  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    std::cout << std::endl << "Solving steady state problem ..." << std::endl;
 
   // Steady Stokes equations
   if(this->param.equation_type == EquationType::Stokes)
@@ -113,16 +117,14 @@ solve()
     // write output
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
-      std::cout << "Solve linear Stokes problem:" << std::endl
+      std::cout << std:: endl
+                << "Solve linear Stokes problem:" << std::endl
                 << "  Iterations: " << std::setw(6) << std::right << iterations
-                << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+                << "\t Wall time [s]: " << std::scientific << std::setprecision(4) << timer.wall_time() << std::endl;
     }
   }
   else // Steady Navier-Stokes equations
   {
-    AssertThrow(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit,
-        ExcMessage("Use 'treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit' when solving the STEADY Navier-Stokes equations."));
-
     // Newton solver
     unsigned int newton_iterations;
     double average_linear_iterations;
@@ -131,18 +133,25 @@ solve()
     // write output
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
-      std::cout << "Solve nonlinear Navier-Stokes problem:" << std::endl
-                << "  Linear iterations (avg): " << std::setw(6) << std::right << average_linear_iterations << std::endl
-                << "  Newton iterations: " << std::setw(6) << std::right << newton_iterations
-                << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+      std::cout << std:: endl
+                << "Solve nonlinear Navier-Stokes problem:" << std::endl
+                << "  Linear iterations (avg):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << average_linear_iterations << std::endl
+                << "  Newton iterations:      " << std::setw(12) << std::right << newton_iterations
+                << "\t Wall time [s]: " << std::scientific << std::setprecision(4) << timer.wall_time() << std::endl;
     }
   }
 
-  // adjust pressure level in case of pure Dirichlet BC
+  // special case: pure Dirichlet BC's
   if(this->param.pure_dirichlet_bc)
   {
-    ns_operation->shift_pressure(solution.block(1));
+    if(this->param.analytical_solution_available == true)
+      ns_operation->shift_pressure(solution.block(1));
+    else // analytical_solution_available == false
+      ns_operation->apply_zero_mean(solution.block(1));
   }
+
+  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    std::cout << std::endl << "... done!" << std::endl;
 }
 
 
@@ -154,9 +163,6 @@ solve_steady_problem()
   global_timer.restart();
 
   postprocessing();
-
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    std::cout << std::endl << "Solving steady state problem ..." << std::endl;
 
   solve();
 

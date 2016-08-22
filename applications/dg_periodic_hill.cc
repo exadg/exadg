@@ -65,7 +65,7 @@
 #include "../include/DGNavierStokesDualSplittingXWall.h"
 #include "../include/DGNavierStokesCoupled.h"
 
-#include "../include/InputParameters.h"
+#include "../include/InputParametersNavierStokes.h"
 #include "TimeIntBDFDualSplitting.h"
 #include "TimeIntBDFDualSplittingXWall.h"
 #include "TimeIntBDFDualSplittingXWallSpalartAllmaras.h"
@@ -89,7 +89,7 @@ const unsigned int REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 const double GRID_STRETCH_FAC = 1.3;
 const bool USE_SOURCE_TERM_CONTROLLER = false;
 
-void InputParameters::set_input_parameters()
+void InputParametersNavierStokes::set_input_parameters()
 {
   output_prefix = "ph1400_l4_k3_sa";
   cfl = 0.02;
@@ -130,7 +130,7 @@ void InputParameters::set_input_parameters()
   output_interval_time = 0.001;
   statistics_start_time = 0.5;
   statistics_every = 10;
-  restart_interval_step = 1e9;
+  restart_every_timesteps = 1e9;
   restart_interval_time = 1.e9;
 
   max_velocity = 4.;
@@ -531,7 +531,7 @@ void InputParameters::set_input_parameters()
     std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity;
     std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure;
 
-    InputParameters param;
+    InputParametersNavierStokes param;
 
     std_cxx11::shared_ptr<DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> > navier_stokes_operation;
 
@@ -548,7 +548,7 @@ void InputParameters::set_input_parameters()
 
     PostProcessorPH(
                   std_cxx11::shared_ptr< const DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> >  ns_operation,
-                  InputParameters const &param_in):
+                  InputParametersNavierStokes const &param_in):
       PostProcessor<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>(ns_operation,param_in),
       statistics_ph(ns_operation->get_dof_handler_u(),ns_operation->get_dof_handler_p(),ns_operation->get_mapping())
     {
@@ -593,7 +593,7 @@ void InputParameters::set_input_parameters()
 
     PostProcessorPHXWall(
                   std_cxx11::shared_ptr< DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> >  ns_operation,
-                  InputParameters const &param_in):
+                  InputParametersNavierStokes const &param_in):
       PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>(ns_operation,param_in),
       statistics_ph(ns_operation->get_dof_handler_u(),ns_operation->get_dof_handler_p(),ns_operation->get_mapping())
     {
@@ -657,7 +657,7 @@ void InputParameters::set_input_parameters()
     PrintInputParams::Header(pcout);
 
     param.set_input_parameters();
-    param.check_parameters();
+    param.check_input_parameters();
 
     // initialize functions (analytical solution, rhs, boundary conditions)
     std_cxx11::shared_ptr<Function<dim> > analytical_solution_velocity;
@@ -669,7 +669,8 @@ void InputParameters::set_input_parameters()
     right_hand_side.reset(new RightHandSide<dim>(param.start_time));
 
     field_functions.reset(new FieldFunctionsNavierStokes<dim>());
-    field_functions->analytical_solution_velocity = analytical_solution_velocity;
+    field_functions->initial_solution_velocity = analytical_solution_velocity;
+    field_functions->initial_solution_pressure = analytical_solution_pressure;
     field_functions->analytical_solution_pressure = analytical_solution_pressure;
     field_functions->right_hand_side = right_hand_side;
 
@@ -679,7 +680,7 @@ void InputParameters::set_input_parameters()
     if(param.spatial_discretization == SpatialDiscretization::DGXWall)
     {
       analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>(2*dim,param.start_time));
-      field_functions->analytical_solution_velocity = analytical_solution_velocity;
+      field_functions->initial_solution_velocity = analytical_solution_velocity;
       if(param.problem_type == ProblemType::Unsteady &&
               param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
       {

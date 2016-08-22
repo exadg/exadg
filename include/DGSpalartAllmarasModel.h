@@ -576,7 +576,7 @@ public:
   };
 
   DGNavierStokesDualSplittingXWallSpalartAllmaras(parallel::distributed::Triangulation<dim> const &triangulation,
-                                   InputParameters const                           &parameter)
+                                                  InputParametersNavierStokes const               &parameter)
     :
       DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>(triangulation,parameter),
       fe_vt(QGaussLobatto<1>(fe_degree+1)),

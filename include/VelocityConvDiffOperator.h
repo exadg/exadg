@@ -22,10 +22,6 @@ struct VelocityConvDiffOperatorData
 
   bool unsteady_problem;
   bool convective_problem;
-
-  MassMatrixOperatorData mass_matrix_operator_data;
-  ViscousOperatorData<dim> viscous_operator_data;
-  ConvectiveOperatorData<dim> convective_operator_data;
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall,typename Number = double>

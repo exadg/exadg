@@ -343,6 +343,7 @@ public:
 
     const_viscosity = operator_data.viscosity;
 
+    // TODO remove this from viscous operator
     QGauss<dim> quadrature(fe_degree+1);
     FEValues<dim> fe_values(mapping, this->data->get_dof_handler().get_fe(), quadrature, update_JxW_values);
     element_length.resize(this->data->n_macro_cells()+this->data->n_macro_ghost_cells());
@@ -383,6 +384,7 @@ public:
                     << std::endl;
       }
     }
+    // TODO remove this from viscous operator
   }
 
   void reinit (const DoFHandler<dim>            &dof_handler,
@@ -422,10 +424,25 @@ public:
 
   void set_variable_viscosity(double const constant_viscosity_in,const parallel::distributed::Vector<Number>  &src)
   {
+//    const_viscosity = constant_viscosity_in;
+//    FEEval_Velocity_Velocity_linear fe_eval_velocity_cell(*data,*fe_param,operator_data.dof_index);
+//    viscous_coefficient_cell.reinit(data->n_macro_cells(), fe_eval_velocity_cell.n_q_points);
+//    viscous_coefficient_cell.fill(make_vectorized_array<Number>(const_viscosity));
+//
+//    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_face(*data,*fe_param,true,operator_data.dof_index);
+//    viscous_coefficient_face.reinit(data->n_macro_inner_faces()+data->n_macro_boundary_faces(), fe_eval_velocity_face.n_q_points);
+//    viscous_coefficient_face.fill(make_vectorized_array<Number>(const_viscosity));
+//
+//    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_face_neighbor(*data,*fe_param,false,operator_data.dof_index);
+//    viscous_coefficient_face_neighbor.reinit(data->n_macro_inner_faces()+data->n_macro_boundary_faces(), fe_eval_velocity_face.n_q_points);
+//    viscous_coefficient_face_neighbor.fill(make_vectorized_array<Number>(const_viscosity));
+
+    // TODO remove this from viscous operator
     this->const_viscosity = constant_viscosity_in;
 
     if(this->fe_param->ml > 0.1)
       set_eddy_viscosity(src);
+    // TODO remove this from viscous operator
   }
 
   // returns true if viscous_coefficient table has been filled with spatially varying viscosity values
@@ -1674,6 +1691,7 @@ private:
     }
   }
 
+  // TODO remove this from viscous operator
   void set_eddy_viscosity(const parallel::distributed::Vector<Number>  &src)
   {
     parallel::distributed::Vector<Number> dummy;
@@ -1682,7 +1700,9 @@ private:
                      &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_set_eddyviscosity_boundary_face,
                      this, dummy, src);
   }
+  // TODO remove this from viscous operator
 
+  // TODO remove this from viscous operator
   void local_set_eddyviscosity (const MatrixFree<dim,Number>                 &data,
                        parallel::distributed::Vector<Number>        &,
                        const parallel::distributed::Vector<Number>  &src,
@@ -1707,7 +1727,9 @@ private:
       }
     }
   }
+  // TODO remove this from viscous operator
 
+  // TODO remove this from viscous operator
   void local_set_eddyviscosity_face (const MatrixFree<dim,Number>                 &data,
                             parallel::distributed::Vector<Number>        &,
                             const parallel::distributed::Vector<Number>  &src,
@@ -1744,7 +1766,9 @@ private:
       }
     }
   }
+  // TODO remove this from viscous operator
 
+  // TODO remove this from viscous operator
   void local_set_eddyviscosity_boundary_face (const MatrixFree<dim,Number>                 & data,
                                      parallel::distributed::Vector<Number>        &,
                                      const parallel::distributed::Vector<Number>  &src,
@@ -1766,6 +1790,7 @@ private:
       }
     }
   }
+  // TODO remove this from viscous operator
 
 private:
   MatrixFree<dim,Number> const * data;
