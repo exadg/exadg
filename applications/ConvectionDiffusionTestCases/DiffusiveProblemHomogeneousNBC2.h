@@ -37,6 +37,7 @@ const double DIFFUSIVITY = 0.2;
 void InputParametersConvDiff::set_input_parameters()
 {
   // MATHEMATICAL MODEL
+  problem_type = ProblemType::Unsteady;
   equation_type = EquationTypeConvDiff::Diffusion;
   right_hand_side = false;
 
@@ -62,7 +63,7 @@ void InputParametersConvDiff::set_input_parameters()
 
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
-  write_output = "true";
+  write_output = true;
   output_prefix = "diffusive_problem_homogeneous_NBC_2";
   output_start_time = start_time;
   output_interval_time = (end_time-start_time)/20;
@@ -70,6 +71,8 @@ void InputParametersConvDiff::set_input_parameters()
   analytical_solution_available = true;
   error_calc_start_time = start_time;
   error_calc_interval_time = output_interval_time;
+
+  output_solver_info_every_timesteps = 1e6;
 }
 
 

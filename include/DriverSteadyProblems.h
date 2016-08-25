@@ -128,7 +128,7 @@ solve()
     // Newton solver
     unsigned int newton_iterations;
     double average_linear_iterations;
-    ns_operation->solve_nonlinear_problem(solution,newton_iterations,average_linear_iterations);
+    ns_operation->solve_nonlinear_steady_problem(solution,newton_iterations,average_linear_iterations);
 
     // write output
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)

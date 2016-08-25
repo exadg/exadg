@@ -16,7 +16,7 @@ struct HelmholtzOperatorData
   HelmholtzOperatorData ()
     :
     dof_index(0),
-    mass_matrix_coefficient(1.0)
+    mass_matrix_coefficient(-1.0)
   {}
 
   unsigned int dof_index;
@@ -60,7 +60,7 @@ public:
     data(nullptr),
     mass_matrix_operator(nullptr),
     viscous_operator(nullptr),
-    mass_matrix_coefficient(1.0)
+    mass_matrix_coefficient(-1.0)
   {}
 
   void initialize(MatrixFree<dim,Number> const                                                            &mf_data_in,
@@ -75,10 +75,10 @@ public:
     this->viscous_operator = &viscous_operator_in;
 
     // set mass matrix coefficient!
-    this->mass_matrix_coefficient = helmholtz_operator_data.mass_matrix_coefficient;
+    AssertThrow(helmholtz_operator_data.mass_matrix_coefficient > 0.0,
+                ExcMessage("Mass matrix coefficient of HelmholtzOperatorData has not been initialized!"));
 
-    // initialize temp vector
-    initialize_dof_vector(temp);
+    this->mass_matrix_coefficient = helmholtz_operator_data.mass_matrix_coefficient;
   }
 
   void reinit (const DoFHandler<dim>            &dof_handler,
@@ -118,6 +118,11 @@ public:
 
     // setup Helmholtz operator
     initialize(own_matrix_free_storage, my_operator_data, own_mass_matrix_operator_storage, own_viscous_operator_storage);
+
+    // initialize temp vector: this is done in this function because
+    // the vector temp is only used in the function vmult_add(), i.e.,
+    // when using the multigrid preconditioner
+    initialize_dof_vector(temp);
   }
 
   void set_mass_matrix_coefficient(Number const coefficient_in)
@@ -143,17 +148,17 @@ public:
     viscous_operator->apply_add(dst,src);
   }
 
-  void Tvmult(parallel::distributed::Vector<Number>       &dst,
-              const parallel::distributed::Vector<Number> &src) const
-  {
-    vmult(dst,src);
-  }
-
-  void Tvmult_add(parallel::distributed::Vector<Number>       &dst,
-                  const parallel::distributed::Vector<Number> &src) const
-  {
-    vmult_add(dst,src);
-  }
+//  void Tvmult(parallel::distributed::Vector<Number>       &dst,
+//              const parallel::distributed::Vector<Number> &src) const
+//  {
+//    vmult(dst,src);
+//  }
+//
+//  void Tvmult_add(parallel::distributed::Vector<Number>       &dst,
+//                  const parallel::distributed::Vector<Number> &src) const
+//  {
+//    vmult_add(dst,src);
+//  }
 
   void vmult_add(parallel::distributed::Vector<Number>       &dst,
                  const parallel::distributed::Vector<Number> &src) const
@@ -183,25 +188,15 @@ public:
     return data->get_vector_partitioner(helmholtz_operator_data.dof_index)->size();
   }
 
-  types::global_dof_index n() const
-  {
-    return data->get_vector_partitioner(helmholtz_operator_data.dof_index)->size();
-  }
+//  types::global_dof_index n() const
+//  {
+//    return data->get_vector_partitioner(helmholtz_operator_data.dof_index)->size();
+//  }
 
   Number el (const unsigned int,  const unsigned int) const
   {
     AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
     return Number();
-  }
-
-  MatrixFree<dim,Number> const  & get_data() const
-  {
-    return *data;
-  }
-
-  HelmholtzOperatorData<dim> const & get_operator_data() const
-  {
-    return helmholtz_operator_data;
   }
 
   unsigned int get_dof_index() const

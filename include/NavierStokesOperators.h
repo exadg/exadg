@@ -246,6 +246,7 @@ private:
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
       fe_eval_velocity.reinit (cell);
+
       VectorizedArray<value_type> local_diagonal_vector[fe_eval_velocity.tensor_dofs_per_cell*dim];
       for (unsigned int j=0; j<fe_eval_velocity.dofs_per_cell*dim; ++j)
       {
@@ -267,6 +268,7 @@ private:
       }
       for (unsigned int j=0; j<fe_eval_velocity.dofs_per_cell*dim; ++j)
         fe_eval_velocity.write_cellwise_dof_value(j,local_diagonal_vector[j]);
+
       fe_eval_velocity.distribute_local_to_global (dst);
     }
   }
@@ -734,6 +736,7 @@ private:
     {
       fe_eval_velocity.reinit (face);
       fe_eval_velocity_neighbor.reinit (face);
+
       fe_eval_velocity.read_dof_values(src);
       fe_eval_velocity.evaluate(true,true);
       fe_eval_velocity_neighbor.read_dof_values(src);
@@ -1034,12 +1037,12 @@ private:
         for (unsigned int i=0; i<fe_eval_velocity_neighbor.dofs_per_cell*dim; ++i)
           fe_eval_velocity_neighbor.write_cellwise_dof_value(i, make_vectorized_array<Number>(0.));
 
+        // copied from local_apply_viscous_face (note that fe_eval_neighbor.submit... has to be removed) //TODO
         fe_eval_velocity.evaluate(true,true);
         fe_eval_velocity_neighbor.evaluate(true,true);
 
         for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
         {
-          // copied from local_apply_viscous_face (note that fe_eval_neighbor.submit... has to be removed) //TODO
           Tensor<1,dim,VectorizedArray<Number> > uM = fe_eval_velocity.get_value(q);
           Tensor<1,dim,VectorizedArray<Number> > uP = fe_eval_velocity_neighbor.get_value(q);
           VectorizedArray<Number> average_viscosity = make_vectorized_array<Number>(const_viscosity);
@@ -1106,14 +1109,16 @@ private:
             AssertThrow(false, ExcMessage("FORMULATION_VISCOUS_TERM is not specified - possibilities are DivergenceFormulation and LaplaceFormulation"));
           }
           fe_eval_velocity.submit_value(-average_gradient,q);
-          // copied from local_apply_viscous_face (note that fe_eval_neighbor.submit... has to be removed)
         }
         // integrate on element-
         fe_eval_velocity.integrate(true,true);
+        // copied from local_apply_viscous_face (note that fe_eval_neighbor.submit... has to be removed)
+
         local_diagonal_vector[j] = fe_eval_velocity.read_cellwise_dof_value(j);
       }
       for (unsigned int j=0; j<fe_eval_velocity.dofs_per_cell*dim; ++j)
         fe_eval_velocity.write_cellwise_dof_value(j, local_diagonal_vector[j]);
+
       fe_eval_velocity.distribute_local_to_global(dst);
 
       // neighbor (element+)
@@ -1128,12 +1133,12 @@ private:
           fe_eval_velocity_neighbor.write_cellwise_dof_value(i, make_vectorized_array<Number>(0.));
         fe_eval_velocity_neighbor.write_cellwise_dof_value(j,make_vectorized_array<Number>(1.));
 
+        // copied from local_apply_viscous_face (note that fe_eval.submit... has to be removed)//TODO
         fe_eval_velocity.evaluate(true,true);
         fe_eval_velocity_neighbor.evaluate(true,true);
 
         for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
         {
-          // copied from local_apply_viscous_face (note that fe_eval.submit... has to be removed)//TODO
           Tensor<1,dim,VectorizedArray<Number> > uM = fe_eval_velocity.get_value(q);
           Tensor<1,dim,VectorizedArray<Number> > uP = fe_eval_velocity_neighbor.get_value(q);
           VectorizedArray<Number> average_viscosity = make_vectorized_array<Number>(const_viscosity);
@@ -1200,10 +1205,11 @@ private:
             AssertThrow(false, ExcMessage("FORMULATION_VISCOUS_TERM is not specified - possibilities are DivergenceFormulation and LaplaceFormulation"));
           }
           fe_eval_velocity_neighbor.submit_value(average_gradient,q);
-          // copied from local_apply_viscous_face  (note that fe_eval.submit... has to be removed)
         }
         // integrate on element+
         fe_eval_velocity_neighbor.integrate(true,true);
+        // copied from local_apply_viscous_face  (note that fe_eval.submit... has to be removed)
+
         local_diagonal_vector_neighbor[j] = fe_eval_velocity_neighbor.read_cellwise_dof_value(j);
       }
       for (unsigned int j=0; j<fe_eval_velocity_neighbor.dofs_per_cell*dim; ++j)
@@ -1237,11 +1243,11 @@ private:
           fe_eval_velocity.write_cellwise_dof_value(i, make_vectorized_array<Number>(0.));
         fe_eval_velocity.write_cellwise_dof_value(j, make_vectorized_array<Number>(1.));
 
+        // copied from local_apply_viscous_boundary_face TODO
         fe_eval_velocity.evaluate(true,true);
 
         for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
         {
-          // copied from local_apply_viscous_boundary_face
           VectorizedArray<Number> viscosity = make_vectorized_array<Number>(const_viscosity);
           if(viscosity_is_variable())
             viscosity = viscous_coefficient_face[face][q];
@@ -1349,9 +1355,10 @@ private:
             }
             fe_eval_velocity.submit_value(-average_gradient,q);
           }
-          // copied from local_apply_viscous__boundary_face
         }
         fe_eval_velocity.integrate(true,true);
+        // copied from local_apply_viscous__boundary_face
+
         local_diagonal_vector[j] = fe_eval_velocity.read_cellwise_dof_value(j);
       }
       for (unsigned int j=0; j<fe_eval_velocity.dofs_per_cell*dim; ++j)

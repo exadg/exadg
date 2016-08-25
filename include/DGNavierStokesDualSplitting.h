@@ -105,9 +105,9 @@ public:
 
   // convective step
   void solve_nonlinear_convective_problem (parallel::distributed::Vector<value_type>       &dst,
+                                           parallel::distributed::Vector<value_type> const &sum_alphai_ui,
                                            unsigned int                                    &newton_iterations,
-                                           double                                          &average_linear_iterations,
-                                           parallel::distributed::Vector<value_type> const &sum_alphai_ui);
+                                           double                                          &average_linear_iterations);
 
   unsigned int solve_linearized_convective_problem (parallel::distributed::Vector<value_type>       &dst,
                                                     parallel::distributed::Vector<value_type> const &src,
@@ -163,7 +163,7 @@ public:
                      const parallel::distributed::Vector<value_type> &src);
 
   unsigned int solve_viscous (parallel::distributed::Vector<value_type>       &dst,
-                                      const parallel::distributed::Vector<value_type> &src);
+                              const parallel::distributed::Vector<value_type> &src);
 
 
   // initialization of vectors
@@ -608,9 +608,9 @@ apply_linearized_convective_problem (parallel::distributed::Vector<value_type>  
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 solve_nonlinear_convective_problem (parallel::distributed::Vector<value_type>       &dst,
+                                    parallel::distributed::Vector<value_type> const &sum_alphai_ui,
                                     unsigned int                                    &newton_iterations,
-                                    double                                          &average_linear_iterations,
-                                    parallel::distributed::Vector<value_type> const &sum_alphai_ui)
+                                    double                                          &average_linear_iterations)
 {
   this->sum_alphai_ui = sum_alphai_ui;
   newton_solver.solve(dst,newton_iterations,average_linear_iterations);
@@ -829,7 +829,7 @@ local_rhs_pressure_BC_term_boundary_face (const MatrixFree<dim,value_type>      
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 rhs_pressure_convective_term (parallel::distributed::Vector<value_type>       &dst,
-                              const parallel::distributed::Vector<value_type>  &src) const
+                              const parallel::distributed::Vector<value_type> &src) const
 {
   this->data.loop (&DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_rhs_pressure_convective_term,
                    &DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_rhs_pressure_convective_term_face,

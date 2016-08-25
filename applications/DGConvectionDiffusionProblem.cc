@@ -54,7 +54,9 @@
 #include <sstream>
 
 #include "../include/DGConvDiffOperation.h"
+
 #include "../include/TimeIntExplRKConvDiff.h"
+#include "../include/TimeIntBDFConvDiff.h"
 
 #include "../include/BoundaryDescriptorConvDiff.h"
 #include "../include/FieldFunctionsConvDiff.h"
@@ -63,14 +65,15 @@
 #include "../include/PrintFunctions.h"
 
 using namespace dealii;
+using namespace ConvDiff;
 
 
 // SPECIFY THE TEST CASE THAT HAS TO BE SOLVED
 
 //#include "ConvectionDiffusionTestCases/PropagatingSineWave.h"
 //#include "ConvectionDiffusionTestCases/RotatingHill.h"
-#include "ConvectionDiffusionTestCases/DeformingHill.h"
-//#include "ConvectionDiffusionTestCases/DiffusiveProblemHomogeneousDBC.h"
+//#include "ConvectionDiffusionTestCases/DeformingHill.h"
+#include "ConvectionDiffusionTestCases/DiffusiveProblemHomogeneousDBC.h"
 //#include "ConvectionDiffusionTestCases/DiffusiveProblemHomogeneousNBC.h"
 //#include "ConvectionDiffusionTestCases/DiffusiveProblemHomogeneousNBC2.h"
 //#include "ConvectionDiffusionTestCases/ConstantRHS.h"
@@ -119,7 +122,8 @@ do_postprocessing(parallel::distributed::Vector<double> const &solution_vector,
     calculate_error(solution_vector,time);
     ++error_counter;
   }
-  if( time > (param.output_start_time + output_counter*param.output_interval_time - EPSILON))
+  if( param.write_output == true &&
+      (time > (param.output_start_time + output_counter*param.output_interval_time - EPSILON)) )
   {
     write_output(solution_vector,time);
     ++output_counter;
@@ -185,6 +189,8 @@ private:
 
   parallel::distributed::Triangulation<dim> triangulation;
 
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_faces;
+
   InputParametersConvDiff param;
 
   const unsigned int n_refine_space;
@@ -195,7 +201,9 @@ private:
 
   std_cxx11::shared_ptr<DGConvDiffOperation<dim,fe_degree, value_type> > conv_diff_operation;
   std_cxx11::shared_ptr<PostProcessor<dim, fe_degree> > postprocessor;
-  std_cxx11::shared_ptr<TimeIntExplRKConvDiff<dim, fe_degree, value_type> > time_integrator;
+
+  std_cxx11::shared_ptr<TimeIntExplRKConvDiff<dim, fe_degree, value_type> > time_integrator_explRK;
+  std_cxx11::shared_ptr<TimeIntBDFConvDiff<dim,fe_degree,value_type> > time_integrator_BDF;
 };
 
 template<int dim, int fe_degree>
@@ -238,12 +246,30 @@ ConvDiffProblem(const unsigned int n_refine_space_in,
   postprocessor.reset(new PostProcessor<dim, fe_degree>(conv_diff_operation,param));
 
   // initialize time integrator
-  time_integrator.reset(new TimeIntExplRKConvDiff<dim, fe_degree, value_type>(
-      conv_diff_operation,
-      postprocessor,
-      param,
-      field_functions->velocity,
-      n_refine_time));
+  if(param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
+  {
+    time_integrator_explRK.reset(new TimeIntExplRKConvDiff<dim, fe_degree, value_type>(
+        conv_diff_operation,
+        postprocessor,
+        param,
+        field_functions->velocity,
+        n_refine_time));
+  }
+  else if(param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
+  {
+    time_integrator_BDF.reset(new TimeIntBDFConvDiff<dim, fe_degree, value_type>(
+        conv_diff_operation,
+        postprocessor,
+        param,
+        field_functions->velocity,
+        n_refine_time));
+  }
+  else
+  {
+    AssertThrow(param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK ||
+                param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF,
+                ExcMessage("Specified time integration scheme is not implemented!"));
+  }
 }
 
 template<int dim, int fe_degree>
@@ -272,12 +298,27 @@ solve_problem()
 
   print_grid_data();
 
-  conv_diff_operation->setup(boundary_descriptor,
+  conv_diff_operation->setup(periodic_faces,
+                             boundary_descriptor,
                              field_functions);
 
-  time_integrator->setup();
+  if(param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
+  {
+    time_integrator_explRK->setup();
 
-  time_integrator->timeloop();
+    time_integrator_explRK->timeloop();
+  }
+  else if(param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
+  {
+    // call setup() of time_integrator before setup_solvers() of conv_diff_operation
+    // because setup_solvers() needs quantities such as the time step size for a
+    // correct initialization of preconditioners
+    time_integrator_BDF->setup();
+
+    conv_diff_operation->setup_solver();
+
+    time_integrator_BDF->timeloop();
+  }
 }
 
 int main (int argc, char** argv)

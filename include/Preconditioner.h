@@ -25,8 +25,8 @@ class InverseMassMatrixPreconditioner : public PreconditionerBase<value_type>
 {
 public:
   InverseMassMatrixPreconditioner(MatrixFree<dim,value_type> const &mf_data,
-                                        const unsigned int         dof_index,
-                                        const unsigned int         quad_index)
+                                  unsigned int const               dof_index,
+                                  unsigned int const               quad_index)
   {
     inverse_mass_matrix_operator.initialize(mf_data,dof_index,quad_index);
   }

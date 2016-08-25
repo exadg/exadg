@@ -33,6 +33,7 @@ const unsigned int REFINE_STEPS_TIME_MAX = 0;
 void InputParametersConvDiff::set_input_parameters()
 {
   // MATHEMATICAL MODEL
+  problem_type = ProblemType::Unsteady;
   equation_type = EquationTypeConvDiff::Convection;
   right_hand_side = false;
 
@@ -58,7 +59,7 @@ void InputParametersConvDiff::set_input_parameters()
 
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
-  write_output = "true";
+  write_output = true;
   output_prefix = "rotating_hill";
   output_start_time = start_time;
   output_interval_time = (end_time-start_time)/20;
@@ -66,6 +67,8 @@ void InputParametersConvDiff::set_input_parameters()
   analytical_solution_available = true;
   error_calc_start_time = start_time;
   error_calc_interval_time = output_interval_time;
+
+  output_solver_info_every_timesteps = 1e6;
 }
 
 

@@ -434,7 +434,7 @@ private:
       // in case of a varying scaling_factor_time_derivate_term (adaptive time stepping)
       // the helmholtz operator has to be updated before applying this preconditioner
       helmholtz_operator_data.mass_matrix_coefficient = underlying_operator->get_scaling_factor_time_derivative_term();
-      helmholtz_operator_data.periodic_face_pairs_level0 = underlying_operator->get_periodic_face_pairs();
+      helmholtz_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
 
       // currently use default parameters of MultigridData!
       MultigridData mg_data_helmholtz;
@@ -497,7 +497,7 @@ private:
       compatible_laplace_operator_data.dof_index_pressure = underlying_operator->get_dof_index_pressure();
       compatible_laplace_operator_data.gradient_operator_data = underlying_operator->get_gradient_operator_data();
       compatible_laplace_operator_data.divergence_operator_data = underlying_operator->get_divergence_operator_data();
-      compatible_laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->get_periodic_face_pairs();
+      compatible_laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
 
       // currently use default parameters of MultigridData!
       MultigridData mg_data_compatible_pressure;
@@ -520,7 +520,7 @@ private:
       laplace_operator_data.penalty_factor = 1.0;
       laplace_operator_data.neumann_boundaries = underlying_operator->get_dirichlet_boundary();
       laplace_operator_data.dirichlet_boundaries = underlying_operator->get_neumann_boundary();
-      laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->get_periodic_face_pairs();
+      laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
 
       // currently use default parameters of MultigridData!
       MultigridData mg_data_pressure;
@@ -558,7 +558,7 @@ private:
       laplace_operator_data.penalty_factor = 1.0;
       laplace_operator_data.neumann_boundaries = underlying_operator->get_dirichlet_boundary();
       laplace_operator_data.dirichlet_boundaries = underlying_operator->get_neumann_boundary();
-      laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->get_periodic_face_pairs();
+      laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
       laplace_operator_classical.reset(new LaplaceOperator<dim>());
       laplace_operator_classical->reinit(
           underlying_operator->get_data(),
@@ -577,7 +577,7 @@ private:
       compatible_laplace_operator_data.dof_index_pressure = underlying_operator->get_dof_index_pressure();
       compatible_laplace_operator_data.gradient_operator_data = underlying_operator->get_gradient_operator_data();
       compatible_laplace_operator_data.divergence_operator_data = underlying_operator->get_divergence_operator_data();
-      compatible_laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->get_periodic_face_pairs();
+      compatible_laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
 
       laplace_operator_compatible.reset(new CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>());
       laplace_operator_compatible->initialize(

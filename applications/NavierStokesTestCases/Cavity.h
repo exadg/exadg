@@ -20,7 +20,7 @@
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 5;
+unsigned int const FE_DEGREE_VELOCITY = 2;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -29,7 +29,7 @@ unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
 unsigned int const REFINE_STEPS_SPACE_MIN = 3;
-unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MAX = 3;//REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -128,9 +128,9 @@ void InputParametersNavierStokes::set_input_parameters()
   max_iter_newton = 1e2;
 
   // linear solver
-  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::FGMRES;
+  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;
   abs_tol_linear = 1.e-20;
-  rel_tol_linear = 1.e-6;
+  rel_tol_linear = 1.e-8;
   max_iter_linear = 1e4;
 
   // preconditioning linear solver
@@ -138,12 +138,12 @@ void InputParametersNavierStokes::set_input_parameters()
 
   // preconditioner velocity/momentum block
   momentum_preconditioner = MomentumPreconditioner::VelocityConvectionDiffusion;
-  solver_momentum_preconditioner = SolverMomentumPreconditioner::GeometricMultigridGMRES;
+  solver_momentum_preconditioner = SolverMomentumPreconditioner::GeometricMultigridVCycle;
   rel_tol_solver_momentum_preconditioner = 1.e-6;
 
   // preconditioner Schur-complement block
-  schur_complement_preconditioner = SchurComplementPreconditioner::Elman;
-  discretization_of_laplacian =  DiscretizationOfLaplacian::Compatible;
+  schur_complement_preconditioner = SchurComplementPreconditioner::PressureConvectionDiffusion;
+  discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
   solver_schur_complement_preconditioner = SolverSchurComplementPreconditioner::GeometricMultigridVCycle;
   rel_tol_solver_schur_complement_preconditioner = 1.e-6;
 
@@ -151,6 +151,8 @@ void InputParametersNavierStokes::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
 
   // write output for visualization of results
+  print_input_parameters = true;
+  write_output = false;
   output_prefix = "cavity";
   output_start_time = start_time;
   output_interval_time = (end_time-start_time)/20;

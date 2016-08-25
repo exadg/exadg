@@ -175,10 +175,10 @@ public:
     return neumann_boundary;
   }
 
-  const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > get_periodic_face_pairs() const
-  {
-    return periodic_face_pairs;
-  }
+//  const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > get_periodic_face_pairs() const
+//  {
+//    return periodic_face_pairs;
+//  }
 
   MassMatrixOperatorData const & get_mass_matrix_operator_data() const
   {
@@ -462,9 +462,9 @@ create_dofs()
 {
   // enumerate degrees of freedom
   dof_handler_u.distribute_dofs(*fe_u);
+  dof_handler_u.distribute_mg_dofs(*fe_u);
   dof_handler_p.distribute_dofs(fe_p);
   dof_handler_p.distribute_mg_dofs(fe_p);
-  dof_handler_u.distribute_mg_dofs(*fe_u);
 
   unsigned int ndofs_per_cell_velocity = Utilities::fixed_int_power<fe_degree+1,dim>::value*dim;
   unsigned int ndofs_per_cell_pressure = Utilities::fixed_int_power<fe_degree_p+1,dim>::value;

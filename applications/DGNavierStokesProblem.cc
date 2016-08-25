@@ -84,7 +84,7 @@ using namespace dealii;
 //#include "NavierStokesTestCases/StokesGuermond.h"
 //#include "NavierStokesTestCases/StokesShahbazi.h"
 //#include "NavierStokesTestCases/Kovasznay.h"
-//#include "NavierStokesTestCases/Vortex.h"
+#include "NavierStokesTestCases/Vortex.h"
 //#include "NavierStokesTestCases/TaylorVortex.h"
 //#include "NavierStokesTestCases/Beltrami.h"
 //#include "NavierStokesTestCases/FlowPastCylinder.h"
@@ -119,7 +119,7 @@ private:
 
   std_cxx11::shared_ptr<PostProcessor<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > postprocessor;
 
-  std_cxx11::shared_ptr<TimeIntBDF<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> > time_integrator;
+  std_cxx11::shared_ptr<TimeIntBDFNavierStokes<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> > time_integrator;
 
   std_cxx11::shared_ptr<DriverSteadyProblems<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> > driver_steady;
 };
@@ -148,6 +148,10 @@ NavierStokesProblem(unsigned int const refine_steps_space,
   boundary_descriptor_velocity.reset(new BoundaryDescriptorNavierStokes<dim>());
   boundary_descriptor_pressure.reset(new BoundaryDescriptorNavierStokes<dim>());
 
+  bool use_adaptive_time_stepping = false;
+  if(param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
+    use_adaptive_time_stepping = true;
+
   if(param.spatial_discretization == SpatialDiscretization::DGXWall)
   {
     if(param.problem_type == ProblemType::Unsteady &&
@@ -160,7 +164,7 @@ NavierStokesProblem(unsigned int const refine_steps_space,
       postprocessor.reset(new PostProcessorXWall<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>(navier_stokes_operation,param));
       // initialize time integrator that depends on both navier_stokes_operation and postprocessor
       time_integrator.reset(new TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(
-          navier_stokes_operation,postprocessor,param,refine_steps_time));
+          navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
     }
     else
     {
@@ -191,7 +195,7 @@ NavierStokesProblem(unsigned int const refine_steps_space,
       postprocessor.reset(new PostProcessor<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>(navier_stokes_operation,param));
       // initialize time integrator that depends on both navier_stokes_operation and postprocessor
       time_integrator.reset(new TimeIntBDFDualSplitting<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(
-          navier_stokes_operation,postprocessor,param,refine_steps_time));
+          navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
     }
     else if(param.problem_type == ProblemType::Unsteady &&
             param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
@@ -203,7 +207,7 @@ NavierStokesProblem(unsigned int const refine_steps_space,
       postprocessor.reset(new PostProcessor<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>(navier_stokes_operation,param));
       // initialize time integrator that depends on both navier_stokes_operation and postprocessor
       time_integrator.reset(new TimeIntBDFCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(
-          navier_stokes_operation,postprocessor,param,refine_steps_time));
+          navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
     }
   }
 }
@@ -268,8 +272,8 @@ template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int n_q
 void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 solve_problem(bool do_restart)
 {
-  // this function has to be defined in the header file that implements all problem specific things like
-  // parameters, geometry, boundary conditions, etc.
+  // this function has to be defined in the header file that implements all
+  // problem specific things like parameters, geometry, boundary conditions, etc.
   create_grid_and_set_boundary_conditions(triangulation,
                                           n_refine_space,
                                           boundary_descriptor_velocity,

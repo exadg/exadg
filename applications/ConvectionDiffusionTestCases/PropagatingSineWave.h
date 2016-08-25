@@ -23,7 +23,7 @@
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 2;
+const unsigned int FE_DEGREE = 6;
 
 // set the number of refine levels for spatial convergence tests
 const unsigned int REFINE_STEPS_SPACE_MIN = 3;
@@ -31,12 +31,13 @@ const unsigned int REFINE_STEPS_SPACE_MAX = 3;
 
 // set the number of refine levels for temporal convergence tests
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
-const unsigned int REFINE_STEPS_TIME_MAX = 0;
+const unsigned int REFINE_STEPS_TIME_MAX = 6;
 
 void InputParametersConvDiff::set_input_parameters()
 {
   // MATHEMATICAL MODEL
-  equation_type = EquationTypeConvDiff::Convection;
+  problem_type = ProblemType::Unsteady;
+  equation_type = EquationType::Convection;
   right_hand_side = false;
 
   // PHYSICAL QUANTITIES
@@ -45,8 +46,12 @@ void InputParametersConvDiff::set_input_parameters()
   diffusivity = 0.0;
 
   // TEMPORAL DISCRETIZATION
-  order_time_integrator = 4;
-  cfl_number = 0.2;
+  temporal_discretization = TemporalDiscretization::BDF;
+  order_time_integrator = 3;
+  start_with_low_order = false;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
+  time_step_size = 1.0e-1;
+  cfl_number = 0.5;
   diffusion_number = 0.01;
 
   // SPATIAL DISCRETIZATION
@@ -56,19 +61,29 @@ void InputParametersConvDiff::set_input_parameters()
   // viscous term
   IP_factor = 1.0;
 
+  // SOLVER
+  solver = Solver::GMRES;
+  abs_tol = 1.e-20;
+  rel_tol = 1.e-6;
+  max_iter = 1e4;
+  preconditioner = Preconditioner::InverseMassMatrix;
+  multigrid_coarse_grid_solver = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
+
   // NUMERICAL PARAMETERS
   runtime_optimization = false;
 
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
-  write_output = "true";
+  write_output = false;
   output_prefix = "propagating_sine_wave";
   output_start_time = start_time;
   output_interval_time = (end_time-start_time)/20;
 
   analytical_solution_available = true;
   error_calc_start_time = start_time;
-  error_calc_interval_time = output_interval_time;
+  error_calc_interval_time = (end_time-start_time);
+
+  output_solver_info_every_timesteps = 1e6;
 }
 
 

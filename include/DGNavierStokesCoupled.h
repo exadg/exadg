@@ -187,9 +187,13 @@ public:
                                             parallel::distributed::BlockVector<value_type> const &src);
 
   void solve_nonlinear_problem (parallel::distributed::BlockVector<value_type>  &dst,
+                                parallel::distributed::Vector<value_type> const &sum_alphai_ui,
                                 unsigned int                                    &newton_iterations,
-                                double                                          &average_linear_iterations,
-                                parallel::distributed::Vector<value_type> const *sum_alphai_ui = nullptr);
+                                double                                          &average_linear_iterations);
+
+  void solve_nonlinear_steady_problem (parallel::distributed::BlockVector<value_type>  &dst,
+                                       unsigned int                                    &newton_iterations,
+                                       double                                          &average_linear_iterations);
 
   void apply_linearized_problem (parallel::distributed::BlockVector<value_type> &dst,
                                  parallel::distributed::BlockVector<value_type> const &src) const;
@@ -409,13 +413,23 @@ solve_linear_stokes_problem (parallel::distributed::BlockVector<value_type>     
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-solve_nonlinear_problem (parallel::distributed::BlockVector<value_type>  &dst,
-                         unsigned int                                    &newton_iterations,
-                         double                                          &average_linear_iterations,
-                         parallel::distributed::Vector<value_type> const *sum_alphai_ui)
+solve_nonlinear_steady_problem (parallel::distributed::BlockVector<value_type>  &dst,
+                                unsigned int                                    &newton_iterations,
+                                double                                          &average_linear_iterations)
 {
-  this->sum_alphai_ui = sum_alphai_ui;
   newton_solver.solve(dst,newton_iterations,average_linear_iterations);
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+void DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+solve_nonlinear_problem (parallel::distributed::BlockVector<value_type>  &dst,
+                         parallel::distributed::Vector<value_type> const &sum_alphai_ui,
+                         unsigned int                                    &newton_iterations,
+                         double                                          &average_linear_iterations)
+{
+  this->sum_alphai_ui = &sum_alphai_ui;
+  newton_solver.solve(dst,newton_iterations,average_linear_iterations);
+  this->sum_alphai_ui = nullptr;
 }
 
 #endif /* INCLUDE_DGNAVIERSTOKESCOUPLED_H_ */

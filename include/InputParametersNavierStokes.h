@@ -1,5 +1,5 @@
 /*
- * InputParameters.h
+ * InputParametersNavierStokes.h
  *
  *  Created on: May 9, 2016
  *      Author: fehn
@@ -563,12 +563,12 @@ public:
      
      // problem type
      std::string str_problem_type[] = {"Undefined", 
-	                               "Steady", 
+	                                     "Steady",
                                        "Unsteady"};
 
      print_parameter(pcout, 
-                                     "Problem type", 
-                                     str_problem_type[(int)problem_type]);
+                     "Problem type",
+                     str_problem_type[(int)problem_type]);
 
      // equation type
      std::string str_equation_type[] = {"Undefined", 

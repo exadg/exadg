@@ -39,6 +39,38 @@ double calculate_min_cell_diameter(Triangulation<dim> const &triangulation)
   return global_min_cell_diameter;
 }
 
+template<int dim>
+double calculate_max_velocity(Triangulation<dim> const              &triangulation,
+                              std_cxx11::shared_ptr<Function<dim> > velocity,
+                              double const                          time)
+{
+  typename Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(), endc = triangulation.end();
+
+  double U = 0.0, max_U = std::numeric_limits<double>::min();
+
+  Tensor<1,dim,double> vel;
+  velocity->set_time(time);
+
+  for (; cell!=endc; ++cell)
+  {
+    if (cell->is_locally_owned())
+    {
+      // calculate maximum velocity
+      Point<dim> point = cell->center();
+
+      for(unsigned int d=0;d<dim;++d)
+        vel[d] = velocity->value(point,d);
+
+      U = vel.norm();
+      if (U > max_U)
+        max_U = U;
+    }
+  }
+  const double global_max_U = Utilities::MPI::max(max_U, MPI_COMM_WORLD);
+
+  return global_max_U;
+}
+
 double calculate_const_time_step_cfl(double const       cfl,
                                      double const       max_velocity,
                                      double const       global_min_cell_diameter,
@@ -47,6 +79,18 @@ double calculate_const_time_step_cfl(double const       cfl,
 {
   // cfl/p^{exponent_fe_degree} = || U || * time_step / h
   double time_step = cfl/pow(fe_degree,exponent_fe_degree) * global_min_cell_diameter / max_velocity;
+
+  return time_step;
+}
+
+double calculate_const_time_step_diff(double const       diffusion_number,
+                                      double const       diffusivity,
+                                      double const       global_min_cell_diameter,
+                                      unsigned int const fe_degree,
+                                      double const       exponent_fe_degree = 3.0)
+{
+  // diffusion_number/p^{exponent_fe_degree} = diffusivity * time_step / h²
+  double time_step = diffusion_number/pow(fe_degree,exponent_fe_degree) * pow(global_min_cell_diameter,2.0) / diffusivity;
 
   return time_step;
 }

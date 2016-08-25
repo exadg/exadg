@@ -110,7 +110,10 @@ public:
   unsigned int solve(VectorType       &dst,
                      VectorType const &rhs) const
   {
-    ReductionControl solver_control (solver_data.max_iter, solver_data.solver_tolerance_abs, solver_data.solver_tolerance_rel);
+    ReductionControl solver_control (solver_data.max_iter,
+                                     solver_data.solver_tolerance_abs,
+                                     solver_data.solver_tolerance_rel);
+
     typename SolverGMRES<VectorType>::AdditionalData additional_data;
     additional_data.max_n_tmp_vectors = solver_data.max_n_tmp_vectors;
     additional_data.right_preconditioning = solver_data.right_preconditioning;

@@ -41,7 +41,8 @@ const double DIFFUSIVITY = 0.25;
 void InputParametersConvDiff::set_input_parameters()
 {
   // MATHEMATICAL MODEL
-  equation_type = EquationTypeConvDiff::ConvectionDiffusion;
+  problem_type = ProblemType::Unsteady;
+  equation_type = EquationType::ConvectionDiffusion;
   right_hand_side = false;
 
   // PHYSICAL QUANTITIES
@@ -50,7 +51,11 @@ void InputParametersConvDiff::set_input_parameters()
   diffusivity = DIFFUSIVITY;
 
   // TEMPORAL DISCRETIZATION
+  temporal_discretization = TemporalDiscretization::ExplRK;
   order_time_integrator = 4;
+  start_with_low_order = true;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFLAndDiffusionNumber;
+  time_step_size = 1.0e-2;
   cfl_number = 0.2;
   diffusion_number = 0.01;
 
@@ -66,7 +71,7 @@ void InputParametersConvDiff::set_input_parameters()
 
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
-  write_output = "true";
+  write_output = false;
   output_prefix = "boundary_layer_problem";
   output_start_time = start_time;
   output_interval_time = (end_time-start_time)/20;
@@ -74,6 +79,8 @@ void InputParametersConvDiff::set_input_parameters()
   analytical_solution_available = true;
   error_calc_start_time = start_time;
   error_calc_interval_time = output_interval_time;
+
+  output_solver_info_every_timesteps = 1e6;
 }
 
 
