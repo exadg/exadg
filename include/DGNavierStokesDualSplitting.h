@@ -602,7 +602,10 @@ apply_linearized_convective_problem (parallel::distributed::Vector<value_type>  
   // dst-vector only contains velocity (and not the pressure)
   dst *= this->scaling_factor_time_derivative_term;
 
-  this->convective_operator.apply_linearized_add(dst,src,&velocity_linear,this->time+this->time_step);
+  this->convective_operator.apply_linearized_add(dst,
+                                                 src,
+                                                 &velocity_linear,
+                                                 this->evaluation_time);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -623,7 +626,7 @@ evaluate_nonlinear_residual (parallel::distributed::Vector<value_type>          
 {
   if(this->param.right_hand_side == true)
   {
-    this->body_force_operator.evaluate(dst,this->time+this->time_step);
+    this->body_force_operator.evaluate(dst,this->evaluation_time);
     // shift body force term to the left-hand side of the equation
     dst *= -1.0;
   }
@@ -640,7 +643,7 @@ evaluate_nonlinear_residual (parallel::distributed::Vector<value_type>          
 
   this->mass_matrix_operator.apply_add(dst,temp);
 
-  this->convective_operator.evaluate_add(dst,src,this->time+this->time_step);
+  this->convective_operator.evaluate_add(dst,src,this->evaluation_time);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -733,7 +736,7 @@ local_rhs_pressure_BC_term_boundary_face (const MatrixFree<dim,value_type>      
 
   // set the correct time for the evaluation of the right_hand_side - function
   if(this->param.right_hand_side == true)
-    this->field_functions->right_hand_side->set_time(this->time+this->time_step);
+    this->field_functions->right_hand_side->set_time(this->evaluation_time);
 
   for(unsigned int face=face_range.first; face<face_range.second; face++)
   {
@@ -774,7 +777,7 @@ local_rhs_pressure_BC_term_boundary_face (const MatrixFree<dim,value_type>      
         // evaluate boundary condition
         Tensor<1,dim,VectorizedArray<value_type> > dudt_np;
         // set time for the correct evaluation of boundary conditions
-        it->second->set_time(this->time+this->time_step);
+        it->second->set_time(this->evaluation_time);
 
         for(unsigned int d=0;d<dim;++d)
         {
@@ -805,7 +808,7 @@ local_rhs_pressure_BC_term_boundary_face (const MatrixFree<dim,value_type>      
         VectorizedArray<value_type> g;
 
         // set time for the correct evaluation of boundary conditions
-        it->second->set_time(this->time+this->time_step);
+        it->second->set_time(this->evaluation_time);
 
         value_type array [VectorizedArray<value_type>::n_array_elements];
         for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
@@ -1021,7 +1024,7 @@ rhs_projection (parallel::distributed::Vector<value_type>        &dst,
                 const parallel::distributed::Vector<value_type>  &src_velocity,
                 const parallel::distributed::Vector<value_type>  &src_pressure) const
 {
-  this->gradient_operator.evaluate(dst,src_pressure,this->time+this->time_step);
+  this->gradient_operator.evaluate(dst,src_pressure,this->evaluation_time);
 
   dst *= - 1.0/this->scaling_factor_time_derivative_term;
 
@@ -1126,7 +1129,7 @@ rhs_viscous (parallel::distributed::Vector<value_type>       &dst,
   this->mass_matrix_operator.apply(dst,src);
   dst *= this->scaling_factor_time_derivative_term;
 
-  this->viscous_operator.rhs_add(dst,this->time+this->time_step);
+  this->viscous_operator.rhs_add(dst,this->evaluation_time);
 }
 
 

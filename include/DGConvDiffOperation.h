@@ -107,7 +107,8 @@ public:
     {
       AssertThrow(param.preconditioner == ConvDiff::Preconditioner::None ||
                   param.preconditioner == ConvDiff::Preconditioner::InverseMassMatrix ||
-                  param.preconditioner == ConvDiff::Preconditioner::Jacobi,
+                  param.preconditioner == ConvDiff::Preconditioner::Jacobi ||
+                  param.preconditioner == ConvDiff::Preconditioner::GeometricMultigrid,
                   ExcMessage("Specified preconditioner is not implemented!"));
     }
 
@@ -180,25 +181,18 @@ public:
   {
     if(param.runtime_optimization == false) //apply volume and surface integrals for each operator separately
     {
-      if(param.equation_type == ConvDiff::EquationType::Diffusion)
+      // diffusive operator
+      if(param.equation_type == ConvDiff::EquationType::Diffusion ||
+         param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
       {
         diffusive_operator.evaluate(dst,src,evaluation_time);
       }
-      else if(param.equation_type == ConvDiff::EquationType::Convection)
+
+      // convective operator
+      if(param.equation_type == ConvDiff::EquationType::Convection ||
+         param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
       {
         convective_operator.evaluate(dst,src,evaluation_time);
-      }
-      else if(param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
-      {
-        diffusive_operator.evaluate(dst,src,evaluation_time);
-        convective_operator.evaluate_add(dst,src,evaluation_time);
-      }
-      else
-      {
-        AssertThrow(param.equation_type == ConvDiff::EquationType::Diffusion ||
-                    param.equation_type == ConvDiff::EquationType::Convection ||
-                    param.equation_type == ConvDiff::EquationType::ConvectionDiffusion,
-                    ExcMessage("Specified equation type for convection-diffusion problem not implemented."));
       }
 
       // shift diffusive and convective term to the rhs of the equation
@@ -218,9 +212,26 @@ public:
     inverse_mass_matrix_operator.apply_inverse_mass_matrix(dst,dst);
   }
 
+  void evaluate_convective_term(parallel::distributed::Vector<value_type>       &dst,
+                                parallel::distributed::Vector<value_type> const &src,
+                                const value_type                                evaluation_time) const
+  {
+    convective_operator.evaluate(dst,src,evaluation_time);
+  }
+
+  /*
+   *  This function calculates the inhomogeneous parts of all operators
+   *  arising e.g. from inhomogeneous boundary conditions or the solution
+   *  at previous instants of time occuring in the discrete time derivate
+   *  term.
+   *  Note that the convective operator only has a contribution if it is
+   *  treated implicitly. In case of an explicit treatment the whole
+   *  convective operator (function evaluate() instead of rhs()) has to be
+   *  added to the right-hand side of the equations.
+   */
   void rhs(parallel::distributed::Vector<value_type>       &dst,
            parallel::distributed::Vector<value_type> const *src,
-           double const evaluation_time)
+           double const evaluation_time) const
   {
     // mass matrix operator
     if(param.problem_type == ConvDiff::ProblemType::Steady)
@@ -238,26 +249,20 @@ public:
                   ExcMessage("Specified problem type for convection-diffusion equation not implemented."));
     }
 
-    // diffusive and convective operator
-    if(param.equation_type == ConvDiff::EquationType::Diffusion)
+    // diffusive operator
+    if(param.equation_type == ConvDiff::EquationType::Diffusion ||
+       param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
     {
       diffusive_operator.rhs_add(dst,evaluation_time);
     }
-    else if(param.equation_type == ConvDiff::EquationType::Convection)
+
+    // convective operator
+    if((param.equation_type == ConvDiff::EquationType::Convection ||
+        param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
+        &&
+       param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::Implicit)
     {
       convective_operator.rhs_add(dst,evaluation_time);
-    }
-    else if(param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
-    {
-      diffusive_operator.rhs_add(dst,evaluation_time);
-      convective_operator.rhs_add(dst,evaluation_time);
-    }
-    else
-    {
-      AssertThrow(param.equation_type == ConvDiff::EquationType::Diffusion ||
-                  param.equation_type == ConvDiff::EquationType::Convection ||
-                  param.equation_type == ConvDiff::EquationType::ConvectionDiffusion,
-                  ExcMessage("Specified equation type for convection-diffusion problem not implemented."));
     }
 
     if(param.right_hand_side == true)
@@ -290,6 +295,10 @@ public:
     scaling_factor_time_derivative_term = value;
   }
 
+  /*
+   *  This function is called by the Jacobi preconditioner to calculate the diagonal.
+   *  Note that the convective term is currently neglected.
+   */
   void calculate_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
   {
     if(param.problem_type == ConvDiff::ProblemType::Steady)
@@ -426,6 +435,15 @@ private:
     }
   }
 
+  /*
+   *  This function implements the matrix-vector product for the
+   *  convection-diffusion equation. Hence, only the homogeneous parts
+   *  of the operators are evaluated.
+   *  Note that the convective operator only has a contribution if
+   *  it is treated implicitly. In case of an explicit treatment the
+   *  convective term occurs on the right-hand side of the equation
+   *  but not in the matrix-vector product.
+   */
   void apply(parallel::distributed::Vector<value_type>       &dst,
              parallel::distributed::Vector<value_type> const &src) const
   {
@@ -447,27 +465,18 @@ private:
     }
 
     // diffusive and convective operator
-    if(param.equation_type == ConvDiff::EquationType::Diffusion)
+    if(param.equation_type == ConvDiff::EquationType::Diffusion ||
+       param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
     {
       diffusive_operator.apply_add(dst,src);
     }
-    else if(param.equation_type == ConvDiff::EquationType::Convection)
+
+    if((param.equation_type == ConvDiff::EquationType::Convection ||
+        param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
+       &&
+       param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::Implicit)
     {
-      // TODO: ensure that evaluation_time is set correctly
       convective_operator.apply_add(dst,src,evaluation_time);
-    }
-    else if(param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
-    {
-      diffusive_operator.apply_add(dst,src);
-      // TODO: ensure that evaluation_time is set correctly
-      convective_operator.apply_add(dst,src,evaluation_time);
-    }
-    else
-    {
-      AssertThrow(param.equation_type == ConvDiff::EquationType::Diffusion ||
-                  param.equation_type == ConvDiff::EquationType::Convection ||
-                  param.equation_type == ConvDiff::EquationType::ConvectionDiffusion,
-                  ExcMessage("Specified equation type for convection-diffusion problem not implemented."));
     }
   }
 

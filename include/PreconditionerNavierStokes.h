@@ -692,7 +692,7 @@ private:
       else if(preconditioner_data.solver_momentum_preconditioner == SolverMomentumPreconditioner::GeometricMultigridGMRES)
       {
         velocity_conv_diff_operator->set_velocity_linearization(underlying_operator->get_velocity_linearization());
-        velocity_conv_diff_operator->set_evaluation_time(underlying_operator->time + underlying_operator->time_step);
+        velocity_conv_diff_operator->set_evaluation_time(underlying_operator->evaluation_time);
 
         // solve velocity convection-diffusion problem using GMRES preconditioned by geometric multigrid (for Helmholtz operator
         // or viscous operator (convective operator is not considered in the multigrid preconditioner))
@@ -765,7 +765,7 @@ private:
 
         // II.b) A = 1/dt * mass matrix  +  viscous term  +  linearized convective term
         velocity_conv_diff_operator->set_velocity_linearization(underlying_operator->get_velocity_linearization());
-        velocity_conv_diff_operator->set_evaluation_time(underlying_operator->time + underlying_operator->time_step);
+        velocity_conv_diff_operator->set_evaluation_time(underlying_operator->evaluation_time);
         velocity_conv_diff_operator->vmult(tmp_scp_velocity_2,tmp_scp_velocity);
 
         // II.c) -B
@@ -794,7 +794,7 @@ private:
 
         // II.c) A = 1/dt * mass matrix + viscous term + linearized convective term
         velocity_conv_diff_operator->set_velocity_linearization(underlying_operator->get_velocity_linearization());
-        velocity_conv_diff_operator->set_evaluation_time(underlying_operator->time + underlying_operator->time_step);
+        velocity_conv_diff_operator->set_evaluation_time(underlying_operator->evaluation_time);
         velocity_conv_diff_operator->vmult(tmp_scp_velocity_2,tmp_scp_velocity);
 
         // II.d) M^{-1}

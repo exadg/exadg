@@ -96,7 +96,7 @@ private:
 void TimeIntBDFBase::
 initialize_time_integrator_constants()
 {
-  AssertThrow(order == 1 || order == 2 || order == 3,
+  AssertThrow(order == 1 || order == 2 || order == 3 || order == 4,
       ExcMessage("Specified order of time integration scheme is not implemented."));
 
   // the default case is start_with_low_order == false
@@ -139,6 +139,30 @@ set_constant_time_integrator_constants (unsigned int const current_order)
     beta[0] = 3.0;
     beta[1] = -3.0;
     beta[2] = 1.0;
+  }
+  else if(current_order == 4) // BDF 4
+  {
+    gamma0 = 25./12.;
+
+    alpha[0] = 4.;
+    alpha[1] = -3.;
+    alpha[2] = 4./3.;
+    alpha[3] = -1./4.;
+
+    beta[0] = 4.;
+    beta[1] = -6.;
+    beta[2] = 4.;
+    beta[3] = -1.;
+  }
+
+  /*
+   * Fill the rest of the vectors with zeros since current_order might be
+   * smaller than order, e.g. when using start_with_low_order = true
+   */
+  for(unsigned int i=current_order;i<order;++i)
+  {
+    alpha[i] = 0.0;
+    beta[i] = 0.0;
   }
 }
 
@@ -184,6 +208,59 @@ set_adaptive_time_integrator_constants (unsigned int const current_order)
                (time_steps[1]*time_steps[2]);
     beta[2] = +time_steps[0]*(time_steps[0]+time_steps[1])/
                ((time_steps[1]+time_steps[2])*time_steps[2]);
+  }
+  else if(current_order == 4) // BDF 4
+  {
+    gamma0 = 1.0 + time_steps[0]/(time_steps[0]+time_steps[1])
+                 + time_steps[0]/(time_steps[0]+time_steps[1]+time_steps[2])
+                 + time_steps[0]/(time_steps[0]+time_steps[1]+time_steps[2]+time_steps[3]);
+
+    alpha[0] = (time_steps[0]+time_steps[1])*(time_steps[0]+time_steps[1]+time_steps[2])*
+               (time_steps[0]+time_steps[1]+time_steps[2]+time_steps[3]) /
+               ( time_steps[1]*(time_steps[1]+time_steps[2])*(time_steps[1]+time_steps[2]+time_steps[3]) );
+
+    alpha[1] = - time_steps[0]*time_steps[0]*(time_steps[0]+time_steps[1]+time_steps[2])
+                 *(time_steps[0]+time_steps[1]+time_steps[2]+time_steps[3]) /
+                 ( (time_steps[0]+time_steps[1])*time_steps[1]*time_steps[2]*(time_steps[2]+time_steps[3]) );
+
+    alpha[2] = time_steps[0]*time_steps[0]*(time_steps[0]+time_steps[1])*
+               (time_steps[0]+time_steps[1]+time_steps[2]+time_steps[3]) /
+               ( (time_steps[0]+time_steps[1]+time_steps[2])*(time_steps[1]+time_steps[2])*time_steps[2]*time_steps[3] );
+
+    alpha[3] = - time_steps[0]*time_steps[0]*(time_steps[0]+time_steps[1])*
+                 (time_steps[0]+time_steps[1]+time_steps[2]) /
+                 ( (time_steps[0]+time_steps[1]+time_steps[2]+time_steps[3])*(time_steps[1]+time_steps[2]+time_steps[3])*
+                    (time_steps[2]+time_steps[3])*time_steps[3] );
+
+    beta[0] = (time_steps[0]+time_steps[1])*
+              (time_steps[0]+time_steps[1]+time_steps[2])*
+              (time_steps[0]+time_steps[1]+time_steps[2]+time_steps[3]) /
+              ( time_steps[1]*(time_steps[1]+time_steps[2])*(time_steps[1]+time_steps[2]+time_steps[3]) );
+
+    beta[1] = - time_steps[0]*
+                (time_steps[0]+time_steps[1]+time_steps[2])*
+                (time_steps[0]+time_steps[1]+time_steps[2]+time_steps[3]) /
+                ( time_steps[1]*time_steps[2]*(time_steps[2]+time_steps[3]) );
+
+    beta[2] = time_steps[0]*
+              (time_steps[0]+time_steps[1])*
+              (time_steps[0]+time_steps[1]+time_steps[2]+time_steps[3]) /
+              ( (time_steps[1]+time_steps[2])*time_steps[2]*time_steps[3] );
+
+    beta[3] = - time_steps[0]*
+                (time_steps[0]+time_steps[1])*
+                (time_steps[0]+time_steps[1]+time_steps[2]) /
+                ( (time_steps[1]+time_steps[2]+time_steps[3])*(time_steps[2]+time_steps[3])*time_steps[3] );
+  }
+
+  /*
+   * Fill the rest of the vectors with zeros since current_order might be
+   * smaller than order, e.g. when using start_with_low_order = true
+   */
+  for(unsigned int i=current_order;i<order;++i)
+  {
+    alpha[i] = 0.0;
+    beta[i] = 0.0;
   }
 }
 

@@ -8,7 +8,7 @@
 #ifndef INCLUDE_TIMEINTBDFCOUPLED_H_
 #define INCLUDE_TIMEINTBDFCOUPLED_H_
 
-#include "TimeIntBDF.h"
+#include "TimeIntBDFNavierStokes.h"
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 class TimeIntBDFCoupled : public TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
@@ -201,7 +201,9 @@ initialize_vec_convective_term()
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i=1;i<vec_convective_term.size();++i)
   {
-    ns_operation_coupled->evaluate_convective_term(vec_convective_term[i],solution[i].block(0),this->time - value_type(i)*this->time_steps[0]);
+    ns_operation_coupled->evaluate_convective_term(vec_convective_term[i],
+                                                   solution[i].block(0),
+                                                   this->time - double(i)*this->time_steps[0]);
   }
 }
 
@@ -260,7 +262,7 @@ solve_timestep()
   timer.restart();
 
   // set the parameters that NavierStokesOperation depends on
-  ns_operation_coupled->set_time(this->time);
+  ns_operation_coupled->set_evaluation_time(this->time+this->time_steps[0]);
   ns_operation_coupled->set_time_step(this->time_steps[0]);
   ns_operation_coupled->set_scaling_factor_time_derivative_term(this->gamma0/this->time_steps[0]);
 

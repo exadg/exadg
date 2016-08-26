@@ -119,8 +119,43 @@ void TimeIntExplRKConvDiff<dim,fe_degree,value_type>::calculate_timestep()
 
     print_parameter(pcout,"time step size",time_step);
   }
-  else if(param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepCFLAndDiffusionNumber)
+  else if(param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepCFL)
   {
+    AssertThrow(param.equation_type == ConvDiff::EquationType::Convection ||
+                param.equation_type == ConvDiff::EquationType::ConvectionDiffusion,
+                ExcMessage("Time step calculation ConstTimeStepCFL does not make sense!"));
+
+    // calculate minimum vertex distance
+    const double global_min_cell_diameter =
+        calculate_min_cell_diameter(conv_diff_operation->get_data().get_dof_handler().get_triangulation());
+
+    print_parameter(pcout,"h_min",global_min_cell_diameter);
+
+    double time_step_conv = 1.0;
+
+    const double max_velocity =
+        calculate_max_velocity(conv_diff_operation->get_data().get_dof_handler().get_triangulation(),
+                               velocity,
+                               time);
+
+    print_parameter(pcout,"U_max",max_velocity);
+    print_parameter(pcout,"CFL",cfl_number);
+
+    time_step_conv = calculate_const_time_step_cfl(cfl_number,
+                                                   max_velocity,
+                                                   global_min_cell_diameter,
+                                                   fe_degree);
+
+    // decrease time_step in order to exactly hit end_time
+    time_step = (param.end_time-param.start_time)/(1+int((param.end_time-param.start_time)/time_step_conv));
+
+    print_parameter(pcout,"Time step size (convection)",time_step);
+  }
+  else if(param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepCFLAndDiffusion)
+  {
+    AssertThrow(param.equation_type == ConvDiff::EquationType::ConvectionDiffusion,
+                ExcMessage("Time step calculation ConstTimeStepCFLAndDiffusion does not make sense!"));
+
     // calculate minimum vertex distance
     const double global_min_cell_diameter =
         calculate_min_cell_diameter(conv_diff_operation->get_data().get_dof_handler().get_triangulation());
@@ -131,35 +166,30 @@ void TimeIntExplRKConvDiff<dim,fe_degree,value_type>::calculate_timestep()
     double time_step_diff = std::numeric_limits<double>::max();
 
     // calculate time step according to CFL condition
-    if(param.equation_type == ConvDiff::EquationType::Convection ||
-       param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
-    {
-      const double max_velocity =
-          calculate_max_velocity(conv_diff_operation->get_data().get_dof_handler().get_triangulation(),
-                                 velocity,
-                                 time);
+    const double max_velocity =
+        calculate_max_velocity(conv_diff_operation->get_data().get_dof_handler().get_triangulation(),
+                               velocity,
+                               time);
 
-      print_parameter(pcout,"U_max",max_velocity);
+    print_parameter(pcout,"U_max",max_velocity);
+    print_parameter(pcout,"CFL",cfl_number);
 
-      time_step_conv = calculate_const_time_step_cfl(cfl_number,
-                                                     max_velocity,
-                                                     global_min_cell_diameter,
-                                                     fe_degree);
+    time_step_conv = calculate_const_time_step_cfl(cfl_number,
+                                                   max_velocity,
+                                                   global_min_cell_diameter,
+                                                   fe_degree);
 
-      print_parameter(pcout,"Time step size (convection)",time_step_conv);
-    }
+    print_parameter(pcout,"Time step size (convection)",time_step_conv);
+
 
     // calculate time step according to Diffusion number condition
-    if(param.equation_type == ConvDiff::EquationType::Diffusion ||
-       param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
-    {
-      time_step_diff = calculate_const_time_step_diff(diffusion_number,
-                                                      param.diffusivity,
-                                                      global_min_cell_diameter,
-                                                      fe_degree);
+    time_step_diff = calculate_const_time_step_diff(diffusion_number,
+                                                    param.diffusivity,
+                                                    global_min_cell_diameter,
+                                                    fe_degree);
 
-      print_parameter(pcout,"Time step size (diffusion)",time_step_diff);
-    }
+    print_parameter(pcout,"Diffusion number",diffusion_number);
+    print_parameter(pcout,"Time step size (diffusion)",time_step_diff);
 
     //adopt minimum time step size
     time_step = time_step_diff < time_step_conv ? time_step_diff : time_step_conv;
@@ -168,6 +198,13 @@ void TimeIntExplRKConvDiff<dim,fe_degree,value_type>::calculate_timestep()
     time_step = (param.end_time-param.start_time)/(1+int((param.end_time-param.start_time)/time_step));
 
     print_parameter(pcout,"Time step size (combined)",time_step);
+  }
+  else
+  {
+    AssertThrow(param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepUserSpecified ||
+                param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepCFL ||
+                param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepCFLAndDiffusion,
+                ExcMessage("Specified calculation of time step size is not implemented!"));
   }
 }
 

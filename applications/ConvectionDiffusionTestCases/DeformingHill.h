@@ -45,6 +45,7 @@ void InputParametersConvDiff::set_input_parameters()
 
   // TEMPORAL DISCRETIZATION
   temporal_discretization = TemporalDiscretization::BDF;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   order_time_integrator = 3;
   start_with_low_order = true;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
@@ -80,8 +81,6 @@ void InputParametersConvDiff::set_input_parameters()
   analytical_solution_available = true;
   error_calc_start_time = start_time;
   error_calc_interval_time = end_time-start_time;
-
-  output_solver_info_every_timesteps = 1e6;
 
   output_solver_info_every_timesteps = 1e6;
 }

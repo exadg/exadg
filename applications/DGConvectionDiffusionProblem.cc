@@ -72,8 +72,8 @@ using namespace ConvDiff;
 
 //#include "ConvectionDiffusionTestCases/PropagatingSineWave.h"
 //#include "ConvectionDiffusionTestCases/RotatingHill.h"
-//#include "ConvectionDiffusionTestCases/DeformingHill.h"
-#include "ConvectionDiffusionTestCases/DiffusiveProblemHomogeneousDBC.h"
+#include "ConvectionDiffusionTestCases/DeformingHill.h"
+//#include "ConvectionDiffusionTestCases/DiffusiveProblemHomogeneousDBC.h"
 //#include "ConvectionDiffusionTestCases/DiffusiveProblemHomogeneousNBC.h"
 //#include "ConvectionDiffusionTestCases/DiffusiveProblemHomogeneousNBC2.h"
 //#include "ConvectionDiffusionTestCases/ConstantRHS.h"

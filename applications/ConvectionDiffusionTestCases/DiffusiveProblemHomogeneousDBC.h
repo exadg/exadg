@@ -19,7 +19,7 @@
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 5;
+const unsigned int FE_DEGREE = 7;
 
 // set the number of refine levels for spatial convergence tests
 const unsigned int REFINE_STEPS_SPACE_MIN = 3;
@@ -47,7 +47,8 @@ void InputParametersConvDiff::set_input_parameters()
 
   // TEMPORAL DISCRETIZATION
   temporal_discretization = TemporalDiscretization::BDF;
-  order_time_integrator = 3;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  order_time_integrator = 4;
   start_with_low_order = false;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
   time_step_size = 1.0e-1;

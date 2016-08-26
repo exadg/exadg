@@ -5,8 +5,8 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_TIMEINTBDF_H_
-#define INCLUDE_TIMEINTBDF_H_
+#ifndef INCLUDE_TIMEINTBDFNAVIERSTOKES_H_
+#define INCLUDE_TIMEINTBDFNAVIERSTOKES_H_
 
 #include "../include/TimeIntBDFBase.h"
 
@@ -117,7 +117,6 @@ setup(bool do_restart)
   initialize_solution_and_calculate_timestep(do_restart);
 
   // set the parameters that NavierStokesOperation depends on
-  ns_operation->set_time(time);
   ns_operation->set_time_step(time_steps[0]);
   ns_operation->set_scaling_factor_time_derivative_term(gamma0/time_steps[0]);
 
@@ -330,4 +329,4 @@ timeloop()
   analyze_computing_times();
 }
 
-#endif /* INCLUDE_TIMEINTBDF_H_ */
+#endif /* INCLUDE_TIMEINTBDFNAVIERSTOKES_H_ */

@@ -8,7 +8,7 @@
 #ifndef INCLUDE_TIMEINTBDFDUALSPLITTING_H_
 #define INCLUDE_TIMEINTBDFDUALSPLITTING_H_
 
-#include "TimeIntBDF.h"
+#include "TimeIntBDFNavierStokes.h"
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 class TimeIntBDFDualSplitting : public TimeIntBDFNavierStokes<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>
@@ -264,7 +264,7 @@ void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_p
 solve_timestep()
 {
   // set the parameters that NavierStokesOperation depends on
-  ns_operation_splitting->set_time(this->time);
+  ns_operation_splitting->set_evaluation_time(this->time+this->time_steps[0]);
   ns_operation_splitting->set_time_step(this->time_steps[0]);
   ns_operation_splitting->set_scaling_factor_time_derivative_term(this->gamma0/this->time_steps[0]);
 

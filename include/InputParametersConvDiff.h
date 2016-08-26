@@ -72,13 +72,25 @@ enum class TemporalDiscretization
 };
 
 /*
+ *  For the BDF time integrator, the convective term can be either
+ *  treated explicitly or implicitly
+ */
+enum class TreatmentOfConvectiveTerm
+{
+  Undefined,
+  Explicit,
+  Implicit
+};
+
+/*
  * calculation of time step size
  */
 enum class TimeStepCalculation
 {
   Undefined,
   ConstTimeStepUserSpecified,
-  ConstTimeStepCFLAndDiffusionNumber
+  ConstTimeStepCFL,
+  ConstTimeStepCFLAndDiffusion
 };
 
 /**************************************************************************************/
@@ -144,6 +156,7 @@ public:
 
     // TEMPORAL DISCRETIZATION
     temporal_discretization(TemporalDiscretization::Undefined),
+    treatment_of_convective_term(TreatmentOfConvectiveTerm::Undefined),
     order_time_integrator(1),
     start_with_low_order(true),
     calculation_of_time_step_size(TimeStepCalculation::Undefined),
@@ -215,6 +228,10 @@ public:
     AssertThrow(temporal_discretization != TemporalDiscretization::Undefined,
                 ExcMessage("parameter must be defined"));
 
+    if(temporal_discretization == TemporalDiscretization::BDF)
+      AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::Undefined,
+                  ExcMessage("parameter must be defined"));
+
     AssertThrow(calculation_of_time_step_size != TimeStepCalculation::Undefined,
                 ExcMessage("parameter must be defined"));
 
@@ -233,7 +250,7 @@ public:
     }
 
     if(temporal_discretization == TemporalDiscretization::BDF)
-      AssertThrow(order_time_integrator >= 1 && order_time_integrator <= 3,
+      AssertThrow(order_time_integrator >= 1 && order_time_integrator <= 4,
                   ExcMessage("Specified order of time integrator BDF not implemented!"));
 
 
@@ -363,10 +380,30 @@ public:
                     "Temporal discretization method",
                     str_temp_discret[(int)temporal_discretization]);
 
+    if(temporal_discretization == TemporalDiscretization::BDF)
+    {
+      std::string str_treatment_conv[] = { "Undefined",
+                                           "Explicit",
+                                           "Implicit" };
+
+      print_parameter(pcout,
+                      "Treatment of convective term",
+                      str_treatment_conv[(int)treatment_of_convective_term]);
+    }
+
     print_parameter(pcout,"Order of time integrator",order_time_integrator);
 
     if(temporal_discretization == TemporalDiscretization::BDF)
       print_parameter(pcout,"Start with low order method",start_with_low_order);
+
+    std::string str_time_step_calc[] = { "Undefined",
+                                         "ConstTimeStepUserSpecified",
+                                         "ConstTimeStepCFL",
+                                         "ConstTimeStepCFLAndDiffusion" };
+
+    print_parameter(pcout,
+                    "Calculation of time step size",
+                    str_time_step_calc[(int)calculation_of_time_step_size]);
 
 
     // here we do not print quantities such as  cfl_number, diffusion_number, time_step_size
@@ -524,6 +561,9 @@ public:
 
   // temporal discretization method
   TemporalDiscretization temporal_discretization;
+
+  // description: see enum declaration
+  TreatmentOfConvectiveTerm treatment_of_convective_term;
 
   // order of time integration scheme
   unsigned int order_time_integrator;

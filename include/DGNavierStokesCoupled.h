@@ -204,9 +204,10 @@ public:
   void rhs_stokes_problem (parallel::distributed::BlockVector<value_type>  &dst,
                            parallel::distributed::Vector<value_type> const *src = nullptr) const;
 
-  void evaluate_convective_term (parallel::distributed::Vector<value_type>       &dst,
-                                 parallel::distributed::Vector<value_type> const &src,
-                                 value_type const                                evaluation_time) const;
+  // already implemented in base class
+//  void evaluate_convective_term (parallel::distributed::Vector<value_type>       &dst,
+//                                 parallel::distributed::Vector<value_type> const &src,
+//                                 value_type const                                evaluation_time) const;
 
   void evaluate_nonlinear_residual (parallel::distributed::BlockVector<value_type>       &dst,
                                     parallel::distributed::BlockVector<value_type> const &src);
@@ -322,7 +323,10 @@ apply_linearized_problem (parallel::distributed::BlockVector<value_type>       &
   }
 
   if(nonlinear_problem_has_to_be_solved())
-    this->convective_operator.apply_linearized_add(dst.block(0),src.block(0),&vector_linearization->block(0),this->time+this->time_step);
+    this->convective_operator.apply_linearized_add(dst.block(0),
+                                                   src.block(0),
+                                                   &vector_linearization->block(0),
+                                                   this->evaluation_time);
 
   // (1,2) block of saddle point matrix
   // gradient operator: dst = velocity, src = pressure
@@ -341,29 +345,30 @@ rhs_stokes_problem (parallel::distributed::BlockVector<value_type>  &dst,
                     parallel::distributed::Vector<value_type> const *src) const
 {
   // velocity-block
-  this->viscous_operator.rhs(dst.block(0),this->time+this->time_step);
-  this->gradient_operator.rhs_add(dst.block(0),this->time+this->time_step);
+  this->viscous_operator.rhs(dst.block(0),this->evaluation_time);
+  this->gradient_operator.rhs_add(dst.block(0),this->evaluation_time);
 
   if(unsteady_problem_has_to_be_solved())
     this->mass_matrix_operator.apply_add(dst.block(0),*src);
 
   if(this->param.right_hand_side == true)
-    this->body_force_operator.evaluate_add(dst.block(0),this->time+this->time_step);
+    this->body_force_operator.evaluate_add(dst.block(0),this->evaluation_time);
 
   // pressure-block
-  this->divergence_operator.rhs(dst.block(1),this->time+this->time_step);
+  this->divergence_operator.rhs(dst.block(1),this->evaluation_time);
   // multiply by -1.0 since we use a formulation with symmetric saddle point matrix
   dst.block(1) *= -1.0;
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-evaluate_convective_term (parallel::distributed::Vector<value_type>       &dst,
-                          parallel::distributed::Vector<value_type> const &src,
-                          value_type const                                evaluation_time) const
-{
-  this->convective_operator.evaluate(dst,src,evaluation_time);
-}
+// already implemented in base class
+//template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+//void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+//evaluate_convective_term (parallel::distributed::Vector<value_type>       &dst,
+//                          parallel::distributed::Vector<value_type> const &src,
+//                          value_type const                                evaluation_time) const
+//{
+//  this->convective_operator.evaluate(dst,src,evaluation_time);
+//}
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
@@ -374,7 +379,7 @@ evaluate_nonlinear_residual (parallel::distributed::BlockVector<value_type>     
 
   if(this->param.right_hand_side == true)
   {
-    this->body_force_operator.evaluate(dst.block(0),this->time+this->time_step);
+    this->body_force_operator.evaluate(dst.block(0),this->evaluation_time);
     // shift body force term to the left-hand side of the equation
     dst.block(0) *= -1.0;
   }
@@ -392,13 +397,13 @@ evaluate_nonlinear_residual (parallel::distributed::BlockVector<value_type>     
     this->mass_matrix_operator.apply_add(dst.block(0),temp);
   }
 
-  this->convective_operator.evaluate_add(dst.block(0),src.block(0),this->time+this->time_step);
-  this->viscous_operator.evaluate_add(dst.block(0),src.block(0),this->time+this->time_step);
-  this->gradient_operator.evaluate_add(dst.block(0),src.block(1),this->time+this->time_step);
+  this->convective_operator.evaluate_add(dst.block(0),src.block(0),this->evaluation_time);
+  this->viscous_operator.evaluate_add(dst.block(0),src.block(0),this->evaluation_time);
+  this->gradient_operator.evaluate_add(dst.block(0),src.block(1),this->evaluation_time);
 
   // pressure-block
 
-  this->divergence_operator.evaluate(dst.block(1),src.block(0),this->time+this->time_step);
+  this->divergence_operator.evaluate(dst.block(1),src.block(0),this->evaluation_time);
   // multiply by -1.0 since we use a formulation with symmetric saddle point matrix
   dst.block(1) *= -1.0;
 }

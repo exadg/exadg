@@ -69,7 +69,7 @@ public:
     mapping(fe_degree),
     dof_handler_u(triangulation),
     dof_handler_p(triangulation),
-    time(0.0),
+    evaluation_time(0.0),
     time_step(1.0),
     scaling_factor_time_derivative_term(1.0),
     viscosity(parameter.viscosity),
@@ -206,9 +206,9 @@ public:
     scaling_factor_time_derivative_term = value;
   }
 
-  void set_time(double const current_time)
+  void set_evaluation_time(double const eval_time)
   {
-    time = current_time;
+    evaluation_time = eval_time;
   }
 
   void set_time_step(double const time_step_in)
@@ -267,7 +267,8 @@ protected:
   DoFHandler<dim>  dof_handler_u;
   DoFHandler<dim>  dof_handler_p;
 
-  double time, time_step;
+  double evaluation_time;
+  double time_step;
   double scaling_factor_time_derivative_term;
 
   const double viscosity;
@@ -545,7 +546,7 @@ shift_pressure (parallel::distributed::Vector<value_type>  &pressure) const
   parallel::distributed::Vector<value_type> vec1(pressure);
   for(unsigned int i=0;i<vec1.local_size();++i)
     vec1.local_element(i) = 1.;
-  this->field_functions->analytical_solution_pressure->set_time(time+time_step);
+  this->field_functions->analytical_solution_pressure->set_time(evaluation_time);
   double exact = this->field_functions->analytical_solution_pressure->value(first_point);
   double current = 0.;
   if (pressure.locally_owned_elements().is_element(dof_index_first_point))
