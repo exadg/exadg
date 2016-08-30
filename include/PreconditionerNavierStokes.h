@@ -29,15 +29,21 @@ public:
                      const parallel::distributed::BlockVector<value_type>  &src) const = 0;
 };
 
-struct PreconditionerDataLinearSolver
+struct BlockPreconditionerData
 {
   PreconditionerLinearizedNavierStokes preconditioner_type;
+
+  // preconditioner momentum block
   MomentumPreconditioner momentum_preconditioner;
   SolverMomentumPreconditioner solver_momentum_preconditioner;
+  MultigridData multigrid_data_momentum_preconditioner;
   double rel_tol_solver_momentum_preconditioner;
+
+  // preconditioner Schur-complement block
   SchurComplementPreconditioner schur_complement_preconditioner;
   DiscretizationOfLaplacian discretization_of_laplacian;
   SolverSchurComplementPreconditioner solver_schur_complement_preconditioner;
+  MultigridData multigrid_data_schur_complement_preconditioner;
   double rel_tol_solver_schur_complement_preconditioner;
 };
 
@@ -49,7 +55,7 @@ public:
 
   BlockPreconditionerNavierStokes(DGNavierStokesCoupled<dim, fe_degree,
                                     fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> *underlying_operator_in,
-                                  PreconditionerDataLinearSolver const                 &preconditioner_data_in)
+                                  BlockPreconditionerData const                        &preconditioner_data_in)
   {
     underlying_operator = underlying_operator_in;
     preconditioner_data = preconditioner_data_in;
@@ -436,11 +442,10 @@ private:
       helmholtz_operator_data.mass_matrix_coefficient = underlying_operator->get_scaling_factor_time_derivative_term();
       helmholtz_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
 
-      // currently use default parameters of MultigridData!
-      MultigridData mg_data_helmholtz;
+      MultigridData mg_data = preconditioner_data.multigrid_data_momentum_preconditioner;
 
       multigrid_preconditioner_momentum.reset(new MyMultigridPreconditioner<dim,value_type,HelmholtzOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>, HelmholtzOperatorData<dim> >(
-          mg_data_helmholtz,
+          mg_data,
           underlying_operator->get_dof_handler_u(),
           underlying_operator->get_mapping(),
           helmholtz_operator_data,
@@ -455,8 +460,9 @@ private:
       // TODO: this viscous operator is initialized with constant viscosity, in case of varying viscosities
       // the viscous operator has to be updated before applying this preconditioner
       viscous_operator_data = underlying_operator->get_viscous_operator_data();
-      // currently use default parameters of MultigridData!
-      MultigridData mg_data;
+
+      MultigridData mg_data = preconditioner_data.multigrid_data_momentum_preconditioner;
+
       multigrid_preconditioner_momentum.reset(new MyMultigridPreconditioner<dim,value_type,ViscousOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>, ViscousOperatorData<dim> >(
           mg_data,
           underlying_operator->get_dof_handler_u(),
@@ -499,13 +505,12 @@ private:
       compatible_laplace_operator_data.divergence_operator_data = underlying_operator->get_divergence_operator_data();
       compatible_laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
 
-      // currently use default parameters of MultigridData!
-      MultigridData mg_data_compatible_pressure;
+      MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
 
       multigrid_preconditioner_schur_complement.reset(new MyMultigridPreconditioner<dim,value_type,
               CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, Number>,
               CompatibleLaplaceOperatorData<dim> >
-          (mg_data_compatible_pressure,
+          (mg_data,
            underlying_operator->get_dof_handler_p(),
            underlying_operator->get_dof_handler_u(),
            underlying_operator->get_mapping(),
@@ -522,12 +527,11 @@ private:
       laplace_operator_data.dirichlet_boundaries = underlying_operator->get_neumann_boundary();
       laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
 
-      // currently use default parameters of MultigridData!
-      MultigridData mg_data_pressure;
+      MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
 
       multigrid_preconditioner_schur_complement.reset(new MyMultigridPreconditioner<dim,value_type,
               LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> >
-          (mg_data_pressure,
+          (mg_data,
            underlying_operator->get_dof_handler_p(),
            underlying_operator->get_mapping(),
            laplace_operator_data,
@@ -683,7 +687,6 @@ private:
     }
     else if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::VelocityConvectionDiffusion)
     {
-      //TODO multigrid vs "exact" solution of velocity equation
       if(preconditioner_data.solver_momentum_preconditioner == SolverMomentumPreconditioner::GeometricMultigridVCycle)
       {
         // perform one geometric multigrid V-cylce for the Helmholtz operator or viscous operator (in case of steady-state problem)
@@ -864,7 +867,7 @@ private:
 
 private:
   DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> *underlying_operator;
-  PreconditionerDataLinearSolver preconditioner_data;
+  BlockPreconditionerData preconditioner_data;
 
   // preconditioner velocity/momentum block
   std_cxx11::shared_ptr<PreconditionerBase<value_type> > multigrid_preconditioner_momentum;

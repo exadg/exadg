@@ -67,12 +67,20 @@ void InputParametersConvDiff::set_input_parameters()
   // viscous term
   IP_factor = 1.0;
 
+  // SOLVER
+  solver = Solver::PCG;
+  abs_tol = 1.e-20;
+  rel_tol = 1.e-6;
+  max_iter = 1e4;
+  preconditioner = Preconditioner::GeometricMultigrid;
+  // use default parameters of multigrid preconditioner
+
   // NUMERICAL PARAMETERS
   runtime_optimization = false;
 
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
-  write_output = false;
+  write_output = true;
   output_prefix = "boundary_layer_problem";
   output_start_time = start_time;
   output_interval_time = (end_time-start_time)/20;
@@ -183,9 +191,9 @@ double NeumannBoundary<dim>::value(const Point<dim>   &p,
 {
   double result = 0.0;
 
-  double right = 1.0;
-  if( fabs(p[0]-right)<1.0e-12 )
-    result = 1.0;
+//  double right = 1.0;
+//  if( fabs(p[0]-right)<1.0e-12 )
+//    result = 1.0;
 
   return result;
 }
@@ -246,7 +254,7 @@ void create_grid_and_set_boundary_conditions(
     {
       if ((std::fabs(cell->face(face_number)->center()(1) - left) < 1e-12)||
          (std::fabs(cell->face(face_number)->center()(1) - right) < 1e-12)
-         || (std::fabs(cell->face(face_number)->center()(0) - right) < 1e-12) // Neumann BC at right boundary
+//         || (std::fabs(cell->face(face_number)->center()(0) - right) < 1e-12) // Neumann BC at right boundary
          )
         cell->face(face_number)->set_boundary_id (1);
     }

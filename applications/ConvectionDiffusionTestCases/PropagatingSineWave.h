@@ -23,7 +23,7 @@
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 7;
+const unsigned int FE_DEGREE = 4;
 
 // set the number of refine levels for spatial convergence tests
 const unsigned int REFINE_STEPS_SPACE_MIN = 3;
@@ -31,7 +31,7 @@ const unsigned int REFINE_STEPS_SPACE_MAX = 3;
 
 // set the number of refine levels for temporal convergence tests
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
-const unsigned int REFINE_STEPS_TIME_MAX = 6;
+const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
 void InputParametersConvDiff::set_input_parameters()
 {
@@ -48,11 +48,11 @@ void InputParametersConvDiff::set_input_parameters()
   // TEMPORAL DISCRETIZATION
   temporal_discretization = TemporalDiscretization::ExplRK;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  order_time_integrator = 3;
+  order_time_integrator = 4;
   start_with_low_order = false;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
   time_step_size = 1.0e-1;
-  cfl_number = 0.8;
+  cfl_number = 0.2;
   diffusion_number = 0.01;
 
   // SPATIAL DISCRETIZATION
@@ -68,14 +68,14 @@ void InputParametersConvDiff::set_input_parameters()
   rel_tol = 1.e-6;
   max_iter = 1e4;
   preconditioner = Preconditioner::InverseMassMatrix;
-  multigrid_coarse_grid_solver = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
+  // use default parameters of multigrid preconditioner
 
   // NUMERICAL PARAMETERS
   runtime_optimization = false;
 
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
-  write_output = false;
+  write_output = true;
   output_prefix = "propagating_sine_wave";
   output_start_time = start_time;
   output_interval_time = (end_time-start_time)/20;

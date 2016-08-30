@@ -77,9 +77,7 @@ public:
     else if(param.preconditioner == ConvDiff::Preconditioner::GeometricMultigrid)
     {
       MultigridData mg_data;
-      // currently use default parameters of MultigridData for smoother_poly_degree and smoother_smoothing_range
-
-      mg_data.coarse_solver = param.multigrid_coarse_grid_solver;
+      mg_data = param.multigrid_data;
 
       ScalarConvDiffOperators::HelmholtzOperatorData<dim> helmholtz_operator_data;
       helmholtz_operator_data.dof_index = 0;
@@ -181,18 +179,21 @@ public:
   {
     if(param.runtime_optimization == false) //apply volume and surface integrals for each operator separately
     {
+      // set dst to zero
+      dst = 0.0;
+
       // diffusive operator
       if(param.equation_type == ConvDiff::EquationType::Diffusion ||
          param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
       {
-        diffusive_operator.evaluate(dst,src,evaluation_time);
+        diffusive_operator.evaluate_add(dst,src,evaluation_time);
       }
 
       // convective operator
       if(param.equation_type == ConvDiff::EquationType::Convection ||
          param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
       {
-        convective_operator.evaluate(dst,src,evaluation_time);
+        convective_operator.evaluate_add(dst,src,evaluation_time);
       }
 
       // shift diffusive and convective term to the rhs of the equation
@@ -338,6 +339,12 @@ public:
 
     invert_diagonal(diagonal);
   }
+
+  Mapping<dim> const & get_mapping() const
+  {
+    return mapping;
+  }
+
 private:
   void create_dofs()
   {

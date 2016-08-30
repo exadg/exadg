@@ -72,12 +72,12 @@ using namespace ConvDiff;
 
 //#include "ConvectionDiffusionTestCases/PropagatingSineWave.h"
 //#include "ConvectionDiffusionTestCases/RotatingHill.h"
-#include "ConvectionDiffusionTestCases/DeformingHill.h"
+//#include "ConvectionDiffusionTestCases/DeformingHill.h"
 //#include "ConvectionDiffusionTestCases/DiffusiveProblemHomogeneousDBC.h"
 //#include "ConvectionDiffusionTestCases/DiffusiveProblemHomogeneousNBC.h"
 //#include "ConvectionDiffusionTestCases/DiffusiveProblemHomogeneousNBC2.h"
 //#include "ConvectionDiffusionTestCases/ConstantRHS.h"
-//#include "ConvectionDiffusionTestCases/BoundaryLayerProblem.h"
+#include "ConvectionDiffusionTestCases/BoundaryLayerProblem.h"
 
 
 template<int dim, int fe_degree>
@@ -159,19 +159,42 @@ calculate_error(parallel::distributed::Vector<double> const &solution_vector,
   pcout << std::endl << "Calculate error at time t = " << std::scientific << std::setprecision(4) << time << ":" << std::endl;
 
   // TODO: PostProcessor still depends on AnalyticalSolution: use Function as parameter instead
-  Vector<double> norm_per_cell (conv_diff_operation->get_data().get_dof_handler().get_triangulation().n_active_cells());
-  VectorTools::integrate_difference (conv_diff_operation->get_data().get_dof_handler(),
+  Vector<double> error_norm_per_cell (conv_diff_operation->get_data().get_dof_handler().get_triangulation().n_active_cells());
+  Vector<double> solution_norm_per_cell (conv_diff_operation->get_data().get_dof_handler().get_triangulation().n_active_cells());
+
+  VectorTools::integrate_difference (conv_diff_operation->get_mapping(),
+                                     conv_diff_operation->get_data().get_dof_handler(),
                                      solution_vector,
                                      AnalyticalSolution<dim>(1,time),
-                                     norm_per_cell,
+                                     error_norm_per_cell,
                                      QGauss<dim>(conv_diff_operation->get_data().get_dof_handler().get_fe().degree+2),
                                      VectorTools::L2_norm);
 
-  double solution_norm = std::sqrt(Utilities::MPI::sum (norm_per_cell.norm_sqr(), MPI_COMM_WORLD));
+  parallel::distributed::Vector<double> dummy;
+  dummy.reinit(solution_vector);
+  VectorTools::integrate_difference (conv_diff_operation->get_mapping(),
+                                     conv_diff_operation->get_data().get_dof_handler(),
+                                     dummy,
+                                     AnalyticalSolution<dim>(1,time),
+                                     solution_norm_per_cell,
+                                     QGauss<dim>(conv_diff_operation->get_data().get_dof_handler().get_fe().degree+2),
+                                     VectorTools::L2_norm);
 
-  pcout << std::endl << "error (L2-norm): "
-        << std::setprecision(5) << std::setw(10) << solution_norm
-        << std::endl;
+  double error_norm = std::sqrt(Utilities::MPI::sum (error_norm_per_cell.norm_sqr(), MPI_COMM_WORLD));
+  double solution_norm = std::sqrt(Utilities::MPI::sum (solution_norm_per_cell.norm_sqr(), MPI_COMM_WORLD));
+
+  if(solution_norm > 1.e-12)
+  {
+    pcout << std::endl << "Relative error (L2-norm): "
+          << std::setprecision(5) << std::setw(10) << error_norm/solution_norm
+          << std::endl;
+  }
+  else
+  {
+    pcout << std::endl << "ABSOLUTE error (L2-norm): "
+          << std::setprecision(5) << std::setw(10) << error_norm
+          << std::endl;
+  }
 }
 
 template<int dim, int fe_degree>

@@ -359,7 +359,7 @@ public:
     // pressure Poisson equation
     IP_factor_pressure(1.),
     preconditioner_pressure_poisson(PreconditionerPressurePoisson::GeometricMultigrid),
-    multigrid_coarse_grid_solver_pressure_poisson(MultigridCoarseGridSolver::coarse_chebyshev_smoother),
+    multigrid_data_pressure_poisson(MultigridData()),
     abs_tol_pressure(1.e-20),
     rel_tol_pressure(1.e-12),
 
@@ -380,7 +380,7 @@ public:
     // viscous step
     solver_viscous(SolverViscous::PCG),
     preconditioner_viscous(PreconditionerViscous::InverseMassMatrix),
-    multigrid_coarse_grid_solver_viscous(MultigridCoarseGridSolver::coarse_chebyshev_smoother),
+    multigrid_data_viscous(MultigridData()),
     abs_tol_viscous(1.e-20),
     rel_tol_viscous(1.e-12),
 
@@ -399,16 +399,20 @@ public:
 
     // preconditioning linear solver
     preconditioner_linearized_navier_stokes(PreconditionerLinearizedNavierStokes::Undefined),
+    use_right_preconditioning(true),
+    max_n_tmp_vectors(30),
 
     // preconditioner velocity/momentum block
     momentum_preconditioner(MomentumPreconditioner::Undefined),
     solver_momentum_preconditioner(SolverMomentumPreconditioner::Undefined),
+    multigrid_data_momentum_preconditioner(MultigridData()),
     rel_tol_solver_momentum_preconditioner(1.e-12),
 
     // preconditioner Schur-complement block
     schur_complement_preconditioner(SchurComplementPreconditioner::Undefined),
     discretization_of_laplacian(DiscretizationOfLaplacian::Undefined),
     solver_schur_complement_preconditioner(SolverSchurComplementPreconditioner::Undefined),
+    multigrid_data_schur_complement_preconditioner(MultigridData()),
     rel_tol_solver_schur_complement_preconditioner(1.e-12),
   
 
@@ -476,16 +480,15 @@ public:
       AssertThrow(time_step_size > 0.,ExcMessage("parameter must be defined"));
 
 
-    if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-    {
-      AssertThrow(projection_type !=ProjectionType::Undefined,ExcMessage("parameter must be defined"));
-    }
-
     // SPATIAL DISCRETIZATION
     AssertThrow(spatial_discretization != SpatialDiscretization::Undefined ,ExcMessage("parameter must be defined"));
     AssertThrow(IP_formulation_viscous != InteriorPenaltyFormulation::Undefined ,ExcMessage("parameter must be defined"));
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
+    if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      AssertThrow(projection_type !=ProjectionType::Undefined,ExcMessage("parameter must be defined"));
+    }
 
     // COUPLED NAVIER-STOKES SOLVER
     if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
@@ -755,9 +758,11 @@ public:
                                                  "PCG - no preconditioner",
                                                  "PCG - Jacobi preconditioner" };
   
+      print_parameter(pcout,"Smoother polynomial degree",multigrid_data_pressure_poisson.smoother_poly_degree);
+      print_parameter(pcout,"Smoothing range",multigrid_data_pressure_poisson.smoother_smoothing_range);
       print_parameter(pcout,
                       "Multigrid coarse grid solver",
-                      str_multigrid_coarse_ppe[(int)multigrid_coarse_grid_solver_pressure_poisson]);
+                      str_multigrid_coarse_ppe[(int)multigrid_data_pressure_poisson.coarse_solver]);
     }
 
     print_parameter(pcout,"Absolute solver tolerance",abs_tol_pressure);
@@ -843,9 +848,11 @@ public:
                                                      "PCG - no preconditioner",
                                                      "PCG - Jacobi preconditioner" };
   
+      print_parameter(pcout,"Smoother polynomial degree",multigrid_data_viscous.smoother_poly_degree);
+      print_parameter(pcout,"Smoothing range",multigrid_data_viscous.smoother_smoothing_range);
       print_parameter(pcout,
                       "Multigrid coarse grid solver",
-                      str_multigrid_coarse_viscous[(int)multigrid_coarse_grid_solver_viscous]);
+                      str_multigrid_coarse_viscous[(int)multigrid_data_viscous.coarse_solver]);
     }
 
     print_parameter(pcout,"Absolute solver tolerance", abs_tol_viscous);
@@ -905,6 +912,10 @@ public:
                     "Preconditioner linear(ized) problem",
                     str_precon_linear[(int)preconditioner_linearized_navier_stokes]);
 
+    print_parameter(pcout,"Right preconditioning",use_right_preconditioning);
+
+    if(solver_linearized_navier_stokes == SolverLinearizedNavierStokes::GMRES)
+      print_parameter(pcout,"Max number of vectors before restart",max_n_tmp_vectors);
 
     // preconditioner momentum block
     std::string str_momentum_precon[] = { "Undefined",
@@ -932,6 +943,16 @@ public:
                         "Relative solver tolerance",
                         rel_tol_solver_momentum_preconditioner);
       }
+
+      print_parameter(pcout,"Smoother polynomial degree",multigrid_data_momentum_preconditioner.smoother_poly_degree);
+      print_parameter(pcout,"Smoothing range",multigrid_data_momentum_preconditioner.smoother_smoothing_range);
+
+      std::string str_multigrid_coarse_solver[] = { "Chebyshev smoother",
+                                                    "PCG - no preconditioner",
+                                                    "PCG - Jacobi preconditioner" };
+      print_parameter(pcout,
+                      "Multigrid coarse grid solver",
+                      str_multigrid_coarse_solver[(int)multigrid_data_momentum_preconditioner.coarse_solver]);
     }
 
     // preconditioner Schur-complement block
@@ -974,7 +995,16 @@ public:
                         "Relative solver tolerance",
                         rel_tol_solver_schur_complement_preconditioner);
       }
+
+      print_parameter(pcout,"Smoother polynomial degree",multigrid_data_schur_complement_preconditioner.smoother_poly_degree);
+      print_parameter(pcout,"Smoothing range",multigrid_data_schur_complement_preconditioner.smoother_smoothing_range);
       
+      std::string str_multigrid_coarse_solver[] = { "Chebyshev smoother",
+                                                    "PCG - no preconditioner",
+                                                    "PCG - Jacobi preconditioner" };
+      print_parameter(pcout,
+                      "Multigrid coarse grid solver",
+                      str_multigrid_coarse_solver[(int)multigrid_data_schur_complement_preconditioner.coarse_solver]);
     }
 
   }
@@ -1154,12 +1184,8 @@ public:
   // description: see enum declaration
   PreconditionerPressurePoisson preconditioner_pressure_poisson;
 
-  // description: see enum declaration:
-  // currently only polynomial Chebyshev smoother available
-//  MultigridSmoother multigrid_smoother_pressure_poisson;
-
-  // description: see enum declaration
-  MultigridCoarseGridSolver multigrid_coarse_grid_solver_pressure_poisson;
+  // description: see declaration of MultigridData
+  MultigridData multigrid_data_pressure_poisson;
 
   // solver tolerances for pressure Poisson equation
   double abs_tol_pressure;
@@ -1200,12 +1226,8 @@ public:
   // description: see enum declaration
   PreconditionerViscous preconditioner_viscous;
 
-  // description: see enum declaration:
-  // currently only polynomial Chebyshev smoother available
-//  MultigridSmoother multigrid_smoother_viscous;
-
-  // description: see enum declaration
-  MultigridCoarseGridSolver multigrid_coarse_grid_solver_viscous;
+  // description: see declaration of MultigridData
+  MultigridData multigrid_data_viscous;
 
   // solver tolerances for Helmholtz equation of viscous step
   double abs_tol_viscous;
@@ -1240,11 +1262,20 @@ public:
   // description: see enum declaration
   PreconditionerLinearizedNavierStokes preconditioner_linearized_navier_stokes;
 
+  // use right preconditioning
+  bool use_right_preconditioning;
+
+  // defines the maximum size of the Krylov subspace before restart
+  unsigned int max_n_tmp_vectors;
+
   // description: see enum declaration
   MomentumPreconditioner momentum_preconditioner;
 
   // description: see enum declaration
   SolverMomentumPreconditioner solver_momentum_preconditioner;
+
+  // description: see declaration
+  MultigridData multigrid_data_momentum_preconditioner;
 
   // relative tolerance for solver_momentum_preconditioner
   double rel_tol_solver_momentum_preconditioner;
@@ -1257,6 +1288,9 @@ public:
 
   // description: see enum declaration
   SolverSchurComplementPreconditioner solver_schur_complement_preconditioner;
+
+  // description: see declaration
+  MultigridData multigrid_data_schur_complement_preconditioner;
 
   // relative tolerance for solver_schur_complement_preconditioner
   double rel_tol_solver_schur_complement_preconditioner;

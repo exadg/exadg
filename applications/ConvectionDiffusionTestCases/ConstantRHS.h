@@ -34,7 +34,7 @@ void InputParametersConvDiff::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
-  equation_type = EquationTypeConvDiff::Diffusion;
+  equation_type = EquationType::ConvectionDiffusion;
   right_hand_side = true;
 
   // PHYSICAL QUANTITIES
@@ -58,6 +58,14 @@ void InputParametersConvDiff::set_input_parameters()
 
   // viscous term
   IP_factor = 1.0;
+
+  // SOLVER
+  solver = Solver::PCG;
+  abs_tol = 1.e-20;
+  rel_tol = 1.e-6;
+  max_iter = 1e4;
+  preconditioner = Preconditioner::GeometricMultigrid;
+  // use default parameters of multigrid preconditioner
 
   // NUMERICAL PARAMETERS
   runtime_optimization = false;

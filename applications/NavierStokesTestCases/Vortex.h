@@ -58,7 +58,7 @@ void InputParametersNavierStokes::set_input_parameters()
 
   // TEMPORAL DISCRETIZATION
   temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
   max_velocity = 1.4 * U_X_MAX;
   cfl = 1.0e-1;
@@ -96,7 +96,7 @@ void InputParametersNavierStokes::set_input_parameters()
   // pressure Poisson equation
   IP_factor_pressure = 1.0;
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
-  multigrid_coarse_grid_solver_pressure_poisson = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
+  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
   abs_tol_pressure = 1.e-20;
   rel_tol_pressure = 1.e-6;
 
@@ -117,7 +117,7 @@ void InputParametersNavierStokes::set_input_parameters()
   // viscous step
   solver_viscous = SolverViscous::PCG;
   preconditioner_viscous = PreconditionerViscous::GeometricMultigrid;
-  multigrid_coarse_grid_solver_viscous = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
+  multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
   abs_tol_viscous = 1.e-20;
   rel_tol_viscous = 1.e-6;
 

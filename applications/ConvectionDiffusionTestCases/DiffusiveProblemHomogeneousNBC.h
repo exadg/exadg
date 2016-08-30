@@ -24,7 +24,7 @@
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 2;
+const unsigned int FE_DEGREE = 5;
 
 // set the number of refine levels for spatial convergence tests
 const unsigned int REFINE_STEPS_SPACE_MIN = 3;
@@ -42,7 +42,7 @@ void InputParametersConvDiff::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
-  equation_type = EquationTypeConvDiff::Diffusion;
+  equation_type = EquationType::Diffusion;
   right_hand_side = true;
 
   // PHYSICAL QUANTITIES
@@ -53,9 +53,9 @@ void InputParametersConvDiff::set_input_parameters()
   // TEMPORAL DISCRETIZATION
   temporal_discretization = TemporalDiscretization::ExplRK;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  order_time_integrator = 4;
-  start_with_low_order = true;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFLAndDiffusion;
+  order_time_integrator = 1;
+  start_with_low_order = false;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepDiffusion;
   time_step_size = 1.0e-2;
   cfl_number = 0.2;
   diffusion_number = 0.01;
@@ -66,6 +66,14 @@ void InputParametersConvDiff::set_input_parameters()
 
   // viscous term
   IP_factor = 1.0;
+
+  // SOLVER
+  solver = Solver::PCG;
+  abs_tol = 1.e-20;
+  rel_tol = 1.e-6;
+  max_iter = 1e4;
+  preconditioner = Preconditioner::GeometricMultigrid;
+  // use default parameters of multigrid preconditioner
 
   // NUMERICAL PARAMETERS
   runtime_optimization = false;
@@ -154,8 +162,8 @@ double RightHandSide<dim>::value(const Point<dim>     &p,
   double result = 0.0;
   for(int d=0;d<dim;++d)
     result += std::cos(p[d]*numbers::PI)+1;
-  result *= - std::pow(numbers::PI,2.0) * DIFFUSIVITY
-              * std::exp(-2.0*DIFFUSIVITY*pow(numbers::PI,2.0)*t);
+  result *=  -std::pow(numbers::PI,2.0) * DIFFUSIVITY
+             * std::exp(-2.0*DIFFUSIVITY*pow(numbers::PI,2.0)*t);
 
   return result;
 }

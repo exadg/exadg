@@ -96,7 +96,7 @@ void InputParametersNavierStokes::set_input_parameters()
   // pressure Poisson equation
   IP_factor_pressure = 1.0;
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
-  multigrid_coarse_grid_solver_pressure_poisson = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
+  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
   abs_tol_pressure = 1.e-12;
   rel_tol_pressure = 1.e-6;
 
@@ -117,7 +117,7 @@ void InputParametersNavierStokes::set_input_parameters()
   // viscous step
   solver_viscous = SolverViscous::PCG;
   preconditioner_viscous = PreconditionerViscous::GeometricMultigrid;
-  multigrid_coarse_grid_solver_viscous = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
+  multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
   abs_tol_viscous = 1.e-12;
   rel_tol_viscous = 1.e-6;
 

@@ -18,11 +18,11 @@
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 5;
+const unsigned int FE_DEGREE = 2;
 
 // set the number of refine levels for spatial convergence tests
-const unsigned int REFINE_STEPS_SPACE_MIN = 2;
-const unsigned int REFINE_STEPS_SPACE_MAX = 5;
+const unsigned int REFINE_STEPS_SPACE_MIN = 4;
+const unsigned int REFINE_STEPS_SPACE_MAX = 4;
 
 // set the number of refine levels for temporal convergence tests
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
@@ -44,11 +44,11 @@ void InputParametersConvDiff::set_input_parameters()
   diffusivity = 0.0;
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDF;
+  temporal_discretization = TemporalDiscretization::ExplRK;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  order_time_integrator = 3;
+  order_time_integrator = 4;
   start_with_low_order = true;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
   time_step_size = 1.0e-4;
   cfl_number = 0.2;
   diffusion_number = 0.01;
@@ -72,7 +72,7 @@ void InputParametersConvDiff::set_input_parameters()
 
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
-  write_output = false;
+  write_output = true;
   output_prefix = "deforming_hill";
   output_start_time = start_time;
   output_interval_time = (end_time-start_time)/20;

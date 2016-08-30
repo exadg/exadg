@@ -20,22 +20,25 @@ template<typename Vector, typename Operator, typename SolverLinearizedProblem>
 class NewtonSolver
 {
 public:
-  void initialize(NewtonSolverData solver_data_in,
-                  Operator *underlying_operator_in,
-                  SolverLinearizedProblem *linear_solver_in)
+  NewtonSolver(NewtonSolverData const  &solver_data_in,
+               Operator                &underlying_operator_in,
+               SolverLinearizedProblem &linear_solver_in)
+    :
+    solver_data(solver_data_in),
+    underlying_operator(underlying_operator_in),
+    linear_solver(linear_solver_in)
   {
-    solver_data = solver_data_in;
-    underlying_operator = underlying_operator_in;
-    linear_solver = linear_solver_in;
-
-    underlying_operator->initialize_vector_for_newton_solver(residual);
-    underlying_operator->initialize_vector_for_newton_solver(increment);
+    underlying_operator.initialize_vector_for_newton_solver(residual);
+    underlying_operator.initialize_vector_for_newton_solver(increment);
   }
 
   void solve(Vector &dst, unsigned int &newton_iterations, double &average_linear_iterations)
   {
+    // set solution linearization to dst
+    underlying_operator.set_solution_linearization(&dst);
+
     // evaluate residual using the given estimate of the solution
-    underlying_operator->evaluate_nonlinear_residual(residual,dst);
+    underlying_operator.evaluate_nonlinear_residual(residual,dst);
 
     double norm_r = residual.l2_norm();
     double norm_r_0 = norm_r;
@@ -54,7 +57,7 @@ public:
       residual *= -1.0;
 
       // solve linear problem
-      unsigned int linear_iterations =  linear_solver->solve(increment, residual, &dst);
+      unsigned int linear_iterations = linear_solver.solve(increment, residual);
 
       if(false)//(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
         std::cout << "  Number of linear solver iterations: " << linear_iterations << std::endl;
@@ -65,12 +68,15 @@ public:
       dst.add(1.0, increment);
 
       // evaluate residual using the new solution
-      underlying_operator->evaluate_nonlinear_residual(residual,dst);
+      underlying_operator.evaluate_nonlinear_residual(residual,dst);
 
       norm_r = residual.l2_norm();
 
       ++n_iter;
     }
+
+    // set solution linearization to nullptr
+    underlying_operator.set_solution_linearization(nullptr);
 
     if(n_iter >= solver_data.max_iter)
     {
@@ -87,8 +93,8 @@ public:
 
 private:
   NewtonSolverData solver_data;
-  Operator *underlying_operator;
-  SolverLinearizedProblem *linear_solver;
+  Operator &underlying_operator;
+  SolverLinearizedProblem &linear_solver;
   Vector residual, increment;
 };
 

@@ -344,7 +344,7 @@ convective_step()
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
     {
       std::cout << std::endl << "Solve nonlinear convective problem for intermediate velocity:" << std::endl
-                << "  Linear iterations (avg): " << std::setw(6) << std::right << average_linear_iterations << std::endl
+                << "  Linear iterations (avg): " << std::setw(6) << std::right << std::fixed << std::setprecision(2) << average_linear_iterations << std::endl
                 << "  Newton iterations: " << std::setw(4) << std::right << newton_iterations
                 << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
     }

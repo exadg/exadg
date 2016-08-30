@@ -90,6 +90,7 @@ enum class TimeStepCalculation
   Undefined,
   ConstTimeStepUserSpecified,
   ConstTimeStepCFL,
+  ConstTimeStepDiffusion,
   ConstTimeStepCFLAndDiffusion
 };
 
@@ -176,7 +177,7 @@ public:
     rel_tol(1.e-12),
     max_iter(std::numeric_limits<unsigned int>::max()),
     preconditioner(Preconditioner::Undefined),
-    multigrid_coarse_grid_solver(MultigridCoarseGridSolver::coarse_chebyshev_smoother),
+    multigrid_data(MultigridData()),
 
     // NUMERICAL PARAMETERS
     runtime_optimization(false),
@@ -399,6 +400,7 @@ public:
     std::string str_time_step_calc[] = { "Undefined",
                                          "ConstTimeStepUserSpecified",
                                          "ConstTimeStepCFL",
+                                         "ConstTimeStepDiffusion",
                                          "ConstTimeStepCFLAndDiffusion" };
 
     print_parameter(pcout,
@@ -473,12 +475,14 @@ public:
     if(preconditioner == Preconditioner::GeometricMultigrid)
     {
       std::string str_multigrid_coarse[] = { "Chebyshev smoother",
-                                                 "PCG - no preconditioner",
-                                                 "PCG - Jacobi preconditioner" };
+                                             "PCG - no preconditioner",
+                                             "PCG - Jacobi preconditioner" };
 
+      print_parameter(pcout,"Smoother polynomial degree",multigrid_data.smoother_poly_degree);
+      print_parameter(pcout,"Smoothing range",multigrid_data.smoother_smoothing_range);
       print_parameter(pcout,
                       "Multigrid coarse grid solver",
-                      str_multigrid_coarse[(int)multigrid_coarse_grid_solver]);
+                      str_multigrid_coarse[(int)multigrid_data.coarse_solver]);
     }
 
   }
@@ -628,8 +632,8 @@ public:
   // description: see enum declaration
   Preconditioner preconditioner;
 
-  // description: see enum declaration
-  MultigridCoarseGridSolver multigrid_coarse_grid_solver;
+  // description: see declaration of MultigridData
+  MultigridData multigrid_data;
 
 
   /**************************************************************************************/
