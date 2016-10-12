@@ -78,9 +78,9 @@ using namespace dealii;
 
 //#include "NavierStokesTestCases/Cuette.h"
 //#include "NavierStokesTestCases/Poiseuille.h"
-//#include "NavierStokesTestCases/Cavity.h"
+#include "NavierStokesTestCases/Cavity.h"
 //#include "NavierStokesTestCases/Kovasznay.h"
-#include "NavierStokesTestCases/FlowPastCylinder.h"
+//#include "NavierStokesTestCases/FlowPastCylinder.h"
 
 
 #include "../include/PostProcessor.h"
