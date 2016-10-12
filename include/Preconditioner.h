@@ -694,12 +694,12 @@ public:
 
     // needed for continuous elements
     this->mg_constrained_dofs.clear();
-    ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
-    typename FunctionMap<dim>::type dirichlet_boundary;
+    std::set<types::boundary_id> dirichlet_boundary;
     for (std::set<types::boundary_id>::const_iterator it = dirichlet_boundaries.begin();
          it != dirichlet_boundaries.end(); ++it)
-      dirichlet_boundary[*it] = &zero_function;
-    this->mg_constrained_dofs.initialize(dof_handler, dirichlet_boundary);
+      dirichlet_boundary.insert(*it);
+    this->mg_constrained_dofs.initialize(dof_handler);
+    this->mg_constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary);
     // needed for continuous elements
 
     this->n_global_levels = tria->n_global_levels();
@@ -916,12 +916,12 @@ public:
     // TODO
     // only needed for continuous elements
     this->mg_constrained_dofs.clear();
-    ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
-    typename FunctionMap<dim>::type dirichlet_boundary;
+    std::set<types::boundary_id> dirichlet_boundary;
 //    for (std::set<types::boundary_id>::const_iterator it = dirichlet_boundaries.begin();
 //         it != dirichlet_boundaries.end(); ++it)
-//      dirichlet_boundary[*it] = &zero_function;
-    this->mg_constrained_dofs.initialize(dof_handler, dirichlet_boundary);
+//      dirichlet_boundary.insert(*it);
+    this->mg_constrained_dofs.initialize(dof_handler);
+    this->mg_constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary);
     // only needed for continuous elements
 
     this->n_global_levels = tria->n_global_levels();

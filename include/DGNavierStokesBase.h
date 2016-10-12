@@ -28,11 +28,11 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 class DGNavierStokesDualSplittingXWall;
 
 //struct MassMatrixOperatorData;
-template<int dim> class ViscousOperatorData;
-template<int dim> class ConvectiveOperatorData;
-template<int dim> class GradientOperatorData;
-template<int dim> class DivergenceOperatorData;
-template<int dim> class BodyForceOperatorData;
+template<int dim> struct ViscousOperatorData;
+template<int dim> struct ConvectiveOperatorData;
+template<int dim> struct GradientOperatorData;
+template<int dim> struct DivergenceOperatorData;
+template<int dim> struct BodyForceOperatorData;
 
 template<int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 class MassMatrixOperator;

@@ -24,8 +24,8 @@
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 class DGNavierStokesCoupled;
 
-template<int dim> class HelmholtzOperatorData;
-template<int dim> class LaplaceOperatorData;
+template<int dim> struct HelmholtzOperatorData;
+template<int dim> struct LaplaceOperatorData;
 
 template<typename value_type>
 class PreconditionerNavierStokesBase
