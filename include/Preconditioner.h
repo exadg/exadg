@@ -639,7 +639,6 @@ public:
     mg_transfer.initialize_constraints(mg_constrained_dofs);
     mg_transfer.add_periodicity(operator_data_in.periodic_face_pairs_level0);
     mg_transfer.build(dof_handler);
-    mg_transfer.set_restriction_type(false);
   }
 
   void vmult (parallel::distributed::Vector<value_type>        &dst,
