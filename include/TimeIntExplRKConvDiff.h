@@ -12,14 +12,17 @@
 #include "../include/InputParametersConvDiff.h"
 #include "../include/PrintFunctions.h"
 
-template<int dim, int fe_degree> class PostProcessor;
+namespace ConvDiff
+{
+  template<int dim, int fe_degree> class PostProcessor;
+}
 
 template<int dim, int fe_degree, typename value_type>
 class TimeIntExplRKConvDiff
 {
 public:
   TimeIntExplRKConvDiff(std_cxx11::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation_in,
-                        std_cxx11::shared_ptr<PostProcessor<dim, fe_degree> >                   postprocessor_in,
+                        std_cxx11::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> >         postprocessor_in,
                         ConvDiff::InputParametersConvDiff const                                 &param_in,
                         std_cxx11::shared_ptr<Function<dim> >                                   velocity_in,
                         unsigned int const                                                      n_refine_time_in)
@@ -51,7 +54,7 @@ private:
   void analyze_computing_times() const;
 
   std_cxx11::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation;
-  std_cxx11::shared_ptr<PostProcessor<dim, fe_degree> > postprocessor;
+  std_cxx11::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> > postprocessor;
   ConvDiff::InputParametersConvDiff const & param;
   std_cxx11::shared_ptr<Function<dim> > velocity;
 

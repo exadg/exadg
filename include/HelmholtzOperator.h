@@ -16,7 +16,7 @@ struct HelmholtzOperatorData
   HelmholtzOperatorData ()
     :
     dof_index(0),
-    mass_matrix_coefficient(-1.0)
+    scaling_factor_time_derivative_term(-1.0)
   {}
 
   unsigned int dof_index;
@@ -25,13 +25,14 @@ struct HelmholtzOperatorData
   ViscousOperatorData<dim> viscous_operator_data;
 
   /*
-   * This variable 'mass_matrix_coefficient' is only used when initializing the HelmholtzOperator.
+   * This variable 'scaling_factor_time_derivative_term' is only used when initializing the HelmholtzOperator.
    * In order to change/update this coefficient during the simulation (e.g., varying time step sizes)
-   * use the element variable 'mass_matrix_coefficient' of HelmholtzOperator and the corresponding setter
-   * set_mass_matrix_coefficient().
+   * use the element variable 'scaling_factor_time_derivative_term' of HelmholtzOperator and the corresponding setter
+   * set_scaling_factor_time_derivative_term().
    */
-  double mass_matrix_coefficient;
+  double scaling_factor_time_derivative_term;
 
+  // current interface of multigrid implementation needs this variable
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs_level0;
 
   std::set<types::boundary_id> const & get_dirichlet_boundaries() const
@@ -60,7 +61,7 @@ public:
     data(nullptr),
     mass_matrix_operator(nullptr),
     viscous_operator(nullptr),
-    mass_matrix_coefficient(-1.0)
+    scaling_factor_time_derivative_term(-1.0)
   {}
 
   void initialize(MatrixFree<dim,Number> const                                                            &mf_data_in,
@@ -75,10 +76,10 @@ public:
     this->viscous_operator = &viscous_operator_in;
 
     // set mass matrix coefficient!
-    AssertThrow(helmholtz_operator_data.mass_matrix_coefficient > 0.0,
-                ExcMessage("Mass matrix coefficient of HelmholtzOperatorData has not been initialized!"));
+    AssertThrow(helmholtz_operator_data.scaling_factor_time_derivative_term > 0.0,
+                ExcMessage("Scaling factor of time derivative term of HelmholtzOperatorData has not been initialized!"));
 
-    this->mass_matrix_coefficient = helmholtz_operator_data.mass_matrix_coefficient;
+    this->scaling_factor_time_derivative_term = helmholtz_operator_data.scaling_factor_time_derivative_term;
   }
 
   void reinit (const DoFHandler<dim>            &dof_handler,
@@ -125,9 +126,9 @@ public:
     initialize_dof_vector(temp);
   }
 
-  void set_mass_matrix_coefficient(Number const coefficient_in)
+  void set_scaling_factor_time_derivative_term(Number const coefficient_in)
   {
-    mass_matrix_coefficient = coefficient_in;
+    scaling_factor_time_derivative_term = coefficient_in;
   }
 
   void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const
@@ -143,7 +144,7 @@ public:
   {
     // helmholtz operator = mass_matrix_operator + viscous_operator
     mass_matrix_operator->apply(dst,src);
-    dst *= mass_matrix_coefficient;
+    dst *= scaling_factor_time_derivative_term;
 
     viscous_operator->apply_add(dst,src);
   }
@@ -165,7 +166,7 @@ public:
   {
     // helmholtz operator = mass_matrix_operator + viscous_operator
     mass_matrix_operator->apply(temp,src);
-    temp *= mass_matrix_coefficient;
+    temp *= scaling_factor_time_derivative_term;
     dst += temp;
 
     viscous_operator->apply_add(dst,src);
@@ -185,7 +186,7 @@ public:
 
   types::global_dof_index m() const
   {
-    return data->get_vector_partitioner(helmholtz_operator_data.dof_index)->size();
+    return data->get_vector_partitioner(get_dof_index())->size();
   }
 
 //  types::global_dof_index n() const
@@ -207,7 +208,7 @@ public:
   void calculate_diagonal(parallel::distributed::Vector<Number> &diagonal) const
   {
     mass_matrix_operator->calculate_diagonal(diagonal);
-    diagonal *= mass_matrix_coefficient;
+    diagonal *= scaling_factor_time_derivative_term;
 
     viscous_operator->add_diagonal(diagonal);
 
@@ -263,7 +264,7 @@ private:
   ViscousOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>  const *viscous_operator;
   HelmholtzOperatorData<dim> helmholtz_operator_data;
   parallel::distributed::Vector<Number> mutable temp;
-  Number mass_matrix_coefficient;
+  double scaling_factor_time_derivative_term;
 
   /*
    * The following variables are necessary when applying the multigrid preconditioner to the Helmholtz equation:

@@ -28,8 +28,8 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 4;
-unsigned int const REFINE_STEPS_SPACE_MAX = 4;//REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 2;
+unsigned int const REFINE_STEPS_SPACE_MAX = 2;//REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -39,7 +39,8 @@ unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 const ProblemType PROBLEM_TYPE = ProblemType::Steady;
 const double L = 1.0;
 
-void InputParametersNavierStokes::set_input_parameters()
+template<int dim>
+void InputParametersNavierStokes<dim>::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = PROBLEM_TYPE; // PROBLEM_TYPE is also needed somewhere else
@@ -51,7 +52,7 @@ void InputParametersNavierStokes::set_input_parameters()
   // PHYSICAL QUANTITIES
   start_time = 0.0;
   end_time = 1.0e6;
-  viscosity = 1.e-3;
+  viscosity = 1.e-2;
 
 
   // TEMPORAL DISCRETIZATION
@@ -94,7 +95,7 @@ void InputParametersNavierStokes::set_input_parameters()
   // pressure Poisson equation
   IP_factor_pressure = 1.0;
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
-  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
+  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
   abs_tol_pressure = 1.e-20;
   rel_tol_pressure = 1.e-6;
 
@@ -115,7 +116,7 @@ void InputParametersNavierStokes::set_input_parameters()
   // viscous step
   solver_viscous = SolverViscous::PCG;
   preconditioner_viscous = PreconditionerViscous::GeometricMultigrid;
-  multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
+  multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
   abs_tol_viscous = 1.e-20;
   rel_tol_viscous = 1.e-6;
 
@@ -124,27 +125,30 @@ void InputParametersNavierStokes::set_input_parameters()
 
   // nonlinear solver (Newton solver)
   abs_tol_newton = 1.e-20;
-  rel_tol_newton = 1.e-6;
+  rel_tol_newton = 1.e-5;
   max_iter_newton = 1e2;
 
   // linear solver
-  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;
+  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::FGMRES;
   abs_tol_linear = 1.e-20;
-  rel_tol_linear = 1.e-8;
+  rel_tol_linear = 1.e-6;
   max_iter_linear = 1e4;
+  max_n_tmp_vectors = 1000;
 
   // preconditioning linear solver
   preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityConvectionDiffusion;
+  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion;
   solver_momentum_preconditioner = SolverMomentumPreconditioner::GeometricMultigridVCycle;
+  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_Jacobi;
   rel_tol_solver_momentum_preconditioner = 1.e-6;
 
   // preconditioner Schur-complement block
   schur_complement_preconditioner = SchurComplementPreconditioner::PressureConvectionDiffusion;
   discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
   solver_schur_complement_preconditioner = SolverSchurComplementPreconditioner::GeometricMultigridVCycle;
+  multigrid_data_schur_complement_preconditioner.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
   rel_tol_solver_schur_complement_preconditioner = 1.e-6;
 
 
@@ -152,16 +156,16 @@ void InputParametersNavierStokes::set_input_parameters()
 
   // write output for visualization of results
   print_input_parameters = true;
-  write_output = false;
-  output_prefix = "cavity";
-  output_start_time = start_time;
-  output_interval_time = (end_time-start_time)/20;
-  compute_divergence = false;
+  output_data.write_output = true;
+  output_data.output_prefix = "cavity";
+  output_data.output_start_time = start_time;
+  output_data.output_interval_time = (end_time-start_time)/20;
+  output_data.compute_divergence = false;
 
   // calculation of error
-  analytical_solution_available = false;
-  error_calc_start_time = start_time;
-  error_calc_interval_time = output_interval_time;
+  error_data.analytical_solution_available = false;
+  error_data.error_calc_start_time = start_time;
+  error_data.error_calc_interval_time = output_data.output_interval_time;
 
   // output of solver information
   output_solver_info_every_timesteps = 1e0;
@@ -416,5 +420,13 @@ void set_field_functions(std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> >
   field_functions->analytical_solution_pressure = initial_solution_pressure;
   field_functions->right_hand_side = right_hand_side;
 }
+
+template<int dim>
+void set_analytical_solution(std_cxx11::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
+{
+  analytical_solution->velocity.reset(new ZeroFunction<dim>(dim));
+  analytical_solution->pressure.reset(new ZeroFunction<dim>(1));
+}
+
 
 #endif /* APPLICATIONS_NAVIERSTOKESTESTCASES_CAVITY_H_ */

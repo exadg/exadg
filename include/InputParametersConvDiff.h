@@ -9,6 +9,8 @@
 #define INCLUDE_INPUTPARAMETERSCONVDIFF_H_
 
 #include "MultigridInputParameters.h"
+#include "../include/ErrorCalculationData.h"
+#include "../include/OutputData.h"
 #include "../include/PrintFunctions.h"
 
 namespace ConvDiff
@@ -139,6 +141,14 @@ enum class Preconditioner
   GeometricMultigrid
 };
 
+
+/**************************************************************************************/
+/*                                                                                    */
+/*                               OUTPUT AND POSTPROCESSING                            */
+/*                                                                                    */
+/**************************************************************************************/
+
+
 class InputParametersConvDiff
 {
 public:
@@ -184,14 +194,12 @@ public:
 
     // OUTPUT AND POSTPROCESSING
     print_input_parameters(false),
-    write_output(false),
-    output_prefix("solution"),
-    output_start_time(std::numeric_limits<double>::max()),
-    output_interval_time(std::numeric_limits<double>::max()),
 
-    analytical_solution_available(false),
-    error_calc_start_time(std::numeric_limits<double>::max()),
-    error_calc_interval_time(std::numeric_limits<double>::max()),
+    // write output
+    output_data(OutputData()),
+
+    // calculation of errors
+    error_data(ErrorCalculationData()),
 
     output_solver_info_every_timesteps(1)
   {}
@@ -275,6 +283,16 @@ public:
 
       AssertThrow(preconditioner != Preconditioner::Undefined,
                   ExcMessage("parameter must be defined"));
+
+      if(preconditioner == Preconditioner::GeometricMultigrid)
+        AssertThrow(equation_type == EquationType::Diffusion ||
+                    equation_type == EquationType::ConvectionDiffusion,
+                    ExcMessage("Multigrid preconditioner is not available for the specified equation type"));
+ 
+      if(preconditioner == Preconditioner::Jacobi)
+        AssertThrow(equation_type == EquationType::Diffusion ||
+                    equation_type == EquationType::ConvectionDiffusion,
+                    ExcMessage("Jacobi preconditioner is not available for the specified equation type"));    
     }
 
 
@@ -502,26 +520,9 @@ public:
     pcout << std::endl
           << "Output and postprocessing:" << std::endl;
    
-    // output for visualization of results
-    print_parameter(pcout,"Write output",write_output);
-    if(write_output == true)
-    {
-      print_parameter(pcout,"Name of output files",output_prefix);
-      if(true /*problem_type == ProblemType::Unsteady*/)
-      {
-        print_parameter(pcout,"Output start time",output_start_time);
-        print_parameter(pcout,"Output interval time",output_interval_time);
-      }
-    }
+    output_data.print(pcout,true /*problem_type == ProblemType::Unsteady*/);
 
-    // calculation of error
-    print_parameter(pcout,"Calculate error",analytical_solution_available);
-    if(analytical_solution_available == true /*&&
-       problem_type == ProblemType::Unsteady*/)
-    {
-      print_parameter(pcout,"Error calculation start time",error_calc_start_time);
-      print_parameter(pcout,"Error calculation interval time",error_calc_interval_time);
-    }
+    error_data.print(pcout,true /*problem_type == ProblemType::Unsteady*/);
   }
 
  
@@ -666,26 +667,11 @@ public:
   // print a list of all input parameters at the beginning of the simulation
   bool print_input_parameters;
 
-  // set write_output = true in order to write files for visualization
-  bool write_output;
+  // writing output
+  OutputData output_data;
 
-  // name of generated output files
-  std::string output_prefix;
-
-  // before then no output will be written
-  double output_start_time;
-
-  // specifies the time interval in which output is written
-  double output_interval_time;
-
-  // to calculate the error an analytical solution to the problem has to be available
-  bool analytical_solution_available;
-
-  // before then no error calculation will be performed
-  double error_calc_start_time;
-
-  // specifies the time interval in which error calculation is performed
-  double error_calc_interval_time;
+  // calculation of errors
+  ErrorCalculationData error_data;
 
   // show solver performance (wall time, number of iterations) every ... timesteps
   unsigned int output_solver_info_every_timesteps;

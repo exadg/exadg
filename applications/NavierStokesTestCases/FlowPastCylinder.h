@@ -15,7 +15,6 @@
 /*                                                                                    */
 /**************************************************************************************/
 
-
 // set the number of space dimensions: dimension = 2, 3
 unsigned int const DIMENSION = 2;
 
@@ -36,6 +35,7 @@ unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
+ProblemType PROBLEM_TYPE = ProblemType::Unsteady;
 const unsigned int TEST_CASE = 1; // 1, 2 or 3
 const double Um = (DIMENSION == 2 ? (TEST_CASE==1 ? 0.3 : 1.5) : (TEST_CASE==1 ? 0.45 : 2.25));
 const double D = 0.1;
@@ -45,11 +45,13 @@ const double L2 = 2.5;
 const double X_C = 0.5;
 const double Y_C = 0.2;
 const double END_TIME = 8.0;
+std::string OUTPUT_PREFIX = "fpc";
 
-void InputParametersNavierStokes::set_input_parameters()
+template<int dim>
+void InputParametersNavierStokes<dim>::set_input_parameters()
 {
   // MATHEMATICAL MODEL
-  problem_type = ProblemType::Unsteady;
+  problem_type = PROBLEM_TYPE;
   equation_type = EquationType::NavierStokes;
   formulation_viscous_term = FormulationViscousTerm::DivergenceFormulation;
   right_hand_side = false;
@@ -66,10 +68,10 @@ void InputParametersNavierStokes::set_input_parameters()
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
   max_velocity = Um;
-  cfl = 3.0e-1;
+  cfl = 1.0;//2.5e-1;
   time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 2; // 1; // 2; // 3;
+  order_time_integrator = 3; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
 
 
@@ -101,7 +103,7 @@ void InputParametersNavierStokes::set_input_parameters()
   // pressure Poisson equation
   IP_factor_pressure = 1.0;
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
-  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
+  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
   abs_tol_pressure = 1.e-12;
   rel_tol_pressure = 1.e-6;
 
@@ -112,8 +114,8 @@ void InputParametersNavierStokes::set_input_parameters()
 
   // projection step
   projection_type = ProjectionType::DivergencePenalty;
-  penalty_factor_divergence = 1.0e1;
-  penalty_factor_continuity = 1.0e1;
+  penalty_factor_divergence = 1.0e0;//1.0e0;
+  penalty_factor_continuity = 1.0e0;
   solver_projection = SolverProjection::PCG;
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
   abs_tol_projection = 1.e-20;
@@ -121,8 +123,8 @@ void InputParametersNavierStokes::set_input_parameters()
 
   // viscous step
   solver_viscous = SolverViscous::PCG;
-  preconditioner_viscous = PreconditionerViscous::GeometricMultigrid;
-  multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
+  preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
+  multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
   abs_tol_viscous = 1.e-12;
   rel_tol_viscous = 1.e-6;
 
@@ -137,45 +139,81 @@ void InputParametersNavierStokes::set_input_parameters()
   // linear solver
   solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;
   abs_tol_linear = 1.e-12;
-  rel_tol_linear = 1.e-6;
+  rel_tol_linear = 1.e-3;
   max_iter_linear = 1e4;
+  max_n_tmp_vectors = 100;
 
   // preconditioning linear solver
   preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityConvectionDiffusion;
+  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion;
   solver_momentum_preconditioner = SolverMomentumPreconditioner::GeometricMultigridVCycle;
-  rel_tol_solver_momentum_preconditioner = 1.e-6;
+  rel_tol_solver_momentum_preconditioner = 1.e-3;
 
   // preconditioner Schur-complement block
-  schur_complement_preconditioner = SchurComplementPreconditioner::CahouetChabard;
+  schur_complement_preconditioner = SchurComplementPreconditioner::PressureConvectionDiffusion;
   discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
   solver_schur_complement_preconditioner = SolverSchurComplementPreconditioner::GeometricMultigridVCycle;
   rel_tol_solver_schur_complement_preconditioner = 1.e-6;
 
 
   // OUTPUT AND POSTPROCESSING
+  print_input_parameters = true;
 
   // write output for visualization of results
-  output_prefix = "flow_past_cylinder";
-  output_start_time = start_time;
-  output_interval_time = (end_time-start_time)/20;
-  compute_divergence = true;
+  output_data.write_output = true;
+  output_data.output_prefix = OUTPUT_PREFIX;
+  output_data.output_start_time = start_time;
+  output_data.output_interval_time = (end_time-start_time)/20;
+  output_data.compute_divergence = true;
+  output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error
-  analytical_solution_available = false;
-  error_calc_start_time = start_time;
-  error_calc_interval_time = output_interval_time;
+  error_data.analytical_solution_available = false;
+  error_data.error_calc_start_time = start_time;
+  error_data.error_calc_interval_time = output_data.output_interval_time;
 
   // output of solver information
-  output_solver_info_every_timesteps = 1e5;
+  output_solver_info_every_timesteps = 1e3;
 
   // restart
   write_restart = false;
   restart_interval_time = 1.e2;
   restart_interval_wall_time = 1.e6;
   restart_every_timesteps = 1e8;
+
+  // lift and drag
+  lift_and_drag_data.calculate_lift_and_drag = true;
+  lift_and_drag_data.viscosity = viscosity;
+  const double U = Um * (DIMENSION == 2 ? 2./3. : 4./9.);
+  if(DIMENSION == 2)
+    lift_and_drag_data.reference_value = 1.0/2.0*pow(U,2.0)*D;
+  else if(DIMENSION == 3)
+    lift_and_drag_data.reference_value = 1.0/2.0*pow(U,2.0)*D*H;
+
+  // surfaces for calculation of lift and drag coefficients have boundary_ID = 2
+  lift_and_drag_data.boundary_IDs.insert(2);
+
+  lift_and_drag_data.filename_prefix_lift = output_data.output_prefix;
+  lift_and_drag_data.filename_prefix_drag = output_data.output_prefix;
+
+  // pressure difference
+  pressure_difference_data.calculate_pressure_difference = true;
+  if(DIMENSION == 2)
+  {
+    Point<dim> point_1_2D((X_C-D/2.0),Y_C), point_2_2D((X_C+D/2.0),Y_C);
+    pressure_difference_data.point_1 = point_1_2D;
+    pressure_difference_data.point_2 = point_2_2D;
+  }
+  else if(DIMENSION == 3)
+  {
+    Point<dim> point_1_3D((X_C-D/2.0),Y_C,H/2.0), point_2_3D((X_C+D/2.0),Y_C,H/2.0);
+    pressure_difference_data.point_1 = point_1_3D;
+    pressure_difference_data.point_2 = point_2_3D;
+  }
+
+  pressure_difference_data.filename_prefix_pressure_difference = output_data.output_prefix;
 }
 
 /**************************************************************************************/
@@ -223,7 +261,16 @@ double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
     const double T = 1.0;
     double coefficient = Utilities::fixed_power<dim-1>(4.) * Um / Utilities::fixed_power<2*dim-2>(H);
     if(TEST_CASE < 3)
-      result = coefficient * p[1] * (H-p[1]) * ( (t/T)<1.0 ? std::sin(pi/2.*t/T) : 1.0);
+    {
+      if(PROBLEM_TYPE == ProblemType::Steady)
+      {
+        result = coefficient * p[1] * (H-p[1]);
+      }
+      else if(PROBLEM_TYPE == ProblemType::Unsteady)
+      {
+        result = coefficient * p[1] * (H-p[1]) * ( (t/T)<1.0 ? std::sin(pi/2.*t/T) : 1.0);
+      }
+    }
     if(TEST_CASE == 3)
       result = coefficient * p[1] * (H-p[1]) * std::sin(pi*t/END_TIME);
     if (dim == 3)
@@ -597,6 +644,13 @@ void set_field_functions(std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> >
   // This function will not be used since no analytical solution is available for this flow problem
   field_functions->analytical_solution_pressure = initial_solution_pressure;
   field_functions->right_hand_side = right_hand_side;
+}
+
+template<int dim>
+void set_analytical_solution(std_cxx11::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
+{
+  analytical_solution->velocity.reset(new ZeroFunction<dim>(dim));
+  analytical_solution->pressure.reset(new ZeroFunction<dim>(1));
 }
 
 

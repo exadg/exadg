@@ -13,19 +13,19 @@
 #include "TimeStepCalculation.h"
 #include "Restart.h"
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall> class PostProcessor;
+template<int dim, int fe_degree, int fe_degree_p> class PostProcessor;
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 class TimeIntBDFNavierStokes : public TimeIntBDFBase
 {
 public:
   TimeIntBDFNavierStokes(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
-               fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation_in,
-               std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
-               fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > postprocessor_in,
-               InputParametersNavierStokes const                    &param_in,
-               unsigned int const                                   n_refine_time_in,
-               bool const                                           use_adaptive_time_stepping)
+                           fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation_in,
+                         std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
+                           fe_degree_p> >                                       postprocessor_in,
+                         InputParametersNavierStokes<dim> const                 &param_in,
+                         unsigned int const                                     n_refine_time_in,
+                         bool const                                             use_adaptive_time_stepping)
     :
     TimeIntBDFBase(param_in.order_time_integrator,
                    param_in.start_with_low_order,
@@ -48,10 +48,9 @@ public:
   virtual void analyze_computing_times() const = 0;
 
 protected:
-  std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
-  fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > postprocessor;
+  std_cxx11::shared_ptr<PostProcessor<dim, fe_degree, fe_degree_p> > postprocessor;
 
-  InputParametersNavierStokes const & param;
+  InputParametersNavierStokes<dim> const & param;
 
   Timer global_timer;
   double total_time;
@@ -160,7 +159,7 @@ void TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_po
 resume_from_restart()
 {
 
-  const std::string filename = restart_filename(param);
+  const std::string filename = restart_filename<dim>(param);
   std::ifstream in (filename.c_str());
   check_file(in, filename);
   boost::archive::binary_iarchive ia (in);
@@ -186,9 +185,9 @@ write_restart() const
     std::ostringstream oss;
 
     boost::archive::binary_oarchive oa(oss);
-    write_restart_preamble<value_type>(oa, param, time_steps, time, postprocessor->get_output_counter(), order);
+    write_restart_preamble<dim, value_type>(oa, param, time_steps, time, postprocessor->get_output_counter(), order);
     write_restart_vectors(oa);
-    write_restart_file(oss, param);
+    write_restart_file<dim>(oss, param);
   }
 }
 
@@ -244,11 +243,30 @@ calculate_time_step()
     if(adaptive_time_step < time_steps[0])
       time_steps[0] = adaptive_time_step;
   }
+  else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepMaxEfficiency)
+  {
+    const double global_min_cell_diameter = calculate_min_cell_diameter(ns_operation->get_dof_handler_u().get_triangulation());
+
+    double time_step = calculate_time_step_max_efficiency(param.c_eff,
+                                                          global_min_cell_diameter,
+                                                          fe_degree,
+                                                          order,
+                                                          n_refine_time);
+
+    // decrease time_step in order to exactly hit end_time
+    time_steps[0] = (param.end_time-param.start_time)/(1+int((param.end_time-param.start_time)/time_step));
+
+    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+    pcout << "Calculation of time step size (max efficiency):" << std::endl << std::endl;
+    print_parameter(pcout,"C_eff",param.c_eff/std::pow(2,n_refine_time));
+    print_parameter(pcout,"Time step size",time_steps[0]);
+  }
   else
   {
     AssertThrow(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified ||
                 param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL ||
-                param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL,
+                param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL ||
+                param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepMaxEfficiency,
                 ExcMessage("User did not specify how to calculate time step size - "
                     "possibilities are ConstTimeStepUserSpecified, ConstTimeStepCFL  and AdaptiveTimeStepCFL."));
   }

@@ -12,11 +12,12 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall> class PostProcessor;
+template<int dim, int fe_degree, int fe_degree_p> class PostProcessor;
 
-const std::string restart_filename(InputParametersNavierStokes const & param)
+template<int dim>
+const std::string restart_filename(InputParametersNavierStokes<dim> const & param)
 {
-  const std::string filename = param.output_prefix + "." +
+  const std::string filename = param.output_data.output_prefix + "." +
     Utilities::int_to_string(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)) +
     ".restart";
   return filename;
@@ -35,8 +36,8 @@ void check_file(std::ifstream const & in, const std::string filename)
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall,typename value_type>
-void resume_restart(boost::archive::binary_iarchive & ia, InputParametersNavierStokes const & param, double & time,
-    std_cxx11::shared_ptr<PostProcessor<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > & postprocessor,
+void resume_restart(boost::archive::binary_iarchive & ia, InputParametersNavierStokes<dim> const & param, double & time,
+    std_cxx11::shared_ptr<PostProcessor<dim, fe_degree, fe_degree_p> > & postprocessor,
     std::vector<value_type> & time_steps, unsigned int const order)
 {
 
@@ -93,8 +94,8 @@ void resume_restart(boost::archive::binary_iarchive & ia, InputParametersNavierS
 
 }
 
-template<typename value_type>
-void write_restart_preamble(boost::archive::binary_oarchive & oa, InputParametersNavierStokes const & param, std::vector<value_type> const & time_steps,
+template<int dim, typename value_type>
+void write_restart_preamble(boost::archive::binary_oarchive & oa, InputParametersNavierStokes<dim> const & param, std::vector<value_type> const & time_steps,
                    double const time, unsigned int const output_counter, unsigned int const order)
 {
 
@@ -118,10 +119,10 @@ void write_restart_preamble(boost::archive::binary_oarchive & oa, InputParameter
       for (unsigned int n = 0; n < n_ranks; n++)
       {
         const std::string rank_string = Utilities::int_to_string(n);
-        const int error = system (("mv -f " + param.output_prefix  +"." + rank_string + ".restart" + " " + param.output_prefix +"." + rank_string + ".restart" + ".old").c_str());
+        const int error = system (("mv -f " + param.output_data.output_prefix  +"." + rank_string + ".restart" + " " + param.output_data.output_prefix +"." + rank_string + ".restart" + ".old").c_str());
         AssertThrow (error == 0, ExcMessage(std::string ("Can't move files: ")
                         +
-                        param.output_prefix  +"." + rank_string + ".restart" + " -> " + param.output_prefix  +"." + rank_string + ".restart" +".old"));
+                        param.output_data.output_prefix  +"." + rank_string + ".restart" + " -> " + param.output_data.output_prefix  +"." + rank_string + ".restart" +".old"));
       }
     }
 
@@ -136,7 +137,8 @@ void write_restart_preamble(boost::archive::binary_oarchive & oa, InputParameter
   }
 }
 
-void write_restart_file(std::ostringstream & oss, InputParametersNavierStokes const & param)
+template<int dim>
+void write_restart_file(std::ostringstream & oss, InputParametersNavierStokes<dim> const & param)
 {
   const std::string filename = restart_filename(param);
   std::ofstream stream(filename.c_str());

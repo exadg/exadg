@@ -16,9 +16,11 @@
  */
 enum class MultigridCoarseGridSolver
 {
-  coarse_chebyshev_smoother,
-  coarse_iterative_nopreconditioner,
-  coarse_iterative_jacobi
+  ChebyshevSmoother,
+  PCG_NoPreconditioner,
+  PCG_Jacobi,
+  GMRES_NoPreconditioner,
+  GMRES_Jacobi
 };
 
 struct MultigridData
@@ -28,7 +30,7 @@ struct MultigridData
     // multigrid_smoother(MultigridSmoother::Chebyshev),
     smoother_poly_degree(5),
     smoother_smoothing_range(20),
-    coarse_solver(MultigridCoarseGridSolver::coarse_chebyshev_smoother)
+    coarse_solver(MultigridCoarseGridSolver::ChebyshevSmoother)
   {}
 
   // Sets the multigrid smoother: currently only Chebyshev implemented, so there is no need for this variable

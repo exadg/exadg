@@ -17,8 +17,8 @@ public:
   TimeIntBDFDualSplitting(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
                             fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
                           std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
-                          fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >    postprocessor_in,
-                          InputParametersNavierStokes const                       &param_in,
+                            fe_degree_p> >                                        postprocessor_in,
+                          InputParametersNavierStokes<dim> const                  &param_in,
                           unsigned int const                                      n_refine_time_in,
                           bool const                                              use_adaptive_time_stepping)
     :
@@ -157,7 +157,7 @@ initialize_vectors()
   ns_operation_splitting->initialize_vector_velocity(rhs_vec_viscous);
 
   // divergence
-  if(this->param.compute_divergence == true)
+  if(this->param.output_data.compute_divergence == true)
   {
     ns_operation_splitting->initialize_vector_velocity(divergence);
   }
@@ -376,7 +376,7 @@ pressure_step()
   // special case: pure Dirichlet BC's
   if(this->param.pure_dirichlet_bc)
   {
-    if(this->param.analytical_solution_available == true)
+    if(this->param.error_data.analytical_solution_available == true)
       ns_operation_splitting->shift_pressure(pressure_np);
     else // analytical_solution_available == false
       ns_operation_splitting->apply_zero_mean(pressure_np);
@@ -480,10 +480,13 @@ projection_step()
   }
 
   // postprocessing related to the analysis of different projection algorithms
-  if(this->param.compute_divergence == true)
+  if(this->param.output_data.compute_divergence == true)
+  {
+    ns_operation_splitting->compute_divergence(divergence, velocity_np);
+  }
+  if(this->param.mass_data.calculate_mass_error == true)
   {
     this->postprocessor->analyze_divergence_error(velocity_np,this->time+this->time_steps[0],this->time_step_number);
-    ns_operation_splitting->compute_divergence(divergence, velocity_np);
   }
 
   computing_times[2] += timer.wall_time();

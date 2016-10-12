@@ -12,6 +12,7 @@ using namespace dealii;
 
 #include "PreconditionerNavierStokes.h"
 #include "NewtonSolver.h"
+#include "DGNavierStokesBase.h"
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 class DGNavierStokesCoupled;
@@ -23,7 +24,7 @@ public:
   typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::value_type value_type;
 
   DGNavierStokesCoupled(parallel::distributed::Triangulation<dim> const &triangulation,
-                        InputParametersNavierStokes const               &parameter)
+                        InputParametersNavierStokes<dim> const          &parameter)
     :
     DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>(triangulation,parameter),
     sum_alphai_ui(nullptr),
@@ -176,7 +177,7 @@ setup_solvers ()
       solver_data.use_preconditioner = true;
     }
 
-    linear_solver.reset(new GMRESSolver<DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>,
+    linear_solver.reset(new GMRESSolverNavierStokes<DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>,
                                         PreconditionerNavierStokesBase<value_type>,
                                         parallel::distributed::BlockVector<value_type> >
         (*this,*preconditioner,solver_data));
@@ -187,6 +188,7 @@ setup_solvers ()
     solver_data.max_iter = this->param.max_iter_linear;
     solver_data.solver_tolerance_abs = this->param.abs_tol_linear;
     solver_data.solver_tolerance_rel = this->param.rel_tol_linear;
+    solver_data.max_n_tmp_vectors = this->param.max_n_tmp_vectors;
 
     if(this->param.preconditioner_linearized_navier_stokes == PreconditionerLinearizedNavierStokes::BlockDiagonal ||
        this->param.preconditioner_linearized_navier_stokes == PreconditionerLinearizedNavierStokes::BlockTriangular ||
@@ -195,7 +197,7 @@ setup_solvers ()
       solver_data.use_preconditioner = true;
     }
 
-    linear_solver.reset(new FGMRESSolver<DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>,
+    linear_solver.reset(new FGMRESSolverNavierStokes<DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>,
                                          PreconditionerNavierStokesBase<value_type>,
                                          parallel::distributed::BlockVector<value_type> >
         (*this,*preconditioner,solver_data));

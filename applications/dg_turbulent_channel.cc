@@ -74,63 +74,109 @@
 #include "PostProcessorXWall.h"
 #include "PrintInputParameters.h"
 
-const unsigned int FE_DEGREE = 5;
-const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
+const unsigned int FE_DEGREE = 3;
+const unsigned int FE_DEGREE_P = FE_DEGREE-1;//FE_DEGREE-1;
 const unsigned int FE_DEGREE_XWALL = 1;
-const unsigned int N_Q_POINTS_1D_XWALL = 25;
-const unsigned int DIMENSION = 2; // DIMENSION >= 2
+const unsigned int N_Q_POINTS_1D_XWALL = 1;
+const unsigned int DIMENSION = 3; // DIMENSION >= 2
 const unsigned int REFINE_STEPS_SPACE_MIN = 3;
 const unsigned int REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
 const unsigned int REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
-const double GRID_STRETCH_FAC = 0.001;
+const double GRID_STRETCH_FAC = 1.8;
 
-void InputParametersNavierStokes::set_input_parameters()
+template<int dim>
+void InputParametersNavierStokes<dim>::set_input_parameters()
 {
-  output_prefix = "ch395_l3_k5k1_gt0_sa";
-  cfl = 0.1;
-  viscosity = 1./395.;
-
   //xwall
   variabletauw = true;
   dtauw = 1.;
-  ml = 1.;
-  max_wdist_xwall = 0.25;
+  ml = 0.;
+  max_wdist_xwall = -0.25;
 
-  //dual splitting scheme
+  // PHYSICAL QUANTITIES
+  start_time = 0.0;
+  end_time = 50.;
+  viscosity = 1./180.;
+
+  // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
   equation_type = EquationType::NavierStokes;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
-  projection_type = ProjectionType::DivergencePenalty;
-  order_time_integrator = 3;
+  formulation_viscous_term = FormulationViscousTerm::DivergenceFormulation;
+  right_hand_side = true;
 
-  //xwall specific
-  spatial_discretization = SpatialDiscretization::DGXWall;
-  IP_formulation_viscous = InteriorPenaltyFormulation::NIPG;
-  solver_viscous = SolverViscous::GMRES;
-
+  // TEMPORAL DISCRETIZATION
+  temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
-  formulation_viscous_term = FormulationViscousTerm::DivergenceFormulation; //also default
+
+  // TEMPORAL DISCRETIZATION
+  temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
+  max_velocity = 22.0;
+  cfl = 1.0;
+  order_time_integrator = 3;
+  start_with_low_order = true;
+
+  // SPATIAL DISCRETIZATION
+  spatial_discretization = SpatialDiscretization::DG;
+
+  IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
+
   divu_integrated_by_parts = true;
+  divu_use_boundary_data = true;
   gradp_integrated_by_parts = true;
+  gradp_use_boundary_data = true;
   pure_dirichlet_bc = true;
-  output_solver_info_every_timesteps = 1e1;
 
-  end_time = 50.;
-  output_start_time = 0.;
-  output_interval_time = 1.;
-  statistics_start_time = 49.;
-  restart_every_timesteps = 1e9;
-  restart_interval_time = 1.e9;
+  // HIGH-ORDER DUAL SPLITTING SCHEME
+  projection_type = ProjectionType::DivergencePenalty;
 
-  max_velocity = 15.;
+  solver_viscous = SolverViscous::GMRES;
 
   //solver tolerances
   rel_tol_pressure = 1.e-4;
   rel_tol_projection = 1.e-5;
   rel_tol_viscous = 1.e-4;
 
+  // COUPLED NAVIER-STOKES SOLVER
+
+  // nonlinear solver (Newton solver)
+  abs_tol_newton = 1.e-12;
+  rel_tol_newton = 1.e-4;
+  max_iter_newton = 1e2;
+
+  // linear solver
+  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;
+  abs_tol_linear = 1.e-12;
+  rel_tol_linear = 1.e-4;
+  max_iter_linear = 1e4;
+  max_n_tmp_vectors = 100;
+
+  // preconditioning linear solver
+  preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
+
+  // preconditioner velocity/momentum block
+  momentum_preconditioner = MomentumPreconditioner::InverseMassMatrix;
+  solver_momentum_preconditioner = SolverMomentumPreconditioner::GeometricMultigridVCycle;
+  rel_tol_solver_momentum_preconditioner = 1.e-3;
+
+  // preconditioner Schur-complement block
+  schur_complement_preconditioner = SchurComplementPreconditioner::PressureConvectionDiffusion;
+  discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
+  solver_schur_complement_preconditioner = SolverSchurComplementPreconditioner::GeometricMultigridVCycle;
+  rel_tol_solver_schur_complement_preconditioner = 1.e-6;
+
+  // OUTPUT AND POSTPROCESSING
+  output_data.output_prefix = "ch180_l3_k3_gt18";
+  output_data.write_output = true;
+  output_data.output_start_time = 0.;
+  output_data.output_interval_time = 1.;
+  output_solver_info_every_timesteps = 1e1;
+  statistics_start_time = 30.;
+  restart_every_timesteps = 1e9;
+  restart_interval_time = 1.e9;
 }
 
   template<int dim>
@@ -267,22 +313,41 @@ void InputParametersNavierStokes::set_input_parameters()
   template<int dim>
   double PressureBC_dudt<dim>::value(const Point<dim> &,const unsigned int ) const
   {
-  double result = 0.0;
-  return result;
+    double result = 0.0;
+    return result;
   }
 
   template <int dim>
   Point<dim> grid_transform (const Point<dim> &in);
 
+  struct PostProcessorChannelData
+  {
+    PostProcessorChannelData()
+      :
+      statistics_start_time(0.),
+      statistics_every(1),
+      viscosity(1.),
+      end_time(1.)
+    {}
+
+    double statistics_start_time;
+    unsigned int statistics_every;
+    double viscosity;
+    double end_time;
+
+  };
+
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-  class PostProcessorChannel: public PostProcessor<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>
+  class PostProcessorChannel: public PostProcessor<dim,fe_degree,fe_degree_p>
   {
   public:
 
     PostProcessorChannel(
                   std_cxx11::shared_ptr< const DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> >  ns_operation,
-                  InputParametersNavierStokes const &param_in):
-      PostProcessor<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>(ns_operation,param_in),
+                  InputParametersNavierStokes<dim> const &param,
+                  PostProcessorChannelData const & data_channel):
+      PostProcessor<dim,fe_degree,fe_degree_p>(),
+      data_ch(data_channel),
       statistics_ch(ns_operation->get_dof_handler_u())
     {
 
@@ -292,29 +357,30 @@ void InputParametersNavierStokes::set_input_parameters()
 
     void setup()
     {
-      PostProcessor<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>::setup();
+      PostProcessor<dim,fe_degree,fe_degree_p>::setup();
       statistics_ch.setup(&grid_transform<dim>);
     }
 
     virtual void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
-                           parallel::distributed::Vector<double> const &pressure,
-                           parallel::distributed::Vector<double> const &vorticity,
-                           parallel::distributed::Vector<double> const &divergence,
-                           double const time,
-                           unsigned int const time_step_number)
+                                   parallel::distributed::Vector<double> const &pressure,
+                                   parallel::distributed::Vector<double> const &vorticity,
+                                   parallel::distributed::Vector<double> const &divergence,
+                                   double const time,
+                                   unsigned int const time_step_number)
     {
-      PostProcessor<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>::do_postprocessing(velocity,pressure,vorticity,divergence,time,time_step_number);
+      PostProcessor<dim,fe_degree,fe_degree_p>::do_postprocessing(velocity,pressure,vorticity,divergence,time,time_step_number);
       const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
 
-      if(time > this->param.statistics_start_time-EPSILON && time_step_number % this->param.statistics_every == 0)
+      if(time > this->data_ch.statistics_start_time-EPSILON && time_step_number % this->data_ch.statistics_every == 0)
       {
         statistics_ch.evaluate(velocity);
-        if(time_step_number % 100 == 0 || time > (this->param.end_time-EPSILON))
-          statistics_ch.write_output(this->param.output_prefix,this->ns_operation_->get_viscosity());
+        if(time_step_number % 100 == 0 || time > (this->data_ch.end_time-EPSILON))
+          statistics_ch.write_output(this->pp_data.output_data.output_prefix,data_ch.viscosity);
       }
     };
 
   protected:
+    PostProcessorChannelData data_ch;
     StatisticsManager<dim> statistics_ch;
 
   };
@@ -326,11 +392,12 @@ void InputParametersNavierStokes::set_input_parameters()
 
     PostProcessorChannelXWall(
                   std_cxx11::shared_ptr< DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> >  ns_operation,
-                  InputParametersNavierStokes const &param_in):
-      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>(ns_operation,param_in),
+                  InputParametersNavierStokes<dim> const &param,
+                  PostProcessorChannelData const & data_channel):
+      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>(ns_operation,param),
+      data_ch(data_channel),
       statistics_ch(ns_operation->get_dof_handler_u())
-    {
-    }
+    {}
 
     virtual ~PostProcessorChannelXWall(){}
 
@@ -350,17 +417,18 @@ void InputParametersNavierStokes::set_input_parameters()
       PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>::do_postprocessing(velocity,pressure,vorticity,divergence,time,time_step_number);
       const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
 
-      if(time > this->param.statistics_start_time-EPSILON && time_step_number % this->param.statistics_every == 0)
+      if(time > this->data_ch.statistics_start_time-EPSILON && time_step_number % this->data_ch.statistics_every == 0)
       {
         this->statistics_ch.evaluate_xwall(velocity,
                                         this->ns_operation_xw_->get_dof_handler_wdist(),
                                         this->ns_operation_xw_->get_fe_parameters(),
                                         this->ns_operation_xw_->get_viscosity());
-        if(time_step_number % 100 == 0 || time > (this->param.end_time-EPSILON))
-          this->statistics_ch.write_output(this->param.output_prefix,this->ns_operation_->get_viscosity());
+        if(time_step_number % 100 == 0 || time > (this->data_ch.end_time-EPSILON))
+          this->statistics_ch.write_output(this->pp_data.output_data.output_prefix,data_ch.viscosity);
       }
     };
   protected:
+    PostProcessorChannelData data_ch;
     StatisticsManager<dim> statistics_ch;
 
   };
@@ -387,13 +455,13 @@ void InputParametersNavierStokes::set_input_parameters()
     std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity;
     std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure;
 
-    InputParametersNavierStokes param;
+    InputParametersNavierStokes<dim> param;
 
     std_cxx11::shared_ptr<DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> > navier_stokes_operation;
 
-    std_cxx11::shared_ptr<PostProcessor<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> > postprocessor;
+    std_cxx11::shared_ptr<PostProcessor<dim, FE_DEGREE, FE_DEGREE_P> > postprocessor;
 
-    std_cxx11::shared_ptr<TimeIntBDF<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type> > time_integrator;
+    std_cxx11::shared_ptr<TimeIntBDFNavierStokes<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type> > time_integrator;
   };
 
   template<int dim>
@@ -425,6 +493,16 @@ void InputParametersNavierStokes::set_input_parameters()
     boundary_descriptor_velocity.reset(new BoundaryDescriptorNavierStokes<dim>());
     boundary_descriptor_pressure.reset(new BoundaryDescriptorNavierStokes<dim>());
 
+    bool use_adaptive_time_stepping = false;
+    if(param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
+      use_adaptive_time_stepping = true;
+
+    PostProcessorChannelData ch_data;
+    ch_data.statistics_every = param.statistics_every;
+    ch_data.statistics_start_time = param.statistics_start_time;
+    ch_data.viscosity = param.viscosity;
+    ch_data.end_time = param.end_time;
+
     if(param.spatial_discretization == SpatialDiscretization::DGXWall)
     {
       analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>(2*dim,param.start_time));
@@ -436,10 +514,11 @@ void InputParametersNavierStokes::set_input_parameters()
         navier_stokes_operation.reset(new DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
             (triangulation,param));
         // initialize postprocessor after initializing navier_stokes_operation
-        postprocessor.reset(new PostProcessorChannelXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,param));
+        postprocessor.reset(new PostProcessorChannelXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,param,ch_data));
         // initialize time integrator that depends on both navier_stokes_operation and postprocessor
         time_integrator.reset(new TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
-            navier_stokes_operation,postprocessor,param,refine_steps_time));
+            navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
+
       }
       else
       {
@@ -449,16 +528,16 @@ void InputParametersNavierStokes::set_input_parameters()
     else if(param.spatial_discretization == SpatialDiscretization::DG)
     {
       if(param.problem_type == ProblemType::Unsteady &&
-              param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+         param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
       {
         // initialize navier_stokes_operation
         navier_stokes_operation.reset(new DGNavierStokesDualSplitting<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
             (triangulation,param));
         // initialize postprocessor after initializing navier_stokes_operation
-        postprocessor.reset(new PostProcessorChannel<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,param));
+        postprocessor.reset(new PostProcessorChannel<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,param,ch_data));
         // initialize time integrator that depends on both navier_stokes_operation and postprocessor
         time_integrator.reset(new TimeIntBDFDualSplitting<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
-            navier_stokes_operation,postprocessor,param,refine_steps_time));
+            navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
       }
       else if(param.problem_type == ProblemType::Unsteady &&
               param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
@@ -467,10 +546,10 @@ void InputParametersNavierStokes::set_input_parameters()
         navier_stokes_operation.reset(new DGNavierStokesCoupled<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
             (triangulation,param));
         // initialize postprocessor after initializing navier_stokes_operation
-        postprocessor.reset(new PostProcessorChannel<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,param));
+        postprocessor.reset(new PostProcessorChannel<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,param,ch_data));
         // initialize time integrator that depends on both navier_stokes_operation and postprocessor
         time_integrator.reset(new TimeIntBDFCoupled<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
-            navier_stokes_operation,postprocessor,param,refine_steps_time));
+            navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
       }
     }
   }
@@ -568,11 +647,11 @@ void NavierStokesProblem<dim>::solve_problem(bool do_restart)
 
   navier_stokes_operation->setup_solvers();
 
-  PrintInputParams::print_solver_parameters(pcout,param);
-  PrintInputParams::print_turbulence_parameters(pcout,param,GRID_STRETCH_FAC);
-  PrintInputParams::print_linear_solver_tolerances_dual_splitting(pcout,param);
+  PrintInputParams::print_solver_parameters<dim>(pcout,param);
+  PrintInputParams::print_turbulence_parameters<dim>(pcout,param,GRID_STRETCH_FAC);
+  PrintInputParams::print_linear_solver_tolerances_dual_splitting<dim>(pcout,param);
   if(param.spatial_discretization == SpatialDiscretization::DGXWall)
-    PrintInputParams::print_xwall_parameters(pcout,param,N_Q_POINTS_1D_XWALL);
+    PrintInputParams::print_xwall_parameters<dim>(pcout,param,N_Q_POINTS_1D_XWALL);
 
   postprocessor->setup();
 

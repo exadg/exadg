@@ -11,6 +11,10 @@
 #include "MultigridInputParameters.h"
 #include "deal.II/base/conditional_ostream.h"
 #include "PrintFunctions.h"
+#include "../include/OutputDataNavierStokes.h"
+#include "ErrorCalculationData.h"
+#include "LiftAndDragData.h"
+#include "PressureDifferenceData.h"
 
 
 /**************************************************************************************/
@@ -94,7 +98,8 @@ enum class TimeStepCalculation
   Undefined,
   ConstTimeStepUserSpecified,
   ConstTimeStepCFL,
-  AdaptiveTimeStepCFL
+  AdaptiveTimeStepCFL,
+  ConstTimeStepMaxEfficiency
 };
 
 
@@ -230,6 +235,7 @@ enum class MomentumPreconditioner
   Undefined,
   None,
   InverseMassMatrix,
+  VelocityDiffusion,
   VelocityConvectionDiffusion
 };
 
@@ -304,7 +310,23 @@ enum class SolverSchurComplementPreconditioner
 
 // there are currently no enums for this section
 
+// mass conservation data
 
+struct MassConservationData
+{
+  MassConservationData()
+    :
+  calculate_mass_error(false),
+  start_time(std::numeric_limits<double>::max()),
+  sample_every_time_steps(std::numeric_limits<unsigned int>::max())
+  {}
+
+  bool calculate_mass_error;
+  double start_time;
+  unsigned int sample_every_time_steps;
+};
+
+template<int dim>
 class InputParametersNavierStokes
 {
 public:
@@ -329,6 +351,7 @@ public:
     calculation_of_time_step_size(TimeStepCalculation::Undefined),
     max_velocity(-1.),
     cfl(-1.),
+    c_eff(-1.),
     time_step_size(-1.),
     max_number_of_time_steps(std::numeric_limits<unsigned int>::max()),
     order_time_integrator(1),
@@ -432,16 +455,10 @@ public:
     print_input_parameters(false),
 
     // write output for visualization of results
-    write_output(false),
-    output_prefix("indexa"),
-    output_start_time(std::numeric_limits<double>::max()),
-    output_interval_time(std::numeric_limits<double>::max()),
-    compute_divergence(false),
+    output_data(OutputDataNavierStokes()),
 
     // calculation of error
-    analytical_solution_available(false),
-    error_calc_start_time(std::numeric_limits<double>::max()),
-    error_calc_interval_time(std::numeric_limits<double>::max()),
+    error_data(ErrorCalculationData()),
 
     // output of solver information
     output_solver_info_every_timesteps(1),
@@ -450,7 +467,16 @@ public:
     write_restart(false),
     restart_interval_time(std::numeric_limits<double>::max()),
     restart_interval_wall_time(std::numeric_limits<double>::max()),
-    restart_every_timesteps(std::numeric_limits<unsigned int>::max())
+    restart_every_timesteps(std::numeric_limits<unsigned int>::max()),
+
+    // lift and drag
+    lift_and_drag_data(LiftAndDragData()),
+
+    // pressure difference
+    pressure_difference_data(PressureDifferenceData<dim>()),
+
+    // conservation of mass
+    mass_data(MassConservationData())
    {}
 
   void set_input_parameters();
@@ -478,6 +504,9 @@ public:
     }
     if(calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified)
       AssertThrow(time_step_size > 0.,ExcMessage("parameter must be defined"));
+    if(calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepMaxEfficiency)
+      AssertThrow(c_eff > 0.,ExcMessage("parameter must be defined"));
+
 
 
     // SPATIAL DISCRETIZATION
@@ -513,6 +542,7 @@ public:
     // TURBULENCE
 
     // OUTPUT AND POSTPROCESSING
+
   }
 
 
@@ -644,7 +674,8 @@ public:
     std::string str_calc_time_step[] = { "Undefined",
                                          "Constant time step (user specified)",
                                          "Constant time step (CFL condition)",
-                                         "Adaptive time step (CFL condition)" };
+                                         "Adaptive time step (CFL condition)",
+                                         "Constant time step (max. efficiency)"};
 
     print_parameter(pcout,
                     "Calculation of time step size",
@@ -756,7 +787,9 @@ public:
     {   
       std::string str_multigrid_coarse_ppe[] = { "Chebyshev smoother",
                                                  "PCG - no preconditioner",
-                                                 "PCG - Jacobi preconditioner" };
+                                                 "PCG - Jacobi preconditioner",
+                                                 "GMRES - No preconditioner",
+                                                 "GMRES - Jacobi preconditioner"};
   
       print_parameter(pcout,"Smoother polynomial degree",multigrid_data_pressure_poisson.smoother_poly_degree);
       print_parameter(pcout,"Smoothing range",multigrid_data_pressure_poisson.smoother_smoothing_range);
@@ -846,7 +879,9 @@ public:
     {  
       std::string str_multigrid_coarse_viscous[] = { "Chebyshev smoother",
                                                      "PCG - no preconditioner",
-                                                     "PCG - Jacobi preconditioner" };
+                                                     "PCG - Jacobi preconditioner",
+                                                     "GMRES - No preconditioner",
+                                                     "GMRES - Jacobi preconditioner"};
   
       print_parameter(pcout,"Smoother polynomial degree",multigrid_data_viscous.smoother_poly_degree);
       print_parameter(pcout,"Smoothing range",multigrid_data_viscous.smoother_smoothing_range);
@@ -949,7 +984,10 @@ public:
 
       std::string str_multigrid_coarse_solver[] = { "Chebyshev smoother",
                                                     "PCG - no preconditioner",
-                                                    "PCG - Jacobi preconditioner" };
+                                                    "PCG - Jacobi preconditioner",
+                                                    "GMRES - No preconditioner",
+                                                    "GMRES - Jacobi preconditioner"};
+
       print_parameter(pcout,
                       "Multigrid coarse grid solver",
                       str_multigrid_coarse_solver[(int)multigrid_data_momentum_preconditioner.coarse_solver]);
@@ -1001,7 +1039,9 @@ public:
       
       std::string str_multigrid_coarse_solver[] = { "Chebyshev smoother",
                                                     "PCG - no preconditioner",
-                                                    "PCG - Jacobi preconditioner" };
+                                                    "PCG - Jacobi preconditioner",
+                                                    "GMRES - No preconditioner",
+                                                    "GMRES - Jacobi preconditioner"};
       print_parameter(pcout,
                       "Multigrid coarse grid solver",
                       str_multigrid_coarse_solver[(int)multigrid_data_schur_complement_preconditioner.coarse_solver]);
@@ -1022,26 +1062,10 @@ public:
           << "Output and postprocessing:" << std::endl;
    
     // output for visualization of results
-    print_parameter(pcout,"Write output",write_output);
-    if(write_output == true)
-    {
-      print_parameter(pcout,"Name of output files",output_prefix);
-      if(problem_type == ProblemType::Unsteady)
-      {
-        print_parameter(pcout,"Output start time",output_start_time);
-        print_parameter(pcout,"Output interval time",output_interval_time);
-      }
-      print_parameter(pcout,"Compute divergence",compute_divergence);
-    }
+    output_data.print(pcout, problem_type == ProblemType::Unsteady);
 
     // calculation of error
-    print_parameter(pcout,"Calculate error",analytical_solution_available);
-    if(analytical_solution_available == true &&
-       problem_type == ProblemType::Unsteady)
-    {
-      print_parameter(pcout,"Error calculation start time",error_calc_start_time);
-      print_parameter(pcout,"Error calculation interval time",error_calc_interval_time);
-    }
+    error_data.print(pcout, problem_type == ProblemType::Unsteady);
      
     // output of solver information
     if(problem_type == ProblemType::Unsteady)
@@ -1123,6 +1147,11 @@ public:
   // cfl number: note that this cfl number is the first in a series of cfl numbers
   // when performing temporal convergence tests, i.e., cfl_real = cfl, cfl/2, cfl/4, ...
   double cfl;
+
+  // C_eff: constant that has to be specified for time step calculation method
+  // MaxEfficiency, which means that the time step is selected such that the errors of
+  // the temporal and spatial discretization are comparable
+  double c_eff;
 
   // user specified time step size:  note that this time_step_size is the first
   // in a series of time_step_size's when performing temporal convergence tests,
@@ -1334,29 +1363,11 @@ public:
   // print input parameters at the beginning of the simulation
   bool print_input_parameters;
 
-  // write output
-  bool write_output;
+  // writing output for visualization
+  OutputDataNavierStokes output_data;
 
-  // name of generated output files
-  std::string output_prefix;
-
-  // before then no output will be written
-  double output_start_time;
-
-  // specifies the time interval in which output is written
-  double output_interval_time;
-
-  // compute divergence of intermediate velocity field to verify divergence penalty method
-  bool compute_divergence;
-
-  // to calculate the error an analytical solution to the problem has to be available
-  bool analytical_solution_available;
-
-  // before then no error calculation will be performed
-  double error_calc_start_time;
-
-  // specifies the time interval in which error calculation is performed
-  double error_calc_interval_time;
+  // calculating errors
+  ErrorCalculationData error_data;
 
   // show solver performance (wall time, number of iterations) every ... timesteps
   unsigned int output_solver_info_every_timesteps;
@@ -1372,6 +1383,15 @@ public:
 
   // specifies the restart interval via number of time steps
   unsigned int restart_every_timesteps;
+
+  // computation of lift and drag coefficients
+  LiftAndDragData lift_and_drag_data;
+
+  // computation of pressure difference between two points
+  PressureDifferenceData<dim> pressure_difference_data;
+
+  // analysis of mass conservation
+  MassConservationData mass_data;
 };
 
 #endif /* INCLUDE_INPUTPARAMETERSNAVIERSTOKES_H_ */

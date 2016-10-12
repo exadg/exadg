@@ -92,14 +92,31 @@ public:
       // fill dirichlet_boundary set
       fill_dbc_set(boundary_descriptor);
 
+//      preconditioner.reset(new MyMultigridPreconditioner<dim,value_type,
+//                                ScalarConvDiffOperators::HelmholtzOperator<dim,fe_degree,Number>,
+//                                ScalarConvDiffOperators::HelmholtzOperatorData<dim> >
+//                               (mg_data,
+//                                dof_handler,
+//                                mapping,
+//                                helmholtz_operator_data,
+//                                dirichlet_boundary));
+
       preconditioner.reset(new MyMultigridPreconditioner<dim,value_type,
                                 ScalarConvDiffOperators::HelmholtzOperator<dim,fe_degree,Number>,
-                                ScalarConvDiffOperators::HelmholtzOperatorData<dim> >
-                               (mg_data,
-                                dof_handler,
-                                mapping,
-                                helmholtz_operator_data,
-                                dirichlet_boundary));
+                                ScalarConvDiffOperators::HelmholtzOperatorData<dim> > ());
+
+      std_cxx11::shared_ptr<MyMultigridPreconditioner<dim,value_type,
+                            ScalarConvDiffOperators::HelmholtzOperator<dim,fe_degree,Number>,
+                            ScalarConvDiffOperators::HelmholtzOperatorData<dim> > >
+        mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditioner<dim,value_type,
+                                                      ScalarConvDiffOperators::HelmholtzOperator<dim,fe_degree,Number>,
+                                                      ScalarConvDiffOperators::HelmholtzOperatorData<dim> > >(preconditioner);
+
+      mg_preconditioner->initialize(mg_data,
+                                    dof_handler,
+                                    mapping,
+                                    helmholtz_operator_data,
+                                    dirichlet_boundary);
     }
     else
     {
@@ -167,11 +184,6 @@ public:
     VectorTools::interpolate(dof_handler, *(field_functions->analytical_solution), src);
   }
 
-  // getters
-  MatrixFree<dim,value_type> const & get_data() const
-  {
-    return data;
-  }
 
   void evaluate(parallel::distributed::Vector<value_type>       &dst,
                 parallel::distributed::Vector<value_type> const &src,
@@ -340,9 +352,20 @@ public:
     invert_diagonal(diagonal);
   }
 
+  // getters
+  MatrixFree<dim,value_type> const & get_data() const
+  {
+    return data;
+  }
+
   Mapping<dim> const & get_mapping() const
   {
     return mapping;
+  }
+
+  DoFHandler<dim> const & get_dof_handler() const
+  {
+    return dof_handler;
   }
 
 private:

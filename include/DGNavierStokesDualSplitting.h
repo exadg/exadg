@@ -32,7 +32,7 @@ public:
       DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::is_xwall> FEFaceEval_Pressure_Velocity_nonlinear;
 
   DGNavierStokesDualSplitting(parallel::distributed::Triangulation<dim> const &triangulation,
-                              InputParametersNavierStokes const               &parameter)
+                              InputParametersNavierStokes<dim> const          &parameter)
     :
     DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>(triangulation,parameter),
     projection_operator(nullptr),
@@ -308,12 +308,31 @@ setup_pressure_poisson_solver ()
     // use single precision for multigrid
     typedef float Number;
 
-    preconditioner_pressure_poisson.reset(new MyMultigridPreconditioner<dim,value_type,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> >(
-        mg_data,
-        this->dof_handler_p,
-        this->mapping,
-        laplace_operator_data,
-        laplace_operator_data.dirichlet_boundaries));
+//    preconditioner_pressure_poisson.reset(new MyMultigridPreconditioner<dim,value_type,
+//                                                LaplaceOperator<dim,Number>,
+//                                                LaplaceOperatorData<dim> >
+//       (mg_data,
+//        this->dof_handler_p,
+//        this->mapping,
+//        laplace_operator_data,
+//        laplace_operator_data.dirichlet_boundaries));
+
+    preconditioner_pressure_poisson.reset(new MyMultigridPreconditioner<dim,value_type,
+                                                LaplaceOperator<dim,Number>,
+                                                LaplaceOperatorData<dim> >());
+
+    std_cxx11::shared_ptr<MyMultigridPreconditioner<dim,value_type,
+                            LaplaceOperator<dim,Number>,
+                            LaplaceOperatorData<dim> > >
+      mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditioner<dim,value_type,
+                                                      LaplaceOperator<dim,Number>,
+                                                      LaplaceOperatorData<dim> > >(preconditioner_pressure_poisson);
+
+    mg_preconditioner->initialize(mg_data,
+                                  this->dof_handler_p,
+                                  this->mapping,
+                                  laplace_operator_data,
+                                  laplace_operator_data.dirichlet_boundaries);
   }
   else
   {
@@ -451,7 +470,7 @@ setup_helmholtz_solver ()
 
   helmholtz_operator_data.dof_index = static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
                                         (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity);
-  helmholtz_operator_data.mass_matrix_coefficient = this->scaling_factor_time_derivative_term;
+  helmholtz_operator_data.scaling_factor_time_derivative_term = this->scaling_factor_time_derivative_term;
   helmholtz_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
 
   helmholtz_operator.initialize(this->data,helmholtz_operator_data,this->mass_matrix_operator,this->viscous_operator);
@@ -539,13 +558,33 @@ setup_helmholtz_preconditioner (HelmholtzOperatorData<dim> &helmholtz_operator_d
     // use single precision for multigrid
     typedef float Number;
 
-    helmholtz_preconditioner.reset(new MyMultigridPreconditioner<dim,value_type,HelmholtzOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>, HelmholtzOperatorData<dim> >(
-        mg_data,
-        this->dof_handler_u,
-        this->mapping,
-        helmholtz_operator_data,
-        this->dirichlet_boundary,
-        this->fe_param));
+//    helmholtz_preconditioner.reset(new MyMultigridPreconditioner<dim,value_type,
+//                                         HelmholtzOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>,
+//                                         HelmholtzOperatorData<dim> >
+//       (mg_data,
+//        this->dof_handler_u,
+//        this->mapping,
+//        helmholtz_operator_data,
+//        this->dirichlet_boundary,
+//        this->fe_param));
+
+    helmholtz_preconditioner.reset(new MyMultigridPreconditioner<dim,value_type,
+                                         HelmholtzOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>,
+                                         HelmholtzOperatorData<dim> > ());
+
+    std_cxx11::shared_ptr<MyMultigridPreconditioner<dim,value_type,
+                            HelmholtzOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>,
+                            HelmholtzOperatorData<dim> > >
+      mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditioner<dim,value_type,
+                                                      HelmholtzOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>,
+                                                      HelmholtzOperatorData<dim> > >(helmholtz_preconditioner);
+
+    mg_preconditioner->initialize(mg_data,
+                                  this->dof_handler_u,
+                                  this->mapping,
+                                  helmholtz_operator_data,
+                                  this->dirichlet_boundary,
+                                  this->fe_param);
   }
 }
 
@@ -1001,7 +1040,7 @@ solve_viscous (parallel::distributed::Vector<value_type>       &dst,
                const parallel::distributed::Vector<value_type> &src)
 {
   // update helmholtz_operator
-  helmholtz_operator.set_mass_matrix_coefficient(this->scaling_factor_time_derivative_term);
+  helmholtz_operator.set_scaling_factor_time_derivative_term(this->scaling_factor_time_derivative_term);
   // viscous_operator.set_constant_viscosity(viscosity);
   // viscous_operator.set_variable_viscosity(viscosity);
 

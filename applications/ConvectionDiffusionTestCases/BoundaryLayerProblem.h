@@ -80,14 +80,15 @@ void InputParametersConvDiff::set_input_parameters()
 
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
-  write_output = true;
-  output_prefix = "boundary_layer_problem";
-  output_start_time = start_time;
-  output_interval_time = (end_time-start_time)/20;
+  output_data.write_output = true;
+  output_data.output_prefix = "boundary_layer_problem";
+  output_data.output_start_time = start_time;
+  output_data.output_interval_time = (end_time-start_time)/20;
+  output_data.number_of_patches = FE_DEGREE;
 
-  analytical_solution_available = true;
-  error_calc_start_time = start_time;
-  error_calc_interval_time = output_interval_time;
+  error_data.analytical_solution_available = true;
+  error_data.error_calc_start_time = start_time;
+  error_data.error_calc_interval_time = output_data.output_interval_time;
 
   output_solver_info_every_timesteps = 1e6;
 }
@@ -287,5 +288,10 @@ void set_field_functions(std_cxx11::shared_ptr<FieldFunctionsConvDiff<dim> > fie
   field_functions->velocity = velocity;
 }
 
+template<int dim>
+void set_analytical_solution(std_cxx11::shared_ptr<AnalyticalSolutionConvDiff<dim> > analytical_solution)
+{
+  analytical_solution->solution.reset(new AnalyticalSolution<dim>(1));
+}
 
 #endif /* APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_BOUNDARYLAYERPROBLEM_H_ */

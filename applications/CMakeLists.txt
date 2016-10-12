@@ -10,12 +10,14 @@ INCLUDE_DIRECTORIES(
         )
 
 SET( SOURCE_FILES
-     DGNavierStokesProblem.cc
+     SteadyNavierStokes.cc
+     UnsteadyNavierStokesDualSplitting.cc
+     UnsteadyNavierStokesCoupledSolver.cc
      multigrid_solver.cc
      fe_flow_past_cylinder.cc
      fe_turbulent_channel.cc
      fe_poiseuille.cc
-     #dg_turbulent_channel.cc
+     dg_turbulent_channel.cc
      #dg_periodic_hill.cc
      DGConvectionDiffusionProblem.cc
      )

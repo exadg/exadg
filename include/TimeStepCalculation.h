@@ -11,7 +11,7 @@
 #define CFL_BASED_ON_MINIMUM_COMPONENT
 
 
-double calculate_const_time_step(double const dt,
+double calculate_const_time_step(double const       dt,
                                  unsigned int const n_refine_time)
 {
   double time_step = dt/std::pow(2.,n_refine_time);
@@ -91,6 +91,25 @@ double calculate_const_time_step_diff(double const       diffusion_number,
 {
   // diffusion_number/p^{exponent_fe_degree} = diffusivity * time_step / h²
   double time_step = diffusion_number/pow(fe_degree,exponent_fe_degree) * pow(global_min_cell_diameter,2.0) / diffusivity;
+
+  return time_step;
+}
+
+/*
+ *  calculates time step such that the spatial and temporal error are of the
+ *  same order of magnitude
+ *  spatial error: e = C_h * h^{p+1}
+ *  temporal error: e = C_dt * dt^{n} (n: order of time integration method)
+ */
+double calculate_time_step_max_efficiency(double const       c_eff,
+                                          double const       global_min_cell_diameter,
+                                          unsigned int const fe_degree,
+                                          unsigned int const order_time_integration,
+                                          unsigned int const n_refine_time)
+{
+
+  double exponent = (double)(fe_degree+1)/order_time_integration;
+  double time_step = c_eff * std::pow(global_min_cell_diameter,exponent)/std::pow(2.,n_refine_time);
 
   return time_step;
 }

@@ -123,12 +123,12 @@
   };
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-  class PostProcessorXWall: public PostProcessor<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>
+  class PostProcessorXWall: public PostProcessor<dim,fe_degree,fe_degree_p>
   {
   public:
     PostProcessorXWall(std_cxx11::shared_ptr<DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> >  ns_operation,
-                       InputParametersNavierStokes const &param_in):
-      PostProcessor<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>(ns_operation,param_in),
+                       InputParametersNavierStokes<dim> const &param_in):
+      PostProcessor<dim,fe_degree,fe_degree_p>(),
       ns_operation_xw_(std::dynamic_pointer_cast<DGNavierStokesDualSplittingXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> > (ns_operation))
     {
     }
@@ -140,14 +140,14 @@
                            double const time,
                            unsigned int const time_step_number)
     {
-      this->time_ = time;
-      this->time_step_number_ = time_step_number;
+      this->time = time;
+      this->time_step_number = time_step_number;
 
       const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
-      if( time > (this->param.output_start_time + this->output_counter_* this->param.output_interval_time - EPSILON))
+      if( time > (this->pp_data.output_data.output_start_time + this->output_counter* this->pp_data.output_data.output_interval_time - EPSILON))
       {
         write_output(velocity,pressure,vorticity,divergence);
-        ++(this->output_counter_);
+        ++(this->output_counter);
       }
     };
 protected:
@@ -168,27 +168,27 @@ private:
                parallel::distributed::Vector<double> const &divergence)
  {
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-    pcout << std::endl << "OUTPUT << Write data at time t = " << std::scientific << std::setprecision(4) << this->time_ << std::endl;
+    pcout << std::endl << "OUTPUT << Write data at time t = " << std::scientific << std::setprecision(4) << this->time << std::endl;
 
     // velocity + xwall dofs
-    const FESystem<dim> joint_fe (this->ns_operation_->get_fe_u(), 1, //velocity
+    const FESystem<dim> joint_fe (this->dof_handler_velocity->get_fe(), 1, //velocity
                                   ns_operation_xw_->get_fe_wdist(), 1, //wdist
                                   ns_operation_xw_->get_fe_wdist(), 1, //tauw
-                                  this->ns_operation_->get_fe_u(), 1 //vorticity
+                                  this->dof_handler_velocity->get_fe(), 1 //vorticity
                                   );
-    DoFHandler<dim> joint_dof_handler (this->ns_operation_->get_dof_handler_u().get_triangulation());
+    DoFHandler<dim> joint_dof_handler (this->dof_handler_velocity->get_triangulation());
     joint_dof_handler.distribute_dofs (joint_fe);
     IndexSet joint_relevant_set;
     DoFTools::extract_locally_relevant_dofs(joint_dof_handler, joint_relevant_set);
     parallel::distributed::Vector<double>
       joint_solution (joint_dof_handler.locally_owned_dofs(), joint_relevant_set, MPI_COMM_WORLD);
     std::vector<types::global_dof_index> loc_joint_dof_indices (joint_fe.dofs_per_cell),
-      loc_vel_dof_indices (this->ns_operation_->get_fe_u().dofs_per_cell),
+      loc_vel_dof_indices (this->dof_handler_velocity->get_fe().dofs_per_cell),
       loc_wdist_dof_indices(ns_operation_xw_->get_fe_wdist().dofs_per_cell);
     typename DoFHandler<dim>::active_cell_iterator
       joint_cell = joint_dof_handler.begin_active(),
       joint_endc = joint_dof_handler.end(),
-      vel_cell = this->ns_operation_->get_dof_handler_u().begin_active(),
+      vel_cell = this->dof_handler_velocity->begin_active(),
       wdist_cell = ns_operation_xw_->get_dof_handler_wdist().begin_active();
 
     for (; joint_cell != joint_endc; ++joint_cell, ++vel_cell
@@ -212,14 +212,14 @@ private:
               Assert (joint_fe.system_to_base_index(i).first.second == 0,
                       ExcInternalError());
               joint_solution (loc_joint_dof_indices[i]) =
-                  (*(this->ns_operation_->get_fe_parameters().wdist))
+                  (*(this->ns_operation_xw_->get_fe_parameters().wdist))
                 (loc_wdist_dof_indices[ joint_fe.system_to_base_index(i).second ]);
               break;
             case 2: //tauw, necessary to reconstruct velocity
               Assert (joint_fe.system_to_base_index(i).first.second == 0,
                       ExcInternalError());
               joint_solution (loc_joint_dof_indices[i]) =
-                  (*(this->ns_operation_->get_fe_parameters().tauw))
+                  (*(this->ns_operation_xw_->get_fe_parameters().tauw))
                 (loc_wdist_dof_indices[ joint_fe.system_to_base_index(i).second ]);
               break;
             case 3: //vorticity
@@ -236,14 +236,14 @@ private:
 
   joint_solution.update_ghost_values();
 
-  Postprocessor<dim> postprocessor (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD),this->ns_operation_->get_viscosity());
+  Postprocessor<dim> postprocessor (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD),this->ns_operation_xw_->get_viscosity());
 
   DataOut<dim> data_out;
   data_out.attach_dof_handler(joint_dof_handler);
   data_out.add_data_vector(joint_solution, postprocessor);
 
   pressure.update_ghost_values();
-  data_out.add_data_vector (this->ns_operation_->get_dof_handler_p(),pressure, "p");
+  data_out.add_data_vector (*(this->dof_handler_pressure),pressure, "p");
   {
     std_cxx11::shared_ptr< const DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > nsa;
     nsa = std::dynamic_pointer_cast<const DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_xw_);
@@ -253,7 +253,7 @@ private:
     }
   }
 
-  if(this->param.compute_divergence == true)
+  if(this->pp_data.output_data.compute_divergence == true)
   {
     AssertThrow(false,ExcMessage("currently not supported"));
 //    std::vector<std::string> divergence_names (dim, "divergence");
@@ -264,14 +264,14 @@ private:
 
   std::ostringstream filename;
   filename << "output/"
-           << this->param.output_prefix
+           << this->pp_data.output_data.output_prefix
            << "_Proc"
            << Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)
            << "_"
-           << this->output_counter_
+           << this->output_counter
            << ".vtu";
 
-  data_out.build_patches (this->ns_operation_->get_mapping(),5, DataOut<dim>::curved_inner_cells);
+  data_out.build_patches (*(this->mapping),this->pp_data.output_data.number_of_patches, DataOut<dim>::curved_inner_cells);
 
   std::ofstream output (filename.str().c_str());
   data_out.write_vtu (output);
@@ -282,16 +282,16 @@ private:
     for (unsigned int i=0;i<Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);++i)
     {
       std::ostringstream filename;
-      filename << this->param.output_prefix
+      filename << this->pp_data.output_data.output_prefix
                << "_Proc"
                << i
                << "_"
-               << this->output_counter_
+               << this->output_counter
                << ".vtu";
 
         filenames.push_back(filename.str().c_str());
     }
-    std::string master_name = "output/" + this->param.output_prefix + "_" + Utilities::int_to_string(this->output_counter_) + ".pvtu";
+    std::string master_name = "output/" + this->pp_data.output_data.output_prefix + "_" + Utilities::int_to_string(this->output_counter) + ".pvtu";
     std::ofstream master_output (master_name.c_str());
     data_out.write_pvtu_record (master_output, filenames);
   }

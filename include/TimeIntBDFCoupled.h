@@ -17,8 +17,8 @@ public:
   TimeIntBDFCoupled(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
                       fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
                     std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
-                    fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >    postprocessor_in,
-                    InputParametersNavierStokes const                       &param_in,
+                      fe_degree_p> >                                        postprocessor_in,
+                    InputParametersNavierStokes<dim> const                  &param_in,
                     unsigned int const                                      n_refine_time_in,
                     bool const                                              use_adaptive_time_stepping)
     :
@@ -144,7 +144,7 @@ initialize_vectors()
   ns_operation_coupled->initialize_vector_vorticity(vorticity);
 
   // divergence
-  if(this->param.compute_divergence == true)
+  if(this->param.output_data.compute_divergence == true)
     ns_operation_coupled->initialize_vector_velocity(divergence);
 }
 
@@ -188,7 +188,7 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 calculate_divergence()
 {
-  if(this->param.compute_divergence == true)
+  if(this->param.output_data.compute_divergence == true)
   {
     ns_operation_coupled->compute_divergence(divergence, solution[0].block(0));
   }
@@ -349,7 +349,7 @@ solve_timestep()
   // special case: pure Dirichlet BC's
   if(this->param.pure_dirichlet_bc)
   {
-    if(this->param.analytical_solution_available == true)
+    if(this->param.error_data.analytical_solution_available == true)
       ns_operation_coupled->shift_pressure(solution_np.block(1));
     else // analytical_solution_available == false
       ns_operation_coupled->apply_zero_mean(solution_np.block(1));

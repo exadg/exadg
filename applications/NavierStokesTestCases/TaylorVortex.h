@@ -40,7 +40,8 @@ unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 // set problem specific parameters like physical dimensions, etc.
 const double VISCOSITY = 0.01;
 
-void InputParametersNavierStokes::set_input_parameters()
+template<int dim>
+void InputParametersNavierStokes<dim>::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
@@ -94,7 +95,7 @@ void InputParametersNavierStokes::set_input_parameters()
   // pressure Poisson equation
   IP_factor_pressure = 1.0;
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
-  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
+  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
   abs_tol_pressure = 1.e-20;
   rel_tol_pressure = 1.e-6;
 
@@ -115,7 +116,7 @@ void InputParametersNavierStokes::set_input_parameters()
   // viscous step
   solver_viscous = SolverViscous::PCG;
   preconditioner_viscous = PreconditionerViscous::GeometricMultigrid;
-  multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
+  multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
   abs_tol_viscous = 1.e-20;
   rel_tol_viscous = 1.e-6;
 
@@ -151,15 +152,17 @@ void InputParametersNavierStokes::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
 
   // write output for visualization of results
-  output_prefix = "taylor_vortex";
-  output_start_time = start_time;
-  output_interval_time = (end_time-start_time)/20;
-  compute_divergence = true;
+  output_data.write_output = true;
+  output_data.output_prefix = "taylor_vortex";
+  output_data.output_start_time = start_time;
+  output_data.output_interval_time = (end_time-start_time)/20;
+  output_data.compute_divergence = true;
+  output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error
-  analytical_solution_available = true;
-  error_calc_start_time = start_time;
-  error_calc_interval_time = output_interval_time;
+  error_data.analytical_solution_available = true;
+  error_data.error_calc_start_time = start_time;
+  error_data.error_calc_interval_time = output_data.output_interval_time;
 
   // output of solver information
   output_solver_info_every_timesteps = 1e5;
@@ -418,6 +421,11 @@ void set_field_functions(std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> >
   field_functions->right_hand_side = right_hand_side;
 }
 
-
+template<int dim>
+void set_analytical_solution(std_cxx11::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
+{
+  analytical_solution->velocity.reset(new AnalyticalSolutionVelocity<dim>());
+  analytical_solution->pressure.reset(new AnalyticalSolutionPressure<dim>());
+}
 
 #endif /* APPLICATIONS_NAVIERSTOKESTESTCASES_TAYLORVORTEX_H_ */

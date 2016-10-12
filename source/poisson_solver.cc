@@ -461,7 +461,9 @@ void LaplaceOperator<dim,Number>::vmult_add(parallel::distributed::Vector<Number
     }
 
   if (apply_mean_value_constraint_in_matvec)
+  {
     apply_nullspace_projection(dst);
+  }
 }
 
 
@@ -611,10 +613,10 @@ template <int dim, typename Number>
 void LaplaceOperator<dim,Number>::apply_nullspace_projection(parallel::distributed::Vector<Number> &vec) const
 {
   if (needs_mean_value_constraint)
-    {
-      const Number mean_val = vec.mean_value();
-      vec.add(-mean_val);
-    }
+  {
+    const Number mean_val = vec.mean_value();
+    vec.add(-mean_val);
+  }
 }
 
 

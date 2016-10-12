@@ -141,16 +141,16 @@ private:
 };
 
 template<typename Operator>
-class MGCoarseIterative : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type> >
+class MGCoarsePCG : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type> >
 {
 public:
-  MGCoarseIterative(const Operator &matrix,
-                    const bool     use_jacobi)
+  MGCoarsePCG(const Operator &matrix,
+              const bool     use_preconditioner_in)
     :
     coarse_matrix (matrix),
-    use_jacobi_preconditioner(use_jacobi)
+    use_preconditioner(use_preconditioner_in)
   {
-    if (use_jacobi_preconditioner)
+    if (use_preconditioner)
     {
       preconditioner.reset(new JacobiPreconditioner<typename Operator::value_type,Operator>(coarse_matrix));
       std_cxx11::shared_ptr<JacobiPreconditioner<typename Operator::value_type,Operator> > precon =
@@ -159,34 +159,115 @@ public:
     }
   }
 
-  virtual ~MGCoarseIterative()
+  virtual ~MGCoarsePCG()
   {}
+
+  void update_preconditioner(const Operator &matrix)
+  {
+    if(use_preconditioner)
+    {
+      std_cxx11::shared_ptr<JacobiPreconditioner<typename Operator::value_type,Operator> > precon =
+          std::dynamic_pointer_cast<JacobiPreconditioner<typename Operator::value_type,Operator> > (preconditioner);
+
+      precon->recalculate_diagonal(coarse_matrix);
+    }
+  }
 
   virtual void operator() (const unsigned int                                                 ,
                            parallel::distributed::Vector<typename Operator::value_type>       &dst,
                            const parallel::distributed::Vector<typename Operator::value_type> &src) const
   {
-    ReductionControl solver_control (1e4, 1e-50, 1e-4);
-    //IterationNumberControl solver_control (10, 1e-15);
+    const double abs_tol = 1.e-20;
+    const double rel_tol = 1.e-6; //1.e-4;
+    ReductionControl solver_control (1e4, abs_tol, rel_tol);
 
     SolverCG<parallel::distributed::Vector<typename Operator::value_type> >
       solver_coarse (solver_control, solver_memory);
     typename VectorMemory<parallel::distributed::Vector<typename Operator::value_type> >::Pointer r(solver_memory);
     *r = src;
     coarse_matrix.apply_nullspace_projection(*r);
-    if (use_jacobi_preconditioner)
+    if (use_preconditioner)
       solver_coarse.solve (coarse_matrix, dst, *r, *preconditioner);
     else
       solver_coarse.solve (coarse_matrix, dst, *r, PreconditionIdentity());
 
-    // std::cout<<"Iterations coarse grid solver = "<<solver_control.last_step()<<std::endl;
+//    std::cout << "Iterations coarse grid solver = " << solver_control.last_step() << std::endl;
   }
 
 private:
   const Operator &coarse_matrix;
   std_cxx11::shared_ptr<PreconditionerBase<typename Operator::value_type> > preconditioner;
   mutable GrowingVectorMemory<parallel::distributed::Vector<typename Operator::value_type> > solver_memory;
-  const bool use_jacobi_preconditioner;
+  const bool use_preconditioner;
+};
+
+#include <deal.II/lac/solver_gmres.h>
+
+template<typename Operator>
+class MGCoarseGMRES : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type> >
+{
+public:
+  MGCoarseGMRES(const Operator &matrix,
+                const bool     use_preconditioner_in)
+    :
+    coarse_matrix (matrix),
+    use_preconditioner(use_preconditioner_in)
+  {
+    if (use_preconditioner)
+    {
+      preconditioner.reset(new JacobiPreconditioner<typename Operator::value_type,Operator>(coarse_matrix));
+      std_cxx11::shared_ptr<JacobiPreconditioner<typename Operator::value_type,Operator> > precon =
+          std::dynamic_pointer_cast<JacobiPreconditioner<typename Operator::value_type,Operator> > (preconditioner);
+      AssertDimension(precon->get_size_of_diagonal(), coarse_matrix.m());
+    }
+  }
+
+  virtual ~MGCoarseGMRES()
+  {}
+
+  void update_preconditioner(const Operator &underlying_operator)
+  {
+    if (use_preconditioner)
+    {
+      std_cxx11::shared_ptr<JacobiPreconditioner<typename Operator::value_type,Operator> > precon =
+          std::dynamic_pointer_cast<JacobiPreconditioner<typename Operator::value_type,Operator> > (preconditioner);
+
+      precon->recalculate_diagonal(underlying_operator);
+    }
+  }
+
+  virtual void operator() (const unsigned int                                                 ,
+                           parallel::distributed::Vector<typename Operator::value_type>       &dst,
+                           const parallel::distributed::Vector<typename Operator::value_type> &src) const
+  {
+    const double abs_tol = 1.e-20;
+    const double rel_tol = 1.e-5; //1.e-4;
+    ReductionControl solver_control (1e4, abs_tol, rel_tol);
+
+    typename SolverGMRES<parallel::distributed::Vector<typename Operator::value_type> >::AdditionalData additional_data;
+    additional_data.max_n_tmp_vectors = 100;
+    additional_data.right_preconditioning = true;
+
+    SolverGMRES<parallel::distributed::Vector<typename Operator::value_type> >
+      solver_coarse (solver_control, solver_memory, additional_data);
+
+    typename VectorMemory<parallel::distributed::Vector<typename Operator::value_type> >::Pointer r(solver_memory);
+    *r = src;
+    coarse_matrix.apply_nullspace_projection(*r);
+
+    if (use_preconditioner)
+      solver_coarse.solve (coarse_matrix, dst, *r, *preconditioner);
+    else
+      solver_coarse.solve (coarse_matrix, dst, *r, PreconditionIdentity());
+
+//    std::cout << "Iterations coarse grid solver = " << solver_control.last_step() << std::endl;
+  }
+
+private:
+  const Operator &coarse_matrix;
+  std_cxx11::shared_ptr<PreconditionerBase<typename Operator::value_type> > preconditioner;
+  mutable GrowingVectorMemory<parallel::distributed::Vector<typename Operator::value_type> > solver_memory;
+  const bool use_preconditioner;
 };
 
 
@@ -217,6 +298,7 @@ public:
   const PreconditionType &smoother;
   const bool is_empty;
 };
+
 
 namespace
 {
@@ -252,6 +334,61 @@ namespace
     }
 
     std::pair<double,double> eigenvalues;
+    if (eigenvalue_tracker.values.empty())
+      eigenvalues.first = eigenvalues.second = 1;
+    else
+    {
+      eigenvalues.first = eigenvalue_tracker.values.front();
+      eigenvalues.second = eigenvalue_tracker.values.back();
+    }
+    return eigenvalues;
+  }
+
+  template<typename Number>
+  struct EigenvalueTracker
+  {
+  public:
+    void slot(const std::vector<Number> &eigenvalues)
+    {
+      values = eigenvalues;
+    }
+
+    std::vector<Number> values;
+  };
+
+
+  // manually compute eigenvalues for the coarsest level for proper setup of the Chebyshev iteration
+  template <typename Operator>
+  std::pair<std::complex<double>,std::complex<double> >
+  compute_eigenvalues_gmres(const Operator &op,
+                            const parallel::distributed::Vector<typename Operator::value_type> &inverse_diagonal)
+  {
+    typedef typename Operator::value_type value_type;
+    parallel::distributed::Vector<value_type> left, right;
+    left.reinit(inverse_diagonal);
+    right.reinit(inverse_diagonal, true);
+    // NB: initialize rand in order to obtain "reproducible" results !!!
+    srand(1);
+    for (unsigned int i=0; i<right.local_size(); ++i)
+      right.local_element(i) = (double)rand()/RAND_MAX;
+    op.apply_nullspace_projection(right);
+
+    SolverControl control(10000, right.l2_norm()*1e-5);
+    EigenvalueTracker<std::complex<double> > eigenvalue_tracker;
+    SolverGMRES<parallel::distributed::Vector<value_type> > solver (control);
+    solver.connect_eigenvalues_slot(std_cxx11::bind(&EigenvalueTracker<std::complex<double> >::slot,
+                                                    &eigenvalue_tracker,
+                                                    std_cxx11::_1));
+    JacobiPreconditioner<value_type, Operator> preconditioner(op);
+    try
+    {
+      solver.solve(op, left, right, preconditioner);
+    }
+    catch (SolverControl::NoConvergence &)
+    {
+    }
+
+    std::pair<std::complex<double>,std::complex<double> > eigenvalues;
     if (eigenvalue_tracker.values.empty())
       eigenvalues.first = eigenvalues.second = 1;
     else
@@ -409,204 +546,100 @@ private:
 #include "FE_Parameters.h"
 
 template<int dim, typename value_type, typename Operator, typename OperatorData>
-class MyMultigridPreconditioner : public PreconditionerBase<value_type>
+class MyMultigridPreconditionerBase : public PreconditionerBase<value_type>
 {
 public:
-  MyMultigridPreconditioner(const MultigridData                &mg_data_in,
-                            const DoFHandler<dim>              &dof_handler,
-                            const Mapping<dim>                 &mapping,
-                            const OperatorData                 &operator_data_in,
-                            std::set<types::boundary_id> const &dirichlet_boundaries,
-                            FEParameters<dim> const            &fe_param = FEParameters<dim>())
+  MyMultigridPreconditionerBase()
+    :
+    n_global_levels(0)
+  {}
+
+  virtual ~MyMultigridPreconditionerBase(){};
+
+  virtual void resize_level_objects()
   {
-    this->mg_data = mg_data_in;
-
-    const parallel::Triangulation<dim> *tria =
-      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
-
-    // needed for continuous elements
-    mg_constrained_dofs.clear();
-    ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
-    typename FunctionMap<dim>::type dirichlet_boundary;
-    for (std::set<types::boundary_id>::const_iterator it = dirichlet_boundaries.begin();
-         it != dirichlet_boundaries.end(); ++it)
-      dirichlet_boundary[*it] = &zero_function;
-    mg_constrained_dofs.initialize(dof_handler, dirichlet_boundary);
-    // needed for continuous elements
-
-    mg_matrices.resize(0, tria->n_global_levels()-1);
-    mg_smoother.resize(0, tria->n_global_levels()-1);
-
-    for (unsigned int level = 0; level<tria->n_global_levels(); ++level)
-    {
-      mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, mg_constrained_dofs, level,fe_param);
-
-      typename SMOOTHER::AdditionalData smoother_data;
-
-      mg_matrices[level].initialize_dof_vector(smoother_data.matrix_diagonal_inverse);
-      mg_matrices[level].calculate_inverse_diagonal(smoother_data.matrix_diagonal_inverse);
-      /*
-      std::pair<double,double> eigenvalues = compute_eigenvalues(mg_matrices[level], smoother_data.matrix_diagonal_inverse);
-      std::cout<<"Max EW = "<< eigenvalues.second <<" : Min EW = "<<eigenvalues.first<<std::endl;
-      */
-      if (level > 0)
-      {
-        smoother_data.smoothing_range = mg_data.smoother_smoothing_range;
-        smoother_data.degree = mg_data.smoother_poly_degree;
-        smoother_data.eig_cg_n_iterations = 20;
-      }
-      else
-      {
-        smoother_data.smoothing_range = 0.;
-        if (mg_data.coarse_solver != MultigridCoarseGridSolver::coarse_chebyshev_smoother)
-        {
-          smoother_data.eig_cg_n_iterations = 0;
-        }
-        else // use Chebyshev smoother of high degree to solve the coarse grid problem approximately
-        {
-          std::pair<double,double> eigenvalues = compute_eigenvalues(mg_matrices[0], smoother_data.matrix_diagonal_inverse);
-          smoother_data.max_eigenvalue = 1.1 * eigenvalues.second;
-          smoother_data.smoothing_range = eigenvalues.second/eigenvalues.first*1.1;
-          double sigma = (1.-std::sqrt(1./smoother_data.smoothing_range))/(1.+std::sqrt(1./smoother_data.smoothing_range));
-          const double eps = 1e-3;
-          smoother_data.degree = std::log(1./eps+std::sqrt(1./eps/eps-1))/std::log(1./sigma);
-          smoother_data.eig_cg_n_iterations = 0;
-        }
-      }
-      mg_smoother[level].initialize(mg_matrices[level], smoother_data);
-    }
-
-    switch (mg_data.coarse_solver)
-    {
-      case MultigridCoarseGridSolver::coarse_chebyshev_smoother:
-      {
-        mg_coarse.reset(new MGCoarseFromSmoother<parallel::distributed::Vector<typename Operator::value_type>, SMOOTHER>(mg_smoother[0], false));
-        break;
-      }
-      case MultigridCoarseGridSolver::coarse_iterative_nopreconditioner:
-      {
-        mg_coarse.reset(new MGCoarseIterative<Operator>(mg_matrices[0],false)); // false: no Jacobi preconditioner
-        break;
-      }
-      case MultigridCoarseGridSolver::coarse_iterative_jacobi:
-      {
-        mg_coarse.reset(new MGCoarseIterative<Operator>(mg_matrices[0],true)); // true: use Jacobi preconditioner
-        break;
-      }
-      default:
-        AssertThrow(false, ExcMessage("Unknown coarse-grid solver given"));
-    }
-
-    mg_transfer.set_operator(mg_matrices);
-    mg_transfer.initialize_constraints(mg_constrained_dofs);
-    mg_transfer.add_periodicity(operator_data_in.periodic_face_pairs_level0);
-    mg_transfer.build(dof_handler);
-    mg_transfer.set_restriction_type(false);
-
-    multigrid_preconditioner.reset(new MultigridPreconditioner<dim, VECTOR_TYPE, Operator, MG_TRANSFER, SMOOTHER>
-                                   (dof_handler, mg_matrices, *mg_coarse, mg_transfer, mg_smoother));
+    mg_matrices.resize(0, n_global_levels -1);
+    mg_smoother.resize(0, n_global_levels -1);
   }
 
-  // multigrid preconditioner for compatible discretization of Laplace operator B * M^{-1} * B^{T} = (-div) * M^{-1} * grad
-  MyMultigridPreconditioner(const MultigridData                &mg_data_in,
-                            const DoFHandler<dim>              &dof_handler,
-                            const DoFHandler<dim>              &dof_handler_additional,
-                            const Mapping<dim>                 &mapping,
-                            const OperatorData                 &operator_data_in,
-                            FEParameters<dim> const            &fe_param = FEParameters<dim>())
+  virtual void initialize_smoother(unsigned int level)
   {
-    this->mg_data = mg_data_in;
+    typename SMOOTHER::AdditionalData smoother_data;
 
-    const parallel::Triangulation<dim> *tria =
-      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+    mg_matrices[level].initialize_dof_vector(smoother_data.matrix_diagonal_inverse);
+    mg_matrices[level].calculate_inverse_diagonal(smoother_data.matrix_diagonal_inverse);
 
-    // TODO
-    // only needed for continuous elements
-    mg_constrained_dofs.clear();
-    ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
-    typename FunctionMap<dim>::type dirichlet_boundary;
-//    for (std::set<types::boundary_id>::const_iterator it = dirichlet_boundaries.begin();
-//         it != dirichlet_boundaries.end(); ++it)
-//      dirichlet_boundary[*it] = &zero_function;
-    mg_constrained_dofs.initialize(dof_handler, dirichlet_boundary);
-    // only needed for continuous elements
+    /*
+    std::pair<double,double> eigenvalues = compute_eigenvalues(mg_matrices[level], smoother_data.matrix_diagonal_inverse);
+    std::cout<<"Max EW = "<< eigenvalues.second <<" : Min EW = "<<eigenvalues.first<<std::endl;
+    */
 
-    mg_matrices.resize(0, tria->n_global_levels()-1);
-    mg_smoother.resize(0, tria->n_global_levels()-1);
-
-    for (unsigned int level = 0; level<tria->n_global_levels(); ++level)
+    if (level > 0)
     {
-      mg_matrices[level].reinit(dof_handler,
-                                dof_handler_additional,
-                                mapping,
-                                operator_data_in,
-                                mg_constrained_dofs /*function reinit of compatible laplace operator does not use mg_constrained_dofs*/,
-                                level,fe_param);
-
-      typename SMOOTHER::AdditionalData smoother_data;
-
-      mg_matrices[level].initialize_dof_vector(smoother_data.matrix_diagonal_inverse);
-      mg_matrices[level].calculate_inverse_diagonal(smoother_data.matrix_diagonal_inverse);
-      /*
-      std::pair<double,double> eigenvalues = compute_eigenvalues(mg_matrices[level], smoother_data.matrix_diagonal_inverse);
-      std::cout<<"Max EW = "<< eigenvalues.second <<" : Min EW = "<<eigenvalues.first<<std::endl;
-      */
-      if (level > 0)
+      smoother_data.smoothing_range = mg_data.smoother_smoothing_range;
+      smoother_data.degree = mg_data.smoother_poly_degree;
+      smoother_data.eig_cg_n_iterations = 20;
+    }
+    else // coarse grid
+    {
+      if (mg_data.coarse_solver == MultigridCoarseGridSolver::ChebyshevSmoother)
       {
-        smoother_data.smoothing_range = mg_data.smoother_smoothing_range;
-        smoother_data.degree = mg_data.smoother_poly_degree;
-        smoother_data.eig_cg_n_iterations = 20;
+        // use Chebyshev smoother of high degree to solve the coarse grid problem approximately
+        std::pair<double,double> eigenvalues = compute_eigenvalues(mg_matrices[0], smoother_data.matrix_diagonal_inverse);
+        smoother_data.max_eigenvalue = 1.1 * eigenvalues.second;
+        smoother_data.smoothing_range = eigenvalues.second/eigenvalues.first*1.1;
+        double sigma = (1.-std::sqrt(1./smoother_data.smoothing_range))/(1.+std::sqrt(1./smoother_data.smoothing_range));
+        const double eps = 1e-3;
+        smoother_data.degree = std::log(1./eps+std::sqrt(1./eps/eps-1))/std::log(1./sigma);
       }
-      else
-      {
-        smoother_data.smoothing_range = 0.;
-        if (mg_data.coarse_solver != MultigridCoarseGridSolver::coarse_chebyshev_smoother)
-        {
-          smoother_data.eig_cg_n_iterations = 0;
-        }
-        else // use Chebyshev smoother of high degree to solve the coarse grid problem approximately
-        {
-          std::pair<double,double> eigenvalues = compute_eigenvalues(mg_matrices[0], smoother_data.matrix_diagonal_inverse);
-          smoother_data.max_eigenvalue = 1.1 * eigenvalues.second;
-          smoother_data.smoothing_range = eigenvalues.second/eigenvalues.first*1.1;
-          double sigma = (1.-std::sqrt(1./smoother_data.smoothing_range))/(1.+std::sqrt(1./smoother_data.smoothing_range));
-          const double eps = 1e-3;
-          smoother_data.degree = std::log(1./eps+std::sqrt(1./eps/eps-1))/std::log(1./sigma);
-          smoother_data.eig_cg_n_iterations = 0;
-        }
-      }
-      mg_smoother[level].initialize(mg_matrices[level], smoother_data);
+      smoother_data.eig_cg_n_iterations = 0;
     }
 
+    mg_smoother[level].initialize(mg_matrices[level], smoother_data);
+  }
+
+  virtual void initialize_coarse_solver()
+  {
     switch (mg_data.coarse_solver)
     {
-      case MultigridCoarseGridSolver::coarse_chebyshev_smoother:
+      case MultigridCoarseGridSolver::ChebyshevSmoother:
       {
         mg_coarse.reset(new MGCoarseFromSmoother<parallel::distributed::Vector<typename Operator::value_type>, SMOOTHER>(mg_smoother[0], false));
         break;
       }
-      case MultigridCoarseGridSolver::coarse_iterative_nopreconditioner:
+      case MultigridCoarseGridSolver::PCG_NoPreconditioner:
       {
-        mg_coarse.reset(new MGCoarseIterative<Operator>(mg_matrices[0],false)); // false: no Jacobi preconditioner
+        mg_coarse.reset(new MGCoarsePCG<Operator>(mg_matrices[0],false)); // false: no Jacobi preconditioner
         break;
       }
-      case MultigridCoarseGridSolver::coarse_iterative_jacobi:
+      case MultigridCoarseGridSolver::PCG_Jacobi:
       {
-        mg_coarse.reset(new MGCoarseIterative<Operator>(mg_matrices[0],true)); // true: use Jacobi preconditioner
+        mg_coarse.reset(new MGCoarsePCG<Operator>(mg_matrices[0],true)); // true: use Jacobi preconditioner
+        break;
+      }
+      case MultigridCoarseGridSolver::GMRES_NoPreconditioner:
+      {
+        mg_coarse.reset(new MGCoarseGMRES<Operator>(mg_matrices[0],false)); // false: no Jacobi preconditioner
+        break;
+      }
+      case MultigridCoarseGridSolver::GMRES_Jacobi:
+      {
+        mg_coarse.reset(new MGCoarseGMRES<Operator>(mg_matrices[0],true)); // true: use Jacobi preconditioner
         break;
       }
       default:
         AssertThrow(false, ExcMessage("Unknown coarse-grid solver given"));
     }
+  }
 
+  virtual void initialize_mg_transfer(const DoFHandler<dim> &dof_handler,
+                                      const OperatorData    &operator_data_in)
+  {
     mg_transfer.set_operator(mg_matrices);
     mg_transfer.initialize_constraints(mg_constrained_dofs);
     mg_transfer.add_periodicity(operator_data_in.periodic_face_pairs_level0);
     mg_transfer.build(dof_handler);
     mg_transfer.set_restriction_type(false);
-
-    multigrid_preconditioner.reset(new MultigridPreconditioner<dim, VECTOR_TYPE, Operator, MG_TRANSFER, SMOOTHER>
-                                   (dof_handler, mg_matrices, *mg_coarse, mg_transfer, mg_smoother));
   }
 
   void vmult (parallel::distributed::Vector<value_type>        &dst,
@@ -615,7 +648,13 @@ public:
     multigrid_preconditioner->vmult(dst,src);
   }
 
-private:
+  virtual void apply_smoother_on_fine_level(parallel::distributed::Vector<typename Operator::value_type>        &dst,
+                                            const parallel::distributed::Vector<typename Operator::value_type>  &src) const
+  {
+    this->mg_smoother[this->mg_smoother.max_level()].vmult(dst,src);
+  }
+
+protected:
   MultigridData mg_data;
   MGConstrainedDoFs mg_constrained_dofs;
 
@@ -631,6 +670,288 @@ private:
 
   std_cxx11::shared_ptr<MultigridPreconditioner<dim, VECTOR_TYPE, Operator, MG_TRANSFER, SMOOTHER> > multigrid_preconditioner;
 
+  unsigned int n_global_levels;
+};
+
+template<int dim, typename value_type, typename Operator, typename OperatorData>
+class MyMultigridPreconditioner : public MyMultigridPreconditionerBase<dim,value_type,Operator,OperatorData>
+{
+public:
+  MyMultigridPreconditioner(){}
+
+  virtual ~MyMultigridPreconditioner(){}
+
+  void initialize(const MultigridData                &mg_data_in,
+                  const DoFHandler<dim>              &dof_handler,
+                  const Mapping<dim>                 &mapping,
+                  const OperatorData                 &operator_data_in,
+                  std::set<types::boundary_id> const &dirichlet_boundaries,
+                  FEParameters<dim> const            &fe_param = FEParameters<dim>())
+  {
+    this->mg_data = mg_data_in;
+
+    const parallel::Triangulation<dim> *tria =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+
+    // needed for continuous elements
+    this->mg_constrained_dofs.clear();
+    ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
+    typename FunctionMap<dim>::type dirichlet_boundary;
+    for (std::set<types::boundary_id>::const_iterator it = dirichlet_boundaries.begin();
+         it != dirichlet_boundaries.end(); ++it)
+      dirichlet_boundary[*it] = &zero_function;
+    this->mg_constrained_dofs.initialize(dof_handler, dirichlet_boundary);
+    // needed for continuous elements
+
+    this->n_global_levels = tria->n_global_levels();
+    this->resize_level_objects();
+
+    for (unsigned int level = 0; level<this->n_global_levels; ++level)
+    {
+      initialize_mg_matrix(level, dof_handler, mapping, operator_data_in, fe_param);
+
+      this->initialize_smoother(level);
+    }
+
+    this->initialize_coarse_solver();
+
+    this->initialize_mg_transfer(dof_handler, operator_data_in);
+
+    typedef MGTransferMF<dim,Operator> MG_TRANSFER;
+    typedef parallel::distributed::Vector<typename Operator::value_type> VECTOR_TYPE;
+    typedef PreconditionChebyshev<Operator,VECTOR_TYPE> SMOOTHER;
+
+    this->multigrid_preconditioner.reset(new MultigridPreconditioner<dim, VECTOR_TYPE, Operator, MG_TRANSFER, SMOOTHER>
+                                   (dof_handler, this->mg_matrices, *(this->mg_coarse), this->mg_transfer, this->mg_smoother));
+  }
+
+  virtual void initialize_mg_matrix(unsigned int            level,
+                                    const DoFHandler<dim>   &dof_handler,
+                                    const Mapping<dim>      &mapping,
+                                    const OperatorData      &operator_data_in,
+                                    FEParameters<dim> const &fe_param)
+  {
+    this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, this->mg_constrained_dofs, level,fe_param);
+  }
+};
+
+/*
+ *  Multigrid preconditioner for velocity convection-diffusion operator of
+ *  the incompressible Navier-Stokes equations
+ */
+template<int dim, typename value_type, typename Operator, typename OperatorData>
+class MyMultigridPreconditionerVelocityConvectionDiffusion : public MyMultigridPreconditioner<dim,value_type,Operator,OperatorData>
+{
+public:
+  MyMultigridPreconditionerVelocityConvectionDiffusion(){}
+
+  virtual ~MyMultigridPreconditionerVelocityConvectionDiffusion(){};
+
+  virtual void resize_level_objects()
+  {
+    this->mg_matrices.resize(0, this->n_global_levels-1);
+    this->mg_smoother.resize(0, this->n_global_levels-1);
+
+    mg_vector_linearization.resize(0, this->n_global_levels-1);
+  }
+
+  virtual void initialize_mg_matrix(unsigned int            level,
+                                    const DoFHandler<dim>   &dof_handler,
+                                    const Mapping<dim>      &mapping,
+                                    const OperatorData      &operator_data_in,
+                                    FEParameters<dim> const &fe_param)
+  {
+    // initialize mg_matrix for given level
+    this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, this->mg_constrained_dofs, level, fe_param);
+
+    // initialize vector linearization
+    this->mg_matrices[level].initialize_dof_vector(mg_vector_linearization[level]);
+
+    // set vector linearization: mg_matrices[level] hold pointer to mg_vector_linearization[level]
+    this->mg_matrices[level].set_velocity_linearization(&mg_vector_linearization[level]);
+
+    // set evaluation time
+    this->mg_matrices[level].set_evaluation_time(0.0);
+  }
+
+  /*
+   *  This function updates vector_linearization.
+   *  In order to update mg_matrices[level] this function has to be called.
+   */
+  void set_vector_linearization(parallel::distributed::Vector<value_type> const &vector_linearization)
+  {
+    for (int level = this->n_global_levels-1; level>=0; --level)
+    {
+      if(level == (int)this->n_global_levels-1) // finest level
+      {
+        mg_vector_linearization[level] = vector_linearization;
+      }
+      else // all coarser levels
+      {
+        // restrict vector_linearization from fine to coarse level
+        mg_vector_linearization[level] = 0;
+        this->mg_transfer.restrict_and_add(level+1,mg_vector_linearization[level],mg_vector_linearization[level+1]);
+      }
+    }
+  }
+
+  /*
+   *  This function updates the evaluation time.
+   *  In order to update mg_matrices[level] this function has to be called.
+   *  (This is due to the fact that the linearized convective term does not
+   *  only depend on the linearized velocity field but also on Dirichlet boundary
+   *  data which itself depends on the current time.)
+   */
+  void set_evaluation_time(double const &evaluation_time)
+  {
+    for (int level = this->n_global_levels-1; level>=0; --level)
+    {
+      this->mg_matrices[level].set_evaluation_time(evaluation_time);
+    }
+  }
+
+  /*
+   *  This function updates the smoother for all levels of the multigrid
+   *  algorithm.
+   *  The prerequisite to call this function is that mg_matrices[level] have
+   *  been updated.
+   */
+  void update_smoother()
+  {
+    for (unsigned int level = 0; level<this->n_global_levels; ++level)
+    {
+      this->initialize_smoother(level);
+    }
+  }
+
+  /*
+   *  This function updates the (preconditioner of the) coarse grid solver.
+   *  The prerequisite to call this function is that mg_matrices[0] has
+   *  been updated.
+   */
+  void update_coarse_solver()
+  {
+    if(this->mg_data.coarse_solver == MultigridCoarseGridSolver::GMRES_Jacobi)
+    {
+      std_cxx11::shared_ptr<MGCoarseGMRES<Operator> >
+        coarse_solver = std::dynamic_pointer_cast<MGCoarseGMRES<Operator> >(this->mg_coarse);
+
+      coarse_solver->update_preconditioner(this->mg_matrices[0]);
+    }
+  }
+
+  /*
+   *  This function initializes the Chebyshev smoother
+   *  by performing a few GMRES iterations
+   */
+  virtual void initialize_smoother(unsigned int level)
+  {
+    typename SMOOTHER::AdditionalData smoother_data;
+
+    this->mg_matrices[level].initialize_dof_vector(smoother_data.matrix_diagonal_inverse);
+    this->mg_matrices[level].calculate_inverse_diagonal(smoother_data.matrix_diagonal_inverse);
+
+    const double factor = 1.1;
+
+    if (level > 0)
+    {
+      std::pair<std::complex<double>,std::complex<double> > eigenvalues = compute_eigenvalues_gmres(this->mg_matrices[level], smoother_data.matrix_diagonal_inverse);
+      smoother_data.max_eigenvalue = factor * std::abs(eigenvalues.second);
+      smoother_data.smoothing_range = this->mg_data.smoother_smoothing_range;
+      smoother_data.degree = this->mg_data.smoother_poly_degree;
+      smoother_data.eig_cg_n_iterations = 0;
+    }
+    else // coarse grid
+    {
+      if (this->mg_data.coarse_solver == MultigridCoarseGridSolver::ChebyshevSmoother)
+      {
+        // use Chebyshev smoother of high degree to solve the coarse grid problem approximately
+        std::pair<std::complex<double>,std::complex<double> > eigenvalues = compute_eigenvalues_gmres(this->mg_matrices[level], smoother_data.matrix_diagonal_inverse);
+        smoother_data.max_eigenvalue = factor * std::abs(eigenvalues.second);
+        smoother_data.smoothing_range = factor * std::abs(eigenvalues.second)/std::abs(eigenvalues.first);
+        double sigma = (1.-std::sqrt(1./smoother_data.smoothing_range))/(1.+std::sqrt(1./smoother_data.smoothing_range));
+        const double eps = 1e-3;
+        smoother_data.degree = std::log(1./eps+std::sqrt(1./eps/eps-1))/std::log(1./sigma);
+      }
+      smoother_data.eig_cg_n_iterations = 0;
+    }
+
+    this->mg_smoother[level].initialize(this->mg_matrices[level], smoother_data);
+  }
+
+private:
+
+  typedef parallel::distributed::Vector<typename Operator::value_type> VECTOR_TYPE;
+  typedef PreconditionChebyshev<Operator,VECTOR_TYPE> SMOOTHER;
+
+  MGLevelObject<VECTOR_TYPE> mg_vector_linearization;
+};
+
+
+/*
+ *   Multigrid preconditioner for compatible discretization
+ *   of Laplace operator occuring in the Schur-complement of
+ *   the incompressible (Navier-)Stokes equations
+ *   Operator: B * M^{-1} * B^{T} = (-div) * M^{-1} * grad
+ *   where M^{-1} is the inverse velocity mass matrix
+ */
+template<int dim, typename value_type, typename Operator, typename OperatorData>
+class MyMultigridPreconditionerCompatibleLaplace :
+    public MyMultigridPreconditionerBase<dim,value_type,Operator,OperatorData>
+{
+public:
+  MyMultigridPreconditionerCompatibleLaplace(){}
+
+  void initialize(const MultigridData      &mg_data_in,
+                  const DoFHandler<dim>    &dof_handler,
+                  const DoFHandler<dim>    &dof_handler_additional,
+                  const Mapping<dim>       &mapping,
+                  const OperatorData       &operator_data_in,
+                  FEParameters<dim> const  &fe_param = FEParameters<dim>())
+  {
+    this->mg_data = mg_data_in;
+
+    const parallel::Triangulation<dim> *tria =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+
+    // TODO
+    // only needed for continuous elements
+    this->mg_constrained_dofs.clear();
+    ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
+    typename FunctionMap<dim>::type dirichlet_boundary;
+//    for (std::set<types::boundary_id>::const_iterator it = dirichlet_boundaries.begin();
+//         it != dirichlet_boundaries.end(); ++it)
+//      dirichlet_boundary[*it] = &zero_function;
+    this->mg_constrained_dofs.initialize(dof_handler, dirichlet_boundary);
+    // only needed for continuous elements
+
+    this->n_global_levels = tria->n_global_levels();
+    this->resize_level_objects();
+
+    for (unsigned int level = 0; level<tria->n_global_levels(); ++level)
+    {
+      this->mg_matrices[level].reinit(dof_handler,
+                                      dof_handler_additional,
+                                      mapping,
+                                      operator_data_in,
+                                      this->mg_constrained_dofs,
+                                      level,
+                                      fe_param);
+
+      this->initialize_smoother(level);
+    }
+
+    this->initialize_coarse_solver();
+
+    this->initialize_mg_transfer(dof_handler,operator_data_in);
+
+    typedef MGTransferMF<dim,Operator> MG_TRANSFER;
+    typedef parallel::distributed::Vector<typename Operator::value_type> VECTOR_TYPE;
+    typedef PreconditionChebyshev<Operator,VECTOR_TYPE> SMOOTHER;
+
+    this->multigrid_preconditioner.reset(new MultigridPreconditioner<dim, VECTOR_TYPE, Operator, MG_TRANSFER, SMOOTHER>
+                                   (dof_handler, this->mg_matrices, *(this->mg_coarse), this->mg_transfer, this->mg_smoother));
+  }
 };
 
 #endif /* INCLUDE_PRECONDITIONER_H_ */
