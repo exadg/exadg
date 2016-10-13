@@ -1160,7 +1160,7 @@ void
 StatisticsManagerPH<dim>::do_evaluate_xwall(const std::vector<const parallel::distributed::Vector<double> *> &velocity,
                                             const parallel::distributed::Vector<double> &pressure,
                                             const DoFHandler<dim>                       &/*dof_handler_wdist*/,
-                                            const FEParameters<dim>                     &fe_param)
+                                            const FEParameters<dim>                     &/*fe_param*/)
 {
 // ---------------------------------------------------
 // evaluate velocity at given x_over_h positions

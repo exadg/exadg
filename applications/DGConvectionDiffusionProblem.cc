@@ -32,7 +32,6 @@
 #include <deal.II/multigrid/multigrid.h>
 #include <deal.II/multigrid/mg_transfer.h>
 #include <deal.II/multigrid/mg_tools.h>
-#include <deal.II/multigrid/mg_coarse.h>
 #include <deal.II/multigrid/mg_smoother.h>
 #include <deal.II/multigrid/mg_matrix.h>
 
@@ -149,7 +148,7 @@ ConvDiffProblem(const unsigned int n_refine_space_in,
     param.print(pcout);
 
   field_functions.reset(new FieldFunctionsConvDiff<dim>());
-  // this function has to be defined in the header file that implements 
+  // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
   set_field_functions(field_functions);
 
@@ -195,8 +194,8 @@ template<int dim, int fe_degree>
 void ConvDiffProblem<dim, fe_degree>::
 print_grid_data()
 {
-  pcout << std::endl 
-        << "Generating grid for " << dim << "-dimensional problem:" << std::endl 
+  pcout << std::endl
+        << "Generating grid for " << dim << "-dimensional problem:" << std::endl
         << std::endl;
 
   print_parameter(pcout,"Number of refinements",n_refine_space);
@@ -225,7 +224,7 @@ template<int dim, int fe_degree>
 void ConvDiffProblem<dim, fe_degree>::
 solve_problem()
 {
-  // this function has to be defined in the header file that implements 
+  // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
   create_grid_and_set_boundary_conditions(triangulation,
                                           n_refine_space,

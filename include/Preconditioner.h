@@ -8,6 +8,16 @@
 #ifndef INCLUDE_PRECONDITIONER_H_
 #define INCLUDE_PRECONDITIONER_H_
 
+
+#include <deal.II/multigrid/multigrid.h>
+#include <deal.II/multigrid/mg_transfer_matrix_free.h>
+#include <deal.II/multigrid/mg_tools.h>
+#include <deal.II/multigrid/mg_smoother.h>
+#include <deal.II/multigrid/mg_matrix.h>
+#include <deal.II/base/function_lib.h>
+
+#include "InverseMassMatrix.h"
+
 template<typename value_type>
 class PreconditionerBase
 {
@@ -17,8 +27,6 @@ public:
   virtual void vmult(parallel::distributed::Vector<value_type>        &dst,
                      const parallel::distributed::Vector<value_type>  &src) const = 0;
 };
-
-#include "InverseMassMatrix.h"
 
 template<int dim, int fe_degree, typename value_type, int n_components=dim>
 class InverseMassMatrixPreconditioner : public PreconditionerBase<value_type>
@@ -93,14 +101,6 @@ public:
 private:
   parallel::distributed::Vector<value_type> inverse_diagonal;
 };
-
-#include <deal.II/multigrid/multigrid.h>
-#include <deal.II/multigrid/mg_transfer_matrix_free.h>
-#include <deal.II/multigrid/mg_tools.h>
-#include <deal.II/multigrid/mg_coarse.h>
-#include <deal.II/multigrid/mg_smoother.h>
-#include <deal.II/multigrid/mg_matrix.h>
-#include <deal.II/base/function_lib.h>
 
 // Specialized matrix-free implementation that overloads the copy_to_mg
 // function for proper initialization of the vectors in matrix-vector

@@ -37,7 +37,6 @@
 #include <deal.II/multigrid/multigrid.h>
 #include <deal.II/multigrid/mg_transfer.h>
 #include <deal.II/multigrid/mg_tools.h>
-#include <deal.II/multigrid/mg_coarse.h>
 #include <deal.II/multigrid/mg_smoother.h>
 #include <deal.II/multigrid/mg_matrix.h>
 
@@ -344,7 +343,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
     PostProcessorChannel(
                   std_cxx11::shared_ptr< const DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> >  ns_operation,
-                  InputParametersNavierStokes<dim> const &param,
+                  InputParametersNavierStokes<dim> const &/*param*/,
                   PostProcessorChannelData const & data_channel):
       PostProcessor<dim,fe_degree,fe_degree_p>(),
       data_ch(data_channel),

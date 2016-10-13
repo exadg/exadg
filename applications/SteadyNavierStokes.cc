@@ -41,7 +41,6 @@
 #include <deal.II/multigrid/multigrid.h>
 #include <deal.II/multigrid/mg_transfer.h>
 #include <deal.II/multigrid/mg_tools.h>
-#include <deal.II/multigrid/mg_coarse.h>
 #include <deal.II/multigrid/mg_smoother.h>
 #include <deal.II/multigrid/mg_matrix.h>
 
@@ -123,7 +122,7 @@ private:
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 NavierStokesProblem(unsigned int const refine_steps_space,
-                    unsigned int const refine_steps_time)
+                    unsigned int const /*refine_steps_time*/)
   :
   pcout (std::cout,Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0),
   triangulation(MPI_COMM_WORLD,dealii::Triangulation<dim>::none,parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
