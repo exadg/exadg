@@ -84,7 +84,7 @@ using namespace dealii;
 //#include "NavierStokesTestCases/StokesGuermond.h"
 //#include "NavierStokesTestCases/StokesShahbazi.h"
 //#include "NavierStokesTestCases/Kovasznay.h"
-//#include "NavierStokesTestCases/Vortex.h"
+#include "NavierStokesTestCases/Vortex.h"
 //#include "NavierStokesTestCases/TaylorVortex.h"
 //#include "NavierStokesTestCases/Beltrami.h"
 //#include "NavierStokesTestCases/FlowPastCylinder.h"
@@ -148,26 +148,7 @@ NavierStokesProblem(unsigned int const refine_steps_space,
   boundary_descriptor_velocity.reset(new BoundaryDescriptorNavierStokes<dim>());
   boundary_descriptor_pressure.reset(new BoundaryDescriptorNavierStokes<dim>());
 
-  if(param.spatial_discretization == SpatialDiscretization::DGXWall)
-  {
-    if(param.problem_type == ProblemType::Unsteady &&
-            param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-    {
-      // initialize navier_stokes_operation
-      navier_stokes_operation.reset(new DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>
-          (triangulation,param));
-      // initialize postprocessor after initializing navier_stokes_operation
-      postprocessor.reset(new PostProcessorXWall<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>(navier_stokes_operation,param));
-      // initialize time integrator that depends on both navier_stokes_operation and postprocessor
-      time_integrator.reset(new TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(
-          navier_stokes_operation,postprocessor,param,refine_steps_time));
-    }
-    else
-    {
-      AssertThrow(false,ExcMessage("XWall only implemented for the unsteady DualSplitting case up to now"));
-    }
-  }
-  else if(param.spatial_discretization == SpatialDiscretization::DG)
+  if(param.spatial_discretization == SpatialDiscretization::DG)
   {
     if(param.problem_type == ProblemType::Steady)
     {
@@ -206,6 +187,8 @@ NavierStokesProblem(unsigned int const refine_steps_space,
           navier_stokes_operation,postprocessor,param,refine_steps_time));
     }
   }
+  else if(param.spatial_discretization == SpatialDiscretization::DGXWall)
+    AssertThrow(false,ExcMessage("DGXWall not compiled in this NavierStokesProblem"));
 }
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>

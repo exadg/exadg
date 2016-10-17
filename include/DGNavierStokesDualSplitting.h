@@ -181,6 +181,7 @@ protected:
   std_cxx11::shared_ptr<PreconditionerBase<value_type> > helmholtz_preconditioner;
   ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> * projection_operator;
   std_cxx11::shared_ptr<ProjectionSolverBase<value_type> > projection_solver;
+  HelmholtzOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type> helmholtz_operator;
 
 private:
   LaplaceOperator<dim,value_type> laplace_operator;
@@ -188,7 +189,6 @@ private:
   std_cxx11::shared_ptr<PreconditionerBase<value_type> > preconditioner_pressure_poisson;
   std_cxx11::shared_ptr<CGSolver<LaplaceOperator<dim,value_type>, PreconditionerBase<value_type>,parallel::distributed::Vector<value_type> > > pressure_poisson_solver;
 
-  HelmholtzOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type> helmholtz_operator;
   std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > helmholtz_solver;
 
   parallel::distributed::Vector<value_type> velocity_linear;

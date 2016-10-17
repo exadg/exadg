@@ -2,6 +2,8 @@
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/distributed/tria_base.h>
 #include <statistics_manager_ph.h>
+#include <SpaldingsLaw.h>
+
 
 
 //#define DEBUG_Y
@@ -22,7 +24,7 @@ namespace patch
 
 template <int dim>
 //void StatisticsManagerPH<dim>::setup(const std_cxx11::function<Point<dim>(const Point<dim> &)> &grid_transform)
-void StatisticsManagerPH<dim>::setup(const Function< dim > &push_forward_function, const std::string output_prefix)
+void StatisticsManagerPH<dim>::setup(const Function< dim > &push_forward_function, const std::string output_prefix,const bool enriched)
 {
   // note: this code only works on structured meshes where the faces in
   // y-direction are faces 2 and 3
@@ -51,6 +53,8 @@ void StatisticsManagerPH<dim>::setup(const Function< dim > &push_forward_functio
   n_cells_y_dir *= std::pow(2, dof_handler.get_triangulation().n_global_levels()-1);
 
   n_points_y = mapping_.get_degree() + 1;
+  if(enriched)
+    n_points_y = 50;
   n_points_y_glob =  n_cells_y_dir*(n_points_y-1)+1;
 //  n_points_x = 3.0*n_points_y;
 
@@ -502,7 +506,34 @@ StatisticsManagerPH<dim>::write_output(const std::string output_prefix,
                                        const double      massflow)
 {
   if(Utilities::MPI::this_mpi_process(communicator)==0)
+  {
+    std::string new_output_prefix;
     {
+      unsigned int statistics_number = 0;
+      std::ostringstream filename;
+      filename.str("");
+      filename.clear();
+      filename << output_prefix
+               << "_slice"
+               << statistics_number
+               << ".tauw_Yplus_flow_statistics_bottom";
+      while(exists_test0(filename.str()))
+      {
+        statistics_number++;
+        filename.str("");
+        filename.clear();
+        filename << output_prefix
+                 << "_slice"
+                 << statistics_number
+                 << ".tauw_Yplus_flow_statistics_bottom";
+      }
+      filename.str("");
+      filename.clear();
+      filename << output_prefix
+               << "_slice"
+               << statistics_number;
+      new_output_prefix = filename.str();
+    }
     double Ub = 0;
     if(dim == 3)
       Ub = massflow/(2.036*4.5*h*h);
@@ -513,7 +544,7 @@ StatisticsManagerPH<dim>::write_output(const std::string output_prefix,
     for (unsigned int i_x=0; i_x<x_over_h.size(); i_x++)
       {
       std::ofstream f;
-      f.open((output_prefix + "_" + patch::to_string(i_x) + ".flow_statistics").c_str(),std::ios::trunc);
+      f.open((new_output_prefix + "_" + patch::to_string(i_x) + ".flow_statistics").c_str(),std::ios::trunc);
       f<<"statistics of periodic hill flow for x/h = " << x_over_h[i_x] <<std::endl;
       f<<"number of samples:   " << numchsamp << std::endl;
       f<<"Re-number:   " << Ub*h/viscosity << std::endl;
@@ -560,7 +591,7 @@ StatisticsManagerPH<dim>::write_output(const std::string output_prefix,
     // write tau_w, yplus at bottom
     std::ofstream f;
 
-    f.open((output_prefix + ".tauw_Yplus_flow_statistics_bottom").c_str(),std::ios::trunc);
+    f.open((new_output_prefix + ".tauw_Yplus_flow_statistics_bottom").c_str(),std::ios::trunc);
     f<<"statistics of periodic hill flow  "<<std::endl;
     f<<"number of samples:   " << numchsamp << std::endl;
     f<<"Re-number:   " << Ub*h/viscosity << std::endl;
@@ -582,7 +613,7 @@ StatisticsManagerPH<dim>::write_output(const std::string output_prefix,
 
 
     // write tau_w, yplus at top
-    f.open((output_prefix + ".tauw_Yplus_flow_statistics_top").c_str(),std::ios::trunc);
+    f.open((new_output_prefix + ".tauw_Yplus_flow_statistics_top").c_str(),std::ios::trunc);
     f<<"statistics of periodic hill flow  "<<std::endl;
     f<<"number of samples:   " << numchsamp << std::endl;
     f<<"Re-number:   " << Ub*h/viscosity << std::endl;
@@ -855,24 +886,29 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
 
   const unsigned int fe_degree = dof_handler.get_fe().degree;
   std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_x);
+  std::vector<std_cxx11::shared_ptr<FEFaceValues<dim,dim> > > fe_face_values(n_points_x);
   QGauss<1> gauss_1d(fe_degree+1);
 
   for (unsigned int i=0; i<n_points_x; ++i)
   {
     std::vector<Point<dim> > points(gauss_1d.size());
+    std::vector<Point<dim-1> > points_face(gauss_1d.size());
     std::vector<double> weights(gauss_1d.size());
     if(dim == 2)
     {
       points.resize(1);
+      points_face.resize(1);
       weights.resize(1);
     }
     for (unsigned int j=0; j<weights.size(); ++j)
     {
       points[j][0] = (double)i/(n_points_x-1);  // linear distributed form 0 to 1
       points[j][1] = 0.0;                       // assumed to be the bottom of the cells
+      points_face[j][0] = (double)i/(n_points_x-1);  // linear distributed form 0 to 1
       if(dim==3)
       {
         points[j][2] = gauss_1d.point(j)[0];
+        points_face[j][1] = gauss_1d.point(j)[0];
         weights[j] = gauss_1d.weight(j);
       }
       else
@@ -883,6 +919,11 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
                                          Quadrature<dim>(points, weights),
                                          update_values | update_jacobians |
                                          update_quadrature_points | update_gradients));
+    fe_face_values[i].reset(new FEFaceValues<dim>(mapping_,
+                                         dof_handler.get_fe().base_element(0),
+                                         Quadrature<dim-1>(points_face, weights),
+                                         update_jacobians |
+                                         update_quadrature_points | update_normal_vectors));
   }
 
   const unsigned int scalar_dofs_per_cell = dof_handler.get_fe().base_element(0).dofs_per_cell;
@@ -925,19 +966,34 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
             pressure_vector[j] = pressure(dof_indices_p[j]);
           }
 
+        std::vector<Tensor<1,dim> > n;
         for (unsigned int i=0; i<n_points_x; ++i)
         {
           fe_values[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
 
           double length = 0, dudy_w = 0, p_w = 0;
 
+          for (unsigned int face_number=0; face_number<GeometryInfo<dim>::faces_per_cell; ++face_number)
+            if (cell->face(face_number)->at_boundary())
+              {
+                fe_face_values[i]->reinit(cell,face_number);
+                n.resize(fe_face_values[i]->n_quadrature_points);
+                for (unsigned int q=0; q<fe_face_values[i]->n_quadrature_points; ++q)
+                  n[q]=fe_face_values[i]->normal_vector(q);
+              }
           for (unsigned int q=0; q<fe_values[i]->n_quadrature_points; ++q)
           {
             // calculate dudy at the quadrature point
-            double dudy = 0.0;
+            Tensor<1,dim,double > du = Tensor<1,dim,double >();
+            Tensor<1,dim,double > dv = Tensor<1,dim,double >();
+            double dudn = 0.0;
             double p = 0.;
             for (unsigned int j=0; j<velocity_vector.size(); ++j)
-              dudy += fe_values[i]->shape_grad(j,q)[1] * velocity_vector[j][0];
+              du += fe_values[i]->shape_grad(j,q) * velocity_vector[j][0];
+            double dudn2 = (du*n[q])*(du*n[q]) + (dv*n[q])*(dv*n[q]);
+            dudn = std::sqrt(std::abs(dudn2));
+            if(du[1]<0.)
+              dudn *= -1.;
 
             for (unsigned int j=0; j<velocity_vector.size(); ++j)
               p += fe_values[i]->shape_value(j,q) * pressure_vector[j];
@@ -950,7 +1006,7 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
 
             double length_ele = reduced_jacobian * fe_values[i]->get_quadrature().weight(q);
             length += length_ele;
-            dudy_w += dudy*length_ele;
+            dudy_w += dudn*length_ele;
             p_w += p*length_ele;
 
           }
@@ -1159,7 +1215,7 @@ template <int dim>
 void
 StatisticsManagerPH<dim>::do_evaluate_xwall(const std::vector<const parallel::distributed::Vector<double> *> &velocity,
                                             const parallel::distributed::Vector<double> &pressure,
-                                            const DoFHandler<dim>                       &/*dof_handler_wdist*/,
+                                            const DoFHandler<dim>                       &dof_handler_wdist,
                                             const FEParameters<dim>                     &fe_param)
 {
 // ---------------------------------------------------
@@ -1180,6 +1236,8 @@ StatisticsManagerPH<dim>::do_evaluate_xwall(const std::vector<const parallel::di
 
     const unsigned int fe_degree = dof_handler.get_fe().degree;
     std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y);
+    std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_xwall(n_points_y);
+    std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_tauw(n_points_y);
     QGauss<1> gauss_1d(fe_degree+1);
 
     // get xi1 position to the considered x position x_pos
@@ -1230,19 +1288,34 @@ StatisticsManagerPH<dim>::do_evaluate_xwall(const std::vector<const parallel::di
                                            Quadrature<dim>(points, weights),
                                            update_values | update_jacobians |
                                            update_quadrature_points));
+      fe_values_xwall[i].reset(new FEValues<dim>(dof_handler.get_fe().base_element(1),
+                                           Quadrature<dim>(points, weights),
+                                           update_values | update_jacobians |
+                                           update_quadrature_points));
+      fe_values_tauw[i].reset(new FEValues<dim>(dof_handler_wdist.get_fe().base_element(0),
+                                           Quadrature<dim>(points, weights),
+                                           update_values | update_jacobians |
+                                           update_quadrature_points));
     }
 
     const unsigned int scalar_dofs_per_cell = dof_handler.get_fe().base_element(0).dofs_per_cell;
+    const unsigned int scalar_dofs_per_cell_xwall = dof_handler.get_fe().base_element(1).dofs_per_cell;
+    const unsigned int scalar_dofs_per_cell_tauw = dof_handler_wdist.get_fe().base_element(0).dofs_per_cell;
 //    std::vector<double> vel_values(fe_values[0]->n_quadrature_points);
     std::vector<Tensor<1,dim> > velocity_vector(scalar_dofs_per_cell); // \vec{u}^e_h
+    std::vector<Tensor<1,dim> > velocity_vector_xwall(scalar_dofs_per_cell_xwall);
+    std::vector<Tensor<1,1> > tauw_vector(scalar_dofs_per_cell_tauw);
+    std::vector<Tensor<1,1> > wdist_vector(scalar_dofs_per_cell_tauw);
 
     std::vector<types::global_dof_index> dof_indices(dof_handler.get_fe().dofs_per_cell);
-
-    for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler.begin_active(); cell!=dof_handler.end(); ++cell)
+    std::vector<types::global_dof_index> dof_indices_tauw(dof_handler_wdist.get_fe().dofs_per_cell);
+    typename DoFHandler<dim>::active_cell_iterator cell_tauw=dof_handler_wdist.begin_active();
+    for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler.begin_active(); cell!=dof_handler.end(); ++cell, ++cell_tauw)
       if (cell->is_locally_owned())
         {
 
         cell->get_dof_indices(dof_indices);
+        cell_tauw->get_dof_indices(dof_indices_tauw);
         std::vector<double> vertex_x_pos(GeometryInfo<dim>::vertices_per_cell);
 
         // get vertices of cell
@@ -1254,37 +1327,44 @@ StatisticsManagerPH<dim>::do_evaluate_xwall(const std::vector<const parallel::di
         std::vector<double>::iterator max = std::max_element(vertex_x_pos.begin(), vertex_x_pos.end());
         if (*min <= x_pos && *max > x_pos)
           {
-          // get velocity_vector[element nodes][components] in element
-
-          // vector-valued FE where all components are explicitly listed in the
-          // DoFHandler
-          if (dof_handler.get_fe().element_multiplicity(0) >= dim)
-            for (unsigned int j=0; j<dof_indices.size(); ++j)
+            { //read dofs from vector
+              for (unsigned int j=0; j<dof_indices.size(); ++j)
               {
                 const std::pair<unsigned int,unsigned int> comp =
                   dof_handler.get_fe().system_to_component_index(j);
                 if (comp.first < dim)
                   velocity_vector[comp.second][comp.first] = (*velocity[0])(dof_indices[j]);
+                else
+                  velocity_vector_xwall[comp.second][comp.first-dim] = (*velocity[0])(dof_indices[j]);
               }
-          else
-            // scalar FE where we have several vectors referring to the same
-            // DoFHandler
-            {
-              AssertDimension(dof_handler.get_fe().element_multiplicity(0), 1);
-              for (unsigned int j=0; j<scalar_dofs_per_cell; ++j)
-                for (unsigned int d=0; d<dim; ++d)
-                  velocity_vector[j][d] = (*velocity[d])(dof_indices[j]);
+              for (unsigned int j=0; j<scalar_dofs_per_cell_tauw; ++j)
+                wdist_vector[j][0] = (*fe_param.wdist)(dof_indices_tauw[j]);
+              for (unsigned int j=0; j<scalar_dofs_per_cell_tauw; ++j)
+                tauw_vector[j][0] = (*fe_param.tauw)(dof_indices_tauw[j]);
             }
 
           // perform quadrature
           for (unsigned int i=0; i<n_points_y; ++i)
           {
             fe_values[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
+            fe_values_xwall[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
+            fe_values_tauw[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
 
             double length = 0, veluv = 0;
             std::vector<double> vel(dim,0.);
             std::vector<double> velsq(dim,0.);
 
+            AlignedVector<double > wdist(fe_values[i]->n_quadrature_points,0.);
+            AlignedVector<double > tauw(fe_values[i]->n_quadrature_points,0.);
+            for (unsigned int q=0; q<fe_values[i]->n_quadrature_points; ++q)
+            {
+              for (unsigned int j=0; j<wdist_vector.size(); ++j)
+                wdist[q] += (fe_values_tauw[i]->shape_value(j,q) * wdist_vector[j])[0];
+              for (unsigned int j=0; j<tauw_vector.size(); ++j)
+                tauw[q] += (fe_values_tauw[i]->shape_value(j,q) * tauw_vector[j])[0];
+            }
+            SpaldingsLawEvaluation<dim, double, double > spalding(fe_param.viscosity);
+            spalding.reinit(wdist,tauw,fe_values[i]->n_quadrature_points);
             for (unsigned int q=0; q<fe_values[i]->n_quadrature_points; ++q)
               {
               // Assert
@@ -1298,6 +1378,8 @@ StatisticsManagerPH<dim>::do_evaluate_xwall(const std::vector<const parallel::di
                 Tensor<1,dim> velocity;
                 for (unsigned int j=0; j<velocity_vector.size(); ++j)
                   velocity += fe_values[i]->shape_value(j,q) * velocity_vector[j];
+                for (unsigned int j=0; j<velocity_vector_xwall.size(); ++j)
+                  velocity += fe_values_xwall[i]->shape_value(j,q) * velocity_vector_xwall[j] * spalding.enrichment(q);
 
                 double reduced_jacobian;
                 if(dim==3)
@@ -1393,6 +1475,9 @@ StatisticsManagerPH<dim>::do_evaluate_xwall(const std::vector<const parallel::di
 
   const unsigned int fe_degree = dof_handler.get_fe().degree;
   std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_x);
+  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_xwall(n_points_x);
+  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_p(n_points_x);
+  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_tauw(n_points_x);
   QGauss<1> gauss_1d(fe_degree+1);
 
   for (unsigned int i=0; i<n_points_x; ++i)
@@ -1421,43 +1506,64 @@ StatisticsManagerPH<dim>::do_evaluate_xwall(const std::vector<const parallel::di
                                          Quadrature<dim>(points, weights),
                                          update_values | update_jacobians |
                                          update_quadrature_points | update_gradients));
+    fe_values_xwall[i].reset(new FEValues<dim>(mapping_,
+                                         dof_handler.get_fe().base_element(1),
+                                         Quadrature<dim>(points, weights),
+                                         update_values | update_jacobians |
+                                         update_quadrature_points | update_gradients));
+    fe_values_p[i].reset(new FEValues<dim>(mapping_,
+                                         dof_handler_p.get_fe(),
+                                         Quadrature<dim>(points, weights),
+                                         update_values | update_jacobians |
+                                         update_quadrature_points | update_gradients));
+    fe_values_tauw[i].reset(new FEValues<dim>(mapping_,
+                                         dof_handler_wdist.get_fe(),
+                                         Quadrature<dim>(points, weights),
+                                         update_values | update_jacobians |
+                                         update_quadrature_points | update_gradients));
   }
 
   const unsigned int scalar_dofs_per_cell = dof_handler.get_fe().base_element(0).dofs_per_cell;
-  std::vector<double> vel_values(fe_values[0]->n_quadrature_points);
-  std::vector<Tensor<1,dim> > velocity_vector(scalar_dofs_per_cell);
+  const unsigned int scalar_dofs_per_cell_p = dof_handler_p.get_fe().dofs_per_cell;
+  const unsigned int scalar_dofs_per_cell_xwall = dof_handler.get_fe().base_element(1).dofs_per_cell;
+  const unsigned int scalar_dofs_per_cell_tauw = dof_handler_wdist.get_fe().base_element(0).dofs_per_cell;
+//    std::vector<double> vel_values(fe_values[0]->n_quadrature_points);
+  std::vector<Tensor<1,dim> > velocity_vector(scalar_dofs_per_cell); // \vec{u}^e_h
+  std::vector<Tensor<1,dim> > velocity_vector_xwall(scalar_dofs_per_cell_xwall);
+  std::vector<Tensor<1,1> > tauw_vector(scalar_dofs_per_cell_tauw);
+  std::vector<Tensor<1,1> > wdist_vector(scalar_dofs_per_cell_tauw);
   std::vector<types::global_dof_index> dof_indices(dof_handler.get_fe().dofs_per_cell);
 
-  std::vector<double > pressure_vector(scalar_dofs_per_cell); // \vec{p}^e_h
-  std::vector<types::global_dof_index> dof_indices_p(dof_handler_p.get_fe().dofs_per_cell);
-//  FEValuesExtractors::Vector v_extract(0);
+  std::vector<double > pressure_vector(scalar_dofs_per_cell_p); // \vec{p}^e_h
+  std::vector<types::global_dof_index> dof_indices_p(scalar_dofs_per_cell_p);
   typename DoFHandler<dim>::active_cell_iterator cell_p=dof_handler_p.begin_active();
-  for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler.begin_active(); cell!=dof_handler.end(); ++cell, ++cell_p)
+  std::vector<types::global_dof_index> dof_indices_tauw(dof_handler_wdist.get_fe().dofs_per_cell);
+  typename DoFHandler<dim>::active_cell_iterator cell_tauw=dof_handler_wdist.begin_active();
+  for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler.begin_active(); cell!=dof_handler.end(); ++cell, ++cell_p, ++cell_tauw)
     if (cell->is_locally_owned())
       {
       if (cell->at_boundary(2)) // just evaluate cells at the bottom of the domain
       {
         cell->get_dof_indices(dof_indices);
         cell_p->get_dof_indices(dof_indices_p);
-        // vector-valued FE where all components are explicitly listed in the
-        // DoFHandler
-        if (dof_handler.get_fe().element_multiplicity(0) >= dim)
+        cell_tauw->get_dof_indices(dof_indices_tauw);
+
+        { //read dofs from vector
           for (unsigned int j=0; j<dof_indices.size(); ++j)
-            {
-              const std::pair<unsigned int,unsigned int> comp =
-                dof_handler.get_fe().system_to_component_index(j);
-              if (comp.first < dim)
-                velocity_vector[comp.second][comp.first] = (*velocity[0])(dof_indices[j]);
-            }
-        else
-          // scalar FE where we have several vectors referring to the same
-          // DoFHandler
           {
-            AssertDimension(dof_handler.get_fe().element_multiplicity(0), 1);
-            for (unsigned int j=0; j<scalar_dofs_per_cell; ++j)
-              for (unsigned int d=0; d<dim; ++d)
-                velocity_vector[j][d] = (*velocity[d])(dof_indices[j]);
+            const std::pair<unsigned int,unsigned int> comp =
+              dof_handler.get_fe().system_to_component_index(j);
+            if (comp.first < dim)
+              velocity_vector[comp.second][comp.first] = (*velocity[0])(dof_indices[j]);
+            else
+              velocity_vector_xwall[comp.second][comp.first-dim] = (*velocity[0])(dof_indices[j]);
           }
+          for (unsigned int j=0; j<scalar_dofs_per_cell_tauw; ++j)
+            wdist_vector[j][0] = (*fe_param.wdist)(dof_indices_tauw[j]);
+          for (unsigned int j=0; j<scalar_dofs_per_cell_tauw; ++j)
+            tauw_vector[j][0] = (*fe_param.tauw)(dof_indices_tauw[j]);
+        }
+
         for (unsigned int j=0; j<dof_indices_p.size(); ++j)
           {
             pressure_vector[j] = pressure(dof_indices_p[j]);
@@ -1466,19 +1572,59 @@ StatisticsManagerPH<dim>::do_evaluate_xwall(const std::vector<const parallel::di
         for (unsigned int i=0; i<n_points_x; ++i)
         {
           fe_values[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
+          fe_values_p[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
+          fe_values_xwall[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
+          fe_values_tauw[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
 
           double length = 0, dudy_w = 0, p_w = 0;
+
+          AlignedVector<double > wdist(fe_values[i]->n_quadrature_points,0.);
+          AlignedVector<double > tauw(fe_values[i]->n_quadrature_points,0.);
+          AlignedVector<Tensor<1,dim,double > > gradwdist(fe_values[i]->n_quadrature_points);
+          AlignedVector<Tensor<1,dim,double > > gradtauw(fe_values[i]->n_quadrature_points);
+          for (unsigned int q=0; q<fe_values[i]->n_quadrature_points; ++q)
+          {
+            for (unsigned int j=0; j<wdist_vector.size(); ++j)
+              wdist[q] += (fe_values_tauw[i]->shape_value(j,q) * wdist_vector[j])[0];
+            for (unsigned int j=0; j<tauw_vector.size(); ++j)
+              tauw[q] += (fe_values_tauw[i]->shape_value(j,q) * tauw_vector[j])[0];
+
+            for (unsigned int j=0; j<tauw_vector.size(); ++j)
+              gradtauw[q] += fe_values_tauw[i]->shape_grad(j,q) * tauw_vector[j][0];
+            for (unsigned int j=0; j<wdist_vector.size(); ++j)
+              gradwdist[q] += fe_values_tauw[i]->shape_grad(j,q) * wdist_vector[j][0];
+          }
+          SpaldingsLawEvaluation<dim, double, double > spalding(fe_param.viscosity);
+          std::vector<bool> enrcomp(1);
+          enrcomp[0] = true;
+          spalding.reinit(wdist,tauw,gradwdist,gradtauw,fe_values[i]->n_quadrature_points,enrcomp);
 
           for (unsigned int q=0; q<fe_values[i]->n_quadrature_points; ++q)
           {
             // calculate dudy at the quadrature point
-            double dudy = 0.0;
+            Tensor<1,dim,double > du = Tensor<1,dim,double >();
+            Tensor<1,dim,double > dv = Tensor<1,dim,double >();
+            double dudn = 0.0;
             double p = 0.;
             for (unsigned int j=0; j<velocity_vector.size(); ++j)
-              dudy += fe_values[i]->shape_grad(j,q)[1] * velocity_vector[j][0];
-
+              du += fe_values[i]->shape_grad(j,q) * velocity_vector[j][0];
             for (unsigned int j=0; j<velocity_vector.size(); ++j)
-              p += fe_values[i]->shape_value(j,q) * pressure_vector[j];
+              dv += fe_values[i]->shape_grad(j,q) * velocity_vector[j][1];
+
+            for (unsigned int j=0; j<velocity_vector_xwall.size(); ++j)
+              du += fe_values_xwall[i]->shape_grad(j,q) * velocity_vector_xwall[j][0]* spalding.enrichment(q)
+                    + fe_values_xwall[i]->shape_value(j,q) * velocity_vector_xwall[j][0]* spalding.enrichment_gradient(q);
+            for (unsigned int j=0; j<velocity_vector_xwall.size(); ++j)
+              dv += fe_values_xwall[i]->shape_grad(j,q) * velocity_vector_xwall[j][1]* spalding.enrichment(q)
+                    + fe_values_xwall[i]->shape_value(j,q) * velocity_vector_xwall[j][1]* spalding.enrichment_gradient(q);
+
+            Tensor<1,dim,double > n = gradwdist[q]/gradwdist[q].norm(); //normalized normal vector in r-s coordinates (element cordinates)
+            double dudn2 = (du*n)*(du*n) + (dv*n)*(dv*n);
+            dudn = std::sqrt(std::abs(dudn2));
+            if(du[1]<0.)
+              dudn *= -1.;
+            for (unsigned int j=0; j<velocity_vector.size(); ++j)
+              p += fe_values_p[i]->shape_value(j,q) * pressure_vector[j];
 
             double reduced_jacobian;
             if(dim==3)
@@ -1488,7 +1634,7 @@ StatisticsManagerPH<dim>::do_evaluate_xwall(const std::vector<const parallel::di
 
             double length_ele = reduced_jacobian * fe_values[i]->get_quadrature().weight(q);
             length += length_ele;
-            dudy_w += dudy*length_ele;
+            dudy_w += dudn*length_ele;
             p_w += p*length_ele;
 
           }
@@ -1541,154 +1687,195 @@ StatisticsManagerPH<dim>::do_evaluate_xwall(const std::vector<const parallel::di
 
 
 
-  // on the TOP
-    std::vector<double> length_top_loc(dudy_top_glob.size(),0.0);
-    std::vector<double> dudy_top_loc(dudy_top_glob.size(),0.0);
-    std::vector<double> p_top_loc(p_top_glob.size(),0.0);
+// on the TOP
+  std::vector<double> length_top_loc(dudy_top_glob.size(),0.0);
+  std::vector<double> dudy_top_loc(dudy_top_glob.size(),0.0);
+  std::vector<double> p_top_loc(p_top_glob.size(),0.0);
 
-//    const unsigned int fe_degree = dof_handler.get_fe().degree;
-    std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_top(n_points_x);
-//    QGauss<1> gauss_1d(fe_degree+1);
+  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_top(n_points_x);
+  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_p_top(n_points_x);
+  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_xwall_top(n_points_x);
+  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_tauw_top(n_points_x);
 
-    for (unsigned int i=0; i<n_points_x; ++i)
+  for (unsigned int i=0; i<n_points_x; ++i)
+  {
+    std::vector<Point<dim> > points(gauss_1d.size());
+    std::vector<double> weights(gauss_1d.size());
+    if(dim == 2)
     {
-      std::vector<Point<dim> > points(gauss_1d.size());
-      std::vector<double> weights(gauss_1d.size());
-      if(dim == 2)
-      {
-        points.resize(1);
-        weights.resize(1);
-      }
-      for (unsigned int j=0; j<weights.size(); ++j)
-      {
-        points[j][0] = (double)i/(n_points_x-1);  // linear distributed form 0 to 1
-        points[j][1] = 1.0;                       // assumed to be the top of the cells
-        if(dim==3)
-        {
-          points[j][2] = gauss_1d.point(j)[0];
-          weights[j] = gauss_1d.weight(j);
-        }
-        else
-          weights[j] = 1.;
-      }
-      fe_values_top[i].reset(new FEValues<dim>(mapping_,
-                                           dof_handler.get_fe().base_element(0),
-                                           Quadrature<dim>(points, weights),
-                                           update_values | update_jacobians |
-                                           update_quadrature_points | update_gradients));
+      points.resize(1);
+      weights.resize(1);
     }
+    for (unsigned int j=0; j<weights.size(); ++j)
+    {
+      points[j][0] = (double)i/(n_points_x-1);  // linear distributed form 0 to 1
+      points[j][1] = 1.0;                       // assumed to be the top of the cells
+      if(dim==3)
+      {
+        points[j][2] = gauss_1d.point(j)[0];
+        weights[j] = gauss_1d.weight(j);
+      }
+      else
+        weights[j] = 1.;
+    }
+    fe_values_top[i].reset(new FEValues<dim>(mapping_,
+                                         dof_handler.get_fe().base_element(0),
+                                         Quadrature<dim>(points, weights),
+                                         update_values | update_jacobians |
+                                         update_quadrature_points | update_gradients));
+    fe_values_xwall_top[i].reset(new FEValues<dim>(mapping_,
+                                         dof_handler.get_fe().base_element(1),
+                                         Quadrature<dim>(points, weights),
+                                         update_values | update_jacobians |
+                                         update_quadrature_points | update_gradients));
+    fe_values_p_top[i].reset(new FEValues<dim>(mapping_,
+                                         dof_handler_p.get_fe(),
+                                         Quadrature<dim>(points, weights),
+                                         update_values | update_jacobians |
+                                         update_quadrature_points | update_gradients));
+    fe_values_tauw_top[i].reset(new FEValues<dim>(mapping_,
+                                         dof_handler_wdist.get_fe(),
+                                         Quadrature<dim>(points, weights),
+                                         update_values | update_jacobians |
+                                         update_quadrature_points | update_gradients));
+  }
 
-    std::vector<Tensor<1,dim> > velocity_vector_top(scalar_dofs_per_cell);
-    std::vector<double > pressure_vector_top(scalar_dofs_per_cell); // \vec{p}^e_h
-
-    cell_p=dof_handler_p.begin_active();
-
-    for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler.begin_active(); cell!=dof_handler.end(); ++cell, ++cell_p)
-      if (cell->is_locally_owned())
-        {
-        if (cell->at_boundary(3)) // just evaluate cells at the bottom of the domain
-        {
-          cell->get_dof_indices(dof_indices);
-          cell_p->get_dof_indices(dof_indices_p);
-          // vector-valued FE where all components are explicitly listed in the
-          // DoFHandler
-          if (dof_handler.get_fe().element_multiplicity(0) >= dim)
-            for (unsigned int j=0; j<dof_indices.size(); ++j)
-              {
-                const std::pair<unsigned int,unsigned int> comp =
-                  dof_handler.get_fe().system_to_component_index(j);
-                if (comp.first < dim)
-                  velocity_vector_top[comp.second][comp.first] = (*velocity[0])(dof_indices[j]);
-              }
-          else
-            // scalar FE where we have several vectors referring to the same
-            // DoFHandler
-            {
-              AssertDimension(dof_handler.get_fe().element_multiplicity(0), 1);
-              for (unsigned int j=0; j<scalar_dofs_per_cell; ++j)
-                for (unsigned int d=0; d<dim; ++d)
-                  velocity_vector_top[j][d] = (*velocity[d])(dof_indices[j]);
-            }
-
-          for (unsigned int j=0; j<dof_indices_p.size(); ++j)
-            {
-              pressure_vector_top[j] = pressure(dof_indices_p[j]);
-            }
-
-          for (unsigned int i=0; i<n_points_x; ++i)
+  std::vector<double > pressure_vector_top(scalar_dofs_per_cell); // \vec{p}^e_h
+  std::vector<Tensor<1,dim> > velocity_vector_xwall_top(scalar_dofs_per_cell_xwall);
+  std::vector<Tensor<1,1> > tauw_vector_top(scalar_dofs_per_cell_tauw);
+  std::vector<Tensor<1,1> > wdist_vector_top(scalar_dofs_per_cell_tauw);
+  cell_p=dof_handler_p.begin_active();
+  cell_tauw=dof_handler_wdist.begin_active();
+  for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler.begin_active(); cell!=dof_handler.end(); ++cell, ++cell_p, ++cell_tauw)
+    if (cell->is_locally_owned())
+      {
+      if (cell->at_boundary(3)) // just evaluate cells at the bottom of the domain
+      {
+        cell->get_dof_indices(dof_indices);
+        cell_p->get_dof_indices(dof_indices_p);
+        cell_tauw->get_dof_indices(dof_indices_tauw);
+        // vector-valued FE where all components are explicitly listed in the
+        { //read dofs from vector
+          for (unsigned int j=0; j<dof_indices.size(); ++j)
           {
-            fe_values_top[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
-
-            double length = 0, dudy_w = 0, p_w = 0;
-
-            for (unsigned int q=0; q<fe_values_top[i]->n_quadrature_points; ++q)
-            {
-              // calculate dudy at the quadrature point
-              double dudy = 0.0;
-              double p = 0.;
-              for (unsigned int j=0; j<velocity_vector_top.size(); ++j)
-                dudy += fe_values_top[i]->shape_grad(j,q)[1] * velocity_vector_top[j][0];
-
-              for (unsigned int j=0; j<velocity_vector_top.size(); ++j)
-                p += fe_values_top[i]->shape_value(j,q) * pressure_vector_top[j];
-
-              double reduced_jacobian;
-              if(dim==3)
-                reduced_jacobian = fe_values_top[i]->jacobian(q)[2][2];
-              else
-                reduced_jacobian = 1.;
-
-              double length_ele = reduced_jacobian * fe_values_top[i]->get_quadrature().weight(q);
-              length += length_ele;
-              dudy_w += dudy*length_ele;
-              p_w += p*length_ele;
-
-            }
-
-            double n_cells_z_dir = (n_points_y_glob-1)/(n_points_y-1); // ASSUMED: n_cells_y_dir = n_cells_z_dir
-            if(dim == 3)
-              AssertThrow(std::abs(length - 4.5*h/n_cells_z_dir) < 1e-13,
-                      ExcMessage("check quadrature code. length = " + patch::to_string(length) + " lz_ele = " + patch::to_string(4.5*h/n_cells_z_dir) + "(element-length in z direction)"));
-
-            // find index within the x-values: first do a binary search to find
-            // the next larger value of x in the list...
-            const double x = fe_values_top[i]->quadrature_point(0)[0];
-            unsigned int idx = std::distance(x_glob.begin(),
-                                             std::lower_bound(x_glob.begin(), x_glob.end(),
-                                                              x));
-            // ..., then, check whether the point before was closer (but off
-            // by 1e-13 or less)
-            if (idx > 0 && std::abs(x_glob[idx-1]-x) < std::abs(x_glob[idx]-x))
-              idx--;
-            AssertThrow(std::abs(x_glob[idx]-x)<1e-13,
-                        ExcMessage("Could not locate " + patch::to_string(x) + " among "
-                                   "pre-evaluated points. Closest point is " +
-                                   patch::to_string(x_glob[idx]) + " at distance " +
-                                   patch::to_string(std::abs(x_glob[idx]-x))));
-
-            dudy_top_loc.at(idx) += dudy_w;
-            length_top_loc.at(idx) += length;
-            p_top_loc.at(idx) += p_w;
+            const std::pair<unsigned int,unsigned int> comp =
+              dof_handler.get_fe().system_to_component_index(j);
+            if (comp.first < dim)
+              velocity_vector[comp.second][comp.first] = (*velocity[0])(dof_indices[j]);
+            else
+              velocity_vector_xwall[comp.second][comp.first-dim] = (*velocity[0])(dof_indices[j]);
           }
+          for (unsigned int j=0; j<scalar_dofs_per_cell_tauw; ++j)
+            wdist_vector[j][0] = (*fe_param.wdist)(dof_indices_tauw[j]);
+          for (unsigned int j=0; j<scalar_dofs_per_cell_tauw; ++j)
+            tauw_vector[j][0] = (*fe_param.tauw)(dof_indices_tauw[j]);
         }
+
+        for (unsigned int j=0; j<dof_indices_p.size(); ++j)
+          {
+            pressure_vector_top[j] = pressure(dof_indices_p[j]);
+          }
+
+        for (unsigned int i=0; i<n_points_x; ++i)
+        {
+          fe_values_top[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
+          fe_values_p_top[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
+          fe_values_xwall_top[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
+          fe_values_tauw_top[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
+
+          double length = 0, dudy_w = 0, p_w = 0;
+          AlignedVector<double > wdist(fe_values_top[i]->n_quadrature_points,0.);
+          AlignedVector<double > tauw(fe_values_top[i]->n_quadrature_points,0.);
+          AlignedVector<Tensor<1,dim,double > > gradwdist(fe_values_top[i]->n_quadrature_points);
+          AlignedVector<Tensor<1,dim,double > > gradtauw(fe_values_top[i]->n_quadrature_points);
+          for (unsigned int q=0; q<fe_values_top[i]->n_quadrature_points; ++q)
+          {
+            for (unsigned int j=0; j<wdist_vector.size(); ++j)
+              wdist[q] += (fe_values_tauw_top[i]->shape_value(j,q) * wdist_vector[j])[0];
+            for (unsigned int j=0; j<tauw_vector.size(); ++j)
+              tauw[q] += (fe_values_tauw_top[i]->shape_value(j,q) * tauw_vector[j])[0];
+
+            for (unsigned int j=0; j<tauw_vector.size(); ++j)
+              gradtauw[q] += fe_values_tauw_top[i]->shape_grad(j,q) * tauw_vector[j][0];
+            for (unsigned int j=0; j<wdist_vector.size(); ++j)
+              gradwdist[q] += fe_values_tauw_top[i]->shape_grad(j,q) * wdist_vector[j][0];
+          }
+          SpaldingsLawEvaluation<dim, double, double > spalding(fe_param.viscosity);
+          std::vector<bool> enrcomp(1);
+          enrcomp[0] = true;
+          spalding.reinit(wdist,tauw,gradwdist,gradtauw,fe_values_top[i]->n_quadrature_points,enrcomp);
+
+          for (unsigned int q=0; q<fe_values_top[i]->n_quadrature_points; ++q)
+          {
+            // calculate dudy at the quadrature point
+            double dudy = 0.0;
+            double p = 0.;
+            for (unsigned int j=0; j<velocity_vector.size(); ++j)
+              dudy += fe_values_top[i]->shape_grad(j,q)[1] * velocity_vector[j][0];
+            for (unsigned int j=0; j<velocity_vector_xwall.size(); ++j)
+              dudy += fe_values_xwall_top[i]->shape_grad(j,q)[1] * velocity_vector_xwall[j][0]*spalding.enrichment(q)
+                    + fe_values_xwall_top[i]->shape_value(j,q) * velocity_vector_xwall[j][0]*spalding.enrichment_gradient(q)[1];
+
+            for (unsigned int j=0; j<velocity_vector.size(); ++j)
+              p += fe_values_p_top[i]->shape_value(j,q) * pressure_vector_top[j];
+
+            double reduced_jacobian;
+            if(dim==3)
+              reduced_jacobian = fe_values_top[i]->jacobian(q)[2][2];
+            else
+              reduced_jacobian = 1.;
+
+            double length_ele = reduced_jacobian * fe_values_top[i]->get_quadrature().weight(q);
+            length += length_ele;
+            dudy_w += dudy*length_ele;
+            p_w += p*length_ele;
+
+          }
+
+          double n_cells_z_dir = (n_points_y_glob-1)/(n_points_y-1); // ASSUMED: n_cells_y_dir = n_cells_z_dir
+          if(dim == 3)
+            AssertThrow(std::abs(length - 4.5*h/n_cells_z_dir) < 1e-13,
+                    ExcMessage("check quadrature code. length = " + patch::to_string(length) + " lz_ele = " + patch::to_string(4.5*h/n_cells_z_dir) + "(element-length in z direction)"));
+
+          // find index within the x-values: first do a binary search to find
+          // the next larger value of x in the list...
+          const double x = fe_values_top[i]->quadrature_point(0)[0];
+          unsigned int idx = std::distance(x_glob.begin(),
+                                           std::lower_bound(x_glob.begin(), x_glob.end(),
+                                                            x));
+          // ..., then, check whether the point before was closer (but off
+          // by 1e-13 or less)
+          if (idx > 0 && std::abs(x_glob[idx-1]-x) < std::abs(x_glob[idx]-x))
+            idx--;
+          AssertThrow(std::abs(x_glob[idx]-x)<1e-13,
+                      ExcMessage("Could not locate " + patch::to_string(x) + " among "
+                                 "pre-evaluated points. Closest point is " +
+                                 patch::to_string(x_glob[idx]) + " at distance " +
+                                 patch::to_string(std::abs(x_glob[idx]-x))));
+
+          dudy_top_loc.at(idx) += dudy_w;
+          length_top_loc.at(idx) += length;
+          p_top_loc.at(idx) += p_w;
         }
-    // accumulate data over all processors overwriting the processor-local data
-    // in xxx_loc
-    Utilities::MPI::sum(dudy_top_loc, communicator, dudy_top_loc);
-    Utilities::MPI::sum(length_top_loc, communicator, length_top_loc);
-    Utilities::MPI::sum(p_top_loc, communicator, p_top_loc);
+      }
+      }
+  // accumulate data over all processors overwriting the processor-local data
+  // in xxx_loc
+  Utilities::MPI::sum(dudy_top_loc, communicator, dudy_top_loc);
+  Utilities::MPI::sum(length_top_loc, communicator, length_top_loc);
+  Utilities::MPI::sum(p_top_loc, communicator, p_top_loc);
 
-    // check quadrature
-    for (unsigned int idx = 0; idx<x_glob.size(); idx++)
-      if(dim == 3)
-        AssertThrow(std::abs(length_top_loc.at(idx) - 4.5*h) < 1e-13 || std::abs(length_top_loc.at(idx) - 2*4.5*h) < 1e-13,
-            ExcMessage("check quadrature code. length_loc.at(" + patch::to_string(idx) + ") = " + patch::to_string(length_top_loc.at(idx)) + " 4.5*h = " + patch::to_string(4.5*h)));
+  // check quadrature
+  for (unsigned int idx = 0; idx<x_glob.size(); idx++)
+    if(dim == 3)
+      AssertThrow(std::abs(length_top_loc.at(idx) - 4.5*h) < 1e-13 || std::abs(length_top_loc.at(idx) - 2*4.5*h) < 1e-13,
+          ExcMessage("check quadrature code. length_loc.at(" + patch::to_string(idx) + ") = " + patch::to_string(length_top_loc.at(idx)) + " 4.5*h = " + patch::to_string(4.5*h)));
 
-    for (unsigned int idx = 0; idx<x_glob.size(); idx++)
-    {
-      dudy_top_glob.at(idx) += dudy_top_loc[idx]/length_top_loc[idx];
-      p_top_glob.at(idx) += p_top_loc[idx]/length_top_loc[idx];
-    }
+  for (unsigned int idx = 0; idx<x_glob.size(); idx++)
+  {
+    dudy_top_glob.at(idx) += dudy_top_loc[idx]/length_top_loc[idx];
+    p_top_glob.at(idx) += p_top_loc[idx]/length_top_loc[idx];
+  }
 
   numchsamp++;
 }

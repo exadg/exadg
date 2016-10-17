@@ -76,6 +76,7 @@ public:
   parallel::distributed::Vector<double> * tauw;
   AlignedVector<AlignedVector<VectorizedArray<double> > > * enrichment;
   AlignedVector<AlignedVector<Tensor<1,dim,VectorizedArray<double> > > > * enrichment_gradient;
+  std_cxx11::shared_ptr<Function<dim,double> > enrichment_is_within;
 };
 
 #endif /* INCLUDE_FE_PARAMETERS_H_ */

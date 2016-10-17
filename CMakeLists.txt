@@ -37,6 +37,7 @@ SET( TARGET_SRC
      source/fe_navierstokes_evaluator.cc
      source/fe_navierstokes_solver.cc
      source/fluid_base_algorithm.cc
+     source/SpaldingsLaw.cc
      source/statistics_manager.cc
      source/statistics_manager_ph.cc
      source/PrintFunctions.cc

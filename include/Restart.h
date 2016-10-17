@@ -118,7 +118,7 @@ void write_restart_preamble(boost::archive::binary_oarchive & oa, InputParameter
       for (unsigned int n = 0; n < n_ranks; n++)
       {
         const std::string rank_string = Utilities::int_to_string(n);
-        const int error = system (("mv -f " + param.output_prefix  +"." + rank_string + ".restart" + " " + param.output_prefix +"." + rank_string + ".restart" + ".old").c_str());
+        const int error = rename ((param.output_prefix  +"." + rank_string + ".restart").c_str(), (param.output_prefix +"." + rank_string + ".restart" + ".old").c_str());
         AssertThrow (error == 0, ExcMessage(std::string ("Can't move files: ")
                         +
                         param.output_prefix  +"." + rank_string + ".restart" + " -> " + param.output_prefix  +"." + rank_string + ".restart" +".old"));

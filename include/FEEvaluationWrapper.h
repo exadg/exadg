@@ -224,10 +224,6 @@ public:
   }
 };
 
-
-
-
-
 template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d,
       int n_components_, typename Number>
 class FEEvaluationWrapper<dim, fe_degree, fe_degree_xwall, n_q_points_1d, n_components_, Number, true>
@@ -323,7 +319,7 @@ public:
     for (unsigned int v=0; v<data.n_components_filled(cell); ++v)
     {
       typename DoFHandler<dim>::cell_iterator dcell = data.get_cell_iterator(cell, v);
-      if ((dcell->center()[1] > (1.0-fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + fe_param.max_wdist_xwall)))
+      if (fe_param.enrichment_is_within->value(dcell->center())>0.)
       {
         enriched = true;
         enriched_components[v] = true;
@@ -957,7 +953,7 @@ public:
     {
       typename DoFHandler<dim>::cell_iterator dcell = this->data.get_cell_iterator(cell, v);
 //            std::cout << ((dcell->center()[1] > (1.0-MAX_WDIST_XWALL)) || (dcell->center()[1] <(-1.0 + MAX_WDIST_XWALL))) << std::endl;
-      if ((dcell->center()[1] > (1.0-this->fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + this->fe_param.max_wdist_xwall)))
+      if (this->fe_param.enrichment_is_within->value(dcell->center())>0.)
       {
         this->quad_type = 1;
       }
@@ -1049,7 +1045,7 @@ public:
         typename DoFHandler<dim>::cell_iterator dcell =  data.get_cell_iterator(
             data.faces.at(f).left_cell[v] / VectorizedArray<Number>::n_array_elements,
             data.faces.at(f).left_cell[v] % VectorizedArray<Number>::n_array_elements);
-            if ((dcell->center()[1] > (1.0-fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + fe_param.max_wdist_xwall)))
+            if (fe_param.enrichment_is_within->value(dcell->center())>0.)
             {
               enriched = true;
               enriched_components.at(v)=true;
@@ -1066,7 +1062,7 @@ public:
         typename DoFHandler<dim>::cell_iterator dcell =  data.get_cell_iterator(
             data.faces.at(f).right_cell[v] / VectorizedArray<Number>::n_array_elements,
             data.faces.at(f).right_cell[v] % VectorizedArray<Number>::n_array_elements);
-            if ((dcell->center()[1] > (1.0-fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + fe_param.max_wdist_xwall)))
+            if (fe_param.enrichment_is_within->value(dcell->center())>0.)
             {
               quad_type = 1;
             }
@@ -1080,7 +1076,7 @@ public:
         typename DoFHandler<dim>::cell_iterator dcell =  data.get_cell_iterator(
             data.faces.at(f).right_cell[v] / VectorizedArray<Number>::n_array_elements,
             data.faces.at(f).right_cell[v] % VectorizedArray<Number>::n_array_elements);
-            if ((dcell->center()[1] > (1.0-fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + fe_param.max_wdist_xwall)))
+            if (fe_param.enrichment_is_within->value(dcell->center())>0.)
             {
               enriched = true;
               enriched_components.at(v)=true;
@@ -1097,7 +1093,7 @@ public:
         typename DoFHandler<dim>::cell_iterator dcell =  data.get_cell_iterator(
             data.faces.at(f).left_cell[v] / VectorizedArray<Number>::n_array_elements,
             data.faces.at(f).left_cell[v] % VectorizedArray<Number>::n_array_elements);
-            if ((dcell->center()[1] > (1.0-fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + fe_param.max_wdist_xwall)))
+            if (fe_param.enrichment_is_within->value(dcell->center())>0.)
             {
               quad_type = 1;
             }
@@ -1699,7 +1695,7 @@ public:
         typename DoFHandler<dim>::cell_iterator dcell =  this->data.get_cell_iterator(
             this->data.faces.at(f).left_cell[v] / VectorizedArray<Number>::n_array_elements,
             this->data.faces.at(f).left_cell[v] % VectorizedArray<Number>::n_array_elements);
-            if ((dcell->center()[1] > (1.0-this->fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + this->fe_param.max_wdist_xwall)))
+            if (this->fe_param.enrichment_is_within->value(dcell->center())>0.)
             {
               this->quad_type = 1;
             }
@@ -1712,7 +1708,7 @@ public:
         typename DoFHandler<dim>::cell_iterator dcell =  this->data.get_cell_iterator(
             this->data.faces.at(f).right_cell[v] / VectorizedArray<Number>::n_array_elements,
             this->data.faces.at(f).right_cell[v] % VectorizedArray<Number>::n_array_elements);
-            if ((dcell->center()[1] > (1.0-this->fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + this->fe_param.max_wdist_xwall)))
+            if (this->fe_param.enrichment_is_within->value(dcell->center())>0.)
             {
               this->quad_type = 1;
             }
@@ -1726,7 +1722,7 @@ public:
         typename DoFHandler<dim>::cell_iterator dcell =  this->data.get_cell_iterator(
             this->data.faces.at(f).right_cell[v] / VectorizedArray<Number>::n_array_elements,
             this->data.faces.at(f).right_cell[v] % VectorizedArray<Number>::n_array_elements);
-            if ((dcell->center()[1] > (1.0-this->fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + this->fe_param.max_wdist_xwall)))
+            if (this->fe_param.enrichment_is_within->value(dcell->center())>0.)
             {
               this->quad_type = 1;
             }
@@ -1739,7 +1735,7 @@ public:
         typename DoFHandler<dim>::cell_iterator dcell =  this->data.get_cell_iterator(
             this->data.faces.at(f).left_cell[v] / VectorizedArray<Number>::n_array_elements,
             this->data.faces.at(f).left_cell[v] % VectorizedArray<Number>::n_array_elements);
-            if ((dcell->center()[1] > (1.0-this->fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + this->fe_param.max_wdist_xwall)))
+            if (this->fe_param.enrichment_is_within->value(dcell->center())>0.)
             {
               this->quad_type = 1;
             }

@@ -420,6 +420,7 @@ public:
     variabletauw(true),
     dtauw(1.),
     max_wdist_xwall(-1.),
+    diffusion_number(-1.),
 
  
     // OUTPUT AND POSTPROCESSING
@@ -1289,6 +1290,9 @@ public:
 
   // max wall distance of enriched elements
   double max_wdist_xwall;
+
+  // diffusion number: used to define time step size for the Spalart Allmaras equations
+  double diffusion_number;
 
 
   /**************************************************************************************/

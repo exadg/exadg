@@ -12,6 +12,8 @@
 #include "InverseMassMatrixXWall.h"
 #include <deal.II/base/utilities.h>
 
+template<int dim> class Enrichment;
+
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 class DGNavierStokesDualSplittingXWall : public DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>
 {
@@ -22,18 +24,18 @@ public:
 
 
   enum class DofHandlerSelector{
-    velocity = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity,
-    pressure = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::pressure,
-    wdist_tauw = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::n_variants,
-    n_variants = wdist_tauw+1
+    velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity),
+    pressure = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::pressure),
+    wdist_tauw = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::n_variants),
+    n_variants = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(wdist_tauw)+1
   };
 
   enum class QuadratureSelector{
-    velocity = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity,
-    pressure = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::pressure,
-    velocity_nonlinear = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity_nonlinear,
-    enriched = DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::n_variants,
-    n_variants = enriched+1
+    velocity = static_cast<typename std::underlying_type<QuadratureSelector>::type >(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity),
+    pressure = static_cast<typename std::underlying_type<QuadratureSelector>::type >(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::pressure),
+    velocity_nonlinear = static_cast<typename std::underlying_type<QuadratureSelector>::type >(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity_nonlinear),
+    enriched = static_cast<typename std::underlying_type<QuadratureSelector>::type >(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::n_variants),
+    n_variants = static_cast<typename std::underlying_type<QuadratureSelector>::type >(enriched)+1
   };
 
   DGNavierStokesDualSplittingXWall(parallel::distributed::Triangulation<dim> const &triangulation,
@@ -62,12 +64,6 @@ public:
   void rhs_for_inverse_mass_matrix(parallel::distributed::Vector<value_type> &velocity);
 
   void xwall_projection(parallel::distributed::Vector<value_type> & velocity);
-
-  // TODO Benjamin: with the new boundary descriptor this function should not be necessary, please check this!
-
-//  void prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
-//                                    parallel::distributed::Vector<value_type> &pressure,
-//                                    double const                              evaluation_time) const;
 
   FE_Q<dim> const & get_fe_wdist() const
   {
@@ -115,11 +111,6 @@ private:
                                        parallel::distributed::Vector<value_type>    &,
                                        const parallel::distributed::Vector<value_type>  &,
                                        const std::pair<unsigned int,unsigned int>   &cell_range);
-//  // inverse mass matrix velocity
-//  void local_precompute_mass_matrix(const MatrixFree<dim,value_type>                &data,
-//                                    parallel::distributed::Vector<value_type>    &,
-//                                    const parallel::distributed::Vector<value_type>  &,
-//                                    const std::pair<unsigned int,unsigned int>          &cell_range);
 
   // inverse mass matrix velocity
   void local_project_xwall(const MatrixFree<dim,value_type>                &data,
@@ -167,6 +158,8 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
 {
   DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::setup(periodic_face_pairs,boundary_descriptor_velocity,boundary_descriptor_pressure,field_functions);
 
+  this->viscous_operator.initialize_viscous_coefficients();
+
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     std::cout << "\nXWall Initialization:" << std::endl;
 
@@ -187,7 +180,11 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   tauw_n.update_ghost_values();
 
   this->fe_param.setup(&wdist,&tauw,&enrichment,&enrichment_gradient);
+  std_cxx11::shared_ptr<Function<dim> > test;
+  test.reset(new Enrichment<dim>(this->param.max_wdist_xwall));
+  this->fe_param.enrichment_is_within = test;
   fe_param_n.setup(&wdist,&tauw_n);
+  fe_param_n.enrichment_is_within = test;
 
   enrichment.resize(this->data.n_macro_cells());
   enrichment_gradient.resize(this->data.n_macro_cells());
@@ -271,18 +268,6 @@ data_reinit(typename MatrixFree<dim,value_type>::AdditionalData & additional_dat
 
   this->data.reinit (this->mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 }
-
-// TODO Benjamin: with the new boundary descriptor this function should not be necessary, please check this!
-
-//template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-//void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
-//prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
-//                             parallel::distributed::Vector<value_type> &pressure,
-//                             double const                              evaluation_time) const
-//{
-//  VectorTools::interpolate(this->mapping, this->dof_handler_u, AnalyticalSolution<dim>(true,evaluation_time,2*dim), velocity);
-//  VectorTools::interpolate(this->mapping, this->dof_handler_p, AnalyticalSolution<dim>(false,evaluation_time), pressure);
-//}
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
@@ -672,6 +657,15 @@ calculate_wall_shear_stress (const parallel::distributed::Vector<value_type>    
   mean = Utilities::MPI::sum(mean,MPI_COMM_WORLD);
   count = Utilities::MPI::sum(count,MPI_COMM_WORLD);
   mean /= (value_type)count;
+  //prescribe 1% of mean as minimum value
+  const double fac = mean * 0.02;
+  for(unsigned int i = 0; i < force.local_size(); ++i)
+  {
+    if(normalization.local_element(i)>EPSILON && tauw_boundary.local_element(i) < fac)
+    {
+      tauw_boundary.local_element(i) = fac;
+    }
+  }
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     std::cout << "mean = " << mean << " ";
 
@@ -875,6 +869,7 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 setup_helmholtz_preconditioner(HelmholtzOperatorData<dim> &)
 {
+  this->helmholtz_operator.initialize_strong_homogeneous_dirichlet_boundary_conditions();
   if(this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix)
   {
     this->helmholtz_preconditioner.reset(new InverseMassMatrixPreconditionerPtr<dim,fe_degree,value_type>(

@@ -80,6 +80,10 @@ template void print_parameter<double> (ConditionalOStream &pcout,
                                        const std::string  name,
                                        const double       value);
 
+//required on SuperMUC
+template void print_parameter<unsigned long long> (ConditionalOStream &pcout,
+                                    const std::string  name,
+                                    const unsigned long long          value);
 
 template void print_value<std::string> (ConditionalOStream &pcout,
                                         const std::string  value);

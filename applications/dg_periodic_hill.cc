@@ -76,33 +76,34 @@
 
 #include "DriverSteadyProblems.h"
 
-const unsigned int FE_DEGREE = 3;//3
+const unsigned int FE_DEGREE = 4;//3
 const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
 const unsigned int FE_DEGREE_XWALL = 1;
-const unsigned int N_Q_POINTS_1D_XWALL = 6;
+const unsigned int N_Q_POINTS_1D_XWALL = 30;
 const unsigned int DIMENSION = 2; // DIMENSION >= 2
 const unsigned int REFINE_STEPS_SPACE_MIN = 4;//4
 const unsigned int REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
 const unsigned int REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
-const double GRID_STRETCH_FAC = 1.3;
-const bool USE_SOURCE_TERM_CONTROLLER = false;
+const double GRID_STRETCH_FAC = 0.001;
+const bool USE_SOURCE_TERM_CONTROLLER = true;
 
 void InputParametersNavierStokes::set_input_parameters()
 {
-  output_prefix = "ph1400_l4_k3_sa";
-  cfl = 0.02;
+  output_prefix = "ph10595_l4_k4k1";
+  cfl = 0.08;
+  diffusion_number = 0.02;
   //Re = 10595: 1.48571e-5
   //Re = 5600:  2.8109185e-5
   //Re = 700:   2.2487348e-4
   //Re = 1400:  1.1243674e-4
-  viscosity = 1.1243674e-4;
+  viscosity = 1.48571e-5;
 
   //xwall
   variabletauw = true;
   dtauw = 1.;
   ml = 1.;
-  max_wdist_xwall = -1.;
+  max_wdist_xwall = 0.125;
 
   //dual splitting scheme
   problem_type = ProblemType::Unsteady;
@@ -110,20 +111,22 @@ void InputParametersNavierStokes::set_input_parameters()
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   projection_type = ProjectionType::DivergencePenalty;
-  penalty_factor_divergence = 1e0;
-  order_time_integrator = 3;
+  penalty_factor_divergence = 1e1;
+  order_time_integrator = 2;
 
   //xwall specific
   spatial_discretization = SpatialDiscretization::DGXWall;
   IP_formulation_viscous = InteriorPenaltyFormulation::NIPG;
+  IP_factor_viscous = 1.;
   solver_viscous = SolverViscous::GMRES;
 
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;//AdaptiveTimeStepCFL;
+  calculation_of_time_step_size = TimeStepCalculation::AdaptiveTimeStepCFL;//AdaptiveTimeStepCFL;
   formulation_viscous_term = FormulationViscousTerm::DivergenceFormulation; //also default
   divu_integrated_by_parts = true;
   gradp_integrated_by_parts = true;
   pure_dirichlet_bc = true;
   output_solver_info_every_timesteps = 1e2;
+  right_hand_side = true;
 
   end_time = 0.6;
   output_start_time = 0.;
@@ -132,6 +135,7 @@ void InputParametersNavierStokes::set_input_parameters()
   statistics_every = 10;
   restart_every_timesteps = 1e9;
   restart_interval_time = 1.e9;
+  restart_interval_wall_time = 1.e9;
 
   max_velocity = 4.;
 
@@ -310,6 +314,31 @@ void InputParametersNavierStokes::set_input_parameters()
     return result;
   }
 
+template<int dim>
+class Enrichment:public Function<dim>
+{
+public:
+  Enrichment (const double max_distance) : Function<dim>(1, 0.),
+                                           max_distance(max_distance)
+                                           {}
+  virtual ~Enrichment (){};
+  virtual double value (const Point<dim> &p,const unsigned int = 0) const
+  {
+    PullBack<dim> pull_back;
+    double test = pull_back.value(p,1);
+    test -= 0.028;
+    test /= (2.036*0.028);
+    test *= 2.;
+    test -= 1.;
+//    std::cout << test << std::endl;
+    if ((test > (1.0-max_distance)) || (test <(-1.0 + max_distance)))
+      return 1.;
+    else
+      return -1.;
+  }
+  const double max_distance;
+};
+
   template<int dim>
   class AnalyticalSolutionVelocity : public Function<dim>
   {
@@ -350,6 +379,9 @@ void InputParametersNavierStokes::set_input_parameters()
           result = 0.0;
         if(dim == 3)
           result *= (1.0 + 0.1*((double)rand() / (RAND_MAX)));
+        //start with 30% of nominal velocity and ramp it up
+        result *= 0.91;//Stefan J used another density and thus the initial condition was different
+        result *= 0.5;
       }
       else
         result = 0.0;
@@ -406,29 +438,40 @@ void InputParametersNavierStokes::set_input_parameters()
   public:
     RightHandSide (const double time = 0.)
       :
-      Function<dim>(dim, time)
-    {}
+      Function<dim>(dim, time),
+      oldforce_(13.5)
+    {
+      massflows_.resize(2);
+      if(dim==2)
+      {
+        massflows_[0] = 0.160238;
+        massflows_[1] = 0.160238;
+      }
+      else
+      {
+        massflows_[0] = 20.19e-3;
+        massflows_[1] = 20.19e-3;
+      }
+    }
 
     virtual ~RightHandSide(){};
 
     virtual double value (const Point<dim> &p,const unsigned int component = 0) const;
 
-    void setup(const double* massflows, double oldforce, double integrand);
+    void setup(const std::vector<double> &massflows, double oldforce);
   private:
     std::vector<double> massflows_;
     double oldforce_;
-    double integrand_;
   };
 
 
   template<int dim>
-  void RightHandSide<dim>::setup(const double* massflows, double oldforce, double integrand)
+  void RightHandSide<dim>::setup(const std::vector<double> &massflows, double oldforce)
   {
     massflows_.resize(2);
     massflows_[0] = massflows[0];
     massflows_[1] = massflows[1];
     oldforce_ = oldforce;
-    integrand_ = integrand;
   }
 
 
@@ -441,25 +484,25 @@ void InputParametersNavierStokes::set_input_parameters()
       double newforce = 0.0;
       if(component==0)
       {
-        const double massflow_id = 40.38e-3;
-//        double force = 13.5;
+        double massflow_id = 40.38e-3;
+        if(dim==2)
+          massflow_id = 0.320476;
+        //start with 10% of the ideal mass flow and increase within 0.1 time units to 1
+        if(this->get_time()<0.1)
+          massflow_id *= std::cos(this->get_time()*numbers::PI*10.+numbers::PI)*0.25+0.75;
 
-        if(this->get_time() > 0.000)
-        {
-          //new estimated force
-          //first contribution makes the system want to get back to the ideal value (spring)
-          //the second contribution is a penalty on quick changes (damping)
-          //the constants are empirical
+        //new estimated force
+        //first contribution makes the system want to get back to the ideal value (spring)
+        //the second contribution is a penalty on quick changes (damping)
+        //the constants are empirical
 
-  //        double oldforce = newforce;
-          double dgoalm = massflow_id - massflows_[0];
-          double dm = massflows_[0] - massflows_[1];
-
+//        double oldforce = newforce;
+        double dgoalm = massflow_id - massflows_[0];
+        double dm = massflows_[0] - massflows_[1];
+        if(dim==3)
           newforce = 500.0*dgoalm  - 30000.0*dm + oldforce_; //(B1)
-        }
-        else
-          newforce = 13.5;
-
+        if(dim==2)
+          newforce = 50.0*dgoalm  - 30000.0*dm + oldforce_; //(B1)
         return newforce;
       }
       else
@@ -505,6 +548,180 @@ void InputParametersNavierStokes::set_input_parameters()
   return result;
   }
 
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+  class TimeIntBDFDualSplittingPH : public virtual TimeIntBDFDualSplitting<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>
+  {
+  public:
+    TimeIntBDFDualSplittingPH(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
+                              fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
+                            std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
+                            fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >    postprocessor_in,
+                            InputParametersNavierStokes const                       &param_in,
+                            unsigned int const                                      n_refine_time_in)
+      :
+      TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+              (ns_operation_in,postprocessor_in,param_in,n_refine_time_in),
+              ns_op(ns_operation_in),
+              old_RHS_value(13.5),
+              rhs(nullptr)
+              {
+                massflows.resize(2);
+                if(dim==2)
+                {
+                  massflows[0] = 0.160238;
+                  massflows[1] = 0.160238;
+                }
+                else
+                {
+                  massflows[0] = 20.19e-3;
+                  massflows[1] = 20.19e-3;
+                }
+              }
+
+      virtual ~TimeIntBDFDualSplittingPH(){}
+  private:
+
+    std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_op;
+    std::vector<double> massflows;
+    double old_RHS_value;
+    std_cxx11::shared_ptr<RightHandSide<dim> > rhs;
+    void convective_step()
+    {
+      setup_controller();
+      compute_massflow_PH(this->velocity[0]);
+
+      TimeIntBDFDualSplitting<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>::convective_step();
+    }
+    void compute_massflow_PH (const parallel::distributed::Vector<value_type>     &src)
+    {
+      double dst_loc = 0.0;
+      ns_op->get_data().cell_loop(&TimeIntBDFDualSplittingPH<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_compute_massflow_PH,
+                                     this, dst_loc, src);
+
+      dst_loc = Utilities::MPI::sum(dst_loc, MPI_COMM_WORLD);
+      massflows[1] = massflows[0];
+      massflows[0] = dst_loc/(9.0*0.028); //9.0*0.028 = 9.0*h is the length of the periodic hill domain
+  #ifdef DEBUG_MASSFLOW_CONTROLLER
+      if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+      {
+  //      std::cout << "old massflow = " << massflows[1] << std::endl;
+        std::cout << "massflow = " << massflows[0] << std::endl;
+      }
+  #endif
+    }
+
+    void setup_controller()
+    {
+      if(rhs == nullptr)
+        rhs = std::dynamic_pointer_cast<RightHandSide<dim> > (ns_op->get_field_functions()->right_hand_side);
+      Point<dim> dummy;
+      if (this->time_step_number <= 2)
+      {
+        old_RHS_value = 13.5;
+      }
+      else
+      {
+        rhs->setup(massflows,old_RHS_value);
+        old_RHS_value = rhs->value(dummy);
+      }
+//  #ifdef DEBUG_MASSFLOW_CONTROLLER
+      if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+      {
+        std::cout << "fx = " << old_RHS_value << "  dm/dt old = "<< massflows[1] << "  dm/dt new = "<< massflows[0] << std::endl;
+      }
+//  #endif
+      if(this->time_step_number% this->param.output_solver_info_every_timesteps == 0)
+        if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+        {
+          std::cout << "fx = " << old_RHS_value << "  dm/dt old = "<< massflows[1] << "  dm/dt new = "<< massflows[0] << std::endl;
+        }
+    }
+    void local_compute_massflow_PH (const MatrixFree<dim,value_type>                       &data,
+                                    double                                                 &dst,
+                                    const parallel::distributed::Vector<value_type>   &src,
+                                    const std::pair<unsigned int,unsigned int>             &cell_range) const
+    {
+      static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
+      static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
+
+      FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall>
+          fe_eval(data,ns_op->get_fe_parameters(),0);
+
+      double dmdt_V_loc = 0.0;
+      for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+      {
+        VectorizedArray<value_type> dmdt_V_loc_array =
+                make_vectorized_array<value_type>(0.0);
+        VectorizedArray<value_type> u_x =
+            make_vectorized_array<value_type>(0.0);
+        AlignedVector<VectorizedArray<value_type> > JxW_values;
+        fe_eval.reinit(cell);
+        fe_eval.read_dof_values(src);
+        fe_eval.evaluate (true,false);
+
+        JxW_values.resize(fe_eval.n_q_points);
+        fe_eval.fill_JxW_values(JxW_values);
+
+        // loop over quadrature points
+        for (unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+        {
+  //        JxW = fe_eval.J_value[q]*fe_eval.quadrature_weights[q];
+          u_x = fe_eval.get_value(q)[0];
+          dmdt_V_loc_array += u_x*JxW_values[q];
+        }
+        // loop over vectorized array
+        for (unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
+        {
+          dmdt_V_loc += dmdt_V_loc_array[v];
+        }
+      }
+      dst += dmdt_V_loc;
+  //    dst.at(0) = dmdt_V_loc;
+    }
+    void reinit_rhs();
+
+  };
+
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+  class TimeIntBDFDualSplittingXWallPH : public virtual TimeIntBDFDualSplittingXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>,
+                                         public virtual TimeIntBDFDualSplittingPH<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>
+  {
+  public:
+    TimeIntBDFDualSplittingXWallPH(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
+                              fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
+                            std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
+                            fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >    postprocessor_in,
+                            InputParametersNavierStokes const                       &param_in,
+                            unsigned int const                                      n_refine_time_in)
+      :
+      TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+              (ns_operation_in,postprocessor_in,param_in,n_refine_time_in),
+      TimeIntBDFDualSplittingPH<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+              (ns_operation_in,postprocessor_in,param_in,n_refine_time_in)
+    {}
+  };
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+  class TimeIntBDFDualSplittingXWallSpalartAllmarasPH : public virtual TimeIntBDFDualSplittingXWallSpalartAllmaras<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>,
+                                                        public virtual TimeIntBDFDualSplittingPH<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>
+  {
+  public:
+    TimeIntBDFDualSplittingXWallSpalartAllmarasPH(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
+                              fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
+                            std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
+                            fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >    postprocessor_in,
+                            InputParametersNavierStokes const                       &param_in,
+                            unsigned int const                                      n_refine_time_in)
+      :
+      TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+              (ns_operation_in,postprocessor_in,param_in,n_refine_time_in),
+      TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+              (ns_operation_in,postprocessor_in,param_in,n_refine_time_in),
+      TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+              (ns_operation_in,postprocessor_in,param_in,n_refine_time_in),
+      TimeIntBDFDualSplittingPH<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+              (ns_operation_in,postprocessor_in,param_in,n_refine_time_in)
+    {}
+  };
   template<int dim>
   class NavierStokesProblem
   {
@@ -560,7 +777,7 @@ void InputParametersNavierStokes::set_input_parameters()
     void setup()
     {
       PostProcessor<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>::setup();
-      statistics_ph.setup(PushForward<dim>(),this->param.output_prefix);
+      statistics_ph.setup(PushForward<dim>(),this->param.output_prefix,false);
     }
 
     virtual void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
@@ -604,7 +821,7 @@ void InputParametersNavierStokes::set_input_parameters()
     void setup()
     {
       PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>::setup();
-      statistics_ph.setup(PushForward<dim>(),this->param.output_prefix);
+      statistics_ph.setup(PushForward<dim>(),this->param.output_prefix,true);
     }
 
     virtual void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
@@ -628,17 +845,6 @@ void InputParametersNavierStokes::set_input_parameters()
           statistics_ph.write_output(this->param.output_prefix,this->ns_operation_->get_viscosity(),0.);//TODO Benjamin: add mass flow in last slot
       }
 
-      //      const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
-
-//      if(time > this->param.statistics_start_time-EPSILON && time_step_number % this->param.statistics_every == 0)
-//      {
-//        this->statistics_ch.evaluate_xwall(velocity,
-//                                        this->ns_operation_xw_->get_dof_handler_wdist(),
-//                                        this->ns_operation_xw_->get_fe_parameters(),
-//                                        this->ns_operation_xw_->get_viscosity());
-//        if(time_step_number % 100 == 0 || time > (this->param.end_time-EPSILON))
-//          this->statistics_ch.write_output(this->param.output_prefix,this->ns_operation_->get_viscosity());
-//      }
     };
   protected:
     StatisticsManagerPH<dim> statistics_ph;
@@ -690,7 +896,7 @@ void InputParametersNavierStokes::set_input_parameters()
         // initialize postprocessor after initializing navier_stokes_operation
         postprocessor.reset(new PostProcessorPHXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,param));
         // initialize time integrator that depends on both navier_stokes_operation and postprocessor
-        time_integrator.reset(new TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
+        time_integrator.reset(new TimeIntBDFDualSplittingXWallSpalartAllmarasPH<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
             navier_stokes_operation,postprocessor,param,refine_steps_time));
       }
       else
@@ -709,20 +915,13 @@ void InputParametersNavierStokes::set_input_parameters()
         // initialize postprocessor after initializing navier_stokes_operation
         postprocessor.reset(new PostProcessorPH<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,param));
         // initialize time integrator that depends on both navier_stokes_operation and postprocessor
-        time_integrator.reset(new TimeIntBDFDualSplitting<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
+        time_integrator.reset(new TimeIntBDFDualSplittingPH<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
             navier_stokes_operation,postprocessor,param,refine_steps_time));
       }
       else if(param.problem_type == ProblemType::Unsteady &&
               param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
       {
-        // initialize navier_stokes_operation
-        navier_stokes_operation.reset(new DGNavierStokesCoupled<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
-            (triangulation,param));
-        // initialize postprocessor after initializing navier_stokes_operation
-        postprocessor.reset(new PostProcessorPH<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,param));
-        // initialize time integrator that depends on both navier_stokes_operation and postprocessor
-        time_integrator.reset(new TimeIntBDFCoupled<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
-            navier_stokes_operation,postprocessor,param,refine_steps_time));
+        AssertThrow(false,ExcMessage("currently not implemented"));
       }
     }
 
@@ -753,7 +952,6 @@ void InputParametersNavierStokes::set_input_parameters()
     triangulation.last()->vertex(0)[1] = 0.;
     if(dim==3)
       triangulation.last()->vertex(4)[1] = 0.;
-
     // boundary ids for refinements[0] = 2:
     //periodicity in x-direction
     //add 10 to avoid conflicts with dirichlet boundary, which is 0

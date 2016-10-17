@@ -88,7 +88,8 @@ const double GRID_STRETCH_FAC = 0.001;
 void InputParametersNavierStokes::set_input_parameters()
 {
   output_prefix = "ch395_l3_k5k1_gt0_sa";
-  cfl = 0.1;
+  cfl = 0.08;
+  diffusion_number = 0.03;
   viscosity = 1./395.;
 
   //xwall
@@ -103,19 +104,22 @@ void InputParametersNavierStokes::set_input_parameters()
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   projection_type = ProjectionType::DivergencePenalty;
-  order_time_integrator = 3;
+  penalty_factor_divergence = 1.0e1;
+  order_time_integrator = 2;
 
   //xwall specific
   spatial_discretization = SpatialDiscretization::DGXWall;
   IP_formulation_viscous = InteriorPenaltyFormulation::NIPG;
+  IP_factor_viscous = 4.;
   solver_viscous = SolverViscous::GMRES;
 
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
+  calculation_of_time_step_size = TimeStepCalculation::AdaptiveTimeStepCFL;
   formulation_viscous_term = FormulationViscousTerm::DivergenceFormulation; //also default
   divu_integrated_by_parts = true;
   gradp_integrated_by_parts = true;
   pure_dirichlet_bc = true;
-  output_solver_info_every_timesteps = 1e1;
+  output_solver_info_every_timesteps = 1e2;
+  right_hand_side = true;
 
   end_time = 50.;
   output_start_time = 0.;
@@ -128,10 +132,28 @@ void InputParametersNavierStokes::set_input_parameters()
 
   //solver tolerances
   rel_tol_pressure = 1.e-4;
-  rel_tol_projection = 1.e-5;
+  rel_tol_projection = 1.e-6;
   rel_tol_viscous = 1.e-4;
 
 }
+
+template<int dim>
+class Enrichment:public Function<dim>
+{
+public:
+  Enrichment (const double max_distance) : Function<dim>(1, 0.),
+                                           max_distance(max_distance)
+                                           {}
+  virtual ~Enrichment (){};
+  virtual double value (const Point<dim> &p,const unsigned int  component = 0) const
+  {
+    if ((p[1] > (1.0-max_distance)) || (p[1] <(-1.0 + max_distance)))
+      return 1.;
+    else
+      return -1.;
+  }
+  const double max_distance;
+};
 
   template<int dim>
   class AnalyticalSolutionVelocity : public Function<dim>

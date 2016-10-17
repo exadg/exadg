@@ -62,15 +62,16 @@ private:
   virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const = 0;
 
   void initialize_time_integrator_constants();
-  void update_time_integrator_constants();
-  void set_time_integrator_constants (unsigned int const current_order);
-  void set_adaptive_time_integrator_constants(unsigned int const current_order);
-  void set_alpha_and_beta (std::vector<value_type> const &alpha_local,
-                           std::vector<value_type> const &beta_local);
-  void check_time_integrator_constants (unsigned int const number) const;
 
-  void calculate_time_step();
-  void recalculate_adaptive_time_step();
+  void set_time_integrator_constants (unsigned int const current_order);
+
+  void set_alpha_and_beta (std::vector<value_type> const &alpha_local,
+                                   std::vector<value_type> const &beta_local,
+                                   const value_type &             gamma_local,
+                                   std::vector<value_type> &alpha,
+                                   std::vector<value_type> &beta,
+                                   value_type &             gamma0);
+  void check_time_integrator_constants (unsigned int const number) const;
 
   virtual void solve_timestep() = 0;
   virtual void postprocessing() const = 0;
@@ -98,6 +99,14 @@ protected:
   value_type const cfl;
   value_type gamma0;
   std::vector<value_type> alpha, beta;
+
+  virtual void calculate_time_step();
+  virtual void recalculate_adaptive_time_step();
+  void set_adaptive_time_integrator_constants(unsigned int const current_order,std::vector<value_type> const & time_steps,
+                                              std::vector<value_type> &alpha,
+                                              std::vector<value_type> &beta,
+                                              value_type &             gamma0);
+  virtual void update_time_integrator_constants();
 
 private:
   std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation;
@@ -247,23 +256,20 @@ calculate_time_step()
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
   {
-    double global_min_cell_diameter = calculate_min_cell_diameter(ns_operation->get_dof_handler_u().get_triangulation());
+    time_steps[0] = calculate_adaptive_time_step_cfl<dim, fe_degree, value_type>(ns_operation->get_data(),
+                                                                                 ns_operation->get_dof_index_velocity(),
+                                                                                 ns_operation->get_quad_index_velocity_linear(),
+                                                                                 get_velocity(),
+                                                                                 cfl,
+                                                                                 time_steps[0],
+                                                                                 false);
 
-    time_steps[0] = calculate_const_time_step_cfl(cfl,
-                                                  param.max_velocity,
-                                                  global_min_cell_diameter,
-                                                  fe_degree);
+    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+    pcout << "Calculation of time step size according to adaptive CFL condition:" << std::endl << std::endl;
 
-    value_type adaptive_time_step = calculate_adaptive_time_step_cfl<dim, fe_degree, value_type>(ns_operation->get_data(),
-                                                                                                 ns_operation->get_dof_index_velocity(),
-                                                                                                 ns_operation->get_quad_index_velocity_linear(),
-                                                                                                 get_velocity(),
-                                                                                                 cfl,
-                                                                                                 time_steps[0],
-                                                                                                 false);
+    print_parameter(pcout,"CFL",cfl);
+    print_parameter(pcout,"Time step size",time_steps[0]);
 
-    if(adaptive_time_step < time_steps[0])
-      time_steps[0] = adaptive_time_step;
   }
   // fill time_steps array
   for(unsigned int i=1;i<order;++i)
@@ -354,10 +360,11 @@ set_time_integrator_constants (unsigned int const current_order)
   unsigned int const MAX_ORDER = 3;
   std::vector<value_type> alpha_local(MAX_ORDER);
   std::vector<value_type> beta_local(MAX_ORDER);
+  value_type gamma_tmp;
 
   if(current_order == 1)   //BDF 1
   {
-    gamma0 = 1.0;
+    gamma_tmp = 1.0;
 
     alpha_local[0] = 1.0;
     alpha_local[1] = 0.0;
@@ -369,7 +376,7 @@ set_time_integrator_constants (unsigned int const current_order)
   }
   else if(current_order == 2) //BDF 2
   {
-    gamma0 = 3.0/2.0;
+    gamma_tmp = 3.0/2.0;
 
     alpha_local[0] = 2.0;
     alpha_local[1] = -0.5;
@@ -381,7 +388,7 @@ set_time_integrator_constants (unsigned int const current_order)
   }
   else if(current_order == 3) //BDF 3
   {
-    gamma0 = 11./6.;
+    gamma_tmp = 11./6.;
 
     alpha_local[0] = 3.;
     alpha_local[1] = -1.5;
@@ -392,12 +399,15 @@ set_time_integrator_constants (unsigned int const current_order)
     beta_local[2] = 1.0;
   }
 
-  set_alpha_and_beta(alpha_local,beta_local);
+  set_alpha_and_beta(alpha_local,beta_local,gamma_tmp,alpha,beta,gamma0);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 void TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
-set_adaptive_time_integrator_constants (unsigned int const current_order)
+set_adaptive_time_integrator_constants (unsigned int const current_order,std::vector<value_type> const & time_steps,
+                                        std::vector<value_type> &alpha,
+                                        std::vector<value_type> &beta,
+                                        value_type &             gamma0)
 {
   AssertThrow(current_order <= order,
     ExcMessage("There is a logical error when updating the time integrator constants."));
@@ -405,10 +415,11 @@ set_adaptive_time_integrator_constants (unsigned int const current_order)
   unsigned int const MAX_ORDER = 3;
   std::vector<value_type> alpha_local(MAX_ORDER);
   std::vector<value_type> beta_local(MAX_ORDER);
+  value_type gamma_tmp;
 
   if(current_order == 1)   // BDF 1
   {
-    gamma0 = 1.0;
+    gamma_tmp = 1.0;
 
     alpha_local[0] = 1.0;
     alpha_local[1] = 0.0;
@@ -424,17 +435,16 @@ set_adaptive_time_integrator_constants (unsigned int const current_order)
     coeffM_alpha(0,0) = 1;
     coeffM_alpha(0,1) = -1;
     coeffM_alpha(0,2) = -1;
-    coeffM_alpha(1,0) = 0;
-    coeffM_alpha(1,1) = time_steps[0];
-    coeffM_alpha(1,2) = time_steps[1] + time_steps[0];
-    coeffM_alpha(2,0) = 0;
-    coeffM_alpha(2,1) = time_steps[0]*time_steps[0];
-    coeffM_alpha(2,2) = (time_steps[1] + time_steps[0])*(time_steps[1] + time_steps[0]);
+    coeffM_alpha(1,1) = 1.0;
+    coeffM_alpha(1,2) = (time_steps[1] + time_steps[0])/time_steps[0];
+    coeffM_alpha(2,0) = 0.0;
+    coeffM_alpha(2,1) = 1.0;
+    coeffM_alpha(2,2) = (time_steps[1] + time_steps[0])*(time_steps[1] + time_steps[0])/(time_steps[0]*time_steps[0]);
 
     Vector<value_type> alphas(3);
     Vector<value_type> b_alpha(3);
     b_alpha(0) = 0;
-    b_alpha(1) = time_steps[0];
+    b_alpha(1) = 1.0;
     b_alpha(2) = 0;
     coeffM_alpha.gauss_jordan();
     coeffM_alpha.vmult(alphas,b_alpha);
@@ -442,8 +452,8 @@ set_adaptive_time_integrator_constants (unsigned int const current_order)
     FullMatrix<value_type> coeffM_betha(2);
     coeffM_betha(0,0) = 1;
     coeffM_betha(0,1) = 1;
-    coeffM_betha(1,0) = time_steps[0];
-    coeffM_betha(1,1) = time_steps[1] + time_steps[0];
+    coeffM_betha(1,0) = 1.0;
+    coeffM_betha(1,1) = (time_steps[1] + time_steps[0])/time_steps[0];
 
     Vector<value_type> bethas(2);
     Vector<value_type> b_bethas(2);
@@ -452,7 +462,7 @@ set_adaptive_time_integrator_constants (unsigned int const current_order)
     coeffM_betha.gauss_jordan();
     coeffM_betha.vmult(bethas,b_bethas);
 
-    gamma0 = alphas(0);
+    gamma_tmp = alphas(0);
     alpha_local[0] = alphas(1);
     alpha_local[1] = alphas(2);
     alpha_local[2] = 0.0;
@@ -468,22 +478,22 @@ set_adaptive_time_integrator_constants (unsigned int const current_order)
     coeffM_alpha(0,2) = -1;
     coeffM_alpha(0,3) = -1;
     coeffM_alpha(1,0) = 0;
-    coeffM_alpha(1,1) = time_steps[0];
-    coeffM_alpha(1,2) = time_steps[1] + time_steps[0];
-    coeffM_alpha(1,3) = time_steps[2] + time_steps[1] + time_steps[0];
-    coeffM_alpha(2,0) = 0;
-    coeffM_alpha(2,1) = time_steps[0]*time_steps[0];
-    coeffM_alpha(2,2) = (time_steps[1] + time_steps[0])*(time_steps[1] + time_steps[0]);
-    coeffM_alpha(2,3) = (time_steps[2] + time_steps[1] + time_steps[0])*(time_steps[2] + time_steps[1] + time_steps[0]);
-    coeffM_alpha(3,0) = 0;
-    coeffM_alpha(3,1) = time_steps[0]*time_steps[0]*time_steps[0];
-    coeffM_alpha(3,2) = (time_steps[1] + time_steps[0])*(time_steps[1] + time_steps[0])*(time_steps[1] + time_steps[0]);
-    coeffM_alpha(3,3) = (time_steps[2] + time_steps[1] + time_steps[0])*(time_steps[2] + time_steps[1] + time_steps[0])*(time_steps[2] + time_steps[1] + time_steps[0]);
+    coeffM_alpha(1,1) = 1.0;
+    coeffM_alpha(1,2) = (time_steps[1] + time_steps[0])/time_steps[0];
+    coeffM_alpha(1,3) = (time_steps[2] + time_steps[1] + time_steps[0])/time_steps[0];
+    coeffM_alpha(2,0) = 0.0;
+    coeffM_alpha(2,1) = 1.0;
+    coeffM_alpha(2,2) = (time_steps[1] + time_steps[0])*(time_steps[1] + time_steps[0])/(time_steps[0]*time_steps[0]);
+    coeffM_alpha(2,3) = (time_steps[2] + time_steps[1] + time_steps[0])*(time_steps[2] + time_steps[1] + time_steps[0])/(time_steps[0]*time_steps[0]);
+    coeffM_alpha(3,0) = 0.0;
+    coeffM_alpha(3,1) = 1.0;
+    coeffM_alpha(3,2) = (time_steps[1] + time_steps[0])*(time_steps[1] + time_steps[0])*(time_steps[1] + time_steps[0])/(time_steps[0]*time_steps[0]*time_steps[0]);
+    coeffM_alpha(3,3) = (time_steps[2] + time_steps[1] + time_steps[0])*(time_steps[2] + time_steps[1] + time_steps[0])*(time_steps[2] + time_steps[1] + time_steps[0])/(time_steps[0]*time_steps[0]*time_steps[0]);
 
     Vector<value_type> alphas(4);
     Vector<value_type> b_alpha(4);
     b_alpha(0) = 0;
-    b_alpha(1) = time_steps[0];
+    b_alpha(1) = 1.0;
     b_alpha(2) = 0;
     b_alpha(3) = 0;
     coeffM_alpha.gauss_jordan();
@@ -493,12 +503,12 @@ set_adaptive_time_integrator_constants (unsigned int const current_order)
     coeffM_betha(0,0) = 1;
     coeffM_betha(0,1) = 1;
     coeffM_betha(0,2) = 1;
-    coeffM_betha(1,0) = time_steps[0];
-    coeffM_betha(1,1) = time_steps[1] + time_steps[0];
-    coeffM_betha(1,2) = time_steps[2] + time_steps[1] + time_steps[0];
-    coeffM_betha(2,0) = time_steps[0]*time_steps[0];
-    coeffM_betha(2,1) = (time_steps[1] + time_steps[0])*(time_steps[1] + time_steps[0]);
-    coeffM_betha(2,2) = (time_steps[2] + time_steps[1] + time_steps[0])*(time_steps[2] + time_steps[1] + time_steps[0]);
+    coeffM_betha(1,0) = 1.0;
+    coeffM_betha(1,1) = (time_steps[1] + time_steps[0])/time_steps[0];
+    coeffM_betha(1,2) = (time_steps[2] + time_steps[1] + time_steps[0])/time_steps[0];
+    coeffM_betha(2,0) = 1.0;
+    coeffM_betha(2,1) = (time_steps[1] + time_steps[0])*(time_steps[1] + time_steps[0])/(time_steps[0]*time_steps[0]);
+    coeffM_betha(2,2) = (time_steps[2] + time_steps[1] + time_steps[0])*(time_steps[2] + time_steps[1] + time_steps[0])/(time_steps[0]*time_steps[0]);
 
     Vector<value_type> bethas(3);
     Vector<value_type> b_bethas(3);
@@ -508,7 +518,7 @@ set_adaptive_time_integrator_constants (unsigned int const current_order)
     coeffM_betha.gauss_jordan();
     coeffM_betha.vmult(bethas,b_bethas);
 
-    gamma0 = alphas(0);
+    gamma_tmp = alphas(0);
     alpha_local[0] = alphas(1);
     alpha_local[1] = alphas(2);
     alpha_local[2] = alphas(3);
@@ -516,13 +526,17 @@ set_adaptive_time_integrator_constants (unsigned int const current_order)
     beta_local[1] = bethas(1);
     beta_local[2] = bethas(2);
   }
-  set_alpha_and_beta(alpha_local,beta_local);
+  set_alpha_and_beta(alpha_local,beta_local,gamma_tmp,alpha,beta,gamma0);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 void TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 set_alpha_and_beta (std::vector<value_type> const &alpha_local,
-                    std::vector<value_type> const &beta_local)
+                    std::vector<value_type> const &beta_local,
+                    const value_type              &gamma_local,
+                    std::vector<value_type>       &alpha,
+                    std::vector<value_type>       &beta,
+                    value_type                    &gamma0)
 {
   AssertThrow((alpha.size() <= alpha_local.size()) && (beta.size() <= beta_local.size()),
       ExcMessage("There is a logical error when setting the time integrator constants. Probably, the specified order of the time integration scheme is not implemented."));
@@ -532,6 +546,8 @@ set_alpha_and_beta (std::vector<value_type> const &alpha_local,
 
   for(unsigned int i=0;i<beta.size();++i)
     beta[i] = beta_local[i];
+
+  gamma0 = gamma_local;
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
@@ -554,11 +570,11 @@ update_time_integrator_constants()
     // the time integrator constants are set properly
     if(time_step_number <= order && param.start_with_low_order == true)
     {
-      set_adaptive_time_integrator_constants(time_step_number);
+      set_adaptive_time_integrator_constants(time_step_number,time_steps,alpha,beta,gamma0);
     }
     else // otherwise, adjust time integrator constants since this is adaptive time stepping
     {
-      set_adaptive_time_integrator_constants(order);
+      set_adaptive_time_integrator_constants(order,time_steps,alpha,beta,gamma0);
     }
   }
   // check_time_integrator_constants(time_step_number);

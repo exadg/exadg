@@ -200,6 +200,11 @@ public:
     return divergence_operator_data;
   }
 
+  std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > const get_field_functions() const
+  {
+    return field_functions;
+  }
+
   // setters
   void set_scaling_factor_time_derivative_term(double const value)
   {

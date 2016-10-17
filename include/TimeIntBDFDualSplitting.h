@@ -46,6 +46,8 @@ protected:
 
   virtual void prepare_vectors_for_next_timestep();
 
+  virtual void convective_step();
+
   std::vector<parallel::distributed::Vector<value_type> > velocity;
 
   std::vector<parallel::distributed::Vector<value_type> > pressure;
@@ -69,7 +71,6 @@ private:
   void initialize_vorticity();
   void initialize_vec_convective_term();
 
-  void convective_step();
   void pressure_step();
   void projection_step();
   virtual void viscous_step();
