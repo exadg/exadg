@@ -547,10 +547,10 @@ public:
   typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::FEEval_Velocity_Velocity_linear FEEval_Velocity_Velocity_linear;
 
   enum class DofHandlerSelector{
-    velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity),
-    pressure = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::pressure),
-    wdist_tauw = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::wdist_tauw),
-    vt = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::n_variants),
+    velocity = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity),
+    pressure = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::pressure),
+    wdist_tauw = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::wdist_tauw),
+    vt = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::n_variants),
     n_variants = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(vt)+1
   };
 
@@ -564,7 +564,7 @@ public:
   };
 
   DGNavierStokesDualSplittingXWallSpalartAllmaras(parallel::distributed::Triangulation<dim> const &triangulation,
-                                                  InputParametersNavierStokes const               &parameter)
+                                                  InputParametersNavierStokes<dim> const          &parameter)
     :
       DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>(triangulation,parameter),
       fe_vt(QGaussLobatto<1>(fe_degree+1)),

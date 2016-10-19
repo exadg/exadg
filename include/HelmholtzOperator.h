@@ -16,7 +16,7 @@ struct HelmholtzOperatorData
   HelmholtzOperatorData ()
     :
     dof_index(0),
-    mass_matrix_coefficient(1.0)
+    scaling_factor_time_derivative_term(-1.0)
   {}
 
   unsigned int dof_index;
@@ -25,13 +25,14 @@ struct HelmholtzOperatorData
   ViscousOperatorData<dim> viscous_operator_data;
 
   /*
-   * This variable 'mass_matrix_coefficient' is only used when initializing the HelmholtzOperator.
+   * This variable 'scaling_factor_time_derivative_term' is only used when initializing the HelmholtzOperator.
    * In order to change/update this coefficient during the simulation (e.g., varying time step sizes)
-   * use the element variable 'mass_matrix_coefficient' of HelmholtzOperator and the corresponding setter
-   * set_mass_matrix_coefficient().
+   * use the element variable 'scaling_factor_time_derivative_term' of HelmholtzOperator and the corresponding setter
+   * set_scaling_factor_time_derivative_term().
    */
-  double mass_matrix_coefficient;
+  double scaling_factor_time_derivative_term;
 
+  // current interface of multigrid implementation needs this variable
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs_level0;
 
   std::set<types::boundary_id> const & get_dirichlet_boundaries() const
@@ -60,7 +61,7 @@ public:
     data(nullptr),
     mass_matrix_operator(nullptr),
     viscous_operator(nullptr),
-    mass_matrix_coefficient(1.0),
+    scaling_factor_time_derivative_term(-1.0),
     strong_homogeneous_dirichlet_bc(false)
   {}
 
@@ -76,10 +77,10 @@ public:
     this->viscous_operator = &viscous_operator_in;
 
     // set mass matrix coefficient!
-    this->mass_matrix_coefficient = helmholtz_operator_data.mass_matrix_coefficient;
+    AssertThrow(helmholtz_operator_data.scaling_factor_time_derivative_term > 0.0,
+                ExcMessage("Scaling factor of time derivative term of HelmholtzOperatorData has not been initialized!"));
 
-    // initialize temp vector
-    initialize_dof_vector(temp);
+    this->scaling_factor_time_derivative_term = helmholtz_operator_data.scaling_factor_time_derivative_term;
   }
 
   void reinit (const DoFHandler<dim>            &dof_handler,
@@ -119,11 +120,16 @@ public:
 
     // setup Helmholtz operator
     initialize(own_matrix_free_storage, my_operator_data, own_mass_matrix_operator_storage, own_viscous_operator_storage);
+
+    // initialize temp vector: this is done in this function because
+    // the vector temp is only used in the function vmult_add(), i.e.,
+    // when using the multigrid preconditioner
+    initialize_dof_vector(temp);
   }
 
-  void set_mass_matrix_coefficient(Number const coefficient_in)
+  void set_scaling_factor_time_derivative_term(Number const coefficient_in)
   {
-    mass_matrix_coefficient = coefficient_in;
+    scaling_factor_time_derivative_term = coefficient_in;
   }
 
   void initialize_strong_homogeneous_dirichlet_boundary_conditions()
@@ -161,7 +167,7 @@ public:
   {
     // helmholtz operator = mass_matrix_operator + viscous_operator
     mass_matrix_operator->apply(dst,src);
-    dst *= mass_matrix_coefficient;
+    dst *= scaling_factor_time_derivative_term;
     std::vector<std::pair<Number,Number> > dbc_values;
     strong_homogeneous_dirichlet_pre(src,dst,dbc_values);
     viscous_operator->apply_add(dst,src);
@@ -169,24 +175,24 @@ public:
     strong_homogeneous_dirichlet_post(src,dst,dbc_values);
   }
 
-  void Tvmult(parallel::distributed::Vector<Number>       &dst,
-              const parallel::distributed::Vector<Number> &src) const
-  {
-    vmult(dst,src);
-  }
-
-  void Tvmult_add(parallel::distributed::Vector<Number>       &dst,
-                  const parallel::distributed::Vector<Number> &src) const
-  {
-    vmult_add(dst,src);
-  }
+//  void Tvmult(parallel::distributed::Vector<Number>       &dst,
+//              const parallel::distributed::Vector<Number> &src) const
+//  {
+//    vmult(dst,src);
+//  }
+//
+//  void Tvmult_add(parallel::distributed::Vector<Number>       &dst,
+//                  const parallel::distributed::Vector<Number> &src) const
+//  {
+//    vmult_add(dst,src);
+//  }
 
   void vmult_add(parallel::distributed::Vector<Number>       &dst,
                  const parallel::distributed::Vector<Number> &src) const
   {
     // helmholtz operator = mass_matrix_operator + viscous_operator
     mass_matrix_operator->apply(temp,src);
-    temp *= mass_matrix_coefficient;
+    temp *= scaling_factor_time_derivative_term;
     dst += temp;
 
     std::vector<std::pair<Number,Number> > dbc_values;
@@ -210,28 +216,18 @@ public:
 
   types::global_dof_index m() const
   {
-    return data->get_vector_partitioner(helmholtz_operator_data.dof_index)->size();
+    return data->get_vector_partitioner(get_dof_index())->size();
   }
 
-  types::global_dof_index n() const
-  {
-    return data->get_vector_partitioner(helmholtz_operator_data.dof_index)->size();
-  }
+//  types::global_dof_index n() const
+//  {
+//    return data->get_vector_partitioner(helmholtz_operator_data.dof_index)->size();
+//  }
 
   Number el (const unsigned int,  const unsigned int) const
   {
     AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
     return Number();
-  }
-
-  MatrixFree<dim,Number> const  & get_data() const
-  {
-    return *data;
-  }
-
-  HelmholtzOperatorData<dim> const & get_operator_data() const
-  {
-    return helmholtz_operator_data;
   }
 
   unsigned int get_dof_index() const
@@ -242,7 +238,7 @@ public:
   void calculate_diagonal(parallel::distributed::Vector<Number> &diagonal) const
   {
     mass_matrix_operator->calculate_diagonal(diagonal);
-    diagonal *= mass_matrix_coefficient;
+    diagonal *= scaling_factor_time_derivative_term;
 
     viscous_operator->add_diagonal(diagonal);
 
@@ -298,7 +294,7 @@ private:
   ViscousOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>  const *viscous_operator;
   HelmholtzOperatorData<dim> helmholtz_operator_data;
   parallel::distributed::Vector<Number> mutable temp;
-  Number mass_matrix_coefficient;
+  double scaling_factor_time_derivative_term;
   bool strong_homogeneous_dirichlet_bc;
   std::vector<unsigned int> dbc_indices;
   std::vector<std::pair<Number,Number> > dbc_values;

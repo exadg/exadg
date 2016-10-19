@@ -8,17 +8,22 @@
 #ifndef INCLUDE_TIMEINTEXPLRKCONVDIFF_H_
 #define INCLUDE_TIMEINTEXPLRKCONVDIFF_H_
 
-#include "InputParametersConvDiff.h"
+#include "../include/TimeStepCalculation.h"
+#include "../include/InputParametersConvDiff.h"
+#include "../include/PrintFunctions.h"
 
-template<int dim, int fe_degree> class PostProcessor;
+namespace ConvDiff
+{
+  template<int dim, int fe_degree> class PostProcessor;
+}
 
 template<int dim, int fe_degree, typename value_type>
 class TimeIntExplRKConvDiff
 {
 public:
   TimeIntExplRKConvDiff(std_cxx11::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation_in,
-                        std_cxx11::shared_ptr<PostProcessor<dim, fe_degree> >                   postprocessor_in,
-                        InputParametersConvDiff const                                           &param_in,
+                        std_cxx11::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> >         postprocessor_in,
+                        ConvDiff::InputParametersConvDiff const                                 &param_in,
                         std_cxx11::shared_ptr<Function<dim> >                                   velocity_in,
                         unsigned int const                                                      n_refine_time_in)
     :
@@ -30,8 +35,9 @@ public:
     time(param.start_time),
     time_step(1.0),
     order(param.order_time_integrator),
-    cfl_number(param.cfl_number/std::pow(2.0,n_refine_time_in)),
-    diffusion_number(param.diffusion_number/std::pow(2.0,n_refine_time_in))
+    n_refine_time(n_refine_time_in),
+    cfl_number(param.cfl_number/std::pow(2.0,n_refine_time)),
+    diffusion_number(param.diffusion_number/std::pow(2.0,n_refine_time))
   {}
 
   void timeloop();
@@ -48,21 +54,23 @@ private:
   void analyze_computing_times() const;
 
   std_cxx11::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation;
-  std_cxx11::shared_ptr<PostProcessor<dim, fe_degree> > postprocessor;
-  InputParametersConvDiff const & param;
+  std_cxx11::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> > postprocessor;
+  ConvDiff::InputParametersConvDiff const & param;
   std_cxx11::shared_ptr<Function<dim> > velocity;
 
   Timer global_timer;
-  value_type total_time;
+  double total_time;
 
   parallel::distributed::Vector<value_type> solution_n, solution_np;
 
   parallel::distributed::Vector<value_type> vec_rhs, vec_temp;
 
-  value_type time, time_step;
+  double time, time_step;
   unsigned int const order;
+  unsigned int const n_refine_time;
   double const cfl_number;
   double const diffusion_number;
+
 };
 
 template<int dim, int fe_degree, typename value_type>
@@ -74,11 +82,11 @@ void TimeIntExplRKConvDiff<dim,fe_degree,value_type>::setup()
   // initialize global solution vectors (allocation)
   initialize_vectors();
 
-  // calculate time step size
-  calculate_timestep();
-
   // initializes the solution by interpolation of analytical solution
   initialize_solution();
+
+  // calculate time step size
+  calculate_timestep();
 
   pcout << std::endl << "... done!" << std::endl;
 }
@@ -86,12 +94,13 @@ void TimeIntExplRKConvDiff<dim,fe_degree,value_type>::setup()
 template<int dim, int fe_degree, typename value_type>
 void TimeIntExplRKConvDiff<dim,fe_degree,value_type>::initialize_vectors()
 {
-  conv_diff_operation->initialize_solution_vector(solution_n);
-  conv_diff_operation->initialize_solution_vector(solution_np);
+  conv_diff_operation->initialize_dof_vector(solution_n);
+  conv_diff_operation->initialize_dof_vector(solution_np);
 
-  //TODO: only initialize these vectors if necessary
-  conv_diff_operation->initialize_solution_vector(vec_rhs);
-  conv_diff_operation->initialize_solution_vector(vec_temp);
+  if(order >= 2)
+    conv_diff_operation->initialize_dof_vector(vec_rhs);
+  if(order >= 3)
+    conv_diff_operation->initialize_dof_vector(vec_temp);
 }
 
 template<int dim, int fe_degree, typename value_type>
@@ -103,66 +112,129 @@ void TimeIntExplRKConvDiff<dim,fe_degree,value_type>::initialize_solution()
 template<int dim, int fe_degree, typename value_type>
 void TimeIntExplRKConvDiff<dim,fe_degree,value_type>::calculate_timestep()
 {
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  ConditionalOStream pcout(std::cout,
+      Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  pcout << std::endl << "Calculation of time step size:" << std::endl << std::endl;
 
-  typename Triangulation<dim>::active_cell_iterator
-    cell = conv_diff_operation->get_data().get_dof_handler().get_triangulation().begin_active(),
-    endc =  conv_diff_operation->get_data().get_dof_handler().get_triangulation().end();
-
-  double diameter = 0.0, min_cell_diameter = std::numeric_limits<double>::max();
-  Tensor<1,dim,value_type> vel;
-  velocity->set_time(time);
-  double a = 0.0, max_cell_a = std::numeric_limits<double>::min();
-  for (; cell!=endc; ++cell)
+  if(param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepUserSpecified)
   {
-    // calculate minimum diameter
-    diameter = cell->diameter()/std::sqrt(dim); // diameter is the largest diagonal -> divide by sqrt(dim)
-    //diameter = cell->minimum_vertex_distance();
-    if (diameter < min_cell_diameter)
-      min_cell_diameter = diameter;
+    time_step = calculate_const_time_step(param.time_step_size,n_refine_time);
 
-    // calculate maximum velocity a
-    Point<dim> point = cell->center();
-
-    for(unsigned int d=0;d<dim;++d)
-      vel[d] = velocity->value(point,d);
-
-    a = vel.norm();
-    if (a > max_cell_a)
-      max_cell_a = a;
+    print_parameter(pcout,"time step size",time_step);
   }
-  const double global_min_cell_diameter = -Utilities::MPI::max(-min_cell_diameter, MPI_COMM_WORLD);
-  const double global_max_cell_a = Utilities::MPI::max(max_cell_a, MPI_COMM_WORLD);
-  pcout << std::endl << "min cell diameter:\t" << std::setw(10) << global_min_cell_diameter;
-  pcout << std::endl << "maximum velocity:\t" << std::setw(10) << global_max_cell_a << std::endl;
-
-  // diffusion_number = diffusivity * time_step / d_min²
-  double time_step_diff = std::numeric_limits<double>::max();
-  if(param.diffusivity > 1.0e-12)
+  else if(param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepCFL)
   {
-    time_step_diff = diffusion_number/pow(fe_degree,3.0) * pow(global_min_cell_diameter,2.0) / param.diffusivity;
-    pcout << std::endl << "time step size (diffusion):\t" << std::setw(10) << time_step_diff;
+    AssertThrow(param.equation_type == ConvDiff::EquationType::Convection ||
+                param.equation_type == ConvDiff::EquationType::ConvectionDiffusion,
+                ExcMessage("Time step calculation ConstTimeStepCFL does not make sense!"));
+
+    // calculate minimum vertex distance
+    const double global_min_cell_diameter =
+        calculate_min_cell_diameter(conv_diff_operation->get_data().get_dof_handler().get_triangulation());
+
+    print_parameter(pcout,"h_min",global_min_cell_diameter);
+
+    double time_step_conv = 1.0;
+
+    const double max_velocity =
+        calculate_max_velocity(conv_diff_operation->get_data().get_dof_handler().get_triangulation(),
+                               velocity,
+                               time);
+
+    print_parameter(pcout,"U_max",max_velocity);
+    print_parameter(pcout,"CFL",cfl_number);
+
+    time_step_conv = calculate_const_time_step_cfl(cfl_number,
+                                                   max_velocity,
+                                                   global_min_cell_diameter,
+                                                   fe_degree);
+
+    // decrease time_step in order to exactly hit end_time
+    time_step = (param.end_time-param.start_time)/(1+int((param.end_time-param.start_time)/time_step_conv));
+
+    print_parameter(pcout,"Time step size (convection)",time_step);
+  }
+  else if(param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepDiffusion)
+  {
+    AssertThrow(param.equation_type == ConvDiff::EquationType::Diffusion ||
+                param.equation_type == ConvDiff::EquationType::ConvectionDiffusion,
+                ExcMessage("Time step calculation ConstTimeStepDiffusion does not make sense!"));
+
+    // calculate minimum vertex distance
+    const double global_min_cell_diameter =
+        calculate_min_cell_diameter(conv_diff_operation->get_data().get_dof_handler().get_triangulation());
+
+    print_parameter(pcout,"h_min",global_min_cell_diameter);
+
+    print_parameter(pcout,"Diffusion number",diffusion_number);
+
+    double time_step_diff = 1.0;
+    // calculate time step according to Diffusion number condition
+    time_step_diff = calculate_const_time_step_diff(diffusion_number,
+                                                    param.diffusivity,
+                                                    global_min_cell_diameter,
+                                                    fe_degree);
+
+    // decrease time_step in order to exactly hit end_time
+    time_step = (param.end_time-param.start_time)/(1+int((param.end_time-param.start_time)/time_step_diff));
+
+    print_parameter(pcout,"Time step size (diffusion)",time_step);
+  }
+  else if(param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepCFLAndDiffusion)
+  {
+    AssertThrow(param.equation_type == ConvDiff::EquationType::ConvectionDiffusion,
+                ExcMessage("Time step calculation ConstTimeStepCFLAndDiffusion does not make sense!"));
+
+    // calculate minimum vertex distance
+    const double global_min_cell_diameter =
+        calculate_min_cell_diameter(conv_diff_operation->get_data().get_dof_handler().get_triangulation());
+
+    print_parameter(pcout,"h_min",global_min_cell_diameter);
+
+    double time_step_conv = std::numeric_limits<double>::max();
+    double time_step_diff = std::numeric_limits<double>::max();
+
+    // calculate time step according to CFL condition
+    const double max_velocity =
+        calculate_max_velocity(conv_diff_operation->get_data().get_dof_handler().get_triangulation(),
+                               velocity,
+                               time);
+
+    print_parameter(pcout,"U_max",max_velocity);
+    print_parameter(pcout,"CFL",cfl_number);
+
+    time_step_conv = calculate_const_time_step_cfl(cfl_number,
+                                                   max_velocity,
+                                                   global_min_cell_diameter,
+                                                   fe_degree);
+
+    print_parameter(pcout,"Time step size (convection)",time_step_conv);
+
+
+    // calculate time step according to Diffusion number condition
+    time_step_diff = calculate_const_time_step_diff(diffusion_number,
+                                                    param.diffusivity,
+                                                    global_min_cell_diameter,
+                                                    fe_degree);
+
+    print_parameter(pcout,"Diffusion number",diffusion_number);
+    print_parameter(pcout,"Time step size (diffusion)",time_step_diff);
+
+    //adopt minimum time step size
+    time_step = time_step_diff < time_step_conv ? time_step_diff : time_step_conv;
+
+    // decrease time_step in order to exactly hit end_time
+    time_step = (param.end_time-param.start_time)/(1+int((param.end_time-param.start_time)/time_step));
+
+    print_parameter(pcout,"Time step size (combined)",time_step);
   }
   else
-    pcout << std::endl << "time step size (diffusion):\t" << std::setw(10) << "infinity";
-
-  // cfl = a * time_step / d_min
-  double time_step_conv = std::numeric_limits<double>::max();
-  if(a > 1.0e-12)
   {
-    time_step_conv = cfl_number/pow(fe_degree,2.0)* global_min_cell_diameter / global_max_cell_a;
-    pcout << std::endl << "time step size (convection):\t" << std::setw(10) << time_step_conv;
+    AssertThrow(param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepUserSpecified ||
+                param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepCFL ||
+                param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepCFLAndDiffusion,
+                ExcMessage("Specified calculation of time step size is not implemented!"));
   }
-  else
-    pcout << std::endl << "time step size (convection):\t" << std::setw(10) << "infinity";
-
-  //adopt minimum time step size
-  time_step = time_step_diff < time_step_conv ? time_step_diff : time_step_conv;
-
-  // decrease time_step in order to exactly hit END_TIME
-  time_step = (param.end_time-param.start_time)/(1+int((param.end_time-param.start_time)/time_step));
-
-  pcout << std::endl << "time step size (combined):\t" << std::setw(10) << time_step << std::endl;
 }
 
 
@@ -213,9 +285,53 @@ template<int dim, int fe_degree, typename value_type>
 void TimeIntExplRKConvDiff<dim,fe_degree,value_type>::
 solve_timestep()
 {
-  if(order == 4)
+  if(order == 1) // explicit Euler method
+  {
+    if(true)
+    {
+      conv_diff_operation->evaluate(solution_np,solution_n,time);
+      solution_np *= time_step;
+      solution_np.add(1.0,solution_n);
+    }
+  }
+  else if(order == 2) // Runge-Kutta method of order 2
+  {
+    if(true)
+    {
+      // stage 1
+      conv_diff_operation->evaluate(vec_rhs,solution_n,time);
+
+      // stage 2
+      vec_rhs *= time_step/2.;
+      vec_rhs.add(1.0,solution_n);
+      conv_diff_operation->evaluate(solution_np,vec_rhs,time + time_step/2.);
+      solution_np *= time_step;
+      solution_np.add(1.0,solution_n);
+    }
+  }
+  else if(order == 3) //Heun's method of order 3
   {
     solution_np = solution_n;
+
+    // stage 1
+    conv_diff_operation->evaluate(vec_temp,solution_n,time);
+    solution_np.add(1.*time_step/4.,vec_temp);
+
+    // stage 2
+    vec_rhs.equ(1.,solution_n);
+    vec_rhs.add(time_step/3.,vec_temp);
+    conv_diff_operation->evaluate(vec_temp,vec_rhs,time+time_step/3.);
+
+    // stage 3
+    vec_rhs.equ(1.,solution_n);
+    vec_rhs.add(2.0*time_step/3.0,vec_temp);
+    conv_diff_operation->evaluate(vec_temp,vec_rhs,time+2.*time_step/3.);
+    solution_np.add(3.*time_step/4.,vec_temp);
+  }
+  else if(order == 4) //classical 4th order Runge-Kutta method
+  {
+    solution_np = solution_n;
+
     // stage 1
     conv_diff_operation->evaluate(vec_temp,solution_n,time);
     solution_np.add(time_step/6., vec_temp);
@@ -237,6 +353,10 @@ solve_timestep()
     vec_rhs.add(time_step, vec_temp);
     conv_diff_operation->evaluate(vec_temp,vec_rhs,time+time_step);
     solution_np.add(time_step/6., vec_temp);
+  }
+  else
+  {
+    AssertThrow(order <= 4,ExcMessage("Explicit Runge-Kutta method only implemented for order <= 4!"));
   }
 }
 

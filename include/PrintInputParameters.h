@@ -22,7 +22,8 @@ namespace PrintInputParams
     << std::endl;
   }
 
-  void print_solver_parameters(ConditionalOStream & pcout, const InputParametersNavierStokes & param)
+  template<int dim>
+  void print_solver_parameters(ConditionalOStream & pcout, const InputParametersNavierStokes<dim> & param)
   {
     pcout << std::endl << "general solver parameters:" << std::endl;
     pcout << " - viscosity:                           " << param.viscosity << std::endl;
@@ -33,10 +34,11 @@ namespace PrintInputParams
     pcout << " - restart interval time:               " << param.restart_interval_time << std::endl;
     pcout << " - restart interval wall time:          " << param.restart_interval_wall_time << std::endl;
     pcout << " - max number of time steps:            " << param.max_number_of_time_steps << std::endl;
-    pcout << " - prefix:                              " << param.output_prefix << std::endl;
+    pcout << " - prefix:                              " << param.output_data.output_prefix << std::endl;
   }
 
-  void print_xwall_parameters(ConditionalOStream & pcout, const InputParametersNavierStokes & param, const int N_Q_POINTS_1D_XWALL)
+  template<int dim>
+  void print_xwall_parameters(ConditionalOStream & pcout, const InputParametersNavierStokes<dim> & param, const int N_Q_POINTS_1D_XWALL)
   {
     pcout << std::endl << "xwall parameters:" << std::endl;
     pcout << " - number of quad points for xwall:     " << N_Q_POINTS_1D_XWALL << std::endl;
@@ -45,16 +47,19 @@ namespace PrintInputParams
     pcout << " - increment of tauw:                   " << param.dtauw << std::endl;
   }
 
-  void print_turbulence_parameters(ConditionalOStream & pcout, const InputParametersNavierStokes & param,const double grid_stretch_fac)
+  template<int dim>
+  void print_turbulence_parameters(ConditionalOStream & pcout, const InputParametersNavierStokes<dim> & param,const double grid_stretch_fac)
   {
     pcout << std::endl << "turbulence parameters:" << std::endl;
     pcout << " - Smagorinsky constant                 " << param.cs << std::endl;
     pcout << " - grid stretching:                     " << grid_stretch_fac << std::endl;
-    pcout << " - statistics start time:               " << param.statistics_start_time << std::endl;
-    pcout << " - statistics every:                    " << param.statistics_every << std::endl;
+    pcout << " - statistics start time:               " << param.turb_stat_data.statistics_start_time << std::endl;
+    pcout << " - statistics every:                    " << param.turb_stat_data.statistics_every << std::endl;
+    pcout << " - statistics end time:                 " << param.turb_stat_data.statistics_end_time << std::endl;
   }
 
-  void print_linear_solver_tolerances_dual_splitting(ConditionalOStream & pcout, const InputParametersNavierStokes & param)
+  template<int dim>
+  void print_linear_solver_tolerances_dual_splitting(ConditionalOStream & pcout, const InputParametersNavierStokes<dim> & param)
   {
     pcout << std::endl << "solver tolerances:" << std::endl;
     pcout << " - Poisson problem (abs)                " << param.abs_tol_pressure << std::endl;

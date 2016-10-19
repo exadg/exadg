@@ -32,7 +32,6 @@
 #include <deal.II/multigrid/multigrid.h>
 #include <deal.II/multigrid/mg_transfer.h>
 #include <deal.II/multigrid/mg_tools.h>
-#include <deal.II/multigrid/mg_coarse.h>
 #include <deal.II/multigrid/mg_smoother.h>
 #include <deal.II/multigrid/mg_matrix.h>
 
@@ -54,7 +53,9 @@
 #include <sstream>
 
 #include "../include/DGConvDiffOperation.h"
+
 #include "../include/TimeIntExplRKConvDiff.h"
+#include "../include/TimeIntBDFConvDiff.h"
 
 #include "../include/BoundaryDescriptorConvDiff.h"
 #include "../include/FieldFunctionsConvDiff.h"
@@ -62,7 +63,11 @@
 
 #include "../include/PrintFunctions.h"
 
+#include "../include/PostProcessorConvDiff.h"
+#include "../include/AnalyticalSolutionConvDiff.h"
+
 using namespace dealii;
+using namespace ConvDiff;
 
 
 // SPECIFY THE TEST CASE THAT HAS TO BE SOLVED
@@ -77,113 +82,27 @@ using namespace dealii;
 //#include "ConvectionDiffusionTestCases/BoundaryLayerProblem.h"
 
 
-template<int dim, int fe_degree>
-class PostProcessor
-{
-public:
-  PostProcessor(std_cxx11::shared_ptr< const DGConvDiffOperation<dim, fe_degree, double> >  conv_diff_operation_in,
-                InputParametersConvDiff const                                               &param_in)
-    :
-    conv_diff_operation(conv_diff_operation_in),
-    param(param_in),
-    output_counter(0),
-    error_counter(0)
-  {}
-
-  void do_postprocessing(parallel::distributed::Vector<double> const &solution,
-                         double const                                time);
-
-private:
-  void calculate_error(parallel::distributed::Vector<double> const &solution,
-                       double const                                time) const;
-
-  void write_output(parallel::distributed::Vector<double> const &solution,
-                    double const                                time) const;
-
-  std_cxx11::shared_ptr< const DGConvDiffOperation<dim, fe_degree, double> >  conv_diff_operation;
-  InputParametersConvDiff const & param;
-
-  unsigned int output_counter;
-  unsigned int error_counter;
-};
-
-template<int dim, int fe_degree>
-void PostProcessor<dim, fe_degree>::
-do_postprocessing(parallel::distributed::Vector<double> const &solution_vector,
-                  double const                                time)
-{
-  const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
-  if( (param.analytical_solution_available == true) &&
-      (time > (param.error_calc_start_time + error_counter*param.error_calc_interval_time - EPSILON)) )
-  {
-    calculate_error(solution_vector,time);
-    ++error_counter;
-  }
-  if( time > (param.output_start_time + output_counter*param.output_interval_time - EPSILON))
-  {
-    write_output(solution_vector,time);
-    ++output_counter;
-  }
-}
-
-template<int dim, int fe_degree>
-void PostProcessor<dim, fe_degree>::
-write_output(parallel::distributed::Vector<double> const &solution_vector,
-             double const                                time) const
-{
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-  pcout << std::endl << "OUTPUT << Write data at time t = " << std::scientific << std::setprecision(4) << time << std::endl;
-
-  DataOut<dim> data_out;
-
-  data_out.attach_dof_handler (conv_diff_operation->get_data().get_dof_handler());
-  data_out.add_data_vector (solution_vector, "solution");
-  data_out.build_patches (4);
-
-  const std::string filename = "output_conv_diff/" + param.output_prefix + "_" + Utilities::int_to_string (output_counter, 3);
-
-  std::ofstream output_data ((filename + ".vtu").c_str());
-  data_out.write_vtu (output_data);
-}
-
-template<int dim, int fe_degree>
-void PostProcessor<dim, fe_degree>::
-calculate_error(parallel::distributed::Vector<double> const &solution_vector,
-                double const                                time) const
-{
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-  pcout << std::endl << "Calculate error at time t = " << std::scientific << std::setprecision(4) << time << ":" << std::endl;
-
-  // TODO: PostProcessor still depends on AnalyticalSolution: use Function as parameter instead
-  Vector<double> norm_per_cell (conv_diff_operation->get_data().get_dof_handler().get_triangulation().n_active_cells());
-  VectorTools::integrate_difference (conv_diff_operation->get_data().get_dof_handler(),
-                                     solution_vector,
-                                     AnalyticalSolution<dim>(1,time),
-                                     norm_per_cell,
-                                     QGauss<dim>(conv_diff_operation->get_data().get_dof_handler().get_fe().degree+2),
-                                     VectorTools::L2_norm);
-
-  double solution_norm = std::sqrt(Utilities::MPI::sum (norm_per_cell.norm_sqr(), MPI_COMM_WORLD));
-
-  pcout << std::endl << "error (L2-norm): "
-        << std::setprecision(5) << std::setw(10) << solution_norm
-        << std::endl;
-}
 
 template<int dim, int fe_degree>
 class ConvDiffProblem
 {
 public:
   typedef double value_type;
-  ConvDiffProblem(const unsigned int n_refine_space, const unsigned int n_refine_time);
+  ConvDiffProblem(const unsigned int n_refine_space,
+                  const unsigned int n_refine_time);
+
   void solve_problem();
 
 private:
   void print_grid_data();
 
+  void setup_postprocessor();
+
   ConditionalOStream pcout;
 
   parallel::distributed::Triangulation<dim> triangulation;
+
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_faces;
 
   InputParametersConvDiff param;
 
@@ -193,9 +112,13 @@ private:
   std_cxx11::shared_ptr<FieldFunctionsConvDiff<dim> > field_functions;
   std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor;
 
+  std_cxx11::shared_ptr<AnalyticalSolutionConvDiff<dim> > analytical_solution;
+
   std_cxx11::shared_ptr<DGConvDiffOperation<dim,fe_degree, value_type> > conv_diff_operation;
-  std_cxx11::shared_ptr<PostProcessor<dim, fe_degree> > postprocessor;
-  std_cxx11::shared_ptr<TimeIntExplRKConvDiff<dim, fe_degree, value_type> > time_integrator;
+  std_cxx11::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> > postprocessor;
+
+  std_cxx11::shared_ptr<TimeIntExplRKConvDiff<dim, fe_degree, value_type> > time_integrator_explRK;
+  std_cxx11::shared_ptr<TimeIntBDFConvDiff<dim,fe_degree,value_type> > time_integrator_BDF;
 };
 
 template<int dim, int fe_degree>
@@ -225,9 +148,12 @@ ConvDiffProblem(const unsigned int n_refine_space_in,
     param.print(pcout);
 
   field_functions.reset(new FieldFunctionsConvDiff<dim>());
-  // this function has to be defined in the header file that implements 
+  // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
   set_field_functions(field_functions);
+
+  analytical_solution.reset(new AnalyticalSolutionConvDiff<dim>());
+  set_analytical_solution(analytical_solution);
 
   boundary_descriptor.reset(new BoundaryDescriptorConvDiff<dim>());
 
@@ -235,23 +161,41 @@ ConvDiffProblem(const unsigned int n_refine_space_in,
   conv_diff_operation.reset(new DGConvDiffOperation<dim, fe_degree, value_type>(triangulation,param));
 
   // initialize postprocessor
-  postprocessor.reset(new PostProcessor<dim, fe_degree>(conv_diff_operation,param));
+  postprocessor.reset(new ConvDiff::PostProcessor<dim, fe_degree>());
 
   // initialize time integrator
-  time_integrator.reset(new TimeIntExplRKConvDiff<dim, fe_degree, value_type>(
-      conv_diff_operation,
-      postprocessor,
-      param,
-      field_functions->velocity,
-      n_refine_time));
+  if(param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
+  {
+    time_integrator_explRK.reset(new TimeIntExplRKConvDiff<dim, fe_degree, value_type>(
+        conv_diff_operation,
+        postprocessor,
+        param,
+        field_functions->velocity,
+        n_refine_time));
+  }
+  else if(param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
+  {
+    time_integrator_BDF.reset(new TimeIntBDFConvDiff<dim, fe_degree, value_type>(
+        conv_diff_operation,
+        postprocessor,
+        param,
+        field_functions->velocity,
+        n_refine_time));
+  }
+  else
+  {
+    AssertThrow(param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK ||
+                param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF,
+                ExcMessage("Specified time integration scheme is not implemented!"));
+  }
 }
 
 template<int dim, int fe_degree>
 void ConvDiffProblem<dim, fe_degree>::
 print_grid_data()
 {
-  pcout << std::endl 
-        << "Generating grid for " << dim << "-dimensional problem:" << std::endl 
+  pcout << std::endl
+        << "Generating grid for " << dim << "-dimensional problem:" << std::endl
         << std::endl;
 
   print_parameter(pcout,"Number of refinements",n_refine_space);
@@ -262,9 +206,25 @@ print_grid_data()
 
 template<int dim, int fe_degree>
 void ConvDiffProblem<dim, fe_degree>::
+setup_postprocessor()
+{
+  ConvDiff::PostProcessorData pp_data;
+
+  pp_data.output_data = param.output_data;
+  pp_data.error_data = param.error_data;
+
+  postprocessor->setup(pp_data,
+                       conv_diff_operation->get_dof_handler(),
+                       conv_diff_operation->get_mapping(),
+                       conv_diff_operation->get_data(),
+                       analytical_solution);
+}
+
+template<int dim, int fe_degree>
+void ConvDiffProblem<dim, fe_degree>::
 solve_problem()
 {
-  // this function has to be defined in the header file that implements 
+  // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
   create_grid_and_set_boundary_conditions(triangulation,
                                           n_refine_space,
@@ -272,12 +232,29 @@ solve_problem()
 
   print_grid_data();
 
-  conv_diff_operation->setup(boundary_descriptor,
+  conv_diff_operation->setup(periodic_faces,
+                             boundary_descriptor,
                              field_functions);
 
-  time_integrator->setup();
+  setup_postprocessor();
 
-  time_integrator->timeloop();
+  if(param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
+  {
+    time_integrator_explRK->setup();
+
+    time_integrator_explRK->timeloop();
+  }
+  else if(param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
+  {
+    // call setup() of time_integrator before setup_solvers() of conv_diff_operation
+    // because setup_solvers() needs quantities such as the time step size for a
+    // correct initialization of preconditioners
+    time_integrator_BDF->setup();
+
+    conv_diff_operation->setup_solver();
+
+    time_integrator_BDF->timeloop();
+  }
 }
 
 int main (int argc, char** argv)

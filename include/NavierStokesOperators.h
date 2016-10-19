@@ -10,6 +10,19 @@
 
 #include "../include/BoundaryDescriptorNavierStokes.h"
 
+// forward declarations
+template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d,
+      int n_components_, typename Number, bool is_enriched> class FEEvaluationWrapper;
+
+template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d,
+      int n_components_, typename Number, bool is_enriched> class FEFaceEvaluationWrapper;
+
+template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d,
+      int n_components_, typename Number, bool is_enriched> class FEEvaluationWrapperPressure;
+
+template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d,
+      int n_components_, typename Number, bool is_enriched> class FEFaceEvaluationWrapperPressure;
+
 template<int dim>
 struct BodyForceOperatorData
 {
@@ -246,6 +259,7 @@ private:
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
       fe_eval_velocity.reinit (cell);
+
       VectorizedArray<value_type> local_diagonal_vector[fe_eval_velocity.tensor_dofs_per_cell*dim];
       for (unsigned int j=0; j<fe_eval_velocity.dofs_per_cell*dim; ++j)
       {
@@ -267,6 +281,7 @@ private:
       }
       for (unsigned int j=0; j<fe_eval_velocity.dofs_per_cell*dim; ++j)
         fe_eval_velocity.write_cellwise_dof_value(j,local_diagonal_vector[j]);
+
       fe_eval_velocity.distribute_local_to_global (dst);
     }
   }
@@ -702,6 +717,7 @@ private:
     {
       fe_eval_velocity.reinit (face);
       fe_eval_velocity_neighbor.reinit (face);
+
       fe_eval_velocity.read_dof_values(src);
       fe_eval_velocity.evaluate(true,true);
       fe_eval_velocity_neighbor.read_dof_values(src);
@@ -1002,12 +1018,12 @@ private:
         for (unsigned int i=0; i<fe_eval_velocity_neighbor.dofs_per_cell*dim; ++i)
           fe_eval_velocity_neighbor.write_cellwise_dof_value(i, make_vectorized_array<Number>(0.));
 
+        // copied from local_apply_viscous_face (note that fe_eval_neighbor.submit... has to be removed) //TODO
         fe_eval_velocity.evaluate(true,true);
         fe_eval_velocity_neighbor.evaluate(true,true);
 
         for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
         {
-          // copied from local_apply_viscous_face (note that fe_eval_neighbor.submit... has to be removed) //TODO
           Tensor<1,dim,VectorizedArray<Number> > uM = fe_eval_velocity.get_value(q);
           Tensor<1,dim,VectorizedArray<Number> > uP = fe_eval_velocity_neighbor.get_value(q);
           VectorizedArray<Number> average_viscosity = make_vectorized_array<Number>(const_viscosity);
@@ -1074,14 +1090,16 @@ private:
             AssertThrow(false, ExcMessage("FORMULATION_VISCOUS_TERM is not specified - possibilities are DivergenceFormulation and LaplaceFormulation"));
           }
           fe_eval_velocity.submit_value(-average_gradient,q);
-          // copied from local_apply_viscous_face (note that fe_eval_neighbor.submit... has to be removed)
         }
         // integrate on element-
         fe_eval_velocity.integrate(true,true);
+        // copied from local_apply_viscous_face (note that fe_eval_neighbor.submit... has to be removed)
+
         local_diagonal_vector[j] = fe_eval_velocity.read_cellwise_dof_value(j);
       }
       for (unsigned int j=0; j<fe_eval_velocity.dofs_per_cell*dim; ++j)
         fe_eval_velocity.write_cellwise_dof_value(j, local_diagonal_vector[j]);
+
       fe_eval_velocity.distribute_local_to_global(dst);
 
       // neighbor (element+)
@@ -1096,12 +1114,12 @@ private:
           fe_eval_velocity_neighbor.write_cellwise_dof_value(i, make_vectorized_array<Number>(0.));
         fe_eval_velocity_neighbor.write_cellwise_dof_value(j,make_vectorized_array<Number>(1.));
 
+        // copied from local_apply_viscous_face (note that fe_eval.submit... has to be removed)//TODO
         fe_eval_velocity.evaluate(true,true);
         fe_eval_velocity_neighbor.evaluate(true,true);
 
         for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
         {
-          // copied from local_apply_viscous_face (note that fe_eval.submit... has to be removed)//TODO
           Tensor<1,dim,VectorizedArray<Number> > uM = fe_eval_velocity.get_value(q);
           Tensor<1,dim,VectorizedArray<Number> > uP = fe_eval_velocity_neighbor.get_value(q);
           VectorizedArray<Number> average_viscosity = make_vectorized_array<Number>(const_viscosity);
@@ -1168,10 +1186,11 @@ private:
             AssertThrow(false, ExcMessage("FORMULATION_VISCOUS_TERM is not specified - possibilities are DivergenceFormulation and LaplaceFormulation"));
           }
           fe_eval_velocity_neighbor.submit_value(average_gradient,q);
-          // copied from local_apply_viscous_face  (note that fe_eval.submit... has to be removed)
         }
         // integrate on element+
         fe_eval_velocity_neighbor.integrate(true,true);
+        // copied from local_apply_viscous_face  (note that fe_eval.submit... has to be removed)
+
         local_diagonal_vector_neighbor[j] = fe_eval_velocity_neighbor.read_cellwise_dof_value(j);
       }
       for (unsigned int j=0; j<fe_eval_velocity_neighbor.dofs_per_cell*dim; ++j)
@@ -1205,11 +1224,11 @@ private:
           fe_eval_velocity.write_cellwise_dof_value(i, make_vectorized_array<Number>(0.));
         fe_eval_velocity.write_cellwise_dof_value(j, make_vectorized_array<Number>(1.));
 
+        // copied from local_apply_viscous_boundary_face TODO
         fe_eval_velocity.evaluate(true,true);
 
         for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
         {
-          // copied from local_apply_viscous_boundary_face
           VectorizedArray<Number> viscosity = make_vectorized_array<Number>(const_viscosity);
           if(viscosity_is_variable())
             viscosity = viscous_coefficient_face[face][q];
@@ -1317,9 +1336,10 @@ private:
             }
             fe_eval_velocity.submit_value(-average_gradient,q);
           }
-          // copied from local_apply_viscous__boundary_face
         }
         fe_eval_velocity.integrate(true,true);
+        // copied from local_apply_viscous__boundary_face
+
         local_diagonal_vector[j] = fe_eval_velocity.read_cellwise_dof_value(j);
       }
       for (unsigned int j=0; j<fe_eval_velocity.dofs_per_cell*dim; ++j)
@@ -2570,7 +2590,7 @@ public:
   typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_nonlinear,dim,value_type,is_xwall> FEFaceEval_Velocity_Velocity_nonlinear;
 
   void initialize(MatrixFree<dim,value_type> const  &mf_data,
-                  FEParameters<dim>                 &fe_param,
+                  FEParameters<dim> const           &fe_param,
                   ConvectiveOperatorData<dim> const &operator_data_in)
   {
     this->data = &mf_data;
@@ -2614,6 +2634,30 @@ public:
     apply_linearized_convective_term(dst,src);
 
     velocity_linearization = nullptr;
+  }
+
+  void calculate_diagonal(parallel::distributed::Vector<value_type>       &diagonal,
+                          parallel::distributed::Vector<value_type> const *vector_linearization,
+                          value_type const                                evaluation_time) const
+  {
+    diagonal = 0;
+
+    add_diagonal(diagonal,vector_linearization,evaluation_time);
+  }
+
+  void add_diagonal(parallel::distributed::Vector<value_type>       &diagonal,
+                    parallel::distributed::Vector<value_type> const *vector_linearization,
+                    value_type const                                evaluation_time) const
+  {
+    this->eval_time = evaluation_time;
+    velocity_linearization = vector_linearization;
+
+    parallel::distributed::Vector<value_type>  src_dummy(diagonal);
+
+    data->loop(&ConvectiveOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_diagonal,
+               &ConvectiveOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_diagonal_face,
+               &ConvectiveOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_diagonal_boundary_face,
+               this, diagonal, src_dummy);
   }
 
 
@@ -2834,7 +2878,7 @@ private:
 
       fe_eval_neighbor.reinit (face);
       fe_eval_neighbor.read_dof_values(src);
-      fe_eval_neighbor.evaluate(true,false);
+      fe_eval_neighbor.evaluate(true, false);
 
       fe_eval_linearization.reinit(face);
       fe_eval_linearization.read_dof_values(*velocity_linearization);
@@ -2842,7 +2886,7 @@ private:
 
       fe_eval_linearization_neighbor.reinit (face);
       fe_eval_linearization_neighbor.read_dof_values(*velocity_linearization);
-      fe_eval_linearization_neighbor.evaluate(true,false);
+      fe_eval_linearization_neighbor.evaluate(true, false);
 
       for(unsigned int q=0;q<fe_eval.n_q_points;++q)
       {
@@ -2961,6 +3005,286 @@ private:
         }
       }
       fe_eval.integrate(true,false);
+      fe_eval.distribute_local_to_global(dst);
+    }
+  }
+
+  void local_diagonal (const MatrixFree<dim,value_type>                 &data,
+                       parallel::distributed::Vector<value_type>        &dst,
+                       const parallel::distributed::Vector<value_type>  &,
+                       const std::pair<unsigned int,unsigned int>       &cell_range) const
+  {
+    FEEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,operator_data.dof_index);
+    FEEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,operator_data.dof_index);
+
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval_linearization.reinit(cell);
+      fe_eval_linearization.read_dof_values(*velocity_linearization);
+      fe_eval_linearization.evaluate (true,false,false);
+
+      fe_eval.reinit(cell);
+
+      VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell*dim];
+
+      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+      {
+        for (unsigned int i=0; i<fe_eval.dofs_per_cell*dim; ++i)
+          fe_eval.write_cellwise_dof_value(i,make_vectorized_array<value_type>(0.));
+        fe_eval.write_cellwise_dof_value(j,make_vectorized_array<value_type>(1.));
+
+        // copied for local_apply_linearized_convective_term
+        fe_eval.evaluate (true,false,false);
+
+        for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+        {
+          Tensor<1,dim,VectorizedArray<value_type> > delta_u = fe_eval.get_value(q);
+          Tensor<1,dim,VectorizedArray<value_type> > u = fe_eval_linearization.get_value(q);
+          Tensor<2,dim,VectorizedArray<value_type> > F = outer_product(u,delta_u);
+          fe_eval.submit_gradient (-(F+transpose(F)), q);
+        }
+        fe_eval.integrate (false,true);
+        // copied for local_apply_linearized_convective_term
+
+        local_diagonal_vector[j] = fe_eval.read_cellwise_dof_value(j);
+      }
+
+      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+        fe_eval.write_cellwise_dof_value(j,local_diagonal_vector[j]);
+      fe_eval.distribute_local_to_global (dst);
+    }
+  }
+
+  void local_diagonal_face (const MatrixFree<dim,value_type>                &data,
+                            parallel::distributed::Vector<value_type>       &dst,
+                            const parallel::distributed::Vector<value_type> &,
+                            const std::pair<unsigned int,unsigned int>      &face_range) const
+  {
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_neighbor(data,*fe_param,false,operator_data.dof_index);
+
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization_neighbor(data,*fe_param,false,operator_data.dof_index);
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval_linearization.reinit(face);
+      fe_eval_linearization.read_dof_values(*velocity_linearization);
+      fe_eval_linearization.evaluate(true, false);
+
+      fe_eval_linearization_neighbor.reinit (face);
+      fe_eval_linearization_neighbor.read_dof_values(*velocity_linearization);
+      fe_eval_linearization_neighbor.evaluate(true, false);
+
+      fe_eval.reinit(face);
+      fe_eval_neighbor.reinit (face);
+
+      // element-
+      VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell*dim];
+      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+      {
+        // set dof value j of element- to 1 and all other dof values of element- to zero
+        for (unsigned int i=0; i<fe_eval.dofs_per_cell*dim; ++i)
+          fe_eval.write_cellwise_dof_value(i,make_vectorized_array<value_type>(0.));
+        fe_eval.write_cellwise_dof_value(j,make_vectorized_array<value_type>(1.));
+        // set all dof values of element+ to zero
+        for (unsigned int i=0; i<fe_eval_neighbor.dofs_per_cell*dim; ++i)
+          fe_eval_neighbor.write_cellwise_dof_value(i, make_vectorized_array<value_type>(0.));
+
+        // copied from local_apply_linearized_convective_term_face  (note that fe_eval_neighbor.submit... has to be removed)
+        fe_eval.evaluate(true, false);
+        fe_eval_neighbor.evaluate(true, false);
+
+        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        {
+          Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_linearization.get_value(q);
+          Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_linearization_neighbor.get_value(q);
+          Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+
+          const VectorizedArray<value_type> uM_n = uM*normal;
+          const VectorizedArray<value_type> uP_n = uP*normal;
+
+          const VectorizedArray<value_type> lambda = 2.*std::max(std::abs(uM_n), std::abs(uP_n));
+
+          Tensor<1,dim,VectorizedArray<value_type> > delta_uM = fe_eval.get_value(q);
+          Tensor<1,dim,VectorizedArray<value_type> > delta_uP = fe_eval_neighbor.get_value(q);
+
+          const VectorizedArray<value_type> delta_uM_n = delta_uM*normal;
+          const VectorizedArray<value_type> delta_uP_n = delta_uP*normal;
+
+          Tensor<1,dim,VectorizedArray<value_type> > jump_value = delta_uM - delta_uP;
+          Tensor<1,dim,VectorizedArray<value_type> > average_normal_flux = make_vectorized_array<value_type>(0.5)*
+              (uM*delta_uM_n + delta_uM*uM_n + uP*delta_uP_n + delta_uP*uP_n);
+          Tensor<1,dim,VectorizedArray<value_type> > lf_flux = average_normal_flux + 0.5 * lambda * jump_value;
+
+          fe_eval.submit_value(lf_flux,q);
+        }
+        // integrate on element-
+        fe_eval.integrate(true,false);
+        // copied from local_apply_linearized_convective_term_face  (note that fe_eval_neighbor.submit... has to be removed)
+
+        local_diagonal_vector[j] = fe_eval.read_cellwise_dof_value(j);
+      }
+      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+        fe_eval.write_cellwise_dof_value(j, local_diagonal_vector[j]);
+
+      fe_eval.distribute_local_to_global(dst);
+
+      // neighbor (element+)
+      VectorizedArray<value_type> local_diagonal_vector_neighbor[fe_eval_neighbor.tensor_dofs_per_cell*dim];
+      for (unsigned int j=0; j<fe_eval_neighbor.dofs_per_cell*dim; ++j)
+      {
+        // set all dof values of element- to zero
+        for (unsigned int i=0; i<fe_eval.dofs_per_cell*dim; ++i)
+          fe_eval.write_cellwise_dof_value(i,make_vectorized_array<value_type>(0.));
+        // set dof value j of element+ to 1 and all other dof values of element+ to zero
+        for (unsigned int i=0; i<fe_eval_neighbor.dofs_per_cell*dim; ++i)
+          fe_eval_neighbor.write_cellwise_dof_value(i, make_vectorized_array<value_type>(0.));
+        fe_eval_neighbor.write_cellwise_dof_value(j,make_vectorized_array<value_type>(1.));
+
+        // copied from local_apply_linearized_convective_term_face  (note that fe_eval.submit... has to be removed)
+        fe_eval.evaluate(true, false);
+        fe_eval_neighbor.evaluate(true, false);
+
+        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        {
+          Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_linearization.get_value(q);
+          Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_linearization_neighbor.get_value(q);
+          Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+
+          const VectorizedArray<value_type> uM_n = uM*normal;
+          const VectorizedArray<value_type> uP_n = uP*normal;
+
+          const VectorizedArray<value_type> lambda = 2.*std::max(std::abs(uM_n), std::abs(uP_n));
+
+          Tensor<1,dim,VectorizedArray<value_type> > delta_uM = fe_eval.get_value(q);
+          Tensor<1,dim,VectorizedArray<value_type> > delta_uP = fe_eval_neighbor.get_value(q);
+
+          const VectorizedArray<value_type> delta_uM_n = delta_uM*normal;
+          const VectorizedArray<value_type> delta_uP_n = delta_uP*normal;
+
+          Tensor<1,dim,VectorizedArray<value_type> > jump_value = delta_uM - delta_uP;
+          Tensor<1,dim,VectorizedArray<value_type> > average_normal_flux = make_vectorized_array<value_type>(0.5)*
+              (uM*delta_uM_n + delta_uM*uM_n + uP*delta_uP_n + delta_uP*uP_n);
+          Tensor<1,dim,VectorizedArray<value_type> > lf_flux = average_normal_flux + 0.5 * lambda * jump_value;
+
+          fe_eval_neighbor.submit_value(-lf_flux,q);
+        }
+        // integrate on element+
+        fe_eval_neighbor.integrate(true,false);
+        // copied from local_apply_linearized_convective_term_face  (note that fe_eval.submit... has to be removed)
+
+        local_diagonal_vector_neighbor[j] = fe_eval_neighbor.read_cellwise_dof_value(j);
+      }
+      for (unsigned int j=0; j<fe_eval_neighbor.dofs_per_cell*dim; ++j)
+        fe_eval_neighbor.write_cellwise_dof_value(j, local_diagonal_vector_neighbor[j]);
+      fe_eval_neighbor.distribute_local_to_global(dst);
+    }
+  }
+
+  void local_diagonal_boundary_face (const MatrixFree<dim,value_type>                 &data,
+                                     parallel::distributed::Vector<value_type>        &dst,
+                                     const parallel::distributed::Vector<value_type>  &,
+                                     const std::pair<unsigned int,unsigned int>       &face_range) const
+  {
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,true,operator_data.dof_index);
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval_linearization.reinit (face);
+      fe_eval_linearization.read_dof_values(*velocity_linearization);
+      fe_eval_linearization.evaluate(true,false);
+
+      fe_eval.reinit (face);
+
+      // element-
+      VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell*dim];
+      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+      {
+        // set dof value j of element- to 1 and all other dof values of element- to zero
+        for (unsigned int i=0; i<fe_eval.dofs_per_cell*dim; ++i)
+          fe_eval.write_cellwise_dof_value(i,make_vectorized_array<value_type>(0.));
+        fe_eval.write_cellwise_dof_value(j,make_vectorized_array<value_type>(1.));
+
+        // copied from local_apply_linearized_convective_term_boundary_face
+        fe_eval.evaluate(true,false);
+
+        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
+        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        {
+          it = operator_data.bc->dirichlet_bc.find(boundary_id);
+          if(it != operator_data.bc->dirichlet_bc.end())
+          {
+            // on GammaD: u⁺ = -u⁻ + 2g
+            Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_linearization.get_value(q);
+
+            Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
+            Tensor<1,dim,VectorizedArray<value_type> > g;
+            // set correct time for the evaluation of boundary conditions
+            it->second->set_time(eval_time);
+            for(unsigned int d=0;d<dim;++d)
+            {
+              value_type array [VectorizedArray<value_type>::n_array_elements];
+              for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+              {
+                Point<dim> q_point;
+                for (unsigned int d=0; d<dim; ++d)
+                  q_point[d] = q_points[d][n];
+                array[n] = it->second->value(q_point,d);
+              }
+              g[d].load(&array[0]);
+            }
+
+            Tensor<1,dim,VectorizedArray<value_type> > uP = -uM + make_vectorized_array<value_type>(2.0)*g;
+            Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+            const VectorizedArray<value_type> uM_n = uM*normal;
+            const VectorizedArray<value_type> uP_n = uP*normal;
+
+            const VectorizedArray<value_type> lambda = 2.*std::max(std::abs(uM_n), std::abs(uP_n));
+
+            Tensor<1,dim,VectorizedArray<value_type> > delta_uM = fe_eval.get_value(q);
+            Tensor<1,dim,VectorizedArray<value_type> > delta_uP = -delta_uM;
+
+            const VectorizedArray<value_type> delta_uM_n = delta_uM*normal;
+            const VectorizedArray<value_type> delta_uP_n = delta_uP*normal;
+
+            Tensor<1,dim,VectorizedArray<value_type> > jump_value = delta_uM - delta_uP;
+            Tensor<1,dim,VectorizedArray<value_type> > average_normal_flux = make_vectorized_array<value_type>(0.5)*
+               (uM*delta_uM_n + delta_uM*uM_n + uP*delta_uP_n + delta_uP*uP_n);
+            Tensor<1,dim,VectorizedArray<value_type> > lf_flux = average_normal_flux + 0.5 * lambda * jump_value;
+
+            fe_eval.submit_value(lf_flux,q);
+          }
+
+          it = operator_data.bc->neumann_bc.find(boundary_id);
+          if(it != operator_data.bc->neumann_bc.end())
+          {
+            // on GammaN: u⁺ = u⁻
+            Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_linearization.get_value(q);
+            Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+            const VectorizedArray<value_type> uM_n = uM*normal;
+
+            Tensor<1,dim,VectorizedArray<value_type> > delta_uM = fe_eval.get_value(q);
+            const VectorizedArray<value_type> delta_uM_n = delta_uM*normal;
+
+            Tensor<1,dim,VectorizedArray<value_type> > average_normal_flux = (uM*delta_uM_n + delta_uM*uM_n);
+            Tensor<1,dim,VectorizedArray<value_type> > lf_flux = average_normal_flux;
+
+            fe_eval.submit_value(lf_flux,q);
+          }
+        }
+        fe_eval.integrate(true,false);
+        // copied from local_apply_linearized_convective_term_boundary_face
+
+        local_diagonal_vector[j] = fe_eval.read_cellwise_dof_value(j);
+      }
+
+      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+        fe_eval.write_cellwise_dof_value(j, local_diagonal_vector[j]);
+
       fe_eval.distribute_local_to_global(dst);
     }
   }

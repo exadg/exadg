@@ -41,7 +41,8 @@ const double DIFFUSIVITY = 0.25;
 void InputParametersConvDiff::set_input_parameters()
 {
   // MATHEMATICAL MODEL
-  equation_type = EquationTypeConvDiff::ConvectionDiffusion;
+  problem_type = ProblemType::Unsteady;
+  equation_type = EquationType::ConvectionDiffusion;
   right_hand_side = false;
 
   // PHYSICAL QUANTITIES
@@ -50,7 +51,12 @@ void InputParametersConvDiff::set_input_parameters()
   diffusivity = DIFFUSIVITY;
 
   // TEMPORAL DISCRETIZATION
+  temporal_discretization = TemporalDiscretization::ExplRK;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   order_time_integrator = 4;
+  start_with_low_order = true;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFLAndDiffusion;
+  time_step_size = 1.0e-2;
   cfl_number = 0.2;
   diffusion_number = 0.01;
 
@@ -61,19 +67,30 @@ void InputParametersConvDiff::set_input_parameters()
   // viscous term
   IP_factor = 1.0;
 
+  // SOLVER
+  solver = Solver::PCG;
+  abs_tol = 1.e-20;
+  rel_tol = 1.e-6;
+  max_iter = 1e4;
+  preconditioner = Preconditioner::GeometricMultigrid;
+  // use default parameters of multigrid preconditioner
+
   // NUMERICAL PARAMETERS
   runtime_optimization = false;
 
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
-  write_output = "true";
-  output_prefix = "boundary_layer_problem";
-  output_start_time = start_time;
-  output_interval_time = (end_time-start_time)/20;
+  output_data.write_output = true;
+  output_data.output_prefix = "boundary_layer_problem";
+  output_data.output_start_time = start_time;
+  output_data.output_interval_time = (end_time-start_time)/20;
+  output_data.number_of_patches = FE_DEGREE;
 
-  analytical_solution_available = true;
-  error_calc_start_time = start_time;
-  error_calc_interval_time = output_interval_time;
+  error_data.analytical_solution_available = true;
+  error_data.error_calc_start_time = start_time;
+  error_data.error_calc_interval_time = output_data.output_interval_time;
+
+  output_solver_info_every_timesteps = 1e6;
 }
 
 
@@ -175,9 +192,9 @@ double NeumannBoundary<dim>::value(const Point<dim>   &p,
 {
   double result = 0.0;
 
-  double right = 1.0;
-  if( fabs(p[0]-right)<1.0e-12 )
-    result = 1.0;
+//  double right = 1.0;
+//  if( fabs(p[0]-right)<1.0e-12 )
+//    result = 1.0;
 
   return result;
 }
@@ -238,7 +255,7 @@ void create_grid_and_set_boundary_conditions(
     {
       if ((std::fabs(cell->face(face_number)->center()(1) - left) < 1e-12)||
          (std::fabs(cell->face(face_number)->center()(1) - right) < 1e-12)
-         || (std::fabs(cell->face(face_number)->center()(0) - right) < 1e-12) // Neumann BC at right boundary
+//         || (std::fabs(cell->face(face_number)->center()(0) - right) < 1e-12) // Neumann BC at right boundary
          )
         cell->face(face_number)->set_boundary_id (1);
     }
@@ -271,5 +288,10 @@ void set_field_functions(std_cxx11::shared_ptr<FieldFunctionsConvDiff<dim> > fie
   field_functions->velocity = velocity;
 }
 
+template<int dim>
+void set_analytical_solution(std_cxx11::shared_ptr<AnalyticalSolutionConvDiff<dim> > analytical_solution)
+{
+  analytical_solution->solution.reset(new AnalyticalSolution<dim>(1));
+}
 
 #endif /* APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_BOUNDARYLAYERPROBLEM_H_ */

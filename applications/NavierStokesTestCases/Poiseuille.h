@@ -46,12 +46,13 @@ const double L = 4.0;
 enum class InflowProfile { ConstantProfile, ParabolicProfile };
 const InflowProfile INFLOW_PROFILE = InflowProfile::ParabolicProfile;
 
-void InputParametersNavierStokes::set_input_parameters()
+template<int dim>
+void InputParametersNavierStokes<dim>::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = PROBLEM_TYPE; // PROBLEM_TYPE is also needed somewhere else
   equation_type = EquationType::NavierStokes;
-  formulation_viscous_term = FormulationViscousTerm::DivergenceFormulation;
+  formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
   right_hand_side = false;
 
 
@@ -101,7 +102,7 @@ void InputParametersNavierStokes::set_input_parameters()
   // pressure Poisson equation
   IP_factor_pressure = 1.0;
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
-  multigrid_coarse_grid_solver_pressure_poisson = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
+  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
   abs_tol_pressure = 1.e-20;
   rel_tol_pressure = 1.e-6;
 
@@ -122,7 +123,7 @@ void InputParametersNavierStokes::set_input_parameters()
   // viscous step
   solver_viscous = SolverViscous::PCG;
   preconditioner_viscous = PreconditionerViscous::GeometricMultigrid;
-  multigrid_coarse_grid_solver_viscous = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
+  multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
   abs_tol_viscous = 1.e-20;
   rel_tol_viscous = 1.e-6;
 
@@ -144,12 +145,12 @@ void InputParametersNavierStokes::set_input_parameters()
   preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityConvectionDiffusion;
+  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion;
   solver_momentum_preconditioner = SolverMomentumPreconditioner::GeometricMultigridVCycle;
   rel_tol_solver_momentum_preconditioner = 1.e-6;
 
   // preconditioner Schur-complement block
-  schur_complement_preconditioner = SchurComplementPreconditioner::InverseMassMatrix;
+  schur_complement_preconditioner = SchurComplementPreconditioner::PressureConvectionDiffusion;
   discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
   solver_schur_complement_preconditioner = SolverSchurComplementPreconditioner::GeometricMultigridVCycle;
   rel_tol_solver_schur_complement_preconditioner = 1.e-6;
@@ -158,19 +159,21 @@ void InputParametersNavierStokes::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
 
   // write output for visualization of results
-  output_prefix = "poiseuille";
-  output_start_time = start_time;
-  output_interval_time = (end_time-start_time)/20;
-  compute_divergence = true;
+  output_data.output_prefix = "poiseuille";
+  output_data.write_output = true;
+  output_data.output_start_time = start_time;
+  output_data.output_interval_time = (end_time-start_time)/20;
+  output_data.compute_divergence = true;
+  output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error
   if(INFLOW_PROFILE == InflowProfile::ConstantProfile)
-    analytical_solution_available = false;
+    error_data.analytical_solution_available = false;
   else if(INFLOW_PROFILE == InflowProfile::ParabolicProfile)
-    analytical_solution_available = true;
+    error_data.analytical_solution_available = true;
 
-  error_calc_start_time = start_time;
-  error_calc_interval_time = output_interval_time;
+  error_data.error_calc_start_time = start_time;
+  error_data.error_calc_interval_time = output_data.output_interval_time;
 
   // output of solver information
   output_solver_info_every_timesteps = 1e5;
@@ -515,6 +518,13 @@ void set_field_functions(std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> >
   field_functions->initial_solution_pressure = initial_solution_pressure;
   field_functions->analytical_solution_pressure = analytical_solution_pressure;
   field_functions->right_hand_side = right_hand_side;
+}
+
+template<int dim>
+void set_analytical_solution(std_cxx11::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
+{
+  analytical_solution->velocity.reset(new AnalyticalSolutionVelocity<dim>());
+  analytical_solution->pressure.reset(new AnalyticalSolutionPressure<dim>());
 }
 
 

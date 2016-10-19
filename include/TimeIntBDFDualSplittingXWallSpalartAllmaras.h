@@ -9,22 +9,25 @@
 #define INCLUDE_TIMEINTBDFDUALSPLITTINGXWALLSPALARTALLMARAS_H_
 
 #include "DGSpalartAllmarasModel.h"
+#include "TimeIntBDFDualSplittingXWall.h"
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 class TimeIntBDFDualSplittingXWallSpalartAllmaras : virtual public TimeIntBDFDualSplittingXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>
 {
 public:
-  TimeIntBDFDualSplittingXWallSpalartAllmaras(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
-                            fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
-                          std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
-                          fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >    postprocessor_in,
-                          InputParametersNavierStokes const                       &param_in,
-                          unsigned int const                                      n_refine_time_in)
+  TimeIntBDFDualSplittingXWallSpalartAllmaras(
+      std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
+        fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
+      std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
+        fe_degree_p> >                                        postprocessor_in,
+      InputParametersNavierStokes<dim> const                  &param_in,
+      unsigned int const                                      n_refine_time_in,
+      bool const                                              use_adaptive_time_stepping)
     :
     TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
-            (ns_operation_in,postprocessor_in,param_in,n_refine_time_in),
+            (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
     TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
-            (ns_operation_in,postprocessor_in,param_in,n_refine_time_in),
+            (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
     time_steps_sa(this->order),
     num_sa_substeps(1),
     ns_operation_xwall_sa (std::dynamic_pointer_cast<DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in)),
@@ -53,10 +56,6 @@ private:
   void recalculate_adaptive_time_step();
 
   void update_time_integrator_constants();
-
-  void set_alpha_and_beta (std::vector<value_type> const &alpha_local,
-                           std::vector<value_type> const &beta_local,
-                           const value_type &             gamma_local);
 
   std::vector<value_type> time_steps_sa;
 
@@ -196,7 +195,7 @@ void TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe
 calculate_time_step()
 {
   //there is no enrichment in the first time step
-  TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+  TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
   calculate_time_step();
 
   if(this->param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
@@ -282,7 +281,7 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 void TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 update_time_integrator_constants()
 {
-  TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+  TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
   update_time_integrator_constants();
 
   if(this->param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified ||

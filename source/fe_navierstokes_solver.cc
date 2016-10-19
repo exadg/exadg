@@ -316,11 +316,22 @@ void FENavierStokesSolver<dim>::setup_problem
 
   MultigridData mg_data;
   mg_data.smoother_smoothing_range = 25;
-  mg_data.coarse_solver = MultigridCoarseGridSolver::coarse_iterative_jacobi;
+  mg_data.coarse_solver = MultigridCoarseGridSolver::PCG_Jacobi;
 
   typedef float Number;
-  preconditioner.reset(new MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> >
-      (mg_data, this->dof_handler_p, this->mapping, laplace_operator.get_operator_data(),laplace_operator_data.dirichlet_boundaries));
+//  preconditioner.reset(new MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> >
+//      (mg_data, this->dof_handler_p, this->mapping, laplace_operator.get_operator_data(),laplace_operator_data.dirichlet_boundaries));
+
+  preconditioner.reset(new MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> >());
+
+  std_cxx11::shared_ptr<MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> > >
+       mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> > >(preconditioner);
+
+  mg_preconditioner->initialize(mg_data,
+                                this->dof_handler_p,
+                                this->mapping,
+                                laplace_operator.get_operator_data(),
+                                laplace_operator_data.dirichlet_boundaries);
 
   PoissonSolverData poisson_solver_data;
   poisson_solver_data.solver_tolerance_rel = 5e-5;

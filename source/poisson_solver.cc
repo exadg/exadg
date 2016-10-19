@@ -39,7 +39,7 @@ template <int dim, typename Number>
 void LaplaceOperator<dim,Number>::reinit(const MatrixFree<dim,Number>       &mf_data,
                                          const Mapping<dim>                 &mapping,
                                          const LaplaceOperatorData<dim>     &operator_data,
-                                         FEParameters<dim> const            &fe_param)
+                                         FEParameters<dim> const            &/*fe_param*/)
 {
   this->data = &mf_data;
   this->operator_data = operator_data;
@@ -123,7 +123,7 @@ void LaplaceOperator<dim,Number>::reinit (const DoFHandler<dim>           &dof_h
                                           const LaplaceOperatorData<dim>  &operator_data,
                                           const MGConstrainedDoFs         &mg_constrained_dofs,
                                           const unsigned int              level,
-                                          FEParameters<dim> const         &fe_param)
+                                          FEParameters<dim> const         &/*fe_param*/)
 {
   clear();
   this->operator_data = operator_data;
@@ -461,7 +461,9 @@ void LaplaceOperator<dim,Number>::vmult_add(parallel::distributed::Vector<Number
     }
 
   if (apply_mean_value_constraint_in_matvec)
+  {
     apply_nullspace_projection(dst);
+  }
 }
 
 
@@ -611,10 +613,10 @@ template <int dim, typename Number>
 void LaplaceOperator<dim,Number>::apply_nullspace_projection(parallel::distributed::Vector<Number> &vec) const
 {
   if (needs_mean_value_constraint)
-    {
-      const Number mean_val = vec.mean_value();
-      vec.add(-mean_val);
-    }
+  {
+    const Number mean_val = vec.mean_value();
+    vec.add(-mean_val);
+  }
 }
 
 

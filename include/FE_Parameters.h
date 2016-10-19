@@ -33,7 +33,7 @@ public:
   {
   }
 
-  FEParameters(InputParametersNavierStokes const & param)
+  FEParameters(InputParametersNavierStokes<dim> const & param)
     :
     viscosity(param.viscosity),
     cs(param.cs),

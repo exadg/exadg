@@ -8,21 +8,22 @@
 #ifndef INCLUDE_TIMEINTBDFCOUPLED_H_
 #define INCLUDE_TIMEINTBDFCOUPLED_H_
 
-#include "TimeIntBDF.h"
+#include "TimeIntBDFNavierStokes.h"
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class TimeIntBDFCoupled : virtual public TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+class TimeIntBDFCoupled : public TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
 {
 public:
   TimeIntBDFCoupled(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
                       fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
                     std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
-                    fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >    postprocessor_in,
-                    InputParametersNavierStokes const                       &param_in,
-                    unsigned int const                                      n_refine_time_in)
+                      fe_degree_p> >                                        postprocessor_in,
+                    InputParametersNavierStokes<dim> const                  &param_in,
+                    unsigned int const                                      n_refine_time_in,
+                    bool const                                              use_adaptive_time_stepping)
     :
-    TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
-            (ns_operation_in,postprocessor_in,param_in,n_refine_time_in),
+    TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+            (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
     solution(this->order),
     vec_convective_term(this->order),
     ns_operation_coupled (std::dynamic_pointer_cast<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in)),
@@ -143,7 +144,7 @@ initialize_vectors()
   ns_operation_coupled->initialize_vector_vorticity(vorticity);
 
   // divergence
-  if(this->param.compute_divergence == true)
+  if(this->param.output_data.compute_divergence == true)
     ns_operation_coupled->initialize_vector_velocity(divergence);
 }
 
@@ -187,7 +188,7 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 calculate_divergence()
 {
-  if(this->param.compute_divergence == true)
+  if(this->param.output_data.compute_divergence == true)
   {
     ns_operation_coupled->compute_divergence(divergence, solution[0].block(0));
   }
@@ -200,7 +201,9 @@ initialize_vec_convective_term()
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i=1;i<vec_convective_term.size();++i)
   {
-    ns_operation_coupled->evaluate_convective_term(vec_convective_term[i],solution[i].block(0),this->time - value_type(i)*this->time_steps[0]);
+    ns_operation_coupled->evaluate_convective_term(vec_convective_term[i],
+                                                   solution[i].block(0),
+                                                   this->time - double(i)*this->time_steps[0]);
   }
 }
 
@@ -259,26 +262,29 @@ solve_timestep()
   timer.restart();
 
   // set the parameters that NavierStokesOperation depends on
-  ns_operation_coupled->set_time(this->time);
+  ns_operation_coupled->set_evaluation_time(this->time+this->time_steps[0]);
   ns_operation_coupled->set_time_step(this->time_steps[0]);
   ns_operation_coupled->set_scaling_factor_time_derivative_term(this->gamma0/this->time_steps[0]);
 
   // write output
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
+  if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
   {
-    std::cout << std::endl << "______________________________________________________________________" << std::endl
-              << std::endl << " Number of TIME STEPS: " << std::left << std::setw(8) << this->time_step_number
-                           << "t_n = " << std::scientific << std::setprecision(4) << this->time
-                           << " -> t_n+1 = " << this->time + this->time_steps[0] << std::endl
-                           << "______________________________________________________________________" << std::endl << std::endl;
+    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+    pcout << std::endl
+          << "______________________________________________________________________"
+          << std::endl
+          << std::endl
+          << " Number of TIME STEPS: " << std::left << std::setw(8) << this->time_step_number
+          << "t_n = " << std::scientific << std::setprecision(4) << this->time
+          << " -> t_n+1 = " << this->time + this->time_steps[0] << std::endl
+          << "______________________________________________________________________"
+          << std::endl << std::endl;
   }
 
   // extrapolate old solution to obtain a good initial guess for the solver
   solution_np.equ(this->beta[0],solution[0]);
   for(unsigned int i=1;i<solution.size();++i)
     solution_np.add(this->beta[i],solution[i]);
-
-//  solution_np.equ(1.0,solution[0]);
 
   // calculate sum (alpha_i/dt * u_i)
   sum_alphai_ui.equ(this->alpha[0]/this->time_steps[0],solution[0].block(0));
@@ -293,10 +299,6 @@ solve_timestep()
   {
     // calculate rhs vector for the Stokes problem, i.e., the convective term is neglected in this step
     ns_operation_coupled->rhs_stokes_problem(rhs_vector,&sum_alphai_ui);
-
-//    double l2_norm = rhs_vector.l2_norm();
-//    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-//      std::cout<<"L2 norm of RHS = "<<std::setprecision(14)<<l2_norm<<std::endl;
 
     // evaluate convective term and add extrapolation of convective term to the rhs (-> minus sign!)
     if(this->param.equation_type == EquationType::NavierStokes)
@@ -314,11 +316,12 @@ solve_timestep()
     solver_time_average += timer.wall_time();
 
     // write output
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
+    if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
     {
-      std::cout << "Solve linear Stokes problem:" << std::endl
-                << "  Iterations: " << std::setw(6) << std::right << iterations
-                << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+      ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+      pcout << "Solve linear Stokes problem:" << std::endl
+            << "  Iterations: " << std::setw(6) << std::right << iterations
+            << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
     }
   }
   else // a nonlinear system of equations has to be solved
@@ -326,26 +329,27 @@ solve_timestep()
     // Newton solver
     unsigned int newton_iterations = 0;
     double average_linear_iterations = 0.0;
-    ns_operation_coupled->solve_nonlinear_problem(solution_np,newton_iterations,average_linear_iterations,&sum_alphai_ui);
+    ns_operation_coupled->solve_nonlinear_problem(solution_np,sum_alphai_ui,newton_iterations,average_linear_iterations);
 
     N_iter_newton_average += newton_iterations;
     N_iter_linear_average += average_linear_iterations;
     solver_time_average += timer.wall_time();
 
     // write output
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
+    if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
     {
-      std::cout << "Solve nonlinear Navier-Stokes problem:" << std::endl
-                << "  Linear iterations (avg): " << std::setw(6) << std::right << average_linear_iterations << std::endl
-                << "  Newton iterations:       " << std::setw(6) << std::right << newton_iterations
-                << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+      ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+      pcout << "Solve nonlinear Navier-Stokes problem:" << std::endl
+            << "  Linear iterations (avg): " << std::setw(6) << std::right << average_linear_iterations << std::endl
+            << "  Newton iterations:       " << std::setw(6) << std::right << newton_iterations
+            << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
     }
   }
 
   // special case: pure Dirichlet BC's
   if(this->param.pure_dirichlet_bc)
   {
-    if(this->param.analytical_solution_available == true)
+    if(this->param.error_data.analytical_solution_available == true)
       ns_operation_coupled->shift_pressure(solution_np.block(1));
     else // analytical_solution_available == false
       ns_operation_coupled->apply_zero_mean(solution_np.block(1));

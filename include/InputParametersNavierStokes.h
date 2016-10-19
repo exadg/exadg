@@ -1,5 +1,5 @@
 /*
- * InputParameters.h
+ * InputParametersNavierStokes.h
  *
  *  Created on: May 9, 2016
  *      Author: fehn
@@ -11,6 +11,11 @@
 #include "MultigridInputParameters.h"
 #include "deal.II/base/conditional_ostream.h"
 #include "PrintFunctions.h"
+#include "../include/OutputDataNavierStokes.h"
+#include "ErrorCalculationData.h"
+#include "LiftAndDragData.h"
+#include "PressureDifferenceData.h"
+#include "TurbulenceStatisticsData.h"
 
 
 /**************************************************************************************/
@@ -94,7 +99,8 @@ enum class TimeStepCalculation
   Undefined,
   ConstTimeStepUserSpecified,
   ConstTimeStepCFL,
-  AdaptiveTimeStepCFL
+  AdaptiveTimeStepCFL,
+  ConstTimeStepMaxEfficiency
 };
 
 
@@ -230,6 +236,7 @@ enum class MomentumPreconditioner
   Undefined,
   None,
   InverseMassMatrix,
+  VelocityDiffusion,
   VelocityConvectionDiffusion
 };
 
@@ -304,7 +311,23 @@ enum class SolverSchurComplementPreconditioner
 
 // there are currently no enums for this section
 
+// mass conservation data
 
+struct MassConservationData
+{
+  MassConservationData()
+    :
+  calculate_mass_error(false),
+  start_time(std::numeric_limits<double>::max()),
+  sample_every_time_steps(std::numeric_limits<unsigned int>::max())
+  {}
+
+  bool calculate_mass_error;
+  double start_time;
+  unsigned int sample_every_time_steps;
+};
+
+template<int dim>
 class InputParametersNavierStokes
 {
 public:
@@ -329,6 +352,7 @@ public:
     calculation_of_time_step_size(TimeStepCalculation::Undefined),
     max_velocity(-1.),
     cfl(-1.),
+    c_eff(-1.),
     time_step_size(-1.),
     max_number_of_time_steps(std::numeric_limits<unsigned int>::max()),
     order_time_integrator(1),
@@ -359,7 +383,7 @@ public:
     // pressure Poisson equation
     IP_factor_pressure(1.),
     preconditioner_pressure_poisson(PreconditionerPressurePoisson::GeometricMultigrid),
-    multigrid_coarse_grid_solver_pressure_poisson(MultigridCoarseGridSolver::coarse_chebyshev_smoother),
+    multigrid_data_pressure_poisson(MultigridData()),
     abs_tol_pressure(1.e-20),
     rel_tol_pressure(1.e-12),
 
@@ -380,7 +404,7 @@ public:
     // viscous step
     solver_viscous(SolverViscous::PCG),
     preconditioner_viscous(PreconditionerViscous::InverseMassMatrix),
-    multigrid_coarse_grid_solver_viscous(MultigridCoarseGridSolver::coarse_chebyshev_smoother),
+    multigrid_data_viscous(MultigridData()),
     abs_tol_viscous(1.e-20),
     rel_tol_viscous(1.e-12),
 
@@ -399,22 +423,24 @@ public:
 
     // preconditioning linear solver
     preconditioner_linearized_navier_stokes(PreconditionerLinearizedNavierStokes::Undefined),
+    use_right_preconditioning(true),
+    max_n_tmp_vectors(30),
 
     // preconditioner velocity/momentum block
     momentum_preconditioner(MomentumPreconditioner::Undefined),
     solver_momentum_preconditioner(SolverMomentumPreconditioner::Undefined),
+    multigrid_data_momentum_preconditioner(MultigridData()),
     rel_tol_solver_momentum_preconditioner(1.e-12),
 
     // preconditioner Schur-complement block
     schur_complement_preconditioner(SchurComplementPreconditioner::Undefined),
     discretization_of_laplacian(DiscretizationOfLaplacian::Undefined),
     solver_schur_complement_preconditioner(SolverSchurComplementPreconditioner::Undefined),
+    multigrid_data_schur_complement_preconditioner(MultigridData()),
     rel_tol_solver_schur_complement_preconditioner(1.e-12),
-  
 
     // TURBULENCE
-    statistics_start_time(std::numeric_limits<double>::max()),
-    statistics_every(1),
+    turb_stat_data(TurbulenceStatisticsData()),
     cs(0.),
     ml(0.),
     variabletauw(true),
@@ -429,16 +455,10 @@ public:
     print_input_parameters(false),
 
     // write output for visualization of results
-    write_output(false),
-    output_prefix("indexa"),
-    output_start_time(std::numeric_limits<double>::max()),
-    output_interval_time(std::numeric_limits<double>::max()),
-    compute_divergence(false),
+    output_data(OutputDataNavierStokes()),
 
     // calculation of error
-    analytical_solution_available(false),
-    error_calc_start_time(std::numeric_limits<double>::max()),
-    error_calc_interval_time(std::numeric_limits<double>::max()),
+    error_data(ErrorCalculationData()),
 
     // output of solver information
     output_solver_info_every_timesteps(1),
@@ -447,7 +467,16 @@ public:
     write_restart(false),
     restart_interval_time(std::numeric_limits<double>::max()),
     restart_interval_wall_time(std::numeric_limits<double>::max()),
-    restart_every_timesteps(std::numeric_limits<unsigned int>::max())
+    restart_every_timesteps(std::numeric_limits<unsigned int>::max()),
+
+    // lift and drag
+    lift_and_drag_data(LiftAndDragData()),
+
+    // pressure difference
+    pressure_difference_data(PressureDifferenceData<dim>()),
+
+    // conservation of mass
+    mass_data(MassConservationData())
    {}
 
   void set_input_parameters();
@@ -475,18 +504,20 @@ public:
     }
     if(calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified)
       AssertThrow(time_step_size > 0.,ExcMessage("parameter must be defined"));
+    if(calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepMaxEfficiency)
+      AssertThrow(c_eff > 0.,ExcMessage("parameter must be defined"));
 
 
-    if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-    {
-      AssertThrow(projection_type !=ProjectionType::Undefined,ExcMessage("parameter must be defined"));
-    }
 
     // SPATIAL DISCRETIZATION
     AssertThrow(spatial_discretization != SpatialDiscretization::Undefined ,ExcMessage("parameter must be defined"));
     AssertThrow(IP_formulation_viscous != InteriorPenaltyFormulation::Undefined ,ExcMessage("parameter must be defined"));
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
+    if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      AssertThrow(projection_type !=ProjectionType::Undefined,ExcMessage("parameter must be defined"));
+    }
 
     // COUPLED NAVIER-STOKES SOLVER
     if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
@@ -511,6 +542,7 @@ public:
     // TURBULENCE
 
     // OUTPUT AND POSTPROCESSING
+
   }
 
 
@@ -564,12 +596,12 @@ public:
      
      // problem type
      std::string str_problem_type[] = {"Undefined", 
-	                               "Steady", 
+	                                     "Steady",
                                        "Unsteady"};
 
      print_parameter(pcout, 
-                                     "Problem type", 
-                                     str_problem_type[(int)problem_type]);
+                     "Problem type",
+                     str_problem_type[(int)problem_type]);
 
      // equation type
      std::string str_equation_type[] = {"Undefined", 
@@ -642,7 +674,8 @@ public:
     std::string str_calc_time_step[] = { "Undefined",
                                          "Constant time step (user specified)",
                                          "Constant time step (CFL condition)",
-                                         "Adaptive time step (CFL condition)" };
+                                         "Adaptive time step (CFL condition)",
+                                         "Constant time step (max. efficiency)"};
 
     print_parameter(pcout,
                     "Calculation of time step size",
@@ -754,11 +787,15 @@ public:
     {   
       std::string str_multigrid_coarse_ppe[] = { "Chebyshev smoother",
                                                  "PCG - no preconditioner",
-                                                 "PCG - Jacobi preconditioner" };
+                                                 "PCG - Jacobi preconditioner",
+                                                 "GMRES - No preconditioner",
+                                                 "GMRES - Jacobi preconditioner"};
   
+      print_parameter(pcout,"Smoother polynomial degree",multigrid_data_pressure_poisson.smoother_poly_degree);
+      print_parameter(pcout,"Smoothing range",multigrid_data_pressure_poisson.smoother_smoothing_range);
       print_parameter(pcout,
                       "Multigrid coarse grid solver",
-                      str_multigrid_coarse_ppe[(int)multigrid_coarse_grid_solver_pressure_poisson]);
+                      str_multigrid_coarse_ppe[(int)multigrid_data_pressure_poisson.coarse_solver]);
     }
 
     print_parameter(pcout,"Absolute solver tolerance",abs_tol_pressure);
@@ -842,11 +879,15 @@ public:
     {  
       std::string str_multigrid_coarse_viscous[] = { "Chebyshev smoother",
                                                      "PCG - no preconditioner",
-                                                     "PCG - Jacobi preconditioner" };
+                                                     "PCG - Jacobi preconditioner",
+                                                     "GMRES - No preconditioner",
+                                                     "GMRES - Jacobi preconditioner"};
   
+      print_parameter(pcout,"Smoother polynomial degree",multigrid_data_viscous.smoother_poly_degree);
+      print_parameter(pcout,"Smoothing range",multigrid_data_viscous.smoother_smoothing_range);
       print_parameter(pcout,
                       "Multigrid coarse grid solver",
-                      str_multigrid_coarse_viscous[(int)multigrid_coarse_grid_solver_viscous]);
+                      str_multigrid_coarse_viscous[(int)multigrid_data_viscous.coarse_solver]);
     }
 
     print_parameter(pcout,"Absolute solver tolerance", abs_tol_viscous);
@@ -906,6 +947,10 @@ public:
                     "Preconditioner linear(ized) problem",
                     str_precon_linear[(int)preconditioner_linearized_navier_stokes]);
 
+    print_parameter(pcout,"Right preconditioning",use_right_preconditioning);
+
+    if(solver_linearized_navier_stokes == SolverLinearizedNavierStokes::GMRES)
+      print_parameter(pcout,"Max number of vectors before restart",max_n_tmp_vectors);
 
     // preconditioner momentum block
     std::string str_momentum_precon[] = { "Undefined",
@@ -933,6 +978,19 @@ public:
                         "Relative solver tolerance",
                         rel_tol_solver_momentum_preconditioner);
       }
+
+      print_parameter(pcout,"Smoother polynomial degree",multigrid_data_momentum_preconditioner.smoother_poly_degree);
+      print_parameter(pcout,"Smoothing range",multigrid_data_momentum_preconditioner.smoother_smoothing_range);
+
+      std::string str_multigrid_coarse_solver[] = { "Chebyshev smoother",
+                                                    "PCG - no preconditioner",
+                                                    "PCG - Jacobi preconditioner",
+                                                    "GMRES - No preconditioner",
+                                                    "GMRES - Jacobi preconditioner"};
+
+      print_parameter(pcout,
+                      "Multigrid coarse grid solver",
+                      str_multigrid_coarse_solver[(int)multigrid_data_momentum_preconditioner.coarse_solver]);
     }
 
     // preconditioner Schur-complement block
@@ -975,7 +1033,18 @@ public:
                         "Relative solver tolerance",
                         rel_tol_solver_schur_complement_preconditioner);
       }
+
+      print_parameter(pcout,"Smoother polynomial degree",multigrid_data_schur_complement_preconditioner.smoother_poly_degree);
+      print_parameter(pcout,"Smoothing range",multigrid_data_schur_complement_preconditioner.smoother_smoothing_range);
       
+      std::string str_multigrid_coarse_solver[] = { "Chebyshev smoother",
+                                                    "PCG - no preconditioner",
+                                                    "PCG - Jacobi preconditioner",
+                                                    "GMRES - No preconditioner",
+                                                    "GMRES - Jacobi preconditioner"};
+      print_parameter(pcout,
+                      "Multigrid coarse grid solver",
+                      str_multigrid_coarse_solver[(int)multigrid_data_schur_complement_preconditioner.coarse_solver]);
     }
 
   }
@@ -993,26 +1062,10 @@ public:
           << "Output and postprocessing:" << std::endl;
    
     // output for visualization of results
-    print_parameter(pcout,"Write output",write_output);
-    if(write_output == true)
-    {
-      print_parameter(pcout,"Name of output files",output_prefix);
-      if(problem_type == ProblemType::Unsteady)
-      {
-        print_parameter(pcout,"Output start time",output_start_time);
-        print_parameter(pcout,"Output interval time",output_interval_time);
-      }
-      print_parameter(pcout,"Compute divergence",compute_divergence);
-    }
+    output_data.print(pcout, problem_type == ProblemType::Unsteady);
 
     // calculation of error
-    print_parameter(pcout,"Calculate error",analytical_solution_available);
-    if(analytical_solution_available == true &&
-       problem_type == ProblemType::Unsteady)
-    {
-      print_parameter(pcout,"Error calculation start time",error_calc_start_time);
-      print_parameter(pcout,"Error calculation interval time",error_calc_interval_time);
-    }
+    error_data.print(pcout, problem_type == ProblemType::Unsteady);
      
     // output of solver information
     if(problem_type == ProblemType::Unsteady)
@@ -1095,6 +1148,11 @@ public:
   // when performing temporal convergence tests, i.e., cfl_real = cfl, cfl/2, cfl/4, ...
   double cfl;
 
+  // C_eff: constant that has to be specified for time step calculation method
+  // MaxEfficiency, which means that the time step is selected such that the errors of
+  // the temporal and spatial discretization are comparable
+  double c_eff;
+
   // user specified time step size:  note that this time_step_size is the first
   // in a series of time_step_size's when performing temporal convergence tests,
   // i.e., delta_t = time_step_size, time_step_size/2, ...
@@ -1155,12 +1213,8 @@ public:
   // description: see enum declaration
   PreconditionerPressurePoisson preconditioner_pressure_poisson;
 
-  // description: see enum declaration:
-  // currently only polynomial Chebyshev smoother available
-//  MultigridSmoother multigrid_smoother_pressure_poisson;
-
-  // description: see enum declaration
-  MultigridCoarseGridSolver multigrid_coarse_grid_solver_pressure_poisson;
+  // description: see declaration of MultigridData
+  MultigridData multigrid_data_pressure_poisson;
 
   // solver tolerances for pressure Poisson equation
   double abs_tol_pressure;
@@ -1201,12 +1255,8 @@ public:
   // description: see enum declaration
   PreconditionerViscous preconditioner_viscous;
 
-  // description: see enum declaration:
-  // currently only polynomial Chebyshev smoother available
-//  MultigridSmoother multigrid_smoother_viscous;
-
-  // description: see enum declaration
-  MultigridCoarseGridSolver multigrid_coarse_grid_solver_viscous;
+  // description: see declaration of MultigridData
+  MultigridData multigrid_data_viscous;
 
   // solver tolerances for Helmholtz equation of viscous step
   double abs_tol_viscous;
@@ -1241,11 +1291,20 @@ public:
   // description: see enum declaration
   PreconditionerLinearizedNavierStokes preconditioner_linearized_navier_stokes;
 
+  // use right preconditioning
+  bool use_right_preconditioning;
+
+  // defines the maximum size of the Krylov subspace before restart
+  unsigned int max_n_tmp_vectors;
+
   // description: see enum declaration
   MomentumPreconditioner momentum_preconditioner;
 
   // description: see enum declaration
   SolverMomentumPreconditioner solver_momentum_preconditioner;
+
+  // description: see declaration
+  MultigridData multigrid_data_momentum_preconditioner;
 
   // relative tolerance for solver_momentum_preconditioner
   double rel_tol_solver_momentum_preconditioner;
@@ -1259,6 +1318,9 @@ public:
   // description: see enum declaration
   SolverSchurComplementPreconditioner solver_schur_complement_preconditioner;
 
+  // description: see declaration
+  MultigridData multigrid_data_schur_complement_preconditioner;
+
   // relative tolerance for solver_schur_complement_preconditioner
   double rel_tol_solver_schur_complement_preconditioner;
 
@@ -1270,11 +1332,8 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // before then no statistics calculation will be performed
-  double statistics_start_time;
-
-  // calculate statistics every "statistics_every" time steps
-  unsigned int statistics_every;
+  // turublence parameters that are required for statistics (post-processing)
+  TurbulenceStatisticsData turb_stat_data;
 
   // Smagorinsky constant
   double cs;
@@ -1304,29 +1363,11 @@ public:
   // print input parameters at the beginning of the simulation
   bool print_input_parameters;
 
-  // write output
-  bool write_output;
+  // writing output for visualization
+  OutputDataNavierStokes output_data;
 
-  // name of generated output files
-  std::string output_prefix;
-
-  // before then no output will be written
-  double output_start_time;
-
-  // specifies the time interval in which output is written
-  double output_interval_time;
-
-  // compute divergence of intermediate velocity field to verify divergence penalty method
-  bool compute_divergence;
-
-  // to calculate the error an analytical solution to the problem has to be available
-  bool analytical_solution_available;
-
-  // before then no error calculation will be performed
-  double error_calc_start_time;
-
-  // specifies the time interval in which error calculation is performed
-  double error_calc_interval_time;
+  // calculating errors
+  ErrorCalculationData error_data;
 
   // show solver performance (wall time, number of iterations) every ... timesteps
   unsigned int output_solver_info_every_timesteps;
@@ -1342,6 +1383,15 @@ public:
 
   // specifies the restart interval via number of time steps
   unsigned int restart_every_timesteps;
+
+  // computation of lift and drag coefficients
+  LiftAndDragData lift_and_drag_data;
+
+  // computation of pressure difference between two points
+  PressureDifferenceData<dim> pressure_difference_data;
+
+  // analysis of mass conservation
+  MassConservationData mass_data;
 };
 
 #endif /* INCLUDE_INPUTPARAMETERSNAVIERSTOKES_H_ */

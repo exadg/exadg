@@ -8,21 +8,22 @@
 #ifndef INCLUDE_TIMEINTBDFDUALSPLITTING_H_
 #define INCLUDE_TIMEINTBDFDUALSPLITTING_H_
 
-#include "TimeIntBDF.h"
+#include "TimeIntBDFNavierStokes.h"
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class TimeIntBDFDualSplitting : public TimeIntBDF<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>
+class TimeIntBDFDualSplitting : public TimeIntBDFNavierStokes<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>
 {
 public:
   TimeIntBDFDualSplitting(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
                             fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
                           std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
-                          fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >    postprocessor_in,
-                          InputParametersNavierStokes const                       &param_in,
-                          unsigned int const                                      n_refine_time_in)
+                            fe_degree_p> >                                        postprocessor_in,
+                          InputParametersNavierStokes<dim> const                  &param_in,
+                          unsigned int const                                      n_refine_time_in,
+                          bool const                                              use_adaptive_time_stepping)
     :
-    TimeIntBDF<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
-            (ns_operation_in,postprocessor_in,param_in,n_refine_time_in),
+    TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+            (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
     velocity(this->order),
     pressure(this->order),
     vorticity(this->order),
@@ -75,8 +76,8 @@ private:
   void projection_step();
   virtual void viscous_step();
   
-  void rhs_pressure (const parallel::distributed::Vector<value_type>  &src,
-                     parallel::distributed::Vector<value_type>        &dst);
+  void rhs_pressure (parallel::distributed::Vector<value_type>        &dst,
+                     const parallel::distributed::Vector<value_type>  &src);
 
   void push_back_solution();
   void push_back_vorticity();
@@ -157,7 +158,7 @@ initialize_vectors()
   ns_operation_splitting->initialize_vector_velocity(rhs_vec_viscous);
 
   // divergence
-  if(this->param.compute_divergence == true)
+  if(this->param.output_data.compute_divergence == true)
   {
     ns_operation_splitting->initialize_vector_velocity(divergence);
   }
@@ -264,7 +265,7 @@ void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_p
 solve_timestep()
 {
   // set the parameters that NavierStokesOperation depends on
-  ns_operation_splitting->set_time(this->time);
+  ns_operation_splitting->set_evaluation_time(this->time+this->time_steps[0]);
   ns_operation_splitting->set_time_step(this->time_steps[0]);
   ns_operation_splitting->set_scaling_factor_time_derivative_term(this->gamma0/this->time_steps[0]);
 
@@ -338,13 +339,13 @@ convective_step()
 
     unsigned int newton_iterations;
     double average_linear_iterations;
-    ns_operation_splitting->solve_nonlinear_convective_problem(velocity_np,newton_iterations,average_linear_iterations,sum_alphai_ui);
+    ns_operation_splitting->solve_nonlinear_convective_problem(velocity_np,sum_alphai_ui,newton_iterations,average_linear_iterations);
 
     // write output implicit case
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 && this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
     {
       std::cout << std::endl << "Solve nonlinear convective problem for intermediate velocity:" << std::endl
-                << "  Linear iterations (avg): " << std::setw(6) << std::right << average_linear_iterations << std::endl
+                << "  Linear iterations (avg): " << std::setw(6) << std::right << std::fixed << std::setprecision(2) << average_linear_iterations << std::endl
                 << "  Newton iterations: " << std::setw(4) << std::right << newton_iterations
                 << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
     }
@@ -361,7 +362,7 @@ pressure_step()
   timer.restart();
 
   // compute right-hand-side vector
-  rhs_pressure(velocity_np,rhs_vec_pressure);
+  rhs_pressure(rhs_vec_pressure,velocity_np);
 
   // extrapolate old solution to get a good initial estimate for the solver
   pressure_np = 0;
@@ -376,7 +377,7 @@ pressure_step()
   // special case: pure Dirichlet BC's
   if(this->param.pure_dirichlet_bc)
   {
-    if(this->param.analytical_solution_available == true)
+    if(this->param.error_data.analytical_solution_available == true)
       ns_operation_splitting->shift_pressure(pressure_np);
     else // analytical_solution_available == false
       ns_operation_splitting->apply_zero_mean(pressure_np);
@@ -408,8 +409,8 @@ pressure_step()
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
-rhs_pressure (const parallel::distributed::Vector<value_type>  &src,
-              parallel::distributed::Vector<value_type>        &dst)
+rhs_pressure (parallel::distributed::Vector<value_type>        &dst,
+              const parallel::distributed::Vector<value_type>  &src)
 {
   /******************************** I. calculate divergence term ********************************/
   ns_operation_splitting->rhs_pressure_divergence_term(dst, src, this->time+this->time_steps[0]);
@@ -480,10 +481,13 @@ projection_step()
   }
 
   // postprocessing related to the analysis of different projection algorithms
-  if(this->param.compute_divergence == true)
+  if(this->param.output_data.compute_divergence == true)
+  {
+    ns_operation_splitting->compute_divergence(divergence, velocity_np);
+  }
+  if(this->param.mass_data.calculate_mass_error == true)
   {
     this->postprocessor->analyze_divergence_error(velocity_np,this->time+this->time_steps[0],this->time_step_number);
-    ns_operation_splitting->compute_divergence(divergence, velocity_np);
   }
 
   computing_times[2] += timer.wall_time();

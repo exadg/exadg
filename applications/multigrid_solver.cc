@@ -36,7 +36,6 @@
 #include <deal.II/multigrid/multigrid.h>
 #include <deal.II/multigrid/mg_transfer_matrix_free.h>
 #include <deal.II/multigrid/mg_tools.h>
-#include <deal.II/multigrid/mg_coarse.h>
 #include <deal.II/multigrid/mg_smoother.h>
 #include <deal.II/multigrid/mg_matrix.h>
 
@@ -502,12 +501,22 @@ namespace Step37
     MultigridData mg_data;
     mg_data.smoother_smoothing_range = 15;
     mg_data.smoother_poly_degree = 4;
-    mg_data.coarse_solver = MultigridCoarseGridSolver::coarse_chebyshev_smoother;
+    mg_data.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
 
     typedef float Number;
     std_cxx11::shared_ptr<PreconditionerBase<double> > preconditioner;
-    preconditioner.reset(new MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> >
-        (mg_data, dof_handler, mapping, laplace_operator_data, laplace_operator_data.dirichlet_boundaries));
+
+//    preconditioner.reset(new MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> >
+//        (mg_data, dof_handler, mapping, laplace_operator_data, laplace_operator_data.dirichlet_boundaries));
+
+    preconditioner.reset(new MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> >());
+
+    std_cxx11::shared_ptr<MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> > >
+      mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditioner<dim,double,
+                                                      LaplaceOperator<dim,Number>,
+                                                      LaplaceOperatorData<dim> > >(preconditioner);
+
+    mg_preconditioner->initialize(mg_data, dof_handler, mapping, laplace_operator_data, laplace_operator_data.dirichlet_boundaries);
 
     PoissonSolverData solver_data;
     solver_data.solver_tolerance_rel = 1e-8;

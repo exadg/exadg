@@ -9,17 +9,17 @@
 #define INCLUDE_DRIVERSTEADYPROBLEMS_H_
 
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall> class PostProcessor;
+template<int dim, int fe_degree, int fe_degree_p> class PostProcessor;
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 class DriverSteadyProblems
 {
 public:
   DriverSteadyProblems(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
-                                fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation_in,
+                         fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >   ns_operation_in,
                        std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
-                                fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > postprocessor_in,
-                       InputParametersNavierStokes const                             &param_in)
+                         fe_degree_p> >                                         postprocessor_in,
+                       InputParametersNavierStokes<dim> const                   &param_in)
     :
     ns_operation(std::dynamic_pointer_cast<DGNavierStokesCoupled<dim, fe_degree,
                     fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in)),
@@ -43,8 +43,8 @@ private:
 
   std_cxx11::shared_ptr<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation;
 
-  std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > postprocessor;
-  InputParametersNavierStokes const &param;
+  std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,fe_degree_p> > postprocessor;
+  InputParametersNavierStokes<dim> const &param;
 
   Timer global_timer;
   value_type total_time;
@@ -81,7 +81,7 @@ initialize_vectors()
   ns_operation->initialize_vector_vorticity(vorticity);
 
   // divergence
-  if(this->param.compute_divergence == true)
+  if(this->param.output_data.compute_divergence == true)
   {
     ns_operation->initialize_vector_velocity(divergence);
   }
@@ -128,7 +128,7 @@ solve()
     // Newton solver
     unsigned int newton_iterations;
     double average_linear_iterations;
-    ns_operation->solve_nonlinear_problem(solution,newton_iterations,average_linear_iterations);
+    ns_operation->solve_nonlinear_steady_problem(solution,newton_iterations,average_linear_iterations);
 
     // write output
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
@@ -144,7 +144,7 @@ solve()
   // special case: pure Dirichlet BC's
   if(this->param.pure_dirichlet_bc)
   {
-    if(this->param.analytical_solution_available == true)
+    if(this->param.error_data.analytical_solution_available == true)
       ns_operation->shift_pressure(solution.block(1));
     else // analytical_solution_available == false
       ns_operation->apply_zero_mean(solution.block(1));

@@ -23,7 +23,7 @@
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 2;
+const unsigned int FE_DEGREE = 4;
 
 // set the number of refine levels for spatial convergence tests
 const unsigned int REFINE_STEPS_SPACE_MIN = 3;
@@ -36,7 +36,8 @@ const unsigned int REFINE_STEPS_TIME_MAX = 0;
 void InputParametersConvDiff::set_input_parameters()
 {
   // MATHEMATICAL MODEL
-  equation_type = EquationTypeConvDiff::Convection;
+  problem_type = ProblemType::Unsteady;
+  equation_type = EquationType::Convection;
   right_hand_side = false;
 
   // PHYSICAL QUANTITIES
@@ -45,7 +46,12 @@ void InputParametersConvDiff::set_input_parameters()
   diffusivity = 0.0;
 
   // TEMPORAL DISCRETIZATION
+  temporal_discretization = TemporalDiscretization::ExplRK;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   order_time_integrator = 4;
+  start_with_low_order = false;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
+  time_step_size = 1.0e-1;
   cfl_number = 0.2;
   diffusion_number = 0.01;
 
@@ -56,19 +62,30 @@ void InputParametersConvDiff::set_input_parameters()
   // viscous term
   IP_factor = 1.0;
 
+  // SOLVER
+  solver = Solver::GMRES;
+  abs_tol = 1.e-20;
+  rel_tol = 1.e-6;
+  max_iter = 1e4;
+  preconditioner = Preconditioner::InverseMassMatrix;
+  // use default parameters of multigrid preconditioner
+
   // NUMERICAL PARAMETERS
   runtime_optimization = false;
 
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
-  write_output = "true";
-  output_prefix = "propagating_sine_wave";
-  output_start_time = start_time;
-  output_interval_time = (end_time-start_time)/20;
+  output_data.write_output = true;
+  output_data.output_prefix = "propagating_sine_wave";
+  output_data.output_start_time = start_time;
+  output_data.output_interval_time = (end_time-start_time)/20;
+  output_data.number_of_patches = FE_DEGREE;
 
-  analytical_solution_available = true;
-  error_calc_start_time = start_time;
-  error_calc_interval_time = output_interval_time;
+  error_data.analytical_solution_available = true;
+  error_data.error_calc_start_time = start_time;
+  error_data.error_calc_interval_time = (end_time-start_time);
+
+  output_solver_info_every_timesteps = 1e6;
 }
 
 
@@ -251,6 +268,10 @@ void set_field_functions(std_cxx11::shared_ptr<FieldFunctionsConvDiff<dim> > fie
   field_functions->velocity = velocity;
 }
 
-
+template<int dim>
+void set_analytical_solution(std_cxx11::shared_ptr<AnalyticalSolutionConvDiff<dim> > analytical_solution)
+{
+  analytical_solution->solution.reset(new AnalyticalSolution<dim>(1));
+}
 
 #endif /* APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_PROPAGATINGSINEWAVE_H_ */

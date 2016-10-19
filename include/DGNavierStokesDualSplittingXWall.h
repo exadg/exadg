@@ -24,22 +24,22 @@ public:
 
 
   enum class DofHandlerSelector{
-    velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity),
-    pressure = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::pressure),
-    wdist_tauw = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::n_variants),
+    velocity = static_cast<int>(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity),
+    pressure = static_cast<int>(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::pressure),
+    wdist_tauw = static_cast<int>(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::n_variants),
     n_variants = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(wdist_tauw)+1
   };
 
   enum class QuadratureSelector{
-    velocity = static_cast<typename std::underlying_type<QuadratureSelector>::type >(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity),
-    pressure = static_cast<typename std::underlying_type<QuadratureSelector>::type >(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::pressure),
-    velocity_nonlinear = static_cast<typename std::underlying_type<QuadratureSelector>::type >(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity_nonlinear),
-    enriched = static_cast<typename std::underlying_type<QuadratureSelector>::type >(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::n_variants),
+    velocity = static_cast<int>(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity),
+    pressure = static_cast<int>(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::pressure),
+    velocity_nonlinear = static_cast<int>(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity_nonlinear),
+    enriched = static_cast<int>(DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::n_variants),
     n_variants = static_cast<typename std::underlying_type<QuadratureSelector>::type >(enriched)+1
   };
 
   DGNavierStokesDualSplittingXWall(parallel::distributed::Triangulation<dim> const &triangulation,
-                                    InputParametersNavierStokes const              &parameter)
+                                    InputParametersNavierStokes<dim> const         &parameter)
     :
       DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>(triangulation,parameter),
       fe_wdist(QGaussLobatto<1>(1+1)),
