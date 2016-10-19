@@ -52,7 +52,7 @@ public:
   {
     velocity_n.update_ghost_values();
 
-    FEEval_Velocity_Velocity_linear fe_eval(data,fe_param,dof_index);
+    FEEval_Velocity_Velocity_linear fe_eval(data,&fe_param,dof_index);
 
     AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval.n_q_points);
 
@@ -111,9 +111,9 @@ public:
   {
     return quad_index;
   }
-  FEParameters<dim> const & get_fe_param() const
+  FEParameters<dim> const * get_fe_param() const
   {
-    return fe_param;
+    return &fe_param;
   }
 
 private:
@@ -202,7 +202,7 @@ public:
                                            std_cxx11::shared_ptr< InverseMassMatrixXWallOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type> > inv_mass_xw)
     :
     ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(data_in,fe_param_in, dof_index_in,quad_index_in,projection_operator_data_in),
-    fe_eval(1,FEEval_Velocity_Velocity_linear(data_in, fe_param_in, dof_index_in, quad_index_in)),
+    fe_eval(1,FEEval_Velocity_Velocity_linear(data_in, &fe_param_in, dof_index_in, quad_index_in)),
     inverse_mass_matrix_operator_xwall(inv_mass_xw),
     tau(1),
     curr_cell(0)

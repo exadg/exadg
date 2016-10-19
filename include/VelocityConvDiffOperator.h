@@ -193,7 +193,7 @@ public:
                const VelocityConvDiffOperatorData<dim> &operator_data,
                const MGConstrainedDoFs                 &/*mg_constrained_dofs*/,
                const unsigned int                      level = numbers::invalid_unsigned_int,
-               FEParameters<dim> const                 &fe_param = FEParameters<dim>())
+               FEParameters<dim> const                 & = FEParameters<dim>())
   {
     // set the dof index to zero (for the VelocityConvDiffOperator and also
     // for the basic Operators (MassMatrixOperator, ViscousOperator, ConvectiveOperator))
@@ -241,15 +241,15 @@ public:
 
     // setup own mass matrix operator
     MassMatrixOperatorData mass_matrix_operator_data = my_operator_data.mass_matrix_operator_data;
-    own_mass_matrix_operator_storage.initialize(own_matrix_free_storage,fe_param,mass_matrix_operator_data);
+    own_mass_matrix_operator_storage.initialize(own_matrix_free_storage,mass_matrix_operator_data);
 
     // setup own viscous operator
     ViscousOperatorData<dim> viscous_operator_data = my_operator_data.viscous_operator_data;
-    own_viscous_operator_storage.initialize(mapping,own_matrix_free_storage,fe_param,viscous_operator_data);
+    own_viscous_operator_storage.initialize(mapping,own_matrix_free_storage,viscous_operator_data);
 
     // setup own convective operator
     ConvectiveOperatorData<dim> convective_operator_data = my_operator_data.convective_operator_data;
-    own_convective_operator_storage.initialize(own_matrix_free_storage,fe_param,convective_operator_data);
+    own_convective_operator_storage.initialize(own_matrix_free_storage,convective_operator_data);
 
     // setup velocity convection diffusion operator
     initialize(own_matrix_free_storage,

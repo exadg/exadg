@@ -650,7 +650,7 @@ public:
       static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
 
       FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall>
-          fe_eval(data,ns_op->get_fe_parameters(),0);
+          fe_eval(data,&ns_op->get_fe_parameters(),0);
 
       double dmdt_V_loc = 0.0;
       for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)

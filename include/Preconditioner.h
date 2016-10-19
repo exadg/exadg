@@ -728,9 +728,9 @@ public:
                                     const DoFHandler<dim>   &dof_handler,
                                     const Mapping<dim>      &mapping,
                                     const OperatorData      &operator_data_in,
-                                    FEParameters<dim> const &fe_param)
+                                    FEParameters<dim> const &)
   {
-    this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, this->mg_constrained_dofs, level,fe_param);
+    this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, this->mg_constrained_dofs, level);
   }
 };
 

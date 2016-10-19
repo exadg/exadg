@@ -213,8 +213,8 @@ local_evaluate_spalart_allmaras(const MatrixFree<dim,value_type>                
                                 const parallel::distributed::Vector<value_type>  &src,
                                 const std::pair<unsigned int,unsigned int>       &cell_range) const
 {
-  FEEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,fe_param,dof_index_velocity);
-  FEEval_Vt_Velocity_nonlinear fe_eval_vt(data,fe_param,dof_index_vt);
+  FEEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,&fe_param,dof_index_velocity);
+  FEEval_Vt_Velocity_nonlinear fe_eval_vt(data,&fe_param,dof_index_vt);
 
   AlignedVector<VectorizedArray<value_type> > wdist;
   AlignedVector<VectorizedArray<value_type> > tauw;
@@ -306,10 +306,10 @@ local_evaluate_spalart_allmaras_face(const MatrixFree<dim,value_type>           
                                      const parallel::distributed::Vector<value_type>  &src,
                                      const std::pair<unsigned int,unsigned int>       &face_range) const
 {
-  FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,fe_param,true,dof_index_velocity);
-  FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity_neighbor(data,fe_param,false,dof_index_velocity);
-  FEFaceEval_Vt_Velocity_nonlinear fe_eval_vt(data,fe_param,true,dof_index_vt);
-  FEFaceEval_Vt_Velocity_nonlinear fe_eval_vt_neighbor(data,fe_param,false,dof_index_vt);
+  FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,&fe_param,true,dof_index_velocity);
+  FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity_neighbor(data,&fe_param,false,dof_index_velocity);
+  FEFaceEval_Vt_Velocity_nonlinear fe_eval_vt(data,&fe_param,true,dof_index_vt);
+  FEFaceEval_Vt_Velocity_nonlinear fe_eval_vt_neighbor(data,&fe_param,false,dof_index_vt);
 
   for(unsigned int face=face_range.first; face<face_range.second; face++)
   {
@@ -410,8 +410,8 @@ local_evaluate_spalart_allmaras_boundary_face(const MatrixFree<dim,value_type>  
                                               const parallel::distributed::Vector<value_type>  &src,
                                               const std::pair<unsigned int,unsigned int>       &face_range) const
 {
-  FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,fe_param,true,dof_index_velocity);
-  FEFaceEval_Vt_Velocity_nonlinear fe_eval_vt(data,fe_param,true,dof_index_vt);
+  FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,&fe_param,true,dof_index_velocity);
+  FEFaceEval_Vt_Velocity_nonlinear fe_eval_vt(data,&fe_param,true,dof_index_vt);
 
   for(unsigned int face=face_range.first; face<face_range.second; face++)
   {
@@ -759,7 +759,7 @@ local_set_eddyviscosity (const MatrixFree<dim,value_type>                 &data,
                      const parallel::distributed::Vector<value_type>  &src,
                      const std::pair<unsigned int,unsigned int>   &cell_range)
 {
-  FEEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type,true> fe_eval_vt(data,this->fe_param,3);
+  FEEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type,true> fe_eval_vt(data,&this->fe_param,3);
 
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
   {
@@ -784,8 +784,8 @@ local_set_eddyviscosity_face (const MatrixFree<dim,value_type>                 &
                           const parallel::distributed::Vector<value_type>  &src,
                           const std::pair<unsigned int,unsigned int>   &face_range)
 {
-  FEFaceEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type,true> fe_eval_vt(data,this->fe_param,true,3);
-  FEFaceEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type,true> fe_eval_vt_neighbor(data,this->fe_param,false,3);
+  FEFaceEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type,true> fe_eval_vt(data,&this->fe_param,true,3);
+  FEFaceEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type,true> fe_eval_vt_neighbor(data,&this->fe_param,false,3);
 
 //    AlignedVector<VectorizedArray<Number> > wdist;
 //    AlignedVector<VectorizedArray<Number> > tauw;
@@ -823,7 +823,7 @@ local_set_eddyviscosity_boundary_face (const MatrixFree<dim,value_type>         
                                    const parallel::distributed::Vector<value_type>  &src,
                                    const std::pair<unsigned int,unsigned int>   &face_range)
 {
-  FEFaceEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type,true> fe_eval_vt(data,this->fe_param,true,3);
+  FEFaceEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type,true> fe_eval_vt(data,&this->fe_param,true,3);
 
   for(unsigned int face=face_range.first; face<face_range.second; face++)
   {

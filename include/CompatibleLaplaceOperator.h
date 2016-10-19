@@ -90,7 +90,7 @@ public:
                const CompatibleLaplaceOperatorData<dim> &operator_data,
                const MGConstrainedDoFs                  &/*mg_constrained_dofs*/,
                const unsigned int                       level = numbers::invalid_unsigned_int,
-               FEParameters<dim> const                  &fe_param = FEParameters<dim>())
+               FEParameters<dim> const                  & = FEParameters<dim>())
   {
     CompatibleLaplaceOperatorData<dim> my_operator_data = operator_data;
 
@@ -129,11 +129,11 @@ public:
 
     // setup own gradient operator
     GradientOperatorData<dim> gradient_operator_data = my_operator_data.gradient_operator_data;
-    own_gradient_operator_storage.initialize(own_matrix_free_storage,fe_param,gradient_operator_data);
+    own_gradient_operator_storage.initialize(own_matrix_free_storage,gradient_operator_data);
 
     // setup own divergence operator
     DivergenceOperatorData<dim> divergence_operator_data = my_operator_data.divergence_operator_data;
-    own_divergence_operator_storage.initialize(own_matrix_free_storage,fe_param,divergence_operator_data);
+    own_divergence_operator_storage.initialize(own_matrix_free_storage,divergence_operator_data);
 
     // setup own inverse mass matrix operator
     // NOTE: use quad_index = 0 since matrix_free contains only one quadrature formula

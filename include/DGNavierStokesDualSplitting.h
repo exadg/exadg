@@ -729,7 +729,7 @@ local_rhs_pressure_BC_term_boundary_face (const MatrixFree<dim,value_type>      
                                           const parallel::distributed::Vector<value_type>  &,
                                           const std::pair<unsigned int,unsigned int>       &face_range) const
 {
-  FEFaceEval_Pressure_Velocity_nonlinear fe_eval_pressure(data,this->fe_param,true,
+  FEFaceEval_Pressure_Velocity_nonlinear fe_eval_pressure(data,&this->fe_param,true,
       static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
         (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::pressure));
 
@@ -871,11 +871,11 @@ local_rhs_pressure_convective_term_boundary_face (const MatrixFree<dim,value_typ
                                                   const std::pair<unsigned int,unsigned int>       &face_range) const
 {
 
-  FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,this->fe_param,true,
+  FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,&this->fe_param,true,
       static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
         (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity));
 
-  FEFaceEval_Pressure_Velocity_nonlinear fe_eval_pressure(data,this->fe_param,true,
+  FEFaceEval_Pressure_Velocity_nonlinear fe_eval_pressure(data,&this->fe_param,true,
       static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
         (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::pressure));
 
@@ -956,11 +956,11 @@ local_rhs_pressure_viscous_term_boundary_face (const MatrixFree<dim,value_type> 
                                                const parallel::distributed::Vector<value_type> &src,
                                                const std::pair<unsigned int,unsigned int>      &face_range) const
 {
-  FEFaceEval_Velocity_Velocity_nonlinear fe_eval_omega(data,this->fe_param,true,
+  FEFaceEval_Velocity_Velocity_nonlinear fe_eval_omega(data,&this->fe_param,true,
       static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
         (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity));
 
-  FEFaceEval_Pressure_Velocity_nonlinear fe_eval_pressure(data,this->fe_param,true,
+  FEFaceEval_Pressure_Velocity_nonlinear fe_eval_pressure(data,&this->fe_param,true,
       static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
         (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::pressure));
 

@@ -9,6 +9,7 @@
 #define INCLUDE_NAVIERSTOKESOPERATORS_H_
 
 #include "../include/BoundaryDescriptorNavierStokes.h"
+#include "BaseOperator.h"
 
 // forward declarations
 template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d,
@@ -36,13 +37,12 @@ struct BodyForceOperatorData
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class BodyForceOperator
+class BodyForceOperator: public BaseOperator<dim>
 {
 public:
   BodyForceOperator()
     :
     data(nullptr),
-    fe_param(nullptr),
     eval_time(0.0)
   {}
 
@@ -51,11 +51,9 @@ public:
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  FEParameters<dim>                &fe_param,
                   BodyForceOperatorData<dim> const &operator_data_in)
   {
     this->data = &mf_data;
-    this->fe_param = &fe_param;
     this->operator_data = operator_data_in;
   }
 
@@ -81,7 +79,7 @@ private:
                        const parallel::distributed::Vector<value_type>  &,
                        const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,operator_data.dof_index);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,operator_data.dof_index);
 
     // set correct evaluation time for the evaluation of the rhs-function
     operator_data.rhs->set_time(eval_time);
@@ -115,7 +113,6 @@ private:
   }
 
   MatrixFree<dim,value_type> const * data;
-  FEParameters<dim> const * fe_param;
   BodyForceOperatorData<dim> operator_data;
   value_type mutable eval_time;
 };
@@ -131,13 +128,12 @@ struct MassMatrixOperatorData
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class MassMatrixOperator
+class MassMatrixOperator: public BaseOperator<dim>
 {
 public:
   MassMatrixOperator()
     :
-    data(nullptr),
-    fe_param(nullptr)
+    data(nullptr)
   {}
 
   static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
@@ -145,11 +141,9 @@ public:
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  FEParameters<dim> const          &fe_param,
                   MassMatrixOperatorData const     &mass_matrix_operator_data_in)
   {
     this->data = &mf_data;
-    this->fe_param = &fe_param;
     this->mass_matrix_operator_data = mass_matrix_operator_data_in;
   }
 
@@ -232,7 +226,7 @@ private:
                     const parallel::distributed::Vector<value_type>  &src,
                     const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,mass_matrix_operator_data.dof_index);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,mass_matrix_operator_data.dof_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -254,7 +248,7 @@ private:
                        const parallel::distributed::Vector<value_type>  &,
                        const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,mass_matrix_operator_data.dof_index);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,mass_matrix_operator_data.dof_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -287,7 +281,6 @@ private:
   }
 
   MatrixFree<dim,value_type> const * data;
-  FEParameters<dim> const * fe_param;
   MassMatrixOperatorData mass_matrix_operator_data;
 };
 
@@ -327,7 +320,7 @@ struct ViscousOperatorData
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename Number=double>
-class ViscousOperator : public Subscriptor
+class ViscousOperator : public BaseOperator<dim>
 {
 public:
   typedef Number value_type;
@@ -335,7 +328,6 @@ public:
   ViscousOperator()
     :
     data(nullptr),
-    fe_param(nullptr),
     const_viscosity(-1.0),
     eval_time(0.0)
   {
@@ -348,12 +340,10 @@ public:
 
   void initialize(Mapping<dim> const              &mapping,
                   MatrixFree<dim,Number> const    &mf_data,
-                  FEParameters<dim> const         &fe_param,
                   ViscousOperatorData<dim> const  &operator_data_in)
   {
 
     this->data = &mf_data;
-    this->fe_param = &fe_param;
     this->operator_data = operator_data_in;
 
     compute_array_penalty_parameter(mapping);
@@ -361,12 +351,11 @@ public:
     const_viscosity = operator_data.viscosity;
   }
 
-  virtual void reinit (const DoFHandler<dim>            &dof_handler,
+  void reinit (const DoFHandler<dim>            &dof_handler,
                const Mapping<dim>               &mapping,
                const ViscousOperatorData<dim>   &operator_data,
                const MGConstrainedDoFs          &/*mg_constrained_dofs*/,
-               const unsigned int               level = numbers::invalid_unsigned_int,
-               FEParameters<dim> const          &fe_param = FEParameters<dim>())
+               const unsigned int               level = numbers::invalid_unsigned_int)
   {
     // set the dof index to zero
     ViscousOperatorData<dim> my_operator_data = operator_data;
@@ -388,7 +377,7 @@ public:
     own_matrix_free_storage.reinit(mapping, dof_handler, constraints, quad, addit_data);
 
     // setup viscous operator
-    initialize(mapping, own_matrix_free_storage, fe_param, my_operator_data);
+    initialize(mapping, own_matrix_free_storage, my_operator_data);
   }
 
   void set_constant_viscosity(double const viscosity_in)
@@ -411,12 +400,12 @@ public:
   {
     Assert(n_q_points_1d_xwall > fe_degree +1, ExcMessage("this may cause a memory error"));
     this->viscous_coefficient_cell.reinit(this->data->n_macro_cells(), Utilities::fixed_int_power<n_q_points_1d_xwall,dim>::value);
-    this->viscous_coefficient_cell.fill(make_vectorized_array<Number>(this->fe_param->viscosity));
+    this->viscous_coefficient_cell.fill(make_vectorized_array<Number>(const_viscosity));
 
     this->viscous_coefficient_face.reinit(this->data->n_macro_inner_faces()+this->data->n_macro_boundary_faces(), Utilities::fixed_int_power<n_q_points_1d_xwall,dim-1>::value);
-    this->viscous_coefficient_face.fill(make_vectorized_array<Number>(this->fe_param->viscosity));
+    this->viscous_coefficient_face.fill(make_vectorized_array<Number>(const_viscosity));
     this->viscous_coefficient_face_neighbor.reinit(this->data->n_macro_inner_faces()+this->data->n_macro_boundary_faces(), Utilities::fixed_int_power<n_q_points_1d_xwall,dim-1>::value);
-    this->viscous_coefficient_face_neighbor.fill(make_vectorized_array<Number>(this->fe_param->viscosity));
+    this->viscous_coefficient_face_neighbor.fill(make_vectorized_array<Number>(const_viscosity));
   }
 
   void set_viscous_coefficient_cell(unsigned int const cell, unsigned int const q, VectorizedArray<Number> const  & value)
@@ -657,7 +646,7 @@ private:
     return operator_data.IP_factor_viscous * (fe_degree + 1.0) * (fe_degree + 1.0);
   }
 protected:
-  virtual void apply_viscous (parallel::distributed::Vector<Number>        &dst,
+  void apply_viscous (parallel::distributed::Vector<Number>        &dst,
                       const parallel::distributed::Vector<Number>  &src) const
   {
     data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_apply_viscous,
@@ -673,7 +662,7 @@ private:
   {
     AssertThrow(const_viscosity>0.0,ExcMessage("Constant viscosity has not been set!"));
 
-    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,operator_data.dof_index);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,operator_data.dof_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -710,8 +699,8 @@ private:
                                  const parallel::distributed::Vector<Number> &src,
                                  const std::pair<unsigned int,unsigned int>  &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,*fe_param,false,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,this->fe_param,false,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -807,12 +796,12 @@ private:
     }
   }
 
-  virtual void local_apply_viscous_boundary_face (const MatrixFree<dim,Number>                 &data,
+  void local_apply_viscous_boundary_face (const MatrixFree<dim,Number>                 &data,
                                           parallel::distributed::Vector<Number>        &dst,
                                           const parallel::distributed::Vector<Number>  &src,
                                           const std::pair<unsigned int,unsigned int>   &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -946,7 +935,7 @@ private:
                        const parallel::distributed::Vector<Number>  &,
                        const std::pair<unsigned int,unsigned int>   &cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,operator_data.dof_index);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,operator_data.dof_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -995,8 +984,8 @@ private:
                             const parallel::distributed::Vector<Number> &,
                             const std::pair<unsigned int,unsigned int>  &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,*fe_param,false,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,this->fe_param,false,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -1204,7 +1193,7 @@ private:
                                      const parallel::distributed::Vector<Number>  &,
                                      const std::pair<unsigned int,unsigned int>   &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -1362,7 +1351,7 @@ private:
                                              const parallel::distributed::Vector<Number>  &src,
                                              const std::pair<unsigned int,unsigned int>   &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -1549,7 +1538,7 @@ private:
                                         const parallel::distributed::Vector<Number> &,
                                         const std::pair<unsigned int,unsigned int>  &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -1680,7 +1669,6 @@ private:
   }
 protected:
   MatrixFree<dim,Number> const * data;
-  FEParameters<dim> const * fe_param;
   ViscousOperatorData<dim> operator_data;
 private:
   AlignedVector<VectorizedArray<Number> > array_penalty_parameter;
@@ -1721,13 +1709,12 @@ struct GradientOperatorData
 };
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class GradientOperator
+class GradientOperator: public BaseOperator<dim>
 {
 public:
   GradientOperator()
     :
     data(nullptr),
-    fe_param(nullptr),
     eval_time(0.0)
   {}
 
@@ -1740,11 +1727,9 @@ public:
   typedef FEFaceEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,is_xwall> FEFaceEval_Pressure_Velocity_linear;
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  FEParameters<dim> const          &fe_param,
                   GradientOperatorData<dim> const  &operator_data_in)
   {
     this->data = &mf_data;
-    this->fe_param = &fe_param;
     this->operator_data = operator_data_in;
   }
 
@@ -1824,8 +1809,8 @@ private:
                              const parallel::distributed::Vector<value_type>  &src,
                              const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,operator_data.dof_index_velocity);
-    FEEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,operator_data.dof_index_pressure);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,operator_data.dof_index_velocity);
+    FEEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,operator_data.dof_index_pressure);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -1867,11 +1852,11 @@ private:
   {
     if(operator_data.integration_by_parts_of_gradP == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,*fe_param,false,operator_data.dof_index_velocity);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,this->fe_param,false,operator_data.dof_index_velocity);
 
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure_neighbor(data,*fe_param,false,operator_data.dof_index_pressure);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,true,operator_data.dof_index_pressure);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure_neighbor(data,this->fe_param,false,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -1908,8 +1893,8 @@ private:
   {
     if(operator_data.integration_by_parts_of_gradP == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,true,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -1971,8 +1956,8 @@ private:
   {
     if(operator_data.integration_by_parts_of_gradP == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,true,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -2065,7 +2050,7 @@ private:
     if(operator_data.integration_by_parts_of_gradP == true &&
        operator_data.use_boundary_data == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index_velocity);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -2121,7 +2106,6 @@ private:
   }
 
   MatrixFree<dim,value_type> const * data;
-  FEParameters<dim> const * fe_param;
   GradientOperatorData<dim> operator_data;
   value_type mutable eval_time;
 };
@@ -2146,13 +2130,12 @@ struct DivergenceOperatorData
 };
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class DivergenceOperator
+class DivergenceOperator: public BaseOperator<dim>
 {
 public:
   DivergenceOperator()
     :
     data(nullptr),
-    fe_param(nullptr),
     eval_time(0.0)
   {}
 
@@ -2166,11 +2149,9 @@ public:
   typedef FEFaceEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,is_xwall> FEFaceEval_Pressure_Velocity_linear;
 
   void initialize(MatrixFree<dim,value_type> const  &mf_data,
-                  FEParameters<dim> const           &fe_param,
                   DivergenceOperatorData<dim> const &operator_data_in)
   {
     this->data = &mf_data;
-    this->fe_param = &fe_param;
     this->operator_data = operator_data_in;
   }
 
@@ -2250,8 +2231,8 @@ private:
                                const parallel::distributed::Vector<value_type> &src,
                                const std::pair<unsigned int,unsigned int>      &cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,operator_data.dof_index_velocity);
-    FEEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,operator_data.dof_index_pressure);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,operator_data.dof_index_velocity);
+    FEEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,operator_data.dof_index_pressure);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -2289,11 +2270,11 @@ private:
   {
     if(operator_data.integration_by_parts_of_divU == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,*fe_param,false,operator_data.dof_index_velocity);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,this->fe_param,false,operator_data.dof_index_velocity);
 
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure_neighbor(data,*fe_param,false,operator_data.dof_index_pressure);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,true,operator_data.dof_index_pressure);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure_neighbor(data,this->fe_param,false,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -2330,8 +2311,8 @@ private:
   {
     if(operator_data.integration_by_parts_of_divU == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,true,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -2394,8 +2375,8 @@ private:
   {
     if(operator_data.integration_by_parts_of_divU == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,true,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -2492,7 +2473,7 @@ private:
     if(operator_data.integration_by_parts_of_divU == true &&
        operator_data.use_boundary_data == true)
     {
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,true,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -2551,7 +2532,6 @@ private:
   }
 
   MatrixFree<dim,value_type> const * data;
-  FEParameters<dim> const * fe_param;
   DivergenceOperatorData<dim> operator_data;
   value_type mutable eval_time;
 };
@@ -2572,13 +2552,12 @@ struct ConvectiveOperatorData
 
 
 template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class ConvectiveOperator
+class ConvectiveOperator: public BaseOperator<dim>
 {
 public:
   ConvectiveOperator()
     :
     data(nullptr),
-    fe_param(nullptr),
     eval_time(0.0),
     velocity_linearization(nullptr)
   {}
@@ -2590,11 +2569,9 @@ public:
   typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_nonlinear,dim,value_type,is_xwall> FEFaceEval_Velocity_Velocity_nonlinear;
 
   void initialize(MatrixFree<dim,value_type> const  &mf_data,
-                  FEParameters<dim> const           &fe_param,
                   ConvectiveOperatorData<dim> const &operator_data_in)
   {
     this->data = &mf_data;
-    this->fe_param = &fe_param;
     this->operator_data = operator_data_in;
   }
 
@@ -2677,7 +2654,7 @@ private:
                                        const parallel::distributed::Vector<value_type>  &src,
                                        const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
-    FEEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,*fe_param,operator_data.dof_index);
+    FEEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,this->fe_param,operator_data.dof_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -2702,8 +2679,8 @@ private:
                                             const parallel::distributed::Vector<value_type> &src,
                                             const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity_neighbor(data,*fe_param,false,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity_neighbor(data,this->fe_param,false,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -2750,7 +2727,7 @@ private:
                                                      const parallel::distributed::Vector<value_type> &src,
                                                      const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -2834,8 +2811,8 @@ private:
                                               const parallel::distributed::Vector<value_type> &src,
                                               const std::pair<unsigned int,unsigned int>      &cell_range) const
   {
-    FEEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,operator_data.dof_index);
-    FEEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,operator_data.dof_index);
+    FEEval_Velocity_Velocity_nonlinear fe_eval(data,this->fe_param,operator_data.dof_index);
+    FEEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,this->fe_param,operator_data.dof_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -2864,11 +2841,11 @@ private:
                                                     const parallel::distributed::Vector<value_type> &src,
                                                     const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,true,operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_neighbor(data,*fe_param,false,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_neighbor(data,this->fe_param,false,operator_data.dof_index);
 
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,true,operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization_neighbor(data,*fe_param,false,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization_neighbor(data,this->fe_param,false,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -2925,8 +2902,8 @@ private:
                                                             const parallel::distributed::Vector<value_type> &src,
                                                             const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,true,operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,this->fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -3014,8 +2991,8 @@ private:
                        const parallel::distributed::Vector<value_type>  &,
                        const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
-    FEEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,operator_data.dof_index);
-    FEEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,operator_data.dof_index);
+    FEEval_Velocity_Velocity_nonlinear fe_eval(data,this->fe_param,operator_data.dof_index);
+    FEEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,this->fe_param,operator_data.dof_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -3060,11 +3037,11 @@ private:
                             const parallel::distributed::Vector<value_type> &,
                             const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,true,operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_neighbor(data,*fe_param,false,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_neighbor(data,this->fe_param,false,operator_data.dof_index);
 
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,true,operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization_neighbor(data,*fe_param,false,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization_neighbor(data,this->fe_param,false,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -3187,8 +3164,8 @@ private:
                                      const parallel::distributed::Vector<value_type>  &,
                                      const std::pair<unsigned int,unsigned int>       &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,true,operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,this->fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -3290,7 +3267,6 @@ private:
   }
 
   MatrixFree<dim,value_type> const * data;
-  FEParameters<dim> const * fe_param;
   ConvectiveOperatorData<dim> operator_data;
   mutable value_type eval_time;
   mutable parallel::distributed::Vector<value_type> const * velocity_linearization;

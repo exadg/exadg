@@ -152,12 +152,19 @@ private:
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
-        std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
-        std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
-        std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+        std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> >                                boundary_descriptor_velocity,
+        std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> >                                boundary_descriptor_pressure,
+        std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> >                                    field_functions)
 {
   DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::setup(periodic_face_pairs,boundary_descriptor_velocity,boundary_descriptor_pressure,field_functions);
 
+  //set fe_param in all operators
+  this->mass_matrix_operator.set_fe_param(&this->fe_param);
+  this->body_force_operator.set_fe_param(&this->fe_param);
+  this->gradient_operator.set_fe_param(&this->fe_param);
+  this->divergence_operator.set_fe_param(&this->fe_param);
+  this->convective_operator.set_fe_param(&this->fe_param);
+  this->viscous_operator.set_fe_param(&this->fe_param);
   this->viscous_operator.initialize_viscous_coefficients();
 
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
@@ -547,10 +554,10 @@ local_project_xwall (const MatrixFree<dim,value_type>        &data,
                      const std::pair<unsigned int,unsigned int>   &cell_range)
 {
 
-  FEEval_Velocity_Velocity_linear fe_eval_velocity_n(data,this->fe_param_n,
+  FEEval_Velocity_Velocity_linear fe_eval_velocity_n(data,&this->fe_param_n,
       static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
   //FEEvaluationXWall<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type> fe_eval_xwall_n (data,xwallstatevec[0],*xwall.ReturnTauWN(),0,3);
-  FEEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,
+  FEEval_Velocity_Velocity_linear fe_eval_velocity(data,&this->fe_param,
       static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
 
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
@@ -698,7 +705,7 @@ local_precompute_spaldings_law (const MatrixFree<dim,value_type>        &data,
                                      const parallel::distributed::Vector<value_type>  &,
                                      const std::pair<unsigned int,unsigned int>   &cell_range)
 {
-  FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type,true> fe_eval(data,this->fe_param,
+  FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,dim,value_type,true> fe_eval(data,&this->fe_param,
                               static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
   AlignedVector<VectorizedArray<value_type> > enrichment_cell;
   AlignedVector<Tensor<1,dim,VectorizedArray<value_type> > > enrichment_gradient_cell;
@@ -747,7 +754,7 @@ local_rhs_wss_boundary_face (const MatrixFree<dim,value_type>             &data,
   //for the case that we are running through here but actually do not have an enriched element
   if(this->fe_param.max_wdist_xwall > EPSILON)
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_face(data,this->fe_param,true,0);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_face(data,&this->fe_param,true,0);
     //these faces should always be enriched, therefore quadrature rule enriched (3)
     FEFaceEvaluation<dim,1,n_q_points_1d_xwall,1,value_type> fe_eval_tauw(data,true,2,3);
 
@@ -776,7 +783,7 @@ local_rhs_wss_boundary_face (const MatrixFree<dim,value_type>             &data,
   }
   else
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_face(data,this->fe_param,true,0);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_face(data,&this->fe_param,true,0);
     //these faces should always be enriched, therefore quadrature rule enriched (3)
     FEFaceEvaluation<dim,1,fe_degree+(fe_degree+2)/2,1,value_type> fe_eval_tauw(data,true,2,2);
 

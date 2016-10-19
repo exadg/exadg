@@ -61,7 +61,6 @@ solve_timestep()
   Timer timer;
   timer.restart(); 
   ns_operation_xwall->update_tauw(this->velocity[0]);
-//  ns_operation_xwall->get_fe_parameters().tauw->print(std::cout);
   if(this->param.variabletauw)
   {
     ns_operation_xwall->precompute_inverse_mass_matrix();

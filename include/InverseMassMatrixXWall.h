@@ -22,8 +22,8 @@ struct InverseMassMatrixXWallData: public InverseMassMatrixData<dim,fe_degree,Nu
                         const unsigned int                quad_index = 0)
     :
       InverseMassMatrixData<dim,fe_degree,Number,n_components>(data,fe_index,quad_index),
-      fe_eval_scalar(1,FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,1,Number,true>(data,fe_param,fe_index)),
-      fe_eval_components(1,FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,n_components,Number,true>(data,fe_param,fe_index)),
+      fe_eval_scalar(1,FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,1,Number,true>(data,&fe_param,fe_index)),
+      fe_eval_components(1,FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,n_components,Number,true>(data,&fe_param,fe_index)),
       vector_result(0)
   {
 

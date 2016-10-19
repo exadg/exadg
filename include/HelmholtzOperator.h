@@ -88,7 +88,7 @@ public:
                const HelmholtzOperatorData<dim> &operator_data,
                const MGConstrainedDoFs          &/*mg_constrained_dofs*/,
                const unsigned int               level = numbers::invalid_unsigned_int,
-               FEParameters<dim> const          &fe_param = FEParameters<dim>())
+               FEParameters<dim> const          & = FEParameters<dim>())
   {
     // set the dof index to zero (for the HelmholtzOperator and also
     // for the basic Operators (MassMatrixOperator and ViscousOperator))
@@ -112,11 +112,11 @@ public:
 
     // setup own mass matrix operator
     MassMatrixOperatorData mass_matrix_operator_data = my_operator_data.mass_matrix_operator_data;
-    own_mass_matrix_operator_storage.initialize(own_matrix_free_storage,fe_param,mass_matrix_operator_data);
+    own_mass_matrix_operator_storage.initialize(own_matrix_free_storage,mass_matrix_operator_data);
 
     // setup own viscous operator
     ViscousOperatorData<dim> viscous_operator_data = my_operator_data.viscous_operator_data;
-    own_viscous_operator_storage.initialize(mapping,own_matrix_free_storage,fe_param,viscous_operator_data);
+    own_viscous_operator_storage.initialize(mapping,own_matrix_free_storage,viscous_operator_data);
 
     // setup Helmholtz operator
     initialize(own_matrix_free_storage, my_operator_data, own_mass_matrix_operator_storage, own_viscous_operator_storage);

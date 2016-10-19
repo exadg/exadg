@@ -410,7 +410,7 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
 
   // mass matrix operator
   mass_matrix_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
-  mass_matrix_operator.initialize(data,fe_param,mass_matrix_operator_data);
+  mass_matrix_operator.initialize(data,mass_matrix_operator_data);
 
   // inverse mass matrix operator
   inverse_mass_matrix_operator.reset(new InverseMassMatrixOperator<dim,fe_degree,value_type>());
@@ -422,7 +422,7 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   BodyForceOperatorData<dim> body_force_operator_data;
   body_force_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
   body_force_operator_data.rhs = field_functions->right_hand_side;
-  body_force_operator.initialize(data,fe_param,body_force_operator_data);
+  body_force_operator.initialize(data,body_force_operator_data);
 
   // gradient operator
   gradient_operator_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
@@ -430,7 +430,7 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   gradient_operator_data.integration_by_parts_of_gradP = param.gradp_integrated_by_parts;
   gradient_operator_data.use_boundary_data = param.gradp_use_boundary_data;
   gradient_operator_data.bc = boundary_descriptor_pressure;
-  gradient_operator.initialize(data,fe_param,gradient_operator_data);
+  gradient_operator.initialize(data,gradient_operator_data);
 
   // divergence operator
   divergence_operator_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
@@ -438,12 +438,12 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   divergence_operator_data.integration_by_parts_of_divU = param.divu_integrated_by_parts;
   divergence_operator_data.use_boundary_data = param.divu_use_boundary_data;
   divergence_operator_data.bc = boundary_descriptor_velocity;
-  divergence_operator.initialize(data,fe_param,divergence_operator_data);
+  divergence_operator.initialize(data,divergence_operator_data);
 
   // convective operator
   convective_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
   convective_operator_data.bc = boundary_descriptor_velocity;
-  convective_operator.initialize(data,fe_param,convective_operator_data);
+  convective_operator.initialize(data,convective_operator_data);
 
   // viscous operator
   viscous_operator_data.formulation_viscous_term = param.formulation_viscous_term;
@@ -453,7 +453,7 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   viscous_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
   viscous_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
   viscous_operator_data.viscosity = param.viscosity;
-  viscous_operator.initialize(mapping,data,fe_param,viscous_operator_data);
+  viscous_operator.initialize(mapping,data,viscous_operator_data);
 
   dof_index_first_point = 0;
   for(unsigned int d=0;d<dim;++d)
@@ -615,7 +615,7 @@ local_compute_vorticity(const MatrixFree<dim,value_type>                 &data,
                         const parallel::distributed::Vector<value_type>  &src,
                         const std::pair<unsigned int,unsigned int>       &cell_range) const
 {
-  FEEval_Velocity_Velocity_linear velocity(data,fe_param,
+  FEEval_Velocity_Velocity_linear velocity(data,&fe_param,
       static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
 
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
@@ -660,7 +660,7 @@ local_compute_divergence (const MatrixFree<dim,value_type>                 &data
                           const parallel::distributed::Vector<value_type>  &src,
                           const std::pair<unsigned int,unsigned int>       &cell_range) const
 {
-  FEEval_Velocity_Velocity_linear fe_eval_velocity(data,fe_param,
+  FEEval_Velocity_Velocity_linear fe_eval_velocity(data,&fe_param,
       static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
 
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
