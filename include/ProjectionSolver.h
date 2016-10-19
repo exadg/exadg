@@ -10,6 +10,7 @@
 
 #include "Preconditioner.h"
 #include "InverseMassMatrixXWall.h"
+#include "BaseOperator.h"
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall> class NavierStokesOperation;
 
@@ -21,7 +22,7 @@ struct ProjectionOperatorData
 };
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class ProjectionOperatorBase
+class ProjectionOperatorBase: public BaseOperator<dim>
 {
 public:
   static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
@@ -29,13 +30,11 @@ public:
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
   ProjectionOperatorBase(MatrixFree<dim,value_type> const & data_in,
-                         FEParameters<dim>                & fe_param_in,
                          const unsigned int               dof_index_in,
                          const unsigned int               quad_index_in,
                          ProjectionOperatorData const     projection_operator_data_in)
     :
     data(data_in),
-    fe_param(fe_param_in),
     dof_index(dof_index_in),
     quad_index(quad_index_in),
     array_penalty_parameter_divergence(0),
@@ -52,7 +51,7 @@ public:
   {
     velocity_n.update_ghost_values();
 
-    FEEval_Velocity_Velocity_linear fe_eval(data,&fe_param,dof_index);
+    FEEval_Velocity_Velocity_linear fe_eval(data,this->fe_param,dof_index);
 
     AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval.n_q_points);
 
@@ -113,12 +112,11 @@ public:
   }
   FEParameters<dim> const * get_fe_param() const
   {
-    return &fe_param;
+    return this->fe_param;
   }
 
 private:
   MatrixFree<dim,value_type> const & data;
-  FEParameters<dim> const & fe_param;
   unsigned int const dof_index;
   unsigned int const quad_index;
   AlignedVector<VectorizedArray<value_type> > array_penalty_parameter_divergence;
@@ -133,12 +131,11 @@ public:
   typedef FEEvaluation<dim,fe_degree,fe_degree+1,dim,double> EvalType;
 
   ProjectionOperatorDivergencePenalty(MatrixFree<dim,value_type> const & data_in,
-                                      FEParameters<dim> & fe_param_in,
                                       const unsigned int dof_index_in,
                                       const unsigned int quad_index_in,
                                       ProjectionOperatorData const projection_operator_data_in)
     :
-    ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(data_in,fe_param_in, dof_index_in,quad_index_in,projection_operator_data_in),
+    ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(data_in, dof_index_in,quad_index_in,projection_operator_data_in),
     fe_eval(1,FEEvaluation<dim,fe_degree,fe_degree+1,dim,double>(data_in, dof_index_in, quad_index_in)),
     inverse(fe_eval[0]),
     tau(1)
@@ -195,14 +192,14 @@ public:
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
   ProjectionOperatorDivergencePenaltyXWall(MatrixFree<dim,value_type> const & data_in,
-                                           FEParameters<dim> & fe_param_in,
+                                           FEParameters<dim> * fe_param_in,
                                            const unsigned int dof_index_in,
                                            const unsigned int quad_index_in,
                                            ProjectionOperatorData const projection_operator_data_in,
                                            std_cxx11::shared_ptr< InverseMassMatrixXWallOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type> > inv_mass_xw)
     :
-    ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(data_in,fe_param_in, dof_index_in,quad_index_in,projection_operator_data_in),
-    fe_eval(1,FEEval_Velocity_Velocity_linear(data_in, &fe_param_in, dof_index_in, quad_index_in)),
+    ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(data_in, dof_index_in,quad_index_in,projection_operator_data_in),
+    fe_eval(1,FEEval_Velocity_Velocity_linear(data_in, fe_param_in, dof_index_in, quad_index_in)),
     inverse_mass_matrix_operator_xwall(inv_mass_xw),
     tau(1),
     curr_cell(0)
@@ -263,12 +260,11 @@ public:
   typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEFaceEval_Velocity_Velocity_linear;
 
   ProjectionOperatorDivergenceAndContinuityPenalty(MatrixFree<dim,value_type> const & data_in,
-                                                   FEParameters<dim> & fe_param_in,
                                                    const unsigned int dof_index_in,
                                                    const unsigned int quad_index_in,
                                                    ProjectionOperatorData const projection_operator_data_in)
     :
-    ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(data_in,fe_param_in, dof_index_in,quad_index_in,projection_operator_data_in)
+    ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(data_in, dof_index_in,quad_index_in,projection_operator_data_in)
   {}
 
   void vmult (parallel::distributed::Vector<value_type>       &dst,

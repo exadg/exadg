@@ -908,9 +908,7 @@ setup_projection_solver ()
 
   if(this->param.projection_type == ProjectionType::NoPenalty)
   {
-    this->projection_solver.reset(new ProjectionSolverNoPenalty<dim, fe_degree, value_type>(this->data,
-        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity)));
+    AssertThrow(false,ExcMessage("This is not implemented, use the local penalty-projection method with zero penalty parameter"));
   }
   else if(this->param.projection_type == ProjectionType::DivergencePenalty &&
           this->param.solver_projection == SolverProjection::LU)
@@ -923,10 +921,10 @@ setup_projection_solver ()
 
     this->projection_operator = new ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(
         this->data,
-        this->fe_param,
         static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity),
         static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity),
         projection_operator_data);
+    this->projection_operator->set_fe_param(&this->fe_param);
 
     this->projection_solver.reset(new DirectProjectionSolverDivergencePenalty
         <dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(this->projection_operator));
@@ -942,11 +940,12 @@ setup_projection_solver ()
 
     this->projection_operator = new ProjectionOperatorDivergencePenaltyXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(
         this->data,
-        this->fe_param,
+        &this->fe_param,
         static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity),
         static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity),
         projection_operator_data,
         inverse_mass_matrix_operator_xwall);
+    this->projection_operator->set_fe_param(&this->fe_param);
 
     ProjectionSolverData projection_solver_data;
     projection_solver_data.solver_tolerance_abs = this->param.abs_tol_projection;
