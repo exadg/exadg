@@ -556,10 +556,10 @@ public:
 
   //same quadrature rules as in DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>
   enum class QuadratureSelector{
-    velocity = static_cast<typename std::underlying_type<QuadratureSelector>::type >(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity),
-    pressure = static_cast<typename std::underlying_type<QuadratureSelector>::type >(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::pressure),
-    velocity_nonlinear = static_cast<typename std::underlying_type<QuadratureSelector>::type >(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity_nonlinear),
-    enriched = static_cast<typename std::underlying_type<QuadratureSelector>::type >(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::enriched),
+    velocity = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity),
+    pressure = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::pressure),
+    velocity_nonlinear = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity_nonlinear),
+    enriched = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::enriched),
     n_variants = static_cast<typename std::underlying_type<QuadratureSelector>::type >(enriched)+1
   };
 
