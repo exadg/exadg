@@ -74,21 +74,21 @@
 #include "PrintInputParameters.h"
 
 const unsigned int FE_DEGREE = 4;
-const unsigned int FE_DEGREE_P = FE_DEGREE-1;//FE_DEGREE-1;
+const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
 const unsigned int FE_DEGREE_XWALL = 1;
-const unsigned int N_Q_POINTS_1D_XWALL = 1;
-const unsigned int DIMENSION = 3; // DIMENSION >= 2
+const unsigned int N_Q_POINTS_1D_XWALL = 25;
+const unsigned int DIMENSION = 2; // DIMENSION >= 2
 const unsigned int REFINE_STEPS_SPACE_MIN = 3;
 const unsigned int REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
 const unsigned int REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
-const double GRID_STRETCH_FAC = 1.8;
+const double GRID_STRETCH_FAC = 0.001;
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
 {
-  output_data.output_prefix = "ch590_l3_k4_gt0";
-  cfl = 0.08;
+  output_data.output_prefix = "ch590_l3_k4k1_gt0";
+  cfl = 0.16;
   diffusion_number = 0.03;
   viscosity = 1./590.;
 
@@ -114,152 +114,35 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
     turb_stat_data.statistics_start_time = 50.;
     end_time = 70.;
   }
-  //xwall
-  variabletauw = true;
-  dtauw = 1.;
 
-  // PHYSICAL QUANTITIES
-  start_time = 0.0;
-  end_time = 50.;
-  viscosity = 1./180.;
-
-  // MATHEMATICAL MODEL
+  //dual splitting scheme
   problem_type = ProblemType::Unsteady;
   equation_type = EquationType::NavierStokes;
-  formulation_viscous_term = FormulationViscousTerm::DivergenceFormulation;
-  right_hand_side = true;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  projection_type = ProjectionType::DivergencePenalty;
+  order_time_integrator = 2;
+
+  //xwall specific
   IP_factor_viscous = 1.;
 
-  order_time_integrator = 2;
   calculation_of_time_step_size = TimeStepCalculation::AdaptiveTimeStepCFL;
-  // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
-  max_velocity = 22.0;
-  cfl = 1.0;
-  order_time_integrator = 3;
-  start_with_low_order = true;
-
-  // SPATIAL DISCRETIZATION
-  spatial_discretization = SpatialDiscretization::DG;
-
-  IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
-
+  formulation_viscous_term = FormulationViscousTerm::DivergenceFormulation; //also default
   divu_integrated_by_parts = true;
-  divu_use_boundary_data = true;
   gradp_integrated_by_parts = true;
-  gradp_use_boundary_data = true;
   pure_dirichlet_bc = true;
   output_solver_info_every_timesteps = 1e2;
   right_hand_side = true;
 
-  output_data.write_output = true;
-  output_data.output_start_time = 0.;
-  output_data.output_interval_time = 1.;
-  output_data.number_of_patches = FE_DEGREE+1;
-  turb_stat_data.statistics_end_time = end_time;
-  restart_interval_wall_time = 1.e9;
+  restart_every_timesteps = 1e9;
+  restart_interval_time = 1.e9;
 
-  solver_viscous = SolverViscous::GMRES;
+  max_velocity = 15.;
 
   //solver tolerances
   rel_tol_pressure = 1.e-4;
   rel_tol_projection = 1.e-6;
   rel_tol_viscous = 1.e-4;
-//  cfl = 0.08;
-//  diffusion_number = 0.03;
-//  //xwall
-//  variabletauw = true;
-//  dtauw = 1.;
-//  ml = 0.;
-//  max_wdist_xwall = -0.25;
-//
-//  // PHYSICAL QUANTITIES
-//  start_time = 0.0;
-//  end_time = 50.;
-//  viscosity = 1./180.;
-//
-//  // MATHEMATICAL MODEL
-//  problem_type = ProblemType::Unsteady;
-//  equation_type = EquationType::NavierStokes;
-//  formulation_viscous_term = FormulationViscousTerm::DivergenceFormulation;
-//  right_hand_side = true;
-//  penalty_factor_divergence = 1.0e1;
-//  order_time_integrator = 2;
-//
-//  // TEMPORAL DISCRETIZATION
-//  temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
-//  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
-//  IP_factor_viscous = 4.;
-//
-//  calculation_of_time_step_size = TimeStepCalculation::AdaptiveTimeStepCFL;
-//  temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
-//  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
-//  max_velocity = 22.0;
-//  cfl = 1.0;
-//  order_time_integrator = 3;
-//  start_with_low_order = true;
-//
-//  // SPATIAL DISCRETIZATION
-//  spatial_discretization = SpatialDiscretization::DG;
-//
-//  IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
-//
-//  divu_integrated_by_parts = true;
-//  divu_use_boundary_data = true;
-//  gradp_integrated_by_parts = true;
-//  gradp_use_boundary_data = true;
-//  pure_dirichlet_bc = true;
-//  output_solver_info_every_timesteps = 1e2;
-//  right_hand_side = true;
-//
-//  // HIGH-ORDER DUAL SPLITTING SCHEME
-//  projection_type = ProjectionType::DivergencePenalty;
-//
-//  solver_viscous = SolverViscous::GMRES;
-//
-//  //solver tolerances
-//  rel_tol_pressure = 1.e-4;
-//  rel_tol_projection = 1.e-6;
-//  rel_tol_viscous = 1.e-4;
-//
-//  // COUPLED NAVIER-STOKES SOLVER
-//
-//  // nonlinear solver (Newton solver)
-//  abs_tol_newton = 1.e-12;
-//  rel_tol_newton = 1.e-4;
-//  max_iter_newton = 1e2;
-//
-//  // linear solver
-//  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;
-//  abs_tol_linear = 1.e-12;
-//  rel_tol_linear = 1.e-4;
-//  max_iter_linear = 1e4;
-//  max_n_tmp_vectors = 100;
-//
-//  // preconditioning linear solver
-//  preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
-//
-//  // preconditioner velocity/momentum block
-//  momentum_preconditioner = MomentumPreconditioner::InverseMassMatrix;
-//  solver_momentum_preconditioner = SolverMomentumPreconditioner::GeometricMultigridVCycle;
-//  rel_tol_solver_momentum_preconditioner = 1.e-3;
-//
-//  // preconditioner Schur-complement block
-//  schur_complement_preconditioner = SchurComplementPreconditioner::PressureConvectionDiffusion;
-//  discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
-//  solver_schur_complement_preconditioner = SolverSchurComplementPreconditioner::GeometricMultigridVCycle;
-//  rel_tol_solver_schur_complement_preconditioner = 1.e-6;
-//
-//  // OUTPUT AND POSTPROCESSING
-//  output_data.output_prefix = "ch180_l3_k3_gt18";
-//  output_data.write_output = true;
-//  output_data.output_start_time = 0.;
-//  output_data.output_interval_time = 1.;
-//  output_solver_info_every_timesteps = 1e1;
-//  statistics_start_time = 30.;
-//  restart_every_timesteps = 1e9;
-//  restart_interval_time = 1.e9;
 }
 
 template<int dim>
