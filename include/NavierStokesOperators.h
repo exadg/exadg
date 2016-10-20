@@ -36,7 +36,7 @@ struct BodyForceOperatorData
   std_cxx11::shared_ptr<Function<dim> > rhs;
 };
 
-template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class BodyForceOperator: public BaseOperator<dim>
 {
 public:
@@ -46,8 +46,8 @@ public:
     eval_time(0.0)
   {}
 
-  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
@@ -70,7 +70,7 @@ public:
     this->eval_time = evaluation_time;
 
     parallel::distributed::Vector<value_type> src;
-    data->cell_loop(&BodyForceOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_evaluate, this, dst, src);
+    data->cell_loop(&BodyForceOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type>::local_evaluate, this, dst, src);
   }
 
 private:
@@ -127,7 +127,7 @@ struct MassMatrixOperatorData
   unsigned int dof_index;
 };
 
-template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class MassMatrixOperator: public BaseOperator<dim>
 {
 public:
@@ -136,8 +136,8 @@ public:
     data(nullptr)
   {}
 
-  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
@@ -174,7 +174,7 @@ public:
   {
     parallel::distributed::Vector<value_type>  src_dummy(diagonal);
 
-    data->cell_loop(&MassMatrixOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_diagonal, this, diagonal, src_dummy);
+    data->cell_loop(&MassMatrixOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type>::local_diagonal, this, diagonal, src_dummy);
   }
 
   void verify_calculation_of_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
@@ -218,7 +218,7 @@ private:
   void apply_mass_matrix (parallel::distributed::Vector<value_type>        &dst,
                           const parallel::distributed::Vector<value_type>  &src) const
   {
-    data->cell_loop(&MassMatrixOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall, value_type>::local_apply, this, dst, src);
+    data->cell_loop(&MassMatrixOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule, value_type>::local_apply, this, dst, src);
   }
 
   void local_apply (const MatrixFree<dim,value_type>                 &data,
@@ -319,7 +319,7 @@ struct ViscousOperatorData
   }
 };
 
-template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename Number=double>
+template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number=double>
 class ViscousOperator : public BaseOperator<dim>
 {
 public:
@@ -333,8 +333,8 @@ public:
   {
   }
 
-  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,Number,is_xwall> FEEval_Velocity_Velocity_linear;
   typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,Number,is_xwall> FEFaceEval_Velocity_Velocity_linear;
 
@@ -398,13 +398,13 @@ public:
 
   void initialize_viscous_coefficients()
   {
-    Assert(n_q_points_1d_xwall > fe_degree +1, ExcMessage("this may cause a memory error"));
-    this->viscous_coefficient_cell.reinit(this->data->n_macro_cells(), Utilities::fixed_int_power<n_q_points_1d_xwall,dim>::value);
+    Assert(xwall_quad_rule > fe_degree +1, ExcMessage("this may cause a memory error"));
+    this->viscous_coefficient_cell.reinit(this->data->n_macro_cells(), Utilities::fixed_int_power<xwall_quad_rule,dim>::value);
     this->viscous_coefficient_cell.fill(make_vectorized_array<Number>(const_viscosity));
 
-    this->viscous_coefficient_face.reinit(this->data->n_macro_inner_faces()+this->data->n_macro_boundary_faces(), Utilities::fixed_int_power<n_q_points_1d_xwall,dim-1>::value);
+    this->viscous_coefficient_face.reinit(this->data->n_macro_inner_faces()+this->data->n_macro_boundary_faces(), Utilities::fixed_int_power<xwall_quad_rule,dim-1>::value);
     this->viscous_coefficient_face.fill(make_vectorized_array<Number>(const_viscosity));
-    this->viscous_coefficient_face_neighbor.reinit(this->data->n_macro_inner_faces()+this->data->n_macro_boundary_faces(), Utilities::fixed_int_power<n_q_points_1d_xwall,dim-1>::value);
+    this->viscous_coefficient_face_neighbor.reinit(this->data->n_macro_inner_faces()+this->data->n_macro_boundary_faces(), Utilities::fixed_int_power<xwall_quad_rule,dim-1>::value);
     this->viscous_coefficient_face_neighbor.fill(make_vectorized_array<Number>(const_viscosity));
   }
 
@@ -525,9 +525,9 @@ public:
     this->eval_time = evaluation_time;
 
     parallel::distributed::Vector<Number> src;
-    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_rhs_viscous,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_rhs_viscous_face,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_rhs_viscous_boundary_face,
+    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_rhs_viscous,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_rhs_viscous_face,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_rhs_viscous_boundary_face,
                this, dst, src);
   }
 
@@ -560,9 +560,9 @@ public:
   {
     parallel::distributed::Vector<Number>  src_dummy(diagonal);
 
-    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_diagonal,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_diagonal_face,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_diagonal_boundary_face,
+    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_diagonal,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_diagonal_face,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_diagonal_boundary_face,
                this, diagonal, src_dummy);
   }
 
@@ -649,9 +649,9 @@ protected:
   void apply_viscous (parallel::distributed::Vector<Number>        &dst,
                       const parallel::distributed::Vector<Number>  &src) const
   {
-    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_apply_viscous,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_apply_viscous_face,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_apply_viscous_boundary_face,
+    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_apply_viscous,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_apply_viscous_face,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_apply_viscous_boundary_face,
                this, dst, src);
   }
 private:
@@ -1340,9 +1340,9 @@ private:
   void evaluate_viscous (parallel::distributed::Vector<Number>        &dst,
                          const parallel::distributed::Vector<Number>  &src) const
   {
-    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_apply_viscous,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_apply_viscous_face,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_evaluate_viscous_boundary_face,
+    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_apply_viscous,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_apply_viscous_face,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_evaluate_viscous_boundary_face,
                this, dst, src);
   }
 
@@ -1708,7 +1708,7 @@ struct GradientOperatorData
   std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
 };
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class GradientOperator: public BaseOperator<dim>
 {
 public:
@@ -1718,8 +1718,8 @@ public:
     eval_time(0.0)
   {}
 
-  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
   typedef FEEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,is_xwall> FEEval_Pressure_Velocity_linear;
 
@@ -1780,27 +1780,27 @@ private:
   void apply_gradient (parallel::distributed::Vector<value_type>        &dst,
                        const parallel::distributed::Vector<value_type>  &src) const
   {
-    data->loop (&GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_gradient,
-                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_gradient_face,
-                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_gradient_boundary_face,
+    data->loop (&GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_gradient,
+                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_gradient_face,
+                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_gradient_boundary_face,
                 this, dst, src);
   }
 
   void rhs_gradient (parallel::distributed::Vector<value_type> &dst) const
   {
     parallel::distributed::Vector<value_type> src;
-    data->loop (&GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_rhs_gradient,
-                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_rhs_gradient_face,
-                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_rhs_gradient_boundary_face,
+    data->loop (&GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_rhs_gradient,
+                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_rhs_gradient_face,
+                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_rhs_gradient_boundary_face,
                 this, dst, src);
   }
 
   void evaluate_gradient (parallel::distributed::Vector<value_type>       &dst,
                           const parallel::distributed::Vector<value_type> &src) const
   {
-    data->loop (&GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_gradient,
-                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_gradient_face,
-                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_evaluate_gradient_boundary_face,
+    data->loop (&GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_gradient,
+                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_gradient_face,
+                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_evaluate_gradient_boundary_face,
                 this, dst, src);
   }
 
@@ -2129,7 +2129,7 @@ struct DivergenceOperatorData
   std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
 };
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class DivergenceOperator: public BaseOperator<dim>
 {
 public:
@@ -2139,8 +2139,8 @@ public:
     eval_time(0.0)
   {}
 
-  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
 
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
   typedef FEEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,is_xwall> FEEval_Pressure_Velocity_linear;
@@ -2202,27 +2202,27 @@ private:
   void apply_divergence (parallel::distributed::Vector<value_type>      &dst,
                         const parallel::distributed::Vector<value_type> &src) const
   {
-    data->loop (&DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_divergence,
-                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_divergence_face,
-                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_divergence_boundary_face,
+    data->loop (&DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_divergence,
+                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_divergence_face,
+                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_divergence_boundary_face,
                 this, dst, src);
   }
 
   void rhs_divergence (parallel::distributed::Vector<value_type> &dst) const
   {
     parallel::distributed::Vector<value_type> src;
-    data->loop (&DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_rhs_divergence,
-                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_rhs_divergence_face,
-                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_rhs_divergence_boundary_face,
+    data->loop (&DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_rhs_divergence,
+                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_rhs_divergence_face,
+                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_rhs_divergence_boundary_face,
                 this, dst, src);
   }
 
   void evaluate_divergence (parallel::distributed::Vector<value_type>       &dst,
                             const parallel::distributed::Vector<value_type> &src) const
   {
-    data->loop (&DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_divergence,
-                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_divergence_face,
-                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_evaluate_divergence_boundary_face,
+    data->loop (&DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_divergence,
+                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_divergence_face,
+                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_evaluate_divergence_boundary_face,
                 this, dst, src);
   }
 
@@ -2551,7 +2551,7 @@ struct ConvectiveOperatorData
 
 
 
-template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class ConvectiveOperator: public BaseOperator<dim>
 {
 public:
@@ -2562,8 +2562,8 @@ public:
     velocity_linearization(nullptr)
   {}
 
-  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_nonlinear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+(fe_degree+2)/2;
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_nonlinear = (is_xwall) ? xwall_quad_rule : fe_degree+(fe_degree+2)/2;
 
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_nonlinear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_nonlinear;
   typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_nonlinear,dim,value_type,is_xwall> FEFaceEval_Velocity_Velocity_nonlinear;
@@ -2631,9 +2631,9 @@ public:
 
     parallel::distributed::Vector<value_type>  src_dummy(diagonal);
 
-    data->loop(&ConvectiveOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_diagonal,
-               &ConvectiveOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_diagonal_face,
-               &ConvectiveOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_diagonal_boundary_face,
+    data->loop(&ConvectiveOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type>::local_diagonal,
+               &ConvectiveOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type>::local_diagonal_face,
+               &ConvectiveOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type>::local_diagonal_boundary_face,
                this, diagonal, src_dummy);
   }
 
@@ -2642,9 +2642,9 @@ private:
   void evaluate_convective_term (parallel::distributed::Vector<value_type>       &dst,
                                  parallel::distributed::Vector<value_type> const &src) const
   {
-    data->loop(&ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_evaluate_convective_term,
-               &ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_evaluate_convective_term_face,
-               &ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_evaluate_convective_term_boundary_face,
+    data->loop(&ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>::local_evaluate_convective_term,
+               &ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>::local_evaluate_convective_term_face,
+               &ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>::local_evaluate_convective_term_boundary_face,
                this, dst, src);
   }
 
@@ -2800,9 +2800,9 @@ private:
   void apply_linearized_convective_term (parallel::distributed::Vector<value_type>       &dst,
                                          parallel::distributed::Vector<value_type> const &src) const
   {
-    data->loop(&ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_linearized_convective_term,
-               &ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_linearized_convective_term_face,
-               &ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_linearized_convective_term_boundary_face,
+    data->loop(&ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_linearized_convective_term,
+               &ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_linearized_convective_term_face,
+               &ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_linearized_convective_term_boundary_face,
                this, dst, src);
   }
 

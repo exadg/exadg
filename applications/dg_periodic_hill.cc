@@ -552,18 +552,18 @@ public:
   return result;
   }
 
-  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-  class TimeIntBDFDualSplittingPH : public virtual TimeIntBDFDualSplitting<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+  class TimeIntBDFDualSplittingPH : public virtual TimeIntBDFDualSplitting<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule,value_type>
   {
   public:
     TimeIntBDFDualSplittingPH(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
-                              fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >                ns_operation_in,
+                              fe_degree_p, fe_degree_xwall, xwall_quad_rule> >                ns_operation_in,
                             std_cxx11::shared_ptr<PostProcessor<dim, fe_degree, fe_degree_p> >    postprocessor_in,
                             InputParametersNavierStokes<dim> const                                &param_in,
                             unsigned int const                                                    n_refine_time_in,
                             bool const                                                            use_adaptive_time_stepping)
       :
-      TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+      TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
               (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
               ns_op(ns_operation_in),
               old_RHS_value(13.5),
@@ -585,7 +585,7 @@ public:
       virtual ~TimeIntBDFDualSplittingPH(){}
   private:
 
-    std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_op;
+    std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > ns_op;
     std::vector<double> massflows;
     double old_RHS_value;
     std_cxx11::shared_ptr<RightHandSide<dim> > rhs;
@@ -594,12 +594,12 @@ public:
       setup_controller();
       compute_massflow_PH(this->velocity[0]);
 
-      TimeIntBDFDualSplitting<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>::convective_step();
+      TimeIntBDFDualSplitting<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule,value_type>::convective_step();
     }
     void compute_massflow_PH (const parallel::distributed::Vector<value_type>     &src)
     {
       double dst_loc = 0.0;
-      ns_op->get_data().cell_loop(&TimeIntBDFDualSplittingPH<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_compute_massflow_PH,
+      ns_op->get_data().cell_loop(&TimeIntBDFDualSplittingPH<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_compute_massflow_PH,
                                      this, dst_loc, src);
 
       dst_loc = Utilities::MPI::sum(dst_loc, MPI_COMM_WORLD);
@@ -645,8 +645,8 @@ public:
                                     const parallel::distributed::Vector<value_type>   &src,
                                     const std::pair<unsigned int,unsigned int>             &cell_range) const
     {
-      static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
-      static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
+      static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+      static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
 
       FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall>
           fe_eval(data,&ns_op->get_fe_parameters(),0);
@@ -686,42 +686,42 @@ public:
 
   };
 
-  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-  class TimeIntBDFDualSplittingXWallPH : public virtual TimeIntBDFDualSplittingXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>,
-                                         public virtual TimeIntBDFDualSplittingPH<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+  class TimeIntBDFDualSplittingXWallPH : public virtual TimeIntBDFDualSplittingXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule,value_type>,
+                                         public virtual TimeIntBDFDualSplittingPH<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule,value_type>
   {
   public:
     TimeIntBDFDualSplittingXWallPH(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
-                              fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
+                              fe_degree_p, fe_degree_xwall, xwall_quad_rule> >  ns_operation_in,
                             std_cxx11::shared_ptr<PostProcessor<dim, fe_degree, fe_degree_p> >    postprocessor_in,
                             InputParametersNavierStokes<dim> const                       &param_in,
                             unsigned int const                                      n_refine_time_in)
       :
-      TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+      TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
               (ns_operation_in,postprocessor_in,param_in,n_refine_time_in),
-      TimeIntBDFDualSplittingPH<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+      TimeIntBDFDualSplittingPH<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
               (ns_operation_in,postprocessor_in,param_in,n_refine_time_in)
     {}
   };
-  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-  class TimeIntBDFDualSplittingXWallSpalartAllmarasPH : public virtual TimeIntBDFDualSplittingXWallSpalartAllmaras<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>,
-                                                        public virtual TimeIntBDFDualSplittingPH<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+  class TimeIntBDFDualSplittingXWallSpalartAllmarasPH : public virtual TimeIntBDFDualSplittingXWallSpalartAllmaras<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule,value_type>,
+                                                        public virtual TimeIntBDFDualSplittingPH<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule,value_type>
   {
   public:
     TimeIntBDFDualSplittingXWallSpalartAllmarasPH(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
-                              fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >             ns_operation_in,
+                              fe_degree_p, fe_degree_xwall, xwall_quad_rule> >             ns_operation_in,
                             std_cxx11::shared_ptr<PostProcessor<dim, fe_degree, fe_degree_p> > postprocessor_in,
                             InputParametersNavierStokes<dim> const                             &param_in,
                             unsigned int const                                                 n_refine_time_in,
                             bool const                                                         use_adaptive_time_stepping)
       :
-      TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+      TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
               (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
-      TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+      TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
               (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
-      TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+      TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
               (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
-      TimeIntBDFDualSplittingPH<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+      TimeIntBDFDualSplittingPH<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
               (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping)
     {}
   };
@@ -761,13 +761,13 @@ public:
 
   };
 
-  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
   class PostProcessorPH: public PostProcessor<dim,fe_degree,fe_degree_p>
   {
   public:
 
     PostProcessorPH(
-                  std_cxx11::shared_ptr< const DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> >  ns_operation):
+                  std_cxx11::shared_ptr< const DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule> >  ns_operation):
       PostProcessor<dim,fe_degree,fe_degree_p>(),
       statistics_ph(ns_operation->get_dof_handler_u(),ns_operation->get_dof_handler_p(),ns_operation->get_mapping())
     {
@@ -816,14 +816,14 @@ public:
 
   };
 
-  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-  class PostProcessorPHXWall: public PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+  class PostProcessorPHXWall: public PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule>
   {
   public:
 
     PostProcessorPHXWall(
-                  std_cxx11::shared_ptr< DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> >  ns_operation):
-      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>(ns_operation),
+                  std_cxx11::shared_ptr< DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule> >  ns_operation):
+      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule>(ns_operation),
       statistics_ph(ns_operation->get_dof_handler_u(),ns_operation->get_dof_handler_p(),ns_operation->get_mapping())
     {
     }
@@ -837,7 +837,7 @@ public:
                MatrixFree<dim,double> const                                 &matrix_free_data_in,
                std_cxx11::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution_in)
     {
-      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>::setup(postprocessor_data_in,
+      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule>::setup(postprocessor_data_in,
                                                                                                dof_handler_velocity_in,
                                                                                                dof_handler_pressure_in,
                                                                                                mapping_in,
@@ -853,7 +853,7 @@ public:
                            double const time,
                            unsigned int const time_step_number)
     {
-      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>::do_postprocessing(velocity,pressure,vorticity,divergence,time,time_step_number);
+      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule>::do_postprocessing(velocity,pressure,vorticity,divergence,time,time_step_number);
 
       const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
 

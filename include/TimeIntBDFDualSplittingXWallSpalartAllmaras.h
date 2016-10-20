@@ -11,26 +11,26 @@
 #include "DGSpalartAllmarasModel.h"
 #include "TimeIntBDFDualSplittingXWall.h"
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class TimeIntBDFDualSplittingXWallSpalartAllmaras : virtual public TimeIntBDFDualSplittingXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+class TimeIntBDFDualSplittingXWallSpalartAllmaras : virtual public TimeIntBDFDualSplittingXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule,value_type>
 {
 public:
   TimeIntBDFDualSplittingXWallSpalartAllmaras(
       std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
-        fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
+        fe_degree_p, fe_degree_xwall, xwall_quad_rule> >  ns_operation_in,
       std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
         fe_degree_p> >                                        postprocessor_in,
       InputParametersNavierStokes<dim> const                  &param_in,
       unsigned int const                                      n_refine_time_in,
       bool const                                              use_adaptive_time_stepping)
     :
-    TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+    TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
             (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
-    TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+    TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
             (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
     time_steps_sa(this->order),
     num_sa_substeps(1),
-    ns_operation_xwall_sa (std::dynamic_pointer_cast<DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in)),
+    ns_operation_xwall_sa (std::dynamic_pointer_cast<DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > (ns_operation_in)),
     vt(this->order),
     vt_rhs(this->order),
     gamma0_sa(1.0),
@@ -61,7 +61,7 @@ private:
 
   unsigned int num_sa_substeps;
 
-  std_cxx11::shared_ptr<DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >
+  std_cxx11::shared_ptr<DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> >
      ns_operation_xwall_sa;
 
   parallel::distributed::Vector<value_type> vt_np;
@@ -73,11 +73,11 @@ private:
 
 };
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 initialize_vectors()
 {
-  TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+  TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
   initialize_vectors();
   // velocity
   for(unsigned int i=0;i<vt.size();++i)
@@ -92,8 +92,8 @@ initialize_vectors()
 
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 solve_timestep()
 {
   for(unsigned int n=0;n<num_sa_substeps; n++)
@@ -136,14 +136,14 @@ solve_timestep()
     }
   }
 //  vt_np.print(std::cout);
-  TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::solve_timestep();
+  TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::solve_timestep();
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 prepare_vectors_for_next_timestep()
 {
-  TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+  TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
   prepare_vectors_for_next_timestep();
 
   // solution at t_{n-i} <-- solution at t_{n-i+1}
@@ -155,15 +155,15 @@ prepare_vectors_for_next_timestep()
   vt[0].swap(vt_np);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 postprocessing() const
 {
   this->postprocessor->do_postprocessing(this->velocity[0],this->pressure[0],this->vorticity[0],vt[0],this->time,this->time_step_number);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 viscous_step()
 {
   Timer timer;
@@ -190,12 +190,12 @@ viscous_step()
   this->computing_times[3] += timer.wall_time();
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 calculate_time_step()
 {
   //there is no enrichment in the first time step
-  TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+  TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
   calculate_time_step();
 
   if(this->param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
@@ -224,8 +224,8 @@ calculate_time_step()
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 recalculate_adaptive_time_step()
 {
   /*
@@ -277,11 +277,11 @@ recalculate_adaptive_time_step()
 
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 update_time_integrator_constants()
 {
-  TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+  TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
   update_time_integrator_constants();
 
   if(this->param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified ||

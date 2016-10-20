@@ -304,12 +304,12 @@ public:
   template <int dim>
   Point<dim> grid_transform (const Point<dim> &in);
 
-  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
   class PostProcessorChannel: public PostProcessor<dim,fe_degree,fe_degree_p>
   {
   public:
 
-    PostProcessorChannel(std_cxx11::shared_ptr< const DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> >  ns_operation):
+    PostProcessorChannel(std_cxx11::shared_ptr< const DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule> >  ns_operation):
       PostProcessor<dim,fe_degree,fe_degree_p>(),
       statistics_ch(ns_operation->get_dof_handler_u())
     {
@@ -357,14 +357,14 @@ public:
 
   };
 
-  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-  class PostProcessorChannelXWall: public PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+  class PostProcessorChannelXWall: public PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule>
   {
   public:
 
     PostProcessorChannelXWall(
-                  std_cxx11::shared_ptr< DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> >  ns_operation):
-      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>(ns_operation),
+                  std_cxx11::shared_ptr< DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule> >  ns_operation):
+      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule>(ns_operation),
       statistics_ch(ns_operation->get_dof_handler_u())
     {}
 
@@ -377,7 +377,7 @@ public:
                MatrixFree<dim,double> const                                 &matrix_free_data_in,
                std_cxx11::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution_in)
     {
-      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>::setup(postprocessor_data_in,
+      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule>::setup(postprocessor_data_in,
                                                                                                dof_handler_velocity_in,
                                                                                                dof_handler_pressure_in,
                                                                                                mapping_in,
@@ -393,7 +393,7 @@ public:
                            double const time,
                            unsigned int const time_step_number)
     {
-      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>::do_postprocessing(velocity,pressure,vorticity,vt,time,time_step_number);
+      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule>::do_postprocessing(velocity,pressure,vorticity,vt,time,time_step_number);
       const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
 
       if(time > this->pp_data.turb_stat_data.statistics_start_time-EPSILON && time_step_number % this->pp_data.turb_stat_data.statistics_every == 0)

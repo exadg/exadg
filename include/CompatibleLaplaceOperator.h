@@ -28,7 +28,7 @@ struct CompatibleLaplaceOperatorData
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs_level0;
 };
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall,typename Number = double>
+template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule,typename Number = double>
 class CompatibleLaplaceOperator : public Subscriptor
 {
 public:
@@ -46,8 +46,8 @@ public:
 
   void initialize(MatrixFree<dim,Number> const                                                                        &mf_data_in,
                   CompatibleLaplaceOperatorData<dim> const                                                            &compatible_laplace_operator_data_in,
-                  GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, Number>  const  &gradient_operator_in,
-                  DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, Number> const &divergence_operator_in,
+                  GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>  const  &gradient_operator_in,
+                  DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> const &divergence_operator_in,
                   InverseMassMatrixOperator<dim,fe_degree, Number> const                                              &inv_mass_matrix_operator_in)
   {
     // copy parameters into element variables
@@ -317,8 +317,8 @@ public:
 
 private:
   MatrixFree<dim,Number> const * data;
-  GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, Number>  const *gradient_operator;
-  DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, Number>  const *divergence_operator;
+  GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>  const *gradient_operator;
+  DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>  const *divergence_operator;
   InverseMassMatrixOperator<dim,fe_degree, Number> const *inv_mass_matrix_operator;
   CompatibleLaplaceOperatorData<dim> compatible_laplace_operator_data;
   parallel::distributed::Vector<Number> mutable tmp;
@@ -332,8 +332,8 @@ private:
    *  e.g., data = &own_matrix_free_storage;
    */
   MatrixFree<dim,Number> own_matrix_free_storage;
-  GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, Number> own_gradient_operator_storage;
-  DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, Number> own_divergence_operator_storage;
+  GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> own_gradient_operator_storage;
+  DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> own_divergence_operator_storage;
   InverseMassMatrixOperator<dim,fe_degree, Number> own_inv_mass_matrix_operator_storage;
 
   bool needs_mean_value_constraint;

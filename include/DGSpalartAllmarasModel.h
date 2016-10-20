@@ -14,13 +14,13 @@
 using namespace dealii;
 const double vt_initial_value = 0.0005;
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 class DGSpalartAllmarasModel
 {
 public:
   typedef double value_type;
   static const bool is_xwall = true;
-  static const unsigned int n_actual_q_points_vel_linear = n_q_points_1d_xwall;
+  static const unsigned int n_actual_q_points_vel_linear = xwall_quad_rule;
 
   /*
    * nomenclature typdedef FEEvaluationWrapper:
@@ -136,8 +136,8 @@ private:
   const value_type ct4;
 };
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 setup (MatrixFree<dim,value_type> &data,
        Mapping<dim> &mapping,
        std::set<types::boundary_id>   &dirichlet_bc_indicator,
@@ -152,8 +152,8 @@ setup (MatrixFree<dim,value_type> &data,
 
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 compute_array_penalty_parameter(MatrixFree<dim,value_type> &data, const Mapping<dim> &mapping)
 {
   // Compute penalty parameter for each cell
@@ -186,8 +186,8 @@ compute_array_penalty_parameter(MatrixFree<dim,value_type> &data, const Mapping<
       }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 evaluate (MatrixFree<dim,value_type> const &data,
           parallel::distributed::Vector<value_type> *src_vel,
           const parallel::distributed::Vector<value_type> &src_vt,
@@ -198,16 +198,16 @@ evaluate (MatrixFree<dim,value_type> const &data,
 
   dst = 0;
 
-  data.loop (&DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_evaluate_spalart_allmaras,
-             &DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_evaluate_spalart_allmaras_face,
-             &DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_evaluate_spalart_allmaras_boundary_face,
+  data.loop (&DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::local_evaluate_spalart_allmaras,
+             &DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::local_evaluate_spalart_allmaras_face,
+             &DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::local_evaluate_spalart_allmaras_boundary_face,
              this, dst, src_vt);
 
   inverse_mass_matrix_operator.apply_inverse_mass_matrix(dst,dst);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 local_evaluate_spalart_allmaras(const MatrixFree<dim,value_type>                 &data,
                                 parallel::distributed::Vector<value_type>        &dst,
                                 const parallel::distributed::Vector<value_type>  &src,
@@ -299,8 +299,8 @@ local_evaluate_spalart_allmaras(const MatrixFree<dim,value_type>                
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 local_evaluate_spalart_allmaras_face(const MatrixFree<dim,value_type>                 &data,
                                      parallel::distributed::Vector<value_type>        &dst,
                                      const parallel::distributed::Vector<value_type>  &src,
@@ -403,8 +403,8 @@ local_evaluate_spalart_allmaras_face(const MatrixFree<dim,value_type>           
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 local_evaluate_spalart_allmaras_boundary_face(const MatrixFree<dim,value_type>                 &data,
                                               parallel::distributed::Vector<value_type>        &dst,
                                               const parallel::distributed::Vector<value_type>  &src,
@@ -538,35 +538,35 @@ local_evaluate_spalart_allmaras_boundary_face(const MatrixFree<dim,value_type>  
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-class DGNavierStokesDualSplittingXWallSpalartAllmaras : public DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+class DGNavierStokesDualSplittingXWallSpalartAllmaras : public DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>
 {
 public:
-  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::value_type value_type;
-  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::FEFaceEval_Velocity_Velocity_linear FEFaceEval_Velocity_Velocity_linear;
-  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::FEEval_Velocity_Velocity_linear FEEval_Velocity_Velocity_linear;
+  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::value_type value_type;
+  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::FEFaceEval_Velocity_Velocity_linear FEFaceEval_Velocity_Velocity_linear;
+  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::FEEval_Velocity_Velocity_linear FEEval_Velocity_Velocity_linear;
 
   enum class DofHandlerSelector{
-    velocity = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity),
-    pressure = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::pressure),
-    wdist_tauw = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::wdist_tauw),
-    vt = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::n_variants),
+    velocity = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector::velocity),
+    pressure = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector::pressure),
+    wdist_tauw = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector::wdist_tauw),
+    vt = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector::n_variants),
     n_variants = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(vt)+1
   };
 
-  //same quadrature rules as in DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>
+  //same quadrature rules as in DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>
   enum class QuadratureSelector{
-    velocity = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity),
-    pressure = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::pressure),
-    velocity_nonlinear = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::velocity_nonlinear),
-    enriched = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::QuadratureSelector::enriched),
+    velocity = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector::velocity),
+    pressure = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector::pressure),
+    velocity_nonlinear = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector::velocity_nonlinear),
+    enriched = static_cast<int>(DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector::enriched),
     n_variants = static_cast<typename std::underlying_type<QuadratureSelector>::type >(enriched)+1
   };
 
   DGNavierStokesDualSplittingXWallSpalartAllmaras(parallel::distributed::Triangulation<dim> const &triangulation,
                                                   InputParametersNavierStokes<dim> const          &parameter)
     :
-      DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>(triangulation,parameter),
+      DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>(triangulation,parameter),
       fe_vt(QGaussLobatto<1>(fe_degree+1)),
       dof_handler_vt(triangulation),
       spalart_allmaras(this->fe_param)
@@ -643,17 +643,17 @@ private:
 
   DoFHandler<dim>  dof_handler_vt;
 
-  DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> spalart_allmaras;
+  DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> spalart_allmaras;
 };
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
         std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
         std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
         std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
 {
-  DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+  DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
   setup(periodic_face_pairs,
   boundary_descriptor_velocity,
   boundary_descriptor_pressure,
@@ -662,8 +662,8 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   spalart_allmaras.setup(this->data,this->mapping,this->dirichlet_boundary,this->neumann_boundary);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 create_dofs()
 {
 
@@ -698,8 +698,8 @@ create_dofs()
     << "  number of dofs (eddy visc):\t" << std::fixed << std::setw(10) << std::right << this->dof_handler_vt.n_dofs() << std::endl;
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 data_reinit(typename MatrixFree<dim,value_type>::AdditionalData & additional_data)
 {
   std::vector<const DoFHandler<dim> * >  dof_handler_vec;
@@ -736,30 +736,30 @@ data_reinit(typename MatrixFree<dim,value_type>::AdditionalData & additional_dat
               = QGauss<1>(fe_degree + (fe_degree+2)/2);
   // high-order integration of enrichment
   quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::enriched)]
-              = QGauss<1>(n_q_points_1d_xwall);
+              = QGauss<1>(xwall_quad_rule);
 
   this->data.reinit (this->mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 set_eddy_viscosity(const parallel::distributed::Vector<value_type>  &src)
 {
   parallel::distributed::Vector<value_type> dummy;
-  this->data.loop(&DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_set_eddyviscosity,
-                   &DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_set_eddyviscosity_face,
-                   &DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_set_eddyviscosity_boundary_face,
+  this->data.loop(&DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::local_set_eddyviscosity,
+                   &DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::local_set_eddyviscosity_face,
+                   &DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::local_set_eddyviscosity_boundary_face,
                    this, dummy, src);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 local_set_eddyviscosity (const MatrixFree<dim,value_type>                 &data,
                      parallel::distributed::Vector<value_type>        &,
                      const parallel::distributed::Vector<value_type>  &src,
                      const std::pair<unsigned int,unsigned int>   &cell_range)
 {
-  FEEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type,true> fe_eval_vt(data,&this->fe_param,3);
+  FEEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,1,value_type,true> fe_eval_vt(data,&this->fe_param,3);
 
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
   {
@@ -777,15 +777,15 @@ local_set_eddyviscosity (const MatrixFree<dim,value_type>                 &data,
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 local_set_eddyviscosity_face (const MatrixFree<dim,value_type>                 &data,
                           parallel::distributed::Vector<value_type>        &,
                           const parallel::distributed::Vector<value_type>  &src,
                           const std::pair<unsigned int,unsigned int>   &face_range)
 {
-  FEFaceEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type,true> fe_eval_vt(data,&this->fe_param,true,3);
-  FEFaceEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type,true> fe_eval_vt_neighbor(data,&this->fe_param,false,3);
+  FEFaceEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,1,value_type,true> fe_eval_vt(data,&this->fe_param,true,3);
+  FEFaceEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,1,value_type,true> fe_eval_vt_neighbor(data,&this->fe_param,false,3);
 
 //    AlignedVector<VectorizedArray<Number> > wdist;
 //    AlignedVector<VectorizedArray<Number> > tauw;
@@ -816,14 +816,14 @@ local_set_eddyviscosity_face (const MatrixFree<dim,value_type>                 &
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 local_set_eddyviscosity_boundary_face (const MatrixFree<dim,value_type>                 & data,
                                    parallel::distributed::Vector<value_type>        &,
                                    const parallel::distributed::Vector<value_type>  &src,
                                    const std::pair<unsigned int,unsigned int>   &face_range)
 {
-  FEFaceEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,value_type,true> fe_eval_vt(data,&this->fe_param,true,3);
+  FEFaceEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,1,value_type,true> fe_eval_vt(data,&this->fe_param,true,3);
 
   for(unsigned int face=face_range.first; face<face_range.second; face++)
   {
@@ -840,14 +840,14 @@ local_set_eddyviscosity_boundary_face (const MatrixFree<dim,value_type>         
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 rhs_viscous (parallel::distributed::Vector<value_type>       &dst,
                const parallel::distributed::Vector<value_type> &src,
                const parallel::distributed::Vector<value_type> &vt)
 {
   set_eddy_viscosity(vt);
-  DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::rhs_viscous(dst,src);
+  DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::rhs_viscous(dst,src);
 }
 
 #endif /* INCLUDE_DGSPALARTALLMARASMODEL_H_ */
