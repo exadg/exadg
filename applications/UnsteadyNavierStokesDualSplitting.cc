@@ -74,11 +74,11 @@ using namespace dealii;
 //#include "NavierStokesTestCases/Cavity.h"
 //#include "NavierStokesTestCases/StokesGuermond.h"
 //#include "NavierStokesTestCases/StokesShahbazi.h"
-//#include "NavierStokesTestCases/Kovasznay.h"
+#include "NavierStokesTestCases/Kovasznay.h"
 //#include "NavierStokesTestCases/Vortex.h"
 //#include "NavierStokesTestCases/TaylorVortex.h"
 //#include "NavierStokesTestCases/Beltrami.h"
-#include "NavierStokesTestCases/FlowPastCylinder.h"
+//#include "NavierStokesTestCases/FlowPastCylinder.h"
 
 
 #include "../include/PostProcessor.h"

@@ -94,7 +94,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   if(N_Q_POINTS_1D_XWALL>1) //enriched
   {
-    ml = 1.;
+    xwall_turb = XWallTurbulenceApproach::RANSSpalartAllmaras;
     max_wdist_xwall = 0.25;
     spatial_discretization = SpatialDiscretization::DGXWall;
     IP_formulation_viscous = InteriorPenaltyFormulation::NIPG;
@@ -105,7 +105,6 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   }
   else //LES
   {
-    ml = 0.;
     max_wdist_xwall = -0.25;
     spatial_discretization = SpatialDiscretization::DG;
     IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
@@ -482,16 +481,34 @@ public:
       if(param.problem_type == ProblemType::Unsteady &&
               param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
       {
-        // initialize navier_stokes_operation
-        navier_stokes_operation.reset(new DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
-            (triangulation,param));
-        // initialize postprocessor after initializing navier_stokes_operation
-        postprocessor.reset(new PostProcessorChannelXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation));
+        if(param.xwall_turb == XWallTurbulenceApproach::RANSSpalartAllmaras)
+        {
+          // initialize navier_stokes_operation
+          navier_stokes_operation.reset(new DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
+              (triangulation,param));
+          // initialize postprocessor after initializing navier_stokes_operation
+          postprocessor.reset(new PostProcessorChannelXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation));
 
-        // initialize time integrator that depends on both navier_stokes_operation and postprocessor
-        time_integrator.reset(new TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
-            navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
+          // initialize time integrator that depends on both navier_stokes_operation and postprocessor
+          time_integrator.reset(new TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
+              navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
+        }
+        else if(param.xwall_turb == XWallTurbulenceApproach::None)
+        {
+          // initialize navier_stokes_operation
+          navier_stokes_operation.reset(new DGNavierStokesDualSplittingXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
+              (triangulation,param));
+          // initialize postprocessor after initializing navier_stokes_operation
+          postprocessor.reset(new PostProcessorChannelXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation));
 
+          // initialize time integrator that depends on both navier_stokes_operation and postprocessor
+          time_integrator.reset(new TimeIntBDFDualSplittingXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
+              navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
+        }
+        else if(param.xwall_turb == XWallTurbulenceApproach::Undefined)
+        {
+          AssertThrow(false,ExcMessage("Turbulence approach for xwall undefined"));
+        }
       }
       else
       {

@@ -298,8 +298,17 @@ enum class SolverSchurComplementPreconditioner
 /*                                                                                    */
 /**************************************************************************************/
 
-// there are currently no enums for this section
-
+/*
+ * Set the turbulence modeling approach for xwall
+ */
+enum class XWallTurbulenceApproach
+{
+  Undefined,
+  None,
+  RANSSpalartAllmaras,
+  ClassicalDESSpalartAllmaras,
+  MultiscaleDESSpalartAllmaras
+};
 
 
 
@@ -441,8 +450,7 @@ public:
 
     // TURBULENCE
     turb_stat_data(TurbulenceStatisticsData()),
-    cs(0.),
-    ml(0.),
+    xwall_turb(XWallTurbulenceApproach::Undefined),
     variabletauw(true),
     dtauw(1.),
     max_wdist_xwall(-1.),
@@ -1053,7 +1061,15 @@ public:
   {
     pcout << std::endl
           << "Turbulence:" << std::endl;
+    std::string str_xwall_turbulence_approach[] = { "Undefined",
+                                                    "None",
+                                                    "RANSSpalartAllmaras",
+                                                    "ClassicalDES",
+                                                    "MultiscaleDES"};
 
+    print_parameter(pcout,
+                    "Turbulence model for xwall",
+                    str_xwall_turbulence_approach[(int)xwall_turb]);
   }
 
   void print_parameters_output_and_postprocessing(ConditionalOStream &pcout)
@@ -1335,11 +1351,8 @@ public:
   // turublence parameters that are required for statistics (post-processing)
   TurbulenceStatisticsData turb_stat_data;
 
-  // Smagorinsky constant
-  double cs;
-
-  // mixing-length model for xwall
-  double ml;
+  // turbulence approach for xwall
+  XWallTurbulenceApproach xwall_turb;
 
   // xwall with adaptive wall shear stress
   bool variabletauw;

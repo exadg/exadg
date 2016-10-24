@@ -104,7 +104,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   //xwall
   variabletauw = true;
   dtauw = 1.;
-  ml = 1.;
+  xwall_turb = XWallTurbulenceApproach::RANSSpalartAllmaras;
   max_wdist_xwall = 0.25;
 
   //dual splitting scheme
@@ -692,15 +692,18 @@ public:
   {
   public:
     TimeIntBDFDualSplittingXWallPH(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
-                              fe_degree_p, fe_degree_xwall, xwall_quad_rule> >  ns_operation_in,
+                              fe_degree_p, fe_degree_xwall, xwall_quad_rule> >                    ns_operation_in,
                             std_cxx11::shared_ptr<PostProcessor<dim, fe_degree, fe_degree_p> >    postprocessor_in,
-                            InputParametersNavierStokes<dim> const                       &param_in,
-                            unsigned int const                                      n_refine_time_in)
+                            InputParametersNavierStokes<dim> const                                &param_in,
+                            unsigned int const                                                    n_refine_time_in,
+                            bool const                                                            use_adaptive_time_stepping)
       :
+      TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
+              (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
       TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
-              (ns_operation_in,postprocessor_in,param_in,n_refine_time_in),
+              (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
       TimeIntBDFDualSplittingPH<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
-              (ns_operation_in,postprocessor_in,param_in,n_refine_time_in)
+              (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping)
     {}
   };
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
@@ -709,7 +712,7 @@ public:
   {
   public:
     TimeIntBDFDualSplittingXWallSpalartAllmarasPH(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
-                              fe_degree_p, fe_degree_xwall, xwall_quad_rule> >             ns_operation_in,
+                              fe_degree_p, fe_degree_xwall, xwall_quad_rule> >                 ns_operation_in,
                             std_cxx11::shared_ptr<PostProcessor<dim, fe_degree, fe_degree_p> > postprocessor_in,
                             InputParametersNavierStokes<dim> const                             &param_in,
                             unsigned int const                                                 n_refine_time_in,
@@ -917,13 +920,30 @@ public:
               param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
       {
         // initialize navier_stokes_operation
-        navier_stokes_operation.reset(new DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
-            (triangulation,param));
-        // initialize postprocessor after initializing navier_stokes_operation
-        postprocessor.reset(new PostProcessorPHXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation));
-        // initialize time integrator that depends on both navier_stokes_operation and postprocessor
-        time_integrator.reset(new TimeIntBDFDualSplittingXWallSpalartAllmarasPH<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
-            navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
+        if(param.xwall_turb == XWallTurbulenceApproach::RANSSpalartAllmaras)
+        {
+          navier_stokes_operation.reset(new DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
+              (triangulation,param));
+          // initialize postprocessor after initializing navier_stokes_operation
+          postprocessor.reset(new PostProcessorPHXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation));
+          // initialize time integrator that depends on both navier_stokes_operation and postprocessor
+          time_integrator.reset(new TimeIntBDFDualSplittingXWallSpalartAllmarasPH<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
+              navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
+        }
+        else if(param.xwall_turb == XWallTurbulenceApproach::None)
+        {
+          navier_stokes_operation.reset(new DGNavierStokesDualSplittingXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
+              (triangulation,param));
+          // initialize postprocessor after initializing navier_stokes_operation
+          postprocessor.reset(new PostProcessorPHXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation));
+          // initialize time integrator that depends on both navier_stokes_operation and postprocessor
+          time_integrator.reset(new TimeIntBDFDualSplittingXWallPH<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
+              navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
+        }
+        else if(param.xwall_turb == XWallTurbulenceApproach::Undefined)
+        {
+          AssertThrow(false,ExcMessage("Turbulence approach for xwall undefined"));
+        }
       }
       else
       {
