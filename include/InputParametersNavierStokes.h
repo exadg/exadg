@@ -15,6 +15,7 @@
 #include "ErrorCalculationData.h"
 #include "LiftAndDragData.h"
 #include "PressureDifferenceData.h"
+#include "TurbulenceStatisticsData.h"
 
 
 /**************************************************************************************/
@@ -297,8 +298,17 @@ enum class SolverSchurComplementPreconditioner
 /*                                                                                    */
 /**************************************************************************************/
 
-// there are currently no enums for this section
-
+/*
+ * Set the turbulence modeling approach for xwall
+ */
+enum class XWallTurbulenceApproach
+{
+  Undefined,
+  None,
+  RANSSpalartAllmaras,
+  ClassicalDESSpalartAllmaras,
+  MultiscaleDESSpalartAllmaras
+};
 
 
 
@@ -500,16 +510,14 @@ public:
     solver_schur_complement_preconditioner(SolverSchurComplementPreconditioner::Undefined),
     multigrid_data_schur_complement_preconditioner(MultigridData()),
     rel_tol_solver_schur_complement_preconditioner(1.e-12),
-  
 
     // TURBULENCE
-    statistics_start_time(std::numeric_limits<double>::max()),
-    statistics_every(1),
-    cs(0.),
-    ml(0.),
+    turb_stat_data(TurbulenceStatisticsData()),
+    xwall_turb(XWallTurbulenceApproach::Undefined),
     variabletauw(true),
     dtauw(1.),
     max_wdist_xwall(-1.),
+    diffusion_number(-1.),
 
  
     // OUTPUT AND POSTPROCESSING
@@ -1119,7 +1127,15 @@ public:
   {
     pcout << std::endl
           << "Turbulence:" << std::endl;
+    std::string str_xwall_turbulence_approach[] = { "Undefined",
+                                                    "None",
+                                                    "RANSSpalartAllmaras",
+                                                    "ClassicalDES",
+                                                    "MultiscaleDES"};
 
+    print_parameter(pcout,
+                    "Turbulence model for xwall",
+                    str_xwall_turbulence_approach[(int)xwall_turb]);
   }
 
   void print_parameters_output_and_postprocessing(ConditionalOStream &pcout)
@@ -1401,17 +1417,11 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // before then no statistics calculation will be performed
-  double statistics_start_time;
+  // turublence parameters that are required for statistics (post-processing)
+  TurbulenceStatisticsData turb_stat_data;
 
-  // calculate statistics every "statistics_every" time steps
-  unsigned int statistics_every;
-
-  // Smagorinsky constant
-  double cs;
-
-  // mixing-length model for xwall
-  double ml;
+  // turbulence approach for xwall
+  XWallTurbulenceApproach xwall_turb;
 
   // xwall with adaptive wall shear stress
   bool variabletauw;
@@ -1421,6 +1431,9 @@ public:
 
   // max wall distance of enriched elements
   double max_wdist_xwall;
+
+  // diffusion number: used to define time step size for the Spalart Allmaras equations
+  double diffusion_number;
 
 
   /**************************************************************************************/

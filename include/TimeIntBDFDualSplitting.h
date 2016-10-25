@@ -10,25 +10,25 @@
 
 #include "TimeIntBDFNavierStokes.h"
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class TimeIntBDFDualSplitting : public TimeIntBDFNavierStokes<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+class TimeIntBDFDualSplitting : public TimeIntBDFNavierStokes<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule,value_type>
 {
 public:
   TimeIntBDFDualSplitting(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
-                            fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
+                            fe_degree_p, fe_degree_xwall, xwall_quad_rule> >  ns_operation_in,
                           std_cxx11::shared_ptr<PostProcessorBase<dim> >          postprocessor_in,
                           InputParametersNavierStokes<dim> const                  &param_in,
                           unsigned int const                                      n_refine_time_in,
                           bool const                                              use_adaptive_time_stepping)
     :
-    TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+    TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
             (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
     velocity(this->order),
     pressure(this->order),
     vorticity(this->order),
     vec_convective_term(this->order),
     computing_times(5),
-    ns_operation_splitting (std::dynamic_pointer_cast<DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in)),
+    ns_operation_splitting (std::dynamic_pointer_cast<DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > (ns_operation_in)),
     N_iter_pressure_average(0.0),
     N_iter_viscous_average(0.0)
   {}
@@ -45,6 +45,11 @@ protected:
   virtual void initialize_vectors();
 
   virtual void prepare_vectors_for_next_timestep();
+
+  virtual void convective_step();
+
+  virtual void read_restart_vectors(boost::archive::binary_iarchive & ia);
+  virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const;
 
   std::vector<parallel::distributed::Vector<value_type> > velocity;
 
@@ -72,7 +77,6 @@ private:
   void initialize_vorticity();
   void initialize_vec_convective_term();
 
-  void convective_step();
   void pressure_step();
   void projection_step();
   virtual void viscous_step();
@@ -85,9 +89,6 @@ private:
   void push_back_vec_convective_term();
 
   virtual parallel::distributed::Vector<value_type> const & get_velocity();
-
-  virtual void read_restart_vectors(boost::archive::binary_iarchive & ia);
-  virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const;
 
   parallel::distributed::Vector<value_type> pressure_np;
 
@@ -106,13 +107,13 @@ private:
   mutable parallel::distributed::Vector<value_type> divergence;
 
   std_cxx11::shared_ptr<DGNavierStokesDualSplitting<dim, fe_degree,
-    fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation_splitting;
+    fe_degree_p, fe_degree_xwall, xwall_quad_rule> > ns_operation_splitting;
 
   double N_iter_pressure_average, N_iter_viscous_average;
 };
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 setup_derived()
 {
   initialize_vorticity();
@@ -121,8 +122,8 @@ setup_derived()
     initialize_vec_convective_term();
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 initialize_vectors()
 {
   // velocity
@@ -173,8 +174,8 @@ initialize_vectors()
 }
 
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 initialize_current_solution()
 {
   ns_operation_splitting->prescribe_initial_conditions(velocity[0],pressure[0],this->time);
@@ -187,8 +188,8 @@ initialize_current_solution()
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 initialize_former_solution()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
@@ -196,8 +197,8 @@ initialize_former_solution()
     ns_operation_splitting->prescribe_initial_conditions(velocity[i],pressure[i],this->time - value_type(i)*this->time_steps[0]);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 initialize_vorticity()
 {
   ns_operation_splitting->compute_vorticity(vorticity[0], velocity[0]);
@@ -209,8 +210,8 @@ initialize_vorticity()
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 initialize_vec_convective_term()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
@@ -221,15 +222,15 @@ initialize_vec_convective_term()
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-parallel::distributed::Vector<value_type> const & TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+parallel::distributed::Vector<value_type> const & TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 get_velocity()
 {
   return velocity[0];
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 read_restart_vectors(boost::archive::binary_iarchive & ia)
 {
   Vector<double> tmp;
@@ -247,8 +248,8 @@ read_restart_vectors(boost::archive::binary_iarchive & ia)
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 write_restart_vectors(boost::archive::binary_oarchive & oa) const
 {
   VectorView<double> tmp(velocity[0].local_size(),
@@ -268,8 +269,8 @@ write_restart_vectors(boost::archive::binary_oarchive & oa) const
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 postprocessing() const
 { 
   // Calculate divergence of intermediate velocity field u_hathat,
@@ -290,8 +291,8 @@ postprocessing() const
                                          this->time_step_number);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 solve_timestep()
 {
   // set the parameters that NavierStokesOperation depends on
@@ -309,8 +310,8 @@ solve_timestep()
   viscous_step();
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 convective_step()
 {
   Timer timer;
@@ -385,8 +386,8 @@ convective_step()
   computing_times[0] += timer.wall_time();
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 pressure_step()
 {
   Timer timer;
@@ -438,8 +439,8 @@ pressure_step()
   N_iter_pressure_average += pres_niter;
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 rhs_pressure (parallel::distributed::Vector<value_type>        &dst,
               const parallel::distributed::Vector<value_type>  &src)
 {
@@ -483,8 +484,8 @@ rhs_pressure (parallel::distributed::Vector<value_type>        &dst,
     ns_operation_splitting->apply_zero_mean(dst);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 projection_step()
 {
   Timer timer;
@@ -522,8 +523,8 @@ projection_step()
   computing_times[2] += timer.wall_time();
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 viscous_step()
 {
   Timer timer;
@@ -552,8 +553,8 @@ viscous_step()
   N_iter_viscous_average += iterations_viscous;
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 prepare_vectors_for_next_timestep()
 {
   Timer timer;
@@ -569,8 +570,8 @@ prepare_vectors_for_next_timestep()
   computing_times[4] += timer.wall_time();
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 push_back_solution()
 {
   /*
@@ -596,8 +597,8 @@ push_back_solution()
   pressure[0].swap(pressure_np);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 push_back_and_calculate_vorticity()
 {
   // solution at t_{n-i} <-- solution at t_{n-i+1}
@@ -608,8 +609,8 @@ push_back_and_calculate_vorticity()
   ns_operation_splitting->compute_vorticity(vorticity[0], velocity[0]);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 push_back_vec_convective_term()
 {
   // solution at t_{n-i} <-- solution at t_{n-i+1}
@@ -619,8 +620,8 @@ push_back_vec_convective_term()
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 analyze_computing_times() const
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);

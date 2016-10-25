@@ -15,12 +15,12 @@
 
 template<int dim> class PostProcessorBase;
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class TimeIntBDFNavierStokes : public TimeIntBDFBase
 {
 public:
   TimeIntBDFNavierStokes(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
-                           fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation_in,
+                           fe_degree_p, fe_degree_xwall, xwall_quad_rule> > ns_operation_in,
                          std_cxx11::shared_ptr<PostProcessorBase<dim> >         postprocessor_in,
                          InputParametersNavierStokes<dim> const                 &param_in,
                          unsigned int const                                     n_refine_time_in,
@@ -49,6 +49,15 @@ public:
 protected:
   std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor;
 
+  virtual void calculate_time_step();
+
+  virtual void read_restart_vectors(boost::archive::binary_iarchive & ia) = 0;
+  virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const = 0;
+
+  virtual void resume_from_restart();
+  void write_restart() const;
+
+
   InputParametersNavierStokes<dim> const & param;
 
   Timer global_timer;
@@ -66,13 +75,8 @@ private:
   virtual void initialize_former_solution() = 0;
   void initialize_solution_and_calculate_timestep(bool do_restart);
 
-  void resume_from_restart();
-  void write_restart() const;
-  virtual void read_restart_vectors(boost::archive::binary_iarchive & ia) = 0;
-  virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const = 0;
 
-  void calculate_time_step();
-  void recalculate_adaptive_time_step();
+  virtual void recalculate_adaptive_time_step();
 
   virtual void solve_timestep() = 0;
   virtual void postprocessing() const = 0;
@@ -83,11 +87,11 @@ private:
 
   unsigned int const n_refine_time;
 
-  std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation;
+  std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > ns_operation;
 };
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 setup(bool do_restart)
 {
   ConditionalOStream pcout(std::cout,
@@ -124,8 +128,8 @@ setup(bool do_restart)
   pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 initialize_solution_and_calculate_timestep(bool do_restart)
 {
   if(do_restart)
@@ -153,8 +157,8 @@ initialize_solution_and_calculate_timestep(bool do_restart)
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 resume_from_restart()
 {
 
@@ -162,7 +166,7 @@ resume_from_restart()
   std::ifstream in (filename.c_str());
   check_file(in, filename);
   boost::archive::binary_iarchive ia (in);
-  resume_restart<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>
+  resume_restart<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule,value_type>
       (ia, param, time, postprocessor, time_steps, order);
 
   read_restart_vectors(ia);
@@ -170,8 +174,8 @@ resume_from_restart()
   finished_reading_restart_output();
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 write_restart() const
 {
   const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
@@ -191,8 +195,8 @@ write_restart() const
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 calculate_time_step()
 {
   if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified)
@@ -225,23 +229,18 @@ calculate_time_step()
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
   {
-    double global_min_cell_diameter = calculate_min_cell_diameter(ns_operation->get_dof_handler_u().get_triangulation());
-
-    time_steps[0] = calculate_const_time_step_cfl(cfl,
-                                                  param.max_velocity,
-                                                  global_min_cell_diameter,
-                                                  fe_degree);
-
-    value_type adaptive_time_step = calculate_adaptive_time_step_cfl<dim, fe_degree, value_type>(ns_operation->get_data(),
+    time_steps[0] = calculate_adaptive_time_step_cfl<dim, fe_degree, value_type>(ns_operation->get_data(),
                                                                                                  ns_operation->get_dof_index_velocity(),
                                                                                                  ns_operation->get_quad_index_velocity_linear(),
                                                                                                  get_velocity(),
                                                                                                  cfl,
                                                                                                  time_steps[0],
                                                                                                  false);
+    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+    pcout << "Calculation of time step size according to adaptive CFL condition:" << std::endl << std::endl;
 
-    if(adaptive_time_step < time_steps[0])
-      time_steps[0] = adaptive_time_step;
+    print_parameter(pcout,"CFL",cfl);
+    print_parameter(pcout,"Time step size",time_steps[0]);
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepMaxEfficiency)
   {
@@ -277,8 +276,8 @@ calculate_time_step()
 
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 recalculate_adaptive_time_step()
 {
   /*
@@ -307,8 +306,8 @@ recalculate_adaptive_time_step()
 }
 
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 timeloop()
 {
   ConditionalOStream pcout(std::cout,

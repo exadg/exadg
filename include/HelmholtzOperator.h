@@ -1,5 +1,5 @@
 /*
- * HelmholtzSolver.h
+ * HelmholtzOperator.h
  *
  *  Created on: May 11, 2016
  *      Author: fehn
@@ -50,7 +50,7 @@ struct HelmholtzOperatorData
   }
 };
 
-template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall,typename Number = double>
+template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule,typename Number = double>
 class HelmholtzOperator : public Subscriptor
 {
 public:
@@ -61,13 +61,14 @@ public:
     data(nullptr),
     mass_matrix_operator(nullptr),
     viscous_operator(nullptr),
-    scaling_factor_time_derivative_term(-1.0)
+    scaling_factor_time_derivative_term(-1.0),
+    strong_homogeneous_dirichlet_bc(false)
   {}
 
   void initialize(MatrixFree<dim,Number> const                                                            &mf_data_in,
                   HelmholtzOperatorData<dim> const                                                        &helmholtz_operator_data_in,
-                  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>  const &mass_matrix_operator_in,
-                  ViscousOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number> const     &viscous_operator_in)
+                  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const &mass_matrix_operator_in,
+                  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const     &viscous_operator_in)
   {
     // copy parameters into element variables
     this->data = &mf_data_in;
@@ -87,7 +88,7 @@ public:
                const HelmholtzOperatorData<dim> &operator_data,
                const MGConstrainedDoFs          &/*mg_constrained_dofs*/,
                const unsigned int               level = numbers::invalid_unsigned_int,
-               FEParameters<dim> const          &fe_param = FEParameters<dim>())
+               FEParameters<dim> const          & = FEParameters<dim>())
   {
     // set the dof index to zero (for the HelmholtzOperator and also
     // for the basic Operators (MassMatrixOperator and ViscousOperator))
@@ -111,11 +112,11 @@ public:
 
     // setup own mass matrix operator
     MassMatrixOperatorData mass_matrix_operator_data = my_operator_data.mass_matrix_operator_data;
-    own_mass_matrix_operator_storage.initialize(own_matrix_free_storage,fe_param,mass_matrix_operator_data);
+    own_mass_matrix_operator_storage.initialize(own_matrix_free_storage,mass_matrix_operator_data);
 
     // setup own viscous operator
     ViscousOperatorData<dim> viscous_operator_data = my_operator_data.viscous_operator_data;
-    own_viscous_operator_storage.initialize(mapping,own_matrix_free_storage,fe_param,viscous_operator_data);
+    own_viscous_operator_storage.initialize(mapping,own_matrix_free_storage,viscous_operator_data);
 
     // setup Helmholtz operator
     initialize(own_matrix_free_storage, my_operator_data, own_mass_matrix_operator_storage, own_viscous_operator_storage);
@@ -129,6 +130,28 @@ public:
   void set_scaling_factor_time_derivative_term(Number const coefficient_in)
   {
     scaling_factor_time_derivative_term = coefficient_in;
+  }
+
+  void initialize_strong_homogeneous_dirichlet_boundary_conditions()
+  {
+    strong_homogeneous_dirichlet_bc = true;
+    std::vector<types::global_dof_index> dof_indices(data->get_dof_handler(0).get_fe().dofs_per_cell);
+    for (typename DoFHandler<dim>::active_cell_iterator cell = data->get_dof_handler(0).begin_active();
+        cell != data->get_dof_handler(0).end(); ++cell)
+    if (cell->is_locally_owned())
+      for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
+        if (cell->at_boundary(f) && cell->face(f)->boundary_id() == 0)
+        {
+          cell->get_dof_indices(dof_indices);
+          for (unsigned int i=0; i<data->get_dof_handler(0).get_fe().dofs_per_cell; ++i)
+            if (data->get_dof_handler(0).get_fe().has_support_on_face(i,f))
+            {
+              const std::pair<unsigned int,unsigned int> comp =
+              data->get_dof_handler(0).get_fe().system_to_component_index(i);
+              if (comp.first < dim)
+                dbc_indices.push_back(dof_indices[i]);
+            }
+        }
   }
 
   void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const
@@ -145,8 +168,11 @@ public:
     // helmholtz operator = mass_matrix_operator + viscous_operator
     mass_matrix_operator->apply(dst,src);
     dst *= scaling_factor_time_derivative_term;
-
+    std::vector<std::pair<Number,Number> > dbc_values;
+    strong_homogeneous_dirichlet_pre(src,dst,dbc_values);
     viscous_operator->apply_add(dst,src);
+
+    strong_homogeneous_dirichlet_post(src,dst,dbc_values);
   }
 
 //  void Tvmult(parallel::distributed::Vector<Number>       &dst,
@@ -169,7 +195,11 @@ public:
     temp *= scaling_factor_time_derivative_term;
     dst += temp;
 
+    std::vector<std::pair<Number,Number> > dbc_values;
+    strong_homogeneous_dirichlet_pre(src,dst,dbc_values);
     viscous_operator->apply_add(dst,src);
+
+    strong_homogeneous_dirichlet_post(src,dst,dbc_values);
   }
 
   void vmult_interface_down(parallel::distributed::Vector<Number>       &dst,
@@ -260,11 +290,14 @@ public:
 
 private:
   MatrixFree<dim,Number> const * data;
-  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>  const *mass_matrix_operator;
-  ViscousOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>  const *viscous_operator;
+  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const *mass_matrix_operator;
+  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const *viscous_operator;
   HelmholtzOperatorData<dim> helmholtz_operator_data;
   parallel::distributed::Vector<Number> mutable temp;
   double scaling_factor_time_derivative_term;
+  bool strong_homogeneous_dirichlet_bc;
+  std::vector<unsigned int> dbc_indices;
+  std::vector<std::pair<Number,Number> > dbc_values;
 
   /*
    * The following variables are necessary when applying the multigrid preconditioner to the Helmholtz equation:
@@ -275,8 +308,42 @@ private:
    *  e.g., data = &own_matrix_free_storage;
    */
   MatrixFree<dim,Number> own_matrix_free_storage;
-  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number> own_mass_matrix_operator_storage;
-  ViscousOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number> own_viscous_operator_storage;
+  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> own_mass_matrix_operator_storage;
+  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> own_viscous_operator_storage;
+
+  void strong_homogeneous_dirichlet_pre(const parallel::distributed::Vector<Number> & src,
+                                        parallel::distributed::Vector<Number> &       dst,
+                                        std::vector<std::pair<Number,Number> > &      dbc_values) const
+  {
+    if(strong_homogeneous_dirichlet_bc)
+    {
+      // save source and set DBC to zero
+      dbc_values.resize(dbc_indices.size());
+      for (unsigned int i=0; i<dbc_indices.size(); ++i)
+      {
+        dbc_values[i] =
+          std::pair<Number,Number>(src(dbc_indices[i]),
+                                   dst(dbc_indices[i]));
+        const_cast<parallel::distributed::Vector<Number>&>(src)(dbc_indices[i]) = 0.;
+      }
+    }
+  }
+
+  void strong_homogeneous_dirichlet_post(const parallel::distributed::Vector<Number> &  src,
+                                         parallel::distributed::Vector<Number> &        dst,
+                                         std::vector<std::pair<Number,Number> > const & dbc_values) const
+  {
+    if(strong_homogeneous_dirichlet_bc)
+    {
+      // reset edge constrained values, multiply by unit matrix and add into
+      // destination
+      for (unsigned int i=0; i<dbc_indices.size(); ++i)
+      {
+        const_cast<parallel::distributed::Vector<Number>&>(src)(dbc_indices[i]) = dbc_values[i].first;
+        dst(dbc_indices[i]) = dbc_values[i].second + dbc_values[i].first;
+      }
+    }
+  }
 
 };
 

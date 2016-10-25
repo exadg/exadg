@@ -15,6 +15,7 @@ struct OutputData
   OutputData()
     :
     write_output(false),
+    output_counter_start(0),
     output_prefix("output"),
     output_start_time(std::numeric_limits<double>::max()),
     output_interval_time(std::numeric_limits<double>::max()),
@@ -27,6 +28,7 @@ struct OutputData
     print_parameter(pcout,"Write output",write_output);
     if(write_output == true)
     {
+      print_parameter(pcout,"Output counter start",output_counter_start);
       print_parameter(pcout,"Name of output files",output_prefix);
       if(unsteady == true)
       {
@@ -39,6 +41,8 @@ struct OutputData
 
   // set write_output = true in order to write files for visualization
   bool write_output;
+
+  unsigned int output_counter_start;
 
   // name of generated output files
   std::string output_prefix;

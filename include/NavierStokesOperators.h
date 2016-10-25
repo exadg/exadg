@@ -9,6 +9,7 @@
 #define INCLUDE_NAVIERSTOKESOPERATORS_H_
 
 #include "../include/BoundaryDescriptorNavierStokes.h"
+#include "BaseOperator.h"
 
 // forward declarations
 template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d,
@@ -35,27 +36,24 @@ struct BodyForceOperatorData
   std_cxx11::shared_ptr<Function<dim> > rhs;
 };
 
-template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class BodyForceOperator
+template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+class BodyForceOperator: public BaseOperator<dim>
 {
 public:
   BodyForceOperator()
     :
     data(nullptr),
-    fe_param(nullptr),
     eval_time(0.0)
   {}
 
-  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  FEParameters<dim>                &fe_param,
                   BodyForceOperatorData<dim> const &operator_data_in)
   {
     this->data = &mf_data;
-    this->fe_param = &fe_param;
     this->operator_data = operator_data_in;
   }
 
@@ -72,7 +70,7 @@ public:
     this->eval_time = evaluation_time;
 
     parallel::distributed::Vector<value_type> src;
-    data->cell_loop(&BodyForceOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_evaluate, this, dst, src);
+    data->cell_loop(&BodyForceOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type>::local_evaluate, this, dst, src);
   }
 
 private:
@@ -81,7 +79,7 @@ private:
                        const parallel::distributed::Vector<value_type>  &,
                        const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,operator_data.dof_index);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,operator_data.dof_index);
 
     // set correct evaluation time for the evaluation of the rhs-function
     operator_data.rhs->set_time(eval_time);
@@ -115,7 +113,6 @@ private:
   }
 
   MatrixFree<dim,value_type> const * data;
-  FEParameters<dim> const * fe_param;
   BodyForceOperatorData<dim> operator_data;
   value_type mutable eval_time;
 };
@@ -130,26 +127,23 @@ struct MassMatrixOperatorData
   unsigned int dof_index;
 };
 
-template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class MassMatrixOperator
+template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+class MassMatrixOperator: public BaseOperator<dim>
 {
 public:
   MassMatrixOperator()
     :
-    data(nullptr),
-    fe_param(nullptr)
+    data(nullptr)
   {}
 
-  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  FEParameters<dim> const          &fe_param,
                   MassMatrixOperatorData const     &mass_matrix_operator_data_in)
   {
     this->data = &mf_data;
-    this->fe_param = &fe_param;
     this->mass_matrix_operator_data = mass_matrix_operator_data_in;
   }
 
@@ -180,7 +174,7 @@ public:
   {
     parallel::distributed::Vector<value_type>  src_dummy(diagonal);
 
-    data->cell_loop(&MassMatrixOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_diagonal, this, diagonal, src_dummy);
+    data->cell_loop(&MassMatrixOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type>::local_diagonal, this, diagonal, src_dummy);
   }
 
   void verify_calculation_of_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
@@ -224,7 +218,7 @@ private:
   void apply_mass_matrix (parallel::distributed::Vector<value_type>        &dst,
                           const parallel::distributed::Vector<value_type>  &src) const
   {
-    data->cell_loop(&MassMatrixOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall, value_type>::local_apply, this, dst, src);
+    data->cell_loop(&MassMatrixOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule, value_type>::local_apply, this, dst, src);
   }
 
   void local_apply (const MatrixFree<dim,value_type>                 &data,
@@ -232,7 +226,7 @@ private:
                     const parallel::distributed::Vector<value_type>  &src,
                     const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,mass_matrix_operator_data.dof_index);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,mass_matrix_operator_data.dof_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -254,7 +248,7 @@ private:
                        const parallel::distributed::Vector<value_type>  &,
                        const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,mass_matrix_operator_data.dof_index);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,mass_matrix_operator_data.dof_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -287,7 +281,6 @@ private:
   }
 
   MatrixFree<dim,value_type> const * data;
-  FEParameters<dim> const * fe_param;
   MassMatrixOperatorData mass_matrix_operator_data;
 };
 
@@ -326,8 +319,8 @@ struct ViscousOperatorData
   }
 };
 
-template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename Number=double>
-class ViscousOperator : public Subscriptor
+template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number=double>
+class ViscousOperator : public BaseOperator<dim>
 {
 public:
   typedef Number value_type;
@@ -335,79 +328,34 @@ public:
   ViscousOperator()
     :
     data(nullptr),
-    fe_param(nullptr),
     const_viscosity(-1.0),
     eval_time(0.0)
-  {}
+  {
+  }
 
-  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,Number,is_xwall> FEEval_Velocity_Velocity_linear;
   typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,Number,is_xwall> FEFaceEval_Velocity_Velocity_linear;
 
   void initialize(Mapping<dim> const              &mapping,
                   MatrixFree<dim,Number> const    &mf_data,
-                  FEParameters<dim> const         &fe_param,
                   ViscousOperatorData<dim> const  &operator_data_in)
   {
+
     this->data = &mf_data;
-    this->fe_param = &fe_param;
     this->operator_data = operator_data_in;
 
     compute_array_penalty_parameter(mapping);
 
     const_viscosity = operator_data.viscosity;
-
-    // TODO remove this from viscous operator
-    QGauss<dim> quadrature(fe_degree+1);
-    FEValues<dim> fe_values(mapping, this->data->get_dof_handler().get_fe(), quadrature, update_JxW_values);
-    element_length.resize(this->data->n_macro_cells()+this->data->n_macro_ghost_cells());
-    Number hfac = 1.0/(Number)fe_degree;
-    for (unsigned int i=0; i<this->data->n_macro_cells()+this->data->n_macro_ghost_cells(); ++i)
-      for (unsigned int v=0; v<this->data->n_components_filled(i); ++v)
-        {
-          typename DoFHandler<dim>::cell_iterator cell = this->data->get_cell_iterator(i,v);
-          fe_values.reinit(cell);
-          double volume = 0.;
-          for (unsigned int q=0; q<quadrature.size(); ++q)
-            volume += fe_values.JxW(q);
-          element_length[i][v] = std::exp(std::log(volume)/(Number)dim)*hfac;;
-        }
-
-    if(this->fe_param->ml > 0.1)
-    {
-      Assert(n_q_points_1d_xwall > fe_degree +1, ExcMessage("this may cause a memory error"));
-      this->viscous_coefficient_cell.reinit(this->data->n_macro_cells(), Utilities::fixed_int_power<n_q_points_1d_xwall,dim>::value);
-      this->viscous_coefficient_cell.fill(make_vectorized_array<Number>(this->fe_param->viscosity));
-
-      this->viscous_coefficient_face.reinit(this->data->n_macro_inner_faces()+this->data->n_macro_boundary_faces(), Utilities::fixed_int_power<n_q_points_1d_xwall,dim-1>::value);
-      this->viscous_coefficient_face.fill(make_vectorized_array<Number>(this->fe_param->viscosity));
-      this->viscous_coefficient_face_neighbor.reinit(this->data->n_macro_inner_faces()+this->data->n_macro_boundary_faces(), Utilities::fixed_int_power<n_q_points_1d_xwall,dim-1>::value);
-      this->viscous_coefficient_face_neighbor.fill(make_vectorized_array<Number>(this->fe_param->viscosity));
-      {
-        Utilities::System::MemoryStats stats;
-        Utilities::System::get_memory_stats(stats);
-        const parallel::Triangulation<dim> *tria =
-          dynamic_cast<const parallel::Triangulation<dim> *>(&this->data->get_dof_handler().get_triangulation());
-        Utilities::MPI::MinMaxAvg memory = Utilities::MPI::min_max_avg (stats.VmRSS/1024., tria->get_communicator());
-        if (Utilities::MPI::this_mpi_process(tria->get_communicator()) == 0)
-          std::cout << std::endl
-                    << "Memory stats RANS [MB]: " << memory.min
-                    << " [p" << memory.min_index << "] "
-                    << memory.avg << " " << memory.max
-                    << " [p" << memory.max_index << "]"
-                    << std::endl;
-      }
-    }
-    // TODO remove this from viscous operator
   }
 
   void reinit (const DoFHandler<dim>            &dof_handler,
                const Mapping<dim>               &mapping,
                const ViscousOperatorData<dim>   &operator_data,
                const MGConstrainedDoFs          &/*mg_constrained_dofs*/,
-               const unsigned int               level = numbers::invalid_unsigned_int,
-               FEParameters<dim> const          &fe_param = FEParameters<dim>())
+               const unsigned int               level = numbers::invalid_unsigned_int)
   {
     // set the dof index to zero
     ViscousOperatorData<dim> my_operator_data = operator_data;
@@ -429,35 +377,12 @@ public:
     own_matrix_free_storage.reinit(mapping, dof_handler, constraints, quad, addit_data);
 
     // setup viscous operator
-    initialize(mapping, own_matrix_free_storage, fe_param, my_operator_data);
+    initialize(mapping, own_matrix_free_storage, my_operator_data);
   }
 
   void set_constant_viscosity(double const viscosity_in)
   {
     const_viscosity = viscosity_in;
-  }
-
-  void set_variable_viscosity(double const constant_viscosity_in,const parallel::distributed::Vector<Number>  &src)
-  {
-//    const_viscosity = constant_viscosity_in;
-//    FEEval_Velocity_Velocity_linear fe_eval_velocity_cell(*data,*fe_param,operator_data.dof_index);
-//    viscous_coefficient_cell.reinit(data->n_macro_cells(), fe_eval_velocity_cell.n_q_points);
-//    viscous_coefficient_cell.fill(make_vectorized_array<Number>(const_viscosity));
-//
-//    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_face(*data,*fe_param,true,operator_data.dof_index);
-//    viscous_coefficient_face.reinit(data->n_macro_inner_faces()+data->n_macro_boundary_faces(), fe_eval_velocity_face.n_q_points);
-//    viscous_coefficient_face.fill(make_vectorized_array<Number>(const_viscosity));
-//
-//    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_face_neighbor(*data,*fe_param,false,operator_data.dof_index);
-//    viscous_coefficient_face_neighbor.reinit(data->n_macro_inner_faces()+data->n_macro_boundary_faces(), fe_eval_velocity_face.n_q_points);
-//    viscous_coefficient_face_neighbor.fill(make_vectorized_array<Number>(const_viscosity));
-
-    // TODO remove this from viscous operator
-    this->const_viscosity = constant_viscosity_in;
-
-    if(this->fe_param->ml > 0.1)
-      set_eddy_viscosity(src);
-    // TODO remove this from viscous operator
   }
 
   // returns true if viscous_coefficient table has been filled with spatially varying viscosity values
@@ -471,9 +396,41 @@ public:
     return const_viscosity;
   }
 
+  void initialize_viscous_coefficients()
+  {
+    Assert(xwall_quad_rule > fe_degree +1, ExcMessage("this may cause a memory error"));
+    this->viscous_coefficient_cell.reinit(this->data->n_macro_cells(), Utilities::fixed_int_power<xwall_quad_rule,dim>::value);
+    this->viscous_coefficient_cell.fill(make_vectorized_array<Number>(const_viscosity));
+
+    this->viscous_coefficient_face.reinit(this->data->n_macro_inner_faces()+this->data->n_macro_boundary_faces(), Utilities::fixed_int_power<xwall_quad_rule,dim-1>::value);
+    this->viscous_coefficient_face.fill(make_vectorized_array<Number>(const_viscosity));
+    this->viscous_coefficient_face_neighbor.reinit(this->data->n_macro_inner_faces()+this->data->n_macro_boundary_faces(), Utilities::fixed_int_power<xwall_quad_rule,dim-1>::value);
+    this->viscous_coefficient_face_neighbor.fill(make_vectorized_array<Number>(const_viscosity));
+  }
+
+  void set_viscous_coefficient_cell(unsigned int const cell, unsigned int const q, VectorizedArray<Number> const  & value)
+  {
+    viscous_coefficient_cell[cell][q] = value;
+  }
+
+  void set_viscous_coefficient_face(unsigned int const face, unsigned int const q, VectorizedArray<Number> const  & value)
+  {
+    viscous_coefficient_face[face][q] = value;
+  }
+
+  void set_viscous_coefficient_face_neighbor(unsigned int const face, unsigned int const q, VectorizedArray<Number> const  & value)
+  {
+    viscous_coefficient_face_neighbor[face][q] = value;
+  }
+
   Table<2,VectorizedArray<Number> > const & get_viscous_coefficient_face() const
   {
     return viscous_coefficient_face;
+  }
+
+  Table<2,VectorizedArray<Number> > const & get_viscous_coefficient_cell() const
+  {
+    return viscous_coefficient_cell;
   }
 
   unsigned int get_dof_index() const
@@ -568,9 +525,9 @@ public:
     this->eval_time = evaluation_time;
 
     parallel::distributed::Vector<Number> src;
-    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_rhs_viscous,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_rhs_viscous_face,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_rhs_viscous_boundary_face,
+    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_rhs_viscous,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_rhs_viscous_face,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_rhs_viscous_boundary_face,
                this, dst, src);
   }
 
@@ -603,9 +560,9 @@ public:
   {
     parallel::distributed::Vector<Number>  src_dummy(diagonal);
 
-    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_diagonal,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_diagonal_face,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_diagonal_boundary_face,
+    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_diagonal,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_diagonal_face,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_diagonal_boundary_face,
                this, diagonal, src_dummy);
   }
 
@@ -688,16 +645,16 @@ private:
   {
     return operator_data.IP_factor_viscous * (fe_degree + 1.0) * (fe_degree + 1.0);
   }
-
+protected:
   void apply_viscous (parallel::distributed::Vector<Number>        &dst,
                       const parallel::distributed::Vector<Number>  &src) const
   {
-    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_apply_viscous,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_apply_viscous_face,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_apply_viscous_boundary_face,
+    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_apply_viscous,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_apply_viscous_face,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_apply_viscous_boundary_face,
                this, dst, src);
   }
-
+private:
   void local_apply_viscous (const MatrixFree<dim,Number>                 &data,
                             parallel::distributed::Vector<Number>        &dst,
                             const parallel::distributed::Vector<Number>  &src,
@@ -705,7 +662,7 @@ private:
   {
     AssertThrow(const_viscosity>0.0,ExcMessage("Constant viscosity has not been set!"));
 
-    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,operator_data.dof_index);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,operator_data.dof_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -742,8 +699,8 @@ private:
                                  const parallel::distributed::Vector<Number> &src,
                                  const std::pair<unsigned int,unsigned int>  &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,*fe_param,false,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,this->fe_param,false,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -844,7 +801,7 @@ private:
                                           const parallel::distributed::Vector<Number>  &src,
                                           const std::pair<unsigned int,unsigned int>   &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -978,7 +935,7 @@ private:
                        const parallel::distributed::Vector<Number>  &,
                        const std::pair<unsigned int,unsigned int>   &cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,operator_data.dof_index);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,operator_data.dof_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -1027,8 +984,8 @@ private:
                             const parallel::distributed::Vector<Number> &,
                             const std::pair<unsigned int,unsigned int>  &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,*fe_param,false,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,this->fe_param,false,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -1236,7 +1193,7 @@ private:
                                      const parallel::distributed::Vector<Number>  &,
                                      const std::pair<unsigned int,unsigned int>   &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -1383,9 +1340,9 @@ private:
   void evaluate_viscous (parallel::distributed::Vector<Number>        &dst,
                          const parallel::distributed::Vector<Number>  &src) const
   {
-    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_apply_viscous,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_apply_viscous_face,
-               &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_evaluate_viscous_boundary_face,
+    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_apply_viscous,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_apply_viscous_face,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_evaluate_viscous_boundary_face,
                this, dst, src);
   }
 
@@ -1394,7 +1351,7 @@ private:
                                              const parallel::distributed::Vector<Number>  &src,
                                              const std::pair<unsigned int,unsigned int>   &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -1581,7 +1538,7 @@ private:
                                         const parallel::distributed::Vector<Number> &,
                                         const std::pair<unsigned int,unsigned int>  &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -1710,119 +1667,16 @@ private:
       fe_eval_velocity.distribute_local_to_global(dst);
     }
   }
-
-  // TODO remove this from viscous operator
-  void set_eddy_viscosity(const parallel::distributed::Vector<Number>  &src)
-  {
-    parallel::distributed::Vector<Number> dummy;
-    this->data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_set_eddyviscosity,
-                     &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_set_eddyviscosity_face,
-                     &ViscousOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,Number>::local_set_eddyviscosity_boundary_face,
-                     this, dummy, src);
-  }
-  // TODO remove this from viscous operator
-
-  // TODO remove this from viscous operator
-  void local_set_eddyviscosity (const MatrixFree<dim,Number>                 &data,
-                       parallel::distributed::Vector<Number>        &,
-                       const parallel::distributed::Vector<Number>  &src,
-                       const std::pair<unsigned int,unsigned int>   &cell_range)
-  {
-    FEEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,Number,true> fe_eval_vt(data,*this->fe_param,3);
-
-//    AlignedVector<VectorizedArray<Number> > wdist;
-//    AlignedVector<VectorizedArray<Number> > tauw;
-    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
-    {
-      fe_eval_vt.reinit(cell);
-      fe_eval_vt.read_dof_values(src);
-      fe_eval_vt.evaluate(true,false);
-//      fe_eval_vt.fill_wdist_and_tauw(cell,wdist,tauw);
-      for(unsigned int q=0; q< fe_eval_vt.n_q_points; q++)
-      {
-        VectorizedArray<Number>  vt = std::max(fe_eval_vt.get_value(q),make_vectorized_array<Number>(0.));
-        VectorizedArray<Number>  chi = vt/this->const_viscosity;
-        VectorizedArray<Number>  fv1 = chi * chi * chi / (chi * chi * chi + 7.1 * 7.1 * 7.1);
-        this->viscous_coefficient_cell[cell][q] = vt * fv1 + this->const_viscosity;
-      }
-    }
-  }
-  // TODO remove this from viscous operator
-
-  // TODO remove this from viscous operator
-  void local_set_eddyviscosity_face (const MatrixFree<dim,Number>                 &data,
-                            parallel::distributed::Vector<Number>        &,
-                            const parallel::distributed::Vector<Number>  &src,
-                            const std::pair<unsigned int,unsigned int>   &face_range)
-  {
-    FEFaceEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,Number,true> fe_eval_vt(data,*this->fe_param,true,3);
-    FEFaceEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,Number,true> fe_eval_vt_neighbor(data,*this->fe_param,false,3);
-
-//    AlignedVector<VectorizedArray<Number> > wdist;
-//    AlignedVector<VectorizedArray<Number> > tauw;
-    for(unsigned int face=face_range.first; face<face_range.second; face++)
-    {
-      fe_eval_vt.reinit(face);
-      fe_eval_vt_neighbor.reinit(face);
-      fe_eval_vt.read_dof_values(src);
-      fe_eval_vt_neighbor.read_dof_values(src);
-      fe_eval_vt.evaluate(true,false);
-      fe_eval_vt_neighbor.evaluate(true,false);
-//      fe_eval_vt.fill_wdist_and_tauw(face,wdist,tauw);
-      for(unsigned int q=0; q< fe_eval_vt.n_q_points; q++)
-      {
-        VectorizedArray<Number>  vt = std::max(fe_eval_vt.get_value(q),make_vectorized_array<Number>(0.));
-        VectorizedArray<Number>  chi = vt/this->const_viscosity;
-        VectorizedArray<Number>  fv1 = chi * chi * chi / (chi * chi * chi + 7.1 * 7.1 * 7.1);
-        this->viscous_coefficient_face[face][q] = vt * fv1 + this->const_viscosity;
-      }
-//      fe_eval_vt_neighbor.fill_wdist_and_tauw(face,wdist,tauw);
-      for(unsigned int q=0; q< fe_eval_vt_neighbor.n_q_points; q++)
-      {
-        VectorizedArray<Number>  vt = std::max(fe_eval_vt_neighbor.get_value(q),make_vectorized_array<Number>(0.));
-        VectorizedArray<Number>  chi = vt/this->const_viscosity;
-        VectorizedArray<Number>  fv1 = chi * chi * chi / (chi * chi * chi + 7.1 * 7.1 * 7.1);
-        this->viscous_coefficient_face_neighbor[face][q] = vt * fv1 + this->const_viscosity;
-      }
-    }
-  }
-  // TODO remove this from viscous operator
-
-  // TODO remove this from viscous operator
-  void local_set_eddyviscosity_boundary_face (const MatrixFree<dim,Number>                 & data,
-                                     parallel::distributed::Vector<Number>        &,
-                                     const parallel::distributed::Vector<Number>  &src,
-                                     const std::pair<unsigned int,unsigned int>   &face_range)
-  {
-    FEFaceEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,1,Number,true> fe_eval_vt(data,*this->fe_param,true,3);
-
-    for(unsigned int face=face_range.first; face<face_range.second; face++)
-    {
-      fe_eval_vt.reinit(face);
-      fe_eval_vt.read_dof_values(src);
-      fe_eval_vt.evaluate(true,false);
-      for(unsigned int q=0; q< fe_eval_vt.n_q_points; q++)
-      {
-        VectorizedArray<Number>  vt = std::max(fe_eval_vt.get_value(q),make_vectorized_array<Number>(0.));
-        VectorizedArray<Number>  chi = vt/this->const_viscosity;
-        VectorizedArray<Number>  fv1 = chi * chi * chi / (chi * chi * chi + 7.1 * 7.1 * 7.1);
-        this->viscous_coefficient_face[face][q] = vt * fv1 + this->const_viscosity;
-      }
-    }
-  }
-  // TODO remove this from viscous operator
-
-private:
+protected:
   MatrixFree<dim,Number> const * data;
-  FEParameters<dim> const * fe_param;
   ViscousOperatorData<dim> operator_data;
+private:
   AlignedVector<VectorizedArray<Number> > array_penalty_parameter;
   Number const_viscosity;
   Table<2,VectorizedArray<Number> > viscous_coefficient_cell;
   Table<2,VectorizedArray<Number> > viscous_coefficient_face;
   Table<2,VectorizedArray<Number> > viscous_coefficient_face_neighbor;
   Number mutable eval_time;
-  AlignedVector<VectorizedArray<Number> > element_length;
 
   /*
    * The following variables are necessary when applying the multigrid preconditioner to the viscous operator
@@ -1854,19 +1708,18 @@ struct GradientOperatorData
   std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
 };
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class GradientOperator
+template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+class GradientOperator: public BaseOperator<dim>
 {
 public:
   GradientOperator()
     :
     data(nullptr),
-    fe_param(nullptr),
     eval_time(0.0)
   {}
 
-  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
   typedef FEEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,is_xwall> FEEval_Pressure_Velocity_linear;
 
@@ -1874,11 +1727,9 @@ public:
   typedef FEFaceEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,is_xwall> FEFaceEval_Pressure_Velocity_linear;
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  FEParameters<dim> const          &fe_param,
                   GradientOperatorData<dim> const  &operator_data_in)
   {
     this->data = &mf_data;
-    this->fe_param = &fe_param;
     this->operator_data = operator_data_in;
   }
 
@@ -1929,27 +1780,27 @@ private:
   void apply_gradient (parallel::distributed::Vector<value_type>        &dst,
                        const parallel::distributed::Vector<value_type>  &src) const
   {
-    data->loop (&GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_gradient,
-                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_gradient_face,
-                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_gradient_boundary_face,
+    data->loop (&GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_gradient,
+                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_gradient_face,
+                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_gradient_boundary_face,
                 this, dst, src);
   }
 
   void rhs_gradient (parallel::distributed::Vector<value_type> &dst) const
   {
     parallel::distributed::Vector<value_type> src;
-    data->loop (&GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_rhs_gradient,
-                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_rhs_gradient_face,
-                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_rhs_gradient_boundary_face,
+    data->loop (&GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_rhs_gradient,
+                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_rhs_gradient_face,
+                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_rhs_gradient_boundary_face,
                 this, dst, src);
   }
 
   void evaluate_gradient (parallel::distributed::Vector<value_type>       &dst,
                           const parallel::distributed::Vector<value_type> &src) const
   {
-    data->loop (&GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_gradient,
-                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_gradient_face,
-                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_evaluate_gradient_boundary_face,
+    data->loop (&GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_gradient,
+                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_gradient_face,
+                &GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_evaluate_gradient_boundary_face,
                 this, dst, src);
   }
 
@@ -1958,8 +1809,8 @@ private:
                              const parallel::distributed::Vector<value_type>  &src,
                              const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,operator_data.dof_index_velocity);
-    FEEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,operator_data.dof_index_pressure);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,operator_data.dof_index_velocity);
+    FEEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,operator_data.dof_index_pressure);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -2001,11 +1852,11 @@ private:
   {
     if(operator_data.integration_by_parts_of_gradP == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,*fe_param,false,operator_data.dof_index_velocity);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,this->fe_param,false,operator_data.dof_index_velocity);
 
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure_neighbor(data,*fe_param,false,operator_data.dof_index_pressure);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,true,operator_data.dof_index_pressure);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure_neighbor(data,this->fe_param,false,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -2042,8 +1893,8 @@ private:
   {
     if(operator_data.integration_by_parts_of_gradP == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,true,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -2105,8 +1956,8 @@ private:
   {
     if(operator_data.integration_by_parts_of_gradP == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,true,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -2199,7 +2050,7 @@ private:
     if(operator_data.integration_by_parts_of_gradP == true &&
        operator_data.use_boundary_data == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index_velocity);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -2255,7 +2106,6 @@ private:
   }
 
   MatrixFree<dim,value_type> const * data;
-  FEParameters<dim> const * fe_param;
   GradientOperatorData<dim> operator_data;
   value_type mutable eval_time;
 };
@@ -2279,19 +2129,18 @@ struct DivergenceOperatorData
   std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
 };
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class DivergenceOperator
+template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+class DivergenceOperator: public BaseOperator<dim>
 {
 public:
   DivergenceOperator()
     :
     data(nullptr),
-    fe_param(nullptr),
     eval_time(0.0)
   {}
 
-  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
 
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
   typedef FEEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,is_xwall> FEEval_Pressure_Velocity_linear;
@@ -2300,11 +2149,9 @@ public:
   typedef FEFaceEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,is_xwall> FEFaceEval_Pressure_Velocity_linear;
 
   void initialize(MatrixFree<dim,value_type> const  &mf_data,
-                  FEParameters<dim> const           &fe_param,
                   DivergenceOperatorData<dim> const &operator_data_in)
   {
     this->data = &mf_data;
-    this->fe_param = &fe_param;
     this->operator_data = operator_data_in;
   }
 
@@ -2355,27 +2202,27 @@ private:
   void apply_divergence (parallel::distributed::Vector<value_type>      &dst,
                         const parallel::distributed::Vector<value_type> &src) const
   {
-    data->loop (&DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_divergence,
-                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_divergence_face,
-                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_divergence_boundary_face,
+    data->loop (&DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_divergence,
+                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_divergence_face,
+                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_divergence_boundary_face,
                 this, dst, src);
   }
 
   void rhs_divergence (parallel::distributed::Vector<value_type> &dst) const
   {
     parallel::distributed::Vector<value_type> src;
-    data->loop (&DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_rhs_divergence,
-                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_rhs_divergence_face,
-                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_rhs_divergence_boundary_face,
+    data->loop (&DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_rhs_divergence,
+                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_rhs_divergence_face,
+                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_rhs_divergence_boundary_face,
                 this, dst, src);
   }
 
   void evaluate_divergence (parallel::distributed::Vector<value_type>       &dst,
                             const parallel::distributed::Vector<value_type> &src) const
   {
-    data->loop (&DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_divergence,
-                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_divergence_face,
-                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_evaluate_divergence_boundary_face,
+    data->loop (&DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_divergence,
+                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_divergence_face,
+                &DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_evaluate_divergence_boundary_face,
                 this, dst, src);
   }
 
@@ -2384,8 +2231,8 @@ private:
                                const parallel::distributed::Vector<value_type> &src,
                                const std::pair<unsigned int,unsigned int>      &cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,operator_data.dof_index_velocity);
-    FEEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,operator_data.dof_index_pressure);
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,operator_data.dof_index_velocity);
+    FEEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,operator_data.dof_index_pressure);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -2423,11 +2270,11 @@ private:
   {
     if(operator_data.integration_by_parts_of_divU == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,*fe_param,false,operator_data.dof_index_velocity);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,this->fe_param,false,operator_data.dof_index_velocity);
 
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure_neighbor(data,*fe_param,false,operator_data.dof_index_pressure);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,true,operator_data.dof_index_pressure);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure_neighbor(data,this->fe_param,false,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -2464,8 +2311,8 @@ private:
   {
     if(operator_data.integration_by_parts_of_divU == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,true,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -2528,8 +2375,8 @@ private:
   {
     if(operator_data.integration_by_parts_of_divU == true)
     {
-      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index_velocity);
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
+      FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index_velocity);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,true,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -2626,7 +2473,7 @@ private:
     if(operator_data.integration_by_parts_of_divU == true &&
        operator_data.use_boundary_data == true)
     {
-      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,*fe_param,true,operator_data.dof_index_pressure);
+      FEFaceEval_Pressure_Velocity_linear fe_eval_pressure(data,this->fe_param,true,operator_data.dof_index_pressure);
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
@@ -2685,7 +2532,6 @@ private:
   }
 
   MatrixFree<dim,value_type> const * data;
-  FEParameters<dim> const * fe_param;
   DivergenceOperatorData<dim> operator_data;
   value_type mutable eval_time;
 };
@@ -2705,30 +2551,27 @@ struct ConvectiveOperatorData
 
 
 
-template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class ConvectiveOperator
+template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+class ConvectiveOperator: public BaseOperator<dim>
 {
 public:
   ConvectiveOperator()
     :
     data(nullptr),
-    fe_param(nullptr),
     eval_time(0.0),
     velocity_linearization(nullptr)
   {}
 
-  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_nonlinear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+(fe_degree+2)/2;
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_nonlinear = (is_xwall) ? xwall_quad_rule : fe_degree+(fe_degree+2)/2;
 
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_nonlinear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_nonlinear;
   typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_nonlinear,dim,value_type,is_xwall> FEFaceEval_Velocity_Velocity_nonlinear;
 
   void initialize(MatrixFree<dim,value_type> const  &mf_data,
-                  FEParameters<dim> const           &fe_param,
                   ConvectiveOperatorData<dim> const &operator_data_in)
   {
     this->data = &mf_data;
-    this->fe_param = &fe_param;
     this->operator_data = operator_data_in;
   }
 
@@ -2788,9 +2631,9 @@ public:
 
     parallel::distributed::Vector<value_type>  src_dummy(diagonal);
 
-    data->loop(&ConvectiveOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_diagonal,
-               &ConvectiveOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_diagonal_face,
-               &ConvectiveOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type>::local_diagonal_boundary_face,
+    data->loop(&ConvectiveOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type>::local_diagonal,
+               &ConvectiveOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type>::local_diagonal_face,
+               &ConvectiveOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type>::local_diagonal_boundary_face,
                this, diagonal, src_dummy);
   }
 
@@ -2799,9 +2642,9 @@ private:
   void evaluate_convective_term (parallel::distributed::Vector<value_type>       &dst,
                                  parallel::distributed::Vector<value_type> const &src) const
   {
-    data->loop(&ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_evaluate_convective_term,
-               &ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_evaluate_convective_term_face,
-               &ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_evaluate_convective_term_boundary_face,
+    data->loop(&ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>::local_evaluate_convective_term,
+               &ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>::local_evaluate_convective_term_face,
+               &ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>::local_evaluate_convective_term_boundary_face,
                this, dst, src);
   }
 
@@ -2811,7 +2654,7 @@ private:
                                        const parallel::distributed::Vector<value_type>  &src,
                                        const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
-    FEEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,*fe_param,operator_data.dof_index);
+    FEEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,this->fe_param,operator_data.dof_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -2836,8 +2679,8 @@ private:
                                             const parallel::distributed::Vector<value_type> &src,
                                             const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity_neighbor(data,*fe_param,false,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity_neighbor(data,this->fe_param,false,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -2884,7 +2727,7 @@ private:
                                                      const parallel::distributed::Vector<value_type> &src,
                                                      const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -2957,9 +2800,9 @@ private:
   void apply_linearized_convective_term (parallel::distributed::Vector<value_type>       &dst,
                                          parallel::distributed::Vector<value_type> const &src) const
   {
-    data->loop(&ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_linearized_convective_term,
-               &ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_linearized_convective_term_face,
-               &ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_apply_linearized_convective_term_boundary_face,
+    data->loop(&ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_linearized_convective_term,
+               &ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_linearized_convective_term_face,
+               &ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_linearized_convective_term_boundary_face,
                this, dst, src);
   }
 
@@ -2968,8 +2811,8 @@ private:
                                               const parallel::distributed::Vector<value_type> &src,
                                               const std::pair<unsigned int,unsigned int>      &cell_range) const
   {
-    FEEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,operator_data.dof_index);
-    FEEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,operator_data.dof_index);
+    FEEval_Velocity_Velocity_nonlinear fe_eval(data,this->fe_param,operator_data.dof_index);
+    FEEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,this->fe_param,operator_data.dof_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -2998,11 +2841,11 @@ private:
                                                     const parallel::distributed::Vector<value_type> &src,
                                                     const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,true,operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_neighbor(data,*fe_param,false,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_neighbor(data,this->fe_param,false,operator_data.dof_index);
 
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,true,operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization_neighbor(data,*fe_param,false,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization_neighbor(data,this->fe_param,false,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -3059,8 +2902,8 @@ private:
                                                             const parallel::distributed::Vector<value_type> &src,
                                                             const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,true,operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,this->fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -3148,8 +2991,8 @@ private:
                        const parallel::distributed::Vector<value_type>  &,
                        const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
-    FEEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,operator_data.dof_index);
-    FEEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,operator_data.dof_index);
+    FEEval_Velocity_Velocity_nonlinear fe_eval(data,this->fe_param,operator_data.dof_index);
+    FEEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,this->fe_param,operator_data.dof_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -3194,11 +3037,11 @@ private:
                             const parallel::distributed::Vector<value_type> &,
                             const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,true,operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_neighbor(data,*fe_param,false,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_neighbor(data,this->fe_param,false,operator_data.dof_index);
 
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,true,operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization_neighbor(data,*fe_param,false,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization_neighbor(data,this->fe_param,false,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -3321,8 +3164,8 @@ private:
                                      const parallel::distributed::Vector<value_type>  &,
                                      const std::pair<unsigned int,unsigned int>       &face_range) const
   {
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,*fe_param,true,operator_data.dof_index);
-    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,*fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,this->fe_param,true,operator_data.dof_index);
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
@@ -3424,7 +3267,6 @@ private:
   }
 
   MatrixFree<dim,value_type> const * data;
-  FEParameters<dim> const * fe_param;
   ConvectiveOperatorData<dim> operator_data;
   mutable value_type eval_time;
   mutable parallel::distributed::Vector<value_type> const * velocity_linearization;

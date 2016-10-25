@@ -10,8 +10,9 @@
 
 #include "Preconditioner.h"
 #include "InverseMassMatrixXWall.h"
+#include "BaseOperator.h"
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall> class NavierStokesOperation;
+template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule> class NavierStokesOperation;
 
 struct ProjectionOperatorData
 {
@@ -20,22 +21,20 @@ struct ProjectionOperatorData
   bool solve_stokes_equations;
 };
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class ProjectionOperatorBase
+template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+class ProjectionOperatorBase: public BaseOperator<dim>
 {
 public:
-  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
   ProjectionOperatorBase(MatrixFree<dim,value_type> const & data_in,
-                         FEParameters<dim>                & fe_param_in,
                          const unsigned int               dof_index_in,
                          const unsigned int               quad_index_in,
                          ProjectionOperatorData const     projection_operator_data_in)
     :
     data(data_in),
-    fe_param(fe_param_in),
     dof_index(dof_index_in),
     quad_index(quad_index_in),
     array_penalty_parameter_divergence(0),
@@ -52,7 +51,7 @@ public:
   {
     velocity_n.update_ghost_values();
 
-    FEEval_Velocity_Velocity_linear fe_eval(data,fe_param,dof_index);
+    FEEval_Velocity_Velocity_linear fe_eval(data,this->fe_param,dof_index);
 
     AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval.n_q_points);
 
@@ -111,14 +110,13 @@ public:
   {
     return quad_index;
   }
-  FEParameters<dim> const & get_fe_param() const
+  FEParameters<dim> const * get_fe_param() const
   {
-    return fe_param;
+    return this->fe_param;
   }
 
 private:
   MatrixFree<dim,value_type> const & data;
-  FEParameters<dim> const & fe_param;
   unsigned int const dof_index;
   unsigned int const quad_index;
   AlignedVector<VectorizedArray<value_type> > array_penalty_parameter_divergence;
@@ -126,19 +124,18 @@ private:
   ProjectionOperatorData projection_operator_data;
 };
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class ProjectionOperatorDivergencePenalty : public ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+class ProjectionOperatorDivergencePenalty : public ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
 {
 public:
   typedef FEEvaluation<dim,fe_degree,fe_degree+1,dim,double> EvalType;
 
   ProjectionOperatorDivergencePenalty(MatrixFree<dim,value_type> const & data_in,
-                                      FEParameters<dim> & fe_param_in,
                                       const unsigned int dof_index_in,
                                       const unsigned int quad_index_in,
                                       ProjectionOperatorData const projection_operator_data_in)
     :
-    ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(data_in,fe_param_in, dof_index_in,quad_index_in,projection_operator_data_in),
+    ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(data_in, dof_index_in,quad_index_in,projection_operator_data_in),
     fe_eval(1,FEEvaluation<dim,fe_degree,fe_degree+1,dim,double>(data_in, dof_index_in, quad_index_in)),
     inverse(fe_eval[0]),
     tau(1)
@@ -186,22 +183,22 @@ private:
   AlignedVector<VectorizedArray<double> > tau;
 };
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class ProjectionOperatorDivergencePenaltyXWall : public ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+class ProjectionOperatorDivergencePenaltyXWall : public ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
 {
 public:
-  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
   ProjectionOperatorDivergencePenaltyXWall(MatrixFree<dim,value_type> const & data_in,
-                                           FEParameters<dim> & fe_param_in,
+                                           FEParameters<dim> * fe_param_in,
                                            const unsigned int dof_index_in,
                                            const unsigned int quad_index_in,
                                            ProjectionOperatorData const projection_operator_data_in,
-                                           std_cxx11::shared_ptr< InverseMassMatrixXWallOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type> > inv_mass_xw)
+                                           std_cxx11::shared_ptr< InverseMassMatrixXWallOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type> > inv_mass_xw)
     :
-    ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(data_in,fe_param_in, dof_index_in,quad_index_in,projection_operator_data_in),
+    ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(data_in, dof_index_in,quad_index_in,projection_operator_data_in),
     fe_eval(1,FEEval_Velocity_Velocity_linear(data_in, fe_param_in, dof_index_in, quad_index_in)),
     inverse_mass_matrix_operator_xwall(inv_mass_xw),
     tau(1),
@@ -248,27 +245,26 @@ public:
 
 private:
   mutable AlignedVector<FEEval_Velocity_Velocity_linear> fe_eval;
-  std_cxx11::shared_ptr< InverseMassMatrixXWallOperator<dim,fe_degree,fe_degree_xwall,n_q_points_1d_xwall,value_type> > inverse_mass_matrix_operator_xwall;
+  std_cxx11::shared_ptr< InverseMassMatrixXWallOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type> > inverse_mass_matrix_operator_xwall;
   AlignedVector<VectorizedArray<double> > tau;
   unsigned int curr_cell;
 };
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class ProjectionOperatorDivergenceAndContinuityPenalty : public ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+class ProjectionOperatorDivergenceAndContinuityPenalty : public ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
 {
 public:
-  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
   typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEFaceEval_Velocity_Velocity_linear;
 
   ProjectionOperatorDivergenceAndContinuityPenalty(MatrixFree<dim,value_type> const & data_in,
-                                                   FEParameters<dim> & fe_param_in,
                                                    const unsigned int dof_index_in,
                                                    const unsigned int quad_index_in,
                                                    ProjectionOperatorData const projection_operator_data_in)
     :
-    ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(data_in,fe_param_in, dof_index_in,quad_index_in,projection_operator_data_in)
+    ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(data_in, dof_index_in,quad_index_in,projection_operator_data_in)
   {}
 
   void vmult (parallel::distributed::Vector<value_type>       &dst,
@@ -283,9 +279,9 @@ public:
 
     parallel::distributed::Vector<value_type>  src_dummy(diagonal);
 
-    this->get_data().loop(&ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_calculate_diagonal,
-                          &ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_calculate_diagonal_face,
-                          &ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::local_calculate_diagonal_boundary_face,
+    this->get_data().loop(&ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_calculate_diagonal,
+                          &ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_calculate_diagonal_face,
+                          &ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_calculate_diagonal_boundary_face,
                           this, diagonal, src_dummy);
 
     // verify_calculation_of_diagonal(diagonal);
@@ -613,15 +609,15 @@ private:
   InverseMassMatrixOperator<dim,fe_degree,value_type> inverse_mass_matrix_operator;
 };
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class DirectProjectionSolverDivergencePenalty : public ProjectionSolverBase<value_type>
 {
 public:
-  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
-  DirectProjectionSolverDivergencePenalty(ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> * projection_operator_in)
+  DirectProjectionSolverDivergencePenalty(ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> * projection_operator_in)
     :
     projection_operator(projection_operator_in)
   {}
@@ -631,7 +627,7 @@ public:
   {
     dst = 0;
 
-    projection_operator->get_data().cell_loop (&DirectProjectionSolverDivergencePenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall,value_type>::local_solve, this, dst, src);
+    projection_operator->get_data().cell_loop (&DirectProjectionSolverDivergencePenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule,value_type>::local_solve, this, dst, src);
 
     return 0;
   }
@@ -710,7 +706,7 @@ public:
     }
   }
 
-  ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> * projection_operator;
+  ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> * projection_operator;
 };
 
 namespace internalCG
@@ -909,11 +905,11 @@ void SolverCGmod<value_type>::solve(const Matrix *matrix,
                     + "iterations. Residual was " + message.str().c_str()));
 }
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall,typename value_type>
+template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule,typename value_type>
 class IterativeProjectionSolverDivergencePenalty : public ProjectionSolverBase<value_type>
 {
 public:
-  IterativeProjectionSolverDivergencePenalty(ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> * projection_operator_in,
+  IterativeProjectionSolverDivergencePenalty(ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> * projection_operator_in,
                                              ProjectionSolverData const solver_data_in)
     :
     projection_operator(projection_operator_in),
@@ -927,7 +923,7 @@ public:
   {
     dst = 0;
 
-    projection_operator->get_data().cell_loop (&IterativeProjectionSolverDivergencePenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall,value_type>::local_solve, this, dst, src);
+    projection_operator->get_data().cell_loop (&IterativeProjectionSolverDivergencePenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule,value_type>::local_solve, this, dst, src);
 
     return 0;
   }
@@ -948,8 +944,8 @@ public:
 
     SolverCGmod<VectorizedArray<double> > cg_solver(total_dofs_per_cell, solver_data.solver_tolerance_abs, solver_data.solver_tolerance_rel, solver_data.max_iter);
 
-    ProjectionOperatorDivergencePenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> *
-          projection_operator_div = static_cast<ProjectionOperatorDivergencePenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> * >(projection_operator);
+    ProjectionOperatorDivergencePenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> *
+          projection_operator_div = static_cast<ProjectionOperatorDivergencePenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> * >(projection_operator);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -966,21 +962,21 @@ public:
   }
 
 protected:
-  ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> * projection_operator;
+  ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> * projection_operator;
   ProjectionSolverData const solver_data;
 };
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall,typename value_type>
-class IterativeProjectionSolverDivergencePenaltyXWall: public IterativeProjectionSolverDivergencePenalty<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>
+template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule,typename value_type>
+class IterativeProjectionSolverDivergencePenaltyXWall: public IterativeProjectionSolverDivergencePenalty<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule,value_type>
 {
 public:
-  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
-  IterativeProjectionSolverDivergencePenaltyXWall(ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> * projection_operator_in,
+  IterativeProjectionSolverDivergencePenaltyXWall(ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> * projection_operator_in,
                                              ProjectionSolverData const solver_data_in)
     :
-      IterativeProjectionSolverDivergencePenalty<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>(projection_operator_in,solver_data_in)
+      IterativeProjectionSolverDivergencePenalty<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule,value_type>(projection_operator_in,solver_data_in)
   {}
 
   void local_solve(const MatrixFree<dim,value_type>                &data,
@@ -993,8 +989,8 @@ public:
 
     FEEval_Velocity_Velocity_linear fe_eval(data,this->projection_operator->get_fe_param(),this->projection_operator->get_dof_index(),this->projection_operator->get_quad_index());
 
-    ProjectionOperatorDivergencePenaltyXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> *
-          projection_operator_div = static_cast<ProjectionOperatorDivergencePenaltyXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> * >(this->projection_operator);
+    ProjectionOperatorDivergencePenaltyXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> *
+          projection_operator_div = static_cast<ProjectionOperatorDivergencePenaltyXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> * >(this->projection_operator);
 
     AlignedVector<VectorizedArray<value_type> > source;
     AlignedVector<VectorizedArray<value_type> > solution;
@@ -1021,18 +1017,18 @@ public:
   }
 };
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class IterativeProjectionSolverDivergenceAndContinuityPenalty : public ProjectionSolverBase<value_type>
 {
 public:
-  IterativeProjectionSolverDivergenceAndContinuityPenalty(ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> * projection_operator_in,
+  IterativeProjectionSolverDivergenceAndContinuityPenalty(ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> * projection_operator_in,
                                                           ProjectionSolverData const solver_data_in)
     :
     projection_operator(nullptr),
     solver_data(solver_data_in),
     preconditioner(nullptr)
   {
-    projection_operator = static_cast<ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> *>(projection_operator_in);
+    projection_operator = static_cast<ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> *>(projection_operator_in);
 
     if(solver_data.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
       preconditioner = new InverseMassMatrixPreconditioner<dim,fe_degree,value_type>(
@@ -1040,7 +1036,7 @@ public:
           projection_operator->get_dof_index(),
           projection_operator->get_quad_index());
     else if(solver_data.preconditioner_projection == PreconditionerProjection::Jacobi)
-      preconditioner = new JacobiPreconditioner<value_type,ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> >(*projection_operator);
+      preconditioner = new JacobiPreconditioner<value_type,ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> >(*projection_operator);
   }
 
   ~IterativeProjectionSolverDivergenceAndContinuityPenalty()
@@ -1069,8 +1065,8 @@ public:
         {
           // recalculate diagonal since the diagonal depends on the penalty parameter which itself depends on
           // the velocity field
-          JacobiPreconditioner<value_type,ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> >
-            *jacobi_preconditioner = dynamic_cast<JacobiPreconditioner<value_type,ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> > *>(preconditioner);
+          JacobiPreconditioner<value_type,ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> >
+            *jacobi_preconditioner = dynamic_cast<JacobiPreconditioner<value_type,ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > *>(preconditioner);
           jacobi_preconditioner->recalculate_diagonal(*projection_operator);
           solver.solve (*projection_operator, dst, src, *preconditioner);
         }
@@ -1093,7 +1089,7 @@ public:
   }
 
 private:
-  ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> * projection_operator;
+  ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> * projection_operator;
   ProjectionSolverData const solver_data;
   PreconditionerBase<value_type> *preconditioner;
 };

@@ -55,7 +55,7 @@ private:
 public:
   FEEvaluationWrapper (
   const MatrixFree<dim,Number>  &matrix_free,
-  const FEParameters<dim>       & in_fe_param,
+  const FEParameters<dim>       * in_fe_param,
   const unsigned int            fe_no = 0,
   const int            quad_no = -1)
     :
@@ -108,7 +108,7 @@ public:
   }
 
   unsigned int std_dofs_per_cell;
-  const FEParameters<dim> & fe_param;
+  const FEParameters<dim> * fe_param;
 };
 
 //template <typename Template>
@@ -119,7 +119,7 @@ class FEEvaluationWrapperPressure : public FEEvaluationWrapper<dim,fe_degree,fe_
 public:
   FEEvaluationWrapperPressure (
   const MatrixFree<dim,Number> &matrix_free,
-  const FEParameters<dim>      &in_fe_param,
+  const FEParameters<dim>      *in_fe_param,
   const unsigned int           fe_no = 0,
   const int                    quad_no = -1)
     :
@@ -152,7 +152,7 @@ private:
 public:
   FEFaceEvaluationWrapper (
   const MatrixFree<dim,Number> &matrix_free,
-  const FEParameters<dim>      & in_fe_param,
+  const FEParameters<dim>      * in_fe_param,
   const bool                   is_left_face = true,
   const unsigned int           fe_no = 0,
   const int                    quad_no = -1)
@@ -204,7 +204,7 @@ public:
   }
 
   unsigned int std_dofs_per_cell;
-  const FEParameters<dim> & fe_param;
+  const FEParameters<dim> * fe_param;
 };
 
 template <int dim, int fe_degree = 1, int fe_degree_xwall = 1, int n_q_points_1d = fe_degree+1,
@@ -214,7 +214,7 @@ class FEFaceEvaluationWrapperPressure : public FEFaceEvaluationWrapper<dim,fe_de
 public:
   FEFaceEvaluationWrapperPressure (
   const MatrixFree<dim,Number> &matrix_free,
-  const FEParameters<dim>      &in_fe_param,
+  const FEParameters<dim>      *in_fe_param,
   const bool                   is_left_face = true,
   const unsigned int           fe_no = 0,
   const int                    quad_no = -1)
@@ -223,10 +223,6 @@ public:
   {
   }
 };
-
-
-
-
 
 template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d,
       int n_components_, typename Number>
@@ -241,13 +237,13 @@ private:
 public:
   FEEvaluationWrapper (
   const MatrixFree<dim,Number>  &matrix_free,
-  const FEParameters<dim>       & in_fe_param,
+  const FEParameters<dim>       * in_fe_param,
   const unsigned int            fe_no = 0,
   const int                     = -1)
   :
   data(matrix_free),
   fe_param(in_fe_param),
-  spalding(fe_param.viscosity),
+  spalding(fe_param->viscosity),
   fe_eval_q0(matrix_free,fe_no,2,0),
   fe_eval_q1(matrix_free,fe_no,3,0),
   fe_eval(),
@@ -323,7 +319,7 @@ public:
     for (unsigned int v=0; v<data.n_components_filled(cell); ++v)
     {
       typename DoFHandler<dim>::cell_iterator dcell = data.get_cell_iterator(cell, v);
-      if ((dcell->center()[1] > (1.0-fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + fe_param.max_wdist_xwall)))
+      if (fe_param->enrichment_is_within->value(dcell->center())>0.)
       {
         enriched = true;
         enriched_components[v] = true;
@@ -347,11 +343,11 @@ public:
       spalding.reinit_zero(n_q_points);
       //initialize the enrichment function
       //the enrichment is available if fe_params has a vector and if this is no ghost cell
-      if(fe_param.enrichment == nullptr || (*fe_param.enrichment).size()-1 < cell || do_not_use_precomputed_enrichment)
+      if(fe_param->enrichment == nullptr || (*fe_param->enrichment).size()-1 < cell || do_not_use_precomputed_enrichment)
       {
         fe_eval_tauw[quad_type]->reinit(cell);
         //get wall distance and wss at quadrature points
-        fe_eval_tauw[quad_type]->read_dof_values(*fe_param.wdist);
+        fe_eval_tauw[quad_type]->read_dof_values(*fe_param->wdist);
         fe_eval_tauw_evaluate(true, true);
 
         AlignedVector<VectorizedArray<Number> > cell_wdist;
@@ -364,7 +360,7 @@ public:
           cell_gradwdist[q] = fe_eval_tauw[quad_type]->get_gradient(q);
         }
 
-        fe_eval_tauw[quad_type]->read_dof_values(*fe_param.tauw);
+        fe_eval_tauw[quad_type]->read_dof_values(*fe_param->tauw);
 
         fe_eval_tauw_evaluate(true, true);
 
@@ -389,9 +385,9 @@ public:
       }
       else
       {
-        AssertThrow(fe_param.enrichment != nullptr, ExcInternalError());
-        AssertThrow(fe_param.enrichment_gradient != nullptr, ExcInternalError());
-        spalding.reinit((*fe_param.enrichment)[cell],(*fe_param.enrichment_gradient)[cell],n_q_points);
+        AssertThrow(fe_param->enrichment != nullptr, ExcInternalError());
+        AssertThrow(fe_param->enrichment_gradient != nullptr, ExcInternalError());
+        spalding.reinit((*fe_param->enrichment)[cell],(*fe_param->enrichment_gradient)[cell],n_q_points);
       }
       dofs_per_cell = fe_eval_q0.dofs_per_cell + fe_eval_xwall_q0.dofs_per_cell;
     }
@@ -439,13 +435,13 @@ public:
   {
     fe_eval_tauw[quad_type]->reinit(cell);
 
-    fe_eval_tauw[quad_type]->read_dof_values(*fe_param.wdist);
+    fe_eval_tauw[quad_type]->read_dof_values(*fe_param->wdist);
     fe_eval_tauw_evaluate(true, false);
     wdist.resize(n_q_points);
     for(unsigned int q=0;q<n_q_points;++q)
       wdist[q] = fe_eval_tauw[quad_type]->get_value(q);
 
-    fe_eval_tauw[quad_type]->read_dof_values(*fe_param.tauw);
+    fe_eval_tauw[quad_type]->read_dof_values(*fe_param->tauw);
     fe_eval_tauw_evaluate(true, false);
     tauw.resize(n_q_points);
     for(unsigned int q=0;q<n_q_points;++q)
@@ -902,7 +898,7 @@ private:
 
 protected:
   const MatrixFree<dim,Number> & data;
-  const FEParameters<dim> & fe_param;
+  const FEParameters<dim> * fe_param;
   SpaldingsLawEvaluation<dim, Number, VectorizedArray<Number> > spalding;
   FEEvaluation<dim,fe_degree,fe_degree+(fe_degree+2)/2,n_components_,Number> fe_eval_q0;
   FEEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number> fe_eval_q1;
@@ -939,7 +935,7 @@ private:
 public:
   FEEvaluationWrapperPressure (
   const MatrixFree<dim,Number>  &matrix_free,
-  const FEParameters<dim>       & in_fe_param,
+  const FEParameters<dim>       * in_fe_param,
   const unsigned int            fe_no = 0,
   const int                     = -1)
   :
@@ -957,7 +953,7 @@ public:
     {
       typename DoFHandler<dim>::cell_iterator dcell = this->data.get_cell_iterator(cell, v);
 //            std::cout << ((dcell->center()[1] > (1.0-MAX_WDIST_XWALL)) || (dcell->center()[1] <(-1.0 + MAX_WDIST_XWALL))) << std::endl;
-      if ((dcell->center()[1] > (1.0-this->fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + this->fe_param.max_wdist_xwall)))
+      if (this->fe_param->enrichment_is_within->value(dcell->center())>0.)
       {
         this->quad_type = 1;
       }
@@ -992,13 +988,13 @@ private:
 
 public:
   FEFaceEvaluationWrapper  ( const MatrixFree<dim,Number> &matrix_free,
-  const FEParameters<dim>       & in_fe_param,
+  const FEParameters<dim>       * in_fe_param,
   const bool                    is_left_face = true,
   const unsigned int            fe_no = 0,
   const int                     = -1):
     data(matrix_free),
     fe_param(in_fe_param),
-    spalding(fe_param.viscosity),
+    spalding(fe_param->viscosity),
     fe_eval_q0(matrix_free,is_left_face,fe_no,2,0),
     fe_eval_q1(matrix_free,is_left_face,fe_no,3,0),
     fe_eval(),
@@ -1017,8 +1013,8 @@ public:
     enriched(false),
     quad_type(0)
   {
-    Assert(in_fe_param.wdist,ExcMessage("wall distance vector not available"));
-    Assert(in_fe_param.tauw,ExcMessage("wall shear stress vector not available"));
+    Assert(in_fe_param->wdist,ExcMessage("wall distance vector not available"));
+    Assert(in_fe_param->tauw,ExcMessage("wall shear stress vector not available"));
     fe_eval.push_back(dynamic_cast<FEEvaluationAccess<dim,n_components_,Number,true>*>(&fe_eval_q0));
     fe_eval.push_back(dynamic_cast<FEEvaluationAccess<dim,n_components_,Number,true>*>(&fe_eval_q1));
 
@@ -1049,7 +1045,7 @@ public:
         typename DoFHandler<dim>::cell_iterator dcell =  data.get_cell_iterator(
             data.faces.at(f).left_cell[v] / VectorizedArray<Number>::n_array_elements,
             data.faces.at(f).left_cell[v] % VectorizedArray<Number>::n_array_elements);
-            if ((dcell->center()[1] > (1.0-fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + fe_param.max_wdist_xwall)))
+            if (fe_param->enrichment_is_within->value(dcell->center())>0.)
             {
               enriched = true;
               enriched_components.at(v)=true;
@@ -1066,7 +1062,7 @@ public:
         typename DoFHandler<dim>::cell_iterator dcell =  data.get_cell_iterator(
             data.faces.at(f).right_cell[v] / VectorizedArray<Number>::n_array_elements,
             data.faces.at(f).right_cell[v] % VectorizedArray<Number>::n_array_elements);
-            if ((dcell->center()[1] > (1.0-fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + fe_param.max_wdist_xwall)))
+            if (fe_param->enrichment_is_within->value(dcell->center())>0.)
             {
               quad_type = 1;
             }
@@ -1080,7 +1076,7 @@ public:
         typename DoFHandler<dim>::cell_iterator dcell =  data.get_cell_iterator(
             data.faces.at(f).right_cell[v] / VectorizedArray<Number>::n_array_elements,
             data.faces.at(f).right_cell[v] % VectorizedArray<Number>::n_array_elements);
-            if ((dcell->center()[1] > (1.0-fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + fe_param.max_wdist_xwall)))
+            if (fe_param->enrichment_is_within->value(dcell->center())>0.)
             {
               enriched = true;
               enriched_components.at(v)=true;
@@ -1097,7 +1093,7 @@ public:
         typename DoFHandler<dim>::cell_iterator dcell =  data.get_cell_iterator(
             data.faces.at(f).left_cell[v] / VectorizedArray<Number>::n_array_elements,
             data.faces.at(f).left_cell[v] % VectorizedArray<Number>::n_array_elements);
-            if ((dcell->center()[1] > (1.0-fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + fe_param.max_wdist_xwall)))
+            if (fe_param->enrichment_is_within->value(dcell->center())>0.)
             {
               quad_type = 1;
             }
@@ -1119,7 +1115,7 @@ public:
       {
         fe_eval_tauw[quad_type]->reinit(f);
         //get wall distance and wss at quadrature points
-        fe_eval_tauw[quad_type]->read_dof_values(*fe_param.wdist);
+        fe_eval_tauw[quad_type]->read_dof_values(*fe_param->wdist);
         fe_eval_tauw_evaluate(true, true);
 
         AlignedVector<VectorizedArray<Number> > face_wdist;
@@ -1132,7 +1128,7 @@ public:
           face_gradwdist[q] = fe_eval_tauw[quad_type]->get_gradient(q);
         }
 
-        fe_eval_tauw[quad_type]->read_dof_values(*fe_param.tauw);
+        fe_eval_tauw[quad_type]->read_dof_values(*fe_param->tauw);
         fe_eval_tauw_evaluate(true, true);
         AlignedVector<VectorizedArray<Number> > face_tauw;
         AlignedVector<Tensor<1,dim,VectorizedArray<Number> > > face_gradtauw;
@@ -1165,13 +1161,13 @@ public:
   {
     fe_eval_tauw[quad_type]->reinit(face);
 
-    fe_eval_tauw[quad_type]->read_dof_values(*fe_param.wdist);
+    fe_eval_tauw[quad_type]->read_dof_values(*fe_param->wdist);
     fe_eval_tauw_evaluate(true, false);
     wdist.resize(n_q_points);
     for(unsigned int q=0;q<n_q_points;++q)
       wdist[q] = fe_eval_tauw[quad_type]->get_value(q);
 
-    fe_eval_tauw[quad_type]->read_dof_values(*fe_param.tauw);
+    fe_eval_tauw[quad_type]->read_dof_values(*fe_param->tauw);
     fe_eval_tauw_evaluate(true, false);
     tauw.resize(n_q_points);
     for(unsigned int q=0;q<n_q_points;++q)
@@ -1637,7 +1633,7 @@ private:
 
 protected:
   const MatrixFree<dim,Number> & data;
-  const FEParameters<dim> & fe_param;
+  const FEParameters<dim> * fe_param;
   SpaldingsLawEvaluation<dim, Number, VectorizedArray<Number> > spalding;
   FEFaceEvaluation<dim,fe_degree,fe_degree+(fe_degree+2)/2,n_components_,Number> fe_eval_q0;
   FEFaceEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number> fe_eval_q1;
@@ -1677,7 +1673,7 @@ private:
 
 public:
   FEFaceEvaluationWrapperPressure  ( const MatrixFree<dim,Number> &matrix_free,
-  const FEParameters<dim>            & in_fe_param,
+  const FEParameters<dim>            * in_fe_param,
   const bool                         is_left_face = true,
   const unsigned int                 fe_no = 0,
   const int                          = -1):
@@ -1699,7 +1695,7 @@ public:
         typename DoFHandler<dim>::cell_iterator dcell =  this->data.get_cell_iterator(
             this->data.faces.at(f).left_cell[v] / VectorizedArray<Number>::n_array_elements,
             this->data.faces.at(f).left_cell[v] % VectorizedArray<Number>::n_array_elements);
-            if ((dcell->center()[1] > (1.0-this->fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + this->fe_param.max_wdist_xwall)))
+            if (this->fe_param->enrichment_is_within->value(dcell->center())>0.)
             {
               this->quad_type = 1;
             }
@@ -1712,7 +1708,7 @@ public:
         typename DoFHandler<dim>::cell_iterator dcell =  this->data.get_cell_iterator(
             this->data.faces.at(f).right_cell[v] / VectorizedArray<Number>::n_array_elements,
             this->data.faces.at(f).right_cell[v] % VectorizedArray<Number>::n_array_elements);
-            if ((dcell->center()[1] > (1.0-this->fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + this->fe_param.max_wdist_xwall)))
+            if (this->fe_param->enrichment_is_within->value(dcell->center())>0.)
             {
               this->quad_type = 1;
             }
@@ -1726,7 +1722,7 @@ public:
         typename DoFHandler<dim>::cell_iterator dcell =  this->data.get_cell_iterator(
             this->data.faces.at(f).right_cell[v] / VectorizedArray<Number>::n_array_elements,
             this->data.faces.at(f).right_cell[v] % VectorizedArray<Number>::n_array_elements);
-            if ((dcell->center()[1] > (1.0-this->fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + this->fe_param.max_wdist_xwall)))
+            if (this->fe_param->enrichment_is_within->value(dcell->center())>0.)
             {
               this->quad_type = 1;
             }
@@ -1739,7 +1735,7 @@ public:
         typename DoFHandler<dim>::cell_iterator dcell =  this->data.get_cell_iterator(
             this->data.faces.at(f).left_cell[v] / VectorizedArray<Number>::n_array_elements,
             this->data.faces.at(f).left_cell[v] % VectorizedArray<Number>::n_array_elements);
-            if ((dcell->center()[1] > (1.0-this->fe_param.max_wdist_xwall)) || (dcell->center()[1] <(-1.0 + this->fe_param.max_wdist_xwall)))
+            if (this->fe_param->enrichment_is_within->value(dcell->center())>0.)
             {
               this->quad_type = 1;
             }

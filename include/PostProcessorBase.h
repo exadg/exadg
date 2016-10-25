@@ -8,6 +8,8 @@
 #ifndef INCLUDE_POSTPROCESSORBASE_H_
 #define INCLUDE_POSTPROCESSORBASE_H_
 
+#include "../include/AnalyticalSolutionNavierStokes.h"
+
 /*
  *  This struct contains information about
  *  indices of dof_handlers and quadrature formulas

@@ -10,6 +10,7 @@
 
 #include <deal.II/numerics/vector_tools.h>
 
+#include "../include/AnalyticalSolutionNavierStokes.h"
 
 template<int dim>
 void calculate_L2_error(DoFHandler<dim> const                       &dof_handler,

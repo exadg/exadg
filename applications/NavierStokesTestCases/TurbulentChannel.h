@@ -631,6 +631,4 @@ construct_postprocessor(InputParametersNavierStokes<dim> const &param)
 }
 
 
-
-
 #endif /* APPLICATIONS_NAVIERSTOKESTESTCASES_TURBULENTCHANNEL_H_ */

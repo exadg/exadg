@@ -50,11 +50,17 @@ namespace PrintInputParams
   template<int dim>
   void print_turbulence_parameters(ConditionalOStream & pcout, const InputParametersNavierStokes<dim> & param,const double grid_stretch_fac)
   {
+    std::string str_xwall_turbulence_approach[] = { "Undefined",
+                                                    "None",
+                                                    "RANSSpalartAllmaras",
+                                                    "ClassicalDES",
+                                                    "MultiscaleDES"};
     pcout << std::endl << "turbulence parameters:" << std::endl;
-    pcout << " - Smagorinsky constant                 " << param.cs << std::endl;
     pcout << " - grid stretching:                     " << grid_stretch_fac << std::endl;
-    pcout << " - statistics start time:               " << param.statistics_start_time << std::endl;
-    pcout << " - statistics every:                    " << param.statistics_every << std::endl;
+    pcout << " - statistics start time:               " << param.turb_stat_data.statistics_start_time << std::endl;
+    pcout << " - statistics every:                    " << param.turb_stat_data.statistics_every << std::endl;
+    pcout << " - statistics end time:                 " << param.turb_stat_data.statistics_end_time << std::endl;
+    pcout << " - xwall turbulence approach:           " << str_xwall_turbulence_approach[(int)param.xwall_turb] << std::endl;
   }
 
   template<int dim>

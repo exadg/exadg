@@ -331,8 +331,8 @@ public:
 };
 
 template<int dim>
-double PressureBC_dudt<dim>::value(const Point<dim>   &p,
-                                   const unsigned int component) const
+double PressureBC_dudt<dim>::value(const Point<dim>   &/*p*/,
+                                   const unsigned int /*component*/) const
 {
   // do nothing (result = 0) since we are interested in a steady state solution
   double result = 0.0;
@@ -359,8 +359,8 @@ template<int dim>
  };
 
  template<int dim>
- double RightHandSide<dim>::value(const Point<dim>   &p,
-                                  const unsigned int component) const
+ double RightHandSide<dim>::value(const Point<dim>   &/*p*/,
+                                  const unsigned int /*component*/) const
  {
    double result = 0.0;
    return result;

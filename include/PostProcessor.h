@@ -12,6 +12,7 @@
 
 #include "LiftAndDragData.h"
 #include "PressureDifferenceData.h"
+#include "TurbulenceStatisticsData.h"
 
 #include "../include/WriteOutputNavierStokes.h"
 #include "../include/ErrorCalculationNavierStokes.h"
@@ -29,6 +30,7 @@ struct PostProcessorData
   LiftAndDragData lift_and_drag_data;
   PressureDifferenceData<dim> pressure_difference_data;
   MassConservationData mass_data;
+  TurbulenceStatisticsData turb_stat_data;
 };
 
 template<int dim, int fe_degree_u, int fe_degree_p>
@@ -41,8 +43,6 @@ public:
   {}
 
   virtual ~PostProcessor(){}
-
-  virtual void setup(){}
 
   virtual void setup(DoFHandler<dim> const                                        &dof_handler_velocity_in,
                      DoFHandler<dim> const                                        &dof_handler_pressure_in,

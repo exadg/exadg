@@ -10,22 +10,22 @@
 
 #include "TimeIntBDFNavierStokes.h"
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class TimeIntBDFCoupled : public TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+class TimeIntBDFCoupled : public TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
 {
 public:
   TimeIntBDFCoupled(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
-                      fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
+                      fe_degree_p, fe_degree_xwall, xwall_quad_rule> >  ns_operation_in,
                     std_cxx11::shared_ptr<PostProcessorBase<dim> >          postprocessor_in,
                     InputParametersNavierStokes<dim> const                  &param_in,
                     unsigned int const                                      n_refine_time_in,
                     bool const                                              use_adaptive_time_stepping)
     :
-    TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+    TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
             (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
     solution(this->order),
     vec_convective_term(this->order),
-    ns_operation_coupled (std::dynamic_pointer_cast<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in)),
+    ns_operation_coupled (std::dynamic_pointer_cast<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > (ns_operation_in)),
     N_iter_linear_average(0.0),
     N_iter_newton_average(0.0),
     solver_time_average(0.0)
@@ -71,7 +71,7 @@ private:
 
   parallel::distributed::Vector<value_type> divergence;
 
-  std_cxx11::shared_ptr<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >
+  std_cxx11::shared_ptr<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> >
      ns_operation_coupled;
 
   // performance analysis: average number of iterations and solver time
@@ -79,8 +79,8 @@ private:
   double solver_time_average;
 };
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 analyze_computing_times() const
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
@@ -114,8 +114,8 @@ analyze_computing_times() const
          << std::endl << std::endl;
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 initialize_vectors()
 {
   // solution
@@ -147,15 +147,15 @@ initialize_vectors()
     ns_operation_coupled->initialize_vector_velocity(divergence);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 initialize_current_solution()
 {
   ns_operation_coupled->prescribe_initial_conditions(solution[0].block(0),solution[0].block(1),this->time);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 initialize_former_solution()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
@@ -163,8 +163,8 @@ initialize_former_solution()
     ns_operation_coupled->prescribe_initial_conditions(solution[i].block(0),solution[i].block(1),this->time - value_type(i)*this->time_steps[0]);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 setup_derived()
 {
   calculate_vorticity();
@@ -176,15 +176,15 @@ setup_derived()
     initialize_vec_convective_term();
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 calculate_vorticity()
 {
   ns_operation_coupled->compute_vorticity(vorticity, solution[0].block(0));
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 calculate_divergence()
 {
   if(this->param.output_data.compute_divergence == true)
@@ -193,8 +193,8 @@ calculate_divergence()
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 initialize_vec_convective_term()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
@@ -206,15 +206,15 @@ initialize_vec_convective_term()
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-parallel::distributed::Vector<value_type> const & TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+parallel::distributed::Vector<value_type> const & TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 get_velocity()
 {
   return solution[0].block(0);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 read_restart_vectors(boost::archive::binary_iarchive & ia)
 {
   Vector<double> tmp;
@@ -232,8 +232,8 @@ read_restart_vectors(boost::archive::binary_iarchive & ia)
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 write_restart_vectors(boost::archive::binary_oarchive & oa) const
 {
   VectorView<double> tmp(solution[0].block(0).local_size(),
@@ -253,8 +253,8 @@ write_restart_vectors(boost::archive::binary_oarchive & oa) const
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 solve_timestep()
 {
   Timer timer;
@@ -355,8 +355,8 @@ solve_timestep()
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 postprocessing() const
 {
   this->postprocessor->do_postprocessing(solution[0].block(0),
@@ -368,8 +368,8 @@ postprocessing() const
                                          this->time_step_number);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 prepare_vectors_for_next_timestep()
 {
   push_back_solution();
@@ -382,8 +382,8 @@ prepare_vectors_for_next_timestep()
     push_back_vec_convective_term();
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 push_back_solution()
 {
   /*
@@ -407,8 +407,8 @@ push_back_solution()
   solution[0].swap(solution_np);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 push_back_vec_convective_term()
 {
   // solution at t_{n-i} <-- solution at t_{n-i+1}

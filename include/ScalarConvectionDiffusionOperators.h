@@ -669,7 +669,7 @@ private:
 
   void local_diagonal_boundary_face (const MatrixFree<dim,value_type>                &data,
                                      parallel::distributed::Vector<value_type>       &dst,
-                                     const parallel::distributed::Vector<value_type> &src,
+                                     const parallel::distributed::Vector<value_type> &/*src*/,
                                      const std::pair<unsigned int,unsigned int>      &face_range) const
   {
     FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,true,operator_data.dof_index,operator_data.quad_index);
@@ -758,7 +758,7 @@ private:
 
   void local_rhs_boundary_face (const MatrixFree<dim,value_type>                &data,
                                 parallel::distributed::Vector<value_type>       &dst,
-                                const parallel::distributed::Vector<value_type> &src,
+                                const parallel::distributed::Vector<value_type> &/*src*/,
                                 const std::pair<unsigned int,unsigned int>      &face_range) const
   {
     FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,true,operator_data.dof_index,operator_data.quad_index);
@@ -1714,6 +1714,8 @@ public:
                const unsigned int               level = numbers::invalid_unsigned_int,
                FEParameters<dim> const          &fe_param = FEParameters<dim>())
   {
+    (void)fe_param; // avoid compiler warning
+
     // setup own matrix free object
     const QGauss<1> quad(dof_handler.get_fe().degree+1);
     typename MatrixFree<dim,Number>::AdditionalData addit_data;

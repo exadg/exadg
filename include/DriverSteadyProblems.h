@@ -11,17 +11,17 @@
 
 template<int dim> class PostProcessorBase;
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class DriverSteadyProblems
 {
 public:
   DriverSteadyProblems(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
-                         fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >   ns_operation_in,
+                         fe_degree_p, fe_degree_xwall, xwall_quad_rule> >   ns_operation_in,
                        std_cxx11::shared_ptr<PostProcessorBase<dim> >           postprocessor_in,
                        InputParametersNavierStokes<dim> const                   &param_in)
     :
     ns_operation(std::dynamic_pointer_cast<DGNavierStokesCoupled<dim, fe_degree,
-                    fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in)),
+                    fe_degree_p, fe_degree_xwall, xwall_quad_rule> > (ns_operation_in)),
     postprocessor(postprocessor_in),
     param(param_in),
     total_time(0.0)
@@ -40,7 +40,7 @@ private:
   void solve();
   void postprocessing();
 
-  std_cxx11::shared_ptr<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation;
+  std_cxx11::shared_ptr<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > ns_operation;
 
   std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor;
   InputParametersNavierStokes<dim> const &param;
@@ -54,8 +54,8 @@ private:
   parallel::distributed::Vector<value_type> divergence;
 };
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 setup()
 {
   // initialize global solution vectors (allocation)
@@ -65,8 +65,8 @@ setup()
   initialize_solution();
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 initialize_vectors()
 {
   // solution
@@ -86,8 +86,8 @@ initialize_vectors()
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 initialize_solution()
 {
   double time = 0.0;
@@ -95,8 +95,8 @@ initialize_solution()
 }
 
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 solve()
 {
   Timer timer;
@@ -155,8 +155,8 @@ solve()
 
 
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 solve_steady_problem()
 {
   global_timer.restart();
@@ -172,8 +172,8 @@ solve_steady_problem()
   analyze_computing_times();
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 postprocessing()
 {
   // calculate divergence
@@ -192,8 +192,8 @@ postprocessing()
                                          divergence);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 analyze_computing_times() const
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);

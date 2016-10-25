@@ -24,7 +24,7 @@
 //  bool convective_problem;
 //};
 //
-//template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall,typename Number = double>
+//template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule,typename Number = double>
 //class VelocityConvDiffOperator : public Subscriptor
 //{
 //public:
@@ -43,9 +43,9 @@
 //
 //  void initialize(MatrixFree<dim,Number> const                                                            &mf_data_in,
 //                  VelocityConvDiffOperatorData<dim> const                                                 &operator_data_in,
-//                  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>  const &mass_matrix_operator_in,
-//                  ViscousOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number> const     &viscous_operator_in,
-//                  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number> const  &convective_operator_in)
+//                  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const &mass_matrix_operator_in,
+//                  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const     &viscous_operator_in,
+//                  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const  &convective_operator_in)
 //  {
 //    // copy parameters into element variables
 //    this->data = &mf_data_in;
@@ -97,9 +97,9 @@
 //
 //private:
 //  MatrixFree<dim,Number> const * data;
-//  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>  const * mass_matrix_operator;
-//  ViscousOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>  const * viscous_operator;
-//  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number> const * convective_operator;
+//  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const * mass_matrix_operator;
+//  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const * viscous_operator;
+//  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const * convective_operator;
 //  VelocityConvDiffOperatorData<dim> operator_data;
 //  Number const * scaling_factor_time_derivative_term;
 //  parallel::distributed::Vector<Number> const * velocity_linearization;
@@ -151,7 +151,7 @@ struct VelocityConvDiffOperatorData
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs_level0;
 };
 
-template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall,typename Number = double>
+template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule,typename Number = double>
 class VelocityConvDiffOperator : public Subscriptor
 {
 public:
@@ -170,9 +170,9 @@ public:
 
   void initialize(MatrixFree<dim,Number> const                                                            &mf_data_in,
                   VelocityConvDiffOperatorData<dim> const                                                 &operator_data_in,
-                  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>  const &mass_matrix_operator_in,
-                  ViscousOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number> const     &viscous_operator_in,
-                  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number> const  &convective_operator_in)
+                  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const &mass_matrix_operator_in,
+                  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const     &viscous_operator_in,
+                  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const  &convective_operator_in)
   {
     // copy parameters into element variables
     this->data = &mf_data_in;
@@ -193,7 +193,7 @@ public:
                const VelocityConvDiffOperatorData<dim> &operator_data,
                const MGConstrainedDoFs                 &/*mg_constrained_dofs*/,
                const unsigned int                      level = numbers::invalid_unsigned_int,
-               FEParameters<dim> const                 &fe_param = FEParameters<dim>())
+               FEParameters<dim> const                 & = FEParameters<dim>())
   {
     // set the dof index to zero (for the VelocityConvDiffOperator and also
     // for the basic Operators (MassMatrixOperator, ViscousOperator, ConvectiveOperator))
@@ -241,15 +241,15 @@ public:
 
     // setup own mass matrix operator
     MassMatrixOperatorData mass_matrix_operator_data = my_operator_data.mass_matrix_operator_data;
-    own_mass_matrix_operator_storage.initialize(own_matrix_free_storage,fe_param,mass_matrix_operator_data);
+    own_mass_matrix_operator_storage.initialize(own_matrix_free_storage,mass_matrix_operator_data);
 
     // setup own viscous operator
     ViscousOperatorData<dim> viscous_operator_data = my_operator_data.viscous_operator_data;
-    own_viscous_operator_storage.initialize(mapping,own_matrix_free_storage,fe_param,viscous_operator_data);
+    own_viscous_operator_storage.initialize(mapping,own_matrix_free_storage,viscous_operator_data);
 
     // setup own convective operator
     ConvectiveOperatorData<dim> convective_operator_data = my_operator_data.convective_operator_data;
-    own_convective_operator_storage.initialize(own_matrix_free_storage,fe_param,convective_operator_data);
+    own_convective_operator_storage.initialize(own_matrix_free_storage,convective_operator_data);
 
     // setup velocity convection diffusion operator
     initialize(own_matrix_free_storage,
@@ -434,9 +434,9 @@ public:
 
 private:
   MatrixFree<dim,Number> const * data;
-  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>  const * mass_matrix_operator;
-  ViscousOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>  const * viscous_operator;
-  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number> const * convective_operator;
+  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const * mass_matrix_operator;
+  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const * viscous_operator;
+  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const * convective_operator;
   VelocityConvDiffOperatorData<dim> operator_data;
   parallel::distributed::Vector<Number> mutable temp;
   double scaling_factor_time_derivative_term;
@@ -452,9 +452,9 @@ private:
    *  e.g., data = &own_matrix_free_storage;
    */
   MatrixFree<dim,Number> own_matrix_free_storage;
-  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number> own_mass_matrix_operator_storage;
-  ViscousOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number> own_viscous_operator_storage;
-  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number> own_convective_operator_storage;
+  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> own_mass_matrix_operator_storage;
+  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> own_viscous_operator_storage;
+  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> own_convective_operator_storage;
 };
 
 #endif /* INCLUDE_VELOCITYCONVDIFFOPERATOR_H_ */

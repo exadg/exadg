@@ -35,7 +35,7 @@ void check_file(std::ifstream const & in, const std::string filename)
                              "!"));
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall,typename value_type>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule,typename value_type>
 void resume_restart(boost::archive::binary_iarchive & ia, InputParametersNavierStokes<dim> const & param, double & time,
     std_cxx11::shared_ptr<PostProcessorBase<dim> > & postprocessor,
     std::vector<value_type> & time_steps, unsigned int const order)
@@ -120,7 +120,7 @@ void write_restart_preamble(boost::archive::binary_oarchive & oa, InputParameter
       for (unsigned int n = 0; n < n_ranks; n++)
       {
         const std::string rank_string = Utilities::int_to_string(n);
-        const int error = system (("mv -f " + param.output_data.output_prefix  +"." + rank_string + ".restart" + " " + param.output_data.output_prefix +"." + rank_string + ".restart" + ".old").c_str());
+        const int error = rename ((param.output_data.output_prefix  +"." + rank_string + ".restart").c_str(), (param.output_data.output_prefix +"." + rank_string + ".restart" + ".old").c_str());
         AssertThrow (error == 0, ExcMessage(std::string ("Can't move files: ")
                         +
                         param.output_data.output_prefix  +"." + rank_string + ".restart" + " -> " + param.output_data.output_prefix  +"." + rank_string + ".restart" +".old"));

@@ -8,6 +8,7 @@
 #include <fluid_base_algorithm.h>
 #include <deal.II/fe/mapping_q.h>
 #include "FE_Parameters.h"
+#include <fstream>
 
 template <int dim>
 class StatisticsManagerPH //: public StatisticsManager<dim>
@@ -32,7 +33,7 @@ public:
                 n_points_x_glob(0)
   {};
 
-  void setup(const Function<dim> &push_forward_function, const std::string output_prefix);
+  void setup(const Function<dim> &push_forward_function, const std::string output_prefix, const bool enriched);
 
   void evaluate(const parallel::distributed::Vector<double> &velocity,const parallel::distributed::Vector<double> &pressure);
 
@@ -68,6 +69,11 @@ private:
                          const parallel::distributed::Vector<double> &pressure,
                          const DoFHandler<dim>                       &dof_handler_wdist,
                          const FEParameters<dim>                     &fe_param);
+  inline bool exists_test0 (const std::string& name)
+  {
+      std::ifstream f(name.c_str());
+      return f.good();
+  }
 
   // variables for evaluation of velocity at certain points x_over_h
   unsigned int n_points_y;

@@ -44,7 +44,17 @@ protected:
    *  This function updates the time integrator constants which is necessary when
    *  using start_with_low_order = true or when using adaptive time stepping
    */
-  void update_time_integrator_constants();
+  virtual void update_time_integrator_constants();
+
+  /*
+   *  This function calculates time integrator constants
+   *  in case of varying time step sizes (adaptive time stepping).
+   */
+  void set_adaptive_time_integrator_constants(unsigned int const              current_order,
+                                              std::vector<double> const     & time_steps,
+                                              std::vector<double>           & alpha,
+                                              std::vector<double>           & beta,
+                                              double                        & gamma0);
 
   // the number of the current time step starting with time_step_number = 1
   unsigned int time_step_number;
@@ -76,13 +86,6 @@ private:
    *  in case of constant time step sizes.
    */
   void set_constant_time_integrator_constants (unsigned int const current_order);
-
-  /*
-   *  This function calculates time integrator constants
-   *  in case of varying time step sizes (adaptive time stepping).
-   */
-  void set_adaptive_time_integrator_constants(unsigned int const current_order);
-
 
   /*
    *  This function prints the time integrator constants in order to check the
@@ -167,7 +170,11 @@ set_constant_time_integrator_constants (unsigned int const current_order)
 }
 
 void TimeIntBDFBase::
-set_adaptive_time_integrator_constants (unsigned int const current_order)
+set_adaptive_time_integrator_constants (unsigned int const              current_order,
+                                        std::vector<double> const     & time_steps,
+                                        std::vector<double>           & alpha,
+                                        std::vector<double>           & beta,
+                                        double                        & gamma0)
 {
   AssertThrow(current_order <= order,
     ExcMessage("There is a logical error when updating the time integrator constants."));
@@ -273,11 +280,11 @@ update_time_integrator_constants()
     // the time integrator constants are set properly
     if(time_step_number <= order && start_with_low_order == true)
     {
-      set_adaptive_time_integrator_constants(time_step_number);
+      set_adaptive_time_integrator_constants(time_step_number, time_steps, alpha, beta, gamma0);
     }
     else // otherwise, adjust time integrator constants since this is adaptive time stepping
     {
-      set_adaptive_time_integrator_constants(order);
+      set_adaptive_time_integrator_constants(order, time_steps, alpha, beta, gamma0);
     }
   }
   else // adaptive_time_stepping == false, i.e., constant time step sizes

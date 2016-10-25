@@ -36,7 +36,6 @@
 #include <deal.II/multigrid/multigrid.h>
 #include <deal.II/multigrid/mg_transfer.h>
 #include <deal.II/multigrid/mg_tools.h>
-#include <deal.II/multigrid/mg_coarse.h>
 #include <deal.II/multigrid/mg_smoother.h>
 #include <deal.II/multigrid/mg_matrix.h>
 
@@ -87,11 +86,11 @@ using namespace dealii;
 
 //#include "../include/PostProcessor.h"
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 class NavierStokesProblem
 {
 public:
-  typedef typename DGNavierStokesBase<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::value_type value_type;
+  typedef typename DGNavierStokesBase<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::value_type value_type;
   NavierStokesProblem(const unsigned int refine_steps_space, const unsigned int refine_steps_time=0);
   void solve_problem(bool do_restart);
 
@@ -115,15 +114,15 @@ private:
 
   InputParametersNavierStokes<dim> param;
 
-  std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > navier_stokes_operation;
+  std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > navier_stokes_operation;
 
   std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor;
 
-  std_cxx11::shared_ptr<TimeIntBDFNavierStokes<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> > time_integrator;
+  std_cxx11::shared_ptr<TimeIntBDFNavierStokes<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > time_integrator;
 };
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 NavierStokesProblem(unsigned int const refine_steps_space,
                     unsigned int const refine_steps_time)
   :
@@ -162,19 +161,19 @@ NavierStokesProblem(unsigned int const refine_steps_space,
                ExcMessage("UnsteadyNavierStokesDualSplitting is an unsteady solver. Hence, problem type has to be unsteady and temporal discretization has to be BDFDualSplittingScheme to solve this problem."));
 
   // initialize navier_stokes_operation
-  navier_stokes_operation.reset(new DGNavierStokesDualSplitting<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>
+  navier_stokes_operation.reset(new DGNavierStokesDualSplitting<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>
       (triangulation,param));
 
   // initialize postprocessor
   postprocessor = construct_postprocessor<dim>(param);
 
   // initialize time integrator that depends on both navier_stokes_operation and postprocessor
-  time_integrator.reset(new TimeIntBDFDualSplitting<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(
+  time_integrator.reset(new TimeIntBDFDualSplitting<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(
       navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
 }
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 print_header()
 {
   pcout << std::endl << std::endl << std::endl
@@ -187,8 +186,8 @@ print_header()
   << std::endl;
 }
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 print_grid_data()
 {
   pcout << std::endl
@@ -201,8 +200,8 @@ print_grid_data()
   print_parameter(pcout,"Number of vertices",triangulation.n_vertices());
 }
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 solve_problem(bool do_restart)
 {
   // this function has to be defined in the header file that implements all
@@ -232,8 +231,8 @@ solve_problem(bool do_restart)
 }
 
 /*
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 setup_postprocessor()
 {
   PostProcessorData<dim> pp_data;

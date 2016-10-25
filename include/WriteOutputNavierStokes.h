@@ -96,6 +96,9 @@ public:
     dof_handler_pressure = &dof_handler_pressure_in;
     mapping = &mapping_in;
     output_data = output_data_in;
+
+    // reset output counter
+    output_counter = output_data.output_counter_start;
   }
 
   void write_output(parallel::distributed::Vector<double> const &velocity,

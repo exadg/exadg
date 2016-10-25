@@ -314,7 +314,7 @@ public:
 };
 
 template<int dim>
-double AnalyticalSolutionPressure<dim>::value(const Point<dim>    &p,
+double AnalyticalSolutionPressure<dim>::value(const Point<dim>    &/*p*/,
                                               const unsigned int  /* component */) const
 {
   double result = 0.0;
@@ -350,7 +350,8 @@ public:
 };
 
 template<int dim>
-double NeumannBoundaryVelocity<dim>::value(const Point<dim> &p,const unsigned int component) const
+double NeumannBoundaryVelocity<dim>::value(const Point<dim> &/*p*/,
+                                           const unsigned int /*component*/) const
 {
   double result = 0.0;
   return result;
@@ -429,8 +430,8 @@ template<int dim>
  };
 
  template<int dim>
- double RightHandSide<dim>::value(const Point<dim>   &p,
-                                  const unsigned int component) const
+ double RightHandSide<dim>::value(const Point<dim>   &/*p*/,
+                                  const unsigned int /*component*/) const
  {
    double result = 0.0;
    return result;

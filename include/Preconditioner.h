@@ -8,6 +8,16 @@
 #ifndef INCLUDE_PRECONDITIONER_H_
 #define INCLUDE_PRECONDITIONER_H_
 
+
+#include <deal.II/multigrid/multigrid.h>
+#include <deal.II/multigrid/mg_transfer_matrix_free.h>
+#include <deal.II/multigrid/mg_tools.h>
+#include <deal.II/multigrid/mg_smoother.h>
+#include <deal.II/multigrid/mg_matrix.h>
+#include <deal.II/base/function_lib.h>
+
+#include "InverseMassMatrix.h"
+
 template<typename value_type>
 class PreconditionerBase
 {
@@ -17,8 +27,6 @@ public:
   virtual void vmult(parallel::distributed::Vector<value_type>        &dst,
                      const parallel::distributed::Vector<value_type>  &src) const = 0;
 };
-
-#include "InverseMassMatrix.h"
 
 template<int dim, int fe_degree, typename value_type, int n_components=dim>
 class InverseMassMatrixPreconditioner : public PreconditionerBase<value_type>
@@ -93,14 +101,6 @@ public:
 private:
   parallel::distributed::Vector<value_type> inverse_diagonal;
 };
-
-#include <deal.II/multigrid/multigrid.h>
-#include <deal.II/multigrid/mg_transfer_matrix_free.h>
-#include <deal.II/multigrid/mg_tools.h>
-#include <deal.II/multigrid/mg_coarse.h>
-#include <deal.II/multigrid/mg_smoother.h>
-#include <deal.II/multigrid/mg_matrix.h>
-#include <deal.II/base/function_lib.h>
 
 // Specialized matrix-free implementation that overloads the copy_to_mg
 // function for proper initialization of the vectors in matrix-vector
@@ -684,8 +684,7 @@ public:
                   const DoFHandler<dim>              &dof_handler,
                   const Mapping<dim>                 &mapping,
                   const OperatorData                 &operator_data_in,
-                  std::set<types::boundary_id> const &dirichlet_boundaries,
-                  FEParameters<dim> const            &fe_param = FEParameters<dim>())
+                  std::set<types::boundary_id> const &dirichlet_boundaries)
   {
     this->mg_data = mg_data_in;
 
@@ -694,12 +693,12 @@ public:
 
     // needed for continuous elements
     this->mg_constrained_dofs.clear();
-    ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
-    typename FunctionMap<dim>::type dirichlet_boundary;
+    std::set<types::boundary_id> dirichlet_boundary;
     for (std::set<types::boundary_id>::const_iterator it = dirichlet_boundaries.begin();
          it != dirichlet_boundaries.end(); ++it)
-      dirichlet_boundary[*it] = &zero_function;
-    this->mg_constrained_dofs.initialize(dof_handler, dirichlet_boundary);
+      dirichlet_boundary.insert(*it);
+    this->mg_constrained_dofs.initialize(dof_handler);
+    this->mg_constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary);
     // needed for continuous elements
 
     this->n_global_levels = tria->n_global_levels();
@@ -707,7 +706,7 @@ public:
 
     for (unsigned int level = 0; level<this->n_global_levels; ++level)
     {
-      initialize_mg_matrix(level, dof_handler, mapping, operator_data_in, fe_param);
+      initialize_mg_matrix(level, dof_handler, mapping, operator_data_in);
 
       this->initialize_smoother(level);
     }
@@ -727,10 +726,9 @@ public:
   virtual void initialize_mg_matrix(unsigned int            level,
                                     const DoFHandler<dim>   &dof_handler,
                                     const Mapping<dim>      &mapping,
-                                    const OperatorData      &operator_data_in,
-                                    FEParameters<dim> const &fe_param)
+                                    const OperatorData      &operator_data_in)
   {
-    this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, this->mg_constrained_dofs, level,fe_param);
+    this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, this->mg_constrained_dofs, level);
   }
 };
 
@@ -757,11 +755,10 @@ public:
   virtual void initialize_mg_matrix(unsigned int            level,
                                     const DoFHandler<dim>   &dof_handler,
                                     const Mapping<dim>      &mapping,
-                                    const OperatorData      &operator_data_in,
-                                    FEParameters<dim> const &fe_param)
+                                    const OperatorData      &operator_data_in)
   {
     // initialize mg_matrix for given level
-    this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, this->mg_constrained_dofs, level, fe_param);
+    this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, this->mg_constrained_dofs, level);
 
     // initialize vector linearization
     this->mg_matrices[level].initialize_dof_vector(mg_vector_linearization[level]);
@@ -1212,8 +1209,7 @@ public:
                   const DoFHandler<dim>    &dof_handler,
                   const DoFHandler<dim>    &dof_handler_additional,
                   const Mapping<dim>       &mapping,
-                  const OperatorData       &operator_data_in,
-                  FEParameters<dim> const  &fe_param = FEParameters<dim>())
+                  const OperatorData       &operator_data_in)
   {
     this->mg_data = mg_data_in;
 
@@ -1223,12 +1219,12 @@ public:
     // TODO
     // only needed for continuous elements
     this->mg_constrained_dofs.clear();
-    ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
-    typename FunctionMap<dim>::type dirichlet_boundary;
+    std::set<types::boundary_id> dirichlet_boundary;
 //    for (std::set<types::boundary_id>::const_iterator it = dirichlet_boundaries.begin();
 //         it != dirichlet_boundaries.end(); ++it)
-//      dirichlet_boundary[*it] = &zero_function;
-    this->mg_constrained_dofs.initialize(dof_handler, dirichlet_boundary);
+//      dirichlet_boundary.insert(*it);
+    this->mg_constrained_dofs.initialize(dof_handler);
+    this->mg_constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary);
     // only needed for continuous elements
 
     this->n_global_levels = tria->n_global_levels();
@@ -1241,8 +1237,7 @@ public:
                                       mapping,
                                       operator_data_in,
                                       this->mg_constrained_dofs,
-                                      level,
-                                      fe_param);
+                                      level);
 
       this->initialize_smoother(level);
     }

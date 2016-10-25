@@ -24,30 +24,30 @@
 using namespace dealii;
 
 //forward declarations
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 class DGNavierStokesDualSplittingXWall;
 
 //struct MassMatrixOperatorData;
-template<int dim> class ViscousOperatorData;
-template<int dim> class ConvectiveOperatorData;
-template<int dim> class GradientOperatorData;
-template<int dim> class DivergenceOperatorData;
-template<int dim> class BodyForceOperatorData;
+template<int dim> struct ViscousOperatorData;
+template<int dim> struct ConvectiveOperatorData;
+template<int dim> struct GradientOperatorData;
+template<int dim> struct DivergenceOperatorData;
+template<int dim> struct BodyForceOperatorData;
 
-template<int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class MassMatrixOperator;
-template<int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class ConvectiveOperator;
-template<int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class ViscousOperator;
-template<int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class BodyForceOperator;
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class GradientOperator;
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class DivergenceOperator;
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 class DGNavierStokesBase
 {
 public:
@@ -66,8 +66,8 @@ public:
 
   typedef double value_type;
   static const unsigned int number_vorticity_components = (dim==2) ? 1 : dim;
-  static const bool is_xwall = (n_q_points_1d_xwall>1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? n_q_points_1d_xwall : fe_degree+1;
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
 
   /*
    * nomenclature typdedef FEEvaluationWrapper:
@@ -226,6 +226,11 @@ public:
     return divergence_operator_data;
   }
 
+  std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > const get_field_functions() const
+  {
+    return field_functions;
+  }
+
   // setters
   void set_scaling_factor_time_derivative_term(double const value)
   {
@@ -321,13 +326,13 @@ protected:
   GradientOperatorData<dim> gradient_operator_data;
   DivergenceOperatorData<dim> divergence_operator_data;
 
-  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type> mass_matrix_operator;
-  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type> convective_operator;
+  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> mass_matrix_operator;
+  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> convective_operator;
   std_cxx11::shared_ptr< InverseMassMatrixOperator<dim,fe_degree,value_type> > inverse_mass_matrix_operator;
-  ViscousOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type> viscous_operator;
-  BodyForceOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, value_type> body_force_operator;
-  GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> gradient_operator;
-  DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> divergence_operator;
+  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> viscous_operator;
+  BodyForceOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> body_force_operator;
+  GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> gradient_operator;
+  DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> divergence_operator;
 
 private:
   virtual void create_dofs();
@@ -348,8 +353,8 @@ private:
 
 };
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 fill_dbc_and_nbc_sets(std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor)
 {
   // Dirichlet boundary conditions: copy Dirichlet boundary ID's from
@@ -371,8 +376,8 @@ fill_dbc_and_nbc_sets(std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> 
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
                                                                    periodic_face_pairs,
        std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity_in,
@@ -405,7 +410,7 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
 
   // mass matrix operator
   mass_matrix_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
-  mass_matrix_operator.initialize(data,fe_param,mass_matrix_operator_data);
+  mass_matrix_operator.initialize(data,mass_matrix_operator_data);
 
   // inverse mass matrix operator
   inverse_mass_matrix_operator.reset(new InverseMassMatrixOperator<dim,fe_degree,value_type>());
@@ -417,7 +422,7 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   BodyForceOperatorData<dim> body_force_operator_data;
   body_force_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
   body_force_operator_data.rhs = field_functions->right_hand_side;
-  body_force_operator.initialize(data,fe_param,body_force_operator_data);
+  body_force_operator.initialize(data,body_force_operator_data);
 
   // gradient operator
   gradient_operator_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
@@ -425,7 +430,7 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   gradient_operator_data.integration_by_parts_of_gradP = param.gradp_integrated_by_parts;
   gradient_operator_data.use_boundary_data = param.gradp_use_boundary_data;
   gradient_operator_data.bc = boundary_descriptor_pressure;
-  gradient_operator.initialize(data,fe_param,gradient_operator_data);
+  gradient_operator.initialize(data,gradient_operator_data);
 
   // divergence operator
   divergence_operator_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
@@ -433,12 +438,12 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   divergence_operator_data.integration_by_parts_of_divU = param.divu_integrated_by_parts;
   divergence_operator_data.use_boundary_data = param.divu_use_boundary_data;
   divergence_operator_data.bc = boundary_descriptor_velocity;
-  divergence_operator.initialize(data,fe_param,divergence_operator_data);
+  divergence_operator.initialize(data,divergence_operator_data);
 
   // convective operator
   convective_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
   convective_operator_data.bc = boundary_descriptor_velocity;
-  convective_operator.initialize(data,fe_param,convective_operator_data);
+  convective_operator.initialize(data,convective_operator_data);
 
   // viscous operator
   viscous_operator_data.formulation_viscous_term = param.formulation_viscous_term;
@@ -448,7 +453,7 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   viscous_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
   viscous_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
   viscous_operator_data.viscosity = param.viscosity;
-  viscous_operator.initialize(mapping,data,fe_param,viscous_operator_data);
+  viscous_operator.initialize(mapping,data,viscous_operator_data);
 
   dof_index_first_point = 0;
   for(unsigned int d=0;d<dim;++d)
@@ -485,8 +490,8 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 create_dofs()
 {
   // enumerate degrees of freedom
@@ -516,8 +521,8 @@ create_dofs()
 
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 data_reinit(typename MatrixFree<dim,value_type>::AdditionalData &additional_data)
 {
   std::vector<const DoFHandler<dim> * >  dof_handler_vec;
@@ -551,8 +556,8 @@ data_reinit(typename MatrixFree<dim,value_type>::AdditionalData &additional_data
   data.reinit (mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
                              parallel::distributed::Vector<value_type> &pressure,
                              double const                              evaluation_time) const
@@ -564,8 +569,8 @@ prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity
   VectorTools::interpolate(mapping, dof_handler_p, *(this->field_functions->initial_solution_pressure), pressure);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 shift_pressure (parallel::distributed::Vector<value_type>  &pressure) const
 {
   AssertThrow(this->param.error_data.analytical_solution_available == true,
@@ -583,34 +588,34 @@ shift_pressure (parallel::distributed::Vector<value_type>  &pressure) const
   pressure.add(exact-current,vec1);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 apply_zero_mean (parallel::distributed::Vector<value_type>  &vector) const
 {
   const value_type mean_value = vector.mean_value();
   vector.add(-mean_value);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 compute_vorticity (parallel::distributed::Vector<value_type>       &dst,
                    const parallel::distributed::Vector<value_type> &src) const
 {
   dst = 0;
 
-  data.cell_loop (&DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_vorticity,this, dst, src);
+  data.cell_loop (&DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::local_compute_vorticity,this, dst, src);
 
   inverse_mass_matrix_operator->apply_inverse_mass_matrix(dst,dst);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 local_compute_vorticity(const MatrixFree<dim,value_type>                 &data,
                         parallel::distributed::Vector<value_type>        &dst,
                         const parallel::distributed::Vector<value_type>  &src,
                         const std::pair<unsigned int,unsigned int>       &cell_range) const
 {
-  FEEval_Velocity_Velocity_linear velocity(data,fe_param,
+  FEEval_Velocity_Velocity_linear velocity(data,&fe_param,
       static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
 
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
@@ -635,27 +640,27 @@ local_compute_vorticity(const MatrixFree<dim,value_type>                 &data,
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 compute_divergence (parallel::distributed::Vector<value_type>       &dst,
                     const parallel::distributed::Vector<value_type> &src) const
 {
   dst = 0;
 
-  data.cell_loop(&DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::local_compute_divergence,
+  data.cell_loop(&DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::local_compute_divergence,
                              this, dst, src);
 
   inverse_mass_matrix_operator->apply_inverse_mass_matrix(dst,dst);
 }
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 local_compute_divergence (const MatrixFree<dim,value_type>                 &data,
                           parallel::distributed::Vector<value_type>        &dst,
                           const parallel::distributed::Vector<value_type>  &src,
                           const std::pair<unsigned int,unsigned int>       &cell_range) const
 {
-  FEEval_Velocity_Velocity_linear fe_eval_velocity(data,fe_param,
+  FEEval_Velocity_Velocity_linear fe_eval_velocity(data,&fe_param,
       static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
 
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
@@ -675,8 +680,8 @@ local_compute_divergence (const MatrixFree<dim,value_type>                 &data
   }
 }
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 evaluate_convective_term (parallel::distributed::Vector<value_type>       &dst,
                           parallel::distributed::Vector<value_type> const &src,
                           value_type const                                evaluation_time) const

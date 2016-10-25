@@ -122,15 +122,14 @@
     const double viscosity;
   };
 
-  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
   class PostProcessorXWall: public PostProcessor<dim,fe_degree,fe_degree_p>
   {
   public:
-    PostProcessorXWall(std_cxx11::shared_ptr<DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> >  ns_operation,
-                       InputParametersNavierStokes<dim> const &param_in,
+    PostProcessorXWall(std_cxx11::shared_ptr<DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule> >  ns_operation,
                        PostProcessorData<dim> const &pp_data):
       PostProcessor<dim,fe_degree,fe_degree_p>(pp_data),
-      ns_operation_xw_(std::dynamic_pointer_cast<DGNavierStokesDualSplittingXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> > (ns_operation))
+      ns_operation_xw_(std::dynamic_pointer_cast<DGNavierStokesDualSplittingXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule> > (ns_operation))
     {
     }
 
@@ -141,18 +140,19 @@
                            double const time,
                            unsigned int const time_step_number)
     {
-      this->time = time;
-      this->time_step_number = time_step_number;
-
-      const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
-      if( time > (this->pp_data.output_data.output_start_time + this->output_counter* this->pp_data.output_data.output_interval_time - EPSILON))
-      {
-        write_output(velocity,pressure,vorticity,divergence);
-        ++(this->output_counter);
-      }
+      // TODO
+//      this->time = time;
+//      this->time_step_number = time_step_number;
+//
+//      const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
+//      if( time > (this->pp_data.output_data.output_start_time + this->output_counter* this->pp_data.output_data.output_interval_time - EPSILON))
+//      {
+//        write_output(velocity,pressure,vorticity,divergence);
+//        ++(this->output_counter);
+//      }
     };
 protected:
-    std_cxx11::shared_ptr< const DGNavierStokesDualSplittingXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> > ns_operation_xw_;
+    std_cxx11::shared_ptr< const DGNavierStokesDualSplittingXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule> > ns_operation_xw_;
 private:
     void write_output(parallel::distributed::Vector<double> const &velocity,
                       parallel::distributed::Vector<double> const &pressure,
@@ -161,8 +161,8 @@ private:
 
   };
 
-  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-  void PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>::
+  template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+  void PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule>::
   write_output(parallel::distributed::Vector<double> const &velocity,
                parallel::distributed::Vector<double> const &pressure,
                parallel::distributed::Vector<double> const &vorticity,
@@ -246,8 +246,8 @@ private:
   pressure.update_ghost_values();
   data_out.add_data_vector (*(this->dof_handler_pressure),pressure, "p");
   {
-    std_cxx11::shared_ptr< const DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > nsa;
-    nsa = std::dynamic_pointer_cast<const DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_xw_);
+    std_cxx11::shared_ptr< const DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > nsa;
+    nsa = std::dynamic_pointer_cast<const DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > (ns_operation_xw_);
     if(nsa != nullptr)
     {
       data_out.add_data_vector (nsa->get_dof_handler_vt(),divergence, "vt");

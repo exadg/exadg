@@ -21,8 +21,6 @@ public:
   FEParameters()
     :
     viscosity(1.0),
-    cs(1.0),
-    ml(1.0),
     variabletauw(false),
     dtauw(1.0),
     max_wdist_xwall(1.0),
@@ -36,8 +34,6 @@ public:
   FEParameters(InputParametersNavierStokes<dim> const & param)
     :
     viscosity(param.viscosity),
-    cs(param.cs),
-    ml(param.ml),
     variabletauw(param.variabletauw),
     dtauw(param.dtauw),
     max_wdist_xwall(param.max_wdist_xwall),
@@ -67,8 +63,6 @@ public:
   }
 
   double const viscosity;
-  double const cs;
-  double const ml;
   bool const variabletauw;
   double const dtauw;
   double const max_wdist_xwall;
@@ -76,6 +70,7 @@ public:
   parallel::distributed::Vector<double> * tauw;
   AlignedVector<AlignedVector<VectorizedArray<double> > > * enrichment;
   AlignedVector<AlignedVector<Tensor<1,dim,VectorizedArray<double> > > > * enrichment_gradient;
+  std_cxx11::shared_ptr<Function<dim,double> > enrichment_is_within;
 };
 
 #endif /* INCLUDE_FE_PARAMETERS_H_ */

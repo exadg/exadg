@@ -10,21 +10,20 @@
 
 #include "TimeIntBDFDualSplitting.h"
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-class TimeIntBDFDualSplittingXWall : public TimeIntBDFDualSplitting<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall,value_type>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+class TimeIntBDFDualSplittingXWall : public virtual TimeIntBDFDualSplitting<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule,value_type>
 {
 public:
   TimeIntBDFDualSplittingXWall(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
-                                 fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
-                               std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
-                                 fe_degree_p> >                                        postprocessor_in,
+                                 fe_degree_p, fe_degree_xwall, xwall_quad_rule> >      ns_operation_in,
+                               std_cxx11::shared_ptr<PostProcessorBase<dim> >          postprocessor_in,
                                InputParametersNavierStokes<dim> const                  &param_in,
                                unsigned int const                                      n_refine_time_in,
                                bool const                                              use_adaptive_time_stepping)
     :
-    TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>
+    TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
             (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
-    ns_operation_xwall (std::dynamic_pointer_cast<DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > (ns_operation_in))
+    ns_operation_xwall (std::dynamic_pointer_cast<DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > (ns_operation_in))
   {
     AssertThrow(this->param.start_with_low_order == true, ExcMessage("Start with low order for xwall"));
   }
@@ -37,23 +36,23 @@ private:
 
   virtual void setup_derived();
 
-  std_cxx11::shared_ptr<DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >
+  std_cxx11::shared_ptr<DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> >
      ns_operation_xwall;
 
 };
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 setup_derived()
 {
   ns_operation_xwall->precompute_inverse_mass_matrix();
 
 
-  TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::setup_derived();
+  TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::setup_derived();
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
-void TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+void TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
 solve_timestep()
 {
   // set the parameters that NavierStokesOperation depends on
@@ -61,7 +60,6 @@ solve_timestep()
   Timer timer;
   timer.restart(); 
   ns_operation_xwall->update_tauw(this->velocity[0]);
-//  ns_operation_xwall->get_fe_parameters().tauw->print(std::cout);
   if(this->param.variabletauw)
   {
     ns_operation_xwall->precompute_inverse_mass_matrix();
@@ -81,7 +79,7 @@ solve_timestep()
     }
   }
 
-  TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::solve_timestep();
+  TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::solve_timestep();
 }
 
 #endif /* INCLUDE_TIMEINTBDFDUALSPLITTINGXWALL_H_ */

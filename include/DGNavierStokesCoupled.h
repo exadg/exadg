@@ -14,19 +14,19 @@ using namespace dealii;
 #include "NewtonSolver.h"
 #include "DGNavierStokesBase.h"
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 class DGNavierStokesCoupled;
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-class DGNavierStokesCoupled : public DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+class DGNavierStokesCoupled : public DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>
 {
 public:
-  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::value_type value_type;
+  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::value_type value_type;
 
   DGNavierStokesCoupled(parallel::distributed::Triangulation<dim> const &triangulation,
                         InputParametersNavierStokes<dim> const          &parameter)
     :
-    DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>(triangulation,parameter),
+    DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>(triangulation,parameter),
     sum_alphai_ui(nullptr),
     vector_linearization(nullptr)
   {}
@@ -40,12 +40,12 @@ public:
     src.reinit(2);
 
     this->data.initialize_dof_vector(src.block(0),
-        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
-    (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::velocity));
+        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector>::type >
+    (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector::velocity));
 
     this->data.initialize_dof_vector(src.block(1),
-        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector>::type >
-    (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::DofHandlerSelector::pressure));
+        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector>::type >
+    (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector::pressure));
 
     src.collect_sizes();
   }
@@ -109,7 +109,7 @@ public:
   }
 
 private:
-  friend class BlockPreconditionerNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>;
+  friend class BlockPreconditionerNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>;
 
   parallel::distributed::Vector<value_type> mutable temp;
   parallel::distributed::Vector<value_type> const *sum_alphai_ui;
@@ -119,15 +119,15 @@ private:
   std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::BlockVector<value_type> > > linear_solver;
 
   std_cxx11::shared_ptr<NewtonSolver<parallel::distributed::BlockVector<value_type>,
-                                     DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>,
+                                     DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
                                      IterativeSolverBase<parallel::distributed::BlockVector<value_type> > > >
     newton_solver;
 };
 
 
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 setup_solvers ()
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
@@ -156,7 +156,7 @@ setup_solvers ()
     preconditioner_data.rel_tol_solver_schur_complement_preconditioner = this->param.rel_tol_solver_schur_complement_preconditioner;
 
     preconditioner.reset(new BlockPreconditionerNavierStokes<dim, fe_degree, fe_degree_p,
-                             fe_degree_xwall, n_q_points_1d_xwall, value_type>(this,preconditioner_data));
+                             fe_degree_xwall, xwall_quad_rule, value_type>(this,preconditioner_data));
   }
 
 
@@ -177,7 +177,7 @@ setup_solvers ()
       solver_data.use_preconditioner = true;
     }
 
-    linear_solver.reset(new GMRESSolverNavierStokes<DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>,
+    linear_solver.reset(new GMRESSolverNavierStokes<DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
                                         PreconditionerNavierStokesBase<value_type>,
                                         parallel::distributed::BlockVector<value_type> >
         (*this,*preconditioner,solver_data));
@@ -197,7 +197,7 @@ setup_solvers ()
       solver_data.use_preconditioner = true;
     }
 
-    linear_solver.reset(new FGMRESSolverNavierStokes<DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>,
+    linear_solver.reset(new FGMRESSolverNavierStokes<DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
                                          PreconditionerNavierStokesBase<value_type>,
                                          parallel::distributed::BlockVector<value_type> >
         (*this,*preconditioner,solver_data));
@@ -218,7 +218,7 @@ setup_solvers ()
     newton_solver_data.max_iter = this->param.max_iter_newton;
 
     newton_solver.reset(new NewtonSolver<parallel::distributed::BlockVector<value_type>,
-                                         DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>,
+                                         DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
                                          IterativeSolverBase<parallel::distributed::BlockVector<value_type> > >
        (newton_solver_data,*this,*linear_solver));
   }
@@ -226,16 +226,16 @@ setup_solvers ()
   pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 vmult (parallel::distributed::BlockVector<value_type>       &dst,
        parallel::distributed::BlockVector<value_type> const &src) const
 {
   apply_linearized_problem(dst,src);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 apply_linearized_problem (parallel::distributed::BlockVector<value_type>       &dst,
                           parallel::distributed::BlockVector<value_type> const &src) const
 {
@@ -265,8 +265,8 @@ apply_linearized_problem (parallel::distributed::BlockVector<value_type>       &
   dst.block(1) *= -1.0;
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 rhs_stokes_problem (parallel::distributed::BlockVector<value_type>  &dst,
                     parallel::distributed::Vector<value_type> const *src) const
 {
@@ -286,8 +286,8 @@ rhs_stokes_problem (parallel::distributed::BlockVector<value_type>  &dst,
   dst.block(1) *= -1.0;
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 evaluate_nonlinear_residual (parallel::distributed::BlockVector<value_type>       &dst,
                              parallel::distributed::BlockVector<value_type> const &src)
 {
@@ -324,16 +324,16 @@ evaluate_nonlinear_residual (parallel::distributed::BlockVector<value_type>     
   dst.block(1) *= -1.0;
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-unsigned int DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+unsigned int DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 solve_linear_stokes_problem (parallel::distributed::BlockVector<value_type>       &dst,
                              parallel::distributed::BlockVector<value_type> const &src)
 {
   return linear_solver->solve(dst,src);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 solve_nonlinear_steady_problem (parallel::distributed::BlockVector<value_type>  &dst,
                                 unsigned int                                    &newton_iterations,
                                 double                                          &average_linear_iterations)
@@ -341,8 +341,8 @@ solve_nonlinear_steady_problem (parallel::distributed::BlockVector<value_type>  
   newton_solver->solve(dst,newton_iterations,average_linear_iterations);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
-void DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 solve_nonlinear_problem (parallel::distributed::BlockVector<value_type>  &dst,
                          parallel::distributed::Vector<value_type> const &sum_alphai_ui,
                          unsigned int                                    &newton_iterations,
