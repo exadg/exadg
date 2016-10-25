@@ -49,6 +49,9 @@ protected:
 
   virtual void convective_step();
 
+  virtual void read_restart_vectors(boost::archive::binary_iarchive & ia);
+  virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const;
+
   std::vector<parallel::distributed::Vector<value_type> > velocity;
 
   std::vector<parallel::distributed::Vector<value_type> > pressure;
@@ -84,9 +87,6 @@ private:
   void push_back_vec_convective_term();
 
   virtual parallel::distributed::Vector<value_type> const & get_velocity();
-
-  virtual void read_restart_vectors(boost::archive::binary_iarchive & ia);
-  virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const;
 
   parallel::distributed::Vector<value_type> pressure_np;
 

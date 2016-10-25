@@ -78,22 +78,21 @@
 const unsigned int FE_DEGREE = 4;//3
 const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
 const unsigned int FE_DEGREE_XWALL = 1;
-const unsigned int N_Q_POINTS_1D_XWALL = 25;
-const unsigned int DIMENSION = 2; // DIMENSION >= 2
+const unsigned int N_Q_POINTS_1D_XWALL = 1;
+const unsigned int DIMENSION = 3; // DIMENSION >= 2
 const unsigned int REFINE_STEPS_SPACE_MIN = 3;//4
 const unsigned int REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
 const unsigned int REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
-const double GRID_STRETCH_FAC = 0.001;
+const double GRID_STRETCH_FAC = 1.8;
 const bool USE_SOURCE_TERM_CONTROLLER = true;
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
 {
 
-  output_data.output_prefix = "ph10595_l3_k4k1";
+  output_data.output_prefix = "ph10595_l3_k4";
   cfl = 0.14;
-  diffusion_number = 0.02;
   //Re = 19000: 0.8284788e-5
   //Re = 10595: 1.48571e-5
   //Re = 5600:  2.8109185e-5
@@ -101,11 +100,30 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   //Re = 1400:  1.1243674e-4
   viscosity = 1.48571e-5;
 
-  //xwall
-  variabletauw = true;
-  dtauw = 1.;
-  xwall_turb = XWallTurbulenceApproach::RANSSpalartAllmaras;
-  max_wdist_xwall = 0.25;
+  if(N_Q_POINTS_1D_XWALL>1) //enriched
+  {
+    xwall_turb = XWallTurbulenceApproach::RANSSpalartAllmaras;
+    max_wdist_xwall = 0.25;
+    diffusion_number = 0.02;
+    spatial_discretization = SpatialDiscretization::DGXWall;
+    IP_formulation_viscous = InteriorPenaltyFormulation::NIPG;
+    solver_viscous = SolverViscous::GMRES;
+    penalty_factor_divergence = 1.0e1;
+    turb_stat_data.statistics_start_time = 0.95;
+    end_time = 1.;
+    variabletauw = true;
+    dtauw = 1.;
+  }
+  else //LES
+  {
+    max_wdist_xwall = -0.25;
+    spatial_discretization = SpatialDiscretization::DG;
+    IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
+    solver_viscous = SolverViscous::PCG;
+    penalty_factor_divergence = 1.0e0;
+    turb_stat_data.statistics_start_time = 1.;
+    end_time = 2.;
+  }
 
   //dual splitting scheme
   problem_type = ProblemType::Unsteady;
@@ -113,14 +131,10 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   projection_type = ProjectionType::DivergencePenalty;
-  penalty_factor_divergence = 1e1;
   order_time_integrator = 2;
 
   //xwall specific
-  spatial_discretization = SpatialDiscretization::DGXWall;
-  IP_formulation_viscous = InteriorPenaltyFormulation::NIPG;
   IP_factor_viscous = 1.;
-  solver_viscous = SolverViscous::GMRES;
 
   calculation_of_time_step_size = TimeStepCalculation::AdaptiveTimeStepCFL;//AdaptiveTimeStepCFL;
   formulation_viscous_term = FormulationViscousTerm::DivergenceFormulation; //also default
@@ -134,10 +148,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   output_data.output_start_time = 0.;
   output_data.output_interval_time = 0.1;
   output_data.number_of_patches = FE_DEGREE+1;
-  turb_stat_data.statistics_start_time = 0.95;
   turb_stat_data.statistics_every = 10;
   turb_stat_data.statistics_end_time = end_time;
-  restart_every_timesteps = 1e9;
+  restart_every_timesteps = 1e1;
   restart_interval_time = 1.e9;
   restart_interval_wall_time = 1.e9;
 
@@ -490,10 +503,12 @@ public:
       {
         double massflow_id = 40.38e-3;
         if(dim==2)
-          massflow_id = 0.320476;
-        //start with 10% of the ideal mass flow and increase within 0.1 time units to 1
-        if(this->get_time()<0.1)
-          massflow_id *= std::cos(this->get_time()*numbers::PI*10.+numbers::PI)*0.25+0.75;
+        {
+            massflow_id = 0.320476;
+          //start with 10% of the ideal mass flow and increase within 0.1 time units to 1
+          if(this->get_time()<0.1)
+            massflow_id *= std::cos(this->get_time()*numbers::PI*10.+numbers::PI)*0.25+0.75;
+        }
 
         //new estimated force
         //first contribution makes the system want to get back to the ideal value (spring)
@@ -504,7 +519,7 @@ public:
         double dgoalm = massflow_id - massflows_[0];
         double dm = massflows_[0] - massflows_[1];
         if(dim==3)
-          newforce = 500.0*dgoalm  - 30000.0*dm + oldforce_; //(B1)
+          newforce = 100.0*dgoalm  - 30000.0*dm + oldforce_; //(B1)
         if(dim==2)
           newforce = 50.0*dgoalm  - 30000.0*dm + oldforce_; //(B1)
         return newforce;
@@ -682,7 +697,30 @@ public:
       dst += dmdt_V_loc;
   //    dst.at(0) = dmdt_V_loc;
     }
-    void reinit_rhs();
+
+    virtual void read_restart_vectors(boost::archive::binary_iarchive & ia)
+    {
+      TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+      read_restart_vectors(ia);
+      double massflows0;
+      double massflows1;
+      double old_force;
+      ia & massflows0;
+      ia & massflows1;
+      ia & old_force;
+      massflows[0] = massflows0;
+      massflows[1] = massflows1;
+      old_RHS_value = old_force;
+    }
+
+    virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const
+    {
+      TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+          write_restart_vectors(oa);
+      oa & massflows[0];
+      oa & massflows[1];
+      oa & old_RHS_value;
+    }
 
   };
 

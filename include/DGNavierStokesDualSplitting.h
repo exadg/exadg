@@ -580,8 +580,7 @@ setup_helmholtz_preconditioner (HelmholtzOperatorData<dim> &helmholtz_operator_d
                                   this->dof_handler_u,
                                   this->mapping,
                                   helmholtz_operator_data,
-                                  this->dirichlet_boundary,
-                                  this->fe_param);
+                                  this->dirichlet_boundary);
   }
 }
 

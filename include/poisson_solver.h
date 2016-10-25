@@ -71,8 +71,7 @@ public:
   // mf_data.
   void reinit(const MatrixFree<dim,Number>       &mf_data,
               const Mapping<dim>                 &mapping,
-              const LaplaceOperatorData<dim>     &operator_data,
-              FEParameters<dim> const            &fe_param = FEParameters<dim>());
+              const LaplaceOperatorData<dim>     &operator_data);
 
   // Initialization given a DoFHandler object. This internally creates a
   // MatrixFree object. Note that the integration routines and loop bounds
@@ -82,8 +81,7 @@ public:
                const Mapping<dim>             &mapping,
                const LaplaceOperatorData<dim> &operator_data,
                const MGConstrainedDoFs        &mg_constrained_dofs,
-               const unsigned int             level = numbers::invalid_unsigned_int,
-               FEParameters<dim> const        &fe_param = FEParameters<dim>());
+               const unsigned int             level = numbers::invalid_unsigned_int);
 
   // Checks whether the boundary conditions are consistent, i.e., no overlap
   // between the Dirichlet, Neumann, and periodic parts. The return value of

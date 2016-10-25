@@ -684,8 +684,7 @@ public:
                   const DoFHandler<dim>              &dof_handler,
                   const Mapping<dim>                 &mapping,
                   const OperatorData                 &operator_data_in,
-                  std::set<types::boundary_id> const &dirichlet_boundaries,
-                  FEParameters<dim> const            &fe_param = FEParameters<dim>())
+                  std::set<types::boundary_id> const &dirichlet_boundaries)
   {
     this->mg_data = mg_data_in;
 
@@ -707,7 +706,7 @@ public:
 
     for (unsigned int level = 0; level<this->n_global_levels; ++level)
     {
-      initialize_mg_matrix(level, dof_handler, mapping, operator_data_in, fe_param);
+      initialize_mg_matrix(level, dof_handler, mapping, operator_data_in);
 
       this->initialize_smoother(level);
     }
@@ -727,8 +726,7 @@ public:
   virtual void initialize_mg_matrix(unsigned int            level,
                                     const DoFHandler<dim>   &dof_handler,
                                     const Mapping<dim>      &mapping,
-                                    const OperatorData      &operator_data_in,
-                                    FEParameters<dim> const &)
+                                    const OperatorData      &operator_data_in)
   {
     this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, this->mg_constrained_dofs, level);
   }
@@ -757,11 +755,10 @@ public:
   virtual void initialize_mg_matrix(unsigned int            level,
                                     const DoFHandler<dim>   &dof_handler,
                                     const Mapping<dim>      &mapping,
-                                    const OperatorData      &operator_data_in,
-                                    FEParameters<dim> const &fe_param)
+                                    const OperatorData      &operator_data_in)
   {
     // initialize mg_matrix for given level
-    this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, this->mg_constrained_dofs, level, fe_param);
+    this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, this->mg_constrained_dofs, level);
 
     // initialize vector linearization
     this->mg_matrices[level].initialize_dof_vector(mg_vector_linearization[level]);
@@ -905,8 +902,7 @@ public:
                   const DoFHandler<dim>    &dof_handler,
                   const DoFHandler<dim>    &dof_handler_additional,
                   const Mapping<dim>       &mapping,
-                  const OperatorData       &operator_data_in,
-                  FEParameters<dim> const  &fe_param = FEParameters<dim>())
+                  const OperatorData       &operator_data_in)
   {
     this->mg_data = mg_data_in;
 
@@ -934,8 +930,7 @@ public:
                                       mapping,
                                       operator_data_in,
                                       this->mg_constrained_dofs,
-                                      level,
-                                      fe_param);
+                                      level);
 
       this->initialize_smoother(level);
     }

@@ -50,6 +50,9 @@ public:
 protected:
   virtual void calculate_time_step();
 
+  virtual void read_restart_vectors(boost::archive::binary_iarchive & ia) = 0;
+  virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const = 0;
+
   std_cxx11::shared_ptr<PostProcessor<dim, fe_degree, fe_degree_p> > postprocessor;
 
   InputParametersNavierStokes<dim> const & param;
@@ -71,8 +74,6 @@ private:
 
   void resume_from_restart();
   void write_restart() const;
-  virtual void read_restart_vectors(boost::archive::binary_iarchive & ia) = 0;
-  virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const = 0;
 
   virtual void recalculate_adaptive_time_step();
 
