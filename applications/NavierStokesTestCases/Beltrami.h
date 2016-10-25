@@ -393,7 +393,9 @@ void create_grid_and_set_boundary_conditions(
     parallel::distributed::Triangulation<dim>                   &triangulation,
     unsigned int const                                          n_refine_space,
     std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
-    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure)
+    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
+    std::vector<GridTools::PeriodicFacePair<typename
+      Triangulation<dim>::cell_iterator> >                      &periodic_faces)
 {
   const double left = -1.0, right = 1.0;
   GridGenerator::hyper_cube(triangulation,left,right);
@@ -443,5 +445,22 @@ void set_analytical_solution(std_cxx11::shared_ptr<AnalyticalSolutionNavierStoke
   analytical_solution->pressure.reset(new AnalyticalSolutionPressure<dim>());
 }
 
+template<int dim>
+std_cxx11::shared_ptr<PostProcessorBase<dim> >
+construct_postprocessor(InputParametersNavierStokes<dim> const &param)
+{
+  PostProcessorData<dim> pp_data;
+
+  pp_data.output_data = param.output_data;
+  pp_data.error_data = param.error_data;
+  pp_data.lift_and_drag_data = param.lift_and_drag_data;
+  pp_data.pressure_difference_data = param.pressure_difference_data;
+  pp_data.mass_data = param.mass_data;
+
+  std_cxx11::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE> > pp;
+  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE>(pp_data));
+
+  return pp;
+}
 
 #endif /* APPLICATIONS_NAVIERSTOKESTESTCASES_BELTRAMI_H_ */

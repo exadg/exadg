@@ -9,7 +9,7 @@
 #define INCLUDE_DRIVERSTEADYPROBLEMS_H_
 
 
-template<int dim, int fe_degree, int fe_degree_p> class PostProcessor;
+template<int dim> class PostProcessorBase;
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 class DriverSteadyProblems
@@ -17,8 +17,7 @@ class DriverSteadyProblems
 public:
   DriverSteadyProblems(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
                          fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >   ns_operation_in,
-                       std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
-                         fe_degree_p> >                                         postprocessor_in,
+                       std_cxx11::shared_ptr<PostProcessorBase<dim> >           postprocessor_in,
                        InputParametersNavierStokes<dim> const                   &param_in)
     :
     ns_operation(std::dynamic_pointer_cast<DGNavierStokesCoupled<dim, fe_degree,
@@ -39,11 +38,11 @@ private:
   void initialize_solution();
 
   void solve();
-  void postprocessing() const;
+  void postprocessing();
 
   std_cxx11::shared_ptr<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation;
 
-  std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,fe_degree_p> > postprocessor;
+  std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor;
   InputParametersNavierStokes<dim> const &param;
 
   Timer global_timer;
@@ -175,9 +174,22 @@ solve_steady_problem()
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
-postprocessing() const
+postprocessing()
 {
-  this->postprocessor->do_postprocessing(solution.block(0),solution.block(1),vorticity,divergence);
+  // calculate divergence
+  if(this->param.output_data.compute_divergence == true)
+  {
+    ns_operation->compute_divergence(divergence, solution.block(0));
+  }
+
+  // calculate vorticity
+  ns_operation->compute_vorticity(vorticity,solution.block(0));
+
+  this->postprocessor->do_postprocessing(solution.block(0),
+                                         solution.block(0), // intermediate_velocity = velocity (inteface!)
+                                         solution.block(1),
+                                         vorticity,
+                                         divergence);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>

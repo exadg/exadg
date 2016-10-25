@@ -16,8 +16,7 @@ class TimeIntBDFCoupled : public TimeIntBDFNavierStokes<dim, fe_degree, fe_degre
 public:
   TimeIntBDFCoupled(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
                       fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
-                    std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
-                      fe_degree_p> >                                        postprocessor_in,
+                    std_cxx11::shared_ptr<PostProcessorBase<dim> >          postprocessor_in,
                     InputParametersNavierStokes<dim> const                  &param_in,
                     unsigned int const                                      n_refine_time_in,
                     bool const                                              use_adaptive_time_stepping)
@@ -360,7 +359,13 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 postprocessing() const
 {
-  this->postprocessor->do_postprocessing(solution[0].block(0),solution[0].block(1),vorticity,divergence,this->time,this->time_step_number);
+  this->postprocessor->do_postprocessing(solution[0].block(0),
+                                         solution[0].block(0), // intermediate_velocity = velocity (interface!)
+                                         solution[0].block(1),
+                                         vorticity,
+                                         divergence,
+                                         this->time,
+                                         this->time_step_number);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>

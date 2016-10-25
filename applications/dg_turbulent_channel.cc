@@ -1,4 +1,7 @@
 
+#include "../include/PostProcessor.h"
+
+
 // Navier-Stokes splitting program
 // authors: Niklas Fehn, Benjamin Krank, Martin Kronbichler, LNM
 // years: 2015-2016
@@ -345,8 +348,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
     PostProcessorChannel(
                   std_cxx11::shared_ptr< const DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> >  ns_operation,
                   InputParametersNavierStokes<dim> const &param,
+                  PostProcessorData<dim> const &pp_data,
                   PostProcessorChannelData const & data_channel):
-      PostProcessor<dim,fe_degree,fe_degree_p>(),
+      PostProcessor<dim,fe_degree,fe_degree_p>(pp_data),
       data_ch(data_channel),
       statistics_ch(ns_operation->get_dof_handler_u())
     {
@@ -362,13 +366,14 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
     }
 
     virtual void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
+                                   parallel::distributed::Vector<double> const &intermediate_velocity,
                                    parallel::distributed::Vector<double> const &pressure,
                                    parallel::distributed::Vector<double> const &vorticity,
                                    parallel::distributed::Vector<double> const &divergence,
                                    double const time,
                                    unsigned int const time_step_number)
     {
-      PostProcessor<dim,fe_degree,fe_degree_p>::do_postprocessing(velocity,pressure,vorticity,divergence,time,time_step_number);
+      PostProcessor<dim,fe_degree,fe_degree_p>::do_postprocessing(velocity,intermediate_velocity,pressure,vorticity,divergence,time,time_step_number);
       const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
 
       if(time > this->data_ch.statistics_start_time-EPSILON && time_step_number % this->data_ch.statistics_every == 0)
@@ -393,8 +398,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
     PostProcessorChannelXWall(
                   std_cxx11::shared_ptr< DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall> >  ns_operation,
                   InputParametersNavierStokes<dim> const &param,
+                  PostProcessorData<dim> const &pp_data,
                   PostProcessorChannelData const & data_channel):
-      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>(ns_operation,param),
+      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,n_q_points_1d_xwall>(ns_operation,param,pp_data),
       data_ch(data_channel),
       statistics_ch(ns_operation->get_dof_handler_u())
     {}
@@ -502,7 +508,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
     ch_data.statistics_start_time = param.statistics_start_time;
     ch_data.viscosity = param.viscosity;
     ch_data.end_time = param.end_time;
-
+    // TODO
+    PostProcessorData<dim> pp_data;
+        
     if(param.spatial_discretization == SpatialDiscretization::DGXWall)
     {
       analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>(2*dim,param.start_time));
@@ -514,7 +522,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
         navier_stokes_operation.reset(new DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
             (triangulation,param));
         // initialize postprocessor after initializing navier_stokes_operation
-        postprocessor.reset(new PostProcessorChannelXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,param,ch_data));
+        postprocessor.reset(new PostProcessorChannelXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,param,pp_data,ch_data));
         // initialize time integrator that depends on both navier_stokes_operation and postprocessor
         time_integrator.reset(new TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
             navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
@@ -534,7 +542,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
         navier_stokes_operation.reset(new DGNavierStokesDualSplitting<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
             (triangulation,param));
         // initialize postprocessor after initializing navier_stokes_operation
-        postprocessor.reset(new PostProcessorChannel<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,param,ch_data));
+        postprocessor.reset(new PostProcessorChannel<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,param,pp_data,ch_data));
         // initialize time integrator that depends on both navier_stokes_operation and postprocessor
         time_integrator.reset(new TimeIntBDFDualSplitting<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
             navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
@@ -546,7 +554,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
         navier_stokes_operation.reset(new DGNavierStokesCoupled<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
             (triangulation,param));
         // initialize postprocessor after initializing navier_stokes_operation
-        postprocessor.reset(new PostProcessorChannel<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,param,ch_data));
+        postprocessor.reset(new PostProcessorChannel<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,param,pp_data,ch_data));
         // initialize time integrator that depends on both navier_stokes_operation and postprocessor
         time_integrator.reset(new TimeIntBDFCoupled<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
             navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));

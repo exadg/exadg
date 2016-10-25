@@ -13,7 +13,7 @@
 #include "TimeStepCalculation.h"
 #include "Restart.h"
 
-template<int dim, int fe_degree, int fe_degree_p> class PostProcessor;
+template<int dim> class PostProcessorBase;
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 class TimeIntBDFNavierStokes : public TimeIntBDFBase
@@ -21,8 +21,7 @@ class TimeIntBDFNavierStokes : public TimeIntBDFBase
 public:
   TimeIntBDFNavierStokes(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
                            fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation_in,
-                         std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
-                           fe_degree_p> >                                       postprocessor_in,
+                         std_cxx11::shared_ptr<PostProcessorBase<dim> >         postprocessor_in,
                          InputParametersNavierStokes<dim> const                 &param_in,
                          unsigned int const                                     n_refine_time_in,
                          bool const                                             use_adaptive_time_stepping)
@@ -48,7 +47,7 @@ public:
   virtual void analyze_computing_times() const = 0;
 
 protected:
-  std_cxx11::shared_ptr<PostProcessor<dim, fe_degree, fe_degree_p> > postprocessor;
+  std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor;
 
   InputParametersNavierStokes<dim> const & param;
 
@@ -185,7 +184,8 @@ write_restart() const
     std::ostringstream oss;
 
     boost::archive::binary_oarchive oa(oss);
-    write_restart_preamble<dim, value_type>(oa, param, time_steps, time, postprocessor->get_output_counter(), order);
+    // TODO
+//    write_restart_preamble<dim, value_type>(oa, param, time_steps, time, postprocessor->get_output_counter(), order);
     write_restart_vectors(oa);
     write_restart_file<dim>(oss, param);
   }

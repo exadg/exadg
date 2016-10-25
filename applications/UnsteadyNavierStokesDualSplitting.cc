@@ -66,6 +66,8 @@
 #include "../include/FieldFunctionsNavierStokes.h"
 #include "../include/AnalyticalSolutionNavierStokes.h"
 
+#include "../include/PostProcessor.h"
+
 using namespace dealii;
 
 // specify the flow problem that has to be solved
@@ -76,13 +78,14 @@ using namespace dealii;
 //#include "NavierStokesTestCases/StokesGuermond.h"
 //#include "NavierStokesTestCases/StokesShahbazi.h"
 //#include "NavierStokesTestCases/Kovasznay.h"
-//#include "NavierStokesTestCases/Vortex.h"
+#include "NavierStokesTestCases/Vortex.h"
 //#include "NavierStokesTestCases/TaylorVortex.h"
 //#include "NavierStokesTestCases/Beltrami.h"
-#include "NavierStokesTestCases/FlowPastCylinder.h"
+//#include "NavierStokesTestCases/FlowPastCylinder.h"
+//#include "NavierStokesTestCases/TurbulentChannel.h"
 
 
-#include "../include/PostProcessor.h"
+//#include "../include/PostProcessor.h"
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 class NavierStokesProblem
@@ -114,7 +117,7 @@ private:
 
   std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > navier_stokes_operation;
 
-  std_cxx11::shared_ptr<PostProcessor<dim, fe_degree_u, fe_degree_p> > postprocessor;
+  std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor;
 
   std_cxx11::shared_ptr<TimeIntBDFNavierStokes<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type> > time_integrator;
 };
@@ -163,7 +166,7 @@ NavierStokesProblem(unsigned int const refine_steps_space,
       (triangulation,param));
 
   // initialize postprocessor
-  postprocessor.reset(new PostProcessor<dim, fe_degree_u, fe_degree_p>());
+  postprocessor = construct_postprocessor<dim>(param);
 
   // initialize time integrator that depends on both navier_stokes_operation and postprocessor
   time_integrator.reset(new TimeIntBDFDualSplitting<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>(
@@ -207,7 +210,8 @@ solve_problem(bool do_restart)
   create_grid_and_set_boundary_conditions(triangulation,
                                           n_refine_space,
                                           boundary_descriptor_velocity,
-                                          boundary_descriptor_pressure);
+                                          boundary_descriptor_pressure,
+                                          periodic_faces);
   print_grid_data();
 
   navier_stokes_operation->setup(periodic_faces,
@@ -227,6 +231,7 @@ solve_problem(bool do_restart)
   time_integrator->timeloop();
 }
 
+/*
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
 void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
 setup_postprocessor()
@@ -250,6 +255,25 @@ setup_postprocessor()
                        navier_stokes_operation->get_data(),
                        analytical_solution);
 }
+*/
+
+template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
+void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall>::
+setup_postprocessor()
+{
+  DofQuadIndexData dof_quad_index_data;
+  dof_quad_index_data.dof_index_velocity = navier_stokes_operation->get_dof_index_velocity();
+  dof_quad_index_data.dof_index_pressure = navier_stokes_operation->get_dof_index_pressure();
+  dof_quad_index_data.quad_index_velocity = navier_stokes_operation->get_quad_index_velocity_linear();
+
+  postprocessor->setup(navier_stokes_operation->get_dof_handler_u(),
+                       navier_stokes_operation->get_dof_handler_p(),
+                       navier_stokes_operation->get_mapping(),
+                       navier_stokes_operation->get_data(),
+                       dof_quad_index_data,
+                       analytical_solution);
+}
+
 
 int main (int argc, char** argv)
 {

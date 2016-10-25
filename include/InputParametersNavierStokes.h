@@ -316,15 +316,78 @@ struct MassConservationData
 {
   MassConservationData()
     :
-  calculate_mass_error(false),
+  calculate_error(false),
   start_time(std::numeric_limits<double>::max()),
-  sample_every_time_steps(std::numeric_limits<unsigned int>::max())
+  sample_every_time_steps(std::numeric_limits<unsigned int>::max()),
+  filename_prefix("indexa")
   {}
 
-  bool calculate_mass_error;
+  void print(ConditionalOStream &pcout)
+  {
+    if(calculate_error == true)
+    {
+      pcout << "  Analysis of divergence and mass error:" << std::endl;
+      print_parameter(pcout,"Calculate error",calculate_error);
+      print_parameter(pcout,"Start time",start_time);
+      print_parameter(pcout,"Sample every timesteps",sample_every_time_steps);
+      print_parameter(pcout,"Filename prefix",filename_prefix);
+    }
+  }
+
+  bool calculate_error;
   double start_time;
   unsigned int sample_every_time_steps;
+  std::string filename_prefix;
 };
+
+// turbulent channel data
+
+struct TurbulentChannelData
+{
+  TurbulentChannelData()
+   :
+   calculate_statistics(false),
+   sample_start_time(0.0),
+   sample_end_time(1.0),
+   sample_every_timesteps(1),
+   viscosity(1.0),
+   filename_prefix("indexa")
+  {}
+
+  void print(ConditionalOStream &pcout)
+  {
+    if(calculate_statistics == true)
+    {
+      pcout << "  Turbulent channel statistics:" << std::endl;
+      print_parameter(pcout,"Calculate statistics",calculate_statistics);
+      print_parameter(pcout,"Sample start time",sample_start_time);
+      print_parameter(pcout,"Sample end time",sample_end_time);
+      print_parameter(pcout,"Sample every timesteps",sample_every_timesteps);
+      print_parameter(pcout,"Viscosity",viscosity);
+      print_parameter(pcout,"Filename prefix",filename_prefix);
+    }
+  }
+
+  // calculate statistics?
+  bool calculate_statistics;
+
+  // start time for sampling
+  double sample_start_time;
+
+  // end time for sampling
+  double sample_end_time;
+
+  // perform sampling every ... timesteps
+  unsigned int sample_every_timesteps;
+ 
+  // viscosity
+  double viscosity;
+
+  std::string filename_prefix;
+};
+
+
+
 
 template<int dim>
 class InputParametersNavierStokes
@@ -476,8 +539,11 @@ public:
     pressure_difference_data(PressureDifferenceData<dim>()),
 
     // conservation of mass
-    mass_data(MassConservationData())
-   {}
+    mass_data(MassConservationData()),
+
+    // turbulent channel statistics
+    turb_ch_data(TurbulentChannelData())
+  {}
 
   void set_input_parameters();
 
@@ -1085,7 +1151,10 @@ public:
         print_parameter(pcout,"Restart interval wall time",restart_interval_wall_time);
         print_parameter(pcout,"Restart every timesteps",restart_every_timesteps);
       }
-    } 
+    }
+
+    // turbulent channel statistics
+    turb_ch_data.print(pcout); 
   }
 
   /**************************************************************************************/
@@ -1392,6 +1461,10 @@ public:
 
   // analysis of mass conservation
   MassConservationData mass_data;
+
+  // turbulent channel statistics
+  TurbulentChannelData turb_ch_data;
+
 };
 
 #endif /* INCLUDE_INPUTPARAMETERSNAVIERSTOKES_H_ */

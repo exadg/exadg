@@ -12,7 +12,7 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 
-template<int dim, int fe_degree, int fe_degree_p> class PostProcessor;
+template<int dim> class PostProcessorBase;
 
 template<int dim>
 const std::string restart_filename(InputParametersNavierStokes<dim> const & param)
@@ -37,7 +37,7 @@ void check_file(std::ifstream const & in, const std::string filename)
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall,typename value_type>
 void resume_restart(boost::archive::binary_iarchive & ia, InputParametersNavierStokes<dim> const & param, double & time,
-    std_cxx11::shared_ptr<PostProcessor<dim, fe_degree, fe_degree_p> > & postprocessor,
+    std_cxx11::shared_ptr<PostProcessorBase<dim> > & postprocessor,
     std::vector<value_type> & time_steps, unsigned int const order)
 {
 
@@ -60,7 +60,8 @@ void resume_restart(boost::archive::binary_iarchive & ia, InputParametersNavierS
     ia & tmp_time_steps[i];
   ia & output_counter;
 
-  postprocessor->init_from_restart(output_counter);
+  // TODO: cast needed
+//  postprocessor->init_from_restart(output_counter);
 
   if(param.start_with_low_order == false)
   {

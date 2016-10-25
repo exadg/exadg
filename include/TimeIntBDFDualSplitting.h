@@ -16,8 +16,7 @@ class TimeIntBDFDualSplitting : public TimeIntBDFNavierStokes<dim,fe_degree,fe_d
 public:
   TimeIntBDFDualSplitting(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
                             fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> >  ns_operation_in,
-                          std_cxx11::shared_ptr<PostProcessor<dim, fe_degree,
-                            fe_degree_p> >                                        postprocessor_in,
+                          std_cxx11::shared_ptr<PostProcessorBase<dim> >          postprocessor_in,
                           InputParametersNavierStokes<dim> const                  &param_in,
                           unsigned int const                                      n_refine_time_in,
                           bool const                                              use_adaptive_time_stepping)
@@ -61,6 +60,9 @@ protected:
 
   parallel::distributed::Vector<value_type> rhs_vec_viscous;
 
+  // postprocessing: intermediate velocity
+  parallel::distributed::Vector<value_type> intermediate_velocity;
+
   virtual void postprocessing() const;
 
 private:
@@ -79,7 +81,7 @@ private:
                      const parallel::distributed::Vector<value_type>  &src);
 
   void push_back_solution();
-  void push_back_vorticity();
+  void push_back_and_calculate_vorticity();
   void push_back_vec_convective_term();
 
   virtual parallel::distributed::Vector<value_type> const & get_velocity();
@@ -100,8 +102,8 @@ private:
 
   parallel::distributed::Vector<value_type> rhs_vec_projection;
 
-  // postprocessing: divergence of intermediate velocity u_hathat
-  parallel::distributed::Vector<value_type> divergence;
+  // postprocessing: divergence of intermediate velocity
+  mutable parallel::distributed::Vector<value_type> divergence;
 
   std_cxx11::shared_ptr<DGNavierStokesDualSplitting<dim, fe_degree,
     fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> > ns_operation_splitting;
@@ -161,6 +163,13 @@ initialize_vectors()
   {
     ns_operation_splitting->initialize_vector_velocity(divergence);
   }
+
+  // intermediate velocity
+  if(this->param.output_data.compute_divergence == true ||
+     this->param.mass_data.calculate_error == true)
+  {
+    ns_operation_splitting->initialize_vector_velocity(intermediate_velocity);
+  }
 }
 
 
@@ -169,6 +178,13 @@ void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_p
 initialize_current_solution()
 {
   ns_operation_splitting->prescribe_initial_conditions(velocity[0],pressure[0],this->time);
+  
+    // intermediate velocity
+  if(this->param.output_data.compute_divergence == true ||
+     this->param.mass_data.calculate_error == true)
+  {
+    intermediate_velocity = velocity[0];
+  }
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
@@ -255,8 +271,23 @@ write_restart_vectors(boost::archive::binary_oarchive & oa) const
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 postprocessing() const
-{
-  this->postprocessor->do_postprocessing(velocity[0],pressure[0],vorticity[0],divergence,this->time,this->time_step_number);
+{ 
+  // Calculate divergence of intermediate velocity field u_hathat,
+  // because this is the velocity field that should be divergence-free.
+  // Of course, also the final velocity field at the end of the time step
+  // could be considered instead.
+  if(this->param.output_data.compute_divergence == true)
+  {
+    ns_operation_splitting->compute_divergence(divergence, intermediate_velocity);
+  }
+
+  this->postprocessor->do_postprocessing(velocity[0],
+                                         intermediate_velocity,
+                                         pressure[0],
+                                         vorticity[0],
+                                         divergence,
+                                         this->time,
+                                         this->time_step_number);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
@@ -303,6 +334,7 @@ convective_step()
   // compute convective term and extrapolate convective term (if not Stokes equations)
   if(this->param.equation_type == EquationType::NavierStokes)
   {
+
     ns_operation_splitting->evaluate_convective_term(vec_convective_term[0],velocity[0],this->time);
     ns_operation_splitting->apply_inverse_mass_matrix(vec_convective_term[0],vec_convective_term[0]);
     for(unsigned int i=0;i<vec_convective_term.size();++i)
@@ -478,16 +510,14 @@ projection_step()
     std::cout << std::endl << "Solve projection step for intermediate velocity:" << std::endl
               << "  PCG iterations:    " << std::setw(4) << std::right << iterations_projection << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
   }
-
-  // postprocessing related to the analysis of different projection algorithms
-  if(this->param.output_data.compute_divergence == true)
+  
+  // write velocity_np into intermediate_velocity which is needed for 
+  // postprocessing reasons
+  if(this->param.output_data.compute_divergence == true ||
+     this->param.mass_data.calculate_error == true)
   {
-    ns_operation_splitting->compute_divergence(divergence, velocity_np);
-  }
-  if(this->param.mass_data.calculate_mass_error == true)
-  {
-    this->postprocessor->analyze_divergence_error(velocity_np,this->time+this->time_steps[0],this->time_step_number);
-  }
+    intermediate_velocity = velocity_np;
+  }  
 
   computing_times[2] += timer.wall_time();
 }
@@ -531,7 +561,7 @@ prepare_vectors_for_next_timestep()
 
   push_back_solution();
 
-  push_back_vorticity();
+  push_back_and_calculate_vorticity();
 
   if(this->param.equation_type == EquationType::NavierStokes)
     push_back_vec_convective_term();
@@ -568,7 +598,7 @@ push_back_solution()
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>
 void TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
-push_back_vorticity()
+push_back_and_calculate_vorticity()
 {
   // solution at t_{n-i} <-- solution at t_{n-i+1}
   for(unsigned int i=vorticity.size()-1; i>0; --i)

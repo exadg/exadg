@@ -66,6 +66,8 @@ public:
   BlockPreconditionerNavierStokes(DGNavierStokesCoupled<dim, fe_degree,
                                     fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall> *underlying_operator_in,
                                   BlockPreconditionerData const                        &preconditioner_data_in)
+  :
+    use_gmres_smoother(true) // TODO
   {
     underlying_operator = underlying_operator_in;
     preconditioner_data = preconditioner_data_in;
@@ -544,6 +546,8 @@ private:
       vel_conv_diff_operator_data.dof_index = underlying_operator->get_dof_index_velocity();
       vel_conv_diff_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
 
+      if(!use_gmres_smoother)
+      {
       multigrid_preconditioner_momentum.reset(new MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
                                                     VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>,
                                                     VelocityConvDiffOperatorData<dim> >());
@@ -561,6 +565,28 @@ private:
                                     vel_conv_diff_operator_data,
                                     underlying_operator->dirichlet_boundary,
                                     underlying_operator->get_fe_parameters());
+      }
+      else
+      {
+        multigrid_preconditioner_momentum.reset(new MyMultigridPreconditionerGMRESSmoother<dim,value_type,
+                                                      VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>,
+                                                      VelocityConvDiffOperatorData<dim> >());
+
+        std_cxx11::shared_ptr<MyMultigridPreconditionerGMRESSmoother<dim,value_type,
+                                VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>,
+                                VelocityConvDiffOperatorData<dim> > >
+          mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditionerGMRESSmoother<dim,value_type,
+                                                          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>,
+                                                          VelocityConvDiffOperatorData<dim> > >(multigrid_preconditioner_momentum);
+
+        mg_preconditioner->initialize(mg_data,
+                                      underlying_operator->get_dof_handler_u(),
+                                      underlying_operator->get_mapping(),
+                                      vel_conv_diff_operator_data,
+                                      underlying_operator->dirichlet_boundary,
+                                      underlying_operator->get_fe_parameters());
+      }
+
     }
   }
 
@@ -806,6 +832,8 @@ private:
   {
     if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::VelocityConvectionDiffusion)
     {
+      if(!use_gmres_smoother)
+      {
       std_cxx11::shared_ptr<MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
                               VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>,
                               VelocityConvDiffOperatorData<dim> > >
@@ -813,10 +841,25 @@ private:
                                                         VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>,
                                                         VelocityConvDiffOperatorData<dim> > >(multigrid_preconditioner_momentum);
 
-      mg_preconditioner->set_vector_linearization(*underlying_operator->get_velocity_linearization());
-      mg_preconditioner->set_evaluation_time(underlying_operator->evaluation_time);
+      mg_preconditioner->update_mg_matrix(*underlying_operator->get_velocity_linearization(),
+                                          underlying_operator->evaluation_time);
       mg_preconditioner->update_smoother();
       mg_preconditioner->update_coarse_solver();
+      }
+      else
+      {
+        std_cxx11::shared_ptr<MyMultigridPreconditionerGMRESSmoother<dim,value_type,
+                                VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>,
+                                VelocityConvDiffOperatorData<dim> > >
+          mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditionerGMRESSmoother<dim,value_type,
+                                                          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, n_q_points_1d_xwall, Number>,
+                                                          VelocityConvDiffOperatorData<dim> > >(multigrid_preconditioner_momentum);
+
+        mg_preconditioner->update_mg_matrix(*underlying_operator->get_velocity_linearization(),
+                                            underlying_operator->evaluation_time);
+        mg_preconditioner->update_smoother();
+        mg_preconditioner->update_coarse_solver();
+      }
     }
   }
 
@@ -1069,6 +1112,9 @@ private:
   // temporary vector that is needed if negative Laplace operator is inverted exactly
   // and if a problem with pure Dirichlet BC's is considered
   parallel::distributed::Vector<value_type> mutable tmp_projection_vector;
+
+  // TODO
+  bool const use_gmres_smoother;
 };
 
 

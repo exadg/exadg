@@ -35,7 +35,7 @@ unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
-ProblemType PROBLEM_TYPE = ProblemType::Unsteady;
+ProblemType PROBLEM_TYPE = ProblemType::Steady;
 const unsigned int TEST_CASE = 1; // 1, 2 or 3
 const double Um = (DIMENSION == 2 ? (TEST_CASE==1 ? 0.3 : 1.5) : (TEST_CASE==1 ? 0.45 : 2.25));
 const double D = 0.1;
@@ -45,7 +45,7 @@ const double L2 = 2.5;
 const double X_C = 0.5;
 const double Y_C = 0.2;
 const double END_TIME = 8.0;
-std::string OUTPUT_PREFIX = "fpc";
+std::string OUTPUT_PREFIX = "fpc_steady_123";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -60,7 +60,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // PHYSICAL QUANTITIES
   start_time = 0.0;
   end_time = END_TIME; //END_TIME is also needed somewhere else
-  viscosity = 0.001;
+  viscosity = 0.1; //1.e-3;
 
 
   // TEMPORAL DISCRETIZATION
@@ -114,7 +114,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // projection step
   projection_type = ProjectionType::DivergencePenalty;
-  penalty_factor_divergence = 1.0e0;//1.0e0;
+  penalty_factor_divergence = 1.0e0;
   penalty_factor_continuity = 1.0e0;
   solver_projection = SolverProjection::PCG;
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
@@ -170,7 +170,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error
-  error_data.analytical_solution_available = false;
+  error_data.analytical_solution_available = true;
   error_data.error_calc_start_time = start_time;
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
@@ -214,6 +214,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   }
 
   pressure_difference_data.filename_prefix_pressure_difference = output_data.output_prefix;
+
+  mass_data.calculate_error = true;
+  mass_data.start_time = 0.0;
+  mass_data.sample_every_time_steps = 1;
+  mass_data.filename_prefix = OUTPUT_PREFIX;
 }
 
 /**************************************************************************************/
@@ -577,7 +582,9 @@ void create_grid_and_set_boundary_conditions(
     parallel::distributed::Triangulation<dim>                   &triangulation,
     unsigned int const                                          n_refine_space,
     std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
-    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure)
+    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
+    std::vector<GridTools::PeriodicFacePair<typename
+      Triangulation<dim>::cell_iterator> >                      &periodic_faces)
 {
 
   Point<dim> direction;
@@ -652,6 +659,25 @@ void set_analytical_solution(std_cxx11::shared_ptr<AnalyticalSolutionNavierStoke
   analytical_solution->velocity.reset(new ZeroFunction<dim>(dim));
   analytical_solution->pressure.reset(new ZeroFunction<dim>(1));
 }
+
+template<int dim>
+std_cxx11::shared_ptr<PostProcessorBase<dim> >
+construct_postprocessor(InputParametersNavierStokes<dim> const &param)
+{
+  PostProcessorData<dim> pp_data;
+
+  pp_data.output_data = param.output_data;
+  pp_data.error_data = param.error_data;
+  pp_data.lift_and_drag_data = param.lift_and_drag_data;
+  pp_data.pressure_difference_data = param.pressure_difference_data;
+  pp_data.mass_data = param.mass_data;
+
+  std_cxx11::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE> > pp;
+  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE>(pp_data));
+
+  return pp;
+}
+
 
 
 #endif /* APPLICATIONS_NAVIERSTOKESTESTCASES_FLOWPASTCYLINDER_H_ */

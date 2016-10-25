@@ -28,8 +28,8 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 2;
-unsigned int const REFINE_STEPS_SPACE_MAX = 2;//REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 0;
+unsigned int const REFINE_STEPS_SPACE_MAX = 4;//REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -52,7 +52,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // PHYSICAL QUANTITIES
   start_time = 0.0;
   end_time = 1.0e6;
-  viscosity = 1.e-2;
+  viscosity = 1.e0;
 
 
   // TEMPORAL DISCRETIZATION
@@ -139,7 +139,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion;
+  momentum_preconditioner = MomentumPreconditioner::VelocityConvectionDiffusion;
   solver_momentum_preconditioner = SolverMomentumPreconditioner::GeometricMultigridVCycle;
   multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_Jacobi;
   rel_tol_solver_momentum_preconditioner = 1.e-6;
@@ -378,7 +378,9 @@ void create_grid_and_set_boundary_conditions(
     parallel::distributed::Triangulation<dim>                   &triangulation,
     unsigned int const                                          n_refine_space,
     std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
-    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure)
+    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
+    std::vector<GridTools::PeriodicFacePair<typename
+      Triangulation<dim>::cell_iterator> >                      &periodic_faces)
 {
   Point<dim> point1(0.0,0.0), point2(L,L);
   GridGenerator::hyper_rectangle(triangulation,point1,point2);
@@ -426,6 +428,24 @@ void set_analytical_solution(std_cxx11::shared_ptr<AnalyticalSolutionNavierStoke
 {
   analytical_solution->velocity.reset(new ZeroFunction<dim>(dim));
   analytical_solution->pressure.reset(new ZeroFunction<dim>(1));
+}
+
+template<int dim>
+std_cxx11::shared_ptr<PostProcessorBase<dim> >
+construct_postprocessor(InputParametersNavierStokes<dim> const &param)
+{
+  PostProcessorData<dim> pp_data;
+
+  pp_data.output_data = param.output_data;
+  pp_data.error_data = param.error_data;
+  pp_data.lift_and_drag_data = param.lift_and_drag_data;
+  pp_data.pressure_difference_data = param.pressure_difference_data;
+  pp_data.mass_data = param.mass_data;
+
+  std_cxx11::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE> > pp;
+  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE>(pp_data));
+
+  return pp;
 }
 
 

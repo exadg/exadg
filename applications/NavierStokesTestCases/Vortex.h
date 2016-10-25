@@ -21,16 +21,16 @@
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 8;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
+unsigned int const FE_DEGREE_VELOCITY = 2;
+unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
 unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 0;
-unsigned int const REFINE_STEPS_SPACE_MAX = 0;//REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 1;
+unsigned int const REFINE_STEPS_SPACE_MAX = 1;//REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -38,7 +38,7 @@ unsigned int const REFINE_STEPS_TIME_MAX = 0;//REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
 const double U_X_MAX = 1.0;
-const double VISCOSITY = 1.0e-2;
+const double VISCOSITY = 2.5e-2;
 const FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::DivergenceFormulation;
 
 template<int dim>
@@ -58,11 +58,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepMaxEfficiency;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
   max_velocity = 1.4 * U_X_MAX;
-  cfl = 4.e0;
+  cfl = 0.1;
   c_eff = 0.125e0;
   time_step_size = 1.0e-3;
   max_number_of_time_steps = 1e8;
@@ -82,12 +82,12 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   IP_factor_viscous = 1.0;
 
   // gradient term
-  gradp_integrated_by_parts = true;
-  gradp_use_boundary_data = true;
+  gradp_integrated_by_parts = false;
+  gradp_use_boundary_data = false;
 
   // divergence term
-  divu_integrated_by_parts = true;
-  divu_use_boundary_data = true;
+  divu_integrated_by_parts = false;
+  divu_use_boundary_data = false;
 
   // special case: pure DBC's
   pure_dirichlet_bc = false;
@@ -161,15 +161,22 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // write output for visualization of results
   output_data.write_output = true;
-  output_data.output_prefix = "vortex";
+  output_data.output_prefix = "vortex_123";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/10;
   output_data.compute_divergence = true;
+  output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error
   error_data.analytical_solution_available = true;
   error_data.error_calc_start_time = start_time;
   error_data.error_calc_interval_time = output_data.output_interval_time;
+
+  // analysis of mass conservation error
+  mass_data.calculate_error = true;
+  mass_data.start_time = 0.0;
+  mass_data.sample_every_time_steps = 1;
+  mass_data.filename_prefix = "test";
 
   // output of solver information
   output_solver_info_every_timesteps = 1e5;
@@ -431,7 +438,9 @@ void create_grid_and_set_boundary_conditions(
     parallel::distributed::Triangulation<dim>                   &triangulation,
     unsigned int const                                          n_refine_space,
     std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
-    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure)
+    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
+    std::vector<GridTools::PeriodicFacePair<typename
+      Triangulation<dim>::cell_iterator> >                      &periodic_faces)
 {
   const double left = -0.5, right = 0.5;
   GridGenerator::subdivided_hyper_cube(triangulation,2,left,right);
@@ -499,5 +508,22 @@ void set_analytical_solution(std_cxx11::shared_ptr<AnalyticalSolutionNavierStoke
   analytical_solution->pressure.reset(new AnalyticalSolutionPressure<dim>());
 }
 
+template<int dim>
+std_cxx11::shared_ptr<PostProcessorBase<dim> >
+construct_postprocessor(InputParametersNavierStokes<dim> const &param)
+{
+  PostProcessorData<dim> pp_data;
+
+  pp_data.output_data = param.output_data;
+  pp_data.error_data = param.error_data;
+  pp_data.lift_and_drag_data = param.lift_and_drag_data;
+  pp_data.pressure_difference_data = param.pressure_difference_data;
+  pp_data.mass_data = param.mass_data;
+
+  std_cxx11::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE> > pp;
+  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE>(pp_data));
+
+  return pp;
+}
 
 #endif /* APPLICATIONS_NAVIERSTOKESTESTCASES_VORTEX_H_ */

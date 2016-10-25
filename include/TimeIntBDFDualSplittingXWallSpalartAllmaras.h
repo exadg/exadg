@@ -110,7 +110,7 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_p
 void TimeIntBDFDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, n_q_points_1d_xwall, value_type>::
 postprocessing() const
 {
-  this->postprocessor->do_postprocessing(this->velocity[0],this->pressure[0],this->vorticity[0],vt[0],this->time,this->time_step_number);
+  this->postprocessor->do_postprocessing(this->velocity[0],this->intermediate_velocity,this->pressure[0],this->vorticity[0],vt[0],this->time,this->time_step_number);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall, typename value_type>

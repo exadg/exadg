@@ -774,6 +774,19 @@ public:
   }
 
   /*
+   *  This function updates mg_matrices
+   *  To do this, two functions are called:
+   *   - set_vector_linearization
+   *   - set_evaluation_time
+   */
+  void update_mg_matrix(parallel::distributed::Vector<value_type> const &vector_linearization,
+                        double const                                    &evaluation_time)
+  {
+    set_vector_linearization(vector_linearization);
+    set_evaluation_time(evaluation_time);
+  }
+
+  /*
    *  This function updates vector_linearization.
    *  In order to update mg_matrices[level] this function has to be called.
    */
@@ -882,6 +895,300 @@ private:
 
   typedef parallel::distributed::Vector<typename Operator::value_type> VECTOR_TYPE;
   typedef PreconditionChebyshev<Operator,VECTOR_TYPE> SMOOTHER;
+
+  MGLevelObject<VECTOR_TYPE> mg_vector_linearization;
+};
+
+
+
+template<typename Operator, typename VectorType>
+class GMRESSmoother
+{
+public:
+  GMRESSmoother()
+    :
+    underlying_operator(nullptr),
+    preconditioner(nullptr)
+  {}
+
+  ~GMRESSmoother()
+  {
+    delete preconditioner;
+    preconditioner = nullptr;
+  }
+
+  GMRESSmoother(GMRESSmoother const &) = delete;
+  GMRESSmoother & operator=(GMRESSmoother const &) = delete;
+
+  void initialize(Operator &operator_in)
+  {
+    underlying_operator = &operator_in;
+    preconditioner = new JacobiPreconditioner<typename Operator::value_type,Operator>(*underlying_operator);
+  }
+
+  void update()
+  {
+    preconditioner->recalculate_diagonal(*underlying_operator);
+  }
+
+  void vmult(VectorType       &dst,
+             VectorType const &src) const
+  {
+    unsigned int max_iter = 5;
+    IterationNumberControl control (max_iter,1.e-20,1.e-10);
+
+    typename SolverGMRES<parallel::distributed::Vector<typename Operator::value_type> >::AdditionalData additional_data;
+    additional_data.right_preconditioning = true;
+
+    SolverGMRES<VectorType> solver (control,additional_data);
+
+    dst = 0.0;
+    bool use_preconditioner = true; // TODO
+    if(use_preconditioner == true)
+      solver.solve(*underlying_operator,dst,src,*preconditioner);
+    else
+      solver.solve(*underlying_operator,dst,src,PreconditionIdentity());
+  }
+
+private:
+  Operator *underlying_operator;
+  JacobiPreconditioner<typename Operator::value_type,Operator> *preconditioner;
+
+};
+
+
+template<int dim, typename value_type, typename Operator, typename OperatorData>
+class MyMultigridPreconditionerGMRESSmoother : public PreconditionerBase<value_type>
+{
+public:
+  MyMultigridPreconditionerGMRESSmoother()
+    :
+    n_global_levels(0)
+  {}
+
+  void initialize(const MultigridData                &mg_data_in,
+                  const DoFHandler<dim>              &dof_handler,
+                  const Mapping<dim>                 &mapping,
+                  const OperatorData                 &operator_data_in,
+                  std::set<types::boundary_id> const &dirichlet_boundaries,
+                  FEParameters<dim> const            &fe_param = FEParameters<dim>())
+  {
+    this->mg_data = mg_data_in;
+
+    const parallel::Triangulation<dim> *tria =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+
+    // needed for continuous elements
+    this->mg_constrained_dofs.clear();
+    ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
+    typename FunctionMap<dim>::type dirichlet_boundary;
+    for (std::set<types::boundary_id>::const_iterator it = dirichlet_boundaries.begin();
+         it != dirichlet_boundaries.end(); ++it)
+      dirichlet_boundary[*it] = &zero_function;
+    this->mg_constrained_dofs.initialize(dof_handler, dirichlet_boundary);
+    // needed for continuous elements
+
+    this->n_global_levels = tria->n_global_levels();
+    this->resize_level_objects();
+
+    for (unsigned int level = 0; level<this->n_global_levels; ++level)
+    {
+      initialize_mg_matrix(level, dof_handler, mapping, operator_data_in, fe_param);
+
+      this->initialize_smoother(level);
+    }
+
+    this->initialize_coarse_solver();
+
+    this->initialize_mg_transfer(dof_handler, operator_data_in);
+
+    this->multigrid_preconditioner.reset(new MultigridPreconditioner<dim, VECTOR_TYPE, Operator, MG_TRANSFER, SMOOTHER>
+                                   (dof_handler, this->mg_matrices, *(this->mg_coarse), this->mg_transfer, this->mg_smoother));
+  }
+
+  void resize_level_objects()
+  {
+    this->mg_matrices.resize(0, this->n_global_levels-1);
+    this->mg_smoother.resize(0, this->n_global_levels-1);
+
+    mg_vector_linearization.resize(0, this->n_global_levels-1);
+  }
+
+  void initialize_smoother(unsigned int level)
+  {
+    mg_smoother[level].initialize(mg_matrices[level]);
+  }
+
+  void initialize_mg_matrix(unsigned int            level,
+                            const DoFHandler<dim>   &dof_handler,
+                            const Mapping<dim>      &mapping,
+                            const OperatorData      &operator_data_in,
+                            FEParameters<dim> const &fe_param)
+  {
+    // initialize mg_matrix for given level
+    this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, this->mg_constrained_dofs, level, fe_param);
+
+    // initialize vector linearization
+    this->mg_matrices[level].initialize_dof_vector(mg_vector_linearization[level]);
+
+    // set vector linearization: mg_matrices[level] hold pointer to mg_vector_linearization[level]
+    this->mg_matrices[level].set_velocity_linearization(&mg_vector_linearization[level]);
+
+    // set evaluation time
+    this->mg_matrices[level].set_evaluation_time(0.0);
+  }
+
+  /*
+   *  This function updates mg_matrices
+   *  To do this, two functions are called:
+   *   - set_vector_linearization
+   *   - set_evaluation_time
+   */
+  void update_mg_matrix(parallel::distributed::Vector<value_type> const &vector_linearization,
+                        double const                                    &evaluation_time)
+  {
+    set_vector_linearization(vector_linearization);
+    set_evaluation_time(evaluation_time);
+  }
+
+  /*
+   *  This function updates vector_linearization.
+   *  In order to update mg_matrices[level] this function has to be called.
+   */
+  void set_vector_linearization(parallel::distributed::Vector<value_type> const &vector_linearization)
+  {
+    for (int level = this->n_global_levels-1; level>=0; --level)
+    {
+      if(level == (int)this->n_global_levels-1) // finest level
+      {
+        mg_vector_linearization[level] = vector_linearization;
+      }
+      else // all coarser levels
+      {
+        // restrict vector_linearization from fine to coarse level
+        mg_vector_linearization[level] = 0;
+        this->mg_transfer.restrict_and_add(level+1,mg_vector_linearization[level],mg_vector_linearization[level+1]);
+      }
+    }
+  }
+
+  /*
+   *  This function updates the evaluation time.
+   *  In order to update mg_matrices[level] this function has to be called.
+   *  (This is due to the fact that the linearized convective term does not
+   *  only depend on the linearized velocity field but also on Dirichlet boundary
+   *  data which itself depends on the current time.)
+   */
+  void set_evaluation_time(double const &evaluation_time)
+  {
+    for (int level = this->n_global_levels-1; level>=0; --level)
+    {
+      this->mg_matrices[level].set_evaluation_time(evaluation_time);
+    }
+  }
+
+  void initialize_coarse_solver()
+  {
+    switch (mg_data.coarse_solver)
+    {
+      case MultigridCoarseGridSolver::ChebyshevSmoother:
+      {
+        mg_coarse.reset(new MGCoarseFromSmoother<parallel::distributed::Vector<typename Operator::value_type>, SMOOTHER>(mg_smoother[0], false));
+        break;
+      }
+      case MultigridCoarseGridSolver::PCG_NoPreconditioner:
+      {
+        mg_coarse.reset(new MGCoarsePCG<Operator>(mg_matrices[0],false)); // false: no Jacobi preconditioner
+        break;
+      }
+      case MultigridCoarseGridSolver::PCG_Jacobi:
+      {
+        mg_coarse.reset(new MGCoarsePCG<Operator>(mg_matrices[0],true)); // true: use Jacobi preconditioner
+        break;
+      }
+      case MultigridCoarseGridSolver::GMRES_NoPreconditioner:
+      {
+        mg_coarse.reset(new MGCoarseGMRES<Operator>(mg_matrices[0],false)); // false: no Jacobi preconditioner
+        break;
+      }
+      case MultigridCoarseGridSolver::GMRES_Jacobi:
+      {
+        mg_coarse.reset(new MGCoarseGMRES<Operator>(mg_matrices[0],true)); // true: use Jacobi preconditioner
+        break;
+      }
+      default:
+        AssertThrow(false, ExcMessage("Unknown coarse-grid solver given"));
+    }
+  }
+
+  /*
+   *  This function updates the (preconditioner of the) coarse grid solver.
+   *  The prerequisite to call this function is that mg_matrices[0] has
+   *  been updated.
+   */
+  void update_coarse_solver()
+  {
+    if(this->mg_data.coarse_solver == MultigridCoarseGridSolver::GMRES_Jacobi)
+    {
+      std_cxx11::shared_ptr<MGCoarseGMRES<Operator> >
+        coarse_solver = std::dynamic_pointer_cast<MGCoarseGMRES<Operator> >(this->mg_coarse);
+
+      coarse_solver->update_preconditioner(this->mg_matrices[0]);
+    }
+  }
+
+  /*
+   *  This function updates the smoother for all levels of the multigrid
+   *  algorithm.
+   *  The prerequisite to call this function is that mg_matrices[level] have
+   *  been updated.
+   */
+  void update_smoother()
+  {
+    for (unsigned int level = 0; level<this->n_global_levels; ++level)
+    {
+      mg_smoother[level].update();
+    }
+  }
+
+  void initialize_mg_transfer(const DoFHandler<dim> &dof_handler,
+                              const OperatorData    &operator_data_in)
+  {
+    mg_transfer.set_operator(mg_matrices);
+    mg_transfer.initialize_constraints(mg_constrained_dofs);
+    mg_transfer.add_periodicity(operator_data_in.periodic_face_pairs_level0);
+    mg_transfer.build(dof_handler);
+  }
+
+  void vmult (parallel::distributed::Vector<value_type>        &dst,
+              const parallel::distributed::Vector<value_type>  &src) const
+  {
+    multigrid_preconditioner->vmult(dst,src);
+  }
+
+  void apply_smoother_on_fine_level(parallel::distributed::Vector<typename Operator::value_type>        &dst,
+                                    const parallel::distributed::Vector<typename Operator::value_type>  &src) const
+  {
+    this->mg_smoother[this->mg_smoother.max_level()].vmult(dst,src);
+  }
+
+protected:
+  MultigridData mg_data;
+  MGConstrainedDoFs mg_constrained_dofs;
+
+  MGLevelObject<Operator> mg_matrices;
+  typedef MGTransferMF<dim,Operator> MG_TRANSFER;
+  MG_TRANSFER mg_transfer;
+
+  typedef parallel::distributed::Vector<typename Operator::value_type> VECTOR_TYPE;
+  typedef GMRESSmoother<Operator,VECTOR_TYPE> SMOOTHER;
+  MGLevelObject<SMOOTHER> mg_smoother;
+
+  std_cxx11::shared_ptr<MGCoarseGridBase<VECTOR_TYPE> > mg_coarse;
+
+  std_cxx11::shared_ptr<MultigridPreconditioner<dim, VECTOR_TYPE, Operator, MG_TRANSFER, SMOOTHER> > multigrid_preconditioner;
+
+  unsigned int n_global_levels;
 
   MGLevelObject<VECTOR_TYPE> mg_vector_linearization;
 };
