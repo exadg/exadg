@@ -25,14 +25,45 @@ public:
             (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
     ns_operation_xwall (std::dynamic_pointer_cast<DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > (ns_operation_in))
   {
-    AssertThrow(this->param.start_with_low_order == true, ExcMessage("Start with low order for xwall"));
   }
 
   virtual ~TimeIntBDFDualSplittingXWall(){}
 
   virtual void solve_timestep();
 
-private:
+protected:
+  virtual void read_restart_vectors(boost::archive::binary_iarchive & ia)
+  {
+    TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+    read_restart_vectors(ia);
+
+    Vector<double> tmp;
+    ia >> tmp;
+    std::copy(tmp.begin(), tmp.end(),
+        ns_operation_xwall->get_fe_parameters().tauw->begin());
+    ia >> tmp;
+    std::copy(tmp.begin(), tmp.end(),
+        ns_operation_xwall->get_fe_parameters_n().tauw->begin());
+    ns_operation_xwall->get_fe_parameters().tauw->update_ghost_values();
+    ns_operation_xwall->get_fe_parameters_n().tauw->update_ghost_values();
+
+    ns_operation_xwall->precompute_spaldings_law();
+  }
+
+  virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const
+  {
+    TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+        write_restart_vectors(oa);
+    VectorView<double> tmp(ns_operation_xwall->get_fe_parameters().tauw->local_size(),
+                           ns_operation_xwall->get_fe_parameters().tauw->begin());
+    oa << tmp;
+
+    tmp.reinit(ns_operation_xwall->get_fe_parameters_n().tauw->local_size(),
+               ns_operation_xwall->get_fe_parameters_n().tauw->begin());
+    oa << tmp;
+  }
+
+protected:
 
   virtual void setup_derived();
 

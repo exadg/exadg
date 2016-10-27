@@ -69,8 +69,8 @@
 #include "TimeIntBDFDualSplittingXWall.h"
 #include "TimeIntBDFDualSplittingXWallSpalartAllmaras.h"
 #include "TimeIntBDFCoupled.h"
-#include "PostProcessor.h"
-#include "PostProcessorXWall.h"
+#include "../include/PostProcessor.h"
+#include "../include/PostProcessorXWall.h"
 #include "PrintInputParameters.h"
 
 #include "DriverSteadyProblems.h"
@@ -78,20 +78,20 @@
 const unsigned int FE_DEGREE = 4;//3
 const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
 const unsigned int FE_DEGREE_XWALL = 1;
-const unsigned int N_Q_POINTS_1D_XWALL = 1;
-const unsigned int DIMENSION = 3; // DIMENSION >= 2
+const unsigned int N_Q_POINTS_1D_XWALL = 25;
+const unsigned int DIMENSION = 2; // DIMENSION >= 2
 const unsigned int REFINE_STEPS_SPACE_MIN = 3;//4
 const unsigned int REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
 const unsigned int REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
-const double GRID_STRETCH_FAC = 1.8;
+const double GRID_STRETCH_FAC = 0.001;
 const bool USE_SOURCE_TERM_CONTROLLER = true;
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
 {
 
-  output_data.output_prefix = "ph10595_l3_k4";
+  output_data.output_prefix = "ph10595_l3_k4k1_gt0";
   cfl = 0.14;
   //Re = 19000: 0.8284788e-5
   //Re = 10595: 1.48571e-5
@@ -132,6 +132,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   projection_type = ProjectionType::DivergencePenalty;
   order_time_integrator = 2;
+  start_with_low_order = false;
 
   //xwall specific
   IP_factor_viscous = 1.;
@@ -145,11 +146,13 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   right_hand_side = true;
 
   end_time = 1.0;
+  output_data.write_output = true;
   output_data.output_start_time = 0.;
-  output_data.output_interval_time = 0.1;
+  output_data.output_interval_time = 0.000000001;
   output_data.number_of_patches = FE_DEGREE+1;
   turb_stat_data.statistics_every = 10;
   turb_stat_data.statistics_end_time = end_time;
+  write_restart = true;
   restart_every_timesteps = 1e1;
   restart_interval_time = 1.e9;
   restart_interval_wall_time = 1.e9;
@@ -397,8 +400,9 @@ public:
         if(dim == 3)
           result *= (1.0 + 0.1*((double)rand() / (RAND_MAX)));
         //start with 30% of nominal velocity and ramp it up
-        result *= 0.91;//Stefan J used another density and thus the initial condition was different
-        result *= 0.5;
+        result *= 0.91;//Stephan J used another density and thus the initial condition was different
+        if(dim==2)
+          result *= 0.5;
       }
       else
         result = 0.0;
@@ -466,8 +470,8 @@ public:
       }
       else
       {
-        massflows_[0] = 20.19e-3;
-        massflows_[1] = 20.19e-3;
+        massflows_[0] = 40.38e-3;
+        massflows_[1] = 40.38e-3;
       }
     }
 
@@ -515,11 +519,10 @@ public:
         //the second contribution is a penalty on quick changes (damping)
         //the constants are empirical
 
-//        double oldforce = newforce;
         double dgoalm = massflow_id - massflows_[0];
         double dm = massflows_[0] - massflows_[1];
         if(dim==3)
-          newforce = 100.0*dgoalm  - 30000.0*dm + oldforce_; //(B1)
+          newforce = 500.0*dgoalm  - 30000.0*dm + oldforce_; //(B1)
         if(dim==2)
           newforce = 50.0*dgoalm  - 30000.0*dm + oldforce_; //(B1)
         return newforce;
@@ -571,12 +574,12 @@ public:
   class TimeIntBDFDualSplittingPH : public virtual TimeIntBDFDualSplitting<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule,value_type>
   {
   public:
-    TimeIntBDFDualSplittingPH(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
-                              fe_degree_p, fe_degree_xwall, xwall_quad_rule> >                ns_operation_in,
-                            std_cxx11::shared_ptr<PostProcessor<dim, fe_degree, fe_degree_p> >    postprocessor_in,
-                            InputParametersNavierStokes<dim> const                                &param_in,
-                            unsigned int const                                                    n_refine_time_in,
-                            bool const                                                            use_adaptive_time_stepping)
+    TimeIntBDFDualSplittingPH(
+        std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > ns_operation_in,
+        std_cxx11::shared_ptr<PostProcessorBase<dim> >                                                            postprocessor_in,
+        InputParametersNavierStokes<dim> const                                                                   &param_in,
+        unsigned int const                                                                                        n_refine_time_in,
+        bool const                                                                                                use_adaptive_time_stepping)
       :
       TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
               (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
@@ -592,13 +595,13 @@ public:
                 }
                 else
                 {
-                  massflows[0] = 20.19e-3;
-                  massflows[1] = 20.19e-3;
+                  massflows[0] = 40.38e-3;
+                  massflows[1] = 40.38e-3;
                 }
               }
 
       virtual ~TimeIntBDFDualSplittingPH(){}
-  private:
+  protected:
 
     std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > ns_op;
     std::vector<double> massflows;
@@ -611,6 +614,41 @@ public:
 
       TimeIntBDFDualSplitting<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule,value_type>::convective_step();
     }
+    void read_restart_data_ph(boost::archive::binary_iarchive & ia)
+    {
+      double massflows0;
+      double massflows1;
+      double old_force;
+      ia & massflows0;
+      ia & massflows1;
+      ia & old_force;
+      this->massflows[0] = massflows0;
+      this->massflows[1] = massflows1;
+      this->old_RHS_value = old_force;
+    }
+    void write_restart_data_ph(boost::archive::binary_oarchive & oa) const
+    {
+      oa & this->massflows[0];
+      oa & this->massflows[1];
+      oa & this->old_RHS_value;
+    }
+    virtual void read_restart_vectors(boost::archive::binary_iarchive & ia)
+    {
+      TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+      read_restart_vectors(ia);
+
+      this->read_restart_data_ph(ia);
+    }
+
+    virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const
+    {
+      TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+          write_restart_vectors(oa);
+
+      this->write_restart_data_ph(oa);
+    }
+
+  private:
     void compute_massflow_PH (const parallel::distributed::Vector<value_type>     &src)
     {
       double dst_loc = 0.0;
@@ -634,15 +672,8 @@ public:
       if(rhs == nullptr)
         rhs = std::dynamic_pointer_cast<RightHandSide<dim> > (ns_op->get_field_functions()->right_hand_side);
       Point<dim> dummy;
-      if (this->time_step_number <= 2)
-      {
-        old_RHS_value = 13.5;
-      }
-      else
-      {
-        rhs->setup(massflows,old_RHS_value);
-        old_RHS_value = rhs->value(dummy);
-      }
+      rhs->setup(massflows,old_RHS_value);
+      old_RHS_value = rhs->value(dummy);
 //  #ifdef DEBUG_MASSFLOW_CONTROLLER
       if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
       {
@@ -695,31 +726,6 @@ public:
         }
       }
       dst += dmdt_V_loc;
-  //    dst.at(0) = dmdt_V_loc;
-    }
-
-    virtual void read_restart_vectors(boost::archive::binary_iarchive & ia)
-    {
-      TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
-      read_restart_vectors(ia);
-      double massflows0;
-      double massflows1;
-      double old_force;
-      ia & massflows0;
-      ia & massflows1;
-      ia & old_force;
-      massflows[0] = massflows0;
-      massflows[1] = massflows1;
-      old_RHS_value = old_force;
-    }
-
-    virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const
-    {
-      TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
-          write_restart_vectors(oa);
-      oa & massflows[0];
-      oa & massflows[1];
-      oa & old_RHS_value;
     }
 
   };
@@ -729,12 +735,12 @@ public:
                                          public virtual TimeIntBDFDualSplittingPH<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule,value_type>
   {
   public:
-    TimeIntBDFDualSplittingXWallPH(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
-                              fe_degree_p, fe_degree_xwall, xwall_quad_rule> >                    ns_operation_in,
-                            std_cxx11::shared_ptr<PostProcessor<dim, fe_degree, fe_degree_p> >    postprocessor_in,
-                            InputParametersNavierStokes<dim> const                                &param_in,
-                            unsigned int const                                                    n_refine_time_in,
-                            bool const                                                            use_adaptive_time_stepping)
+    TimeIntBDFDualSplittingXWallPH(
+        std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > ns_operation_in,
+        std_cxx11::shared_ptr<PostProcessorBase<dim> >                                                            postprocessor_in,
+        InputParametersNavierStokes<dim> const                                                                   &param_in,
+        unsigned int const                                                                                        n_refine_time_in,
+        bool const                                                                                                use_adaptive_time_stepping)
       :
       TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
               (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
@@ -743,18 +749,38 @@ public:
       TimeIntBDFDualSplittingPH<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
               (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping)
     {}
+
+    virtual ~TimeIntBDFDualSplittingXWallPH(){};
+
+  protected:
+    virtual void read_restart_vectors(boost::archive::binary_iarchive & ia)
+    {
+      TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+      read_restart_vectors(ia);
+
+      this->read_restart_data_ph(ia);
+    }
+
+    virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const
+    {
+      TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+          write_restart_vectors(oa);
+
+      this->write_restart_data_ph(oa);
+    }
   };
+
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
   class TimeIntBDFDualSplittingXWallSpalartAllmarasPH : public virtual TimeIntBDFDualSplittingXWallSpalartAllmaras<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule,value_type>,
                                                         public virtual TimeIntBDFDualSplittingPH<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule,value_type>
   {
   public:
-    TimeIntBDFDualSplittingXWallSpalartAllmarasPH(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
-                              fe_degree_p, fe_degree_xwall, xwall_quad_rule> >                 ns_operation_in,
-                            std_cxx11::shared_ptr<PostProcessor<dim, fe_degree, fe_degree_p> > postprocessor_in,
-                            InputParametersNavierStokes<dim> const                             &param_in,
-                            unsigned int const                                                 n_refine_time_in,
-                            bool const                                                         use_adaptive_time_stepping)
+    TimeIntBDFDualSplittingXWallSpalartAllmarasPH(
+      std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > ns_operation_in,
+      std_cxx11::shared_ptr<PostProcessorBase<dim> >                                                            postprocessor_in,
+      InputParametersNavierStokes<dim> const                                                                   &param_in,
+      unsigned int const                                                                                        n_refine_time_in,
+      bool const                                                                                                use_adaptive_time_stepping)
       :
       TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
               (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
@@ -765,13 +791,37 @@ public:
       TimeIntBDFDualSplittingPH<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
               (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping)
     {}
+
+    virtual ~TimeIntBDFDualSplittingXWallSpalartAllmarasPH(){}
+
+  protected:
+    virtual void read_restart_vectors(boost::archive::binary_iarchive & ia)
+    {
+      TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+      read_restart_vectors(ia);
+
+      this->read_restart_data_ph(ia);
+
+      this->read_restart_data_sa(ia);
+    }
+
+    virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const
+    {
+      TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+          write_restart_vectors(oa);
+
+      this->write_restart_data_ph(oa);
+
+      this->write_restart_data_sa(oa);
+    }
   };
+
   template<int dim>
   class NavierStokesProblem
   {
   public:
     typedef typename DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>::value_type value_type;
-    NavierStokesProblem(const unsigned int refine_steps_space, const unsigned int refine_steps_time=0);
+    NavierStokesProblem(const unsigned int refine_steps_space, const unsigned int refine_steps_time=0, const bool do_restart = false);
     void solve_problem(bool do_restart);
 
   private:
@@ -796,7 +846,7 @@ public:
 
     std_cxx11::shared_ptr<DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> > navier_stokes_operation;
 
-    std_cxx11::shared_ptr<PostProcessor<dim, FE_DEGREE, FE_DEGREE_P> > postprocessor;
+    std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor;
 
     std_cxx11::shared_ptr<TimeIntBDFNavierStokes<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type> > time_integrator;
 
@@ -811,49 +861,59 @@ public:
                   std_cxx11::shared_ptr< const DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule> >  ns_operation,
                   PostProcessorData<dim> const &pp_data):
       PostProcessor<dim,fe_degree,fe_degree_p>(pp_data),
+      output_data(pp_data.output_data),
+      turb_stat_data(pp_data.turb_stat_data),
       statistics_ph(ns_operation->get_dof_handler_u(),ns_operation->get_dof_handler_p(),ns_operation->get_mapping())
     {
-
     }
 
     virtual ~PostProcessorPH(){}
 
-    void setup(PostProcessorData<dim> const                                 &postprocessor_data_in,
-               DoFHandler<dim> const                                        &dof_handler_velocity_in,
-               DoFHandler<dim> const                                        &dof_handler_pressure_in,
-               Mapping<dim> const                                           &mapping_in,
-               MatrixFree<dim,double> const                                 &matrix_free_data_in,
-               std_cxx11::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution_in)
+    virtual void setup(DoFHandler<dim> const                                        &dof_handler_velocity_in,
+                       DoFHandler<dim> const                                        &dof_handler_pressure_in,
+                       Mapping<dim> const                                           &mapping_in,
+                       MatrixFree<dim,double> const                                 &matrix_free_data_in,
+                       DofQuadIndexData const                                       &dof_quad_index_data_in,
+                       std_cxx11::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution_in)
     {
-      PostProcessor<dim,fe_degree,fe_degree_p>::setup(postprocessor_data_in,
-                                                      dof_handler_velocity_in,
+      PostProcessor<dim,fe_degree,fe_degree_p>::setup(dof_handler_velocity_in,
                                                       dof_handler_pressure_in,
                                                       mapping_in,
                                                       matrix_free_data_in,
+                                                      dof_quad_index_data_in,
                                                       analytical_solution_in);
 
-      statistics_ph.setup(PushForward<dim>(),this->pp_data.output_data.output_prefix,false);
+      statistics_ph.setup(PushForward<dim>(),this->output_data.output_prefix,false);
     }
 
     virtual void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
-                           parallel::distributed::Vector<double> const &pressure,
-                           parallel::distributed::Vector<double> const &vorticity,
-                           parallel::distributed::Vector<double> const &divergence,
-                           double const time,
-                           unsigned int const time_step_number)
+                                   parallel::distributed::Vector<double> const &intermediate_velocity,
+                                   parallel::distributed::Vector<double> const &pressure,
+                                   parallel::distributed::Vector<double> const &vorticity,
+                                   parallel::distributed::Vector<double> const &divergence,
+                                   double const                                time = 0.0,
+                                   int const                                   time_step_number = -1)
     {
-      PostProcessor<dim,fe_degree,fe_degree_p>::do_postprocessing(velocity,pressure,vorticity,divergence,time,time_step_number);
+      PostProcessor<dim,fe_degree,fe_degree_p>::do_postprocessing(velocity,
+                                                                  intermediate_velocity,
+                                                                  pressure,
+                                                                  vorticity,
+                                                                  divergence,
+                                                                  time,
+                                                                  time_step_number);
       const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
 
-      if(time > this->pp_data.turb_stat_data.statistics_start_time-EPSILON && time_step_number % this->pp_data.turb_stat_data.statistics_every == 0)
+      if(time > this->turb_stat_data.statistics_start_time-EPSILON && time_step_number % this->turb_stat_data.statistics_every == 0)
       {
         statistics_ph.evaluate(velocity,pressure);
-        if(time_step_number % 100 == 0 || time > (this->pp_data.turb_stat_data.statistics_end_time-EPSILON))
-          statistics_ph.write_output(this->pp_data.output_data.output_prefix,this->pp_data.turb_stat_data.viscosity,0.);//TODO Benjamin: add mass flow in last slot
+        if(time_step_number % 100 == 0 || time > (this->turb_stat_data.statistics_end_time-EPSILON))
+          statistics_ph.write_output(this->output_data.output_prefix,this->turb_stat_data.viscosity,0.);//TODO Benjamin: add mass flow in last slot
       }
     };
 
   protected:
+    OutputDataNavierStokes output_data;
+    TurbulenceStatisticsData turb_stat_data;
     StatisticsManagerPH<dim> statistics_ph;
 
   };
@@ -863,39 +923,48 @@ public:
   {
   public:
 
-    PostProcessorPHXWall(
-                  std_cxx11::shared_ptr< DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule> >  ns_operation):
-      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule>(ns_operation),
-      statistics_ph(ns_operation->get_dof_handler_u(),ns_operation->get_dof_handler_p(),ns_operation->get_mapping())
+    PostProcessorPHXWall(std_cxx11::shared_ptr< DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule> >  ns_operation,
+                         PostProcessorData<dim> const                                                                           &pp_data)
+                           :
+                         PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule>(ns_operation,pp_data),
+                         statistics_ph(ns_operation->get_dof_handler_u(),ns_operation->get_dof_handler_p(),ns_operation->get_mapping())
     {
     }
 
     virtual ~PostProcessorPHXWall(){}
 
-    void setup(PostProcessorData<dim> const                                 &postprocessor_data_in,
-               DoFHandler<dim> const                                        &dof_handler_velocity_in,
+    void setup(DoFHandler<dim> const                                        &dof_handler_velocity_in,
                DoFHandler<dim> const                                        &dof_handler_pressure_in,
                Mapping<dim> const                                           &mapping_in,
-               MatrixFree<dim,double> const                                 &matrix_free_data_in,
-               std_cxx11::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution_in)
+               MatrixFree<dim,double> const                                 &matrix_free_data,
+               DofQuadIndexData const                                       &dof_quad_index_data,
+               std_cxx11::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution)
     {
-      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule>::setup(postprocessor_data_in,
-                                                                                               dof_handler_velocity_in,
-                                                                                               dof_handler_pressure_in,
-                                                                                               mapping_in,
-                                                                                               matrix_free_data_in,
-                                                                                               analytical_solution_in);
+      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule>::
+            setup(dof_handler_velocity_in,
+                  dof_handler_pressure_in,
+                  mapping_in,
+                  matrix_free_data,
+                  dof_quad_index_data,
+                  analytical_solution);
       statistics_ph.setup(PushForward<dim>(),this->pp_data.output_data.output_prefix,true);
     }
 
     virtual void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
-                           parallel::distributed::Vector<double> const &pressure,
-                           parallel::distributed::Vector<double> const &vorticity,
-                           parallel::distributed::Vector<double> const &divergence,
-                           double const time,
-                           unsigned int const time_step_number)
+                                   parallel::distributed::Vector<double> const &intermediate_velocity,
+                                   parallel::distributed::Vector<double> const &pressure,
+                                   parallel::distributed::Vector<double> const &vorticity,
+                                   parallel::distributed::Vector<double> const &divergence,
+                                   double const                                time = 0.0,
+                                   int const                                   time_step_number = -1)
     {
-      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule>::do_postprocessing(velocity,pressure,vorticity,divergence,time,time_step_number);
+      PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule>::do_postprocessing(velocity,
+                                                                                                       intermediate_velocity,
+                                                                                                       pressure,
+                                                                                                       vorticity,
+                                                                                                       divergence,
+                                                                                                       time,
+                                                                                                       time_step_number);
 
       const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
 
@@ -915,8 +984,14 @@ public:
 
   };
 
+  bool exists_test0 (const std::string& name)
+  {
+      std::ifstream f(name.c_str());
+      return f.good();
+  }
+
   template<int dim>
-  NavierStokesProblem<dim>::NavierStokesProblem(const unsigned int refine_steps_space, const unsigned int refine_steps_time):
+  NavierStokesProblem<dim>::NavierStokesProblem(const unsigned int refine_steps_space, const unsigned int refine_steps_time, const bool do_restart):
   pcout (std::cout,Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0),
   push_forward(),
   pull_back(),
@@ -928,6 +1003,9 @@ public:
 
     param.set_input_parameters();
     param.check_input_parameters();
+
+    if(do_restart == false)
+      AssertThrow(param.start_with_low_order == true,ExcMessage("start with low order unless you do a restart"));
 
     // initialize functions (analytical solution, rhs, boundary conditions)
     std_cxx11::shared_ptr<Function<dim> > analytical_solution_velocity;
@@ -947,6 +1025,37 @@ public:
     boundary_descriptor_velocity.reset(new BoundaryDescriptorNavierStokes<dim>());
     boundary_descriptor_pressure.reset(new BoundaryDescriptorNavierStokes<dim>());
 
+    PostProcessorData<dim> pp_data;
+    pp_data.output_data = param.output_data;
+    pp_data.turb_stat_data = param.turb_stat_data;
+    pp_data.turb_stat_data.viscosity = param.viscosity;
+
+    // set next empty output number if we do restart
+    if(do_restart)
+    {
+      unsigned int output_number = 0;
+      std::ostringstream filename;
+      filename.str("");
+      filename.clear();
+      filename << "output/"
+               << pp_data.output_data.output_prefix
+               << "_"
+               << output_number
+               << ".pvtu";
+      while(exists_test0(filename.str()))
+      {
+        output_number++;
+        filename.str("");
+        filename.clear();
+        filename << "output/"
+                 << pp_data.output_data.output_prefix
+                 << "_"
+                 << output_number
+                 << ".pvtu";
+      }
+      pp_data.output_data.output_counter_start = output_number;
+    }
+
     bool use_adaptive_time_stepping = false;
     if(param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
       use_adaptive_time_stepping = true;
@@ -964,7 +1073,7 @@ public:
           navier_stokes_operation.reset(new DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
               (triangulation,param));
           // initialize postprocessor after initializing navier_stokes_operation
-          postprocessor.reset(new PostProcessorPHXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation));
+          postprocessor.reset(new PostProcessorPHXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,pp_data));
           // initialize time integrator that depends on both navier_stokes_operation and postprocessor
           time_integrator.reset(new TimeIntBDFDualSplittingXWallSpalartAllmarasPH<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
               navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
@@ -974,7 +1083,7 @@ public:
           navier_stokes_operation.reset(new DGNavierStokesDualSplittingXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
               (triangulation,param));
           // initialize postprocessor after initializing navier_stokes_operation
-          postprocessor.reset(new PostProcessorPHXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation));
+          postprocessor.reset(new PostProcessorPHXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,pp_data));
           // initialize time integrator that depends on both navier_stokes_operation and postprocessor
           time_integrator.reset(new TimeIntBDFDualSplittingXWallPH<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
               navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
@@ -998,7 +1107,7 @@ public:
         navier_stokes_operation.reset(new DGNavierStokesDualSplitting<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
             (triangulation,param));
         // initialize postprocessor after initializing navier_stokes_operation
-        postprocessor.reset(new PostProcessorPH<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation));
+        postprocessor.reset(new PostProcessorPH<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,pp_data));
         // initialize time integrator that depends on both navier_stokes_operation and postprocessor
         time_integrator.reset(new TimeIntBDFDualSplittingPH<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
             navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
@@ -1009,7 +1118,6 @@ public:
         AssertThrow(false,ExcMessage("currently not implemented"));
       }
     }
-
   }
 
   template<int dim>
@@ -1126,26 +1234,13 @@ void NavierStokesProblem<dim>::solve_problem(bool do_restart)
   analytical_solution->velocity = field_functions->initial_solution_velocity;
   analytical_solution->pressure = field_functions->initial_solution_pressure;
 
-  PostProcessorData<dim> pp_data;
+  DofQuadIndexData dof_quad_index_data;
 
-  pp_data.dof_index_velocity = navier_stokes_operation->get_dof_index_velocity();
-  pp_data.dof_index_pressure = navier_stokes_operation->get_dof_index_pressure();
-  pp_data.quad_index_velocity = navier_stokes_operation->get_quad_index_velocity_linear();
-
-  pp_data.output_data = param.output_data;
-  pp_data.error_data = param.error_data;
-  pp_data.lift_and_drag_data = param.lift_and_drag_data;
-  pp_data.pressure_difference_data = param.pressure_difference_data;
-  pp_data.mass_data = param.mass_data;
-
-  pp_data.turb_stat_data = param.turb_stat_data;
-  pp_data.turb_stat_data.viscosity = param.viscosity;
-
-  postprocessor->setup(pp_data,
-                       navier_stokes_operation->get_dof_handler_u(),
+  postprocessor->setup(navier_stokes_operation->get_dof_handler_u(),
                        navier_stokes_operation->get_dof_handler_p(),
                        navier_stokes_operation->get_mapping(),
                        navier_stokes_operation->get_data(),
+                       dof_quad_index_data,
                        analytical_solution);
 
   time_integrator->timeloop();
@@ -1181,7 +1276,7 @@ int main (int argc, char** argv)
       //time refinements in order to perform temporal convergence tests
       for(unsigned int refine_steps_time = REFINE_STEPS_TIME_MIN;refine_steps_time <= REFINE_STEPS_TIME_MAX;++refine_steps_time)
       {
-        NavierStokesProblem<DIMENSION> navier_stokes_problem(refine_steps_space,refine_steps_time);
+        NavierStokesProblem<DIMENSION> navier_stokes_problem(refine_steps_space,refine_steps_time,do_restart);
         navier_stokes_problem.solve_problem(do_restart);
       }
     }

@@ -76,13 +76,6 @@ public:
                                         pp_data.mass_data);
   }
 
-//  void init_from_restart(unsigned int o_counter)
-//  {
-//    output_counter = o_counter;
-//  }
-//
-//  unsigned int get_output_counter() const {return output_counter;}
-
   virtual void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
                                  parallel::distributed::Vector<double> const &intermediate_velocity,
                                  parallel::distributed::Vector<double> const &pressure,

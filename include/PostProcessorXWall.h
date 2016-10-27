@@ -123,36 +123,67 @@
   };
 
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-  class PostProcessorXWall: public PostProcessor<dim,fe_degree,fe_degree_p>
+  class PostProcessorXWall: public PostProcessorBase<dim>
   {
   public:
     PostProcessorXWall(std_cxx11::shared_ptr<DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule> >  ns_operation,
-                       PostProcessorData<dim> const &pp_data):
-      PostProcessor<dim,fe_degree,fe_degree_p>(pp_data),
-      ns_operation_xw_(std::dynamic_pointer_cast<DGNavierStokesDualSplittingXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule> > (ns_operation))
+                       PostProcessorData<dim> const                                                                          &pp_data)
+        :
+      PostProcessorBase<dim>(),
+      ns_operation_xw_(std::dynamic_pointer_cast<DGNavierStokesDualSplittingXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule> > (ns_operation)),
+      pp_data(pp_data),
+      output_counter(pp_data.output_data.output_counter_start)
     {
     }
 
-    void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
-                           parallel::distributed::Vector<double> const &pressure,
-                           parallel::distributed::Vector<double> const &vorticity,
-                           parallel::distributed::Vector<double> const &divergence,
-                           double const time,
-                           unsigned int const time_step_number)
+    virtual ~PostProcessorXWall(){};
+
+    /*
+     * Setup function.
+     */
+    virtual void setup(DoFHandler<dim> const                                        &dof_handler_velocity_in,
+                       DoFHandler<dim> const                                        &dof_handler_pressure_in,
+                       Mapping<dim> const                                           &mapping_in,
+                       MatrixFree<dim,double> const                                 &,
+                       DofQuadIndexData const                                       &,
+                       std_cxx11::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  )
     {
-      // TODO
-//      this->time = time;
-//      this->time_step_number = time_step_number;
-//
-//      const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
-//      if( time > (this->pp_data.output_data.output_start_time + this->output_counter* this->pp_data.output_data.output_interval_time - EPSILON))
-//      {
-//        write_output(velocity,pressure,vorticity,divergence);
-//        ++(this->output_counter);
-//      }
+      dof_handler_velocity = &dof_handler_velocity_in;
+      dof_handler_pressure = &dof_handler_pressure_in;
+      mapping = &mapping_in;
+    }
+
+    /*
+     * This function has to be called to apply the postprocessing tools.
+     * It is currently used for unsteady solvers, but the plan is to use this
+     * function also for the steady solver and that the individual postprocessing
+     * tools decide whether to apply the steady or unsteady postprocessing functions.
+     */
+    virtual void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
+                                   parallel::distributed::Vector<double> const &,
+                                   parallel::distributed::Vector<double> const &pressure,
+                                   parallel::distributed::Vector<double> const &vorticity,
+                                   parallel::distributed::Vector<double> const &divergence,
+                                   double const                                time = 0.0,
+                                   int const                                    = -1)
+    {
+      const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
+      if( time > (this->pp_data.output_data.output_start_time + this->output_counter* this->pp_data.output_data.output_interval_time - EPSILON))
+      {
+        write_output(velocity,pressure,vorticity,divergence);
+          ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+          pcout << std::endl << "OUTPUT << Write data at time t = " << std::scientific << std::setprecision(4) << time << std::endl;
+        ++(this->output_counter);
+      }
     };
 protected:
+
     std_cxx11::shared_ptr< const DGNavierStokesDualSplittingXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule> > ns_operation_xw_;
+    PostProcessorData<dim> pp_data;
+    unsigned int output_counter;
+    SmartPointer< DoFHandler<dim> const > dof_handler_velocity;
+    SmartPointer< DoFHandler<dim> const > dof_handler_pressure;
+    SmartPointer< Mapping<dim> const > mapping;
 private:
     void write_output(parallel::distributed::Vector<double> const &velocity,
                       parallel::distributed::Vector<double> const &pressure,
@@ -168,8 +199,6 @@ private:
                parallel::distributed::Vector<double> const &vorticity,
                parallel::distributed::Vector<double> const &divergence)
  {
-    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-    pcout << std::endl << "OUTPUT << Write data at time t = " << std::scientific << std::setprecision(4) << this->time << std::endl;
 
     // velocity + xwall dofs
     const FESystem<dim> joint_fe (this->dof_handler_velocity->get_fe(), 1, //velocity

@@ -27,10 +27,10 @@ public:
             (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
     TimeIntBDFDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
             (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
+    vt(this->order),
     time_steps_sa(this->order),
     num_sa_substeps(1),
     ns_operation_xwall_sa (std::dynamic_pointer_cast<DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > (ns_operation_in)),
-    vt(this->order),
     vt_rhs(this->order),
     gamma0_sa(1.0),
     alpha_sa(this->order),
@@ -39,6 +39,54 @@ public:
   }
 
   virtual ~TimeIntBDFDualSplittingXWallSpalartAllmaras(){}
+
+  std::vector<parallel::distributed::Vector<value_type> > vt;
+
+protected:
+
+  void read_restart_data_sa(boost::archive::binary_iarchive & ia)
+  {
+    Vector<double> tmp;
+    for (unsigned int i=0; i<this->vt.size(); i++)
+    {
+      ia >> tmp;
+      std::copy(tmp.begin(), tmp.end(),
+                this->vt[i].begin());
+    }
+
+    for (unsigned int i=0; i<this->vt_rhs.size(); i++)
+    {
+      ia >> tmp;
+      std::copy(tmp.begin(), tmp.end(),
+                this->vt_rhs[i].begin());
+    }
+
+    for (unsigned int i = 0; i < this->order; i++)
+      ia & time_steps_sa[i];
+
+  }
+  void write_restart_data_sa(boost::archive::binary_oarchive & oa) const
+  {
+    VectorView<double> tmp(this->vt[0].local_size(),
+                           this->vt[0].begin());
+    oa << tmp;
+    for (unsigned int i=1; i<this->vt.size(); i++)
+    {
+      tmp.reinit(this->vt[i].local_size(),
+                 this->vt[i].begin());
+      oa << tmp;
+    }
+
+    for (unsigned int i=0; i<this->vt_rhs.size(); i++)
+    {
+      tmp.reinit(this->vt_rhs[i].local_size(),
+                 this->vt_rhs[i].begin());
+      oa << tmp;
+    }
+
+    for (unsigned int i = 0; i< this->order;i++)
+      oa & time_steps_sa[i];
+  }
 
 private:
   virtual void postprocessing() const;
@@ -64,7 +112,6 @@ private:
      ns_operation_xwall_sa;
 
   parallel::distributed::Vector<value_type> vt_np;
-  std::vector<parallel::distributed::Vector<value_type> > vt;
   std::vector<parallel::distributed::Vector<value_type> > vt_rhs;
 
   value_type gamma0_sa;
