@@ -80,10 +80,7 @@ const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
 const unsigned int FE_DEGREE_XWALL = 1;
 const unsigned int N_Q_POINTS_1D_XWALL = 25;
 const unsigned int DIMENSION = 2; // DIMENSION >= 2
-const unsigned int REFINE_STEPS_SPACE_MIN = 3;//4
-const unsigned int REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
-const unsigned int REFINE_STEPS_TIME_MIN = 0;
-const unsigned int REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
+const unsigned int REFINE_STEPS_SPACE = 3;//4
 const double GRID_STRETCH_FAC = 0.001;
 const bool USE_SOURCE_TERM_CONTROLLER = true;
 
@@ -132,7 +129,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   projection_type = ProjectionType::DivergencePenalty;
   order_time_integrator = 2;
-  start_with_low_order = false;
+  start_with_low_order = true;
 
   //xwall specific
   IP_factor_viscous = 1.;
@@ -148,7 +145,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   end_time = 1.0;
   output_data.write_output = true;
   output_data.output_start_time = 0.;
-  output_data.output_interval_time = 0.000000001;
+  output_data.output_interval_time = 0.1;
   output_data.number_of_patches = FE_DEGREE+1;
   turb_stat_data.statistics_every = 10;
   turb_stat_data.statistics_end_time = end_time;
@@ -674,12 +671,12 @@ public:
       Point<dim> dummy;
       rhs->setup(massflows,old_RHS_value);
       old_RHS_value = rhs->value(dummy);
-//  #ifdef DEBUG_MASSFLOW_CONTROLLER
+  #ifdef DEBUG_MASSFLOW_CONTROLLER
       if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
       {
         std::cout << "fx = " << old_RHS_value << "  dm/dt old = "<< massflows[1] << "  dm/dt new = "<< massflows[0] << std::endl;
       }
-//  #endif
+  #endif
       if(this->time_step_number% this->param.output_solver_info_every_timesteps == 0)
         if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
         {
@@ -816,42 +813,6 @@ public:
     }
   };
 
-  template<int dim>
-  class NavierStokesProblem
-  {
-  public:
-    typedef typename DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>::value_type value_type;
-    NavierStokesProblem(const unsigned int refine_steps_space, const unsigned int refine_steps_time=0, const bool do_restart = false);
-    void solve_problem(bool do_restart);
-
-  private:
-    void create_grid();
-    void print_parameters() const;
-
-    ConditionalOStream pcout;
-    // TMP
-    PushForward<dim> push_forward;
-    PullBack<dim> pull_back;
-    FunctionManifold<dim,dim,dim> manifold;
-    parallel::distributed::Triangulation<dim> triangulation;
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_faces;
-
-    const unsigned int n_refine_space;
-
-    std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions;
-    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity;
-    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure;
-
-    InputParametersNavierStokes<dim> param;
-
-    std_cxx11::shared_ptr<DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> > navier_stokes_operation;
-
-    std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor;
-
-    std_cxx11::shared_ptr<TimeIntBDFNavierStokes<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type> > time_integrator;
-
-  };
-
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
   class PostProcessorPH: public PostProcessor<dim,fe_degree,fe_degree_p>
   {
@@ -984,6 +945,41 @@ public:
 
   };
 
+  template<int dim>
+  class NavierStokesProblem
+  {
+  public:
+    typedef typename DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>::value_type value_type;
+    NavierStokesProblem(const unsigned int refine_steps_space, const bool do_restart = false);
+    void solve_problem(bool do_restart);
+
+  private:
+    void create_grid();
+    void print_parameters() const;
+
+    ConditionalOStream pcout;
+    // TMP
+    PushForward<dim> push_forward;
+    PullBack<dim> pull_back;
+    FunctionManifold<dim,dim,dim> manifold;
+    parallel::distributed::Triangulation<dim> triangulation;
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_faces;
+
+    const unsigned int n_refine_space;
+
+    std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions;
+    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity;
+    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure;
+
+    InputParametersNavierStokes<dim> param;
+
+    std_cxx11::shared_ptr<DGNavierStokesBase<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL> > navier_stokes_operation;
+
+    std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor;
+
+    std_cxx11::shared_ptr<TimeIntBDFNavierStokes<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type> > time_integrator;
+
+  };
   bool exists_test0 (const std::string& name)
   {
       std::ifstream f(name.c_str());
@@ -991,7 +987,7 @@ public:
   }
 
   template<int dim>
-  NavierStokesProblem<dim>::NavierStokesProblem(const unsigned int refine_steps_space, const unsigned int refine_steps_time, const bool do_restart):
+  NavierStokesProblem<dim>::NavierStokesProblem(const unsigned int refine_steps_space, const bool do_restart):
   pcout (std::cout,Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0),
   push_forward(),
   pull_back(),
@@ -1076,7 +1072,7 @@ public:
           postprocessor.reset(new PostProcessorPHXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,pp_data));
           // initialize time integrator that depends on both navier_stokes_operation and postprocessor
           time_integrator.reset(new TimeIntBDFDualSplittingXWallSpalartAllmarasPH<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
-              navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
+              navier_stokes_operation,postprocessor,param,0,use_adaptive_time_stepping));
         }
         else if(param.xwall_turb == XWallTurbulenceApproach::None)
         {
@@ -1086,7 +1082,7 @@ public:
           postprocessor.reset(new PostProcessorPHXWall<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,pp_data));
           // initialize time integrator that depends on both navier_stokes_operation and postprocessor
           time_integrator.reset(new TimeIntBDFDualSplittingXWallPH<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
-              navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
+              navier_stokes_operation,postprocessor,param,0,use_adaptive_time_stepping));
         }
         else if(param.xwall_turb == XWallTurbulenceApproach::Undefined)
         {
@@ -1110,12 +1106,12 @@ public:
         postprocessor.reset(new PostProcessorPH<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>(navier_stokes_operation,pp_data));
         // initialize time integrator that depends on both navier_stokes_operation and postprocessor
         time_integrator.reset(new TimeIntBDFDualSplittingPH<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type>(
-            navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
+            navier_stokes_operation,postprocessor,param,0,use_adaptive_time_stepping));
       }
       else if(param.problem_type == ProblemType::Unsteady &&
               param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
       {
-        AssertThrow(false,ExcMessage("currently not implemented"));
+        AssertThrow(false,ExcMessage("currently not implemented. One would have to include the adaptive bodyforce in the RHS"));
       }
     }
   }
@@ -1259,27 +1255,10 @@ int main (int argc, char** argv)
     if (argc > 1)
     {
       do_restart = std::atoi(argv[1]);
-      if(do_restart)
-      {
-        AssertThrow(REFINE_STEPS_SPACE_MIN == REFINE_STEPS_SPACE_MAX, ExcMessage("Spatial refinement with restart not possible!"));
-
-        //this does in principle work
-        //although it doesn't make much sense
-        if(REFINE_STEPS_TIME_MIN != REFINE_STEPS_TIME_MAX && Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-          std::cout << "Warning: you are starting from a restart and refine the time steps!" << std::endl;
-      }
     }
 
-    //mesh refinements in order to perform spatial convergence tests
-    for(unsigned int refine_steps_space = REFINE_STEPS_SPACE_MIN;refine_steps_space <= REFINE_STEPS_SPACE_MAX;++refine_steps_space)
-    {
-      //time refinements in order to perform temporal convergence tests
-      for(unsigned int refine_steps_time = REFINE_STEPS_TIME_MIN;refine_steps_time <= REFINE_STEPS_TIME_MAX;++refine_steps_time)
-      {
-        NavierStokesProblem<DIMENSION> navier_stokes_problem(refine_steps_space,refine_steps_time,do_restart);
-        navier_stokes_problem.solve_problem(do_restart);
-      }
-    }
+    NavierStokesProblem<DIMENSION> navier_stokes_problem(REFINE_STEPS_SPACE,do_restart);
+    navier_stokes_problem.solve_problem(do_restart);
   }
   catch (std::exception &exc)
   {

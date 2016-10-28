@@ -17,7 +17,7 @@ SET( SOURCE_FILES
      fe_flow_past_cylinder.cc
      fe_turbulent_channel.cc
      fe_poiseuille.cc
-     #dg_turbulent_channel.cc
+     dg_turbulent_channel.cc
      dg_periodic_hill.cc
      DGConvectionDiffusionProblem.cc
      )

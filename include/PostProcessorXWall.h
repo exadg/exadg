@@ -188,7 +188,7 @@ private:
     void write_output(parallel::distributed::Vector<double> const &velocity,
                       parallel::distributed::Vector<double> const &pressure,
                       parallel::distributed::Vector<double> const &vorticity,
-                      parallel::distributed::Vector<double> const &divergence);
+                      parallel::distributed::Vector<double> const &vt);
 
   };
 
@@ -197,7 +197,7 @@ private:
   write_output(parallel::distributed::Vector<double> const &velocity,
                parallel::distributed::Vector<double> const &pressure,
                parallel::distributed::Vector<double> const &vorticity,
-               parallel::distributed::Vector<double> const &divergence)
+               parallel::distributed::Vector<double> const &vt)
  {
 
     // velocity + xwall dofs
@@ -266,7 +266,7 @@ private:
 
   joint_solution.update_ghost_values();
 
-  Postprocessor<dim> postprocessor (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD),this->ns_operation_xw_->get_viscosity());
+  Postprocessor<dim> postprocessor (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD),pp_data.turb_stat_data.viscosity);
 
   DataOut<dim> data_out;
   data_out.attach_dof_handler(joint_dof_handler);
@@ -279,18 +279,12 @@ private:
     nsa = std::dynamic_pointer_cast<const DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > (ns_operation_xw_);
     if(nsa != nullptr)
     {
-      data_out.add_data_vector (nsa->get_dof_handler_vt(),divergence, "vt");
+      data_out.add_data_vector (nsa->get_dof_handler_vt(),vt, "vt");
     }
   }
 
   if(this->pp_data.output_data.compute_divergence == true)
-  {
-    AssertThrow(false,ExcMessage("currently not supported"));
-//    std::vector<std::string> divergence_names (dim, "divergence");
-//    std::vector<DataComponentInterpretation::DataComponentInterpretation>
-//      divergence_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
-//    data_out.add_data_vector (this->ns_operation_->get_dof_handler_u(),divergence, divergence_names, divergence_component_interpretation);
-  }
+    AssertThrow(false,ExcMessage("Computing the divergence for xwall elements currently not supported"));
 
   std::ostringstream filename;
   filename << "output/"
