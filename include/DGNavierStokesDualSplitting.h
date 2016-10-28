@@ -35,6 +35,7 @@ public:
                               InputParametersNavierStokes<dim> const          &parameter)
     :
     DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>(triangulation,parameter),
+    fe_param(parameter),
     projection_operator(nullptr),
     velocity_linear(nullptr)
   {}
@@ -118,6 +119,7 @@ public:
   }
 
 protected:
+  FEParameters<dim> fe_param;
   std_cxx11::shared_ptr<PreconditionerBase<value_type> > helmholtz_preconditioner;
   ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> * projection_operator;
   std_cxx11::shared_ptr<ProjectionSolverBase<value_type> > projection_solver;

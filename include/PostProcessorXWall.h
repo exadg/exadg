@@ -163,14 +163,14 @@
                                    parallel::distributed::Vector<double> const &,
                                    parallel::distributed::Vector<double> const &pressure,
                                    parallel::distributed::Vector<double> const &vorticity,
-                                   parallel::distributed::Vector<double> const &divergence,
+                                   parallel::distributed::Vector<double> const &vt,
                                    double const                                time = 0.0,
                                    int const                                    = -1)
     {
       const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
       if( time > (this->pp_data.output_data.output_start_time + this->output_counter* this->pp_data.output_data.output_interval_time - EPSILON))
       {
-        write_output(velocity,pressure,vorticity,divergence);
+        write_output(velocity,pressure,vorticity,vt);
           ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
           pcout << std::endl << "OUTPUT << Write data at time t = " << std::scientific << std::setprecision(4) << time << std::endl;
         ++(this->output_counter);

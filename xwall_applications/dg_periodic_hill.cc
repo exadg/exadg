@@ -580,7 +580,7 @@ public:
       :
       TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
               (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
-              ns_op(ns_operation_in),
+              ns_op(std::dynamic_pointer_cast<DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > (ns_operation_in)),
               old_RHS_value(13.5),
               rhs(nullptr)
               {
@@ -600,7 +600,7 @@ public:
       virtual ~TimeIntBDFDualSplittingPH(){}
   protected:
 
-    std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > ns_op;
+    std_cxx11::shared_ptr<DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > ns_op;
     std::vector<double> massflows;
     double old_RHS_value;
     std_cxx11::shared_ptr<RightHandSide<dim> > rhs;

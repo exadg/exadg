@@ -77,6 +77,11 @@ public:
     return  dof_handler_wdist;
   }
 
+  FEParameters<dim> const & get_fe_parameters() const
+  {
+    return this->fe_param;
+  }
+
   FEParameters<dim> const & get_fe_parameters_n() const
   {
     return fe_param_n;
@@ -171,6 +176,10 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   this->convective_operator.set_fe_param(&this->fe_param);
   this->viscous_operator.set_fe_param(&this->fe_param);
   this->viscous_operator.initialize_viscous_coefficients();
+
+  //set fe_param in all calculators
+  this->vorticity_calculator.set_fe_param(&this->fe_param);
+  this->divergence_calculator.set_fe_param(&this->fe_param);
 
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     std::cout << "\nXWall Initialization:" << std::endl;
