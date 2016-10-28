@@ -70,4 +70,6 @@ DEAL_II_SETUP_TARGET(indexa)
 
 ADD_SUBDIRECTORY(applications)
 
+ADD_SUBDIRECTORY(xwall_applications)
+
 MESSAGE("====================================================")

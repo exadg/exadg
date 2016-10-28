@@ -150,7 +150,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   turb_stat_data.statistics_every = 10;
   turb_stat_data.statistics_end_time = end_time;
   write_restart = true;
-  restart_every_timesteps = 1e1;
+  restart_every_timesteps = 1e9;
   restart_interval_time = 1.e9;
   restart_interval_wall_time = 1.e9;
 

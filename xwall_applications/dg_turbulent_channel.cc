@@ -129,7 +129,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   right_hand_side = true;
 
   write_restart = true;
-  restart_every_timesteps = 1e1;
+  restart_every_timesteps = 1e9;
   restart_interval_time = 1.e9;
   restart_interval_wall_time = 1.e9;
 

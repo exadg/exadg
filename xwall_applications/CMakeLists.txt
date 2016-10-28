@@ -2,7 +2,7 @@
 #  CMake script
 ##
 
-PROJECT(indexa_applications)
+PROJECT(indexa_xwall_applications)
 
 INCLUDE_DIRECTORIES(
         include
@@ -10,14 +10,8 @@ INCLUDE_DIRECTORIES(
         )
 
 SET( SOURCE_FILES
-     SteadyNavierStokes.cc
-     UnsteadyNavierStokesDualSplitting.cc
-     UnsteadyNavierStokesCoupledSolver.cc
-     multigrid_solver.cc
-     fe_flow_past_cylinder.cc
-     fe_turbulent_channel.cc
-     fe_poiseuille.cc
-     DGConvectionDiffusionProblem.cc
+     dg_turbulent_channel.cc
+     dg_periodic_hill.cc
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )
