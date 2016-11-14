@@ -11,17 +11,15 @@
 
 template<int dim> class PostProcessorBase;
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+template<int dim, typename value_type, typename NavierStokesOperation>
 class DriverSteadyProblems
 {
 public:
-  DriverSteadyProblems(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
-                         fe_degree_p, fe_degree_xwall, xwall_quad_rule> >   ns_operation_in,
-                       std_cxx11::shared_ptr<PostProcessorBase<dim> >           postprocessor_in,
-                       InputParametersNavierStokes<dim> const                   &param_in)
+  DriverSteadyProblems(std_cxx11::shared_ptr<NavierStokesOperation>   navier_stokes_operation_in,
+                       std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor_in,
+                       InputParametersNavierStokes<dim> const         &param_in)
     :
-    ns_operation(std::dynamic_pointer_cast<DGNavierStokesCoupled<dim, fe_degree,
-                    fe_degree_p, fe_degree_xwall, xwall_quad_rule> > (ns_operation_in)),
+    navier_stokes_operation(navier_stokes_operation_in),
     postprocessor(postprocessor_in),
     param(param_in),
     total_time(0.0)
@@ -40,7 +38,7 @@ private:
   void solve();
   void postprocessing();
 
-  std_cxx11::shared_ptr<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > ns_operation;
+  std_cxx11::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
   std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor;
   InputParametersNavierStokes<dim> const &param;
@@ -54,49 +52,50 @@ private:
   parallel::distributed::Vector<value_type> divergence;
 };
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+template<int dim, typename value_type, typename NavierStokesOperation>
+void DriverSteadyProblems<dim, value_type, NavierStokesOperation>::
 setup()
 {
   // initialize global solution vectors (allocation)
   initialize_vectors();
 
-  // initialize solution by using the analytical solution or a guess of the velocity and pressure field
+  // initialize solution by using the analytical solution
+  // or a guess of the velocity and pressure field
   initialize_solution();
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+template<int dim, typename value_type, typename NavierStokesOperation>
+void DriverSteadyProblems<dim, value_type, NavierStokesOperation>::
 initialize_vectors()
 {
   // solution
-  ns_operation->initialize_block_vector_velocity_pressure(solution);
+  navier_stokes_operation->initialize_block_vector_velocity_pressure(solution);
 
   // rhs_vector
   if(this->param.equation_type == EquationType::Stokes)
-    ns_operation->initialize_block_vector_velocity_pressure(rhs_vector);
+    navier_stokes_operation->initialize_block_vector_velocity_pressure(rhs_vector);
 
   // vorticity
-  ns_operation->initialize_vector_vorticity(vorticity);
+  navier_stokes_operation->initialize_vector_vorticity(vorticity);
 
   // divergence
   if(this->param.output_data.compute_divergence == true)
   {
-    ns_operation->initialize_vector_velocity(divergence);
+    navier_stokes_operation->initialize_vector_velocity(divergence);
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+template<int dim, typename value_type, typename NavierStokesOperation>
+void DriverSteadyProblems<dim, value_type, NavierStokesOperation>::
 initialize_solution()
 {
   double time = 0.0;
-  ns_operation->prescribe_initial_conditions(solution.block(0),solution.block(1),time);
+  navier_stokes_operation->prescribe_initial_conditions(solution.block(0),solution.block(1),time);
 }
 
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+template<int dim, typename value_type, typename NavierStokesOperation>
+void DriverSteadyProblems<dim, value_type, NavierStokesOperation>::
 solve()
 {
   Timer timer;
@@ -109,10 +108,10 @@ solve()
   if(this->param.equation_type == EquationType::Stokes)
   {
     // calculate rhs vector
-    ns_operation->rhs_stokes_problem(rhs_vector);
+    navier_stokes_operation->rhs_stokes_problem(rhs_vector);
 
     // solve coupled system of equations
-    unsigned int iterations = ns_operation->solve_linear_stokes_problem(solution,rhs_vector);
+    unsigned int iterations = navier_stokes_operation->solve_linear_stokes_problem(solution,rhs_vector);
     // write output
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
@@ -127,7 +126,7 @@ solve()
     // Newton solver
     unsigned int newton_iterations;
     double average_linear_iterations;
-    ns_operation->solve_nonlinear_steady_problem(solution,newton_iterations,average_linear_iterations);
+    navier_stokes_operation->solve_nonlinear_steady_problem(solution,newton_iterations,average_linear_iterations);
 
     // write output
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
@@ -144,19 +143,17 @@ solve()
   if(this->param.pure_dirichlet_bc)
   {
     if(this->param.error_data.analytical_solution_available == true)
-      ns_operation->shift_pressure(solution.block(1));
+      navier_stokes_operation->shift_pressure(solution.block(1));
     else // analytical_solution_available == false
-      ns_operation->apply_zero_mean(solution.block(1));
+      navier_stokes_operation->apply_zero_mean(solution.block(1));
   }
 
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     std::cout << std::endl << "... done!" << std::endl;
 }
 
-
-
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+template<int dim, typename value_type, typename NavierStokesOperation>
+void DriverSteadyProblems<dim, value_type, NavierStokesOperation>::
 solve_steady_problem()
 {
   global_timer.restart();
@@ -172,28 +169,28 @@ solve_steady_problem()
   analyze_computing_times();
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+template<int dim, typename value_type, typename NavierStokesOperation>
+void DriverSteadyProblems<dim, value_type, NavierStokesOperation>::
 postprocessing()
 {
   // calculate divergence
   if(this->param.output_data.compute_divergence == true)
   {
-    ns_operation->compute_divergence(divergence, solution.block(0));
+    navier_stokes_operation->compute_divergence(divergence, solution.block(0));
   }
 
   // calculate vorticity
-  ns_operation->compute_vorticity(vorticity,solution.block(0));
+  navier_stokes_operation->compute_vorticity(vorticity,solution.block(0));
 
   this->postprocessor->do_postprocessing(solution.block(0),
-                                         solution.block(0), // intermediate_velocity = velocity (inteface!)
+                                         solution.block(0), // intermediate_velocity = velocity
                                          solution.block(1),
                                          vorticity,
                                          divergence);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void DriverSteadyProblems<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+template<int dim, typename value_type, typename NavierStokesOperation>
+void DriverSteadyProblems<dim, value_type, NavierStokesOperation>::
 analyze_computing_times() const
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);

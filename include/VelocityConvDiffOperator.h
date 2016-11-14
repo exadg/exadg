@@ -8,7 +8,7 @@
 #ifndef INCLUDE_VELOCITYCONVDIFFOPERATOR_H_
 #define INCLUDE_VELOCITYCONVDIFFOPERATOR_H_
 
-
+#include "MatrixOperatorBase.h"
 #include "NavierStokesOperators.h"
 
 //template<int dim>
@@ -152,7 +152,7 @@ struct VelocityConvDiffOperatorData
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule,typename Number = double>
-class VelocityConvDiffOperator : public Subscriptor
+class VelocityConvDiffOperator : public MatrixOperatorBase
 {
 public:
   typedef Number value_type;
@@ -168,8 +168,8 @@ public:
     evaluation_time(0.0)
   {}
 
-  void initialize(MatrixFree<dim,Number> const                                                            &mf_data_in,
-                  VelocityConvDiffOperatorData<dim> const                                                 &operator_data_in,
+  void initialize(MatrixFree<dim,Number> const                                                        &mf_data_in,
+                  VelocityConvDiffOperatorData<dim> const                                             &operator_data_in,
                   MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const &mass_matrix_operator_in,
                   ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const     &viscous_operator_in,
                   ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const  &convective_operator_in)
@@ -192,8 +192,7 @@ public:
                const Mapping<dim>                      &mapping,
                const VelocityConvDiffOperatorData<dim> &operator_data,
                const MGConstrainedDoFs                 &/*mg_constrained_dofs*/,
-               const unsigned int                      level = numbers::invalid_unsigned_int,
-               FEParameters<dim> const                 & = FEParameters<dim>())
+               const unsigned int                      level = numbers::invalid_unsigned_int)
   {
     // set the dof index to zero (for the VelocityConvDiffOperator and also
     // for the basic Operators (MassMatrixOperator, ViscousOperator, ConvectiveOperator))
@@ -269,14 +268,31 @@ public:
     scaling_factor_time_derivative_term = factor;
   }
 
-  void set_velocity_linearization(parallel::distributed::Vector<Number> const *velocity_linearization_in)
+  void set_solution_linearization(parallel::distributed::Vector<Number> const *solution_linearization)
   {
-    velocity_linearization = velocity_linearization_in;
+    velocity_linearization = solution_linearization;
   }
 
   void set_evaluation_time(double const &evaluation_time_in)
   {
     evaluation_time = evaluation_time_in;
+  }
+
+  double get_evaluation_time() const
+  {
+    return evaluation_time;
+  }
+
+  parallel::distributed::Vector<value_type> const * get_solution_linearization() const
+  {
+    if(velocity_linearization != nullptr)
+    {
+      return velocity_linearization;
+    }
+    else
+    {
+      return nullptr;
+    }
   }
 
   void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const

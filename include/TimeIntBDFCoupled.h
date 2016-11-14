@@ -9,23 +9,23 @@
 #define INCLUDE_TIMEINTBDFCOUPLED_H_
 
 #include "TimeIntBDFNavierStokes.h"
+#include "PushBackVectors.h"
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-class TimeIntBDFCoupled : public TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+class TimeIntBDFCoupled : public TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>
 {
 public:
-  TimeIntBDFCoupled(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
-                      fe_degree_p, fe_degree_xwall, xwall_quad_rule> >  ns_operation_in,
-                    std_cxx11::shared_ptr<PostProcessorBase<dim> >          postprocessor_in,
-                    InputParametersNavierStokes<dim> const                  &param_in,
-                    unsigned int const                                      n_refine_time_in,
-                    bool const                                              use_adaptive_time_stepping)
+  TimeIntBDFCoupled(std_cxx11::shared_ptr<NavierStokesOperation>   navier_stokes_operation_in,
+                    std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor_in,
+                    InputParametersNavierStokes<dim> const         &param_in,
+                    unsigned int const                             n_refine_time_in,
+                    bool const                                     use_adaptive_time_stepping)
     :
-    TimeIntBDFNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
-            (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
+    TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>
+            (navier_stokes_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
     solution(this->order),
     vec_convective_term(this->order),
-    ns_operation_coupled (std::dynamic_pointer_cast<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > (ns_operation_in)),
+    navier_stokes_operation(navier_stokes_operation_in),
     N_iter_linear_average(0.0),
     N_iter_newton_average(0.0),
     solver_time_average(0.0)
@@ -43,16 +43,14 @@ private:
   virtual void initialize_current_solution();
   virtual void initialize_former_solution();
 
-  void calculate_vorticity();
-  void calculate_divergence();
+  void calculate_vorticity() const;
+  void calculate_divergence() const;
   void initialize_vec_convective_term();
 
   virtual void solve_timestep();
   virtual void postprocessing() const;
 
   virtual void prepare_vectors_for_next_timestep();
-  void push_back_solution();
-  void push_back_vec_convective_term();
 
   virtual parallel::distributed::Vector<value_type> const & get_velocity();
 
@@ -67,20 +65,19 @@ private:
 
   std::vector<parallel::distributed::Vector<value_type> > vec_convective_term;
 
-  parallel::distributed::Vector<value_type> vorticity;
+  mutable parallel::distributed::Vector<value_type> vorticity;
 
-  parallel::distributed::Vector<value_type> divergence;
+  mutable parallel::distributed::Vector<value_type> divergence;
 
-  std_cxx11::shared_ptr<DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> >
-     ns_operation_coupled;
+  std_cxx11::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
   // performance analysis: average number of iterations and solver time
   double N_iter_linear_average, N_iter_newton_average;
   double solver_time_average;
 };
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 analyze_computing_times() const
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
@@ -114,107 +111,104 @@ analyze_computing_times() const
          << std::endl << std::endl;
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 initialize_vectors()
 {
   // solution
   for(unsigned int i=0;i<solution.size();++i)
-    ns_operation_coupled->initialize_block_vector_velocity_pressure(solution[i]);
-  ns_operation_coupled->initialize_block_vector_velocity_pressure(solution_np);
+    navier_stokes_operation->initialize_block_vector_velocity_pressure(solution[i]);
+  navier_stokes_operation->initialize_block_vector_velocity_pressure(solution_np);
 
   // convective term
   if(this->param.equation_type == EquationType::NavierStokes &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     for(unsigned int i=0;i<vec_convective_term.size();++i)
-      ns_operation_coupled->initialize_vector_velocity(vec_convective_term[i]);
+      navier_stokes_operation->initialize_vector_velocity(vec_convective_term[i]);
   }
 
   // temporal derivative term: sum_i (alpha_i * u_i)
-  ns_operation_coupled->initialize_vector_velocity(sum_alphai_ui);
+  navier_stokes_operation->initialize_vector_velocity(sum_alphai_ui);
 
   // rhs_vector
   if(this->param.equation_type == EquationType::Stokes ||
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
-    ns_operation_coupled->initialize_block_vector_velocity_pressure(rhs_vector);
+    navier_stokes_operation->initialize_block_vector_velocity_pressure(rhs_vector);
 
   // vorticity
-  ns_operation_coupled->initialize_vector_vorticity(vorticity);
+  navier_stokes_operation->initialize_vector_vorticity(vorticity);
 
   // divergence
   if(this->param.output_data.compute_divergence == true)
-    ns_operation_coupled->initialize_vector_velocity(divergence);
+    navier_stokes_operation->initialize_vector_velocity(divergence);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 initialize_current_solution()
 {
-  ns_operation_coupled->prescribe_initial_conditions(solution[0].block(0),solution[0].block(1),this->time);
+  navier_stokes_operation->prescribe_initial_conditions(solution[0].block(0),solution[0].block(1),this->time);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 initialize_former_solution()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i=1;i<solution.size();++i)
-    ns_operation_coupled->prescribe_initial_conditions(solution[i].block(0),solution[i].block(1),this->time - value_type(i)*this->time_steps[0]);
+    navier_stokes_operation->prescribe_initial_conditions(solution[i].block(0),solution[i].block(1),this->time - double(i)*this->time_steps[0]);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 setup_derived()
 {
-  calculate_vorticity();
-  calculate_divergence();
-
   if(this->param.equation_type == EquationType::NavierStokes &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit &&
      this->param.start_with_low_order == false)
     initialize_vec_convective_term();
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
-calculate_vorticity()
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
+calculate_vorticity() const
 {
-  ns_operation_coupled->compute_vorticity(vorticity, solution[0].block(0));
+  navier_stokes_operation->compute_vorticity(vorticity, solution[0].block(0));
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
-calculate_divergence()
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
+calculate_divergence() const
 {
   if(this->param.output_data.compute_divergence == true)
   {
-    ns_operation_coupled->compute_divergence(divergence, solution[0].block(0));
+    navier_stokes_operation->compute_divergence(divergence, solution[0].block(0));
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 initialize_vec_convective_term()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i=1;i<vec_convective_term.size();++i)
   {
-    ns_operation_coupled->evaluate_convective_term(vec_convective_term[i],
+    navier_stokes_operation->evaluate_convective_term(vec_convective_term[i],
                                                    solution[i].block(0),
                                                    this->time - double(i)*this->time_steps[0]);
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-parallel::distributed::Vector<value_type> const & TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+parallel::distributed::Vector<value_type> const &  TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 get_velocity()
 {
   return solution[0].block(0);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 read_restart_vectors(boost::archive::binary_iarchive & ia)
 {
   Vector<double> tmp;
@@ -232,8 +226,8 @@ read_restart_vectors(boost::archive::binary_iarchive & ia)
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 write_restart_vectors(boost::archive::binary_oarchive & oa) const
 {
   VectorView<double> tmp(solution[0].block(0).local_size(),
@@ -253,17 +247,17 @@ write_restart_vectors(boost::archive::binary_oarchive & oa) const
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 solve_timestep()
 {
   Timer timer;
   timer.restart();
 
   // set the parameters that NavierStokesOperation depends on
-  ns_operation_coupled->set_evaluation_time(this->time+this->time_steps[0]);
-  ns_operation_coupled->set_time_step(this->time_steps[0]);
-  ns_operation_coupled->set_scaling_factor_time_derivative_term(this->gamma0/this->time_steps[0]);
+  navier_stokes_operation->set_evaluation_time(this->time+this->time_steps[0]);
+  navier_stokes_operation->set_time_step(this->time_steps[0]);
+  navier_stokes_operation->set_scaling_factor_time_derivative_term(this->gamma0/this->time_steps[0]);
 
   // write output
   if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
@@ -297,19 +291,19 @@ solve_timestep()
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     // calculate rhs vector for the Stokes problem, i.e., the convective term is neglected in this step
-    ns_operation_coupled->rhs_stokes_problem(rhs_vector,&sum_alphai_ui);
+    navier_stokes_operation->rhs_stokes_problem(rhs_vector,&sum_alphai_ui);
 
     // evaluate convective term and add extrapolation of convective term to the rhs (-> minus sign!)
     if(this->param.equation_type == EquationType::NavierStokes)
     {
-      ns_operation_coupled->evaluate_convective_term(vec_convective_term[0],solution[0].block(0),this->time);
+      navier_stokes_operation->evaluate_convective_term(vec_convective_term[0],solution[0].block(0),this->time);
 
       for(unsigned int i=0;i<vec_convective_term.size();++i)
         rhs_vector.block(0).add(-this->beta[i],vec_convective_term[i]);
     }
 
     // solve coupled system of equations
-    unsigned int iterations = ns_operation_coupled->solve_linear_stokes_problem(solution_np,rhs_vector);
+    unsigned int iterations = navier_stokes_operation->solve_linear_stokes_problem(solution_np,rhs_vector);
 
     N_iter_linear_average += iterations;
     solver_time_average += timer.wall_time();
@@ -328,7 +322,7 @@ solve_timestep()
     // Newton solver
     unsigned int newton_iterations = 0;
     double average_linear_iterations = 0.0;
-    ns_operation_coupled->solve_nonlinear_problem(solution_np,sum_alphai_ui,newton_iterations,average_linear_iterations);
+    navier_stokes_operation->solve_nonlinear_problem(solution_np,sum_alphai_ui,newton_iterations,average_linear_iterations);
 
     N_iter_newton_average += newton_iterations;
     N_iter_linear_average += average_linear_iterations;
@@ -349,18 +343,21 @@ solve_timestep()
   if(this->param.pure_dirichlet_bc)
   {
     if(this->param.error_data.analytical_solution_available == true)
-      ns_operation_coupled->shift_pressure(solution_np.block(1));
+      navier_stokes_operation->shift_pressure(solution_np.block(1));
     else // analytical_solution_available == false
-      ns_operation_coupled->apply_zero_mean(solution_np.block(1));
+      navier_stokes_operation->apply_zero_mean(solution_np.block(1));
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 postprocessing() const
 {
+  calculate_vorticity();
+  calculate_divergence();
+
   this->postprocessor->do_postprocessing(solution[0].block(0),
-                                         solution[0].block(0), // intermediate_velocity = velocity (interface!)
+                                         solution[0].block(0), // intermediate_velocity = velocity
                                          solution[0].block(1),
                                          vorticity,
                                          divergence,
@@ -368,55 +365,18 @@ postprocessing() const
                                          this->time_step_number);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 prepare_vectors_for_next_timestep()
 {
-  push_back_solution();
-
-  calculate_vorticity();
-  calculate_divergence();
+  push_back(solution);
+  solution[0].swap(solution_np);
 
   if(this->param.equation_type == EquationType::NavierStokes &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
-    push_back_vec_convective_term();
-}
-
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
-push_back_solution()
-{
-  /*
-   *   time t
-   *  -------->   t_{n-2}   t_{n-1}   t_{n}    t_{n+1}
-   *  _______________|_________|________|_________|___________\
-   *                 |         |        |         |           /
-   *
-   *  sol-vec:    sol[2]    sol[1]    sol[0]    sol_np
-   *
-   * <- sol[2] <- sol[1] <- sol[0] <- sol_np <- sol[2] <--
-   * |___________________________________________________|
-   *
-   */
-
-  // solution at t_{n-i} <-- solution at t_{n-i+1}
-  for(unsigned int i=solution.size()-1; i>0; --i)
   {
-    solution[i].swap(solution[i-1]);
-  }
-  solution[0].swap(solution_np);
-}
-
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-void TimeIntBDFCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::
-push_back_vec_convective_term()
-{
-  // solution at t_{n-i} <-- solution at t_{n-i+1}
-  for(unsigned int i=vec_convective_term.size()-1; i>0; --i)
-  {
-    vec_convective_term[i].swap(vec_convective_term[i-1]);
+    push_back(vec_convective_term);
   }
 }
-
 
 #endif /* INCLUDE_TIMEINTBDFCOUPLED_H_ */

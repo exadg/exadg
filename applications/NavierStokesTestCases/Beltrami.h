@@ -124,9 +124,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // COUPLED NAVIER-STOKES SOLVER
 
   // nonlinear solver (Newton solver)
-  abs_tol_newton = 1.e-20;
-  rel_tol_newton = 1.e-6;
-  max_iter_newton = 1e2;
+  newton_solver_data_coupled.abs_tol = 1.e-20;
+  newton_solver_data_coupled.rel_tol = 1.e-6;
+  newton_solver_data_coupled.max_iter = 1e2;
 
   // linear solver
   solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;

@@ -8,6 +8,7 @@
 #ifndef INCLUDE_COMPATIBLELAPLACEOPERATOR_H_
 #define INCLUDE_COMPATIBLELAPLACEOPERATOR_H_
 
+#include "MatrixOperatorBase.h"
 #include "NavierStokesOperators.h"
 
 template<int dim>
@@ -29,7 +30,7 @@ struct CompatibleLaplaceOperatorData
 };
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule,typename Number = double>
-class CompatibleLaplaceOperator : public Subscriptor
+class CompatibleLaplaceOperator : public MatrixOperatorBase
 {
 public:
   typedef Number value_type;
@@ -202,7 +203,7 @@ public:
 
     // compatible Laplace operator = B * M^{-1} * B^{T} = (-div) * M^{-1} * grad
     gradient_operator->apply(tmp,*actual_src);
-    inv_mass_matrix_operator->apply_inverse_mass_matrix(tmp,tmp);
+    inv_mass_matrix_operator->apply(tmp,tmp);
     // NEGATIVE divergence operator
     tmp *= -1.0;
     divergence_operator->apply_add(dst,tmp);

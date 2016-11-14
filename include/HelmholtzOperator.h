@@ -51,7 +51,7 @@ struct HelmholtzOperatorData
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule,typename Number = double>
-class HelmholtzOperator : public Subscriptor
+class HelmholtzOperator : public MatrixOperatorBase
 {
 public:
   typedef Number value_type;
@@ -65,8 +65,8 @@ public:
     strong_homogeneous_dirichlet_bc(false)
   {}
 
-  void initialize(MatrixFree<dim,Number> const                                                            &mf_data_in,
-                  HelmholtzOperatorData<dim> const                                                        &helmholtz_operator_data_in,
+  void initialize(MatrixFree<dim,Number> const                                                        &mf_data_in,
+                  HelmholtzOperatorData<dim> const                                                    &helmholtz_operator_data_in,
                   MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const &mass_matrix_operator_in,
                   ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const     &viscous_operator_in)
   {

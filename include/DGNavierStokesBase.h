@@ -10,6 +10,8 @@
 
 #include <deal.II/matrix_free/operators.h>
 
+#include "MatrixOperatorBase.h"
+
 #include "FEEvaluationWrapper.h"
 #include "FE_Parameters.h"
 
@@ -19,6 +21,8 @@
 #include "../include/BoundaryDescriptorNavierStokes.h"
 #include "../include/FieldFunctionsNavierStokes.h"
 #include "InputParametersNavierStokes.h"
+
+#include "BoundaryDescriptorLaplace.h"
 
 
 using namespace dealii;
@@ -48,7 +52,7 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall
 class DivergenceOperator;
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-class DGNavierStokesBase
+class DGNavierStokesBase : public MatrixOperatorBase
 {
 public:
   enum class DofHandlerSelector {
@@ -106,7 +110,9 @@ public:
     data.clear();
   }
 
-  void fill_dbc_and_nbc_sets(std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor);
+//  void fill_dbc_and_nbc_sets(std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor);
+
+  void initialize_boundary_descriptor_laplace();
 
   virtual void setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
                                                                                   periodic_face_pairs,
@@ -186,21 +192,6 @@ public:
     return scaling_factor_time_derivative_term;
   }
 
-  std::set<types::boundary_id> get_dirichlet_boundary() const
-  {
-    return dirichlet_boundary;
-  }
-
-  std::set<types::boundary_id> get_neumann_boundary() const
-  {
-    return neumann_boundary;
-  }
-
-//  const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > get_periodic_face_pairs() const
-//  {
-//    return periodic_face_pairs;
-//  }
-
   MassMatrixOperatorData const & get_mass_matrix_operator_data() const
   {
     return mass_matrix_operator_data;
@@ -229,6 +220,11 @@ public:
   std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > const get_field_functions() const
   {
     return field_functions;
+  }
+
+  double get_evaluation_time() const
+  {
+    return evaluation_time;
   }
 
   // setters
@@ -313,8 +309,14 @@ protected:
   std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure;
   std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions;
 
-  std::set<types::boundary_id> dirichlet_boundary;
-  std::set<types::boundary_id> neumann_boundary;
+  // In case of projection type Navier-Stokes solvers this variable
+  // is needed to solve the pressure Poisson equation.
+  // In that case, also the functions specified in BoundaryDescriptorLaplace are relevant.
+  // In case of the coupled solver it is used for the block preconditioner
+  // (or more precisely for the Schur-complement preconditioner and the GMG method
+  // used to approximately invert the Laplace operator).
+  // In that case, the functions specified in BoundaryDescriptorLaplace are irrelevant.
+  std_cxx11::shared_ptr<BoundaryDescriptorLaplace<dim> > boundary_descriptor_laplace;
 
   InputParametersNavierStokes<dim> const &param;
 
@@ -355,24 +357,26 @@ private:
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-fill_dbc_and_nbc_sets(std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor)
+initialize_boundary_descriptor_laplace()
 {
-  // Dirichlet boundary conditions: copy Dirichlet boundary ID's from
-  // boundary_descriptor.dirichlet_bc (map) to dirichlet_boundary (set)
-  for (typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::
-       const_iterator it = boundary_descriptor->dirichlet_bc.begin();
-       it != boundary_descriptor->dirichlet_bc.end(); ++it)
-  {
-    dirichlet_boundary.insert(it->first);
-  }
+  boundary_descriptor_laplace.reset(new BoundaryDescriptorLaplace<dim>());
 
-  // Neumann boundary conditions: copy Neumann boundary ID's from
-  // boundary_descriptor.neumann_bc (map) to neumann_boundary (set)
+  // Neumann BC Navier-Stokes -> Dirichlet BC for Laplace operator of pressure Poisson equation
+  this->boundary_descriptor_laplace->dirichlet = boundary_descriptor_pressure->neumann_bc;
+
+  // Dirichlet BC Navier-Stokes -> Neumann BC for Laplace operator of pressure Poisson equation
+  // on pressure Neumann boundaries: prescribe h=0 -> set all functions to ZeroFunction
+  // This is necessary for projection type Navier-Stokes solvers.
+  // For the coupled solution approach, the functions
+  // specified in the boundary descriptor are not evaluated.
   for (typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::
-       const_iterator it = boundary_descriptor->neumann_bc.begin();
-       it != boundary_descriptor->neumann_bc.end(); ++it)
+       const_iterator it = boundary_descriptor_pressure->dirichlet_bc.begin();
+       it != boundary_descriptor_pressure->dirichlet_bc.end(); ++it)
   {
-    neumann_boundary.insert(it->first);
+    std_cxx11::shared_ptr<Function<dim> > zero_function;
+    zero_function.reset(new ZeroFunction<dim>(1));
+    boundary_descriptor_laplace->neumann.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+      (it->first,zero_function));
   }
 }
 
@@ -392,7 +396,7 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   this->boundary_descriptor_pressure = boundary_descriptor_pressure_in;
   this->field_functions = field_functions_in;
 
-  fill_dbc_and_nbc_sets(this->boundary_descriptor_velocity);
+  initialize_boundary_descriptor_laplace();
 
   create_dofs();
 
@@ -605,7 +609,7 @@ compute_vorticity (parallel::distributed::Vector<value_type>       &dst,
 
   data.cell_loop (&DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::local_compute_vorticity,this, dst, src);
 
-  inverse_mass_matrix_operator->apply_inverse_mass_matrix(dst,dst);
+  inverse_mass_matrix_operator->apply(dst,dst);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
@@ -650,7 +654,7 @@ compute_divergence (parallel::distributed::Vector<value_type>       &dst,
   data.cell_loop(&DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::local_compute_divergence,
                              this, dst, src);
 
-  inverse_mass_matrix_operator->apply_inverse_mass_matrix(dst,dst);
+  inverse_mass_matrix_operator->apply(dst,dst);
 }
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>

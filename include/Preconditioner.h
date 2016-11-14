@@ -17,6 +17,7 @@
 #include <deal.II/base/function_lib.h>
 
 #include "InverseMassMatrix.h"
+#include "MatrixOperatorBase.h"
 
 template<typename value_type>
 class PreconditionerBase
@@ -26,9 +27,11 @@ public:
 
   virtual void vmult(parallel::distributed::Vector<value_type>        &dst,
                      const parallel::distributed::Vector<value_type>  &src) const = 0;
+
+  virtual void update(MatrixOperatorBase const *matrix_operator) = 0;
 };
 
-template<int dim, int fe_degree, typename value_type, int n_components=dim>
+template<int dim, int fe_degree, typename value_type,  int n_components=dim>
 class InverseMassMatrixPreconditioner : public PreconditionerBase<value_type>
 {
 public:
@@ -42,8 +45,10 @@ public:
   void vmult (parallel::distributed::Vector<value_type>        &dst,
               const parallel::distributed::Vector<value_type>  &src) const
   {
-    inverse_mass_matrix_operator.apply_inverse_mass_matrix(dst,src);
+    inverse_mass_matrix_operator.apply(dst,src);
   }
+
+  void update(MatrixOperatorBase const * /*matrix_operator*/) {} // do nothing
 
 private:
   InverseMassMatrixOperator<dim,fe_degree,value_type,n_components> inverse_mass_matrix_operator;
@@ -64,16 +69,18 @@ public:
     inverse_mass_matrix_operator->apply_inverse_mass_matrix(dst,src);
   }
 
+  void update(MatrixOperatorBase const * /*matrix_operator*/) {} // do nothing
+
 private:
   std_cxx11::shared_ptr<InverseMassMatrixOperator<dim,fe_degree,value_type,n_components> > inverse_mass_matrix_operator;
 };
 
 
-template<typename value_type, typename Operator>
+template<typename value_type, typename UnderlyingOperator>
 class JacobiPreconditioner : public PreconditionerBase<value_type>
 {
 public:
-  JacobiPreconditioner(Operator const &underlying_operator)
+  JacobiPreconditioner(UnderlyingOperator const &underlying_operator)
   {
     underlying_operator.initialize_dof_vector(inverse_diagonal);
 
@@ -88,9 +95,13 @@ public:
     dst.scale(inverse_diagonal);
   }
 
-  void recalculate_diagonal(Operator const &underlying_operator)
+  void update(MatrixOperatorBase const * matrix_operator)
   {
-    underlying_operator.calculate_inverse_diagonal(inverse_diagonal);
+    UnderlyingOperator const *underlying_operator = dynamic_cast<UnderlyingOperator const *>(matrix_operator);
+    if(underlying_operator)
+      underlying_operator->calculate_inverse_diagonal(inverse_diagonal);
+    else
+      AssertThrow(false,ExcMessage("Jacobi preconditioner: UnderlyingOperator and MatrixOperator are not compatible!"));
   }
 
   unsigned int get_size_of_diagonal()
@@ -229,10 +240,10 @@ public:
   {
     if (use_preconditioner)
     {
-      std_cxx11::shared_ptr<JacobiPreconditioner<typename Operator::value_type,Operator> > precon =
-          std::dynamic_pointer_cast<JacobiPreconditioner<typename Operator::value_type,Operator> > (preconditioner);
+//      std_cxx11::shared_ptr<JacobiPreconditioner<typename Operator::value_type,Operator> > precon =
+//          std::dynamic_pointer_cast<JacobiPreconditioner<typename Operator::value_type,Operator> > (preconditioner);
 
-      precon->recalculate_diagonal(underlying_operator);
+      preconditioner->update(&underlying_operator);
     }
   }
 
@@ -556,6 +567,8 @@ public:
 
   virtual ~MyMultigridPreconditionerBase(){};
 
+  virtual void update(MatrixOperatorBase const * /*matrix_operator*/) {} // do nothing
+
   virtual void resize_level_objects()
   {
     mg_matrices.resize(0, n_global_levels -1);
@@ -680,11 +693,12 @@ public:
 
   virtual ~MyMultigridPreconditioner(){}
 
-  void initialize(const MultigridData                &mg_data_in,
-                  const DoFHandler<dim>              &dof_handler,
-                  const Mapping<dim>                 &mapping,
-                  const OperatorData                 &operator_data_in,
-                  std::set<types::boundary_id> const &dirichlet_boundaries)
+  void initialize(const MultigridData                             &mg_data_in,
+                  const DoFHandler<dim>                           &dof_handler,
+                  const Mapping<dim>                              &mapping,
+                  const OperatorData                              &operator_data_in,
+                  std::map<types::boundary_id,
+                    std_cxx11::shared_ptr<Function<dim> > > const &dirichlet_bc)
   {
     this->mg_data = mg_data_in;
 
@@ -694,9 +708,9 @@ public:
     // needed for continuous elements
     this->mg_constrained_dofs.clear();
     std::set<types::boundary_id> dirichlet_boundary;
-    for (std::set<types::boundary_id>::const_iterator it = dirichlet_boundaries.begin();
-         it != dirichlet_boundaries.end(); ++it)
-      dirichlet_boundary.insert(*it);
+    for(typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::const_iterator
+        it = dirichlet_bc.begin(); it != dirichlet_bc.end(); ++it)
+      dirichlet_boundary.insert(it->first);
     this->mg_constrained_dofs.initialize(dof_handler);
     this->mg_constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary);
     // needed for continuous elements
@@ -736,7 +750,7 @@ public:
  *  Multigrid preconditioner for velocity convection-diffusion operator of
  *  the incompressible Navier-Stokes equations
  */
-template<int dim, typename value_type, typename Operator, typename OperatorData>
+template<int dim, typename value_type, typename Operator, typename OperatorData, typename UnderlyingOperator>
 class MyMultigridPreconditionerVelocityConvectionDiffusion : public MyMultigridPreconditioner<dim,value_type,Operator,OperatorData>
 {
 public:
@@ -764,10 +778,29 @@ public:
     this->mg_matrices[level].initialize_dof_vector(mg_vector_linearization[level]);
 
     // set vector linearization: mg_matrices[level] hold pointer to mg_vector_linearization[level]
-    this->mg_matrices[level].set_velocity_linearization(&mg_vector_linearization[level]);
+    this->mg_matrices[level].set_solution_linearization(&mg_vector_linearization[level]);
 
     // set evaluation time
     this->mg_matrices[level].set_evaluation_time(0.0);
+  }
+
+  /*
+   *  This function updates the multigrid preconditioner.
+   *
+   */
+  virtual void update(MatrixOperatorBase const * matrix_operator)
+  {
+    UnderlyingOperator const
+      *underlying_operator = dynamic_cast<UnderlyingOperator const *>(matrix_operator);
+    if(underlying_operator)
+    {
+      update_mg_matrix(*(underlying_operator->get_solution_linearization()),
+          underlying_operator->get_evaluation_time());
+      update_smoother();
+      update_coarse_solver();
+    }
+    else
+      AssertThrow(false,ExcMessage("Multigrid preconditioner: UnderlyingOperator and MatrixOperator are not compatible!"));
   }
 
   /*
@@ -925,7 +958,7 @@ public:
 
   void update()
   {
-    preconditioner->recalculate_diagonal(*underlying_operator);
+    preconditioner->update(underlying_operator);
   }
 
   void vmult(VectorType       &dst,
@@ -954,7 +987,7 @@ private:
 };
 
 
-template<int dim, typename value_type, typename Operator, typename OperatorData>
+template<int dim, typename value_type, typename Operator, typename OperatorData,typename UnderlyingOperator>
 class MyMultigridPreconditionerGMRESSmoother : public PreconditionerBase<value_type>
 {
 public:
@@ -963,12 +996,14 @@ public:
     n_global_levels(0)
   {}
 
-  void initialize(const MultigridData                &mg_data_in,
-                  const DoFHandler<dim>              &dof_handler,
-                  const Mapping<dim>                 &mapping,
-                  const OperatorData                 &operator_data_in,
-                  std::set<types::boundary_id> const &dirichlet_boundaries,
-                  FEParameters<dim> const            &fe_param = FEParameters<dim>())
+  virtual ~MyMultigridPreconditionerGMRESSmoother(){};
+
+  void initialize(const MultigridData                             &mg_data_in,
+                  const DoFHandler<dim>                           &dof_handler,
+                  const Mapping<dim>                              &mapping,
+                  const OperatorData                              &operator_data_in,
+                  std::map<types::boundary_id,
+                    std_cxx11::shared_ptr<Function<dim> > > const &dirichlet_bc)
   {
     this->mg_data = mg_data_in;
 
@@ -977,12 +1012,12 @@ public:
 
     // needed for continuous elements
     this->mg_constrained_dofs.clear();
-    ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
-    typename FunctionMap<dim>::type dirichlet_boundary;
-    for (std::set<types::boundary_id>::const_iterator it = dirichlet_boundaries.begin();
-         it != dirichlet_boundaries.end(); ++it)
-      dirichlet_boundary[*it] = &zero_function;
-    this->mg_constrained_dofs.initialize(dof_handler, dirichlet_boundary);
+    std::set<types::boundary_id> dirichlet_boundary;
+    for(typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::const_iterator
+        it = dirichlet_bc.begin(); it != dirichlet_bc.end(); ++it)
+      dirichlet_boundary.insert(it->first);
+    this->mg_constrained_dofs.initialize(dof_handler);
+    this->mg_constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary);
     // needed for continuous elements
 
     this->n_global_levels = tria->n_global_levels();
@@ -990,7 +1025,7 @@ public:
 
     for (unsigned int level = 0; level<this->n_global_levels; ++level)
     {
-      initialize_mg_matrix(level, dof_handler, mapping, operator_data_in, fe_param);
+      initialize_mg_matrix(level, dof_handler, mapping, operator_data_in);
 
       this->initialize_smoother(level);
     }
@@ -1019,20 +1054,38 @@ public:
   void initialize_mg_matrix(unsigned int            level,
                             const DoFHandler<dim>   &dof_handler,
                             const Mapping<dim>      &mapping,
-                            const OperatorData      &operator_data_in,
-                            FEParameters<dim> const &fe_param)
+                            const OperatorData      &operator_data_in)
   {
     // initialize mg_matrix for given level
-    this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, this->mg_constrained_dofs, level, fe_param);
+    this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, this->mg_constrained_dofs, level);
 
     // initialize vector linearization
     this->mg_matrices[level].initialize_dof_vector(mg_vector_linearization[level]);
 
     // set vector linearization: mg_matrices[level] hold pointer to mg_vector_linearization[level]
-    this->mg_matrices[level].set_velocity_linearization(&mg_vector_linearization[level]);
+    this->mg_matrices[level].set_solution_linearization(&mg_vector_linearization[level]);
 
     // set evaluation time
     this->mg_matrices[level].set_evaluation_time(0.0);
+  }
+
+  /*
+   *  This function updates the multigrid preconditioner.
+   *
+   */
+  virtual void update(MatrixOperatorBase const * matrix_operator)
+  {
+    UnderlyingOperator const
+      *underlying_operator = dynamic_cast<UnderlyingOperator const *>(matrix_operator);
+    if(underlying_operator)
+    {
+      update_mg_matrix(*(underlying_operator->get_solution_linearization()),
+                       underlying_operator->get_evaluation_time());
+      update_smoother();
+      update_coarse_solver();
+    }
+    else
+      AssertThrow(false,ExcMessage("Multigrid preconditioner: UnderlyingOperator and MatrixOperator are not compatible!"));
   }
 
   /*
@@ -1050,7 +1103,7 @@ public:
 
   /*
    *  This function updates vector_linearization.
-   *  In order to update mg_matrices[level] this function has to be called.
+   *  In order to update mg_matrices[level], this function has to be called.
    */
   void set_vector_linearization(parallel::distributed::Vector<value_type> const &vector_linearization)
   {
@@ -1215,17 +1268,6 @@ public:
 
     const parallel::Triangulation<dim> *tria =
       dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
-
-    // TODO
-    // only needed for continuous elements
-    this->mg_constrained_dofs.clear();
-    std::set<types::boundary_id> dirichlet_boundary;
-//    for (std::set<types::boundary_id>::const_iterator it = dirichlet_boundaries.begin();
-//         it != dirichlet_boundaries.end(); ++it)
-//      dirichlet_boundary.insert(*it);
-    this->mg_constrained_dofs.initialize(dof_handler);
-    this->mg_constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary);
-    // only needed for continuous elements
 
     this->n_global_levels = tria->n_global_levels();
     this->resize_level_objects();

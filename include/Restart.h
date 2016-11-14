@@ -35,7 +35,7 @@ void check_file(std::ifstream const & in, const std::string filename)
                              "!"));
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule,typename value_type>
+template<int dim,typename value_type>
 void resume_restart(boost::archive::binary_iarchive & ia, InputParametersNavierStokes<dim> const & param, double & time,
     std_cxx11::shared_ptr<PostProcessorBase<dim> > & postprocessor,
     std::vector<value_type> & time_steps, unsigned int const order)

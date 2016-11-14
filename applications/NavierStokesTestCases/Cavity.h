@@ -124,9 +124,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // COUPLED NAVIER-STOKES SOLVER
 
   // nonlinear solver (Newton solver)
-  abs_tol_newton = 1.e-20;
-  rel_tol_newton = 1.e-5;
-  max_iter_newton = 1e2;
+  newton_solver_data_convective.abs_tol = 1.e-20;
+  newton_solver_data_convective.rel_tol = 1.e-5;
+  newton_solver_data_convective.max_iter = 100;
 
   // linear solver
   solver_linearized_navier_stokes = SolverLinearizedNavierStokes::FGMRES;
@@ -150,6 +150,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   solver_schur_complement_preconditioner = SolverSchurComplementPreconditioner::GeometricMultigridVCycle;
   multigrid_data_schur_complement_preconditioner.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
   rel_tol_solver_schur_complement_preconditioner = 1.e-6;
+
+  // update of preconditioner
+  update_preconditioner = true;
 
 
   // OUTPUT AND POSTPROCESSING

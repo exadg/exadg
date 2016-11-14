@@ -492,8 +492,17 @@ namespace Step37
     Timer time;
 
     LaplaceOperatorData<dim> laplace_operator_data;
-    laplace_operator_data.dirichlet_boundaries.insert(1);
-    laplace_operator_data.neumann_boundaries.insert(0);
+
+    // TODO
+//    laplace_operator_data.dirichlet_boundaries.insert(1);
+//    laplace_operator_data.neumann_boundaries.insert(0);
+    std_cxx11::shared_ptr<BoundaryDescriptorLaplace<dim> > boundary_descriptor;
+    std_cxx11::shared_ptr<Function<dim> > zero_function;
+    zero_function.reset(new ZeroFunction<dim>(1));
+    boundary_descriptor->dirichlet.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >(1,zero_function));
+    boundary_descriptor->neumann.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >(0,zero_function));
+    laplace_operator_data.bc = boundary_descriptor;
+
     laplace_operator_data.penalty_factor = 0.25;
     LaplaceOperator<dim,double> laplace_operator;
     laplace_operator.reinit(matrix_free, mapping, laplace_operator_data);
@@ -516,7 +525,7 @@ namespace Step37
                                                       LaplaceOperator<dim,Number>,
                                                       LaplaceOperatorData<dim> > >(preconditioner);
 
-    mg_preconditioner->initialize(mg_data, dof_handler, mapping, laplace_operator_data, laplace_operator_data.dirichlet_boundaries);
+    mg_preconditioner->initialize(mg_data, dof_handler, mapping, laplace_operator_data, laplace_operator_data.bc->dirichlet);
 
     PoissonSolverData solver_data;
     solver_data.solver_tolerance_rel = 1e-8;

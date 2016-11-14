@@ -10,6 +10,8 @@
 
 using namespace dealii;
 
+#include "MatrixOperatorBase.h"
+
 // operators
 #include "../include/InverseMassMatrix.h"
 #include "../include/ScalarConvectionDiffusionOperators.h"
@@ -25,7 +27,7 @@ using namespace dealii;
 #include "InputParametersConvDiff.h"
 
 template<int dim, int fe_degree, typename value_type>
-class DGConvDiffOperation
+class DGConvDiffOperation : public MatrixOperatorBase
 {
 public:
 
@@ -66,7 +68,8 @@ public:
     // initialize preconditioner
     if(param.preconditioner == ConvDiff::Preconditioner::InverseMassMatrix)
     {
-      preconditioner.reset(new InverseMassMatrixPreconditioner<dim,fe_degree,value_type,1>(data,0,0));
+      preconditioner.reset(new InverseMassMatrixPreconditioner<dim, fe_degree, value_type, 1>
+        (data,0,0));
     }
     else if(param.preconditioner == ConvDiff::Preconditioner::Jacobi)
     {
@@ -89,17 +92,8 @@ public:
       // use single precision for multigrid
       typedef float Number;
 
-      // fill dirichlet_boundary set
-      fill_dbc_set(boundary_descriptor);
-
-//      preconditioner.reset(new MyMultigridPreconditioner<dim,value_type,
-//                                ScalarConvDiffOperators::HelmholtzOperator<dim,fe_degree,Number>,
-//                                ScalarConvDiffOperators::HelmholtzOperatorData<dim> >
-//                               (mg_data,
-//                                dof_handler,
-//                                mapping,
-//                                helmholtz_operator_data,
-//                                dirichlet_boundary));
+      // fill dirichlet_boundary set TODO
+//      fill_dbc_set(boundary_descriptor);
 
       preconditioner.reset(new MyMultigridPreconditioner<dim,value_type,
                                 ScalarConvDiffOperators::HelmholtzOperator<dim,fe_degree,Number>,
@@ -116,7 +110,7 @@ public:
                                     dof_handler,
                                     mapping,
                                     helmholtz_operator_data,
-                                    dirichlet_boundary);
+                                    boundary_descriptor->dirichlet_bc);
     }
     else
     {
@@ -222,7 +216,7 @@ public:
     }
 
     // apply inverse mass matrix
-    inverse_mass_matrix_operator.apply_inverse_mass_matrix(dst,dst);
+    inverse_mass_matrix_operator.apply(dst,dst);
   }
 
   void evaluate_convective_term(parallel::distributed::Vector<value_type>       &dst,
@@ -451,19 +445,19 @@ private:
 
   }
 
-  // TODO This function is only needed when using the GeometricMultigrid preconditioner
-  // which expects the set 'dirichlet_boundary' as input parameter
-  void fill_dbc_set(std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor)
-  {
-    // Dirichlet boundary conditions: copy Dirichlet boundary ID's from
-    // boundary_descriptor.dirichlet_bc (map) to dirichlet_boundary (set)
-    for (typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::
-         const_iterator it = boundary_descriptor->dirichlet_bc.begin();
-         it != boundary_descriptor->dirichlet_bc.end(); ++it)
-    {
-      dirichlet_boundary.insert(it->first);
-    }
-  }
+//  // TODO This function is only needed when using the GeometricMultigrid preconditioner
+//  // which expects the set 'dirichlet_boundary' as input parameter
+//  void fill_dbc_set(std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor)
+//  {
+//    // Dirichlet boundary conditions: copy Dirichlet boundary ID's from
+//    // boundary_descriptor.dirichlet_bc (map) to dirichlet_boundary (set)
+//    for (typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::
+//         const_iterator it = boundary_descriptor->dirichlet_bc.begin();
+//         it != boundary_descriptor->dirichlet_bc.end(); ++it)
+//    {
+//      dirichlet_boundary.insert(it->first);
+//    }
+//  }
 
   /*
    *  This function implements the matrix-vector product for the
@@ -528,9 +522,9 @@ private:
   std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor;
   std_cxx11::shared_ptr<FieldFunctionsConvDiff<dim> > field_functions;
 
-  // TODO This variable is only needed when using the GeometricMultigrid preconditioner
-  // which expects the set 'dirichlet_boundary' as input parameter
-  std::set<types::boundary_id> dirichlet_boundary;
+//  // TODO This variable is only needed when using the GeometricMultigrid preconditioner
+//  // which expects the set 'dirichlet_boundary' as input parameter
+//  std::set<types::boundary_id> dirichlet_boundary;
 
   ScalarConvDiffOperators::MassMatrixOperatorData mass_matrix_operator_data;
   ScalarConvDiffOperators::MassMatrixOperator<dim, fe_degree, value_type> mass_matrix_operator;

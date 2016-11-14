@@ -38,7 +38,7 @@ protected:
    *  This function initializes the time integrator constants. The default case is
    *  start_with_low_order = false.
    */
-  void initialize_time_integrator_constants();
+  virtual void initialize_time_integrator_constants();
 
   /*
    *  This function updates the time integrator constants which is necessary when
@@ -47,14 +47,53 @@ protected:
   virtual void update_time_integrator_constants();
 
   /*
+   *  This function updates the time integrator constants of the BDF scheme
+   */
+  void update_time_integrator_constants_bdf(unsigned int const  max_order,
+                                            std::vector<double> &alpha,
+                                            double              &gamma0);
+
+  /*
+   *  This function updates the time integrator constants of the extrapolation scheme
+   */
+  void update_time_integrator_constants_extrapolation(unsigned int const  max_order,
+                                                      std::vector<double> &beta);
+
+  /*
+   *  This function calculates the time integrator constants of the BDF scheme
+   *  in case of constant time step sizes.
+   */
+  void set_constant_time_integrator_constants_bdf(unsigned int const  current_order,
+                                                  unsigned int const  max_order,
+                                                  std::vector<double> &alpha,
+                                                  double              &gamma0);
+
+  /*
+   *  This function calculates the time integrator constants of the extrapolation scheme
+   *  in case of constant time step sizes.
+   */
+  void set_constant_time_integrator_constants_extrapolation(unsigned int const  current_order,
+                                                            unsigned int const  max_order,
+                                                            std::vector<double> &beta);
+
+  /*
    *  This function calculates time integrator constants
    *  in case of varying time step sizes (adaptive time stepping).
    */
-  void set_adaptive_time_integrator_constants(unsigned int const              current_order,
-                                              std::vector<double> const     & time_steps,
-                                              std::vector<double>           & alpha,
-                                              std::vector<double>           & beta,
-                                              double                        & gamma0);
+  void set_adaptive_time_integrator_constants_bdf(unsigned int const              current_order,
+                                                  unsigned int const              max_order,
+                                                  std::vector<double> const     & time_steps,
+                                                  std::vector<double>           & alpha,
+                                                  double                        & gamma0);
+
+  /*
+   *  This function calculates time integrator constants
+   *  in case of varying time step sizes (adaptive time stepping).
+   */
+  void set_adaptive_time_integrator_constants_extrapolation(unsigned int const              current_order,
+                                                            unsigned int const              max_order,
+                                                            std::vector<double> const     & time_steps,
+                                                            std::vector<double>           & beta);
 
   // the number of the current time step starting with time_step_number = 1
   unsigned int time_step_number;
@@ -81,11 +120,6 @@ protected:
   std::vector<double> beta;
 
 private:
-  /*
-   *  This function calculates the time integrator constants
-   *  in case of constant time step sizes.
-   */
-  void set_constant_time_integrator_constants (unsigned int const current_order);
 
   /*
    *  This function prints the time integrator constants in order to check the
@@ -103,14 +137,18 @@ initialize_time_integrator_constants()
       ExcMessage("Specified order of time integration scheme is not implemented."));
 
   // the default case is start_with_low_order == false
-  set_constant_time_integrator_constants(order);
+  set_constant_time_integrator_constants_bdf(order,order,alpha,gamma0);
+  set_constant_time_integrator_constants_extrapolation(order,order,beta);
 }
 
 
 void TimeIntBDFBase::
-set_constant_time_integrator_constants (unsigned int const current_order)
+set_constant_time_integrator_constants_bdf (unsigned int const  current_order,
+                                            unsigned int const  max_order,
+                                            std::vector<double> &alpha,
+                                            double              &gamma0)
 {
-  AssertThrow(current_order <= order,
+  AssertThrow(current_order <= max_order,
       ExcMessage("There is a logical error when updating the time integrator constants."));
 
   if(current_order == 1)   //BDF 1
@@ -118,8 +156,6 @@ set_constant_time_integrator_constants (unsigned int const current_order)
     gamma0 = 1.0;
 
     alpha[0] = 1.0;
-
-    beta[0] = 1.0;
   }
   else if(current_order == 2) //BDF 2
   {
@@ -127,9 +163,6 @@ set_constant_time_integrator_constants (unsigned int const current_order)
 
     alpha[0] = 2.0;
     alpha[1] = -0.5;
-
-    beta[0] = 2.0;
-    beta[1] = -1.0;
   }
   else if(current_order == 3) //BDF 3
   {
@@ -138,10 +171,6 @@ set_constant_time_integrator_constants (unsigned int const current_order)
     alpha[0] = 3.;
     alpha[1] = -1.5;
     alpha[2] = 1./3.;
-
-    beta[0] = 3.0;
-    beta[1] = -3.0;
-    beta[2] = 1.0;
   }
   else if(current_order == 4) // BDF 4
   {
@@ -151,7 +180,43 @@ set_constant_time_integrator_constants (unsigned int const current_order)
     alpha[1] = -3.;
     alpha[2] = 4./3.;
     alpha[3] = -1./4.;
+  }
 
+  /*
+   * Fill the rest of the vectors with zeros since current_order might be
+   * smaller than order, e.g. when using start_with_low_order = true
+   */
+  for(unsigned int i=current_order;i<max_order;++i)
+  {
+    alpha[i] = 0.0;
+  }
+}
+
+void TimeIntBDFBase::
+set_constant_time_integrator_constants_extrapolation (unsigned int const  current_order,
+                                                      unsigned int const  max_order,
+                                                      std::vector<double> &beta)
+{
+  AssertThrow(current_order <= max_order,
+      ExcMessage("There is a logical error when updating the time integrator constants."));
+
+  if(current_order == 1)   //BDF 1
+  {
+    beta[0] = 1.0;
+  }
+  else if(current_order == 2) //BDF 2
+  {
+    beta[0] = 2.0;
+    beta[1] = -1.0;
+  }
+  else if(current_order == 3) //BDF 3
+  {
+    beta[0] = 3.0;
+    beta[1] = -3.0;
+    beta[2] = 1.0;
+  }
+  else if(current_order == 4) // BDF 4
+  {
     beta[0] = 4.;
     beta[1] = -6.;
     beta[2] = 4.;
@@ -162,21 +227,21 @@ set_constant_time_integrator_constants (unsigned int const current_order)
    * Fill the rest of the vectors with zeros since current_order might be
    * smaller than order, e.g. when using start_with_low_order = true
    */
-  for(unsigned int i=current_order;i<order;++i)
+  for(unsigned int i=current_order;i<max_order;++i)
   {
-    alpha[i] = 0.0;
     beta[i] = 0.0;
   }
 }
 
+
 void TimeIntBDFBase::
-set_adaptive_time_integrator_constants (unsigned int const              current_order,
-                                        std::vector<double> const     & time_steps,
-                                        std::vector<double>           & alpha,
-                                        std::vector<double>           & beta,
-                                        double                        & gamma0)
+set_adaptive_time_integrator_constants_bdf (unsigned int const              current_order,
+                                            unsigned int const              max_order,
+                                            std::vector<double> const     & time_steps,
+                                            std::vector<double>           & alpha,
+                                            double                        & gamma0)
 {
-  AssertThrow(current_order <= order,
+  AssertThrow(current_order <= max_order,
     ExcMessage("There is a logical error when updating the time integrator constants."));
 
   if(current_order == 1)   // BDF 1
@@ -184,8 +249,6 @@ set_adaptive_time_integrator_constants (unsigned int const              current_
     gamma0 = 1.0;
 
     alpha[0] = 1.0;
-
-    beta[0] = 1.0;
   }
   else if(current_order == 2) // BDF 2
   {
@@ -193,9 +256,6 @@ set_adaptive_time_integrator_constants (unsigned int const              current_
 
     alpha[0] = (time_steps[0]+time_steps[1])/time_steps[1];
     alpha[1] = - time_steps[0]*time_steps[0]/((time_steps[0]+time_steps[1])*time_steps[1]);
-
-    beta[0] = (time_steps[0]+time_steps[1])/time_steps[1];
-    beta[1] = -time_steps[0]/time_steps[1];
   }
   else if(current_order == 3) // BDF 3
   {
@@ -208,13 +268,6 @@ set_adaptive_time_integrator_constants (unsigned int const              current_
                 ((time_steps[0]+time_steps[1])*time_steps[1]*time_steps[2]);
     alpha[2] = +time_steps[0]*time_steps[0]*(time_steps[0]+time_steps[1])/
                 ((time_steps[0]+time_steps[1]+time_steps[2])*(time_steps[1]+time_steps[2])*time_steps[2]);
-
-    beta[0] = +(time_steps[0]+time_steps[1])*(time_steps[0]+time_steps[1]+time_steps[2])/
-               (time_steps[1]*(time_steps[1]+time_steps[2]));
-    beta[1] = -time_steps[0]*(time_steps[0]+time_steps[1]+time_steps[2])/
-               (time_steps[1]*time_steps[2]);
-    beta[2] = +time_steps[0]*(time_steps[0]+time_steps[1])/
-               ((time_steps[1]+time_steps[2])*time_steps[2]);
   }
   else if(current_order == 4) // BDF 4
   {
@@ -238,7 +291,47 @@ set_adaptive_time_integrator_constants (unsigned int const              current_
                  (time_steps[0]+time_steps[1]+time_steps[2]) /
                  ( (time_steps[0]+time_steps[1]+time_steps[2]+time_steps[3])*(time_steps[1]+time_steps[2]+time_steps[3])*
                     (time_steps[2]+time_steps[3])*time_steps[3] );
+  }
 
+  /*
+   * Fill the rest of the vectors with zeros since current_order might be
+   * smaller than order, e.g. when using start_with_low_order = true
+   */
+  for(unsigned int i=current_order;i<max_order;++i)
+  {
+    alpha[i] = 0.0;
+  }
+}
+
+void TimeIntBDFBase::
+set_adaptive_time_integrator_constants_extrapolation (unsigned int const              current_order,
+                                                      unsigned int const              max_order,
+                                                      std::vector<double> const     & time_steps,
+                                                      std::vector<double>           & beta)
+{
+  AssertThrow(current_order <= max_order,
+    ExcMessage("There is a logical error when updating the time integrator constants."));
+
+  if(current_order == 1)   // BDF 1
+  {
+    beta[0] = 1.0;
+  }
+  else if(current_order == 2) // BDF 2
+  {
+    beta[0] = (time_steps[0]+time_steps[1])/time_steps[1];
+    beta[1] = -time_steps[0]/time_steps[1];
+  }
+  else if(current_order == 3) // BDF 3
+  {
+    beta[0] = +(time_steps[0]+time_steps[1])*(time_steps[0]+time_steps[1]+time_steps[2])/
+               (time_steps[1]*(time_steps[1]+time_steps[2]));
+    beta[1] = -time_steps[0]*(time_steps[0]+time_steps[1]+time_steps[2])/
+               (time_steps[1]*time_steps[2]);
+    beta[2] = +time_steps[0]*(time_steps[0]+time_steps[1])/
+               ((time_steps[1]+time_steps[2])*time_steps[2]);
+  }
+  else if(current_order == 4) // BDF 4
+  {
     beta[0] = (time_steps[0]+time_steps[1])*
               (time_steps[0]+time_steps[1]+time_steps[2])*
               (time_steps[0]+time_steps[1]+time_steps[2]+time_steps[3]) /
@@ -264,9 +357,8 @@ set_adaptive_time_integrator_constants (unsigned int const              current_
    * Fill the rest of the vectors with zeros since current_order might be
    * smaller than order, e.g. when using start_with_low_order = true
    */
-  for(unsigned int i=current_order;i<order;++i)
+  for(unsigned int i=current_order;i<max_order;++i)
   {
-    alpha[i] = 0.0;
     beta[i] = 0.0;
   }
 }
@@ -274,30 +366,68 @@ set_adaptive_time_integrator_constants (unsigned int const              current_
 void TimeIntBDFBase::
 update_time_integrator_constants()
 {
+  update_time_integrator_constants_bdf(order,alpha,gamma0);
+  update_time_integrator_constants_extrapolation(order,beta);
+
+  // use this function to check the correctness of the time integrator constants
+//  check_time_integrator_constants(time_step_number);
+}
+
+void TimeIntBDFBase::
+update_time_integrator_constants_bdf(unsigned int const  max_order,
+                                     std::vector<double> &alpha,
+                                     double              &gamma0)
+{
   if(adaptive_time_stepping == true)
   {
     // when starting the time integrator with a low order method, ensure that
     // the time integrator constants are set properly
-    if(time_step_number <= order && start_with_low_order == true)
+    if(time_step_number <= max_order && start_with_low_order == true)
     {
-      set_adaptive_time_integrator_constants(time_step_number, time_steps, alpha, beta, gamma0);
+      set_adaptive_time_integrator_constants_bdf(time_step_number, max_order, time_steps, alpha, gamma0);
     }
     else // otherwise, adjust time integrator constants since this is adaptive time stepping
     {
-      set_adaptive_time_integrator_constants(order, time_steps, alpha, beta, gamma0);
+      set_adaptive_time_integrator_constants_bdf(max_order, max_order, time_steps, alpha, gamma0);
     }
   }
   else // adaptive_time_stepping == false, i.e., constant time step sizes
   {
     // when starting the time integrator with a low order method, ensure that
     // the time integrator constants are set properly
-    if(time_step_number <= order && start_with_low_order == true)
+    if(time_step_number <= max_order && start_with_low_order == true)
     {
-      set_constant_time_integrator_constants(time_step_number);
+      set_constant_time_integrator_constants_bdf(time_step_number,max_order,alpha,gamma0);
     }
   }
+}
 
-//   check_time_integrator_constants(time_step_number);
+void TimeIntBDFBase::
+update_time_integrator_constants_extrapolation(unsigned int const  max_order,
+                                               std::vector<double> &beta)
+{
+  if(adaptive_time_stepping == true)
+  {
+    // when starting the time integrator with a low order method, ensure that
+    // the time integrator constants are set properly
+    if(time_step_number <= max_order && start_with_low_order == true)
+    {
+      set_adaptive_time_integrator_constants_extrapolation(time_step_number, max_order, time_steps, beta);
+    }
+    else // otherwise, adjust time integrator constants since this is adaptive time stepping
+    {
+      set_adaptive_time_integrator_constants_extrapolation(max_order, max_order, time_steps, beta);
+    }
+  }
+  else // adaptive_time_stepping == false, i.e., constant time step sizes
+  {
+    // when starting the time integrator with a low order method, ensure that
+    // the time integrator constants are set properly
+    if(time_step_number <= max_order && start_with_low_order == true)
+    {
+      set_constant_time_integrator_constants_extrapolation(time_step_number,max_order,beta);
+    }
+  }
 }
 
 

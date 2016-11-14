@@ -8,37 +8,28 @@
 #ifndef INCLUDE_NEWTONSOLVER_H_
 #define INCLUDE_NEWTONSOLVER_H_
 
+#include "NewtonSolverData.h"
 
-struct NewtonSolverData
-{
-  double abs_tol;
-  double rel_tol;
-  unsigned int max_iter;
-};
-
-template<typename Vector, typename Operator, typename SolverLinearizedProblem>
+template<typename Vector, typename NonlinearOperator, typename SolverLinearizedProblem>
 class NewtonSolver
 {
 public:
   NewtonSolver(NewtonSolverData const  &solver_data_in,
-               Operator                &underlying_operator_in,
+               NonlinearOperator       &nonlinear_operator_in,
                SolverLinearizedProblem &linear_solver_in)
     :
     solver_data(solver_data_in),
-    underlying_operator(underlying_operator_in),
+    nonlinear_operator(nonlinear_operator_in),
     linear_solver(linear_solver_in)
   {
-    underlying_operator.initialize_vector_for_newton_solver(residual);
-    underlying_operator.initialize_vector_for_newton_solver(increment);
+    nonlinear_operator.initialize_vector_for_newton_solver(residual);
+    nonlinear_operator.initialize_vector_for_newton_solver(increment);
   }
 
   void solve(Vector &dst, unsigned int &newton_iterations, double &average_linear_iterations)
   {
-    // set solution linearization to dst
-    underlying_operator.set_solution_linearization(&dst);
-
     // evaluate residual using the given estimate of the solution
-    underlying_operator.evaluate_nonlinear_residual(residual,dst);
+    nonlinear_operator.evaluate_nonlinear_residual(residual,dst);
 
     double norm_r = residual.l2_norm();
     double norm_r_0 = norm_r;
@@ -67,15 +58,12 @@ public:
       dst.add(1.0, increment);
 
       // evaluate residual using the new solution
-      underlying_operator.evaluate_nonlinear_residual(residual,dst);
+      nonlinear_operator.evaluate_nonlinear_residual(residual,dst);
 
       norm_r = residual.l2_norm();
 
       ++n_iter;
     }
-
-    // set solution linearization to nullptr
-    underlying_operator.set_solution_linearization(nullptr);
 
     if(n_iter >= solver_data.max_iter)
     {
@@ -92,7 +80,7 @@ public:
 
 private:
   NewtonSolverData solver_data;
-  Operator &underlying_operator;
+  NonlinearOperator &nonlinear_operator;
   SolverLinearizedProblem &linear_solver;
   Vector residual, increment;
 };

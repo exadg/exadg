@@ -96,7 +96,7 @@ public:
     vector_linearization = solution_linearization;
   }
 
-  parallel::distributed::Vector<value_type> const * get_velocity_linearization() const
+  parallel::distributed::Vector<value_type> const * get_solution_linearization() const
   {
     if(vector_linearization != nullptr)
     {
@@ -109,13 +109,16 @@ public:
   }
 
 private:
-  friend class BlockPreconditionerNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>;
+  friend class BlockPreconditionerNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type,
+    DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> >;
 
   parallel::distributed::Vector<value_type> mutable temp;
   parallel::distributed::Vector<value_type> const *sum_alphai_ui;
   parallel::distributed::BlockVector<value_type> const *vector_linearization;
 
-  std_cxx11::shared_ptr<PreconditionerNavierStokesBase<value_type> > preconditioner;
+  std_cxx11::shared_ptr<PreconditionerNavierStokesBase<value_type,
+    DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > > preconditioner;
+
   std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::BlockVector<value_type> > > linear_solver;
 
   std_cxx11::shared_ptr<NewtonSolver<parallel::distributed::BlockVector<value_type>,
@@ -155,8 +158,9 @@ setup_solvers ()
     preconditioner_data.multigrid_data_schur_complement_preconditioner = this->param.multigrid_data_schur_complement_preconditioner;
     preconditioner_data.rel_tol_solver_schur_complement_preconditioner = this->param.rel_tol_solver_schur_complement_preconditioner;
 
-    preconditioner.reset(new BlockPreconditionerNavierStokes<dim, fe_degree, fe_degree_p,
-                             fe_degree_xwall, xwall_quad_rule, value_type>(this,preconditioner_data));
+    preconditioner.reset(new BlockPreconditionerNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type,
+                               DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> >
+        (this,preconditioner_data));
   }
 
 
@@ -167,6 +171,7 @@ setup_solvers ()
     solver_data.solver_tolerance_abs = this->param.abs_tol_linear;
     solver_data.solver_tolerance_rel = this->param.rel_tol_linear;
     solver_data.right_preconditioning = this->param.use_right_preconditioning;
+    solver_data.update_preconditioner = this->param.update_preconditioner;
     solver_data.max_n_tmp_vectors = this->param.max_n_tmp_vectors;
     solver_data.compute_eigenvalues = false;
 
@@ -177,8 +182,8 @@ setup_solvers ()
       solver_data.use_preconditioner = true;
     }
 
-    linear_solver.reset(new GMRESSolverNavierStokes<DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
-                                        PreconditionerNavierStokesBase<value_type>,
+    linear_solver.reset(new GMRESSolver<DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
+                                        PreconditionerNavierStokesBase<value_type, DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> >,
                                         parallel::distributed::BlockVector<value_type> >
         (*this,*preconditioner,solver_data));
   }
@@ -188,6 +193,7 @@ setup_solvers ()
     solver_data.max_iter = this->param.max_iter_linear;
     solver_data.solver_tolerance_abs = this->param.abs_tol_linear;
     solver_data.solver_tolerance_rel = this->param.rel_tol_linear;
+    solver_data.update_preconditioner = this->param.update_preconditioner;
     solver_data.max_n_tmp_vectors = this->param.max_n_tmp_vectors;
 
     if(this->param.preconditioner_linearized_navier_stokes == PreconditionerLinearizedNavierStokes::BlockDiagonal ||
@@ -197,8 +203,8 @@ setup_solvers ()
       solver_data.use_preconditioner = true;
     }
 
-    linear_solver.reset(new FGMRESSolverNavierStokes<DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
-                                         PreconditionerNavierStokesBase<value_type>,
+    linear_solver.reset(new FGMRESSolver<DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
+                                         PreconditionerNavierStokesBase<value_type, DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>>,
                                          parallel::distributed::BlockVector<value_type> >
         (*this,*preconditioner,solver_data));
   }
@@ -212,15 +218,10 @@ setup_solvers ()
   // Newton solver
   if(nonlinear_problem_has_to_be_solved())
   {
-    NewtonSolverData newton_solver_data;
-    newton_solver_data.abs_tol = this->param.abs_tol_newton;
-    newton_solver_data.rel_tol = this->param.rel_tol_newton;
-    newton_solver_data.max_iter = this->param.max_iter_newton;
-
     newton_solver.reset(new NewtonSolver<parallel::distributed::BlockVector<value_type>,
                                          DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
                                          IterativeSolverBase<parallel::distributed::BlockVector<value_type> > >
-       (newton_solver_data,*this,*linear_solver));
+       (this->param.newton_solver_data_coupled,*this,*linear_solver));
   }
 
   pcout << std::endl << "... done!" << std::endl;
@@ -338,7 +339,15 @@ solve_nonlinear_steady_problem (parallel::distributed::BlockVector<value_type>  
                                 unsigned int                                    &newton_iterations,
                                 double                                          &average_linear_iterations)
 {
+  // update the linear operator so that it works with the correct
+  // linearized velocity field
+  set_solution_linearization(&dst);
+
+  // solve nonlinear problem
   newton_solver->solve(dst,newton_iterations,average_linear_iterations);
+
+  // reset solution linearization
+  set_solution_linearization(nullptr);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
@@ -348,8 +357,20 @@ solve_nonlinear_problem (parallel::distributed::BlockVector<value_type>  &dst,
                          unsigned int                                    &newton_iterations,
                          double                                          &average_linear_iterations)
 {
+  // Set sum_alphai_ui, this variable is used when evaluating the nonlinear residual
   this->sum_alphai_ui = &sum_alphai_ui;
+
+  // update the linear operator so that it works with the correct
+  // linearized velocity field
+  set_solution_linearization(&dst);
+
+  // Solve nonlinear problem
   newton_solver->solve(dst,newton_iterations,average_linear_iterations);
+
+  // reset solution linearization
+  set_solution_linearization(nullptr);
+
+  // Reset sum_alphai_ui
   this->sum_alphai_ui = nullptr;
 }
 

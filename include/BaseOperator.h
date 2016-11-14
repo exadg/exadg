@@ -9,9 +9,13 @@
 #define INCLUDE_BASEOPERATOR_H_
 
 #include "FE_Parameters.h"
+#include "MatrixOperatorBase.h"
+
+//template <int dim>
+//class BaseOperator: public Subscriptor
 
 template <int dim>
-class BaseOperator: public Subscriptor
+class BaseOperator: public MatrixOperatorBase
 {
 public:
   BaseOperator()

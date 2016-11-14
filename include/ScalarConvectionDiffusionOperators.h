@@ -516,8 +516,8 @@ private:
           // on GammaD: grad(u⁺)*n = -grad(u⁻)*n + 2h -> {{grad(u)}}*n = h
           // homogeneous part: {{grad(u)}}*n = 0
           // inhomogeneous part: {{grad(u)}}*n = h
-          VectorizedArray<value_type> jump_value;
-          VectorizedArray<value_type> gradient_flux;
+          VectorizedArray<value_type> jump_value = make_vectorized_array<value_type>(0.0);
+          VectorizedArray<value_type> gradient_flux = make_vectorized_array<value_type>(0.0);
 
           fe_eval.submit_normal_gradient(-0.5*diffusivity*jump_value,q);
           fe_eval.submit_value(-diffusivity*gradient_flux,q);
@@ -725,8 +725,8 @@ private:
             // on GammaD: grad(u⁺)*n = -grad(u⁻)*n + 2h -> {{grad(u)}}*n = h
             // homogeneous part: {{grad(u)}}*n = 0
             // inhomogeneous part: {{grad(u)}}*n = h
-            VectorizedArray<value_type> jump_value;
-            VectorizedArray<value_type> gradient_flux;
+            VectorizedArray<value_type> jump_value = make_vectorized_array<value_type>(0.0);
+            VectorizedArray<value_type> gradient_flux = make_vectorized_array<value_type>(0.0);
 
             fe_eval.submit_normal_gradient(-0.5*diffusivity*jump_value,q);
             fe_eval.submit_value(-diffusivity*gradient_flux,q);
@@ -801,7 +801,7 @@ private:
           g.load(&array[0]);
 
           VectorizedArray<value_type> jump_value = -2.0*g;
-          VectorizedArray<value_type> gradient_flux;
+          VectorizedArray<value_type> gradient_flux = make_vectorized_array<value_type>(0.0);
           gradient_flux = gradient_flux - tau_IP * jump_value;
 
           fe_eval.submit_normal_gradient(-0.5*diffusivity*(-jump_value),q); // -jump_value since this term appears on the rhs of the equation
@@ -818,8 +818,8 @@ private:
           // on GammaN: grad(u⁺)*n = -grad(u⁻)*n + 2h -> {{grad(u)}}*n = h
           // homogeneous part: {{grad(u)}}*n = 0
           // inhomogeneous part: {{grad(u)}}*n = h
-          VectorizedArray<value_type> jump_value;
-          VectorizedArray<value_type> gradient_flux;
+          VectorizedArray<value_type> jump_value = make_vectorized_array<value_type>(0.0);
+          VectorizedArray<value_type> gradient_flux = make_vectorized_array<value_type>(0.0);
 
           // set time for the correct evaluation of boundary conditions
           it->second->set_time(eval_time);

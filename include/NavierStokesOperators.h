@@ -399,12 +399,12 @@ public:
   void initialize_viscous_coefficients()
   {
     Assert(xwall_quad_rule > fe_degree +1, ExcMessage("this may cause a memory error"));
-    this->viscous_coefficient_cell.reinit(this->data->n_macro_cells(), Utilities::fixed_int_power<xwall_quad_rule,dim>::value);
+    this->viscous_coefficient_cell.reinit(this->data->n_macro_cells(), Utilities::fixed_int_power<FEEval_Velocity_Velocity_linear::n_q_points,dim>::value);
     this->viscous_coefficient_cell.fill(make_vectorized_array<Number>(const_viscosity));
 
-    this->viscous_coefficient_face.reinit(this->data->n_macro_inner_faces()+this->data->n_macro_boundary_faces(), Utilities::fixed_int_power<xwall_quad_rule,dim-1>::value);
+    this->viscous_coefficient_face.reinit(this->data->n_macro_inner_faces()+this->data->n_macro_boundary_faces(), Utilities::fixed_int_power<FEFaceEval_Velocity_Velocity_linear::n_q_points,dim-1>::value);
     this->viscous_coefficient_face.fill(make_vectorized_array<Number>(const_viscosity));
-    this->viscous_coefficient_face_neighbor.reinit(this->data->n_macro_inner_faces()+this->data->n_macro_boundary_faces(), Utilities::fixed_int_power<xwall_quad_rule,dim-1>::value);
+    this->viscous_coefficient_face_neighbor.reinit(this->data->n_macro_inner_faces()+this->data->n_macro_boundary_faces(), Utilities::fixed_int_power<FEFaceEval_Velocity_Velocity_linear::n_q_points,dim-1>::value);
     this->viscous_coefficient_face_neighbor.fill(make_vectorized_array<Number>(const_viscosity));
   }
 
@@ -645,7 +645,7 @@ private:
   {
     return operator_data.IP_factor_viscous * (fe_degree + 1.0) * (fe_degree + 1.0);
   }
-protected:
+
   void apply_viscous (parallel::distributed::Vector<Number>        &dst,
                       const parallel::distributed::Vector<Number>  &src) const
   {
@@ -654,7 +654,7 @@ protected:
                &ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_apply_viscous_boundary_face,
                this, dst, src);
   }
-private:
+
   void local_apply_viscous (const MatrixFree<dim,Number>                 &data,
                             parallel::distributed::Vector<Number>        &dst,
                             const parallel::distributed::Vector<Number>  &src,

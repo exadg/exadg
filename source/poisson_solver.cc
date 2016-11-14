@@ -146,10 +146,10 @@ void LaplaceOperator<dim,Number>::reinit (const DoFHandler<dim>           &dof_h
   {
     ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
     typename FunctionMap<dim>::type dirichlet_boundary;
-    for (std::set<types::boundary_id>::const_iterator it =
-           operator_data.dirichlet_boundaries.begin();
-         it != operator_data.dirichlet_boundaries.end(); ++it)
-      dirichlet_boundary[*it] = &zero_function;
+    for (typename std::map<types::boundary_id, std_cxx11::shared_ptr<Function<dim> > >::const_iterator it =
+           operator_data.bc->dirichlet.begin();
+         it != operator_data.bc->dirichlet.end(); ++it)
+      dirichlet_boundary[it->first] = &zero_function;
 
     IndexSet relevant_dofs;
     DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs);
@@ -289,11 +289,11 @@ bool LaplaceOperator<dim,Number>
       if (cell->at_boundary(f))
         {
           types::boundary_id bid = cell->face(f)->boundary_id();
-          if (operator_data.dirichlet_boundaries.find(bid) !=
-              operator_data.dirichlet_boundaries.end())
+          if (operator_data.bc->dirichlet.find(bid) !=
+              operator_data.bc->dirichlet.end())
             {
-              AssertThrow(operator_data.neumann_boundaries.find(bid) ==
-                          operator_data.neumann_boundaries.end(),
+              AssertThrow(operator_data.bc->neumann.find(bid) ==
+                          operator_data.bc->neumann.end(),
                           ExcMessage("Boundary id " + Utilities::to_string((int)bid) +
                                      " wants to set both Dirichlet and Neumann " +
                                      "boundary conditions, which is impossible!"));
@@ -305,8 +305,8 @@ bool LaplaceOperator<dim,Number>
               pure_neumann_problem = false;
               continue;
             }
-          if (operator_data.neumann_boundaries.find(bid) !=
-              operator_data.neumann_boundaries.end())
+          if (operator_data.bc->neumann.find(bid) !=
+              operator_data.bc->neumann.end())
             {
               AssertThrow(periodic_boundary_ids.find(bid) ==
                           periodic_boundary_ids.end(),
@@ -605,6 +605,101 @@ void LaplaceOperator<dim,Number>
     }
 }
 
+template <int dim, typename Number>
+void LaplaceOperator<dim,Number>::rhs(parallel::distributed::Vector<Number> &dst) const
+{
+  dst = 0;
+  rhs_add(dst);
+}
+
+template <int dim, typename Number>
+void LaplaceOperator<dim,Number>::rhs_add(parallel::distributed::Vector<Number> &dst) const
+{
+  run_rhs_loop(dst);
+}
+
+
+template <int dim, typename Number>
+void LaplaceOperator<dim,Number>::run_rhs_loop(parallel::distributed::Vector<Number> &dst) const
+{
+  Assert(src.partitioners_are_globally_compatible(*data->get_dof_info(operator_data.laplace_dof_index).vector_partitioner), ExcInternalError());
+  Assert(dst.partitioners_are_globally_compatible(*data->get_dof_info(operator_data.laplace_dof_index).vector_partitioner), ExcInternalError());
+
+  parallel::distributed::Vector<value_type> src;
+
+  switch (fe_degree)
+    {
+    case 0:
+      data->loop (&LaplaceOperator::template local_rhs<0>,
+                  &LaplaceOperator::template local_rhs_face<0>,
+                  &LaplaceOperator::template local_rhs_boundary<0>,
+                  this, dst, src);
+      break;
+    case 1:
+      data->loop (&LaplaceOperator::template local_rhs<1>,
+                  &LaplaceOperator::template local_rhs_face<1>,
+                  &LaplaceOperator::template local_rhs_boundary<1>,
+                  this, dst, src);
+      break;
+    case 2:
+      data->loop (&LaplaceOperator::template local_rhs<2>,
+                  &LaplaceOperator::template local_rhs_face<2>,
+                  &LaplaceOperator::template local_rhs_boundary<2>,
+                  this, dst, src);
+      break;
+    case 3:
+      data->loop (&LaplaceOperator::template local_rhs<3>,
+                  &LaplaceOperator::template local_rhs_face<3>,
+                  &LaplaceOperator::template local_rhs_boundary<3>,
+                  this, dst, src);
+      break;
+    case 4:
+      data->loop (&LaplaceOperator::template local_rhs<4>,
+                  &LaplaceOperator::template local_rhs_face<4>,
+                  &LaplaceOperator::template local_rhs_boundary<4>,
+                  this, dst, src);
+      break;
+    case 5:
+      data->loop (&LaplaceOperator::template local_rhs<5>,
+                  &LaplaceOperator::template local_rhs_face<5>,
+                  &LaplaceOperator::template local_rhs_boundary<5>,
+                  this, dst, src);
+      break;
+    case 6:
+      data->loop (&LaplaceOperator::template local_rhs<6>,
+                  &LaplaceOperator::template local_rhs_face<6>,
+                  &LaplaceOperator::template local_rhs_boundary<6>,
+                  this, dst, src);
+      break;
+    case 7:
+      data->loop (&LaplaceOperator::template local_rhs<7>,
+                  &LaplaceOperator::template local_rhs_face<7>,
+                  &LaplaceOperator::template local_rhs_boundary<7>,
+                  this, dst, src);
+      break;
+    case 8:
+      data->loop (&LaplaceOperator::template local_rhs<8>,
+                  &LaplaceOperator::template local_rhs_face<8>,
+                  &LaplaceOperator::template local_rhs_boundary<8>,
+                  this, dst, src);
+      break;
+    case 9:
+      data->loop (&LaplaceOperator::template local_rhs<9>,
+                  &LaplaceOperator::template local_rhs_face<9>,
+                  &LaplaceOperator::template local_rhs_boundary<9>,
+                  this, dst, src);
+      break;
+    case 10:
+      data->loop (&LaplaceOperator::template local_rhs<10>,
+                  &LaplaceOperator::template local_rhs_face<10>,
+                  &LaplaceOperator::template local_rhs_boundary<10>,
+                  this, dst, src);
+      break;
+    default:
+      AssertThrow(false, ExcMessage("Only polynomial degrees 0 up to 10 instantiated"));
+    }
+}
+
 
 
 template <int dim, typename Number>
@@ -871,39 +966,148 @@ local_apply_boundary (const MatrixFree<dim,Number>                &data,
       VectorizedArray<Number> sigmaF =
         fe_eval.read_cell_data(array_penalty_parameter) *
         get_penalty_factor();
-      const bool is_dirichlet =
-        operator_data.dirichlet_boundaries.find(data.get_boundary_indicator(face)) !=
-        operator_data.dirichlet_boundaries.end();
+
+      typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+      types::boundary_id boundary_id = data.get_boundary_indicator(face);
 
       for(unsigned int q=0;q<fe_eval.n_q_points;++q)
         {
-          if (!is_dirichlet) // Neumann boundaries
-            {
-              //set gradient in normal direction to zero, i.e. u+ = ue-, grad+ = -grad-
-              VectorizedArray<Number> jump_value = make_vectorized_array<Number>(0.0);
-              VectorizedArray<Number> average_gradient = make_vectorized_array<Number>(0.0);
-              average_gradient = average_gradient - jump_value * sigmaF;
+          it = operator_data.bc->dirichlet.find(boundary_id);
+          if(it != operator_data.bc->dirichlet.end())
+          {
+            //set value to zero, i.e. u+ = - u- , grad+ = grad-
+            VectorizedArray<Number> valueM = fe_eval.get_value(q);
 
-              fe_eval.submit_normal_gradient(-0.5*jump_value,q);
-              fe_eval.submit_value(-average_gradient,q);
-            }
-          else // Dirichlet boundaries
-            {
-              //set value to zero, i.e. u+ = - u- , grad+ = grad-
-              VectorizedArray<Number> valueM = fe_eval.get_value(q);
+            VectorizedArray<Number> jump_value = 2.0*valueM;
+            VectorizedArray<Number> average_gradient = fe_eval.get_normal_gradient(q);
+            average_gradient = average_gradient - jump_value * sigmaF;
 
-              VectorizedArray<Number> jump_value = 2.0*valueM;
-              VectorizedArray<Number> average_gradient = fe_eval.get_normal_gradient(q);
-              average_gradient = average_gradient - jump_value * sigmaF;
+            fe_eval.submit_normal_gradient(-0.5*jump_value,q);
+            fe_eval.submit_value(-average_gradient,q);
+          }
+          it = operator_data.bc->neumann.find(boundary_id);
+          if (it != operator_data.bc->neumann.end())
+          {
+            //set gradient in normal direction to zero, i.e. u+ = u-, grad+ = -grad-
+            VectorizedArray<Number> jump_value = make_vectorized_array<Number>(0.0);
+            VectorizedArray<Number> average_gradient = make_vectorized_array<Number>(0.0);
+            average_gradient = average_gradient - jump_value * sigmaF;
 
-              fe_eval.submit_normal_gradient(-0.5*jump_value,q);
-              fe_eval.submit_value(-average_gradient,q);
-            }
+            fe_eval.submit_normal_gradient(-0.5*jump_value,q);
+            fe_eval.submit_value(-average_gradient,q);
+          }
         }
 
       fe_eval.integrate(true,true);
       fe_eval.distribute_local_to_global(dst);
     }
+}
+
+
+template <int dim, typename Number>
+template <int degree>
+void LaplaceOperator<dim,Number>::
+local_rhs (const MatrixFree<dim,Number>                &,
+           parallel::distributed::Vector<Number>       &,
+           const parallel::distributed::Vector<Number> &,
+           const std::pair<unsigned int,unsigned int>  &) const
+{}
+
+
+
+template <int dim, typename Number>
+template <int degree>
+void LaplaceOperator<dim,Number>::
+local_rhs_face (const MatrixFree<dim,Number>                &,
+                parallel::distributed::Vector<Number>       &,
+                const parallel::distributed::Vector<Number> &,
+                const std::pair<unsigned int,unsigned int>  &) const
+{}
+
+
+
+template <int dim, typename Number>
+template <int degree>
+void LaplaceOperator<dim,Number>::
+local_rhs_boundary (const MatrixFree<dim,Number>                &data,
+                    parallel::distributed::Vector<Number>       &dst,
+                    const parallel::distributed::Vector<Number> &,
+                    const std::pair<unsigned int,unsigned int>  &face_range) const
+{
+  // Nothing to do for continuous elements
+  if (data.get_dof_handler(operator_data.laplace_dof_index).get_fe().dofs_per_vertex > 0)
+    return;
+
+  FEFaceEvaluation<dim,degree,degree+1,1,Number> fe_eval(data, true,
+                                                         operator_data.laplace_dof_index,
+                                                         operator_data.laplace_quad_index);
+
+  for(unsigned int face=face_range.first; face<face_range.second; face++)
+  {
+    fe_eval.reinit (face);
+
+    VectorizedArray<Number> sigmaF =
+      fe_eval.read_cell_data(array_penalty_parameter) *
+      get_penalty_factor();
+
+    typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+    types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
+    for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+    {
+      it = operator_data.bc->dirichlet.find(boundary_id);
+      if(it != operator_data.bc->dirichlet.end())
+      {
+        // u+ = 2g , grad+ = 0 (inhomogeneous parts)
+        VectorizedArray<value_type> g = make_vectorized_array<Number>(0.0);
+
+        Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
+        value_type array [VectorizedArray<value_type>::n_array_elements];
+        for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+        {
+          Point<dim> q_point;
+          for (unsigned int d=0; d<dim; ++d)
+            q_point[d] = q_points[d][n];
+          array[n] = it->second->value(q_point);
+        }
+        g.load(&array[0]);
+
+        VectorizedArray<Number> jump_value = - 2.0*g;
+        VectorizedArray<Number> average_gradient = make_vectorized_array<Number>(0.0);
+        average_gradient = average_gradient - jump_value * sigmaF;
+
+        fe_eval.submit_normal_gradient(-0.5*(-jump_value),q); // (-jump_value) since this term is shifted to the rhs of the equations
+        fe_eval.submit_value(average_gradient,q); // (+average_gradient) since this term is shifted to the rhs of the equations
+      }
+
+      it = operator_data.bc->neumann.find(boundary_id);
+      if (it != operator_data.bc->neumann.end())
+      {
+        // u+ = 0, grad+ = 2h (inhomogeneous parts)
+        VectorizedArray<Number> jump_value = make_vectorized_array<Number>(0.0);
+        VectorizedArray<Number> average_gradient = make_vectorized_array<Number>(0.0);
+
+        Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
+        value_type array [VectorizedArray<value_type>::n_array_elements];
+        for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+        {
+          Point<dim> q_point;
+          for (unsigned int d=0; d<dim; ++d)
+            q_point[d] = q_points[d][n];
+          array[n] = it->second->value(q_point);
+        }
+        average_gradient.load(&array[0]);
+
+        average_gradient = average_gradient - jump_value * sigmaF;
+
+        fe_eval.submit_normal_gradient(-0.5*(-jump_value),q); // (-jump_value) since this term is shifted to the rhs of the equations
+        fe_eval.submit_value(average_gradient,q); // (+average_gradient) since this term is shifted to the rhs of the equations
+      }
+    }
+
+    fe_eval.integrate(true,true);
+    fe_eval.distribute_local_to_global(dst);
+  }
 }
 
 
@@ -913,7 +1117,7 @@ template <int degree>
 void LaplaceOperator<dim,Number>::
 local_diagonal_cell (const MatrixFree<dim,Number>                &data,
                      parallel::distributed::Vector<Number>       &dst,
-                     const unsigned int  &,
+                     const unsigned int                          &,
                      const std::pair<unsigned int,unsigned int>  &cell_range) const
 {
   FEEvaluation<dim,degree,degree+1,1,Number> phi (data,
@@ -949,7 +1153,7 @@ template <int degree>
 void LaplaceOperator<dim,Number>::
 local_diagonal_face (const MatrixFree<dim,Number>                &data,
                      parallel::distributed::Vector<Number>       &dst,
-                     const unsigned int  &,
+                     const unsigned int                          &,
                      const std::pair<unsigned int,unsigned int>  &face_range) const
 {
   // Nothing to do for continuous elements
@@ -1045,7 +1249,7 @@ template <int degree>
 void LaplaceOperator<dim,Number>::
 local_diagonal_boundary (const MatrixFree<dim,Number>                &data,
                          parallel::distributed::Vector<Number>       &dst,
-                         const unsigned int  &,
+                         const unsigned int                          &,
                          const std::pair<unsigned int,unsigned int>  &face_range) const
 {
   // Nothing to do for continuous elements
@@ -1064,9 +1268,9 @@ local_diagonal_boundary (const MatrixFree<dim,Number>                &data,
       VectorizedArray<Number> sigmaF =
         phi.read_cell_data(array_penalty_parameter) *
         get_penalty_factor();
-      const bool is_dirichlet =
-        operator_data.dirichlet_boundaries.find(data.get_boundary_indicator(face)) !=
-        operator_data.dirichlet_boundaries.end();
+
+      typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+      types::boundary_id boundary_id = data.get_boundary_indicator(face);
 
       for (unsigned int i=0; i<phi.dofs_per_cell; ++i)
         {
@@ -1076,28 +1280,33 @@ local_diagonal_boundary (const MatrixFree<dim,Number>                &data,
           phi.evaluate(true,true);
 
           for(unsigned int q=0;q<phi.n_q_points;++q)
-            if (!is_dirichlet) // Neumann boundaries
-              {
-                //set solution gradient in normal direction to zero, i.e. u+ = u-, grad+ = -grad-
-                VectorizedArray<Number> jump_value = make_vectorized_array<Number>(0.0);
-                VectorizedArray<Number> average_gradient = make_vectorized_array<Number>(0.0);
-                average_gradient = average_gradient - jump_value * sigmaF;
+          {
+            it = operator_data.bc->dirichlet.find(boundary_id);
+            if(it != operator_data.bc->dirichlet.end())
+            {
+              //set value to zero, i.e. u+ = - u- , grad+ = grad-
+              VectorizedArray<Number> valueM = phi.get_value(q);
 
-                phi.submit_normal_gradient(-0.5*jump_value,q);
-                phi.submit_value(-average_gradient,q);
-              }
-            else // Dirichlet
-              {
-                //set value to zero, i.e. u+ = - u- , grad+ = grad-
-                VectorizedArray<Number> valueM = phi.get_value(q);
+              VectorizedArray<Number> jump_value = 2.0*valueM;
+              VectorizedArray<Number> average_gradient = phi.get_normal_gradient(q);
+              average_gradient = average_gradient - jump_value * sigmaF;
 
-                VectorizedArray<Number> jump_value = 2.0*valueM;
-                VectorizedArray<Number> average_gradient = phi.get_normal_gradient(q);
-                average_gradient = average_gradient - jump_value * sigmaF;
+              phi.submit_normal_gradient(-0.5*jump_value,q);
+              phi.submit_value(-average_gradient,q);
+            }
 
-                phi.submit_normal_gradient(-0.5*jump_value,q);
-                phi.submit_value(-average_gradient,q);
-              }
+            it = operator_data.bc->neumann.find(boundary_id);
+            if (it != operator_data.bc->neumann.end())
+            {
+              //set solution gradient in normal direction to zero, i.e. u+ = u-, grad+ = -grad-
+              VectorizedArray<Number> jump_value = make_vectorized_array<Number>(0.0);
+              VectorizedArray<Number> average_gradient = make_vectorized_array<Number>(0.0);
+              average_gradient = average_gradient - jump_value * sigmaF;
+
+              phi.submit_normal_gradient(-0.5*jump_value,q);
+              phi.submit_value(-average_gradient,q);
+            }
+          }
 
           phi.integrate(true,true);
           local_diagonal_vector[i] = phi.begin_dof_values()[i];

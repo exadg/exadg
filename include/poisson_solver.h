@@ -16,7 +16,9 @@
 
 using namespace dealii;
 
-#include "FE_Parameters.h"
+#include "MatrixOperatorBase.h"
+
+#include "BoundaryDescriptorLaplace.h"
 
 template<int dim>
 struct LaplaceOperatorData
@@ -43,11 +45,14 @@ struct LaplaceOperatorData
   // characteristic_element_length. This variable gives the scaling factor
   double penalty_factor;
 
-  // Specifies the boundary ids with Dirichlet boundary conditions
-  std::set<types::boundary_id> dirichlet_boundaries;
+//  // Specifies the boundary ids with Dirichlet boundary conditions
+//  std::set<types::boundary_id> dirichlet_boundaries;
+//
+//  // Specifies the boundary ids with Neumann boundary conditions
+//  std::set<types::boundary_id> neumann_boundaries;
 
-  // Specifies the boundary ids with Neumann boundary conditions
-  std::set<types::boundary_id> neumann_boundaries;
+  // boundary descriptor:
+  std_cxx11::shared_ptr<BoundaryDescriptorLaplace<dim> >  bc;
 
   // If periodic boundaries are present, this variable collects matching faces
   // on the two sides of the domain
@@ -57,7 +62,7 @@ struct LaplaceOperatorData
 // Generic implementation of Laplace operator for both continuous elements
 // (FE_Q) and discontinuous elements (FE_DGQ).
 template <int dim, typename Number=double>
-class LaplaceOperator : public Subscriptor
+class LaplaceOperator : public MatrixOperatorBase
 {
 public:
   typedef Number value_type;
@@ -122,6 +127,12 @@ public:
   // prolongation phase)
   void vmult_add_interface_up(parallel::distributed::Vector<Number>       &dst,
                               const parallel::distributed::Vector<Number> &src) const;
+
+  // Evaluates inhomogeneous parts of boundary face integrals occuring on
+  // the right-hand side of the linear system of equations
+  void rhs(parallel::distributed::Vector<Number> &dst) const;
+
+  void rhs_add(parallel::distributed::Vector<Number> &dst) const;
 
   // For a pure Neumann problem, this call subtracts the mean value of 'vec'
   // from all entries, ensuring that all operations with this matrix lie in
@@ -222,6 +233,31 @@ private:
                         parallel::distributed::Vector<Number>       &dst,
                         const parallel::distributed::Vector<Number> &src,
                         const std::pair<unsigned int,unsigned int>  &face_range) const;
+
+  // Runs the loop over all cells and interior faces (does nothing)
+  // and boundary faces (to evaluate inhomgeneous boundary conditions)
+  void run_rhs_loop(parallel::distributed::Vector<Number>       &dst) const;
+
+  template <int degree>
+  void
+  local_rhs (const MatrixFree<dim,Number>                &,
+             parallel::distributed::Vector<Number>       &,
+             const parallel::distributed::Vector<Number> &,
+             const std::pair<unsigned int,unsigned int>  &) const;
+
+  template <int degree>
+  void
+  local_rhs_face (const MatrixFree<dim,Number>                &,
+                  parallel::distributed::Vector<Number>       &,
+                  const parallel::distributed::Vector<Number> &,
+                  const std::pair<unsigned int,unsigned int>  &) const;
+
+  template <int degree>
+  void
+  local_rhs_boundary (const MatrixFree<dim,Number>                &data,
+                      parallel::distributed::Vector<Number>       &dst,
+                      const parallel::distributed::Vector<Number> &src,
+                      const std::pair<unsigned int,unsigned int>  &face_range) const;
 
   template <int degree>
   void

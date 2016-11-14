@@ -1,10 +1,9 @@
 /*
- * DGNavierStokesSteadySolver.cc
+ * UnsteadyNavierStokesPressureCorrection.cc
  *
- *  Created on: Oct 10, 2016
+ *  Created on: Oct 26, 2016
  *      Author: fehn
  */
-
 
 
 
@@ -60,12 +59,11 @@
 #include <fstream>
 #include <sstream>
 
-#include "../include/DGNavierStokesCoupled.h"
+#include "../include/DGNavierStokesPressureCorrection.h"
 
 #include "../include/InputParametersNavierStokes.h"
+#include "../include/TimeIntBDFPressureCorrection.h"
 #include "PrintInputParameters.h"
-
-#include "DriverSteadyProblems.h"
 
 #include "../include/BoundaryDescriptorNavierStokes.h"
 #include "../include/FieldFunctionsNavierStokes.h"
@@ -79,12 +77,16 @@ using namespace dealii;
 
 //#include "NavierStokesTestCases/Cuette.h"
 //#include "NavierStokesTestCases/Poiseuille.h"
-#include "NavierStokesTestCases/Cavity.h"
+//#include "NavierStokesTestCases/Cavity.h"
+//#include "NavierStokesTestCases/StokesGuermond.h"
+//#include "NavierStokesTestCases/StokesShahbazi.h"
 //#include "NavierStokesTestCases/Kovasznay.h"
+#include "NavierStokesTestCases/Vortex.h"
+//#include "NavierStokesTestCases/TaylorVortex.h"
+//#include "NavierStokesTestCases/Beltrami.h"
 //#include "NavierStokesTestCases/FlowPastCylinder.h"
+//#include "NavierStokesTestCases/TurbulentChannel.h"
 
-
-//#include "../include/PostProcessor.h"
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 class NavierStokesProblem
@@ -92,7 +94,7 @@ class NavierStokesProblem
 public:
   typedef typename DGNavierStokesBase<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::value_type value_type;
   NavierStokesProblem(const unsigned int refine_steps_space, const unsigned int refine_steps_time=0);
-  void solve_problem();
+  void solve_problem(bool do_restart);
 
 private:
   void print_header();
@@ -114,18 +116,18 @@ private:
 
   InputParametersNavierStokes<dim> param;
 
-  std_cxx11::shared_ptr<DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > navier_stokes_operation;
+  std_cxx11::shared_ptr<DGNavierStokesPressureCorrection<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > navier_stokes_operation;
 
   std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor;
 
-  std_cxx11::shared_ptr<DriverSteadyProblems<dim, value_type,
-    DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > > driver_steady;
+  std_cxx11::shared_ptr<TimeIntBDFNavierStokes<dim, fe_degree_u, value_type,
+    DGNavierStokesPressureCorrection<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > > time_integrator;
 };
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 NavierStokesProblem(unsigned int const refine_steps_space,
-                    unsigned int const /*refine_steps_time*/)
+                    unsigned int const refine_steps_time)
   :
   pcout (std::cout,Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0),
   triangulation(MPI_COMM_WORLD,dealii::Triangulation<dim>::none,parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
@@ -139,7 +141,6 @@ NavierStokesProblem(unsigned int const refine_steps_space,
     param.print(pcout);
 
   field_functions.reset(new FieldFunctionsNavierStokes<dim>());
-
   // this function has to be defined in the header file
   // that implements all problem specific things like
   // parameters, geometry, boundary conditions, etc.
@@ -154,18 +155,27 @@ NavierStokesProblem(unsigned int const refine_steps_space,
   boundary_descriptor_velocity.reset(new BoundaryDescriptorNavierStokes<dim>());
   boundary_descriptor_pressure.reset(new BoundaryDescriptorNavierStokes<dim>());
 
-  AssertThrow(param.problem_type == ProblemType::Steady,ExcMessage("DGNavierStokesSteadySolver is a steady solver. Hence, problem type has to be steady to solve this problem."))
+  bool use_adaptive_time_stepping = false;
+  if(param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
+    use_adaptive_time_stepping = true;
+
+  AssertThrow(param.problem_type == ProblemType::Unsteady &&
+               param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection,
+               ExcMessage("UnsteadyNavierStokesPressureCorrection is an unsteady solver. Hence, problem type has to be unsteady and temporal discretization has to be BDFPressureCorrection to solve this problem."));
 
   // initialize navier_stokes_operation
-  navier_stokes_operation.reset(new DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>
+  navier_stokes_operation.reset(new DGNavierStokesPressureCorrection<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>
       (triangulation,param));
 
   // initialize postprocessor
+  // this function has to be defined in the header file
+  // that implements all problem specific things like
+  // parameters, geometry, boundary conditions, etc.
   postprocessor = construct_postprocessor<dim>(param);
 
-  // initialize driver for steady state problem that depends on both navier_stokes_operation and postprocessor
-  driver_steady.reset(new DriverSteadyProblems<dim, value_type, DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule> >
-      (navier_stokes_operation,postprocessor,param));
+  // initialize time integrator that depends on both navier_stokes_operation and postprocessor
+  time_integrator.reset(new TimeIntBDFPressureCorrection<dim, fe_degree_u,value_type, DGNavierStokesPressureCorrection<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule> >(
+      navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
 }
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
@@ -176,8 +186,8 @@ print_header()
   << "_________________________________________________________________________________" << std::endl
   << "                                                                                 " << std::endl
   << "                High-order discontinuous Galerkin solver for the                 " << std::endl
-  << "                 steady, incompressible Navier-Stokes equations                  " << std::endl
-  << "            based on coupled solution approach of Newton-Krylov type             " << std::endl
+  << "                unsteady, incompressible Navier-Stokes equations                 " << std::endl
+  << "                    based on a pressure correction approach                      " << std::endl
   << "_________________________________________________________________________________" << std::endl
   << std::endl;
 }
@@ -194,6 +204,36 @@ print_grid_data()
   print_parameter(pcout,"Number of cells",triangulation.n_global_active_cells());
   print_parameter(pcout,"Number of faces",triangulation.n_active_faces());
   print_parameter(pcout,"Number of vertices",triangulation.n_vertices());
+}
+
+template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+solve_problem(bool do_restart)
+{
+  // this function has to be defined in the header file that implements all
+  // problem specific things like parameters, geometry, boundary conditions, etc.
+  create_grid_and_set_boundary_conditions(triangulation,
+                                          n_refine_space,
+                                          boundary_descriptor_velocity,
+                                          boundary_descriptor_pressure,
+                                          periodic_faces);
+  print_grid_data();
+
+  navier_stokes_operation->setup(periodic_faces,
+                                 boundary_descriptor_velocity,
+                                 boundary_descriptor_pressure,
+                                 field_functions);
+
+  // setup time integrator before calling setup_solvers
+  // (this is necessary since the setup of the solvers
+  // depends on quantities such as the time_step_size or gamma0!!!)
+  time_integrator->setup(do_restart);
+
+  navier_stokes_operation->setup_solvers();
+
+  setup_postprocessor();
+
+  time_integrator->timeloop();
 }
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int n_q_points_1d_xwall>
@@ -214,34 +254,6 @@ setup_postprocessor()
 }
 
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-solve_problem()
-{
-  // this function has to be defined in the header file that implements all
-  // problem specific things like parameters, geometry, boundary conditions, etc.
-  create_grid_and_set_boundary_conditions(triangulation,
-                                          n_refine_space,
-                                          boundary_descriptor_velocity,
-                                          boundary_descriptor_pressure,
-                                          periodic_faces);
-  print_grid_data();
-
-  navier_stokes_operation->setup(periodic_faces,
-                                 boundary_descriptor_velocity,
-                                 boundary_descriptor_pressure,
-                                 field_functions);
-
-  driver_steady->setup();
-
-  navier_stokes_operation->setup_solvers();
-
-  setup_postprocessor();
-
-  driver_steady->solve_steady_problem();
-
-}
-
 int main (int argc, char** argv)
 {
   try
@@ -249,6 +261,21 @@ int main (int argc, char** argv)
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
     deallog.depth_console(0);
+
+    bool do_restart = false;
+    if (argc > 1)
+    {
+      do_restart = std::atoi(argv[1]);
+      if(do_restart)
+      {
+        AssertThrow(REFINE_STEPS_SPACE_MIN == REFINE_STEPS_SPACE_MAX, ExcMessage("Spatial refinement with restart not possible!"));
+
+        //this does in principle work
+        //although it doesn't make much sense
+        if(REFINE_STEPS_TIME_MIN != REFINE_STEPS_TIME_MAX && Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+          std::cout << "Warning: you are starting from a restart and refine the time steps!" << std::endl;
+      }
+    }
 
     //mesh refinements in order to perform spatial convergence tests
     for(unsigned int refine_steps_space = REFINE_STEPS_SPACE_MIN;refine_steps_space <= REFINE_STEPS_SPACE_MAX;++refine_steps_space)
@@ -259,7 +286,7 @@ int main (int argc, char** argv)
         NavierStokesProblem<DIMENSION, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
             navier_stokes_problem(refine_steps_space,refine_steps_time);
 
-        navier_stokes_problem.solve_problem();
+        navier_stokes_problem.solve_problem(do_restart);
       }
     }
   }
@@ -288,3 +315,5 @@ int main (int argc, char** argv)
   }
   return 0;
 }
+
+

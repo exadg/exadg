@@ -601,7 +601,7 @@ public:
   unsigned int solve(parallel::distributed::Vector<value_type>       &dst,
                      const parallel::distributed::Vector<value_type> &src) const
   {
-    inverse_mass_matrix_operator.apply_inverse_mass_matrix(dst,src);
+    inverse_mass_matrix_operator.apply(dst,src);
 
     return 0;
   }
@@ -1031,8 +1031,8 @@ public:
     projection_operator = static_cast<ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> *>(projection_operator_in);
 
     if(solver_data.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
-      preconditioner = new InverseMassMatrixPreconditioner<dim,fe_degree,value_type>(
-          projection_operator->get_data(),
+      preconditioner = new InverseMassMatrixPreconditioner<dim,fe_degree,value_type>
+         (projection_operator->get_data(),
           projection_operator->get_dof_index(),
           projection_operator->get_quad_index());
     else if(solver_data.preconditioner_projection == PreconditionerProjection::Jacobi)
@@ -1065,9 +1065,7 @@ public:
         {
           // recalculate diagonal since the diagonal depends on the penalty parameter which itself depends on
           // the velocity field
-          JacobiPreconditioner<value_type,ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> >
-            *jacobi_preconditioner = dynamic_cast<JacobiPreconditioner<value_type,ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > *>(preconditioner);
-          jacobi_preconditioner->recalculate_diagonal(*projection_operator);
+          preconditioner->update(projection_operator);
           solver.solve (*projection_operator, dst, src, *preconditioner);
         }
         else

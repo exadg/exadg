@@ -19,8 +19,8 @@
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 2;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
+unsigned int const FE_DEGREE_VELOCITY = 3;
+unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
 unsigned int const FE_DEGREE_XWALL = 1;
@@ -35,7 +35,7 @@ unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
-ProblemType PROBLEM_TYPE = ProblemType::Steady;
+ProblemType PROBLEM_TYPE = ProblemType::Unsteady;
 const unsigned int TEST_CASE = 1; // 1, 2 or 3
 const double Um = (DIMENSION == 2 ? (TEST_CASE==1 ? 0.3 : 1.5) : (TEST_CASE==1 ? 0.45 : 2.25));
 const double D = 0.1;
@@ -45,7 +45,7 @@ const double L2 = 2.5;
 const double X_C = 0.5;
 const double Y_C = 0.2;
 const double END_TIME = 8.0;
-std::string OUTPUT_PREFIX = "fpc_steady_123";
+std::string OUTPUT_PREFIX = "fpc_2D_1";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -60,18 +60,18 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // PHYSICAL QUANTITIES
   start_time = 0.0;
   end_time = END_TIME; //END_TIME is also needed somewhere else
-  viscosity = 0.1; //1.e-3;
+  viscosity = 1.e-3;
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
+  temporal_discretization = TemporalDiscretization::BDFPressureCorrection; //BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
   max_velocity = Um;
-  cfl = 1.0;//2.5e-1;
+  cfl = 0.025;//2.5e-1;
   time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 3; // 1; // 2; // 3;
+  order_time_integrator = 2; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
 
 
@@ -113,7 +113,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   deltat_ref = 1.e0;
 
   // projection step
-  projection_type = ProjectionType::DivergencePenalty;
+  projection_type = ProjectionType::NoPenalty;
   penalty_factor_divergence = 1.0e0;
   penalty_factor_continuity = 1.0e0;
   solver_projection = SolverProjection::PCG;
@@ -128,13 +128,26 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   abs_tol_viscous = 1.e-12;
   rel_tol_viscous = 1.e-6;
 
+  // PRESSURE-CORRECTION SCHEME
+
+  // momentum step
+  solver_momentum = SolverMomentum::GMRES;
+  preconditioner_momentum = PreconditionerMomentum::InverseMassMatrix; //VelocityConvectionDiffusion;
+  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
+  abs_tol_momentum_linear = 1.e-20;
+  rel_tol_momentum_linear = 1.e-6;
+
+  incremental_formulation = true;
+  order_pressure_extrapolation = 1;
+  rotational_formulation = false;
+
 
   // COUPLED NAVIER-STOKES SOLVER
 
   // nonlinear solver (Newton solver)
-  abs_tol_newton = 1.e-12;
-  rel_tol_newton = 1.e-6;
-  max_iter_newton = 1e2;
+  newton_solver_data_coupled.abs_tol = 1.e-20;
+  newton_solver_data_coupled.rel_tol = 1.e-6;
+  newton_solver_data_coupled.max_iter = 1e2;
 
   // linear solver
   solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;

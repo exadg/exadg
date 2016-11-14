@@ -21,16 +21,16 @@
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 2;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
+unsigned int const FE_DEGREE_VELOCITY = 4;
+unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
 unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 1;
-unsigned int const REFINE_STEPS_SPACE_MAX = 1;//REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 2;
+unsigned int const REFINE_STEPS_SPACE_MAX = 2;//REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -58,15 +58,15 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified;//ConstTimeStepCFL;
   max_velocity = 1.4 * U_X_MAX;
   cfl = 0.1;
   c_eff = 0.125e0;
-  time_step_size = 1.0e-3;
+  time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 3;
+  order_time_integrator = 2;
   start_with_low_order = false; // true; // false;
 
 
@@ -82,18 +82,18 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   IP_factor_viscous = 1.0;
 
   // gradient term
-  gradp_integrated_by_parts = false;
-  gradp_use_boundary_data = false;
+  gradp_integrated_by_parts = true;//true;
+  gradp_use_boundary_data = true;//true;
 
   // divergence term
-  divu_integrated_by_parts = false;
-  divu_use_boundary_data = false;
+  divu_integrated_by_parts = true;//true;
+  divu_use_boundary_data = false;//true;
 
   // special case: pure DBC's
   pure_dirichlet_bc = false;
 
 
-  // HIGH-ORDER DUAL SPLITTING SCHEME
+  // PROJECTION METHODS
 
   // pressure Poisson equation
   IP_factor_pressure = 1.0;
@@ -102,19 +102,38 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   abs_tol_pressure = 1.e-20;
   rel_tol_pressure = 1.e-6;
 
-  // stability in the limit of small time steps and projection step
-  small_time_steps_stability = false;
+  // stability in the limit of small time steps
   use_approach_of_ferrer = false;
   deltat_ref = 1.e0;
 
   // projection step
-  projection_type = ProjectionType::DivergencePenalty;
+  projection_type = ProjectionType::DivergencePenalty; //NoPenalty; //DivergencePenalty;
   penalty_factor_divergence = 1.0e0;
   penalty_factor_continuity = 1.0e0;
   solver_projection = SolverProjection::PCG;
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
   abs_tol_projection = 1.e-20;
   rel_tol_projection = 1.e-12;
+
+
+  // HIGH-ORDER DUAL SPLITTING SCHEME
+
+  // convective step
+
+  // nonlinear solver
+  newton_solver_data_convective.abs_tol = 1.e-20;
+  newton_solver_data_convective.rel_tol = 1.e-6;
+  newton_solver_data_convective.max_iter = 100;
+
+  // linear solver
+  abs_tol_linear_convective = 1.e-20;
+  rel_tol_linear_convective = 1.e-3;
+  max_iter_linear_convective = 1e4;
+  use_right_preconditioning_convective = true;
+  max_n_tmp_vectors_convective = 100;
+
+  // stability in the limit of small time steps and projection step
+  small_time_steps_stability = false;
 
   // viscous step
   solver_viscous = SolverViscous::PCG;
@@ -124,18 +143,44 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   rel_tol_viscous = 1.e-6;
 
 
+  // PRESSURE-CORRECTION SCHEME
+
+  // momentum step
+
+  // Newton solver
+  newton_solver_data_momentum.abs_tol = 1.e-20;
+  newton_solver_data_momentum.rel_tol = 1.e-6;
+  newton_solver_data_momentum.max_iter = 100;
+
+  // linear solver
+  solver_momentum = SolverMomentum::GMRES;
+  preconditioner_momentum = PreconditionerMomentum::InverseMassMatrix; //VelocityConvectionDiffusion;
+  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
+  abs_tol_momentum_linear = 1.e-20;
+  rel_tol_momentum_linear = 1.e-3;
+  max_iter_momentum_linear = 1e4;
+  use_right_preconditioning_momentum = true;
+  max_n_tmp_vectors_momentum = 100;
+
+  // formulation
+  incremental_formulation = true;
+  order_pressure_extrapolation = 1;
+  rotational_formulation = false;
+
+
   // COUPLED NAVIER-STOKES SOLVER
 
   // nonlinear solver (Newton solver)
-  abs_tol_newton = 1.e-20;
-  rel_tol_newton = 1.e-4;
-  max_iter_newton = 1e2;
+  newton_solver_data_coupled.abs_tol = 1.e-20;
+  newton_solver_data_coupled.rel_tol = 1.e-6;
+  newton_solver_data_coupled.max_iter = 1e2;
 
   // linear solver
   solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;
   abs_tol_linear = 1.e-20;
   rel_tol_linear = 1.e-4;
   max_iter_linear = 1e4;
+  use_right_preconditioning = true;
   max_n_tmp_vectors = 100;
 
   // preconditioning linear solver
@@ -161,7 +206,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // write output for visualization of results
   output_data.write_output = true;
-  output_data.output_prefix = "vortex_123";
+  output_data.output_prefix = "vortex";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/10;
   output_data.compute_divergence = true;
@@ -170,10 +215,10 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // calculation of error
   error_data.analytical_solution_available = true;
   error_data.error_calc_start_time = start_time;
-  error_data.error_calc_interval_time = output_data.output_interval_time;
+  error_data.error_calc_interval_time = end_time-start_time; //output_data.output_interval_time;
 
   // analysis of mass conservation error
-  mass_data.calculate_error = true;
+  mass_data.calculate_error = false;
   mass_data.start_time = 0.0;
   mass_data.sample_every_time_steps = 1;
   mass_data.filename_prefix = "test";

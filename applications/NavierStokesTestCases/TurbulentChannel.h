@@ -20,15 +20,15 @@
 unsigned int const DIMENSION = 3;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 3;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
+unsigned int const FE_DEGREE_VELOCITY = 4;
+unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
 unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 3;
+unsigned int const REFINE_STEPS_SPACE_MIN = 2;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
@@ -48,7 +48,7 @@ const double GRID_STRETCH_FAC = 1.8;
 double const VISCOSITY = 1./180.;
 double const END_TIME = 50.0;
 
-std::string OUTPUT_PREFIX = "turb_ch_coupled_nu_180_l3_p3_CFL1";
+std::string OUTPUT_PREFIX = "turb_ch_test"; //"turb_ch_press_corr_nu_180_l2_p4_p3_mixed_order_weak_projection_CFL10_implicit";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -67,8 +67,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFDualSplittingScheme;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; //Explicit;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFPressureCorrection;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; // AdaptiveTimeStepCFL
   max_velocity = MAX_VELOCITY;
   cfl = 1.0e0; //1.0 if ConstTimeStepCFL
@@ -91,11 +91,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // gradient term
   gradp_integrated_by_parts = true;
-  gradp_use_boundary_data = true; //false;
+  gradp_use_boundary_data = false; //false;
 
   // divergence term
   divu_integrated_by_parts = true;
-  divu_use_boundary_data = true; //false;
+  divu_use_boundary_data = false; //false;
 
   // special case: pure DBC's
   pure_dirichlet_bc = true;
@@ -116,13 +116,13 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   deltat_ref = 1.e0;
 
   // projection step
-  projection_type = ProjectionType::DivergencePenalty;
+  projection_type = ProjectionType::NoPenalty; //DivergenceAndContinuityPenalty; //NoPenalty; //DivergencePenalty;
   penalty_factor_divergence = 1.0e0;//1.0e0;
-  penalty_factor_continuity = 1.0e0;
+  penalty_factor_continuity = 1.0e0;//1.0e0;
   solver_projection = SolverProjection::PCG;
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
   abs_tol_projection = 1.e-20;
-  rel_tol_projection = 1.e-12; //1.e-6;
+  rel_tol_projection = 1.e-6;//1.e-12; //1.e-6;
 
   // viscous step
   solver_viscous = SolverViscous::PCG;
@@ -131,18 +131,31 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   abs_tol_viscous = 1.e-12;
   rel_tol_viscous = 1.e-6; //1.e-4;
 
+  // PRESSURE-CORRECTION SCHEME
+
+  // momentum step
+  solver_momentum = SolverMomentum::GMRES;
+  preconditioner_momentum = PreconditionerMomentum::InverseMassMatrix; //VelocityConvectionDiffusion;
+  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
+  abs_tol_momentum_linear = 1.e-20;
+  rel_tol_momentum_linear = 1.e-3;
+
+  incremental_formulation = true;
+  order_pressure_extrapolation = 1;
+  rotational_formulation = false;
+
 
   // COUPLED NAVIER-STOKES SOLVER
 
   // nonlinear solver (Newton solver)
-  abs_tol_newton = 1.e-12;
-  rel_tol_newton = 1.e-6;
-  max_iter_newton = 1e2;
+  newton_solver_data_coupled.abs_tol = 1.e-20;
+  newton_solver_data_coupled.rel_tol = 1.e-6;
+  newton_solver_data_coupled.max_iter = 1e2;
 
   // linear solver
   solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;
   abs_tol_linear = 1.e-12;
-  rel_tol_linear = 1.e-3;
+  rel_tol_linear = 1.e-6; //1.e-3;
   max_iter_linear = 1e4;
   max_n_tmp_vectors = 100;
 

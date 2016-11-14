@@ -16,6 +16,7 @@
 #include "LiftAndDragData.h"
 #include "PressureDifferenceData.h"
 #include "TurbulenceStatisticsData.h"
+#include "NewtonSolverData.h"
 
 
 /**************************************************************************************/
@@ -78,6 +79,7 @@ enum class TemporalDiscretization
 {
   Undefined,
   BDFDualSplittingScheme,
+  BDFPressureCorrection,
   BDFCoupledSolution
 };
 
@@ -199,6 +201,34 @@ enum class PreconditionerViscous
   InverseMassMatrix,
   GeometricMultigrid
 };
+
+/**************************************************************************************/
+/*                                                                                    */
+/*                             PRESSURE-CORRECTION SCHEME                             */
+/*                                                                                    */
+/**************************************************************************************/
+
+/*
+ *  Solver type for solution of momentum equation
+ */
+enum class SolverMomentum
+{
+  PCG,
+  GMRES
+};
+
+/*
+ *  Preconditioner type for solution of momentum equation
+ */
+enum class PreconditionerMomentum
+{
+  None,
+  Jacobi,
+  InverseMassMatrix,
+  VelocityDiffusion,
+  VelocityConvectionDiffusion
+};
+
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -451,7 +481,8 @@ public:
     // special case: pure DBC's
     pure_dirichlet_bc(false),
 
-    // HIGH-ORDER DUAL SPLITTING SCHEME
+    // PROJECTION METHODS
+
     // pressure Poisson equation
     IP_factor_pressure(1.),
     preconditioner_pressure_poisson(PreconditionerPressurePoisson::GeometricMultigrid),
@@ -460,7 +491,6 @@ public:
     rel_tol_pressure(1.e-12),
 
     // stability in the limit of small time steps and projection step
-    small_time_steps_stability(false),
     use_approach_of_ferrer(false),
     deltat_ref(1.0),
 
@@ -473,6 +503,19 @@ public:
     abs_tol_projection(1.e-20),
     rel_tol_projection(1.e-12),
 
+    // HIGH-ORDER DUAL SPLITTING SCHEME
+
+    // convective step
+    newton_solver_data_convective(NewtonSolverData()),
+    abs_tol_linear_convective(1.e-20),
+    rel_tol_linear_convective(1.e-12),
+    max_iter_linear_convective(std::numeric_limits<unsigned int>::max()),
+    use_right_preconditioning_convective(true),
+    max_n_tmp_vectors_convective(30),
+
+    // stability in the limit of small time steps and projection step
+    small_time_steps_stability(false),
+
     // viscous step
     solver_viscous(SolverViscous::PCG),
     preconditioner_viscous(PreconditionerViscous::InverseMassMatrix),
@@ -480,12 +523,28 @@ public:
     abs_tol_viscous(1.e-20),
     rel_tol_viscous(1.e-12),
 
+    // PRESSURE-CORRECTION SCHEME
+
+    // momentum step
+    newton_solver_data_momentum(NewtonSolverData()),
+    solver_momentum(SolverMomentum::GMRES),
+    preconditioner_momentum(PreconditionerMomentum::InverseMassMatrix),
+    multigrid_data_momentum(MultigridData()),
+    abs_tol_momentum_linear(1.e-20),
+    rel_tol_momentum_linear(1.e-12),
+    max_iter_momentum_linear(std::numeric_limits<unsigned int>::max()),
+    use_right_preconditioning_momentum(true),
+    max_n_tmp_vectors_momentum(30),
+
+    // formulations
+    incremental_formulation(false),
+    order_pressure_extrapolation(1),
+    rotational_formulation(false),
+
 
     // COUPLED NAVIER-STOKES SOLVER
     // nonlinear solver (Newton solver)
-    abs_tol_newton(1.e-20),
-    rel_tol_newton(1.e-12),
-    max_iter_newton(std::numeric_limits<unsigned int>::max()),
+    newton_solver_data_coupled(NewtonSolverData()),
 
     // linear solver
     solver_linearized_navier_stokes(SolverLinearizedNavierStokes::Undefined),
@@ -510,6 +569,9 @@ public:
     solver_schur_complement_preconditioner(SolverSchurComplementPreconditioner::Undefined),
     multigrid_data_schur_complement_preconditioner(MultigridData()),
     rel_tol_solver_schur_complement_preconditioner(1.e-12),
+
+    // update preconditioner
+    update_preconditioner(false),
 
     // TURBULENCE
     turb_stat_data(TurbulenceStatisticsData()),
@@ -588,10 +650,16 @@ public:
     AssertThrow(IP_formulation_viscous != InteriorPenaltyFormulation::Undefined ,ExcMessage("parameter must be defined"));
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
-    if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme ||
+       temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
     {
       AssertThrow(projection_type !=ProjectionType::Undefined,ExcMessage("parameter must be defined"));
     }
+
+    // PRESSURE-CORRECTION SCHEME
+    if(temporal_discretization == TemporalDiscretization::BDFPressureCorrection && incremental_formulation == true)
+      AssertThrow(order_pressure_extrapolation > 0 && order_pressure_extrapolation <= order_time_integrator,
+                  ExcMessage("Invalid input parameter order_pressure_extrapolation!"));
 
     // COUPLED NAVIER-STOKES SOLVER
     if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
@@ -637,10 +705,15 @@ public:
 
     // SPATIAL DISCRETIZATION
     print_parameters_spatial_discretization(pcout);
- 
+
+
     // HIGH-ORDER DUAL SPLITTING SCHEME 
     if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
       print_parameters_dual_splitting(pcout);
+
+    // PRESSURE-CORRECTION  SCHEME
+    if(temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+      print_parameters_pressure_correction(pcout);
    
     // COUPLED NAVIER-STOKES SOLVER
     if(  problem_type == ProblemType::Steady ||
@@ -730,6 +803,7 @@ public:
     // temporal discretization scheme
     std::string str_temporal_discretization[] = { "Undefined",
                                                   "BDF dual splitting scheme",
+                                                  "BDF pressure-correction scheme",
                                                   "BDF coupled solution" };
     print_parameter(pcout,
                     "Temporal discretization method",
@@ -833,19 +907,10 @@ public:
                     pure_dirichlet_bc);
   } 
 
-  void print_parameters_dual_splitting(ConditionalOStream &pcout)
+  void print_parameters_projection_methods(ConditionalOStream &pcout)
   {
-    pcout << std::endl
-          << "High-order dual splitting scheme:" << std::endl;
-
-    /*
-     *  The definition of string-arrays in this function is somehow redundant with the 
-     *  enum declarations but I think C++ does not offer a more elaborate conversion 
-     *  from enums to strings
-     */
-
     // pressure Poisson equation
-    pcout << "  Pressure Poisson equation (PPE):" << std::endl;
+    pcout << std::endl << "  Pressure Poisson equation (PPE):" << std::endl;
 
     print_parameter(pcout, "IP factor PPE",IP_factor_pressure); 
   
@@ -877,10 +942,6 @@ public:
     print_parameter(pcout,"Relative solver tolerance",rel_tol_pressure);
 
     // small time steps stability
-    pcout << std::endl << "  Small time steps stability:" << std::endl;
-
-    print_parameter(pcout,"STS stability approach",small_time_steps_stability);
-
     print_parameter(pcout,"Approach of Ferrer et al.",use_approach_of_ferrer);
     if(use_approach_of_ferrer == true)
       print_parameter(pcout,"Reference time step size (Ferrer)",deltat_ref);
@@ -929,6 +990,48 @@ public:
       print_parameter(pcout,"Absolute solver tolerance", abs_tol_projection);
       print_parameter(pcout,"Relative solver tolerance", rel_tol_projection);
     }
+  }
+
+  void print_parameters_dual_splitting(ConditionalOStream &pcout)
+  {
+    pcout << std::endl
+          << "High-order dual splitting scheme:" << std::endl;
+
+    // convective step
+    pcout << "  Convective step:" << std::endl;
+
+    // Newton solver
+    if(equation_type == EquationType::NavierStokes &&
+       treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+    {
+      pcout << "  Newton solver:" << std::endl;
+
+      print_parameter(pcout,"Absolute solver tolerance",newton_solver_data_convective.abs_tol);
+      print_parameter(pcout,"Relative solver tolerance",newton_solver_data_convective.rel_tol);
+      print_parameter(pcout,"Maximum number of iterations",newton_solver_data_convective.max_iter);
+
+      pcout << "  Linear solver:" << std::endl;
+
+      print_parameter(pcout,"Absolute solver tolerance",abs_tol_linear_convective);
+      print_parameter(pcout,"Relative solver tolerance",rel_tol_linear_convective);
+      print_parameter(pcout,"Maximum number of iterations",max_iter_linear_convective);
+      print_parameter(pcout,"Right preconditioning",use_right_preconditioning_convective);
+      print_parameter(pcout,"Max number of vectors before restart",max_n_tmp_vectors_convective);
+    }
+
+
+
+    // small time steps stability
+    pcout << std::endl << "  Small time steps stability:" << std::endl;
+
+    print_parameter(pcout,"STS stability approach",small_time_steps_stability);
+
+
+
+    // projection method
+    print_parameters_projection_methods(pcout);
+
+
 
     // Viscous step
     pcout << std::endl << "  Viscous step:" << std::endl;
@@ -968,6 +1071,65 @@ public:
     print_parameter(pcout,"Relative solver tolerance", rel_tol_viscous);
   } 
 
+  void print_parameters_pressure_correction(ConditionalOStream &pcout)
+  {
+    pcout << std::endl
+          << "Pressure-correction scheme:" << std::endl;
+
+    // Momentum step
+    pcout << "  Momentum step:" << std::endl;
+
+    // Newton solver
+    if(equation_type == EquationType::NavierStokes &&
+       treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+    {
+      pcout << "  Newton solver:" << std::endl;
+
+      print_parameter(pcout,"Absolute solver tolerance",newton_solver_data_momentum.abs_tol);
+      print_parameter(pcout,"Relative solver tolerance",newton_solver_data_momentum.rel_tol);
+      print_parameter(pcout,"Maximum number of iterations",newton_solver_data_momentum.max_iter);
+
+      pcout << std::endl;
+    }
+
+    // Solver linearized problem
+    pcout << "  Linear solver:" << std::endl;
+
+    std::string str_solver_momentum[] = { "PCG",
+                                          "GMRES" };
+
+    print_parameter(pcout,
+                    "Solver for linear(ized) problem",
+                    str_solver_momentum[(int)solver_momentum]);
+
+    std::string str_precon_momentum[] = { "None",
+                                          "Jacobi",
+                                          "InverseMassMatrix",
+                                          "VelocityDiffusion",
+                                          "VelocityConvectionDiffusion" };
+
+    print_parameter(pcout,
+                    "Preconditioner linear(ized) problem",
+                    str_precon_momentum[(int)preconditioner_momentum]);
+
+    print_parameter(pcout,"Absolute solver tolerance",abs_tol_momentum_linear);
+    print_parameter(pcout,"Relative solver tolerance",rel_tol_momentum_linear);
+    print_parameter(pcout,"Maximum number of iterations",max_iter_momentum_linear);
+    print_parameter(pcout,"Right preconditioning",use_right_preconditioning_momentum);
+
+    if(solver_momentum == SolverMomentum::GMRES)
+      print_parameter(pcout,"Max number of vectors before restart",max_n_tmp_vectors_momentum);
+
+    // formulations of pressur-correction scheme
+    pcout << std::endl << "  Formulation of pressure-correction scheme:" << std::endl;
+    print_parameter(pcout,"Incremental formulation",incremental_formulation);
+    print_parameter(pcout,"Order of pressure extrapolation",order_pressure_extrapolation);
+    print_parameter(pcout,"Rotational formulation",rotational_formulation);
+
+    // projection method
+    print_parameters_projection_methods(pcout);
+  }
+
 
   void print_parameters_coupled_solver(ConditionalOStream &pcout)
   {
@@ -986,12 +1148,12 @@ public:
     if(equation_type == EquationType::NavierStokes &&
        (problem_type == ProblemType::Steady ||
         treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit) )
-   {
+    {
       pcout << "Newton solver" << std::endl;
     
-      print_parameter(pcout,"Absolute solver tolerance",abs_tol_newton);
-      print_parameter(pcout,"Relative solver tolerance",rel_tol_newton);
-      print_parameter(pcout,"Maximum number of iterations",max_iter_newton);
+      print_parameter(pcout,"Absolute solver tolerance",newton_solver_data_coupled.abs_tol);
+      print_parameter(pcout,"Relative solver tolerance",newton_solver_data_coupled.rel_tol);
+      print_parameter(pcout,"Maximum number of iterations",newton_solver_data_coupled.max_iter);
 
       pcout << std::endl;
     }
@@ -1065,6 +1227,8 @@ public:
       print_parameter(pcout,
                       "Multigrid coarse grid solver",
                       str_multigrid_coarse_solver[(int)multigrid_data_momentum_preconditioner.coarse_solver]);
+
+      print_parameter(pcout,"Update preconditioner",update_preconditioner);
     }
 
     // preconditioner Schur-complement block
@@ -1284,13 +1448,13 @@ public:
   // special case of pure Dirichlet BCs on whole boundary
   bool pure_dirichlet_bc;
 
-
-
   /**************************************************************************************/
   /*                                                                                    */
-  /*                        HIGH-ORDER DUAL SPLITTING SCHEME                            */
+  /*                                 PROJECTION METHODS                                 */
   /*                                                                                    */
   /**************************************************************************************/
+
+  // PRESSURE POISSON EQUATION
 
   // interior penalty parameter scaling factor for pressure Poisson equation
   double IP_factor_pressure;
@@ -1305,15 +1469,14 @@ public:
   double abs_tol_pressure;
   double rel_tol_pressure;
 
-  // use small time steps stability approach (similar to approach of Leriche et al.)
-  bool small_time_steps_stability;
-
   // use approach of Ferrer et al. (increase penalty parameter when reducing
   // the time step in order to improve stability in the limit of small time steps)
   bool use_approach_of_ferrer;
 
   // reference time step size that is used when use_approach_of_ferrer == true
   double deltat_ref;
+
+  // PROJECTION STEP
 
   // description: see enum declaration
   ProjectionType projection_type;
@@ -1334,6 +1497,34 @@ public:
   double abs_tol_projection;
   double rel_tol_projection;
 
+
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                        HIGH-ORDER DUAL SPLITTING SCHEME                            */
+  /*                                                                                    */
+  /**************************************************************************************/
+
+  // CONVECTIVE STEP
+  NewtonSolverData newton_solver_data_convective;
+
+  // linear solver tolerances for momentum equation
+  double abs_tol_linear_convective;
+  double rel_tol_linear_convective;
+  unsigned int max_iter_linear_convective;
+
+  // use right preconditioning
+  bool use_right_preconditioning_convective;
+
+  // defines the maximum size of the Krylov subspace before restart
+  unsigned int max_n_tmp_vectors_convective;
+
+
+  // SMALL TIME STEPS: use small time steps stability approach
+  // (similar to approach of Leriche et al.)
+  bool small_time_steps_stability;
+
+  // VISCOUS STEP
+
   // description: see enum declaration
   SolverViscous solver_viscous;
 
@@ -1348,6 +1539,44 @@ public:
   double rel_tol_viscous;
 
 
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                            PRESSURE-CORRECTION SCHEME                              */
+  /*                                                                                    */
+  /**************************************************************************************/
+
+  // Newton solver data
+  NewtonSolverData newton_solver_data_momentum;
+
+  // description: see enum declaration
+  SolverMomentum solver_momentum;
+
+  // description: see enum declaration
+  PreconditionerMomentum preconditioner_momentum;
+
+  // description: see declaration of MultigridData
+  MultigridData multigrid_data_momentum;
+
+  // linear solver tolerances for momentum equation
+  double abs_tol_momentum_linear;
+  double rel_tol_momentum_linear;
+  unsigned int max_iter_momentum_linear;
+
+  // use right preconditioning
+  bool use_right_preconditioning_momentum;
+
+  // defines the maximum size of the Krylov subspace before restart
+  unsigned int max_n_tmp_vectors_momentum;
+
+  // incremental formulation
+  bool incremental_formulation;
+
+  // order of pressure extrapolation in case of incremental formulation
+  unsigned int order_pressure_extrapolation;
+
+  // rotational formulation
+  bool rotational_formulation;
+
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -1361,9 +1590,7 @@ public:
 //  bool use_symmetric_saddle_point_matrix;
 
   // solver tolerances Newton solver
-  double abs_tol_newton;
-  double rel_tol_newton;
-  unsigned int max_iter_newton;
+  NewtonSolverData newton_solver_data_coupled;
 
   // description: see enum declaration
   SolverLinearizedNavierStokes solver_linearized_navier_stokes;
@@ -1408,6 +1635,11 @@ public:
 
   // relative tolerance for solver_schur_complement_preconditioner
   double rel_tol_solver_schur_complement_preconditioner;
+
+
+  // Update preconditioner: this variable is also relevant for other solver
+  // strategies also it is currently listed in the coupled solver section
+  bool update_preconditioner;
 
 
 
