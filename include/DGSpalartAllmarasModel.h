@@ -36,7 +36,7 @@ public:
   typedef FEFaceEvaluationWrapperPressure<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,is_xwall> FEFaceEval_Vt_Velocity_nonlinear;
 
   // constructor
-  DGSpalartAllmarasModel(FEParameters<dim> const &parameter)
+  DGSpalartAllmarasModel(FEParameters<dim> const &parameter, const bool des)
     :
     viscosity(parameter.viscosity),
     fe_param(parameter),
@@ -53,7 +53,9 @@ public:
     cw2(0.3),
     cw3(2.),
     ct3(1.2),
-    ct4(0.5)
+    ct4(0.5),
+    DES_on(des),
+    C_DES(0.65)
   {}
 
   // destructor
@@ -91,6 +93,9 @@ protected:
 
   AlignedVector<VectorizedArray<value_type> > array_penalty_parameter;
 
+  //element length
+  AlignedVector<VectorizedArray<value_type> > element_length;
+
   parallel::distributed::Vector<value_type>* vel;
 
   // Returns the current factor by which array_penalty_parameter() is
@@ -105,6 +110,9 @@ private:
   // Computes the array penalty parameter for later use of the symmetric
   // interior penalty method. Called in reinit().
   void compute_array_penalty_parameter(MatrixFree<dim,value_type> &data, const Mapping<dim> &mapping);
+
+  //compute element volume for DES
+  void compute_element_length(MatrixFree<dim,value_type> &data, const Mapping<dim> &mapping);
 
   // compute cell
   void local_evaluate_spalart_allmaras (const MatrixFree<dim,value_type>                 &data,
@@ -134,6 +142,10 @@ private:
   const value_type cw3;
   const value_type ct3;
   const value_type ct4;
+
+  //parameters for detached-eddy simulation
+  const bool DES_on;
+  const value_type C_DES;
 };
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
@@ -149,6 +161,9 @@ setup (MatrixFree<dim,value_type> &data,
   inverse_mass_matrix_operator.initialize(data,dof_index_vt,0);
 
   compute_array_penalty_parameter(data,mapping);
+
+  if(DES_on)
+    compute_element_length(data,mapping);
 
 }
 
@@ -183,6 +198,31 @@ compute_array_penalty_parameter(MatrixFree<dim,value_type> &data, const Mapping<
         }
 
         array_penalty_parameter[i][v] = surface_area / volume;
+      }
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGSpalartAllmarasModel<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+compute_element_length(MatrixFree<dim,value_type> &data, const Mapping<dim> &mapping)
+{
+  // Compute penalty parameter for each cell
+  element_length.resize(data.n_macro_cells()+data.n_macro_ghost_cells());
+  QGauss<dim> quadrature(fe_degree+1);
+  FEValues<dim> fe_values(mapping,
+                          data.get_dof_handler(dof_index_vt).get_fe(),
+                          quadrature, update_JxW_values);
+  QGauss<dim-1> face_quadrature(fe_degree+1);
+  FEFaceValues<dim> fe_face_values(mapping, data.get_dof_handler(dof_index_vt).get_fe(), face_quadrature, update_JxW_values);
+
+  for (unsigned int i=0; i<data.n_macro_cells()+data.n_macro_ghost_cells(); ++i)
+    for (unsigned int v=0; v<data.n_components_filled(i); ++v)
+      {
+        typename DoFHandler<dim>::cell_iterator cell = data.get_cell_iterator(i,v,dof_index_vt);
+        fe_values.reinit(cell);
+        double volume = 0;
+        for (unsigned int q=0; q<quadrature.size(); ++q)
+          volume += fe_values.JxW(q);
+        element_length[i][v] = std::pow(volume,1./(double)dim)/(double)(fe_degree+1); //actually, this makes only sense in 3D
       }
 }
 
@@ -228,6 +268,11 @@ local_evaluate_spalart_allmaras(const MatrixFree<dim,value_type>                
     fe_eval_vt.evaluate (true,true,false);
 
     fe_eval_vt.fill_wdist_and_tauw(cell,wdist,tauw);
+    if(DES_on) //this is the only modification in case of DES
+    {
+      for(unsigned int i=0; i<wdist.size();i++)
+        wdist[i] = std::min(wdist[i],C_DES*element_length[cell]);
+    }
     for (unsigned int q=0; q<fe_eval_velocity.n_q_points; ++q)
     {
       Tensor<1,dim,VectorizedArray<value_type> > submit_gradient = Tensor<1,dim,VectorizedArray<value_type> >();
@@ -569,7 +614,7 @@ public:
       DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>(triangulation,parameter),
       fe_vt(QGaussLobatto<1>(fe_degree+1)),
       dof_handler_vt(triangulation),
-      spalart_allmaras(this->fe_param)
+      spalart_allmaras(this->fe_param, parameter.xwall_turb == XWallTurbulenceApproach::ClassicalDESSpalartAllmaras)
   {
   }
 
@@ -763,6 +808,20 @@ local_set_eddyviscosity (const MatrixFree<dim,value_type>                 &data,
 
   for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
   {
+    std::vector<bool> enriched(VectorizedArray<value_type>::n_array_elements);
+    for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+    {
+      if(data.n_components_filled(cell))
+      {
+        typename DoFHandler<dim>::cell_iterator dcell = data.get_cell_iterator(cell, v);
+        if (this->fe_param.enrichment_is_within->value(dcell->center())>0.)
+          enriched[v] = true;
+        else
+          enriched[v] = false;
+      }
+      else
+        enriched[v] = false;
+    }
     fe_eval_vt.reinit(cell);
     fe_eval_vt.read_dof_values(src);
     fe_eval_vt.evaluate(true,false);
@@ -772,6 +831,9 @@ local_set_eddyviscosity (const MatrixFree<dim,value_type>                 &data,
       VectorizedArray<value_type>  vt = std::max(fe_eval_vt.get_value(q),make_vectorized_array<value_type>(0.));
       VectorizedArray<value_type>  chi = vt/this->fe_param.viscosity;
       VectorizedArray<value_type>  fv1 = chi * chi * chi / (chi * chi * chi + 7.1 * 7.1 * 7.1);
+      for(unsigned int v=0;v<VectorizedArray<value_type>::n_array_elements;v++)
+        if(not enriched[v])
+          fv1[v] = 0.;
       this->viscous_operator.set_viscous_coefficient_cell(cell,q,vt * fv1 + this->fe_param.viscosity);
     }
   }
@@ -797,12 +859,40 @@ local_set_eddyviscosity_face (const MatrixFree<dim,value_type>                 &
     fe_eval_vt_neighbor.read_dof_values(src);
     fe_eval_vt.evaluate(true,false);
     fe_eval_vt_neighbor.evaluate(true,false);
-//      fe_eval_vt.fill_wdist_and_tauw(face,wdist,tauw);
+    std::vector<bool> left_enriched(VectorizedArray<value_type>::n_array_elements);
+    std::vector<bool> right_enriched(VectorizedArray<value_type>::n_array_elements);
+    for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+    {
+      left_enriched[v] = false;
+      right_enriched[v] = false;
+    }
+    for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements &&
+    data.faces.at(face).left_cell[v] != numbers::invalid_unsigned_int; ++v)
+    {
+      typename DoFHandler<dim>::cell_iterator dcell =  data.get_cell_iterator(
+          data.faces.at(face).left_cell[v] / VectorizedArray<value_type>::n_array_elements,
+          data.faces.at(face).left_cell[v] % VectorizedArray<value_type>::n_array_elements);
+          if (this->fe_param.enrichment_is_within->value(dcell->center())>0.)
+            left_enriched[v] = true;
+    }
+    for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements &&
+    data.faces.at(face).left_cell[v] != numbers::invalid_unsigned_int; ++v)
+    {
+      typename DoFHandler<dim>::cell_iterator dcell =  data.get_cell_iterator(
+          data.faces.at(face).right_cell[v] / VectorizedArray<value_type>::n_array_elements,
+          data.faces.at(face).right_cell[v] % VectorizedArray<value_type>::n_array_elements);
+          if (this->fe_param.enrichment_is_within->value(dcell->center())>0.)
+            right_enriched[v] = true;
+    }
+
     for(unsigned int q=0; q< fe_eval_vt.n_q_points; q++)
     {
       VectorizedArray<value_type>  vt = std::max(fe_eval_vt.get_value(q),make_vectorized_array<value_type>(0.));
       VectorizedArray<value_type>  chi = vt/this->fe_param.viscosity;
       VectorizedArray<value_type>  fv1 = chi * chi * chi / (chi * chi * chi + 7.1 * 7.1 * 7.1);
+      for(unsigned int v=0;v<VectorizedArray<value_type>::n_array_elements;v++)
+        if(not left_enriched[v])
+          fv1[v] = 0.;
       this->viscous_operator.set_viscous_coefficient_face(face,q,vt * fv1 + this->fe_param.viscosity);
     }
 //      fe_eval_vt_neighbor.fill_wdist_and_tauw(face,wdist,tauw);
@@ -811,6 +901,9 @@ local_set_eddyviscosity_face (const MatrixFree<dim,value_type>                 &
       VectorizedArray<value_type>  vt = std::max(fe_eval_vt_neighbor.get_value(q),make_vectorized_array<value_type>(0.));
       VectorizedArray<value_type>  chi = vt/this->fe_param.viscosity;
       VectorizedArray<value_type>  fv1 = chi * chi * chi / (chi * chi * chi + 7.1 * 7.1 * 7.1);
+      for(unsigned int v=0;v<VectorizedArray<value_type>::n_array_elements;v++)
+        if(not right_enriched[v])
+          fv1[v] = 0.;
       this->viscous_operator.set_viscous_coefficient_face_neighbor(face,q,vt * fv1 + this->fe_param.viscosity);
     }
   }
@@ -830,6 +923,7 @@ local_set_eddyviscosity_boundary_face (const MatrixFree<dim,value_type>         
     fe_eval_vt.reinit(face);
     fe_eval_vt.read_dof_values(src);
     fe_eval_vt.evaluate(true,false);
+
     for(unsigned int q=0; q< fe_eval_vt.n_q_points; q++)
     {
       VectorizedArray<value_type>  vt = std::max(fe_eval_vt.get_value(q),make_vectorized_array<value_type>(0.));

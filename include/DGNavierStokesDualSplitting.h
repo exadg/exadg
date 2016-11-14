@@ -118,6 +118,11 @@ public:
     velocity_linear = solution_linearization;
   }
 
+  FEParameters<dim> const & get_fe_parameters() const
+  {
+    return this->fe_param;
+  }
+
 protected:
   FEParameters<dim> fe_param;
   std_cxx11::shared_ptr<PreconditionerBase<value_type> > helmholtz_preconditioner;

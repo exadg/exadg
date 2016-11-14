@@ -77,11 +77,6 @@ public:
     return  dof_handler_wdist;
   }
 
-  FEParameters<dim> const & get_fe_parameters() const
-  {
-    return this->fe_param;
-  }
-
   FEParameters<dim> const & get_fe_parameters_n() const
   {
     return fe_param_n;

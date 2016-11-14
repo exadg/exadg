@@ -70,25 +70,25 @@
 #include "../include/PostProcessorXWall.h"
 #include "PrintInputParameters.h"
 
-const unsigned int FE_DEGREE = 4;
+const unsigned int FE_DEGREE = 3;
 const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
 const unsigned int FE_DEGREE_XWALL = 1;
-const unsigned int N_Q_POINTS_1D_XWALL = 25;
-const unsigned int DIMENSION = 2; // DIMENSION >= 2
+const unsigned int N_Q_POINTS_1D_XWALL = 15;
+const unsigned int DIMENSION = 3; // DIMENSION >= 2
 const unsigned int REFINE_STEPS_SPACE = 3;
 const double GRID_STRETCH_FAC = 0.001;
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
 {
-  output_data.output_prefix = "ch590_l3_k4k1_gt0";
+  output_data.output_prefix = "ch590_l3_k3k1_gt0";
   cfl = 0.16;
-  diffusion_number = 0.03;
+  diffusion_number = 0.02;
   viscosity = 1./590.;
 
   if(N_Q_POINTS_1D_XWALL>1) //enriched
   {
-    xwall_turb = XWallTurbulenceApproach::RANSSpalartAllmaras;
+    xwall_turb = XWallTurbulenceApproach::ClassicalDESSpalartAllmaras;//RANSSpalartAllmaras;
     max_wdist_xwall = 0.25;
     spatial_discretization = SpatialDiscretization::DGXWall;
     IP_formulation_viscous = InteriorPenaltyFormulation::NIPG;
@@ -128,6 +128,12 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   output_solver_info_every_timesteps = 1e2;
   right_hand_side = true;
 
+  output_data.write_output = true;
+  output_data.output_start_time = 0.;
+  output_data.output_interval_time = 0.1;
+  output_data.number_of_patches = FE_DEGREE+1;
+  turb_stat_data.statistics_every = 10;
+  turb_stat_data.statistics_end_time = end_time;
   write_restart = true;
   restart_every_timesteps = 1e9;
   restart_interval_time = 1.e9;
@@ -528,7 +534,8 @@ public:
       if(param.problem_type == ProblemType::Unsteady &&
               param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
       {
-        if(param.xwall_turb == XWallTurbulenceApproach::RANSSpalartAllmaras)
+        if(param.xwall_turb == XWallTurbulenceApproach::RANSSpalartAllmaras ||
+           param.xwall_turb == XWallTurbulenceApproach::ClassicalDESSpalartAllmaras)
         {
           // initialize navier_stokes_operation
           navier_stokes_operation.reset(new DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>

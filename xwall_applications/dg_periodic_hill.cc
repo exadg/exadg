@@ -78,17 +78,17 @@
 const unsigned int FE_DEGREE = 4;//3
 const unsigned int FE_DEGREE_P = FE_DEGREE;//FE_DEGREE-1;
 const unsigned int FE_DEGREE_XWALL = 1;
-const unsigned int N_Q_POINTS_1D_XWALL = 25;
-const unsigned int DIMENSION = 2; // DIMENSION >= 2
+const unsigned int N_Q_POINTS_1D_XWALL = 1;
+const unsigned int DIMENSION = 3; // DIMENSION >= 2
 const unsigned int REFINE_STEPS_SPACE = 3;//4
-const double GRID_STRETCH_FAC = 0.001;
+const double GRID_STRETCH_FAC = 1.8;
 const bool USE_SOURCE_TERM_CONTROLLER = true;
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
 {
 
-  output_data.output_prefix = "ph10595_l3_k4k1_gt0";
+  output_data.output_prefix = "ph10595_l3_k4_gt18mod";
   cfl = 0.14;
   //Re = 19000: 0.8284788e-5
   //Re = 10595: 1.48571e-5
@@ -118,7 +118,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
     IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
     solver_viscous = SolverViscous::PCG;
     penalty_factor_divergence = 1.0e0;
-    turb_stat_data.statistics_start_time = 1.;
+    turb_stat_data.statistics_start_time = 0.00001;
     end_time = 2.;
   }
 
@@ -142,11 +142,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   output_solver_info_every_timesteps = 1e2;
   right_hand_side = true;
 
-  end_time = 1.0;
   output_data.write_output = true;
   output_data.output_start_time = 0.;
   output_data.output_interval_time = 0.1;
-  output_data.number_of_patches = FE_DEGREE+1;
+  output_data.number_of_patches = FE_DEGREE+2;
+  turb_stat_data.write_output_q_criterion = true;
   turb_stat_data.statistics_every = 10;
   turb_stat_data.statistics_end_time = end_time;
   write_restart = true;
@@ -191,6 +191,22 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
     return y_m;
   }
+
+  double gamma_x(double x_m)
+  {
+    double xmod = x_m/0.028;
+    double gamma = 1.;
+    if (xmod<2.8) //slightly un-stretch mesh to get a better resolution of the shear layer
+    {
+      gamma = (0.06*std::cos(xmod*numbers::PI/1.4)+0.94);
+    }
+    else if (xmod > 8.) //move mesh closer to the wall to get a lower y+ value at the peak
+    {
+      xmod = 9. - xmod;
+      gamma = (-0.05*std::cos(xmod*numbers::PI*2.)+1.05);
+    }
+    return GRID_STRETCH_FAC*gamma;
+  }
   template<int dim>
   class PushForward : public Function<dim>
   {
@@ -224,8 +240,10 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
     // y component
     else if (component == 1)
     {
-      double s_y = std::tanh(GRID_STRETCH_FAC*(2.0*((p[1] - y_FoR)/y_max)-1.0))/std::tanh(GRID_STRETCH_FAC);
-      double t_y = std::tanh(GRID_STRETCH_FAC*(2.0*(1.0 - (p[1] - y_FoR)/y_max)-1.0))/std::tanh(GRID_STRETCH_FAC);
+      const double gamma = gamma_x(p[0]);
+      const double tanh_gamma = std::tanh(gamma);
+      double s_y = std::tanh(gamma*(2.0*((p[1] - y_FoR)/y_max)-1.0))/tanh_gamma;
+      double t_y = std::tanh(gamma*(2.0*(1.0 - (p[1] - y_FoR)/y_max)-1.0))/tanh_gamma;
       if (p[0] <= x_max/2.0)
         result = y_max/2.0*s_y+4.036*h/2.0 + (0.5*t_y + 0.5)*f_x(p[0]);
                 // y_max/2.0*t_y+4.036*h/2.0
@@ -282,15 +300,17 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
       if (p[0] <= x_max/2.0)
       {
+        const double gamma = gamma_x(p[0]);
+        const double tanh_gamma = std::tanh(gamma);
         while(eps > tol && iter < maxiter)
         {
-          double arg = GRID_STRETCH_FAC*(2.0*(1.0-(Y-y_FoR)/y_max)-1.0);
-          double arg2 = GRID_STRETCH_FAC*(2.0*((Y-y_FoR)/y_max)-1.0);
-          double t_y = std::tanh(arg)/std::tanh(GRID_STRETCH_FAC);
-          double s_y = std::tanh(arg2)/std::tanh(GRID_STRETCH_FAC);
-          double ts_y = 1.0/(std::cosh(arg)*std::cosh(arg))*GRID_STRETCH_FAC*(-2.0/y_max)/(std::tanh(GRID_STRETCH_FAC));
-          double ss_y = 1.0/(std::cosh(arg2)*std::cosh(arg2))*GRID_STRETCH_FAC*(2.0/y_max)/(std::tanh(GRID_STRETCH_FAC));
-          double Yn = Y - (y_max/2.0*s_y+4.036*h/2.0 + (0.5*t_y + 0.5)*f_x(p[0]) -p[1])
+          const double arg = gamma*(2.0*(1.0-(Y-y_FoR)/y_max)-1.0);
+          const double arg2 = gamma*(2.0*((Y-y_FoR)/y_max)-1.0);
+          const double t_y = std::tanh(arg)/tanh_gamma;
+          const double s_y = std::tanh(arg2)/tanh_gamma;
+          const double ts_y = 1.0/(std::cosh(arg)*std::cosh(arg))*gamma*(-2.0/y_max)/tanh_gamma;
+          const double ss_y = 1.0/(std::cosh(arg2)*std::cosh(arg2))*gamma*(2.0/y_max)/tanh_gamma;
+          const double Yn = Y - (y_max/2.0*s_y+4.036*h/2.0 + (0.5*t_y + 0.5)*f_x(p[0]) -p[1])
               / (y_max/2.0*ss_y  + 0.5*ts_y*f_x(p[0]));
 
           eps = std::abs(Yn-Y);
@@ -303,15 +323,17 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
       }
       else if (p[0] > x_max/2.0)
       {
+        const double gamma = gamma_x(p[0]);
+        const double tanh_gamma = std::tanh(gamma);
         while(eps > tol && iter < maxiter)
         {
-          double arg = GRID_STRETCH_FAC*(2.0*(1.0-(Y-y_FoR)/y_max)-1.0);
-          double arg2 = GRID_STRETCH_FAC*(2.0*((Y-y_FoR)/y_max)-1.0);
-          double t_y = std::tanh(arg)/std::tanh(GRID_STRETCH_FAC);
-          double s_y = std::tanh(arg2)/std::tanh(GRID_STRETCH_FAC);
-          double ts_y = 1.0/(std::cosh(arg)*std::cosh(arg))*GRID_STRETCH_FAC*(-2.0/y_max)/(std::tanh(GRID_STRETCH_FAC));
-          double ss_y = 1.0/(std::cosh(arg2)*std::cosh(arg2))*GRID_STRETCH_FAC*(2.0/y_max)/(std::tanh(GRID_STRETCH_FAC));
-          double Yn = Y - (y_max/2.0*s_y+4.036*h/2.0 + (0.5*t_y + 0.5)*f_x(x_max - p[0]) -p[1])
+          const double arg = gamma*(2.0*(1.0-(Y-y_FoR)/y_max)-1.0);
+          const double arg2 = gamma*(2.0*((Y-y_FoR)/y_max)-1.0);
+          const double t_y = std::tanh(arg)/tanh_gamma;
+          const double s_y = std::tanh(arg2)/tanh_gamma;
+          const double ts_y = 1.0/(std::cosh(arg)*std::cosh(arg))*gamma*(-2.0/y_max)/tanh_gamma;
+          const double ss_y = 1.0/(std::cosh(arg2)*std::cosh(arg2))*gamma*(2.0/y_max)/tanh_gamma;
+          const double Yn = Y - (y_max/2.0*s_y+4.036*h/2.0 + (0.5*t_y + 0.5)*f_x(x_max - p[0]) -p[1])
               / (y_max/2.0*ss_y  + 0.5*ts_y*f_x(x_max - p[0]));
 
           eps = std::abs(Yn-Y);
@@ -580,7 +602,7 @@ public:
       :
       TimeIntBDFDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>
               (ns_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
-              ns_op(std::dynamic_pointer_cast<DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > (ns_operation_in)),
+              ns_op(std::dynamic_pointer_cast<DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > (ns_operation_in)),
               old_RHS_value(13.5),
               rhs(nullptr)
               {
@@ -600,7 +622,7 @@ public:
       virtual ~TimeIntBDFDualSplittingPH(){}
   protected:
 
-    std_cxx11::shared_ptr<DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > ns_op;
+    std_cxx11::shared_ptr<DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > ns_op;
     std::vector<double> massflows;
     double old_RHS_value;
     std_cxx11::shared_ptr<RightHandSide<dim> > rhs;
@@ -813,6 +835,12 @@ public:
     }
   };
 
+  bool exists_test0 (const std::string& name)
+  {
+      std::ifstream f(name.c_str());
+      return f.good();
+  }
+
   template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
   class PostProcessorPH: public PostProcessor<dim,fe_degree,fe_degree_p>
   {
@@ -824,7 +852,11 @@ public:
       PostProcessor<dim,fe_degree,fe_degree_p>(pp_data),
       output_data(pp_data.output_data),
       turb_stat_data(pp_data.turb_stat_data),
-      statistics_ph(ns_operation->get_dof_handler_u(),ns_operation->get_dof_handler_p(),ns_operation->get_mapping())
+      statistics_ph(ns_operation->get_dof_handler_u(),ns_operation->get_dof_handler_p(),ns_operation->get_mapping(),true),
+      matrix_free_data(nullptr),
+      output_counter_q(output_data.output_counter_start),
+      mapping(nullptr),
+      statistics_number(0)
     {
     }
 
@@ -845,6 +877,33 @@ public:
                                                       analytical_solution_in);
 
       statistics_ph.setup(PushForward<dim>(),this->output_data.output_prefix,false);
+      matrix_free_data = &matrix_free_data_in;
+      dof_quad_index_data = dof_quad_index_data_in;
+      mapping = &mapping_in;
+      if(turb_stat_data.write_output_q_criterion == true)
+      {
+        matrix_free_data->initialize_dof_vector(q_criterion,dof_quad_index_data.dof_index_pressure);
+        matrix_free_data->initialize_dof_vector(u_magnitude,dof_quad_index_data.dof_index_pressure);
+      }
+
+      // search for next statistics number
+      std::ostringstream filename;
+      filename.str("");
+      filename.clear();
+      filename << this->output_data.output_prefix
+               << "_slice"
+               << statistics_number
+               << ".tauw_Yplus_flow_statistics_bottom";
+      while(exists_test0(filename.str()))
+      {
+        statistics_number++;
+        filename.str("");
+        filename.clear();
+        filename << this->output_data.output_prefix
+                 << "_slice"
+                 << statistics_number
+                 << ".tauw_Yplus_flow_statistics_bottom";
+      }
     }
 
     virtual void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
@@ -868,14 +927,156 @@ public:
       {
         statistics_ph.evaluate(velocity,pressure);
         if(time_step_number % 100 == 0 || time > (this->turb_stat_data.statistics_end_time-EPSILON))
-          statistics_ph.write_output(this->output_data.output_prefix,this->turb_stat_data.viscosity,0.);//TODO Benjamin: add mass flow in last slot
+          statistics_ph.write_output(this->output_data.output_prefix,this->turb_stat_data.viscosity,statistics_number);
       }
+
+      if(turb_stat_data.write_output_q_criterion == true)
+        if(time > (output_data.output_start_time + output_counter_q*output_data.output_interval_time - EPSILON))
+        {
+          write_output_q_criterion(velocity);
+          output_counter_q++;
+        }
     };
+
+    void write_output_q_criterion(parallel::distributed::Vector<double> const &velocity)
+    {
+      DataOut<dim> data_out;
+      compute_q_criterion(q_criterion,velocity);
+      compute_u_magnitude(u_magnitude,velocity);
+      data_out.add_data_vector (matrix_free_data->get_dof_handler(dof_quad_index_data.dof_index_pressure),q_criterion, "q_criterion");
+      data_out.add_data_vector (matrix_free_data->get_dof_handler(dof_quad_index_data.dof_index_pressure),u_magnitude, "u_magnitude");
+
+      std::ostringstream filename;
+      filename << "output/"
+               << output_data.output_prefix
+               << "_q_Proc"
+               << Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)
+               << "_"
+               << output_counter_q
+               << ".vtu";
+
+      data_out.build_patches (*mapping, output_data.number_of_patches, DataOut<dim>::curved_inner_cells);
+
+      std::ofstream output (filename.str().c_str());
+      data_out.write_vtu (output);
+
+      if ( Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+      {
+        std::vector<std::string> filenames;
+        for (unsigned int i=0;i<Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);++i)
+        {
+          std::ostringstream filename;
+          filename << output_data.output_prefix
+                   << "_q_Proc"
+                   << i
+                   << "_"
+                   << output_counter_q
+                   << ".vtu";
+
+          filenames.push_back(filename.str().c_str());
+        }
+        std::string master_name = "output/" + output_data.output_prefix + "_q_" + Utilities::int_to_string(output_counter_q) + ".pvtu";
+        std::ofstream master_output (master_name.c_str());
+        data_out.write_pvtu_record (master_output, filenames);
+      }
+    }
+
+    void compute_q_criterion(parallel::distributed::Vector<double>       &dst,
+                             parallel::distributed::Vector<double> const &velocity)
+    {
+      dst = 0;
+      matrix_free_data->cell_loop (&PostProcessorPH<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule>::local_compute_q_criterion,
+                                   this, dst, velocity);
+    }
+
+    void compute_u_magnitude(parallel::distributed::Vector<double>       &dst,
+                             parallel::distributed::Vector<double> const &velocity)
+    {
+      dst = 0;
+      matrix_free_data->cell_loop (&PostProcessorPH<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule>::local_compute_u_magnitude,
+                                   this, dst, velocity);
+    }
+
+    void local_compute_q_criterion(const MatrixFree<dim,double>                &data,
+                                   parallel::distributed::Vector<double>       &dst,
+                                   const parallel::distributed::Vector<double> &source,
+                                   const std::pair<unsigned int,unsigned int>  &cell_range)
+    {
+      //we use the pressure space for the q-criterion because we only need a vector with one component
+      //the pressure space is also sufficient in case k,k-1 for u,p, because the q-criterion only consists of derivatives of the velocity
+      FEEvaluation<dim,fe_degree_p,fe_degree_p+1,1,double> phi(data,dof_quad_index_data.dof_index_pressure,dof_quad_index_data.quad_index_velocity);
+      FEEvaluation<dim,fe_degree,fe_degree_p+1,dim,double> fe_eval_u(data,dof_quad_index_data.dof_index_velocity,dof_quad_index_data.quad_index_velocity);
+      MatrixFreeOperators::CellwiseInverseMassMatrix<dim, fe_degree_p, 1, double> inverse(phi);
+      const unsigned int dofs_per_cell = phi.dofs_per_cell;
+      AlignedVector<VectorizedArray<double> > coefficients(dofs_per_cell);
+      for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+      {
+        phi.reinit(cell);
+        fe_eval_u.reinit(cell);
+        fe_eval_u.read_dof_values(source);
+        fe_eval_u.evaluate(false,true);
+        for(unsigned int q=0;q<phi.n_q_points;q++)
+        {
+          Tensor<2,dim,VectorizedArray<double> > gradu = fe_eval_u.get_gradient(q);
+          Tensor<2,dim,VectorizedArray<double> > Om;
+          Tensor<2,dim,VectorizedArray<double> > S;
+          for(unsigned int i=0;i<dim;i++)
+            for(unsigned int j=0;j<dim;j++)
+            {
+              Om[i][j]=0.5*(gradu[i][j]-gradu[j][i]);
+              S[i][j]=0.5*(gradu[i][j]+gradu[j][i]);
+            }
+          const VectorizedArray<double> Q = 0.5*(Om.norm_square() - S.norm_square());
+          phi.submit_value(Q,q);
+        }
+        phi.integrate(true,false);
+        inverse.fill_inverse_JxW_values(coefficients);
+        inverse.apply(coefficients,1,phi.begin_dof_values(),phi.begin_dof_values());
+        phi.distribute_local_to_global(dst);
+      }
+    }
+
+    void local_compute_u_magnitude(const MatrixFree<dim,double>                &data,
+                                   parallel::distributed::Vector<double>       &dst,
+                                   const parallel::distributed::Vector<double> &source,
+                                   const std::pair<unsigned int,unsigned int>  &cell_range)
+    {
+      //we use the pressure space for the q-criterion because we only need a vector with one component
+      //the pressure space is also sufficient in case k,k-1 for u,p, because the q-criterion only consists of derivatives of the velocity
+      FEEvaluation<dim,fe_degree_p,fe_degree_p+1,1,double> phi(data,dof_quad_index_data.dof_index_pressure,dof_quad_index_data.quad_index_velocity);
+      FEEvaluation<dim,fe_degree,fe_degree_p+1,dim,double> fe_eval_u(data,dof_quad_index_data.dof_index_velocity,dof_quad_index_data.quad_index_velocity);
+      MatrixFreeOperators::CellwiseInverseMassMatrix<dim, fe_degree_p, 1, double> inverse(phi);
+      const unsigned int dofs_per_cell = phi.dofs_per_cell;
+      AlignedVector<VectorizedArray<double> > coefficients(dofs_per_cell);
+      for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+      {
+        phi.reinit(cell);
+        fe_eval_u.reinit(cell);
+        fe_eval_u.read_dof_values(source);
+        fe_eval_u.evaluate(true,false);
+        for(unsigned int q=0;q<phi.n_q_points;q++)
+        {
+          Tensor<1,dim,VectorizedArray<double> > u = fe_eval_u.get_value(q);
+          phi.submit_value(u.norm(),q);
+        }
+        phi.integrate(true,false);
+        inverse.fill_inverse_JxW_values(coefficients);
+        inverse.apply(coefficients,1,phi.begin_dof_values(),phi.begin_dof_values());
+        phi.distribute_local_to_global(dst);
+      }
+    }
 
   protected:
     OutputDataNavierStokes output_data;
     TurbulenceStatisticsData turb_stat_data;
     StatisticsManagerPH<dim> statistics_ph;
+    MatrixFree<dim,double> const * matrix_free_data;
+    unsigned int output_counter_q;
+    DofQuadIndexData dof_quad_index_data;
+    parallel::distributed::Vector<double> q_criterion;
+    parallel::distributed::Vector<double> u_magnitude;
+    Mapping<dim> const * mapping;
+    unsigned int statistics_number;
 
   };
 
@@ -888,7 +1089,8 @@ public:
                          PostProcessorData<dim> const                                                                           &pp_data)
                            :
                          PostProcessorXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule>(ns_operation,pp_data),
-                         statistics_ph(ns_operation->get_dof_handler_u(),ns_operation->get_dof_handler_p(),ns_operation->get_mapping())
+                         statistics_ph(ns_operation->get_dof_handler_u(),ns_operation->get_dof_handler_p(),ns_operation->get_mapping()),
+                         statistics_number(0)
     {
     }
 
@@ -909,6 +1111,25 @@ public:
                   dof_quad_index_data,
                   analytical_solution);
       statistics_ph.setup(PushForward<dim>(),this->pp_data.output_data.output_prefix,true);
+
+      // search for next statistics number
+      std::ostringstream filename;
+      filename.str("");
+      filename.clear();
+      filename << this->pp_data.output_data.output_prefix
+               << "_slice"
+               << statistics_number
+               << ".tauw_Yplus_flow_statistics_bottom";
+      while(exists_test0(filename.str()))
+      {
+        statistics_number++;
+        filename.str("");
+        filename.clear();
+        filename << this->pp_data.output_data.output_prefix
+                 << "_slice"
+                 << statistics_number
+                 << ".tauw_Yplus_flow_statistics_bottom";
+      }
     }
 
     virtual void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
@@ -936,12 +1157,13 @@ public:
                                      this->ns_operation_xw_->get_dof_handler_wdist(),
                                      this->ns_operation_xw_->get_fe_parameters());
         if(time_step_number % 100 == 0 || time > (this->pp_data.turb_stat_data.statistics_end_time-EPSILON))
-          statistics_ph.write_output(this->pp_data.output_data.output_prefix,this->pp_data.turb_stat_data.viscosity,0.);//TODO Benjamin: add mass flow in last slot
+          statistics_ph.write_output(this->pp_data.output_data.output_prefix,this->pp_data.turb_stat_data.viscosity,statistics_number);
       }
 
     };
   protected:
     StatisticsManagerPH<dim> statistics_ph;
+    unsigned int statistics_number;
 
   };
 
@@ -980,11 +1202,6 @@ public:
     std_cxx11::shared_ptr<TimeIntBDFNavierStokes<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, value_type> > time_integrator;
 
   };
-  bool exists_test0 (const std::string& name)
-  {
-      std::ifstream f(name.c_str());
-      return f.good();
-  }
 
   template<int dim>
   NavierStokesProblem<dim>::NavierStokesProblem(const unsigned int refine_steps_space, const bool do_restart):
@@ -1064,7 +1281,8 @@ public:
               param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
       {
         // initialize navier_stokes_operation
-        if(param.xwall_turb == XWallTurbulenceApproach::RANSSpalartAllmaras)
+        if(param.xwall_turb == XWallTurbulenceApproach::RANSSpalartAllmaras ||
+           param.xwall_turb == XWallTurbulenceApproach::ClassicalDESSpalartAllmaras)
         {
           navier_stokes_operation.reset(new DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, FE_DEGREE, FE_DEGREE_P, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
               (triangulation,param));
