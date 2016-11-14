@@ -137,6 +137,9 @@ initialize_solution_and_calculate_timestep(bool do_restart)
     // otherwise the old solutions would not fit the time step increments, etc.
     if(param.start_with_low_order)
       calculate_time_step();
+
+    if(adaptive_time_stepping == true)
+      recalculate_adaptive_time_step();
   }
   else
   {
@@ -164,7 +167,7 @@ resume_from_restart()
   check_file(in, filename);
   boost::archive::binary_iarchive ia (in);
   resume_restart<dim,value_type>
-      (ia, param, time, postprocessor, time_steps, order);
+      (ia, param, time, time_steps, order);
 
   read_restart_vectors(ia);
 
@@ -185,8 +188,7 @@ write_restart() const
     std::ostringstream oss;
 
     boost::archive::binary_oarchive oa(oss);
-    // TODO
-//    write_restart_preamble<dim, value_type>(oa, param, time_steps, time, postprocessor->get_output_counter(), order);
+    write_restart_preamble<dim, value_type>(oa, param, time_steps, time, order);
     write_restart_vectors(oa);
     write_restart_file<dim>(oss, param);
   }
@@ -223,7 +225,7 @@ calculate_time_step()
     print_parameter(pcout,"CFL",cfl);
     print_parameter(pcout,"Time step size",time_steps[0]);
   }
-  else if(param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
+  else if(adaptive_time_stepping == true)
   {
     time_steps[0] = calculate_adaptive_time_step_cfl<dim, fe_degree_u, value_type>(
         navier_stokes_operation->get_data(),

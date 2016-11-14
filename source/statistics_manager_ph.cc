@@ -49,10 +49,11 @@ void StatisticsManagerPH<dim>::setup(const Function< dim > &push_forward_functio
       ++n_cells_y_dir;
       cell = cell->neighbor(3);
     }
+  const unsigned int fe_degree = dof_handler.get_fe().degree;
 
   n_cells_y_dir *= std::pow(2, dof_handler.get_triangulation().n_global_levels()-1);
 
-  n_points_y = mapping_.get_degree() + 1;
+  n_points_y = fe_degree + 1;
   if(enriched)
     n_points_y = 50;
   n_points_y_glob =  n_cells_y_dir*(n_points_y-1)+1;
@@ -63,6 +64,7 @@ void StatisticsManagerPH<dim>::setup(const Function< dim > &push_forward_functio
   x_over_h = {0.05, 0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
 
   y_vec_glob.resize(x_over_h.size());
+  y_h_glob.resize(x_over_h.size());
   vel_glob.resize(3);
   for(unsigned int i=0; i<3;i++)
     vel_glob[i].resize(x_over_h.size());
@@ -70,13 +72,17 @@ void StatisticsManagerPH<dim>::setup(const Function< dim > &push_forward_functio
   for(unsigned int i=0; i<3;i++)
     velsq_glob[i].resize(x_over_h.size());
   veluv_glob.resize(x_over_h.size());
-
+  epsii_glob.resize(3);
+  for(unsigned int i=0; i<3;i++)
+    epsii_glob[i].resize(x_over_h.size());
   for (unsigned int i=0; i<x_over_h.size(); i++)
   {
     for(unsigned int j=0; j<3;j++)
       vel_glob[j][i].resize(n_points_y_glob,0.);
     for(unsigned int j=0; j<3;j++)
       velsq_glob[j][i].resize(n_points_y_glob,0.);
+    for(unsigned int j=0; j<3;j++)
+      epsii_glob[j][i].resize(n_points_y_glob,0.);
     veluv_glob[i].resize(n_points_y_glob);
   }
 
@@ -89,6 +95,7 @@ void StatisticsManagerPH<dim>::setup(const Function< dim > &push_forward_functio
   for (unsigned int i=0; i<x_over_h.size(); i++)
   {
     y_vec_glob[i].reserve(n_points_y_glob);
+    y_h_glob[i].reserve(n_points_y_glob);
     const double x_pos = x_over_h[i]*h;
     for (unsigned int ele = 0; ele < n_cells_y_dir;ele++)
     {
@@ -106,6 +113,10 @@ void StatisticsManagerPH<dim>::setup(const Function< dim > &push_forward_functio
       {
         double coord = ylower + (yupper-ylower)/(n_points_y-1)*z_line;
         y_vec_glob[i].push_back(coord);
+        if(y_h_glob[i].size()>0)
+          y_h_glob[i].push_back((yupper-ylower + y_h_glob[i].back())*0.5);//take the average between the current and the previous element, results in better consistent behavior at element interfaces
+        else
+          y_h_glob[i].push_back(yupper-ylower);
       }
     }
     //push back last missing coordinate at upper wall
@@ -114,7 +125,13 @@ void StatisticsManagerPH<dim>::setup(const Function< dim > &push_forward_functio
     upper[0] = x_pos;
     y_vec_glob[i].push_back(push_forward_function.value(upper,1));
     AssertThrow(y_vec_glob[i].size() == n_points_y_glob, ExcInternalError());
-
+    y_h_glob[i].push_back(y_h_glob[i].back());
+  }
+  //compute real volume for eta
+  for (unsigned int i_x=0; i_x<x_over_h.size(); i_x++)
+  {
+    for (unsigned int j=0; j<y_h_glob[i_x].size(); j++)
+      y_h_glob[i_x][j] = std::pow(y_h_glob[i_x][j]*(4.5*0.028/(double)n_cells_y_dir)*(0.5*9.*0.028/(double)n_cells_y_dir),1./3.)/(double)(fe_degree + 1);
   }
 
   // get the real y-values (y_loc) on each processor, respectively
@@ -123,7 +140,6 @@ void StatisticsManagerPH<dim>::setup(const Function< dim > &push_forward_functio
 #ifdef DEBUG_Y
     std::cout << "### current x/h position (i_x=" << i_x << "): " << x_over_h[i_x] << std::endl;
 #endif
-    const unsigned int fe_degree = dof_handler.get_fe().degree;
     std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y);
     QGauss<1> gauss_1d(fe_degree+1);
     std::vector<double> y_loc;
@@ -325,7 +341,7 @@ void StatisticsManagerPH<dim>::setup(const Function< dim > &push_forward_functio
       if(dim==3)
         upper_point[2] = 0.0;
       double y_upper = push_forward_function.value(upper_point,1);
-      double y1 = (y_upper - y_lower)/(mapping_.get_degree() + 1);
+      double y1 = (y_upper - y_lower)/(fe_degree + 1);
       y1_bottom_glob.push_back(y1);
       y_hill_contour_nominal.push_back(y_lower);
 
@@ -342,7 +358,7 @@ void StatisticsManagerPH<dim>::setup(const Function< dim > &push_forward_functio
       if(dim==3)
         upper_point[2] = 0.0;
       y_upper = push_forward_function.value(upper_point,1);
-      y1 = (y_upper - y_lower)/(mapping_.get_degree() + 1);
+      y1 = (y_upper - y_lower)/(fe_degree + 1);
       y1_top_glob.push_back(y1);
 
 
@@ -437,7 +453,7 @@ void StatisticsManagerPH<dim>::setup(const Function< dim > &push_forward_functio
         f.open((output_prefix + ".geometry_approximation_error").c_str(),std::ios::trunc);
         f<<"geometry_approximation_error of periodic hill flow "<<std::endl;
         f<<"refinement level:   " << dof_handler.get_triangulation().n_global_levels() - 1 << std::endl;
-        f<<"fe degree:   " << mapping_.get_degree() << std::endl;
+        f<<"fe degree:   " << fe_degree << std::endl;
     //    f<<"friction Reynolds number:   " << sqrt(viscosity*(velx_glob.at(1)/numchsamp/(x_glob.at(1)+1.)))/viscosity << std::endl;
 
         f<< "       x       |    y_actual   |   y_nominal   |   abs(error)  " << std::endl;
@@ -503,54 +519,34 @@ template <int dim>
 void
 StatisticsManagerPH<dim>::write_output(const std::string output_prefix,
                                        const double      viscosity,
-                                       const double      massflow)
+                                       unsigned int statistics_number)
 {
   if(Utilities::MPI::this_mpi_process(communicator)==0)
   {
+    //specify values for normalization
+    const double H = 0.028;
+    const double ub = 5.621;
+    const double ubsq = ub*ub;
+
     std::string new_output_prefix;
-    {
-      unsigned int statistics_number = 0;
-      std::ostringstream filename;
-      filename.str("");
-      filename.clear();
-      filename << output_prefix
-               << "_slice"
-               << statistics_number
-               << ".tauw_Yplus_flow_statistics_bottom";
-      while(exists_test0(filename.str()))
-      {
-        statistics_number++;
-        filename.str("");
-        filename.clear();
-        filename << output_prefix
-                 << "_slice"
-                 << statistics_number
-                 << ".tauw_Yplus_flow_statistics_bottom";
-      }
-      filename.str("");
-      filename.clear();
-      filename << output_prefix
-               << "_slice"
-               << statistics_number;
-      new_output_prefix = filename.str();
-    }
-    double Ub = 0;
-    if(dim == 3)
-      Ub = massflow/(2.036*4.5*h*h);
-    else
-      Ub = massflow/(2.036*h);
+    std::ostringstream filename;
+    filename.str("");
+    filename.clear();
+    filename << output_prefix
+             << "_slice"
+             << statistics_number;
+    new_output_prefix = filename.str();
 
     // write velocitys at certain x_over_h -positions
     for (unsigned int i_x=0; i_x<x_over_h.size(); i_x++)
-      {
+    {
       std::ofstream f;
       f.open((new_output_prefix + "_" + patch::to_string(i_x) + ".flow_statistics").c_str(),std::ios::trunc);
       f<<"statistics of periodic hill flow for x/h = " << x_over_h[i_x] <<std::endl;
       f<<"number of samples:   " << numchsamp << std::endl;
-      f<<"Re-number:   " << Ub*h/viscosity << std::endl;
-      f<<"wall shear stress:   " << viscosity*(vel_glob[0][i_x].at(1)/(double)numchsamp/(y_vec_glob[i_x].at(2) - y_vec_glob[i_x].at(1))) << std::endl;
+      f<<"viscosity:           " << std::scientific<<std::setprecision(9) << viscosity << std::endl;
 
-      f<< "       y       |       u      |       v      |       w      |     u'u'     |     v'v'     |     w'w'     |     u'v'     |     TKE     " << std::endl;
+      f<< "       y/H       |      u/U_b     |      v/U_b     |      w/U_b     |   u'u'/U_b^2   |   v'v'/U_b^2   |   w'w'/U_b^2   |   u'v'/U_b^2   |   TKE/U_b^2    |      eps       |     eta/H      |     h/eta      |       h      " << std::endl;
       for (unsigned int idx = 0; idx<y_vec_glob[i_x].size(); idx++)
       {
         double velx = vel_glob[0][i_x].at(idx)/(double)numchsamp;
@@ -565,6 +561,15 @@ StatisticsManagerPH<dim>::write_output(const std::string output_prefix,
         - velz*velz;
         double veluv = veluv_glob[i_x].at(idx)/((double)(numchsamp))
         - velx*vely;
+        //eps = 1/2 epsii -> factor 2 cancels out
+        double eps = viscosity  *(epsii_glob[0][i_x].at(idx)/((double)(numchsamp))
+                                + epsii_glob[1][i_x].at(idx)/((double)(numchsamp))
+                                + epsii_glob[2][i_x].at(idx)/((double)(numchsamp)));
+        //to prevent devision by 0
+        double eta = -1.;
+        if(DNS)
+          eta = std::pow(viscosity*viscosity*viscosity/eps,0.25);
+        double h_eta = y_h_glob[i_x][idx] / eta;
 
 #ifdef DEBUG_WRITE_OUTPUT
         std::cout << "velxssq using std::abs: " << velxssq << std::endl;
@@ -574,19 +579,23 @@ StatisticsManagerPH<dim>::write_output(const std::string output_prefix,
         std::cout << "std::sqrt(velyssq) = " << std::sqrt(velyssq)<<  std::endl;
 #endif
 
-        f<<std::scientific<<std::setprecision(7) << std::setw(15) << y_vec_glob[i_x].at(idx);
-        f<<std::scientific<<std::setprecision(7) << std::setw(15) << velx;
-        f<<std::scientific<<std::setprecision(7) << std::setw(15) << vely;
-        f<<std::scientific<<std::setprecision(7) << std::setw(15) << velz;
-        f<<std::scientific<<std::setprecision(7) << std::setw(15) << veluu;
-        f<<std::scientific<<std::setprecision(7) << std::setw(15) << velvv;
-        f<<std::scientific<<std::setprecision(7) << std::setw(15) << velww;
-        f<<std::scientific<<std::setprecision(7) << std::setw(15) << veluv;
-        f<<std::scientific<<std::setprecision(7) << std::setw(15) << 0.5*( veluu + velvv + velww );
+        f<<std::scientific<<std::setprecision(9) << std::setw(17) << y_vec_glob[i_x].at(idx)/H;
+        f<<std::scientific<<std::setprecision(9) << std::setw(17) << velx/ub;
+        f<<std::scientific<<std::setprecision(9) << std::setw(17) << vely/ub;
+        f<<std::scientific<<std::setprecision(9) << std::setw(17) << velz/ub;
+        f<<std::scientific<<std::setprecision(9) << std::setw(17) << veluu/ubsq;
+        f<<std::scientific<<std::setprecision(9) << std::setw(17) << velvv/ubsq;
+        f<<std::scientific<<std::setprecision(9) << std::setw(17) << velww/ubsq;
+        f<<std::scientific<<std::setprecision(9) << std::setw(17) << veluv/ubsq;
+        f<<std::scientific<<std::setprecision(9) << std::setw(17) << 0.5*( veluu + velvv + velww )/ubsq;
+        f<<std::scientific<<std::setprecision(9) << std::setw(17) << eps;
+        f<<std::scientific<<std::setprecision(9) << std::setw(17) << eta/H;
+        f<<std::scientific<<std::setprecision(9) << std::setw(17) << h_eta;
+        f<<std::scientific<<std::setprecision(9) << std::setw(17) << y_h_glob[i_x][idx];
         f << std::endl;
       }
       f.close();
-      }
+    }
 
     // write tau_w, yplus at bottom
     std::ofstream f;
@@ -594,19 +603,22 @@ StatisticsManagerPH<dim>::write_output(const std::string output_prefix,
     f.open((new_output_prefix + ".tauw_Yplus_flow_statistics_bottom").c_str(),std::ios::trunc);
     f<<"statistics of periodic hill flow  "<<std::endl;
     f<<"number of samples:   " << numchsamp << std::endl;
-    f<<"Re-number:   " << Ub*h/viscosity << std::endl;
-//    f<<"friction Reynolds number:   " << sqrt(viscosity*(velx_glob.at(1)/numchsamp/(x_glob.at(1)+1.)))/viscosity << std::endl;
+    f<<"fe degree:           " << dof_handler.get_fe().degree << std::endl;
 
-    f<< "       x       |     Yplus     |     tau_w     |       p       " << std::endl;
+    double pnorm = p_top_glob.at(0)/(double)numchsamp;
+    f<< "       x/H      |      Yplus     |       cf       |        cp      " << std::endl;
     for (unsigned int idx = 0; idx<x_glob.size(); idx++)
     {
       double tau_w = viscosity*dudy_bottom_glob.at(idx)/(double)numchsamp;
       double p = p_bottom_glob.at(idx)/(double)numchsamp;
 
-      f<<std::scientific<<std::setprecision(7) << std::setw(15) << x_glob.at(idx);
-      f<<std::scientific<<std::setprecision(7) << std::setw(15) << std::sqrt(std::abs(tau_w))*y1_bottom_glob.at(idx)/viscosity;
-      f<<std::scientific<<std::setprecision(7) << std::setw(15) << tau_w;
-      f<<std::scientific<<std::setprecision(7) << std::setw(15) << p;
+      const double norm = 0.5*ubsq;
+      const double cf = tau_w/norm;
+      const double cp = (p-pnorm)/norm;
+      f<<std::scientific<<std::setprecision(9) << std::setw(17) << x_glob.at(idx)/H;
+      f<<std::scientific<<std::setprecision(9) << std::setw(17) << std::sqrt(std::abs(tau_w))*y1_bottom_glob.at(idx)/viscosity;
+      f<<std::scientific<<std::setprecision(9) << std::setw(17) << cf;
+      f<<std::scientific<<std::setprecision(9) << std::setw(17) << cp;
       f << std::endl;
     }
     f.close();
@@ -616,22 +628,25 @@ StatisticsManagerPH<dim>::write_output(const std::string output_prefix,
     f.open((new_output_prefix + ".tauw_Yplus_flow_statistics_top").c_str(),std::ios::trunc);
     f<<"statistics of periodic hill flow  "<<std::endl;
     f<<"number of samples:   " << numchsamp << std::endl;
-    f<<"Re-number:   " << Ub*h/viscosity << std::endl;
-//    f<<"friction Reynolds number:   " << sqrt(viscosity*(velx_glob.at(1)/numchsamp/(x_glob.at(1)+1.)))/viscosity << std::endl;
+    f<<"fe degree:           " << dof_handler.get_fe().degree << std::endl;
 
-    f<< "       x       |     Yplus     |     tau_w     |       p       " << std::endl;
+    f<< "       x/H      |      Yplus     |       cf       |        cp      " << std::endl;
     for (unsigned int idx = 0; idx<x_glob.size(); idx++)
     {
       double tau_w = -viscosity*dudy_top_glob.at(idx)/(double)numchsamp; // minus is set because on the top of the domain, the domain the gradient is negative for unseparated u-profiles
       double p = p_top_glob.at(idx)/(double)numchsamp;
-      f<<std::scientific<<std::setprecision(7) << std::setw(15) << x_glob.at(idx);
-      f<<std::scientific<<std::setprecision(7) << std::setw(15) << std::sqrt(std::abs(tau_w))*y1_top_glob.at(idx)/viscosity;
-      f<<std::scientific<<std::setprecision(7) << std::setw(15) << tau_w;
-      f<<std::scientific<<std::setprecision(7) << std::setw(15) << p;
+
+      const double norm = 0.5*ubsq;
+      const double cf = tau_w/norm;
+      const double cp = (p-pnorm)/norm;
+      f<<std::scientific<<std::setprecision(9) << std::setw(17) << x_glob.at(idx)/H;
+      f<<std::scientific<<std::setprecision(9) << std::setw(17) << std::sqrt(std::abs(tau_w))*y1_top_glob.at(idx)/viscosity;
+      f<<std::scientific<<std::setprecision(9) << std::setw(17) << cf;
+      f<<std::scientific<<std::setprecision(9) << std::setw(17) << cp;
       f << std::endl;
     }
     f.close();
-    }
+  }
 }
 
 template <int dim>
@@ -670,7 +685,10 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
     for(unsigned int i=0;i<dim;i++)
       velsq_loc[i].resize(vel_glob[0][0].size());
     std::vector<double> veluv_loc(vel_glob[0][0].size());
-
+    std::vector<std::vector<double> > epsii_loc(dim);
+    if(DNS)
+      for(unsigned int i=0;i<dim;i++)
+        epsii_loc[i].resize(vel_glob[0][0].size());
     const unsigned int fe_degree = dof_handler.get_fe().degree;
     std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y);
     QGauss<1> gauss_1d(fe_degree+1);
@@ -718,11 +736,22 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
         else
           weights[j] = 1.;
       }
-      fe_values[i].reset(new FEValues<dim>(mapping_,
-                                           dof_handler.get_fe().base_element(0),
-                                           Quadrature<dim>(points, weights),
-                                           update_values | update_jacobians |
-                                           update_quadrature_points));
+      if(DNS)
+      {
+        fe_values[i].reset(new FEValues<dim>(mapping_,
+                                             dof_handler.get_fe().base_element(0),
+                                             Quadrature<dim>(points, weights),
+                                             update_values | update_jacobians |
+                                             update_quadrature_points | update_gradients));
+      }
+      else
+      {
+        fe_values[i].reset(new FEValues<dim>(mapping_,
+                                             dof_handler.get_fe().base_element(0),
+                                             Quadrature<dim>(points, weights),
+                                             update_values | update_jacobians |
+                                             update_quadrature_points));
+      }
     }
 
     const unsigned int scalar_dofs_per_cell = dof_handler.get_fe().base_element(0).dofs_per_cell;
@@ -777,21 +806,25 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
             double length = 0, veluv = 0;
             std::vector<double> vel(dim,0.);
             std::vector<double> velsq(dim,0.);
-
+            std::vector<double> epsii(dim,0.);
             for (unsigned int q=0; q<fe_values[i]->n_quadrature_points; ++q)
               {
               // Assert
-              const Point<dim> point_assert = fe_values[i]->quadrature_point(q); // all quadrature points have the same x-value// TODO
-              AssertThrow(std::abs(point_assert[0]-x_pos)<1e-13,
+              const Point<dim> point_assert = fe_values[i]->quadrature_point(q); // all quadrature points have the same x-value
+              (void) point_assert;
+              Assert(std::abs(point_assert[0]-x_pos)<1e-13,
                           ExcMessage("Check calculation of xi1-value for quadrature. "
                                      "x_pos = " + patch::to_string(x_pos) + " and point_assert[0] = " + patch::to_string(point_assert[0])));
 
-
                 // interpolate velocity to the quadrature point
                 Tensor<1,dim> velocity;
+                Tensor<1,dim> gradu;
                 for (unsigned int j=0; j<velocity_vector.size(); ++j)
                   velocity += fe_values[i]->shape_value(j,q) * velocity_vector[j];
-
+                if(DNS)
+                  for (unsigned int j=0; j<velocity_vector.size(); ++j)
+                    for (unsigned int idim = 0; idim < dim;idim++)
+                      gradu[idim] += fe_values[i]->shape_grad(j,q)[idim] * velocity_vector[j][idim];
                 double reduced_jacobian;
                 if(dim==3)
                   reduced_jacobian = fe_values[i]->jacobian(q)[2][2];
@@ -805,12 +838,16 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
                 for(unsigned int j=0;j<dim;j++)
                   velsq[j] += velocity[j] * velocity[j] * length_ele;
                 veluv += velocity[0] * velocity[1] * length_ele;
+                if(DNS)
+                  for(unsigned int j=0;j<dim;j++)
+                    epsii[j] += gradu[j] * gradu[j] * length_ele;
               }
 
             // check quadrature
             double n_cells_z_dir = (n_points_y_glob-1)/(n_points_y-1); // ASSUMED: n_cells_y_dir = n_cells_z_dir
+            (void) n_cells_z_dir;
             if(dim == 3)
-              AssertThrow(std::abs(length - 4.5*h/n_cells_z_dir) < 1e-13,
+              Assert(std::abs(length - 4.5*h/n_cells_z_dir) < 1e-13,
                       ExcMessage("check quadrature code. length = " + patch::to_string(length) + " lz_ele = " + patch::to_string(4.5*h/n_cells_z_dir) + "(element-length in z direction)"));
 
 
@@ -824,11 +861,11 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
             // by 1e-13 or less)
             if (idx > 0 && std::abs(y_vec_glob[i_x][idx-1]-y) < std::abs(y_vec_glob[i_x][idx]-y))
               idx--;
-            AssertThrow(idx < n_points_y_glob,
+            Assert(idx < n_points_y_glob,
                         ExcMessage("idx is out of range. The current x/h-position is " + patch::to_string(x_over_h[i_x]) +
                                    ". idx = " + patch::to_string(idx) + " n_points_y_glob = " + patch::to_string(n_points_y_glob)));
 
-            AssertThrow(std::abs(y_vec_glob[i_x][idx]-y)<1e-13,//1e-13,
+            Assert(std::abs(y_vec_glob[i_x][idx]-y)<1e-13,//1e-13,
                         ExcMessage("Could not locate " + patch::to_string(y) + " among "
                                    "pre-evaluated points. Closest point is " +
                                    patch::to_string(y_vec_glob[i_x][idx]) + " at distance " +
@@ -843,6 +880,9 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
               velsq_loc[j][idx] += velsq[j];
             veluv_loc.at(idx) += veluv;
             length_loc.at(idx) += length;
+            if(DNS)
+              for(unsigned int j=0;j<dim;j++)
+                epsii_loc[j][idx] += epsii[j];
           } // loop over y-points within one element
           }
         }
@@ -856,11 +896,14 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
       Utilities::MPI::sum(velsq_loc[j], communicator, velsq_loc[j]);
     Utilities::MPI::sum(veluv_loc, communicator, veluv_loc);
     Utilities::MPI::sum(length_loc, communicator, length_loc);
+    if(DNS)
+      for(unsigned int j=0;j<dim;j++)
+        Utilities::MPI::sum(epsii_loc[j], communicator, epsii_loc[j]);
 
     // check quadrature
     for (unsigned int idx = 0; idx<y_vec_glob[i_x].size(); idx++)
       if(dim == 3)
-        AssertThrow(std::abs(length_loc.at(idx) - 4.5*h) < 1e-13 || std::abs(length_loc.at(idx) - 2*4.5*h) < 1e-13,
+        Assert(std::abs(length_loc.at(idx) - 4.5*h) < 1e-13 || std::abs(length_loc.at(idx) - 2*4.5*h) < 1e-13,
             ExcMessage("check quadrature code. length_loc.at(" + patch::to_string(idx) + ") = " + patch::to_string(length_loc.at(idx)) + " 4.5*h = " + patch::to_string(4.5*h)));
 
 
@@ -872,6 +915,9 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
       for(unsigned int j=0;j<dim;j++)
         velsq_glob[j][i_x][idx] += velsq_loc[j][idx]/length_loc[idx];
       veluv_glob[i_x].at(idx) += veluv_loc[idx]/length_loc[idx];
+      if(DNS)
+        for(unsigned int j=0;j<dim;j++)
+          epsii_glob[j][i_x][idx] += epsii_loc[j][idx]/length_loc[idx];
     }
   } // for loop over x
 
@@ -1012,8 +1058,9 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
           }
 
           double n_cells_z_dir = (n_points_y_glob-1)/(n_points_y-1); // ASSUMED: n_cells_y_dir = n_cells_z_dir
+          (void) n_cells_z_dir;
           if(dim == 3)
-          AssertThrow(std::abs(length - 4.5*h/n_cells_z_dir) < 1e-13,
+          Assert(std::abs(length - 4.5*h/n_cells_z_dir) < 1e-13,
                   ExcMessage("check quadrature code. length = " + patch::to_string(length) + " lz_ele = " + patch::to_string(4.5*h/n_cells_z_dir) + "(element-length in z direction)"));
 
           // find index within the x-values: first do a binary search to find
@@ -1026,7 +1073,7 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
           // by 1e-13 or less)
           if (idx > 0 && std::abs(x_glob[idx-1]-x) < std::abs(x_glob[idx]-x))
             idx--;
-          AssertThrow(std::abs(x_glob[idx]-x)<1e-13,
+          Assert(std::abs(x_glob[idx]-x)<1e-13,
                       ExcMessage("Could not locate " + patch::to_string(x) + " among "
                                  "pre-evaluated points. Closest point is " +
                                  patch::to_string(x_glob[idx]) + " at distance " +
@@ -1048,7 +1095,7 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
   // check quadrature
   for (unsigned int idx = 0; idx<x_glob.size(); idx++)
     if(dim == 3)
-      AssertThrow(std::abs(length_loc.at(idx) - 4.5*h) < 1e-13 || std::abs(length_loc.at(idx) - 2*4.5*h) < 1e-13,
+      Assert(std::abs(length_loc.at(idx) - 4.5*h) < 1e-13 || std::abs(length_loc.at(idx) - 2*4.5*h) < 1e-13,
           ExcMessage("check quadrature code. length_loc.at(" + patch::to_string(idx) + ") = " + patch::to_string(length_loc.at(idx)) + " 4.5*h = " + patch::to_string(4.5*h)));
 
   for (unsigned int idx = 0; idx<x_glob.size(); idx++)
@@ -1164,8 +1211,9 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
             }
 
             double n_cells_z_dir = (n_points_y_glob-1)/(n_points_y-1); // ASSUMED: n_cells_y_dir = n_cells_z_dir
+            (void) n_cells_z_dir;
             if(dim == 3)
-              AssertThrow(std::abs(length - 4.5*h/n_cells_z_dir) < 1e-13,
+              Assert(std::abs(length - 4.5*h/n_cells_z_dir) < 1e-13,
                       ExcMessage("check quadrature code. length = " + patch::to_string(length) + " lz_ele = " + patch::to_string(4.5*h/n_cells_z_dir) + "(element-length in z direction)"));
 
             // find index within the x-values: first do a binary search to find
@@ -1178,7 +1226,7 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
             // by 1e-13 or less)
             if (idx > 0 && std::abs(x_glob[idx-1]-x) < std::abs(x_glob[idx]-x))
               idx--;
-            AssertThrow(std::abs(x_glob[idx]-x)<1e-13,
+            Assert(std::abs(x_glob[idx]-x)<1e-13,
                         ExcMessage("Could not locate " + patch::to_string(x) + " among "
                                    "pre-evaluated points. Closest point is " +
                                    patch::to_string(x_glob[idx]) + " at distance " +
@@ -1199,7 +1247,7 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
     // check quadrature
     for (unsigned int idx = 0; idx<x_glob.size(); idx++)
       if(dim == 3)
-        AssertThrow(std::abs(length_top_loc.at(idx) - 4.5*h) < 1e-13 || std::abs(length_top_loc.at(idx) - 2*4.5*h) < 1e-13,
+        Assert(std::abs(length_top_loc.at(idx) - 4.5*h) < 1e-13 || std::abs(length_top_loc.at(idx) - 2*4.5*h) < 1e-13,
             ExcMessage("check quadrature code. length_loc.at(" + patch::to_string(idx) + ") = " + patch::to_string(length_top_loc.at(idx)) + " 4.5*h = " + patch::to_string(4.5*h)));
 
     for (unsigned int idx = 0; idx<x_glob.size(); idx++)
@@ -1368,7 +1416,7 @@ StatisticsManagerPH<dim>::do_evaluate_xwall(const std::vector<const parallel::di
             for (unsigned int q=0; q<fe_values[i]->n_quadrature_points; ++q)
               {
               // Assert
-              const Point<dim> point_assert = fe_values[i]->quadrature_point(q); // all quadrature points have the same x-value// TODO
+              const Point<dim> point_assert = fe_values[i]->quadrature_point(q); // all quadrature points have the same x-value
               AssertThrow(std::abs(point_assert[0]-x_pos)<1e-13,
                           ExcMessage("Check calculation of xi1-value for quadrature. "
                                      "x_pos = " + patch::to_string(x_pos) + " and point_assert[0] = " + patch::to_string(point_assert[0])));

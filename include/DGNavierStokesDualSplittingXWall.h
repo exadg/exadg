@@ -65,6 +65,8 @@ public:
 
   void xwall_projection(parallel::distributed::Vector<value_type> & velocity);
 
+  void precompute_spaldings_law();
+
   FE_Q<dim> const & get_fe_wdist() const
   {
     return fe_wdist;
@@ -75,6 +77,10 @@ public:
     return  dof_handler_wdist;
   }
 
+  FEParameters<dim> const & get_fe_parameters_n() const
+  {
+    return fe_param_n;
+  }
 
 private:
   virtual void create_dofs();
@@ -104,8 +110,6 @@ private:
                                               parallel::distributed::Vector<value_type>    &dst,
                                               const parallel::distributed::Vector<value_type>  &,
                                               const std::pair<unsigned int,unsigned int>   &face_range) const;
-
-  void precompute_spaldings_law();
 
   void local_precompute_spaldings_law (const MatrixFree<dim,value_type>        &data,
                                        parallel::distributed::Vector<value_type>    &,
@@ -156,7 +160,8 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
         std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> >                                boundary_descriptor_pressure,
         std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> >                                    field_functions)
 {
-  DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::setup(periodic_face_pairs,boundary_descriptor_velocity,boundary_descriptor_pressure,field_functions);
+  DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+        setup(periodic_face_pairs,boundary_descriptor_velocity,boundary_descriptor_pressure,field_functions);
 
   //set fe_param in all operators
   this->mass_matrix_operator.set_fe_param(&this->fe_param);
@@ -166,6 +171,10 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   this->convective_operator.set_fe_param(&this->fe_param);
   this->viscous_operator.set_fe_param(&this->fe_param);
   this->viscous_operator.initialize_viscous_coefficients();
+
+  //set fe_param in all calculators
+  this->vorticity_calculator.set_fe_param(&this->fe_param);
+  this->divergence_calculator.set_fe_param(&this->fe_param);
 
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     std::cout << "\nXWall Initialization:" << std::endl;

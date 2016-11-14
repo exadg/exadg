@@ -261,6 +261,7 @@ public:
   enriched(false),
   quad_type(0)
   {
+    AssertThrow(fe_param != nullptr,ExcMessage("fe_param not set!"));
     // use non-linear quadrature rule for now for all terms... small speed-up possible through better choice of standard quadrature rule
     // (via additional template argument)
     fe_eval.push_back(dynamic_cast<FEEvaluationAccess<dim,n_components_,Number,false>* >(&fe_eval_q0));

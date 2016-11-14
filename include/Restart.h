@@ -37,7 +37,6 @@ void check_file(std::ifstream const & in, const std::string filename)
 
 template<int dim,typename value_type>
 void resume_restart(boost::archive::binary_iarchive & ia, InputParametersNavierStokes<dim> const & param, double & time,
-    std_cxx11::shared_ptr<PostProcessorBase<dim> > & postprocessor,
     std::vector<value_type> & time_steps, unsigned int const order)
 {
 
@@ -50,7 +49,6 @@ void resume_restart(boost::archive::binary_iarchive & ia, InputParametersNavierS
   // the operations done here must be in sync with the output
   std::vector <value_type> tmp_time_steps;
   unsigned int n_ranks;
-  unsigned int output_counter;
   unsigned int tmp_order;
   ia & n_ranks;
   ia & time;
@@ -58,15 +56,8 @@ void resume_restart(boost::archive::binary_iarchive & ia, InputParametersNavierS
   tmp_time_steps.resize(tmp_order);
   for (unsigned int i = 0; i < tmp_order; i++)
     ia & tmp_time_steps[i];
-  ia & output_counter;
 
-  // TODO: cast needed
-//  postprocessor->init_from_restart(output_counter);
-
-  if(param.start_with_low_order == false)
-  {
-    AssertThrow(tmp_order == order, ExcMessage("temporal orders have to be identical if start_with_low_order == false"));
-  }
+  AssertThrow(tmp_order == order, ExcMessage("temporal orders have to be identical"));
 
   for (unsigned int i=0; i<std::min(time_steps.size(),tmp_time_steps.size()); i++)
   {
@@ -97,7 +88,7 @@ void resume_restart(boost::archive::binary_iarchive & ia, InputParametersNavierS
 
 template<int dim, typename value_type>
 void write_restart_preamble(boost::archive::binary_oarchive & oa, InputParametersNavierStokes<dim> const & param, std::vector<value_type> const & time_steps,
-                   double const time, unsigned int const output_counter, unsigned int const order)
+                   double const time, unsigned int const order)
 {
 
   unsigned int n_ranks = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
@@ -107,7 +98,6 @@ void write_restart_preamble(boost::archive::binary_oarchive & oa, InputParameter
   oa & order;
   for (unsigned int i = 0; i< order;i++)
     oa & time_steps[i];
-  oa & output_counter;
 
 
   // move current restart to old one in case something fails while writing

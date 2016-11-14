@@ -17,6 +17,7 @@
 
 #include "InverseMassMatrix.h"
 #include "NavierStokesOperators.h"
+#include "NavierStokesCalculators.h"
 
 #include "../include/BoundaryDescriptorNavierStokes.h"
 #include "../include/FieldFunctionsNavierStokes.h"
@@ -100,7 +101,6 @@ public:
     viscosity(parameter.viscosity),
     dof_index_first_point(0),
     param(parameter),
-    fe_param(param),
     inverse_mass_matrix_operator(nullptr)
   {}
 
@@ -180,11 +180,6 @@ public:
   double get_viscosity() const
   {
     return viscosity;
-  }
-
-  FEParameters<dim> const & get_fe_parameters() const
-  {
-    return fe_param;
   }
 
   value_type get_scaling_factor_time_derivative_term() const
@@ -320,8 +315,6 @@ protected:
 
   InputParametersNavierStokes<dim> const &param;
 
-  FEParameters<dim> fe_param;
-
   MassMatrixOperatorData mass_matrix_operator_data;
   ViscousOperatorData<dim> viscous_operator_data;
   ConvectiveOperatorData<dim> convective_operator_data;
@@ -336,22 +329,13 @@ protected:
   GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> gradient_operator;
   DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> divergence_operator;
 
+  VorticityCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> vorticity_calculator;
+  DivergenceCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> divergence_calculator;
+
 private:
   virtual void create_dofs();
 
   virtual void data_reinit(typename MatrixFree<dim,value_type>::AdditionalData & additional_data);
-
-  // compute vorticity
-  void local_compute_vorticity (const MatrixFree<dim,value_type>                 &data,
-                                parallel::distributed::Vector<value_type>        &dst,
-                                const parallel::distributed::Vector<value_type>  &src,
-                                const std::pair<unsigned int,unsigned int>       &cell_range) const;
-
-  // divergence
-  void local_compute_divergence (const MatrixFree<dim,value_type>                &data,
-                                 parallel::distributed::Vector<value_type>       &dst,
-                                 const parallel::distributed::Vector<value_type> &src,
-                                 const std::pair<unsigned int,unsigned int>      &cell_range) const;
 
 };
 
@@ -458,6 +442,13 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   viscous_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
   viscous_operator_data.viscosity = param.viscosity;
   viscous_operator.initialize(mapping,data,viscous_operator_data);
+
+  // vorticity
+  vorticity_calculator.initialize(data,
+      static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
+  // diveregnce
+  divergence_calculator.initialize(data,
+      static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
 
   dof_index_first_point = 0;
   for(unsigned int d=0;d<dim;++d)
@@ -605,43 +596,9 @@ void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad
 compute_vorticity (parallel::distributed::Vector<value_type>       &dst,
                    const parallel::distributed::Vector<value_type> &src) const
 {
-  dst = 0;
-
-  data.cell_loop (&DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::local_compute_vorticity,this, dst, src);
+  vorticity_calculator.compute_vorticity(dst,src);
 
   inverse_mass_matrix_operator->apply(dst,dst);
-}
-
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-local_compute_vorticity(const MatrixFree<dim,value_type>                 &data,
-                        parallel::distributed::Vector<value_type>        &dst,
-                        const parallel::distributed::Vector<value_type>  &src,
-                        const std::pair<unsigned int,unsigned int>       &cell_range) const
-{
-  FEEval_Velocity_Velocity_linear velocity(data,&fe_param,
-      static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
-
-  for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
-  {
-    velocity.reinit(cell);
-    velocity.read_dof_values(src);
-    velocity.evaluate (false,true,false);
-    for (unsigned int q=0; q<velocity.n_q_points; ++q)
-    {
-      Tensor<1,number_vorticity_components,VectorizedArray<value_type> > omega = velocity.get_curl(q);
-      // omega_vector is a vector with dim components
-      // for dim=3: omega_vector[i] = omega[i], i=1,...,dim
-      // for dim=2: omega_vector[0] = omega,
-      //            omega_vector[1] = 0
-      Tensor<1,dim,VectorizedArray<value_type> > omega_vector;
-      for (unsigned int d=0; d<number_vorticity_components; ++d)
-        omega_vector[d] = omega[d];
-      velocity.submit_value (omega_vector, q);
-    }
-    velocity.integrate (true,false);
-    velocity.distribute_local_to_global(dst);
-  }
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
@@ -649,39 +606,9 @@ void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad
 compute_divergence (parallel::distributed::Vector<value_type>       &dst,
                     const parallel::distributed::Vector<value_type> &src) const
 {
-  dst = 0;
-
-  data.cell_loop(&DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::local_compute_divergence,
-                             this, dst, src);
+  divergence_calculator.compute_divergence(dst,src);
 
   inverse_mass_matrix_operator->apply(dst,dst);
-}
-
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-local_compute_divergence (const MatrixFree<dim,value_type>                 &data,
-                          parallel::distributed::Vector<value_type>        &dst,
-                          const parallel::distributed::Vector<value_type>  &src,
-                          const std::pair<unsigned int,unsigned int>       &cell_range) const
-{
-  FEEval_Velocity_Velocity_linear fe_eval_velocity(data,&fe_param,
-      static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
-
-  for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
-  {
-    fe_eval_velocity.reinit(cell);
-    fe_eval_velocity.read_dof_values(src);
-    fe_eval_velocity.evaluate(false,true);
-
-    for (unsigned int q=0; q<fe_eval_velocity.n_q_points; q++)
-    {
-      Tensor<1,dim,VectorizedArray<value_type> > div_vector;
-        div_vector[0] = fe_eval_velocity.get_divergence(q);
-      fe_eval_velocity.submit_value(div_vector,q);
-    }
-    fe_eval_velocity.integrate(true,false);
-    fe_eval_velocity.distribute_local_to_global(dst);
-  }
 }
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>

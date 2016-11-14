@@ -15,7 +15,7 @@ class StatisticsManagerPH //: public StatisticsManager<dim>
 {
 public:
 
-  StatisticsManagerPH(const DoFHandler<dim> &dof_handler_velocity, const DoFHandler<dim> &dof_handler_pressure, const Mapping<dim> &mapping):
+  StatisticsManagerPH(const DoFHandler<dim> &dof_handler_velocity, const DoFHandler<dim> &dof_handler_pressure, const Mapping<dim> &mapping, const bool dns = false):
   dof_handler (dof_handler_velocity),
   dof_handler_p (dof_handler_pressure),
   communicator (dynamic_cast<const parallel::Triangulation<dim>*>(&dof_handler_velocity.get_triangulation()) ?
@@ -26,11 +26,13 @@ public:
                 y_max(3.036*h),
                 y_min(h),
                 x_max(9.0*h),
-                mapping_(dynamic_cast<MappingQGeneric<dim> const &>(mapping)),
+                mapping_(mapping),
+              //  mapping_(dynamic_cast<MappingQGeneric<dim> const &>(mapping)),
                 numchsamp(0),
                 n_points_y(0),
                 n_points_y_glob(0),
-                n_points_x_glob(0)
+                n_points_x_glob(0),
+                DNS(dns)
   {};
 
   void setup(const Function<dim> &push_forward_function, const std::string output_prefix, const bool enriched);
@@ -48,7 +50,7 @@ public:
 
   void write_output(const std::string output_prefix,
                     const double      viscosity,
-                    const double      massflow);
+                    unsigned int      statistics_number = 0);
 
   void reset();
 
@@ -61,7 +63,7 @@ private:
   const double y_max;// = 3.036*h;
   const double y_min;// = h;
   const double x_max;// = 9.0*h;
-  const MappingQGeneric<dim> &mapping_;
+  const Mapping<dim> &mapping_;
   int numchsamp;
   void do_evaluate(const std::vector<const parallel::distributed::Vector<double> *> &velocity,const parallel::distributed::Vector<double> &pressure);
 
@@ -81,13 +83,16 @@ private:
 
   std::vector<double> x_over_h;
   std::vector<std::vector<double> > y_vec_glob;
+  std::vector<std::vector<double> > y_h_glob;
   std::vector<std::vector<std::vector<double> > > vel_glob;
   std::vector<std::vector<std::vector<double> > > velsq_glob;
   std::vector<std::vector<double> > veluv_glob;
+  std::vector<std::vector<std::vector<double> > > epsii_glob;
 
   // variables for evaluation of velocity at the lower boundary (tau_w(x), ...)
-  static const unsigned int n_points_x = 30;
+  static const unsigned int n_points_x = 10;
   unsigned int n_points_x_glob;
+  const bool DNS;
 
   std::vector<double> x_glob;
   std::vector<double> y1_bottom_glob;  // cell high of the fist cell at the domain bottom over fe-degree+1

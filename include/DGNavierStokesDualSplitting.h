@@ -33,6 +33,7 @@ public:
                               InputParametersNavierStokes<dim> const          &parameter)
     :
     DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>(triangulation,parameter),
+    fe_param(parameter),
     velocity_linear(nullptr)
   {}
 
@@ -109,7 +110,13 @@ public:
   unsigned int solve_viscous (parallel::distributed::Vector<value_type>       &dst,
                               const parallel::distributed::Vector<value_type> &src);
 
+  FEParameters<dim> const & get_fe_parameters() const
+  {
+    return this->fe_param;
+  }
+
 protected:
+  FEParameters<dim> fe_param;
   HelmholtzOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type> helmholtz_operator;
   std_cxx11::shared_ptr<PreconditionerBase<value_type> > helmholtz_preconditioner;
 
