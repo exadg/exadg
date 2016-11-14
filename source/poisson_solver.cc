@@ -622,7 +622,6 @@ void LaplaceOperator<dim,Number>::rhs_add(parallel::distributed::Vector<Number> 
 template <int dim, typename Number>
 void LaplaceOperator<dim,Number>::run_rhs_loop(parallel::distributed::Vector<Number> &dst) const
 {
-  Assert(src.partitioners_are_globally_compatible(*data->get_dof_info(operator_data.laplace_dof_index).vector_partitioner), ExcInternalError());
   Assert(dst.partitioners_are_globally_compatible(*data->get_dof_info(operator_data.laplace_dof_index).vector_partitioner), ExcInternalError());
 
   parallel::distributed::Vector<value_type> src;

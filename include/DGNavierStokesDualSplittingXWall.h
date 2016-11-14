@@ -171,6 +171,8 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   this->convective_operator.set_fe_param(&this->fe_param);
   this->viscous_operator.set_fe_param(&this->fe_param);
   this->viscous_operator.initialize_viscous_coefficients();
+  this->pressure_nbc_convective_term.set_fe_param(&this->fe_param);
+  this->pressure_nbc_viscous_term.set_fe_param(&this->fe_param);
 
   //set fe_param in all calculators
   this->vorticity_calculator.set_fe_param(&this->fe_param);

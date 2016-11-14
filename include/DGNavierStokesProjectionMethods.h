@@ -72,7 +72,7 @@ public:
                                  double const                                    cfl) const;
 
 protected:
-  void setup_pressure_poisson_solver();
+  virtual void setup_pressure_poisson_solver();
   void setup_projection_solver();
 
   // Pressure Poisson equation

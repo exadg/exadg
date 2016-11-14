@@ -22,7 +22,7 @@ unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
 unsigned int const FE_DEGREE_VELOCITY = 4;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
+unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
 unsigned int const FE_DEGREE_XWALL = 1;
@@ -66,7 +66,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   c_eff = 0.125e0;
   time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 2;
+  order_time_integrator = 3;
   start_with_low_order = false; // true; // false;
 
 
@@ -82,11 +82,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   IP_factor_viscous = 1.0;
 
   // gradient term
-  gradp_integrated_by_parts = true;//true;
-  gradp_use_boundary_data = true;//true;
+  gradp_integrated_by_parts = false;//true;
+  gradp_use_boundary_data = false;//true;
 
   // divergence term
-  divu_integrated_by_parts = true;//true;
+  divu_integrated_by_parts = false;//true;
   divu_use_boundary_data = false;//true;
 
   // special case: pure DBC's
