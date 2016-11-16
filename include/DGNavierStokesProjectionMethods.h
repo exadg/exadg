@@ -38,6 +38,8 @@ public:
     projection_operator = nullptr;
   }
 
+  virtual void setup_solvers(const double time_step_size) = 0;
+
   // velocity divergence
   void evaluate_velocity_divergence_term(parallel::distributed::Vector<value_type>        &dst,
                                          const parallel::distributed::Vector<value_type>  &src,
@@ -69,10 +71,11 @@ public:
   unsigned int solve_projection (parallel::distributed::Vector<value_type>       &dst,
                                  const parallel::distributed::Vector<value_type> &src,
                                  const parallel::distributed::Vector<value_type> &velocity_n,
-                                 double const                                    cfl) const;
+                                 double const                                    cfl,
+                                 double const                                    time_step_size) const;
 
 protected:
-  virtual void setup_pressure_poisson_solver();
+  virtual void setup_pressure_poisson_solver(double const time_step_size);
   void setup_projection_solver();
 
   // Pressure Poisson equation
@@ -90,7 +93,7 @@ private:
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-setup_pressure_poisson_solver ()
+setup_pressure_poisson_solver (double const time_step_size)
 {
   // setup Laplace operator
   LaplaceOperatorData<dim> laplace_operator_data;
@@ -106,7 +109,8 @@ setup_pressure_poisson_solver ()
     pcout << "Approach of Ferrer et al. is applied: IP_factor_pressure is scaled by time_step_size/time_step_size_ref!"
           << std::endl;
 
-    laplace_operator_data.penalty_factor = this->param.IP_factor_pressure/this->time_step*this->param.deltat_ref;
+    // only makes sense in case of constant time step sizes
+    laplace_operator_data.penalty_factor = this->param.IP_factor_pressure/time_step_size*this->param.deltat_ref;
   }
 
   laplace_operator_data.bc = this->boundary_descriptor_laplace;
@@ -335,10 +339,11 @@ unsigned int DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_deg
 solve_projection (parallel::distributed::Vector<value_type>       &dst,
                   const parallel::distributed::Vector<value_type> &src,
                   const parallel::distributed::Vector<value_type> &velocity_n,
-                  double const                                    cfl) const
+                  double const                                    cfl,
+                  double const                                    time_step_size) const
 {
   if(this->param.projection_type != ProjectionType::NoPenalty)
-    this->projection_operator->calculate_array_penalty_parameter(velocity_n,cfl,this->time_step);
+    this->projection_operator->calculate_array_penalty_parameter(velocity_n,cfl,time_step_size);
 
   unsigned int n_iter = this->projection_solver->solve(dst,src);
 

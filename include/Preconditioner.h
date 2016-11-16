@@ -554,9 +554,9 @@ private:
 
 #include "MultigridInputParameters.h"
 
-#include "FE_Parameters.h"
+//#include "FE_Parameters.h"
 
-template<int dim, typename value_type, typename Operator, typename OperatorData>
+template<int dim, typename value_type, typename Operator>
 class MyMultigridPreconditionerBase : public PreconditionerBase<value_type>
 {
 public:
@@ -567,7 +567,7 @@ public:
 
   virtual ~MyMultigridPreconditionerBase(){};
 
-  virtual void update(MatrixOperatorBase const * /*matrix_operator*/) {} // do nothing
+  virtual void update(MatrixOperatorBase const * /*matrix_operator*/) = 0;
 
   virtual void resize_level_objects()
   {
@@ -646,11 +646,12 @@ public:
   }
 
   virtual void initialize_mg_transfer(const DoFHandler<dim> &dof_handler,
-                                      const OperatorData    &operator_data_in)
+                                      const std::vector<GridTools::PeriodicFacePair<typename
+                                        Triangulation<dim>::cell_iterator> > &periodic_face_pairs_level0)
   {
     mg_transfer.set_operator(mg_matrices);
     mg_transfer.initialize_constraints(mg_constrained_dofs);
-    mg_transfer.add_periodicity(operator_data_in.periodic_face_pairs_level0);
+    mg_transfer.add_periodicity(periodic_face_pairs_level0);
     mg_transfer.build(dof_handler);
   }
 
@@ -686,12 +687,14 @@ protected:
 };
 
 template<int dim, typename value_type, typename Operator, typename OperatorData>
-class MyMultigridPreconditioner : public MyMultigridPreconditionerBase<dim,value_type,Operator,OperatorData>
+class MyMultigridPreconditioner : public MyMultigridPreconditionerBase<dim,value_type,Operator>
 {
 public:
   MyMultigridPreconditioner(){}
 
   virtual ~MyMultigridPreconditioner(){}
+
+  virtual void update(MatrixOperatorBase const * /*matrix_operator*/){}
 
   void initialize(const MultigridData                             &mg_data_in,
                   const DoFHandler<dim>                           &dof_handler,
@@ -727,7 +730,7 @@ public:
 
     this->initialize_coarse_solver();
 
-    this->initialize_mg_transfer(dof_handler, operator_data_in);
+    this->initialize_mg_transfer(dof_handler, operator_data_in.periodic_face_pairs_level0);
 
     typedef MGTransferMF<dim,Operator> MG_TRANSFER;
     typedef parallel::distributed::Vector<typename Operator::value_type> VECTOR_TYPE;
@@ -751,19 +754,55 @@ public:
  *  the incompressible Navier-Stokes equations
  */
 template<int dim, typename value_type, typename Operator, typename OperatorData, typename UnderlyingOperator>
-class MyMultigridPreconditionerVelocityConvectionDiffusion : public MyMultigridPreconditioner<dim,value_type,Operator,OperatorData>
+class MyMultigridPreconditionerVelocityConvectionDiffusion : public MyMultigridPreconditionerBase<dim,value_type,Operator>
 {
 public:
   MyMultigridPreconditionerVelocityConvectionDiffusion(){}
 
   virtual ~MyMultigridPreconditionerVelocityConvectionDiffusion(){};
 
-  virtual void resize_level_objects()
+  void initialize(const MultigridData                             &mg_data_in,
+                  const DoFHandler<dim>                           &dof_handler,
+                  const Mapping<dim>                              &mapping,
+                  const OperatorData                              &operator_data_in,
+                  std::map<types::boundary_id,
+                    std_cxx11::shared_ptr<Function<dim> > > const &dirichlet_bc)
   {
-    this->mg_matrices.resize(0, this->n_global_levels-1);
-    this->mg_smoother.resize(0, this->n_global_levels-1);
+    this->mg_data = mg_data_in;
 
-    mg_vector_linearization.resize(0, this->n_global_levels-1);
+    const parallel::Triangulation<dim> *tria =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+
+    // needed for continuous elements
+    this->mg_constrained_dofs.clear();
+    std::set<types::boundary_id> dirichlet_boundary;
+    for(typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::const_iterator
+        it = dirichlet_bc.begin(); it != dirichlet_bc.end(); ++it)
+      dirichlet_boundary.insert(it->first);
+    this->mg_constrained_dofs.initialize(dof_handler);
+    this->mg_constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary);
+    // needed for continuous elements
+
+    this->n_global_levels = tria->n_global_levels();
+    this->resize_level_objects();
+
+    for (unsigned int level = 0; level<this->n_global_levels; ++level)
+    {
+      initialize_mg_matrix(level, dof_handler, mapping, operator_data_in);
+
+      this->initialize_smoother(level);
+    }
+
+    this->initialize_coarse_solver();
+
+    this->initialize_mg_transfer(dof_handler, operator_data_in.periodic_face_pairs_level0);
+
+    typedef MGTransferMF<dim,Operator> MG_TRANSFER;
+    typedef parallel::distributed::Vector<typename Operator::value_type> VECTOR_TYPE;
+    typedef PreconditionChebyshev<Operator,VECTOR_TYPE> SMOOTHER;
+
+    this->multigrid_preconditioner.reset(new MultigridPreconditioner<dim, VECTOR_TYPE, Operator, MG_TRANSFER, SMOOTHER>
+                                   (dof_handler, this->mg_matrices, *(this->mg_coarse), this->mg_transfer, this->mg_smoother));
   }
 
   virtual void initialize_mg_matrix(unsigned int            level,
@@ -772,13 +811,7 @@ public:
                                     const OperatorData      &operator_data_in)
   {
     // initialize mg_matrix for given level
-    this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, this->mg_constrained_dofs, level);
-
-    // initialize vector linearization
-    this->mg_matrices[level].initialize_dof_vector(mg_vector_linearization[level]);
-
-    // set vector linearization: mg_matrices[level] hold pointer to mg_vector_linearization[level]
-    this->mg_matrices[level].set_solution_linearization(&mg_vector_linearization[level]);
+    this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, level);
 
     // set evaluation time
     this->mg_matrices[level].set_evaluation_time(0.0);
@@ -792,15 +825,24 @@ public:
   {
     UnderlyingOperator const
       *underlying_operator = dynamic_cast<UnderlyingOperator const *>(matrix_operator);
+
     if(underlying_operator)
     {
-      update_mg_matrix(*(underlying_operator->get_solution_linearization()),
-          underlying_operator->get_evaluation_time());
-      update_smoother();
+      parallel::distributed::Vector<value_type> const & vector_linearization = underlying_operator->get_solution_linearization();
+
+      // convert value_type --> Operator::value_type, i.e., double --> float
+      parallel::distributed::Vector<typename Operator::value_type> vector_multigrid_type;
+      vector_multigrid_type = vector_linearization;
+
+      update_mg_matrices(vector_multigrid_type,
+                         underlying_operator->get_evaluation_time());
+      update_smoothers();
       update_coarse_solver();
     }
     else
+    {
       AssertThrow(false,ExcMessage("Multigrid preconditioner: UnderlyingOperator and MatrixOperator are not compatible!"));
+    }
   }
 
   /*
@@ -809,8 +851,8 @@ public:
    *   - set_vector_linearization
    *   - set_evaluation_time
    */
-  void update_mg_matrix(parallel::distributed::Vector<value_type> const &vector_linearization,
-                        double const                                    &evaluation_time)
+  void update_mg_matrices(parallel::distributed::Vector<typename Operator::value_type> const &vector_linearization,
+                          double const                                                       &evaluation_time)
   {
     set_vector_linearization(vector_linearization);
     set_evaluation_time(evaluation_time);
@@ -820,19 +862,22 @@ public:
    *  This function updates vector_linearization.
    *  In order to update mg_matrices[level] this function has to be called.
    */
-  void set_vector_linearization(parallel::distributed::Vector<value_type> const &vector_linearization)
+  void set_vector_linearization(parallel::distributed::Vector<typename Operator::value_type> const &vector_linearization)
   {
     for (int level = this->n_global_levels-1; level>=0; --level)
     {
       if(level == (int)this->n_global_levels-1) // finest level
       {
-        mg_vector_linearization[level] = vector_linearization;
+        this->mg_matrices[level].set_solution_linearization(vector_linearization);
       }
       else // all coarser levels
       {
         // restrict vector_linearization from fine to coarse level
-        mg_vector_linearization[level] = 0;
-        this->mg_transfer.restrict_and_add(level+1,mg_vector_linearization[level],mg_vector_linearization[level+1]);
+        parallel::distributed::Vector<typename Operator::value_type> & vector_fine_level = this->mg_matrices[level+1].get_solution_linearization();
+        parallel::distributed::Vector<typename Operator::value_type> & vector_coarse_level = this->mg_matrices[level].get_solution_linearization();
+        // set vector_coarse_level to zero since ..._add is called
+        vector_coarse_level = 0.0;
+        this->mg_transfer.restrict_and_add(level+1,vector_coarse_level,vector_fine_level);
       }
     }
   }
@@ -858,7 +903,7 @@ public:
    *  The prerequisite to call this function is that mg_matrices[level] have
    *  been updated.
    */
-  void update_smoother()
+  void update_smoothers()
   {
     for (unsigned int level = 0; level<this->n_global_levels; ++level)
     {
@@ -884,7 +929,7 @@ public:
 
   /*
    *  This function initializes the Chebyshev smoother
-   *  by performing a few GMRES iterations
+   *  by performing a few GMRES iterations.
    */
   virtual void initialize_smoother(unsigned int level)
   {
@@ -925,67 +970,11 @@ private:
 
   typedef parallel::distributed::Vector<typename Operator::value_type> VECTOR_TYPE;
   typedef PreconditionChebyshev<Operator,VECTOR_TYPE> SMOOTHER;
-
-  MGLevelObject<VECTOR_TYPE> mg_vector_linearization;
 };
 
 
 
-template<typename Operator, typename VectorType>
-class GMRESSmoother
-{
-public:
-  GMRESSmoother()
-    :
-    underlying_operator(nullptr),
-    preconditioner(nullptr)
-  {}
-
-  ~GMRESSmoother()
-  {
-    delete preconditioner;
-    preconditioner = nullptr;
-  }
-
-  GMRESSmoother(GMRESSmoother const &) = delete;
-  GMRESSmoother & operator=(GMRESSmoother const &) = delete;
-
-  void initialize(Operator &operator_in)
-  {
-    underlying_operator = &operator_in;
-    preconditioner = new JacobiPreconditioner<typename Operator::value_type,Operator>(*underlying_operator);
-  }
-
-  void update()
-  {
-    preconditioner->update(underlying_operator);
-  }
-
-  void vmult(VectorType       &dst,
-             VectorType const &src) const
-  {
-    unsigned int max_iter = 5;
-    IterationNumberControl control (max_iter,1.e-20,1.e-10);
-
-    typename SolverGMRES<parallel::distributed::Vector<typename Operator::value_type> >::AdditionalData additional_data;
-    additional_data.right_preconditioning = true;
-
-    SolverGMRES<VectorType> solver (control,additional_data);
-
-    dst = 0.0;
-    bool use_preconditioner = true; // TODO
-    if(use_preconditioner == true)
-      solver.solve(*underlying_operator,dst,src,*preconditioner);
-    else
-      solver.solve(*underlying_operator,dst,src,PreconditionIdentity());
-  }
-
-private:
-  Operator *underlying_operator;
-  JacobiPreconditioner<typename Operator::value_type,Operator> *preconditioner;
-
-};
-
+#include "GMRESSmoother.h"
 
 template<int dim, typename value_type, typename Operator, typename OperatorData,typename UnderlyingOperator>
 class MyMultigridPreconditionerGMRESSmoother : public PreconditionerBase<value_type>
@@ -1032,18 +1021,16 @@ public:
 
     this->initialize_coarse_solver();
 
-    this->initialize_mg_transfer(dof_handler, operator_data_in);
+    this->initialize_mg_transfer(dof_handler, operator_data_in.periodic_face_pairs_level0);
 
     this->multigrid_preconditioner.reset(new MultigridPreconditioner<dim, VECTOR_TYPE, Operator, MG_TRANSFER, SMOOTHER>
-                                   (dof_handler, this->mg_matrices, *(this->mg_coarse), this->mg_transfer, this->mg_smoother));
+        (dof_handler, this->mg_matrices, *(this->mg_coarse), this->mg_transfer, this->mg_smoother));
   }
 
   void resize_level_objects()
   {
     this->mg_matrices.resize(0, this->n_global_levels-1);
     this->mg_smoother.resize(0, this->n_global_levels-1);
-
-    mg_vector_linearization.resize(0, this->n_global_levels-1);
   }
 
   void initialize_smoother(unsigned int level)
@@ -1057,13 +1044,7 @@ public:
                             const OperatorData      &operator_data_in)
   {
     // initialize mg_matrix for given level
-    this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, this->mg_constrained_dofs, level);
-
-    // initialize vector linearization
-    this->mg_matrices[level].initialize_dof_vector(mg_vector_linearization[level]);
-
-    // set vector linearization: mg_matrices[level] hold pointer to mg_vector_linearization[level]
-    this->mg_matrices[level].set_solution_linearization(&mg_vector_linearization[level]);
+    this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, level);
 
     // set evaluation time
     this->mg_matrices[level].set_evaluation_time(0.0);
@@ -1079,9 +1060,15 @@ public:
       *underlying_operator = dynamic_cast<UnderlyingOperator const *>(matrix_operator);
     if(underlying_operator)
     {
-      update_mg_matrix(*(underlying_operator->get_solution_linearization()),
-                       underlying_operator->get_evaluation_time());
-      update_smoother();
+      parallel::distributed::Vector<value_type> const & vector_linearization = underlying_operator->get_solution_linearization();
+
+      // convert value_type --> Operator::value_type, i.e., double --> float
+      parallel::distributed::Vector<typename Operator::value_type> vector_multigrid_type;
+      vector_multigrid_type = vector_linearization;
+
+      update_mg_matrices(vector_multigrid_type,
+                         underlying_operator->get_evaluation_time());
+      update_smoothers();
       update_coarse_solver();
     }
     else
@@ -1094,8 +1081,8 @@ public:
    *   - set_vector_linearization
    *   - set_evaluation_time
    */
-  void update_mg_matrix(parallel::distributed::Vector<value_type> const &vector_linearization,
-                        double const                                    &evaluation_time)
+  void update_mg_matrices(parallel::distributed::Vector<typename Operator::value_type> const &vector_linearization,
+                          double const                                    &evaluation_time)
   {
     set_vector_linearization(vector_linearization);
     set_evaluation_time(evaluation_time);
@@ -1105,19 +1092,22 @@ public:
    *  This function updates vector_linearization.
    *  In order to update mg_matrices[level], this function has to be called.
    */
-  void set_vector_linearization(parallel::distributed::Vector<value_type> const &vector_linearization)
+  void set_vector_linearization(parallel::distributed::Vector<typename Operator::value_type> const &vector_linearization)
   {
     for (int level = this->n_global_levels-1; level>=0; --level)
     {
       if(level == (int)this->n_global_levels-1) // finest level
       {
-        mg_vector_linearization[level] = vector_linearization;
+        this->mg_matrices[level].set_solution_linearization(vector_linearization);
       }
       else // all coarser levels
       {
         // restrict vector_linearization from fine to coarse level
-        mg_vector_linearization[level] = 0;
-        this->mg_transfer.restrict_and_add(level+1,mg_vector_linearization[level],mg_vector_linearization[level+1]);
+        parallel::distributed::Vector<typename Operator::value_type> & vector_fine_level = this->mg_matrices[level+1].get_solution_linearization();
+        parallel::distributed::Vector<typename Operator::value_type> & vector_coarse_level = this->mg_matrices[level].get_solution_linearization();
+        // set vector_coarse_level to zero since ..._add is called
+        vector_coarse_level = 0.0;
+        this->mg_transfer.restrict_and_add(level+1,vector_coarse_level,vector_fine_level);
       }
     }
   }
@@ -1193,7 +1183,7 @@ public:
    *  The prerequisite to call this function is that mg_matrices[level] have
    *  been updated.
    */
-  void update_smoother()
+  void update_smoothers()
   {
     for (unsigned int level = 0; level<this->n_global_levels; ++level)
     {
@@ -1201,12 +1191,13 @@ public:
     }
   }
 
-  void initialize_mg_transfer(const DoFHandler<dim> &dof_handler,
-                              const OperatorData    &operator_data_in)
+  virtual void initialize_mg_transfer(const DoFHandler<dim> &dof_handler,
+                                      const std::vector<GridTools::PeriodicFacePair<typename
+                                        Triangulation<dim>::cell_iterator> > &periodic_face_pairs_level0)
   {
     mg_transfer.set_operator(mg_matrices);
     mg_transfer.initialize_constraints(mg_constrained_dofs);
-    mg_transfer.add_periodicity(operator_data_in.periodic_face_pairs_level0);
+    mg_transfer.add_periodicity(periodic_face_pairs_level0);
     mg_transfer.build(dof_handler);
   }
 
@@ -1239,8 +1230,6 @@ protected:
   std_cxx11::shared_ptr<MultigridPreconditioner<dim, VECTOR_TYPE, Operator, MG_TRANSFER, SMOOTHER> > multigrid_preconditioner;
 
   unsigned int n_global_levels;
-
-  MGLevelObject<VECTOR_TYPE> mg_vector_linearization;
 };
 
 
@@ -1252,11 +1241,12 @@ protected:
  *   where M^{-1} is the inverse velocity mass matrix
  */
 template<int dim, typename value_type, typename Operator, typename OperatorData>
-class MyMultigridPreconditionerCompatibleLaplace :
-    public MyMultigridPreconditionerBase<dim,value_type,Operator,OperatorData>
+class MyMultigridPreconditionerCompatibleLaplace : public MyMultigridPreconditionerBase<dim,value_type,Operator>
 {
 public:
   MyMultigridPreconditionerCompatibleLaplace(){}
+
+  void update(MatrixOperatorBase const * /*matrix_operator*/){}
 
   void initialize(const MultigridData      &mg_data_in,
                   const DoFHandler<dim>    &dof_handler,
@@ -1268,6 +1258,16 @@ public:
 
     const parallel::Triangulation<dim> *tria =
       dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+
+    // only needed for continuous elements
+    this->mg_constrained_dofs.clear();
+    std::set<types::boundary_id> dirichlet_boundary;
+//    for(typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::const_iterator
+//        it = dirichlet_bc.begin(); it != dirichlet_bc.end(); ++it)
+//      dirichlet_boundary.insert(it->first);
+    this->mg_constrained_dofs.initialize(dof_handler);
+    this->mg_constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary);
+    // only needed for continuous elements
 
     this->n_global_levels = tria->n_global_levels();
     this->resize_level_objects();
@@ -1286,7 +1286,7 @@ public:
 
     this->initialize_coarse_solver();
 
-    this->initialize_mg_transfer(dof_handler,operator_data_in);
+    this->initialize_mg_transfer(dof_handler, operator_data_in.periodic_face_pairs_level0);
 
     typedef MGTransferMF<dim,Operator> MG_TRANSFER;
     typedef parallel::distributed::Vector<typename Operator::value_type> VECTOR_TYPE;

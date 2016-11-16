@@ -22,7 +22,7 @@ unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
 unsigned int const FE_DEGREE_VELOCITY = 4;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
+unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
 unsigned int const FE_DEGREE_XWALL = 1;
@@ -58,15 +58,15 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified;//ConstTimeStepCFL;
   max_velocity = 1.4 * U_X_MAX;
   cfl = 0.1;
   c_eff = 0.125e0;
-  time_step_size = 1.0e-1;
+  time_step_size = 1.0e-2;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 3;
+  order_time_integrator = 2;
   start_with_low_order = false; // true; // false;
 
 
@@ -82,12 +82,12 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   IP_factor_viscous = 1.0;
 
   // gradient term
-  gradp_integrated_by_parts = false;//true;
-  gradp_use_boundary_data = false;//true;
+  gradp_integrated_by_parts = true;
+  gradp_use_boundary_data = true;
 
   // divergence term
-  divu_integrated_by_parts = false;//true;
-  divu_use_boundary_data = false;//true;
+  divu_integrated_by_parts = true;
+  divu_use_boundary_data = true;
 
   // special case: pure DBC's
   pure_dirichlet_bc = false;
@@ -107,7 +107,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   deltat_ref = 1.e0;
 
   // projection step
-  projection_type = ProjectionType::DivergencePenalty; //NoPenalty; //DivergencePenalty;
+  projection_type = ProjectionType::NoPenalty; //NoPenalty; //DivergencePenalty;
   penalty_factor_divergence = 1.0e0;
   penalty_factor_continuity = 1.0e0;
   solver_projection = SolverProjection::PCG;
@@ -124,7 +124,6 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   newton_solver_data_convective.abs_tol = 1.e-20;
   newton_solver_data_convective.rel_tol = 1.e-6;
   newton_solver_data_convective.max_iter = 100;
-
   // linear solver
   abs_tol_linear_convective = 1.e-20;
   rel_tol_linear_convective = 1.e-3;
@@ -154,18 +153,19 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // linear solver
   solver_momentum = SolverMomentum::GMRES;
-  preconditioner_momentum = PreconditionerMomentum::InverseMassMatrix; //VelocityConvectionDiffusion;
+  preconditioner_momentum = PreconditionerMomentum::VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
   abs_tol_momentum_linear = 1.e-20;
-  rel_tol_momentum_linear = 1.e-3;
+  rel_tol_momentum_linear = 1.e-4;
   max_iter_momentum_linear = 1e4;
   use_right_preconditioning_momentum = true;
   max_n_tmp_vectors_momentum = 100;
+  update_preconditioner_momentum = false;
 
   // formulation
   incremental_formulation = true;
   order_pressure_extrapolation = 1;
-  rotational_formulation = false;
+  rotational_formulation = true;
 
 
   // COUPLED NAVIER-STOKES SOLVER
@@ -178,7 +178,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // linear solver
   solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;
   abs_tol_linear = 1.e-20;
-  rel_tol_linear = 1.e-4;
+  rel_tol_linear = 1.e-3;
   max_iter_linear = 1e4;
   use_right_preconditioning = true;
   max_n_tmp_vectors = 100;
@@ -191,6 +191,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   solver_momentum_preconditioner = SolverMomentumPreconditioner::GeometricMultigridVCycle;
   multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
   rel_tol_solver_momentum_preconditioner = 1.e-6;
+  max_n_tmp_vectors_solver_momentum_preconditioner = 100;
 
   // preconditioner Schur-complement block
   schur_complement_preconditioner = SchurComplementPreconditioner::PressureConvectionDiffusion;
@@ -205,7 +206,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   print_input_parameters = true;
 
   // write output for visualization of results
-  output_data.write_output = true;
+  output_data.write_output = false;
   output_data.output_prefix = "vortex";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/10;
@@ -224,7 +225,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   mass_data.filename_prefix = "test";
 
   // output of solver information
-  output_solver_info_every_timesteps = 1e5;
+  output_solver_info_every_timesteps = 1e3;
 
   // restart
   write_restart = false;

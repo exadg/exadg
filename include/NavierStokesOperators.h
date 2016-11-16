@@ -303,8 +303,6 @@ struct ViscousOperatorData
 
   std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
 
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs_level0;
-
   /*
    * This variable 'viscosity' is only used when initializing the ViscousOperator.
    * In order to change/update this coefficient during the simulation (e.g., varying viscosity/turbulence)
@@ -312,11 +310,6 @@ struct ViscousOperatorData
    * set_constant_viscosity().
    */
   double viscosity;
-
-  void set_dof_index(unsigned int dof_index_in)
-  {
-    this->dof_index = dof_index_in;
-  }
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number=double>
@@ -330,8 +323,7 @@ public:
     data(nullptr),
     const_viscosity(-1.0),
     eval_time(0.0)
-  {
-  }
+  {}
 
   static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
@@ -349,35 +341,6 @@ public:
     compute_array_penalty_parameter(mapping);
 
     const_viscosity = operator_data.viscosity;
-  }
-
-  void reinit (const DoFHandler<dim>            &dof_handler,
-               const Mapping<dim>               &mapping,
-               const ViscousOperatorData<dim>   &operator_data,
-               const MGConstrainedDoFs          &/*mg_constrained_dofs*/,
-               const unsigned int               level = numbers::invalid_unsigned_int)
-  {
-    // set the dof index to zero
-    ViscousOperatorData<dim> my_operator_data = operator_data;
-    my_operator_data.set_dof_index(0);
-
-    // setup own matrix free object
-    const QGauss<1> quad(dof_handler.get_fe().degree+1);
-    typename MatrixFree<dim,Number>::AdditionalData addit_data;
-    addit_data.tasks_parallel_scheme = MatrixFree<dim,Number>::AdditionalData::none;
-    if (dof_handler.get_fe().dofs_per_vertex == 0)
-      addit_data.build_face_info = true;
-    addit_data.level_mg_handler = level;
-    addit_data.mpi_communicator =
-      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()) ?
-      (dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()))->get_communicator() : MPI_COMM_SELF;
-    addit_data.periodic_face_pairs_level_0 = operator_data.periodic_face_pairs_level0;
-
-    ConstraintMatrix constraints;
-    own_matrix_free_storage.reinit(mapping, dof_handler, constraints, quad, addit_data);
-
-    // setup viscous operator
-    initialize(mapping, own_matrix_free_storage, my_operator_data);
   }
 
   void set_constant_viscosity(double const viscosity_in)
@@ -433,69 +396,11 @@ public:
     return viscous_coefficient_cell;
   }
 
-  unsigned int get_dof_index() const
-  {
-    return operator_data.dof_index;
-  }
-
-  void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const
-  {
-    // does nothing in case of the viscous operator for the velocity
-    // this function is only necessary due to the interface of the multigrid preconditioner
-    // and especially the coarse grid solver that calls this function (needed when solving the pressure Poisson equation)
-  }
-
   // apply matrix vector multiplication
   void vmult (parallel::distributed::Vector<Number>       &dst,
               const parallel::distributed::Vector<Number> &src) const
   {
     apply(dst,src);
-  }
-
-  void Tvmult(parallel::distributed::Vector<Number>       &dst,
-              const parallel::distributed::Vector<Number> &src) const
-  {
-    vmult(dst,src);
-  }
-
-  void Tvmult_add(parallel::distributed::Vector<Number>       &dst,
-                  const parallel::distributed::Vector<Number> &src) const
-  {
-    vmult_add(dst,src);
-  }
-
-  void vmult_add(parallel::distributed::Vector<Number>       &dst,
-                 const parallel::distributed::Vector<Number> &src) const
-  {
-    apply_add(dst,src);
-  }
-
-  void vmult_interface_down(parallel::distributed::Vector<Number>       &dst,
-                            const parallel::distributed::Vector<Number> &src) const
-  {
-    vmult(dst,src);
-  }
-
-  void vmult_add_interface_up(parallel::distributed::Vector<Number>       &dst,
-                              const parallel::distributed::Vector<Number> &src) const
-  {
-    vmult_add(dst,src);
-  }
-
-  types::global_dof_index m() const
-  {
-    return data->get_vector_partitioner(operator_data.dof_index)->size();
-  }
-
-  types::global_dof_index n() const
-  {
-    return data->get_vector_partitioner(operator_data.dof_index)->size();
-  }
-
-  Number el (const unsigned int,  const unsigned int) const
-  {
-    AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
-    return Number();
   }
 
   // apply matrix vector multiplication
@@ -602,11 +507,6 @@ public:
     calculate_diagonal(diagonal);
 
     invert_diagonal(diagonal);
-  }
-
-  void initialize_dof_vector(parallel::distributed::Vector<Number> &vector) const
-  {
-    data->initialize_dof_vector(vector,get_dof_index());
   }
 
 private:
@@ -1677,16 +1577,6 @@ private:
   Table<2,VectorizedArray<Number> > viscous_coefficient_face;
   Table<2,VectorizedArray<Number> > viscous_coefficient_face_neighbor;
   Number mutable eval_time;
-
-  /*
-   * The following variables are necessary when applying the multigrid preconditioner to the viscous operator
-   * In that case, the ViscousOperator has to be generated for each level of the multigrid algorithm.
-   * Accordingly, in a first step one has to setup own objects of MatrixFree
-   *  e.g., own_matrix_free_storage.reinit(...);
-   * and later initialize the ViccousOperator with this oject by setting the above pointers to the own_objects_storage,
-   *  e.g., data = &own_matrix_free_storage;
-   */
-  MatrixFree<dim,Number> own_matrix_free_storage;
 };
 
 template<int dim>

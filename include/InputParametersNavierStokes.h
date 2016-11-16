@@ -535,6 +535,7 @@ public:
     max_iter_momentum_linear(std::numeric_limits<unsigned int>::max()),
     use_right_preconditioning_momentum(true),
     max_n_tmp_vectors_momentum(30),
+    update_preconditioner_momentum(false),
 
     // formulations
     incremental_formulation(false),
@@ -1120,6 +1121,8 @@ public:
     if(solver_momentum == SolverMomentum::GMRES)
       print_parameter(pcout,"Max number of vectors before restart",max_n_tmp_vectors_momentum);
 
+    print_parameter(pcout,"Update of preconditioner",update_preconditioner_momentum);
+
     // formulations of pressur-correction scheme
     pcout << std::endl << "  Formulation of pressure-correction scheme:" << std::endl;
     print_parameter(pcout,"Incremental formulation",incremental_formulation);
@@ -1192,6 +1195,7 @@ public:
     std::string str_momentum_precon[] = { "Undefined",
                                           "None",
                                           "InverseMassMatrix",
+                                          "VelocityDiffusion",
                                           "VelocityConvectionDiffusion"};
 
     print_parameter(pcout,
@@ -1213,6 +1217,9 @@ public:
         print_parameter(pcout,
                         "Relative solver tolerance",
                         rel_tol_solver_momentum_preconditioner);
+
+        print_parameter(pcout,"Max number of vectors before restart",
+                        max_n_tmp_vectors_solver_momentum_preconditioner);
       }
 
       print_parameter(pcout,"Smoother polynomial degree",multigrid_data_momentum_preconditioner.smoother_poly_degree);
@@ -1568,6 +1575,10 @@ public:
   // defines the maximum size of the Krylov subspace before restart
   unsigned int max_n_tmp_vectors_momentum;
 
+  // update preconditioner before solving the linear system of equations
+  // only necessary if the parts of the operator change during the simulation
+  bool update_preconditioner_momentum;
+
   // incremental formulation
   bool incremental_formulation;
 
@@ -1635,6 +1646,10 @@ public:
 
   // relative tolerance for solver_schur_complement_preconditioner
   double rel_tol_solver_schur_complement_preconditioner;
+
+  // defines the maximum size of the Krylov subspace before restart
+  // (for solver of momentum equation in block preconditioner)
+  unsigned int max_n_tmp_vectors_solver_momentum_preconditioner;
 
 
   // Update preconditioner: this variable is also relevant for other solver

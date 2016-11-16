@@ -15,9 +15,12 @@ struct HelmholtzOperatorData
 {
   HelmholtzOperatorData ()
     :
+    unsteady_problem(true),
     dof_index(0),
     scaling_factor_time_derivative_term(-1.0)
   {}
+
+  bool unsteady_problem;
 
   unsigned int dof_index;
 
@@ -30,6 +33,7 @@ struct HelmholtzOperatorData
    * use the element variable 'scaling_factor_time_derivative_term' of HelmholtzOperator and the corresponding setter
    * set_scaling_factor_time_derivative_term().
    */
+  // TODO remove this variable from VelocityConvectionDiffusionOperatorData
   double scaling_factor_time_derivative_term;
 
   // current interface of multigrid implementation needs this variable
@@ -77,18 +81,20 @@ public:
     this->viscous_operator = &viscous_operator_in;
 
     // set mass matrix coefficient!
-    AssertThrow(helmholtz_operator_data.scaling_factor_time_derivative_term > 0.0,
-                ExcMessage("Scaling factor of time derivative term of HelmholtzOperatorData has not been initialized!"));
+    if(helmholtz_operator_data.unsteady_problem == true)
+    {
+      AssertThrow(helmholtz_operator_data.scaling_factor_time_derivative_term > 0.0,
+                  ExcMessage("Scaling factor of time derivative term of HelmholtzOperatorData has not been initialized!"));
 
-    this->scaling_factor_time_derivative_term = helmholtz_operator_data.scaling_factor_time_derivative_term;
+      this->scaling_factor_time_derivative_term = helmholtz_operator_data.scaling_factor_time_derivative_term;
+    }
   }
 
   void reinit (const DoFHandler<dim>            &dof_handler,
                const Mapping<dim>               &mapping,
                const HelmholtzOperatorData<dim> &operator_data,
                const MGConstrainedDoFs          &/*mg_constrained_dofs*/,
-               const unsigned int               level = numbers::invalid_unsigned_int,
-               FEParameters<dim> const          & = FEParameters<dim>())
+               const unsigned int               level = numbers::invalid_unsigned_int)
   {
     // set the dof index to zero (for the HelmholtzOperator and also
     // for the basic Operators (MassMatrixOperator and ViscousOperator))
@@ -166,10 +172,22 @@ public:
               const parallel::distributed::Vector<Number> &src) const
   {
     // helmholtz operator = mass_matrix_operator + viscous_operator
-    mass_matrix_operator->apply(dst,src);
-    dst *= scaling_factor_time_derivative_term;
+    if(helmholtz_operator_data.unsteady_problem == true)
+    {
+      AssertThrow(helmholtz_operator_data.scaling_factor_time_derivative_term > 0.0,
+                  ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
+
+      mass_matrix_operator->apply(dst,src);
+      dst *= scaling_factor_time_derivative_term;
+    }
+    else
+    {
+      dst = 0.0;
+    }
+
     std::vector<std::pair<Number,Number> > dbc_values;
     strong_homogeneous_dirichlet_pre(src,dst,dbc_values);
+
     viscous_operator->apply_add(dst,src);
 
     strong_homogeneous_dirichlet_post(src,dst,dbc_values);
@@ -191,9 +209,16 @@ public:
                  const parallel::distributed::Vector<Number> &src) const
   {
     // helmholtz operator = mass_matrix_operator + viscous_operator
-    mass_matrix_operator->apply(temp,src);
-    temp *= scaling_factor_time_derivative_term;
-    dst += temp;
+
+    if(helmholtz_operator_data.unsteady_problem == true)
+    {
+      AssertThrow(helmholtz_operator_data.scaling_factor_time_derivative_term > 0.0,
+                  ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
+
+      mass_matrix_operator->apply(temp,src);
+      temp *= scaling_factor_time_derivative_term;
+      dst += temp;
+    }
 
     std::vector<std::pair<Number,Number> > dbc_values;
     strong_homogeneous_dirichlet_pre(src,dst,dbc_values);
@@ -237,8 +262,18 @@ public:
 
   void calculate_diagonal(parallel::distributed::Vector<Number> &diagonal) const
   {
-    mass_matrix_operator->calculate_diagonal(diagonal);
-    diagonal *= scaling_factor_time_derivative_term;
+    if(helmholtz_operator_data.unsteady_problem == true)
+    {
+      AssertThrow(helmholtz_operator_data.scaling_factor_time_derivative_term > 0.0,
+                  ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
+
+      mass_matrix_operator->calculate_diagonal(diagonal);
+      diagonal *= scaling_factor_time_derivative_term;
+    }
+    else
+    {
+      diagonal = 0.0;
+    }
 
     viscous_operator->add_diagonal(diagonal);
 

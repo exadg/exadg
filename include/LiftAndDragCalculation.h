@@ -120,12 +120,12 @@ public:
          filename_drag = "output/FPC/"
              + lift_and_drag_data.filename_prefix_drag
              + "_refine_" + Utilities::int_to_string(dof_handler_velocity->get_triangulation().n_levels()-1)
-             + "_fe_degree_" + Utilities::int_to_string(fe_degree_u) + Utilities::int_to_string(fe_degree_p)
+             + "_fe_degree_" + Utilities::int_to_string(fe_degree_u) + "-" + Utilities::int_to_string(fe_degree_p)
              + "_drag.txt";
          filename_lift = "output/FPC/"
              + lift_and_drag_data.filename_prefix_lift
              + "_refine_" + Utilities::int_to_string(dof_handler_velocity->get_triangulation().n_levels()-1)
-             + "_fe_degree_" + Utilities::int_to_string(fe_degree_u) + Utilities::int_to_string(fe_degree_p)
+             + "_fe_degree_" + Utilities::int_to_string(fe_degree_u) + "-" + Utilities::int_to_string(fe_degree_p)
              + "_lift.txt";
 
          std::ofstream f_drag, f_lift;
@@ -141,11 +141,13 @@ public:
            f_lift.open(filename_lift.c_str(),std::ios::app);
          }
 
-         f_drag << std::scientific << std::setprecision(6)
+         unsigned int precision = 8;
+
+         f_drag << std::scientific << std::setprecision(precision)
                 << time << "\t" << Force[0] << std::endl;
          f_drag.close();
 
-         f_lift << std::scientific << std::setprecision(6)
+         f_lift << std::scientific << std::setprecision(precision)
                 << time << "\t" << Force[1] << std::endl;
          f_lift.close();
        }

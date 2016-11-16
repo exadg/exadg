@@ -29,14 +29,13 @@ public:
                                    InputParametersNavierStokes<dim> const          &parameter)
     :
     DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>(triangulation,parameter),
-    velocity_linear(nullptr),
     rhs_vector(nullptr)
   {}
 
   virtual ~DGNavierStokesPressureCorrection()
   {}
 
-  void setup_solvers ();
+  void setup_solvers(double const time_step_size);
 
   // momentum step: linear system of equations (Stokes or convective term treated explicitly)
   void solve_linear_momentum_equation (parallel::distributed::Vector<value_type>       &solution,
@@ -87,12 +86,12 @@ private:
 
   std_cxx11::shared_ptr<NewtonSolver<parallel::distributed::Vector<value_type>,
                                      DGNavierStokesPressureCorrection<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
+                                     VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>,
                                      IterativeSolverBase<parallel::distributed::Vector<value_type> > > >
     momentum_newton_solver;
 
   InverseMassMatrixOperator<dim,fe_degree_p,value_type> inverse_mass_matrix_operator_pressure;
 
-  parallel::distributed::Vector<value_type> const *velocity_linear;
   parallel::distributed::Vector<value_type> temp_vector;
   parallel::distributed::Vector<value_type> const *rhs_vector;
 
@@ -102,14 +101,14 @@ private:
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesPressureCorrection<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-setup_solvers ()
+setup_solvers(double const time_step_size)
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Setup solvers ..." << std::endl;
 
   setup_momentum_solver();
 
-  this->setup_pressure_poisson_solver();
+  this->setup_pressure_poisson_solver(time_step_size);
 
   this->setup_projection_solver();
 
@@ -191,10 +190,14 @@ setup_momentum_solver ()
     helmholtz_operator_data.viscous_operator_data = this->viscous_operator_data;
 
     helmholtz_operator_data.dof_index = this->get_dof_index_velocity();
+
+    // always unsteady problem
+    helmholtz_operator_data.unsteady_problem = true;
     // TODO: this Helmholtz operator is initialized with constant scaling_factor_time_derivative term,
     // in case of a varying scaling_factor_time_derivate_term (adaptive time stepping)
     // the helmholtz operator has to be updated before applying this preconditioner
     helmholtz_operator_data.scaling_factor_time_derivative_term = this->scaling_factor_time_derivative_term;
+
     helmholtz_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
 
     typedef float Number;
@@ -276,9 +279,7 @@ setup_momentum_solver ()
     solver_data.solver_tolerance_abs = this->param.abs_tol_momentum_linear;
     solver_data.solver_tolerance_rel = this->param.rel_tol_momentum_linear;
     solver_data.max_iter = this->param.max_iter_momentum_linear;
-    // TODO: update_preconditioner
 
-    // default value of use_preconditioner = false
     if(this->param.preconditioner_momentum == PreconditionerMomentum::Jacobi ||
        this->param.preconditioner_momentum == PreconditionerMomentum::InverseMassMatrix ||
        this->param.preconditioner_momentum == PreconditionerMomentum::VelocityDiffusion ||
@@ -286,6 +287,7 @@ setup_momentum_solver ()
     {
       solver_data.use_preconditioner = true;
     }
+    solver_data.update_preconditioner = this->param.update_preconditioner_momentum;
 
     // setup solver
     momentum_linear_solver.reset(new CGSolver<VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>,
@@ -305,9 +307,7 @@ setup_momentum_solver ()
     solver_data.right_preconditioning = this->param.use_right_preconditioning_momentum;
     solver_data.max_n_tmp_vectors = this->param.max_n_tmp_vectors_momentum;
     solver_data.compute_eigenvalues = false;
-    // TODO: update_preconditioner
 
-    // default value of use_preconditioner = false
     if(this->param.preconditioner_momentum == PreconditionerMomentum::Jacobi ||
        this->param.preconditioner_momentum == PreconditionerMomentum::InverseMassMatrix ||
        this->param.preconditioner_momentum == PreconditionerMomentum::VelocityDiffusion ||
@@ -315,6 +315,7 @@ setup_momentum_solver ()
     {
       solver_data.use_preconditioner = true;
     }
+    solver_data.update_preconditioner = this->param.update_preconditioner_momentum;
 
     // setup solver
     momentum_linear_solver.reset(new GMRESSolver<VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>,
@@ -341,9 +342,11 @@ setup_momentum_solver ()
 
     momentum_newton_solver.reset(new NewtonSolver<parallel::distributed::Vector<value_type>,
                                                   DGNavierStokesPressureCorrection<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
+                                                  VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>,
                                                   IterativeSolverBase<parallel::distributed::Vector<value_type> > >(
         this->param.newton_solver_data_momentum,
         *this,
+        velocity_conv_diff_operator,
         *momentum_linear_solver));
   }
 }
@@ -376,19 +379,11 @@ solve_nonlinear_momentum_equation(parallel::distributed::Vector<value_type>     
   // Set rhs_vector, this variable is used when evaluating the nonlinear residual
   this->rhs_vector = &rhs_vector;
 
-  // Set correct evaluation time for linear operator.
-  // The linear operator also depends on the linearized velocity field but this
-  // is done inside the Newton solver.
+  // Set correct evaluation time for linear operator (=velocity_conv_diff_operator).
   velocity_conv_diff_operator.set_evaluation_time(this->evaluation_time);
-  // update the linear operator so that it uses the correct
-  // linearized velocity field
-  velocity_conv_diff_operator.set_solution_linearization(&dst);
 
   // Solve nonlinear problem
   momentum_newton_solver->solve(dst,newton_iterations,average_linear_iterations);
-
-  // reset solution linearization
-  velocity_conv_diff_operator.set_solution_linearization(nullptr);
 
   // Reset rhs_vector
   this->rhs_vector = nullptr;

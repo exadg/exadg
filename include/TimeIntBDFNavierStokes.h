@@ -46,6 +46,11 @@ public:
 
   virtual void analyze_computing_times() const = 0;
 
+  double get_time_step_size()
+  {
+    return time_steps[0];
+  }
+
 protected:
   std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor;
 
@@ -116,7 +121,7 @@ setup(bool do_restart)
   initialize_solution_and_calculate_timestep(do_restart);
 
   // set the parameters that NavierStokesOperation depends on
-  navier_stokes_operation->set_time_step(time_steps[0]);
+//  navier_stokes_operation->set_time_step(time_steps[0]);
   navier_stokes_operation->set_scaling_factor_time_derivative_term(gamma0/time_steps[0]);
 
   // this is where the setup of deriving classes is performed

@@ -91,45 +91,75 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   pure_dirichlet_bc = true;
 
 
-  // HIGH-ORDER DUAL SPLITTING SCHEME
+  // PROJECTION METHODS
 
   // pressure Poisson equation
   IP_factor_pressure = 1.0;
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
   multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
-  abs_tol_pressure = 1.e-12;
+  abs_tol_pressure = 1.e-20;
   rel_tol_pressure = 1.e-6;
 
-  // stability in the limit of small time steps and projection step
-  small_time_steps_stability = false;
+  // stability in the limit of small time steps
   use_approach_of_ferrer = false;
   deltat_ref = 1.e0;
 
   // projection step
-  projection_type = ProjectionType::NoPenalty; //DivergencePenalty;
+  projection_type = ProjectionType::NoPenalty; //NoPenalty; //DivergencePenalty;
   penalty_factor_divergence = 1.0e0;
   penalty_factor_continuity = 1.0e0;
   solver_projection = SolverProjection::PCG;
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
-  abs_tol_projection = 1.e-12;
-  rel_tol_projection = 1.e-6;
+  abs_tol_projection = 1.e-20;
+  rel_tol_projection = 1.e-12;
+
+  // HIGH-ORDER DUAL SPLITTING SCHEME
+
+  // convective step
+
+  // nonlinear solver
+  newton_solver_data_convective.abs_tol = 1.e-20;
+  newton_solver_data_convective.rel_tol = 1.e-6;
+  newton_solver_data_convective.max_iter = 100;
+  // linear solver
+  abs_tol_linear_convective = 1.e-20;
+  rel_tol_linear_convective = 1.e-3;
+  max_iter_linear_convective = 1e4;
+  use_right_preconditioning_convective = true;
+  max_n_tmp_vectors_convective = 100;
+
+  // stability in the limit of small time steps and projection step
+  small_time_steps_stability = false;
 
   // viscous step
   solver_viscous = SolverViscous::PCG;
   preconditioner_viscous = PreconditionerViscous::GeometricMultigrid;
   multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
-  abs_tol_viscous = 1.e-12;
+  abs_tol_viscous = 1.e-20;
   rel_tol_viscous = 1.e-6;
+
 
   // PRESSURE-CORRECTION SCHEME
 
   // momentum step
+
+  // Newton solver
+  newton_solver_data_momentum.abs_tol = 1.e-20;
+  newton_solver_data_momentum.rel_tol = 1.e-6;
+  newton_solver_data_momentum.max_iter = 100;
+
+  // linear solver
   solver_momentum = SolverMomentum::GMRES;
-  preconditioner_momentum = PreconditionerMomentum::InverseMassMatrix; //VelocityConvectionDiffusion;
+  preconditioner_momentum = PreconditionerMomentum::InverseMassMatrix;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
   abs_tol_momentum_linear = 1.e-20;
   rel_tol_momentum_linear = 1.e-6;
+  max_iter_momentum_linear = 1e4;
+  use_right_preconditioning_momentum = true;
+  max_n_tmp_vectors_momentum = 100;
+  update_preconditioner_momentum = false;
 
+  // formulation
   incremental_formulation = true;
   order_pressure_extrapolation = 1;
   rotational_formulation = true;
@@ -155,6 +185,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   momentum_preconditioner = MomentumPreconditioner::VelocityConvectionDiffusion;
   solver_momentum_preconditioner = SolverMomentumPreconditioner::GeometricMultigridVCycle;
   rel_tol_solver_momentum_preconditioner = 1.e-6;
+  max_n_tmp_vectors_solver_momentum_preconditioner = 100;
 
   // preconditioner Schur-complement block
   schur_complement_preconditioner = SchurComplementPreconditioner::CahouetChabard;

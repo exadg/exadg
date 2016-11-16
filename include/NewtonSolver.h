@@ -10,16 +10,18 @@
 
 #include "NewtonSolverData.h"
 
-template<typename Vector, typename NonlinearOperator, typename SolverLinearizedProblem>
+template<typename Vector, typename NonlinearOperator, typename LinearOperator, typename SolverLinearizedProblem>
 class NewtonSolver
 {
 public:
   NewtonSolver(NewtonSolverData const  &solver_data_in,
                NonlinearOperator       &nonlinear_operator_in,
+               LinearOperator          &linear_operator_in,
                SolverLinearizedProblem &linear_solver_in)
     :
     solver_data(solver_data_in),
     nonlinear_operator(nonlinear_operator_in),
+    linear_operator(linear_operator_in),
     linear_solver(linear_solver_in)
   {
     nonlinear_operator.initialize_vector_for_newton_solver(residual);
@@ -48,6 +50,7 @@ public:
       residual *= -1.0;
 
       // solve linear problem
+      linear_operator.set_solution_linearization(dst);
       unsigned int linear_iterations = linear_solver.solve(increment, residual);
       average_linear_iterations += linear_iterations;
 
@@ -81,6 +84,7 @@ public:
 private:
   NewtonSolverData solver_data;
   NonlinearOperator &nonlinear_operator;
+  LinearOperator &linear_operator;
   SolverLinearizedProblem &linear_solver;
   Vector residual, increment;
 };

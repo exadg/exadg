@@ -163,10 +163,11 @@ NavierStokesProblem(unsigned int const refine_steps_space,
                param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection,
                ExcMessage("UnsteadyNavierStokesPressureCorrection is an unsteady solver. Hence, problem type has to be unsteady and temporal discretization has to be BDFPressureCorrection to solve this problem."));
 
+std::cout<<__LINE__<<std::endl;
   // initialize navier_stokes_operation
   navier_stokes_operation.reset(new DGNavierStokesPressureCorrection<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>
       (triangulation,param));
-
+std::cout<<__LINE__<<std::endl;
   // initialize postprocessor
   // this function has to be defined in the header file
   // that implements all problem specific things like
@@ -229,7 +230,7 @@ solve_problem(bool do_restart)
   // depends on quantities such as the time_step_size or gamma0!!!)
   time_integrator->setup(do_restart);
 
-  navier_stokes_operation->setup_solvers();
+  navier_stokes_operation->setup_solvers(time_integrator->get_time_step_size());
 
   setup_postprocessor();
 

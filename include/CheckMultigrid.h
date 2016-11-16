@@ -13,7 +13,7 @@ template<int dim, typename value_type, typename Operator, typename Preconditione
 class CheckMultigrid
 {
 public:
-  CheckMultigrid(std_cxx11::shared_ptr<Operator>       underlying_operator_in,
+  CheckMultigrid(Operator const                        &underlying_operator_in,
                  std_cxx11::shared_ptr<Preconditioner> preconditioner_in)
     :
     underlying_operator(underlying_operator_in),
@@ -43,13 +43,13 @@ public:
      *  Whole MG Cycle
      */
     parallel::distributed::Vector<value_type> initial_solution;
-    underlying_operator->initialize_dof_vector(initial_solution);
+    underlying_operator.initialize_dof_vector(initial_solution);
     parallel::distributed::Vector<value_type> solution_after_mg_cylce(initial_solution), tmp(initial_solution);
 
     for (unsigned int i=0; i<initial_solution.size(); ++i)
       initial_solution(i) = (double)rand()/RAND_MAX;
 
-    underlying_operator->vmult(tmp, initial_solution);
+    underlying_operator.vmult(tmp, initial_solution);
     tmp *= -1.0;
     preconditioner->vmult(solution_after_mg_cylce, tmp);
     solution_after_mg_cylce += initial_solution;
@@ -71,25 +71,25 @@ public:
      *  Output
      */
     DataOut<dim> data_out;
-    unsigned int dof_index = underlying_operator->get_dof_index();
-    data_out.attach_dof_handler (underlying_operator->get_data().get_dof_handler(dof_index));
+    unsigned int dof_index = underlying_operator.get_dof_index();
+    data_out.attach_dof_handler (underlying_operator.get_data().get_dof_handler(dof_index));
 
     std::vector<std::string> initial (dim, "initial");
     std::vector<DataComponentInterpretation::DataComponentInterpretation>
       initial_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
-    data_out.add_data_vector (underlying_operator->get_data().get_dof_handler(dof_index),initial_solution, initial, initial_component_interpretation);
+    data_out.add_data_vector (underlying_operator.get_data().get_dof_handler(dof_index),initial_solution, initial, initial_component_interpretation);
 
     std::vector<std::string> mg_cycle (dim, "mg_cycle");
     std::vector<DataComponentInterpretation::DataComponentInterpretation>
       mg_cylce_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
-    data_out.add_data_vector (underlying_operator->get_data().get_dof_handler(dof_index),solution_after_mg_cylce, mg_cycle, mg_cylce_component_interpretation);
+    data_out.add_data_vector (underlying_operator.get_data().get_dof_handler(dof_index),solution_after_mg_cylce, mg_cycle, mg_cylce_component_interpretation);
 
     std::vector<std::string> smoother (dim, "smoother");
     std::vector<DataComponentInterpretation::DataComponentInterpretation>
       smoother_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
-    data_out.add_data_vector (underlying_operator->get_data().get_dof_handler(dof_index),solution_after_smoothing, smoother, smoother_component_interpretation);
+    data_out.add_data_vector (underlying_operator.get_data().get_dof_handler(dof_index),solution_after_smoothing, smoother, smoother_component_interpretation);
 
-    data_out.build_patches (underlying_operator->get_data().get_dof_handler(dof_index).get_fe().degree*3);
+    data_out.build_patches (underlying_operator.get_data().get_dof_handler(dof_index).get_fe().degree*3);
     std::ostringstream filename;
     filename << "smoothing.vtk";
 
@@ -103,7 +103,7 @@ public:
   }
 
 private:
-  std_cxx11::shared_ptr<Operator> underlying_operator;
+  Operator const &underlying_operator;
   std_cxx11::shared_ptr<Preconditioner> preconditioner;
 };
 

@@ -139,6 +139,7 @@ struct VelocityConvDiffOperatorData
    * use the element variable 'scaling_factor_time_derivative_term' of VelocityConvDiffOperator and the corresponding setter
    * set_scaling_factor_time_derivative_term().
    */
+  // TODO remove this variable from VelocityConvectionDiffusionOperatorData
   double scaling_factor_time_derivative_term;
 
   MassMatrixOperatorData mass_matrix_operator_data;
@@ -164,7 +165,6 @@ public:
     viscous_operator(nullptr),
     convective_operator(nullptr),
     scaling_factor_time_derivative_term(-1.0),
-    velocity_linearization(nullptr),
     evaluation_time(0.0)
   {}
 
@@ -181,17 +181,23 @@ public:
     this->viscous_operator = &viscous_operator_in;
     this->convective_operator = &convective_operator_in;
 
-    // set mass matrix coefficient!
-    AssertThrow(operator_data.scaling_factor_time_derivative_term > 0.0,
-                ExcMessage("Scaling factor of time derivative term of VelocityConvDiffOperatorData has not been initialized!"));
+    if(operator_data.unsteady_problem == true)
+    {
+      AssertThrow(operator_data.scaling_factor_time_derivative_term > 0.0,
+        ExcMessage("Scaling factor of time derivative term of VelocityConvDiffOperatorData has not been initialized!"));
 
-    this->scaling_factor_time_derivative_term = operator_data.scaling_factor_time_derivative_term;
+      this->scaling_factor_time_derivative_term = operator_data.scaling_factor_time_derivative_term;
+    }
+
+    if(operator_data.convective_problem == true)
+    {
+      this->initialize_dof_vector(velocity_linearization);
+    }
   }
 
   void reinit (const DoFHandler<dim>                   &dof_handler,
                const Mapping<dim>                      &mapping,
                const VelocityConvDiffOperatorData<dim> &operator_data,
-               const MGConstrainedDoFs                 &/*mg_constrained_dofs*/,
                const unsigned int                      level = numbers::invalid_unsigned_int)
   {
     // set the dof index to zero (for the VelocityConvDiffOperator and also
@@ -200,10 +206,6 @@ public:
     my_operator_data.set_dof_index(0);
 
     // setup own matrix free object
-
-    // TODO: quadrature formula for convective term, currently the same quadrature (fe_degree+1 quadrature points)
-    // as for the mass matrix and viscous operator is used for the convective operator
-//    const QGauss<1> quad(dof_handler.get_fe().degree+1);
 
     std::vector<const DoFHandler<dim> * >  dof_handler_vec;
     dof_handler_vec.resize(1);
@@ -235,7 +237,9 @@ public:
     addit_data.periodic_face_pairs_level_0 = operator_data.periodic_face_pairs_level0;
 
 //    ConstraintMatrix constraints;
+//    const QGauss<1> quad(dof_handler.get_fe().degree+1);
 //    own_matrix_free_storage.reinit(mapping, dof_handler, constraints, quad, addit_data);
+
     own_matrix_free_storage.reinit(mapping, dof_handler_vec, constraint_matrix_vec, quadrature_vec, addit_data);
 
     // setup own mass matrix operator
@@ -257,10 +261,10 @@ public:
                own_viscous_operator_storage,
                own_convective_operator_storage);
 
-    // initialize temp vector: this is done in this function because
-    // the vector temp is only used in the function vmult_add(), i.e.,
+    // initialize temp_vector: this is done in this function because
+    // temp_vector is only used in the function vmult_add(), i.e.,
     // when using the multigrid preconditioner
-    initialize_dof_vector(temp);
+    initialize_dof_vector(temp_vector);
   }
 
   void set_scaling_factor_time_derivative_term(double const &factor)
@@ -268,7 +272,7 @@ public:
     scaling_factor_time_derivative_term = factor;
   }
 
-  void set_solution_linearization(parallel::distributed::Vector<Number> const *solution_linearization)
+  void set_solution_linearization(parallel::distributed::Vector<Number> const &solution_linearization)
   {
     velocity_linearization = solution_linearization;
   }
@@ -283,16 +287,9 @@ public:
     return evaluation_time;
   }
 
-  parallel::distributed::Vector<value_type> const * get_solution_linearization() const
+  parallel::distributed::Vector<value_type> & get_solution_linearization() const
   {
-    if(velocity_linearization != nullptr)
-    {
-      return velocity_linearization;
-    }
-    else
-    {
-      return nullptr;
-    }
+    return velocity_linearization;
   }
 
   void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const
@@ -306,11 +303,11 @@ public:
   void vmult (parallel::distributed::Vector<Number>       &dst,
               const parallel::distributed::Vector<Number> &src) const
   {
-    AssertThrow(scaling_factor_time_derivative_term > 0.0,
-      ExcMessage("Scaling factor of time derivative term has not been set for velocity convection-diffusion operator!"));
-
     if(operator_data.unsteady_problem == true)
     {
+      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+        ExcMessage("Scaling factor of time derivative term has not been set for velocity convection-diffusion operator!"));
+
       mass_matrix_operator->apply(dst,src);
       dst *= scaling_factor_time_derivative_term;
     }
@@ -323,28 +320,28 @@ public:
 
     if(operator_data.convective_problem == true)
     {
-      convective_operator->apply_linearized_add(dst,src,velocity_linearization,evaluation_time);
+      convective_operator->apply_linearized_add(dst,src,&velocity_linearization,evaluation_time);
     }
   }
 
   void vmult_add(parallel::distributed::Vector<Number>       &dst,
                  const parallel::distributed::Vector<Number> &src) const
   {
-    AssertThrow(scaling_factor_time_derivative_term > 0.0,
-      ExcMessage("Scaling factor of time derivative term has not been set for velocity convection-diffusion operator!"));
-
     if(operator_data.unsteady_problem == true)
     {
-      mass_matrix_operator->apply(temp,src);
-      temp *= scaling_factor_time_derivative_term;
-      dst += temp;
+      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+        ExcMessage("Scaling factor of time derivative term has not been set for velocity convection-diffusion operator!"));
+
+      mass_matrix_operator->apply(temp_vector,src);
+      temp_vector *= scaling_factor_time_derivative_term;
+      dst += temp_vector;
     }
 
     viscous_operator->apply_add(dst,src);
 
     if(operator_data.convective_problem == true)
     {
-      convective_operator->apply_linearized_add(dst,src,velocity_linearization,evaluation_time);
+      convective_operator->apply_linearized_add(dst,src,&velocity_linearization,evaluation_time);
     }
   }
 
@@ -386,6 +383,9 @@ public:
 
     if(operator_data.unsteady_problem == true)
     {
+      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+        ExcMessage("Scaling factor of time derivative term has not been set for velocity convection-diffusion operator!"));
+
       mass_matrix_operator->calculate_diagonal(diagonal);
       diagonal *= scaling_factor_time_derivative_term;
     }
@@ -398,7 +398,7 @@ public:
 
     if(operator_data.convective_problem == true)
     {
-      convective_operator->add_diagonal(diagonal,velocity_linearization,evaluation_time);
+      convective_operator->add_diagonal(diagonal,&velocity_linearization,evaluation_time);
     }
   }
 
@@ -437,7 +437,7 @@ public:
   {
     calculate_diagonal(diagonal);
 
-//    verify_calculation_of_diagonal(diagonal);
+    //verify_calculation_of_diagonal(diagonal);
 
     invert_diagonal(diagonal);
   }
@@ -454,9 +454,9 @@ private:
   ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const * viscous_operator;
   ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const * convective_operator;
   VelocityConvDiffOperatorData<dim> operator_data;
-  parallel::distributed::Vector<Number> mutable temp;
+  parallel::distributed::Vector<Number> mutable temp_vector;
   double scaling_factor_time_derivative_term;
-  parallel::distributed::Vector<Number> const * velocity_linearization;
+  parallel::distributed::Vector<Number> mutable velocity_linearization;
   double evaluation_time;
 
   /*

@@ -11,9 +11,6 @@
 #include "../include/BoundaryDescriptorConvDiff.h"
 #include "InputParametersConvDiff.h"
 
-// forward declaration
-template<int dim> class FEParameters;
-
 namespace ScalarConvDiffOperators
 {
 
@@ -1711,11 +1708,8 @@ public:
                const Mapping<dim>               &mapping,
                const HelmholtzOperatorData<dim> &operator_data,
                const MGConstrainedDoFs          &/*mg_constrained_dofs*/,
-               const unsigned int               level = numbers::invalid_unsigned_int,
-               FEParameters<dim> const          &fe_param = FEParameters<dim>())
+               const unsigned int               level = numbers::invalid_unsigned_int)
   {
-    (void)fe_param; // avoid compiler warning
-
     // setup own matrix free object
     const QGauss<1> quad(dof_handler.get_fe().degree+1);
     typename MatrixFree<dim,Number>::AdditionalData addit_data;

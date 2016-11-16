@@ -99,7 +99,7 @@ public:
         std::string filename = "output/FPC/"
             + pressure_difference_data.filename_prefix_pressure_difference
             + "_refine_" + Utilities::int_to_string(dof_handler_pressure->get_triangulation().n_levels()-1)
-            + "_fe_degree_" + Utilities::int_to_string(fe_degree_u) + Utilities::int_to_string(fe_degree_p)
+            + "_fe_degree_" + Utilities::int_to_string(fe_degree_u) + "-" + Utilities::int_to_string(fe_degree_p)
             + "_pressure_difference.txt";
 
         std::ofstream f;
@@ -112,7 +112,9 @@ public:
         {
           f.open(filename.c_str(),std::ios::app);
         }
-        f << std::scientific << std::setprecision(6) << time << "\t" << pressure_difference << std::endl;
+
+        unsigned int precision = 8;
+        f << std::scientific << std::setprecision(precision) << time << "\t" << pressure_difference << std::endl;
         f.close();
       }
     }

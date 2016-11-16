@@ -256,7 +256,7 @@ solve_timestep()
 
   // set the parameters that NavierStokesOperation depends on
   navier_stokes_operation->set_evaluation_time(this->time+this->time_steps[0]);
-  navier_stokes_operation->set_time_step(this->time_steps[0]);
+//  navier_stokes_operation->set_time_step(this->time_steps[0]);
   navier_stokes_operation->set_scaling_factor_time_derivative_term(this->gamma0/this->time_steps[0]);
 
   // write output

@@ -96,7 +96,7 @@ public:
     dof_handler_u(triangulation),
     dof_handler_p(triangulation),
     evaluation_time(0.0),
-    time_step(1.0),
+//    time_step(1.0),
     scaling_factor_time_derivative_term(1.0),
     viscosity(parameter.viscosity),
     dof_index_first_point(0),
@@ -110,8 +110,6 @@ public:
     data.clear();
   }
 
-//  void fill_dbc_and_nbc_sets(std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor);
-
   void initialize_boundary_descriptor_laplace();
 
   virtual void setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
@@ -119,8 +117,6 @@ public:
                       std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
                       std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
                       std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> >     field_functions);
-
-  virtual void setup_solvers () = 0;
 
   virtual void prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
                                             parallel::distributed::Vector<value_type> &pressure,
@@ -228,15 +224,15 @@ public:
     scaling_factor_time_derivative_term = value;
   }
 
-  void set_evaluation_time(double const eval_time)
+  virtual void set_evaluation_time(double const eval_time)
   {
     evaluation_time = eval_time;
   }
 
-  void set_time_step(double const time_step_in)
-  {
-    time_step = time_step_in;
-  }
+//  void set_time_step(double const time_step_in)
+//  {
+//    time_step = time_step_in;
+//  }
 
   // initialization of vectors
   void initialize_vector_velocity(parallel::distributed::Vector<value_type> &src) const
@@ -286,11 +282,11 @@ protected:
 
   MappingQGeneric<dim> mapping;
 
-  DoFHandler<dim>  dof_handler_u;
-  DoFHandler<dim>  dof_handler_p;
+  DoFHandler<dim> dof_handler_u;
+  DoFHandler<dim> dof_handler_p;
 
   double evaluation_time;
-  double time_step;
+//  double time_step;
   double scaling_factor_time_derivative_term;
 
   const double viscosity;
@@ -439,7 +435,6 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   viscous_operator_data.IP_factor_viscous = param.IP_factor_viscous;
   viscous_operator_data.bc = boundary_descriptor_velocity;
   viscous_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
-  viscous_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
   viscous_operator_data.viscosity = param.viscosity;
   viscous_operator.initialize(mapping,data,viscous_operator_data);
 

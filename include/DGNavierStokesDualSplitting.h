@@ -28,13 +28,13 @@ public:
     :
     DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>(triangulation,parameter),
     fe_param(parameter),
-    velocity_linear(nullptr)
+    sum_alphai_ui(nullptr)
   {}
 
   virtual ~DGNavierStokesDualSplitting()
   {}
 
-  void setup_solvers ();
+  void setup_solvers(double const time_step_size);
 
   /*
    *  implicit solution of convective step
@@ -64,9 +64,9 @@ public:
    * The implementation of the Newton solver requires that the underlying operator
    * implements a function called "set_solution_linearization"
    */
-  void set_solution_linearization(parallel::distributed::Vector<value_type> const *solution_linearization)
+  void set_solution_linearization(parallel::distributed::Vector<value_type> const &solution_linearization)
   {
-    velocity_linear = solution_linearization;
+    velocity_linearization = solution_linearization;
   }
 
   /*
@@ -115,15 +115,16 @@ protected:
 private:
   std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > helmholtz_solver;
 
-  parallel::distributed::Vector<value_type> const *velocity_linear;
+  parallel::distributed::Vector<value_type> velocity_linearization;
   parallel::distributed::Vector<value_type> temp;
-  parallel::distributed::Vector<value_type> sum_alphai_ui;
+  parallel::distributed::Vector<value_type> const * sum_alphai_ui;
 
   // implicit solution of convective step
   std_cxx11::shared_ptr<InverseMassMatrixPreconditioner<dim,fe_degree,value_type> >
       preconditioner_convective_problem;
   std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > linear_solver;
   std_cxx11::shared_ptr<NewtonSolver<parallel::distributed::Vector<value_type>,
+                                     DGNavierStokesDualSplitting<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
                                      DGNavierStokesDualSplitting<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
                                      IterativeSolverBase<parallel::distributed::Vector<value_type> > > >
       newton_solver;
@@ -136,7 +137,7 @@ private:
 
   // setup of solvers
   void setup_convective_solver();
-  virtual void setup_pressure_poisson_solver();
+  virtual void setup_pressure_poisson_solver(double const time_step_size);
   void setup_helmholtz_solver();
   virtual void setup_helmholtz_preconditioner(HelmholtzOperatorData<dim> &helmholtz_operator_data);
 
@@ -160,7 +161,7 @@ private:
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-setup_solvers ()
+setup_solvers (double const time_step_size)
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Setup solvers ..." << std::endl;
@@ -172,7 +173,7 @@ setup_solvers ()
     setup_convective_solver();
   }
 
-  this->setup_pressure_poisson_solver();
+  this->setup_pressure_poisson_solver(time_step_size);
 
   this->setup_projection_solver();
 
@@ -183,9 +184,9 @@ setup_solvers ()
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-setup_pressure_poisson_solver ()
+setup_pressure_poisson_solver (const double time_step_size)
 {
-  DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::setup_pressure_poisson_solver();
+  DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::setup_pressure_poisson_solver(time_step_size);
 
   PressureNeumannBCConvectiveTermData<dim> pressure_nbc_convective_data;
   pressure_nbc_convective_data.dof_index_velocity = static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector>::type >
@@ -211,7 +212,7 @@ void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, x
 setup_convective_solver ()
 {
   this->initialize_vector_velocity(temp);
-  this->initialize_vector_velocity(sum_alphai_ui);
+  this->initialize_vector_velocity(velocity_linearization);
 
   // preconditioner implicit convective step
   preconditioner_convective_problem.reset(new InverseMassMatrixPreconditioner<dim,fe_degree,value_type>
@@ -239,8 +240,9 @@ setup_convective_solver ()
 
   newton_solver.reset(new NewtonSolver<parallel::distributed::Vector<value_type>,
                                        DGNavierStokesDualSplitting<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
+                                       DGNavierStokesDualSplitting<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
                                        IterativeSolverBase<parallel::distributed::Vector<value_type> > >
-     (this->param.newton_solver_data_convective,*this,*linear_solver));
+     (this->param.newton_solver_data_convective,*this,*this,*linear_solver));
 }
 
 
@@ -256,6 +258,8 @@ setup_helmholtz_solver ()
 
   helmholtz_operator_data.dof_index = static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector>::type >
                                         (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector::velocity);
+  // always unsteady problem
+  helmholtz_operator_data.unsteady_problem = true;
   helmholtz_operator_data.scaling_factor_time_derivative_term = this->scaling_factor_time_derivative_term;
   helmholtz_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
 
@@ -386,7 +390,7 @@ apply_linearized_convective_problem (parallel::distributed::Vector<value_type>  
 
   this->convective_operator.apply_linearized_add(dst,
                                                  src,
-                                                 velocity_linear,
+                                                 &velocity_linearization,
                                                  this->evaluation_time);
 }
 
@@ -397,17 +401,14 @@ solve_nonlinear_convective_problem (parallel::distributed::Vector<value_type>   
                                     unsigned int                                    &newton_iterations,
                                     double                                          &average_linear_iterations)
 {
-  this->sum_alphai_ui = sum_alphai_ui;
-
-  // update the linear operator so that it uses the correct
-  // linearized velocity field
-  set_solution_linearization(&dst);
+  // Set sum_alphai_ui, this variable is used when evaluating the nonlinear residual
+  this->sum_alphai_ui = &sum_alphai_ui;
 
   // solve nonlinear problem
   newton_solver->solve(dst,newton_iterations,average_linear_iterations);
 
-  // reset solution linearization
-  set_solution_linearization(nullptr);
+  // Reset sum_alphai_ui
+  this->sum_alphai_ui = nullptr;
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
@@ -430,7 +431,7 @@ evaluate_nonlinear_residual(parallel::distributed::Vector<value_type>       &dst
 
   // temp, src, sum_alphai_ui have the same number of blocks
   temp.equ(this->scaling_factor_time_derivative_term,src);
-  temp.add(-1.0,sum_alphai_ui);
+  temp.add(-1.0,*sum_alphai_ui);
 
   this->mass_matrix_operator.apply_add(dst,temp);
 
