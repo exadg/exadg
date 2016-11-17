@@ -54,14 +54,12 @@ ADD_LIBRARY(indexa SHARED  ${TARGET_SRC})
 # Define custom targets to easily switch the build type:
 ADD_CUSTOM_TARGET(debug
   COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Debug ${CMAKE_SOURCE_DIR}
-  COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target all
-  COMMENT "Switch CMAKE_BUILD_TYPE to Debug"
+  COMMENT "Switch CMAKE_BUILD_TYPE to Debug\nPlease call 'make' to build the debug project"
   )
 
 ADD_CUSTOM_TARGET(release
   COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Release ${CMAKE_SOURCE_DIR}
-  COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target all
-  COMMENT "Switch CMAKE_BUILD_TYPE to Release"
+  COMMENT "Switch CMAKE_BUILD_TYPE to Release\nPlease call 'make' to build the release project"
   )
 
 DEAL_II_INITIALIZE_CACHED_VARIABLES()
