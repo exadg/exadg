@@ -133,9 +133,84 @@ public:
     initialize_dof_vector(temp);
   }
 
-  void set_scaling_factor_time_derivative_term(Number const coefficient_in)
+  template<typename UnderlyingOperator>
+  void initialize_mg_matrix (unsigned int const       level,
+                             DoFHandler<dim> const    &dof_handler,
+                             Mapping<dim> const       &mapping,
+                             UnderlyingOperator const &underlying_operator,
+                             const std::vector<GridTools::PeriodicFacePair<typename
+                               Triangulation<dim>::cell_iterator> > &periodic_face_pairs_level0)
   {
-    scaling_factor_time_derivative_term = coefficient_in;
+    // setup own matrix free object
+
+    const QGauss<1> quad(dof_handler.get_fe().degree+1);
+    typename MatrixFree<dim,Number>::AdditionalData addit_data;
+    addit_data.tasks_parallel_scheme = MatrixFree<dim,Number>::AdditionalData::none;
+    if (dof_handler.get_fe().dofs_per_vertex == 0)
+      addit_data.build_face_info = true;
+    addit_data.level_mg_handler = level;
+    addit_data.mpi_communicator =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()) ?
+      (dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()))->get_communicator() : MPI_COMM_SELF;
+    addit_data.periodic_face_pairs_level_0 = periodic_face_pairs_level0;
+
+    ConstraintMatrix constraints;
+
+    // reinit
+    own_matrix_free_storage.reinit(mapping, dof_handler, constraints, quad, addit_data);
+
+    // setup own mass matrix operator
+    MassMatrixOperatorData mass_matrix_operator_data = underlying_operator.get_mass_matrix_operator_data();
+    mass_matrix_operator_data.dof_index = 0;
+    own_mass_matrix_operator_storage.initialize(own_matrix_free_storage,mass_matrix_operator_data);
+
+    // setup own viscous operator
+    ViscousOperatorData<dim> viscous_operator_data = underlying_operator.get_viscous_operator_data();
+    // set dof index to zero since matrix free object only contains one dof-handler
+    viscous_operator_data.dof_index = 0;
+    own_viscous_operator_storage.initialize(mapping,own_matrix_free_storage, viscous_operator_data);
+
+    // setup Helmholtz operator
+    HelmholtzOperatorData<dim> operator_data = underlying_operator.get_helmholtz_operator_data();
+    initialize(own_matrix_free_storage, operator_data, own_mass_matrix_operator_storage, own_viscous_operator_storage);
+
+    // Initialize other variables:
+
+    // mass matrix term: set scaling factor time derivative term
+    set_scaling_factor_time_derivative_term(underlying_operator.get_scaling_factor_time_derivative_term());
+
+    // viscous term:
+
+
+    // initialize temp vector: this is done in this function because
+    // the vector temp is only used in the function vmult_add(), i.e.,
+    // when using the multigrid preconditioner
+    initialize_dof_vector(temp);
+  }
+
+  void set_scaling_factor_time_derivative_term(double const &factor)
+  {
+    scaling_factor_time_derivative_term = factor;
+  }
+
+  double get_scaling_factor_time_derivative_term() const
+  {
+    return scaling_factor_time_derivative_term;
+  }
+
+  HelmholtzOperatorData<dim> const & get_helmholtz_operator_data() const
+  {
+    return this->helmholtz_operator_data;
+  }
+
+  MassMatrixOperatorData const & get_mass_matrix_operator_data() const
+  {
+    return mass_matrix_operator->get_operator_data();
+  }
+
+  ViscousOperatorData<dim> const & get_viscous_operator_data() const
+  {
+    return viscous_operator->get_operator_data();
   }
 
   void initialize_strong_homogeneous_dirichlet_boundary_conditions()

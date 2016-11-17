@@ -151,7 +151,7 @@ setup_solvers ()
   if(unsteady_problem_has_to_be_solved())
   {
     vel_conv_diff_operator_data.unsteady_problem = true;
-    vel_conv_diff_operator_data.scaling_factor_time_derivative_term = this->scaling_factor_time_derivative_term;
+//    vel_conv_diff_operator_data.scaling_factor_time_derivative_term = this->scaling_factor_time_derivative_term;
   }
   else
   {
@@ -168,12 +168,13 @@ setup_solvers ()
     vel_conv_diff_operator_data.convective_problem = false;
   }
 
-  vel_conv_diff_operator_data.mass_matrix_operator_data = this->get_mass_matrix_operator_data();
-  vel_conv_diff_operator_data.viscous_operator_data = this->get_viscous_operator_data();
-  vel_conv_diff_operator_data.convective_operator_data = this->get_convective_operator_data();
+//  vel_conv_diff_operator_data.mass_matrix_operator_data = this->get_mass_matrix_operator_data();
+//  vel_conv_diff_operator_data.viscous_operator_data = this->get_viscous_operator_data();
+//  vel_conv_diff_operator_data.convective_operator_data = this->get_convective_operator_data();
 
   vel_conv_diff_operator_data.dof_index = this->get_dof_index_velocity();
-  vel_conv_diff_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
+
+//  vel_conv_diff_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
 
   velocity_conv_diff_operator.initialize(
       this->get_data(),
@@ -182,7 +183,7 @@ setup_solvers ()
       this->viscous_operator,
       this->convective_operator);
 
-
+  velocity_conv_diff_operator.set_scaling_factor_time_derivative_term(this->scaling_factor_time_derivative_term);
 
   // temp has to be initialized whenever an unsteady problem has to be solved
   if(unsteady_problem_has_to_be_solved())

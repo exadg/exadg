@@ -522,6 +522,7 @@ public:
     multigrid_data_viscous(MultigridData()),
     abs_tol_viscous(1.e-20),
     rel_tol_viscous(1.e-12),
+    update_preconditioner_viscous(false),
 
     // PRESSURE-CORRECTION SCHEME
 
@@ -563,6 +564,7 @@ public:
     solver_momentum_preconditioner(SolverMomentumPreconditioner::Undefined),
     multigrid_data_momentum_preconditioner(MultigridData()),
     rel_tol_solver_momentum_preconditioner(1.e-12),
+    max_n_tmp_vectors_solver_momentum_preconditioner(30),
 
     // preconditioner Schur-complement block
     schur_complement_preconditioner(SchurComplementPreconditioner::Undefined),
@@ -1070,6 +1072,8 @@ public:
 
     print_parameter(pcout,"Absolute solver tolerance", abs_tol_viscous);
     print_parameter(pcout,"Relative solver tolerance", rel_tol_viscous);
+
+    print_parameter(pcout,"Udpate preconditioner viscous",update_preconditioner_viscous);
   } 
 
   void print_parameters_pressure_correction(ConditionalOStream &pcout)
@@ -1544,6 +1548,9 @@ public:
   // solver tolerances for Helmholtz equation of viscous step
   double abs_tol_viscous;
   double rel_tol_viscous;
+
+  // update preconditioner before every solve of the viscous step
+  bool update_preconditioner_viscous;
 
 
   /**************************************************************************************/

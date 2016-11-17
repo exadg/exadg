@@ -131,7 +131,7 @@ setup_momentum_solver ()
 
   // unsteady problem
   vel_conv_diff_operator_data.unsteady_problem = true;
-  vel_conv_diff_operator_data.scaling_factor_time_derivative_term = this->scaling_factor_time_derivative_term;
+//  vel_conv_diff_operator_data.scaling_factor_time_derivative_term = this->scaling_factor_time_derivative_term;
 
   // convective problem
   if(this->param.equation_type == EquationType::NavierStokes &&
@@ -144,15 +144,16 @@ setup_momentum_solver ()
     vel_conv_diff_operator_data.convective_problem = false;
   }
 
-  vel_conv_diff_operator_data.mass_matrix_operator_data = this->get_mass_matrix_operator_data();
-  // TODO: Velocity conv diff operator is initialized with constant viscosity, in case of varying viscosities
-  // the vel conv diff operator (the viscous operator of the conv diff operator) has to be updated before applying this
-  // preconditioner
-  vel_conv_diff_operator_data.viscous_operator_data = this->get_viscous_operator_data();
-  vel_conv_diff_operator_data.convective_operator_data = this->get_convective_operator_data();
+//  vel_conv_diff_operator_data.mass_matrix_operator_data = this->get_mass_matrix_operator_data();
+//  // TODO: Velocity conv diff operator is initialized with constant viscosity, in case of varying viscosities
+//  // the vel conv diff operator (the viscous operator of the conv diff operator) has to be updated before applying this
+//  // preconditioner
+//  vel_conv_diff_operator_data.viscous_operator_data = this->get_viscous_operator_data();
+//  vel_conv_diff_operator_data.convective_operator_data = this->get_convective_operator_data();
 
   vel_conv_diff_operator_data.dof_index = this->get_dof_index_velocity();
-  vel_conv_diff_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
+
+//  vel_conv_diff_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
 
   velocity_conv_diff_operator.initialize(
       this->get_data(),
@@ -160,6 +161,8 @@ setup_momentum_solver ()
       this->mass_matrix_operator,
       this->viscous_operator,
       this->convective_operator);
+
+  velocity_conv_diff_operator.set_scaling_factor_time_derivative_term(this->scaling_factor_time_derivative_term);
 
 
   // setup preconditioner for momentum equation
@@ -222,52 +225,47 @@ setup_momentum_solver ()
   {
     typedef float Number;
 
-    bool use_chebyshev_smoother = true;
+    bool use_chebyshev_smoother = false;
     if(use_chebyshev_smoother) // TODO
     {
       momentum_preconditioner.reset(new MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
                                           VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                          VelocityConvDiffOperatorData<dim>,
                                           VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> >());
 
       std_cxx11::shared_ptr<MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
                               VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                              VelocityConvDiffOperatorData<dim>,
                               VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
         mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
                                                         VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                                        VelocityConvDiffOperatorData<dim>,
                                                         VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
             (momentum_preconditioner);
+
 
       mg_preconditioner->initialize(this->param.multigrid_data_momentum,
                                     this->get_dof_handler_u(),
                                     this->get_mapping(),
-                                    vel_conv_diff_operator_data,
-                                    this->boundary_descriptor_velocity->dirichlet_bc);
+                                    velocity_conv_diff_operator,
+                                    this->periodic_face_pairs);
     }
     else
     {
       momentum_preconditioner.reset(new MyMultigridPreconditionerGMRESSmoother<dim,value_type,
                                           VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                          VelocityConvDiffOperatorData<dim>,
                                           VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> >());
 
       std_cxx11::shared_ptr<MyMultigridPreconditionerGMRESSmoother<dim,value_type,
                               VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                              VelocityConvDiffOperatorData<dim>,
                               VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
         mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditionerGMRESSmoother<dim,value_type,
                                                         VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                                        VelocityConvDiffOperatorData<dim>,
                                                         VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
           (momentum_preconditioner);
 
       mg_preconditioner->initialize(this->param.multigrid_data_momentum,
                                     this->get_dof_handler_u(),
                                     this->get_mapping(),
-                                    vel_conv_diff_operator_data,
-                                    this->boundary_descriptor_velocity->dirichlet_bc);
+                                    velocity_conv_diff_operator,
+                                    this->periodic_face_pairs);
     }
   }
 

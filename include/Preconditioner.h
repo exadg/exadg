@@ -177,10 +177,10 @@ public:
   {
     if(use_preconditioner)
     {
-      std_cxx11::shared_ptr<JacobiPreconditioner<typename Operator::value_type,Operator> > precon =
-          std::dynamic_pointer_cast<JacobiPreconditioner<typename Operator::value_type,Operator> > (preconditioner);
+//      std_cxx11::shared_ptr<JacobiPreconditioner<typename Operator::value_type,Operator> > precon =
+//          std::dynamic_pointer_cast<JacobiPreconditioner<typename Operator::value_type,Operator> > (preconditioner);
 
-      precon->recalculate_diagonal(coarse_matrix);
+      preconditioner->update(&coarse_matrix);
     }
   }
 
@@ -749,53 +749,48 @@ public:
   }
 };
 
+
 /*
- *  Multigrid preconditioner for velocity convection-diffusion operator of
- *  the incompressible Navier-Stokes equations
+ *  Multigrid preconditioner for velocity reaction-diffusion operator
+ *  (Helmholtz operator) of the incompressible Navier-Stokes equations
  */
-template<int dim, typename value_type, typename Operator, typename OperatorData, typename UnderlyingOperator>
-class MyMultigridPreconditionerVelocityConvectionDiffusion : public MyMultigridPreconditionerBase<dim,value_type,Operator>
+template<int dim, typename value_type, typename Operator, typename UnderlyingOperator>
+class MyMultigridPreconditionerVelocityDiffusion : public MyMultigridPreconditionerBase<dim,value_type,Operator>
 {
 public:
-  MyMultigridPreconditionerVelocityConvectionDiffusion(){}
+  MyMultigridPreconditionerVelocityDiffusion(){}
 
-  virtual ~MyMultigridPreconditionerVelocityConvectionDiffusion(){};
+  virtual ~MyMultigridPreconditionerVelocityDiffusion(){};
 
-  void initialize(const MultigridData                             &mg_data_in,
-                  const DoFHandler<dim>                           &dof_handler,
-                  const Mapping<dim>                              &mapping,
-                  const OperatorData                              &operator_data_in,
-                  std::map<types::boundary_id,
-                    std_cxx11::shared_ptr<Function<dim> > > const &dirichlet_bc)
+  void initialize(const MultigridData                                     &mg_data_in,
+                  const DoFHandler<dim>                                   &dof_handler,
+                  const Mapping<dim>                                      &mapping,
+                  const UnderlyingOperator                                &underlying_operator,
+                  const std::vector<GridTools::PeriodicFacePair<typename
+                    Triangulation<dim>::cell_iterator> >                  &periodic_face_pairs_level0)
   {
     this->mg_data = mg_data_in;
 
     const parallel::Triangulation<dim> *tria =
       dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
 
-    // needed for continuous elements
+    // initialize mg_contstrained_dofs
     this->mg_constrained_dofs.clear();
-    std::set<types::boundary_id> dirichlet_boundary;
-    for(typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::const_iterator
-        it = dirichlet_bc.begin(); it != dirichlet_bc.end(); ++it)
-      dirichlet_boundary.insert(it->first);
     this->mg_constrained_dofs.initialize(dof_handler);
-    this->mg_constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary);
-    // needed for continuous elements
 
     this->n_global_levels = tria->n_global_levels();
     this->resize_level_objects();
 
     for (unsigned int level = 0; level<this->n_global_levels; ++level)
     {
-      initialize_mg_matrix(level, dof_handler, mapping, operator_data_in);
+      initialize_mg_matrix(level, dof_handler, mapping, underlying_operator, periodic_face_pairs_level0);
 
       this->initialize_smoother(level);
     }
 
     this->initialize_coarse_solver();
 
-    this->initialize_mg_transfer(dof_handler, operator_data_in.periodic_face_pairs_level0);
+    this->initialize_mg_transfer(dof_handler, periodic_face_pairs_level0);
 
     typedef MGTransferMF<dim,Operator> MG_TRANSFER;
     typedef parallel::distributed::Vector<typename Operator::value_type> VECTOR_TYPE;
@@ -805,37 +800,187 @@ public:
                                    (dof_handler, this->mg_matrices, *(this->mg_coarse), this->mg_transfer, this->mg_smoother));
   }
 
-  virtual void initialize_mg_matrix(unsigned int            level,
-                                    const DoFHandler<dim>   &dof_handler,
-                                    const Mapping<dim>      &mapping,
-                                    const OperatorData      &operator_data_in)
+  virtual void initialize_mg_matrix(const unsigned int       level,
+                                    const DoFHandler<dim>    &dof_handler,
+                                    const Mapping<dim>       &mapping,
+                                    const UnderlyingOperator &underlying_operator,
+                                    const std::vector<GridTools::PeriodicFacePair<typename
+                                      Triangulation<dim>::cell_iterator> > &periodic_face_pairs_level0)
   {
-    // initialize mg_matrix for given level
-    this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, level);
-
-    // set evaluation time
-    this->mg_matrices[level].set_evaluation_time(0.0);
+    this->mg_matrices[level].initialize_mg_matrix(level, dof_handler, mapping, underlying_operator, periodic_face_pairs_level0);
   }
 
   /*
    *  This function updates the multigrid preconditioner.
-   *
+   */
+  virtual void update(MatrixOperatorBase const * matrix_operator)
+  {std::cout<<"Update MyMultigridPreconditionerVelocityDiffusion"<<std::endl;
+    UnderlyingOperator const *underlying_operator =
+        dynamic_cast<UnderlyingOperator const *>(matrix_operator);
+
+    if(underlying_operator)
+    {
+      update_mg_matrices(underlying_operator->get_scaling_factor_time_derivative_term());
+      update_smoothers();
+      update_coarse_solver();
+    }
+    else
+    {
+      AssertThrow(false,ExcMessage("Multigrid preconditioner: UnderlyingOperator and MatrixOperator are not compatible!"));
+    }
+  }
+
+  /*
+   *  This function updates mg_matrices
+   *  To do this, two functions are called:
+   *   - set_vector_linearization
+   *   - set_evaluation_time
+   */
+  void update_mg_matrices(double const &scaling_factor_time_derivative_term)
+  {
+    set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
+  }
+
+  /*
+   *  This function updates scaling_factor_time_derivative_term.
+   *  In order to update mg_matrices[level] this function has to be called.
+   *  This is necessary if adaptive time stepping is used where
+   *  the scaling factor of the derivative term is variable.
+   */
+  void set_scaling_factor_time_derivative_term(double const &scaling_factor_time_derivative_term)
+  {
+    for (int level = this->n_global_levels-1; level>=0; --level)
+    {
+      this->mg_matrices[level].set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
+    }
+  }
+
+  /*
+   *  This function updates the smoother for all levels of the multigrid
+   *  algorithm.
+   *  The prerequisite to call this function is that mg_matrices[level] have
+   *  been updated.
+   */
+  void update_smoothers()
+  {
+    for (unsigned int level = 0; level<this->n_global_levels; ++level)
+    {
+      this->initialize_smoother(level);
+    }
+  }
+
+  /*
+   *  This function updates the (preconditioner of the) coarse grid solver.
+   *  The prerequisite to call this function is that mg_matrices[0] has
+   *  been updated.
+   */
+  // TODO: this function should update the coarse solver also for other
+  // types of the multigrid coarse grid solver
+  void update_coarse_solver()
+  {
+    if(this->mg_data.coarse_solver == MultigridCoarseGridSolver::PCG_Jacobi)
+    {
+      std_cxx11::shared_ptr<MGCoarsePCG<Operator> >
+        coarse_solver = std::dynamic_pointer_cast<MGCoarsePCG<Operator> >(this->mg_coarse);
+
+      coarse_solver->update_preconditioner(this->mg_matrices[0]);
+    }
+  }
+
+private:
+
+//  typedef parallel::distributed::Vector<typename Operator::value_type> VECTOR_TYPE;
+//  typedef PreconditionChebyshev<Operator,VECTOR_TYPE> SMOOTHER;
+};
+
+/*
+ *  Multigrid preconditioner for velocity convection-diffusion operator of
+ *  the incompressible Navier-Stokes equations
+ */
+template<int dim, typename value_type, typename Operator, typename UnderlyingOperator>
+class MyMultigridPreconditionerVelocityConvectionDiffusion : public MyMultigridPreconditionerBase<dim,value_type,Operator>
+{
+public:
+  MyMultigridPreconditionerVelocityConvectionDiffusion(){}
+
+  virtual ~MyMultigridPreconditionerVelocityConvectionDiffusion(){};
+
+  void initialize(const MultigridData                                     &mg_data_in,
+                  const DoFHandler<dim>                                   &dof_handler,
+                  const Mapping<dim>                                      &mapping,
+                  const UnderlyingOperator                                &underlying_operator,
+                  const std::vector<GridTools::PeriodicFacePair<typename
+                    Triangulation<dim>::cell_iterator> >                  &periodic_face_pairs_level0)
+  {
+    this->mg_data = mg_data_in;
+
+    const parallel::Triangulation<dim> *tria =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+
+    // initialize mg_contstrained_dofs
+    this->mg_constrained_dofs.clear();
+    this->mg_constrained_dofs.initialize(dof_handler);
+
+    this->n_global_levels = tria->n_global_levels();
+    this->resize_level_objects();
+
+    for (unsigned int level = 0; level<this->n_global_levels; ++level)
+    {
+      initialize_mg_matrix(level, dof_handler, mapping, underlying_operator, periodic_face_pairs_level0);
+
+      this->initialize_smoother(level);
+    }
+
+    this->initialize_coarse_solver();
+
+    this->initialize_mg_transfer(dof_handler, periodic_face_pairs_level0);
+
+    typedef MGTransferMF<dim,Operator> MG_TRANSFER;
+    typedef parallel::distributed::Vector<typename Operator::value_type> VECTOR_TYPE;
+    typedef PreconditionChebyshev<Operator,VECTOR_TYPE> SMOOTHER;
+
+    this->multigrid_preconditioner.reset(new MultigridPreconditioner<dim, VECTOR_TYPE, Operator, MG_TRANSFER, SMOOTHER>
+                                   (dof_handler, this->mg_matrices, *(this->mg_coarse), this->mg_transfer, this->mg_smoother));
+  }
+
+  virtual void initialize_mg_matrix(const unsigned int       level,
+                                    const DoFHandler<dim>    &dof_handler,
+                                    const Mapping<dim>       &mapping,
+                                    const UnderlyingOperator &underlying_operator,
+                                    const std::vector<GridTools::PeriodicFacePair<typename
+                                      Triangulation<dim>::cell_iterator> > &periodic_face_pairs_level0)
+  {
+    this->mg_matrices[level].initialize_mg_matrix(level, dof_handler, mapping, underlying_operator, periodic_face_pairs_level0);
+  }
+
+  /*
+   *  This function updates the multigrid preconditioner.
    */
   virtual void update(MatrixOperatorBase const * matrix_operator)
   {
-    UnderlyingOperator const
-      *underlying_operator = dynamic_cast<UnderlyingOperator const *>(matrix_operator);
+    UnderlyingOperator const *underlying_operator =
+        dynamic_cast<UnderlyingOperator const *>(matrix_operator);
 
     if(underlying_operator)
     {
       parallel::distributed::Vector<value_type> const & vector_linearization = underlying_operator->get_solution_linearization();
 
-      // convert value_type --> Operator::value_type, i.e., double --> float
-      parallel::distributed::Vector<typename Operator::value_type> vector_multigrid_type;
-      vector_multigrid_type = vector_linearization;
+      // convert value_type --> Operator::value_type, e.g., double --> float, but only if necessary
+      parallel::distributed::Vector<typename Operator::value_type> vector_multigrid_type_copy;
+      parallel::distributed::Vector<typename Operator::value_type> const *vector_multigrid_type_ptr;
+      if (types_are_equal<typename Operator::value_type, value_type>::value)
+      {
+        vector_multigrid_type_ptr = reinterpret_cast<parallel::distributed::Vector<typename Operator::value_type> const*>(&vector_linearization);
+      }
+      else
+      {
+        vector_multigrid_type_copy = vector_linearization;
+        vector_multigrid_type_ptr = &vector_multigrid_type_copy;
+      }
 
-      update_mg_matrices(vector_multigrid_type,
-                         underlying_operator->get_evaluation_time());
+      update_mg_matrices(*vector_multigrid_type_ptr,
+                         underlying_operator->get_evaluation_time(),
+                         underlying_operator->get_scaling_factor_time_derivative_term());
       update_smoothers();
       update_coarse_solver();
     }
@@ -852,10 +997,12 @@ public:
    *   - set_evaluation_time
    */
   void update_mg_matrices(parallel::distributed::Vector<typename Operator::value_type> const &vector_linearization,
-                          double const                                                       &evaluation_time)
+                          double const                                                       &evaluation_time,
+                          double const                                                       &scaling_factor_time_derivative_term)
   {
     set_vector_linearization(vector_linearization);
     set_evaluation_time(evaluation_time);
+    set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
   }
 
   /*
@@ -898,6 +1045,20 @@ public:
   }
 
   /*
+   *  This function updates scaling_factor_time_derivative_term.
+   *  In order to update mg_matrices[level] this function has to be called.
+   *  This is necessary if adaptive time stepping is used where
+   *  the scaling factor of the derivative term is variable.
+   */
+  void set_scaling_factor_time_derivative_term(double const &scaling_factor_time_derivative_term)
+  {
+    for (int level = this->n_global_levels-1; level>=0; --level)
+    {
+      this->mg_matrices[level].set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
+    }
+  }
+
+  /*
    *  This function updates the smoother for all levels of the multigrid
    *  algorithm.
    *  The prerequisite to call this function is that mg_matrices[level] have
@@ -916,6 +1077,8 @@ public:
    *  The prerequisite to call this function is that mg_matrices[0] has
    *  been updated.
    */
+  // TODO: this function should update the coarse solver also for other
+  // types of the multigrid coarse grid solver
   void update_coarse_solver()
   {
     if(this->mg_data.coarse_solver == MultigridCoarseGridSolver::GMRES_Jacobi)
@@ -976,7 +1139,7 @@ private:
 
 #include "GMRESSmoother.h"
 
-template<int dim, typename value_type, typename Operator, typename OperatorData,typename UnderlyingOperator>
+template<int dim, typename value_type, typename Operator, typename UnderlyingOperator>
 class MyMultigridPreconditionerGMRESSmoother : public PreconditionerBase<value_type>
 {
 public:
@@ -987,41 +1150,35 @@ public:
 
   virtual ~MyMultigridPreconditionerGMRESSmoother(){};
 
-  void initialize(const MultigridData                             &mg_data_in,
-                  const DoFHandler<dim>                           &dof_handler,
-                  const Mapping<dim>                              &mapping,
-                  const OperatorData                              &operator_data_in,
-                  std::map<types::boundary_id,
-                    std_cxx11::shared_ptr<Function<dim> > > const &dirichlet_bc)
+  void initialize(const MultigridData                                     &mg_data_in,
+                  const DoFHandler<dim>                                   &dof_handler,
+                  const Mapping<dim>                                      &mapping,
+                  const UnderlyingOperator                                &underlying_operator,
+                  const std::vector<GridTools::PeriodicFacePair<typename
+                    Triangulation<dim>::cell_iterator> >                  &periodic_face_pairs_level0)
   {
     this->mg_data = mg_data_in;
 
     const parallel::Triangulation<dim> *tria =
       dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
 
-    // needed for continuous elements
+    // initialize_mg_constrained_dofs
     this->mg_constrained_dofs.clear();
-    std::set<types::boundary_id> dirichlet_boundary;
-    for(typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::const_iterator
-        it = dirichlet_bc.begin(); it != dirichlet_bc.end(); ++it)
-      dirichlet_boundary.insert(it->first);
     this->mg_constrained_dofs.initialize(dof_handler);
-    this->mg_constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary);
-    // needed for continuous elements
 
     this->n_global_levels = tria->n_global_levels();
     this->resize_level_objects();
 
     for (unsigned int level = 0; level<this->n_global_levels; ++level)
     {
-      initialize_mg_matrix(level, dof_handler, mapping, operator_data_in);
+      initialize_mg_matrix(level, dof_handler, mapping, underlying_operator,periodic_face_pairs_level0);
 
       this->initialize_smoother(level);
     }
 
     this->initialize_coarse_solver();
 
-    this->initialize_mg_transfer(dof_handler, operator_data_in.periodic_face_pairs_level0);
+    this->initialize_mg_transfer(dof_handler, periodic_face_pairs_level0);
 
     this->multigrid_preconditioner.reset(new MultigridPreconditioner<dim, VECTOR_TYPE, Operator, MG_TRANSFER, SMOOTHER>
         (dof_handler, this->mg_matrices, *(this->mg_coarse), this->mg_transfer, this->mg_smoother));
@@ -1038,16 +1195,14 @@ public:
     mg_smoother[level].initialize(mg_matrices[level]);
   }
 
-  void initialize_mg_matrix(unsigned int            level,
-                            const DoFHandler<dim>   &dof_handler,
-                            const Mapping<dim>      &mapping,
-                            const OperatorData      &operator_data_in)
+  virtual void initialize_mg_matrix(const unsigned int       level,
+                                    const DoFHandler<dim>    &dof_handler,
+                                    const Mapping<dim>       &mapping,
+                                    const UnderlyingOperator &underlying_operator,
+                                    const std::vector<GridTools::PeriodicFacePair<typename
+                                      Triangulation<dim>::cell_iterator> > &periodic_face_pairs_level0)
   {
-    // initialize mg_matrix for given level
-    this->mg_matrices[level].reinit(dof_handler, mapping, operator_data_in, level);
-
-    // set evaluation time
-    this->mg_matrices[level].set_evaluation_time(0.0);
+    this->mg_matrices[level].initialize_mg_matrix(level, dof_handler, mapping, underlying_operator, periodic_face_pairs_level0);
   }
 
   /*
@@ -1056,18 +1211,29 @@ public:
    */
   virtual void update(MatrixOperatorBase const * matrix_operator)
   {
-    UnderlyingOperator const
-      *underlying_operator = dynamic_cast<UnderlyingOperator const *>(matrix_operator);
+    UnderlyingOperator const *underlying_operator =
+        dynamic_cast<UnderlyingOperator const *>(matrix_operator);
+
     if(underlying_operator)
     {
       parallel::distributed::Vector<value_type> const & vector_linearization = underlying_operator->get_solution_linearization();
 
-      // convert value_type --> Operator::value_type, i.e., double --> float
-      parallel::distributed::Vector<typename Operator::value_type> vector_multigrid_type;
-      vector_multigrid_type = vector_linearization;
+      // convert value_type --> Operator::value_type, e.g., double --> float, but only if necessary
+      parallel::distributed::Vector<typename Operator::value_type> vector_multigrid_type_copy;
+      parallel::distributed::Vector<typename Operator::value_type> const *vector_multigrid_type_ptr;
+      if (types_are_equal<typename Operator::value_type, value_type>::value)
+      {
+        vector_multigrid_type_ptr = reinterpret_cast<parallel::distributed::Vector<typename Operator::value_type> const*>(&vector_linearization);
+      }
+      else
+      {
+        vector_multigrid_type_copy = vector_linearization;
+        vector_multigrid_type_ptr = &vector_multigrid_type_copy;
+      }
 
-      update_mg_matrices(vector_multigrid_type,
-                         underlying_operator->get_evaluation_time());
+      update_mg_matrices(*vector_multigrid_type_ptr,
+                         underlying_operator->get_evaluation_time(),
+                         underlying_operator->get_scaling_factor_time_derivative_term());
       update_smoothers();
       update_coarse_solver();
     }
@@ -1076,16 +1242,18 @@ public:
   }
 
   /*
-   *  This function updates mg_matrices
+   *  This function updates mg_matrices.
    *  To do this, two functions are called:
    *   - set_vector_linearization
    *   - set_evaluation_time
    */
   void update_mg_matrices(parallel::distributed::Vector<typename Operator::value_type> const &vector_linearization,
-                          double const                                    &evaluation_time)
+                          double const                                                       &evaluation_time,
+                          double const                                                       &scaling_factor_time_derivative_term)
   {
     set_vector_linearization(vector_linearization);
     set_evaluation_time(evaluation_time);
+    set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
   }
 
   /*
@@ -1124,6 +1292,20 @@ public:
     for (int level = this->n_global_levels-1; level>=0; --level)
     {
       this->mg_matrices[level].set_evaluation_time(evaluation_time);
+    }
+  }
+
+  /*
+   *  This function updates scaling_factor_time_derivative_term.
+   *  In order to update mg_matrices[level] this function has to be called.
+   *  This is necessary if adaptive time stepping is used where
+   *  the scaling factor of the derivative term is variable.
+   */
+  void set_scaling_factor_time_derivative_term(double const &scaling_factor_time_derivative_term)
+  {
+    for (int level = this->n_global_levels-1; level>=0; --level)
+    {
+      this->mg_matrices[level].set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
     }
   }
 
@@ -1166,6 +1348,8 @@ public:
    *  The prerequisite to call this function is that mg_matrices[0] has
    *  been updated.
    */
+  // TODO: this function should update the coarse solver also for other
+  // types of the multigrid coarse grid solver
   void update_coarse_solver()
   {
     if(this->mg_data.coarse_solver == MultigridCoarseGridSolver::GMRES_Jacobi)
@@ -1259,15 +1443,9 @@ public:
     const parallel::Triangulation<dim> *tria =
       dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
 
-    // only needed for continuous elements
+    // initialize mg_constrained_dofs
     this->mg_constrained_dofs.clear();
-    std::set<types::boundary_id> dirichlet_boundary;
-//    for(typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::const_iterator
-//        it = dirichlet_bc.begin(); it != dirichlet_bc.end(); ++it)
-//      dirichlet_boundary.insert(it->first);
     this->mg_constrained_dofs.initialize(dof_handler);
-    this->mg_constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary);
-    // only needed for continuous elements
 
     this->n_global_levels = tria->n_global_levels();
     this->resize_level_objects();
@@ -1278,7 +1456,6 @@ public:
                                       dof_handler_additional,
                                       mapping,
                                       operator_data_in,
-                                      this->mg_constrained_dofs,
                                       level);
 
       this->initialize_smoother(level);

@@ -282,6 +282,7 @@ setup_helmholtz_solver ()
     {
       solver_data.use_preconditioner = true;
     }
+    solver_data.update_preconditioner = this->param.update_preconditioner_viscous;
 
     // setup helmholtz solver
     helmholtz_solver.reset(new CGSolver<HelmholtzOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type>,
@@ -301,6 +302,7 @@ setup_helmholtz_solver ()
     // use default value of right_preconditioning
     // use default value of max_n_tmp_vectors
     // use default value of compute_eigenvalues
+    solver_data.update_preconditioner = this->param.update_preconditioner_viscous;
 
     // default value of use_preconditioner = false
     if(this->param.preconditioner_viscous == PreconditionerViscous::Jacobi ||
@@ -368,6 +370,24 @@ setup_helmholtz_preconditioner (HelmholtzOperatorData<dim> &helmholtz_operator_d
                                   this->mapping,
                                   helmholtz_operator_data,
                                   this->boundary_descriptor_velocity->dirichlet_bc);
+
+//    helmholtz_preconditioner.reset(new MyMultigridPreconditionerVelocityDiffusion<dim,value_type,
+//                                         HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
+//                                         HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > ());
+//
+//    std_cxx11::shared_ptr<MyMultigridPreconditionerVelocityDiffusion<dim,value_type,
+//                            HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
+//                            HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
+//      mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditionerVelocityDiffusion<dim,value_type,
+//                                                      HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
+//                                                      HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
+//        (helmholtz_preconditioner);
+//
+//    mg_preconditioner->initialize(mg_data,
+//                                  this->dof_handler_u,
+//                                  this->mapping,
+//                                  helmholtz_operator,
+//                                  this->periodic_face_pairs);
   }
 }
 

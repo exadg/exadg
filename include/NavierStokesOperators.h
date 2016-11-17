@@ -214,6 +214,11 @@ public:
     invert_diagonal(diagonal);
   }
 
+  MassMatrixOperatorData const & get_operator_data() const
+  {
+    return mass_matrix_operator_data;
+  }
+
 private:
   void apply_mass_matrix (parallel::distributed::Vector<value_type>        &dst,
                           const parallel::distributed::Vector<value_type>  &src) const
@@ -507,6 +512,11 @@ public:
     calculate_diagonal(diagonal);
 
     invert_diagonal(diagonal);
+  }
+
+  ViscousOperatorData<dim> const & get_operator_data() const
+  {
+    return operator_data;
   }
 
 private:
@@ -2525,6 +2535,11 @@ public:
                &ConvectiveOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type>::local_diagonal_face,
                &ConvectiveOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type>::local_diagonal_boundary_face,
                this, diagonal, src_dummy);
+  }
+
+  ConvectiveOperatorData<dim> const & get_operator_data() const
+  {
+    return operator_data;
   }
 
 
