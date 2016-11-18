@@ -38,7 +38,8 @@ public:
     projection_operator = nullptr;
   }
 
-  virtual void setup_solvers(const double time_step_size) = 0;
+  virtual void setup_solvers(double const &time_step_size,
+                             double const &scaling_factor_time_derivative_term) = 0;
 
   // velocity divergence
   void evaluate_velocity_divergence_term(parallel::distributed::Vector<value_type>        &dst,
@@ -83,7 +84,6 @@ protected:
   std_cxx11::shared_ptr<PreconditionerBase<value_type> > preconditioner_pressure_poisson;
   std_cxx11::shared_ptr<CGSolver<LaplaceOperator<dim,value_type>, PreconditionerBase<value_type>,parallel::distributed::Vector<value_type> > > pressure_poisson_solver;
 
-
   // Projection method
   ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> * projection_operator;
   std_cxx11::shared_ptr<ProjectionSolverBase<value_type> > projection_solver;
@@ -95,12 +95,13 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall
 void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 setup_pressure_poisson_solver (double const time_step_size)
 {
+  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector DofHandlerSelector;
+  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector QuadratureSelector;
+
   // setup Laplace operator
   LaplaceOperatorData<dim> laplace_operator_data;
-  laplace_operator_data.laplace_dof_index = static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector>::type >
-    (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector::pressure);
-  laplace_operator_data.laplace_quad_index = static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector>::type >
-    (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector::pressure);
+  laplace_operator_data.laplace_dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::pressure);
+  laplace_operator_data.laplace_quad_index = static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::pressure);
   laplace_operator_data.penalty_factor = this->param.IP_factor_pressure;
 
   if(this->param.use_approach_of_ferrer == true)
@@ -131,16 +132,11 @@ setup_pressure_poisson_solver (double const time_step_size)
     // use single precision for multigrid
     typedef float Number;
 
-    preconditioner_pressure_poisson.reset(new MyMultigridPreconditioner<dim,value_type,
-                                                LaplaceOperator<dim,Number>,
-                                                LaplaceOperatorData<dim> >());
+    typedef MyMultigridPreconditioner<dim, value_type, LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> > MULTIGRID;
 
-    std_cxx11::shared_ptr<MyMultigridPreconditioner<dim,value_type,
-                            LaplaceOperator<dim,Number>,
-                            LaplaceOperatorData<dim> > >
-      mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditioner<dim,value_type,
-                                                      LaplaceOperator<dim,Number>,
-                                                      LaplaceOperatorData<dim> > >(preconditioner_pressure_poisson);
+    preconditioner_pressure_poisson.reset(new MULTIGRID());
+
+    std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
 
     mg_preconditioner->initialize(mg_data,
                                   this->dof_handler_p,
@@ -169,7 +165,9 @@ setup_pressure_poisson_solver (double const time_step_size)
   }
 
   // setup solver
-  pressure_poisson_solver.reset(new CGSolver<LaplaceOperator<dim,value_type>, PreconditionerBase<value_type>, parallel::distributed::Vector<value_type> >(
+  pressure_poisson_solver.reset(new CGSolver<LaplaceOperator<dim,value_type>,
+                                             PreconditionerBase<value_type>,
+                                             parallel::distributed::Vector<value_type> >(
       laplace_operator,
       *preconditioner_pressure_poisson,
       solver_data));
@@ -179,6 +177,9 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall
 void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 setup_projection_solver ()
 {
+  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector DofHandlerSelector;
+  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector QuadratureSelector;
+
   // initialize projection solver
   ProjectionOperatorData projection_operator_data;
   projection_operator_data.penalty_parameter_divergence = this->param.penalty_factor_divergence;
@@ -189,10 +190,8 @@ setup_projection_solver ()
   {
     projection_solver.reset(new ProjectionSolverNoPenalty<dim, fe_degree, value_type>(
         this->data,
-        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector>::type >
-          (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector>::type >
-          (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector::velocity)));
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity)));
   }
   else if(this->param.projection_type == ProjectionType::DivergencePenalty &&
           this->param.solver_projection == SolverProjection::LU)
@@ -205,10 +204,8 @@ setup_projection_solver ()
 
     projection_operator = new ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(
         this->data,
-        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector>::type >
-          (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector>::type >
-          (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector::velocity),
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity),
         projection_operator_data);
 
     projection_solver.reset(new DirectProjectionSolverDivergencePenalty
@@ -225,10 +222,8 @@ setup_projection_solver ()
 
     projection_operator = new ProjectionOperatorDivergencePenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(
         this->data,
-        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector>::type >
-          (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector>::type >
-          (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector::velocity),
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity),
         projection_operator_data);
 
     ProjectionSolverData projection_solver_data;
@@ -251,10 +246,8 @@ setup_projection_solver ()
 
     projection_operator = new ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(
         this->data,
-        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector>::type >
-          (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector>::type >
-          (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector::velocity),
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity),
         projection_operator_data);
 
     ProjectionSolverData projection_solver_data;
@@ -311,12 +304,9 @@ rhs_ppe_laplace_add(parallel::distributed::Vector<value_type> &dst,
   const LaplaceOperatorData<dim> &data = this->laplace_operator.get_operator_data();
 
   // Set correct time for evaluation of functions on pressure Dirichlet boundaries
-  // (not needed for pressure Neumann boundaries because
-  // all functions are ZeroFunction in Neumann BC map!)
-  for(typename std::map<types::boundary_id,
-      std_cxx11::shared_ptr<Function<dim> > >::const_iterator
-        it = data.bc->dirichlet.begin();
-      it != data.bc->dirichlet.end(); ++it)
+  // (not needed for pressure Neumann boundaries because all functions are ZeroFunction in Neumann BC map!)
+  for(typename std::map<types::boundary_id, std_cxx11::shared_ptr<Function<dim> > >::const_iterator
+        it = data.bc->dirichlet.begin(); it != data.bc->dirichlet.end(); ++it)
   {
     it->second->set_time(evaluation_time);
   }
@@ -342,6 +332,7 @@ solve_projection (parallel::distributed::Vector<value_type>       &dst,
                   double const                                    cfl,
                   double const                                    time_step_size) const
 {
+  // Update projection operator
   if(this->param.projection_type != ProjectionType::NoPenalty)
     this->projection_operator->calculate_array_penalty_parameter(velocity_n,cfl,time_step_size);
 

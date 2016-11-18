@@ -16,45 +16,15 @@ struct HelmholtzOperatorData
   HelmholtzOperatorData ()
     :
     unsteady_problem(true),
-    dof_index(0),
-    scaling_factor_time_derivative_term(-1.0)
+    dof_index(0)
   {}
 
   bool unsteady_problem;
 
   unsigned int dof_index;
-
-  MassMatrixOperatorData mass_matrix_operator_data;
-  ViscousOperatorData<dim> viscous_operator_data;
-
-  /*
-   * This variable 'scaling_factor_time_derivative_term' is only used when initializing the HelmholtzOperator.
-   * In order to change/update this coefficient during the simulation (e.g., varying time step sizes)
-   * use the element variable 'scaling_factor_time_derivative_term' of HelmholtzOperator and the corresponding setter
-   * set_scaling_factor_time_derivative_term().
-   */
-  // TODO remove this variable from VelocityConvectionDiffusionOperatorData
-  double scaling_factor_time_derivative_term;
-
-  // current interface of multigrid implementation needs this variable
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs_level0;
-
-  std::set<types::boundary_id> const & get_dirichlet_boundaries() const
-  {
-    return viscous_operator_data.get_dirichlet_boundaries();
-  }
-
-  void set_dof_index(unsigned int dof_index_in)
-  {
-    this->dof_index = dof_index_in;
-
-    // don't forget to set the dof_indices of the mass_matrix_operator_data and viscous_operator_data
-    mass_matrix_operator_data.dof_index = dof_index_in;
-    viscous_operator_data.dof_index = dof_index_in;
-  }
 };
 
-template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule,typename Number = double>
+template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number = double>
 class HelmholtzOperator : public MatrixOperatorBase
 {
 public:
@@ -62,11 +32,13 @@ public:
 
   HelmholtzOperator()
     :
+    // TODO Benjamin: remove this from Helmholtz operator
+    strong_homogeneous_dirichlet_bc(false),
+    // TODO Benjamin: remove this from Helmholtz operator
     data(nullptr),
     mass_matrix_operator(nullptr),
     viscous_operator(nullptr),
-    scaling_factor_time_derivative_term(-1.0),
-    strong_homogeneous_dirichlet_bc(false)
+    scaling_factor_time_derivative_term(-1.0)
   {}
 
   void initialize(MatrixFree<dim,Number> const                                                        &mf_data_in,
@@ -79,60 +51,15 @@ public:
     this->helmholtz_operator_data = helmholtz_operator_data_in;
     this->mass_matrix_operator = &mass_matrix_operator_in;
     this->viscous_operator = &viscous_operator_in;
-
-    // set mass matrix coefficient!
-    if(helmholtz_operator_data.unsteady_problem == true)
-    {
-      AssertThrow(helmholtz_operator_data.scaling_factor_time_derivative_term > 0.0,
-                  ExcMessage("Scaling factor of time derivative term of HelmholtzOperatorData has not been initialized!"));
-
-      this->scaling_factor_time_derivative_term = helmholtz_operator_data.scaling_factor_time_derivative_term;
-    }
   }
 
-  void reinit (const DoFHandler<dim>            &dof_handler,
-               const Mapping<dim>               &mapping,
-               const HelmholtzOperatorData<dim> &operator_data,
-               const MGConstrainedDoFs          &/*mg_constrained_dofs*/,
-               const unsigned int               level = numbers::invalid_unsigned_int)
-  {
-    // set the dof index to zero (for the HelmholtzOperator and also
-    // for the basic Operators (MassMatrixOperator and ViscousOperator))
-    HelmholtzOperatorData<dim> my_operator_data = operator_data;
-    my_operator_data.set_dof_index(0);
-
-    // setup own matrix free object
-    const QGauss<1> quad(dof_handler.get_fe().degree+1);
-    typename MatrixFree<dim,Number>::AdditionalData addit_data;
-    addit_data.tasks_parallel_scheme = MatrixFree<dim,Number>::AdditionalData::none;
-    if (dof_handler.get_fe().dofs_per_vertex == 0)
-      addit_data.build_face_info = true;
-    addit_data.level_mg_handler = level;
-    addit_data.mpi_communicator =
-      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()) ?
-      (dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()))->get_communicator() : MPI_COMM_SELF;
-    addit_data.periodic_face_pairs_level_0 = operator_data.periodic_face_pairs_level0;
-
-    ConstraintMatrix constraints;
-    own_matrix_free_storage.reinit(mapping, dof_handler, constraints, quad, addit_data);
-
-    // setup own mass matrix operator
-    MassMatrixOperatorData mass_matrix_operator_data = my_operator_data.mass_matrix_operator_data;
-    own_mass_matrix_operator_storage.initialize(own_matrix_free_storage,mass_matrix_operator_data);
-
-    // setup own viscous operator
-    ViscousOperatorData<dim> viscous_operator_data = my_operator_data.viscous_operator_data;
-    own_viscous_operator_storage.initialize(mapping,own_matrix_free_storage,viscous_operator_data);
-
-    // setup Helmholtz operator
-    initialize(own_matrix_free_storage, my_operator_data, own_mass_matrix_operator_storage, own_viscous_operator_storage);
-
-    // initialize temp vector: this is done in this function because
-    // the vector temp is only used in the function vmult_add(), i.e.,
-    // when using the multigrid preconditioner
-    initialize_dof_vector(temp);
-  }
-
+  /*
+   *  This function is called by the multigrid algorithm to initialize the
+   *  matrices on all levels. To construct the matrices, and object of
+   *  type UnderlyingOperator is used that provides all the information for
+   *  the setup, i.e., the information that is needed to call the
+   *  member function initialize(...).
+   */
   template<typename UnderlyingOperator>
   void initialize_mg_matrix (unsigned int const       level,
                              DoFHandler<dim> const    &dof_handler,
@@ -188,6 +115,9 @@ public:
     initialize_dof_vector(temp);
   }
 
+  /*
+   *  Scaling factor of time derivative term (mass matrix term)
+   */
   void set_scaling_factor_time_derivative_term(double const &factor)
   {
     scaling_factor_time_derivative_term = factor;
@@ -198,11 +128,17 @@ public:
     return scaling_factor_time_derivative_term;
   }
 
+  /*
+   *  Operator data
+   */
   HelmholtzOperatorData<dim> const & get_helmholtz_operator_data() const
   {
     return this->helmholtz_operator_data;
   }
 
+  /*
+   *  Operator data of basic operators: mass matrix, convective operator, viscous operator
+   */
   MassMatrixOperatorData const & get_mass_matrix_operator_data() const
   {
     return mass_matrix_operator->get_operator_data();
@@ -213,6 +149,7 @@ public:
     return viscous_operator->get_operator_data();
   }
 
+  // TODO Benjamin: remove this from Helmholtz operator
   void initialize_strong_homogeneous_dirichlet_boundary_conditions()
   {
     strong_homogeneous_dirichlet_bc = true;
@@ -234,74 +171,18 @@ public:
             }
         }
   }
+  // TODO Benjamin: remove this from Helmholtz operator
 
-  void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const
-  {
-    // does nothing in case of the Helmholtz equation
-    // this function is only necessary due to the interface of the multigrid preconditioner
-    // and especially the coarse grid solver that calls this function
-  }
+  /*
+   *  This function does nothing in case of the velocity conv diff operator.
+   *  IT is only necessary due to the interface of the multigrid preconditioner
+   *  and especially the coarse grid solver that calls this function.
+   */
+  void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const {}
 
-  // apply matrix vector multiplication
-  void vmult (parallel::distributed::Vector<Number>       &dst,
-              const parallel::distributed::Vector<Number> &src) const
-  {
-    // helmholtz operator = mass_matrix_operator + viscous_operator
-    if(helmholtz_operator_data.unsteady_problem == true)
-    {
-      AssertThrow(helmholtz_operator_data.scaling_factor_time_derivative_term > 0.0,
-                  ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
-
-      mass_matrix_operator->apply(dst,src);
-      dst *= scaling_factor_time_derivative_term;
-    }
-    else
-    {
-      dst = 0.0;
-    }
-
-    std::vector<std::pair<Number,Number> > dbc_values;
-    strong_homogeneous_dirichlet_pre(src,dst,dbc_values);
-
-    viscous_operator->apply_add(dst,src);
-
-    strong_homogeneous_dirichlet_post(src,dst,dbc_values);
-  }
-
-//  void Tvmult(parallel::distributed::Vector<Number>       &dst,
-//              const parallel::distributed::Vector<Number> &src) const
-//  {
-//    vmult(dst,src);
-//  }
-//
-//  void Tvmult_add(parallel::distributed::Vector<Number>       &dst,
-//                  const parallel::distributed::Vector<Number> &src) const
-//  {
-//    vmult_add(dst,src);
-//  }
-
-  void vmult_add(parallel::distributed::Vector<Number>       &dst,
-                 const parallel::distributed::Vector<Number> &src) const
-  {
-    // helmholtz operator = mass_matrix_operator + viscous_operator
-
-    if(helmholtz_operator_data.unsteady_problem == true)
-    {
-      AssertThrow(helmholtz_operator_data.scaling_factor_time_derivative_term > 0.0,
-                  ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
-
-      mass_matrix_operator->apply(temp,src);
-      temp *= scaling_factor_time_derivative_term;
-      dst += temp;
-    }
-
-    std::vector<std::pair<Number,Number> > dbc_values;
-    strong_homogeneous_dirichlet_pre(src,dst,dbc_values);
-    viscous_operator->apply_add(dst,src);
-
-    strong_homogeneous_dirichlet_post(src,dst,dbc_values);
-  }
-
+  /*
+   *  Other function needed in order to apply geometric multigrid to this operator
+   */
   void vmult_interface_down(parallel::distributed::Vector<Number>       &dst,
                             const parallel::distributed::Vector<Number> &src) const
   {
@@ -319,15 +200,64 @@ public:
     return data->get_vector_partitioner(get_dof_index())->size();
   }
 
-//  types::global_dof_index n() const
-//  {
-//    return data->get_vector_partitioner(helmholtz_operator_data.dof_index)->size();
-//  }
-
   Number el (const unsigned int,  const unsigned int) const
   {
     AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
     return Number();
+  }
+
+  /*
+   *  This function applies the matrix vector multiplication.
+   */
+  void vmult (parallel::distributed::Vector<Number>       &dst,
+              const parallel::distributed::Vector<Number> &src) const
+  {
+    // helmholtz operator = mass_matrix_operator + viscous_operator
+    if(helmholtz_operator_data.unsteady_problem == true)
+    {
+      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+        ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
+
+      mass_matrix_operator->apply(dst,src);
+      dst *= scaling_factor_time_derivative_term;
+    }
+    else
+    {
+      dst = 0.0;
+    }
+
+    std::vector<std::pair<Number,Number> > dbc_values;
+    strong_homogeneous_dirichlet_pre(src,dst,dbc_values);
+
+    viscous_operator->apply_add(dst,src);
+
+    strong_homogeneous_dirichlet_post(src,dst,dbc_values);
+  }
+
+  /*
+   *  This function applies matrix vector product and adds the result
+   *  to the dst-vector.
+   */
+  void vmult_add(parallel::distributed::Vector<Number>       &dst,
+                 const parallel::distributed::Vector<Number> &src) const
+  {
+    // helmholtz operator = mass_matrix_operator + viscous_operator
+
+    if(helmholtz_operator_data.unsteady_problem == true)
+    {
+      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+        ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
+
+      mass_matrix_operator->apply(temp,src);
+      temp *= scaling_factor_time_derivative_term;
+      dst += temp;
+    }
+
+    std::vector<std::pair<Number,Number> > dbc_values;
+    strong_homogeneous_dirichlet_pre(src,dst,dbc_values);
+    viscous_operator->apply_add(dst,src);
+
+    strong_homogeneous_dirichlet_post(src,dst,dbc_values);
   }
 
   unsigned int get_dof_index() const
@@ -335,12 +265,37 @@ public:
     return helmholtz_operator_data.dof_index;
   }
 
+  /*
+   *  This function initializes a global dof-vector.
+   */
+  void initialize_dof_vector(parallel::distributed::Vector<Number> &vector) const
+  {
+    data->initialize_dof_vector(vector,get_dof_index());
+  }
+
+  /*
+   *  Calculation of inverse diagonal (needed for smoothers and preconditioners)
+   */
+  void calculate_inverse_diagonal(parallel::distributed::Vector<Number> &diagonal) const
+  {
+    calculate_diagonal(diagonal);
+
+    // verify_calculation_of_diagonal(diagonal);
+
+    invert_diagonal(diagonal);
+  }
+
+private:
+  /*
+   *  This function calculated the diagonal of the discrete operator representing the
+   *  velocity convection-diffusion operator.
+   */
   void calculate_diagonal(parallel::distributed::Vector<Number> &diagonal) const
   {
     if(helmholtz_operator_data.unsteady_problem == true)
     {
-      AssertThrow(helmholtz_operator_data.scaling_factor_time_derivative_term > 0.0,
-                  ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
+      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+        ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
 
       mass_matrix_operator->calculate_diagonal(diagonal);
       diagonal *= scaling_factor_time_derivative_term;
@@ -351,10 +306,13 @@ public:
     }
 
     viscous_operator->add_diagonal(diagonal);
-
-    // verify_calculation_of_diagonal(diagonal);
   }
 
+  /*
+   *  This functions checks the calculation of the diagonal
+   *  by comparing with an naive algorithm that computes only global
+   *  matrix-vector products to generate the diagonal.
+   */
   void verify_calculation_of_diagonal(parallel::distributed::Vector<Number> const &diagonal) const
   {
     parallel::distributed::Vector<Number>  diagonal2(diagonal);
@@ -375,6 +333,9 @@ public:
     std::cout<<"L2 error diagonal: "<<diagonal2.l2_norm()<<std::endl;
   }
 
+  /*
+   *  This function inverts the diagonal (element by element).
+   */
   void invert_diagonal(parallel::distributed::Vector<Number> &diagonal) const
   {
     for (unsigned int i=0;i<diagonal.local_size();++i)
@@ -386,41 +347,7 @@ public:
     }
   }
 
-  void calculate_inverse_diagonal(parallel::distributed::Vector<Number> &diagonal) const
-  {
-    calculate_diagonal(diagonal);
-
-    invert_diagonal(diagonal);
-  }
-
-  void initialize_dof_vector(parallel::distributed::Vector<Number> &vector) const
-  {
-    data->initialize_dof_vector(vector,get_dof_index());
-  }
-
-private:
-  MatrixFree<dim,Number> const * data;
-  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const *mass_matrix_operator;
-  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const *viscous_operator;
-  HelmholtzOperatorData<dim> helmholtz_operator_data;
-  parallel::distributed::Vector<Number> mutable temp;
-  double scaling_factor_time_derivative_term;
-  bool strong_homogeneous_dirichlet_bc;
-  std::vector<unsigned int> dbc_indices;
-  std::vector<std::pair<Number,Number> > dbc_values;
-
-  /*
-   * The following variables are necessary when applying the multigrid preconditioner to the Helmholtz equation:
-   * In that case, the HelmholtzOperator has to be generated for each level of the multigrid algorithm.
-   * Accordingly, in a first step one has to setup own objects of MatrixFree, MassMatrixOperator, ViscousOperator,
-   *  e.g., own_matrix_free_storage.reinit(...);
-   * and later initialize the HelmholtzOperator with these ojects by setting the above pointers to the own_objects_storage,
-   *  e.g., data = &own_matrix_free_storage;
-   */
-  MatrixFree<dim,Number> own_matrix_free_storage;
-  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> own_mass_matrix_operator_storage;
-  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> own_viscous_operator_storage;
-
+  // TODO Benjamin: remove this from Helmholtz operator
   void strong_homogeneous_dirichlet_pre(const parallel::distributed::Vector<Number> & src,
                                         parallel::distributed::Vector<Number> &       dst,
                                         std::vector<std::pair<Number,Number> > &      dbc_values) const
@@ -438,7 +365,9 @@ private:
       }
     }
   }
+  // TODO Benjamin: remove this from Helmholtz operator
 
+  // TODO Benjamin: remove this from Helmholtz operator
   void strong_homogeneous_dirichlet_post(const parallel::distributed::Vector<Number> &  src,
                                          parallel::distributed::Vector<Number> &        dst,
                                          std::vector<std::pair<Number,Number> > const & dbc_values) const
@@ -454,7 +383,35 @@ private:
       }
     }
   }
+  // TODO Benjamin: remove this from Helmholtz operator
 
+  // TODO Benjamin: remove this from Helmholtz operator
+  bool strong_homogeneous_dirichlet_bc;
+  std::vector<unsigned int> dbc_indices;
+  std::vector<std::pair<Number,Number> > dbc_values;
+  // TODO Benjamin: remove this from Helmholtz operator
+
+  MatrixFree<dim,Number> const * data;
+  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const *mass_matrix_operator;
+  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const *viscous_operator;
+  HelmholtzOperatorData<dim> helmholtz_operator_data;
+  parallel::distributed::Vector<Number> mutable temp;
+  double scaling_factor_time_derivative_term;
+
+  /*
+   * The following variables are necessary when applying the multigrid
+   * preconditioner to the Helmholtz operator. In that case, the
+   * Helmholtz has to be generated for each level of the multigrid algorithm.
+   * Accordingly, in a first step one has to setup own objects of
+   * MatrixFree, MassMatrixOperator, ViscousOperator,
+   *   e.g., own_matrix_free_storage.reinit(...);
+   * and later initialize the HelmholtzOperator with these
+   * ojects by setting the above pointers to the own_objects_storage,
+   *   e.g., data = &own_matrix_free_storage;
+   */
+  MatrixFree<dim,Number> own_matrix_free_storage;
+  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> own_mass_matrix_operator_storage;
+  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> own_viscous_operator_storage;
 };
 
 #endif /* INCLUDE_HELMHOLTZOPERATOR_H_ */

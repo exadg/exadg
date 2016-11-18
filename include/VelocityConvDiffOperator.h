@@ -11,102 +11,6 @@
 #include "MatrixOperatorBase.h"
 #include "NavierStokesOperators.h"
 
-//template<int dim>
-//struct VelocityConvDiffOperatorData
-//{
-//  VelocityConvDiffOperatorData ()
-//    :
-//    unsteady_problem(true),
-//    convective_problem(true)
-//  {}
-//
-//  bool unsteady_problem;
-//  bool convective_problem;
-//};
-//
-//template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule,typename Number = double>
-//class VelocityConvDiffOperator : public Subscriptor
-//{
-//public:
-//  typedef Number value_type;
-//
-//  VelocityConvDiffOperator()
-//    :
-//    data(nullptr),
-//    mass_matrix_operator(nullptr),
-//    viscous_operator(nullptr),
-//    convective_operator(nullptr),
-//    scaling_factor_time_derivative_term(nullptr),
-//    velocity_linearization(nullptr),
-//    evaluation_time(0.0)
-//  {}
-//
-//  void initialize(MatrixFree<dim,Number> const                                                            &mf_data_in,
-//                  VelocityConvDiffOperatorData<dim> const                                                 &operator_data_in,
-//                  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const &mass_matrix_operator_in,
-//                  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const     &viscous_operator_in,
-//                  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const  &convective_operator_in)
-//  {
-//    // copy parameters into element variables
-//    this->data = &mf_data_in;
-//    this->operator_data = operator_data_in;
-//    this->mass_matrix_operator = &mass_matrix_operator_in;
-//    this->viscous_operator = &viscous_operator_in;
-//    this->convective_operator = &convective_operator_in;
-//  }
-//
-//  void set_scaling_factor_time_derivative_term(Number const *factor)
-//  {
-//    scaling_factor_time_derivative_term = factor;
-//  }
-//
-//  void set_velocity_linearization(parallel::distributed::Vector<Number> const *velocity_linearization_in)
-//  {
-//    velocity_linearization = velocity_linearization_in;
-//  }
-//
-//  void set_evaluation_time(Number const &evaluation_time_in)
-//  {
-//    evaluation_time = evaluation_time_in;
-//  }
-//
-//  // apply matrix vector multiplication
-//  void vmult (parallel::distributed::Vector<Number>       &dst,
-//              const parallel::distributed::Vector<Number> &src) const
-//  {
-//    AssertThrow(scaling_factor_time_derivative_term != nullptr,
-//      ExcMessage("Scaling factor of time derivative term has not been set for velocity convection-diffusion operator!"));
-//
-//    if(operator_data.unsteady_problem == true)
-//    {
-//      mass_matrix_operator->apply(dst,src);
-//      dst *= (*scaling_factor_time_derivative_term);
-//    }
-//    else
-//    {
-//      dst = 0.0;
-//    }
-//
-//    viscous_operator->apply_add(dst,src);
-//
-//    if(operator_data.convective_problem == true)
-//    {
-//      convective_operator->apply_linearized_add(dst,src,velocity_linearization,evaluation_time);
-//    }
-//  }
-//
-//private:
-//  MatrixFree<dim,Number> const * data;
-//  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const * mass_matrix_operator;
-//  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const * viscous_operator;
-//  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const * convective_operator;
-//  VelocityConvDiffOperatorData<dim> operator_data;
-//  Number const * scaling_factor_time_derivative_term;
-//  parallel::distributed::Vector<Number> const * velocity_linearization;
-//  Number evaluation_time;
-//};
-
-
 
 template<int dim>
 struct VelocityConvDiffOperatorData
@@ -158,6 +62,13 @@ public:
     }
   }
 
+  /*
+   *  This function is called by the multigrid algorithm to initialize the
+   *  matrices on all levels. To construct the matrices, and object of
+   *  type UnderlyingOperator is used that provides all the information for
+   *  the setup, i.e., the information that is needed to call the
+   *  member function initialize(...).
+   */
   template<typename UnderlyingOperator>
   void initialize_mg_matrix (unsigned int const       level,
                              DoFHandler<dim> const    &dof_handler,
@@ -254,6 +165,9 @@ public:
     initialize_dof_vector(temp_vector);
   }
 
+  /*
+   *  Scaling factor of time derivative term (mass matrix term)
+   */
   void set_scaling_factor_time_derivative_term(double const &factor)
   {
     scaling_factor_time_derivative_term = factor;
@@ -264,6 +178,9 @@ public:
     return scaling_factor_time_derivative_term;
   }
 
+  /*
+   *  Linearized velocity field for convective operator
+   */
   void set_solution_linearization(parallel::distributed::Vector<Number> const &solution_linearization)
   {
     velocity_linearization = solution_linearization;
@@ -274,6 +191,9 @@ public:
     return velocity_linearization;
   }
 
+  /*
+   *  Evaluation time that is needed for evaluation of linearized convective operator.
+   */
   void set_evaluation_time(double const &evaluation_time_in)
   {
     evaluation_time = evaluation_time_in;
@@ -284,11 +204,31 @@ public:
     return evaluation_time;
   }
 
+  /*
+   *  Operator data
+   */
   VelocityConvDiffOperatorData<dim> const & get_velocity_conv_diff_operator_data() const
   {
     return this->operator_data;
   }
 
+  /*
+   *  This function is needed to initialize the multigrid matrices
+   *  for the HelmholtzOperator using VelocityConvDiffOperator as
+   *  underlying operator.
+   */
+  HelmholtzOperatorData<dim> const get_helmholtz_operator_data() const
+  {
+    HelmholtzOperatorData<dim> helmholtz_operator_data;
+    helmholtz_operator_data.unsteady_problem = this->operator_data.unsteady_problem;
+    helmholtz_operator_data.dof_index = this->operator_data.dof_index;
+
+    return helmholtz_operator_data;
+  }
+
+  /*
+   *  Operator data of basic operators: mass matrix, convective operator, viscous operator
+   */
   MassMatrixOperatorData const & get_mass_matrix_operator_data() const
   {
     return mass_matrix_operator->get_operator_data();
@@ -304,14 +244,42 @@ public:
     return viscous_operator->get_operator_data();
   }
 
-  void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const
+  /*
+   *  This function does nothing in case of the velocity conv diff operator.
+   *  IT is only necessary due to the interface of the multigrid preconditioner
+   *  and especially the coarse grid solver that calls this function.
+   */
+  void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const {}
+
+  /*
+   *  Other function needed in order to apply geometric multigrid to this operator
+   */
+  void vmult_interface_down(parallel::distributed::Vector<Number>       &dst,
+                            const parallel::distributed::Vector<Number> &src) const
   {
-    // does nothing in case of the velocity conv diff operator
-    // this function is only necessary due to the interface of the multigrid preconditioner
-    // and especially the coarse grid solver that calls this function
+    vmult(dst,src);
   }
 
-  // apply matrix vector multiplication
+  void vmult_add_interface_up(parallel::distributed::Vector<Number>       &dst,
+                              const parallel::distributed::Vector<Number> &src) const
+  {
+    vmult_add(dst,src);
+  }
+
+  types::global_dof_index m() const
+  {
+    return data->get_vector_partitioner(get_dof_index())->size();
+  }
+
+  Number el (const unsigned int,  const unsigned int) const
+  {
+    AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
+    return Number();
+  }
+
+  /*
+   *  This function applies the matrix vector multiplication.
+   */
   void vmult (parallel::distributed::Vector<Number>       &dst,
               const parallel::distributed::Vector<Number> &src) const
   {
@@ -336,6 +304,10 @@ public:
     }
   }
 
+  /*
+   *  This function applies matrix vector product and adds the result
+   *  to the dst-vector.
+   */
   void vmult_add(parallel::distributed::Vector<Number>       &dst,
                  const parallel::distributed::Vector<Number> &src) const
   {
@@ -357,39 +329,37 @@ public:
     }
   }
 
-  void vmult_interface_down(parallel::distributed::Vector<Number>       &dst,
-                            const parallel::distributed::Vector<Number> &src) const
-  {
-    vmult(dst,src);
-  }
-
-  void vmult_add_interface_up(parallel::distributed::Vector<Number>       &dst,
-                              const parallel::distributed::Vector<Number> &src) const
-  {
-    vmult_add(dst,src);
-  }
-
-  types::global_dof_index m() const
-  {
-    return data->get_vector_partitioner(get_dof_index())->size();
-  }
-
-  Number el (const unsigned int,  const unsigned int) const
-  {
-    AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
-    return Number();
-  }
-
   unsigned int get_dof_index() const
   {
     return operator_data.dof_index;
   }
 
+  /*
+   *  This function initializes a global dof-vector.
+   */
   void initialize_dof_vector(parallel::distributed::Vector<Number> &vector) const
   {
     data->initialize_dof_vector(vector,get_dof_index());
   }
 
+  /*
+   *  Calculation of inverse diagonal (needed for smoothers and preconditioners)
+   */
+  void calculate_inverse_diagonal(parallel::distributed::Vector<Number> &diagonal) const
+  {
+    calculate_diagonal(diagonal);
+
+    // call this function only for reasons of testing
+    //verify_calculation_of_diagonal(diagonal);
+
+    invert_diagonal(diagonal);
+  }
+
+private:
+  /*
+   *  This function calculated the diagonal of the discrete operator representing the
+   *  velocity convection-diffusion operator.
+   */
   void calculate_diagonal(parallel::distributed::Vector<Number> &diagonal) const
   {
 
@@ -414,6 +384,11 @@ public:
     }
   }
 
+  /*
+   *  This functions checks the calculation of the diagonal
+   *  by comparing with an naive algorithm that computes only global
+   *  matrix-vector products to generate the diagonal.
+   */
   void verify_calculation_of_diagonal(parallel::distributed::Vector<Number> const &diagonal) const
   {
     parallel::distributed::Vector<Number>  diagonal2(diagonal);
@@ -434,6 +409,9 @@ public:
     std::cout<<"L2 error diagonal: "<<diagonal2.l2_norm()<<std::endl;
   }
 
+  /*
+   *  This function inverts the diagonal (element by element).
+   */
   void invert_diagonal(parallel::distributed::Vector<Number> &diagonal) const
   {
     for (unsigned int i=0;i<diagonal.local_size();++i)
@@ -445,22 +423,6 @@ public:
     }
   }
 
-  void calculate_inverse_diagonal(parallel::distributed::Vector<Number> &diagonal) const
-  {
-    calculate_diagonal(diagonal);
-
-    //verify_calculation_of_diagonal(diagonal);
-
-    invert_diagonal(diagonal);
-  }
-
-  // getters
-  MatrixFree<dim,value_type> const & get_data() const
-  {
-    return *data;
-  }
-
-private:
   MatrixFree<dim,Number> const * data;
   MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const * mass_matrix_operator;
   ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const * viscous_operator;

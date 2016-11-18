@@ -51,6 +51,11 @@ public:
     return time_steps[0];
   }
 
+  double get_scaling_factor_time_derivative_term()
+  {
+    return gamma0/time_steps[0];
+  }
+
 protected:
   std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor;
 
@@ -120,10 +125,6 @@ setup(bool do_restart)
   // initializes the solution and calculates the time step size!
   initialize_solution_and_calculate_timestep(do_restart);
 
-  // set the parameters that NavierStokesOperation depends on
-//  navier_stokes_operation->set_time_step(time_steps[0]);
-  navier_stokes_operation->set_scaling_factor_time_derivative_term(gamma0/time_steps[0]);
-
   // this is where the setup of deriving classes is performed
   setup_derived();
 
@@ -166,7 +167,6 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
 resume_from_restart()
 {
-
   const std::string filename = restart_filename<dim>(param);
   std::ifstream in (filename.c_str());
   check_file(in, filename);

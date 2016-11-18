@@ -38,7 +38,8 @@ public:
     :
     matrix_free_data(matrix_free_data_in),
     operator_data(operator_data_in),
-    scaling_factor_time_derivative_term(nullptr)
+    scaling_factor_time_derivative_term(-1.0)
+//    scaling_factor_time_derivative_term(nullptr)
   {
     // initialize MassMatrixOperator
     if(operator_data.unsteady_problem == true)
@@ -63,11 +64,11 @@ public:
     // time derivate term in case of unsteady problems
     if(operator_data.unsteady_problem == true)
     {
-      AssertThrow(scaling_factor_time_derivative_term != nullptr,
+      AssertThrow(scaling_factor_time_derivative_term > 0.0,
           ExcMessage("Scaling factor of time derivative term has not been set for pressure convection-diffusion preconditioner!"));
 
       mass_matrix_operator.apply(dst,src);
-      dst *= (*scaling_factor_time_derivative_term);
+      dst *= scaling_factor_time_derivative_term;
     }
     else // ensure that dst is initialized with 0.0 since diffusive operator calls apply_add and not apply
     {
@@ -84,7 +85,7 @@ public:
     }
   }
 
-  void set_scaling_factor_time_derivative_term(double const *factor)
+  void set_scaling_factor_time_derivative_term(double const factor)
   {
     scaling_factor_time_derivative_term = factor;
   }
@@ -92,7 +93,7 @@ public:
 private:
   MatrixFree<dim,value_type> const &matrix_free_data;
   PressureConvectionDiffusionOperatorData<dim> operator_data;
-  value_type const * scaling_factor_time_derivative_term;
+  double scaling_factor_time_derivative_term;
   ScalarConvDiffOperators::MassMatrixOperator<dim, fe_degree, value_type> mass_matrix_operator;
   ScalarConvDiffOperators::DiffusiveOperator<dim, fe_degree, value_type> diffusive_operator;
   ScalarConvDiffOperators::ConvectiveOperatorDiscontinuousVelocity<dim, fe_degree, fe_degree_velocity, value_type> convective_operator;

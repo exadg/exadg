@@ -20,31 +20,38 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall
 class DGNavierStokesPressureCorrection : public DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>
 {
 public:
-  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::value_type value_type;
+  typedef DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> BaseClass;
+  typedef typename BaseClass::value_type value_type;
 
-  typedef FEFaceEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::n_actual_q_points_vel_linear,1,value_type,
-      DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::is_xwall> FEFaceEval_Pressure_Velocity_linear;
+  typedef FEFaceEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,BaseClass::n_actual_q_points_vel_linear,1,
+                                          value_type,BaseClass::is_xwall> FEFaceEval_Pressure_Velocity_linear;
 
   DGNavierStokesPressureCorrection(parallel::distributed::Triangulation<dim> const &triangulation,
                                    InputParametersNavierStokes<dim> const          &parameter)
     :
     DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>(triangulation,parameter),
-    rhs_vector(nullptr)
+    rhs_vector(nullptr),
+    evaluation_time(0.0),
+    scaling_factor_time_derivative_term(1.0)
   {}
 
   virtual ~DGNavierStokesPressureCorrection()
   {}
 
-  void setup_solvers(double const time_step_size);
+  void setup_solvers(double const &time_step_size,
+                     double const &scaling_factor_time_derivative_term);
 
   // momentum step: linear system of equations (Stokes or convective term treated explicitly)
   void solve_linear_momentum_equation (parallel::distributed::Vector<value_type>       &solution,
                                        parallel::distributed::Vector<value_type> const &rhs,
+                                       double const                                    &scaling_factor_mass_matrix_term,
                                        unsigned int                                    &linear_iterations);
 
   // momentum step: nonlinear system of equations (convective term treated implicitly)
   void solve_nonlinear_momentum_equation (parallel::distributed::Vector<value_type>       &dst,
                                           parallel::distributed::Vector<value_type> const &rhs_vector,
+                                          double const                                    &eval_time,
+                                          double const                                    &scaling_factor_mass_matrix_term,
                                           unsigned int                                    &newton_iterations,
                                           double                                          &average_linear_iterations);
 
@@ -66,12 +73,12 @@ public:
   }
 
   // rhs pressure gradient
-  void rhs_pressure_gradient_term(parallel::distributed::Vector<value_type>       &dst,
-                                  value_type const                                evaluation_time) const;
+  void rhs_pressure_gradient_term(parallel::distributed::Vector<value_type> &dst,
+                                  double const                              evaluation_time) const;
 
   // body forces
-  void  evaluate_add_body_force_term(parallel::distributed::Vector<value_type>  &dst,
-                                     const value_type                           evaluation_time) const;
+  void  evaluate_add_body_force_term(parallel::distributed::Vector<value_type> &dst,
+                                     double const                              evaluation_time) const;
 
 
   // apply inverse pressure mass matrix
@@ -95,43 +102,43 @@ private:
   parallel::distributed::Vector<value_type> temp_vector;
   parallel::distributed::Vector<value_type> const *rhs_vector;
 
+  double evaluation_time;
+  double scaling_factor_time_derivative_term;
+
   // setup of solvers
-  void setup_momentum_solver();
+  void setup_momentum_solver(double const &scaling_factor_time_derivative_term);
+
+  void setup_inverse_mass_matrix_operator_pressure();
 };
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesPressureCorrection<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-setup_solvers(double const time_step_size)
+setup_solvers(double const &time_step_size,
+              double const &scaling_factor_time_derivative_term)
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Setup solvers ..." << std::endl;
 
-  setup_momentum_solver();
+  setup_momentum_solver(scaling_factor_time_derivative_term);
 
   this->setup_pressure_poisson_solver(time_step_size);
 
   this->setup_projection_solver();
 
-  // inverse mass matrix operator pressure (needed for pressure update in case of rotational formulation)
-  inverse_mass_matrix_operator_pressure.initialize(this->data,
-      static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector>::type >
-        (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector::pressure),
-      static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector>::type >
-        (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector::pressure));
+  setup_inverse_mass_matrix_operator_pressure();
 
   pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesPressureCorrection<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-setup_momentum_solver ()
+setup_momentum_solver(double const &scaling_factor_time_derivative_term)
 {
   // setup velocity convection-diffusion operator
   VelocityConvDiffOperatorData<dim> vel_conv_diff_operator_data;
 
   // unsteady problem
   vel_conv_diff_operator_data.unsteady_problem = true;
-//  vel_conv_diff_operator_data.scaling_factor_time_derivative_term = this->scaling_factor_time_derivative_term;
 
   // convective problem
   if(this->param.equation_type == EquationType::NavierStokes &&
@@ -144,16 +151,7 @@ setup_momentum_solver ()
     vel_conv_diff_operator_data.convective_problem = false;
   }
 
-//  vel_conv_diff_operator_data.mass_matrix_operator_data = this->get_mass_matrix_operator_data();
-//  // TODO: Velocity conv diff operator is initialized with constant viscosity, in case of varying viscosities
-//  // the vel conv diff operator (the viscous operator of the conv diff operator) has to be updated before applying this
-//  // preconditioner
-//  vel_conv_diff_operator_data.viscous_operator_data = this->get_viscous_operator_data();
-//  vel_conv_diff_operator_data.convective_operator_data = this->get_convective_operator_data();
-
   vel_conv_diff_operator_data.dof_index = this->get_dof_index_velocity();
-
-//  vel_conv_diff_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
 
   velocity_conv_diff_operator.initialize(
       this->get_data(),
@@ -162,18 +160,19 @@ setup_momentum_solver ()
       this->viscous_operator,
       this->convective_operator);
 
-  velocity_conv_diff_operator.set_scaling_factor_time_derivative_term(this->scaling_factor_time_derivative_term);
+  velocity_conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
 
 
   // setup preconditioner for momentum equation
   if(this->param.preconditioner_momentum == PreconditionerMomentum::InverseMassMatrix)
   {
+    typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector DofHandlerSelector;
+    typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector QuadratureSelector;
+
     momentum_preconditioner.reset(new InverseMassMatrixPreconditioner<dim,fe_degree,value_type>(
         this->data,
-        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector>::type >
-            (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector>::type >
-            (DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector::velocity)));
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity)));
   }
   else if(this->param.preconditioner_momentum == PreconditionerMomentum::Jacobi)
   {
@@ -183,43 +182,21 @@ setup_momentum_solver ()
   }
   else if(this->param.preconditioner_momentum == PreconditionerMomentum::VelocityDiffusion)
   {
-    // Geometric multigrid V-cycle performed on Helmholtz operator
-    HelmholtzOperatorData<dim> helmholtz_operator_data;
-
-    helmholtz_operator_data.mass_matrix_operator_data = this->mass_matrix_operator_data;
-    // TODO: this Helmholtz operator is initialized with constant viscosity, in case of varying viscosities
-    // the helmholtz operator (the viscous operator of the helmholtz operator) has to be updated before applying this
-    // preconditioner
-    helmholtz_operator_data.viscous_operator_data = this->viscous_operator_data;
-
-    helmholtz_operator_data.dof_index = this->get_dof_index_velocity();
-
-    // always unsteady problem
-    helmholtz_operator_data.unsteady_problem = true;
-    // TODO: this Helmholtz operator is initialized with constant scaling_factor_time_derivative term,
-    // in case of a varying scaling_factor_time_derivate_term (adaptive time stepping)
-    // the helmholtz operator has to be updated before applying this preconditioner
-    helmholtz_operator_data.scaling_factor_time_derivative_term = this->scaling_factor_time_derivative_term;
-
-    helmholtz_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
-
     typedef float Number;
-    momentum_preconditioner.reset(new MyMultigridPreconditioner<dim,value_type,
-                                        HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                        HelmholtzOperatorData<dim> >());
 
-    std_cxx11::shared_ptr<MyMultigridPreconditioner<dim,value_type,
-                            HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                            HelmholtzOperatorData<dim> > >
-      mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditioner<dim,value_type,
-                                                      HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                                      HelmholtzOperatorData<dim> > >(momentum_preconditioner);
+    typedef MyMultigridPreconditionerVelocityDiffusion<dim,value_type,
+        HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
+        VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
+
+    momentum_preconditioner.reset(new MULTIGRID());
+
+    std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(momentum_preconditioner);
 
     mg_preconditioner->initialize(this->param.multigrid_data_momentum,
-                                  this->get_dof_handler_u(),
-                                  this->get_mapping(),
-                                  helmholtz_operator_data,
-                                  this->boundary_descriptor_velocity->dirichlet_bc);
+                                  this->dof_handler_u,
+                                  this->mapping,
+                                  velocity_conv_diff_operator,
+                                  this->periodic_face_pairs);
   }
   else if(this->param.preconditioner_momentum == PreconditionerMomentum::VelocityConvectionDiffusion)
   {
@@ -228,18 +205,13 @@ setup_momentum_solver ()
     bool use_chebyshev_smoother = false;
     if(use_chebyshev_smoother) // TODO
     {
-      momentum_preconditioner.reset(new MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
-                                          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> >());
+      typedef MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
+          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
+          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
 
-      std_cxx11::shared_ptr<MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
-                              VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                              VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
-        mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
-                                                        VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                                        VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
-            (momentum_preconditioner);
+      momentum_preconditioner.reset(new MULTIGRID());
 
+      std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(momentum_preconditioner);
 
       mg_preconditioner->initialize(this->param.multigrid_data_momentum,
                                     this->get_dof_handler_u(),
@@ -249,17 +221,13 @@ setup_momentum_solver ()
     }
     else
     {
-      momentum_preconditioner.reset(new MyMultigridPreconditionerGMRESSmoother<dim,value_type,
-                                          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> >());
+      typedef MyMultigridPreconditionerGMRESSmoother<dim,value_type,
+          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
+          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
 
-      std_cxx11::shared_ptr<MyMultigridPreconditionerGMRESSmoother<dim,value_type,
-                              VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                              VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
-        mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditionerGMRESSmoother<dim,value_type,
-                                                        VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                                        VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
-          (momentum_preconditioner);
+      momentum_preconditioner.reset(new MULTIGRID());
+
+      std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(momentum_preconditioner);
 
       mg_preconditioner->initialize(this->param.multigrid_data_momentum,
                                     this->get_dof_handler_u(),
@@ -338,6 +306,7 @@ setup_momentum_solver ()
     // initialize temp vector
     this->initialize_vector_velocity(temp_vector);
 
+    // setup Newton solver
     momentum_newton_solver.reset(new NewtonSolver<parallel::distributed::Vector<value_type>,
                                                   DGNavierStokesPressureCorrection<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
                                                   VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>,
@@ -351,17 +320,39 @@ setup_momentum_solver ()
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesPressureCorrection<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+setup_inverse_mass_matrix_operator_pressure ()
+{
+  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector DofHandlerSelector;
+  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector QuadratureSelector;
+
+  // inverse mass matrix operator pressure (needed for pressure update in case of rotational formulation)
+  inverse_mass_matrix_operator_pressure.initialize(
+      this->data,
+      static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure),
+      static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::pressure));
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesPressureCorrection<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 solve_linear_momentum_equation(parallel::distributed::Vector<value_type>       &solution,
                                parallel::distributed::Vector<value_type> const &rhs,
+                               double const                                    &scaling_factor_mass_matrix_term,
                                unsigned int                                    &linear_iterations)
 {
+  // Set scaling_factor_time_derivative_term for linear operator (=velocity_conv_diff_operator).
+  velocity_conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor_mass_matrix_term);
+
+  // Note that there is no need to set the evaluation time for the velocity_conv_diff_operator
+  // in this because because this function is only called if the convective term is not considered
+  // in the velocity_conv_diff_operator (Stokes eq. or explicit treatment of convective term).
+
   linear_iterations = momentum_linear_solver->solve(solution,rhs);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesPressureCorrection<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-evaluate_add_body_force_term(parallel::distributed::Vector<value_type>  &dst,
-                             const value_type                           evaluation_time) const
+evaluate_add_body_force_term(parallel::distributed::Vector<value_type> &dst,
+                             double const                              evaluation_time) const
 {
   this->body_force_operator.evaluate_add(dst,evaluation_time);
 }
@@ -371,14 +362,23 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall
 void DGNavierStokesPressureCorrection<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 solve_nonlinear_momentum_equation(parallel::distributed::Vector<value_type>       &dst,
                                   parallel::distributed::Vector<value_type> const &rhs_vector,
+                                  double const                                    &eval_time,
+                                  double const                                    &scaling_factor_mass_matrix_term,
                                   unsigned int                                    &newton_iterations,
                                   double                                          &average_linear_iterations)
 {
   // Set rhs_vector, this variable is used when evaluating the nonlinear residual
   this->rhs_vector = &rhs_vector;
 
+  // Set evaluation_time for nonlinear operator (=DGNavierStokesPressureCorrection)
+  evaluation_time = eval_time;
+  // Set scaling_time_derivative_term for nonlinear operator (=DGNavierStokesPressureCorrection)
+  scaling_factor_time_derivative_term = scaling_factor_mass_matrix_term;
+
   // Set correct evaluation time for linear operator (=velocity_conv_diff_operator).
-  velocity_conv_diff_operator.set_evaluation_time(this->evaluation_time);
+  velocity_conv_diff_operator.set_evaluation_time(eval_time);
+  // Set scaling_factor_time_derivative_term for linear operator (=velocity_conv_diff_operator).
+  velocity_conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor_mass_matrix_term);
 
   // Solve nonlinear problem
   momentum_newton_solver->solve(dst,newton_iterations,average_linear_iterations);
@@ -396,16 +396,16 @@ evaluate_nonlinear_residual (parallel::distributed::Vector<value_type>          
   dst = 0.0;
 
   // mass matrix term
-  temp_vector.equ(this->scaling_factor_time_derivative_term,src);
+  temp_vector.equ(scaling_factor_time_derivative_term,src);
   this->mass_matrix_operator.apply_add(dst,temp_vector);
 
   // always evaluate convective term since this function is only called
   // if a nonlinear problem has to be solved, i.e., if the convective operator
   // has to be considered
-  this->convective_operator.evaluate_add(dst,src,this->evaluation_time);
+  this->convective_operator.evaluate_add(dst,src,evaluation_time);
 
   // viscous term
-  this->viscous_operator.evaluate_add(dst,src,this->evaluation_time);
+  this->viscous_operator.evaluate_add(dst,src,evaluation_time);
 
   // rhs vector
   dst.add(-1.0,*rhs_vector);
@@ -414,8 +414,8 @@ evaluate_nonlinear_residual (parallel::distributed::Vector<value_type>          
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesPressureCorrection<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-rhs_pressure_gradient_term(parallel::distributed::Vector<value_type>       &dst,
-                           value_type const                                evaluation_time) const
+rhs_pressure_gradient_term(parallel::distributed::Vector<value_type> &dst,
+                           double const                              evaluation_time) const
 {
   this->gradient_operator.rhs(dst,evaluation_time);
 }
