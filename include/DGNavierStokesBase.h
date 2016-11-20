@@ -89,15 +89,11 @@ public:
   DGNavierStokesBase(parallel::distributed::Triangulation<dim> const &triangulation,
                      InputParametersNavierStokes<dim> const          &parameter)
     :
-    // fe_u(FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(fe_degree+1)),dim),
     fe_u(new FESystem<dim>(FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(fe_degree+1)),dim)),
     fe_p(QGaussLobatto<1>(fe_degree_p+1)),
     mapping(fe_degree),
     dof_handler_u(triangulation),
     dof_handler_p(triangulation),
-    evaluation_time(0.0),
-//    time_step(1.0),
-    scaling_factor_time_derivative_term(1.0),
     viscosity(parameter.viscosity),
     dof_index_first_point(0),
     param(parameter),
@@ -122,7 +118,7 @@ public:
                                             parallel::distributed::Vector<value_type> &pressure,
                                             double const                              evaluation_time) const;
 
-  // getters
+
   MatrixFree<dim,value_type> const & get_data() const
   {
     return data;
@@ -178,11 +174,6 @@ public:
     return viscosity;
   }
 
-  value_type get_scaling_factor_time_derivative_term() const
-  {
-    return scaling_factor_time_derivative_term;
-  }
-
   MassMatrixOperatorData const & get_mass_matrix_operator_data() const
   {
     return mass_matrix_operator_data;
@@ -213,27 +204,6 @@ public:
     return field_functions;
   }
 
-  double get_evaluation_time() const
-  {
-    return evaluation_time;
-  }
-
-  // setters
-  void set_scaling_factor_time_derivative_term(double const value)
-  {
-    scaling_factor_time_derivative_term = value;
-  }
-
-  virtual void set_evaluation_time(double const eval_time)
-  {
-    evaluation_time = eval_time;
-  }
-
-//  void set_time_step(double const time_step_in)
-//  {
-//    time_step = time_step_in;
-//  }
-
   // initialization of vectors
   void initialize_vector_velocity(parallel::distributed::Vector<value_type> &src) const
   {
@@ -255,8 +225,10 @@ public:
 
   // special case: pure Dirichlet boundary conditions
   // if analytical solution is available: shift pressure so that the numerical pressure solution
-  // coincides the the analytical pressure solution in an arbitrary point
-  void  shift_pressure (parallel::distributed::Vector<value_type> &pressure) const;
+  // coincides the the analytical pressure solution in an arbitrary point.
+  // Note that the parameter 'eval_time' is only needed for unsteady problems.
+  void  shift_pressure (parallel::distributed::Vector<value_type> &pressure,
+                        double const                              &eval_time = 0.0) const;
 
   // special case: pure Dirichlet boundary conditions
   // if no analytical solution is available: set mean value of pressure vector to zero
@@ -284,10 +256,6 @@ protected:
 
   DoFHandler<dim> dof_handler_u;
   DoFHandler<dim> dof_handler_p;
-
-  double evaluation_time;
-//  double time_step;
-  double scaling_factor_time_derivative_term;
 
   const double viscosity;
 
@@ -561,7 +529,8 @@ prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-shift_pressure (parallel::distributed::Vector<value_type>  &pressure) const
+shift_pressure (parallel::distributed::Vector<value_type>  &pressure,
+                double const                               &eval_time) const
 {
   AssertThrow(this->param.error_data.analytical_solution_available == true,
               ExcMessage("The function shift_pressure is intended to be used only if an analytical solution is available!"));
@@ -569,7 +538,7 @@ shift_pressure (parallel::distributed::Vector<value_type>  &pressure) const
   parallel::distributed::Vector<value_type> vec1(pressure);
   for(unsigned int i=0;i<vec1.local_size();++i)
     vec1.local_element(i) = 1.;
-  this->field_functions->analytical_solution_pressure->set_time(evaluation_time);
+  this->field_functions->analytical_solution_pressure->set_time(eval_time);
   double exact = this->field_functions->analytical_solution_pressure->value(first_point);
   double current = 0.;
   if (pressure.locally_owned_elements().is_element(dof_index_first_point))

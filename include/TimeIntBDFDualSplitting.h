@@ -300,11 +300,6 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
 solve_timestep()
 {
-  // set the parameters that NavierStokesOperation depends on
-  navier_stokes_operation->set_evaluation_time(this->time+this->time_steps[0]);
-//  navier_stokes_operation->set_time_step(this->time_steps[0]);
-  navier_stokes_operation->set_scaling_factor_time_derivative_term(this->gamma0/this->time_steps[0]);
-
   // write output
   if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
   {
@@ -376,7 +371,12 @@ convective_step()
 
     unsigned int newton_iterations;
     double average_linear_iterations;
-    navier_stokes_operation->solve_nonlinear_convective_problem(velocity_np,sum_alphai_ui,newton_iterations,average_linear_iterations);
+    navier_stokes_operation->solve_nonlinear_convective_problem(velocity_np,
+                                                                sum_alphai_ui,
+                                                                this->time + this->time_steps[0],
+                                                                this->get_scaling_factor_time_derivative_term(),
+                                                                newton_iterations,
+                                                                average_linear_iterations);
 
     // write output implicit case
     if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
@@ -416,7 +416,7 @@ pressure_step()
   if(this->param.pure_dirichlet_bc)
   {
     if(this->param.error_data.analytical_solution_available == true)
-      navier_stokes_operation->shift_pressure(pressure_np);
+      navier_stokes_operation->shift_pressure(pressure_np,this->time + this->time_steps[0]);
     else // analytical_solution_available == false
       navier_stokes_operation->apply_zero_mean(pressure_np);
   }
@@ -455,9 +455,6 @@ rhs_pressure()
   // II.1. inhomogeneousBC terms depending on prescribed boundary data,
   //       i.e. pressure Dirichlet boundary conditions on Gamma_N and
   //       body force vector, temporal derivative of velocity on Gamma_D
-
-//  navier_stokes_operation->rhs_pressure_BC_term(rhs_vec_pressure, dummy);
-
   navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure,this->time+this->time_steps[0]);
   navier_stokes_operation->rhs_ppe_nbc_add(rhs_vec_pressure,this->time+this->time_steps[0]);
 
@@ -508,7 +505,11 @@ projection_step()
   rhs_projection();
 
   // solve linear system of equations
-  unsigned int iterations_projection = navier_stokes_operation->solve_projection(velocity_np,rhs_vec_projection,velocity[0],this->cfl,this->time_steps[0]);
+  unsigned int iterations_projection = navier_stokes_operation->solve_projection(velocity_np,
+                                                                                 rhs_vec_projection,
+                                                                                 velocity[0],
+                                                                                 this->cfl,
+                                                                                 this->time_steps[0]);
 
   // write output
   if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
@@ -562,7 +563,9 @@ viscous_step()
     velocity_np.add(this->beta[i],velocity[i]);
 
   // solve linear system of equations
-  unsigned int iterations_viscous = navier_stokes_operation->solve_viscous(velocity_np, rhs_vec_viscous);
+  unsigned int iterations_viscous = navier_stokes_operation->solve_viscous(velocity_np,
+                                                                           rhs_vec_viscous,
+                                                                           this->get_scaling_factor_time_derivative_term());
 
   // write output
   if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)

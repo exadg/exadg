@@ -226,7 +226,8 @@ solve_problem(bool do_restart)
   // depends on quantities such as the time_step_size or gamma0!!!)
   time_integrator->setup(do_restart);
 
-  navier_stokes_operation->setup_solvers(time_integrator->get_time_step_size());
+  navier_stokes_operation->setup_solvers(time_integrator->get_time_step_size(),
+                                         time_integrator->get_scaling_factor_time_derivative_term());
 
   setup_postprocessor();
 

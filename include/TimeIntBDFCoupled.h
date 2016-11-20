@@ -254,11 +254,6 @@ solve_timestep()
   Timer timer;
   timer.restart();
 
-  // set the parameters that NavierStokesOperation depends on
-  navier_stokes_operation->set_evaluation_time(this->time+this->time_steps[0]);
-//  navier_stokes_operation->set_time_step(this->time_steps[0]);
-  navier_stokes_operation->set_scaling_factor_time_derivative_term(this->gamma0/this->time_steps[0]);
-
   // write output
   if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
   {
@@ -291,7 +286,7 @@ solve_timestep()
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     // calculate rhs vector for the Stokes problem, i.e., the convective term is neglected in this step
-    navier_stokes_operation->rhs_stokes_problem(rhs_vector,&sum_alphai_ui);
+    navier_stokes_operation->rhs_stokes_problem(rhs_vector, &sum_alphai_ui, this->time + this->time_steps[0]);
 
     // evaluate convective term and add extrapolation of convective term to the rhs (-> minus sign!)
     if(this->param.equation_type == EquationType::NavierStokes)
@@ -303,7 +298,9 @@ solve_timestep()
     }
 
     // solve coupled system of equations
-    unsigned int iterations = navier_stokes_operation->solve_linear_stokes_problem(solution_np,rhs_vector);
+    unsigned int iterations = navier_stokes_operation->solve_linear_stokes_problem(solution_np,
+                                                                                   rhs_vector,
+                                                                                   this->get_scaling_factor_time_derivative_term());
 
     N_iter_linear_average += iterations;
     solver_time_average += timer.wall_time();
@@ -322,7 +319,12 @@ solve_timestep()
     // Newton solver
     unsigned int newton_iterations = 0;
     double average_linear_iterations = 0.0;
-    navier_stokes_operation->solve_nonlinear_problem(solution_np,sum_alphai_ui,newton_iterations,average_linear_iterations);
+    navier_stokes_operation->solve_nonlinear_problem(solution_np,
+                                                     sum_alphai_ui,
+                                                     this->time + this->time_steps[0],
+                                                     this->get_scaling_factor_time_derivative_term(),
+                                                     newton_iterations,
+                                                     average_linear_iterations);
 
     N_iter_newton_average += newton_iterations;
     N_iter_linear_average += average_linear_iterations;
@@ -343,7 +345,7 @@ solve_timestep()
   if(this->param.pure_dirichlet_bc)
   {
     if(this->param.error_data.analytical_solution_available == true)
-      navier_stokes_operation->shift_pressure(solution_np.block(1));
+      navier_stokes_operation->shift_pressure(solution_np.block(1),this->time + this->time_steps[0]);
     else // analytical_solution_available == false
       navier_stokes_operation->apply_zero_mean(solution_np.block(1));
   }

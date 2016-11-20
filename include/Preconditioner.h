@@ -957,7 +957,7 @@ public:
    *  This function updates the multigrid preconditioner.
    */
   virtual void update(MatrixOperatorBase const * matrix_operator)
-  {
+  {std::cout<<"Update MyMultigridPreconditionerVelocityConvectionDiffusion"<<std::endl;
     UnderlyingOperator const *underlying_operator =
         dynamic_cast<UnderlyingOperator const *>(matrix_operator);
 
@@ -1210,7 +1210,7 @@ public:
    *
    */
   virtual void update(MatrixOperatorBase const * matrix_operator)
-  {
+  {std::cout<<"Update MyMultigridPreconditionerVelocityConvectionDiffusionGMRESSmoother"<<std::endl;
     UnderlyingOperator const *underlying_operator =
         dynamic_cast<UnderlyingOperator const *>(matrix_operator);
 

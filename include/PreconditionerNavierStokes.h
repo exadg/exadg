@@ -464,90 +464,40 @@ private:
       // Helmholtz operator is evaluated)
       HelmholtzOperatorData<dim> helmholtz_operator_data;
 
-      helmholtz_operator_data.mass_matrix_operator_data = underlying_operator->get_mass_matrix_operator_data();
-      // TODO: this Helmholtz operator is initialized with constant viscosity, in case of varying viscosities
-      // the helmholtz operator (the viscous operator of the helmholtz operator) has to be updated before applying this
-      // preconditioner
-      helmholtz_operator_data.viscous_operator_data = underlying_operator->get_viscous_operator_data();
+      if(underlying_operator->param.problem_type == ProblemType::Steady)
+        helmholtz_operator_data.unsteady_problem = false;
+      else
+        helmholtz_operator_data.unsteady_problem = true;
 
       helmholtz_operator_data.dof_index = underlying_operator->get_dof_index_velocity();
 
-      if(underlying_operator->param.problem_type == ProblemType::Steady)
-      {
-        helmholtz_operator_data.unsteady_problem = false;
-      }
-      else
-      {
-        helmholtz_operator_data.unsteady_problem = true;
-        // TODO: this Helmholtz operator is initialized with constant scaling_factor_time_derivative term,
-        // in case of a varying scaling_factor_time_derivate_term (adaptive time stepping)
-        // the helmholtz operator has to be updated before applying this preconditioner
-        helmholtz_operator_data.scaling_factor_time_derivative_term = underlying_operator->get_scaling_factor_time_derivative_term();
-      }
+      typedef MyMultigridPreconditionerVelocityDiffusion<dim,value_type,
+          HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
+          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
 
-      helmholtz_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
+      multigrid_preconditioner_momentum.reset(new MULTIGRID());
 
-      multigrid_preconditioner_momentum.reset(new MyMultigridPreconditioner<dim,value_type,
-                                                    HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                                    HelmholtzOperatorData<dim> >());
-
-      std_cxx11::shared_ptr<MyMultigridPreconditioner<dim,value_type,
-                              HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                              HelmholtzOperatorData<dim> > >
-        mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditioner<dim,value_type,
-                                                        HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                                        HelmholtzOperatorData<dim> > >(multigrid_preconditioner_momentum);
+      std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_momentum);
 
       mg_preconditioner->initialize(mg_data,
                                     underlying_operator->get_dof_handler_u(),
                                     underlying_operator->get_mapping(),
-                                    helmholtz_operator_data,
-                                    underlying_operator->boundary_descriptor_velocity->dirichlet_bc);
+                                    underlying_operator->velocity_conv_diff_operator,
+                                    underlying_operator->periodic_face_pairs);
 
     }
     else if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::VelocityConvectionDiffusion)
     {
-      // Geometric multigrid V-cycle performed on velocity conv-diff operator
-//      VelocityConvDiffOperatorData<dim> vel_conv_diff_operator_data;
-//      // unsteady problem ?
-//      if(underlying_operator->param.problem_type == ProblemType::Unsteady)
-//        vel_conv_diff_operator_data.unsteady_problem = true;
-//      else
-//        vel_conv_diff_operator_data.unsteady_problem = false;
-//      // convective problem ?
-//      if(underlying_operator->nonlinear_problem_has_to_be_solved() == true)
-//        vel_conv_diff_operator_data.convective_problem = true;
-//      else
-//        vel_conv_diff_operator_data.convective_problem = false;
-
-//      // TODO: Velocity conv diff operator is initialized with constant scaling_factor_time_derivative term,
-//      // in case of a varying scaling_factor_time_derivate_term (adaptive time stepping)
-//      // the velocity conv diff operator has to be updated before applying this preconditioner
-//      vel_conv_diff_operator_data.scaling_factor_time_derivative_term = underlying_operator->scaling_factor_time_derivative_term;
-//
-//      vel_conv_diff_operator_data.mass_matrix_operator_data = underlying_operator->get_mass_matrix_operator_data();
-//      // TODO: Velocity conv diff operator is initialized with constant viscosity, in case of varying viscosities
-//      // the vel conv diff operator (the viscous operator of the conv diff operator) has to be updated before applying this
-//      // preconditioner
-//      vel_conv_diff_operator_data.viscous_operator_data = underlying_operator->get_viscous_operator_data();
-//      vel_conv_diff_operator_data.convective_operator_data = underlying_operator->get_convective_operator_data();
-//
-//      vel_conv_diff_operator_data.dof_index = underlying_operator->get_dof_index_velocity();
-//      vel_conv_diff_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
-
-      if(!use_gmres_smoother) // TODO
+      // TODO: Select type of smoother (Chebyshev, GMRES or other) inside the multigrid implementation
+      if(!use_gmres_smoother)
       {
-        multigrid_preconditioner_momentum.reset(new MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
-                                                      VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                                      VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> >());
+        typedef MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
+            VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
+            VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
 
-        std_cxx11::shared_ptr<MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
-                                VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
-          mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
-                                                          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                                          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
-              (multigrid_preconditioner_momentum);
+        multigrid_preconditioner_momentum.reset(new MULTIGRID());
+
+        std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_momentum);
 
         mg_preconditioner->initialize(mg_data,
                                       underlying_operator->get_dof_handler_u(),
@@ -557,17 +507,13 @@ private:
       }
       else
       {
-        multigrid_preconditioner_momentum.reset(new MyMultigridPreconditionerGMRESSmoother<dim,value_type,
-                                                      VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                                      VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> >());
+        typedef MyMultigridPreconditionerGMRESSmoother<dim,value_type,
+            VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
+            VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
 
-        std_cxx11::shared_ptr<MyMultigridPreconditionerGMRESSmoother<dim,value_type,
-                                VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
-          mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditionerGMRESSmoother<dim,value_type,
-                                                          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                                          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
-            (multigrid_preconditioner_momentum);
+        multigrid_preconditioner_momentum.reset(new MULTIGRID());
+
+        std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_momentum);
 
         mg_preconditioner->initialize(mg_data,
                                       underlying_operator->get_dof_handler_u(),
@@ -575,7 +521,6 @@ private:
                                       underlying_operator->velocity_conv_diff_operator,
                                       underlying_operator->periodic_face_pairs);
       }
-
     }
   }
 
@@ -611,18 +556,13 @@ private:
 
       MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
 
-      multigrid_preconditioner_schur_complement.reset(new
-          MyMultigridPreconditionerCompatibleLaplace<dim,value_type,
-            CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>,
-            CompatibleLaplaceOperatorData<dim> > ());
+      typedef MyMultigridPreconditionerCompatibleLaplace<dim,value_type,
+                CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>,
+                CompatibleLaplaceOperatorData<dim> > MULTIGRID;
 
-      std_cxx11::shared_ptr<MyMultigridPreconditionerCompatibleLaplace<dim,value_type,
-                              CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>,
-                              CompatibleLaplaceOperatorData<dim> > >
-        mg_preconditioner = std::dynamic_pointer_cast<
-          MyMultigridPreconditionerCompatibleLaplace<dim,value_type,
-            CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>,
-            CompatibleLaplaceOperatorData<dim> > >(multigrid_preconditioner_schur_complement);
+      multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
+
+      std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
 
       mg_preconditioner->initialize(mg_data,
                                     underlying_operator->get_dof_handler_p(),
@@ -642,16 +582,11 @@ private:
 
       MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
 
-      multigrid_preconditioner_schur_complement.reset(new MyMultigridPreconditioner<dim,value_type,
-                                                            LaplaceOperator<dim,Number>,
-                                                            LaplaceOperatorData<dim> > ());
+      typedef MyMultigridPreconditioner<dim,value_type,LaplaceOperator<dim,Number>,LaplaceOperatorData<dim> > MULTIGRID;
 
-      std_cxx11::shared_ptr<MyMultigridPreconditioner<dim,value_type,
-                              LaplaceOperator<dim,Number>,
-                              LaplaceOperatorData<dim> > >
-        mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditioner<dim,value_type,
-                                                        LaplaceOperator<dim,Number>,
-                                                        LaplaceOperatorData<dim> > >(multigrid_preconditioner_schur_complement);
+      multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
+
+      std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
 
       mg_preconditioner->initialize(mg_data,
                                     underlying_operator->get_dof_handler_p(),
@@ -791,38 +726,21 @@ private:
       pressure_convection_diffusion_operator_data));
 
     if(underlying_operator->unsteady_problem_has_to_be_solved())
-      pressure_convection_diffusion_operator->set_scaling_factor_time_derivative_term(&underlying_operator->scaling_factor_time_derivative_term);
+      pressure_convection_diffusion_operator->set_scaling_factor_time_derivative_term(
+          underlying_operator->velocity_conv_diff_operator.get_scaling_factor_time_derivative_term());
   }
 
-  void update(UnderlyingOperator const *underlying_op)
+  void update(UnderlyingOperator const * /*underlying_op*/)
   {
-    if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::VelocityConvectionDiffusion)
+    // momentum block
+    multigrid_preconditioner_momentum->update(&underlying_operator->velocity_conv_diff_operator);
+
+    // pressure block
+    if(preconditioner_data.schur_complement_preconditioner == SchurComplementPreconditioner::PressureConvectionDiffusion)
     {
-      if(!use_gmres_smoother) // TODO
-      {
-        std_cxx11::shared_ptr<MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
-                                VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
-
-          mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
-                                                          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                                          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
-            (multigrid_preconditioner_momentum);
-
-        mg_preconditioner->update(&underlying_operator->velocity_conv_diff_operator);
-      }
-      else
-      {
-        std_cxx11::shared_ptr<MyMultigridPreconditionerGMRESSmoother<dim,value_type,
-                                VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
-          mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditionerGMRESSmoother<dim,value_type,
-                                                          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-                                                          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
-            (multigrid_preconditioner_momentum);
-
-        mg_preconditioner->update(&underlying_operator->velocity_conv_diff_operator);
-      }
+      if(underlying_operator->unsteady_problem_has_to_be_solved())
+        pressure_convection_diffusion_operator->set_scaling_factor_time_derivative_term(
+            underlying_operator->velocity_conv_diff_operator.get_scaling_factor_time_derivative_term());
     }
   }
 
@@ -838,7 +756,7 @@ private:
       // use the inverse mass matrix as an approximation to the momentum block
       // this approach is expected to perform well for small time steps and/or small viscosities
       inv_mass_matrix_preconditioner_momentum->vmult(dst,src);
-      dst *= 1./underlying_operator->get_scaling_factor_time_derivative_term();
+      dst *= 1./underlying_operator->velocity_conv_diff_operator.get_scaling_factor_time_derivative_term();
     }
     else if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::VelocityDiffusion ||
             preconditioner_data.momentum_preconditioner == MomentumPreconditioner::VelocityConvectionDiffusion)
@@ -915,7 +833,7 @@ private:
     {
       // -S^{-1} = 1/dt  (-L)^{-1}
       apply_inverse_negative_laplace_operator(dst,src);
-      dst *=  underlying_operator->get_scaling_factor_time_derivative_term();
+      dst *=  underlying_operator->velocity_conv_diff_operator.get_scaling_factor_time_derivative_term();
     }
     else if(preconditioner_data.schur_complement_preconditioner == SchurComplementPreconditioner::CahouetChabard)
     {
@@ -923,7 +841,7 @@ private:
 
       // I. 1/dt (-L)^{-1}
       apply_inverse_negative_laplace_operator(dst,src);
-      dst *=  underlying_operator->get_scaling_factor_time_derivative_term();
+      dst *=  underlying_operator->velocity_conv_diff_operator.get_scaling_factor_time_derivative_term();
 
       // II. M_p^{-1}, apply inverse pressure mass matrix to src-vector and store the result in a temporary vector
       inv_mass_matrix_preconditioner_schur_complement->vmult(tmp_scp_pressure,src);
@@ -1044,10 +962,8 @@ private:
   BlockPreconditionerData preconditioner_data;
 
   // preconditioner velocity/momentum block
-  std_cxx11::shared_ptr<PreconditionerBase<value_type> >
-      multigrid_preconditioner_momentum;
-  std_cxx11::shared_ptr<InverseMassMatrixPreconditioner<dim,fe_degree,value_type> >
-      inv_mass_matrix_preconditioner_momentum;
+  std_cxx11::shared_ptr<PreconditionerBase<value_type> > multigrid_preconditioner_momentum;
+  std_cxx11::shared_ptr<InverseMassMatrixPreconditioner<dim,fe_degree,value_type> > inv_mass_matrix_preconditioner_momentum;
 
   std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > solver_velocity_block;
 

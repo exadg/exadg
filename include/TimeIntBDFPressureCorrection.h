@@ -367,11 +367,6 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
 solve_timestep()
 {
-  // set the parameters that NavierStokesOperation depends on
-  navier_stokes_operation->set_evaluation_time(this->time+this->time_steps[0]);
-//  navier_stokes_operation->set_time_step(this->time_steps[0]);
-  navier_stokes_operation->set_scaling_factor_time_derivative_term(this->gamma0/this->time_steps[0]);
-
   // write output
   if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
   {
@@ -425,6 +420,7 @@ momentum_step()
     unsigned int linear_iterations_momentum;
     navier_stokes_operation->solve_linear_momentum_equation(velocity_np,
                                                             rhs_vec_momentum,
+                                                            this->get_scaling_factor_time_derivative_term(),
                                                             linear_iterations_momentum);
 
     // write output explicit case
@@ -448,6 +444,8 @@ momentum_step()
     unsigned int nonlinear_iterations_momentum;
     navier_stokes_operation->solve_nonlinear_momentum_equation(velocity_np,
                                                               rhs_vec_momentum,
+                                                              this->time + this->time_steps[0],
+                                                              this->get_scaling_factor_time_derivative_term(),
                                                               nonlinear_iterations_momentum,
                                                               linear_iterations_momentum);
 
@@ -566,7 +564,7 @@ pressure_step()
   if(this->param.pure_dirichlet_bc)
   {
     if(this->param.error_data.analytical_solution_available == true)
-      navier_stokes_operation->shift_pressure(pressure_np);
+      navier_stokes_operation->shift_pressure(pressure_np,this->time + this->time_steps[0]);
     else // analytical_solution_available == false
       navier_stokes_operation->apply_zero_mean(pressure_np);
   }
