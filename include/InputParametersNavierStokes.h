@@ -270,16 +270,6 @@ enum class MomentumPreconditioner
   VelocityConvectionDiffusion
 };
 
-/*
- *  solver for momentum preconditioner:
- *  only relevant if MomentumPreconditioner::VelocityConvectionDiffusion
- */
-enum class SolverMomentumPreconditioner
-{
-  Undefined,
-  GeometricMultigridVCycle,
-  GeometricMultigridGMRES
-};
 
 /*
  *  Preconditioner for (2,2) pressure/Schur complement block in case of block preconditioning
@@ -306,18 +296,6 @@ enum class DiscretizationOfLaplacian
   Undefined,
   Classical,
   Compatible
-};
-
-/*
- *  solver for Schur complement preconditioner:
- *  only relevant if approximate or exact inversion of Laplace operator
- *  (classical or compatible) is involved in Schur complement preconditioner
- */
-enum class SolverSchurComplementPreconditioner
-{
-  Undefined,
-  GeometricMultigridVCycle,
-  GeometricMultigridPCG
 };
 
 
@@ -561,16 +539,16 @@ public:
 
     // preconditioner velocity/momentum block
     momentum_preconditioner(MomentumPreconditioner::Undefined),
-    solver_momentum_preconditioner(SolverMomentumPreconditioner::Undefined),
     multigrid_data_momentum_preconditioner(MultigridData()),
+    exact_inversion_of_momentum_block(false),
     rel_tol_solver_momentum_preconditioner(1.e-12),
     max_n_tmp_vectors_solver_momentum_preconditioner(30),
 
     // preconditioner Schur-complement block
     schur_complement_preconditioner(SchurComplementPreconditioner::Undefined),
     discretization_of_laplacian(DiscretizationOfLaplacian::Undefined),
-    solver_schur_complement_preconditioner(SolverSchurComplementPreconditioner::Undefined),
     multigrid_data_schur_complement_preconditioner(MultigridData()),
+    exact_inversion_of_laplace_operator(false),
     rel_tol_solver_schur_complement_preconditioner(1.e-12),
 
     // update preconditioner
@@ -670,8 +648,6 @@ public:
       AssertThrow(preconditioner_linearized_navier_stokes != PreconditionerLinearizedNavierStokes::Undefined,ExcMessage("parameter must be defined"));
 
       AssertThrow(momentum_preconditioner != MomentumPreconditioner::Undefined,ExcMessage("parameter must be defined"));
-      if(momentum_preconditioner == MomentumPreconditioner::VelocityConvectionDiffusion)
-        AssertThrow(solver_momentum_preconditioner != SolverMomentumPreconditioner::Undefined,ExcMessage("parameter must be defined"));
 
       AssertThrow(schur_complement_preconditioner != SchurComplementPreconditioner::Undefined,ExcMessage("parameter must be defined"));
       if(schur_complement_preconditioner == SchurComplementPreconditioner::LaplaceOperator ||
@@ -680,7 +656,6 @@ public:
          schur_complement_preconditioner == SchurComplementPreconditioner::PressureConvectionDiffusion)
       {
         AssertThrow(discretization_of_laplacian != DiscretizationOfLaplacian::Undefined,ExcMessage("parameter must be defined"));
-        AssertThrow(solver_schur_complement_preconditioner != SolverSchurComplementPreconditioner::Undefined,ExcMessage("parameter must be defined"));
       }
     }
 
@@ -927,21 +902,10 @@ public:
     
     if(preconditioner_pressure_poisson == PreconditionerPressurePoisson::GeometricMultigrid)
     {   
-      std::string str_multigrid_coarse_ppe[] = { "Chebyshev smoother",
-                                                 "PCG - no preconditioner",
-                                                 "PCG - Jacobi preconditioner",
-                                                 "GMRES - No preconditioner",
-                                                 "GMRES - Jacobi preconditioner"};
-  
-      print_parameter(pcout,"Smoother polynomial degree",multigrid_data_pressure_poisson.smoother_poly_degree);
-      print_parameter(pcout,"Smoothing range",multigrid_data_pressure_poisson.smoother_smoothing_range);
-      print_parameter(pcout,
-                      "Multigrid coarse grid solver",
-                      str_multigrid_coarse_ppe[(int)multigrid_data_pressure_poisson.coarse_solver]);
+      multigrid_data_pressure_poisson.print(pcout);
     }
 
     print_parameter(pcout,"Absolute solver tolerance",abs_tol_pressure);
-
     print_parameter(pcout,"Relative solver tolerance",rel_tol_pressure);
 
     // small time steps stability
@@ -1057,17 +1021,7 @@ public:
 
     if(preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
     {  
-      std::string str_multigrid_coarse_viscous[] = { "Chebyshev smoother",
-                                                     "PCG - no preconditioner",
-                                                     "PCG - Jacobi preconditioner",
-                                                     "GMRES - No preconditioner",
-                                                     "GMRES - Jacobi preconditioner"};
-  
-      print_parameter(pcout,"Smoother polynomial degree",multigrid_data_viscous.smoother_poly_degree);
-      print_parameter(pcout,"Smoothing range",multigrid_data_viscous.smoother_smoothing_range);
-      print_parameter(pcout,
-                      "Multigrid coarse grid solver",
-                      str_multigrid_coarse_viscous[(int)multigrid_data_viscous.coarse_solver]);
+      multigrid_data_viscous.print(pcout);
     }
 
     print_parameter(pcout,"Absolute solver tolerance", abs_tol_viscous);
@@ -1206,38 +1160,21 @@ public:
                     "Preconditioner momentum block",
                     str_momentum_precon[(int)momentum_preconditioner]);                                 
  
-    if(momentum_preconditioner == MomentumPreconditioner::VelocityConvectionDiffusion)
+    if(momentum_preconditioner == MomentumPreconditioner::VelocityDiffusion ||
+       momentum_preconditioner == MomentumPreconditioner::VelocityConvectionDiffusion)
     {
-      std::string str_solver_momentum_precon[] = { "Undefined",
-                                                   "GeometricMultigridVCycle",
-                                                   "GeometricMultigridGMRES" };
+      multigrid_data_momentum_preconditioner.print(pcout);
 
-      print_parameter(pcout,
-                      "Solver momentum preconditioner",
-                      str_solver_momentum_precon[(int)solver_momentum_preconditioner]);
+      print_parameter(pcout,"Exact inversion of momentum block",exact_inversion_of_momentum_block);
 
-      if(solver_momentum_preconditioner == SolverMomentumPreconditioner::GeometricMultigridGMRES)
+      if(exact_inversion_of_momentum_block == true)
       {
-        print_parameter(pcout,
-                        "Relative solver tolerance",
+        print_parameter(pcout, "Relative solver tolerance",
                         rel_tol_solver_momentum_preconditioner);
 
         print_parameter(pcout,"Max number of vectors before restart",
                         max_n_tmp_vectors_solver_momentum_preconditioner);
       }
-
-      print_parameter(pcout,"Smoother polynomial degree",multigrid_data_momentum_preconditioner.smoother_poly_degree);
-      print_parameter(pcout,"Smoothing range",multigrid_data_momentum_preconditioner.smoother_smoothing_range);
-
-      std::string str_multigrid_coarse_solver[] = { "Chebyshev smoother",
-                                                    "PCG - no preconditioner",
-                                                    "PCG - Jacobi preconditioner",
-                                                    "GMRES - No preconditioner",
-                                                    "GMRES - Jacobi preconditioner"};
-
-      print_parameter(pcout,
-                      "Multigrid coarse grid solver",
-                      str_multigrid_coarse_solver[(int)multigrid_data_momentum_preconditioner.coarse_solver]);
 
       print_parameter(pcout,"Update preconditioner",update_preconditioner);
     }
@@ -1267,35 +1204,17 @@ public:
                       "Discretization of Laplacian",
                       str_discret_laplacian[(int)discretization_of_laplacian]);
 
-      std::string str_solver_schur_precon[] = { "Undefined",
-                                                "GeometricMultigridVCycle",
-                                                "GeometricMultigridPCG" };
+      multigrid_data_schur_complement_preconditioner.print(pcout);
 
-      print_parameter(pcout,
-                      "Solver Schur-complement preconditioner",
-                      str_solver_schur_precon[(int)solver_schur_complement_preconditioner]);
+      print_parameter(pcout,"Exact inversion of Laplace operator",exact_inversion_of_laplace_operator);
 
-      if(solver_schur_complement_preconditioner == 
-           SolverSchurComplementPreconditioner::GeometricMultigridPCG)
+      if(exact_inversion_of_laplace_operator)
       {
         print_parameter(pcout,
                         "Relative solver tolerance",
                         rel_tol_solver_schur_complement_preconditioner);
       }
-
-      print_parameter(pcout,"Smoother polynomial degree",multigrid_data_schur_complement_preconditioner.smoother_poly_degree);
-      print_parameter(pcout,"Smoothing range",multigrid_data_schur_complement_preconditioner.smoother_smoothing_range);
-      
-      std::string str_multigrid_coarse_solver[] = { "Chebyshev smoother",
-                                                    "PCG - no preconditioner",
-                                                    "PCG - Jacobi preconditioner",
-                                                    "GMRES - No preconditioner",
-                                                    "GMRES - Jacobi preconditioner"};
-      print_parameter(pcout,
-                      "Multigrid coarse grid solver",
-                      str_multigrid_coarse_solver[(int)multigrid_data_schur_complement_preconditioner.coarse_solver]);
     }
-
   }
 
   void print_parameters_turbulence(ConditionalOStream &pcout)
@@ -1630,14 +1549,20 @@ public:
   // description: see enum declaration
   MomentumPreconditioner momentum_preconditioner;
 
-  // description: see enum declaration
-  SolverMomentumPreconditioner solver_momentum_preconditioner;
-
   // description: see declaration
   MultigridData multigrid_data_momentum_preconditioner;
 
+  // The momentum block is inverted "exactly" in block preconditioner
+  // by solving the velocity convection-diffusion problem to a given
+  // relative tolerance
+  bool exact_inversion_of_momentum_block;
+
   // relative tolerance for solver_momentum_preconditioner
   double rel_tol_solver_momentum_preconditioner;
+
+  // defines the maximum size of the Krylov subspace before restart
+  // (for solver of momentum equation in block preconditioner)
+  unsigned int max_n_tmp_vectors_solver_momentum_preconditioner;
 
   // description: see enum declaration
   SchurComplementPreconditioner schur_complement_preconditioner;
@@ -1645,18 +1570,15 @@ public:
   // description: see enum declaration
   DiscretizationOfLaplacian discretization_of_laplacian;
 
-  // description: see enum declaration
-  SolverSchurComplementPreconditioner solver_schur_complement_preconditioner;
-
   // description: see declaration
   MultigridData multigrid_data_schur_complement_preconditioner;
 
+  // The Laplace operator is inverted "exactly" in block preconditioner
+  // by solving the Laplace problem to a given relative tolerance
+  bool exact_inversion_of_laplace_operator;
+
   // relative tolerance for solver_schur_complement_preconditioner
   double rel_tol_solver_schur_complement_preconditioner;
-
-  // defines the maximum size of the Krylov subspace before restart
-  // (for solver of momentum equation in block preconditioner)
-  unsigned int max_n_tmp_vectors_solver_momentum_preconditioner;
 
 
   // Update preconditioner: this variable is also relevant for other solver

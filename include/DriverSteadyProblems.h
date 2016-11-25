@@ -194,19 +194,19 @@ void DriverSteadyProblems<dim, value_type, NavierStokesOperation>::
 analyze_computing_times() const
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-  pcout << std::endl << "_________________________________________________________________________________" << std::endl
-        << std::endl << "Computing times:          min        avg        max        rel      p_min  p_max" << std::endl;
+  pcout << std::endl
+        << "_________________________________________________________________________________" << std::endl << std::endl
+        << "Computing times:          min        avg        max        rel      p_min  p_max " << std::endl;
 
   Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg (this->total_time, MPI_COMM_WORLD);
-  pcout  << "  Global time:         " << std::scientific
-         << std::setprecision(4) << std::setw(10) << data.min << " "
-         << std::setprecision(4) << std::setw(10) << data.avg << " "
-         << std::setprecision(4) << std::setw(10) << data.max << " "
-         << "          " << "  "
-         << std::setw(6) << std::left << data.min_index << " "
-         << std::setw(6) << std::left << data.max_index << std::endl
-         << "_________________________________________________________________________________"
-         << std::endl << std::endl;
+  pcout << "  Global time:         " << std::scientific
+        << std::setprecision(4) << std::setw(10) << data.min << " "
+        << std::setprecision(4) << std::setw(10) << data.avg << " "
+        << std::setprecision(4) << std::setw(10) << data.max << " "
+        << "          " << "  "
+        << std::setw(6) << std::left << data.min_index << " "
+        << std::setw(6) << std::left << data.max_index << std::endl
+        << "_________________________________________________________________________________" << std::endl << std::endl;
 }
 
 #endif /* INCLUDE_DRIVERSTEADYPROBLEMS_H_ */

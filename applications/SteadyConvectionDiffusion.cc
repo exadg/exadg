@@ -1,7 +1,7 @@
 /*
- * DGConvectionDiffusionProblem.cc
+ * SteadyConvectionDiffusion.cc
  *
- *  Created on: Aug 18, 2016
+ *  Created on: Nov 23, 2016
  *      Author: fehn
  */
 
@@ -54,8 +54,7 @@
 
 #include "../include/DGConvDiffOperation.h"
 
-#include "../include/TimeIntExplRKConvDiff.h"
-#include "../include/TimeIntBDFConvDiff.h"
+#include "../include/DriverSteadyConvDiff.h"
 
 #include "../include/BoundaryDescriptorConvDiff.h"
 #include "../include/FieldFunctionsConvDiff.h"
@@ -72,16 +71,8 @@ using namespace ConvDiff;
 
 // SPECIFY THE TEST CASE THAT HAS TO BE SOLVED
 
-//#include "ConvectionDiffusionTestCases/PropagatingSineWave.h"
-//#include "ConvectionDiffusionTestCases/RotatingHill.h"
-//#include "ConvectionDiffusionTestCases/DeformingHill.h"
-#include "ConvectionDiffusionTestCases/DiffusiveProblemHomogeneousDBC.h"
-//#include "ConvectionDiffusionTestCases/DiffusiveProblemHomogeneousNBC.h"
-//#include "ConvectionDiffusionTestCases/DiffusiveProblemHomogeneousNBC2.h"
-//#include "ConvectionDiffusionTestCases/ConstantRHS.h"
 //#include "ConvectionDiffusionTestCases/BoundaryLayerProblem.h"
-//#include "ConvectionDiffusionTestCases/ConstWindConstRHS.h"
-
+#include "ConvectionDiffusionTestCases/ConstWindConstRHS.h"
 
 
 template<int dim, int fe_degree>
@@ -89,12 +80,13 @@ class ConvDiffProblem
 {
 public:
   typedef double value_type;
-  ConvDiffProblem(const unsigned int n_refine_space,
-                  const unsigned int n_refine_time);
+  ConvDiffProblem(const unsigned int n_refine_space);
 
   void solve_problem();
 
 private:
+  void print_header();
+
   void print_grid_data();
 
   void setup_postprocessor();
@@ -105,10 +97,9 @@ private:
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_faces;
 
-  InputParametersConvDiff param;
+  ConvDiff::InputParametersConvDiff param;
 
   const unsigned int n_refine_space;
-  const unsigned int n_refine_time;
 
   std_cxx11::shared_ptr<FieldFunctionsConvDiff<dim> > field_functions;
   std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor;
@@ -118,34 +109,26 @@ private:
   std_cxx11::shared_ptr<DGConvDiffOperation<dim,fe_degree, value_type> > conv_diff_operation;
   std_cxx11::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> > postprocessor;
 
-  std_cxx11::shared_ptr<TimeIntExplRKConvDiff<dim, fe_degree, value_type> > time_integrator_explRK;
-  std_cxx11::shared_ptr<TimeIntBDFConvDiff<dim,fe_degree,value_type> > time_integrator_BDF;
+  std_cxx11::shared_ptr<DriverSteadyConvDiff<dim, fe_degree, value_type,
+      DGConvDiffOperation<dim,fe_degree, value_type> > > driver_steady_conv_diff;
 };
 
 template<int dim, int fe_degree>
 ConvDiffProblem<dim, fe_degree>::
-ConvDiffProblem(const unsigned int n_refine_space_in,
-                const unsigned int n_refine_time_in)
+ConvDiffProblem(const unsigned int n_refine_space_in)
   :
   pcout (std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0),
   triangulation(MPI_COMM_WORLD,
                 dealii::Triangulation<dim>::none,
                 parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
-  n_refine_space(n_refine_space_in),
-  n_refine_time(n_refine_time_in)
+  n_refine_space(n_refine_space_in)
 {
-  pcout << std::endl << std::endl << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << "                                                                                 " << std::endl
-  << "                High-order discontinuous Galerkin solver for the                 " << std::endl
-  << "                     unsteady convection-diffusion equation                      " << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << std::endl;
+  print_header();
 
   param.set_input_parameters();
   param.check_input_parameters();
 
-  if(param.print_input_parameters)
+  if(param.print_input_parameters == true)
     param.print(pcout);
 
   field_functions.reset(new FieldFunctionsConvDiff<dim>());
@@ -164,31 +147,22 @@ ConvDiffProblem(const unsigned int n_refine_space_in,
   // initialize postprocessor
   postprocessor.reset(new ConvDiff::PostProcessor<dim, fe_degree>());
 
-  // initialize time integrator
-  if(param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
-  {
-    time_integrator_explRK.reset(new TimeIntExplRKConvDiff<dim, fe_degree, value_type>(
-        conv_diff_operation,
-        postprocessor,
-        param,
-        field_functions->velocity,
-        n_refine_time));
-  }
-  else if(param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
-  {
-    time_integrator_BDF.reset(new TimeIntBDFConvDiff<dim, fe_degree, value_type>(
-        conv_diff_operation,
-        postprocessor,
-        param,
-        field_functions->velocity,
-        n_refine_time));
-  }
-  else
-  {
-    AssertThrow(param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK ||
-                param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF,
-                ExcMessage("Specified time integration scheme is not implemented!"));
-  }
+  // initialize driver for steady convection-diffusion problems
+  driver_steady_conv_diff.reset(new DriverSteadyConvDiff<dim, fe_degree, value_type,
+      DGConvDiffOperation<dim,fe_degree, value_type> >(conv_diff_operation,postprocessor,param));
+}
+
+template<int dim, int fe_degree>
+void ConvDiffProblem<dim, fe_degree>::
+print_header()
+{
+  pcout << std::endl << std::endl << std::endl
+  << "_________________________________________________________________________________" << std::endl
+  << "                                                                                 " << std::endl
+  << "                High-order discontinuous Galerkin solver for the                 " << std::endl
+  << "                      steady convection-diffusion equation                       " << std::endl
+  << "_________________________________________________________________________________" << std::endl
+  << std::endl;
 }
 
 template<int dim, int fe_degree>
@@ -237,25 +211,13 @@ solve_problem()
                              boundary_descriptor,
                              field_functions);
 
+  conv_diff_operation->setup_solver(/*no parameter since this is a steady problem*/);
+
   setup_postprocessor();
 
-  if(param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
-  {
-    time_integrator_explRK->setup();
+  driver_steady_conv_diff->setup();
 
-    time_integrator_explRK->timeloop();
-  }
-  else if(param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
-  {
-    // call setup() of time_integrator before setup_solvers() of conv_diff_operation
-    // because setup_solvers() needs quantities such as the time step size for a
-    // correct initialization of preconditioners
-    time_integrator_BDF->setup();
-
-    conv_diff_operation->setup_solver(time_integrator_BDF->get_scaling_factor_time_derivative_term());
-
-    time_integrator_BDF->timeloop();
-  }
+  driver_steady_conv_diff->solve_problem();
 }
 
 int main (int argc, char** argv)
@@ -271,14 +233,8 @@ int main (int argc, char** argv)
     for(unsigned int refine_steps_space = REFINE_STEPS_SPACE_MIN;
         refine_steps_space <= REFINE_STEPS_SPACE_MAX; ++refine_steps_space)
     {
-      //time refinements in order to perform temporal convergence tests
-      for(unsigned int refine_steps_time = REFINE_STEPS_TIME_MIN;
-          refine_steps_time <= REFINE_STEPS_TIME_MAX; ++refine_steps_time)
-      {
-        ConvDiffProblem<DIMENSION, FE_DEGREE> conv_diff_problem(refine_steps_space,
-                                                                refine_steps_time);
-        conv_diff_problem.solve_problem();
-      }
+      ConvDiffProblem<DIMENSION, FE_DEGREE> conv_diff_problem(refine_steps_space);
+      conv_diff_problem.solve_problem();
     }
   }
   catch (std::exception &exc)
@@ -306,3 +262,6 @@ int main (int argc, char** argv)
   }
   return 0;
 }
+
+
+

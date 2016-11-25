@@ -11,9 +11,6 @@
 #include "FE_Parameters.h"
 #include "MatrixOperatorBase.h"
 
-//template <int dim>
-//class BaseOperator: public Subscriptor
-
 template <int dim>
 class BaseOperator: public MatrixOperatorBase
 {

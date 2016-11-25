@@ -856,6 +856,14 @@ void LaplaceOperator<dim,Number>
       inverse_diagonal_entries.local_element(i) = 1.;
 }
 
+template <int dim, typename Number>
+void LaplaceOperator<dim,Number>::
+apply_block_jacobi (parallel::distributed::Vector<Number>       &dst,
+                    parallel::distributed::Vector<Number> const &src) const
+{
+  AssertThrow(false,ExcMessage("Block Jacobi preconditioner not implemented for Laplace operator."));
+}
+
 
 
 template <int dim, typename Number>

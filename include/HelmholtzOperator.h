@@ -61,12 +61,12 @@ public:
    *  member function initialize(...).
    */
   template<typename UnderlyingOperator>
-  void initialize_mg_matrix (unsigned int const       level,
-                             DoFHandler<dim> const    &dof_handler,
-                             Mapping<dim> const       &mapping,
-                             UnderlyingOperator const &underlying_operator,
-                             const std::vector<GridTools::PeriodicFacePair<typename
-                               Triangulation<dim>::cell_iterator> > &periodic_face_pairs_level0)
+  void initialize_mg_matrix (unsigned int const                              level,
+                             DoFHandler<dim> const                           &dof_handler,
+                             Mapping<dim> const                              &mapping,
+                             UnderlyingOperator const                        &underlying_operator,
+                             const std::vector<GridTools::PeriodicFacePair<
+                               typename Triangulation<dim>::cell_iterator> > &periodic_face_pairs_level0)
   {
     // setup own matrix free object
 
@@ -137,7 +137,7 @@ public:
   }
 
   /*
-   *  Operator data of basic operators: mass matrix, convective operator, viscous operator
+   *  Operator data of basic operators: mass matrix, viscous operator
    */
   MassMatrixOperatorData const & get_mass_matrix_operator_data() const
   {
@@ -204,6 +204,11 @@ public:
   {
     AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
     return Number();
+  }
+
+  MatrixFree<dim,value_type> const & get_data() const
+  {
+    return *data;
   }
 
   /*
@@ -285,9 +290,18 @@ public:
     invert_diagonal(diagonal);
   }
 
+  /*
+   *  Apply block Jacobi preconditioner
+   */
+  void apply_block_jacobi (parallel::distributed::Vector<Number>       &dst,
+                           parallel::distributed::Vector<Number> const &src) const
+  {
+    AssertThrow(false,ExcMessage("Block Jacobi preconditioner not implemented for velocity reaction-diffusion operator."));
+  }
+
 private:
   /*
-   *  This function calculated the diagonal of the discrete operator representing the
+   *  This function calculates the diagonal of the discrete operator representing the
    *  velocity convection-diffusion operator.
    */
   void calculate_diagonal(parallel::distributed::Vector<Number> &diagonal) const

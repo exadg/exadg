@@ -17,6 +17,10 @@
 #include "PressureNeumannBCConvectiveTerm.h"
 #include "PressureNeumannBCViscousTerm.h"
 
+#include "InverseMassMatrixPreconditioner.h"
+#include "../include/JacobiPreconditioner.h"
+#include "../include/MultigridPreconditionerNavierStokes.h"
+
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 class DGNavierStokesDualSplitting : public DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>
 {

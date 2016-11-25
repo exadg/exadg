@@ -8,7 +8,11 @@
 #ifndef INCLUDE_PRECONDITIONERNAVIERSTOKES_H_
 #define INCLUDE_PRECONDITIONERNAVIERSTOKES_H_
 
-#include "Preconditioner.h"
+
+#include "InverseMassMatrixPreconditioner.h"
+#include "MultigridPreconditionerLaplace.h"
+#include "MultigridPreconditionerNavierStokes.h"
+
 #include "HelmholtzOperator.h"
 #include "poisson_solver.h"
 #include "CompatibleLaplaceOperator.h"
@@ -153,16 +157,16 @@ struct BlockPreconditionerData
 
   // preconditioner momentum block
   MomentumPreconditioner momentum_preconditioner;
-  SolverMomentumPreconditioner solver_momentum_preconditioner;
   MultigridData multigrid_data_momentum_preconditioner;
+  bool exact_inversion_of_momentum_block;
   double rel_tol_solver_momentum_preconditioner;
   unsigned int max_n_tmp_vectors_solver_momentum_preconditioner;
 
   // preconditioner Schur-complement block
   SchurComplementPreconditioner schur_complement_preconditioner;
   DiscretizationOfLaplacian discretization_of_laplacian;
-  SolverSchurComplementPreconditioner solver_schur_complement_preconditioner;
   MultigridData multigrid_data_schur_complement_preconditioner;
+  bool exact_inversion_of_laplace_operator;
   double rel_tol_solver_schur_complement_preconditioner;
 };
 
@@ -175,8 +179,6 @@ public:
   BlockPreconditionerNavierStokes(DGNavierStokesCoupled<dim, fe_degree,
                                     fe_degree_p, fe_degree_xwall, xwall_quad_rule> *underlying_operator_in,
                                   BlockPreconditionerData const                    &preconditioner_data_in)
-    :
-    use_gmres_smoother(false) // TODO
   {
     underlying_operator = underlying_operator_in;
     preconditioner_data = preconditioner_data_in;
@@ -194,7 +196,7 @@ public:
     }
     /*********** initialization of temporary vector ***************/
 
-    /****** preconditioner velocity/momentum block ****************/
+    /********** preconditioner velocity/momentum block ************/
     if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::InverseMassMatrix)
     {
       // inverse mass matrix
@@ -209,12 +211,12 @@ public:
       // multigrid preconditioner for Helmholtz operator (unsteady case) or viscous operator (steady case)
       setup_multigrid_preconditioner_momentum();
 
-      if(preconditioner_data.solver_momentum_preconditioner == SolverMomentumPreconditioner::GeometricMultigridGMRES)
+      if(preconditioner_data.exact_inversion_of_momentum_block == true)
       {
         setup_iterative_solver_momentum();
       }
     }
-    /****** preconditioner velocity/momentum block ****************/
+    /********** preconditioner velocity/momentum block ************/
 
     /****** preconditioner pressure/Schur-complement block ********/
     if(preconditioner_data.schur_complement_preconditioner == SchurComplementPreconditioner::InverseMassMatrix)
@@ -230,7 +232,7 @@ public:
       // multigrid for negative Laplace operator (classical or compatible discretization)
       setup_multigrid_preconditioner_schur_complement();
 
-      if(preconditioner_data.solver_schur_complement_preconditioner == SolverSchurComplementPreconditioner::GeometricMultigridPCG)
+      if(preconditioner_data.exact_inversion_of_laplace_operator == true)
       {
         // iterative solver used to invert the negative Laplace operator (classical or compatible discretization)
         setup_iterative_solver_schur_complement();
@@ -244,7 +246,7 @@ public:
       // multigrid for negative Laplace operator (classical or compatible discretization)
       setup_multigrid_preconditioner_schur_complement();
 
-      if(preconditioner_data.solver_schur_complement_preconditioner == SolverSchurComplementPreconditioner::GeometricMultigridPCG)
+      if(preconditioner_data.exact_inversion_of_laplace_operator == true)
       {
         // iterative solver used to invert the negative Laplace operator (classical or compatible discretization)
         setup_iterative_solver_schur_complement();
@@ -265,7 +267,7 @@ public:
       // multigrid for negative Laplace operator (classical or compatible discretization)
       setup_multigrid_preconditioner_schur_complement();
 
-      if(preconditioner_data.solver_schur_complement_preconditioner == SolverSchurComplementPreconditioner::GeometricMultigridPCG)
+      if(preconditioner_data.exact_inversion_of_laplace_operator == true)
       {
         // iterative solver used to invert the negative Laplace operator (classical or compatible discretization)
         setup_iterative_solver_schur_complement();
@@ -293,7 +295,7 @@ public:
       // I. multigrid for negative Laplace operator (classical or compatible discretization)
       setup_multigrid_preconditioner_schur_complement();
 
-      if(preconditioner_data.solver_schur_complement_preconditioner == SolverSchurComplementPreconditioner::GeometricMultigridPCG)
+      if(preconditioner_data.exact_inversion_of_laplace_operator == true)
       {
         setup_iterative_solver_schur_complement();
       }
@@ -462,15 +464,7 @@ private:
     {
       // Geometric multigrid for Helmholtz operator (for steady problems only the viscous term of the
       // Helmholtz operator is evaluated)
-      HelmholtzOperatorData<dim> helmholtz_operator_data;
-
-      if(underlying_operator->param.problem_type == ProblemType::Steady)
-        helmholtz_operator_data.unsteady_problem = false;
-      else
-        helmholtz_operator_data.unsteady_problem = true;
-
-      helmholtz_operator_data.dof_index = underlying_operator->get_dof_index_velocity();
-
+      // use VelocityConvDiffOperator as underlying operator
       typedef MyMultigridPreconditionerVelocityDiffusion<dim,value_type,
           HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
           VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
@@ -488,39 +482,19 @@ private:
     }
     else if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::VelocityConvectionDiffusion)
     {
-      // TODO: Select type of smoother (Chebyshev, GMRES or other) inside the multigrid implementation
-      if(!use_gmres_smoother)
-      {
-        typedef MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
-            VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-            VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
+      typedef MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
+          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
+          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
 
-        multigrid_preconditioner_momentum.reset(new MULTIGRID());
+      multigrid_preconditioner_momentum.reset(new MULTIGRID());
 
-        std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_momentum);
+      std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_momentum);
 
-        mg_preconditioner->initialize(mg_data,
-                                      underlying_operator->get_dof_handler_u(),
-                                      underlying_operator->get_mapping(),
-                                      underlying_operator->velocity_conv_diff_operator,
-                                      underlying_operator->periodic_face_pairs);
-      }
-      else
-      {
-        typedef MyMultigridPreconditionerGMRESSmoother<dim,value_type,
-            VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-            VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
-
-        multigrid_preconditioner_momentum.reset(new MULTIGRID());
-
-        std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_momentum);
-
-        mg_preconditioner->initialize(mg_data,
-                                      underlying_operator->get_dof_handler_u(),
-                                      underlying_operator->get_mapping(),
-                                      underlying_operator->velocity_conv_diff_operator,
-                                      underlying_operator->periodic_face_pairs);
-      }
+      mg_preconditioner->initialize(mg_data,
+                                    underlying_operator->get_dof_handler_u(),
+                                    underlying_operator->get_mapping(),
+                                    underlying_operator->velocity_conv_diff_operator,
+                                    underlying_operator->periodic_face_pairs);
     }
   }
 
@@ -546,19 +520,11 @@ private:
   {
     if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Compatible)
     {
-      // compatible discretization of Laplacian
-      CompatibleLaplaceOperatorData<dim> compatible_laplace_operator_data;
-      compatible_laplace_operator_data.dof_index_velocity = underlying_operator->get_dof_index_velocity();
-      compatible_laplace_operator_data.dof_index_pressure = underlying_operator->get_dof_index_pressure();
-      compatible_laplace_operator_data.gradient_operator_data = underlying_operator->get_gradient_operator_data();
-      compatible_laplace_operator_data.divergence_operator_data = underlying_operator->get_divergence_operator_data();
-      compatible_laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
-
       MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
-
-      typedef MyMultigridPreconditionerCompatibleLaplace<dim,value_type,
+      // use DGNavierStokesCoupled as underlying operator for multigrid applied to compatible Laplace operator
+      typedef MyMultigridPreconditionerDG<dim,value_type,
                 CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>,
-                CompatibleLaplaceOperatorData<dim> > MULTIGRID;
+                DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > MULTIGRID;
 
       multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
 
@@ -566,9 +532,9 @@ private:
 
       mg_preconditioner->initialize(mg_data,
                                     underlying_operator->get_dof_handler_p(),
-                                    underlying_operator->get_dof_handler_u(),
                                     underlying_operator->get_mapping(),
-                                    compatible_laplace_operator_data);
+                                    *underlying_operator,
+                                    underlying_operator->periodic_face_pairs);
     }
     else if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Classical)
     {
@@ -582,7 +548,7 @@ private:
 
       MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
 
-      typedef MyMultigridPreconditioner<dim,value_type,LaplaceOperator<dim,Number>,LaplaceOperatorData<dim> > MULTIGRID;
+      typedef MyMultigridPreconditionerLaplace<dim,value_type,LaplaceOperator<dim,Number>,LaplaceOperatorData<dim> > MULTIGRID;
 
       multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
 
@@ -635,17 +601,13 @@ private:
       CompatibleLaplaceOperatorData<dim> compatible_laplace_operator_data;
       compatible_laplace_operator_data.dof_index_velocity = underlying_operator->get_dof_index_velocity();
       compatible_laplace_operator_data.dof_index_pressure = underlying_operator->get_dof_index_pressure();
-      compatible_laplace_operator_data.gradient_operator_data = underlying_operator->get_gradient_operator_data();
-      compatible_laplace_operator_data.divergence_operator_data = underlying_operator->get_divergence_operator_data();
-      compatible_laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
 
       laplace_operator_compatible.reset(new CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>());
-      laplace_operator_compatible->initialize(
-          underlying_operator->get_data(),
-          compatible_laplace_operator_data,
-          underlying_operator->gradient_operator,
-          underlying_operator->divergence_operator,
-          *underlying_operator->inverse_mass_matrix_operator);
+      laplace_operator_compatible->initialize(underlying_operator->get_data(),
+                                              compatible_laplace_operator_data,
+                                              underlying_operator->gradient_operator,
+                                              underlying_operator->divergence_operator,
+                                              *underlying_operator->inverse_mass_matrix_operator);
 
       solver_pressure_block.reset(new CGSolver<CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>,
                                                PreconditionerBase<value_type>,
@@ -761,12 +723,12 @@ private:
     else if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::VelocityDiffusion ||
             preconditioner_data.momentum_preconditioner == MomentumPreconditioner::VelocityConvectionDiffusion)
     {
-      if(preconditioner_data.solver_momentum_preconditioner == SolverMomentumPreconditioner::GeometricMultigridVCycle)
+      if(preconditioner_data.exact_inversion_of_momentum_block == false)
       {
         // perform one geometric multigrid V-cylce for the Helmholtz operator or viscous operator (in case of steady-state problem)
         multigrid_preconditioner_momentum->vmult(dst,src);
       }
-      else if(preconditioner_data.solver_momentum_preconditioner == SolverMomentumPreconditioner::GeometricMultigridGMRES)
+      else // exact_inversion_of_momentum_block == true
       {
         // CheckMultigrid
 //        std_cxx11::shared_ptr<MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
@@ -797,13 +759,6 @@ private:
 //        ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 //        pcout<<"Number of GMRES iterations = "<<iterations_velocity_block<<std::endl;
       }
-      else
-      {
-        AssertThrow(preconditioner_data.solver_momentum_preconditioner == SolverMomentumPreconditioner::GeometricMultigridVCycle ||
-                    preconditioner_data.solver_momentum_preconditioner == SolverMomentumPreconditioner::GeometricMultigridGMRES,
-                    ExcMessage("Specified solver for velocity/momentum preconditioner is not implemented."));
-      }
-
     }
     else
     {
@@ -934,12 +889,12 @@ private:
   void apply_inverse_negative_laplace_operator(parallel::distributed::Vector<value_type>       &dst,
                                                parallel::distributed::Vector<value_type> const &src) const
   {
-    if(preconditioner_data.solver_schur_complement_preconditioner == SolverSchurComplementPreconditioner::GeometricMultigridVCycle)
+    if(preconditioner_data.exact_inversion_of_laplace_operator == false)
     {
       // perform one multigrid V-cycle in order to approximately invert the negative Laplace operator (classical or compatible)
       multigrid_preconditioner_schur_complement->vmult(dst,src);
     }
-    else if(preconditioner_data.solver_schur_complement_preconditioner == SolverSchurComplementPreconditioner::GeometricMultigridPCG)
+    else // exact_inversion_of_laplace_operator == true
     {
       // solve a linear system of equations for negative Laplace operator to given (relative) tolerance using the PCG method
       parallel::distributed::Vector<value_type> const *pointer_to_src = &src;
@@ -988,9 +943,6 @@ private:
   // temporary vector that is needed if negative Laplace operator is inverted exactly
   // and if a problem with pure Dirichlet BC's is considered
   parallel::distributed::Vector<value_type> mutable tmp_projection_vector;
-
-  // TODO
-  bool const use_gmres_smoother;
 };
 
 

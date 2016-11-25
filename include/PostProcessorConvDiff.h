@@ -51,6 +51,9 @@ public:
   void do_postprocessing(parallel::distributed::Vector<double> const &solution,
                          double const                                time);
 
+  // steady problems
+  void do_postprocessing(parallel::distributed::Vector<double> const &solution);
+
 private:
   void calculate_error(parallel::distributed::Vector<double> const &solution,
                        double const                                time) const;
@@ -85,6 +88,21 @@ do_postprocessing(parallel::distributed::Vector<double> const &solution_vector,
       (time > (pp_data.output_data.output_start_time + output_counter*pp_data.output_data.output_interval_time - EPSILON)) )
   {
     write_output(solution_vector,time);
+    ++output_counter;
+  }
+}
+
+template<int dim, int fe_degree>
+void PostProcessor<dim, fe_degree>::
+do_postprocessing(parallel::distributed::Vector<double> const &solution_vector)
+{
+  if(pp_data.error_data.analytical_solution_available == true)
+  {
+    calculate_error(solution_vector,1.0);
+  }
+  if(pp_data.output_data.write_output == true )
+  {
+    write_output(solution_vector,0.0);
     ++output_counter;
   }
 }

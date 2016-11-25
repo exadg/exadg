@@ -16,6 +16,10 @@
 #include "NewtonSolver.h"
 #include "IterativeSolvers.h"
 
+#include "InverseMassMatrixPreconditioner.h"
+#include "../include/JacobiPreconditioner.h"
+#include "../include/MultigridPreconditionerNavierStokes.h"
+
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 class DGNavierStokesPressureCorrection : public DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>
 {
@@ -202,39 +206,19 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
   {
     typedef float Number;
 
-    bool use_chebyshev_smoother = false;
-    if(use_chebyshev_smoother) // TODO
-    {
-      typedef MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
-          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
+    typedef MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
+        VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
+        VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
 
-      momentum_preconditioner.reset(new MULTIGRID());
+    momentum_preconditioner.reset(new MULTIGRID());
 
-      std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(momentum_preconditioner);
+    std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(momentum_preconditioner);
 
-      mg_preconditioner->initialize(this->param.multigrid_data_momentum,
-                                    this->get_dof_handler_u(),
-                                    this->get_mapping(),
-                                    velocity_conv_diff_operator,
-                                    this->periodic_face_pairs);
-    }
-    else
-    {
-      typedef MyMultigridPreconditionerGMRESSmoother<dim,value_type,
-          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
-
-      momentum_preconditioner.reset(new MULTIGRID());
-
-      std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(momentum_preconditioner);
-
-      mg_preconditioner->initialize(this->param.multigrid_data_momentum,
-                                    this->get_dof_handler_u(),
-                                    this->get_mapping(),
-                                    velocity_conv_diff_operator,
-                                    this->periodic_face_pairs);
-    }
+    mg_preconditioner->initialize(this->param.multigrid_data_momentum,
+                                  this->get_dof_handler_u(),
+                                  this->get_mapping(),
+                                  velocity_conv_diff_operator,
+                                  this->periodic_face_pairs);
   }
 
   // setup linear solver for momentum equation

@@ -56,6 +56,7 @@
 #include <sstream>
 
 #include "poisson_solver.h"
+#include "MultigridPreconditionerLaplace.h"
 
 namespace Step37
 {
@@ -296,7 +297,7 @@ namespace Step37
     void solve ();
     void output_results (const unsigned int cycle) const;
 
-    parallel::distributed::Triangulation<dim>               triangulation;
+    parallel::distributed::Triangulation<dim>  triangulation;
     std_cxx11::shared_ptr<FiniteElement<dim> > fe;
     MappingQGeneric<dim>             mapping;
     DoFHandler<dim>                  dof_handler;
@@ -389,9 +390,6 @@ namespace Step37
 
 
 
-
-//  template <int dim>
-//  void LaplaceProblem<dim>::assemble_system (const PoissonSolver<dim> &solver)
   template <int dim>
   void LaplaceProblem<dim>::assemble_system (const LaplaceOperator<dim,double> &laplace_operator)
   {
@@ -508,22 +506,17 @@ namespace Step37
     laplace_operator.reinit(matrix_free, mapping, laplace_operator_data);
 
     MultigridData mg_data;
-    mg_data.smoother_smoothing_range = 15;
-    mg_data.smoother_poly_degree = 4;
-    mg_data.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
+    mg_data.chebyshev_smoother_data.smoother_smoothing_range = 15;
+    mg_data.chebyshev_smoother_data.smoother_poly_degree = 4;
+    mg_data.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
     typedef float Number;
     std_cxx11::shared_ptr<PreconditionerBase<double> > preconditioner;
 
-//    preconditioner.reset(new MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> >
-//        (mg_data, dof_handler, mapping, laplace_operator_data, laplace_operator_data.dirichlet_boundaries));
+    typedef MyMultigridPreconditionerLaplace<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> > MULTIGRID;
+    preconditioner.reset(new MULTIGRID());
 
-    preconditioner.reset(new MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> >());
-
-    std_cxx11::shared_ptr<MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> > >
-      mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditioner<dim,double,
-                                                      LaplaceOperator<dim,Number>,
-                                                      LaplaceOperatorData<dim> > >(preconditioner);
+    std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
 
     mg_preconditioner->initialize(mg_data, dof_handler, mapping, laplace_operator_data, laplace_operator_data.bc->dirichlet);
 

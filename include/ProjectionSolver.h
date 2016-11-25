@@ -8,7 +8,9 @@
 #ifndef INCLUDE_PROJECTIONSOLVER_H_
 #define INCLUDE_PROJECTIONSOLVER_H_
 
-#include "Preconditioner.h"
+#include "JacobiPreconditioner.h"
+#include "InverseMassMatrixPreconditioner.h"
+
 #include "InverseMassMatrixXWall.h"
 #include "BaseOperator.h"
 
@@ -934,18 +936,23 @@ public:
                            const std::pair<unsigned int,unsigned int>      &cell_range) const
   {
     AssertThrow(solver_data.preconditioner_projection == PreconditionerProjection::InverseMassMatrix,
-                        ExcMessage("Specified preconditioner is not available for projection_type = ProjectionType::DivergencePenalty and solver_projection = SolverProjection::PCG"));
+        ExcMessage("Specified preconditioner is not implemented!"));
 
-    FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> fe_eval(data,projection_operator->get_dof_index(),projection_operator->get_quad_index());
+    FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> fe_eval(data,
+                                                                   projection_operator->get_dof_index(),
+                                                                   projection_operator->get_quad_index());
 
     const unsigned int total_dofs_per_cell = fe_eval.dofs_per_cell * dim;
-
     AlignedVector<VectorizedArray<value_type> > solution(total_dofs_per_cell);
 
-    SolverCGmod<VectorizedArray<double> > cg_solver(total_dofs_per_cell, solver_data.solver_tolerance_abs, solver_data.solver_tolerance_rel, solver_data.max_iter);
+    SolverCGmod<VectorizedArray<double> > cg_solver(total_dofs_per_cell,
+                                                    solver_data.solver_tolerance_abs,
+                                                    solver_data.solver_tolerance_rel,
+                                                    solver_data.max_iter);
 
-    ProjectionOperatorDivergencePenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> *
-          projection_operator_div = static_cast<ProjectionOperatorDivergencePenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> * >(projection_operator);
+    typedef ProjectionOperatorDivergencePenalty<dim, fe_degree, fe_degree_p,
+        fe_degree_xwall, xwall_quad_rule, value_type> PROJ_OPERATOR;
+    PROJ_OPERATOR *projection_operator_div = static_cast<PROJ_OPERATOR *>(projection_operator);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -953,7 +960,9 @@ public:
       fe_eval.read_dof_values(src,0);
 
       projection_operator_div->setup(cell);
-      cg_solver.solve(projection_operator_div, solution.begin(), fe_eval.begin_dof_values());
+      cg_solver.solve(projection_operator_div,
+                      solution.begin(),
+                      fe_eval.begin_dof_values());
 
       for (unsigned int j=0; j<total_dofs_per_cell; ++j)
         fe_eval.begin_dof_values()[j] = solution[j];
