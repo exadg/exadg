@@ -97,7 +97,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // pressure Poisson equation
   IP_factor_pressure = 1.0;
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
-  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
+  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_pressure = 1.e-20;
   rel_tol_pressure = 1.e-6;
 
@@ -135,7 +135,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // viscous step
   solver_viscous = SolverViscous::PCG;
   preconditioner_viscous = PreconditionerViscous::GeometricMultigrid;
-  multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
+  multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_viscous = 1.e-20;
   rel_tol_viscous = 1.e-6;
 
@@ -151,7 +151,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // linear solver
   solver_momentum = SolverMomentum::GMRES;
   preconditioner_momentum = PreconditionerMomentum::VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
-  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::ChebyshevSmoother;
+  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_momentum_linear = 1.e-20;
   rel_tol_momentum_linear = 1.e-4;
   max_iter_momentum_linear = 1e4;
@@ -167,9 +167,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // COUPLED NAVIER-STOKES SOLVER
 
   // nonlinear solver (Newton solver)
-  abs_tol_newton = 1.e-12;
-  rel_tol_newton = 1.e-6;
-  max_iter_newton = 1e2;
+  newton_solver_data_coupled.abs_tol = 1.e-20;
+  newton_solver_data_coupled.rel_tol = 1.e-6;
+  newton_solver_data_coupled.max_iter = 1e2;
 
   // linear solver
   solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;
@@ -182,14 +182,14 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // preconditioner velocity/momentum block
   momentum_preconditioner = MomentumPreconditioner::VelocityConvectionDiffusion;
-  solver_momentum_preconditioner = SolverMomentumPreconditioner::GeometricMultigridVCycle;
+  exact_inversion_of_momentum_block = false;
   rel_tol_solver_momentum_preconditioner = 1.e-6;
   max_n_tmp_vectors_solver_momentum_preconditioner = 100;
 
   // preconditioner Schur-complement block
   schur_complement_preconditioner = SchurComplementPreconditioner::InverseMassMatrix;
   discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
-  solver_schur_complement_preconditioner = SolverSchurComplementPreconditioner::GeometricMultigridVCycle;
+  exact_inversion_of_laplace_operator = false;
   rel_tol_solver_schur_complement_preconditioner = 1.e-6;
 
 
