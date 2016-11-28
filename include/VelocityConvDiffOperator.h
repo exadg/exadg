@@ -12,6 +12,25 @@
 #include "NavierStokesOperators.h"
 
 
+template<typename UnderlyingOperator, typename Number>
+class VelocityConvectionDiffusionBlockJacobiOperator
+{
+public:
+  VelocityConvectionDiffusionBlockJacobiOperator(UnderlyingOperator const &underlying_operator_in)
+    : underlying_operator(underlying_operator_in)
+  {}
+
+  void vmult (parallel::distributed::Vector<Number>       &dst,
+              const parallel::distributed::Vector<Number> &src) const
+  {
+    underlying_operator.vmult_block_jacobi(dst,src);
+  }
+
+private:
+  UnderlyingOperator const &underlying_operator;
+};
+
+
 template<int dim>
 struct VelocityConvDiffOperatorData
 {
@@ -334,6 +353,34 @@ public:
     }
   }
 
+
+  /*
+   *  This function applies the matrix vector multiplication for block Jacobi operation.
+   */
+  void vmult_block_jacobi (parallel::distributed::Vector<Number>       &dst,
+                           parallel::distributed::Vector<Number> const &src) const
+  {
+    if(operator_data.unsteady_problem == true)
+    {
+      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+        ExcMessage("Scaling factor of time derivative term has not been set for velocity convection-diffusion operator!"));
+
+      mass_matrix_operator->apply(dst,src);
+      dst *= scaling_factor_time_derivative_term;
+    }
+    else
+    {
+      dst = 0.0;
+    }
+
+    viscous_operator->apply_block_jacobi_add(dst,src);
+
+    if(operator_data.convective_problem == true)
+    {
+      convective_operator->apply_linearized_block_jacobi_add(dst,src,&velocity_linearization,evaluation_time);
+    }
+  }
+
   unsigned int get_dof_index() const
   {
     return operator_data.dof_index;
@@ -366,7 +413,18 @@ public:
   void apply_block_jacobi (parallel::distributed::Vector<Number>       &dst,
                            parallel::distributed::Vector<Number> const &src) const
   {
-    AssertThrow(false,ExcMessage("Block Jacobi preconditioner not implemented for velocity convection-diffusion operator."));
+    IterationNumberControl control (30,1.e-20,1.e-6);
+    typename SolverGMRES<parallel::distributed::Vector<Number> >::AdditionalData additional_data;
+    additional_data.right_preconditioning = true;
+    SolverGMRES<parallel::distributed::Vector<Number> > solver (control,additional_data);
+
+    typedef VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> MY_TYPE;
+    VelocityConvectionDiffusionBlockJacobiOperator<MY_TYPE, Number> block_jacobi_operator(*this);
+
+    dst = 0.0;
+    solver.solve(block_jacobi_operator,dst,src,PreconditionIdentity());
+
+//    std::cout<<"Number of iterations block Jacobi solve = "<<control.last_step()<<std::endl;
   }
 
 private:

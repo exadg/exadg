@@ -422,6 +422,23 @@ public:
     apply_viscous(dst,src);
   }
 
+  // apply matrix vector multiplication for block Jacobi operator
+  void apply_block_jacobi (parallel::distributed::Vector<Number>       &dst,
+                           const parallel::distributed::Vector<Number> &src) const
+  {
+    dst = 0;
+    apply_block_jacobi_add(dst,src);
+  }
+
+  void apply_block_jacobi_add (parallel::distributed::Vector<Number>       &dst,
+                  const parallel::distributed::Vector<Number> &src) const
+  {
+    data->loop(&ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_apply_viscous,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_apply_block_jacobi_face,
+               &ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number>::local_apply_viscous_boundary_face,
+               this, dst, src);
+  }
+
   void rhs (parallel::distributed::Vector<Number> &dst,
             Number const                          evaluation_time) const
   {
@@ -840,6 +857,182 @@ private:
     }
   }
 
+  /*
+   *  BLOCK JACOBI
+   */
+  void local_apply_block_jacobi_face (const MatrixFree<dim,Number>                &data,
+                                      parallel::distributed::Vector<Number>       &dst,
+                                      const parallel::distributed::Vector<Number> &src,
+                                      const std::pair<unsigned int,unsigned int>  &face_range) const
+  {
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_velocity_neighbor(data,this->fe_param,false,operator_data.dof_index);
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval_velocity.reinit (face);
+      fe_eval_velocity.read_dof_values(src);
+      fe_eval_velocity.evaluate(true,true);
+
+      fe_eval_velocity_neighbor.reinit (face);
+      fe_eval_velocity_neighbor.read_dof_values(src);
+      fe_eval_velocity_neighbor.evaluate(true,true);
+
+      VectorizedArray<Number> tau_IP = std::max(fe_eval_velocity.read_cell_data(array_penalty_parameter),fe_eval_velocity_neighbor.read_cell_data(array_penalty_parameter))
+                                              * get_penalty_factor();
+
+      // integrate over face for element e⁻
+      for(unsigned int q=0;q<fe_eval_velocity.n_q_points;++q)
+      {
+        Tensor<1,dim,VectorizedArray<Number> > uM = fe_eval_velocity.get_value(q);
+        Tensor<1,dim,VectorizedArray<Number> > uP;
+        VectorizedArray<Number> average_viscosity = make_vectorized_array<Number>(const_viscosity);
+        VectorizedArray<Number> max_viscosity = make_vectorized_array<Number>(const_viscosity);
+        if(viscosity_is_variable())
+        {
+          // harmonic weighting according to Schott and Rasthofer et al (2015)
+          average_viscosity = 2. * viscous_coefficient_face[face][q] * viscous_coefficient_face_neighbor[face][q] /
+                             (viscous_coefficient_face[face][q] + viscous_coefficient_face_neighbor[face][q]);
+          max_viscosity = average_viscosity;
+        }
+
+        Tensor<1,dim,VectorizedArray<Number> > jump_value = uM - uP;
+
+        Tensor<2,dim,VectorizedArray<Number> > average_gradient_tensor;
+        if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+        {
+          // {{F}} = (F⁻ + F⁺)/2 where F = 2 * nu * symmetric_gradient -> nu * (symmetric_gradient⁻ + symmetric_gradient⁺)
+          average_gradient_tensor = fe_eval_velocity.get_symmetric_gradient(q);
+        }
+        else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+        {
+          average_gradient_tensor = fe_eval_velocity.get_gradient(q) * make_vectorized_array<Number>(0.5);
+        }
+        else
+        {
+          AssertThrow(false, ExcMessage("FORMULATION_VISCOUS_TERM is not specified - possibilities are DivergenceFormulation and LaplaceFormulation"));
+        }
+        Tensor<2,dim,VectorizedArray<Number> > jump_tensor =
+            outer_product(jump_value,fe_eval_velocity.get_normal_vector(q));
+
+        //we do not want to symmetrize the penalty part
+        average_gradient_tensor = average_viscosity*average_gradient_tensor - max_viscosity * jump_tensor * tau_IP;
+        Tensor<1,dim,VectorizedArray<Number> > average_gradient = average_gradient_tensor*fe_eval_velocity.get_normal_vector(q);
+
+        if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+        {
+          if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+          {
+            fe_eval_velocity.submit_gradient(fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
+          }
+          else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+          {
+            fe_eval_velocity.submit_gradient(-fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
+          }
+          else
+            AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
+        }
+        else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+        {
+          if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+          {
+            fe_eval_velocity.submit_gradient(0.5*average_viscosity*jump_tensor,q);
+          }
+          else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+          {
+            fe_eval_velocity.submit_gradient(-0.5*average_viscosity*jump_tensor,q);
+          }
+          else
+            AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
+        }
+        else
+        {
+          AssertThrow(false, ExcMessage("FORMULATION_VISCOUS_TERM is not specified - possibilities are DivergenceFormulation and LaplaceFormulation"));
+        }
+        fe_eval_velocity.submit_value(-average_gradient,q);
+      }
+      fe_eval_velocity.integrate(true,true);
+      fe_eval_velocity.distribute_local_to_global(dst);
+
+
+      // integrate over face for element e⁺
+      for(unsigned int q=0;q<fe_eval_velocity_neighbor.n_q_points;++q)
+      {
+        Tensor<1,dim,VectorizedArray<Number> > uM;
+        Tensor<1,dim,VectorizedArray<Number> > uP = fe_eval_velocity_neighbor.get_value(q);
+        VectorizedArray<Number> average_viscosity = make_vectorized_array<Number>(const_viscosity);
+        VectorizedArray<Number> max_viscosity = make_vectorized_array<Number>(const_viscosity);
+        if(viscosity_is_variable())
+        {
+          // harmonic weighting according to Schott and Rasthofer et al (2015)
+          average_viscosity = 2. * viscous_coefficient_face[face][q] * viscous_coefficient_face_neighbor[face][q] /
+                             (viscous_coefficient_face[face][q] + viscous_coefficient_face_neighbor[face][q]);
+          max_viscosity = average_viscosity;
+        }
+
+        Tensor<1,dim,VectorizedArray<Number> > jump_value = uM - uP;
+
+        Tensor<2,dim,VectorizedArray<Number> > average_gradient_tensor;
+        if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+        {
+          // {{F}} = (F⁻ + F⁺)/2 where F = 2 * nu * symmetric_gradient -> nu * (symmetric_gradient⁻ + symmetric_gradient⁺)
+          average_gradient_tensor = fe_eval_velocity_neighbor.get_symmetric_gradient(q);
+        }
+        else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+        {
+          average_gradient_tensor = fe_eval_velocity_neighbor.get_gradient(q) * make_vectorized_array<Number>(0.5);
+        }
+        else
+        {
+          AssertThrow(false, ExcMessage("FORMULATION_VISCOUS_TERM is not specified - possibilities are DivergenceFormulation and LaplaceFormulation"));
+        }
+        Tensor<2,dim,VectorizedArray<Number> > jump_tensor =
+            outer_product(jump_value,fe_eval_velocity_neighbor.get_normal_vector(q));
+
+        //we do not want to symmetrize the penalty part
+        average_gradient_tensor = average_viscosity*average_gradient_tensor - max_viscosity * jump_tensor * tau_IP;
+        Tensor<1,dim,VectorizedArray<Number> > average_gradient = average_gradient_tensor*fe_eval_velocity_neighbor.get_normal_vector(q);
+
+        if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+        {
+          if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+          {
+            fe_eval_velocity_neighbor.submit_gradient(fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
+          }
+          else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+          {
+            fe_eval_velocity_neighbor.submit_gradient(-fe_eval_velocity.make_symmetric(average_viscosity*jump_tensor),q);
+          }
+          else
+            AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
+        }
+        else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+        {
+          if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::NIPG)
+          {
+            fe_eval_velocity_neighbor.submit_gradient(0.5*average_viscosity*jump_tensor,q);
+          }
+          else if(operator_data.IP_formulation_viscous == InteriorPenaltyFormulation::SIPG)
+          {
+            fe_eval_velocity_neighbor.submit_gradient(-0.5*average_viscosity*jump_tensor,q);
+          }
+          else
+            AssertThrow(false, ExcMessage("IP_FORMULATION_VISCOUS is not specified - possibilities are SIPG and NIPG"));
+        }
+        else
+        {
+          AssertThrow(false, ExcMessage("FORMULATION_VISCOUS_TERM is not specified - possibilities are DivergenceFormulation and LaplaceFormulation"));
+        }
+        fe_eval_velocity_neighbor.submit_value(average_gradient,q);
+      }
+      fe_eval_velocity_neighbor.integrate(true,true);
+      fe_eval_velocity_neighbor.distribute_local_to_global(dst);
+    }
+  }
+
+  /*
+   *  DIAGONAL
+   */
   void local_diagonal (const MatrixFree<dim,Number>                 &data,
                        parallel::distributed::Vector<Number>        &dst,
                        const parallel::distributed::Vector<Number>  &,
@@ -2513,6 +2706,31 @@ public:
     velocity_linearization = nullptr;
   }
 
+  void apply_linearized_block_jacobi (parallel::distributed::Vector<value_type>       &dst,
+                                      parallel::distributed::Vector<value_type> const &src,
+                                      parallel::distributed::Vector<value_type> const *vector_linearization,
+                                      value_type const                                evaluation_time) const
+  {
+    dst = 0;
+    apply_linearized_block_jacobi_add(dst,src,vector_linearization,evaluation_time);
+  }
+
+  void apply_linearized_block_jacobi_add (parallel::distributed::Vector<value_type>       &dst,
+                                          parallel::distributed::Vector<value_type> const &src,
+                                          parallel::distributed::Vector<value_type> const *vector_linearization,
+                                          value_type const                                evaluation_time) const
+  {
+    this->eval_time = evaluation_time;
+    velocity_linearization = vector_linearization;
+
+    data->loop(&ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_linearized_convective_term,
+               &ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_linearized_block_jacobi_face,
+               &ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>::local_apply_linearized_convective_term_boundary_face,
+               this, dst, src);
+
+    velocity_linearization = nullptr;
+  }
+
   void calculate_diagonal(parallel::distributed::Vector<value_type>       &diagonal,
                           parallel::distributed::Vector<value_type> const *vector_linearization,
                           value_type const                                evaluation_time) const
@@ -2891,6 +3109,100 @@ private:
     }
   }
 
+  /*
+   *  BLOCK-JACOBI
+   */
+  void local_apply_linearized_block_jacobi_face (const MatrixFree<dim,value_type>                &data,
+                                                 parallel::distributed::Vector<value_type>       &dst,
+                                                 const parallel::distributed::Vector<value_type> &src,
+                                                 const std::pair<unsigned int,unsigned int>      &face_range) const
+  {
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_neighbor(data,this->fe_param,false,operator_data.dof_index);
+
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization_neighbor(data,this->fe_param,false,operator_data.dof_index);
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval.reinit(face);
+      fe_eval.read_dof_values(src);
+      fe_eval.evaluate(true, false);
+
+      fe_eval_neighbor.reinit (face);
+      fe_eval_neighbor.read_dof_values(src);
+      fe_eval_neighbor.evaluate(true, false);
+
+      fe_eval_linearization.reinit(face);
+      fe_eval_linearization.read_dof_values(*velocity_linearization);
+      fe_eval_linearization.evaluate(true, false);
+
+      fe_eval_linearization_neighbor.reinit (face);
+      fe_eval_linearization_neighbor.read_dof_values(*velocity_linearization);
+      fe_eval_linearization_neighbor.evaluate(true, false);
+
+      // integrate over face for element e⁻
+      for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+      {
+        Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_linearization.get_value(q);
+        Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_linearization_neighbor.get_value(q);
+        Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+
+        const VectorizedArray<value_type> uM_n = uM*normal;
+        const VectorizedArray<value_type> uP_n = uP*normal;
+
+        const VectorizedArray<value_type> lambda = 2.*std::max(std::abs(uM_n), std::abs(uP_n));
+
+        Tensor<1,dim,VectorizedArray<value_type> > delta_uM = fe_eval.get_value(q);
+        Tensor<1,dim,VectorizedArray<value_type> > delta_uP; // set delta_uP to zero
+
+        const VectorizedArray<value_type> delta_uM_n = delta_uM*normal;
+        const VectorizedArray<value_type> delta_uP_n = delta_uP*normal;
+
+        Tensor<1,dim,VectorizedArray<value_type> > jump_value = delta_uM - delta_uP;
+        Tensor<1,dim,VectorizedArray<value_type> > average_normal_flux = make_vectorized_array<value_type>(0.5)*
+            (uM*delta_uM_n + delta_uM*uM_n + uP*delta_uP_n + delta_uP*uP_n);
+        Tensor<1,dim,VectorizedArray<value_type> > lf_flux = average_normal_flux + 0.5 * lambda * jump_value;
+
+        fe_eval.submit_value(lf_flux,q);
+      }
+      fe_eval.integrate(true,false);
+      fe_eval.distribute_local_to_global(dst);
+
+
+      // integrate over face for element e⁺
+      for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+      {
+        Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval_linearization.get_value(q);
+        Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_linearization_neighbor.get_value(q);
+        Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+
+        const VectorizedArray<value_type> uM_n = uM*normal;
+        const VectorizedArray<value_type> uP_n = uP*normal;
+
+        const VectorizedArray<value_type> lambda = 2.*std::max(std::abs(uM_n), std::abs(uP_n));
+
+        Tensor<1,dim,VectorizedArray<value_type> > delta_uM; // set delta_uM to zero
+        Tensor<1,dim,VectorizedArray<value_type> > delta_uP = fe_eval_neighbor.get_value(q);
+
+        const VectorizedArray<value_type> delta_uM_n = delta_uM*normal;
+        const VectorizedArray<value_type> delta_uP_n = delta_uP*normal;
+
+        Tensor<1,dim,VectorizedArray<value_type> > jump_value = delta_uM - delta_uP;
+        Tensor<1,dim,VectorizedArray<value_type> > average_normal_flux = make_vectorized_array<value_type>(0.5)*
+            (uM*delta_uM_n + delta_uM*uM_n + uP*delta_uP_n + delta_uP*uP_n);
+        Tensor<1,dim,VectorizedArray<value_type> > lf_flux = average_normal_flux + 0.5 * lambda * jump_value;
+
+        fe_eval_neighbor.submit_value(-lf_flux,q);
+      }
+      fe_eval_neighbor.integrate(true,false);
+      fe_eval_neighbor.distribute_local_to_global(dst);
+    }
+  }
+
+  /*
+   *  DIAGONAL
+   */
   void local_diagonal (const MatrixFree<dim,value_type>                 &data,
                        parallel::distributed::Vector<value_type>        &dst,
                        const parallel::distributed::Vector<value_type>  &,

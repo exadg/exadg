@@ -20,7 +20,7 @@
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 2;
+unsigned int const FE_DEGREE_VELOCITY = 5;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -28,8 +28,8 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 7;
-unsigned int const REFINE_STEPS_SPACE_MAX = 9;//REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 0;
+unsigned int const REFINE_STEPS_SPACE_MAX = 4;//REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -52,7 +52,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // PHYSICAL QUANTITIES
   start_time = 0.0;
   end_time = 1.0e6;
-  viscosity = 2.e-3;
+  viscosity = 1.e0;
 
 
   // TEMPORAL DISCRETIZATION
@@ -168,13 +168,13 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // nonlinear solver (Newton solver)
   newton_solver_data_coupled.abs_tol = 1.e-20;
-  newton_solver_data_coupled.rel_tol = 1.e-4;
+  newton_solver_data_coupled.rel_tol = 1.e-5;
   newton_solver_data_coupled.max_iter = 100;
 
   // linear solver
   solver_linearized_navier_stokes = SolverLinearizedNavierStokes::FGMRES;
   abs_tol_linear = 1.e-20;
-  rel_tol_linear = 1.e-5;
+  rel_tol_linear = 1.e-6;
   max_iter_linear = 1e4;
   max_n_tmp_vectors = 1000;
 
@@ -182,13 +182,13 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion;
-  multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::Chebyshev;
-  multigrid_data_momentum_preconditioner.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::PointJacobi;
+  momentum_preconditioner = MomentumPreconditioner::VelocityConvectionDiffusion;
+  multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::GMRES;
+  multigrid_data_momentum_preconditioner.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
   multigrid_data_momentum_preconditioner.gmres_smoother_data.number_of_iterations = 5;
-  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::Chebyshev; //Chebyshev; //ChebyshevNonsymmetricOperator;//GMRES_Jacobi;
+  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_Jacobi; //ChebyshevNonsymmetricOperator;//GMRES_Jacobi;
   exact_inversion_of_momentum_block = true;
-  rel_tol_solver_momentum_preconditioner = 1.e-2;
+  rel_tol_solver_momentum_preconditioner = 1.e-6;
   max_n_tmp_vectors_solver_momentum_preconditioner = 100;
 
   // preconditioner Schur-complement block

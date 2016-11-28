@@ -503,17 +503,39 @@ private:
     AssertThrow(multigrid_preconditioner_momentum.get() != 0,
                 ExcMessage("Setup of iterative solver for momentum preconditioner: Multigrid preconditioner is uninitialized"));
 
-    GMRESSolverData gmres_data;
-    gmres_data.use_preconditioner = true;
-    gmres_data.solver_tolerance_rel = preconditioner_data.rel_tol_solver_momentum_preconditioner;
-    gmres_data.max_n_tmp_vectors = preconditioner_data.max_n_tmp_vectors_solver_momentum_preconditioner;
+    // use FMGRES for "exact" solution of velocity block system if GMRES is used as a smoother for the multigrid algorithm
+    if(preconditioner_data.multigrid_data_momentum_preconditioner.smoother == MultigridSmoother::GMRES)
+    {
+      FGMRESSolverData gmres_data;
+      gmres_data.use_preconditioner = true;
+      // Use udpate_preconditioner = false, since momentum preconditioner is already updated in function update() of this class
+      // (if update_preconditioner for the solver of the linearized Navier--Stokes problem is set to true).
+      gmres_data.solver_tolerance_rel = preconditioner_data.rel_tol_solver_momentum_preconditioner;
+      gmres_data.max_n_tmp_vectors = preconditioner_data.max_n_tmp_vectors_solver_momentum_preconditioner;
 
-    solver_velocity_block.reset(new GMRESSolver<VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>,
-                                                PreconditionerBase<value_type>,
-                                                parallel::distributed::Vector<value_type> >
-       (underlying_operator->velocity_conv_diff_operator,
-        *multigrid_preconditioner_momentum,
-        gmres_data));
+      solver_velocity_block.reset(new FGMRESSolver<VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>,
+                                                   PreconditionerBase<value_type>,
+                                                   parallel::distributed::Vector<value_type> >
+         (underlying_operator->velocity_conv_diff_operator,
+          *multigrid_preconditioner_momentum,
+          gmres_data));
+    }
+    else
+    {
+      GMRESSolverData gmres_data;
+      gmres_data.use_preconditioner = true;
+      // Use udpate_preconditioner = false, since momentum preconditioner is already updated in function update() of this class
+      // (if update_preconditioner for the solver of the linearized Navier--Stokes problem is set to true).
+      gmres_data.solver_tolerance_rel = preconditioner_data.rel_tol_solver_momentum_preconditioner;
+      gmres_data.max_n_tmp_vectors = preconditioner_data.max_n_tmp_vectors_solver_momentum_preconditioner;
+
+      solver_velocity_block.reset(new GMRESSolver<VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>,
+                                                  PreconditionerBase<value_type>,
+                                                  parallel::distributed::Vector<value_type> >
+         (underlying_operator->velocity_conv_diff_operator,
+          *multigrid_preconditioner_momentum,
+          gmres_data));
+    }
   }
 
   void setup_multigrid_preconditioner_schur_complement()

@@ -103,7 +103,6 @@ private:
   /*
    *  This function updates mg_matrices
    *  To do this, three functions are called:
-   *   - set_vector_linearization
    *   - set_evaluation_time
    *   - set_scaling_factor_time_derivative_term
    */
@@ -117,9 +116,8 @@ private:
   /*
    *  This function updates the evaluation time.
    *  In order to update mg_matrices[level] this function has to be called.
-   *  (This is due to the fact that the linearized convective term does not
-   *  only depend on the linearized velocity field but also on Dirichlet boundary
-   *  data which itself depends on the current time.)
+   *  (This is due to the fact that the velocity field of the convective term
+   *  is a function of the time.)
    */
   void set_evaluation_time(double const &evaluation_time)
   {

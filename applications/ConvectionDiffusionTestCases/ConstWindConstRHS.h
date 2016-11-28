@@ -26,7 +26,7 @@
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 4;
+const unsigned int FE_DEGREE = 8;
 
 // set the number of refine levels for spatial convergence tests
 const unsigned int REFINE_STEPS_SPACE_MIN = 1;
@@ -38,7 +38,7 @@ const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
 // problem specific parameters
 const double START_TIME = 0.0;
-const double DIFFUSIVITY = 1.0e0;
+const double DIFFUSIVITY = 1.0e-6;
 
 void InputParametersConvDiff::set_input_parameters()
 {
@@ -74,15 +74,15 @@ void InputParametersConvDiff::set_input_parameters()
   abs_tol = 1.e-20;
   rel_tol = 1.e-8;
   max_iter = 1e4;
-  max_n_tmp_vectors = 30;
-  preconditioner = Preconditioner::BlockJacobi; //MultigridConvectionDiffusion; //MultigridDiffusion; //MultigridConvectionDiffusion;
+  max_n_tmp_vectors = 100;
+  preconditioner = Preconditioner::MultigridConvectionDiffusion; //Jacobi; //BlockJacobi; //MultigridDiffusion; //MultigridConvectionDiffusion;
   // MG smoother
   multigrid_data.smoother = MultigridSmoother::GMRES; //GMRES; //Chebyshev; //ChebyshevNonsymmetricOperator;
   // MG smoother data
-  multigrid_data.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::PointJacobi;
+  multigrid_data.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
   multigrid_data.gmres_smoother_data.number_of_iterations = 5;
   // MG coarse grid solver
-  multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_Jacobi; //GMRES_NoPreconditioner; //Chebyshev; //GMRES_Jacobi;
+  multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner; //GMRES_NoPreconditioner; //Chebyshev; //GMRES_Jacobi;
 
   update_preconditioner = false;
 
