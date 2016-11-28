@@ -14,6 +14,8 @@
 
 #include "IterativeSolvers.h"
 
+#include "MultigridPreconditionerLaplace.h"
+
 /*
  *  Base class for projection type splitting methods such as
  *  the high-order dual splitting scheme (velocity-correction) or
@@ -132,7 +134,7 @@ setup_pressure_poisson_solver (double const time_step_size)
     // use single precision for multigrid
     typedef float Number;
 
-    typedef MyMultigridPreconditioner<dim, value_type, LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> > MULTIGRID;
+    typedef MyMultigridPreconditionerLaplace<dim, value_type, LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> > MULTIGRID;
 
     preconditioner_pressure_poisson.reset(new MULTIGRID());
 

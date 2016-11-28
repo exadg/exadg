@@ -137,6 +137,14 @@ public:
     return velocity_conv_diff_operator.get_solution_linearization();
   }
 
+  CompatibleLaplaceOperatorData<dim> const get_compatible_laplace_operator_data() const
+  {
+    CompatibleLaplaceOperatorData<dim> comp_laplace_operator_data;
+    comp_laplace_operator_data.dof_index_velocity = this->get_dof_index_velocity();
+    comp_laplace_operator_data.dof_index_pressure = this->get_dof_index_pressure();
+    return comp_laplace_operator_data;
+  }
+
 private:
   friend class BlockPreconditionerNavierStokes<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type,
     DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> >;
@@ -216,13 +224,13 @@ setup_solvers(double const &scaling_factor_time_derivative_term)
     BlockPreconditionerData preconditioner_data;
     preconditioner_data.preconditioner_type = this->param.preconditioner_linearized_navier_stokes;
     preconditioner_data.momentum_preconditioner = this->param.momentum_preconditioner;
-    preconditioner_data.solver_momentum_preconditioner = this->param.solver_momentum_preconditioner;
+    preconditioner_data.exact_inversion_of_momentum_block = this->param.exact_inversion_of_momentum_block;
     preconditioner_data.multigrid_data_momentum_preconditioner = this->param.multigrid_data_momentum_preconditioner;
     preconditioner_data.rel_tol_solver_momentum_preconditioner = this->param.rel_tol_solver_momentum_preconditioner;
     preconditioner_data.max_n_tmp_vectors_solver_momentum_preconditioner = this->param.max_n_tmp_vectors_solver_momentum_preconditioner;
     preconditioner_data.schur_complement_preconditioner = this->param.schur_complement_preconditioner;
     preconditioner_data.discretization_of_laplacian = this->param.discretization_of_laplacian;
-    preconditioner_data.solver_schur_complement_preconditioner = this->param.solver_schur_complement_preconditioner;
+    preconditioner_data.exact_inversion_of_laplace_operator = this->param.exact_inversion_of_laplace_operator;
     preconditioner_data.multigrid_data_schur_complement_preconditioner = this->param.multigrid_data_schur_complement_preconditioner;
     preconditioner_data.rel_tol_solver_schur_complement_preconditioner = this->param.rel_tol_solver_schur_complement_preconditioner;
 

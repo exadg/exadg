@@ -22,11 +22,6 @@ struct CompatibleLaplaceOperatorData
 
   unsigned int dof_index_velocity;
   unsigned int dof_index_pressure;
-
-  GradientOperatorData<dim> gradient_operator_data;
-  DivergenceOperatorData<dim> divergence_operator_data;
-
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs_level0;
 };
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule,typename Number = double>
@@ -45,11 +40,11 @@ public:
     apply_mean_value_constraint_in_matvec (false)
   {}
 
-  void initialize(MatrixFree<dim,Number> const                                                                        &mf_data_in,
-                  CompatibleLaplaceOperatorData<dim> const                                                            &compatible_laplace_operator_data_in,
+  void initialize(MatrixFree<dim,Number> const                                                                    &mf_data_in,
+                  CompatibleLaplaceOperatorData<dim> const                                                        &compatible_laplace_operator_data_in,
                   GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>  const  &gradient_operator_in,
                   DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> const &divergence_operator_in,
-                  InverseMassMatrixOperator<dim,fe_degree, Number> const                                              &inv_mass_matrix_operator_in)
+                  InverseMassMatrixOperator<dim,fe_degree, Number> const                                          &inv_mass_matrix_operator_in)
   {
     // copy parameters into element variables
     this->data = &mf_data_in;
@@ -60,7 +55,6 @@ public:
 
     // initialize tmp vector
     initialize_dof_vector_velocity(tmp);
-
 
 
     // Check whether the Laplace matrix is singular when applied to a vector
@@ -85,25 +79,58 @@ public:
     apply_mean_value_constraint_in_matvec = needs_mean_value_constraint;
   }
 
-  void reinit (const DoFHandler<dim>                    &dof_handler_p,
-               const DoFHandler<dim>                    &dof_handler_u,
-               const Mapping<dim>                       &mapping,
-               const CompatibleLaplaceOperatorData<dim> &operator_data,
-               const unsigned int                       level = numbers::invalid_unsigned_int)
+
+  /*
+   *  This function is called by the multigrid algorithm to initialize the
+   *  matrices on all levels. To construct the matrices, and object of
+   *  type UnderlyingOperator is used that provides all the information for
+   *  the setup, i.e., the information that is needed to call the
+   *  member function initialize(...).
+   */
+  template<typename UnderlyingOperator>
+  void initialize_mg_matrix (unsigned int const       level,
+                             DoFHandler<dim> const    &dof_handler_p,
+                             Mapping<dim> const       &mapping,
+                             UnderlyingOperator const &underlying_operator,
+                             const std::vector<GridTools::PeriodicFacePair<typename
+                               Triangulation<dim>::cell_iterator> > &periodic_face_pairs_level0)
   {
-    CompatibleLaplaceOperatorData<dim> my_operator_data = operator_data;
+    // get compatible Laplace operator data
+    CompatibleLaplaceOperatorData<dim> comp_laplace_operator_data = underlying_operator.get_compatible_laplace_operator_data();
+
+    unsigned int dof_index_velocity = comp_laplace_operator_data.dof_index_velocity;
+    unsigned int dof_index_pressure = comp_laplace_operator_data.dof_index_pressure;
+
+    const DoFHandler<dim> &dof_handler_u = underlying_operator.get_dof_handler_u();
+
+    AssertThrow(dof_index_velocity == 0, ExcMessage("Expected that dof_index_velocity is 0. Fix implementation of CompatibleLaplaceOperator!"));
+    AssertThrow(dof_index_pressure == 1, ExcMessage("Expected that dof_index_pressure is 1. Fix implementation of CompatibleLaplaceOperator!"));
 
     // setup own matrix free object
+
+    // dof_handler
     std::vector<const DoFHandler<dim> * >  dof_handler_vec;
     // TODO: instead of 2 use something more general like DofHandlerSelector::n_variants
     dof_handler_vec.resize(2);
-    dof_handler_vec[my_operator_data.dof_index_velocity] = &dof_handler_u;
-    dof_handler_vec[my_operator_data.dof_index_pressure] = &dof_handler_p;
+    dof_handler_vec[dof_index_velocity] = &dof_handler_u;
+    dof_handler_vec[dof_index_pressure] = &dof_handler_p;
 
+    // constraint matrix
+    std::vector<ConstraintMatrix const *> constraint_matrix_vec;
+    // TODO: instead of 2 use something more general like DofHandlerSelector::n_variants
+    constraint_matrix_vec.resize(2);
+    ConstraintMatrix constraint_u, constraint_p;
+    constraint_u.close();
+    constraint_p.close();
+    constraint_matrix_vec[dof_index_velocity] = &constraint_u;
+    constraint_matrix_vec[dof_index_pressure] = &constraint_p;
+
+    // quadratures
     // quadrature formula with (fe_degree_velocity+1) quadrature points: this is the quadrature formula that is used for
     // the gradient operator and the divergence operator (and the inverse velocity mass matrix operator)
     const QGauss<1> quad(dof_handler_u.get_fe().degree+1);
 
+    // additional data
     typename MatrixFree<dim,Number>::AdditionalData addit_data;
     addit_data.tasks_parallel_scheme = MatrixFree<dim,Number>::AdditionalData::none;
     // continuous or discontinuous elements: discontinuous == 0
@@ -113,41 +140,33 @@ public:
     addit_data.mpi_communicator =
       dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler_p.get_triangulation()) ?
       (dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler_p.get_triangulation()))->get_communicator() : MPI_COMM_SELF;
-    addit_data.periodic_face_pairs_level_0 = operator_data.periodic_face_pairs_level0;
+    addit_data.periodic_face_pairs_level_0 = periodic_face_pairs_level0;
 
-    std::vector<ConstraintMatrix const *> constraint_matrix_vec;
-    // TODO: instead of 2 use something more general like DofHandlerSelector::n_variants
-    constraint_matrix_vec.resize(2);
-    ConstraintMatrix constraint_u, constraint_p;
-    constraint_u.close();
-    constraint_p.close();
-    constraint_matrix_vec[my_operator_data.dof_index_velocity] = &constraint_u;
-    constraint_matrix_vec[my_operator_data.dof_index_pressure] = &constraint_p;
-
+    // reinit
     own_matrix_free_storage.reinit(mapping, dof_handler_vec, constraint_matrix_vec, quad, addit_data);
 
     // setup own gradient operator
-    GradientOperatorData<dim> gradient_operator_data = my_operator_data.gradient_operator_data;
+    GradientOperatorData<dim> gradient_operator_data = underlying_operator.get_gradient_operator_data();
     own_gradient_operator_storage.initialize(own_matrix_free_storage,gradient_operator_data);
 
     // setup own divergence operator
-    DivergenceOperatorData<dim> divergence_operator_data = my_operator_data.divergence_operator_data;
+    DivergenceOperatorData<dim> divergence_operator_data = underlying_operator.get_divergence_operator_data();
     own_divergence_operator_storage.initialize(own_matrix_free_storage,divergence_operator_data);
 
     // setup own inverse mass matrix operator
-    // NOTE: use quad_index = 0 since matrix_free contains only one quadrature formula
-    // (use quad_index = 0 also if quad_index_velocity would be 1 !)
+    // NOTE: use quad_index = 0 since own_matrix_free_storage contains only one quadrature formula
+    // (i.e. on would use quad_index = 0 also if quad_index_velocity would be 1 !)
     unsigned int quad_index = 0;
     own_inv_mass_matrix_operator_storage.initialize(own_matrix_free_storage,
-                                                    my_operator_data.dof_index_velocity,
+                                                    underlying_operator.get_dof_index_velocity(),
                                                     quad_index);
 
     // setup compatible Laplace operator
     initialize(own_matrix_free_storage,
-              my_operator_data,
-              own_gradient_operator_storage,
-              own_divergence_operator_storage,
-              own_inv_mass_matrix_operator_storage);
+               comp_laplace_operator_data,
+               own_gradient_operator_storage,
+               own_divergence_operator_storage,
+               own_inv_mass_matrix_operator_storage);
 
     // we do not need the mean value constraint for smoothers on the
     // multigrid levels, so we can disable it
@@ -243,16 +262,6 @@ public:
     return *data;
   }
 
-  unsigned int get_dof_index_pressure() const
-  {
-    return compatible_laplace_operator_data.dof_index_pressure;
-  }
-
-  unsigned int get_dof_index_velocity() const
-  {
-    return compatible_laplace_operator_data.dof_index_velocity;
-  }
-
   void calculate_diagonal(parallel::distributed::Vector<Number> &diagonal) const
   {
     // naive implementation of calculation of diagonal (TODO)
@@ -306,12 +315,21 @@ public:
 
   void initialize_dof_vector_pressure(parallel::distributed::Vector<Number> &vector) const
   {
-    data->initialize_dof_vector(vector,get_dof_index_pressure());
+    data->initialize_dof_vector(vector,compatible_laplace_operator_data.dof_index_pressure);
   }
 
   void initialize_dof_vector_velocity(parallel::distributed::Vector<Number> &vector) const
   {
-    data->initialize_dof_vector(vector,get_dof_index_velocity());
+    data->initialize_dof_vector(vector,compatible_laplace_operator_data.dof_index_velocity);
+  }
+
+  /*
+   *  Apply block Jacobi preconditioner
+   */
+  void apply_block_jacobi (parallel::distributed::Vector<Number>       &dst,
+                           parallel::distributed::Vector<Number> const &src) const
+  {
+    AssertThrow(false,ExcMessage("Block Jacobi preconditioner not implemented for compatible Laplace operator."));
   }
 
 private:

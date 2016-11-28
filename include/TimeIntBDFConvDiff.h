@@ -50,6 +50,11 @@ public:
 
   virtual void timeloop();
 
+  double get_scaling_factor_time_derivative_term()
+  {
+    return gamma0/time_steps[0];
+  }
+
 private:
   void initialize_vectors();
   void initialize_solution();
@@ -117,7 +122,7 @@ setup(bool /*do_restart*/)
   }
 
   // set the parameters that DGConvDiffOperation depends on
-  conv_diff_operation->set_scaling_factor_time_derivative_term(gamma0/time_steps[0]);
+//  conv_diff_operation->set_scaling_factor_time_derivative_term(gamma0/time_steps[0]);
 
   pcout << std::endl << "... done!" << std::endl;
 }

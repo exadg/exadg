@@ -137,8 +137,10 @@ enum class Preconditioner
   Undefined,
   None,
   InverseMassMatrix,
-  Jacobi,
-  GeometricMultigrid
+  PointJacobi,
+  BlockJacobi,
+  MultigridDiffusion,
+  MultigridConvectionDiffusion,
 };
 
 
@@ -188,6 +190,7 @@ public:
     max_iter(std::numeric_limits<unsigned int>::max()),
     preconditioner(Preconditioner::Undefined),
     multigrid_data(MultigridData()),
+    update_preconditioner(false),
 
     // NUMERICAL PARAMETERS
     runtime_optimization(false),
@@ -214,10 +217,7 @@ public:
   {
     // MATHEMATICAL MODEL
 
-    // todo: implement steady state case
-//    AssertThrow(problem_type != ProblemType::Undefined,
-//                ExcMessage("parameter must be defined"));
-    AssertThrow(problem_type == ProblemType::Unsteady,
+    AssertThrow(problem_type != ProblemType::Undefined,
                 ExcMessage("parameter must be defined"));
 
     AssertThrow(equation_type != EquationType::Undefined,
@@ -284,15 +284,20 @@ public:
       AssertThrow(preconditioner != Preconditioner::Undefined,
                   ExcMessage("parameter must be defined"));
 
-      if(preconditioner == Preconditioner::GeometricMultigrid)
+      if(preconditioner == Preconditioner::MultigridDiffusion ||
+         preconditioner == Preconditioner::MultigridConvectionDiffusion)
         AssertThrow(equation_type == EquationType::Diffusion ||
                     equation_type == EquationType::ConvectionDiffusion,
                     ExcMessage("Multigrid preconditioner is not available for the specified equation type"));
  
-      if(preconditioner == Preconditioner::Jacobi)
+      if(preconditioner == Preconditioner::PointJacobi)
         AssertThrow(equation_type == EquationType::Diffusion ||
                     equation_type == EquationType::ConvectionDiffusion,
-                    ExcMessage("Jacobi preconditioner is not available for the specified equation type"));    
+                    ExcMessage("Point Jacobi preconditioner is not available for the specified equation type"));
+
+      if(preconditioner == Preconditioner::BlockJacobi)
+        AssertThrow(equation_type == EquationType::ConvectionDiffusion,
+                    ExcMessage("Block Jacobi preconditioner is not available for the specified equation type"));
     }
 
 
@@ -485,23 +490,20 @@ public:
     std::string str_precon[] = { "Undefined",
                                  "None",
                                  "InverseMassMatrix",
-                                 "Jacobi",
-                                 "GeometricMultigrid" };
+                                 "PointJacobi",
+                                 "BlockJacobi",
+                                 "GMG (Reaction-)Diffusion",
+                                 "GMG (Reaction-)Convection-Diffusion" };
 
     print_parameter(pcout,"Preconditioner",str_precon[(int)preconditioner]);
 
-    if(preconditioner == Preconditioner::GeometricMultigrid)
+    if(preconditioner == Preconditioner::MultigridDiffusion ||
+       preconditioner == Preconditioner::MultigridConvectionDiffusion)
     {
-      std::string str_multigrid_coarse[] = { "Chebyshev smoother",
-                                             "PCG - no preconditioner",
-                                             "PCG - Jacobi preconditioner" };
-
-      print_parameter(pcout,"Smoother polynomial degree",multigrid_data.smoother_poly_degree);
-      print_parameter(pcout,"Smoothing range",multigrid_data.smoother_smoothing_range);
-      print_parameter(pcout,
-                      "Multigrid coarse grid solver",
-                      str_multigrid_coarse[(int)multigrid_data.coarse_solver]);
+      multigrid_data.print(pcout);
     }
+
+    print_parameter(pcout,"Update preconditioner",update_preconditioner);
 
   }
 
@@ -635,6 +637,9 @@ public:
 
   // description: see declaration of MultigridData
   MultigridData multigrid_data;
+
+  // update preconditioner in case of varying parameters
+  bool update_preconditioner;
 
 
   /**************************************************************************************/

@@ -8,39 +8,131 @@
 #ifndef INCLUDE_MULTIGRIDINPUTPARAMETERS_H_
 #define INCLUDE_MULTIGRIDINPUTPARAMETERS_H_
 
+#include "PrintFunctions.h"
 
-// enum class MultigridSmoother { Chebyshev };
+ enum class MultigridSmoother
+ {
+   Chebyshev,
+   ChebyshevNonsymmetricOperator,
+   GMRES
+ };
 
 /*
  *  Multigrid coarse grid solver
  */
 enum class MultigridCoarseGridSolver
 {
-  ChebyshevSmoother,
+  Chebyshev,
+  ChebyshevNonsymmetricOperator,
   PCG_NoPreconditioner,
   PCG_Jacobi,
   GMRES_NoPreconditioner,
   GMRES_Jacobi
 };
 
-struct MultigridData
+struct ChebyshevSmootherData
 {
-  MultigridData()
+  ChebyshevSmootherData()
     :
-    // multigrid_smoother(MultigridSmoother::Chebyshev),
     smoother_poly_degree(5),
     smoother_smoothing_range(20),
-    coarse_solver(MultigridCoarseGridSolver::ChebyshevSmoother)
-  {}
+    eig_cg_n_iterations(20)
+    {}
 
-  // Sets the multigrid smoother: currently only Chebyshev implemented, so there is no need for this variable
-  // MultigridSmoother multigrid_smoother;
+  void print(ConditionalOStream &pcout)
+  {
+    print_parameter(pcout,"Smoother polynomial degree",smoother_poly_degree);
+    print_parameter(pcout,"Smoothing range",smoother_smoothing_range);
+    print_parameter(pcout,"Iterations eigenvalue calculation",eig_cg_n_iterations);
+  }
 
   // Sets the polynomial degree of the Chebyshev smoother (Chebyshev accelerated Jacobi smoother)
   double smoother_poly_degree;
 
   // Sets the smoothing range of the Chebyshev smoother
   double smoother_smoothing_range;
+
+  // number of CG iterations for estimation of eigenvalues
+  unsigned int eig_cg_n_iterations;
+};
+
+enum class PreconditionerGMRESSmoother
+{
+  None,
+  PointJacobi,
+  BlockJacobi
+};
+
+struct GMRESSmootherData
+{
+  GMRESSmootherData()
+    :
+    preconditioner(PreconditionerGMRESSmoother::None),
+    number_of_iterations(5)
+  {}
+
+  void print(ConditionalOStream &pcout)
+  {
+    std::string str_preconditioner[] = { "None",
+                                         "PointJacobi",
+                                         "BlockJacobi"};
+
+    print_parameter(pcout,"Preconditioner",str_preconditioner[(int)preconditioner]);
+    print_parameter(pcout,"Number of iterations",number_of_iterations);
+  }
+
+  // use Jacobi method as preconditioner
+  PreconditionerGMRESSmoother preconditioner;
+
+  // number of GMRES iterations per smoothing step
+  unsigned int number_of_iterations;
+
+};
+
+struct MultigridData
+{
+  MultigridData()
+    :
+    smoother(MultigridSmoother::Chebyshev),
+    coarse_solver(MultigridCoarseGridSolver::Chebyshev)
+  {}
+
+  void print(ConditionalOStream &pcout)
+  {
+    std::string str_smoother[] = { "Chebyshev",
+                                   "ChebyshevNonsymmetricOperator",
+                                   "GMRES"};
+
+    print_parameter(pcout,"Multigrid smoother",str_smoother[(int)smoother]);
+
+    if(smoother == MultigridSmoother::Chebyshev || smoother == MultigridSmoother::ChebyshevNonsymmetricOperator)
+    {
+      chebyshev_smoother_data.print(pcout);
+    }
+    else if(smoother == MultigridSmoother::GMRES)
+    {
+      gmres_smoother_data.print(pcout);
+    }
+
+    std::string str_coarse_solver[] = { "Chebyshev",
+                                        "ChebyshevNonsymmetricOperator",
+                                        "PCG - no preconditioner",
+                                        "PCG - Jacobi preconditioner",
+                                        "GMRES - No preconditioner",
+                                        "GMRES - Jacobi preconditioner"};
+
+    print_parameter(pcout,"Multigrid coarse grid solver",str_coarse_solver[(int)coarse_solver]);
+
+  }
+
+  // Type of smoother
+  MultigridSmoother smoother;
+
+  // Chebyshev smoother (Chebyshev accelerated Jacobi smoother)
+  ChebyshevSmootherData chebyshev_smoother_data;
+
+  // GMRES smoother
+  GMRESSmootherData gmres_smoother_data;
 
   // Sets the coarse grid solver
   MultigridCoarseGridSolver coarse_solver;

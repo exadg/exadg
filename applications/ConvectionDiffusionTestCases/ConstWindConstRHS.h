@@ -1,12 +1,14 @@
 /*
- * BoundaryLayerProblem.h
+ * ConstWindConstRHS.h
  *
- *  Created on: Aug 18, 2016
+ *  Created on: Nov 23, 2016
  *      Author: fehn
  */
 
-#ifndef APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_BOUNDARYLAYERPROBLEM_H_
-#define APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_BOUNDARYLAYERPROBLEM_H_
+#ifndef APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_CONSTWINDCONSTRHS_H_
+#define APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_CONSTWINDCONSTRHS_H_
+
+
 
 
 
@@ -16,19 +18,19 @@
 /*                                                                                    */
 /**************************************************************************************/
 
-// prescribe value of phi at left and right boundary
-// neumann boundaries at upper and lower boundary
-// use constant advection velocity from left to right -> boundary layer
+// constant source term inside rectangular domain
+// pure dirichlet boundary conditions (homogeneous)
+// use constant advection velocity -> boundary layer
 
 // set the number of space dimensions: DIMENSION = 2, 3
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 3;
+const unsigned int FE_DEGREE = 8;
 
 // set the number of refine levels for spatial convergence tests
-const unsigned int REFINE_STEPS_SPACE_MIN = 5;
-const unsigned int REFINE_STEPS_SPACE_MAX = 5;
+const unsigned int REFINE_STEPS_SPACE_MIN = 1;
+const unsigned int REFINE_STEPS_SPACE_MAX = 8;
 
 // set the number of refine levels for temporal convergence tests
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
@@ -36,18 +38,18 @@ const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
 // problem specific parameters
 const double START_TIME = 0.0;
-const double DIFFUSIVITY = 0.1;
+const double DIFFUSIVITY = 1.0e-6;
 
 void InputParametersConvDiff::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Steady;
   equation_type = EquationType::ConvectionDiffusion;
-  right_hand_side = false;
+  right_hand_side = true;
 
   // PHYSICAL QUANTITIES
   start_time = START_TIME;
-  end_time = 8.0;
+  end_time = 1.0;
   diffusivity = DIFFUSIVITY;
 
   // TEMPORAL DISCRETIZATION
@@ -72,14 +74,15 @@ void InputParametersConvDiff::set_input_parameters()
   abs_tol = 1.e-20;
   rel_tol = 1.e-8;
   max_iter = 1e4;
-  preconditioner = Preconditioner::MultigridConvectionDiffusion;
+  max_n_tmp_vectors = 100;
+  preconditioner = Preconditioner::MultigridConvectionDiffusion; //Jacobi; //BlockJacobi; //MultigridDiffusion; //MultigridConvectionDiffusion;
   // MG smoother
-  multigrid_data.smoother = MultigridSmoother::GMRES;
+  multigrid_data.smoother = MultigridSmoother::GMRES; //GMRES; //Chebyshev; //ChebyshevNonsymmetricOperator;
   // MG smoother data
-  multigrid_data.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::None;
+  multigrid_data.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
   multigrid_data.gmres_smoother_data.number_of_iterations = 5;
   // MG coarse grid solver
-  multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_Jacobi;
+  multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner; //GMRES_NoPreconditioner; //Chebyshev; //GMRES_Jacobi;
 
   update_preconditioner = false;
 
@@ -87,14 +90,14 @@ void InputParametersConvDiff::set_input_parameters()
   runtime_optimization = false;
 
   // OUTPUT AND POSTPROCESSING
-  print_input_parameters = true;
-  output_data.write_output = true;
-  output_data.output_prefix = "boundary_layer_problem";
+  print_input_parameters = false;
+  output_data.write_output = false;
+  output_data.output_prefix = "const_wind_const_rhs";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time);// /20;
   output_data.number_of_patches = FE_DEGREE;
 
-  error_data.analytical_solution_available = true;
+  error_data.analytical_solution_available = false;
   error_data.error_calc_start_time = start_time;
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
@@ -129,19 +132,11 @@ public:
 };
 
 template<int dim>
-double AnalyticalSolution<dim>::value(const Point<dim>    &p,
+double AnalyticalSolution<dim>::value(const Point<dim>    &/* p */,
                                       const unsigned int  /* component */) const
 {
   double t = this->get_time();
   double result = 0.0;
-
-  double phi_l = 1.0 , phi_r = 0.0;
-  double U = 1.0, L = 2.0;
-  double Pe = U*L/DIFFUSIVITY;
-  if(t<(START_TIME + 1.0e-8))
-    result = phi_l + (phi_r-phi_l)*(0.5+p[0]/L);
-  else
-    result = phi_l + (phi_r-phi_l)*(std::exp(Pe*p[0]/L)-std::exp(-Pe/2.0))/(std::exp(Pe/2.0)-std::exp(-Pe/2.0));
 
   return result;
 }
@@ -170,7 +165,7 @@ template<int dim>
 double RightHandSide<dim>::value(const Point<dim>     & /* p */,
                                 const unsigned int   /* component */) const
 {
-  double result = 0.0;
+  double result = 1.0;
   return result;
 }
 
@@ -199,11 +194,6 @@ double NeumannBoundary<dim>::value(const Point<dim>   &/* p */,
                                    const unsigned int /* component */) const
 {
   double result = 0.0;
-
-//  double right = 1.0;
-//  if( fabs(p[0]-right)<1.0e-12 )
-//    result = 1.0;
-
   return result;
 }
 
@@ -228,13 +218,20 @@ public:
 };
 
 template<int dim>
-double VelocityField<dim>::value(const Point<dim>   &/* point */,
+double VelocityField<dim>::value(const Point<dim>   &point,
                                  const unsigned int component) const
 {
-  double value = 0.0;
+  // constant velocity field (u,v) = (1,1)
+  double value = 1.0;
 
-  if(component == 0)
-    value = 1.0;
+  // circular velocity field (u,v) = (-y,x)
+//  double value = 0.0;
+//  if(component == 0)
+//    value = - point[1];
+//  else if(component == 1)
+//    value = point[0];
+//  else
+//    AssertThrow(component <= 1, ExcMessage("Velocity field for 3-dimensional problem is not implemented!"));
 
   return value;
 }
@@ -255,27 +252,11 @@ void create_grid_and_set_boundary_conditions(
   const double left = -1.0, right = 1.0;
   GridGenerator::hyper_cube(triangulation,left,right);
 
-  // set boundary indicator
-  typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
-  for(;cell!=endc;++cell)
-  {
-    for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-    {
-      if ((std::fabs(cell->face(face_number)->center()(1) - left) < 1e-12)||
-         (std::fabs(cell->face(face_number)->center()(1) - right) < 1e-12)
-//         || (std::fabs(cell->face(face_number)->center()(0) - right) < 1e-12) // Neumann BC at right boundary
-         )
-        cell->face(face_number)->set_boundary_id (1);
-    }
-  }
   triangulation.refine_global(n_refine_space);
 
   std_cxx11::shared_ptr<Function<dim> > analytical_solution;
   analytical_solution.reset(new AnalyticalSolution<dim>());
   boundary_descriptor->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >(0,analytical_solution));
-  std_cxx11::shared_ptr<Function<dim> > neumann_bc;
-  neumann_bc.reset(new NeumannBoundary<dim>());
-  boundary_descriptor->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >(1,neumann_bc));
 }
 
 template<int dim>
@@ -302,4 +283,5 @@ void set_analytical_solution(std_cxx11::shared_ptr<AnalyticalSolutionConvDiff<di
   analytical_solution->solution.reset(new AnalyticalSolution<dim>(1));
 }
 
-#endif /* APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_BOUNDARYLAYERPROBLEM_H_ */
+
+#endif /* APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_CONSTWINDCONSTRHS_H_ */

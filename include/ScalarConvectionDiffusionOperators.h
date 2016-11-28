@@ -72,6 +72,11 @@ public:
     data->cell_loop(&MassMatrixOperator<dim,fe_degree,value_type>::local_diagonal, this, diagonal, src_dummy);
   }
 
+  MassMatrixOperatorData const & get_operator_data() const
+  {
+    return mass_matrix_operator_data;
+  }
+
 private:
   void apply_mass_matrix (parallel::distributed::Vector<value_type>        &dst,
                           const parallel::distributed::Vector<value_type>  &src) const
@@ -296,6 +301,24 @@ public:
     apply_diffusive_operator(dst,src);
   }
 
+  // apply "block Jacobi" matrix vector multiplication
+  void apply_block_Jacobi (parallel::distributed::Vector<value_type>       &dst,
+                           const parallel::distributed::Vector<value_type> &src) const
+  {
+    dst = 0;
+    apply_block_jacobi_add(dst,src);
+  }
+
+  void apply_block_jacobi_add (parallel::distributed::Vector<value_type>       &dst,
+                               const parallel::distributed::Vector<value_type> &src) const
+  {
+    AssertThrow(diffusivity > 0.0,ExcMessage("Diffusivity has not been set!"));
+
+    data->loop(&DiffusiveOperator<dim,fe_degree, value_type>::local_apply_cell,
+               &DiffusiveOperator<dim,fe_degree, value_type>::local_apply_block_jacobi_face,
+               &DiffusiveOperator<dim,fe_degree, value_type>::local_apply_boundary_face,this, dst, src);
+  }
+
   void rhs (parallel::distributed::Vector<value_type> &dst,
             value_type const                          evaluation_time) const
   {
@@ -351,6 +374,11 @@ public:
                this, diagonal, src_dummy);
   }
 
+  DiffusiveOperatorData<dim> const & get_operator_data() const
+  {
+    return operator_data;
+  }
+
 private:
   void compute_array_penalty_parameter(const Mapping<dim> &mapping)
   {
@@ -398,6 +426,9 @@ private:
                &DiffusiveOperator<dim,fe_degree, value_type>::local_apply_boundary_face,this, dst, src);
   }
 
+  /*
+   *  APPLY
+   */
   void local_apply_cell (const MatrixFree<dim,value_type>                 &data,
                          parallel::distributed::Vector<value_type>        &dst,
                          const parallel::distributed::Vector<value_type>  &src,
@@ -525,6 +556,61 @@ private:
     }
   }
 
+  /*
+   *  BLOCK_JACOBI
+   */
+  void local_apply_block_jacobi_face (const MatrixFree<dim,value_type>                &data,
+                                      parallel::distributed::Vector<value_type>       &dst,
+                                      const parallel::distributed::Vector<value_type> &src,
+                                      const std::pair<unsigned int,unsigned int>      &face_range) const
+  {
+    FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,true,operator_data.dof_index,operator_data.quad_index);
+    FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval_neighbor(data,false,operator_data.dof_index,operator_data.quad_index);
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval.reinit (face);
+      fe_eval.read_dof_values(src);
+      fe_eval.evaluate(true,true);
+
+      fe_eval_neighbor.reinit (face);
+      fe_eval_neighbor.read_dof_values(src);
+      fe_eval_neighbor.evaluate(true,true);
+
+      VectorizedArray<value_type> tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),fe_eval_neighbor.read_cell_data(array_penalty_parameter))
+                                              * get_penalty_factor();
+
+      // integrate over face for element e⁻
+      for(unsigned int q=0;q<fe_eval_neighbor.n_q_points;++q)
+      {
+        VectorizedArray<value_type> jump_value = fe_eval.get_value(q);
+        VectorizedArray<value_type> gradient_flux = fe_eval.get_normal_gradient(q) * 0.5;
+        gradient_flux = gradient_flux - tau_IP * jump_value;
+
+        fe_eval.submit_normal_gradient(-0.5*diffusivity*jump_value,q);
+        fe_eval.submit_value(-diffusivity*gradient_flux,q);
+      }
+      fe_eval.integrate(true,true);
+      fe_eval.distribute_local_to_global(dst);
+
+      // integrate over face for element e⁺
+      for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+      {
+        VectorizedArray<value_type> jump_value =  - fe_eval_neighbor.get_value(q);
+        VectorizedArray<value_type> gradient_flux = fe_eval_neighbor.get_normal_gradient(q) * 0.5;
+        gradient_flux = gradient_flux - tau_IP * jump_value;
+
+        fe_eval_neighbor.submit_normal_gradient(-0.5*diffusivity*jump_value,q);
+        fe_eval_neighbor.submit_value(diffusivity*gradient_flux,q);
+      }
+      fe_eval_neighbor.integrate(true,true);
+      fe_eval_neighbor.distribute_local_to_global(dst);
+    }
+  }
+
+  /*
+   *  DIAGONAL
+   */
   void local_diagonal_cell (const MatrixFree<dim,value_type>                 &data,
                             parallel::distributed::Vector<value_type>        &dst,
                             const parallel::distributed::Vector<value_type>  &,
@@ -987,6 +1073,25 @@ public:
     apply_convective_operator(dst,src);
   }
 
+  // apply "block Jacobi" matrix vector multiplication
+  void apply_block_jacobi (parallel::distributed::Vector<value_type>       &dst,
+                           const parallel::distributed::Vector<value_type> &src,
+                           value_type const                                evaluation_time) const
+  {
+    dst = 0;
+    apply_block_jacobi_add(dst,src,evaluation_time);
+  }
+
+  void apply_block_jacobi_add (parallel::distributed::Vector<value_type>       &dst,
+                               const parallel::distributed::Vector<value_type> &src,
+                               value_type const                                evaluation_time) const
+  {
+    this->eval_time = evaluation_time;
+    data->loop(&ConvectiveOperator<dim,fe_degree, value_type>::local_apply_cell,
+               &ConvectiveOperator<dim,fe_degree, value_type>::local_apply_block_jacobi_face,
+               &ConvectiveOperator<dim,fe_degree, value_type>::local_apply_boundary_face,this, dst, src);
+  }
+
   void evaluate (parallel::distributed::Vector<value_type>       &dst,
                  const parallel::distributed::Vector<value_type> &src,
                  value_type const                                evaluation_time) const
@@ -1004,6 +1109,27 @@ public:
     data->loop(&ConvectiveOperator<dim,fe_degree, value_type>::local_apply_cell,
                &ConvectiveOperator<dim,fe_degree, value_type>::local_apply_face,
                &ConvectiveOperator<dim,fe_degree, value_type>::local_evaluate_boundary_face,this, dst, src);
+  }
+
+  void calculate_diagonal (parallel::distributed::Vector<value_type>       &diagonal,
+                           value_type const                                evaluation_time) const
+  {
+    diagonal = 0.0;
+
+    add_diagonal(diagonal,evaluation_time);
+  }
+
+  void add_diagonal(parallel::distributed::Vector<value_type>       &diagonal,
+                    value_type const                                evaluation_time) const
+  {
+    this->eval_time = evaluation_time;
+
+    parallel::distributed::Vector<value_type>  src_dummy(diagonal);
+
+    data->loop(&ConvectiveOperator<dim,fe_degree,value_type>::local_diagonal_cell,
+               &ConvectiveOperator<dim,fe_degree,value_type>::local_diagonal_face,
+               &ConvectiveOperator<dim,fe_degree,value_type>::local_diagonal_boundary_face,
+               this, diagonal, src_dummy);
   }
 
   void rhs (parallel::distributed::Vector<value_type>       &dst,
@@ -1025,6 +1151,11 @@ public:
                &ConvectiveOperator<dim,fe_degree, value_type>::local_rhs_boundary_face,this, dst, src);
   }
 
+  ConvectiveOperatorData<dim> const & get_operator_data() const
+  {
+    return this->operator_data;
+  }
+
 private:
   void apply_convective_operator (parallel::distributed::Vector<value_type>       &dst,
                                   const parallel::distributed::Vector<value_type> &src) const
@@ -1034,6 +1165,9 @@ private:
                &ConvectiveOperator<dim,fe_degree, value_type>::local_apply_boundary_face,this, dst, src);
   }
 
+  /*
+   *  APPLY
+   */
   void local_apply_cell (const MatrixFree<dim,value_type>                 &data,
                          parallel::distributed::Vector<value_type>        &dst,
                          const parallel::distributed::Vector<value_type>  &src,
@@ -1218,6 +1352,420 @@ private:
     }
   }
 
+  /*
+   *  BLOCK JACOBI
+   */
+  void local_apply_block_jacobi_face (const MatrixFree<dim,value_type>                &data,
+                                      parallel::distributed::Vector<value_type>       &dst,
+                                      const parallel::distributed::Vector<value_type> &src,
+                                      const std::pair<unsigned int,unsigned int>      &face_range) const
+  {
+    FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,true,operator_data.dof_index,operator_data.quad_index);
+    FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval_neighbor(data,false,operator_data.dof_index,operator_data.quad_index);
+
+    // set the correct time for the evaluation of the velocity field
+    operator_data.velocity->set_time(eval_time);
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval.reinit (face);
+      fe_eval.read_dof_values(src);
+      fe_eval.evaluate(true,false);
+
+      fe_eval_neighbor.reinit (face);
+      fe_eval_neighbor.read_dof_values(src);
+      fe_eval_neighbor.evaluate(true,false);
+
+      // integrate over face for element e⁻
+      for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+      {
+        Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
+        Tensor<1,dim,VectorizedArray<value_type> > velocity;
+        for(unsigned int d=0;d<dim;++d)
+        {
+          value_type array [VectorizedArray<value_type>::n_array_elements];
+          for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+          {
+            Point<dim> q_point;
+            for (unsigned int d=0; d<dim; ++d)
+              q_point[d] = q_points[d][n];
+            array[n] = operator_data.velocity->value(q_point,d);
+          }
+          velocity[d].load(&array[0]);
+        }
+        Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+        VectorizedArray<value_type> u_n = velocity*normal;
+        VectorizedArray<value_type> value_m = fe_eval.get_value(q);
+        // set value_p to zero
+        VectorizedArray<value_type> value_p = make_vectorized_array<value_type>(0.0);
+        VectorizedArray<value_type> average_value = 0.5*(value_m + value_p);
+        VectorizedArray<value_type> jump_value = value_m - value_p;
+        VectorizedArray<value_type> lambda = std::abs(u_n);
+        VectorizedArray<value_type> lf_flux = make_vectorized_array<value_type>(0.0);
+
+        if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
+          lf_flux = u_n*average_value;
+        else if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+          lf_flux = u_n*average_value + 0.5*lambda*jump_value;
+        else
+          AssertThrow(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux ||
+                      this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux,
+                      ExcMessage("Specified numerical flux function for convective operator is not implemented!"));
+
+        fe_eval.submit_value(lf_flux,q);
+      }
+      fe_eval.integrate(true,false);
+      fe_eval.distribute_local_to_global(dst);
+
+
+      // integrate over face for element e⁺
+      for(unsigned int q=0;q<fe_eval_neighbor.n_q_points;++q)
+      {
+        Point<dim,VectorizedArray<value_type> > q_points = fe_eval_neighbor.quadrature_point(q);
+        Tensor<1,dim,VectorizedArray<value_type> > velocity;
+        for(unsigned int d=0;d<dim;++d)
+        {
+          value_type array [VectorizedArray<value_type>::n_array_elements];
+          for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+          {
+            Point<dim> q_point;
+            for (unsigned int d=0; d<dim; ++d)
+              q_point[d] = q_points[d][n];
+            array[n] = operator_data.velocity->value(q_point,d);
+          }
+          velocity[d].load(&array[0]);
+        }
+        Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_neighbor.get_normal_vector(q);
+        VectorizedArray<value_type> u_n = velocity*normal;
+        // set value_m to zero
+        VectorizedArray<value_type> value_m = make_vectorized_array<value_type>(0.0);
+        VectorizedArray<value_type> value_p = fe_eval_neighbor.get_value(q);
+        VectorizedArray<value_type> average_value = 0.5*(value_m + value_p);
+        VectorizedArray<value_type> jump_value = value_m - value_p;
+        VectorizedArray<value_type> lambda = std::abs(u_n);
+        VectorizedArray<value_type> lf_flux = make_vectorized_array<value_type>(0.0);
+
+        if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
+          lf_flux = u_n*average_value;
+        else if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+          lf_flux = u_n*average_value + 0.5*lambda*jump_value;
+        else
+          AssertThrow(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux ||
+                      this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux,
+                      ExcMessage("Specified numerical flux function for convective operator is not implemented!"));
+
+        fe_eval_neighbor.submit_value(-lf_flux,q);
+      }
+      fe_eval_neighbor.integrate(true,false);
+      fe_eval_neighbor.distribute_local_to_global(dst);
+    }
+  }
+
+
+  /*
+   *  DIAGONAL
+   */
+  void local_diagonal_cell (const MatrixFree<dim,value_type>                 &data,
+                            parallel::distributed::Vector<value_type>        &dst,
+                            const parallel::distributed::Vector<value_type>  &,
+                            const std::pair<unsigned int,unsigned int>       &cell_range) const
+  {
+    FEEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,
+                                                                 operator_data.dof_index,
+                                                                 operator_data.quad_index);
+
+    // set the correct time for the evaluation of the velocity field
+    operator_data.velocity->set_time(eval_time);
+
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval.reinit(cell);
+
+      VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
+      for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+      {
+        for (unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+          fe_eval.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
+        fe_eval.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+
+        // copied from local_apply_cell TODO
+        fe_eval.evaluate (true,false,false);
+        for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+        {
+          Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
+          Tensor<1,dim,VectorizedArray<value_type> > velocity;
+          for(unsigned int d=0;d<dim;++d)
+          {
+            value_type array [VectorizedArray<value_type>::n_array_elements];
+            for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+            {
+              Point<dim> q_point;
+              for (unsigned int d=0; d<dim; ++d)
+                q_point[d] = q_points[d][n];
+              array[n] = operator_data.velocity->value(q_point,d);
+            }
+            velocity[d].load(&array[0]);
+          }
+          fe_eval.submit_gradient(-fe_eval.get_value(q)*velocity,q);
+        }
+        fe_eval.integrate (false,true);
+        // copied from local_apply_cell TODO
+
+        local_diagonal_vector[j] = fe_eval.begin_dof_values()[j];
+      }
+      for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+        fe_eval.begin_dof_values()[j] = local_diagonal_vector[j];
+
+      fe_eval.distribute_local_to_global (dst);
+    }
+  }
+
+  void local_diagonal_face (const MatrixFree<dim,value_type>                &data,
+                            parallel::distributed::Vector<value_type>       &dst,
+                            const parallel::distributed::Vector<value_type> &,
+                            const std::pair<unsigned int,unsigned int>      &face_range) const
+  {
+    FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,true,operator_data.dof_index,operator_data.quad_index);
+    FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval_neighbor(data,false,operator_data.dof_index,operator_data.quad_index);
+
+    // set the correct time for the evaluation of the velocity field
+    operator_data.velocity->set_time(eval_time);
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval.reinit (face);
+      fe_eval_neighbor.reinit (face);
+
+
+      // element-
+      VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
+      for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+      {
+        // set dof value j of element- to 1 and all other dof values of element- to zero
+        for (unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+          fe_eval.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
+        fe_eval.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+
+        // set all dof values of element+ to zero
+        for (unsigned int i=0; i<fe_eval_neighbor.dofs_per_cell; ++i)
+          fe_eval_neighbor.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
+
+        // copied from local_apply_face (note that fe_eval_neighbor.submit...
+        // and fe_eval_neighbor.integrate() has to be removed. TODO
+        fe_eval.evaluate(true,false);
+        fe_eval_neighbor.evaluate(true,false);
+
+        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        {
+          Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
+          Tensor<1,dim,VectorizedArray<value_type> > velocity;
+          for(unsigned int d=0;d<dim;++d)
+          {
+            value_type array [VectorizedArray<value_type>::n_array_elements];
+            for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+            {
+              Point<dim> q_point;
+              for (unsigned int d=0; d<dim; ++d)
+                q_point[d] = q_points[d][n];
+              array[n] = operator_data.velocity->value(q_point,d);
+            }
+            velocity[d].load(&array[0]);
+          }
+          Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+          VectorizedArray<value_type> u_n = velocity*normal;
+          VectorizedArray<value_type> value_m = fe_eval.get_value(q);
+          VectorizedArray<value_type> value_p = fe_eval_neighbor.get_value(q);
+          VectorizedArray<value_type> average_value = 0.5*(value_m + value_p);
+          VectorizedArray<value_type> jump_value = value_m - value_p;
+          VectorizedArray<value_type> lambda = std::abs(u_n);
+          VectorizedArray<value_type> lf_flux = make_vectorized_array<value_type>(0.0);
+
+          if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
+            lf_flux = u_n*average_value;
+          else if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+            lf_flux = u_n*average_value + 0.5*lambda*jump_value;
+          else
+            AssertThrow(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux ||
+                        this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux,
+                        ExcMessage("Specified numerical flux function for convective operator is not implemented!"));
+
+          fe_eval.submit_value(lf_flux,q);
+        }
+        fe_eval.integrate(true,false);
+        // copied from local_apply_face (note that fe_eval_neighbor.submit...
+        // and fe_eval_neighbor.integrate() has to be removed. //TODO
+
+        local_diagonal_vector[j] = fe_eval.begin_dof_values()[j];
+      }
+      for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+        fe_eval.begin_dof_values()[j] = local_diagonal_vector[j];
+
+      fe_eval.distribute_local_to_global(dst);
+
+
+
+      // element+
+      VectorizedArray<value_type> local_diagonal_vector_neighbor[fe_eval_neighbor.tensor_dofs_per_cell];
+      for (unsigned int j=0; j<fe_eval_neighbor.dofs_per_cell; ++j)
+      {
+        // set all dof values of element- to zero
+        for (unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+          fe_eval.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
+
+        // set dof value j of element+ to 1 and all other dof values of element+ to zero
+        for (unsigned int i=0; i<fe_eval_neighbor.dofs_per_cell; ++i)
+          fe_eval_neighbor.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
+        fe_eval_neighbor.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+
+        // copied from local_apply_face (note that fe_eval.submit...
+        // and fe_eval.integrate() has to be removed. TODO
+        fe_eval.evaluate(true,false);
+        fe_eval_neighbor.evaluate(true,false);
+
+        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        {
+          Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
+          Tensor<1,dim,VectorizedArray<value_type> > velocity;
+          for(unsigned int d=0;d<dim;++d)
+          {
+            value_type array [VectorizedArray<value_type>::n_array_elements];
+            for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+            {
+              Point<dim> q_point;
+              for (unsigned int d=0; d<dim; ++d)
+                q_point[d] = q_points[d][n];
+              array[n] = operator_data.velocity->value(q_point,d);
+            }
+            velocity[d].load(&array[0]);
+          }
+          Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+          VectorizedArray<value_type> u_n = velocity*normal;
+          VectorizedArray<value_type> value_m = fe_eval.get_value(q);
+          VectorizedArray<value_type> value_p = fe_eval_neighbor.get_value(q);
+          VectorizedArray<value_type> average_value = 0.5*(value_m + value_p);
+          VectorizedArray<value_type> jump_value = value_m - value_p;
+          VectorizedArray<value_type> lambda = std::abs(u_n);
+          VectorizedArray<value_type> lf_flux = make_vectorized_array<value_type>(0.0);
+
+          if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
+            lf_flux = u_n*average_value;
+          else if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+            lf_flux = u_n*average_value + 0.5*lambda*jump_value;
+          else
+            AssertThrow(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux ||
+                        this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux,
+                        ExcMessage("Specified numerical flux function for convective operator is not implemented!"));
+
+          fe_eval_neighbor.submit_value(-lf_flux,q);
+        }
+        fe_eval_neighbor.integrate(true,false);
+        // copied from local_apply_face (note that fe_eval.submit...
+        // and fe_eval.integrate() has to be removed. TODO
+
+        local_diagonal_vector_neighbor[j] = fe_eval_neighbor.begin_dof_values()[j];
+      }
+      for (unsigned int j=0; j<fe_eval_neighbor.dofs_per_cell; ++j)
+        fe_eval_neighbor.begin_dof_values()[j] = local_diagonal_vector_neighbor[j];
+
+      fe_eval_neighbor.distribute_local_to_global(dst);
+
+    }
+  }
+
+  void local_diagonal_boundary_face (const MatrixFree<dim,value_type>                &data,
+                                     parallel::distributed::Vector<value_type>       &dst,
+                                     const parallel::distributed::Vector<value_type> &,
+                                     const std::pair<unsigned int,unsigned int>      &face_range) const
+  {
+    FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,true,operator_data.dof_index,operator_data.quad_index);
+
+    // set the correct time for the evaluation of the velocity field
+    operator_data.velocity->set_time(eval_time);
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval.reinit (face);
+
+      typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+      types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
+      VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
+      for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+      {
+        // set dof value j of element- to 1 and all other dof values of element- to zero
+        for (unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+          fe_eval.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
+        fe_eval.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+
+        // copied from local_apply_boundary_face // TODO
+        fe_eval.evaluate(true,false);
+        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        {
+          Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
+          Tensor<1,dim,VectorizedArray<value_type> > velocity;
+          for(unsigned int d=0;d<dim;++d)
+          {
+            value_type array [VectorizedArray<value_type>::n_array_elements];
+            for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+            {
+              Point<dim> q_point;
+              for (unsigned int d=0; d<dim; ++d)
+                q_point[d] = q_points[d][n];
+              array[n] = operator_data.velocity->value(q_point,d);
+            }
+            velocity[d].load(&array[0]);
+          }
+          Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+          VectorizedArray<value_type> u_n = velocity*normal;
+          VectorizedArray<value_type> value_m = fe_eval.get_value(q);
+          VectorizedArray<value_type> value_p = make_vectorized_array<value_type>(0.0);
+
+          it = operator_data.bc->dirichlet_bc.find(boundary_id);
+          if(it != operator_data.bc->dirichlet_bc.end())
+          {
+            // on GammaD: phi⁺ = -phi⁻ + 2g -> {{phi}} = g, [phi] = 2 phi⁻ - 2 g
+            // homogeneous part: phi⁺ = -phi⁻ -> {{phi}} = 0, [phi] = 2 phi⁻
+            // inhomongenous part: phi⁺ = 2g -> {{phi}} = g, [phi] = -2 g
+            value_p = - value_m;
+          }
+          it = operator_data.bc->neumann_bc.find(boundary_id);
+          if(it != operator_data.bc->neumann_bc.end())
+          {
+            // on GammaN: phi⁺ = phi⁻-> {{phi}} = phi⁻, [phi] = 0
+            // homogeneous part: phi⁺ = phi⁻ -> {{phi}} = phi⁻, [phi] = 0
+            // inhomongenous part: phi⁺ = 0 -> {{phi}} = 0, [phi] = 0
+            value_p = value_m;
+          }
+          VectorizedArray<value_type> average_value = 0.5*(value_m + value_p);
+          VectorizedArray<value_type> jump_value = value_m - value_p;
+          VectorizedArray<value_type> lambda = std::abs(u_n);
+          VectorizedArray<value_type> lf_flux = make_vectorized_array<value_type>(0.0);
+
+          if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
+            lf_flux = u_n*average_value;
+          else if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+            lf_flux = u_n*average_value + 0.5*lambda*jump_value;
+          else
+            AssertThrow(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux ||
+                        this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux,
+                        ExcMessage("Specified numerical flux function for convective operator is not implemented!"));
+
+          fe_eval.submit_value(lf_flux,q);
+        }
+        fe_eval.integrate(true,false);
+        // copied from local_apply_boundary_face // TODO
+
+        local_diagonal_vector[j] = fe_eval.begin_dof_values()[j];
+      }
+      for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+        fe_eval.begin_dof_values()[j] = local_diagonal_vector[j];
+
+      fe_eval.distribute_local_to_global(dst);
+    }
+  }
+
+
+
   void local_evaluate_boundary_face (const MatrixFree<dim,value_type>                &data,
                                      parallel::distributed::Vector<value_type>       &dst,
                                      const parallel::distributed::Vector<value_type> &src,
@@ -1313,7 +1861,7 @@ private:
                        parallel::distributed::Vector<value_type>        &,
                        const parallel::distributed::Vector<value_type>  &,
                        const std::pair<unsigned int,unsigned int>       &) const
-   {}
+  {}
 
   void local_rhs_face (const MatrixFree<dim,value_type>                &,
                        parallel::distributed::Vector<value_type>       &,
@@ -1643,37 +2191,19 @@ struct HelmholtzOperatorData
 {
   HelmholtzOperatorData ()
     :
-    dof_index(0),
-    mass_matrix_coefficient(-1.0)
+    unsteady_problem(true),
+    dof_index(0)
   {}
 
+  bool unsteady_problem;
+
   unsigned int dof_index;
-
-  MassMatrixOperatorData mass_matrix_operator_data;
-  DiffusiveOperatorData<dim> diffusive_operator_data;
-
-  /*
-   * This variable 'mass_matrix_coefficient' is only used when initializing the HelmholtzOperator.
-   * In order to change/update this coefficient during the simulation (e.g., varying time step sizes)
-   * use the element variable 'mass_matrix_coefficient' of HelmholtzOperator.
-   */
-  double mass_matrix_coefficient;
-
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs_level0;
-
-  void set_dof_index(unsigned int dof_index_in)
-  {
-    this->dof_index = dof_index_in;
-
-    // don't forget to set the dof_indices of mass_matrix_operator_data
-    // and diffusive_operator_data
-    mass_matrix_operator_data.dof_index = dof_index_in;
-    diffusive_operator_data.dof_index = dof_index_in;
-  }
 };
 
+#include "MatrixOperatorBase.h"
+
 template <int dim, int fe_degree, typename Number = double>
-class HelmholtzOperator : public Subscriptor
+class HelmholtzOperator : public MatrixOperatorBase
 {
 public:
   typedef Number value_type;
@@ -1683,7 +2213,7 @@ public:
     data(nullptr),
     mass_matrix_operator(nullptr),
     diffusive_operator(nullptr),
-    mass_matrix_coefficient(-1.0)
+    scaling_factor_time_derivative_term(-1.0)
   {}
 
   void initialize(MatrixFree<dim,Number> const                      &mf_data_in,
@@ -1696,19 +2226,23 @@ public:
     this->helmholtz_operator_data = helmholtz_operator_data_in;
     this->mass_matrix_operator = &mass_matrix_operator_in;
     this->diffusive_operator = &diffusive_operator_in;
-
-    // set mass matrix coefficient!
-    AssertThrow(helmholtz_operator_data.mass_matrix_coefficient > 0.0,
-                ExcMessage("Mass matrix coefficient of HelmholtzOperatorData has not been initialized!"));
-
-    this->mass_matrix_coefficient = helmholtz_operator_data.mass_matrix_coefficient;
   }
 
-  void reinit (const DoFHandler<dim>            &dof_handler,
-               const Mapping<dim>               &mapping,
-               const HelmholtzOperatorData<dim> &operator_data,
-               const MGConstrainedDoFs          &/*mg_constrained_dofs*/,
-               const unsigned int               level = numbers::invalid_unsigned_int)
+
+  /*
+   *  This function is called by the multigrid algorithm to initialize the
+   *  matrices on all levels. To construct the matrices, and object of
+   *  type UnderlyingOperator is used that provides all the information for
+   *  the setup, i.e., the information that is needed to call the
+   *  member function initialize(...).
+   */
+  template<typename UnderlyingOperator>
+  void initialize_mg_matrix (unsigned int const                              level,
+                             DoFHandler<dim> const                           &dof_handler,
+                             Mapping<dim> const                              &mapping,
+                             UnderlyingOperator const                        &underlying_operator,
+                             const std::vector<GridTools::PeriodicFacePair<
+                               typename Triangulation<dim>::cell_iterator> > &periodic_face_pairs_level0)
   {
     // setup own matrix free object
     const QGauss<1> quad(dof_handler.get_fe().degree+1);
@@ -1716,31 +2250,42 @@ public:
     addit_data.tasks_parallel_scheme = MatrixFree<dim,Number>::AdditionalData::none;
     if (dof_handler.get_fe().dofs_per_vertex == 0)
       addit_data.build_face_info = true;
+
+    // TODO
+//    addit_data.mapping_update_flags = (update_gradients | update_JxW_values |
+//                                       update_quadrature_points | update_normal_vectors |
+//                                       update_values);
+
     addit_data.level_mg_handler = level;
     addit_data.mpi_communicator =
       dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()) ?
       (dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()))->get_communicator() : MPI_COMM_SELF;
-    addit_data.periodic_face_pairs_level_0 = operator_data.periodic_face_pairs_level0;
+    addit_data.periodic_face_pairs_level_0 = periodic_face_pairs_level0;
 
     ConstraintMatrix constraints;
+    // reinit
     own_matrix_free_storage.reinit(mapping, dof_handler, constraints, quad, addit_data);
 
-    // set the dof index to zero (for the HelmholtzOperator and also
-    // for the basic Operators (MassMatrixOperator and ViscousOperator))
-    // because the own_matrix_free_storage object has only one dof_handler with dof_index = 0
-    HelmholtzOperatorData<dim> my_operator_data = operator_data;
-    my_operator_data.set_dof_index(0);
-
     // setup own mass matrix operator
-    MassMatrixOperatorData mass_matrix_operator_data = my_operator_data.mass_matrix_operator_data;
+    MassMatrixOperatorData mass_matrix_operator_data = underlying_operator.get_mass_matrix_operator_data();
+    mass_matrix_operator_data.dof_index = 0;
+    mass_matrix_operator_data.quad_index = 0;
     own_mass_matrix_operator_storage.initialize(own_matrix_free_storage,mass_matrix_operator_data);
 
     // setup own viscous operator
-    DiffusiveOperatorData<dim> diffusive_operator_data = my_operator_data.diffusive_operator_data;
+    DiffusiveOperatorData<dim> diffusive_operator_data = underlying_operator.get_diffusive_operator_data();
+    diffusive_operator_data.dof_index = 0;
+    diffusive_operator_data.quad_index = 0;
     own_diffusive_operator_storage.initialize(mapping,own_matrix_free_storage,diffusive_operator_data);
 
     // setup Helmholtz operator
-    initialize(own_matrix_free_storage, my_operator_data, own_mass_matrix_operator_storage, own_diffusive_operator_storage);
+    HelmholtzOperatorData<dim> operator_data = underlying_operator.get_helmholtz_operator_data();
+    initialize(own_matrix_free_storage, operator_data, own_mass_matrix_operator_storage, own_diffusive_operator_storage);
+
+    // Initialize other variables:
+
+    // mass matrix term: set scaling factor time derivative term
+    set_scaling_factor_time_derivative_term(underlying_operator.get_scaling_factor_time_derivative_term());
 
     // initialize temp vector: this is done in this function because
     // the vector temp is only used in the function vmult_add(), i.e.,
@@ -1748,43 +2293,89 @@ public:
     initialize_dof_vector(temp);
   }
 
-  void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const
+  /*
+   *  Scaling factor of time derivative term (mass matrix term)
+   */
+  void set_scaling_factor_time_derivative_term(double const &factor)
   {
-    // does nothing in case of the Helmholtz operator
-    // this function is only necessary due to the interface of the multigrid preconditioner
-    // and especially the coarse grid solver that calls this function
+    scaling_factor_time_derivative_term = factor;
   }
+
+  double get_scaling_factor_time_derivative_term() const
+  {
+    return scaling_factor_time_derivative_term;
+  }
+
+  /*
+   *  Operator data
+   */
+  HelmholtzOperatorData<dim> const & get_helmholtz_operator_data() const
+  {
+    return this->helmholtz_operator_data;
+  }
+
+  /*
+   *  Operator data of basic operators: mass matrix, diffusive operator
+   */
+  MassMatrixOperatorData const & get_mass_matrix_operator_data() const
+  {
+    return mass_matrix_operator->get_operator_data();
+  }
+
+  DiffusiveOperatorData<dim> const & get_diffusive_operator_data() const
+  {
+    return diffusive_operator->get_operator_data();
+  }
+
+  /*
+   *  MatrixFree data
+   */
+  MatrixFree<dim,value_type> const & get_data() const
+  {
+    return *data;
+  }
+
+  /*
+   *  This function does nothing in case of the HelmholtzOperator.
+   *  IT is only necessary due to the interface of the multigrid preconditioner
+   *  and especially the coarse grid solver that calls this function.
+   */
+  void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const {}
 
   // apply matrix vector multiplication
   void vmult (parallel::distributed::Vector<Number>       &dst,
               const parallel::distributed::Vector<Number> &src) const
   {
     // helmholtz operator = mass_matrix_operator + viscous_operator
-    mass_matrix_operator->apply(dst,src);
-    dst *= mass_matrix_coefficient;
+    if(helmholtz_operator_data.unsteady_problem == true)
+    {
+      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+        ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
+
+      mass_matrix_operator->apply(dst,src);
+      dst *= scaling_factor_time_derivative_term;
+    }
+    else
+    {
+      dst = 0.0;
+    }
 
     diffusive_operator->apply_add(dst,src);
   }
-
-//  void Tvmult(parallel::distributed::Vector<Number>       &dst,
-//              const parallel::distributed::Vector<Number> &src) const
-//  {
-//    vmult(dst,src);
-//  }
-//
-//  void Tvmult_add(parallel::distributed::Vector<Number>       &dst,
-//                  const parallel::distributed::Vector<Number> &src) const
-//  {
-//    vmult_add(dst,src);
-//  }
 
   void vmult_add(parallel::distributed::Vector<Number>       &dst,
                  const parallel::distributed::Vector<Number> &src) const
   {
     // helmholtz operator = mass_matrix_operator + viscous_operator
-    mass_matrix_operator->apply(temp,src);
-    temp *= mass_matrix_coefficient;
-    dst += temp;
+    if(helmholtz_operator_data.unsteady_problem == true)
+    {
+      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+        ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
+
+      mass_matrix_operator->apply(temp,src);
+      temp *= scaling_factor_time_derivative_term;
+      dst += temp;
+    }
 
     diffusive_operator->apply_add(dst,src);
   }
@@ -1806,32 +2397,69 @@ public:
     return data->get_vector_partitioner(helmholtz_operator_data.dof_index)->size();
   }
 
-//  types::global_dof_index n() const
-//  {
-//    return data->get_vector_partitioner(helmholtz_operator_data.dof_index)->size();
-//  }
-
   Number el (const unsigned int,  const unsigned int) const
   {
     AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
     return Number();
   }
 
-  unsigned int get_dof_index() const
+  /*
+   *  This function initializes a global dof-vector.
+   */
+  void initialize_dof_vector(parallel::distributed::Vector<Number> &vector) const
   {
-    return helmholtz_operator_data.dof_index;
+    data->initialize_dof_vector(vector,helmholtz_operator_data.dof_index);
   }
 
-  void calculate_diagonal(parallel::distributed::Vector<Number> &diagonal) const
+  /*
+   *  Calculation of inverse diagonal (needed for smoothers and preconditioners)
+   */
+  void calculate_inverse_diagonal(parallel::distributed::Vector<Number> &diagonal) const
   {
-    mass_matrix_operator->calculate_diagonal(diagonal);
-    diagonal *= mass_matrix_coefficient;
-
-    diffusive_operator->add_diagonal(diagonal);
+    calculate_diagonal(diagonal);
 
     // verify_calculation_of_diagonal(diagonal);
+
+    invert_diagonal(diagonal);
   }
 
+  /*
+   *  Apply block Jacobi preconditioner
+   */
+  void apply_block_jacobi (parallel::distributed::Vector<Number>       &dst,
+                           parallel::distributed::Vector<Number> const &src) const
+  {
+    AssertThrow(false,ExcMessage("Block Jacobi preconditioner not implemented for scalar reaction-diffusion operator"));
+  }
+
+private:
+  /*
+   *  This function calculates the diagonal of the discrete operator representing the
+   *  scalar reaction-diffusion operator.
+   */
+  void calculate_diagonal(parallel::distributed::Vector<Number> &diagonal) const
+  {
+    if(helmholtz_operator_data.unsteady_problem == true)
+    {
+      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+        ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
+
+      mass_matrix_operator->calculate_diagonal(diagonal);
+      diagonal *= scaling_factor_time_derivative_term;
+    }
+    else
+    {
+      diagonal = 0.0;
+    }
+
+    diffusive_operator->add_diagonal(diagonal);
+  }
+
+  /*
+   *  This functions checks the calculation of the diagonal
+   *  by comparing with an naive algorithm that computes only global
+   *  matrix-vector products to generate the diagonal.
+   */
   void verify_calculation_of_diagonal(parallel::distributed::Vector<Number> const &diagonal) const
   {
     parallel::distributed::Vector<Number>  diagonal2(diagonal);
@@ -1852,6 +2480,9 @@ public:
     std::cout<<"L2 error diagonal: "<<diagonal2.l2_norm()<<std::endl;
   }
 
+  /*
+   *  This function inverts the diagonal (element by element).
+   */
   void invert_diagonal(parallel::distributed::Vector<Number> &diagonal) const
   {
     for (unsigned int i=0;i<diagonal.local_size();++i)
@@ -1863,39 +2494,511 @@ public:
     }
   }
 
-  void calculate_inverse_diagonal(parallel::distributed::Vector<Number> &diagonal) const
-  {
-    calculate_diagonal(diagonal);
-
-    invert_diagonal(diagonal);
-  }
-
-  void initialize_dof_vector(parallel::distributed::Vector<Number> &vector) const
-  {
-    data->initialize_dof_vector(vector,get_dof_index());
-  }
-
-private:
   MatrixFree<dim,Number> const * data;
   MassMatrixOperator<dim, fe_degree, Number>  const *mass_matrix_operator;
   DiffusiveOperator<dim, fe_degree, Number>  const *diffusive_operator;
   HelmholtzOperatorData<dim> helmholtz_operator_data;
   parallel::distributed::Vector<Number> mutable temp;
-  double mass_matrix_coefficient;
+  double scaling_factor_time_derivative_term;
 
   /*
-   * The following variables are necessary when applying the multigrid preconditioner to the Helmholtz operator:
-   * In that case, the HelmholtzOperator has to be generated for each level of the multigrid algorithm.
-   * Accordingly, in a first step one has to setup own objects of MatrixFree, MassMatrixOperator, DiffusiveOperator,
-   *  e.g., own_matrix_free_storage.reinit(...);
-   * and later initialize the HelmholtzOperator with these ojects by setting the above pointers to the own_objects_storage,
-   *  e.g., data = &own_matrix_free_storage;
+   * The following variables are necessary when applying the multigrid
+   * preconditioner to the Helmholtz operator. In that case, the
+   * Helmholtz has to be generated for each level of the multigrid algorithm.
+   * Accordingly, in a first step one has to setup own objects of
+   * MatrixFree, MassMatrixOperator, DiffusiveOperator,
+   *   e.g., own_matrix_free_storage.reinit(...);
+   * and later initialize the HelmholtzOperator with these
+   * ojects by setting the above pointers to the own_objects_storage,
+   *   e.g., data = &own_matrix_free_storage;
    */
   MatrixFree<dim,Number> own_matrix_free_storage;
   MassMatrixOperator<dim, fe_degree, Number> own_mass_matrix_operator_storage;
   DiffusiveOperator<dim, fe_degree, Number> own_diffusive_operator_storage;
-
 };
+
+
+
+
+template<typename UnderlyingOperator, typename Number>
+class ConvectionDiffusionBlockJacobiOperator
+{
+public:
+  ConvectionDiffusionBlockJacobiOperator(UnderlyingOperator const &underlying_operator_in)
+    : underlying_operator(underlying_operator_in)
+  {}
+
+  void vmult (parallel::distributed::Vector<Number>       &dst,
+              const parallel::distributed::Vector<Number> &src) const
+  {
+    underlying_operator.vmult_block_jacobi(dst,src);
+  }
+
+private:
+  UnderlyingOperator const &underlying_operator;
+};
+
+template<int dim>
+struct ConvectionDiffusionOperatorData
+{
+  ConvectionDiffusionOperatorData()
+    :
+    unsteady_problem(true),
+    convective_problem(true),
+    diffusive_problem(true),
+    dof_index(0)
+  {}
+
+  bool unsteady_problem;
+  bool convective_problem;
+  bool diffusive_problem;
+  unsigned int dof_index;
+};
+
+template <int dim, int fe_degree, typename Number = double>
+class ConvectionDiffusionOperator : public MatrixOperatorBase
+{
+public:
+  typedef Number value_type;
+
+  ConvectionDiffusionOperator()
+    :
+    data(nullptr),
+    mass_matrix_operator(nullptr),
+    convective_operator(nullptr),
+    diffusive_operator(nullptr),
+    scaling_factor_time_derivative_term(-1.0),
+    evaluation_time(0.0)
+  {}
+
+  void initialize(MatrixFree<dim,Number> const                      &mf_data_in,
+                  ConvectionDiffusionOperatorData<dim> const        &operator_data_in,
+                  MassMatrixOperator<dim, fe_degree, Number>  const &mass_matrix_operator_in,
+                  ConvectiveOperator<dim, fe_degree, Number> const  &convective_operator_in,
+                  DiffusiveOperator<dim, fe_degree, Number> const   &diffusive_operator_in)
+  {
+    // copy parameters into element variables
+    this->data = &mf_data_in;
+    this->operator_data = operator_data_in;
+    this->mass_matrix_operator = &mass_matrix_operator_in;
+    this->convective_operator = &convective_operator_in;
+    this->diffusive_operator = &diffusive_operator_in;
+  }
+
+
+  /*
+   *  This function is called by the multigrid algorithm to initialize the
+   *  matrices on all levels. To construct the matrices, and object of
+   *  type UnderlyingOperator is used that provides all the information for
+   *  the setup, i.e., the information that is needed to call the
+   *  member function initialize(...).
+   */
+  template<typename UnderlyingOperator>
+  void initialize_mg_matrix (unsigned int const                              level,
+                             DoFHandler<dim> const                           &dof_handler,
+                             Mapping<dim> const                              &mapping,
+                             UnderlyingOperator const                        &underlying_operator,
+                             const std::vector<GridTools::PeriodicFacePair<
+                               typename Triangulation<dim>::cell_iterator> > &periodic_face_pairs_level0)
+  {
+    // setup own matrix free object
+    const QGauss<1> quad(dof_handler.get_fe().degree+1);
+    typename MatrixFree<dim,Number>::AdditionalData addit_data;
+    addit_data.tasks_parallel_scheme = MatrixFree<dim,Number>::AdditionalData::none;
+    if (dof_handler.get_fe().dofs_per_vertex == 0)
+      addit_data.build_face_info = true;
+    // TODO
+    addit_data.mapping_update_flags = (update_gradients | update_JxW_values |
+                                       update_quadrature_points | update_normal_vectors |
+                                       update_values);
+
+    addit_data.level_mg_handler = level;
+    addit_data.mpi_communicator =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()) ?
+      (dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()))->get_communicator() : MPI_COMM_SELF;
+    addit_data.periodic_face_pairs_level_0 = periodic_face_pairs_level0;
+
+    ConstraintMatrix constraints;
+    // reinit
+    own_matrix_free_storage.reinit(mapping, dof_handler, constraints, quad, addit_data);
+
+    // setup own mass matrix operator
+    MassMatrixOperatorData mass_matrix_operator_data = underlying_operator.get_mass_matrix_operator_data();
+    mass_matrix_operator_data.dof_index = 0;
+    mass_matrix_operator_data.quad_index = 0;
+    own_mass_matrix_operator_storage.initialize(own_matrix_free_storage,mass_matrix_operator_data);
+
+    // setup own convective operator
+    ConvectiveOperatorData<dim> convective_operator_data = underlying_operator.get_convective_operator_data();
+    convective_operator_data.dof_index = 0;
+    convective_operator_data.quad_index = 0;
+    own_convective_operator_storage.initialize(own_matrix_free_storage,convective_operator_data);
+
+    // setup own viscous operator
+    DiffusiveOperatorData<dim> diffusive_operator_data = underlying_operator.get_diffusive_operator_data();
+    diffusive_operator_data.dof_index = 0;
+    diffusive_operator_data.quad_index = 0;
+    own_diffusive_operator_storage.initialize(mapping,own_matrix_free_storage,diffusive_operator_data);
+
+    // setup convection-diffusion operator
+    ConvectionDiffusionOperatorData<dim> my_operator_data = underlying_operator.get_convection_diffusion_operator_data();
+    initialize(own_matrix_free_storage,
+               my_operator_data,
+               own_mass_matrix_operator_storage,
+               own_convective_operator_storage,
+               own_diffusive_operator_storage);
+
+    // Initialize other variables:
+
+    // mass matrix term: set scaling factor time derivative term
+    set_scaling_factor_time_derivative_term(underlying_operator.get_scaling_factor_time_derivative_term());
+
+    // convective term: evaluation_time
+    // This variables is not set here. If the convective term
+    // is considered, this variables has to be updated anyway,
+    // which is done somewhere else.
+
+    // viscous term:
+
+    // initialize temp vector: this is done in this function because
+    // the vector temp is only used in the function vmult_add(), i.e.,
+    // when using the multigrid preconditioner
+    initialize_dof_vector(temp);
+  }
+
+  /*
+   *  Scaling factor of time derivative term (mass matrix term)
+   */
+  void set_scaling_factor_time_derivative_term(double const &factor)
+  {
+    scaling_factor_time_derivative_term = factor;
+  }
+
+  double get_scaling_factor_time_derivative_term() const
+  {
+    return scaling_factor_time_derivative_term;
+  }
+
+  /*
+   *  Evaluation time that is needed for evaluation of convective operator.
+   */
+  void set_evaluation_time(double const &evaluation_time_in)
+  {
+    evaluation_time = evaluation_time_in;
+  }
+
+  double get_evaluation_time() const
+  {
+    return evaluation_time;
+  }
+
+  /*
+   *  Operator data
+   */
+  ConvectionDiffusionOperatorData<dim> const & get_convection_diffusion_operator_data() const
+  {
+    return this->operator_data;
+  }
+
+  /*
+   *  Helmholtz operator data
+   */
+  HelmholtzOperatorData<dim> const get_helmholtz_operator_data() const
+  {
+    ScalarConvDiffOperators::HelmholtzOperatorData<dim> helmholtz_operator_data;
+    helmholtz_operator_data.unsteady_problem = this->operator_data.unsteady_problem;
+    helmholtz_operator_data.dof_index = 0;
+
+    return helmholtz_operator_data;
+  }
+
+  /*
+   *  Operator data of basic operators: mass matrix, convective operator, diffusive operator
+   */
+  MassMatrixOperatorData const & get_mass_matrix_operator_data() const
+  {
+    return mass_matrix_operator->get_operator_data();
+  }
+
+  ConvectiveOperatorData<dim> const & get_convective_operator_data() const
+  {
+    return convective_operator->get_operator_data();
+  }
+
+  DiffusiveOperatorData<dim> const & get_diffusive_operator_data() const
+  {
+    return diffusive_operator->get_operator_data();
+  }
+
+  /*
+   *  MatrixFree data
+   */
+  MatrixFree<dim,value_type> const & get_data() const
+  {
+    return *data;
+  }
+
+  /*
+   *  This function does nothing in case of the ConvectionDiffusionOperator.
+   *  IT is only necessary due to the interface of the multigrid preconditioner
+   *  and especially the coarse grid solver that calls this function.
+   */
+  void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const {}
+
+  // apply matrix vector multiplication
+  void vmult (parallel::distributed::Vector<Number>       &dst,
+              const parallel::distributed::Vector<Number> &src) const
+  {
+    if(operator_data.unsteady_problem == true)
+    {
+      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+        ExcMessage("Scaling factor of time derivative term has not been initialized for convection-diffusion operator!"));
+
+      mass_matrix_operator->apply(dst,src);
+      dst *= scaling_factor_time_derivative_term;
+    }
+    else
+    {
+      dst = 0.0;
+    }
+
+    if(operator_data.diffusive_problem == true)
+    {
+      diffusive_operator->apply_add(dst,src);
+    }
+
+    if(operator_data.convective_problem == true)
+    {
+      convective_operator->apply_add(dst,src,evaluation_time);
+    }
+  }
+
+  void vmult_add(parallel::distributed::Vector<Number>       &dst,
+                 const parallel::distributed::Vector<Number> &src) const
+  {
+    if(operator_data.unsteady_problem == true)
+    {
+      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+        ExcMessage("Scaling factor of time derivative term has not been initialized for convection-diffusion operator!"));
+
+      mass_matrix_operator->apply(temp,src);
+      temp *= scaling_factor_time_derivative_term;
+      dst += temp;
+    }
+
+    if(operator_data.diffusive_problem == true)
+    {
+      diffusive_operator->apply_add(dst,src);
+    }
+
+    if(operator_data.convective_problem == true)
+    {
+      convective_operator->apply_add(dst,src,evaluation_time);
+    }
+  }
+
+  // apply matrix vector multiplication
+  void vmult_block_jacobi (parallel::distributed::Vector<Number>       &dst,
+                           const parallel::distributed::Vector<Number> &src) const
+  {
+    if(operator_data.unsteady_problem == true)
+    {
+      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+        ExcMessage("Scaling factor of time derivative term has not been initialized for convection-diffusion operator!"));
+
+      // mass matrix operator has already "block Jacobi form" in DG
+      mass_matrix_operator->apply(dst,src);
+      dst *= scaling_factor_time_derivative_term;
+    }
+    else
+    {
+      dst = 0.0;
+    }
+
+    if(operator_data.diffusive_problem == true)
+    {
+      diffusive_operator->apply_block_jacobi_add(dst,src);
+    }
+
+    if(operator_data.convective_problem == true)
+    {
+      convective_operator->apply_block_jacobi_add(dst,src,evaluation_time);
+    }
+  }
+
+  void vmult_interface_down(parallel::distributed::Vector<Number>       &dst,
+                            const parallel::distributed::Vector<Number> &src) const
+  {
+    vmult(dst,src);
+  }
+
+  void vmult_add_interface_up(parallel::distributed::Vector<Number>       &dst,
+                              const parallel::distributed::Vector<Number> &src) const
+  {
+    vmult_add(dst,src);
+  }
+
+  types::global_dof_index m() const
+  {
+    return data->get_vector_partitioner(operator_data.dof_index)->size();
+  }
+
+  Number el (const unsigned int,  const unsigned int) const
+  {
+    AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
+    return Number();
+  }
+
+  unsigned int get_dof_index() const
+  {
+    return operator_data.dof_index;
+  }
+
+  unsigned int get_quad_index() const
+  {
+    // Operator data does not contain quad_index. Hence,
+    // ask one of the basic operators (here we choose the mass matrix operator)
+    // for the quadrature index.
+    return get_mass_matrix_operator_data().quad_index;
+  }
+
+  /*
+   *  This function initializes a global dof-vector.
+   */
+  void initialize_dof_vector(parallel::distributed::Vector<Number> &vector) const
+  {
+    data->initialize_dof_vector(vector,operator_data.dof_index);
+  }
+
+  /*
+   *  Calculation of inverse diagonal (needed for smoothers and preconditioners)
+   */
+  void calculate_inverse_diagonal(parallel::distributed::Vector<Number> &diagonal) const
+  {
+    calculate_diagonal(diagonal);
+
+    // verify_calculation_of_diagonal(diagonal);
+
+    invert_diagonal(diagonal);
+  }
+
+  /*
+   *  Apply block Jacobi preconditioner
+   */
+  void apply_block_jacobi (parallel::distributed::Vector<Number>       &dst,
+                           parallel::distributed::Vector<Number> const &src) const
+  {
+    IterationNumberControl control (30,1.e-20,1.e-2);
+    typename SolverGMRES<parallel::distributed::Vector<Number> >::AdditionalData additional_data;
+    additional_data.right_preconditioning = true;
+    SolverGMRES<parallel::distributed::Vector<Number> > solver (control,additional_data);
+
+    typedef ConvectionDiffusionOperator<dim,fe_degree,Number> MY_TYPE;
+    ConvectionDiffusionBlockJacobiOperator<MY_TYPE, Number> block_jacobi_operator(*this);
+
+    dst = 0.0;
+    solver.solve(block_jacobi_operator,dst,src,PreconditionIdentity());
+
+//    std::cout<<"Number of iterations block Jacobi solve = "<<control.last_step()<<std::endl;
+  }
+
+private:
+  /*
+   *  This function calculates the diagonal of the discrete operator representing the
+   *  scalar reaction-convection-diffusion operator.
+   */
+  void calculate_diagonal(parallel::distributed::Vector<Number> &diagonal) const
+  {
+    if(operator_data.unsteady_problem == true)
+    {
+      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+        ExcMessage("Scaling factor of time derivative term has not been initialized for convection-diffusion operator!"));
+
+      mass_matrix_operator->calculate_diagonal(diagonal);
+      diagonal *= scaling_factor_time_derivative_term;
+    }
+    else
+    {
+      diagonal = 0.0;
+    }
+
+    if(operator_data.diffusive_problem == true)
+    {
+      diffusive_operator->add_diagonal(diagonal);
+    }
+
+    if(operator_data.convective_problem == true)
+    {
+      convective_operator->add_diagonal(diagonal,evaluation_time);
+    }
+  }
+
+  /*
+   *  This functions checks the calculation of the diagonal
+   *  by comparing with an naive algorithm that computes only global
+   *  matrix-vector products to generate the diagonal.
+   */
+  void verify_calculation_of_diagonal(parallel::distributed::Vector<Number> const &diagonal) const
+  {
+    parallel::distributed::Vector<Number>  diagonal2(diagonal);
+    diagonal2 = 0.0;
+    parallel::distributed::Vector<Number>  src(diagonal2);
+    parallel::distributed::Vector<Number>  dst(diagonal2);
+    for (unsigned int i=0;i<diagonal.local_size();++i)
+    {
+      src.local_element(i) = 1.0;
+      vmult(dst,src);
+      diagonal2.local_element(i) = dst.local_element(i);
+      src.local_element(i) = 0.0;
+    }
+
+    std::cout<<"L2 norm diagonal - Variant 1: "<<diagonal.l2_norm()<<std::endl;
+    std::cout<<"L2 norm diagonal - Variant 2: "<<diagonal2.l2_norm()<<std::endl;
+    diagonal2.add(-1.0,diagonal);
+    std::cout<<"L2 error diagonal: "<<diagonal2.l2_norm()<<std::endl;
+  }
+
+  /*
+   *  This function inverts the diagonal (element by element).
+   */
+  void invert_diagonal(parallel::distributed::Vector<Number> &diagonal) const
+  {
+    for (unsigned int i=0;i<diagonal.local_size();++i)
+    {
+      if( std::abs(diagonal.local_element(i)) > 1.0e-10 )
+        diagonal.local_element(i) = 1.0/diagonal.local_element(i);
+      else
+        diagonal.local_element(i) = 1.0;
+    }
+  }
+
+  MatrixFree<dim,Number> const * data;
+  MassMatrixOperator<dim, fe_degree, Number>  const *mass_matrix_operator;
+  ConvectiveOperator<dim, fe_degree, Number> const *convective_operator;
+  DiffusiveOperator<dim, fe_degree, Number>  const *diffusive_operator;
+  ConvectionDiffusionOperatorData<dim> operator_data;
+  parallel::distributed::Vector<Number> mutable temp;
+  double scaling_factor_time_derivative_term;
+  double evaluation_time;
+
+  /*
+   * The following variables are necessary when applying the multigrid
+   * preconditioner to the convection-diffusion operator. In that case, the
+   * Helmholtz has to be generated for each level of the multigrid algorithm.
+   * Accordingly, in a first step one has to setup own objects of
+   * MatrixFree, MassMatrixOperator, DiffusiveOperator,
+   *   e.g., own_matrix_free_storage.reinit(...);
+   * and later initialize the convection-diffusion operator with these
+   * ojects by setting the above pointers to the own_objects_storage,
+   *   e.g., data = &own_matrix_free_storage;
+   */
+  MatrixFree<dim,Number> own_matrix_free_storage;
+  MassMatrixOperator<dim, fe_degree, Number> own_mass_matrix_operator_storage;
+  ConvectiveOperator<dim, fe_degree, Number> own_convective_operator_storage;
+  DiffusiveOperator<dim, fe_degree, Number> own_diffusive_operator_storage;
+};
+
+
 
 
 // Convection-diffusion operator for runtime optimization:
@@ -1905,10 +3008,10 @@ private:
 //
 // Note: to obtain meaningful results, ensure that ...
 //   ... the rhs-function, velocity-field and that the diffusivity is zero
-//   if the rhs operator, convective operator or diffusive operator is "inactive"
+//   if the rhs operator, convective operator or diffusive operator is "inactive".
 //   The reason behind is that the volume and surface integrals of these operators
 //   will always be evaluated for this "runtime optimization" implementation of the
-//   convection-diffusion operator
+//   convection-diffusion operator.
 //
 // Note: This operator is only implemented for the special case of explicit time integration,
 //   i.e., when "evaluating" the operators for a given input-vector, at a given time and given
@@ -1918,9 +3021,9 @@ private:
 //   is currently not available for this implementation.
 
 template<int dim>
-struct ConvectionDiffusionOperatorData
+struct ConvectionDiffusionOperatorDataEfficiency
 {
-  ConvectionDiffusionOperatorData (){}
+  ConvectionDiffusionOperatorDataEfficiency (){}
 
   ConvectiveOperatorData<dim> conv_data;
   DiffusiveOperatorData<dim> diff_data;
@@ -1928,18 +3031,18 @@ struct ConvectionDiffusionOperatorData
 };
 
 template <int dim, int fe_degree, typename value_type>
-class ConvectionDiffusionOperator
+class ConvectionDiffusionOperatorEfficiency
 {
 public:
-  ConvectionDiffusionOperator()
+  ConvectionDiffusionOperatorEfficiency()
     :
     data(nullptr),
     diffusivity(-1.0)
   {}
 
-  void initialize(Mapping<dim> const               &mapping,
-                  MatrixFree<dim,value_type> const           &mf_data,
-                  ConvectionDiffusionOperatorData<dim> const &operator_data_in)
+  void initialize(Mapping<dim> const                                   &mapping,
+                  MatrixFree<dim,value_type> const                     &mf_data,
+                  ConvectionDiffusionOperatorDataEfficiency<dim> const &operator_data_in)
   {
     this->data = &mf_data;
     this->operator_data = operator_data_in;
@@ -1965,9 +3068,9 @@ public:
   {
     this->eval_time = evaluation_time;
 
-    data->loop(&ConvectionDiffusionOperator<dim,fe_degree, value_type>::local_apply_cell,
-               &ConvectionDiffusionOperator<dim,fe_degree, value_type>::local_apply_face,
-               &ConvectionDiffusionOperator<dim,fe_degree, value_type>::local_evaluate_boundary_face, this, dst, src);
+    data->loop(&ConvectionDiffusionOperatorEfficiency<dim,fe_degree, value_type>::local_apply_cell,
+               &ConvectionDiffusionOperatorEfficiency<dim,fe_degree, value_type>::local_apply_face,
+               &ConvectionDiffusionOperatorEfficiency<dim,fe_degree, value_type>::local_evaluate_boundary_face, this, dst, src);
   }
 
 private:
@@ -2296,7 +3399,7 @@ private:
   }
 
   MatrixFree<dim,value_type> const * data;
-  ConvectionDiffusionOperatorData<dim> operator_data;
+  ConvectionDiffusionOperatorDataEfficiency<dim> operator_data;
   AlignedVector<VectorizedArray<value_type> > array_penalty_parameter;
   double diffusivity;
   mutable value_type eval_time;

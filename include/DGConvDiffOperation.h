@@ -17,8 +17,10 @@ using namespace dealii;
 #include "../include/ScalarConvectionDiffusionOperators.h"
 
 // preconditioner, solver
-#include "../include/Preconditioner.h"
 #include "../include/IterativeSolvers.h"
+#include "../include/InverseMassMatrixPreconditioner.h"
+#include "../include/JacobiPreconditioner.h"
+#include "../include/MultigridPreconditionerScalarConvDiff.h"
 
 
 #include "../include/BoundaryDescriptorConvDiff.h"
@@ -37,9 +39,7 @@ public:
     fe(QGaussLobatto<1>(fe_degree+1)),
     mapping(fe_degree),
     dof_handler(triangulation),
-    param(param_in),
-    scaling_factor_time_derivative_term(-1.0),
-    evaluation_time(0.0)
+    param(param_in)
   {}
 
   void setup(const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
@@ -63,61 +63,64 @@ public:
     pcout << std::endl << "... done!" << std::endl;
   }
 
-  void setup_solver()
+  void setup_solver(double const scaling_factor_time_derivative_term_in=-1.0)
   {
+    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+    pcout << std::endl << "Setup solver ..." << std::endl;
+
     // initialize preconditioner
     if(param.preconditioner == ConvDiff::Preconditioner::InverseMassMatrix)
     {
-      preconditioner.reset(new InverseMassMatrixPreconditioner<dim, fe_degree, value_type, 1>
-        (data,0,0));
+      preconditioner.reset(new InverseMassMatrixPreconditioner<dim, fe_degree, value_type, 1>(data,0,0));
     }
-    else if(param.preconditioner == ConvDiff::Preconditioner::Jacobi)
+    else if(param.preconditioner == ConvDiff::Preconditioner::PointJacobi)
     {
       preconditioner.reset(new JacobiPreconditioner<value_type,
-                                 DGConvDiffOperation<dim,fe_degree,value_type> >
-                               (*this));
+          ScalarConvDiffOperators::ConvectionDiffusionOperator<dim,fe_degree,value_type> >(conv_diff_operator));
     }
-    else if(param.preconditioner == ConvDiff::Preconditioner::GeometricMultigrid)
+    else if(param.preconditioner == ConvDiff::Preconditioner::BlockJacobi)
+    {
+      preconditioner.reset(new BlockJacobiPreconditioner<dim, value_type,
+          ScalarConvDiffOperators::ConvectionDiffusionOperator<dim,fe_degree,value_type> >(conv_diff_operator));
+    }
+    else if(param.preconditioner == ConvDiff::Preconditioner::MultigridDiffusion)
     {
       MultigridData mg_data;
       mg_data = param.multigrid_data;
 
-      ScalarConvDiffOperators::HelmholtzOperatorData<dim> helmholtz_operator_data;
-      helmholtz_operator_data.dof_index = 0;
-      helmholtz_operator_data.mass_matrix_coefficient = this->scaling_factor_time_derivative_term;
-      helmholtz_operator_data.mass_matrix_operator_data = mass_matrix_operator_data;
-      helmholtz_operator_data.diffusive_operator_data = diffusive_operator_data;
-      helmholtz_operator_data.periodic_face_pairs_level0 = periodic_face_pairs;
-
-      // use single precision for multigrid
       typedef float Number;
 
-      // fill dirichlet_boundary set TODO
-//      fill_dbc_set(boundary_descriptor);
+      typedef MyMultigridPreconditionerScalarDiff<dim,value_type,
+          ScalarConvDiffOperators::HelmholtzOperator<dim,fe_degree,Number>,
+          ScalarConvDiffOperators::ConvectionDiffusionOperator<dim,fe_degree,value_type> > MULTIGRID;
 
-      preconditioner.reset(new MyMultigridPreconditioner<dim,value_type,
-                                ScalarConvDiffOperators::HelmholtzOperator<dim,fe_degree,Number>,
-                                ScalarConvDiffOperators::HelmholtzOperatorData<dim> > ());
+      preconditioner.reset(new MULTIGRID());
+      std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
+      mg_preconditioner->initialize(mg_data,dof_handler,mapping,conv_diff_operator,this->periodic_face_pairs);
+    }
+    else if(param.preconditioner == ConvDiff::Preconditioner::MultigridConvectionDiffusion)
+    {
+       MultigridData mg_data;
+       mg_data = param.multigrid_data;
 
-      std_cxx11::shared_ptr<MyMultigridPreconditioner<dim,value_type,
-                            ScalarConvDiffOperators::HelmholtzOperator<dim,fe_degree,Number>,
-                            ScalarConvDiffOperators::HelmholtzOperatorData<dim> > >
-        mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditioner<dim,value_type,
-                                                      ScalarConvDiffOperators::HelmholtzOperator<dim,fe_degree,Number>,
-                                                      ScalarConvDiffOperators::HelmholtzOperatorData<dim> > >(preconditioner);
+       typedef float Number;
 
-      mg_preconditioner->initialize(mg_data,
-                                    dof_handler,
-                                    mapping,
-                                    helmholtz_operator_data,
-                                    boundary_descriptor->dirichlet_bc);
+       typedef MyMultigridPreconditionerScalarConvDiff<dim,value_type,
+           ScalarConvDiffOperators::ConvectionDiffusionOperator<dim,fe_degree,Number>,
+           ScalarConvDiffOperators::ConvectionDiffusionOperator<dim,fe_degree,value_type> > MULTIGRID;
+
+       preconditioner.reset(new MULTIGRID());
+       std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
+       mg_preconditioner->initialize(mg_data,dof_handler,mapping,conv_diff_operator,this->periodic_face_pairs);
     }
     else
     {
       AssertThrow(param.preconditioner == ConvDiff::Preconditioner::None ||
                   param.preconditioner == ConvDiff::Preconditioner::InverseMassMatrix ||
-                  param.preconditioner == ConvDiff::Preconditioner::Jacobi ||
-                  param.preconditioner == ConvDiff::Preconditioner::GeometricMultigrid,
+                  param.preconditioner == ConvDiff::Preconditioner::PointJacobi ||
+                  param.preconditioner == ConvDiff::Preconditioner::BlockJacobi ||
+                  param.preconditioner == ConvDiff::Preconditioner::MultigridDiffusion ||
+                  param.preconditioner == ConvDiff::Preconditioner::MultigridConvectionDiffusion,
                   ExcMessage("Specified preconditioner is not implemented!"));
     }
 
@@ -129,6 +132,7 @@ public:
       solver_data.solver_tolerance_abs = param.abs_tol;
       solver_data.solver_tolerance_rel = param.rel_tol;
       solver_data.max_iter = param.max_iter;
+      solver_data.update_preconditioner = param.update_preconditioner;
 
       if(param.preconditioner != ConvDiff::Preconditioner::None)
         solver_data.use_preconditioner = true;
@@ -148,6 +152,7 @@ public:
       solver_data.max_iter = param.max_iter;
       solver_data.right_preconditioning = param.use_right_preconditioner;
       solver_data.max_n_tmp_vectors = param.max_n_tmp_vectors;
+      solver_data.update_preconditioner = param.update_preconditioner;
 
       if(param.preconditioner != ConvDiff::Preconditioner::None)
         solver_data.use_preconditioner = true;
@@ -164,6 +169,8 @@ public:
                   param.solver == ConvDiff::Solver::GMRES,
                   ExcMessage("Specified solver is not implemented!"));
     }
+
+    pcout << std::endl << "... done!" << std::endl;
   }
 
   void initialize_dof_vector(parallel::distributed::Vector<value_type> &src) const
@@ -178,7 +185,13 @@ public:
     VectorTools::interpolate(dof_handler, *(field_functions->analytical_solution), src);
   }
 
-
+  /*
+   *  This function is used in case of explicit time integration:
+   *  This function evaluates the right-hand side operator, the
+   *  convective and diffusive term (subsequently multiplied by -1.0 in order
+   *  to shift these terms to the right-hand side of the equations)
+   *  and finally applies the inverse mass matrix operator.
+   */
   void evaluate(parallel::distributed::Vector<value_type>       &dst,
                 parallel::distributed::Vector<value_type> const &src,
                 const value_type                                evaluation_time) const
@@ -212,7 +225,7 @@ public:
     }
     else // param.runtime_optimization == true
     {
-      convection_diffusion_operator.evaluate(dst,src,evaluation_time);
+      convection_diffusion_operator_efficiency.evaluate(dst,src,evaluation_time);
     }
 
     // apply inverse mass matrix
@@ -237,8 +250,8 @@ public:
    *  added to the right-hand side of the equations.
    */
   void rhs(parallel::distributed::Vector<value_type>       &dst,
-           parallel::distributed::Vector<value_type> const *src,
-           double const evaluation_time) const
+           parallel::distributed::Vector<value_type> const *src = nullptr,
+           double const                                    evaluation_time = 0.0) const
   {
     // mass matrix operator
     if(param.problem_type == ConvDiff::ProblemType::Steady)
@@ -247,6 +260,8 @@ public:
     }
     else if(param.problem_type == ConvDiff::ProblemType::Unsteady)
     {
+      AssertThrow(src != nullptr, ExcMessage("src-Vector is invalid when evaluating rhs of scalar convection-diffusion equation."));
+
       mass_matrix_operator.apply(dst,*src);
     }
     else
@@ -264,12 +279,16 @@ public:
     }
 
     // convective operator
-    if((param.equation_type == ConvDiff::EquationType::Convection ||
-        param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
-        &&
-       param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::Implicit)
+    if(param.equation_type == ConvDiff::EquationType::Convection ||
+       param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
     {
-      convective_operator.rhs_add(dst,evaluation_time);
+      if(param.problem_type == ConvDiff::ProblemType::Steady
+         ||
+         (param.problem_type == ConvDiff::ProblemType::Unsteady &&
+          param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::Implicit))
+      {
+        convective_operator.rhs_add(dst,evaluation_time);
+      }
     }
 
     if(param.right_hand_side == true)
@@ -281,69 +300,20 @@ public:
   void vmult(parallel::distributed::Vector<value_type>       &dst,
              parallel::distributed::Vector<value_type> const &src) const
   {
-    apply(dst,src);
+    conv_diff_operator.vmult(dst,src);
   }
 
   unsigned int solve(parallel::distributed::Vector<value_type>       &sol,
                      parallel::distributed::Vector<value_type> const &rhs,
-                     double const scaling_factor_time_derivative_term_in,
-                     double const evaluation_time_in)
+                     double const                                    scaling_factor_time_derivative_term_in = -1.0,
+                     double const                                    evaluation_time_in = -1.0)
   {
-    this->scaling_factor_time_derivative_term = scaling_factor_time_derivative_term_in;
-    this->evaluation_time = evaluation_time_in;
+    conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term_in);
+    conv_diff_operator.set_evaluation_time(evaluation_time_in);
 
     unsigned int iterations = iterative_solver->solve(sol,rhs);
 
     return iterations;
-  }
-
-  void set_scaling_factor_time_derivative_term(double const value)
-  {
-    scaling_factor_time_derivative_term = value;
-  }
-
-  /*
-   *  This function is called by the Jacobi preconditioner to calculate the diagonal.
-   *  Note that the convective term is currently neglected.
-   */
-  void calculate_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
-  {
-    if(param.problem_type == ConvDiff::ProblemType::Steady)
-    {
-      diagonal = 0;
-    }
-    else if(param.problem_type == ConvDiff::ProblemType::Unsteady)
-    {
-      AssertThrow(scaling_factor_time_derivative_term > 0.0,
-                  ExcMessage("Scaling factor of time derivative term has not been initialized!"));
-
-      mass_matrix_operator.calculate_diagonal(diagonal);
-      diagonal *= scaling_factor_time_derivative_term;
-    }
-
-    if(param.equation_type == ConvDiff::EquationType::Diffusion ||
-       param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
-    {
-      diffusive_operator.add_diagonal(diagonal);
-    }
-  }
-
-  void invert_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
-  {
-    for (unsigned int i=0;i<diagonal.local_size();++i)
-    {
-      if( std::abs(diagonal.local_element(i)) > 1.0e-10 )
-        diagonal.local_element(i) = 1.0/diagonal.local_element(i);
-      else
-        diagonal.local_element(i) = 1.0;
-    }
-  }
-
-  void calculate_inverse_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
-  {
-    calculate_diagonal(diagonal);
-
-    invert_diagonal(diagonal);
   }
 
   // getters
@@ -361,6 +331,7 @@ public:
   {
     return dof_handler;
   }
+
 
 private:
   void create_dofs()
@@ -413,7 +384,6 @@ private:
     inverse_mass_matrix_operator.initialize(data,0,0);
 
     // convective operator
-    ScalarConvDiffOperators::ConvectiveOperatorData<dim> convective_operator_data;
     convective_operator_data.dof_index = 0;
     convective_operator_data.quad_index = 0;
     convective_operator_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
@@ -436,72 +406,55 @@ private:
     rhs_operator_data.rhs = field_functions->right_hand_side;
     rhs_operator.initialize(data,rhs_operator_data);
 
-    // convection-diffusion operator (also includes rhs operator)
+    // convection-diffusion operator
     ScalarConvDiffOperators::ConvectionDiffusionOperatorData<dim> conv_diff_operator_data;
-    conv_diff_operator_data.conv_data = convective_operator_data;
-    conv_diff_operator_data.diff_data = diffusive_operator_data;
-    conv_diff_operator_data.rhs_data = rhs_operator_data;
-    convection_diffusion_operator.initialize(mapping, data, conv_diff_operator_data);
-
-  }
-
-//  // TODO This function is only needed when using the GeometricMultigrid preconditioner
-//  // which expects the set 'dirichlet_boundary' as input parameter
-//  void fill_dbc_set(std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor)
-//  {
-//    // Dirichlet boundary conditions: copy Dirichlet boundary ID's from
-//    // boundary_descriptor.dirichlet_bc (map) to dirichlet_boundary (set)
-//    for (typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::
-//         const_iterator it = boundary_descriptor->dirichlet_bc.begin();
-//         it != boundary_descriptor->dirichlet_bc.end(); ++it)
-//    {
-//      dirichlet_boundary.insert(it->first);
-//    }
-//  }
-
-  /*
-   *  This function implements the matrix-vector product for the
-   *  convection-diffusion equation. Hence, only the homogeneous parts
-   *  of the operators are evaluated.
-   *  Note that the convective operator only has a contribution if
-   *  it is treated implicitly. In case of an explicit treatment the
-   *  convective term occurs on the right-hand side of the equation
-   *  but not in the matrix-vector product.
-   */
-  void apply(parallel::distributed::Vector<value_type>       &dst,
-             parallel::distributed::Vector<value_type> const &src) const
-  {
-    // mass matrix operator
-    if(param.problem_type == ConvDiff::ProblemType::Steady)
+    if(this->param.problem_type == ConvDiff::ProblemType::Unsteady)
     {
-      dst = 0;
-    }
-    else if(param.problem_type == ConvDiff::ProblemType::Unsteady)
-    {
-      mass_matrix_operator.apply(dst,src);
-      dst *= scaling_factor_time_derivative_term;
+      conv_diff_operator_data.unsteady_problem = true;
     }
     else
     {
-      AssertThrow(param.problem_type == ConvDiff::ProblemType::Steady ||
-                  param.problem_type == ConvDiff::ProblemType::Unsteady,
-                  ExcMessage("Specified problem type for convection-diffusion equation not implemented."));
+      conv_diff_operator_data.unsteady_problem = false;
     }
 
-    // diffusive and convective operator
-    if(param.equation_type == ConvDiff::EquationType::Diffusion ||
-       param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
+    if(this->param.equation_type == ConvDiff::EquationType::Diffusion ||
+       this->param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
     {
-      diffusive_operator.apply_add(dst,src);
+      conv_diff_operator_data.diffusive_problem = true;
+    }
+    else
+    {
+      conv_diff_operator_data.diffusive_problem = false;
     }
 
-    if((param.equation_type == ConvDiff::EquationType::Convection ||
-        param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
-       &&
-       param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::Implicit)
+    if((this->param.equation_type == ConvDiff::EquationType::Convection ||
+        this->param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
+        &&
+       this->param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::Implicit)
     {
-      convective_operator.apply_add(dst,src,evaluation_time);
+      conv_diff_operator_data.convective_problem = true;
     }
+    else
+    {
+      conv_diff_operator_data.convective_problem = false;
+    }
+
+    conv_diff_operator_data.dof_index = 0;
+
+    conv_diff_operator.initialize(data,
+                                  conv_diff_operator_data,
+                                  mass_matrix_operator,
+                                  convective_operator,
+                                  diffusive_operator);
+
+
+
+    // convection-diffusion operator (efficient implementation, only for explicit time integration, includes also rhs operator)
+    ScalarConvDiffOperators::ConvectionDiffusionOperatorDataEfficiency<dim> conv_diff_operator_data_eff;
+    conv_diff_operator_data_eff.conv_data = convective_operator_data;
+    conv_diff_operator_data_eff.diff_data = diffusive_operator_data;
+    conv_diff_operator_data_eff.rhs_data = rhs_operator_data;
+    convection_diffusion_operator_efficiency.initialize(mapping, data, conv_diff_operator_data_eff);
   }
 
 
@@ -513,35 +466,30 @@ private:
 
   ConvDiff::InputParametersConvDiff const &param;
 
-  double scaling_factor_time_derivative_term;
-  double evaluation_time;
-
   // TODO This variable is only needed when using the GeometricMultigrid preconditioner
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs;
 
   std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor;
   std_cxx11::shared_ptr<FieldFunctionsConvDiff<dim> > field_functions;
 
-//  // TODO This variable is only needed when using the GeometricMultigrid preconditioner
-//  // which expects the set 'dirichlet_boundary' as input parameter
-//  std::set<types::boundary_id> dirichlet_boundary;
-
   ScalarConvDiffOperators::MassMatrixOperatorData mass_matrix_operator_data;
   ScalarConvDiffOperators::MassMatrixOperator<dim, fe_degree, value_type> mass_matrix_operator;
   InverseMassMatrixOperator<dim,fe_degree,value_type> inverse_mass_matrix_operator;
 
+  ScalarConvDiffOperators::ConvectiveOperatorData<dim> convective_operator_data;
   ScalarConvDiffOperators::ConvectiveOperator<dim, fe_degree, value_type> convective_operator;
 
   ScalarConvDiffOperators::DiffusiveOperatorData<dim> diffusive_operator_data;
   ScalarConvDiffOperators::DiffusiveOperator<dim, fe_degree, value_type> diffusive_operator;
   ScalarConvDiffOperators::RHSOperator<dim, fe_degree, value_type> rhs_operator;
 
+  ScalarConvDiffOperators::ConvectionDiffusionOperator<dim, fe_degree, value_type> conv_diff_operator;
+
   // convection-diffusion operator for runtime optimization (also includes rhs operator)
-  ScalarConvDiffOperators::ConvectionDiffusionOperator<dim, fe_degree, value_type> convection_diffusion_operator;
+  ScalarConvDiffOperators::ConvectionDiffusionOperatorEfficiency<dim, fe_degree, value_type> convection_diffusion_operator_efficiency;
 
   std_cxx11::shared_ptr<PreconditionerBase<value_type> > preconditioner;
   std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > iterative_solver;
-
 };
 
 

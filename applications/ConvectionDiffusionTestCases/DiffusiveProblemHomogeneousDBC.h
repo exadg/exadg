@@ -19,11 +19,11 @@
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 1;
+const unsigned int FE_DEGREE = 5;
 
 // set the number of refine levels for spatial convergence tests
-const unsigned int REFINE_STEPS_SPACE_MIN = 3;
-const unsigned int REFINE_STEPS_SPACE_MAX = 3;
+const unsigned int REFINE_STEPS_SPACE_MIN = 6;
+const unsigned int REFINE_STEPS_SPACE_MAX = 6;
 
 // set the number of refine levels for temporal convergence tests
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
@@ -51,7 +51,7 @@ void InputParametersConvDiff::set_input_parameters()
   order_time_integrator = 3;
   start_with_low_order = false;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
-  time_step_size = 1.0e-3;
+  time_step_size = 1.0e-2;
   cfl_number = 0.1;
   diffusion_number = 0.01;
 
@@ -67,8 +67,10 @@ void InputParametersConvDiff::set_input_parameters()
   abs_tol = 1.e-20;
   rel_tol = 1.e-6;
   max_iter = 1e4;
-  preconditioner = Preconditioner::GeometricMultigrid;
-  // use default parameters of multigrid preconditioner
+  preconditioner = Preconditioner::MultigridConvectionDiffusion;
+  multigrid_data.smoother = MultigridSmoother::GMRES;
+
+  update_preconditioner = false;
 
   // NUMERICAL PARAMETERS
   runtime_optimization = false;
@@ -78,14 +80,14 @@ void InputParametersConvDiff::set_input_parameters()
   output_data.write_output = true;
   output_data.output_prefix = "diffusive_problem_homogeneous_DBC";
   output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time)/20;
+  output_data.output_interval_time = (end_time-start_time);// /20;
   output_data.number_of_patches = FE_DEGREE;
 
   error_data.analytical_solution_available = true;
   error_data.error_calc_start_time = start_time;
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
-  output_solver_info_every_timesteps = 1e4;
+  output_solver_info_every_timesteps = 1e1;
 }
 
 

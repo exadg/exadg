@@ -169,6 +169,12 @@ public:
   void
   calculate_inverse_diagonal (parallel::distributed::Vector<Number> &inverse_diagonal_entries) const;
 
+  /*
+   *  Apply block Jacobi preconditioner
+   */
+  void apply_block_jacobi (parallel::distributed::Vector<Number>       &dst,
+                           parallel::distributed::Vector<Number> const &src) const;
+
   // Returns a reference to the ratio between the element surface and the
   // element volume for the symmetric interior penalty method (only available
   // in the DG case).
@@ -318,7 +324,7 @@ struct PoissonSolverData
   bool use_preconditioner;
 };
 
-#include "Preconditioner.h"
+#include "PreconditionerBase.h"
 
 // Implementation of a Poisson solver class that wraps around the matrix-free
 // implementation in LaplaceOperator.
