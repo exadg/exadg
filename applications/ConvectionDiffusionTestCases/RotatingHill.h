@@ -19,11 +19,11 @@
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 5;
+const unsigned int FE_DEGREE = 6;
 
 // set the number of refine levels for spatial convergence tests
-const unsigned int REFINE_STEPS_SPACE_MIN = 4;
-const unsigned int REFINE_STEPS_SPACE_MAX = 4;
+const unsigned int REFINE_STEPS_SPACE_MIN = 1;
+const unsigned int REFINE_STEPS_SPACE_MAX = 6;
 
 // set the number of refine levels for temporal convergence tests
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
@@ -43,12 +43,12 @@ void InputParametersConvDiff::set_input_parameters()
   diffusivity = 0.0;
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::ExplRK;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  order_time_integrator = 4;
-  start_with_low_order = true;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
-  time_step_size = 1.0e-2;
+  temporal_discretization = TemporalDiscretization::BDF; //ExplRK;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+  order_time_integrator = 2; // instabilities for BDF 3 and 4
+  start_with_low_order = false;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepCFL;
+  time_step_size = 1.e-2;
   cfl_number = 0.2;
   diffusion_number = 0.01;
 
@@ -59,15 +59,32 @@ void InputParametersConvDiff::set_input_parameters()
   // viscous term
   IP_factor = 1.0;
 
+  // SOLVER
+  solver = Solver::GMRES;
+  abs_tol = 1.e-20;
+  rel_tol = 1.e-8;
+  max_iter = 1e3;
+  max_n_tmp_vectors = 100;
+  preconditioner = Preconditioner::BlockJacobi; //None; //PointJacobi; //BlockJacobi; //InverseMassMatrix; //MultigridDiffusion; //MultigridConvectionDiffusion;
+  // MG smoother
+  multigrid_data.smoother = MultigridSmoother::GMRES; //GMRES; //Chebyshev; //ChebyshevNonsymmetricOperator;
+  // MG smoother data
+  multigrid_data.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
+  multigrid_data.gmres_smoother_data.number_of_iterations = 5;
+  // MG coarse grid solver
+  multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner; //GMRES_NoPreconditioner; //Chebyshev; //GMRES_Jacobi;
+
+  update_preconditioner = true;
+
   // NUMERICAL PARAMETERS
   runtime_optimization = false;
 
   // OUTPUT AND POSTPROCESSING
-  print_input_parameters = true;
-  output_data.write_output = true;
+  print_input_parameters = false;
+  output_data.write_output = false;
   output_data.output_prefix = "rotating_hill";
   output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time)/20;
+  output_data.output_interval_time = (end_time-start_time);// /20;
   output_data.number_of_patches = FE_DEGREE;
 
   error_data.analytical_solution_available = true;

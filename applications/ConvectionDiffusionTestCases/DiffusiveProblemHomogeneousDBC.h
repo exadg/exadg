@@ -48,7 +48,7 @@ void InputParametersConvDiff::set_input_parameters()
   // TEMPORAL DISCRETIZATION
   temporal_discretization = TemporalDiscretization::BDF;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  order_time_integrator = 3;
+  order_time_integrator = 2;
   start_with_low_order = false;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
   time_step_size = 1.0e-2;
