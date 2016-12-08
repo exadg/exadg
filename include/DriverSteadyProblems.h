@@ -8,6 +8,7 @@
 #ifndef INCLUDE_DRIVERSTEADYPROBLEMS_H_
 #define INCLUDE_DRIVERSTEADYPROBLEMS_H_
 
+#include <deal.II/base/timer.h>
 
 template<int dim> class PostProcessorBase;
 

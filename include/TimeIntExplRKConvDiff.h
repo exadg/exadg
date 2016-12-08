@@ -8,6 +8,10 @@
 #ifndef INCLUDE_TIMEINTEXPLRKCONVDIFF_H_
 #define INCLUDE_TIMEINTEXPLRKCONVDIFF_H_
 
+#include <deal.II/lac/parallel_vector.h>
+
+#include <deal.II/base/timer.h>
+
 #include "../include/TimeStepCalculation.h"
 #include "../include/InputParametersConvDiff.h"
 #include "../include/PrintFunctions.h"

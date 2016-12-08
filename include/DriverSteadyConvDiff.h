@@ -8,6 +8,8 @@
 #ifndef INCLUDE_DRIVERSTEADYCONVDIFF_H_
 #define INCLUDE_DRIVERSTEADYCONVDIFF_H_
 
+#include <deal.II/base/timer.h>
+
 namespace ConvDiff
 {
   template<int dim, int fe_degree> class PostProcessor;

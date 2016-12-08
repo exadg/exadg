@@ -8,8 +8,6 @@
 #ifndef INCLUDE_DGNAVIERSTOKESCOUPLED_H_
 #define INCLUDE_DGNAVIERSTOKESCOUPLED_H_
 
-using namespace dealii;
-
 #include "PreconditionerNavierStokes.h"
 #include "NewtonSolver.h"
 #include "DGNavierStokesBase.h"

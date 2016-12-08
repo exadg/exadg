@@ -8,6 +8,7 @@
 #ifndef INCLUDE_CHECKMULTIGRID_H_
 #define INCLUDE_CHECKMULTIGRID_H_
 
+#include <deal.II/numerics/data_out.h>
 
 template<int dim, typename value_type, typename Operator, typename Preconditioner>
 class CheckMultigrid

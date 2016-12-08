@@ -8,6 +8,9 @@
 #ifndef APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_ROTATINGHILL_H_
 #define APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_ROTATINGHILL_H_
 
+#include <deal.II/distributed/tria.h>
+#include <deal.II/grid/grid_generator.h>
+
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -65,7 +68,7 @@ void InputParametersConvDiff::set_input_parameters()
   rel_tol = 1.e-8;
   max_iter = 1e3;
   max_n_tmp_vectors = 100;
-  preconditioner = Preconditioner::BlockJacobi; //None; //PointJacobi; //BlockJacobi; //InverseMassMatrix; //MultigridDiffusion; //MultigridConvectionDiffusion;
+  preconditioner = Preconditioner::PointJacobi; //None; //PointJacobi; //BlockJacobi; //InverseMassMatrix; //MultigridDiffusion; //MultigridConvectionDiffusion;
   // MG smoother
   multigrid_data.smoother = MultigridSmoother::GMRES; //GMRES; //Chebyshev; //ChebyshevNonsymmetricOperator;
   // MG smoother data

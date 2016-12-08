@@ -223,7 +223,8 @@ enum class SolverMomentum
 enum class PreconditionerMomentum
 {
   None,
-  Jacobi,
+  PointJacobi,
+  BlockJacobi,
   InverseMassMatrix,
   VelocityDiffusion,
   VelocityConvectionDiffusion
@@ -1062,7 +1063,8 @@ public:
                     str_solver_momentum[(int)solver_momentum]);
 
     std::string str_precon_momentum[] = { "None",
-                                          "Jacobi",
+                                          "PointJacobi",
+                                          "BlockJacobi",
                                           "InverseMassMatrix",
                                           "VelocityDiffusion",
                                           "VelocityConvectionDiffusion" };

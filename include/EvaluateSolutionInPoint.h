@@ -8,6 +8,9 @@
 #ifndef INCLUDE_EVALUATESOLUTIONINPOINT_H_
 #define INCLUDE_EVALUATESOLUTIONINPOINT_H_
 
+#include <fstream>
+#include <sstream>
+
 template<int dim>
 void my_point_value(const Mapping<dim>                                                           &mapping,
                     const DoFHandler<dim>                                                        &dof_handler,

@@ -8,7 +8,10 @@
 #ifndef INCLUDE_BOUNDARYDESCRIPTORLAPLACE_H_
 #define INCLUDE_BOUNDARYDESCRIPTORLAPLACE_H_
 
+using namespace dealii;
+
 #include <deal.II/base/function.h>
+#include <deal.II/base/types.h>
 
 template<int dim>
 struct BoundaryDescriptorLaplace

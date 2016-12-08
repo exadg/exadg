@@ -8,7 +8,13 @@
 #ifndef INCLUDE_DGCONVDIFFOPERATION_H_
 #define INCLUDE_DGCONVDIFFOPERATION_H_
 
-using namespace dealii;
+
+#include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/fe_values.h>
+#include <deal.II/fe/mapping_q.h>
+
+#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/numerics/vector_tools.h>
 
 #include "MatrixOperatorBase.h"
 

@@ -8,6 +8,10 @@
 #ifndef APPLICATIONS_NAVIERSTOKESTESTCASES_FLOWPASTCYLINDER_H_
 #define APPLICATIONS_NAVIERSTOKESTESTCASES_FLOWPASTCYLINDER_H_
 
+#include <deal.II/distributed/tria.h>
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/tria_boundary_lib.h>
+#include <deal.II/grid/manifold_lib.h>
 
 /**************************************************************************************/
 /*                                                                                    */

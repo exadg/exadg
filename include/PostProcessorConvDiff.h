@@ -8,6 +8,13 @@
 #ifndef INCLUDE_POSTPROCESSORCONVDIFF_H_
 #define INCLUDE_POSTPROCESSORCONVDIFF_H_
 
+#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/numerics/data_out.h>
+#include <deal.II/numerics/vector_tools.h>
+
+#include <fstream>
+#include <sstream>
+
 #include "../include/OutputData.h"
 #include "../include/ErrorCalculationData.h"
 #include "../include/AnalyticalSolutionConvDiff.h"

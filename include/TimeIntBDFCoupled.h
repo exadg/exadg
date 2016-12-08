@@ -8,6 +8,9 @@
 #ifndef INCLUDE_TIMEINTBDFCOUPLED_H_
 #define INCLUDE_TIMEINTBDFCOUPLED_H_
 
+#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/parallel_block_vector.h>
+
 #include "TimeIntBDFNavierStokes.h"
 #include "PushBackVectors.h"
 

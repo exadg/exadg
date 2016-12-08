@@ -11,6 +11,9 @@
 #include "MatrixOperatorBase.h"
 #include "NavierStokesOperators.h"
 
+#include "VerifyCalculationOfDiagonal.h"
+#include "InvertDiagonal.h"
+
 
 template<typename UnderlyingOperator, typename Number>
 class VelocityConvectionDiffusionBlockJacobiOperator
@@ -401,8 +404,7 @@ public:
   {
     calculate_diagonal(diagonal);
 
-    // call this function only for reasons of testing
-    //verify_calculation_of_diagonal(diagonal);
+    // verify_calculation_of_diagonal(*this,diagonal);
 
     invert_diagonal(diagonal);
   }
@@ -453,45 +455,6 @@ private:
     if(operator_data.convective_problem == true)
     {
       convective_operator->add_diagonal(diagonal,&velocity_linearization,evaluation_time);
-    }
-  }
-
-  /*
-   *  This functions checks the calculation of the diagonal
-   *  by comparing with an naive algorithm that computes only global
-   *  matrix-vector products to generate the diagonal.
-   */
-  void verify_calculation_of_diagonal(parallel::distributed::Vector<Number> const &diagonal) const
-  {
-    parallel::distributed::Vector<Number>  diagonal2(diagonal);
-    diagonal2 = 0.0;
-    parallel::distributed::Vector<Number>  src(diagonal2);
-    parallel::distributed::Vector<Number>  dst(diagonal2);
-    for (unsigned int i=0;i<diagonal.local_size();++i)
-    {
-      src.local_element(i) = 1.0;
-      vmult(dst,src);
-      diagonal2.local_element(i) = dst.local_element(i);
-      src.local_element(i) = 0.0;
-    }
-
-    std::cout<<"L2 norm diagonal - Variant 1: "<<diagonal.l2_norm()<<std::endl;
-    std::cout<<"L2 norm diagonal - Variant 2: "<<diagonal2.l2_norm()<<std::endl;
-    diagonal2.add(-1.0,diagonal);
-    std::cout<<"L2 error diagonal: "<<diagonal2.l2_norm()<<std::endl;
-  }
-
-  /*
-   *  This function inverts the diagonal (element by element).
-   */
-  void invert_diagonal(parallel::distributed::Vector<Number> &diagonal) const
-  {
-    for (unsigned int i=0;i<diagonal.local_size();++i)
-    {
-      if( std::abs(diagonal.local_element(i)) > 1.0e-10 )
-        diagonal.local_element(i) = 1.0/diagonal.local_element(i);
-      else
-        diagonal.local_element(i) = 1.0;
     }
   }
 

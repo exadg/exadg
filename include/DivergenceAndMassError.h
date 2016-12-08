@@ -12,6 +12,8 @@
 #include <deal.II/matrix_free/fe_evaluation.h>
 #include <deal.II/matrix_free/operators.h>
 
+#include <fstream>
+#include <sstream>
 
 template<int dim, int fe_degree>
 class DivergenceAndMassErrorCalculator

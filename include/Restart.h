@@ -12,6 +12,9 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 
+#include <fstream>
+#include <sstream>
+
 template<int dim> class PostProcessorBase;
 
 template<int dim>

@@ -8,6 +8,9 @@
 #ifndef INCLUDE_ITERATIVESOLVERS_H_
 #define INCLUDE_ITERATIVESOLVERS_H_
 
+#include <deal.II/lac/solver_cg.h>
+#include <deal.II/lac/solver_gmres.h>
+
 template<typename VectorType>
 class IterativeSolverBase
 {
@@ -175,13 +178,6 @@ public:
     return solver_control.last_step();
   }
 
-//  virtual void do_solve(SolverGMRES<VectorType> &solver,
-//                        VectorType              &dst,
-//                        VectorType const        &rhs) const
-//  {
-//    solver.solve(underlying_operator, dst, rhs, preconditioner);
-//  }
-
 protected:
   Operator const & underlying_operator;
   Preconditioner & preconditioner;
@@ -254,59 +250,11 @@ public:
     return solver_control.last_step();
   }
 
-//  virtual void do_solve(SolverFGMRES<VectorType> &solver,
-//                        VectorType               &dst,
-//                        VectorType const         &rhs) const
-//  {
-//    solver.solve(underlying_operator, dst, rhs, preconditioner);
-//  }
-
 protected:
   Operator const & underlying_operator;
   Preconditioner & preconditioner;
   FGMRESSolverData const solver_data;
 };
-
-//template<typename Operator, typename Preconditioner, typename VectorType>
-//class GMRESSolverNavierStokes : public GMRESSolver<Operator,Preconditioner,VectorType>
-//{
-//public:
-//  GMRESSolverNavierStokes(Operator const        &underlying_operator_in,
-//                          Preconditioner        &preconditioner_in,
-//                          GMRESSolverData const &solver_data_in)
-//    :
-//    GMRESSolver<Operator,Preconditioner,VectorType>(underlying_operator_in,preconditioner_in,solver_data_in)
-//  {}
-//
-//  void do_solve(SolverGMRES<VectorType> &solver,
-//                VectorType              &dst,
-//                VectorType const        &rhs) const
-//  {
-//    this->preconditioner.update(&this->underlying_operator);
-//    solver.solve(this->underlying_operator, dst, rhs, this->preconditioner);
-//  }
-//};
-//
-//
-//template<typename Operator, typename Preconditioner, typename VectorType>
-//class FGMRESSolverNavierStokes : public FGMRESSolver<Operator,Preconditioner,VectorType>
-//{
-//public:
-//  FGMRESSolverNavierStokes(Operator const         &underlying_operator_in,
-//                           Preconditioner         &preconditioner_in,
-//                           FGMRESSolverData const &solver_data_in)
-//    :
-//    FGMRESSolver<Operator,Preconditioner,VectorType>(underlying_operator_in,preconditioner_in,solver_data_in)
-//  {}
-//
-//  void do_solve(SolverFGMRES<VectorType> &solver,
-//                VectorType               &dst,
-//                VectorType const         &rhs) const
-//  {
-//    this->preconditioner.update(&this->underlying_operator);
-//    solver.solve(this->underlying_operator, dst, rhs, this->preconditioner);
-//  }
-//};
 
 
 #endif /* INCLUDE_ITERATIVESOLVERS_H_ */

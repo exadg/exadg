@@ -9,7 +9,8 @@
 #define APPLICATIONS_NAVIERSTOKESTESTCASES_STOKESGUERMOND_H_
 
 
-
+#include <deal.II/distributed/tria.h>
+#include <deal.II/grid/grid_generator.h>
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -30,7 +31,7 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 1;
+unsigned int const REFINE_STEPS_SPACE_MIN = 2;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests

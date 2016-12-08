@@ -8,6 +8,8 @@
 #ifndef APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_DIFFUSIVEPROBLEMHOMOGENEOUSNBC_H_
 #define APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_DIFFUSIVEPROBLEMHOMOGENEOUSNBC_H_
 
+#include <deal.II/distributed/tria.h>
+#include <deal.II/grid/grid_generator.h>
 
 /**************************************************************************************/
 /*                                                                                    */

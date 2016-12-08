@@ -8,7 +8,8 @@
 #ifndef APPLICATIONS_NAVIERSTOKESTESTCASES_TAYLORVORTEX_H_
 #define APPLICATIONS_NAVIERSTOKESTESTCASES_TAYLORVORTEX_H_
 
-
+#include <deal.II/distributed/tria.h>
+#include <deal.II/grid/grid_generator.h>
 
 /**************************************************************************************/
 /*                                                                                    */
