@@ -8,6 +8,8 @@
 #ifndef INCLUDE_PRECONDITIONERNAVIERSTOKES_H_
 #define INCLUDE_PRECONDITIONERNAVIERSTOKES_H_
 
+#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/parallel_block_vector.h>
 
 #include "InverseMassMatrixPreconditioner.h"
 #include "MultigridPreconditionerLaplace.h"

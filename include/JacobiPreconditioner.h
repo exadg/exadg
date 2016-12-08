@@ -8,6 +8,8 @@
 #ifndef INCLUDE_JACOBIPRECONDITIONER_H_
 #define INCLUDE_JACOBIPRECONDITIONER_H_
 
+#include <deal.II/lac/parallel_vector.h>
+
 #include "PreconditionerBase.h"
 #include "MatrixOperatorBase.h"
 

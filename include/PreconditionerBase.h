@@ -8,6 +8,9 @@
 #ifndef INCLUDE_PRECONDITIONERBASE_H_
 #define INCLUDE_PRECONDITIONERBASE_H_
 
+using namespace dealii;
+
+#include <deal.II/lac/parallel_vector.h>
 
 #include "MatrixOperatorBase.h"
 

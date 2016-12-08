@@ -8,6 +8,8 @@
 #ifndef APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_PROPAGATINGSINEWAVE_H_
 #define APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_PROPAGATINGSINEWAVE_H_
 
+#include <deal.II/distributed/tria.h>
+#include <deal.II/grid/grid_generator.h>
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -23,7 +25,7 @@
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 4;
+const unsigned int FE_DEGREE = 6;
 
 // set the number of refine levels for spatial convergence tests
 const unsigned int REFINE_STEPS_SPACE_MIN = 3;

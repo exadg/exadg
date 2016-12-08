@@ -8,7 +8,13 @@
 #ifndef INCLUDE_DGCONVDIFFOPERATION_H_
 #define INCLUDE_DGCONVDIFFOPERATION_H_
 
-using namespace dealii;
+
+#include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/fe_values.h>
+#include <deal.II/fe/mapping_q.h>
+
+#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/numerics/vector_tools.h>
 
 #include "MatrixOperatorBase.h"
 
@@ -67,6 +73,9 @@ public:
   {
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
     pcout << std::endl << "Setup solver ..." << std::endl;
+
+    // scaling factor of time derivative term has to be set before initializing preconditioners
+    conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term_in);
 
     // initialize preconditioner
     if(param.preconditioner == ConvDiff::Preconditioner::InverseMassMatrix)
@@ -138,10 +147,10 @@ public:
         solver_data.use_preconditioner = true;
 
       // initialize solver
-      iterative_solver.reset(new CGSolver<DGConvDiffOperation<dim,fe_degree,value_type>,
+      iterative_solver.reset(new CGSolver<ScalarConvDiffOperators::ConvectionDiffusionOperator<dim,fe_degree,value_type>,
                                           PreconditionerBase<value_type>,
                                           parallel::distributed::Vector<value_type> >
-                                 (*this,*preconditioner,solver_data));
+                                 (conv_diff_operator,*preconditioner,solver_data));
     }
     else if(param.solver == ConvDiff::Solver::GMRES)
     {
@@ -158,10 +167,10 @@ public:
         solver_data.use_preconditioner = true;
 
       // initialize solver
-      iterative_solver.reset(new GMRESSolver<DGConvDiffOperation<dim,fe_degree,value_type>,
+      iterative_solver.reset(new GMRESSolver<ScalarConvDiffOperators::ConvectionDiffusionOperator<dim,fe_degree,value_type>,
                                              PreconditionerBase<value_type>,
                                              parallel::distributed::Vector<value_type> >
-                                 (*this,*preconditioner,solver_data));
+                                 (conv_diff_operator,*preconditioner,solver_data));
     }
     else
     {
@@ -295,12 +304,6 @@ public:
     {
       rhs_operator.evaluate_add(dst,evaluation_time);
     }
-  }
-
-  void vmult(parallel::distributed::Vector<value_type>       &dst,
-             parallel::distributed::Vector<value_type> const &src) const
-  {
-    conv_diff_operator.vmult(dst,src);
   }
 
   unsigned int solve(parallel::distributed::Vector<value_type>       &sol,

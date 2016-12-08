@@ -8,7 +8,14 @@
 #ifndef INCLUDE_DGNAVIERSTOKESBASE_H_
 #define INCLUDE_DGNAVIERSTOKESBASE_H_
 
+#include <deal.II/numerics/vector_tools.h>
+
 #include <deal.II/matrix_free/operators.h>
+
+#include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/fe_values.h>
+#include <deal.II/fe/fe_system.h>
+#include <deal.II/fe/mapping_q.h>
 
 #include "MatrixOperatorBase.h"
 

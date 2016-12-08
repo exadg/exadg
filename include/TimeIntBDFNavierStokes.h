@@ -8,6 +8,8 @@
 #ifndef INCLUDE_TIMEINTBDFNAVIERSTOKES_H_
 #define INCLUDE_TIMEINTBDFNAVIERSTOKES_H_
 
+#include <deal.II/base/timer.h>
+
 #include "../include/TimeIntBDFBase.h"
 
 #include "TimeStepCalculation.h"

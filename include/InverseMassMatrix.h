@@ -8,6 +8,10 @@
 #ifndef INCLUDE_INVERSEMASSMATRIX_H_
 #define INCLUDE_INVERSEMASSMATRIX_H_
 
+using namespace dealii;
+
+#include <deal.II/lac/parallel_vector.h>
+
 #include <deal.II/matrix_free/fe_evaluation.h>
 #include <deal.II/matrix_free/operators.h>
 

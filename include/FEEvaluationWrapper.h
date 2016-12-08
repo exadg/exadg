@@ -87,7 +87,7 @@ public:
 
   using FEEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number>::set_dof_values;
 
-  Tensor<2,dim,VectorizedArray<Number> > make_symmetric(const Tensor<2,dim,VectorizedArray<Number> >& grad)
+  Tensor<2,dim,VectorizedArray<Number> > make_symmetric(const Tensor<2,dim,VectorizedArray<Number> >& grad) const
   {
     Tensor<2,dim,VectorizedArray<Number> > symgrad;
     for (unsigned int i = 0; i<dim; i++)
@@ -96,7 +96,7 @@ public:
     symgrad *= make_vectorized_array<Number>(0.5);
     return symgrad;
   }
-  Tensor<1,dim,VectorizedArray<Number> > make_symmetric(const Tensor<1,dim,VectorizedArray<Number> >& grad)
+  Tensor<1,dim,VectorizedArray<Number> > make_symmetric(const Tensor<1,dim,VectorizedArray<Number> >& grad) const
   {
     Tensor<1,dim,VectorizedArray<Number> > symgrad;
     AssertThrow(false, ExcNotImplemented());
@@ -182,7 +182,7 @@ public:
 
   using FEFaceEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number>::distribute_local_to_global;
 
-  Tensor<2,dim,VectorizedArray<Number> > make_symmetric(const Tensor<2,dim,VectorizedArray<Number> >& grad)
+  Tensor<2,dim,VectorizedArray<Number> > make_symmetric(const Tensor<2,dim,VectorizedArray<Number> >& grad) const
   {
     Tensor<2,dim,VectorizedArray<Number> > symgrad;
     for (unsigned int i = 0; i<dim; i++)
@@ -191,7 +191,7 @@ public:
     symgrad *= make_vectorized_array<Number>(0.5);
     return symgrad;
   }
-  Tensor<1,dim,VectorizedArray<Number> > make_symmetric(const Tensor<1,dim,VectorizedArray<Number> >& grad)
+  Tensor<1,dim,VectorizedArray<Number> > make_symmetric(const Tensor<1,dim,VectorizedArray<Number> >& grad) const
   {
     Tensor<1,dim,VectorizedArray<Number> > symgrad;
     // symmetric gradient is not defined in that case
@@ -597,7 +597,7 @@ public:
     return make_symmetric(get_gradient(q_point));
   }
 
-  Tensor<2,dim,VectorizedArray<Number> > make_symmetric(const Tensor<2,dim,VectorizedArray<Number> >& grad)
+  Tensor<2,dim,VectorizedArray<Number> > make_symmetric(const Tensor<2,dim,VectorizedArray<Number> >& grad) const
   {
     Tensor<2,dim,VectorizedArray<Number> > symgrad;
     for (unsigned int i = 0; i<dim; i++)
@@ -606,7 +606,7 @@ public:
     symgrad *= make_vectorized_array<Number>(0.5);
     return symgrad;
   }
-  Tensor<1,dim,VectorizedArray<Number> > make_symmetric(const Tensor<1,dim,VectorizedArray<Number> >& grad)
+  Tensor<1,dim,VectorizedArray<Number> > make_symmetric(const Tensor<1,dim,VectorizedArray<Number> >& grad) const
   {
     Tensor<1,dim,VectorizedArray<Number> > symgrad;
     AssertThrow(false, ExcNotImplemented());
@@ -1271,7 +1271,7 @@ public:
     return make_symmetric(get_gradient(q_point));
   }
 
-  Tensor<2,dim,VectorizedArray<Number> > make_symmetric(const Tensor<2,dim,VectorizedArray<Number> >& grad)
+  Tensor<2,dim,VectorizedArray<Number> > make_symmetric(const Tensor<2,dim,VectorizedArray<Number> >& grad) const
   {
     Tensor<2,dim,VectorizedArray<Number> > symgrad;
     for (unsigned int i = 0; i<dim; i++)
@@ -1280,7 +1280,7 @@ public:
     symgrad *= make_vectorized_array<Number>(0.5);
     return symgrad;
   }
-  Tensor<1,dim,VectorizedArray<Number> > make_symmetric(const Tensor<1,dim,VectorizedArray<Number> >& grad)
+  Tensor<1,dim,VectorizedArray<Number> > make_symmetric(const Tensor<1,dim,VectorizedArray<Number> >& grad) const
   {
     Tensor<1,dim,VectorizedArray<Number> > symgrad;
     // symmetric gradient is not defined in that case

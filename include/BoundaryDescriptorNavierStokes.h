@@ -8,6 +8,10 @@
 #ifndef INCLUDE_BOUNDARYDESCRIPTORNAVIERSTOKES_H_
 #define INCLUDE_BOUNDARYDESCRIPTORNAVIERSTOKES_H_
 
+using namespace dealii;
+
+#include <deal.II/base/function.h>
+#include <deal.II/base/types.h>
 
 template<int dim>
 struct BoundaryDescriptorNavierStokes

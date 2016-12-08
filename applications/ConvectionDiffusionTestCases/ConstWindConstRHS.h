@@ -8,8 +8,8 @@
 #ifndef APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_CONSTWINDCONSTRHS_H_
 #define APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_CONSTWINDCONSTRHS_H_
 
-
-
+#include <deal.II/distributed/tria.h>
+#include <deal.II/grid/grid_generator.h>
 
 
 /**************************************************************************************/
@@ -20,13 +20,13 @@
 
 // constant source term inside rectangular domain
 // pure dirichlet boundary conditions (homogeneous)
-// use constant advection velocity -> boundary layer
+// use constant or circular advection velocity
 
 // set the number of space dimensions: DIMENSION = 2, 3
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 8;
+const unsigned int FE_DEGREE = 4;
 
 // set the number of refine levels for spatial convergence tests
 const unsigned int REFINE_STEPS_SPACE_MIN = 1;
@@ -38,7 +38,10 @@ const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
 // problem specific parameters
 const double START_TIME = 0.0;
-const double DIFFUSIVITY = 1.0e-6;
+const double DIFFUSIVITY = 1.0e0;
+
+enum class TypeVelocityField { Constant, Circular };
+TypeVelocityField const TYPE_VELOCITY_FIELD = TypeVelocityField::Constant;
 
 void InputParametersConvDiff::set_input_parameters()
 {
@@ -73,16 +76,16 @@ void InputParametersConvDiff::set_input_parameters()
   solver = Solver::GMRES;
   abs_tol = 1.e-20;
   rel_tol = 1.e-8;
-  max_iter = 1e4;
-  max_n_tmp_vectors = 100;
-  preconditioner = Preconditioner::MultigridConvectionDiffusion; //Jacobi; //BlockJacobi; //MultigridDiffusion; //MultigridConvectionDiffusion;
+  max_iter = 1e3;
+  max_n_tmp_vectors = 30;
+  preconditioner = Preconditioner::MultigridDiffusion; //PointJacobi; //BlockJacobi; //MultigridDiffusion; //MultigridConvectionDiffusion;
   // MG smoother
-  multigrid_data.smoother = MultigridSmoother::GMRES; //GMRES; //Chebyshev; //ChebyshevNonsymmetricOperator;
+  multigrid_data.smoother = MultigridSmoother::Chebyshev; //GMRES; //Chebyshev; //ChebyshevNonsymmetricOperator;
   // MG smoother data
-  multigrid_data.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
-  multigrid_data.gmres_smoother_data.number_of_iterations = 5;
+//  multigrid_data.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
+//  multigrid_data.gmres_smoother_data.number_of_iterations = 5;
   // MG coarse grid solver
-  multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner; //GMRES_NoPreconditioner; //Chebyshev; //GMRES_Jacobi;
+  multigrid_data.coarse_solver = MultigridCoarseGridSolver::Chebyshev; //GMRES_NoPreconditioner; //Chebyshev; //GMRES_Jacobi;
 
   update_preconditioner = false;
 
@@ -91,7 +94,7 @@ void InputParametersConvDiff::set_input_parameters()
 
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = false;
-  output_data.write_output = false;
+  output_data.write_output = true;
   output_data.output_prefix = "const_wind_const_rhs";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time);// /20;
@@ -221,17 +224,27 @@ template<int dim>
 double VelocityField<dim>::value(const Point<dim>   &point,
                                  const unsigned int component) const
 {
-  // constant velocity field (u,v) = (1,1)
-  double value = 1.0;
+  double value = 0.0;
 
-  // circular velocity field (u,v) = (-y,x)
-//  double value = 0.0;
-//  if(component == 0)
-//    value = - point[1];
-//  else if(component == 1)
-//    value = point[0];
-//  else
-//    AssertThrow(component <= 1, ExcMessage("Velocity field for 3-dimensional problem is not implemented!"));
+  if(TYPE_VELOCITY_FIELD == TypeVelocityField::Constant)
+  {
+    // constant velocity field (u,v) = (1,1)
+    value = 1.0;
+  }
+  else if(TYPE_VELOCITY_FIELD == TypeVelocityField::Circular)
+  {
+    // circular velocity field (u,v) = (-y,x)
+    if(component == 0)
+      value = - point[1];
+    else if(component == 1)
+      value = point[0];
+    else
+      AssertThrow(component <= 1, ExcMessage("Velocity field for 3-dimensional problem is not implemented!"));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Invalid type of velocity field prescribed for this problem."));
+  }
 
   return value;
 }

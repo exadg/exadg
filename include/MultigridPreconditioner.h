@@ -8,6 +8,7 @@
 #ifndef INCLUDE_MULTIGRIDPRECONDITIONER_H_
 #define INCLUDE_MULTIGRIDPRECONDITIONER_H_
 
+#include <deal.II/lac/parallel_vector.h>
 
 #include <deal.II/multigrid/multigrid.h>
 #include <deal.II/multigrid/mg_transfer_matrix_free.h>

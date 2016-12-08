@@ -8,6 +8,8 @@
 #ifndef APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_DIFFUSIVEPROBLEMHOMOGENEOUSNBC_H_
 #define APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_DIFFUSIVEPROBLEMHOMOGENEOUSNBC_H_
 
+#include <deal.II/distributed/tria.h>
+#include <deal.II/grid/grid_generator.h>
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -51,11 +53,11 @@ void InputParametersConvDiff::set_input_parameters()
   diffusivity = DIFFUSIVITY;
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::ExplRK;
+  temporal_discretization = TemporalDiscretization::BDF;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  order_time_integrator = 1;
+  order_time_integrator = 3;
   start_with_low_order = false;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepDiffusion;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepDiffusion;
   time_step_size = 1.0e-2;
   cfl_number = 0.2;
   diffusion_number = 0.01;

@@ -8,7 +8,8 @@
 #ifndef APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_BOUNDARYLAYERPROBLEM_H_
 #define APPLICATIONS_CONVECTIONDIFFUSIONTESTCASES_BOUNDARYLAYERPROBLEM_H_
 
-
+#include <deal.II/distributed/tria.h>
+#include <deal.II/grid/grid_generator.h>
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -47,7 +48,7 @@ void InputParametersConvDiff::set_input_parameters()
 
   // PHYSICAL QUANTITIES
   start_time = START_TIME;
-  end_time = 8.0;
+  end_time = 1.0; //8.0;
   diffusivity = DIFFUSIVITY;
 
   // TEMPORAL DISCRETIZATION
@@ -91,14 +92,14 @@ void InputParametersConvDiff::set_input_parameters()
   output_data.write_output = true;
   output_data.output_prefix = "boundary_layer_problem";
   output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time);// /20;
+  output_data.output_interval_time = (end_time-start_time) /20;
   output_data.number_of_patches = FE_DEGREE;
 
   error_data.analytical_solution_available = true;
   error_data.error_calc_start_time = start_time;
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
-  output_solver_info_every_timesteps = 1e2;
+  output_solver_info_every_timesteps = 1e0;
 }
 
 

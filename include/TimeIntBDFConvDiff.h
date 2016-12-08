@@ -8,6 +8,10 @@
 #ifndef INCLUDE_TIMEINTBDFCONVDIFF_H_
 #define INCLUDE_TIMEINTBDFCONVDIFF_H_
 
+#include <deal.II/lac/parallel_vector.h>
+
+#include <deal.II/base/timer.h>
+
 #include "../include/TimeIntBDFBase.h"
 #include "../include/PushBackVectors.h"
 

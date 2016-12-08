@@ -11,6 +11,8 @@
 #include "MatrixOperatorBase.h"
 #include "NavierStokesOperators.h"
 
+#include "InvertDiagonal.h"
+
 template<int dim>
 struct CompatibleLaplaceOperatorData
 {
@@ -287,17 +289,6 @@ public:
       double length = vec1*vec1;
       double factor = vec1*d;
       diagonal.add(-2./length,d,factor/pow(length,2.),vec1);
-    }
-  }
-
-  void invert_diagonal(parallel::distributed::Vector<Number> &diagonal) const
-  {
-    for (unsigned int i=0;i<diagonal.local_size();++i)
-    {
-      if( std::abs(diagonal.local_element(i)) > 1.0e-10 )
-        diagonal.local_element(i) = 1.0/diagonal.local_element(i);
-      else
-        diagonal.local_element(i) = 1.0;
     }
   }
 

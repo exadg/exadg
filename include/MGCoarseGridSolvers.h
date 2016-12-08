@@ -8,6 +8,10 @@
 #ifndef INCLUDE_MGCOARSEGRIDSOLVERS_H_
 #define INCLUDE_MGCOARSEGRIDSOLVERS_H_
 
+#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/solver_cg.h>
+#include <deal.II/lac/solver_gmres.h>
+
 #include "PreconditionerBase.h"
 #include "JacobiPreconditioner.h"
 
@@ -69,7 +73,6 @@ private:
   const bool use_preconditioner;
 };
 
-#include <deal.II/lac/solver_gmres.h>
 
 template<typename Operator>
 class MGCoarseGMRES : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type> >

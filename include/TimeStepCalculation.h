@@ -10,6 +10,8 @@
 
 #define CFL_BASED_ON_MINIMUM_COMPONENT
 
+#include <deal.II/lac/parallel_vector.h>
+
 #include "SpaldingsLaw.h"
 
 double calculate_const_time_step(double const       dt,

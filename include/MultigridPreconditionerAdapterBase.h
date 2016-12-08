@@ -8,13 +8,17 @@
 #ifndef INCLUDE_MULTIGRIDPRECONDITIONERADAPTERBASE_H_
 #define INCLUDE_MULTIGRIDPRECONDITIONERADAPTERBASE_H_
 
+#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/solver_gmres.h>
+#include <deal.II/lac/precondition.h>
+
+#include "MultigridPreconditioner.h"
 
 #include "MultigridInputParameters.h"
 #include "SmootherBase.h"
 #include "GMRESSmoother.h"
 #include "ChebyshevSmoother.h"
 #include "MGCoarseGridSolvers.h"
-#include "MultigridPreconditioner.h"
 
 namespace
 {

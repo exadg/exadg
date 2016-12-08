@@ -284,20 +284,20 @@ public:
       AssertThrow(preconditioner != Preconditioner::Undefined,
                   ExcMessage("parameter must be defined"));
 
-      if(preconditioner == Preconditioner::MultigridDiffusion ||
-         preconditioner == Preconditioner::MultigridConvectionDiffusion)
-        AssertThrow(equation_type == EquationType::Diffusion ||
-                    equation_type == EquationType::ConvectionDiffusion,
-                    ExcMessage("Multigrid preconditioner is not available for the specified equation type"));
- 
-      if(preconditioner == Preconditioner::PointJacobi)
-        AssertThrow(equation_type == EquationType::Diffusion ||
-                    equation_type == EquationType::ConvectionDiffusion,
-                    ExcMessage("Point Jacobi preconditioner is not available for the specified equation type"));
-
-      if(preconditioner == Preconditioner::BlockJacobi)
-        AssertThrow(equation_type == EquationType::ConvectionDiffusion,
-                    ExcMessage("Block Jacobi preconditioner is not available for the specified equation type"));
+//      if(preconditioner == Preconditioner::MultigridDiffusion ||
+//         preconditioner == Preconditioner::MultigridConvectionDiffusion)
+//        AssertThrow(equation_type == EquationType::Diffusion ||
+//                    equation_type == EquationType::ConvectionDiffusion,
+//                    ExcMessage("Multigrid preconditioner is not available for the specified equation type"));
+//
+//      if(preconditioner == Preconditioner::PointJacobi)
+//        AssertThrow(equation_type == EquationType::Diffusion ||
+//                    equation_type == EquationType::ConvectionDiffusion,
+//                    ExcMessage("Point Jacobi preconditioner is not available for the specified equation type"));
+//
+//      if(preconditioner == Preconditioner::BlockJacobi)
+//        AssertThrow(equation_type == EquationType::ConvectionDiffusion,
+//                    ExcMessage("Block Jacobi preconditioner is not available for the specified equation type"));
     }
 
 

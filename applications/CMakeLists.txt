@@ -19,7 +19,7 @@ SET( SOURCE_FILES
      #fe_turbulent_channel.cc
      #fe_poiseuille.cc
      SteadyConvectionDiffusion.cc
-     DGConvectionDiffusionProblem.cc
+     UnsteadyConvectionDiffusion.cc
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )

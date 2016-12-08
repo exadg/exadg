@@ -1,56 +1,13 @@
 /*
- * DGConvectionDiffusionProblem.cc
+ * UnsteadyConvectionDiffusion.cc
  *
  *  Created on: Aug 18, 2016
  *      Author: fehn
  */
 
-#include <deal.II/base/quadrature_lib.h>
-#include <deal.II/base/function.h>
-#include <deal.II/base/logstream.h>
-#include <deal.II/base/convergence_table.h>
-#include <deal.II/base/timer.h>
 
-#include <deal.II/lac/parallel_vector.h>
-#include <deal.II/lac/full_matrix.h>
-#include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/solver_gmres.h>
-#include <deal.II/lac/precondition.h>
-#include <deal.II/lac/trilinos_sparse_matrix.h>
-
-#include <deal.II/fe/fe_dgq.h>
-#include <deal.II/fe/fe_values.h>
-
-#include <deal.II/fe/mapping_q.h>
-#include <deal.II/grid/tria.h>
 #include <deal.II/distributed/tria.h>
-#include <deal.II/grid/tria_accessor.h>
-#include <deal.II/grid/tria_iterator.h>
-#include <deal.II/grid/tria_boundary_lib.h>
-#include <deal.II/grid/grid_generator.h>
-
-#include <deal.II/multigrid/multigrid.h>
-#include <deal.II/multigrid/mg_transfer.h>
-#include <deal.II/multigrid/mg_tools.h>
-#include <deal.II/multigrid/mg_smoother.h>
-#include <deal.II/multigrid/mg_matrix.h>
-
-#include <deal.II/numerics/data_out.h>
-#include <deal.II/numerics/vector_tools.h>
-
-#include <deal.II/matrix_free/matrix_free.h>
-#include <deal.II/matrix_free/fe_evaluation.h>
-#include <deal.II/matrix_free/operators.h>
-
-#include <deal.II/meshworker/dof_info.h>
-#include <deal.II/meshworker/integration_info.h>
-#include <deal.II/meshworker/assembler.h>
-#include <deal.II/meshworker/loop.h>
-
-#include <deal.II/integrators/laplace.h>
-
-#include <fstream>
-#include <sstream>
+#include <deal.II/grid/grid_tools.h>
 
 #include "../include/DGConvDiffOperation.h"
 
@@ -73,9 +30,9 @@ using namespace ConvDiff;
 // SPECIFY THE TEST CASE THAT HAS TO BE SOLVED
 
 //#include "ConvectionDiffusionTestCases/PropagatingSineWave.h"
-//#include "ConvectionDiffusionTestCases/RotatingHill.h"
+#include "ConvectionDiffusionTestCases/RotatingHill.h"
 //#include "ConvectionDiffusionTestCases/DeformingHill.h"
-#include "ConvectionDiffusionTestCases/DiffusiveProblemHomogeneousDBC.h"
+//#include "ConvectionDiffusionTestCases/DiffusiveProblemHomogeneousDBC.h"
 //#include "ConvectionDiffusionTestCases/DiffusiveProblemHomogeneousNBC.h"
 //#include "ConvectionDiffusionTestCases/DiffusiveProblemHomogeneousNBC2.h"
 //#include "ConvectionDiffusionTestCases/ConstantRHS.h"
