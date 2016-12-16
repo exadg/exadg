@@ -224,7 +224,7 @@ private:
       for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
       {
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
-        VectorizedArray<value_type> rhs;
+        VectorizedArray<value_type> rhs = make_vectorized_array<value_type>(0.0);
         evaluate_scalar_function(rhs,operator_data.rhs,q_points,eval_time);
 
         fe_eval.submit_value (rhs, q);
@@ -496,7 +496,7 @@ private:
     {
       if(boundary_type == BoundaryType::dirichlet)
       {
-        VectorizedArray<value_type> g;
+        VectorizedArray<value_type> g = make_vectorized_array<value_type>(0.0);
         typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->dirichlet_bc.find(boundary_id);
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
@@ -532,7 +532,7 @@ private:
     {
       if(boundary_type == BoundaryType::dirichlet)
       {
-        VectorizedArray<value_type> g;
+        VectorizedArray<value_type> g = make_vectorized_array<value_type>(0.0);
         typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->dirichlet_bc.find(boundary_id);
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
@@ -614,7 +614,7 @@ private:
       }
       else if(boundary_type == BoundaryType::neumann)
       {
-        VectorizedArray<value_type> h;
+        VectorizedArray<value_type> h = make_vectorized_array<value_type>(0.0);
         typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->neumann_bc.find(boundary_id);
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
@@ -650,7 +650,7 @@ private:
       }
       else if(boundary_type == BoundaryType::neumann)
       {
-        VectorizedArray<value_type> h;
+        VectorizedArray<value_type> h = make_vectorized_array<value_type>(0.0);
         typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->neumann_bc.find(boundary_id);
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
@@ -771,15 +771,15 @@ private:
 
       for(unsigned int q=0;q<fe_eval.n_q_points;++q)
       {
-        VectorizedArray<value_type> jump_value;
+        VectorizedArray<value_type> jump_value = make_vectorized_array<value_type>(0.0);
         calculate_jump_value_boundary_face(jump_value,q,fe_eval,OperatorType::homogeneous,boundary_type);
-        VectorizedArray<value_type> value_flux;
+        VectorizedArray<value_type> value_flux = make_vectorized_array<value_type>(0.0);
         calculate_value_flux(value_flux, jump_value);
 
-        VectorizedArray<value_type> average_normal_gradient;
+        VectorizedArray<value_type> average_normal_gradient = make_vectorized_array<value_type>(0.0);
         calculate_average_normal_gradient_boundary_face(average_normal_gradient,q,fe_eval,OperatorType::homogeneous,boundary_type);
 
-        VectorizedArray<value_type> gradient_flux;
+        VectorizedArray<value_type> gradient_flux = make_vectorized_array<value_type>(0.0);
         calculate_gradient_flux(gradient_flux, average_normal_gradient, jump_value, tau_IP);
 
         fe_eval.submit_normal_gradient(value_flux,q);
@@ -818,13 +818,13 @@ private:
       {
         // set exterior value to zero
         VectorizedArray<value_type> jump_value = fe_eval.get_value(q);
-        VectorizedArray<value_type> value_flux;
+        VectorizedArray<value_type> value_flux = make_vectorized_array<value_type>(0.0);
         calculate_value_flux(value_flux, jump_value);
 
         // set exterior value to zero
         VectorizedArray<value_type> average_normal_gradient = 0.5 * fe_eval.get_normal_gradient(q);
 
-        VectorizedArray<value_type> gradient_flux;
+        VectorizedArray<value_type> gradient_flux = make_vectorized_array<value_type>(0.0);
         calculate_gradient_flux(gradient_flux, average_normal_gradient, jump_value, tau_IP);
 
         fe_eval.submit_normal_gradient(value_flux,q);
@@ -853,12 +853,12 @@ private:
       {
         // set value_m to zero
         VectorizedArray<value_type> jump_value = fe_eval_neighbor.get_value(q);
-        VectorizedArray<value_type> value_flux;
+        VectorizedArray<value_type> value_flux = make_vectorized_array<value_type>(0.0);
         calculate_value_flux(value_flux, jump_value);
         // set gradient_m to zero, minus sign to get the correct normal vector n⁺ = -n⁻
         VectorizedArray<value_type> average_normal_gradient = - 0.5 * fe_eval_neighbor.get_normal_gradient(q);
 
-        VectorizedArray<value_type> gradient_flux;
+        VectorizedArray<value_type> gradient_flux = make_vectorized_array<value_type>(0.0);
         calculate_gradient_flux(gradient_flux, average_normal_gradient, jump_value, tau_IP);
         // minus sign since n⁺ = -n⁻
         fe_eval_neighbor.submit_normal_gradient(-value_flux,q);
@@ -938,13 +938,13 @@ private:
         {
           // set exterior value to zero
           VectorizedArray<value_type> jump_value = fe_eval.get_value(q);
-          VectorizedArray<value_type> value_flux;
+          VectorizedArray<value_type> value_flux = make_vectorized_array<value_type>(0.0);
           calculate_value_flux(value_flux, jump_value);
 
           // set exterior value to zero
           VectorizedArray<value_type> average_normal_gradient = 0.5 * fe_eval.get_normal_gradient(q);
 
-          VectorizedArray<value_type> gradient_flux;
+          VectorizedArray<value_type> gradient_flux = make_vectorized_array<value_type>(0.0);
           calculate_gradient_flux(gradient_flux, average_normal_gradient, jump_value, tau_IP);
 
           fe_eval.submit_normal_gradient(value_flux,q);
@@ -988,12 +988,12 @@ private:
         {
           // set value_m to zero
           VectorizedArray<value_type> jump_value = fe_eval_neighbor.get_value(q);
-          VectorizedArray<value_type> value_flux;
+          VectorizedArray<value_type> value_flux = make_vectorized_array<value_type>(0.0);
           calculate_value_flux(value_flux, jump_value);
           // set gradient_m to zero, minus sign to get the correct normal vector n⁺ = -n⁻
           VectorizedArray<value_type> average_normal_gradient = - 0.5 * fe_eval_neighbor.get_normal_gradient(q);
 
-          VectorizedArray<value_type> gradient_flux;
+          VectorizedArray<value_type> gradient_flux = make_vectorized_array<value_type>(0.0);
           calculate_gradient_flux(gradient_flux, average_normal_gradient, jump_value, tau_IP);
           // minus sign since n⁺ = -n⁻
           fe_eval_neighbor.submit_normal_gradient(-value_flux,q);
@@ -1049,15 +1049,15 @@ private:
 
         for(unsigned int q=0;q<fe_eval.n_q_points;++q)
         {
-          VectorizedArray<value_type> jump_value;
+          VectorizedArray<value_type> jump_value = make_vectorized_array<value_type>(0.0);
           calculate_jump_value_boundary_face(jump_value,q,fe_eval,OperatorType::homogeneous,boundary_type);
-          VectorizedArray<value_type> value_flux;
+          VectorizedArray<value_type> value_flux = make_vectorized_array<value_type>(0.0);
           calculate_value_flux(value_flux, jump_value);
 
-          VectorizedArray<value_type> average_normal_gradient;
+          VectorizedArray<value_type> average_normal_gradient = make_vectorized_array<value_type>(0.0);
           calculate_average_normal_gradient_boundary_face(average_normal_gradient,q,fe_eval,OperatorType::homogeneous,boundary_type);
 
-          VectorizedArray<value_type> gradient_flux;
+          VectorizedArray<value_type> gradient_flux = make_vectorized_array<value_type>(0.0);
           calculate_gradient_flux(gradient_flux, average_normal_gradient, jump_value, tau_IP);
 
           fe_eval.submit_normal_gradient(value_flux,q);
@@ -1106,15 +1106,15 @@ private:
 
       for(unsigned int q=0;q<fe_eval.n_q_points;++q)
       {
-        VectorizedArray<value_type> jump_value;
+        VectorizedArray<value_type> jump_value = make_vectorized_array<value_type>(0.0);
         calculate_jump_value_boundary_face(jump_value,q,fe_eval,OperatorType::full,boundary_type,boundary_id);
-        VectorizedArray<value_type> value_flux;
+        VectorizedArray<value_type> value_flux = make_vectorized_array<value_type>(0.0);
         calculate_value_flux(value_flux, jump_value);
 
-        VectorizedArray<value_type> average_normal_gradient;
+        VectorizedArray<value_type> average_normal_gradient = make_vectorized_array<value_type>(0.0);
         calculate_average_normal_gradient_boundary_face(average_normal_gradient,q,fe_eval,OperatorType::full,boundary_type,boundary_id);
 
-        VectorizedArray<value_type> gradient_flux;
+        VectorizedArray<value_type> gradient_flux = make_vectorized_array<value_type>(0.0);
         calculate_gradient_flux(gradient_flux, average_normal_gradient, jump_value, tau_IP);
 
         fe_eval.submit_normal_gradient(value_flux,q);
@@ -1169,15 +1169,15 @@ private:
 
       for(unsigned int q=0;q<fe_eval.n_q_points;++q)
       {
-        VectorizedArray<value_type> jump_value;
+        VectorizedArray<value_type> jump_value = make_vectorized_array<value_type>(0.0);
         calculate_jump_value_boundary_face(jump_value,q,fe_eval,OperatorType::inhomogeneous,boundary_type,boundary_id);
-        VectorizedArray<value_type> value_flux;
+        VectorizedArray<value_type> value_flux = make_vectorized_array<value_type>(0.0);
         calculate_value_flux(value_flux, jump_value);
 
-        VectorizedArray<value_type> average_normal_gradient;
+        VectorizedArray<value_type> average_normal_gradient = make_vectorized_array<value_type>(0.0);
         calculate_average_normal_gradient_boundary_face(average_normal_gradient,q,fe_eval,OperatorType::inhomogeneous,boundary_type,boundary_id);
 
-        VectorizedArray<value_type> gradient_flux;
+        VectorizedArray<value_type> gradient_flux = make_vectorized_array<value_type>(0.0);
         calculate_gradient_flux(gradient_flux, average_normal_gradient, jump_value, tau_IP);
 
         // -value_flux since this term appears on the rhs of the equation !!
@@ -1469,7 +1469,7 @@ private:
     {
       if(boundary_type == BoundaryType::dirichlet)
       {
-        VectorizedArray<value_type> g;
+        VectorizedArray<value_type> g = make_vectorized_array<value_type>(0.0);
         typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->dirichlet_bc.find(boundary_id);
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
@@ -1505,7 +1505,7 @@ private:
     {
       if(boundary_type == BoundaryType::dirichlet)
       {
-        VectorizedArray<value_type> g;
+        VectorizedArray<value_type> g = make_vectorized_array<value_type>(0.0);
         typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->dirichlet_bc.find(boundary_id);
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
@@ -3062,7 +3062,7 @@ private:
           velocity[d].load(&array[0]);
         }
         // rhs
-        VectorizedArray<value_type> rhs;
+        VectorizedArray<value_type> rhs = make_vectorized_array<value_type>(0.0);
         value_type array [VectorizedArray<value_type>::n_array_elements];
         for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
         {
@@ -3213,7 +3213,7 @@ private:
 
           // set the correct time for the evaluation of the boundary conditions
           it->second->set_time(eval_time);
-          VectorizedArray<value_type> g;
+          VectorizedArray<value_type> g = make_vectorized_array<value_type>(0.0);
           value_type array [VectorizedArray<value_type>::n_array_elements];
           for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
           {
@@ -3289,7 +3289,7 @@ private:
                         this->operator_data.conv_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux,
                         ExcMessage("Specified numerical flux function for convective operator is not implemented!"));
 
-          VectorizedArray<value_type> gradient_flux;
+          VectorizedArray<value_type> gradient_flux = make_vectorized_array<value_type>(0.0);
 
           // set time for the correct evaluation of boundary conditions
           it->second->set_time(eval_time);

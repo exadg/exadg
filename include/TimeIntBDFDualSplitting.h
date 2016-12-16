@@ -415,9 +415,9 @@ pressure_step()
   // special case: pure Dirichlet BC's
   if(this->param.pure_dirichlet_bc)
   {
-    if(this->param.error_data.analytical_solution_available == true)
+    if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
       navier_stokes_operation->shift_pressure(pressure_np,this->time + this->time_steps[0]);
-    else // analytical_solution_available == false
+    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
       navier_stokes_operation->apply_zero_mean(pressure_np);
   }
 
