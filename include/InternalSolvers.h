@@ -16,6 +16,7 @@ namespace InternalSolvers
   {
     return a<b;
   }
+
   template <typename Number, typename Number2>
   bool all_smaller (const VectorizedArray<Number> a, const Number2 b)
   {
@@ -24,9 +25,11 @@ namespace InternalSolvers
         return false;
     return true;
   }
+
   template <typename Number>
   void adjust_division_by_zero (Number &)
   {}
+
   template <typename Number>
   void adjust_division_by_zero (VectorizedArray<Number> &x)
   {
@@ -50,12 +53,12 @@ namespace InternalSolvers
                value_type const *rhs);
 
   private:
+    const unsigned int M;
     const double ABS_TOL;
     const double REL_TOL;
     const unsigned int MAX_ITER;
     AlignedVector<value_type> storage;
     value_type *p,*r,*v;
-    const unsigned int M;
 
     value_type l2_norm(value_type const *vector);
 
@@ -85,10 +88,10 @@ namespace InternalSolvers
                                  double const       rel_tol,
                                  unsigned int const max_iter)
     :
+    M(unknowns),
     ABS_TOL(abs_tol),
     REL_TOL(rel_tol),
-    MAX_ITER(max_iter),
-    M(unknowns)
+    MAX_ITER(max_iter)
   {
     storage.resize(3*M);
     p = storage.begin();
@@ -174,7 +177,9 @@ namespace InternalSolvers
     // compute norm of residual
     value_type norm_r_abs = norm_r0;
     value_type norm_r_rel = one;
-    value_type r_times_y = inner_product(p, r);
+
+    // compute (r^{0})^T * y^{0} = (r^{0})^T * p^{0}
+    value_type r_times_y = inner_product(r, p);
 
     unsigned int n_iter = 0;
 
@@ -203,24 +208,30 @@ namespace InternalSolvers
       // increment iteration counter
       ++n_iter;
 
+      // check convergence
       if (all_smaller(norm_r_abs, ABS_TOL) || all_smaller(norm_r_rel, REL_TOL) || (n_iter > MAX_ITER))
       {
         break;
       }
 
-      // precondition
+      // precondition: y = P^{-1} * r
+      // Note: we use v instead of y to avoid
+      // the storage of another variable y
       matrix->precondition(v,r);
 
+      // compute r_times_y_new = r^T*y
       value_type r_times_y_new = inner_product(r,v);
 
-      // beta = (v^T*r) / (p^T*v)
+      // beta = (r^T*y)_new / (r^T*y)
       value_type beta = r_times_y_new / r_times_y;
 
-      // p <- r - beta*p
+      // p <- y + beta*p
       equ(p,one,v,beta,p);
 
       r_times_y = r_times_y_new;
     }
+
+//    std::cout<<"Number of iterations = "<< n_iter << std::endl;
 
     std::ostringstream message;
     for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; v++)
@@ -235,11 +246,151 @@ namespace InternalSolvers
   class SolverGMRES
   {
   public:
+    SolverGMRES(unsigned int const unknowns,
+                double const       abs_tol=1.e-12,
+                double const       rel_tol=1.e-8,
+                unsigned int const max_iter = 1e5);
+
+    template<typename Matrix>
+    void solve(Matrix const     *matrix,
+               value_type       *solution,
+               value_type const *rhs);
 
 
   private:
+    const unsigned int M;
+    const double ABS_TOL;
+    const double REL_TOL;
+    const unsigned int MAX_ITER;
+
+    // TODO
+//    AlignedVector<value_type> storage;
+//    value_type *p,*r,*v;
+
+    value_type *r;
+    value_type *w;
+    value_type **v;
+
+    value_type *y;
+
+    value_type *h;
+
   };
 
+  template<typename value_type>
+  SolverGMRES<value_type>::SolverGMRES(unsigned int const unknowns,
+                                       double const       abs_tol,
+                                       double const       rel_tol,
+                                       unsigned int const max_iter)
+    :
+    M(unknowns),
+    ABS_TOL(abs_tol),
+    REL_TOL(rel_tol),
+    MAX_ITER(max_iter)
+  {
+    // TODO
+//    storage.resize(3*M);
+//    p = storage.begin();
+//    r = storage.begin()+M;
+//    v = storage.begin()+2*M;
+  }
+
+  // TODO
+  template<typename value_type>
+  double modified_gram_schmidt(value_type         **orthogonal_vectors,
+                               unsigned int const dimension,
+                               value_type         *w,
+                               value_type         *h)
+  {
+    for(unsigned int i=0; i<dimension; ++i)
+    {
+      h[i] = inner_product(w, orthogonal_vectors[i]);
+      w.add(-h[i],orthogonal_vectors[i]);
+    }
+
+    double const h_new = l2_norm(w);
+
+    return h_new;
+  }
+
+  /*
+   *  Linear system of equations: Ax = b
+   *  A: matrix
+   *  x: solution vector
+   *  b: rhs vector
+   *  r: residual r = b - A*x
+   */
+  // TODO
+  template<typename value_type>
+  template<typename Matrix /*, typename Preconditioner*/>
+  void SolverGMRES<value_type>::solve(Matrix const     *A,
+                                      value_type       *x,
+                                      value_type const *b /*,
+                                      Preconditioner const *P */)
+  {
+    value_type one;
+    one = 1.0;
+
+    // apply matrix vector product: r = A*x
+    A->vmult(r,x);
+
+    // compute residual: r <--  -r + b
+    equ(r,-one,r,one,b);
+    value_type norm_r_initial = l2_norm(r);
+
+    // compute v = r / norm_r
+    equ(v[0],1.0/norm_r_initial,r);
+
+    // compute norm of residual
+    value_type norm_r_abs = norm_r_initial;
+    value_type norm_r_rel = one;
+
+    unsigned int n_iter = 0;
+
+    while(!all_smaller(norm_r_abs, ABS_TOL) && !all_smaller(norm_r_rel, REL_TOL) && (n_iter < MAX_ITER))
+    {
+      // matrix-vector product
+      A->vmult(w,v[n_iter]);
+
+      // perform modified Gram-Schmidt orthogonalization
+      // TODO
+      double const h_new = modified_gram_schmidt(v,n_iter+1,w,h);
+
+//      if(h>small_number)
+//        break;
+
+      if (h_new != 0)
+        scale(w,1./h_new);
+
+      // calculate y
+      // TODO
+
+      // calculate residual
+      // TODO
+
+      // calculate residual norm
+      norm_r_abs = l2_norm(r);
+      norm_r_rel = norm_r_abs / norm_r_initial;
+
+      // increment iteration counter
+      ++n_iter;
+    }
+
+    // calculate solution
+    for(unsigned int i=0; i<=n_iter; ++i)
+    {
+      add(x,y[i],v[i]);
+    }
+
+    std::cout << "Number of iterations = " << n_iter << std::endl;
+
+    std::ostringstream message;
+    for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; v++)
+    {
+       message << " v: " << v << "  " << norm_r_abs[v] << " ";
+    }
+    Assert(n_iter <= MAX_ITER, ExcMessage("No convergence of solver in " + Utilities::to_string(MAX_ITER) + "iterations. Residual was " + message.str().c_str()));
+  }
 }
 
 

@@ -134,6 +134,12 @@ enum class InteriorPenaltyFormulation
   NIPG
 };
 
+enum class AdjustPressureLevel
+{
+  ApplyZeroMeanValue,
+  ApplyAnalyticalSolutionInPoint
+};
+
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -459,6 +465,7 @@ public:
 
     // special case: pure DBC's
     pure_dirichlet_bc(false),
+    adjust_pressure_level(AdjustPressureLevel::ApplyZeroMeanValue),
 
     // PROJECTION METHODS
 
@@ -630,6 +637,13 @@ public:
     // SPATIAL DISCRETIZATION
     AssertThrow(spatial_discretization != SpatialDiscretization::Undefined ,ExcMessage("parameter must be defined"));
     AssertThrow(IP_formulation_viscous != InteriorPenaltyFormulation::Undefined ,ExcMessage("parameter must be defined"));
+
+    if(pure_dirichlet_bc == true)
+    {
+      if(adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
+        AssertThrow(error_data.analytical_solution_available == true,
+                    ExcMessage("To adjust the pressure level as specified an analytical solution has to be available."));
+    }
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
     if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme ||
@@ -881,9 +895,17 @@ public:
                     divu_use_boundary_data);
 
     // special case pure DBC's
-    print_parameter(pcout,
-                    "Pure Dirichlet BC's",
-                    pure_dirichlet_bc);
+    print_parameter(pcout,"Pure Dirichlet BC's",pure_dirichlet_bc);
+
+    if(pure_dirichlet_bc == true)
+    {
+      std::string str_pressure_level[] = { "applying zero mean value",
+                                           "applying analytical solution in point"};
+
+      print_parameter(pcout,
+                      "Adjust pressure level by",
+                      str_pressure_level[(int)adjust_pressure_level]);
+    }
   } 
 
   void print_parameters_projection_methods(ConditionalOStream &pcout)
@@ -1379,6 +1401,10 @@ public:
 
   // special case of pure Dirichlet BCs on whole boundary
   bool pure_dirichlet_bc;
+
+  // adjust pressure level in case of pure Dirichlet BC's where
+  // the pressure is only defined up to an additive constant
+  AdjustPressureLevel adjust_pressure_level;
 
   /**************************************************************************************/
   /*                                                                                    */

@@ -26,11 +26,11 @@ using namespace dealii;
 
 // specify the flow problem that has to be solved
 
-#include "NavierStokesTestCases/Couette.h"
+//#include "NavierStokesTestCases/Couette.h"
 //#include "NavierStokesTestCases/Poiseuille.h"
 //#include "NavierStokesTestCases/Cavity.h"
 //#include "NavierStokesTestCases/StokesGuermond.h"
-//#include "NavierStokesTestCases/StokesShahbazi.h"
+#include "NavierStokesTestCases/StokesShahbazi.h"
 //#include "NavierStokesTestCases/Kovasznay.h"
 //#include "NavierStokesTestCases/Vortex.h"
 //#include "NavierStokesTestCases/TaylorVortex.h"

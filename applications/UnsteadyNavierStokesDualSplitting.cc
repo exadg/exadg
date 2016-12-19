@@ -3,12 +3,11 @@
 // authors: Niklas Fehn, Benjamin Krank, Martin Kronbichler, LNM
 // years: 2015-2016
 
+// vectorized array, std::sqrt(VectorizedArray), must be forward declared at central place in deal.ii
 #include <deal.II/base/vectorization.h>
 
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
-
-//#include <deal.II/base/vectorization.h>
 
 #include "../include/DGNavierStokesDualSplitting.h"
 
@@ -30,9 +29,9 @@ using namespace dealii;
 //#include "NavierStokesTestCases/Poiseuille.h"
 //#include "NavierStokesTestCases/Cavity.h"
 //#include "NavierStokesTestCases/StokesGuermond.h"
-//#include "NavierStokesTestCases/StokesShahbazi.h"
+#include "NavierStokesTestCases/StokesShahbazi.h"
 //#include "NavierStokesTestCases/Kovasznay.h"
-#include "NavierStokesTestCases/Vortex.h"
+//#include "NavierStokesTestCases/Vortex.h"
 //#include "NavierStokesTestCases/TaylorVortex.h"
 //#include "NavierStokesTestCases/Beltrami.h"
 //#include "NavierStokesTestCases/FlowPastCylinder.h"

@@ -30,9 +30,9 @@ public:
    *  Richardson iteration: x^{k+1} = x^{k} + M^{-1} * ( b - A*x^{k} )
    *
    *  A: system matrix
-   *  M^{-1}: preconditioner (should approximate A^{-1}
+   *  M^{-1}: preconditioner (should approximate A^{-1})
    *
-   *  rhs vector b: b = 0
+   *  rhs vector b: b = 0 (-> x_ex = 0)
    *  initial guess x^{0} = rand()
    *
    *  --> calculate x^{1} = x^{0} - M^{-1}*A*x^{0}
