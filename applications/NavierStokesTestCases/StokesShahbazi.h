@@ -22,20 +22,20 @@
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY =6;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
+unsigned int const FE_DEGREE_VELOCITY = 2;
+unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
 unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 0;
-unsigned int const REFINE_STEPS_SPACE_MAX = 6; // REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 2;
+unsigned int const REFINE_STEPS_SPACE_MAX = 2; // REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
-unsigned int const REFINE_STEPS_TIME_MAX = 0; //REFINE_STEPS_TIME_MIN;
+unsigned int const REFINE_STEPS_TIME_MAX = 15; //REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
 const double VISCOSITY = 1.0e0;
@@ -57,14 +57,14 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
   max_velocity = 1.0;
   cfl = 2.0e-1;
-  time_step_size = 1.e-4;
+  time_step_size = 5.e-2;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 2; // 1; // 2; // 3;
+  order_time_integrator = 3; // 1; // 2; // 3;
   start_with_low_order = false; // true; // false;
 
 
@@ -97,7 +97,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   IP_factor_pressure = 1.0;
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
   multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
-  abs_tol_pressure = 1.e-20;
+  abs_tol_pressure = 1.e-12;
   rel_tol_pressure = 1.e-6;
 
   // stability in the limit of small time steps
@@ -160,9 +160,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   update_preconditioner_momentum = false;
 
   // formulation
-  incremental_formulation = true;
+  incremental_formulation = false;
   order_pressure_extrapolation = 1;
-  rotational_formulation = true;
+  rotational_formulation = false;
 
 
   // COUPLED NAVIER-STOKES SOLVER

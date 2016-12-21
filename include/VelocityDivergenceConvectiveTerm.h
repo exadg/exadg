@@ -1,21 +1,22 @@
 /*
- * PressureNeumannBCConvective.h
+ * VelocityDivergenceConvectiveTerm.h
  *
- *  Created on: Nov 14, 2016
+ *  Created on: Dec 21, 2016
  *      Author: fehn
  */
 
-#ifndef INCLUDE_PRESSURENEUMANNBCCONVECTIVETERM_H_
-#define INCLUDE_PRESSURENEUMANNBCCONVECTIVETERM_H_
+#ifndef INCLUDE_VELOCITYDIVERGENCECONVECTIVETERM_H_
+#define INCLUDE_VELOCITYDIVERGENCECONVECTIVETERM_H_
+
 
 #include "BaseOperator.h"
 #include "FEEvaluationWrapper.h"
 
 template<int dim>
-class PressureNeumannBCConvectiveTermData
+class VelocityDivergenceConvectiveTermData
 {
 public:
-  PressureNeumannBCConvectiveTermData()
+  VelocityDivergenceConvectiveTermData()
     :
     dof_index_velocity(0),
     dof_index_pressure(0)
@@ -27,7 +28,7 @@ public:
 };
 
 template <int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
-class PressureNeumannBCConvectiveTerm: public BaseOperator<dim>
+class VelocityDivergenceConvectiveTerm: public BaseOperator<dim>
 {
 public:
   static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
@@ -46,15 +47,15 @@ public:
   typedef FEFaceEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_nonlinear,1,value_type,is_xwall>
     FEFaceEval_Pressure_Velocity_nonlinear;
 
-  typedef PressureNeumannBCConvectiveTerm<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> This;
+  typedef VelocityDivergenceConvectiveTerm<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> This;
 
-  PressureNeumannBCConvectiveTerm()
+  VelocityDivergenceConvectiveTerm()
     :
     data(nullptr)
   {}
 
-  void initialize (MatrixFree<dim,value_type> const         &mf_data,
-                   PressureNeumannBCConvectiveTermData<dim> &my_data_in)
+  void initialize (MatrixFree<dim,value_type> const          &mf_data,
+                   VelocityDivergenceConvectiveTermData<dim> &my_data_in)
   {
     this->data = &mf_data;
     my_data = my_data_in;
@@ -89,6 +90,7 @@ private:
                            const parallel::distributed::Vector<value_type>  &src,
                            const std::pair<unsigned int,unsigned int>       &face_range) const
   {
+
     FEFaceEval_Velocity_Velocity_nonlinear fe_eval_velocity(data,this->fe_param,true,my_data.dof_index_velocity);
     FEFaceEval_Pressure_Velocity_nonlinear fe_eval_pressure(data,this->fe_param,true,my_data.dof_index_pressure);
 
@@ -108,22 +110,21 @@ private:
         it = my_data.bc->dirichlet_bc.find(boundary_id);
         if(it != my_data.bc->dirichlet_bc.end())
         {
-          VectorizedArray<value_type> h;
-          Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_pressure.get_normal_vector(q);
-
           Tensor<1,dim,VectorizedArray<value_type> > u = fe_eval_velocity.get_value(q);
           Tensor<2,dim,VectorizedArray<value_type> > grad_u = fe_eval_velocity.get_gradient(q);
           Tensor<1,dim,VectorizedArray<value_type> > convective_term = grad_u * u + fe_eval_velocity.get_divergence(q) * u;
 
-          h = - normal * convective_term;
+          VectorizedArray<value_type> flux_times_normal = convective_term * fe_eval_pressure.get_normal_vector(q);
 
-          fe_eval_pressure.submit_value(h,q);
+          fe_eval_pressure.submit_value(flux_times_normal,q);
         }
 
         it = my_data.bc->neumann_bc.find(boundary_id);
         if (it != my_data.bc->neumann_bc.end())
         {
-          fe_eval_pressure.submit_value(make_vectorized_array<value_type>(0.0),q);
+          // do nothing on Neumann boundaries
+          VectorizedArray<value_type> zero = make_vectorized_array<value_type>(0.0);
+          fe_eval_pressure.submit_value(zero,q);
         }
       }
       fe_eval_pressure.integrate(true,false);
@@ -132,8 +133,9 @@ private:
   }
 
   MatrixFree<dim,value_type> const * data;
-  PressureNeumannBCConvectiveTermData<dim> my_data;
+  VelocityDivergenceConvectiveTermData<dim> my_data;
 };
 
 
-#endif /* INCLUDE_PRESSURENEUMANNBCCONVECTIVETERM_H_ */
+
+#endif /* INCLUDE_VELOCITYDIVERGENCECONVECTIVETERM_H_ */

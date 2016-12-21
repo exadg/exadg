@@ -62,7 +62,7 @@ public:
                             const value_type                          evaluation_time) const;
 
   // rhs pressure Poisson equation: inhomogeneous parts of boundary face
-  // integrals of ngeative Laplace operator
+  // integrals of negative Laplace operator
   void rhs_ppe_laplace_add(parallel::distributed::Vector<value_type> &dst,
                            double const                              &evaluation_time) const;
 

@@ -47,6 +47,8 @@ public:
   typedef FEFaceEvaluationWrapperPressure<dim,fe_degree_p,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,is_xwall>
     FEFaceEval_Pressure_Velocity_linear;
 
+  typedef PressureNeumannBCViscousTerm<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> This;
+
   PressureNeumannBCViscousTerm()
     :
     data(nullptr),
@@ -66,34 +68,31 @@ public:
   void calculate (parallel::distributed::Vector<value_type>       &dst,
                   const parallel::distributed::Vector<value_type> &src) const
   {
-    this->data->loop(&PressureNeumannBCViscousTerm<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_cell,
-                     &PressureNeumannBCViscousTerm<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_face,
-                     &PressureNeumannBCViscousTerm<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>::local_boundary_face,
-                     this, dst, src);
+    this->data->loop(&This::cell_loop,&This::face_loop,&This::boundary_face_loop,this, dst, src);
   }
 
 private:
 
-  void local_cell(const MatrixFree<dim,value_type>                &,
-                  parallel::distributed::Vector<value_type>       &,
-                  const parallel::distributed::Vector<value_type> &,
-                  const std::pair<unsigned int,unsigned int>      &) const
+  void cell_loop(const MatrixFree<dim,value_type>                &,
+                 parallel::distributed::Vector<value_type>       &,
+                 const parallel::distributed::Vector<value_type> &,
+                 const std::pair<unsigned int,unsigned int>      &) const
   {
 
   }
 
-  void  local_face(const MatrixFree<dim,value_type>                &,
-                   parallel::distributed::Vector<value_type>       &,
-                   const parallel::distributed::Vector<value_type> &,
-                   const std::pair<unsigned int,unsigned int>      &) const
+  void face_loop(const MatrixFree<dim,value_type>                &,
+                 parallel::distributed::Vector<value_type>       &,
+                 const parallel::distributed::Vector<value_type> &,
+                 const std::pair<unsigned int,unsigned int>      &) const
   {
 
   }
 
-  void local_boundary_face (const MatrixFree<dim,value_type>                 &data,
-                            parallel::distributed::Vector<value_type>        &dst,
-                            const parallel::distributed::Vector<value_type>  &src,
-                            const std::pair<unsigned int,unsigned int>       &face_range) const
+  void boundary_face_loop (const MatrixFree<dim,value_type>                 &data,
+                           parallel::distributed::Vector<value_type>        &dst,
+                           const parallel::distributed::Vector<value_type>  &src,
+                           const std::pair<unsigned int,unsigned int>       &face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval_omega(data,this->fe_param,true,my_data.dof_index_velocity);
 
