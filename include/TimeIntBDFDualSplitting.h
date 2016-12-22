@@ -442,20 +442,58 @@ rhs_pressure()
   /*
    *  I. calculate divergence term
    */
-  navier_stokes_operation->evaluate_velocity_divergence_term(rhs_vec_pressure, velocity_np, this->time+this->time_steps[0]);
+  // homogeneous part of velocity divergence operator
+  navier_stokes_operation->apply_velocity_divergence_term(rhs_vec_pressure, velocity_np);
+
   if(this->param.small_time_steps_stability == true)
     rhs_vec_pressure *= -1.0;
   else
     rhs_vec_pressure *= -this->gamma0/this->time_steps[0];
 
+  // inhomogeneous parts of boundary face integrals of velocity divergence operator
+  if(this->param.divu_integrated_by_parts == true)
+  {
+    if(this->param.divu_use_boundary_data == true)
+    {
+      // sum alpha_i * u_i term
+      for(unsigned int i=0;i<velocity.size();++i)
+      {
+        double time_offset = 0.0;
+        for(unsigned int k=0; k<=i;++k)
+          time_offset += this->time_steps[k];
+
+        rhs_vec_pressure_temp = 0;
+        navier_stokes_operation->rhs_velocity_divergence_term(rhs_vec_pressure_temp,this->time+this->time_steps[0]-time_offset);
+
+        // note that the minus sign related to this term is already taken into account
+        // in the function .rhs() of the divergence operator
+        rhs_vec_pressure.add(this->alpha[i]/this->time_steps[0],rhs_vec_pressure_temp);
+      }
+
+      // convective term
+      if(this->param.equation_type == EquationType::NavierStokes)
+      {
+        for(unsigned int i=0;i<velocity.size();++i)
+        {
+          rhs_vec_pressure_temp = 0;
+          navier_stokes_operation->rhs_ppe_div_term_convective_term_add(rhs_vec_pressure_temp, velocity[i]);
+          rhs_vec_pressure.add(this->beta[i], rhs_vec_pressure_temp);
+        }
+      }
+
+      // body force term
+      navier_stokes_operation->rhs_ppe_div_term_body_forces_add(rhs_vec_pressure,this->time + this->time_steps[0]);
+    }
+  }
+
   /*
    *  II. calculate terms originating from inhomogeneous parts of boundary face integrals
    */
 
-  // II.1. inhomogeneousBC terms depending on prescribed boundary data,
-  //       i.e. pressure Dirichlet boundary conditions on Gamma_N and
-  //       body force vector, temporal derivative of velocity on Gamma_D
+  // II.1. inhomogeneous BC terms depending on prescribed boundary data,
+  //       i.e. pressure Dirichlet boundary conditions on Gamma_N
   navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure,this->time+this->time_steps[0]);
+  //       and body force vector, temporal derivative of velocity on Gamma_D
   navier_stokes_operation->rhs_ppe_nbc_add(rhs_vec_pressure,this->time+this->time_steps[0]);
 
   // II.2. viscous term of pressure Neumann boundary condition on Gamma_D

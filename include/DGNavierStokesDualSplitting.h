@@ -14,6 +14,7 @@
 
 #include "NewtonSolver.h"
 #include "IterativeSolvers.h"
+#include "VelocityDivergenceConvectiveTerm.h"
 #include "PressureNeumannBCConvectiveTerm.h"
 #include "PressureNeumannBCViscousTerm.h"
 
@@ -100,6 +101,19 @@ public:
   void  evaluate_body_force_and_apply_inverse_mass_matrix (parallel::distributed::Vector<value_type>  &dst,
                                                            const value_type                           evaluation_time) const;
 
+  // rhs pressure: velocity divergence
+  void apply_velocity_divergence_term(parallel::distributed::Vector<value_type>        &dst,
+                                      const parallel::distributed::Vector<value_type>  &src) const;
+
+  void rhs_velocity_divergence_term(parallel::distributed::Vector<value_type>        &dst,
+                                    double const                                     &evaluation_time) const;
+
+  void rhs_ppe_div_term_body_forces_add(parallel::distributed::Vector<value_type> &dst,
+                                        double const                              &eval_time);
+
+  void rhs_ppe_div_term_convective_term_add(parallel::distributed::Vector<value_type>       &dst,
+                                            parallel::distributed::Vector<value_type> const &src);
+
   // rhs pressure
   void rhs_ppe_nbc_add (parallel::distributed::Vector<value_type> &dst,
                         double const                              &evaluation_time);
@@ -144,6 +158,10 @@ private:
                                      DGNavierStokesDualSplitting<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
                                      IterativeSolverBase<parallel::distributed::Vector<value_type> > > > newton_solver;
 
+
+  // rhs pressure Poisson equation: Velocity divergence term
+  VelocityDivergenceConvectiveTerm<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> velocity_divergence_convective_term;
+
   // pressure Neumann BC
   PressureNeumannBCConvectiveTerm<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> pressure_nbc_convective_term;
   PressureNeumannBCViscousTerm<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> pressure_nbc_viscous_term;
@@ -156,6 +174,23 @@ private:
   virtual void setup_pressure_poisson_solver(double const time_step_size);
   void setup_helmholtz_solver(double const &scaling_factor_time_derivative_term);
   virtual void setup_helmholtz_preconditioner();
+
+  // rhs pressure: boundary conditions for intermediate velocity u_hat
+  // body force term
+  void local_rhs_ppe_div_term_body_forces (const MatrixFree<dim,value_type>                &data,
+                                           parallel::distributed::Vector<value_type>       &dst,
+                                           const parallel::distributed::Vector<value_type> &src,
+                                           const std::pair<unsigned int,unsigned int>      &cell_range) const;
+
+  void local_rhs_ppe_div_term_body_forces_face (const MatrixFree<dim,value_type>                 &data,
+                                                parallel::distributed::Vector<value_type>        &dst,
+                                                const parallel::distributed::Vector<value_type>  &src,
+                                                const std::pair<unsigned int,unsigned int>       &face_range) const;
+
+  void local_rhs_ppe_div_term_body_forces_boundary_face(const MatrixFree<dim,value_type>                 &data,
+                                                        parallel::distributed::Vector<value_type>        &dst,
+                                                        const parallel::distributed::Vector<value_type>  &src,
+                                                        const std::pair<unsigned int,unsigned int>       &face_range) const;
 
   // rhs pressure: NBC term
   void local_rhs_ppe_nbc_add (const MatrixFree<dim,value_type>                &data,
@@ -249,7 +284,15 @@ setup_pressure_poisson_solver (const double time_step_size)
 
   typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector DofHandlerSelector;
 
-  // Convective term
+  // RHS PPE: Velocity divergence term
+  VelocityDivergenceConvectiveTermData<dim> velocity_divergence_convective_data;
+  velocity_divergence_convective_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity);
+  velocity_divergence_convective_data.dof_index_pressure =  static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure);
+  velocity_divergence_convective_data.bc = this->boundary_descriptor_velocity;
+
+  velocity_divergence_convective_term.initialize(this->data,velocity_divergence_convective_data);
+
+  // Pressure NBC: Convective term
   PressureNeumannBCConvectiveTermData<dim> pressure_nbc_convective_data;
   pressure_nbc_convective_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity);
   pressure_nbc_convective_data.dof_index_pressure =  static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure);
@@ -257,7 +300,7 @@ setup_pressure_poisson_solver (const double time_step_size)
 
   pressure_nbc_convective_term.initialize(this->data,pressure_nbc_convective_data);
 
-  // Viscous term
+  // Pressure NBC: Viscous term
   PressureNeumannBCViscousTermData<dim> pressure_nbc_viscous_data;
   pressure_nbc_viscous_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity);
   pressure_nbc_viscous_data.dof_index_pressure =  static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::pressure);
@@ -491,6 +534,116 @@ evaluate_body_force_and_apply_inverse_mass_matrix(parallel::distributed::Vector<
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+apply_velocity_divergence_term(parallel::distributed::Vector<value_type>        &dst,
+                               const parallel::distributed::Vector<value_type>  &src) const
+{
+  this->divergence_operator.apply(dst,src);
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+rhs_velocity_divergence_term(parallel::distributed::Vector<value_type>        &dst,
+                             double const                                     &evaluation_time) const
+{
+  this->divergence_operator.rhs(dst,evaluation_time);
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+rhs_ppe_div_term_body_forces_add(parallel::distributed::Vector<value_type> &dst,
+                                 double const                              &eval_time)
+{
+  evaluation_time = eval_time;
+
+  parallel::distributed::Vector<value_type> src_dummy;
+  this->data.loop (&DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::local_rhs_ppe_div_term_body_forces,
+                   &DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::local_rhs_ppe_div_term_body_forces_face,
+                   &DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::local_rhs_ppe_div_term_body_forces_boundary_face,
+                   this, dst, src_dummy);
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+local_rhs_ppe_div_term_body_forces (const MatrixFree<dim,value_type>                 &,
+                                    parallel::distributed::Vector<value_type>        &,
+                                    const parallel::distributed::Vector<value_type>  &,
+                                    const std::pair<unsigned int,unsigned int>       &) const
+{
+
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+local_rhs_ppe_div_term_body_forces_face (const MatrixFree<dim,value_type>                &,
+                                         parallel::distributed::Vector<value_type>       &,
+                                         const parallel::distributed::Vector<value_type> &,
+                                         const std::pair<unsigned int,unsigned int>      &) const
+{
+
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+local_rhs_ppe_div_term_body_forces_boundary_face (const MatrixFree<dim,value_type>                 &data,
+                                                  parallel::distributed::Vector<value_type>        &dst,
+                                                  const parallel::distributed::Vector<value_type>  &,
+                                                  const std::pair<unsigned int,unsigned int>       &face_range) const
+{
+  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector DofHandlerSelector;
+  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector QuadratureSelector;
+
+  unsigned int dof_index_pressure = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::pressure);
+  unsigned int quad_index_pressure = static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::pressure);
+
+  FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval(data,true,dof_index_pressure,quad_index_pressure);
+
+  for(unsigned int face=face_range.first; face<face_range.second; face++)
+  {
+    fe_eval.reinit (face);
+
+    typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+    types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
+    for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+    {
+      it = this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id);
+      if(it != this->boundary_descriptor_pressure->dirichlet_bc.end())
+      {
+        Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
+
+        // evaluate right-hand side
+        Tensor<1,dim,VectorizedArray<value_type> > rhs;
+        evaluate_vectorial_function(rhs,this->field_functions->right_hand_side,q_points,evaluation_time);
+
+        VectorizedArray<value_type> flux_times_normal = rhs * fe_eval.get_normal_vector(q);
+        // minus sign is introduced here which allows to call a function of type ...add()
+        // and avoids a scaling of the resulting vector by the factor -1.0
+        fe_eval.submit_value(-flux_times_normal,q);
+      }
+
+      it = this->boundary_descriptor_pressure->neumann_bc.find(boundary_id);
+      if (it != this->boundary_descriptor_pressure->neumann_bc.end())
+      {
+        // do nothing on Neumann boundaries
+        VectorizedArray<value_type> zero = make_vectorized_array<value_type>(0.0);
+        fe_eval.submit_value(zero,q);
+      }
+    }
+    fe_eval.integrate(true,false);
+    fe_eval.distribute_local_to_global(dst);
+  }
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+rhs_ppe_div_term_convective_term_add(parallel::distributed::Vector<value_type>       &dst,
+                                     parallel::distributed::Vector<value_type> const &src)
+{
+  velocity_divergence_convective_term.calculate(dst,src);
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 rhs_ppe_nbc_add (parallel::distributed::Vector<value_type> &dst,
                  double const                              &eval_time)
 {
@@ -523,6 +676,7 @@ local_rhs_ppe_nbc_add_face (const MatrixFree<dim,value_type>                &,
 
 }
 
+
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 local_rhs_ppe_nbc_add_boundary_face (const MatrixFree<dim,value_type>                 &data,
@@ -536,11 +690,7 @@ local_rhs_ppe_nbc_add_boundary_face (const MatrixFree<dim,value_type>           
   unsigned int dof_index_pressure = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::pressure);
   unsigned int quad_index_pressure = static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::pressure);
 
-  FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval(data, true,dof_index_pressure,quad_index_pressure);
-
-  // set the correct time for the evaluation of the right_hand_side - function
-  if(this->param.right_hand_side == true)
-    this->field_functions->right_hand_side->set_time(evaluation_time);
+  FEFaceEvaluation<dim,fe_degree_p,fe_degree_p+1,1,value_type> fe_eval(data,true,dof_index_pressure,quad_index_pressure);
 
   for(unsigned int face=face_range.first; face<face_range.second; face++)
   {
@@ -558,47 +708,17 @@ local_rhs_ppe_nbc_add_boundary_face (const MatrixFree<dim,value_type>           
 
         // evaluate right-hand side
         Tensor<1,dim,VectorizedArray<value_type> > rhs;
-
-        if(this->param.right_hand_side == true)
-        {
-          for(unsigned int d=0;d<dim;++d)
-          {
-            value_type array_rhs [VectorizedArray<value_type>::n_array_elements];
-            for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
-            {
-              Point<dim> q_point;
-              for (unsigned int d=0; d<dim; ++d)
-              q_point[d] = q_points[d][n];
-              array_rhs[n] = this->field_functions->right_hand_side->value(q_point,d);
-            }
-            rhs[d].load(&array_rhs[0]);
-          }
-        }
+        evaluate_vectorial_function(rhs,this->field_functions->right_hand_side,q_points,evaluation_time);
 
         // evaluate boundary condition
         Tensor<1,dim,VectorizedArray<value_type> > dudt;
-        // set time for the correct evaluation of boundary conditions
-        it->second->set_time(evaluation_time);
-
-        for(unsigned int d=0;d<dim;++d)
-        {
-          value_type array_dudt [VectorizedArray<value_type>::n_array_elements];
-          for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
-          {
-            Point<dim> q_point;
-            for (unsigned int d=0; d<dim; ++d)
-              q_point[d] = q_points[d][n];
-            array_dudt[n] = it->second->value(q_point,d);
-          }
-          dudt[d].load(&array_dudt[0]);
-        }
+        evaluate_vectorial_function(dudt,it->second,q_points,evaluation_time);
 
         Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
         VectorizedArray<value_type> h;
 
         h = - normal * (dudt - rhs);
 
-        fe_eval.submit_normal_gradient(make_vectorized_array<value_type>(0.0),q);
         fe_eval.submit_value(h,q);
       }
 
@@ -606,14 +726,14 @@ local_rhs_ppe_nbc_add_boundary_face (const MatrixFree<dim,value_type>           
       if (it != this->boundary_descriptor_pressure->neumann_bc.end())
       {
         VectorizedArray<value_type> zero = make_vectorized_array<value_type>(0.0);
-        fe_eval.submit_normal_gradient(zero,q);
         fe_eval.submit_value(zero,q);
       }
     }
-    fe_eval.integrate(true,true);
+    fe_eval.integrate(true,false);
     fe_eval.distribute_local_to_global(dst);
   }
 }
+
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
