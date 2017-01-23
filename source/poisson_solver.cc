@@ -49,30 +49,36 @@ void LaplaceOperator<dim,Number>::reinit(const MatrixFree<dim,Number>       &mf_
 
   compute_array_penalty_parameter(mapping);
 
-  // Check whether the Poisson matrix is singular when applied to a vector
-  // consisting of only ones (except for constrained entries)
-  parallel::distributed::Vector<Number> in_vec, out_vec;
-  initialize_dof_vector(in_vec);
-  initialize_dof_vector(out_vec);
-  in_vec = 1;
-  const std::vector<unsigned int> &constrained_entries =
-    mf_data.get_constrained_dofs(operator_data.laplace_dof_index);
-  for (unsigned int i=0; i<constrained_entries.size(); ++i)
-    in_vec.local_element(constrained_entries[i]) = 0;
-  vmult_add(out_vec, in_vec);
-  const double linfty_norm = out_vec.linfty_norm();
+  // TODO
+//  // Check whether the Poisson matrix is singular when applied to a vector
+//  // consisting of only ones (except for constrained entries)
+//  parallel::distributed::Vector<Number> in_vec, out_vec;
+//  initialize_dof_vector(in_vec);
+//  initialize_dof_vector(out_vec);
+//  in_vec = 1;
+//  const std::vector<unsigned int> &constrained_entries =
+//    mf_data.get_constrained_dofs(operator_data.laplace_dof_index);
+//  for (unsigned int i=0; i<constrained_entries.size(); ++i)
+//    in_vec.local_element(constrained_entries[i]) = 0;
+//  vmult_add(out_vec, in_vec);
+//  const double linfty_norm = out_vec.linfty_norm();
+//
+//  // since we cannot know the magnitude of the entries at this point (the
+//  // diagonal entries would be a guideline but they are not available here),
+//  // we instead multiply by a random vector
+//  for (unsigned int i=0; i<in_vec.local_size(); ++i)
+//    in_vec.local_element(i) = (double)rand()/RAND_MAX;
+//  vmult(out_vec, in_vec);
+//  const double linfty_norm_compare = out_vec.linfty_norm();
+//
+//  // use mean value constraint if the infty norm with the one vector is very small
+//  needs_mean_value_constraint =
+//    linfty_norm / linfty_norm_compare < std::pow(std::numeric_limits<Number>::epsilon(), 2./3.);
 
-  // since we cannot know the magnitude of the entries at this point (the
-  // diagonal entries would be a guideline but they are not available here),
-  // we instead multiply by a random vector
-  for (unsigned int i=0; i<in_vec.local_size(); ++i)
-    in_vec.local_element(i) = (double)rand()/RAND_MAX;
-  vmult(out_vec, in_vec);
-  const double linfty_norm_compare = out_vec.linfty_norm();
+  // TODO
+  // alternative approach: specify whether the system of equations is singular by using an input parameter
+  needs_mean_value_constraint = operator_data.needs_mean_value_constraint;
 
-  // use mean value constraint if the infty norm with the one vector is very small
-  needs_mean_value_constraint =
-    linfty_norm / linfty_norm_compare < std::pow(std::numeric_limits<Number>::epsilon(), 2./3.);
   apply_mean_value_constraint_in_matvec = needs_mean_value_constraint;
 }
 

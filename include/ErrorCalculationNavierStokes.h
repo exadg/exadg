@@ -30,7 +30,7 @@ void calculate_L2_error(DoFHandler<dim> const                       &dof_handler
                                      numerical_solution,
                                      *analytical_solution,
                                      error_norm_per_cell,
-                                     QGauss<dim>(dof_handler.get_fe().degree+4),//(fe().degree+2),
+                                     QGauss<dim>(dof_handler.get_fe().degree+3), //(fe().degree+2),
                                      VectorTools::L2_norm);
   parallel::distributed::Vector<double> zero_solution;
   zero_solution.reinit(numerical_solution);
@@ -39,14 +39,14 @@ void calculate_L2_error(DoFHandler<dim> const                       &dof_handler
                                      zero_solution,
                                      *analytical_solution,
                                      solution_norm_per_cell,
-                                     QGauss<dim>(dof_handler.get_fe().degree+4), //(fe().degree+2),
+                                     QGauss<dim>(dof_handler.get_fe().degree+3), //(fe().degree+2),
                                      VectorTools::L2_norm);
   double error_norm = std::sqrt(Utilities::MPI::sum (error_norm_per_cell.norm_sqr(), MPI_COMM_WORLD));
   double solution_norm = std::sqrt(Utilities::MPI::sum (solution_norm_per_cell.norm_sqr(), MPI_COMM_WORLD));
 
   if(solution_norm > 1.e-12)
   {
-    error =  error_norm/solution_norm;
+    error = error_norm/solution_norm;
     relative_error = true;
   }
   else

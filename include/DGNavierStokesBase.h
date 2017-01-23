@@ -406,6 +406,7 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
 
   // viscous operator
   viscous_operator_data.formulation_viscous_term = param.formulation_viscous_term;
+  viscous_operator_data.penalty_term_div_formulation = param.penalty_term_div_formulation;
   viscous_operator_data.IP_formulation_viscous = param.IP_formulation_viscous;
   viscous_operator_data.IP_factor_viscous = param.IP_factor_viscous;
   viscous_operator_data.bc = boundary_descriptor_velocity;

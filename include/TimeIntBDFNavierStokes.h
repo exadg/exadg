@@ -220,7 +220,8 @@ calculate_time_step()
     double time_step = calculate_const_time_step_cfl(cfl,
                                                      param.max_velocity,
                                                      global_min_cell_diameter,
-                                                     fe_degree_u);
+                                                     fe_degree_u,
+                                                     param.cfl_exponent_fe_degree_velocity);
 
     // decrease time_step in order to exactly hit end_time
     time_steps[0] = (param.end_time-param.start_time)/(1+int((param.end_time-param.start_time)/time_step));
@@ -230,6 +231,7 @@ calculate_time_step()
     print_parameter(pcout,"h_min",global_min_cell_diameter);
     print_parameter(pcout,"U_max",param.max_velocity);
     print_parameter(pcout,"CFL",cfl);
+    print_parameter(pcout,"exponent fe_degree_velocity",param.cfl_exponent_fe_degree_velocity);
     print_parameter(pcout,"Time step size",time_steps[0]);
   }
   else if(adaptive_time_stepping == true)

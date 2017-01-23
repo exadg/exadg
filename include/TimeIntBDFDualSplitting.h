@@ -413,6 +413,9 @@ pressure_step()
   unsigned int pres_niter = navier_stokes_operation->solve_pressure(pressure_np, rhs_vec_pressure);
 
   // special case: pure Dirichlet BC's
+  // Adjust the pressure level in order to allow a calculation of the pressure error.
+  // This is necessary because otherwise the pressure solution moves away from the exact solution.
+  // For some test cases it was found that ApplyZeroMeanValue works better than ApplyAnalyticalSolutionInPoint
   if(this->param.pure_dirichlet_bc)
   {
     if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
@@ -520,6 +523,10 @@ rhs_pressure()
   }
 
   // special case: pure Dirichlet BC's
+  // Set mean value of rhs to zero in order to obtain a consistent linear system of equations.
+  // This is really necessary for the dual-splitting scheme in contrast to the pressure-correction scheme
+  // and coupled solution approach due to the Dirichlet BC prescribed for the intermediate velocity field
+  // and the pressure Neumann BC in case of the dual-splitting scheme.
   if(this->param.pure_dirichlet_bc)
     navier_stokes_operation->apply_zero_mean(rhs_vec_pressure);
 }

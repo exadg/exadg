@@ -567,6 +567,10 @@ private:
       laplace_operator_data.laplace_dof_index = underlying_operator->get_dof_index_pressure();
       laplace_operator_data.laplace_quad_index = underlying_operator->get_quad_index_pressure();
       laplace_operator_data.penalty_factor = 1.0;
+      // TODO this is not needed if Laplace operator detects automatically whether the system of equations
+      // is singular or not
+      laplace_operator_data.needs_mean_value_constraint = underlying_operator->param.pure_dirichlet_bc;
+
       laplace_operator_data.bc = underlying_operator->boundary_descriptor_laplace;
       laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
 

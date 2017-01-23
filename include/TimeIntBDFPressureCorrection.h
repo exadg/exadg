@@ -67,6 +67,8 @@ private:
   void rhs_projection();
   void pressure_update();
 
+  void calculate_chi(double &chi) const;
+
   void rhs_pressure();
 
   virtual void prepare_vectors_for_next_timestep();
@@ -560,7 +562,9 @@ pressure_step()
   pressure_update();
 
   // Special case: pure Dirichlet BC's
-  // --> adjust pressure level
+  // Adjust the pressure level in order to allow a calculation of the pressure error.
+  // This is necessary because otherwise the pressure solution moves away from the exact solution.
+  // For some test cases it was found that ApplyZeroMeanValue works better than ApplyAnalyticalSolutionInPoint
   if(this->param.pure_dirichlet_bc)
   {
     if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
@@ -585,6 +589,20 @@ pressure_step()
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
+calculate_chi(double &chi) const
+{
+  if(this->param.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+    chi = 1.0;
+  else if(this->param.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+    chi = 2.0;
+  else
+    AssertThrow(this->param.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation &&
+                this->param.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation,
+                ExcMessage("Not implemented!"));
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
 rhs_pressure()
 {
   /*
@@ -599,7 +617,6 @@ rhs_pressure()
    *  i.e., pressure Dirichlet boundary conditions on Gamma_N and
    *  pressure Neumann boundary conditions on Gamma_D (always h=0 for pressure-correction scheme!)
    */
-//  navier_stokes_operation->rhs_pressure_BC_term(rhs_vec_pressure, this->time+this->time_steps[0]); // adds into dst-vector
   navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure, this->time+this->time_steps[0]);
 
   // incremental formulation of pressure-correction scheme
@@ -611,19 +628,39 @@ rhs_pressure()
       for(unsigned int k=0; k<=i;++k)
         time_offset += this->time_steps[k];
 
-      rhs_vec_pressure_temp = 0.0; // set rhs_vec_pressure_temp to zero since rhs_pressure_BC_term adds into dst-vector
+      rhs_vec_pressure_temp = 0.0; // set rhs_vec_pressure_temp to zero since rhs_ppe_laplace_add() adds into dst-vector
       navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure_temp, this->time + this->time_steps[0] - time_offset);
       rhs_vec_pressure.add(-beta_pressure_extrapolation[i],rhs_vec_pressure_temp);
     }
   }
 
+  // TODO remove this
+  // rotational formulation of pressure-correction scheme
+//  if(this->param.rotational_formulation == true)
+//  {
+//    rhs_vec_pressure_temp = 0.0; // set rhs_vec_pressure_temp to zero since rhs_ppe_nbc_divergence_term_add() adds into dst-vector
+//    navier_stokes_operation->rhs_ppe_divergence_term_add(rhs_vec_pressure_temp,velocity_np);
+//
+//    double chi = 0.0;
+//    calculate_chi(chi);
+//
+//    rhs_vec_pressure.add(chi * this->param.viscosity,rhs_vec_pressure_temp);
+//  }
+
   // special case: pure Dirichlet BC's
-  // TODO: check if this is really necessary, because from a theoretical
+  // TODO:
+  // check if this is really necessary, because from a theoretical
   // point of view one would expect that the mean value of the rhs of the
   // presssure Poisson equation is zero if consistent Dirichlet boundary
   // conditions are prescribed.
+  // In principle, it works (since the linear system of equations is consistent)
+  // but we detected no convergence for some test cases and specific parameters.
+  // Hence, for reasons of robustness we also solve a transformed linear system of equations
+  // in case of the pressure-correction scheme.
+
   if(this->param.pure_dirichlet_bc)
     navier_stokes_operation->apply_zero_mean(rhs_vec_pressure);
+
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -642,14 +679,7 @@ pressure_update()
     navier_stokes_operation->apply_inverse_pressure_mass_matrix(pressure_np,pressure_np);
 
     double chi = 0.0;
-    if(this->param.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
-      chi = 1.0;
-    else if(this->param.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
-      chi = 2.0;
-    else
-      AssertThrow(this->param.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation &&
-                  this->param.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation,
-                  ExcMessage("Not implemented!"));
+    calculate_chi(chi);
 
     pressure_np *= - chi * this->param.viscosity;
   }
@@ -681,13 +711,14 @@ rhs_projection()
   navier_stokes_operation->apply_mass_matrix(rhs_vec_projection,velocity_np);
 
   /*
-   *  II. calculate pressure gradient term
+   *  II. calculate pressure gradient term including boundary condition g_p(t_{n+1})
    */
   navier_stokes_operation->evaluate_pressure_gradient_term(rhs_vec_projection_temp,pressure_increment,this->time + this->time_steps[0]);
   rhs_vec_projection.add(-this->time_steps[0]/this->gamma0,rhs_vec_projection_temp);
 
   /*
-   *  III. incremental formulation of pressure-correction scheme
+   *  III. pressure gradient term: boundary conditions g_p(t_{n-i})
+   *       in case of incremental formulation of pressure-correction scheme
    */
   if(this->param.incremental_formulation == true)
   {
@@ -702,6 +733,21 @@ rhs_projection()
       rhs_vec_projection.add(-beta_pressure_extrapolation[i]*this->time_steps[0]/this->gamma0,rhs_vec_projection_temp);
     }
   }
+
+  // TODO remove this
+  /*
+   *  IV. pressure gradient term: boundary condition chi*nu*div(u_hat)
+   *      in case of rotational formulation of pressure-correction scheme
+   */
+//  if(this->param.rotational_formulation == true)
+//  {
+//    rhs_vec_projection_temp = 0.0;
+//    navier_stokes_operation->pressure_gradient_bc_term_div_term_add(rhs_vec_projection_temp,velocity_np);
+//
+//    double chi = 0.0;
+//    calculate_chi(chi);
+//    rhs_vec_projection.add(-chi*this->param.viscosity*this->time_steps[0]/this->gamma0,rhs_vec_projection_temp);
+//  }
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>

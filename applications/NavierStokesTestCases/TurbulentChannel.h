@@ -22,7 +22,7 @@ unsigned int const DIMENSION = 3;
 
 // set the polynomial degree of the shape functions for velocity and pressure
 unsigned int const FE_DEGREE_VELOCITY = 4;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
+unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
 unsigned int const FE_DEGREE_XWALL = 1;
@@ -42,14 +42,14 @@ double const MAX_VELOCITY = 22.0;
 
 const double GRID_STRETCH_FAC = 1.8;
 
-// nu = 180  l2p4 or l3p3 with GRID_STRETCH_FAC = 1.8
-// nu = 395
-// nu = 590
-// nu = 950
-double const VISCOSITY = 1./180.;
+// nu = 1/180  l2p4 or l3p3 with GRID_STRETCH_FAC = 1.8
+// nu = 1/395
+// nu = 1/590
+// nu = 1/950
+double const VISCOSITY = 1./180.; // critical value: 1./50. - 1./75.
 double const END_TIME = 50.0;
 
-std::string OUTPUT_PREFIX = "turb_ch_test"; //"turb_ch_press_corr_nu_180_l2_p4_p3_mixed_order_weak_projection_CFL10_implicit";
+std::string OUTPUT_PREFIX = "turb_ch_dual_splitting_nu_180_l2_p4-3_CFL1_div_and_conti_penalty"; //"turb_ch_press_corr_nu_180_l2_p4_p3_mixed_order_weak_projection_CFL10_implicit";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -68,7 +68,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFPressureCorrection;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; // BDFDualSplittingScheme; //BDFPressureCorrection;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; // AdaptiveTimeStepCFL
   max_velocity = MAX_VELOCITY;
@@ -92,11 +92,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // gradient term
   gradp_integrated_by_parts = true;
-  gradp_use_boundary_data = false; //false;
+  gradp_use_boundary_data = true; //false;
 
   // divergence term
   divu_integrated_by_parts = true;
-  divu_use_boundary_data = false; //false;
+  divu_use_boundary_data = true; //false;
 
   // special case: pure DBC's
   pure_dirichlet_bc = true;
@@ -116,7 +116,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   deltat_ref = 1.e0;
 
   // projection step
-  projection_type = ProjectionType::NoPenalty; //NoPenalty; //DivergencePenalty;
+  projection_type = ProjectionType::DivergenceAndContinuityPenalty; //NoPenalty; //DivergencePenalty;
   penalty_factor_divergence = 1.0e0;
   penalty_factor_continuity = 1.0e0;
   solver_projection = SolverProjection::PCG;
@@ -145,7 +145,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // viscous step
   solver_viscous = SolverViscous::PCG;
-  preconditioner_viscous = PreconditionerViscous::GeometricMultigrid;
+  preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; //GeometricMultigrid;
   multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_viscous = 1.e-20;
   rel_tol_viscous = 1.e-6;
@@ -162,7 +162,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // linear solver
   solver_momentum = SolverMomentum::GMRES;
-  preconditioner_momentum = PreconditionerMomentum::VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
+  preconditioner_momentum = PreconditionerMomentum::InverseMassMatrix; //VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_momentum_linear = 1.e-20;
   rel_tol_momentum_linear = 1.e-3;
@@ -482,7 +482,7 @@ void create_grid_and_set_boundary_conditions(
    //turbulent channel flow
    Point<dim> coordinates;
    coordinates[0] = 2.0*numbers::PI;
-   coordinates[1] = 1.0;
+   coordinates[1] = 1.0; // dimension in y-direction is 2.0, see also function grid_transform() that maps the y-coordinate from [0,1] to [-1,1]
    if (dim == 3)
      coordinates[2] = numbers::PI;
    // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
