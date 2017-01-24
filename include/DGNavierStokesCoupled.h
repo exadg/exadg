@@ -312,7 +312,7 @@ solve_linear_stokes_problem (parallel::distributed::BlockVector<value_type>     
   velocity_conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor_mass_matrix_term);
 
   // Note that there is no need to set the evaluation time for the velocity_conv_diff_operator
-  // in this because because this function is only called if the convective term is not considered
+  // because this function is only called if the convective term is not considered
   // in the velocity_conv_diff_operator (Stokes eq. or explicit treatment of convective term).
 
   return linear_solver->solve(dst,src);

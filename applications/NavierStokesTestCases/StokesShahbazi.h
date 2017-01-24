@@ -22,20 +22,20 @@
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 2;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
+unsigned int const FE_DEGREE_VELOCITY = 5;
+unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
 unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 2;
-unsigned int const REFINE_STEPS_SPACE_MAX = 2; // REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 0;
+unsigned int const REFINE_STEPS_SPACE_MAX = 0; // REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
-unsigned int const REFINE_STEPS_TIME_MAX = 15; //REFINE_STEPS_TIME_MIN;
+unsigned int const REFINE_STEPS_TIME_MAX = 0; //REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
 const double VISCOSITY = 1.0e0;
@@ -46,7 +46,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
   equation_type = EquationType::Stokes;
-  formulation_viscous_term = FormulationViscousTerm::DivergenceFormulation;
+  formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation; //LaplaceFormulation; //DivergenceFormulation;
   right_hand_side = false;
 
 
@@ -57,14 +57,14 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  temporal_discretization = TemporalDiscretization::BDFPressureCorrection; //BDFPressureCorrection; //BDFCoupledSolution; //BDFDualSplittingScheme;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
   max_velocity = 1.0;
   cfl = 2.0e-1;
-  time_step_size = 5.e-2;
+  time_step_size = 1.e-4;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 3; // 1; // 2; // 3;
+  order_time_integrator = 1; // 1; // 2; // 3;
   start_with_low_order = false; // true; // false;
 
 
@@ -78,14 +78,15 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
   IP_factor_viscous = 1.0;
+  penalty_term_div_formulation = PenaltyTermDivergenceFormulation::NotSymmetrized;
 
   // gradient term
-  gradp_integrated_by_parts = true;
-  gradp_use_boundary_data = true;
+  gradp_integrated_by_parts = true; //false; //true;
+  gradp_use_boundary_data = true; //false; //true;
 
   // divergence term
-  divu_integrated_by_parts = true;
-  divu_use_boundary_data = true;
+  divu_integrated_by_parts = true; //false; //true;
+  divu_use_boundary_data = true; //false; //true;
 
   // special case: pure DBC's
   pure_dirichlet_bc = true;
@@ -98,7 +99,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
   multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_pressure = 1.e-12;
-  rel_tol_pressure = 1.e-6;
+  rel_tol_pressure = 1.e-8;
 
   // stability in the limit of small time steps
   use_approach_of_ferrer = false;
@@ -135,8 +136,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   solver_viscous = SolverViscous::PCG;
   preconditioner_viscous = PreconditionerViscous::GeometricMultigrid;
   multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
-  abs_tol_viscous = 1.e-20;
-  rel_tol_viscous = 1.e-6;
+  abs_tol_viscous = 1.e-12;
+  rel_tol_viscous = 1.e-8;
 
 
   // PRESSURE-CORRECTION SCHEME
@@ -152,17 +153,17 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   solver_momentum = SolverMomentum::GMRES;
   preconditioner_momentum = PreconditionerMomentum::VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
-  abs_tol_momentum_linear = 1.e-20;
-  rel_tol_momentum_linear = 1.e-4;
+  abs_tol_momentum_linear = 1.e-12;
+  rel_tol_momentum_linear = 1.e-8;
   max_iter_momentum_linear = 1e4;
   use_right_preconditioning_momentum = true;
   max_n_tmp_vectors_momentum = 100;
   update_preconditioner_momentum = false;
 
   // formulation
-  incremental_formulation = false;
+  incremental_formulation = false; //true;
   order_pressure_extrapolation = 1;
-  rotational_formulation = false;
+  rotational_formulation = false; //true;
 
 
   // COUPLED NAVIER-STOKES SOLVER
@@ -175,7 +176,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // linear solver
   solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;
   abs_tol_linear = 1.e-12;
-  rel_tol_linear = 1.e-6;
+  rel_tol_linear = 1.e-8;
   max_iter_linear = 1e4;
 
   // preconditioning linear solver
@@ -197,12 +198,12 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
 
   // write output for visualization of results
-  output_data.write_output = false;
+  output_data.write_output = true;
   output_data.output_prefix = "stokes_shahbazi";
   output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time); // /10;
+  output_data.output_interval_time = (end_time-start_time) /10;
   output_data.compute_divergence = false;
-  output_data.number_of_patches = FE_DEGREE_VELOCITY;
+  output_data.number_of_patches = 100; //FE_DEGREE_VELOCITY;
 
   // calculation of error
   error_data.analytical_solution_available = true;
@@ -312,7 +313,6 @@ double AnalyticalSolutionPressure<dim>::value(const Point<dim>    &p,
   double t = this->get_time();
   double result = 0.0;
 
-  const double pi = numbers::PI;
   const double a = 2.883356;
   const double lambda = VISCOSITY*(1.+a*a);
 
@@ -393,7 +393,6 @@ double PressureBC_dudt<dim>::value(const Point<dim>   &p,
   double t = this->get_time();
   double result = 0.0;
 
-  const double pi = numbers::PI;
   const double a = 2.883356;
   const double lambda = VISCOSITY*(1.+a*a);
 

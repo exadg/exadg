@@ -20,6 +20,9 @@
 #include "../include/JacobiPreconditioner.h"
 #include "../include/MultigridPreconditionerNavierStokes.h"
 
+#include "PressureNeumannBCDivergenceTerm.h"
+#include "PressureGradientBCTermDivTerm.h"
+
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 class DGNavierStokesPressureCorrection : public DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>
 {
@@ -80,6 +83,11 @@ public:
   void rhs_pressure_gradient_term(parallel::distributed::Vector<value_type> &dst,
                                   double const                              evaluation_time) const;
 
+  // TODO remove this
+  // pressure gradient term: inhomogneous BC term chi*nu*div(u_hat)
+//  void pressure_gradient_bc_term_div_term_add(parallel::distributed::Vector<value_type>       &dst,
+//                                              parallel::distributed::Vector<value_type> const &src) const;
+
   // body forces
   void  evaluate_add_body_force_term(parallel::distributed::Vector<value_type> &dst,
                                      double const                              evaluation_time) const;
@@ -88,6 +96,11 @@ public:
   // apply inverse pressure mass matrix
   void apply_inverse_pressure_mass_matrix(parallel::distributed::Vector<value_type>        &dst,
                                           const parallel::distributed::Vector<value_type>  &src) const;
+
+  // TODO remove this
+  // rhs pressure step
+//  void rhs_ppe_divergence_term_add (parallel::distributed::Vector<value_type>       &dst,
+//                                    parallel::distributed::Vector<value_type> const &src) const;
 
 private:
   // momentum equation
@@ -103,6 +116,14 @@ private:
 
   InverseMassMatrixOperator<dim,fe_degree_p,value_type> inverse_mass_matrix_operator_pressure;
 
+  // TODO: remove this
+  // PPE: pressure Neumann BC
+//  PressureNeumannBCDivergenceTerm<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> pressure_nbc_divergence_term;
+
+  // TODO: remove this
+  // inhomgeneous BC of pressure gradient term: velocity divergence term
+//  PressureGradientBCTermDivTerm<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> pressure_gradient_bc_term_div_term;
+
   parallel::distributed::Vector<value_type> temp_vector;
   parallel::distributed::Vector<value_type> const *rhs_vector;
 
@@ -111,6 +132,10 @@ private:
 
   // setup of solvers
   void setup_momentum_solver(double const &scaling_factor_time_derivative_term);
+  virtual void setup_pressure_poisson_solver(double const time_step_size);
+
+  // TODO remove this
+  virtual void setup_projection_solver();
 
   void setup_inverse_mass_matrix_operator_pressure();
 };
@@ -310,6 +335,47 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
   }
 }
 
+// TODO remove this
+// call function setup_pressure_poisson_solver() of base class in function setup_solvers()
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesPressureCorrection<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+setup_pressure_poisson_solver (const double time_step_size)
+{
+  // Call setup function of base class
+  DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::setup_pressure_poisson_solver(time_step_size);
+
+  // TODO: remove this
+//  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector DofHandlerSelector;
+//
+//  // RHS PPE: Pressure NBC divergence term
+//  PressureNeumannBCDivergenceTermData<dim> pressure_nbc_divergence_data;
+//  pressure_nbc_divergence_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity);
+//  pressure_nbc_divergence_data.dof_index_pressure =  static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure);
+//  pressure_nbc_divergence_data.bc = this->boundary_descriptor_pressure;
+//
+//  pressure_nbc_divergence_term.initialize(this->data,pressure_nbc_divergence_data,this->laplace_operator);
+}
+
+// TODO remove this
+// call function setup_projection_solver() of base class in function setup_solvers()
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesPressureCorrection<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+setup_projection_solver ()
+{
+  // Call setup function of base class
+  DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::setup_projection_solver();
+
+  // TODO: remove this
+//  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector DofHandlerSelector;
+//
+//  // Pressure gradient BC term: divergence term
+//  PressureGradientBCTermDivTermData<dim> pressure_gradient_bc_term_div_term_data;
+//  pressure_gradient_bc_term_div_term_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity);
+//  pressure_gradient_bc_term_div_term_data.bc = this->boundary_descriptor_pressure;
+//
+//  pressure_gradient_bc_term_div_term.initialize(this->data,pressure_gradient_bc_term_div_term_data);
+}
+
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesPressureCorrection<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 setup_inverse_mass_matrix_operator_pressure ()
@@ -412,6 +478,15 @@ rhs_pressure_gradient_term(parallel::distributed::Vector<value_type> &dst,
   this->gradient_operator.rhs(dst,evaluation_time);
 }
 
+// TODO remove this
+//template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+//void DGNavierStokesPressureCorrection<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+//pressure_gradient_bc_term_div_term_add(parallel::distributed::Vector<value_type>       &dst,
+//                                       parallel::distributed::Vector<value_type> const &src) const
+//{
+//  pressure_gradient_bc_term_div_term.calculate(dst,src);
+//}
+
 
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
@@ -421,6 +496,15 @@ apply_inverse_pressure_mass_matrix(parallel::distributed::Vector<value_type>    
 {
   inverse_mass_matrix_operator_pressure.apply(dst,src);
 }
+
+// TODO remove this
+//template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+//void DGNavierStokesPressureCorrection<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+//rhs_ppe_divergence_term_add (parallel::distributed::Vector<value_type>       &dst,
+//                             parallel::distributed::Vector<value_type> const &src) const
+//{
+//  pressure_nbc_divergence_term.calculate(dst,src);
+//}
 
 
 #endif /* INCLUDE_DGNAVIERSTOKESPRESSURECORRECTION_H_ */

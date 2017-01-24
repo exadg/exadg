@@ -244,6 +244,7 @@ struct ViscousOperatorData
   ViscousOperatorData ()
     :
     formulation_viscous_term(FormulationViscousTerm::DivergenceFormulation),
+    penalty_term_div_formulation(PenaltyTermDivergenceFormulation::Symmetrized),
     IP_formulation_viscous(InteriorPenaltyFormulation::SIPG),
     IP_factor_viscous(1.0),
     dof_index(0),
@@ -251,6 +252,7 @@ struct ViscousOperatorData
   {}
 
   FormulationViscousTerm formulation_viscous_term;
+  PenaltyTermDivergenceFormulation penalty_term_div_formulation;
   InteriorPenaltyFormulation IP_formulation_viscous;
   double IP_factor_viscous;
   unsigned int dof_index;
@@ -823,10 +825,42 @@ private:
   inline void calculate_gradient_flux(Tensor<1,dim,VectorizedArray<Number> >       &gradient_flux,
                                       Tensor<1,dim,VectorizedArray<Number> > const &average_normal_gradient,
                                       Tensor<1,dim,VectorizedArray<Number> > const &jump_value,
+                                      Tensor<1,dim,VectorizedArray<Number> > const &normal,
                                       VectorizedArray<Number> const                &viscosity,
                                       VectorizedArray<Number> const                &penalty_parameter) const
   {
-    gradient_flux = viscosity * average_normal_gradient - viscosity * penalty_parameter * jump_value;
+    if(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+    {
+      if(operator_data.penalty_term_div_formulation == PenaltyTermDivergenceFormulation::Symmetrized)
+      {
+        //Tensor<2,dim,VectorizedArray<Number> > jump_tensor = outer_product(jump_value,normal);
+        //gradient_flux = viscosity * average_normal_gradient
+        //                - viscosity * penalty_parameter * (jump_tensor + transpose(jump_tensor)) * normal;
+
+        gradient_flux = viscosity * average_normal_gradient
+                        - viscosity * penalty_parameter * (jump_value + (jump_value * normal) * normal);
+      }
+      else if(operator_data.penalty_term_div_formulation == PenaltyTermDivergenceFormulation::NotSymmetrized)
+      {
+        gradient_flux = viscosity * average_normal_gradient - viscosity * penalty_parameter * jump_value;
+      }
+      else
+      {
+        AssertThrow(operator_data.penalty_term_div_formulation == PenaltyTermDivergenceFormulation::Symmetrized ||
+            operator_data.penalty_term_div_formulation == PenaltyTermDivergenceFormulation::NotSymmetrized,
+                    ExcMessage("Specified formulation of viscous term is not implemented."));
+      }
+    }
+    else if(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+    {
+      gradient_flux = viscosity * average_normal_gradient - viscosity * penalty_parameter * jump_value;
+    }
+    else
+    {
+      AssertThrow(operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation ||
+                  operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation,
+                  ExcMessage("Specified formulation of viscous term is not implemented."));
+    }
   }
 
 
@@ -836,24 +870,27 @@ private:
    *  and the given boundary conditions. The average normal gradient has to
    *  be calculated in order to evaluate the gradient flux.
    *
+   *  Divergence formulation: F(u) = nu * ( grad(u) + grad(u)^T )
+   *  Laplace formulation: F(u) = nu * grad(u)
+   *
    *                            +---------------------------------+-----------------------------------+
    *                            | Dirichlet boundaries            | Neumann boundaries                |
    *  +-------------------------+---------------------------------+-----------------------------------+
-   *  | full operator           | grad(u⁺)*n = grad(u⁻)*n         | grad(u⁺)*n = -grad(u⁻)*n + 2h     |
+   *  | full operator           | F(u⁺)*n = F(u⁻)*n               | F(u⁺)*n = -F(u⁻)*n + 2h           |
    *  +-------------------------+---------------------------------+-----------------------------------+
-   *  | homogeneous operator    | grad(u⁺)*n = grad(u⁻)*n         | grad(u⁺)*n = -grad(u⁻)*n          |
+   *  | homogeneous operator    | F(u⁺)*n = F(u⁻)*n               | F(u⁺)*n = -F(u⁻)*n                |
    *  +-------------------------+---------------------------------+-----------------------------------+
-   *  | inhomogeneous operator  | grad(u⁻)*n  = 0, grad(u⁺)*n = 0 | grad(u⁻)*n  = 0, grad(u⁺)*n  = 2h |
+   *  | inhomogeneous operator  | F(u⁻)*n  = 0, F(u⁺)*n = 0       | F(u⁻)*n  = 0, F(u⁺)*n = 2h        |
    *  +-------------------------+---------------------------------+-----------------------------------+
    *
    *                            +---------------------------------+-----------------------------------+
    *                            | Dirichlet boundaries            | Neumann boundaries                |
    *  +-------------------------+---------------------------------+-----------------------------------+
-   *  | full operator           | {{grad(u)}}*n = grad(u⁻)*n      | {{grad(u)}}*n = h                 |
+   *  | full operator           | {{F(u)}}*n = F(u⁻)*n            | {{F(u)}}*n = h                    |
    *  +-------------------------+---------------------------------+-----------------------------------+
-   *  | homogeneous operator    | {{grad(u)}}*n = grad(u⁻)*n      | {{grad(u)}}*n = 0                 |
+   *  | homogeneous operator    | {{F(u)}}*n = F(u⁻)*n            | {{F(u)}}*n = 0                    |
    *  +-------------------------+---------------------------------+-----------------------------------+
-   *  | inhomogeneous operator  | {{grad(u)}}*n = 0               | {{grad(u)}}*n = h                 |
+   *  | inhomogeneous operator  | {{F(u)}}*n = 0                  | {{F(u)}}*n = h                    |
    *  +-------------------------+---------------------------------+-----------------------------------+
    */
   template<typename FEEvaluation>
@@ -966,7 +1003,7 @@ private:
         calculate_average_normal_gradient(average_normal_gradient,q,fe_eval,fe_eval_neighbor);
 
         Tensor<1,dim,VectorizedArray<Number> > gradient_flux;
-        calculate_gradient_flux(gradient_flux,average_normal_gradient,jump_value,average_viscosity,penalty_parameter);
+        calculate_gradient_flux(gradient_flux,average_normal_gradient,jump_value,normal,average_viscosity,penalty_parameter);
 
         fe_eval.submit_gradient(value_flux,q);
         fe_eval_neighbor.submit_gradient(value_flux,q);
@@ -1025,7 +1062,7 @@ private:
         calculate_average_normal_gradient_boundary_face(average_normal_gradient,q,fe_eval,OperatorType::homogeneous,boundary_type);
 
         Tensor<1,dim,VectorizedArray<Number> > gradient_flux;
-        calculate_gradient_flux(gradient_flux,average_normal_gradient,jump_value,viscosity,penalty_parameter);
+        calculate_gradient_flux(gradient_flux,average_normal_gradient,jump_value,normal,viscosity,penalty_parameter);
 
         fe_eval.submit_gradient(value_flux,q);
         fe_eval.submit_value(-gradient_flux,q);
@@ -1078,7 +1115,7 @@ private:
         calculate_average_normal_gradient_boundary_face(average_normal_gradient,q,fe_eval,OperatorType::full,boundary_type,boundary_id);
 
         Tensor<1,dim,VectorizedArray<Number> > gradient_flux;
-        calculate_gradient_flux(gradient_flux,average_normal_gradient,jump_value,viscosity,penalty_parameter);
+        calculate_gradient_flux(gradient_flux,average_normal_gradient,jump_value,normal,viscosity,penalty_parameter);
 
         fe_eval.submit_gradient(value_flux,q);
         fe_eval.submit_value(-gradient_flux,q);
@@ -1146,7 +1183,7 @@ private:
         calculate_average_normal_gradient_boundary_face(average_normal_gradient,q,fe_eval,OperatorType::inhomogeneous,boundary_type,boundary_id);
 
         Tensor<1,dim,VectorizedArray<Number> > gradient_flux;
-        calculate_gradient_flux(gradient_flux,average_normal_gradient,jump_value,viscosity,penalty_parameter);
+        calculate_gradient_flux(gradient_flux,average_normal_gradient,jump_value,normal,viscosity,penalty_parameter);
 
         fe_eval.submit_gradient(-value_flux,q); // - sign since this term appears on the rhs of the equations
         fe_eval.submit_value(gradient_flux,q); // + sign since this term appears on the rhs of the equations
@@ -1201,7 +1238,7 @@ private:
         average_normal_gradient = make_vectorized_array<Number>(0.5) * average_normal_gradient;
 
         Tensor<1,dim,VectorizedArray<Number> > gradient_flux;
-        calculate_gradient_flux(gradient_flux,average_normal_gradient,jump_value,average_viscosity,penalty_parameter);
+        calculate_gradient_flux(gradient_flux,average_normal_gradient,jump_value,normal,average_viscosity,penalty_parameter);
 
         fe_eval.submit_gradient(value_flux,q);
         fe_eval.submit_value(-gradient_flux,q);
@@ -1248,7 +1285,7 @@ private:
         average_normal_gradient = make_vectorized_array<Number>(-0.5) * average_normal_gradient;
 
         Tensor<1,dim,VectorizedArray<Number> > gradient_flux;
-        calculate_gradient_flux(gradient_flux,average_normal_gradient,jump_value,average_viscosity,penalty_parameter);
+        calculate_gradient_flux(gradient_flux,average_normal_gradient,jump_value,normal,average_viscosity,penalty_parameter);
 
         fe_eval_neighbor.submit_gradient(value_flux,q);
         fe_eval_neighbor.submit_value(-gradient_flux,q);
@@ -1336,7 +1373,7 @@ private:
           average_normal_gradient = make_vectorized_array<Number>(0.5) * average_normal_gradient;
 
           Tensor<1,dim,VectorizedArray<Number> > gradient_flux;
-          calculate_gradient_flux(gradient_flux,average_normal_gradient,jump_value,average_viscosity,penalty_parameter);
+          calculate_gradient_flux(gradient_flux,average_normal_gradient,jump_value,normal,average_viscosity,penalty_parameter);
 
           fe_eval.submit_gradient(value_flux,q);
           fe_eval.submit_value(-gradient_flux,q);
@@ -1394,7 +1431,7 @@ private:
           average_normal_gradient = make_vectorized_array<Number>(-0.5) * average_normal_gradient;
 
           Tensor<1,dim,VectorizedArray<Number> > gradient_flux;
-          calculate_gradient_flux(gradient_flux,average_normal_gradient,jump_value,average_viscosity,penalty_parameter);
+          calculate_gradient_flux(gradient_flux,average_normal_gradient,jump_value,normal,average_viscosity,penalty_parameter);
 
           fe_eval_neighbor.submit_gradient(value_flux,q);
           fe_eval_neighbor.submit_value(-gradient_flux,q);
@@ -1463,7 +1500,7 @@ private:
           calculate_average_normal_gradient_boundary_face(average_normal_gradient,q,fe_eval,OperatorType::homogeneous,boundary_type);
 
           Tensor<1,dim,VectorizedArray<Number> > gradient_flux;
-          calculate_gradient_flux(gradient_flux,average_normal_gradient,jump_value,viscosity,penalty_parameter);
+          calculate_gradient_flux(gradient_flux,average_normal_gradient,jump_value,normal,viscosity,penalty_parameter);
 
           fe_eval.submit_gradient(value_flux,q);
           fe_eval.submit_value(-gradient_flux,q);

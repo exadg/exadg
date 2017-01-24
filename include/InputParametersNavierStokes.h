@@ -134,6 +134,19 @@ enum class InteriorPenaltyFormulation
   NIPG
 };
 
+
+/*
+ *   Penalty term in case of divergence formulation:
+ *   not symmetrized: penalty term identical to Laplace formulation, tau * [[u]]
+ *   symmetrized: penalty term = tau * ([[u]] + [[u]]^T)
+ */
+enum class PenaltyTermDivergenceFormulation
+{
+  Undefined,
+  Symmetrized,
+  NotSymmetrized
+};
+
 enum class AdjustPressureLevel
 {
   ApplyZeroMeanValue,
@@ -439,6 +452,7 @@ public:
     calculation_of_time_step_size(TimeStepCalculation::Undefined),
     max_velocity(-1.),
     cfl(-1.),
+    cfl_exponent_fe_degree_velocity(2.0),
     c_eff(-1.),
     time_step_size(-1.),
     max_number_of_time_steps(std::numeric_limits<unsigned int>::max()),
@@ -453,6 +467,7 @@ public:
 
     // viscous term
     IP_formulation_viscous(InteriorPenaltyFormulation::Undefined),
+    penalty_term_div_formulation(PenaltyTermDivergenceFormulation::Undefined),
     IP_factor_viscous(1.),
 
     // gradient term
@@ -637,6 +652,9 @@ public:
     // SPATIAL DISCRETIZATION
     AssertThrow(spatial_discretization != SpatialDiscretization::Undefined ,ExcMessage("parameter must be defined"));
     AssertThrow(IP_formulation_viscous != InteriorPenaltyFormulation::Undefined ,ExcMessage("parameter must be defined"));
+
+    if(formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+      AssertThrow(penalty_term_div_formulation != PenaltyTermDivergenceFormulation::Undefined ,ExcMessage("parameter must be defined"));
 
     if(pure_dirichlet_bc == true)
     {
@@ -875,6 +893,17 @@ public:
 
     print_parameter(pcout,
                     "Viscous term - IP factor", IP_factor_viscous);
+
+    if(formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+    {
+      std::string str_penalty_term_div_form[] = { "Undefined",
+                                                  "Symmetrized",
+                                                  "NotSymmetrized" };
+
+      print_parameter(pcout,
+                      "Penalty term formulation viscous term",
+                      str_penalty_term_div_form[(int)penalty_term_div_formulation]);
+    }
 
     // pressure gradient term
     print_parameter(pcout,
@@ -1351,6 +1380,9 @@ public:
   // when performing temporal convergence tests, i.e., cfl_real = cfl, cfl/2, cfl/4, ...
   double cfl;
 
+  // dt = CFL/k_u^{exp} * h / || u ||
+  double cfl_exponent_fe_degree_velocity;
+
   // C_eff: constant that has to be specified for time step calculation method
   // MaxEfficiency, which means that the time step is selected such that the errors of
   // the temporal and spatial discretization are comparable
@@ -1383,6 +1415,8 @@ public:
 
   // description: see enum declaration
   InteriorPenaltyFormulation IP_formulation_viscous;
+  // description: see enum declaration
+  PenaltyTermDivergenceFormulation penalty_term_div_formulation;
 
   // interior penalty parameter scaling factor for Helmholtz equation of viscous step
   double IP_factor_viscous;

@@ -50,7 +50,7 @@ public:
                            const parallel::distributed::Vector<typename Operator::value_type> &src) const
   {
     const double abs_tol = 1.e-20;
-    const double rel_tol = 1.e-6; //1.e-4;
+    const double rel_tol = 1.e-6; //1.e-6; //1.e-4;
     ReductionControl solver_control (1e4, abs_tol, rel_tol);
 
     SolverCG<parallel::distributed::Vector<typename Operator::value_type> >

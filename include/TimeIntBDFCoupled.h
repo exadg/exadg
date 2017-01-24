@@ -345,6 +345,8 @@ solve_timestep()
   }
 
   // special case: pure Dirichlet BC's
+  // Adjust the pressure level in order to allow a calculation of the pressure error.
+  // This is necessary because otherwise the pressure solution moves away from the exact solution.
   if(this->param.pure_dirichlet_bc)
   {
     if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)

@@ -22,7 +22,7 @@
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 2;
+unsigned int const FE_DEGREE_VELOCITY = 8;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -30,17 +30,17 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 1;
-unsigned int const REFINE_STEPS_SPACE_MAX = 1;//REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 2;
+unsigned int const REFINE_STEPS_SPACE_MAX = 2;//REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
-unsigned int const REFINE_STEPS_TIME_MAX = 13; //REFINE_STEPS_TIME_MIN;
+unsigned int const REFINE_STEPS_TIME_MAX = 11; //REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
 const double U_X_MAX = 1.0;
 const double VISCOSITY = 2.5e-2;
-const FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::DivergenceFormulation;
+const FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::LaplaceFormulation; //LaplaceFormulation; //DivergenceFormulation;
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -59,15 +59,15 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingSchme; //BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
   max_velocity = 1.4 * U_X_MAX;
   cfl = 1.0;
   c_eff = 0.125e0;
-  time_step_size = 1.25e-2;
+  time_step_size = 2.e-1;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 3;
+  order_time_integrator = 1;
   start_with_low_order = false; // true; // false;
 
 
@@ -81,14 +81,15 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
   IP_factor_viscous = 1.0;
+  penalty_term_div_formulation = PenaltyTermDivergenceFormulation::NotSymmetrized;
 
   // gradient term
-  gradp_integrated_by_parts = true;
-  gradp_use_boundary_data = true;
+  gradp_integrated_by_parts = true; //false;//true;
+  gradp_use_boundary_data = true; //false;//true;
 
   // divergence term
-  divu_integrated_by_parts = true;
-  divu_use_boundary_data = true;
+  divu_integrated_by_parts = true; //false;// true;
+  divu_use_boundary_data = true; //false;
 
   // special case: pure DBC's
   pure_dirichlet_bc = false;
@@ -101,11 +102,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
   multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_pressure = 1.e-12;
-  rel_tol_pressure = 1.e-6;
+  rel_tol_pressure = 1.e-8;
 
   // stability in the limit of small time steps
   use_approach_of_ferrer = false;
-  deltat_ref = 1.e0;
+  deltat_ref = 1.e-1;
 
   // projection step
   projection_type = ProjectionType::NoPenalty; //NoPenalty; //DivergencePenalty;
@@ -139,8 +140,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   solver_viscous = SolverViscous::PCG;
   preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; // GeometricMultigrid;
   multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
-  abs_tol_viscous = 1.e-20;
-  rel_tol_viscous = 1.e-6;
+  abs_tol_viscous = 1.e-12;
+  rel_tol_viscous = 1.e-8;
   update_preconditioner_viscous = false;
 
 
@@ -149,40 +150,40 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // momentum step
 
   // Newton solver
-  newton_solver_data_momentum.abs_tol = 1.e-20;
-  newton_solver_data_momentum.rel_tol = 1.e-6;
+  newton_solver_data_momentum.abs_tol = 1.e-12;
+  newton_solver_data_momentum.rel_tol = 1.e-8;
   newton_solver_data_momentum.max_iter = 100;
 
   // linear solver
   solver_momentum = SolverMomentum::GMRES;
-  preconditioner_momentum = PreconditionerMomentum::InverseMassMatrix; //InverseMassMatrix; //PointJacobi; //VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
+  preconditioner_momentum = PreconditionerMomentum::VelocityDiffusion; //PointJacobi; //VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
   multigrid_data_momentum.smoother = MultigridSmoother::Chebyshev;
 //  multigrid_data_momentum.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
-  abs_tol_momentum_linear = 1.e-20;
-  rel_tol_momentum_linear = 1.e-3;
+  abs_tol_momentum_linear = 1.e-12;
+  rel_tol_momentum_linear = 1.e-8;
   max_iter_momentum_linear = 1e4;
   use_right_preconditioning_momentum = true;
   max_n_tmp_vectors_momentum = 100;
   update_preconditioner_momentum = false; //false;
 
   // formulation
-  incremental_formulation = false;
+  incremental_formulation = true;
   order_pressure_extrapolation = 1;
-  rotational_formulation = false;
+  rotational_formulation = true;
 
 
   // COUPLED NAVIER-STOKES SOLVER
 
   // nonlinear solver (Newton solver)
-  newton_solver_data_coupled.abs_tol = 1.e-20;
-  newton_solver_data_coupled.rel_tol = 1.e-4;
+  newton_solver_data_coupled.abs_tol = 1.e-12;
+  newton_solver_data_coupled.rel_tol = 1.e-8;
   newton_solver_data_coupled.max_iter = 1e2;
 
   // linear solver
   solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;
-  abs_tol_linear = 1.e-20;
-  rel_tol_linear = 1.e-6;
+  abs_tol_linear = 1.e-12;
+  rel_tol_linear = 1.e-8;
   max_iter_linear = 1e4;
   use_right_preconditioning = true;
   max_n_tmp_vectors = 100;
@@ -336,7 +337,7 @@ double AnalyticalSolutionPressure<dim>::value(const Point<dim>    &p,
  *    -> prescribe velocity gradient (grad U)*n on Gamma_N
  *
  *  - Divergence formulation of viscous term
- *    -> prescribe (grad U + (grad U) ^T)*n on Gamma_N
+ *    -> prescribe (grad U + (grad U)^T)*n on Gamma_N
  */
 template<int dim>
 class NeumannBoundaryVelocity : public Function<dim>

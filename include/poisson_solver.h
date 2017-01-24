@@ -27,7 +27,8 @@ struct LaplaceOperatorData
     :
     laplace_dof_index(0),
     laplace_quad_index(0),
-    penalty_factor(1.)
+    penalty_factor(1.),
+    needs_mean_value_constraint(false)
   {}
 
   // If an external MatrixFree object is given which can contain other
@@ -44,6 +45,10 @@ struct LaplaceOperatorData
   // computed as penalty_factor * (fe_degree+1)^2 /
   // characteristic_element_length. This variable gives the scaling factor
   double penalty_factor;
+
+  // pure Neumann BC's - set needs_mean_value_constraint to true in order
+  // to solve a transformed system of equations based on Krylov projection
+  bool needs_mean_value_constraint;
 
 //  // Specifies the boundary ids with Dirichlet boundary conditions
 //  std::set<types::boundary_id> dirichlet_boundaries;
