@@ -50,6 +50,7 @@ public:
       residual *= -1.0;
 
       // solve linear problem
+      dst.update_ghost_values();
       linear_operator.set_solution_linearization(dst);
       unsigned int linear_iterations = linear_solver.solve(increment, residual);
       average_linear_iterations += linear_iterations;
