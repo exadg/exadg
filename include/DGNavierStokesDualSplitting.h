@@ -385,10 +385,34 @@ setup_helmholtz_solver (double const &scaling_factor_time_derivative_term)
         *helmholtz_preconditioner,
         solver_data));
   }
+  else if(this->param.solver_viscous == SolverViscous::FGMRES)
+  {
+    FGMRESSolverData solver_data;
+    // use default value of max_iter
+    solver_data.solver_tolerance_abs = this->param.abs_tol_viscous;
+    solver_data.solver_tolerance_rel = this->param.rel_tol_viscous;
+    // use default value of max_n_tmp_vectors
+    solver_data.update_preconditioner = this->param.update_preconditioner_viscous;
+
+    if(this->param.preconditioner_viscous == PreconditionerViscous::Jacobi ||
+       this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix ||
+       this->param.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
+    {
+      solver_data.use_preconditioner = true;
+    }
+
+    helmholtz_solver.reset(new FGMRESSolver<HelmholtzOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type>,
+                                            PreconditionerBase<value_type>,
+                                            parallel::distributed::Vector<value_type>  >
+        (helmholtz_operator,
+         *helmholtz_preconditioner,
+         solver_data));
+  }
   else
   {
     AssertThrow(this->param.solver_viscous == SolverViscous::PCG ||
-                this->param.solver_viscous == SolverViscous::GMRES,
+                this->param.solver_viscous == SolverViscous::GMRES ||
+                this->param.solver_viscous == SolverViscous::FGMRES,
                 ExcMessage("Specified Viscous Solver not implemented - possibilities are PCG and GMRES"));
   }
 }

@@ -160,6 +160,16 @@ enum class AdjustPressureLevel
 /*                                                                                    */
 /**************************************************************************************/
 
+
+/*
+ *  Solver for pressure Poisson equation
+ */
+enum class SolverPressurePoisson
+{
+  PCG,
+  FGMRES
+};
+
 /*
  *  Preconditioner type for solution of pressure Poisson equation
  */
@@ -207,7 +217,8 @@ enum class PreconditionerProjection
 enum class SolverViscous
 {
   PCG,
-  GMRES
+  GMRES,
+  FGMRES
 };
 
 /*
@@ -233,7 +244,8 @@ enum class PreconditionerViscous
 enum class SolverMomentum
 {
   PCG,
-  GMRES
+  GMRES,
+  FGMRES
 };
 
 /*
@@ -486,6 +498,7 @@ public:
 
     // pressure Poisson equation
     IP_factor_pressure(1.),
+    solver_pressure_poisson(SolverPressurePoisson::PCG),
     preconditioner_pressure_poisson(PreconditionerPressurePoisson::GeometricMultigrid),
     multigrid_data_pressure_poisson(MultigridData()),
     abs_tol_pressure(1.e-20),
@@ -943,6 +956,13 @@ public:
     pcout << std::endl << "  Pressure Poisson equation (PPE):" << std::endl;
 
     print_parameter(pcout, "IP factor PPE",IP_factor_pressure); 
+
+    std::string str_solver_ppe[] = { "PCG",
+                                     "FGMRES" };
+
+    print_parameter(pcout,
+                    "Solver PPE",
+                    str_solver_ppe[(int)solver_pressure_poisson]);
   
     std::string str_precon_ppe[] = { "None",
                                      "Jacobi",
@@ -1056,7 +1076,8 @@ public:
     pcout << std::endl << "  Viscous step:" << std::endl;
 
     std::string str_solver_viscous[] = { "PCG",
-                                         "GMRES" };
+                                         "GMRES",
+                                         "FGMRES"};
 
     print_parameter(pcout,
                     "Solver viscous step",
@@ -1107,7 +1128,8 @@ public:
     pcout << "  Linear solver:" << std::endl;
 
     std::string str_solver_momentum[] = { "PCG",
-                                          "GMRES" };
+                                          "GMRES",
+                                          "FGMRES" };
 
     print_parameter(pcout,
                     "Solver for linear(ized) problem",
@@ -1450,6 +1472,9 @@ public:
 
   // interior penalty parameter scaling factor for pressure Poisson equation
   double IP_factor_pressure;
+
+  // description: see enum declaration
+  SolverPressurePoisson solver_pressure_poisson;
 
   // description: see enum declaration
   PreconditionerPressurePoisson preconditioner_pressure_poisson;

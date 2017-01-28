@@ -84,7 +84,7 @@ protected:
   // Pressure Poisson equation
   LaplaceOperator<dim,value_type> laplace_operator;
   std_cxx11::shared_ptr<PreconditionerBase<value_type> > preconditioner_pressure_poisson;
-  std_cxx11::shared_ptr<CGSolver<LaplaceOperator<dim,value_type>, PreconditionerBase<value_type>,parallel::distributed::Vector<value_type> > > pressure_poisson_solver;
+  std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > pressure_poisson_solver;
 
   // Projection method
   ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> * projection_operator;
@@ -173,25 +173,56 @@ setup_pressure_poisson_solver (double const time_step_size)
                 ExcMessage("Specified preconditioner for pressure Poisson equation not implemented"));
   }
 
-  // setup solver data
-  CGSolverData solver_data;
-  // use default value of max_iter
-  solver_data.solver_tolerance_abs = this->param.abs_tol_pressure;
-  solver_data.solver_tolerance_rel = this->param.rel_tol_pressure;
-  // default value of use_preconditioner = false
-  if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Jacobi ||
-     this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::GeometricMultigrid)
+  if(this->param.solver_pressure_poisson == SolverPressurePoisson::PCG)
   {
-    solver_data.use_preconditioner = true;
-  }
+    // setup solver data
+    CGSolverData solver_data;
+    // use default value of max_iter
+    solver_data.solver_tolerance_abs = this->param.abs_tol_pressure;
+    solver_data.solver_tolerance_rel = this->param.rel_tol_pressure;
+    // default value of use_preconditioner = false
+    if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Jacobi ||
+       this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::GeometricMultigrid)
+    {
+      solver_data.use_preconditioner = true;
+    }
 
-  // setup solver
-  pressure_poisson_solver.reset(new CGSolver<LaplaceOperator<dim,value_type>,
-                                             PreconditionerBase<value_type>,
-                                             parallel::distributed::Vector<value_type> >(
-      laplace_operator,
-      *preconditioner_pressure_poisson,
-      solver_data));
+    // setup solver
+    pressure_poisson_solver.reset(new CGSolver<LaplaceOperator<dim,value_type>,
+                                               PreconditionerBase<value_type>,
+                                               parallel::distributed::Vector<value_type> >
+       (laplace_operator,
+        *preconditioner_pressure_poisson,
+        solver_data));
+  }
+  else if(this->param.solver_pressure_poisson == SolverPressurePoisson::FGMRES)
+  {
+    FGMRESSolverData solver_data;
+    // use default value of max_iter
+    solver_data.solver_tolerance_abs = this->param.abs_tol_pressure;
+    solver_data.solver_tolerance_rel = this->param.rel_tol_pressure;
+    // use default value of max_n_tmp_vectors
+    // use default value of update_preconditioner (=false)
+
+    if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Jacobi ||
+       this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::GeometricMultigrid)
+    {
+      solver_data.use_preconditioner = true;
+    }
+
+    pressure_poisson_solver.reset(new FGMRESSolver<LaplaceOperator<dim,value_type>,
+                                                   PreconditionerBase<value_type>,
+                                                   parallel::distributed::Vector<value_type> >
+        (laplace_operator,
+         *preconditioner_pressure_poisson,
+         solver_data));
+  }
+  else
+  {
+    AssertThrow(this->param.solver_viscous == SolverViscous::PCG ||
+                this->param.solver_viscous == SolverViscous::FGMRES,
+                ExcMessage("Specified  solver for pressure Poisson equation not implemented - possibilities are PCG and FGMRES"));
+  }
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
