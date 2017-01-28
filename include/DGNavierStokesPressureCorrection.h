@@ -308,10 +308,34 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
         *momentum_preconditioner,
         solver_data));
   }
+  else if(this->param.solver_momentum == SolverMomentum::FGMRES)
+  {
+    FGMRESSolverData solver_data;
+    solver_data.max_iter = this->param.max_iter_momentum_linear;
+    solver_data.solver_tolerance_abs = this->param.abs_tol_momentum_linear;
+    solver_data.solver_tolerance_rel = this->param.rel_tol_momentum_linear;
+    solver_data.max_n_tmp_vectors = this->param.max_n_tmp_vectors_momentum;
+
+    if(this->param.preconditioner_momentum == PreconditionerMomentum::PointJacobi ||
+       this->param.preconditioner_momentum == PreconditionerMomentum::BlockJacobi ||
+       this->param.preconditioner_momentum == PreconditionerMomentum::InverseMassMatrix ||
+       this->param.preconditioner_momentum == PreconditionerMomentum::VelocityDiffusion ||
+       this->param.preconditioner_momentum == PreconditionerMomentum::VelocityConvectionDiffusion)
+    {
+      solver_data.use_preconditioner = true;
+    }
+    solver_data.update_preconditioner = this->param.update_preconditioner_momentum;
+
+    momentum_linear_solver.reset(new FGMRESSolver<VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>,
+                                         PreconditionerBase<value_type>,
+                                         parallel::distributed::Vector<value_type> >
+        (velocity_conv_diff_operator,*momentum_preconditioner,solver_data));
+  }
   else
   {
     AssertThrow(this->param.solver_momentum == SolverMomentum::PCG ||
-                this->param.solver_momentum == SolverMomentum::GMRES,
+                this->param.solver_momentum == SolverMomentum::GMRES ||
+                this->param.solver_momentum == SolverMomentum::FGMRES,
                 ExcMessage("Specified Viscous Solver not implemented - possibilities are PCG and GMRES"));
   }
 
