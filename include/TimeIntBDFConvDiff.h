@@ -12,7 +12,9 @@
 
 #include <deal.II/base/timer.h>
 
-#include "../include/TimeIntBDFBase.h"
+#include "../include/BDFTimeIntegration.h"
+#include "../include/ExtrapolationScheme.h"
+
 #include "../include/PushBackVectors.h"
 
 namespace ConvDiff
@@ -21,7 +23,7 @@ namespace ConvDiff
 }
 
 template<int dim, int fe_degree, typename value_type>
-class TimeIntBDFConvDiff : public TimeIntBDFBase
+class TimeIntBDFConvDiff
 {
 public:
   TimeIntBDFConvDiff(std_cxx11::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation_in,
@@ -30,9 +32,6 @@ public:
                      std_cxx11::shared_ptr<Function<dim> >                                   velocity_in,
                      unsigned int const                                                      n_refine_time_in)
     :
-    TimeIntBDFBase(param_in.order_time_integrator,
-                   param_in.start_with_low_order,
-                   false), // false: currently no adaptive time stepping implemented
     conv_diff_operation(conv_diff_operation_in),
     postprocessor(postprocessor_in),
     param(param_in),
@@ -41,7 +40,11 @@ public:
     cfl_number(param.cfl_number/std::pow(2.0,n_refine_time)),
     total_time(0.0),
     time(param.start_time),
+    time_step_number(1),
+    order(param_in.order_time_integrator),
     time_steps(this->order),
+    bdf(param_in.order_time_integrator,param_in.start_with_low_order),
+    extra(param_in.order_time_integrator,param_in.start_with_low_order),
     solution(this->order),
     vec_convective_term(this->order),
     N_iter_average(0.0),
@@ -56,10 +59,13 @@ public:
 
   double get_scaling_factor_time_derivative_term()
   {
-    return gamma0/time_steps[0];
+    return bdf.get_gamma0()/time_steps[0];
   }
 
 private:
+  void initialize_time_integrator_constants();
+  void update_time_integrator_constants();
+
   void initialize_vectors();
   void initialize_solution();
   void initialize_vec_convective_term();
@@ -77,11 +83,24 @@ private:
   unsigned int const n_refine_time;
   double const cfl_number;
 
+  // computation time
   Timer global_timer;
   double total_time;
 
+  // physical time
   double time;
+
+  // the number of the current time step starting with time_step_number = 1
+  unsigned int time_step_number;
+
+  // order of time integration scheme
+  unsigned int const order;
+
+
   std::vector<double> time_steps;
+
+  BDFTimeIntegratorConstants bdf;
+  ExtrapolationConstants extra;
 
   parallel::distributed::Vector<value_type> solution_np;
   std::vector<parallel::distributed::Vector<value_type> > solution;
@@ -129,6 +148,29 @@ setup(bool /*do_restart*/)
 //  conv_diff_operation->set_scaling_factor_time_derivative_term(gamma0/time_steps[0]);
 
   pcout << std::endl << "... done!" << std::endl;
+}
+
+template<int dim, int fe_degree, typename value_type>
+void TimeIntBDFConvDiff<dim,fe_degree,value_type>::
+initialize_time_integrator_constants()
+{
+  bdf.initialize();
+  extra.initialize();
+}
+
+template<int dim, int fe_degree, typename value_type>
+void TimeIntBDFConvDiff<dim,fe_degree,value_type>::
+update_time_integrator_constants()
+{
+  bdf.update(time_step_number);
+  extra.update(time_step_number);
+
+  // use this function to check the correctness of the time integrator constants
+//  std::cout << std::endl << "Time step " << time_step_number << std::endl << std::endl;
+//  std::cout << "Coefficients BDF time integration scheme:" << std::endl;
+//  bdf.print();
+//  std::cout << "Coefficients extrapolation scheme:" << std::endl;
+//  extra.print();
 }
 
 template<int dim, int fe_degree, typename value_type>
@@ -316,9 +358,9 @@ solve_timestep()
   timer.restart();
 
   // calculate sum (alpha_i/dt * u_i)
-  sum_alphai_ui.equ(this->alpha[0]/this->time_steps[0],solution[0]);
+  sum_alphai_ui.equ(this->bdf.get_alpha(0)/this->time_steps[0],solution[0]);
   for (unsigned int i=1;i<solution.size();++i)
-    sum_alphai_ui.add(this->alpha[i]/this->time_steps[0],solution[i]);
+    sum_alphai_ui.add(this->bdf.get_alpha(i)/this->time_steps[0],solution[i]);
 
   // calculate rhs
   conv_diff_operation->rhs(rhs_vector,&sum_alphai_ui,this->time+this->time_steps[0]);
@@ -334,19 +376,19 @@ solve_timestep()
       conv_diff_operation->evaluate_convective_term(vec_convective_term[0],solution[0],this->time);
 
       for(unsigned int i=0;i<vec_convective_term.size();++i)
-        rhs_vector.add(-this->beta[i],vec_convective_term[i]);
+        rhs_vector.add(-this->extra.get_beta(i),vec_convective_term[i]);
     }
   }
 
   // extrapolate old solution to obtain a good initial guess for the solver
-  solution_np.equ(this->beta[0],solution[0]);
+  solution_np.equ(this->extra.get_beta(0),solution[0]);
   for(unsigned int i=1;i<solution.size();++i)
-    solution_np.add(this->beta[i],solution[i]);
+    solution_np.add(this->extra.get_beta(i),solution[i]);
 
   // solve the linear system of equations
   unsigned int iterations = conv_diff_operation->solve(solution_np,
                                                        rhs_vector,
-                                                       this->gamma0/this->time_steps[0],
+                                                       this->bdf.get_gamma0()/this->time_steps[0],
                                                        this->time + this->time_steps[0]);
 
   N_iter_average += iterations;

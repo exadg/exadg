@@ -31,10 +31,10 @@ using namespace dealii;
 //#include "NavierStokesTestCases/StokesGuermond.h"
 //#include "NavierStokesTestCases/StokesShahbazi.h"
 //#include "NavierStokesTestCases/Kovasznay.h"
-//#include "NavierStokesTestCases/Vortex.h"
+#include "NavierStokesTestCases/Vortex.h"
 //#include "NavierStokesTestCases/TaylorVortex.h"
 //#include "NavierStokesTestCases/Beltrami.h"
-#include "NavierStokesTestCases/FlowPastCylinder.h"
+//#include "NavierStokesTestCases/FlowPastCylinder.h"
 //#include "NavierStokesTestCases/TurbulentChannel.h"
 
 
@@ -138,7 +138,7 @@ print_header()
   << "                                                                                 " << std::endl
   << "                High-order discontinuous Galerkin solver for the                 " << std::endl
   << "                unsteady, incompressible Navier-Stokes equations                 " << std::endl
-  << "                based on a semi-explicit dual-splitting approach                 " << std::endl
+  << "                based on a semi-explicit dual splitting approach                 " << std::endl
   << "_________________________________________________________________________________" << std::endl
   << std::endl;
 }

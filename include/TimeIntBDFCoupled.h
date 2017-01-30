@@ -14,6 +14,7 @@
 #include "TimeIntBDFNavierStokes.h"
 #include "PushBackVectors.h"
 
+
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 class TimeIntBDFCoupled : public TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>
 {
@@ -273,15 +274,15 @@ solve_timestep()
   }
 
   // extrapolate old solution to obtain a good initial guess for the solver
-  solution_np.equ(this->beta[0],solution[0]);
+  solution_np.equ(this->extra.get_beta(0),solution[0]);
   for(unsigned int i=1;i<solution.size();++i)
-    solution_np.add(this->beta[i],solution[i]);
+    solution_np.add(this->extra.get_beta(i),solution[i]);
 
   // calculate sum (alpha_i/dt * u_i)
-  sum_alphai_ui.equ(this->alpha[0]/this->time_steps[0],solution[0].block(0));
+  sum_alphai_ui.equ(this->bdf.get_alpha(0)/this->time_steps[0],solution[0].block(0));
   for (unsigned int i=1;i<solution.size();++i)
   {
-    sum_alphai_ui.add(this->alpha[i]/this->time_steps[0],solution[i].block(0));
+    sum_alphai_ui.add(this->bdf.get_alpha(i)/this->time_steps[0],solution[i].block(0));
   }
 
   // if the problem to be solved is linear
@@ -297,7 +298,7 @@ solve_timestep()
       navier_stokes_operation->evaluate_convective_term(vec_convective_term[0],solution[0].block(0),this->time);
 
       for(unsigned int i=0;i<vec_convective_term.size();++i)
-        rhs_vector.block(0).add(-this->beta[i],vec_convective_term[i]);
+        rhs_vector.block(0).add(-this->extra.get_beta(i),vec_convective_term[i]);
     }
 
     // solve coupled system of equations

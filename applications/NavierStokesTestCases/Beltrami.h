@@ -114,6 +114,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
 
+  // formulations
+  order_extrapolation_pressure_nbc = order_time_integrator <=2 ? order_time_integrator : 2;
+
   // convective step
 
   // nonlinear solver

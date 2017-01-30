@@ -20,10 +20,10 @@
 /**************************************************************************************/
 
 // set the number of space dimensions: dimension = 2, 3
-unsigned int const DIMENSION = 2;
+unsigned int const DIMENSION = 3; // TODO
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 4;
+unsigned int const FE_DEGREE_VELOCITY = 10;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -31,7 +31,7 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 2;
+unsigned int const REFINE_STEPS_SPACE_MIN = 0;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
@@ -57,11 +57,11 @@ const double X_2 = 0.7;
 const double Y_0 = 0.0;
 const double Y_C = 0.2; // center
 
-
 const unsigned int MANIFOLD_ID = 1;
 
 const double END_TIME = 8.0;
 std::string OUTPUT_PREFIX = "test"; //"2D_3_cfl_0-6";
+std::string OUTPUT_FOLDER = "/comparison_lehrenfeld/pressure_correction/"; // "/paper/pressure_correction";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -80,14 +80,14 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFPressureCorrection; //BDFDualSplittingScheme; //BDFCoupledSolution;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
+  temporal_discretization = TemporalDiscretization::BDFPressureCorrection; //BDFPressureCorrection; //BDFDualSplittingScheme; //BDFCoupledSolution;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; //Explicit;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepCFL; // TODO
   max_velocity = Um;
   cfl = 0.6;//2.5e-1;
   cfl_exponent_fe_degree_velocity = 1.5;
-  time_step_size = 8.0e-3;
-  max_number_of_time_steps = 4758; //1e8; // TODO
+  time_step_size = 4.0e-3;
+  max_number_of_time_steps = 1e8;
   order_time_integrator = 2; //2; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
 
@@ -141,6 +141,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
 
+  // formulations
+  order_extrapolation_pressure_nbc = order_time_integrator <=2 ? order_time_integrator : 2;
+
   // convective step
 
   // nonlinear solver
@@ -175,8 +178,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   newton_solver_data_momentum.max_iter = 100;
 
   // linear solver
-  solver_momentum = SolverMomentum::GMRES; //GMRES; //FGMRES;
-  preconditioner_momentum = PreconditionerMomentum::InverseMassMatrix; //VelocityDiffusion;
+  solver_momentum = SolverMomentum::FGMRES; //GMRES; //FGMRES;
+  preconditioner_momentum = PreconditionerMomentum::VelocityDiffusion; //InverseMassMatrix; //VelocityDiffusion;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::GMRES_Jacobi; //Chebyshev;
   abs_tol_momentum_linear = 1.e-12;
   rel_tol_momentum_linear = 1.e-8;
@@ -227,7 +230,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   print_input_parameters = true;
 
   // write output for visualization of results
-  output_data.write_output = false; //true;
+  output_data.write_output = true; //false; //true;
   output_data.output_prefix = OUTPUT_PREFIX;
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
@@ -260,8 +263,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // surfaces for calculation of lift and drag coefficients have boundary_ID = 2
   lift_and_drag_data.boundary_IDs.insert(2);
 
-  lift_and_drag_data.filename_prefix_lift = "paper/coupled_solver/" + output_data.output_prefix; //"paper/pressure_correction/" + output_data.output_prefix;
-  lift_and_drag_data.filename_prefix_drag = "paper/coupled_solver/" + output_data.output_prefix; //"paper/pressure_correction/" + output_data.output_prefix;
+  lift_and_drag_data.filename_prefix_lift = OUTPUT_FOLDER + output_data.output_prefix; //"paper/pressure_correction/" + output_data.output_prefix;
+  lift_and_drag_data.filename_prefix_drag = OUTPUT_FOLDER + output_data.output_prefix; //"paper/pressure_correction/" + output_data.output_prefix;
 
   // pressure difference
   pressure_difference_data.calculate_pressure_difference = true;
@@ -278,7 +281,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
     pressure_difference_data.point_2 = point_2_3D;
   }
 
-  pressure_difference_data.filename_prefix_pressure_difference = "paper/coupled_solver/" + output_data.output_prefix; //"paper/pressure_correction/" + output_data.output_prefix;
+  pressure_difference_data.filename_prefix_pressure_difference = OUTPUT_FOLDER + output_data.output_prefix; //"paper/pressure_correction/" + output_data.output_prefix;
 
   mass_data.calculate_error = false; //true;
   mass_data.start_time = 0.0;
@@ -644,7 +647,7 @@ void create_triangulation(Triangulation<3> &tria)
          cell->face(f)->set_all_boundary_ids(0);
        else if (std::abs(cell->face(f)->center()[0]-L2) < 1e-12)
          cell->face(f)->set_all_boundary_ids(1);
-       else if (Point<3>(X_C,Y_C,cell->face(f)->center()[2]).distance(cell->face(f)->center()) <= R)
+       else if (Point<3>(X_C,Y_C,cell->face(f)->center()[2]).distance(cell->face(f)->center()) <= R*2.0)
        {
          cell->face(f)->set_all_boundary_ids(2);
        }
@@ -675,7 +678,7 @@ void create_grid_and_set_boundary_conditions(
    std_cxx11::shared_ptr<Manifold<dim> >(dim == 2 ? static_cast<Manifold<dim>*>(new SphericalManifold<dim>(center)) :
                                          static_cast<Manifold<dim>*>(new CylindricalManifold<dim>(direction, center)));
  create_triangulation(triangulation);
- triangulation.set_manifold(1, *cylinder_manifold);
+ triangulation.set_manifold(MANIFOLD_ID, *cylinder_manifold);
 
  triangulation.refine_global(n_refine_space);
 

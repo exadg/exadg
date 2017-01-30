@@ -33,7 +33,7 @@ const unsigned int REFINE_STEPS_SPACE_MAX = 3;
 
 // set the number of refine levels for temporal convergence tests
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
-const unsigned int REFINE_STEPS_TIME_MAX = 0;
+const unsigned int REFINE_STEPS_TIME_MAX = 5;
 
 void InputParametersConvDiff::set_input_parameters()
 {
@@ -48,13 +48,13 @@ void InputParametersConvDiff::set_input_parameters()
   diffusivity = 0.0;
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::ExplRK;
+  temporal_discretization = TemporalDiscretization::BDF; //ExplRK;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  order_time_integrator = 4;
+  order_time_integrator = 2;
   start_with_low_order = false;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
   time_step_size = 1.0e-1;
-  cfl_number = 0.2;
+  cfl_number = 0.4;
   diffusion_number = 0.01;
 
   // SPATIAL DISCRETIZATION
@@ -77,7 +77,7 @@ void InputParametersConvDiff::set_input_parameters()
 
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
-  output_data.write_output = true;
+  output_data.write_output = false; //true;
   output_data.output_prefix = "propagating_sine_wave";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;

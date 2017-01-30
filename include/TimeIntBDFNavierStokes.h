@@ -10,7 +10,8 @@
 
 #include <deal.II/base/timer.h>
 
-#include "../include/TimeIntBDFBase.h"
+#include "../include/BDFTimeIntegration.h"
+#include "../include/ExtrapolationScheme.h"
 
 #include "TimeStepCalculation.h"
 #include "Restart.h"
@@ -18,7 +19,7 @@
 template<int dim> class PostProcessorBase;
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-class TimeIntBDFNavierStokes : public TimeIntBDFBase
+class TimeIntBDFNavierStokes
 {
 public:
   TimeIntBDFNavierStokes(std_cxx11::shared_ptr<NavierStokesOperation>   navier_stokes_operation_in,
@@ -27,13 +28,16 @@ public:
                          unsigned int const                             n_refine_time_in,
                          bool const                                     use_adaptive_time_stepping)
     :
-    TimeIntBDFBase(param_in.order_time_integrator,
-                   param_in.start_with_low_order,
-                   use_adaptive_time_stepping),
     postprocessor(postprocessor_in),
     param(param_in),
     total_time(0.0),
     time(param.start_time),
+    time_step_number(1),
+    order(param_in.order_time_integrator),
+    time_steps(param_in.order_time_integrator),
+    bdf(param_in.order_time_integrator,param_in.start_with_low_order),
+    extra(param_in.order_time_integrator,param_in.start_with_low_order),
+    adaptive_time_stepping(use_adaptive_time_stepping),
     cfl(param.cfl/std::pow(2.0,n_refine_time_in)),
     pcout(std::cout,Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     n_refine_time(n_refine_time_in),
@@ -55,11 +59,14 @@ public:
 
   double get_scaling_factor_time_derivative_term()
   {
-    return gamma0/time_steps[0];
+    return bdf.get_gamma0()/time_steps[0];
   }
 
 protected:
   std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor;
+
+  virtual void initialize_time_integrator_constants();
+  virtual void update_time_integrator_constants();
 
   virtual void calculate_time_step();
 
@@ -70,10 +77,29 @@ protected:
 
   InputParametersNavierStokes<dim> const & param;
 
+  // computation time
   Timer global_timer;
   double total_time;
 
+  // physical time
   double time;
+
+  // the number of the current time step starting with time_step_number = 1
+  unsigned int time_step_number;
+
+  // order of time integration scheme
+  unsigned int const order;
+
+  // Vector that stores time step sizes. This vector is necessary
+  // if adaptive_time_stepping = true. For constant time step sizes
+  // one double for the time step size would be sufficient.
+  std::vector<double> time_steps;
+
+  BDFTimeIntegratorConstants bdf;
+  ExtrapolationConstants extra;
+
+  // use adaptive time stepping?
+  bool const adaptive_time_stepping;
 
   double const cfl;
 
@@ -131,6 +157,37 @@ setup(bool do_restart)
   setup_derived();
 
   pcout << std::endl << "... done!" << std::endl;
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+initialize_time_integrator_constants()
+{
+  bdf.initialize();
+  extra.initialize();
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+update_time_integrator_constants()
+{
+  if(adaptive_time_stepping == false) // constant time steps
+  {
+    bdf.update(time_step_number);
+    extra.update(time_step_number);
+  }
+  else // adaptive time stepping
+  {
+    bdf.update(time_step_number, time_steps);
+    extra.update(time_step_number, time_steps);
+  }
+
+  // use this function to check the correctness of the time integrator constants
+//  std::cout << std::endl << "Time step " << time_step_number << std::endl << std::endl;
+//  std::cout << "Coefficients BDF time integration scheme:" << std::endl;
+//  bdf.print();
+//  std::cout << "Coefficients extrapolation scheme:" << std::endl;
+//  extra.print();
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>

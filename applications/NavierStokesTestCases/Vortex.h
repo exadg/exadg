@@ -35,7 +35,7 @@ unsigned int const REFINE_STEPS_SPACE_MAX = 2;//REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
-unsigned int const REFINE_STEPS_TIME_MAX = 11; //REFINE_STEPS_TIME_MIN;
+unsigned int const REFINE_STEPS_TIME_MAX = 7; //REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
 const double U_X_MAX = 1.0;
@@ -59,15 +59,15 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingSchme; //BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified;
   max_velocity = 1.4 * U_X_MAX;
   cfl = 1.0;
   c_eff = 0.125e0;
-  time_step_size = 2.e-1;
+  time_step_size = 1.e-1;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 1;
+  order_time_integrator = 3;
   start_with_low_order = false; // true; // false;
 
 
@@ -119,6 +119,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
+
+  // formulations
+  order_extrapolation_pressure_nbc = order_time_integrator-1; // order_time_integrator <=2 ? order_time_integrator : 2;
 
   // convective step
 

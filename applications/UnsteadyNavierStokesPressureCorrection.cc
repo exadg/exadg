@@ -138,7 +138,7 @@ print_header()
   << "                                                                                 " << std::endl
   << "                High-order discontinuous Galerkin solver for the                 " << std::endl
   << "                unsteady, incompressible Navier-Stokes equations                 " << std::endl
-  << "                    based on a pressure correction approach                      " << std::endl
+  << "                    based on a pressure-correction approach                      " << std::endl
   << "_________________________________________________________________________________" << std::endl
   << std::endl;
 }

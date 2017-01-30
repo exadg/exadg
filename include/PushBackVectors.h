@@ -33,7 +33,7 @@ void push_back(std::vector<T> &vector)
    */
 
   // solution at t_{n-i} <-- solution at t_{n-i+1}
-  for(unsigned int i=vector.size()-1; i>0; --i)
+  for(int i=vector.size()-1; i>0; --i)
   {
     vector[i].swap(vector[i-1]);
   }

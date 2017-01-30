@@ -9,9 +9,9 @@
 #define INCLUDE_TIMEINTBDFPRESSURECORRECTION_H_
 
 
-
 #include "TimeIntBDFNavierStokes.h"
 #include "PushBackVectors.h"
+
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 class TimeIntBDFPressureCorrection : public TimeIntBDFNavierStokes<dim,fe_degree_u,value_type,NavierStokesOperation>
@@ -31,7 +31,7 @@ public:
     vorticity(this->order),
     navier_stokes_operation(navier_stokes_operation_in),
     order_pressure_extrapolation(this->param.order_pressure_extrapolation),
-    beta_pressure_extrapolation(order_pressure_extrapolation),
+    extra_pressure_gradient(this->param.order_pressure_extrapolation,this->param.start_with_low_order),
     vec_pressure_gradient_term(order_pressure_extrapolation),
     computing_times(3),
     N_iter_pressure_average(0.0),
@@ -46,7 +46,6 @@ public:
 private:
   virtual void initialize_time_integrator_constants();
   virtual void update_time_integrator_constants();
-  void check_time_integrator_constants_pressure_correction() const;
 
   virtual void initialize_vectors();
 
@@ -117,7 +116,7 @@ private:
   unsigned int order_pressure_extrapolation;
 
   // time integrator constants: extrapolation scheme
-  std::vector<double> beta_pressure_extrapolation;
+  ExtrapolationConstants extra_pressure_gradient;
 
   std::vector<parallel::distributed::Vector<value_type> > vec_pressure_gradient_term;
 
@@ -132,15 +131,13 @@ void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOper
 initialize_time_integrator_constants()
 {
   // call function of base class to initialize the standard time integrator constants
-  TimeIntBDFBase::initialize_time_integrator_constants();
+  TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::initialize_time_integrator_constants();
 
-  // set time integrator constants for extrapolation scheme of pressure gradient term in case of
-  // incremental formulation of pressure-correction scheme
+  // set time integrator constants for extrapolation scheme of pressure gradient term
+  // in case of incremental formulation of pressure-correction scheme
   if(this->param.incremental_formulation == true)
   {
-    this->set_constant_time_integrator_constants_extrapolation(order_pressure_extrapolation,
-                                                               order_pressure_extrapolation,
-                                                               beta_pressure_extrapolation);
+    extra_pressure_gradient.initialize();
   }
 }
 
@@ -149,31 +146,23 @@ void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOper
 update_time_integrator_constants()
 {
   // call function of base class to update the standard time integrator constants
-  TimeIntBDFBase::update_time_integrator_constants();
+  TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::update_time_integrator_constants();
 
   if(this->param.incremental_formulation == true)
   {
     // update time integrator constants for extrapolation scheme of pressure gradient term in case of
     // incremental formulation of pressure-correction scheme
-    this->update_time_integrator_constants_extrapolation(order_pressure_extrapolation,
-                                                         beta_pressure_extrapolation);
+    if(this->adaptive_time_stepping == false)
+    {
+      extra_pressure_gradient.update(this->time_step_number);
+    }
+    else // adaptive time stepping
+    {
+      extra_pressure_gradient.update(this->time_step_number, this->time_steps);
+    }
 
     // use this function to check the correctness of the time integrator constants
-//    check_time_integrator_constants_pressure_correction();
-  }
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-check_time_integrator_constants_pressure_correction() const
-{
-  if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-  {
-    for(unsigned int i=0;i<order_pressure_extrapolation;++i)
-      std::cout << "Beta_Pressure_Extrapolation[" << i <<"]  = "
-                << beta_pressure_extrapolation[i] << std::endl;
-
-    std::cout << std::endl;
+//    extra_pressure_gradient.print();
   }
 }
 
@@ -409,7 +398,7 @@ momentum_step()
   velocity_np = 0.0;
   for(unsigned int i=0;i<velocity.size();++i)
   {
-    velocity_np.add(this->beta[i],velocity[i]);
+    velocity_np.add(this->extra.get_beta(i),velocity[i]);
   }
 
   /*
@@ -476,10 +465,10 @@ rhs_momentum()
    *  calculate sum (alpha_i/dt * u_i): This term is relevant for both the explicit
    *  and the implicit formulation of the convective term
    */
-  sum_alphai_ui.equ(this->alpha[0]/this->time_steps[0],velocity[0]);
+  sum_alphai_ui.equ(this->bdf.get_alpha(0)/this->time_steps[0],velocity[0]);
   for (unsigned int i=1;i<velocity.size();++i)
   {
-    sum_alphai_ui.add(this->alpha[i]/this->time_steps[0],velocity[i]);
+    sum_alphai_ui.add(this->bdf.get_alpha(i)/this->time_steps[0],velocity[i]);
   }
   navier_stokes_operation->apply_mass_matrix(rhs_vec_momentum,sum_alphai_ui);
 
@@ -493,7 +482,7 @@ rhs_momentum()
                                                              this->time);
 
     for(unsigned int i=0;i<vec_pressure_gradient_term.size();++i)
-      rhs_vec_momentum.add(-beta_pressure_extrapolation[i],vec_pressure_gradient_term[i]);
+      rhs_vec_momentum.add(-extra_pressure_gradient.get_beta(i),vec_pressure_gradient_term[i]);
   }
 
   /*
@@ -514,7 +503,7 @@ rhs_momentum()
     navier_stokes_operation->evaluate_convective_term(vec_convective_term[0],velocity[0],this->time);
 
     for(unsigned int i=0;i<vec_convective_term.size();++i)
-      rhs_vec_momentum.add(-this->beta[i],vec_convective_term[i]);
+      rhs_vec_momentum.add(-this->extra.get_beta(i),vec_convective_term[i]);
   }
 
   /*
@@ -551,7 +540,7 @@ pressure_step()
     // extrapolate old solution to get a good initial estimate for the solver
     for(unsigned int i=0;i<pressure.size();++i)
     {
-      pressure_increment.add(this->beta[i],pressure[i]);
+      pressure_increment.add(this->extra.get_beta(i),pressure[i]);
     }
   }
 
@@ -609,7 +598,7 @@ rhs_pressure()
    *  I. calculate divergence term
    */
   navier_stokes_operation->evaluate_velocity_divergence_term(rhs_vec_pressure_temp, velocity_np, this->time+this->time_steps[0]);
-  rhs_vec_pressure.equ(-this->gamma0/this->time_steps[0],rhs_vec_pressure_temp);
+  rhs_vec_pressure.equ(-this->bdf.get_gamma0()/this->time_steps[0],rhs_vec_pressure_temp);
 
 
   /*
@@ -622,7 +611,7 @@ rhs_pressure()
   // incremental formulation of pressure-correction scheme
   if(this->param.incremental_formulation == true)
   {
-    for(unsigned int i=0;i<beta_pressure_extrapolation.size();++i)
+    for(unsigned int i=0;i<extra_pressure_gradient.get_order();++i)
     {
       double time_offset = 0.0;
       for(unsigned int k=0; k<=i;++k)
@@ -630,7 +619,7 @@ rhs_pressure()
 
       rhs_vec_pressure_temp = 0.0; // set rhs_vec_pressure_temp to zero since rhs_ppe_laplace_add() adds into dst-vector
       navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure_temp, this->time + this->time_steps[0] - time_offset);
-      rhs_vec_pressure.add(-beta_pressure_extrapolation[i],rhs_vec_pressure_temp);
+      rhs_vec_pressure.add(-extra_pressure_gradient.get_beta(i),rhs_vec_pressure_temp);
     }
   }
 
@@ -694,9 +683,9 @@ pressure_update()
     // add extrapolation of pressure to the pressure-increment solution in order to obtain
     // the pressure solution at the end of the time step, i.e.,
     // p^{n+1} = (pressure_increment)^{n+1} + sum_i (beta_pressure_extrapolation_i * p^{n-i});
-    for(unsigned int i=0;i<beta_pressure_extrapolation.size();++i)
+    for(unsigned int i=0;i<extra_pressure_gradient.get_order();++i)
     {
-      pressure_np.add(this->beta_pressure_extrapolation[i],pressure[i]);
+      pressure_np.add(this->extra_pressure_gradient.get_beta(i),pressure[i]);
     }
   }
 }
@@ -714,7 +703,7 @@ rhs_projection()
    *  II. calculate pressure gradient term including boundary condition g_p(t_{n+1})
    */
   navier_stokes_operation->evaluate_pressure_gradient_term(rhs_vec_projection_temp,pressure_increment,this->time + this->time_steps[0]);
-  rhs_vec_projection.add(-this->time_steps[0]/this->gamma0,rhs_vec_projection_temp);
+  rhs_vec_projection.add(-this->time_steps[0]/this->bdf.get_gamma0(),rhs_vec_projection_temp);
 
   /*
    *  III. pressure gradient term: boundary conditions g_p(t_{n-i})
@@ -722,7 +711,7 @@ rhs_projection()
    */
   if(this->param.incremental_formulation == true)
   {
-    for(unsigned int i=0;i<beta_pressure_extrapolation.size();++i)
+    for(unsigned int i=0;i<extra_pressure_gradient.get_order();++i)
     {
       double time_offset = 0.0;
       for(unsigned int k=0; k<=i;++k)
@@ -730,7 +719,7 @@ rhs_projection()
 
       // evaluate inhomogeneous parts of boundary face integrals
       navier_stokes_operation->rhs_pressure_gradient_term(rhs_vec_projection_temp, this->time + this->time_steps[0] - time_offset);
-      rhs_vec_projection.add(-beta_pressure_extrapolation[i]*this->time_steps[0]/this->gamma0,rhs_vec_projection_temp);
+      rhs_vec_projection.add(-extra_pressure_gradient.get_beta(i)*this->time_steps[0]/this->bdf.get_gamma0(),rhs_vec_projection_temp);
     }
   }
 
@@ -746,7 +735,7 @@ rhs_projection()
 //
 //    double chi = 0.0;
 //    calculate_chi(chi);
-//    rhs_vec_projection.add(-chi*this->param.viscosity*this->time_steps[0]/this->gamma0,rhs_vec_projection_temp);
+//    rhs_vec_projection.add(-chi*this->param.viscosity*this->time_steps[0]/this->bdf.get_gamma0(),rhs_vec_projection_temp);
 //  }
 }
 
@@ -870,7 +859,6 @@ analyze_computing_times() const
                << "_________________________________________________________________________________"
                << std::endl << std::endl;
 }
-
 
 
 #endif /* INCLUDE_TIMEINTBDFPRESSURECORRECTION_H_ */

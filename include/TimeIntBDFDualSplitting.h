@@ -11,6 +11,7 @@
 #include "TimeIntBDFNavierStokes.h"
 #include "PushBackVectors.h"
 
+
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 class TimeIntBDFDualSplitting : public TimeIntBDFNavierStokes<dim,fe_degree_u,value_type,NavierStokesOperation>
 {
@@ -25,9 +26,11 @@ public:
             (navier_stokes_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
     velocity(this->order),
     pressure(this->order),
-    vorticity(this->order),
+    // vorticity has at least length >=1 since the vorticity is also used for postprocessing
+    vorticity(this->param.order_extrapolation_pressure_nbc > 1 ? this->param.order_extrapolation_pressure_nbc : 1),
     vec_convective_term(this->order),
     computing_times(4),
+    extra_pressure_nbc(this->param.order_extrapolation_pressure_nbc,this->param.start_with_low_order),
     navier_stokes_operation(navier_stokes_operation_in),
     N_iter_pressure_average(0.0),
     N_iter_viscous_average(0.0)
@@ -71,6 +74,9 @@ protected:
   virtual void postprocessing() const;
 
 private:
+  virtual void initialize_time_integrator_constants();
+  virtual void update_time_integrator_constants();
+
   virtual void initialize_current_solution();
   virtual void initialize_former_solution();
   
@@ -86,6 +92,9 @@ private:
   void rhs_viscous();
   
   virtual parallel::distributed::Vector<value_type> const & get_velocity();
+
+  // time integrator constants: extrapolation scheme
+  ExtrapolationConstants extra_pressure_nbc;
 
   parallel::distributed::Vector<value_type> pressure_np;
 
@@ -108,6 +117,40 @@ private:
 
   double N_iter_pressure_average, N_iter_viscous_average;
 };
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
+initialize_time_integrator_constants()
+{
+  // call function of base class to initialize the standard time integrator constants
+  TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::initialize_time_integrator_constants();
+
+  // set time integrator constants for extrapolation scheme of viscous term and convective term in pressure NBC
+  extra_pressure_nbc.initialize();
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
+update_time_integrator_constants()
+{
+  // call function of base class to update the standard time integrator constants
+  TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::update_time_integrator_constants();
+
+  // update time integrator constants for extrapolation scheme of pressure gradient term in case of
+  // incremental formulation of pressure-correction scheme
+  if(this->adaptive_time_stepping == false)
+  {
+    extra_pressure_nbc.update(this->time_step_number);
+  }
+  else // adaptive time stepping
+  {
+    extra_pressure_nbc.update(this->time_step_number, this->time_steps);
+  }
+
+  // use this function to check the correctness of the time integrator constants
+//  std::cout << "Coefficients extrapolation scheme pressure NBC:" << std::endl;
+//  extra_pressure_nbc.print();
+}
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
@@ -199,7 +242,9 @@ initialize_vorticity()
   if(this->param.start_with_low_order == false)
   {
     for(unsigned int i=1;i<vorticity.size();++i)
+    {
       navier_stokes_operation->compute_vorticity(vorticity[i], velocity[i]);
+    }
   }
 }
 
@@ -338,19 +383,19 @@ convective_step()
   {
     navier_stokes_operation->evaluate_convective_term_and_apply_inverse_mass_matrix(vec_convective_term[0],velocity[0],this->time);
     for(unsigned int i=0;i<vec_convective_term.size();++i)
-      velocity_np.add(-this->beta[i],vec_convective_term[i]);
+      velocity_np.add(-this->extra.get_beta(i),vec_convective_term[i]);
   }
 
   // calculate sum (alpha_i/dt * u_i)
-  sum_alphai_ui.equ(this->alpha[0]/this->time_steps[0],velocity[0]);
+  sum_alphai_ui.equ(this->bdf.get_alpha(0)/this->time_steps[0],velocity[0]);
   for (unsigned int i=1;i<velocity.size();++i)
-    sum_alphai_ui.add(this->alpha[i]/this->time_steps[0],velocity[i]);
+    sum_alphai_ui.add(this->bdf.get_alpha(i)/this->time_steps[0],velocity[i]);
 
   // solve discrete temporal derivative term for intermediate velocity u_hat (if not STS approach)
   if(this->param.small_time_steps_stability == false)
   {
     velocity_np.add(1.0,sum_alphai_ui);
-    velocity_np *= this->time_steps[0]/this->gamma0;
+    velocity_np *= this->time_steps[0]/this->bdf.get_gamma0();
   }
 
   if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
@@ -406,7 +451,7 @@ pressure_step()
   pressure_np = 0;
   for(unsigned int i=0;i<pressure.size();++i)
   {
-    pressure_np.add(this->beta[i],pressure[i]);
+    pressure_np.add(this->extra.get_beta(i),pressure[i]);
   }
 
   // solve linear system of equations
@@ -451,7 +496,7 @@ rhs_pressure()
   if(this->param.small_time_steps_stability == true)
     rhs_vec_pressure *= -1.0;
   else
-    rhs_vec_pressure *= -this->gamma0/this->time_steps[0];
+    rhs_vec_pressure *= -this->bdf.get_gamma0()/this->time_steps[0];
 
   // inhomogeneous parts of boundary face integrals of velocity divergence operator
   if(this->param.divu_integrated_by_parts == true)
@@ -470,7 +515,7 @@ rhs_pressure()
 
         // note that the minus sign related to this term is already taken into account
         // in the function .rhs() of the divergence operator
-        rhs_vec_pressure.add(this->alpha[i]/this->time_steps[0],rhs_vec_pressure_temp);
+        rhs_vec_pressure.add(this->bdf.get_alpha(i)/this->time_steps[0],rhs_vec_pressure_temp);
       }
 
       // convective term
@@ -480,7 +525,7 @@ rhs_pressure()
         {
           rhs_vec_pressure_temp = 0;
           navier_stokes_operation->rhs_ppe_div_term_convective_term_add(rhs_vec_pressure_temp, velocity[i]);
-          rhs_vec_pressure.add(this->beta[i], rhs_vec_pressure_temp);
+          rhs_vec_pressure.add(this->extra.get_beta(i), rhs_vec_pressure_temp);
         }
       }
 
@@ -503,8 +548,10 @@ rhs_pressure()
   //       extrapolate vorticity and subsequently evaluate boundary face integral
   //       (this is possible since pressure Neumann BC is linear in vorticity)
   vorticity_extrapolated = 0;
-  for(unsigned int i=0;i<vorticity.size();++i)
-    vorticity_extrapolated.add(this->beta[i], vorticity[i]);
+  for(unsigned int i=0;i<extra_pressure_nbc.get_order();++i)
+  {
+    vorticity_extrapolated.add(this->extra_pressure_nbc.get_beta(i), vorticity[i]);
+  }
 
   navier_stokes_operation->rhs_ppe_viscous_add(rhs_vec_pressure, vorticity_extrapolated);
 
@@ -514,11 +561,11 @@ rhs_pressure()
   //       (the convective term is nonlinear!)
   if(this->param.equation_type == EquationType::NavierStokes)
   {
-    for(unsigned int i=0;i<velocity.size();++i)
+    for(unsigned int i=0;i<extra_pressure_nbc.get_order();++i)
     {
       rhs_vec_pressure_temp = 0;
       navier_stokes_operation->rhs_ppe_convective_add(rhs_vec_pressure_temp, velocity[i]);
-      rhs_vec_pressure.add(this->beta[i], rhs_vec_pressure_temp);
+      rhs_vec_pressure.add(this->extra_pressure_nbc.get_beta(i), rhs_vec_pressure_temp);
     }
   }
 
@@ -543,7 +590,7 @@ projection_step()
   if(this->param.small_time_steps_stability == true)
   {
     velocity_np.add(1.0,sum_alphai_ui);
-    velocity_np *= this->time_steps[0]/this->gamma0;
+    velocity_np *= this->time_steps[0]/this->bdf.get_gamma0();
   }
 
   // compute right-hand-side vector
@@ -589,7 +636,7 @@ rhs_projection()
    *  II. calculate pressure gradient term
    */
   navier_stokes_operation->evaluate_pressure_gradient_term(rhs_vec_projection_temp,pressure_np,this->time + this->time_steps[0]);
-  rhs_vec_projection.add(-this->time_steps[0]/this->gamma0,rhs_vec_projection_temp);
+  rhs_vec_projection.add(-this->time_steps[0]/this->bdf.get_gamma0(),rhs_vec_projection_temp);
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -605,7 +652,7 @@ viscous_step()
   // extrapolate old solution to get a good initial estimate for the solver
   velocity_np = 0;
   for (unsigned int i=0; i<velocity.size(); ++i)
-    velocity_np.add(this->beta[i],velocity[i]);
+    velocity_np.add(this->extra.get_beta(i),velocity[i]);
 
   // solve linear system of equations
   unsigned int iterations_viscous = navier_stokes_operation->solve_viscous(velocity_np,
@@ -634,7 +681,7 @@ rhs_viscous()
    *  I. calculate mass matrix term
    */
   navier_stokes_operation->apply_mass_matrix(rhs_vec_viscous,velocity_np);
-  rhs_vec_viscous *= this->gamma0/this->time_steps[0];
+  rhs_vec_viscous *= this->bdf.get_gamma0()/this->time_steps[0];
 
   /*
    *  II. inhomongeous parts of boundary face integrals of viscous operator
@@ -715,6 +762,5 @@ analyze_computing_times() const
                << "_________________________________________________________________________________"
                << std::endl << std::endl;
 }
-
 
 #endif /* INCLUDE_TIMEINTBDFDUALSPLITTING_H_ */

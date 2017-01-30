@@ -22,7 +22,7 @@
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 5;
+unsigned int const FE_DEGREE_VELOCITY = 6;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -30,12 +30,12 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 0;
-unsigned int const REFINE_STEPS_SPACE_MAX = 0; // REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 4;
+unsigned int const REFINE_STEPS_SPACE_MAX = 4; // REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
-unsigned int const REFINE_STEPS_TIME_MAX = 0; //REFINE_STEPS_TIME_MIN;
+unsigned int const REFINE_STEPS_TIME_MAX = 7; //REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
 const double VISCOSITY = 1.0e0;
@@ -62,9 +62,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
   max_velocity = 1.0;
   cfl = 2.0e-1;
-  time_step_size = 1.e-4;
+  time_step_size = 1.e-2;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 1; // 1; // 2; // 3;
+  order_time_integrator = 3; // 1; // 2; // 3;
   start_with_low_order = false; // true; // false;
 
 
@@ -116,6 +116,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
 
+  // formulations
+  order_extrapolation_pressure_nbc = order_time_integrator <=2 ? order_time_integrator : 2;
+
   // convective step
 
   // nonlinear solver
@@ -161,9 +164,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   update_preconditioner_momentum = false;
 
   // formulation
-  incremental_formulation = false; //true;
-  order_pressure_extrapolation = 1;
-  rotational_formulation = false; //true;
+  incremental_formulation = true; //true;
+  order_pressure_extrapolation = order_time_integrator-1;
+  rotational_formulation = true; //true;
 
 
   // COUPLED NAVIER-STOKES SOLVER
@@ -198,12 +201,12 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
 
   // write output for visualization of results
-  output_data.write_output = true;
+  output_data.write_output = false; //true;
   output_data.output_prefix = "stokes_shahbazi";
   output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time) /10;
+  output_data.output_interval_time = (end_time-start_time); // /10;
   output_data.compute_divergence = false;
-  output_data.number_of_patches = 100; //FE_DEGREE_VELOCITY;
+  output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error
   error_data.analytical_solution_available = true;
