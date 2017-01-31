@@ -519,6 +519,9 @@ public:
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
 
+    // formulations
+    order_extrapolation_pressure_nbc( (order_time_integrator <= 2) ? order_time_integrator : 2),
+
     // convective step
     newton_solver_data_convective(NewtonSolverData()),
     abs_tol_linear_convective(1.e-20),
@@ -681,6 +684,18 @@ public:
        temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
     {
       AssertThrow(projection_type !=ProjectionType::Undefined,ExcMessage("parameter must be defined"));
+    }
+
+    if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      AssertThrow(order_extrapolation_pressure_nbc >= 0 && order_extrapolation_pressure_nbc <= order_time_integrator,
+                  ExcMessage("Invalid input parameter order_extrapolation_pressure_nbc!"));
+
+      if(order_extrapolation_pressure_nbc > 2)
+      {
+        std::cout << "WARNING:" << std::endl
+                  << "Order of extrapolation of viscous term and convective term in pressure NBC larger than 2 leads to a conditionally stable scheme." << std::endl;
+      }
     }
 
     // PRESSURE-CORRECTION SCHEME
@@ -1035,6 +1050,11 @@ public:
   {
     pcout << std::endl
           << "High-order dual splitting scheme:" << std::endl;
+
+    // formulations
+    print_parameter(pcout,
+                    "Order of extrapolation pressure NBC",
+                    order_extrapolation_pressure_nbc);
 
     // convective step
     pcout << "  Convective step:" << std::endl;
@@ -1520,6 +1540,11 @@ public:
   /*                        HIGH-ORDER DUAL SPLITTING SCHEME                            */
   /*                                                                                    */
   /**************************************************************************************/
+
+  // FORMULATIONS
+
+  // order of extrapolation of viscous term and convective term in pressure Neumann BC
+  unsigned int order_extrapolation_pressure_nbc;
 
   // CONVECTIVE STEP
   NewtonSolverData newton_solver_data_convective;
