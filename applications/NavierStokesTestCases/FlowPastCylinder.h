@@ -20,7 +20,7 @@
 /**************************************************************************************/
 
 // set the number of space dimensions: dimension = 2, 3
-unsigned int const DIMENSION = 3; // TODO
+unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
 unsigned int const FE_DEGREE_VELOCITY = 10;
@@ -60,8 +60,8 @@ const double Y_C = 0.2; // center
 const unsigned int MANIFOLD_ID = 1;
 
 const double END_TIME = 8.0;
-std::string OUTPUT_PREFIX = "test"; //"2D_3_cfl_0-6";
-std::string OUTPUT_FOLDER = "/comparison_lehrenfeld/pressure_correction/"; // "/paper/pressure_correction";
+std::string OUTPUT_PREFIX = "2D_3_cfl_0-3";
+std::string OUTPUT_FOLDER = "/paper/dual_splitting/"; //"/comparison_lehrenfeld/pressure_correction/"; // "/paper/pressure_correction";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -80,11 +80,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFPressureCorrection; //BDFPressureCorrection; //BDFDualSplittingScheme; //BDFCoupledSolution;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; //Explicit;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepCFL; // TODO
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFPressureCorrection; //BDFDualSplittingScheme; //BDFCoupledSolution;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
   max_velocity = Um;
-  cfl = 0.6;//2.5e-1;
+  cfl = 0.3;//2.5e-1;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 4.0e-3;
   max_number_of_time_steps = 1e8;
@@ -142,7 +142,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // HIGH-ORDER DUAL SPLITTING SCHEME
 
   // formulations
-  order_extrapolation_pressure_nbc = order_time_integrator <=2 ? order_time_integrator : 2;
+  order_extrapolation_pressure_nbc = 2; //order_time_integrator <=2 ? order_time_integrator : 2;
 
   // convective step
 
@@ -163,7 +163,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // viscous step
   solver_viscous = SolverViscous::PCG; //PCG;
   preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
-  multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::GMRES_Jacobi; //PCG_Jacobi; //Chebyshev;
+  multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::PCG_Jacobi; //PCG_Jacobi; //Chebyshev;
   abs_tol_viscous = 1.e-12;
   rel_tol_viscous = 1.e-8;
 
@@ -243,7 +243,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
   // output of solver information
-  output_solver_info_every_timesteps = 10; // 1e5; // TODO
+  output_solver_info_every_timesteps = 1e5;
 
   // restart
   write_restart = false;
@@ -602,6 +602,8 @@ void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = tru
     GridGenerator::merge_triangulations (tmp_3D, right, tria);
   }
 
+  tria.set_all_manifold_ids(0);
+
   // Set the cylinder boundary  to 2, outflow to 1, the rest to 0.
   for (Triangulation<2>::active_cell_iterator cell=tria.begin(); cell != tria.end(); ++cell)
   {
@@ -632,6 +634,8 @@ void create_triangulation(Triangulation<3> &tria)
  Triangulation<2> tria_2d;
  create_triangulation(tria_2d, false);
  GridGenerator::extrude_triangulation(tria_2d, 3, H, tria);
+
+ tria.set_all_manifold_ids(0);
 
  // Set the cylinder boundary  to 2, outflow to 1, the rest to 0.
  for (Triangulation<3>::active_cell_iterator cell=tria.begin();cell != tria.end(); ++cell)
@@ -665,7 +669,7 @@ void create_grid_and_set_boundary_conditions(
    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
    std::vector<GridTools::PeriodicFacePair<typename
-     Triangulation<dim>::cell_iterator> >                      &periodic_faces)
+     Triangulation<dim>::cell_iterator> >                      &/*periodic_faces*/)
 {
  Point<dim> direction;
  direction[dim-1] = 1.;
@@ -840,7 +844,7 @@ void create_grid_and_set_boundary_conditions(
 //    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
 //    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
 //    std::vector<GridTools::PeriodicFacePair<typename
-//      Triangulation<dim>::cell_iterator> >                      &periodic_faces)
+//      Triangulation<dim>::cell_iterator> >                      &/*periodic_faces*/)
 //{
 //
 //  Point<dim> direction;

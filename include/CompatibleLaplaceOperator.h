@@ -317,8 +317,8 @@ public:
   /*
    *  Apply block Jacobi preconditioner
    */
-  void apply_block_jacobi (parallel::distributed::Vector<Number>       &dst,
-                           parallel::distributed::Vector<Number> const &src) const
+  void apply_block_jacobi (parallel::distributed::Vector<Number>       &/*dst*/,
+                           parallel::distributed::Vector<Number> const &/*src*/) const
   {
     AssertThrow(false,ExcMessage("Block Jacobi preconditioner not implemented for compatible Laplace operator."));
   }

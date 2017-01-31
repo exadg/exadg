@@ -21,7 +21,7 @@ public:
     : underlying_operator(underlying_operator_in)
   {}
 
-  void update(MatrixOperatorBase const * matrix_operator){}
+  void update(MatrixOperatorBase const * /*matrix_operator*/){}
 
   void vmult (parallel::distributed::Vector<value_type>       &dst,
               const parallel::distributed::Vector<value_type> &src) const
