@@ -24,7 +24,7 @@
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 8;
+unsigned int const FE_DEGREE_VELOCITY = 5;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -37,7 +37,7 @@ unsigned int const REFINE_STEPS_SPACE_MAX = 3; //REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
-unsigned int const REFINE_STEPS_TIME_MAX = 7; //REFINE_STEPS_TIME_MIN;
+unsigned int const REFINE_STEPS_TIME_MAX = 0; //REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
 const double VISCOSITY = 1.0e-2;
@@ -67,7 +67,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
   max_velocity = 2.65;
   cfl = 2.0e-1;
-  time_step_size = 1.e-1;
+  time_step_size = 1.e-2;
   max_number_of_time_steps = 1e8;
   order_time_integrator = 3; // 1; // 2; // 3;
   start_with_low_order = false; // true; // false;
@@ -169,7 +169,6 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   update_preconditioner_momentum = false;
 
   // formulation
-  incremental_formulation = true;
   order_pressure_extrapolation = 1;
   rotational_formulation = true;
 
@@ -465,6 +464,8 @@ template<int dim>
 /*                                                                                    */
 /**************************************************************************************/
 
+#include "../../include/OneSidedSphericalManifold.h"
+
 template<int dim>
 void create_grid_and_set_boundary_conditions(
     parallel::distributed::Triangulation<dim>                   &triangulation,
@@ -472,13 +473,23 @@ void create_grid_and_set_boundary_conditions(
     std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
     std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                      &periodic_faces)
+      Triangulation<dim>::cell_iterator> >                      &/*periodic_faces*/)
 {
   if(MESH_TYPE == MeshType::UniformCartesian)
   {
     // Uniform Cartesian grid
     const double left = 0.0, right = 1.0;
     GridGenerator::hyper_cube(triangulation,left,right);
+
+    Point<dim> center = Point<dim>();
+    center[0] = 0.5;
+    center[1] = 2.0;
+    Triangulation<2>::cell_iterator cell = triangulation.begin();
+    cell->set_all_manifold_ids(10);
+    static std_cxx11::shared_ptr<Manifold<dim> > my_manifold =
+      std_cxx11::shared_ptr<Manifold<dim> >(static_cast<Manifold<dim>*>(new OneSidedSphericalManifold<dim>(cell,3,center)));
+    triangulation.set_manifold(10,*my_manifold);
+
     triangulation.refine_global(n_refine_space);
   }
   else if(MESH_TYPE == MeshType::Complex)
@@ -492,21 +503,25 @@ void create_grid_and_set_boundary_conditions(
     GridGenerator::merge_triangulations(tria1, tria2, triangulation);
     triangulation.set_all_manifold_ids(0);
     for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin();cell != triangulation.end(); ++cell)
+    {
+      for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
       {
-        for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
-          {
-            bool face_at_sphere_boundary = true;
-            for (unsigned int v=0; v<GeometryInfo<dim-1>::vertices_per_cell; ++v)
-              if (std::abs(cell->face(f)->vertex(v).norm()-0.4) > 1e-12)
-                face_at_sphere_boundary = false;
-            if (face_at_sphere_boundary)
-              cell->face(f)->set_all_manifold_ids(1);
-          }
-        if (cell->center().norm() > 0.4)
-          cell->set_material_id(1);
-        else
-          cell->set_material_id(0);
+        bool face_at_sphere_boundary = true;
+        for (unsigned int v=0; v<GeometryInfo<dim-1>::vertices_per_cell; ++v)
+        {
+          if (std::abs(cell->face(f)->vertex(v).norm()-0.4) > 1e-12)
+            face_at_sphere_boundary = false;
+        }
+        if (face_at_sphere_boundary)
+        {
+          cell->face(f)->set_all_manifold_ids(1);
+        }
       }
+      if (cell->center().norm() > 0.4)
+        cell->set_material_id(1);
+      else
+        cell->set_material_id(0);
+    }
     static const SphericalManifold<dim> spherical_manifold;
     triangulation.set_manifold(1, spherical_manifold);
     triangulation.set_boundary(0);
