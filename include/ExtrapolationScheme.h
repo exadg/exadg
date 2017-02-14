@@ -95,22 +95,22 @@ set_constant_time_step(unsigned int const current_order)
   AssertThrow(current_order <= order,
       ExcMessage("There is a logical error when updating the constants of the extrapolation scheme."));
 
-  if(current_order == 1)   //BDF 1
+  if(current_order == 1) // EX 1
   {
     beta[0] = 1.0;
   }
-  else if(current_order == 2) //BDF 2
+  else if(current_order == 2) // EX 2
   {
     beta[0] = 2.0;
     beta[1] = -1.0;
   }
-  else if(current_order == 3) //BDF 3
+  else if(current_order == 3) // EX 3
   {
     beta[0] = 3.0;
     beta[1] = -3.0;
     beta[2] = 1.0;
   }
-  else if(current_order == 4) // BDF 4
+  else if(current_order == 4) // EX 4
   {
     beta[0] = 4.;
     beta[1] = -6.;
@@ -139,16 +139,16 @@ set_adaptive_time_step (unsigned int const        current_order,
   AssertThrow(time_steps.size() == order,
     ExcMessage("Length of vector containing time step sizes has to be equal to order of extrapolation scheme."));
 
-  if(current_order == 1)   // BDF 1
+  if(current_order == 1)   // EX 1
   {
     beta[0] = 1.0;
   }
-  else if(current_order == 2) // BDF 2
+  else if(current_order == 2) // EX 2
   {
     beta[0] = (time_steps[0]+time_steps[1])/time_steps[1];
     beta[1] = -time_steps[0]/time_steps[1];
   }
-  else if(current_order == 3) // BDF 3
+  else if(current_order == 3) // EX 3
   {
     beta[0] = +(time_steps[0]+time_steps[1])*(time_steps[0]+time_steps[1]+time_steps[2])/
                (time_steps[1]*(time_steps[1]+time_steps[2]));
@@ -157,7 +157,7 @@ set_adaptive_time_step (unsigned int const        current_order,
     beta[2] = +time_steps[0]*(time_steps[0]+time_steps[1])/
                ((time_steps[1]+time_steps[2])*time_steps[2]);
   }
-  else if(current_order == 4) // BDF 4
+  else if(current_order == 4) // EX 4
   {
     beta[0] = (time_steps[0]+time_steps[1])*
               (time_steps[0]+time_steps[1]+time_steps[2])*
@@ -182,7 +182,8 @@ set_adaptive_time_step (unsigned int const        current_order,
 
   /*
    * Fill the rest of the vectors with zeros since current_order might be
-   * smaller than order, e.g. when using start_with_low_order = true
+   * smaller than order, e.g. when using start_with_low_order = true,
+   * if current_order == 0, all coefficients are set to zero, i.e., no extrapolation
    */
   for(unsigned int i=current_order;i<order;++i)
   {
@@ -199,25 +200,25 @@ initialize()
 
 
 void ExtrapolationConstants::
-update(unsigned int const time_step_number)
+update(unsigned int const current_order)
 {
   // when starting the time integrator with a low order method, ensure that
   // the time integrator constants are set properly
-  if(time_step_number <= order && start_with_low_order == true)
+  if(current_order <= order && start_with_low_order == true)
   {
-    set_constant_time_step(time_step_number);
+    set_constant_time_step(current_order);
   }
 }
 
 void ExtrapolationConstants::
-update(unsigned int const        time_step_number,
+update(unsigned int const        current_order,
        std::vector<double> const &time_steps)
 {
   // when starting the time integrator with a low order method, ensure that
   // the time integrator constants are set properly
-  if(time_step_number <= order && start_with_low_order == true)
+  if(current_order <= order && start_with_low_order == true)
   {
-    set_adaptive_time_step(time_step_number, time_steps);
+    set_adaptive_time_step(current_order, time_steps);
   }
   else // adjust time integrator constants since this is adaptive time stepping
   {

@@ -201,7 +201,7 @@ setup_pressure_poisson_solver (double const time_step_size)
     // use default value of max_iter
     solver_data.solver_tolerance_abs = this->param.abs_tol_pressure;
     solver_data.solver_tolerance_rel = this->param.rel_tol_pressure;
-    // use default value of max_n_tmp_vectors
+    solver_data.max_n_tmp_vectors = this->param.max_n_tmp_vectors_pressure_poisson;
     // use default value of update_preconditioner (=false)
 
     if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Jacobi ||
