@@ -32,7 +32,7 @@ public:
     navier_stokes_operation(navier_stokes_operation_in),
     order_pressure_extrapolation(this->param.order_pressure_extrapolation),
     extra_pressure_gradient(this->param.order_pressure_extrapolation,this->param.start_with_low_order),
-    vec_pressure_gradient_term(order_pressure_extrapolation),
+    vec_pressure_gradient_term(this->param.order_pressure_extrapolation),
     computing_times(3),
     N_iter_pressure_average(0.0),
     N_iter_linear_momentum_average(0.0),
@@ -135,7 +135,7 @@ initialize_time_integrator_constants()
 
   // set time integrator constants for extrapolation scheme of pressure gradient term
   // in case of incremental formulation of pressure-correction scheme
-  if(this->param.incremental_formulation == true)
+  if(extra_pressure_gradient.get_order()>0)
   {
     extra_pressure_gradient.initialize();
   }
@@ -148,22 +148,23 @@ update_time_integrator_constants()
   // call function of base class to update the standard time integrator constants
   TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::update_time_integrator_constants();
 
-  if(this->param.incremental_formulation == true)
-  {
-    // update time integrator constants for extrapolation scheme of pressure gradient term in case of
-    // incremental formulation of pressure-correction scheme
-    if(this->adaptive_time_stepping == false)
-    {
-      extra_pressure_gradient.update(this->time_step_number);
-    }
-    else // adaptive time stepping
-    {
-      extra_pressure_gradient.update(this->time_step_number, this->time_steps);
-    }
+  // update time integrator constants for extrapolation scheme of pressure gradient term
 
-    // use this function to check the correctness of the time integrator constants
-//    extra_pressure_gradient.print();
+  // if start_with_low_order == true (no analytical solution available) the pressure is unknown at t = t_0:
+  // -> use no extrapolation (order=0, non-incremental) in first time step (the pressure solution is calculated in the second sub step)
+  // -> use first order extrapolation in second time steps, second order extrapolation in third time step, etc.
+  if(this->adaptive_time_stepping == false)
+  {
+    extra_pressure_gradient.update(this->time_step_number-1);
   }
+  else // adaptive time stepping
+  {
+    extra_pressure_gradient.update(this->time_step_number-1, this->time_steps);
+  }
+
+  // use this function to check the correctness of the time integrator constants
+//  std::cout << "Coefficients extrapolation scheme pressure: Time step = " << this->time_step_number << std::endl;
+//  extra_pressure_gradient.print();
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -174,7 +175,7 @@ setup_derived()
       && this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
     initialize_vec_convective_term();
 
-  if(this->param.incremental_formulation == true)
+  if(extra_pressure_gradient.get_order()>0)
     initialize_vec_pressure_gradient_term();
 }
 
@@ -205,11 +206,8 @@ initialize_vectors()
   }
 
   // vec_pressure_gradient_term
-  if(this->param.incremental_formulation == true)
-  {
-    for(unsigned int i=0;i<vec_pressure_gradient_term.size();++i)
-      navier_stokes_operation->initialize_vector_velocity(vec_pressure_gradient_term[i]);
-  }
+  for(unsigned int i=0;i<vec_pressure_gradient_term.size();++i)
+    navier_stokes_operation->initialize_vector_velocity(vec_pressure_gradient_term[i]);
 
   // Sum_i (alpha_i/dt * u_i)
   navier_stokes_operation->initialize_vector_velocity(sum_alphai_ui);
@@ -475,13 +473,13 @@ rhs_momentum()
   /*
    *  Add extrapolation of pressure gradient term to the rhs in case of incremental formulation
    */
-  if(this->param.incremental_formulation == true)
+  if(extra_pressure_gradient.get_order()>0)
   {
     navier_stokes_operation->evaluate_pressure_gradient_term(vec_pressure_gradient_term[0],
                                                              pressure[0],
                                                              this->time);
 
-    for(unsigned int i=0;i<vec_pressure_gradient_term.size();++i)
+    for(unsigned int i=0;i<extra_pressure_gradient.get_order();++i)
       rhs_vec_momentum.add(-extra_pressure_gradient.get_beta(i),vec_pressure_gradient_term[i]);
   }
 
@@ -534,13 +532,26 @@ pressure_step()
   // calculate initial guess for pressure solve
   pressure_increment = 0.0;
 
-  // non-incremental formulation
-  if(this->param.incremental_formulation == false)
+  // extrapolate old solution to get a good initial estimate for the
+  // pressure solution p_{n+1} at time t^{n+1}
+  for(unsigned int i=0;i<pressure.size();++i)
   {
-    // extrapolate old solution to get a good initial estimate for the solver
-    for(unsigned int i=0;i<pressure.size();++i)
+    pressure_increment.add(this->extra.get_beta(i),pressure[i]);
+  }
+
+  // incremental formulation
+  if(extra_pressure_gradient.get_order()>0)
+  {
+    // Subtract extrapolation of pressure since the PPE is solved for the
+    // pressure increment phi = p_{n+1} - sum_i (beta_pressure_extra_i * pressure_i)
+    // where p_{n+1} is approximated by extrapolation of order J (=order of BDF scheme).
+    // Note that divergence correction term in case of rotational formulation is not
+    // considered when calculating a good initial guess for the solution of the PPE,
+    // which will slightly increase the number of iterations compared to the standard
+    // formulation of the pressure-correction scheme.
+    for(unsigned int i=0;i<extra_pressure_gradient.get_order();++i)
     {
-      pressure_increment.add(this->extra.get_beta(i),pressure[i]);
+      pressure_increment.add(-this->extra_pressure_gradient.get_beta(i),pressure[i]);
     }
   }
 
@@ -609,18 +620,15 @@ rhs_pressure()
   navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure, this->time+this->time_steps[0]);
 
   // incremental formulation of pressure-correction scheme
-  if(this->param.incremental_formulation == true)
+  for(unsigned int i=0;i<extra_pressure_gradient.get_order();++i)
   {
-    for(unsigned int i=0;i<extra_pressure_gradient.get_order();++i)
-    {
-      double time_offset = 0.0;
-      for(unsigned int k=0; k<=i;++k)
-        time_offset += this->time_steps[k];
+    double time_offset = 0.0;
+    for(unsigned int k=0; k<=i;++k)
+      time_offset += this->time_steps[k];
 
-      rhs_vec_pressure_temp = 0.0; // set rhs_vec_pressure_temp to zero since rhs_ppe_laplace_add() adds into dst-vector
-      navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure_temp, this->time + this->time_steps[0] - time_offset);
-      rhs_vec_pressure.add(-extra_pressure_gradient.get_beta(i),rhs_vec_pressure_temp);
-    }
+    rhs_vec_pressure_temp = 0.0; // set rhs_vec_pressure_temp to zero since rhs_ppe_laplace_add() adds into dst-vector
+    navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure_temp, this->time + this->time_steps[0] - time_offset);
+    rhs_vec_pressure.add(-extra_pressure_gradient.get_beta(i),rhs_vec_pressure_temp);
   }
 
   // TODO remove this
@@ -678,15 +686,13 @@ pressure_update()
   pressure_np.add(1.0,pressure_increment);
 
   // Incremental formulation only.
-  if(this->param.incremental_formulation == true)
+
+  // add extrapolation of pressure to the pressure-increment solution in order to obtain
+  // the pressure solution at the end of the time step, i.e.,
+  // p^{n+1} = (pressure_increment)^{n+1} + sum_i (beta_pressure_extrapolation_i * p^{n-i});
+  for(unsigned int i=0;i<extra_pressure_gradient.get_order();++i)
   {
-    // add extrapolation of pressure to the pressure-increment solution in order to obtain
-    // the pressure solution at the end of the time step, i.e.,
-    // p^{n+1} = (pressure_increment)^{n+1} + sum_i (beta_pressure_extrapolation_i * p^{n-i});
-    for(unsigned int i=0;i<extra_pressure_gradient.get_order();++i)
-    {
-      pressure_np.add(this->extra_pressure_gradient.get_beta(i),pressure[i]);
-    }
+    pressure_np.add(this->extra_pressure_gradient.get_beta(i),pressure[i]);
   }
 }
 
@@ -709,18 +715,15 @@ rhs_projection()
    *  III. pressure gradient term: boundary conditions g_p(t_{n-i})
    *       in case of incremental formulation of pressure-correction scheme
    */
-  if(this->param.incremental_formulation == true)
+  for(unsigned int i=0;i<extra_pressure_gradient.get_order();++i)
   {
-    for(unsigned int i=0;i<extra_pressure_gradient.get_order();++i)
-    {
-      double time_offset = 0.0;
-      for(unsigned int k=0; k<=i;++k)
-        time_offset += this->time_steps[k];
+    double time_offset = 0.0;
+    for(unsigned int k=0; k<=i;++k)
+      time_offset += this->time_steps[k];
 
-      // evaluate inhomogeneous parts of boundary face integrals
-      navier_stokes_operation->rhs_pressure_gradient_term(rhs_vec_projection_temp, this->time + this->time_steps[0] - time_offset);
-      rhs_vec_projection.add(-extra_pressure_gradient.get_beta(i)*this->time_steps[0]/this->bdf.get_gamma0(),rhs_vec_projection_temp);
-    }
+    // evaluate inhomogeneous parts of boundary face integrals
+    navier_stokes_operation->rhs_pressure_gradient_term(rhs_vec_projection_temp, this->time + this->time_steps[0] - time_offset);
+    rhs_vec_projection.add(-extra_pressure_gradient.get_beta(i)*this->time_steps[0]/this->bdf.get_gamma0(),rhs_vec_projection_temp);
   }
 
   // TODO remove this
@@ -780,7 +783,7 @@ prepare_vectors_for_next_timestep()
     push_back(vec_convective_term);
   }
 
-  if(this->param.incremental_formulation == true)
+  if(extra_pressure_gradient.get_order()>0)
   {
     push_back(vec_pressure_gradient_term);
   }

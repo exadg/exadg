@@ -499,6 +499,7 @@ public:
     // pressure Poisson equation
     IP_factor_pressure(1.),
     solver_pressure_poisson(SolverPressurePoisson::PCG),
+    max_n_tmp_vectors_pressure_poisson(30),
     preconditioner_pressure_poisson(PreconditionerPressurePoisson::GeometricMultigrid),
     multigrid_data_pressure_poisson(MultigridData()),
     abs_tol_pressure(1.e-20),
@@ -556,7 +557,6 @@ public:
     update_preconditioner_momentum(false),
 
     // formulations
-    incremental_formulation(false),
     order_pressure_extrapolation(1),
     rotational_formulation(false),
 
@@ -699,8 +699,8 @@ public:
     }
 
     // PRESSURE-CORRECTION SCHEME
-    if(temporal_discretization == TemporalDiscretization::BDFPressureCorrection && incremental_formulation == true)
-      AssertThrow(order_pressure_extrapolation > 0 && order_pressure_extrapolation <= order_time_integrator,
+    if(temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+      AssertThrow(order_pressure_extrapolation >= 0 && order_pressure_extrapolation <= order_time_integrator,
                   ExcMessage("Invalid input parameter order_pressure_extrapolation!"));
 
     // COUPLED NAVIER-STOKES SOLVER
@@ -978,6 +978,9 @@ public:
     print_parameter(pcout,
                     "Solver PPE",
                     str_solver_ppe[(int)solver_pressure_poisson]);
+
+    if(solver_pressure_poisson == SolverPressurePoisson::FGMRES)
+      print_parameter(pcout,"Max number of vectors before restart",max_n_tmp_vectors_pressure_poisson);
   
     std::string str_precon_ppe[] = { "None",
                                      "Jacobi",
@@ -1178,7 +1181,6 @@ public:
 
     // formulations of pressur-correction scheme
     pcout << std::endl << "  Formulation of pressure-correction scheme:" << std::endl;
-    print_parameter(pcout,"Incremental formulation",incremental_formulation);
     print_parameter(pcout,"Order of pressure extrapolation",order_pressure_extrapolation);
     print_parameter(pcout,"Rotational formulation",rotational_formulation);
 
@@ -1496,6 +1498,9 @@ public:
   // description: see enum declaration
   SolverPressurePoisson solver_pressure_poisson;
 
+  // defines the maximum size of the Krylov subspace before restart
+  unsigned int max_n_tmp_vectors_pressure_poisson;
+
   // description: see enum declaration
   PreconditionerPressurePoisson preconditioner_pressure_poisson;
 
@@ -1617,10 +1622,9 @@ public:
   // only necessary if the parts of the operator change during the simulation
   bool update_preconditioner_momentum;
 
-  // incremental formulation
-  bool incremental_formulation;
-
   // order of pressure extrapolation in case of incremental formulation
+  // a value of 0 corresponds to non-incremental formulation
+  // and a value >=1 to incremental formulation
   unsigned int order_pressure_extrapolation;
 
   // rotational formulation
