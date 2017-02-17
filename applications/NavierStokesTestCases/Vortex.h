@@ -10,6 +10,7 @@
 
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/manifold_lib.h>
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -22,7 +23,7 @@
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 8;
+unsigned int const FE_DEGREE_VELOCITY = 2;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -30,17 +31,20 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 2;
-unsigned int const REFINE_STEPS_SPACE_MAX = 2;//REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 0;
+unsigned int const REFINE_STEPS_SPACE_MAX = 4;//REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
-unsigned int const REFINE_STEPS_TIME_MAX = 7; //REFINE_STEPS_TIME_MIN;
+unsigned int const REFINE_STEPS_TIME_MAX = 0; //REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
 const double U_X_MAX = 1.0;
 const double VISCOSITY = 2.5e-2;
 const FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::LaplaceFormulation; //LaplaceFormulation; //DivergenceFormulation;
+
+enum class MeshType{ UniformCartesian, Complex };
+const MeshType MESH_TYPE = MeshType::Complex;
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -59,13 +63,13 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified;
+  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepCFL; //ConstTimeStepUserSpecified;
   max_velocity = 1.4 * U_X_MAX;
   cfl = 1.0;
   c_eff = 0.125e0;
-  time_step_size = 1.e-1;
+  time_step_size = 1.e-4;
   max_number_of_time_steps = 1e8;
   order_time_integrator = 3;
   start_with_low_order = false; // true; // false;
@@ -121,7 +125,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // HIGH-ORDER DUAL SPLITTING SCHEME
 
   // formulations
-  order_extrapolation_pressure_nbc = order_time_integrator-1; // order_time_integrator <=2 ? order_time_integrator : 2;
+  order_extrapolation_pressure_nbc = order_time_integrator <=2 ? order_time_integrator : 2;
 
   // convective step
 
@@ -171,7 +175,6 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   update_preconditioner_momentum = false; //false;
 
   // formulation
-  incremental_formulation = true;
   order_pressure_extrapolation = 1;
   rotational_formulation = true;
 
@@ -184,7 +187,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   newton_solver_data_coupled.max_iter = 1e2;
 
   // linear solver
-  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;
+  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::FGMRES; //GMRES;
   abs_tol_linear = 1.e-12;
   rel_tol_linear = 1.e-8;
   max_iter_linear = 1e4;
@@ -197,7 +200,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // preconditioner velocity/momentum block
   momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion; //InverseMassMatrix; //VelocityDiffusion;
-  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+//  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_Jacobi;
   exact_inversion_of_momentum_block = false;
   rel_tol_solver_momentum_preconditioner = 1.e-6;
   max_n_tmp_vectors_solver_momentum_preconditioner = 100;
@@ -205,6 +209,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // preconditioner Schur-complement block
   schur_complement_preconditioner = SchurComplementPreconditioner::PressureConvectionDiffusion;
   discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
+  multigrid_data_schur_complement_preconditioner.coarse_solver = MultigridCoarseGridSolver::PCG_Jacobi;
   exact_inversion_of_laplace_operator = false;
   rel_tol_solver_schur_complement_preconditioner = 1.e-6;
 
@@ -212,10 +217,10 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
 
   // print input parameters
-  print_input_parameters = false; //true;
+  print_input_parameters = true; //false; //true;
 
   // write output for visualization of results
-  output_data.write_output = false;
+  output_data.write_output = true;
   output_data.output_prefix = "vortex";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/10;
@@ -488,6 +493,8 @@ template<int dim>
 /*                                                                                    */
 /**************************************************************************************/
 
+#include "../../include/OneSidedSphericalManifold.h"
+
 template<int dim>
 void create_grid_and_set_boundary_conditions(
     parallel::distributed::Triangulation<dim>                   &triangulation,
@@ -497,8 +504,128 @@ void create_grid_and_set_boundary_conditions(
     std::vector<GridTools::PeriodicFacePair<typename
       Triangulation<dim>::cell_iterator> >                      &/*periodic_faces*/)
 {
+//  const double left = -0.5, right = 0.5;
+//  GridGenerator::subdivided_hyper_cube(triangulation,2,left,right);
+//
+//  typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+//  for(;cell!=endc;++cell)
+//  {
+//    for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+//    {
+//       if (((std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12) && (cell->face(face_number)->center()(1)<0))||
+//           ((std::fabs(cell->face(face_number)->center()(0) - left)< 1e-12) && (cell->face(face_number)->center()(1)>0))||
+//           ((std::fabs(cell->face(face_number)->center()(1) - left)< 1e-12) && (cell->face(face_number)->center()(0)<0))||
+//           ((std::fabs(cell->face(face_number)->center()(1) - right)< 1e-12) && (cell->face(face_number)->center()(0)>0)))
+//         cell->face(face_number)->set_boundary_id (1);
+//    }
+//  }
+//  triangulation.refine_global(n_refine_space);
+
   const double left = -0.5, right = 0.5;
-  GridGenerator::subdivided_hyper_cube(triangulation,2,left,right);
+
+  if(MESH_TYPE == MeshType::UniformCartesian)
+  {
+    // Uniform Cartesian grid
+    GridGenerator::subdivided_hyper_cube(triangulation,2,left,right);
+  }
+//  else if(MESH_TYPE == MeshType::Complex)
+//  {
+//    // Complex Geometry
+//    Triangulation<dim> tria1, tria2;
+//    const double radius = (right-left)*0.25;
+//    const double width = right-left;
+//    GridGenerator::hyper_shell(tria1, Point<dim>(), radius, 0.5*width*std::sqrt(dim), 2*dim);
+//    if (dim == 2)
+//    {
+//      GridTools::rotate(numbers::PI/4, tria1);
+//    }
+//    GridGenerator::hyper_ball(tria2, Point<dim>(), radius);
+//    GridGenerator::merge_triangulations(tria1, tria2, triangulation);
+//    triangulation.set_all_manifold_ids(0);
+//    for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin();cell != triangulation.end(); ++cell)
+//    {
+//      for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
+//      {
+//        bool face_at_sphere_boundary = true;
+//        for (unsigned int v=0; v<GeometryInfo<dim-1>::vertices_per_cell; ++v)
+//        {
+//          if (std::abs(cell->face(f)->vertex(v).norm()-radius) > 1e-12)
+//            face_at_sphere_boundary = false;
+//        }
+//        if (face_at_sphere_boundary)
+//        {
+//          cell->face(f)->set_all_manifold_ids(1);
+//        }
+//      }
+//    }
+//    static const SphericalManifold<dim> spherical_manifold;
+//    triangulation.set_manifold(1, spherical_manifold);
+//    triangulation.set_boundary(0);
+//
+//    // refine globally due to boundary conditions for vortex problem
+//    triangulation.refine_global(1);
+//  }
+  else if(MESH_TYPE == MeshType::Complex)
+  {
+    // Complex Geometry
+    Triangulation<dim> tria1, tria2;
+    const double radius = (right-left)*0.25;
+    const double width = right-left;
+    Point<dim> center = Point<dim>();
+
+    GridGenerator::hyper_shell(tria1, Point<dim>(), radius, 0.5*width*std::sqrt(dim), 2*dim);
+    if (dim == 2)
+    {
+      GridTools::rotate(numbers::PI/4, tria1);
+    }
+    GridGenerator::hyper_ball(tria2, Point<dim>(), radius);
+    GridGenerator::merge_triangulations(tria1, tria2, triangulation);
+    triangulation.set_all_manifold_ids(0);
+
+    // first fill vectors of manifold_ids and face_ids
+    std::vector<unsigned int> manifold_ids;
+    std::vector<unsigned int> face_ids;
+
+    for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin();cell != triangulation.end(); ++cell)
+    {
+      for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
+      {
+        bool face_at_sphere_boundary = true;
+        for (unsigned int v=0; v<GeometryInfo<dim-1>::vertices_per_cell; ++v)
+        {
+          if (std::abs(cell->face(f)->vertex(v).norm()-radius) > 1e-12)
+            face_at_sphere_boundary = false;
+        }
+        if (face_at_sphere_boundary)
+        {
+          face_ids.push_back(f);
+          unsigned int manifold_id = manifold_ids.size() + 1;
+          cell->set_all_manifold_ids(manifold_id);
+          manifold_ids.push_back(manifold_id);
+        }
+      }
+    }
+
+    // generate vector of manifolds and apply manifold to all cells that have been marked
+    static std::vector<std_cxx11::shared_ptr<Manifold<dim> > > manifold_vec;
+    manifold_vec.resize(manifold_ids.size());
+
+    for(unsigned int i=0;i<manifold_ids.size();++i)
+    {
+      for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin(); cell != triangulation.end(); ++cell)
+      {
+        if(cell->manifold_id() == manifold_ids[i])
+        {
+          manifold_vec[i] = std_cxx11::shared_ptr<Manifold<dim> >(
+              static_cast<Manifold<dim>*>(new OneSidedSphericalManifold<dim>(cell,face_ids[i],center)));
+          triangulation.set_manifold(manifold_ids[i],*(manifold_vec[i]));
+        }
+      }
+    }
+
+    // refine globally due to boundary conditions for vortex problem
+    triangulation.refine_global(1);
+  }
 
   typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
   for(;cell!=endc;++cell)
