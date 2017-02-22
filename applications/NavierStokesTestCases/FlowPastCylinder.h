@@ -23,7 +23,7 @@
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 10;
+unsigned int const FE_DEGREE_VELOCITY = 86;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -31,7 +31,7 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 0;
+unsigned int const REFINE_STEPS_SPACE_MIN = 3;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
@@ -42,25 +42,36 @@ unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 ProblemType PROBLEM_TYPE = ProblemType::Unsteady;
 const unsigned int TEST_CASE = 3; // 1, 2 or 3
 const double Um = (DIMENSION == 2 ? (TEST_CASE==1 ? 0.3 : 1.5) : (TEST_CASE==1 ? 0.45 : 2.25));
+
+// pyhsical dimensions
 const double D = 0.1;
 const double R = D/2.0;
-const double R_1 = 1.2*R;
-const double R_2 = 1.7*R;
 const double H = 0.41;
 const double L1 = 0.3;
 const double L2 = 2.5;
 const double X_0 = 0.0;
-const double X_1 = L1;
-const double X_C = 0.5; // center
-const double X_2 = 0.7;
-
 const double Y_0 = 0.0;
+const double X_1 = L1;
+const double X_2 = 0.7;
+const double X_C = 0.5; // center
 const double Y_C = 0.2; // center
 
-const unsigned int MANIFOLD_ID = 1;
+// ManifoldType
+// Surface manifold: when refining the mesh only the cells close to the manifold-surface are curved
+// Volume manifold: all child cells are curved and subject to the manifold since it is a volume manifold
+enum class ManifoldType{ SurfaceManifold, VolumeManifold };
+const ManifoldType MANIFOLD_TYPE = ManifoldType::VolumeManifold;
+
+// MeshType
+// Type1: no refinement around cylinder surface
+// Type2: two layers of spherical cells around cylinder
+// Type3: coarse mesh has only one element in direction perpendicular to flow direction,
+//        one layer of spherical cells around cylinder for coarsest mesh
+enum class MeshType{ Type1, Type2, Type3 };
+const MeshType MESH_TYPE = MeshType::Type3;
 
 const double END_TIME = 8.0;
-std::string OUTPUT_PREFIX = "2D_3_cfl_0-3";
+std::string OUTPUT_PREFIX = "2D_3_cfl_0-2";
 std::string OUTPUT_FOLDER = "/paper/dual_splitting/"; //"/comparison_lehrenfeld/pressure_correction/"; // "/paper/pressure_correction";
 
 template<int dim>
@@ -82,11 +93,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // TEMPORAL DISCRETIZATION
   temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFPressureCorrection; //BDFDualSplittingScheme; //BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified; //ConstTimeStepCFL;
   max_velocity = Um;
-  cfl = 0.3;//2.5e-1;
-  cfl_exponent_fe_degree_velocity = 1.5;
-  time_step_size = 4.0e-3;
+  cfl = 0.2;//0.6;//2.5e-1;
+  cfl_exponent_fe_degree_velocity = 1.0;
+  time_step_size = 1.0e-3;
   max_number_of_time_steps = 1e8;
   order_time_integrator = 2; //2; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
@@ -120,6 +131,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // pressure Poisson equation
   IP_factor_pressure = 1.0;
   solver_pressure_poisson = SolverPressurePoisson::FGMRES; //PCG; //FGMRES;
+  max_n_tmp_vectors_pressure_poisson = 60;
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid; //Jacobi; //GeometricMultigrid;
   multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::PCG_Jacobi; //Chebyshev;
   abs_tol_pressure = 1.e-12;
@@ -189,7 +201,6 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   update_preconditioner_momentum = false;
 
   // formulation
-  incremental_formulation = true;
   order_pressure_extrapolation = 1;
   rotational_formulation = true;
 
@@ -512,116 +523,42 @@ template<int dim>
 /*                                                                                    */
 /**************************************************************************************/
 
-void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = true)
+ // needed for mesh type 2 with two layers of spherical cells around cylinder
+const double R_1 = 1.2*R;
+const double R_2 = 1.7*R;
+const double R_3 = 1.75*R;
+
+// manifold ID of spherical manifold
+const unsigned int MANIFOLD_ID = 10;
+
+#include "../../include/OneSidedSphericalManifold.h"
+
+// vectors of manifold_ids and face_ids
+std::vector<unsigned int> manifold_ids;
+std::vector<unsigned int> face_ids;
+
+template<int dim>
+void set_boundary_ids(Triangulation<dim> &tria, bool compute_in_2d)
 {
-  AssertThrow(std::abs((X_2-X_1) - 2.0*(X_C-X_1))<1.0e-12, ExcMessage("Geometry parameters X_1,X_2,X_C invalid!"));
-  SphericalManifold<2> spherical_manifold(Point<2>(X_C,Y_C));
-
-  Triangulation<2> left, circle_1, circle_2, circle_tmp, middle, middle_tmp, middle_tmp2, right, tmp_3D;
-  std::vector<unsigned int> ref_1(2, 2);
-  ref_1[1] = 2;
-
-  GridGenerator::subdivided_hyper_rectangle(left, ref_1 ,Point<2>(X_0,Y_0), Point<2>(X_1, H), false);
-  std::vector<unsigned int> ref_2(2, 9);
-  ref_2[1] = 2;
-
-  GridGenerator::subdivided_hyper_rectangle(right, ref_2, Point<2>(X_2, Y_0), Point<2>(L2, H), false);
-
-  // create middle part first as a hyper shell
-  const double outer_radius = (X_2-X_1)/2.0;
-  const unsigned int n_cells = 4;
-  GridGenerator::hyper_shell(middle, Point<2>(X_C, Y_C), R_2, outer_radius, n_cells, true);
-  middle.set_all_manifold_ids(MANIFOLD_ID);
-  middle.set_manifold(MANIFOLD_ID, spherical_manifold);
-  middle.refine_global(1);
-
-  // two inner circles in order to refine towards the cylinder surface
-  const unsigned int n_cells_circle = 8;
-  GridGenerator::hyper_shell(circle_1, Point<2>(X_C, Y_C), R, R_1, n_cells_circle, true);
-  circle_1.set_all_manifold_ids(MANIFOLD_ID);
-  circle_1.set_manifold(MANIFOLD_ID,spherical_manifold);
-
-  GridGenerator::hyper_shell(circle_2, Point<2>(X_C, Y_C), R_1, R_2, n_cells_circle, true);
-  circle_2.set_all_manifold_ids(MANIFOLD_ID);
-  circle_2.set_manifold(MANIFOLD_ID,spherical_manifold);
-
-  // then move the vertices to the points where we want them to be to create a slightly asymmetric cube with a hole
-  for (Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
+  // Set the cylinder boundary to 2, outflow to 1, the rest to 0.
+  for (typename Triangulation<dim>::active_cell_iterator cell=tria.begin(); cell != tria.end(); ++cell)
   {
-    for (unsigned int v=0; v < GeometryInfo<2>::vertices_per_cell; ++v)
-    {
-      Point<2> &vertex = cell->vertex(v);
-      if (std::abs(vertex[0] - X_2) < 1e-10 && std::abs(vertex[1] - Y_C) < 1e-10)
-      {
-        vertex = Point<2>(X_2, H/2.0);
-      }
-      else if (std::abs(vertex[0] - (X_C + (X_2-X_1)/2.0/std::sqrt(2))) < 1e-10 && std::abs(vertex[1] - (Y_C + (X_2-X_1)/2.0/std::sqrt(2))) < 1e-10)
-      {
-        vertex = Point<2>(X_2, H);
-      }
-      else if (std::abs(vertex[0] - (X_C + (X_2-X_1)/2.0/std::sqrt(2))) < 1e-10 && std::abs(vertex[1] - (Y_C - (X_2-X_1)/2.0/std::sqrt(2))) < 1e-10)
-      {
-        vertex = Point<2>(X_2, Y_0);
-      }
-      else if (std::abs(vertex[0] - X_C) < 1e-10 && std::abs(vertex[1] - (Y_C +(X_2-X_1)/2.0)) < 1e-10)
-      {
-        vertex = Point<2>(X_C, H);
-      }
-      else if (std::abs(vertex[0] - X_C) < 1e-10 && std::abs(vertex[1] - (Y_C-(X_2-X_1)/2.0)) < 1e-10)
-      {
-        vertex = Point<2>(X_C, Y_0);
-      }
-      else if (std::abs(vertex[0] - (X_C - (X_2-X_1)/2.0/std::sqrt(2))) < 1e-10 && std::abs(vertex[1] - (Y_C + (X_2-X_1)/2.0/std::sqrt(2))) < 1e-10)
-      {
-        vertex = Point<2>(X_1, H);
-      }
-      else if (std::abs(vertex[0] - (X_C - (X_2-X_1)/2.0/std::sqrt(2))) < 1e-10 && std::abs(vertex[1] - (Y_C - (X_2-X_1)/2.0/std::sqrt(2))) < 1e-10)
-      {
-        vertex = Point<2>(X_1, Y_0);
-      }
-      else if (std::abs(vertex[0] - X_1) < 1e-10 && std::abs(vertex[1] - Y_C) < 1e-10)
-      {
-        vertex = Point<2>(X_1, H/2.0);
-      }
-    }
-  }
-
-  // must copy the triangulation because we cannot merge triangulations with refinement...
-  GridGenerator::flatten_triangulation(middle, middle_tmp);
-
-  GridGenerator::merge_triangulations(circle_1,circle_2,circle_tmp);
-  GridGenerator::merge_triangulations(middle_tmp,circle_tmp,middle_tmp2);
-
-  if (compute_in_2d)
-  {
-    GridGenerator::merge_triangulations(middle_tmp2,right,tria);
-  }
-  else // 3D
-  {
-    GridGenerator::merge_triangulations (left, middle_tmp2, tmp_3D);
-    GridGenerator::merge_triangulations (tmp_3D, right, tria);
-  }
-
-  tria.set_all_manifold_ids(0);
-
-  // Set the cylinder boundary  to 2, outflow to 1, the rest to 0.
-  for (Triangulation<2>::active_cell_iterator cell=tria.begin(); cell != tria.end(); ++cell)
-  {
-    if(Point<2>(X_C,Y_C).distance(cell->center())<= R_2)
-      cell->set_all_manifold_ids(MANIFOLD_ID);
-
-    for (unsigned int f=0; f<GeometryInfo<2>::faces_per_cell; ++f)// loop over cells
+    for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)// loop over cells
     {
       if (cell->face(f)->at_boundary())
       {
-        if (std::abs(cell->face(f)->center()[0] - (compute_in_2d ? L1 : 0)) < 1e-12)
+        Point<dim> point_on_centerline;
+        point_on_centerline[0] = X_C;
+        point_on_centerline[1] = Y_C;
+        if(dim==3)
+          point_on_centerline[dim-1] = cell->face(f)->center()[2];
+
+        if (std::abs(cell->face(f)->center()[0] - (compute_in_2d ? L1 : X_0)) < 1e-12)
           cell->face(f)->set_all_boundary_ids(0);
         else if (std::abs(cell->face(f)->center()[0]-L2) < 1e-12)
           cell->face(f)->set_all_boundary_ids(1);
-        else if (Point<2>(X_C,Y_C).distance(cell->face(f)->center()) <= R*2.0)
-        {
+        else if (point_on_centerline.distance(cell->face(f)->center()) <= R)
           cell->face(f)->set_all_boundary_ids(2);
-        }
         else
           cell->face(f)->set_all_boundary_ids(0);
       }
@@ -629,37 +566,543 @@ void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = tru
   }
 }
 
+void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = true)
+{
+  AssertThrow(std::abs((X_2-X_1) - 2.0*(X_C-X_1))<1.0e-12, ExcMessage("Geometry parameters X_1, X_2, X_C invalid!"));
+
+  Point<2> center = Point<2>(X_C,Y_C);
+
+  if(MESH_TYPE == MeshType::Type1)
+  {
+    SphericalManifold<2> boundary(center);
+    Triangulation<2> left, middle, right, tmp, tmp2;
+    std::vector<unsigned int> ref_1(2, 2);
+    ref_1[1] = 2;
+
+    GridGenerator::subdivided_hyper_rectangle(left, ref_1 ,Point<2>(X_0,Y_0), Point<2>(X_1, H), false);
+    std::vector<unsigned int> ref_2(2, 9);
+    ref_2[1] = 2;
+
+    GridGenerator::subdivided_hyper_rectangle(right, ref_2,Point<2>(X_2,Y_0), Point<2>(L2, H), false);
+
+    // create middle part first as a hyper shell
+    /*const double outer_radius = (X_2-X_1)/2.0;*/
+    const unsigned int n_cells = 4;
+    // use value of 0.2 in the following line instead of outer_radius since this yields
+    // different results for the pressure-difference --> TODO
+    GridGenerator::hyper_shell(middle, center, R, 0.2, n_cells, true);
+    middle.set_manifold(0, boundary);
+    middle.refine_global(1);
+
+    // then move the vertices to the points where we want them to be to create a slightly asymmetric cube with a hole
+    for (Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
+    {
+     for (unsigned int v=0; v < GeometryInfo<2>::vertices_per_cell; ++v)
+     {
+       Point<2> &vertex = cell->vertex(v);
+       if (std::abs(vertex[0] - 0.7) < 1e-10 && std::abs(vertex[1] - 0.2) < 1e-10)
+         vertex = Point<2>(0.7, 0.205);
+       else if (std::abs(vertex[0] - 0.6) < 1e-10 && std::abs(vertex[1] - 0.3) < 1e-10)
+         vertex = Point<2>(0.7, 0.41);
+       else if (std::abs(vertex[0] - 0.6) < 1e-10 && std::abs(vertex[1] - 0.1) < 1e-10)
+         vertex = Point<2>(0.7, 0);
+       else if (std::abs(vertex[0] - 0.5) < 1e-10 && std::abs(vertex[1] - 0.4) < 1e-10)
+         vertex = Point<2>(0.5, 0.41);
+       else if (std::abs(vertex[0] - 0.5) < 1e-10 && std::abs(vertex[1] - 0.0) < 1e-10)
+         vertex = Point<2>(0.5, 0.0);
+       else if (std::abs(vertex[0] - 0.4) < 1e-10 && std::abs(vertex[1] - 0.3) < 1e-10)
+         vertex = Point<2>(0.3, 0.41);
+       else if (std::abs(vertex[0] - 0.4) < 1e-10 && std::abs(vertex[1] - 0.1) < 1e-10)
+         vertex = Point<2>(0.3, 0);
+       else if (std::abs(vertex[0] - 0.3) < 1e-10 && std::abs(vertex[1] - 0.2) < 1e-10)
+         vertex = Point<2>(0.3, 0.205);
+       else if (std::abs(vertex[0] - 0.56379) < 1e-4 && std::abs(vertex[1] - 0.13621) < 1e-4)
+         vertex = Point<2>(0.59, 0.11);
+       else if (std::abs(vertex[0] - 0.56379) < 1e-4 && std::abs(vertex[1] - 0.26379) < 1e-4)
+         vertex = Point<2>(0.59, 0.29);
+       else if (std::abs(vertex[0] - 0.43621) < 1e-4 && std::abs(vertex[1] - 0.13621) < 1e-4)
+         vertex = Point<2>(0.41, 0.11);
+       else if (std::abs(vertex[0] - 0.43621) < 1e-4 && std::abs(vertex[1] - 0.26379) < 1e-4)
+         vertex = Point<2>(0.41, 0.29);
+     }
+    }
+
+
+    // must copy the triangulation because we cannot merge triangulations with
+    // refinement...
+    GridGenerator::flatten_triangulation(middle, tmp2);
+
+    if (compute_in_2d)
+    {
+     GridGenerator::merge_triangulations (tmp2, right, tria);
+    }
+    else
+    {
+     GridGenerator::merge_triangulations (left, tmp2, tmp);
+     GridGenerator::merge_triangulations (tmp, right, tria);
+    }
+
+    if (compute_in_2d)
+    {
+      // set manifold ID's
+      tria.set_all_manifold_ids(0);
+
+      for (Triangulation<2>::active_cell_iterator cell=tria.begin(); cell != tria.end(); ++cell)
+      {
+        if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
+        {
+          for (unsigned int f=0; f<GeometryInfo<2>::faces_per_cell; ++f)
+          {
+            if (cell->face(f)->at_boundary() && center.distance(cell->face(f)->center())<=R)
+            {
+              cell->face(f)->set_all_manifold_ids(MANIFOLD_ID);
+            }
+          }
+        }
+        else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
+        {
+          for (unsigned int f=0; f<GeometryInfo<2>::faces_per_cell; ++f)
+          {
+            bool face_at_sphere_boundary = true;
+            for (unsigned int v=0; v<GeometryInfo<2-1>::vertices_per_cell; ++v)
+            {
+              if (std::abs(center.distance(cell->face(f)->vertex(v)) - R) > 1e-12)
+                face_at_sphere_boundary = false;
+            }
+            if (face_at_sphere_boundary)
+            {
+              face_ids.push_back(f);
+              unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
+              cell->set_all_manifold_ids(manifold_id);
+              manifold_ids.push_back(manifold_id);
+            }
+          }
+        }
+        else
+        {
+          AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold || MANIFOLD_TYPE == ManifoldType::VolumeManifold,
+              ExcMessage("Specified manifold type not implemented"));
+        }
+      }
+    }
+  }
+  else if(MESH_TYPE == MeshType::Type2)
+  {
+    SphericalManifold<2> spherical_manifold(center);
+
+    Triangulation<2> left, circle_1, circle_2, circle_tmp, middle, middle_tmp, middle_tmp2, right, tmp_3D;
+    std::vector<unsigned int> ref_1(2, 2);
+    ref_1[1] = 2;
+
+    GridGenerator::subdivided_hyper_rectangle(left, ref_1 ,Point<2>(X_0,Y_0), Point<2>(X_1, H), false);
+    std::vector<unsigned int> ref_2(2, 9);
+    ref_2[1] = 2;
+
+    GridGenerator::subdivided_hyper_rectangle(right, ref_2, Point<2>(X_2, Y_0), Point<2>(L2, H), false);
+
+    // create middle part first as a hyper shell
+    const double outer_radius = (X_2-X_1)/2.0;
+    const unsigned int n_cells = 4;
+    GridGenerator::hyper_shell(middle, center, R_2, outer_radius, n_cells, true);
+    middle.set_all_manifold_ids(MANIFOLD_ID);
+    middle.set_manifold(MANIFOLD_ID, spherical_manifold);
+    middle.refine_global(1);
+
+    // two inner circles in order to refine towards the cylinder surface
+    const unsigned int n_cells_circle = 8;
+    GridGenerator::hyper_shell(circle_1, center, R, R_1, n_cells_circle, true);
+    GridGenerator::hyper_shell(circle_2, center, R_1, R_2, n_cells_circle, true);
+
+    // then move the vertices to the points where we want them to be to create a slightly asymmetric cube with a hole
+    for (Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
+    {
+      for (unsigned int v=0; v < GeometryInfo<2>::vertices_per_cell; ++v)
+      {
+        Point<2> &vertex = cell->vertex(v);
+        if (std::abs(vertex[0] - X_2) < 1e-10 && std::abs(vertex[1] - Y_C) < 1e-10)
+        {
+          vertex = Point<2>(X_2, H/2.0);
+        }
+        else if (std::abs(vertex[0] - (X_C + (X_2-X_1)/2.0/std::sqrt(2))) < 1e-10 && std::abs(vertex[1] - (Y_C + (X_2-X_1)/2.0/std::sqrt(2))) < 1e-10)
+        {
+          vertex = Point<2>(X_2, H);
+        }
+        else if (std::abs(vertex[0] - (X_C + (X_2-X_1)/2.0/std::sqrt(2))) < 1e-10 && std::abs(vertex[1] - (Y_C - (X_2-X_1)/2.0/std::sqrt(2))) < 1e-10)
+        {
+          vertex = Point<2>(X_2, Y_0);
+        }
+        else if (std::abs(vertex[0] - X_C) < 1e-10 && std::abs(vertex[1] - (Y_C +(X_2-X_1)/2.0)) < 1e-10)
+        {
+          vertex = Point<2>(X_C, H);
+        }
+        else if (std::abs(vertex[0] - X_C) < 1e-10 && std::abs(vertex[1] - (Y_C-(X_2-X_1)/2.0)) < 1e-10)
+        {
+          vertex = Point<2>(X_C, Y_0);
+        }
+        else if (std::abs(vertex[0] - (X_C - (X_2-X_1)/2.0/std::sqrt(2))) < 1e-10 && std::abs(vertex[1] - (Y_C + (X_2-X_1)/2.0/std::sqrt(2))) < 1e-10)
+        {
+          vertex = Point<2>(X_1, H);
+        }
+        else if (std::abs(vertex[0] - (X_C - (X_2-X_1)/2.0/std::sqrt(2))) < 1e-10 && std::abs(vertex[1] - (Y_C - (X_2-X_1)/2.0/std::sqrt(2))) < 1e-10)
+        {
+          vertex = Point<2>(X_1, Y_0);
+        }
+        else if (std::abs(vertex[0] - X_1) < 1e-10 && std::abs(vertex[1] - Y_C) < 1e-10)
+        {
+          vertex = Point<2>(X_1, H/2.0);
+        }
+      }
+    }
+
+    // must copy the triangulation because we cannot merge triangulations with refinement...
+    GridGenerator::flatten_triangulation(middle, middle_tmp);
+
+    GridGenerator::merge_triangulations(circle_1,circle_2,circle_tmp);
+    GridGenerator::merge_triangulations(middle_tmp,circle_tmp,middle_tmp2);
+
+    if (compute_in_2d)
+    {
+      GridGenerator::merge_triangulations(middle_tmp2,right,tria);
+    }
+    else // 3D
+    {
+      GridGenerator::merge_triangulations (left, middle_tmp2, tmp_3D);
+      GridGenerator::merge_triangulations (tmp_3D, right, tria);
+    }
+
+    if (compute_in_2d)
+    {
+      // set manifold ID's
+      tria.set_all_manifold_ids(0);
+
+      for (Triangulation<2>::active_cell_iterator cell=tria.begin(); cell != tria.end(); ++cell)
+      {
+        if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
+        {
+          if(center.distance(cell->center())<= R_2)
+            cell->set_all_manifold_ids(MANIFOLD_ID);
+        }
+        else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
+        {
+          if(center.distance(cell->center())<= R_2)
+            cell->set_all_manifold_ids(MANIFOLD_ID);
+          else
+          {
+            for (unsigned int f=0; f<GeometryInfo<2>::faces_per_cell; ++f)
+            {
+              bool face_at_sphere_boundary = true;
+              for (unsigned int v=0; v<GeometryInfo<2-1>::vertices_per_cell; ++v)
+              {
+                if (std::abs(center.distance(cell->face(f)->vertex(v)) - R_2) > 1e-12)
+                  face_at_sphere_boundary = false;
+              }
+              if (face_at_sphere_boundary)
+              {
+                face_ids.push_back(f);
+                unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
+                cell->set_all_manifold_ids(manifold_id);
+                manifold_ids.push_back(manifold_id);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  else if(MESH_TYPE == MeshType::Type3)
+  {
+    SphericalManifold<2> spherical_manifold(center);
+
+    Triangulation<2> left, middle, circle, middle_tmp, right, tmp_3D;
+
+    // left part (only needed for 3D problem)
+    std::vector<unsigned int> ref_1(2, 1);
+    GridGenerator::subdivided_hyper_rectangle(left, ref_1 ,Point<2>(X_0,Y_0), Point<2>(X_1, H), false);
+
+    // right part (2D and 3D)
+    std::vector<unsigned int> ref_2(2, 5);
+    ref_2[1] = 1;
+    GridGenerator::subdivided_hyper_rectangle(right, ref_2, Point<2>(X_2, Y_0), Point<2>(L2, H), false);
+
+    // middle part
+    const double outer_radius = (X_2-X_1)/2.0;
+    const unsigned int n_cells = 4;
+    Point<2> origin;
+
+    // inner circle around cylinder
+    GridGenerator::hyper_shell(circle, origin, R, R_3, n_cells, true);
+    GridTools::rotate(numbers::PI/4, circle);
+    GridTools::shift(Point<2>(outer_radius+X_1,outer_radius),circle);
+
+    // create middle part first as a hyper shell
+    GridGenerator::hyper_shell(middle, origin, R_3, outer_radius*std::sqrt(2.0), n_cells, true);
+    GridTools::rotate(numbers::PI/4, middle);
+    GridTools::shift(Point<2>(outer_radius+X_1,outer_radius),middle);
+
+    // then move the vertices to the points where we want them to be
+    for (Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
+    {
+      for (unsigned int v=0; v < GeometryInfo<2>::vertices_per_cell; ++v)
+      {
+        Point<2> &vertex = cell->vertex(v);
+        if (std::abs(vertex[0] - X_1) < 1e-10 && std::abs(vertex[1] - (X_2-X_1)) < 1e-10)
+        {
+          vertex = Point<2>(X_1, H);
+        }
+        else if (std::abs(vertex[0] - X_2) < 1e-10 && std::abs(vertex[1] - (X_2-X_1)) < 1e-10)
+        {
+          vertex = Point<2>(X_2, H);
+        }
+      }
+    }
+
+    GridGenerator::merge_triangulations(circle,middle,middle_tmp);
+
+    if (compute_in_2d)
+    {
+      GridGenerator::merge_triangulations(middle_tmp,right,tria);
+    }
+    else // 3D
+    {
+      GridGenerator::merge_triangulations (left, middle_tmp, tmp_3D);
+      GridGenerator::merge_triangulations (tmp_3D, right, tria);
+    }
+
+    if (compute_in_2d)
+    {
+      // set manifold ID's
+      tria.set_all_manifold_ids(0);
+
+      for (Triangulation<2>::active_cell_iterator cell=tria.begin(); cell != tria.end(); ++cell)
+      {
+        if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
+        {
+          if(center.distance(cell->center())<= R_3)
+            cell->set_all_manifold_ids(MANIFOLD_ID);
+          else
+          {
+            for (unsigned int f=0; f<GeometryInfo<2>::faces_per_cell; ++f)
+            {
+              bool face_at_sphere_boundary = true;
+              for (unsigned int v=0; v<GeometryInfo<2-1>::vertices_per_cell; ++v)
+              {
+                if (std::abs(center.distance(cell->face(f)->vertex(v)) - R_3) > 1e-12)
+                  face_at_sphere_boundary = false;
+              }
+              if (face_at_sphere_boundary)
+              {
+                face_ids.push_back(f);
+                unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
+                cell->set_all_manifold_ids(manifold_id);
+                manifold_ids.push_back(manifold_id);
+              }
+            }
+          }
+        }
+        else
+        {
+          AssertThrow(MANIFOLD_TYPE == ManifoldType::VolumeManifold, ExcMessage("Specified manifold type not implemented."));
+        }
+      }
+    }
+  }
+
+  // Set boundary ID's
+  // Set the cylinder boundary to 2, outflow to 1, the rest to 0.
+//  for (Triangulation<2>::active_cell_iterator cell=tria.begin(); cell != tria.end(); ++cell)
+//  {
+//    for (unsigned int f=0; f<GeometryInfo<2>::faces_per_cell; ++f)// loop over cells
+//    {
+//      if (cell->face(f)->at_boundary())
+//      {
+//        if (std::abs(cell->face(f)->center()[0] - (compute_in_2d ? L1 : X_0)) < 1e-12)
+//          cell->face(f)->set_all_boundary_ids(0);
+//        else if (std::abs(cell->face(f)->center()[0]-L2) < 1e-12)
+//          cell->face(f)->set_all_boundary_ids(1);
+//        else if (center.distance(cell->face(f)->center()) <= R)
+//          cell->face(f)->set_all_boundary_ids(2);
+//        else
+//          cell->face(f)->set_all_boundary_ids(0);
+//      }
+//    }
+//  }
+
+  if(compute_in_2d == true)
+  {
+    // Set boundary ID's
+    set_boundary_ids<2>(tria, compute_in_2d);
+  }
+}
+
+
 void create_triangulation(Triangulation<3> &tria)
 {
  Triangulation<2> tria_2d;
  create_triangulation(tria_2d, false);
- GridGenerator::extrude_triangulation(tria_2d, 3, H, tria);
 
- tria.set_all_manifold_ids(0);
-
- // Set the cylinder boundary  to 2, outflow to 1, the rest to 0.
- for (Triangulation<3>::active_cell_iterator cell=tria.begin();cell != tria.end(); ++cell)
+ if(MESH_TYPE == MeshType::Type1)
  {
-   if(Point<3>(X_C,Y_C,cell->center()[2]).distance(cell->center())<= R_2)
-     cell->set_all_manifold_ids(MANIFOLD_ID);
+   GridGenerator::extrude_triangulation(tria_2d, 3, H, tria);
 
-   for (unsigned int f=0; f<GeometryInfo<3>::faces_per_cell; ++f)
+   // set manifold ID's
+   tria.set_all_manifold_ids(0);
+
+   if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
    {
-     if (cell->face(f)->at_boundary())
+     for (Triangulation<3>::active_cell_iterator cell=tria.begin();cell != tria.end(); ++cell)
      {
-       if (std::abs(cell->face(f)->center()[0]) < 1e-12)
-         cell->face(f)->set_all_boundary_ids(0);
-       else if (std::abs(cell->face(f)->center()[0]-L2) < 1e-12)
-         cell->face(f)->set_all_boundary_ids(1);
-       else if (Point<3>(X_C,Y_C,cell->face(f)->center()[2]).distance(cell->face(f)->center()) <= R*2.0)
+       for (unsigned int f=0; f<GeometryInfo<3>::faces_per_cell; ++f)
        {
-         cell->face(f)->set_all_boundary_ids(2);
+         if (cell->face(f)->at_boundary() && Point<3>(X_C,Y_C,cell->face(f)->center()[2]).distance(cell->face(f)->center()) <= R)
+         {
+           cell->face(f)->set_all_manifold_ids(MANIFOLD_ID);
+         }
        }
-       else
-         cell->face(f)->set_all_boundary_ids(0);
      }
    }
+   else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
+   {
+     for (Triangulation<3>::active_cell_iterator cell=tria.begin();cell != tria.end(); ++cell)
+     {
+       for (unsigned int f=0; f<GeometryInfo<3>::faces_per_cell; ++f)
+       {
+         bool face_at_sphere_boundary = true;
+         for (unsigned int v=0; v<GeometryInfo<3-1>::vertices_per_cell; ++v)
+         {
+           if (std::abs(Point<3>(X_C,Y_C,cell->face(f)->vertex(v)[2]).distance(cell->face(f)->vertex(v)) - R) > 1e-12)
+             face_at_sphere_boundary = false;
+         }
+         if (face_at_sphere_boundary)
+         {
+           face_ids.push_back(f);
+           unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
+           cell->set_all_manifold_ids(manifold_id);
+           manifold_ids.push_back(manifold_id);
+         }
+       }
+     }
+   }
+   else
+   {
+     AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold || MANIFOLD_TYPE == ManifoldType::VolumeManifold,
+         ExcMessage("Specified manifold type not implemented"));
+   }
  }
+ else if(MESH_TYPE == MeshType::Type2)
+ {
+   GridGenerator::extrude_triangulation(tria_2d, 3, H, tria);
+
+   // set manifold ID's
+   tria.set_all_manifold_ids(0);
+
+   if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
+   {
+     for (Triangulation<3>::active_cell_iterator cell=tria.begin();cell != tria.end(); ++cell)
+     {
+       if(Point<3>(X_C,Y_C,cell->center()[2]).distance(cell->center()) <= R_2)
+         cell->set_all_manifold_ids(MANIFOLD_ID);
+     }
+   }
+   else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
+   {
+     for (Triangulation<3>::active_cell_iterator cell=tria.begin();cell != tria.end(); ++cell)
+     {
+       if(Point<3>(X_C,Y_C,cell->center()[2]).distance(cell->center())<= R_2)
+         cell->set_all_manifold_ids(MANIFOLD_ID);
+       else
+       {
+         for (unsigned int f=0; f<GeometryInfo<3>::faces_per_cell; ++f)
+         {
+           bool face_at_sphere_boundary = true;
+           for (unsigned int v=0; v<GeometryInfo<3-1>::vertices_per_cell; ++v)
+           {
+             if (std::abs(Point<3>(X_C,Y_C,cell->face(f)->vertex(v)[2]).distance(cell->face(f)->vertex(v)) - R_2) > 1e-12)
+               face_at_sphere_boundary = false;
+           }
+           if (face_at_sphere_boundary)
+           {
+             face_ids.push_back(f);
+             unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
+             cell->set_all_manifold_ids(manifold_id);
+             manifold_ids.push_back(manifold_id);
+           }
+         }
+       }
+     }
+   }
+   else
+   {
+     AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold || MANIFOLD_TYPE == ManifoldType::VolumeManifold,
+         ExcMessage("Specified manifold type not implemented"));
+   }
+ }
+ else if(MESH_TYPE == MeshType::Type3)
+ {
+   GridGenerator::extrude_triangulation(tria_2d, 2, H, tria);
+
+   // set manifold ID's
+   tria.set_all_manifold_ids(0);
+
+   if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
+   {
+    for (Triangulation<3>::active_cell_iterator cell=tria.begin();cell != tria.end(); ++cell)
+    {
+      if(Point<3>(X_C,Y_C,cell->center()[2]).distance(cell->center())<= R_3)
+        cell->set_all_manifold_ids(MANIFOLD_ID);
+      else
+      {
+        for (unsigned int f=0; f<GeometryInfo<3>::faces_per_cell; ++f)
+        {
+          bool face_at_sphere_boundary = true;
+          for (unsigned int v=0; v<GeometryInfo<3-1>::vertices_per_cell; ++v)
+          {
+            if (std::abs(Point<3>(X_C,Y_C,cell->face(f)->vertex(v)[2]).distance(cell->face(f)->vertex(v)) - R_3) > 1e-12)
+              face_at_sphere_boundary = false;
+          }
+          if (face_at_sphere_boundary)
+          {
+            face_ids.push_back(f);
+            unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
+            cell->set_all_manifold_ids(manifold_id);
+            manifold_ids.push_back(manifold_id);
+          }
+        }
+      }
+    }
+  }
+  else
+  {
+    AssertThrow(MANIFOLD_TYPE == ManifoldType::VolumeManifold, ExcMessage("Specified manifold type not implemented"));
+  }
+ }
+ else
+ {
+   AssertThrow(MESH_TYPE == MeshType::Type1 || MESH_TYPE == MeshType::Type2 || MESH_TYPE == MeshType::Type3,
+       ExcMessage("Specified mesh type not implemented"));
+ }
+
+// // Set boundary ID's
+// // Set the cylinder boundary to 2, outflow to 1, the rest to 0.
+// for (Triangulation<3>::active_cell_iterator cell=tria.begin();cell != tria.end(); ++cell)
+// {
+//   for (unsigned int f=0; f<GeometryInfo<3>::faces_per_cell; ++f)
+//   {
+//     if (cell->face(f)->at_boundary())
+//     {
+//       if (std::abs(cell->face(f)->center()[0] - X_0) < 1e-12)
+//         cell->face(f)->set_all_boundary_ids(0);
+//       else if (std::abs(cell->face(f)->center()[0]-L2) < 1e-12)
+//         cell->face(f)->set_all_boundary_ids(1);
+//       else if (Point<3>(X_C,Y_C,cell->face(f)->center()[2]).distance(cell->face(f)->center()) <= R)
+//         cell->face(f)->set_all_boundary_ids(2);
+//       else
+//         cell->face(f)->set_all_boundary_ids(0);
+//     }
+//   }
+// }
+
+  // Set boundary ID's
+  set_boundary_ids<3>(tria, false);
 }
 
 template<int dim>
@@ -671,18 +1114,50 @@ void create_grid_and_set_boundary_conditions(
    std::vector<GridTools::PeriodicFacePair<typename
      Triangulation<dim>::cell_iterator> >                      &/*periodic_faces*/)
 {
- Point<dim> direction;
- direction[dim-1] = 1.;
-
  Point<dim> center;
  center[0] = X_C;
  center[1] = Y_C;
 
- static std_cxx11::shared_ptr<Manifold<dim> > cylinder_manifold =
-   std_cxx11::shared_ptr<Manifold<dim> >(dim == 2 ? static_cast<Manifold<dim>*>(new SphericalManifold<dim>(center)) :
-                                         static_cast<Manifold<dim>*>(new CylindricalManifold<dim>(direction, center)));
+ // apply this manifold for all mesh types
+ Point<dim> direction;
+ direction[dim-1] = 1.;
+
+ static std_cxx11::shared_ptr<Manifold<dim> > cylinder_manifold;
+
+ if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
+ {
+   cylinder_manifold = std_cxx11::shared_ptr<Manifold<dim> >(dim == 2 ? static_cast<Manifold<dim>*>(new SphericalManifold<dim>(center)) :
+                                           static_cast<Manifold<dim>*>(new CylindricalManifold<dim>(direction, center)));
+ }
+ else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
+ {
+   cylinder_manifold = std_cxx11::shared_ptr<Manifold<dim> >(static_cast<Manifold<dim>*>(new MyCylindricalManifold<dim>(center)));
+ }
+ else
+ {
+   AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold || MANIFOLD_TYPE == ManifoldType::VolumeManifold,
+       ExcMessage("Specified manifold type not implemented"));
+ }
+
  create_triangulation(triangulation);
  triangulation.set_manifold(MANIFOLD_ID, *cylinder_manifold);
+
+ // generate vector of manifolds and apply manifold to all cells that have been marked
+ static std::vector<std_cxx11::shared_ptr<Manifold<dim> > > manifold_vec;
+ manifold_vec.resize(manifold_ids.size());
+
+ for(unsigned int i=0;i<manifold_ids.size();++i)
+ {
+   for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin(); cell != triangulation.end(); ++cell)
+   {
+     if(cell->manifold_id() == manifold_ids[i])
+     {
+       manifold_vec[i] = std_cxx11::shared_ptr<Manifold<dim> >(
+           static_cast<Manifold<dim>*>(new OneSidedCylindricalManifold<dim>(cell,face_ids[i],center)));
+       triangulation.set_manifold(manifold_ids[i],*(manifold_vec[i]));
+     }
+   }
+ }
 
  triangulation.refine_global(n_refine_space);
 
@@ -716,182 +1191,6 @@ void create_grid_and_set_boundary_conditions(
  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
                                                   (1,analytical_solution_pressure));
 }
-
-//void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = true)
-//{
-//   HyperBallBoundary<2> boundary(Point<2>(0.5,0.2), 0.05);
-//   Triangulation<2> left, middle, right, tmp, tmp2;
-//   std::vector<unsigned int> ref_1(2, 2);
-//   ref_1[1] = 2;
-//
-//   GridGenerator::subdivided_hyper_rectangle(left, ref_1 ,Point<2>(), Point<2>(0.3, 0.41), false);
-//   std::vector<unsigned int> ref_2(2, 9);
-//   ref_2[1] = 2;
-//
-//   GridGenerator::subdivided_hyper_rectangle(right, ref_2,Point<2>(0.7, 0), Point<2>(2.5, 0.41), false);
-//
-//   // create middle part first as a hyper shell
-//   GridGenerator::hyper_shell(middle, Point<2>(0.5, 0.2), 0.05, 0.2, 4, true);
-//   middle.set_manifold(0, boundary);
-//   middle.refine_global(1);
-//
-//   //for (unsigned int v=0; v<middle.get_vertices().size(); ++v)
-//   //  const_cast<Point<dim> &>(middle.get_vertices()[v]) = 0.4 / 3. * middle.get_vertices()[v];
-//
-//   // then move the vertices to the points where we want them to be to create a
-//   // slightly asymmetric cube with a hole
-//   for (Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
-//   {
-//     for (unsigned int v=0; v < GeometryInfo<2>::vertices_per_cell; ++v)
-//     {
-//       Point<2> &vertex = cell->vertex(v);
-//       if (std::abs(vertex[0] - 0.7) < 1e-10 && std::abs(vertex[1] - 0.2) < 1e-10)
-//         vertex = Point<2>(0.7, 0.205);
-//       else if (std::abs(vertex[0] - 0.6) < 1e-10 && std::abs(vertex[1] - 0.3) < 1e-10)
-//         vertex = Point<2>(0.7, 0.41);
-//       else if (std::abs(vertex[0] - 0.6) < 1e-10 && std::abs(vertex[1] - 0.1) < 1e-10)
-//         vertex = Point<2>(0.7, 0);
-//       else if (std::abs(vertex[0] - 0.5) < 1e-10 && std::abs(vertex[1] - 0.4) < 1e-10)
-//         vertex = Point<2>(0.5, 0.41);
-//       else if (std::abs(vertex[0] - 0.5) < 1e-10 && std::abs(vertex[1] - 0.0) < 1e-10)
-//         vertex = Point<2>(0.5, 0.0);
-//       else if (std::abs(vertex[0] - 0.4) < 1e-10 && std::abs(vertex[1] - 0.3) < 1e-10)
-//         vertex = Point<2>(0.3, 0.41);
-//       else if (std::abs(vertex[0] - 0.4) < 1e-10 && std::abs(vertex[1] - 0.1) < 1e-10)
-//         vertex = Point<2>(0.3, 0);
-//       else if (std::abs(vertex[0] - 0.3) < 1e-10 && std::abs(vertex[1] - 0.2) < 1e-10)
-//         vertex = Point<2>(0.3, 0.205);
-//       else if (std::abs(vertex[0] - 0.56379) < 1e-4 && std::abs(vertex[1] - 0.13621) < 1e-4)
-//         vertex = Point<2>(0.59, 0.11);
-//       else if (std::abs(vertex[0] - 0.56379) < 1e-4 && std::abs(vertex[1] - 0.26379) < 1e-4)
-//         vertex = Point<2>(0.59, 0.29);
-//       else if (std::abs(vertex[0] - 0.43621) < 1e-4 && std::abs(vertex[1] - 0.13621) < 1e-4)
-//         vertex = Point<2>(0.41, 0.11);
-//       else if (std::abs(vertex[0] - 0.43621) < 1e-4 && std::abs(vertex[1] - 0.26379) < 1e-4)
-//         vertex = Point<2>(0.41, 0.29);
-//     }
-//   }
-//
-//   // must copy the triangulation because we cannot merge triangulations with
-//   // refinement...
-//   GridGenerator::flatten_triangulation(middle, tmp2);
-//
-//   if (compute_in_2d)
-//   {
-//     GridGenerator::merge_triangulations (tmp2, right, tria);
-//   }
-//   else
-//   {
-//     GridGenerator::merge_triangulations (left, tmp2, tmp);
-//     GridGenerator::merge_triangulations (tmp, right, tria);
-//   }
-//
-//   // Set the cylinder boundary  to 2, outflow to 1, the rest to 0.
-//   for (Triangulation<2>::active_cell_iterator cell=tria.begin(); cell != tria.end(); ++cell)
-//   {
-//     for (unsigned int f=0; f<GeometryInfo<2>::faces_per_cell; ++f)
-//     {
-//       if (cell->face(f)->at_boundary())
-//       {
-//         if (std::abs(cell->face(f)->center()[0] - (compute_in_2d ? 0.3 : 0)) < 1e-12)
-//           cell->face(f)->set_all_boundary_ids(0);
-//         else if (std::abs(cell->face(f)->center()[0]-2.5) < 1e-12)
-//           cell->face(f)->set_all_boundary_ids(1);
-//         else if (Point<2>(0.5,0.2).distance(cell->face(f)->center())<=0.05)
-//         {
-//           cell->face(f)->set_all_manifold_ids(10);
-//           cell->face(f)->set_all_boundary_ids(2);
-//         }
-//         else
-//           cell->face(f)->set_all_boundary_ids(0);
-//       }
-//     }
-//   }
-//}
-//
-//void create_triangulation(Triangulation<3> &tria)
-//{
-//  Triangulation<2> tria_2d;
-//  create_triangulation(tria_2d, false);
-//  GridGenerator::extrude_triangulation(tria_2d, 3, 0.41, tria);
-//
-//  // Set the cylinder boundary  to 2, outflow to 1, the rest to 0.
-//  for (Triangulation<3>::active_cell_iterator cell=tria.begin();cell != tria.end(); ++cell)
-//  {
-//    for (unsigned int f=0; f<GeometryInfo<3>::faces_per_cell; ++f)
-//    {
-//      if (cell->face(f)->at_boundary())
-//      {
-//        if (std::abs(cell->face(f)->center()[0]) < 1e-12)
-//          cell->face(f)->set_all_boundary_ids(0);
-//        else if (std::abs(cell->face(f)->center()[0]-2.5) < 1e-12)
-//          cell->face(f)->set_all_boundary_ids(1);
-//        else if (Point<3>(0.5,0.2,cell->face(f)->center()[2]).distance(cell->face(f)->center())<=0.05)
-//        {
-//          cell->face(f)->set_all_manifold_ids(10);
-//          cell->face(f)->set_all_boundary_ids(2);
-//        }
-//        else
-//          cell->face(f)->set_all_boundary_ids(0);
-//      }
-//    }
-//  }
-//}
-//template<int dim>
-//void create_grid_and_set_boundary_conditions(
-//    parallel::distributed::Triangulation<dim>                   &triangulation,
-//    unsigned int const                                          n_refine_space,
-//    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
-//    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
-//    std::vector<GridTools::PeriodicFacePair<typename
-//      Triangulation<dim>::cell_iterator> >                      &/*periodic_faces*/)
-//{
-//
-//  Point<dim> direction;
-//  direction[dim-1] = 1.;
-//
-//  Point<dim> center;
-//  center[0] = 0.5;
-//  center[1] = 0.2;
-//
-//  static std_cxx11::shared_ptr<Manifold<dim> > cylinder_manifold =
-//    std_cxx11::shared_ptr<Manifold<dim> >(dim == 2 ? static_cast<Manifold<dim>*>(new HyperBallBoundary<dim>(center, 0.05)) :
-//                                          static_cast<Manifold<dim>*>(new CylindricalManifold<dim>(direction, center)));
-//  create_triangulation(triangulation);
-//  triangulation.set_manifold(10, *cylinder_manifold);
-//
-//  triangulation.refine_global(n_refine_space);
-//
-//  // fill boundary descriptor velocity
-//  std_cxx11::shared_ptr<Function<dim> > analytical_solution_velocity;
-//  analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
-//  // Dirichlet boundaries: ID = 0, 2
-//  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
-//                                                     (0,analytical_solution_velocity));
-//  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
-//                                                     (2,analytical_solution_velocity));
-//
-//  std_cxx11::shared_ptr<Function<dim> > neumann_bc_velocity;
-//  neumann_bc_velocity.reset(new NeumannBoundaryVelocity<dim>());
-//  // Neumann boundaris: ID = 1
-//  boundary_descriptor_velocity->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
-//                                                    (1,neumann_bc_velocity));
-//
-//  // fill boundary descriptor pressure
-//  std_cxx11::shared_ptr<Function<dim> > pressure_bc_dudt;
-//  pressure_bc_dudt.reset(new PressureBC_dudt<dim>());
-//  // Dirichlet boundaries: ID = 0, 2
-//  boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
-//                                                     (0,pressure_bc_dudt));
-//  boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
-//                                                     (2,pressure_bc_dudt));
-//
-//  std_cxx11::shared_ptr<Function<dim> > analytical_solution_pressure;
-//  analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
-//  // Neumann boundaries: ID = 1
-//  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
-//                                                   (1,analytical_solution_pressure));
-//}
 
 
 template<int dim>

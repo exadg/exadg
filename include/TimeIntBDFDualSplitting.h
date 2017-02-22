@@ -339,6 +339,26 @@ postprocessing() const
                                          divergence,
                                          this->time,
                                          this->time_step_number);
+
+  // check pressure error and velocity error
+//  parallel::distributed::Vector<value_type> velocity_exact;
+//  navier_stokes_operation->initialize_vector_velocity(velocity_exact);
+//
+//  parallel::distributed::Vector<value_type> pressure_exact;
+//  navier_stokes_operation->initialize_vector_pressure(pressure_exact);
+//
+//  navier_stokes_operation->prescribe_initial_conditions(velocity_exact,pressure_exact,this->time);
+//
+//  velocity_exact.add(-1.0,velocity[0]);
+//  pressure_exact.add(-1.0,pressure[0]);
+//
+//  this->postprocessor->do_postprocessing(velocity_exact,
+//                                         intermediate_velocity,
+//                                         pressure_exact,
+//                                         vorticity[0],
+//                                         divergence,
+//                                         this->time,
+//                                         this->time_step_number);
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -712,6 +732,10 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
 analyze_computing_times() const
 {
+
+  this->pcout << std::endl
+              << "Number of MPI processes = " << Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) << std::endl;
+
   this->pcout << std::endl
               << "Number of time steps = " << (this->time_step_number-1) << std::endl
               << "Average number of iterations pressure Poisson = " << std::scientific << std::setprecision(3)

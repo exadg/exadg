@@ -89,6 +89,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
   IP_factor_viscous = 1.0;
+  penalty_term_div_formulation = PenaltyTermDivergenceFormulation::NotSymmetrized;
 
   // gradient term
   gradp_integrated_by_parts = true;
