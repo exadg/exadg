@@ -20,6 +20,7 @@ SET( SOURCE_FILES
      #fe_poiseuille.cc
      SteadyConvectionDiffusion.cc
      UnsteadyConvectionDiffusion.cc
+     #step-7.cc
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )

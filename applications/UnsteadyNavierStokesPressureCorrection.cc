@@ -32,10 +32,10 @@ using namespace dealii;
 //#include "NavierStokesTestCases/StokesGuermond.h"
 //#include "NavierStokesTestCases/StokesShahbazi.h"
 //#include "NavierStokesTestCases/Kovasznay.h"
-//#include "NavierStokesTestCases/Vortex.h"
+#include "NavierStokesTestCases/Vortex.h"
 //#include "NavierStokesTestCases/TaylorVortex.h"
 //#include "NavierStokesTestCases/Beltrami.h"
-#include "NavierStokesTestCases/FlowPastCylinder.h"
+//#include "NavierStokesTestCases/FlowPastCylinder.h"
 //#include "NavierStokesTestCases/TurbulentChannel.h"
 
 
@@ -49,6 +49,7 @@ public:
 
 private:
   void print_header();
+  void print_mpi_info();
   void print_grid_data();
   void setup_postprocessor();
 
@@ -88,6 +89,7 @@ NavierStokesProblem(unsigned int const refine_steps_space,
   param.check_input_parameters();
 
   print_header();
+  print_mpi_info();
   if(param.print_input_parameters == true)
     param.print(pcout);
 
@@ -141,6 +143,14 @@ print_header()
   << "                    based on a pressure-correction approach                      " << std::endl
   << "_________________________________________________________________________________" << std::endl
   << std::endl;
+}
+
+template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+print_mpi_info()
+{
+  pcout << std::endl << "MPI info:" << std::endl << std::endl;
+  print_parameter(pcout,"Number of processes",Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD));
 }
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>

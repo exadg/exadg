@@ -2843,9 +2843,10 @@ public:
   void apply_block_jacobi (parallel::distributed::Vector<Number>       &dst,
                            parallel::distributed::Vector<Number> const &src) const
   {
-    IterationNumberControl control (30,1.e-20,1.e-2);
+    IterationNumberControl control (100,1.e-20,1.e-2);
     typename SolverGMRES<parallel::distributed::Vector<Number> >::AdditionalData additional_data;
     additional_data.right_preconditioning = true;
+    additional_data.max_n_tmp_vectors = 100;
     SolverGMRES<parallel::distributed::Vector<Number> > solver (control,additional_data);
 
     typedef ConvectionDiffusionOperator<dim,fe_degree,Number> MY_TYPE;

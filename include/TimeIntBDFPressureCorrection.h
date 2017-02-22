@@ -811,12 +811,27 @@ void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOper
 analyze_computing_times() const
 {
   this->pcout << std::endl
-              << "Number of time steps = " << (this->time_step_number-1) << std::endl
-              << "Average number of linear iterations momentum step = " << std::scientific << std::setprecision(3)
-              << N_iter_linear_momentum_average/(this->time_step_number-1) << std::endl
-              << "Average number of nonlinear iterations momentum step = " << std::scientific << std::setprecision(3)
-              << N_iter_nonlinear_momentum_average/(this->time_step_number-1) << std::endl
-              << "Average number of iterations pressure Poisson = " << std::scientific << std::setprecision(3)
+              << "Number of MPI processes = " << Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) << std::endl;
+
+  if(this->param.equation_type == EquationType::Stokes ||
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
+    this->pcout << std::endl
+                << "Number of time steps = " << (this->time_step_number-1) << std::endl
+                << "Average number of linear iterations momentum step = " << std::scientific << std::setprecision(3)
+                << N_iter_linear_momentum_average/(this->time_step_number-1) << std::endl;
+  }
+  else
+  {
+    this->pcout << std::endl
+                << "Number of time steps = " << (this->time_step_number-1) << std::endl
+                << "Average number of linear iterations momentum step = " << std::scientific << std::setprecision(3)
+                << N_iter_linear_momentum_average/(this->time_step_number-1) << std::endl
+                << "Average number of nonlinear iterations momentum step = " << std::scientific << std::setprecision(3)
+                << N_iter_nonlinear_momentum_average/(this->time_step_number-1) << std::endl;
+  }
+
+  this->pcout << "Average number of iterations pressure Poisson = " << std::scientific << std::setprecision(3)
               << N_iter_pressure_average/(this->time_step_number-1) << std::endl
               << "Average wall time per time step = " << std::scientific << std::setprecision(3)
               << this->total_time/(this->time_step_number-1) << std::endl;
