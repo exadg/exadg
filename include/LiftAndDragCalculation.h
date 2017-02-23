@@ -144,7 +144,7 @@ public:
            f_lift.open(filename_lift.c_str(),std::ios::app);
          }
 
-         unsigned int precision = 8;
+         unsigned int precision = 12;
 
          f_drag << std::scientific << std::setprecision(precision)
                 << time << "\t" << Force[0] << std::endl;
