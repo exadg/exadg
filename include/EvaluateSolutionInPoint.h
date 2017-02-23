@@ -269,7 +269,8 @@ public:
           f.open(filename.c_str(),std::ios::app);
         }
 
-        unsigned int precision = 8;
+        unsigned int precision = 12;
+
         f << std::scientific << std::setprecision(precision) << time << "\t" << pressure_difference << std::endl;
         f.close();
       }

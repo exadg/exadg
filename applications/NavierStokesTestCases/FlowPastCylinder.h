@@ -31,7 +31,7 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 3;
+unsigned int const REFINE_STEPS_SPACE_MIN = 0;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
@@ -68,11 +68,11 @@ const ManifoldType MANIFOLD_TYPE = ManifoldType::VolumeManifold;
 // Type3: coarse mesh has only one element in direction perpendicular to flow direction,
 //        one layer of spherical cells around cylinder for coarsest mesh
 enum class MeshType{ Type1, Type2, Type3 };
-const MeshType MESH_TYPE = MeshType::Type3;
+const MeshType MESH_TYPE = MeshType::Type2;
 
 const double END_TIME = 8.0;
-std::string OUTPUT_PREFIX = "2D_3_cfl_0-2";
-std::string OUTPUT_FOLDER = "/paper/dual_splitting/"; //"/comparison_lehrenfeld/pressure_correction/"; // "/paper/pressure_correction";
+std::string OUTPUT_PREFIX = "2D_3_cfl_0-25";
+std::string OUTPUT_FOLDER = "/paper/dual_splitting_tmp/"; //"/comparison_lehrenfeld/pressure_correction/"; // "/paper/pressure_correction";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -95,11 +95,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified; //ConstTimeStepCFL;
   max_velocity = Um;
-  cfl = 0.2;//0.6;//2.5e-1;
+  cfl = 0.25;//0.6;//2.5e-1;
   cfl_exponent_fe_degree_velocity = 1.0;
   time_step_size = 1.0e-3;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 2; //2; // 1; // 2; // 3;
+  order_time_integrator = 3; //2; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
 
 
@@ -154,7 +154,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // HIGH-ORDER DUAL SPLITTING SCHEME
 
   // formulations
-  order_extrapolation_pressure_nbc = 2; //order_time_integrator <=2 ? order_time_integrator : 2;
+  order_extrapolation_pressure_nbc = order_time_integrator <=2 ? order_time_integrator : 2;
 
   // convective step
 
@@ -241,7 +241,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   print_input_parameters = true;
 
   // write output for visualization of results
-  output_data.write_output = true; //false; //true;
+  output_data.write_output = false; //true;
   output_data.output_prefix = OUTPUT_PREFIX;
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
@@ -574,7 +574,9 @@ void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = tru
 
   if(MESH_TYPE == MeshType::Type1)
   {
-    SphericalManifold<2> boundary(center);
+//    SphericalManifold<2> boundary(center);
+    MyCylindricalManifold<2> boundary(center);
+
     Triangulation<2> left, middle, right, tmp, tmp2;
     std::vector<unsigned int> ref_1(2, 2);
     ref_1[1] = 2;
@@ -688,7 +690,8 @@ void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = tru
   }
   else if(MESH_TYPE == MeshType::Type2)
   {
-    SphericalManifold<2> spherical_manifold(center);
+//    SphericalManifold<2> cylinder_manifold(center);
+    MyCylindricalManifold<2> cylinder_manifold(center);
 
     Triangulation<2> left, circle_1, circle_2, circle_tmp, middle, middle_tmp, middle_tmp2, right, tmp_3D;
     std::vector<unsigned int> ref_1(2, 2);
@@ -705,7 +708,7 @@ void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = tru
     const unsigned int n_cells = 4;
     GridGenerator::hyper_shell(middle, center, R_2, outer_radius, n_cells, true);
     middle.set_all_manifold_ids(MANIFOLD_ID);
-    middle.set_manifold(MANIFOLD_ID, spherical_manifold);
+    middle.set_manifold(MANIFOLD_ID, cylinder_manifold);
     middle.refine_global(1);
 
     // two inner circles in order to refine towards the cylinder surface
@@ -811,8 +814,6 @@ void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = tru
   }
   else if(MESH_TYPE == MeshType::Type3)
   {
-    SphericalManifold<2> spherical_manifold(center);
-
     Triangulation<2> left, middle, circle, middle_tmp, right, tmp_3D;
 
     // left part (only needed for 3D problem)
