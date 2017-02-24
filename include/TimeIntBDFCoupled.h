@@ -250,6 +250,12 @@ solve_timestep()
     sum_alphai_ui.add(this->bdf.get_alpha(i)/this->time_steps[0],solution[i].block(0));
   }
 
+  // Update divegence and continuity penalty operator
+  if(this->param.use_div_div_penalty == true || this->param.use_continuity_penalty == true)
+  {
+    navier_stokes_operation->update_div_conti_penalty_operator(solution[0].block(0),this->time_steps[0]);
+  }
+
   // if the problem to be solved is linear
   if(this->param.equation_type == EquationType::Stokes ||
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)

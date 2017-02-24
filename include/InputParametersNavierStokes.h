@@ -494,6 +494,11 @@ public:
     pure_dirichlet_bc(false),
     adjust_pressure_level(AdjustPressureLevel::ApplyZeroMeanValue),
 
+    // div-div and continuity penalty
+    // currently for coupled solver only (TODO)
+    use_div_div_penalty(false),
+    use_continuity_penalty(false),
+
     // PROJECTION METHODS
 
     // pressure Poisson equation
@@ -962,6 +967,19 @@ public:
       print_parameter(pcout,
                       "Adjust pressure level by",
                       str_pressure_level[(int)adjust_pressure_level]);
+    }
+
+    if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+    {
+      print_parameter(pcout,"Use div-div penalty term",use_div_div_penalty);
+
+      if(use_div_div_penalty == true)
+        print_parameter(pcout, "Penalty factor divergence", penalty_factor_divergence);
+
+      print_parameter(pcout,"Use continuity penalty term",use_continuity_penalty);
+
+      if(use_continuity_penalty == true)
+        print_parameter(pcout,"Penalty factor continuity",penalty_factor_continuity);
     }
   } 
 
@@ -1483,6 +1501,14 @@ public:
   // adjust pressure level in case of pure Dirichlet BC's where
   // the pressure is only defined up to an additive constant
   AdjustPressureLevel adjust_pressure_level;
+
+  // use div-div penalty term
+  // Note that this parameter is currently only relevant for the coupled solver
+  bool use_div_div_penalty;
+
+  // use continuity penalty term
+  // Note that this parameter is currently only relevant for the coupled solver
+  bool use_continuity_penalty;
 
   /**************************************************************************************/
   /*                                                                                    */
