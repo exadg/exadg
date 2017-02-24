@@ -164,7 +164,6 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   update_preconditioner_momentum = false;
 
   // formulation
-  incremental_formulation = true;
   order_pressure_extrapolation = 1; // only relevant if icnremental=true
   rotational_formulation = true;
 

@@ -30,11 +30,11 @@ using namespace dealii;
 //#include "NavierStokesTestCases/StokesGuermond.h"
 //#include "NavierStokesTestCases/StokesShahbazi.h"
 //#include "NavierStokesTestCases/Kovasznay.h"
-#include "NavierStokesTestCases/Vortex.h"
+//#include "NavierStokesTestCases/Vortex.h"
 //#include "NavierStokesTestCases/TaylorVortex.h"
 //#include "NavierStokesTestCases/Beltrami.h"
 //#include "NavierStokesTestCases/FlowPastCylinder.h"
-//#include "NavierStokesTestCases/TurbulentChannel.h"
+#include "NavierStokesTestCases/TurbulentChannel.h"
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 class NavierStokesProblem

@@ -49,7 +49,7 @@ const double GRID_STRETCH_FAC = 1.8;
 double const VISCOSITY = 1./180.; // critical value: 1./50. - 1./75.
 double const END_TIME = 50.0;
 
-std::string OUTPUT_PREFIX = "turb_ch_dual_splitting_nu_180_l2_p4-3_CFL1_div_and_conti_penalty"; //"turb_ch_press_corr_nu_180_l2_p4_p3_mixed_order_weak_projection_CFL10_implicit";
+std::string OUTPUT_PREFIX = "turb_ch_coupled_solver_nu_180_l2_p4-3_CFL1_div_conti_0-1"; //"turb_ch_dual_splitting_nu_180_l2_p4-3_CFL1_div_and_conti_penalty"; //"turb_ch_press_corr_nu_180_l2_p4_p3_mixed_order_weak_projection_CFL10_implicit";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -68,11 +68,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; // BDFDualSplittingScheme; //BDFPressureCorrection;
+  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; // BDFDualSplittingScheme; //BDFPressureCorrection;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; // AdaptiveTimeStepCFL
   max_velocity = MAX_VELOCITY;
-  cfl = 1.0e0; //1.0 if ConstTimeStepCFL
+  cfl = 0.5e0; //1.0 if ConstTimeStepCFL
   time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
   order_time_integrator = 2; // 1; // 2; // 3;
@@ -102,6 +102,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // special case: pure DBC's
   pure_dirichlet_bc = true;
 
+  // div-div and continuity penalty
+  // these parameters are only used for the coupled solver
+  use_div_div_penalty = true;
+  use_continuity_penalty = true;
+
 
   // PROJECTION METHODS
 
@@ -118,7 +123,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // projection step
   projection_type = ProjectionType::DivergenceAndContinuityPenalty; //NoPenalty; //DivergencePenalty;
-  penalty_factor_divergence = 1.0e0;
+  // currently, these two parameters are also used for the coupled solver
+  penalty_factor_divergence = 1.0e-1;
   penalty_factor_continuity = 1.0e0;
   solver_projection = SolverProjection::PCG;
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
@@ -176,8 +182,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   update_preconditioner_momentum = false;
 
   // formulation
-  incremental_formulation = true;
-  order_pressure_extrapolation = 1;
+  order_pressure_extrapolation = 1; // use 0 for non-incremental formulation
   rotational_formulation = true;
 
 
@@ -191,7 +196,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // linear solver
   solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;
   abs_tol_linear = 1.e-12;
-  rel_tol_linear = 1.e-6; //1.e-3;
+  rel_tol_linear = 1.e-3; //1.e-6; //1.e-3;
   max_iter_linear = 1e4;
   max_n_tmp_vectors = 100;
 
@@ -199,7 +204,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::InverseMassMatrix; //VelocityDiffusion;
+  momentum_preconditioner = MomentumPreconditioner::InverseMassMatrix; //InverseMassMatrix; //VelocityDiffusion;
   exact_inversion_of_momentum_block = false;
   rel_tol_solver_momentum_preconditioner = 1.e-3;
   max_n_tmp_vectors_solver_momentum_preconditioner = 100;
