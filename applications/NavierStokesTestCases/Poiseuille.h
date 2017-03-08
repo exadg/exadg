@@ -112,9 +112,6 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   deltat_ref = 1.e0;
 
   // projection step
-  projection_type = ProjectionType::NoPenalty; //NoPenalty; //DivergencePenalty;
-  penalty_factor_divergence = 1.0e0;
-  penalty_factor_continuity = 1.0e0;
   solver_projection = SolverProjection::PCG;
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
   abs_tol_projection = 1.e-20;
@@ -171,7 +168,6 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   update_preconditioner_momentum = false;
 
   // formulation
-  incremental_formulation = true;
   order_pressure_extrapolation = 1;
   rotational_formulation = true;
 

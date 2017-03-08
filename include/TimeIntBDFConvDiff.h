@@ -261,10 +261,30 @@ calculate_timestep()
 
     print_parameter(pcout,"Time step size (convection)",time_steps[0]);
   }
+  else if(param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepMaxEfficiency)
+  {
+    // calculate minimum vertex distance
+    const double global_min_cell_diameter =
+        calculate_min_cell_diameter(conv_diff_operation->get_data().get_dof_handler().get_triangulation());
+
+    double time_step = calculate_time_step_max_efficiency(param.c_eff,
+                                                          global_min_cell_diameter,
+                                                          fe_degree,
+                                                          order,
+                                                          n_refine_time);
+
+    // decrease time_step in order to exactly hit end_time
+    time_steps[0] = (param.end_time-param.start_time)/(1+int((param.end_time-param.start_time)/time_step));
+
+    pcout << "Calculation of time step size (max efficiency):" << std::endl << std::endl;
+    print_parameter(pcout,"C_eff",param.c_eff/std::pow(2,n_refine_time));
+    print_parameter(pcout,"Time step size",time_steps[0]);
+  }
   else
   {
     AssertThrow(param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepUserSpecified ||
-                param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepCFL,
+                param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepCFL ||
+                param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepMaxEfficiency ,
                 ExcMessage("Specified calculation of time step size not implemented for BDF time integrator!"));
   }
 

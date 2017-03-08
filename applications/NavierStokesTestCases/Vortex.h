@@ -23,7 +23,7 @@
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 10;
+unsigned int const FE_DEGREE_VELOCITY = 4;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -31,8 +31,8 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 0;
-unsigned int const REFINE_STEPS_SPACE_MAX = 0;//REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 1;
+unsigned int const REFINE_STEPS_SPACE_MAX = 1;//REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -40,7 +40,7 @@ unsigned int const REFINE_STEPS_TIME_MAX = 0; //REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
 const double U_X_MAX = 1.0;
-const double VISCOSITY = 1.e-6; //2.5e-2;
+const double VISCOSITY = 0.025; //1.e-6; //2.5e-2;
 const FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::LaplaceFormulation; //LaplaceFormulation; //DivergenceFormulation;
 
 enum class MeshType{ UniformCartesian, ComplexSurfaceManifold, ComplexVolumeManifold };
@@ -67,8 +67,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepCFL; //ConstTimeStepUserSpecified;
   max_velocity = 1.4 * U_X_MAX;
-  cfl = 0.006;
-  cfl_exponent_fe_degree_velocity = 0.0;
+  cfl = 1.0; // 0.006;
+  cfl_exponent_fe_degree_velocity = 1.0; // 0.0;
   c_eff = 0.125e0;
   time_step_size = 1.e-4;
   max_number_of_time_steps = 1e8;
@@ -99,6 +99,12 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // special case: pure DBC's
   pure_dirichlet_bc = false;
 
+  // div-div and continuity penalty
+  use_divergence_penalty = false; //true;
+  divergence_penalty_factor = 1.0e0;
+  use_continuity_penalty = false; //true;
+  continuity_penalty_factor = 1.0e0;
+
 
   // PROJECTION METHODS
 
@@ -114,11 +120,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   deltat_ref = 1.e-1;
 
   // projection step
-  projection_type = ProjectionType::NoPenalty; //NoPenalty; //DivergencePenalty;
-  penalty_factor_divergence = 1.0e0;
-  penalty_factor_continuity = 1.0e0;
   solver_projection = SolverProjection::PCG;
-  preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
+  preconditioner_projection = PreconditionerProjection::InverseMassMatrix; //None; //Jacobi; //InverseMassMatrix;
   abs_tol_projection = 1.e-20;
   rel_tol_projection = 1.e-12;
 
@@ -126,7 +129,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // HIGH-ORDER DUAL SPLITTING SCHEME
 
   // formulations
-  order_extrapolation_pressure_nbc = order_time_integrator <=2 ? order_time_integrator : 2;
+  order_extrapolation_pressure_nbc = order_time_integrator<=2 ? order_time_integrator : 2;
 
   // convective step
 
@@ -225,14 +228,14 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   output_data.write_output = true;
   output_data.output_prefix = "vortex";
   output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time)/10;
+  output_data.output_interval_time = (end_time-start_time); // /10;
   output_data.compute_divergence = true;
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error
   error_data.analytical_solution_available = true;
   error_data.error_calc_start_time = start_time;
-  error_data.error_calc_interval_time = (end_time-start_time) /10; // /output_data.output_interval_time;
+  error_data.error_calc_interval_time = (end_time-start_time);// /10; // /output_data.output_interval_time;
 
   // analysis of mass conservation error
   mass_data.calculate_error = false;
@@ -241,7 +244,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   mass_data.filename_prefix = "test";
 
   // output of solver information
-  output_solver_info_every_timesteps = 1e5;
+  output_solver_info_every_timesteps = 1; //1e5;
 
   // restart
   write_restart = false;

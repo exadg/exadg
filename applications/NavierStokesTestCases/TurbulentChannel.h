@@ -49,7 +49,7 @@ const double GRID_STRETCH_FAC = 1.8;
 double const VISCOSITY = 1./180.; // critical value: 1./50. - 1./75.
 double const END_TIME = 50.0;
 
-std::string OUTPUT_PREFIX = "turb_ch_coupled_solver_nu_180_l2_p4-3_CFL1_div_conti_0-1"; //"turb_ch_dual_splitting_nu_180_l2_p4-3_CFL1_div_and_conti_penalty"; //"turb_ch_press_corr_nu_180_l2_p4_p3_mixed_order_weak_projection_CFL10_implicit";
+std::string OUTPUT_PREFIX = "turb_ch_coupled_bdf2_CFL0-5_implicit_nu_180_l2_p4-3_laplace_form_no_penalty"; //"turb_ch_dual_splitting_nu_180_l2_p4-3_CFL1_div_and_conti_penalty"; //"turb_ch_press_corr_nu_180_l2_p4_p3_mixed_order_weak_projection_CFL10_implicit";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -57,7 +57,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
   equation_type = EquationType::NavierStokes;
-  formulation_viscous_term = FormulationViscousTerm::DivergenceFormulation;
+  formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
   right_hand_side = true;
 
 
@@ -69,10 +69,10 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // TEMPORAL DISCRETIZATION
   temporal_discretization = TemporalDiscretization::BDFCoupledSolution; // BDFDualSplittingScheme; //BDFPressureCorrection;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; //Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; // AdaptiveTimeStepCFL
   max_velocity = MAX_VELOCITY;
-  cfl = 0.5e0; //1.0 if ConstTimeStepCFL
+  cfl = 0.5; //0.5;//1.0 if ConstTimeStepCFL
   time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
   order_time_integrator = 2; // 1; // 2; // 3;
@@ -104,8 +104,10 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // div-div and continuity penalty
   // these parameters are only used for the coupled solver
-  use_div_div_penalty = true;
-  use_continuity_penalty = true;
+  use_divergence_penalty = false; //true;
+  divergence_penalty_factor = 1.0e0;
+  use_continuity_penalty = false; //true;
+  continuity_penalty_factor = 1.0e0;
 
 
   // PROJECTION METHODS
@@ -114,7 +116,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   IP_factor_pressure = 1.0;
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
   multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
-  abs_tol_pressure = 1.e-20;
+  abs_tol_pressure = 1.e-12;
   rel_tol_pressure = 1.e-6;
 
   // stability in the limit of small time steps
@@ -122,14 +124,10 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   deltat_ref = 1.e0;
 
   // projection step
-  projection_type = ProjectionType::DivergenceAndContinuityPenalty; //NoPenalty; //DivergencePenalty;
-  // currently, these two parameters are also used for the coupled solver
-  penalty_factor_divergence = 1.0e-1;
-  penalty_factor_continuity = 1.0e0;
   solver_projection = SolverProjection::PCG;
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
-  abs_tol_projection = 1.e-20;
-  rel_tol_projection = 1.e-12;
+  abs_tol_projection = 1.e-12;
+  rel_tol_projection = 1.e-6;
 
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -157,7 +155,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   solver_viscous = SolverViscous::PCG;
   preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; //GeometricMultigrid;
   multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
-  abs_tol_viscous = 1.e-20;
+  abs_tol_viscous = 1.e-12;
   rel_tol_viscous = 1.e-6;
 
 
@@ -166,7 +164,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // momentum step
 
   // Newton solver
-  newton_solver_data_momentum.abs_tol = 1.e-20;
+  newton_solver_data_momentum.abs_tol = 1.e-12;
   newton_solver_data_momentum.rel_tol = 1.e-6;
   newton_solver_data_momentum.max_iter = 100;
 
@@ -174,7 +172,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   solver_momentum = SolverMomentum::GMRES;
   preconditioner_momentum = PreconditionerMomentum::InverseMassMatrix; //VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
-  abs_tol_momentum_linear = 1.e-20;
+  abs_tol_momentum_linear = 1.e-12;
   rel_tol_momentum_linear = 1.e-3;
   max_iter_momentum_linear = 1e4;
   use_right_preconditioning_momentum = true;
@@ -189,7 +187,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // COUPLED NAVIER-STOKES SOLVER
 
   // nonlinear solver (Newton solver)
-  newton_solver_data_coupled.abs_tol = 1.e-20;
+  newton_solver_data_coupled.abs_tol = 1.e-12;
   newton_solver_data_coupled.rel_tol = 1.e-6;
   newton_solver_data_coupled.max_iter = 1e2;
 
@@ -233,7 +231,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
   // output of solver information
-  output_solver_info_every_timesteps = 1e2;
+  output_solver_info_every_timesteps = 1e3;
 
   // restart
   write_restart = false;
@@ -273,7 +271,6 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
  *    to prescribe Dirichlet BC's for the velocity field on Dirichlet boundaries
  */
 
-// TODO
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
 {
@@ -427,8 +424,6 @@ double PressureBC_dudt<dim>::value(const Point<dim>   &p,
  *  Right-hand side function: Implements the body force vector occuring on the
  *  right-hand side of the momentum equation of the Navier-Stokes equations
  */
-
-// TODO
 template<int dim>
  class RightHandSide : public Function<dim>
  {

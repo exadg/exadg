@@ -11,7 +11,7 @@
 #include "PreconditionerNavierStokes.h"
 #include "NewtonSolver.h"
 #include "DGNavierStokesBase.h"
-#include "../include/ProjectionSolver.h"
+#include "ProjectionOperatorsAndSolvers.h"
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 class DGNavierStokesCoupled;
@@ -68,11 +68,18 @@ public:
   }
 
   /*
-   *  Update divergence and continuity penalty operator by recalculating the penalty parameter
+   *  Update divergence penalty operator by recalculating the penalty parameter
    *  which depends on the current velocity field
    */
-  void update_div_conti_penalty_operator (parallel::distributed::Vector<value_type> const &velocity,
-                                          double const                                    time_step_size = 1.0);
+  void update_divergence_penalty_operator (parallel::distributed::Vector<value_type> const &velocity) const;
+
+
+  /*
+   *  Update continuity penalty operator by recalculating the penalty parameter
+   *  which depends on the current velocity field
+   */
+  void update_continuity_penalty_operator (parallel::distributed::Vector<value_type> const &velocity) const;
+
 
   /*
    *  This function solves the linear Stokes problem (steady/unsteady Stokes or unsteady
@@ -157,8 +164,9 @@ private:
 
   VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> velocity_conv_diff_operator;
 
-  // test div-div-penalty and continuity penalty operator as turbulence models
-  std_cxx11::shared_ptr<DivergenceAndContinuityPenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > div_conti_penalty_operator;
+  // div-div-penalty and continuity penalty operator
+  std_cxx11::shared_ptr<DivergencePenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > divergence_penalty_operator;
+  std_cxx11::shared_ptr<ContinuityPenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > continuity_penalty_operator;
 
   parallel::distributed::Vector<value_type> mutable temp_vector;
   parallel::distributed::Vector<value_type> const *sum_alphai_ui;
@@ -310,38 +318,53 @@ setup_solvers(double const &scaling_factor_time_derivative_term)
        (this->param.newton_solver_data_coupled,*this,*this,*linear_solver));
   }
 
-  if(this->param.use_div_div_penalty == true || this->param.use_continuity_penalty == true)
+  // divergence penalty operator
+  if(this->param.use_divergence_penalty == true)
   {
-    // divergence and continuity penalty operator
-    DivAndContiPenaltyOperatorData div_conti_penalty_data;
-    // always use div-div penalty term
-    if(this->param.use_div_div_penalty == true)
-      div_conti_penalty_data.div_div_penalty = true;
-    if(this->param.use_continuity_penalty == true)
-      div_conti_penalty_data.continuity_penalty = true;
-
-    div_conti_penalty_data.penalty_parameter_divergence = this->param.penalty_factor_divergence;
-    div_conti_penalty_data.penalty_parameter_continuity = this->param.penalty_factor_continuity;
+    DivergencePenaltyOperatorData div_penalty_data;
+    div_penalty_data.penalty_parameter = this->param.divergence_penalty_factor;
 
     typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector DofHandlerSelector;
     typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector QuadratureSelector;
 
-    div_conti_penalty_operator.reset(new DivergenceAndContinuityPenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(
+    divergence_penalty_operator.reset(new DivergencePenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(
         this->data,
         static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
         static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity),
-        div_conti_penalty_data));
-
-    pcout << std::endl << "... done!" << std::endl;
+        div_penalty_data));
   }
+
+  // continuity penalty operator
+  if(this->param.use_continuity_penalty == true)
+  {
+    ContinuityPenaltyOperatorData conti_penalty_data;
+    conti_penalty_data.penalty_parameter = this->param.continuity_penalty_factor;
+
+    typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector DofHandlerSelector;
+    typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector QuadratureSelector;
+
+    continuity_penalty_operator.reset(new ContinuityPenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(
+        this->data,
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity),
+        conti_penalty_data));
+  }
+
+  pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-update_div_conti_penalty_operator (parallel::distributed::Vector<value_type> const &velocity,
-                                   double const                                    time_step_size)
+update_divergence_penalty_operator (parallel::distributed::Vector<value_type> const &velocity) const
 {
-  this->div_conti_penalty_operator->calculate_array_penalty_parameter(velocity,time_step_size);
+  this->divergence_penalty_operator->calculate_array_penalty_parameter(velocity);
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+update_continuity_penalty_operator (parallel::distributed::Vector<value_type> const &velocity) const
+{
+  this->continuity_penalty_operator->calculate_array_penalty_parameter(velocity);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
@@ -399,10 +422,11 @@ apply_linearized_problem (parallel::distributed::BlockVector<value_type>       &
   // (1,1) block of saddle point matrix
   velocity_conv_diff_operator.vmult(dst.block(0),src.block(0));
 
-  if(this->param.use_div_div_penalty == true || this->param.use_continuity_penalty == true)
-  {
-    div_conti_penalty_operator->apply_add(dst.block(0),src.block(0));
-  }
+  // Divergence and continuity penalty operators
+  if(this->param.use_divergence_penalty == true)
+    divergence_penalty_operator->apply_add(dst.block(0),src.block(0));
+  if(this->param.use_continuity_penalty == true)
+    continuity_penalty_operator->apply_add(dst.block(0),src.block(0));
 
   // (1,2) block of saddle point matrix
   // gradient operator: dst = velocity, src = pressure
@@ -485,10 +509,11 @@ evaluate_nonlinear_residual (parallel::distributed::BlockVector<value_type>     
   this->convective_operator.evaluate_add(dst.block(0),src.block(0),evaluation_time);
   this->viscous_operator.evaluate_add(dst.block(0),src.block(0),evaluation_time);
 
-  if(this->param.use_div_div_penalty == true || this->param.use_continuity_penalty == true)
-  {
-    div_conti_penalty_operator->apply_add(dst.block(0),src.block(0));
-  }
+  // Divergence and continuity penalty operators
+  if(this->param.use_divergence_penalty == true)
+    divergence_penalty_operator->apply_add(dst.block(0),src.block(0));
+  if(this->param.use_continuity_penalty == true)
+    continuity_penalty_operator->apply_add(dst.block(0),src.block(0));
 
   this->gradient_operator.evaluate_add(dst.block(0),src.block(1),evaluation_time);
 

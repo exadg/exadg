@@ -180,6 +180,11 @@ public:
   void apply_block_jacobi (parallel::distributed::Vector<Number>       &dst,
                            parallel::distributed::Vector<Number> const &src) const;
 
+  /*
+   *  Update block Jacobi preconditioner
+   */
+  void update_block_jacobi () const;
+
   // Returns a reference to the ratio between the element surface and the
   // element volume for the symmetric interior penalty method (only available
   // in the DG case).

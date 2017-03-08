@@ -110,7 +110,7 @@ public:
     Tensor<1,2> direction;
     direction = std::cos(beta)*v_1 + std::sin(beta)*normal;
 
-    Assert(std::abs(direction.norm()-1.0)<tol, ExcMessage("Vector must have length 1."));
+    Assert(std::abs(direction.norm()-1.0)<1.e-12, ExcMessage("Vector must have length 1."));
 
     // calculate point x_S on spherical manifold
     Tensor<1,2> x_S;

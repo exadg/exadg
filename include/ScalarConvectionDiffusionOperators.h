@@ -83,10 +83,18 @@ public:
     data->cell_loop(&This::cell_loop_diagonal, this, diagonal, src_dummy);
   }
 
+  void add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
+  {
+    parallel::distributed::Vector<value_type>  src;
+
+    data->cell_loop(&This::cell_loop_calculate_block_jacobi_matrices, this, matrices, src);
+  }
+
   MassMatrixOperatorData const & get_operator_data() const
   {
     return mass_matrix_operator_data;
   }
+
 
 private:
   template<typename FEEvaluation>
@@ -149,6 +157,34 @@ private:
         fe_eval.begin_dof_values()[j] = local_diagonal_vector[j];
 
       fe_eval.distribute_local_to_global (dst);
+    }
+  }
+
+  void cell_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,value_type>                 &data,
+                                                  std::vector<LAPACKFullMatrix<value_type> >       &matrices,
+                                                  const parallel::distributed::Vector<value_type>  &,
+                                                  const std::pair<unsigned int,unsigned int>       &cell_range) const
+  {
+    FEEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,
+                                                                 mass_matrix_operator_data.dof_index,
+                                                                 mass_matrix_operator_data.quad_index);
+
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval.reinit(cell);
+
+      for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+      {
+        for (unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+          fe_eval.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
+        fe_eval.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+
+        do_cell_integral(fe_eval);
+
+        for(unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+          for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+            matrices[cell*VectorizedArray<value_type>::n_array_elements+v](i,j) += fe_eval.begin_dof_values()[i][v];
+      }
     }
   }
 
@@ -329,6 +365,14 @@ public:
 
     data->loop(&This::cell_loop,&This::face_loop_block_jacobi,
                &This::boundary_face_loop_hom_operator,this, dst, src);
+  }
+
+  void add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
+  {
+    parallel::distributed::Vector<value_type>  src;
+
+    data->loop(&This::cell_loop_calculate_block_jacobi_matrices,&This::face_loop_calculate_block_jacobi_matrices,
+                    &This::boundary_face_loop_calculate_block_jacobi_matrices, this, matrices, src);
   }
 
   void rhs (parallel::distributed::Vector<value_type> &dst,
@@ -1074,6 +1118,206 @@ private:
     }
   }
 
+
+  void cell_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,value_type>                 &data,
+                                                  std::vector<LAPACKFullMatrix<value_type> >       &matrices,
+                                                  const parallel::distributed::Vector<value_type>  &,
+                                                  const std::pair<unsigned int,unsigned int>       &cell_range) const
+  {
+    FEEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,
+                                                                 operator_data.dof_index,
+                                                                 operator_data.quad_index);
+
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval.reinit(cell);
+
+      for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+      {
+        for (unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+          fe_eval.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
+        fe_eval.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+
+        do_cell_integral(fe_eval);
+
+        for(unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+          for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+            matrices[cell*VectorizedArray<value_type>::n_array_elements+v](i,j) += fe_eval.begin_dof_values()[i][v];
+      }
+    }
+  }
+
+  void face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,value_type>                &data,
+                                                  std::vector<LAPACKFullMatrix<value_type> >      &matrices,
+                                                  const parallel::distributed::Vector<value_type> &,
+                                                  const std::pair<unsigned int,unsigned int>      &face_range) const
+  {
+    FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,true,operator_data.dof_index,operator_data.quad_index);
+    FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval_neighbor(data,false,operator_data.dof_index,operator_data.quad_index);
+
+    // Perform face intergrals for element e⁻.
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval.reinit (face);
+      fe_eval_neighbor.reinit (face);
+
+      VectorizedArray<value_type> tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
+                                                    fe_eval_neighbor.read_cell_data(array_penalty_parameter))
+                                              * get_penalty_factor();
+
+      for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+      {
+        // set dof value j of element- to 1 and all other dof values of element- to zero
+        for (unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+          fe_eval.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
+        fe_eval.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+
+        fe_eval.evaluate(true,true);
+
+        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        {
+          // set exterior value to zero
+          VectorizedArray<value_type> jump_value = fe_eval.get_value(q);
+          VectorizedArray<value_type> value_flux = make_vectorized_array<value_type>(0.0);
+          calculate_value_flux(value_flux, jump_value);
+
+          // set exterior value to zero
+          VectorizedArray<value_type> average_normal_gradient = 0.5 * fe_eval.get_normal_gradient(q);
+
+          VectorizedArray<value_type> gradient_flux = make_vectorized_array<value_type>(0.0);
+          calculate_gradient_flux(gradient_flux, average_normal_gradient, jump_value, tau_IP);
+
+          fe_eval.submit_normal_gradient(value_flux,q);
+          fe_eval.submit_value(-gradient_flux,q);
+        }
+        fe_eval.integrate(true,true);
+
+        for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+        {
+          const unsigned int cell_number = data.faces[face].left_cell[v];
+          if (cell_number != numbers::invalid_unsigned_int)
+            for(unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+              matrices[cell_number](i,j) += fe_eval.begin_dof_values()[i][v];
+        }
+      }
+    }
+
+
+
+    // TODO: This has to be removed as soon as the new infrastructure is used that
+    // allows to perform face integrals over all faces of the current element.
+    // Perform face intergrals for element e⁺.
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval.reinit (face);
+      fe_eval_neighbor.reinit (face);
+
+      VectorizedArray<value_type> tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
+                                                    fe_eval_neighbor.read_cell_data(array_penalty_parameter))
+                                              * get_penalty_factor();
+
+      for (unsigned int j=0; j<fe_eval_neighbor.dofs_per_cell; ++j)
+      {
+        // set dof value j of element+ to 1 and all other dof values of element+ to zero
+        for (unsigned int i=0; i<fe_eval_neighbor.dofs_per_cell; ++i)
+          fe_eval_neighbor.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
+        fe_eval_neighbor.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+
+        fe_eval_neighbor.evaluate(true,true);
+
+        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        {
+          // set value_m to zero
+          VectorizedArray<value_type> jump_value = fe_eval_neighbor.get_value(q);
+          VectorizedArray<value_type> value_flux = make_vectorized_array<value_type>(0.0);
+          calculate_value_flux(value_flux, jump_value);
+          // set gradient_m to zero, minus sign to get the correct normal vector n⁺ = -n⁻
+          VectorizedArray<value_type> average_normal_gradient = - 0.5 * fe_eval_neighbor.get_normal_gradient(q);
+
+          VectorizedArray<value_type> gradient_flux = make_vectorized_array<value_type>(0.0);
+          calculate_gradient_flux(gradient_flux, average_normal_gradient, jump_value, tau_IP);
+          // minus sign since n⁺ = -n⁻
+          fe_eval_neighbor.submit_normal_gradient(-value_flux,q);
+          fe_eval_neighbor.submit_value(-gradient_flux,q);
+        }
+        fe_eval_neighbor.integrate(true,true);
+
+        for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+        {
+          const unsigned int cell_number = data.faces[face].right_cell[v];
+          if (cell_number != numbers::invalid_unsigned_int)
+            for(unsigned int i=0; i<fe_eval_neighbor.dofs_per_cell; ++i)
+              matrices[cell_number](i,j) += fe_eval_neighbor.begin_dof_values()[i][v];
+        }
+      }
+    }
+  }
+
+  // TODO: This function has to be removed as soon as the new infrastructure is used that
+  // allows to perform face integrals over all faces of the current element.
+  void boundary_face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,value_type>                &data,
+                                                           std::vector<LAPACKFullMatrix<value_type> >      &matrices,
+                                                           const parallel::distributed::Vector<value_type> &,
+                                                           const std::pair<unsigned int,unsigned int>      &face_range) const
+  {
+    FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,true,operator_data.dof_index,operator_data.quad_index);
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      types::boundary_id boundary_id = data.get_boundary_indicator(face);
+      BoundaryType boundary_type = BoundaryType::undefined;
+
+      if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
+        boundary_type = BoundaryType::dirichlet;
+      else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
+        boundary_type = BoundaryType::neumann;
+
+      AssertThrow(boundary_type != BoundaryType::undefined,
+          ExcMessage("Boundary type of face is invalid or not implemented."));
+
+      fe_eval.reinit (face);
+
+      VectorizedArray<value_type> tau_IP = fe_eval.read_cell_data(array_penalty_parameter)
+                                              * get_penalty_factor();
+
+      for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+      {
+        // set dof value j of element- to 1 and all other dof values of element- to zero
+        for (unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+          fe_eval.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
+        fe_eval.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+
+        fe_eval.evaluate(true,true);
+
+        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        {
+          VectorizedArray<value_type> jump_value = make_vectorized_array<value_type>(0.0);
+          calculate_jump_value_boundary_face(jump_value,q,fe_eval,OperatorType::homogeneous,boundary_type);
+          VectorizedArray<value_type> value_flux = make_vectorized_array<value_type>(0.0);
+          calculate_value_flux(value_flux, jump_value);
+
+          VectorizedArray<value_type> average_normal_gradient = make_vectorized_array<value_type>(0.0);
+          calculate_average_normal_gradient_boundary_face(average_normal_gradient,q,fe_eval,OperatorType::homogeneous,boundary_type);
+
+          VectorizedArray<value_type> gradient_flux = make_vectorized_array<value_type>(0.0);
+          calculate_gradient_flux(gradient_flux, average_normal_gradient, jump_value, tau_IP);
+
+          fe_eval.submit_normal_gradient(value_flux,q);
+          fe_eval.submit_value(-gradient_flux,q);
+        }
+        fe_eval.integrate(true,true);
+
+        for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+        {
+          const unsigned int cell_number = data.faces[face].left_cell[v];
+          if (cell_number != numbers::invalid_unsigned_int)
+            for(unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+              matrices[cell_number](i,j) += fe_eval.begin_dof_values()[i][v];
+        }
+      }
+    }
+  }
+
   /*
    *  evaluate boundary face integrals for full operator (homogeneous + inhomogeneous parts)
    */
@@ -1282,6 +1526,17 @@ public:
 
     data->loop(&This::cell_loop,&This::face_loop_block_jacobi,
                &This::boundary_face_loop_hom_operator,this, dst, src);
+  }
+
+  void add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices,
+                                 value_type const                           evaluation_time) const
+  {
+    this->eval_time = evaluation_time;
+
+    parallel::distributed::Vector<value_type>  src;
+
+    data->loop(&This::cell_loop_calculate_block_jacobi_matrices,&This::face_loop_calculate_block_jacobi_matrices,
+               &This::boundary_face_loop_calculate_block_jacobi_matrices, this, matrices, src);
   }
 
   void evaluate (parallel::distributed::Vector<value_type>       &dst,
@@ -1861,6 +2116,174 @@ private:
     }
   }
 
+  void cell_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,value_type>                 &data,
+                                                  std::vector<LAPACKFullMatrix<value_type> >       &matrices,
+                                                  const parallel::distributed::Vector<value_type>  &,
+                                                  const std::pair<unsigned int,unsigned int>       &cell_range) const
+  {
+    FEEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,
+                                                                 operator_data.dof_index,
+                                                                 operator_data.quad_index);
+
+    // set the correct time for the evaluation of the velocity field
+    operator_data.velocity->set_time(eval_time);
+
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval.reinit(cell);
+
+      for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+      {
+        for (unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+          fe_eval.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
+        fe_eval.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+
+        do_cell_integral(fe_eval);
+
+        for(unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+          for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+            matrices[cell*VectorizedArray<value_type>::n_array_elements+v](i,j) += fe_eval.begin_dof_values()[i][v];
+      }
+    }
+  }
+
+  void face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,value_type>                &data,
+                                                  std::vector<LAPACKFullMatrix<value_type> >      &matrices,
+                                                  const parallel::distributed::Vector<value_type> &,
+                                                  const std::pair<unsigned int,unsigned int>      &face_range) const
+  {
+    // perform face intergrals for element e⁻
+    FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,true,operator_data.dof_index,operator_data.quad_index);
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval.reinit (face);
+
+      for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+      {
+        // set dof value j of element- to 1 and all other dof values of element- to zero
+        for (unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+          fe_eval.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
+        fe_eval.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+
+        fe_eval.evaluate(true,false);
+
+        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        {
+          VectorizedArray<value_type> numerical_flux = make_vectorized_array<value_type>(0.0);
+          VectorizedArray<value_type> value_m = fe_eval.get_value(q);
+          // set value_p to zero
+          VectorizedArray<value_type> value_p = make_vectorized_array<value_type>(0.0);
+          calculate_flux(numerical_flux, q, fe_eval, value_m, value_p);
+
+          fe_eval.submit_value(numerical_flux,q);
+        }
+        fe_eval.integrate(true,false);
+
+        for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+        {
+          const unsigned int cell_number = data.faces[face].left_cell[v];
+          if (cell_number != numbers::invalid_unsigned_int)
+            for(unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+              matrices[cell_number](i,j) += fe_eval.begin_dof_values()[i][v];
+        }
+      }
+    }
+
+    // TODO: this has to be removed as soon as the new infrastructure is used that
+    // allows to perform face integrals over all faces of the current element
+    // perform face intergrals for element e⁺
+    FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval_neighbor(data,false,operator_data.dof_index,operator_data.quad_index);
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval_neighbor.reinit (face);
+
+      for (unsigned int j=0; j<fe_eval_neighbor.dofs_per_cell; ++j)
+      {
+        // set dof value j of element+ to 1 and all other dof values of element+ to zero
+        for (unsigned int i=0; i<fe_eval_neighbor.dofs_per_cell; ++i)
+          fe_eval_neighbor.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
+        fe_eval_neighbor.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+
+        fe_eval_neighbor.evaluate(true,false);
+
+        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        {
+          VectorizedArray<value_type> numerical_flux = make_vectorized_array<value_type>(0.0);
+          // set value_m to zero
+          VectorizedArray<value_type> value_m = make_vectorized_array<value_type>(0.0);
+          VectorizedArray<value_type> value_p = fe_eval_neighbor.get_value(q);
+          calculate_flux(numerical_flux, q, fe_eval_neighbor, value_m, value_p);
+
+          // hack (minus sign) since n⁺ = -n⁻
+          fe_eval_neighbor.submit_value(-numerical_flux,q);
+        }
+        fe_eval_neighbor.integrate(true,false);
+
+        for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+        {
+          const unsigned int cell_number = data.faces[face].right_cell[v];
+          if (cell_number != numbers::invalid_unsigned_int)
+            for(unsigned int i=0; i<fe_eval_neighbor.dofs_per_cell; ++i)
+              matrices[cell_number](i,j) += fe_eval_neighbor.begin_dof_values()[i][v];
+        }
+      }
+    }
+  }
+
+  // TODO: this function has to be removed as soon as the new infrastructure is used that
+  // allows to perform face integrals over all faces of the current element
+  void boundary_face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,value_type>                &data,
+                                                           std::vector<LAPACKFullMatrix<value_type> >      &matrices,
+                                                           const parallel::distributed::Vector<value_type> &,
+                                                           const std::pair<unsigned int,unsigned int>      &face_range) const
+  {
+    FEFaceEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,true,operator_data.dof_index,operator_data.quad_index);
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      types::boundary_id boundary_id = data.get_boundary_indicator(face);
+      BoundaryType boundary_type = BoundaryType::undefined;
+
+      if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
+        boundary_type = BoundaryType::dirichlet;
+      else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
+        boundary_type = BoundaryType::neumann;
+
+      AssertThrow(boundary_type != BoundaryType::undefined,
+          ExcMessage("Boundary type of face is invalid or not implemented."));
+
+      fe_eval.reinit (face);
+
+      for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+      {
+        // set dof value j of element- to 1 and all other dof values of element- to zero
+        for (unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+          fe_eval.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
+        fe_eval.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+
+        fe_eval.evaluate(true,false);
+        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        {
+          VectorizedArray<value_type> numerical_flux = make_vectorized_array<value_type>(0.0);
+
+          calculate_flux_boundary_face(numerical_flux, q, fe_eval, OperatorType::homogeneous, boundary_type);
+
+          fe_eval.submit_value(numerical_flux,q);
+        }
+        fe_eval.integrate(true,false);
+
+        for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+        {
+          const unsigned int cell_number = data.faces[face].left_cell[v];
+          if (cell_number != numbers::invalid_unsigned_int)
+            for(unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
+              matrices[cell_number](i,j) += fe_eval.begin_dof_values()[i][v];
+        }
+      }
+    }
+  }
 
   /*
    *  evaluate boundary face integrals for full operator (homogeneous + inhomogeneous parts)
@@ -2425,6 +2848,14 @@ public:
     AssertThrow(false,ExcMessage("Block Jacobi preconditioner not implemented for scalar reaction-diffusion operator"));
   }
 
+  /*
+   *  Update block Jacobi preconditioner
+   */
+  void update_block_jacobi () const
+  {
+    AssertThrow(false,ExcMessage("Function update_block_jacobi() has not been implemented."));
+  }
+
 private:
   /*
    *  This function calculates the diagonal of the discrete operator representing the
@@ -2518,6 +2949,7 @@ public:
 
   ConvectionDiffusionOperator()
     :
+    block_jacobi_matrices_have_been_initialized(false),
     data(nullptr),
     mass_matrix_operator(nullptr),
     convective_operator(nullptr),
@@ -2752,7 +3184,11 @@ public:
     }
   }
 
-  // apply matrix vector multiplication
+  // Apply matrix vector multiplication for global block Jacobi system.
+  // Do that sequentially for the different operators.
+  // This function is only needed when solving the global block Jacobi problem
+  // iteratively in which case the function vmult_block_jacobi() represents
+  // the "vmult()" operation of the linear system of equations.
   void vmult_block_jacobi (parallel::distributed::Vector<Number>       &dst,
                            const parallel::distributed::Vector<Number> &src) const
   {
@@ -2778,6 +3214,49 @@ public:
     if(operator_data.convective_problem == true)
     {
       convective_operator->apply_block_jacobi_add(dst,src,evaluation_time);
+    }
+  }
+
+
+  // TODO only needed for testing
+  void vmult_block_jacobi_2 (parallel::distributed::Vector<Number>       &dst,
+                           const parallel::distributed::Vector<Number> &src) const
+  {
+    data->cell_loop(&ConvectionDiffusionOperator<dim,fe_degree,Number>::vmult_block_jacobi_matrices, this, dst, src);
+  }
+
+  // TODO only needed for testing
+  void vmult_block_jacobi_matrices (const MatrixFree<dim,value_type>                 &data,
+                                    parallel::distributed::Vector<value_type>        &dst,
+                                    const parallel::distributed::Vector<value_type>  &src,
+                                    const std::pair<unsigned int,unsigned int>       &cell_range) const
+  {
+    FEEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,
+                                                                 mass_matrix_operator->get_operator_data().dof_index,
+                                                                 mass_matrix_operator->get_operator_data().quad_index);
+
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval.reinit(cell);
+      fe_eval.read_dof_values(src);
+
+      for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+      {
+        // fill source vector
+        Vector<value_type> src_vector(fe_eval.dofs_per_cell);
+        Vector<value_type> dst_vector(fe_eval.dofs_per_cell);
+        for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+          src_vector(j) = fe_eval.begin_dof_values()[j][v];
+
+        // apply matrix-vector product
+        matrices[cell*VectorizedArray<value_type>::n_array_elements+v].vmult(dst_vector,src_vector,false);
+
+        // write solution to dst-vector
+        for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+          fe_eval.begin_dof_values()[j][v] = dst_vector(j);
+      }
+
+      fe_eval.set_dof_values (dst);
     }
   }
 
@@ -2843,7 +3322,9 @@ public:
   void apply_block_jacobi (parallel::distributed::Vector<Number>       &dst,
                            parallel::distributed::Vector<Number> const &src) const
   {
-    IterationNumberControl control (100,1.e-20,1.e-2);
+    /*
+    // VARIANT 1: solve global system of equations using an iterative solver
+    IterationNumberControl control (30,1.e-20,1.e-3);
     typename SolverGMRES<parallel::distributed::Vector<Number> >::AdditionalData additional_data;
     additional_data.right_preconditioning = true;
     additional_data.max_n_tmp_vectors = 100;
@@ -2854,8 +3335,161 @@ public:
 
     dst = 0.0;
     solver.solve(block_jacobi_operator,dst,src,PreconditionIdentity());
+    //std::cout<<"Number of iterations block Jacobi solve = "<<control.last_step()<<std::endl;
+    */
 
-//    std::cout<<"Number of iterations block Jacobi solve = "<<control.last_step()<<std::endl;
+    // VARIANT 2: calculate block jacobi matrices and solve block Jacobi problem
+    // elementwise using a direct solver
+
+    // check_block_jacobi_matrices(src);
+
+    // apply_inverse_matrices
+    data->cell_loop(&ConvectionDiffusionOperator<dim,fe_degree,Number>::cell_loop_apply_inverse_block_jacobi_matrices, this, dst, src);
+  }
+
+  /*
+   *  This function updates the block Jacobi preconditioner.
+   *  Since this function also initializes the block Jacobi preconditioner,
+   *  make sure that the block Jacobi matrices are allocated before calculating
+   *  the matrices and the LU factorization.
+   */
+  void update_block_jacobi () const
+  {
+    if(block_jacobi_matrices_have_been_initialized == false)
+    {
+      matrices.resize(data->n_macro_cells()*VectorizedArray<Number>::n_array_elements,
+        LAPACKFullMatrix<Number>(data->get_shape_info().dofs_per_cell, data->get_shape_info().dofs_per_cell));
+
+      block_jacobi_matrices_have_been_initialized = true;
+    }
+
+    calculate_block_jacobi_matrices();
+    calculate_lu_factorization_block_jacobi();
+  }
+
+  /*
+   *  Initialize block Jacobi matrices
+   */
+  void initialize_block_jacobi_matrices_with_zero() const
+  {
+    // initialize matrices
+    for(typename std::vector<LAPACKFullMatrix<Number> >::iterator
+        it = matrices.begin(); it != matrices.end(); ++it)
+    {
+      *it = 0;
+    }
+  }
+
+  void calculate_block_jacobi_matrices() const
+  {
+    // initialize block Jacobi matrices with zeros
+    initialize_block_jacobi_matrices_with_zero();
+
+    // calculate block Jacobi matrices
+    if(operator_data.unsteady_problem == true)
+    {
+      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+        ExcMessage("Scaling factor of time derivative term has not been initialized for convection-diffusion operator!"));
+
+      mass_matrix_operator->add_block_jacobi_matrices(matrices);
+
+      for(typename std::vector<LAPACKFullMatrix<Number> >::iterator
+          it = matrices.begin(); it != matrices.end(); ++it)
+      {
+        (*it) *= scaling_factor_time_derivative_term;
+      }
+    }
+
+    if(operator_data.diffusive_problem == true)
+    {
+      diffusive_operator->add_block_jacobi_matrices(matrices);
+    }
+
+    if(operator_data.convective_problem == true)
+    {
+      convective_operator->add_block_jacobi_matrices(matrices,evaluation_time);
+    }
+  }
+
+  void calculate_lu_factorization_block_jacobi() const
+  {
+    for(typename std::vector<LAPACKFullMatrix<Number> >::iterator
+        it = matrices.begin(); it != matrices.end(); ++it)
+    {
+      LAPACKFullMatrix<Number> copy(*it);
+      try // the matrix might be singular
+      {
+        (*it).compute_lu_factorization();
+      }
+      catch (std::exception &exc)
+      {
+        // add a small, positive value to the diagonal of the LU
+        // factorized matrix
+        for(unsigned int i=0;i<(*it).m();++i)
+        {
+          for(unsigned int j=0;j<(*it).n();++j)
+          {
+            if(i==j)
+              (*it)(i,j) += 1.e-4;
+          }
+        }
+      }
+    }
+  }
+
+  void cell_loop_apply_inverse_block_jacobi_matrices (const MatrixFree<dim,value_type>                 &data,
+                                                      parallel::distributed::Vector<value_type>        &dst,
+                                                      const parallel::distributed::Vector<value_type>  &src,
+                                                      const std::pair<unsigned int,unsigned int>       &cell_range) const
+  {
+    // apply inverse block matrices
+    FEEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,
+                                                                 mass_matrix_operator->get_operator_data().dof_index,
+                                                                 mass_matrix_operator->get_operator_data().quad_index);
+
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval.reinit(cell);
+      fe_eval.read_dof_values(src);
+
+      for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+      {
+        // fill source vector
+        Vector<value_type> src_vector(fe_eval.dofs_per_cell);
+        for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+          src_vector(j) = fe_eval.begin_dof_values()[j][v];
+
+        // apply inverse matrix
+        matrices[cell*VectorizedArray<value_type>::n_array_elements+v].apply_lu_factorization(src_vector,false);
+
+        // write solution to dst-vector
+        for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+          fe_eval.begin_dof_values()[j][v] = src_vector(j);
+      }
+
+      fe_eval.set_dof_values (dst);
+    }
+  }
+
+  void check_block_jacobi_matrices(parallel::distributed::Vector<Number> const &src) const
+  {
+    calculate_block_jacobi_matrices();
+
+    // test matrix-vector product for block Jacobi problem by comparing
+    // matrix-free matrix-vector product and matrix-based matrix-vector product
+    // (where the matrices are generated using the matrix-free implementation)
+    parallel::distributed::Vector<Number> tmp1(src), tmp2(src), diff(src);
+    tmp1 = 0.0;
+    tmp2 = 0.0;
+    vmult_block_jacobi(tmp1,src);
+    vmult_block_jacobi_2(tmp2,src);
+
+    diff = tmp2;
+    diff.add(-1.0,tmp1);
+
+    std::cout << "L2 norm variant 1 = " << tmp1.l2_norm() << std::endl
+              << "L2 norm variant 2 = " << tmp2.l2_norm() << std::endl
+              << "L2 norm v2 - v1 = " << diff.l2_norm() << std::endl << std::endl;
   }
 
 private:
@@ -2887,6 +3521,10 @@ private:
       convective_operator->add_diagonal(diagonal,evaluation_time);
     }
   }
+
+  // TODO
+  mutable std::vector<LAPACKFullMatrix<Number> > matrices;
+  mutable bool block_jacobi_matrices_have_been_initialized;
 
   MatrixFree<dim,Number> const * data;
   MassMatrixOperator<dim, fe_degree, Number>  const *mass_matrix_operator;
