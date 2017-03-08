@@ -93,7 +93,8 @@ enum class TimeStepCalculation
   ConstTimeStepUserSpecified,
   ConstTimeStepCFL,
   ConstTimeStepDiffusion,
-  ConstTimeStepCFLAndDiffusion
+  ConstTimeStepCFLAndDiffusion,
+  ConstTimeStepMaxEfficiency
 };
 
 /**************************************************************************************/
@@ -176,6 +177,7 @@ public:
     time_step_size(-1.),
     cfl_number(-1.),
     diffusion_number(-1.),
+    c_eff(-1.),
 
     // SPATIAL DISCRETIZATION
     numerical_flux_convective_operator(NumericalFluxConvectiveOperator::Undefined),
@@ -230,7 +232,7 @@ public:
     // Set the diffusivity whenever the diffusive term is involved.
     if(equation_type == EquationType::Diffusion ||
        equation_type == EquationType::ConvectionDiffusion)
-    AssertThrow(diffusivity > (0.0 + 1.0e-10), ExcMessage("parameter must be defined"));
+    AssertThrow(diffusivity > (0.0 + 1.0e-12), ExcMessage("parameter must be defined"));
 
 
     // TEMPORAL DISCRETIZATION
@@ -246,6 +248,9 @@ public:
 
     if(calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified)
       AssertThrow(time_step_size > 0.0, ExcMessage("parameter must be defined"));
+
+    if(calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepMaxEfficiency)
+      AssertThrow(c_eff > 0.,ExcMessage("parameter must be defined"));
 
     if(temporal_discretization == TemporalDiscretization::ExplRK)
     {
@@ -593,6 +598,10 @@ public:
   // when treating the diffusive term explicitly)
   double diffusion_number;
 
+  // C_eff: constant that has to be specified for time step calculation method
+  // MaxEfficiency, which means that the time step is selected such that the errors of
+  // the temporal and spatial discretization are comparable
+  double c_eff;
 
 
   /**************************************************************************************/

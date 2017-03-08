@@ -302,6 +302,14 @@ public:
     AssertThrow(false,ExcMessage("Block Jacobi preconditioner not implemented for velocity reaction-diffusion operator."));
   }
 
+  /*
+   *  Update block Jacobi preconditioner
+   */
+  void update_block_jacobi () const
+  {
+    AssertThrow(false,ExcMessage("Function update_block_jacobi() has not been implemented."));
+  }
+
 private:
   /*
    *  This function calculates the diagonal of the discrete operator representing the

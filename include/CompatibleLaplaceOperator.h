@@ -323,6 +323,14 @@ public:
     AssertThrow(false,ExcMessage("Block Jacobi preconditioner not implemented for compatible Laplace operator."));
   }
 
+  /*
+   *  Update block Jacobi preconditioner
+   */
+  void update_block_jacobi () const
+  {
+    AssertThrow(false,ExcMessage("Function update_block_jacobi() has not been implemented."));
+  }
+
 private:
   MatrixFree<dim,Number> const * data;
   GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>  const *gradient_operator;

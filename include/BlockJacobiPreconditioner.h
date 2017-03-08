@@ -19,10 +19,26 @@ class BlockJacobiPreconditioner : public PreconditionerBase<value_type>
 public:
   BlockJacobiPreconditioner(UnderlyingOperator const &underlying_operator_in)
     : underlying_operator(underlying_operator_in)
-  {}
+  {
+    // initialize block Jacobi
+    underlying_operator.update_block_jacobi();
+  }
 
-  void update(MatrixOperatorBase const * /*matrix_operator*/){}
+  /*
+   *  This function updates the block Jacobi preconditioner.
+   *  Make sure that the underlying operator has been updated
+   *  when calling this function.
+   */
+  void update(MatrixOperatorBase const * /*matrix_operator*/)
+  {
+    underlying_operator.update_block_jacobi();
+  }
 
+  /*
+   *  This function applies the block Jacobi preconditioner.
+   *  Make sure that the block Jacobi preconditioner has been
+   *  updated when calling this function.
+   */
   void vmult (parallel::distributed::Vector<value_type>       &dst,
               const parallel::distributed::Vector<value_type> &src) const
   {

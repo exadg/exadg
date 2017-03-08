@@ -870,6 +870,13 @@ apply_block_jacobi (parallel::distributed::Vector<Number>       &dst,
   AssertThrow(false,ExcMessage("Block Jacobi preconditioner not implemented for Laplace operator."));
 }
 
+template <int dim, typename Number>
+void LaplaceOperator<dim,Number>::
+update_block_jacobi () const
+{
+  AssertThrow(false,ExcMessage("Function update_block_jacobi() has not been implemented."));
+}
+
 
 
 template <int dim, typename Number>
@@ -1158,6 +1165,45 @@ local_diagonal_cell (const MatrixFree<dim,Number>                &data,
       phi.distribute_local_to_global (dst);
     }
 }
+
+//template <int dim, typename Number>
+//template <int degree>
+//void LaplaceOperator<dim,Number>::
+//local_diagonal_cell (const MatrixFree<dim,Number>                &data,
+//                     parallel::distributed::Vector<Number>       &dst,
+//                     const unsigned int                          &,
+//                     const std::pair<unsigned int,unsigned int>  &cell_range) const
+//{
+//  FEEvaluation<dim,degree,degree+1,1,Number> phi (data,
+//                                                  operator_data.laplace_dof_index,
+//                                                  operator_data.laplace_quad_index);
+//
+//  std::vector<FullMatrix<Number>> matrices(data.n_macro_cells()*VectorizedArray<Number>::n_array_elements,
+//      FullMatrix<Number>(phi.dofs_per_cell, phi.dofs_per_cell));
+//  VectorizedArray<Number> local_diagonal_vector[phi.tensor_dofs_per_cell];
+//  for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+//    {
+//      phi.reinit (cell);
+//
+//      for (unsigned int i=0; i<phi.dofs_per_cell; ++i)
+//        {
+//          for (unsigned int j=0; j<phi.dofs_per_cell; ++j)
+//            phi.begin_dof_values()[j] = VectorizedArray<Number>();
+//          phi.begin_dof_values()[i] = 1.;
+//          phi.evaluate (false,true,false);
+//          for (unsigned int q=0; q<phi.n_q_points; ++q)
+//            phi.submit_gradient (phi.get_gradient(q), q);
+//          phi.integrate (false,true);
+//          for (unsigned int j=0; j<phi.dofs_per_cell; ++j)
+//            for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
+//              matrices[cell*VectorizedArray<Number>::n_array_elements+v](j,i) = phi.begin_dof_values()[j][v];
+//          local_diagonal_vector[i] = phi.begin_dof_values()[i];
+//        }
+//      for (unsigned int i=0; i<phi.tensor_dofs_per_cell; ++i)
+//        phi.begin_dof_values()[i] = local_diagonal_vector[i];
+//      phi.distribute_local_to_global (dst);
+//    }
+//}
 
 
 

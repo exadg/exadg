@@ -26,7 +26,7 @@ const unsigned int FE_DEGREE = 6;
 
 // set the number of refine levels for spatial convergence tests
 const unsigned int REFINE_STEPS_SPACE_MIN = 1;
-const unsigned int REFINE_STEPS_SPACE_MAX = 6;
+const unsigned int REFINE_STEPS_SPACE_MAX = 8;
 
 // set the number of refine levels for temporal convergence tests
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
@@ -50,10 +50,11 @@ void InputParametersConvDiff::set_input_parameters()
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   order_time_integrator = 2; // instabilities for BDF 3 and 4
   start_with_low_order = false;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepCFL;
-  time_step_size = 1.e-2;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepMaxEfficiency; //ConstTimeStepUserSpecified; //ConstTimeStepCFL;
+  time_step_size = 1.e-1;
   cfl_number = 0.2;
   diffusion_number = 0.01;
+  c_eff = 1.0e4;
 
   // SPATIAL DISCRETIZATION
   // convective term
@@ -68,7 +69,7 @@ void InputParametersConvDiff::set_input_parameters()
   rel_tol = 1.e-8;
   max_iter = 1e3;
   max_n_tmp_vectors = 100;
-  preconditioner = Preconditioner::PointJacobi; //None; //PointJacobi; //BlockJacobi; //InverseMassMatrix; //MultigridDiffusion; //MultigridConvectionDiffusion;
+  preconditioner = Preconditioner::BlockJacobi; //None; //PointJacobi; //BlockJacobi; //InverseMassMatrix; //MultigridDiffusion; //MultigridConvectionDiffusion;
   // MG smoother
   multigrid_data.smoother = MultigridSmoother::GMRES; //GMRES; //Chebyshev; //ChebyshevNonsymmetricOperator;
   // MG smoother data
@@ -77,7 +78,7 @@ void InputParametersConvDiff::set_input_parameters()
   // MG coarse grid solver
   multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner; //GMRES_NoPreconditioner; //Chebyshev; //GMRES_Jacobi;
 
-  update_preconditioner = true;
+  update_preconditioner = false; //true;
 
   // NUMERICAL PARAMETERS
   runtime_optimization = false;

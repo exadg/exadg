@@ -268,7 +268,7 @@ public:
 
   /*
    *  This function does nothing in case of the velocity conv diff operator.
-   *  IT is only necessary due to the interface of the multigrid preconditioner
+   *  It is only necessary due to the interface of the multigrid preconditioner
    *  and especially the coarse grid solver that calls this function.
    */
   void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const {}
@@ -429,9 +429,17 @@ public:
 //    std::cout<<"Number of iterations block Jacobi solve = "<<control.last_step()<<std::endl;
   }
 
+  /*
+   *  Update block Jacobi preconditioner
+   */
+  void update_block_jacobi () const
+  {
+    AssertThrow(false,ExcMessage("Function update_block_jacobi() has not been implemented."));
+  }
+
 private:
   /*
-   *  This function calculated the diagonal of the discrete operator representing the
+   *  This function calculates the diagonal of the discrete operator representing the
    *  velocity convection-diffusion operator.
    */
   void calculate_diagonal(parallel::distributed::Vector<Number> &diagonal) const
