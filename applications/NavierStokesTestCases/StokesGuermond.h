@@ -111,9 +111,6 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   deltat_ref = 1.e0;
 
   // projection step
-  projection_type = ProjectionType::NoPenalty; //NoPenalty; //DivergencePenalty;
-  penalty_factor_divergence = 1.0e0;
-  penalty_factor_continuity = 1.0e0;
   solver_projection = SolverProjection::PCG;
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
   abs_tol_projection = 1.e-20;
@@ -482,19 +479,19 @@ void create_grid_and_set_boundary_conditions(
     GridGenerator::hyper_cube(triangulation,left,right);
 
     /****** test one-sided spherical manifold *********/
-    Point<dim> center = Point<dim>();
-    center[0] = 1.15;
-    center[1] = 0.5;
-    typename Triangulation<dim>::cell_iterator cell = triangulation.begin();
-    cell->set_all_manifold_ids(10);
-//    cell->vertex(0)[1] = -1.0;
-//    cell->vertex(2)[1] = 2.0;
-//    cell->vertex(4)[1] = -1.0;
-//    cell->vertex(6)[1] = 2.0;
-
-    static std_cxx11::shared_ptr<Manifold<dim> > my_manifold =
-      std_cxx11::shared_ptr<Manifold<dim> >(static_cast<Manifold<dim>*>(new RealOneSidedSphericalManifold<dim>(cell,1,center)));
-    triangulation.set_manifold(10,*my_manifold);
+//    Point<dim> center = Point<dim>();
+//    center[0] = 1.15;
+//    center[1] = 0.5;
+//    typename Triangulation<dim>::cell_iterator cell = triangulation.begin();
+//    cell->set_all_manifold_ids(10);
+//    //    cell->vertex(0)[1] = -1.0;
+//    //    cell->vertex(2)[1] = 2.0;
+//    //    cell->vertex(4)[1] = -1.0;
+//    //    cell->vertex(6)[1] = 2.0;
+//
+//    static std_cxx11::shared_ptr<Manifold<dim> > my_manifold =
+//      std_cxx11::shared_ptr<Manifold<dim> >(static_cast<Manifold<dim>*>(new OneSidedCylindricalManifold<dim>(cell,1,center)));
+//    triangulation.set_manifold(10,*my_manifold);
     /****** test one-sided spherical manifold *********/
 
     triangulation.refine_global(n_refine_space);

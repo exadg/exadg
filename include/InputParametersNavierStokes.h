@@ -496,8 +496,10 @@ public:
 
     // div-div and continuity penalty
     // currently for coupled solver only (TODO)
-    use_div_div_penalty(false),
+    use_divergence_penalty(false),
+    divergence_penalty_factor(1.),
     use_continuity_penalty(false),
+    continuity_penalty_factor(1.),
 
     // PROJECTION METHODS
 
@@ -515,9 +517,6 @@ public:
     deltat_ref(1.0),
 
     // projection step
-    projection_type(ProjectionType::Undefined),
-    penalty_factor_divergence(1.),
-    penalty_factor_continuity(1.),
     solver_projection(SolverProjection::PCG),
     preconditioner_projection(PreconditionerProjection::InverseMassMatrix),
     abs_tol_projection(1.e-20),
@@ -685,12 +684,6 @@ public:
     }
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
-    if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme ||
-       temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-    {
-      AssertThrow(projection_type !=ProjectionType::Undefined,ExcMessage("parameter must be defined"));
-    }
-
     if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
       AssertThrow(order_extrapolation_pressure_nbc >= 0 && order_extrapolation_pressure_nbc <= order_time_integrator,
@@ -969,18 +962,15 @@ public:
                       str_pressure_level[(int)adjust_pressure_level]);
     }
 
-    if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-    {
-      print_parameter(pcout,"Use div-div penalty term",use_div_div_penalty);
+    print_parameter(pcout,"Use divergence penalty term",use_divergence_penalty);
 
-      if(use_div_div_penalty == true)
-        print_parameter(pcout, "Penalty factor divergence", penalty_factor_divergence);
+    if(use_divergence_penalty == true)
+      print_parameter(pcout, "Penalty factor divergence", divergence_penalty_factor);
 
-      print_parameter(pcout,"Use continuity penalty term",use_continuity_penalty);
+    print_parameter(pcout,"Use continuity penalty term",use_continuity_penalty);
 
-      if(use_continuity_penalty == true)
-        print_parameter(pcout,"Penalty factor continuity",penalty_factor_continuity);
-    }
+    if(use_continuity_penalty == true)
+      print_parameter(pcout,"Penalty factor continuity",continuity_penalty_factor);
   } 
 
   void print_parameters_projection_methods(ConditionalOStream &pcout)
@@ -1024,28 +1014,7 @@ public:
     // projection step
     pcout << std::endl << "  Projection step:" << std::endl;
 
-    std::string str_proj_type[] = { "Undefined",
-                                    "No penalty",
-                                    "Divergence penalty",
-                                    "Divergence and continuity penalty" };
-
-    print_parameter(pcout,
-                    "Projection type",
-                    str_proj_type[(int)projection_type]);
-
-    if(projection_type == ProjectionType::DivergencePenalty ||
-       projection_type == ProjectionType::DivergenceAndContinuityPenalty)
-      print_parameter(pcout,
-                      "Penalty factor divergence",
-                      penalty_factor_divergence);
-
-    if(projection_type == ProjectionType::DivergenceAndContinuityPenalty)
-      print_parameter(pcout,
-                      "Penalty factor continuity",
-                      penalty_factor_continuity);
-   
-    if(projection_type == ProjectionType::DivergencePenalty ||
-       projection_type == ProjectionType::DivergenceAndContinuityPenalty)
+    if(use_divergence_penalty == true)
     {  
       std::string str_solver_proj[] = { "LU",
                                         "PCG" };
@@ -1054,13 +1023,16 @@ public:
                       "Solver projection step",
                       str_solver_proj[(int)solver_projection]);
 
-      std::string str_precon_proj[] = { "None",
-                                        "Jacobi",
-                                        "InverseMassMatrix" };
-  
-      print_parameter(pcout,
-                      "Preconditioner projection step",
-                      str_precon_proj[(int)preconditioner_projection]);
+      if(use_divergence_penalty == true && use_continuity_penalty == true)
+      {
+        std::string str_precon_proj[] = { "None",
+                                          "Jacobi",
+                                          "InverseMassMatrix" };
+
+        print_parameter(pcout,
+                        "Preconditioner projection step",
+                        str_precon_proj[(int)preconditioner_projection]);
+      }
 
       print_parameter(pcout,"Absolute solver tolerance", abs_tol_projection);
       print_parameter(pcout,"Relative solver tolerance", rel_tol_projection);
@@ -1504,11 +1476,17 @@ public:
 
   // use div-div penalty term
   // Note that this parameter is currently only relevant for the coupled solver
-  bool use_div_div_penalty;
+  bool use_divergence_penalty;
+
+  // penalty factor of divergence penalty term
+  double divergence_penalty_factor;
 
   // use continuity penalty term
   // Note that this parameter is currently only relevant for the coupled solver
   bool use_continuity_penalty;
+
+  // penalty factor of continuity penalty term
+  double continuity_penalty_factor;
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -1545,15 +1523,6 @@ public:
   double deltat_ref;
 
   // PROJECTION STEP
-
-  // description: see enum declaration
-  ProjectionType projection_type;
-
-  // penalty factor of divergence penalty term in projection step
-  double penalty_factor_divergence;
-
-  // penalty factor of divergence penalty term in projection step
-  double penalty_factor_continuity;
 
   // description: see enum declaration
   SolverProjection solver_projection;

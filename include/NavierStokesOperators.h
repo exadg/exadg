@@ -174,6 +174,11 @@ public:
     return operator_data;
   }
 
+  MatrixFree<dim,value_type> const & get_data() const
+  {
+    return *data;
+  }
+
 private:
   template<typename FEEvaluation>
   inline void do_cell_integral(FEEvaluation &fe_eval) const

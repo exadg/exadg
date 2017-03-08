@@ -251,9 +251,13 @@ solve_timestep()
   }
 
   // Update divegence and continuity penalty operator
-  if(this->param.use_div_div_penalty == true || this->param.use_continuity_penalty == true)
+  if(this->param.use_divergence_penalty == true)
   {
-    navier_stokes_operation->update_div_conti_penalty_operator(solution[0].block(0),this->time_steps[0]);
+    navier_stokes_operation->update_divergence_penalty_operator(solution[0].block(0));
+  }
+  if(this->param.use_continuity_penalty == true)
+  {
+    navier_stokes_operation->update_continuity_penalty_operator(solution[0].block(0));
   }
 
   // if the problem to be solved is linear

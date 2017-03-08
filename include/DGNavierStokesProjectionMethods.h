@@ -9,12 +9,12 @@
 #define INCLUDE_DGNAVIERSTOKESPROJECTIONMETHODS_H_
 
 #include "DGNavierStokesBase.h"
-#include "ProjectionSolver.h"
 #include "poisson_solver.h"
 
 #include "IterativeSolvers.h"
 
 #include "MultigridPreconditionerLaplace.h"
+#include "ProjectionOperatorsAndSolvers.h"
 
 /*
  *  Base class for projection type splitting methods such as
@@ -30,15 +30,11 @@ public:
   DGNavierStokesProjectionMethods(parallel::distributed::Triangulation<dim> const &triangulation,
                                   InputParametersNavierStokes<dim> const          &parameter)
     :
-    DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>(triangulation,parameter),
-    projection_operator(nullptr)
+    DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>(triangulation,parameter)//,
   {}
 
   virtual ~DGNavierStokesProjectionMethods()
-  {
-    delete projection_operator;
-    projection_operator = nullptr;
-  }
+  {}
 
   virtual void setup_solvers(double const &time_step_size,
                              double const &scaling_factor_time_derivative_term) = 0;
@@ -87,8 +83,17 @@ protected:
   std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > pressure_poisson_solver;
 
   // Projection method
-  ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> * projection_operator;
-  std_cxx11::shared_ptr<ProjectionSolverBase<value_type> > projection_solver;
+
+  // div-div-penalty and continuity penalty operator
+  std_cxx11::shared_ptr<DivergencePenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > divergence_penalty_operator;
+  std_cxx11::shared_ptr<ContinuityPenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > continuity_penalty_operator;
+
+  // projection operator
+  std_cxx11::shared_ptr<ProjectionOperatorBase<dim> > projection_operator;
+
+  // projection solver
+  std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > projection_solver;
+  std_cxx11::shared_ptr<PreconditionerBase<value_type> > preconditioner_projection;
 
 private:
 };
@@ -232,85 +237,177 @@ setup_projection_solver ()
   typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector DofHandlerSelector;
   typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector QuadratureSelector;
 
-  // initialize projection solver
-  ProjectionOperatorData projection_operator_data;
-  projection_operator_data.penalty_parameter_divergence = this->param.penalty_factor_divergence;
-  projection_operator_data.penalty_parameter_continuity = this->param.penalty_factor_continuity;
-  projection_operator_data.solve_stokes_equations = (this->param.equation_type == EquationType::Stokes);
+  // setup divergence and continuity penalty operators
+  if(this->param.use_divergence_penalty == true)
+  {
+    DivergencePenaltyOperatorData div_penalty_data;
+    div_penalty_data.penalty_parameter = this->param.divergence_penalty_factor;
 
-  if(this->param.projection_type == ProjectionType::NoPenalty)
+    divergence_penalty_operator.reset(new DivergencePenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(
+        this->data,
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity),
+        div_penalty_data));
+  }
+
+  if(this->param.use_continuity_penalty == true)
+  {
+    ContinuityPenaltyOperatorData conti_penalty_data;
+    conti_penalty_data.penalty_parameter = this->param.continuity_penalty_factor;
+
+    continuity_penalty_operator.reset(new ContinuityPenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(
+        this->data,
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity),
+        conti_penalty_data));
+  }
+
+  // setup projection operator and projection solver
+
+  // no penalty terms
+  if(this->param.use_divergence_penalty == false &&
+     this->param.use_continuity_penalty == false)
   {
     projection_solver.reset(new ProjectionSolverNoPenalty<dim, fe_degree, value_type>(
         this->data,
         static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
         static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity)));
   }
-  else if(this->param.projection_type == ProjectionType::DivergencePenalty &&
-          this->param.solver_projection == SolverProjection::LU)
+  // divergence penalty only
+  else if(this->param.use_divergence_penalty == true &&
+          this->param.use_continuity_penalty == false)
   {
-    if(projection_operator != nullptr)
+    // use direct solver
+    if(this->param.solver_projection == SolverProjection::LU)
     {
-      delete projection_operator;
-      projection_operator = nullptr;
+      AssertThrow(divergence_penalty_operator.get() != 0,
+          ExcMessage("Divergence penalty operator has not been initialized."));
+
+      // projection operator
+      typedef ProjectionOperatorDivergencePenaltyDirect<dim, fe_degree, fe_degree_p,
+          fe_degree_xwall, xwall_quad_rule, value_type> PROJ_OPERATOR;
+
+      projection_operator.reset(new PROJ_OPERATOR(*divergence_penalty_operator));
+
+      typedef DirectProjectionSolverDivergencePenalty<dim, fe_degree,
+          fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> PROJ_SOLVER;
+
+      projection_solver.reset(new PROJ_SOLVER(std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
     }
+    // use iterative solver (PCG)
+    else if(this->param.solver_projection == SolverProjection::PCG)
+    {
+      AssertThrow(divergence_penalty_operator.get() != 0,
+          ExcMessage("Divergence penalty operator has not been initialized."));
 
-    projection_operator = new ProjectionOperatorBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(
-        this->data,
-        static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity),
-        projection_operator_data);
+      // projection operator
+      typedef ProjectionOperatorDivergencePenaltyIterative<dim, fe_degree, fe_degree_p,
+          fe_degree_xwall, xwall_quad_rule, value_type> PROJ_OPERATOR;
 
-    projection_solver.reset(new DirectProjectionSolverDivergencePenalty
-        <dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(projection_operator));
+      projection_operator.reset(new PROJ_OPERATOR(*divergence_penalty_operator));
+
+      // solver
+      ProjectionSolverData projection_solver_data;
+      projection_solver_data.solver_tolerance_abs = this->param.abs_tol_projection;
+      projection_solver_data.solver_tolerance_rel = this->param.rel_tol_projection;
+
+      typedef IterativeProjectionSolverDivergencePenalty<dim, fe_degree,
+          fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> PROJ_SOLVER;
+
+      projection_solver.reset(new PROJ_SOLVER(*std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator),
+                                              projection_solver_data));
+    }
+    else
+    {
+      AssertThrow(this->param.solver_projection == SolverProjection::LU ||
+                  this->param.solver_projection == SolverProjection::PCG,
+          ExcMessage("Specified projection solver not implemented."));
+    }
   }
-  else if(this->param.projection_type == ProjectionType::DivergencePenalty &&
-          this->param.solver_projection == SolverProjection::PCG)
+  // both divergence and continuity penalty terms
+  else if(this->param.use_divergence_penalty == true &&
+          this->param.use_continuity_penalty == true)
   {
-    if(projection_operator != nullptr)
+    AssertThrow(divergence_penalty_operator.get() != 0,
+        ExcMessage("Divergence penalty operator has not been initialized."));
+
+    AssertThrow(continuity_penalty_operator.get() != 0,
+        ExcMessage("Continuity penalty operator has not been initialized."));
+
+    // projection operator consisting of mass matrix operator,
+    // divergence penalty operator, and continuity penalty operator
+    typedef ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree,
+        fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> PROJ_OPERATOR;
+
+    projection_operator.reset(new PROJ_OPERATOR(this->mass_matrix_operator,
+                                                *this->divergence_penalty_operator,
+                                                *this->continuity_penalty_operator));
+
+    // preconditioner
+    if(this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
     {
-      delete projection_operator;
-      projection_operator = nullptr;
+      preconditioner_projection.reset(new InverseMassMatrixPreconditioner<dim,fe_degree,value_type>
+         (this->data,
+          static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
+          static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity)));
+    }
+    else if(this->param.preconditioner_projection == PreconditionerProjection::Jacobi)
+    {
+      // Note that at this point (when initializing the Jacobi preconditioner and calculating the diagonal)
+      // the penalty parameter of the projection operator has not been calculated and the time step size has
+      // not been set. Hence, update_preconditioner = true should be used for the Jacobi preconditioner in order
+      // to use to correct diagonal for preconditioning.
+      preconditioner_projection.reset(new JacobiPreconditioner<value_type,PROJ_OPERATOR>
+          (*std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
+    }
+    else
+    {
+      AssertThrow(this->param.preconditioner_projection == PreconditionerProjection::None ||
+                  this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix ||
+                  this->param.preconditioner_projection == PreconditionerProjection::Jacobi,
+                  ExcMessage("Specified preconditioner of projection solver not implemented."));
     }
 
-    projection_operator = new ProjectionOperatorDivergencePenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(
-        this->data,
-        static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity),
-        projection_operator_data);
+    // solver
+    if(this->param.solver_projection == SolverProjection::PCG)
+    {
+      // setup solver data
+      CGSolverData projection_solver_data;
+      // use default value of max_iter
+      projection_solver_data.solver_tolerance_abs = this->param.abs_tol_projection;
+      projection_solver_data.solver_tolerance_rel = this->param.rel_tol_projection;
+      // default value of use_preconditioner = false
+      if(this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix ||
+         this->param.preconditioner_projection == PreconditionerProjection::Jacobi)
+      {
+        projection_solver_data.use_preconditioner = true;
 
-    ProjectionSolverData projection_solver_data;
-    projection_solver_data.solver_tolerance_abs = this->param.abs_tol_projection;
-    projection_solver_data.solver_tolerance_rel = this->param.rel_tol_projection;
-    projection_solver_data.solver_projection = this->param.solver_projection;
-    projection_solver_data.preconditioner_projection = this->param.preconditioner_projection;
+        if(this->param.preconditioner_projection == PreconditionerProjection::Jacobi)
+          projection_solver_data.update_preconditioner = true;
+      }
+      else
+      {
+        AssertThrow(this->param.preconditioner_projection == PreconditionerProjection::None ||
+                    this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix ||
+                    this->param.preconditioner_projection == PreconditionerProjection::Jacobi,
+                    ExcMessage("Specified preconditioner of projection solver not implemented."));
+      }
 
-    projection_solver.reset(new IterativeProjectionSolverDivergencePenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(
-        projection_operator,
-        projection_solver_data));
+      // setup solver
+      projection_solver.reset(new CGSolver<PROJ_OPERATOR,PreconditionerBase<value_type>,parallel::distributed::Vector<value_type> >
+         (*std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator),
+          *preconditioner_projection,
+          projection_solver_data));
+    }
+    else
+    {
+      AssertThrow(this->param.solver_projection == SolverProjection::PCG,
+          ExcMessage("Specified projection solver not implemented."));
+    }
   }
-  else if(this->param.projection_type == ProjectionType::DivergenceAndContinuityPenalty)
+  else
   {
-    if(projection_operator != nullptr)
-    {
-      delete projection_operator;
-      projection_operator = nullptr;
-    }
-
-    projection_operator = new ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(
-        this->data,
-        static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity),
-        projection_operator_data);
-
-    ProjectionSolverData projection_solver_data;
-    projection_solver_data.solver_tolerance_abs = this->param.abs_tol_projection;
-    projection_solver_data.solver_tolerance_rel = this->param.rel_tol_projection;
-    projection_solver_data.solver_projection = this->param.solver_projection;
-    projection_solver_data.preconditioner_projection = this->param.preconditioner_projection;
-
-    projection_solver.reset(new IterativeProjectionSolverDivergenceAndContinuityPenalty<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(
-                              projection_operator,
-                              projection_solver_data));
+    AssertThrow(false,ExcMessage("Specified combination of divergence and continuity penalty operators not implemented."));
   }
 }
 
@@ -384,10 +481,22 @@ solve_projection (parallel::distributed::Vector<value_type>       &dst,
                   double const                                    cfl,
                   double const                                    time_step_size) const
 {
-  // Update projection operator
-  if(this->param.projection_type != ProjectionType::NoPenalty)
-    this->projection_operator->calculate_array_penalty_parameter(velocity_n,cfl,time_step_size);
+  // Update projection operator, i.e., the penalty parameters that depend on
+  // the current solution (velocity field).
+  if(this->param.use_divergence_penalty == true)
+  {
+    divergence_penalty_operator->calculate_array_penalty_parameter(velocity_n);
+  }
+  if(this->param.use_continuity_penalty == true)
+  {
+    continuity_penalty_operator->calculate_array_penalty_parameter(velocity_n);
+  }
 
+  // Set the correct time step size.
+  if(projection_operator.get() != 0)
+    projection_operator->set_time_step_size(time_step_size);
+
+  // Solve projection equation.
   unsigned int n_iter = this->projection_solver->solve(dst,src);
 
   return n_iter;
