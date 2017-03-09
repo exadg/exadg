@@ -18,6 +18,7 @@
 #include "SmootherBase.h"
 #include "GMRESSmoother.h"
 #include "ChebyshevSmoother.h"
+#include "JacobiSmoother.h"
 #include "MGCoarseGridSolvers.h"
 
 namespace
@@ -196,6 +197,20 @@ protected:
         smoother->initialize(mg_matrices[level],smoother_data);
         break;
       }
+      case MultigridSmoother::Jacobi:
+      {
+        typedef JacobiSmoother<dim,Operator,VECTOR_TYPE> JACOBI_SMOOTHER;
+        mg_smoother[level].reset(new JACOBI_SMOOTHER());
+
+        typename JACOBI_SMOOTHER::AdditionalData smoother_data;
+        smoother_data.preconditioner = mg_data.jacobi_smoother_data.preconditioner;
+        smoother_data.number_of_smoothing_steps = mg_data.jacobi_smoother_data.number_of_smoothing_steps;
+        smoother_data.damping_factor = mg_data.jacobi_smoother_data.damping_factor;
+
+        std_cxx11::shared_ptr<JACOBI_SMOOTHER> smoother = std::dynamic_pointer_cast<JACOBI_SMOOTHER>(mg_smoother[level]);
+        smoother->initialize(mg_matrices[level],smoother_data);
+        break;
+      }
       default:
       {
         AssertThrow(false, ExcMessage("Specified MultigridSmoother not implemented!"));
@@ -223,6 +238,13 @@ protected:
       {
         typedef GMRESSmoother<dim,Operator,VECTOR_TYPE> GMRES_SMOOTHER;
         std_cxx11::shared_ptr<GMRES_SMOOTHER> smoother = std::dynamic_pointer_cast<GMRES_SMOOTHER>(mg_smoother[level]);
+        smoother->update();
+        break;
+      }
+      case MultigridSmoother::Jacobi:
+      {
+        typedef JacobiSmoother<dim,Operator,VECTOR_TYPE> JACOBI_SMOOTHER;
+        std_cxx11::shared_ptr<JACOBI_SMOOTHER> smoother = std::dynamic_pointer_cast<JACOBI_SMOOTHER>(mg_smoother[level]);
         smoother->update();
         break;
       }
