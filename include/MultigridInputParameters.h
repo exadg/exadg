@@ -14,7 +14,8 @@
  {
    Chebyshev,
    ChebyshevNonsymmetricOperator,
-   GMRES
+   GMRES,
+   Jacobi
  };
 
 /*
@@ -89,6 +90,44 @@ struct GMRESSmootherData
 
 };
 
+enum class PreconditionerJacobiSmoother
+{
+  None,
+  PointJacobi,
+  BlockJacobi
+};
+
+struct JacobiSmootherData
+{
+  JacobiSmootherData()
+    :
+    preconditioner(PreconditionerJacobiSmoother::None),
+    number_of_smoothing_steps(5),
+    damping_factor(1.0)
+  {}
+
+  void print(ConditionalOStream &pcout)
+  {
+    std::string str_preconditioner[] = { "None",
+                                         "PointJacobi",
+                                         "BlockJacobi"};
+
+    print_parameter(pcout,"Preconditioner",str_preconditioner[(int)preconditioner]);
+    print_parameter(pcout,"Number of iterations",number_of_smoothing_steps);
+    print_parameter(pcout,"Damping factor",damping_factor);
+  }
+
+  // use Jacobi method as preconditioner
+  PreconditionerJacobiSmoother preconditioner;
+
+  // number of iterations per smoothing step
+  unsigned int number_of_smoothing_steps;
+
+  // damping factor
+  double damping_factor;
+
+};
+
 struct MultigridData
 {
   MultigridData()
@@ -101,7 +140,8 @@ struct MultigridData
   {
     std::string str_smoother[] = { "Chebyshev",
                                    "ChebyshevNonsymmetricOperator",
-                                   "GMRES"};
+                                   "GMRES",
+                                   "Jacobi"};
 
     print_parameter(pcout,"Multigrid smoother",str_smoother[(int)smoother]);
 
@@ -112,6 +152,10 @@ struct MultigridData
     else if(smoother == MultigridSmoother::GMRES)
     {
       gmres_smoother_data.print(pcout);
+    }
+    else if(smoother == MultigridSmoother::Jacobi)
+    {
+      jacobi_smoother_data.print(pcout);
     }
 
     std::string str_coarse_solver[] = { "Chebyshev",
@@ -133,6 +177,9 @@ struct MultigridData
 
   // GMRES smoother
   GMRESSmootherData gmres_smoother_data;
+
+  // Jacobi smoother
+  JacobiSmootherData jacobi_smoother_data;
 
   // Sets the coarse grid solver
   MultigridCoarseGridSolver coarse_solver;
