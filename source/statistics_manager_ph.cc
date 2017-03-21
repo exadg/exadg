@@ -1,8 +1,10 @@
 
+#include "../include/incompressible_navier_stokes/postprocessor/statistics_manager_ph.h"
+
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/distributed/tria_base.h>
-#include <statistics_manager_ph.h>
-#include <SpaldingsLaw.h>
+
+#include "../include/incompressible_navier_stokes/xwall/SpaldingsLaw.h"
 
 
 

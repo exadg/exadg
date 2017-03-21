@@ -55,8 +55,8 @@
 #include <fstream>
 #include <sstream>
 
-#include "poisson_solver.h"
-#include "MultigridPreconditionerLaplace.h"
+#include "../include/poisson/multigrid_preconditioner_laplace.h"
+#include "../include/poisson/poisson_solver.h"
 
 namespace Step37
 {

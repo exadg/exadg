@@ -13,10 +13,10 @@
 #include <deal.II/distributed/tria.h>
 
 #include <fe_navierstokes_solver.h>
-#include <statistics_manager.h>
-
 #include <fstream>
 #include <sstream>
+
+#include "../include/incompressible_navier_stokes/postprocessor/statistics_manager.h"
 
 
 using namespace dealii;

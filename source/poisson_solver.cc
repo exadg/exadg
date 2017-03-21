@@ -1,6 +1,6 @@
 
 
-#include "poisson_solver.h"
+#include "../include/poisson/poisson_solver.h"
 
 #include <deal.II/base/function_lib.h>
 #include <deal.II/lac/precondition.h>
