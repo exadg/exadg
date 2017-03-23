@@ -44,7 +44,7 @@ const double VISCOSITY = 0.025; //1.e-6; //2.5e-2;
 const FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::LaplaceFormulation; //LaplaceFormulation; //DivergenceFormulation;
 
 enum class MeshType{ UniformCartesian, ComplexSurfaceManifold, ComplexVolumeManifold };
-const MeshType MESH_TYPE = MeshType::UniformCartesian; //ComplexVolumeManifold; //UniformCartesian;
+const MeshType MESH_TYPE = MeshType::ComplexSurfaceManifold; //ComplexVolumeManifold; //UniformCartesian;
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -63,7 +63,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
+  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepCFL; //ConstTimeStepUserSpecified;
   max_velocity = 1.4 * U_X_MAX;
@@ -185,11 +185,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // COUPLED NAVIER-STOKES SOLVER
   use_scaling_continuity = false;
-  scaling_factor_continuity = 1.0e2;
+  scaling_factor_continuity = 1.0e0;
 
   // nonlinear solver (Newton solver)
-  newton_solver_data_coupled.abs_tol = 1.e-12;
-  newton_solver_data_coupled.rel_tol = 1.e-8;
+  newton_solver_data_coupled.abs_tol = 1.e-10; //1.e-12;
+  newton_solver_data_coupled.rel_tol = 1.e-10; //1.e-8;
   newton_solver_data_coupled.max_iter = 1e2;
 
   // linear solver

@@ -10,8 +10,8 @@
 
 #include "../../incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/projection_operators_and_solvers.h"
+#include "../../poisson/laplace_operator.h"
 #include "../../poisson/multigrid_preconditioner_laplace.h"
-#include "../../poisson/poisson_solver.h"
 #include "solvers_and_preconditioners/iterative_solvers.h"
 
 
@@ -78,7 +78,7 @@ protected:
   void setup_projection_solver();
 
   // Pressure Poisson equation
-  LaplaceOperator<dim,value_type> laplace_operator;
+  LaplaceOperator<dim,fe_degree_p, value_type> laplace_operator;
   std_cxx11::shared_ptr<PreconditionerBase<value_type> > preconditioner_pressure_poisson;
   std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > pressure_poisson_solver;
 
@@ -148,7 +148,7 @@ setup_pressure_poisson_solver (double const time_step_size)
   // setup preconditioner
   if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Jacobi)
   {
-    preconditioner_pressure_poisson.reset(new JacobiPreconditioner<value_type, LaplaceOperator<dim,value_type> >(laplace_operator));
+    preconditioner_pressure_poisson.reset(new JacobiPreconditioner<value_type, LaplaceOperator<dim, fe_degree_p, value_type> >(laplace_operator));
   }
   else if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::GeometricMultigrid)
   {
@@ -158,7 +158,7 @@ setup_pressure_poisson_solver (double const time_step_size)
     // use single precision for multigrid
     typedef float Number;
 
-    typedef MyMultigridPreconditionerLaplace<dim, value_type, LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> > MULTIGRID;
+    typedef MyMultigridPreconditionerLaplace<dim, value_type, LaplaceOperator<dim, fe_degree_p, Number>, LaplaceOperatorData<dim> > MULTIGRID;
 
     preconditioner_pressure_poisson.reset(new MULTIGRID());
 
@@ -193,7 +193,7 @@ setup_pressure_poisson_solver (double const time_step_size)
     }
 
     // setup solver
-    pressure_poisson_solver.reset(new CGSolver<LaplaceOperator<dim,value_type>,
+    pressure_poisson_solver.reset(new CGSolver<LaplaceOperator<dim, fe_degree_p, value_type>,
                                                PreconditionerBase<value_type>,
                                                parallel::distributed::Vector<value_type> >
        (laplace_operator,
@@ -215,7 +215,7 @@ setup_pressure_poisson_solver (double const time_step_size)
       solver_data.use_preconditioner = true;
     }
 
-    pressure_poisson_solver.reset(new FGMRESSolver<LaplaceOperator<dim,value_type>,
+    pressure_poisson_solver.reset(new FGMRESSolver<LaplaceOperator<dim, fe_degree_p, value_type>,
                                                    PreconditionerBase<value_type>,
                                                    parallel::distributed::Vector<value_type> >
         (laplace_operator,

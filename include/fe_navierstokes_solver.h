@@ -19,7 +19,7 @@
 
 using namespace dealii;
 
-#include "poisson/poisson_solver.h"
+#include "poisson/laplace_operator.h"
 #include "fluid_base_algorithm.h"
 
 

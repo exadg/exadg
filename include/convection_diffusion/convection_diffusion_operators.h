@@ -20,6 +20,7 @@
 #include "../include/functionalities/evaluate_functions.h"
 #include "solvers_and_preconditioners/invert_diagonal.h"
 #include "solvers_and_preconditioners/verify_calculation_of_diagonal.h"
+#include "solvers_and_preconditioners/block_jacobi_matrices.h"
 
 namespace ScalarConvDiffOperators
 {
@@ -2905,7 +2906,10 @@ private:
 
 
 
-
+/*
+ *  This class is used as an interface to apply the global block Jacobi
+ *  matrix-vector product for a given operator that implements this operation.
+ */
 template<typename UnderlyingOperator, typename Number>
 class ConvectionDiffusionBlockJacobiOperator
 {
@@ -3128,7 +3132,7 @@ public:
 
   /*
    *  This function does nothing in case of the ConvectionDiffusionOperator.
-   *  IT is only necessary due to the interface of the multigrid preconditioner
+   *  It is only necessary due to the interface of the multigrid preconditioner
    *  and especially the coarse grid solver that calls this function.
    */
   void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const {}
@@ -3223,16 +3227,16 @@ public:
   void vmult_block_jacobi_2 (parallel::distributed::Vector<Number>       &dst,
                            const parallel::distributed::Vector<Number> &src) const
   {
-    data->cell_loop(&ConvectionDiffusionOperator<dim,fe_degree,Number>::vmult_block_jacobi_matrices, this, dst, src);
+    data->cell_loop(&ConvectionDiffusionOperator<dim,fe_degree,Number>::cell_loop_apply_block_jacobi_matrices, this, dst, src);
   }
 
   // TODO only needed for testing
-  void vmult_block_jacobi_matrices (const MatrixFree<dim,value_type>                 &data,
-                                    parallel::distributed::Vector<value_type>        &dst,
-                                    const parallel::distributed::Vector<value_type>  &src,
-                                    const std::pair<unsigned int,unsigned int>       &cell_range) const
+  void cell_loop_apply_block_jacobi_matrices (const MatrixFree<dim,Number>                 &data,
+                                              parallel::distributed::Vector<Number>        &dst,
+                                              const parallel::distributed::Vector<Number>  &src,
+                                              const std::pair<unsigned int,unsigned int>   &cell_range) const
   {
-    FEEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,
+    FEEvaluation<dim,fe_degree,fe_degree+1,1,Number> fe_eval(data,
                                                                  mass_matrix_operator->get_operator_data().dof_index,
                                                                  mass_matrix_operator->get_operator_data().quad_index);
 
@@ -3241,16 +3245,16 @@ public:
       fe_eval.reinit(cell);
       fe_eval.read_dof_values(src);
 
-      for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+      for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
       {
         // fill source vector
-        Vector<value_type> src_vector(fe_eval.dofs_per_cell);
-        Vector<value_type> dst_vector(fe_eval.dofs_per_cell);
+        Vector<Number> src_vector(fe_eval.dofs_per_cell);
+        Vector<Number> dst_vector(fe_eval.dofs_per_cell);
         for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
           src_vector(j) = fe_eval.begin_dof_values()[j][v];
 
         // apply matrix-vector product
-        matrices[cell*VectorizedArray<value_type>::n_array_elements+v].vmult(dst_vector,src_vector,false);
+        matrices[cell*VectorizedArray<Number>::n_array_elements+v].vmult(dst_vector,src_vector,false);
 
         // write solution to dst-vector
         for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
@@ -3365,26 +3369,30 @@ public:
     }
 
     calculate_block_jacobi_matrices();
-    calculate_lu_factorization_block_jacobi();
+    calculate_lu_factorization_block_jacobi(matrices);
   }
+
+//  /*
+//   *  Initialize block Jacobi matrices.
+//   */
+//  void initialize_block_jacobi_matrices_with_zero() const
+//  {
+//    // initialize matrices
+//    for(typename std::vector<LAPACKFullMatrix<Number> >::iterator
+//        it = matrices.begin(); it != matrices.end(); ++it)
+//    {
+//      *it = 0;
+//    }
+//  }
 
   /*
-   *  Initialize block Jacobi matrices
+   * This function calculates the block jacobi matrices.
+   * This is done sequentially for the different operators.
    */
-  void initialize_block_jacobi_matrices_with_zero() const
-  {
-    // initialize matrices
-    for(typename std::vector<LAPACKFullMatrix<Number> >::iterator
-        it = matrices.begin(); it != matrices.end(); ++it)
-    {
-      *it = 0;
-    }
-  }
-
   void calculate_block_jacobi_matrices() const
   {
     // initialize block Jacobi matrices with zeros
-    initialize_block_jacobi_matrices_with_zero();
+    initialize_block_jacobi_matrices_with_zero(matrices);
 
     // calculate block Jacobi matrices
     if(operator_data.unsteady_problem == true)
@@ -3412,56 +3420,64 @@ public:
     }
   }
 
-  void calculate_lu_factorization_block_jacobi() const
-  {
-    for(typename std::vector<LAPACKFullMatrix<Number> >::iterator
-        it = matrices.begin(); it != matrices.end(); ++it)
-    {
-      LAPACKFullMatrix<Number> copy(*it);
-      try // the matrix might be singular
-      {
-        (*it).compute_lu_factorization();
-      }
-      catch (std::exception &exc)
-      {
-        // add a small, positive value to the diagonal of the LU
-        // factorized matrix
-        for(unsigned int i=0;i<(*it).m();++i)
-        {
-          for(unsigned int j=0;j<(*it).n();++j)
-          {
-            if(i==j)
-              (*it)(i,j) += 1.e-4;
-          }
-        }
-      }
-    }
-  }
+//
+//  /*
+//   *  This function calculates the LU factorization for a given vector
+//   *  of matrices of type LAPACKFullMatrix.
+//   */
+//  void calculate_lu_factorization_block_jacobi() const
+//  {
+//    for(typename std::vector<LAPACKFullMatrix<Number> >::iterator
+//        it = matrices.begin(); it != matrices.end(); ++it)
+//    {
+//      LAPACKFullMatrix<Number> copy(*it);
+//      try // the matrix might be singular
+//      {
+//        (*it).compute_lu_factorization();
+//      }
+//      catch (std::exception &exc)
+//      {
+//        // add a small, positive value to the diagonal
+//        // of the LU factorized matrix
+//        for(unsigned int i=0; i<(*it).m(); ++i)
+//        {
+//          for(unsigned int j=0; j<(*it).n(); ++j)
+//          {
+//            if(i==j)
+//              (*it)(i,j) += 1.e-4;
+//          }
+//        }
+//      }
+//    }
+//  }
 
-  void cell_loop_apply_inverse_block_jacobi_matrices (const MatrixFree<dim,value_type>                 &data,
-                                                      parallel::distributed::Vector<value_type>        &dst,
-                                                      const parallel::distributed::Vector<value_type>  &src,
-                                                      const std::pair<unsigned int,unsigned int>       &cell_range) const
+  /*
+   *  This function loops over all cells and applies the inverse block Jacobi matrices elementwise.
+   */
+  void cell_loop_apply_inverse_block_jacobi_matrices (const MatrixFree<dim,Number>                 &data,
+                                                      parallel::distributed::Vector<Number>        &dst,
+                                                      const parallel::distributed::Vector<Number>  &src,
+                                                      const std::pair<unsigned int,unsigned int>   &cell_range) const
   {
     // apply inverse block matrices
-    FEEvaluation<dim,fe_degree,fe_degree+1,1,value_type> fe_eval(data,
-                                                                 mass_matrix_operator->get_operator_data().dof_index,
-                                                                 mass_matrix_operator->get_operator_data().quad_index);
+    FEEvaluation<dim,fe_degree,fe_degree+1,1,Number> fe_eval(data,
+                                                             mass_matrix_operator->get_operator_data().dof_index,
+                                                             mass_matrix_operator->get_operator_data().quad_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
       fe_eval.reinit(cell);
       fe_eval.read_dof_values(src);
 
-      for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+      for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
       {
         // fill source vector
-        Vector<value_type> src_vector(fe_eval.dofs_per_cell);
+        Vector<Number> src_vector(fe_eval.dofs_per_cell);
         for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
           src_vector(j) = fe_eval.begin_dof_values()[j][v];
 
         // apply inverse matrix
-        matrices[cell*VectorizedArray<value_type>::n_array_elements+v].apply_lu_factorization(src_vector,false);
+        matrices[cell*VectorizedArray<Number>::n_array_elements+v].apply_lu_factorization(src_vector,false);
 
         // write solution to dst-vector
         for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
@@ -3472,6 +3488,7 @@ public:
     }
   }
 
+  // verify computation of block Jacobi matrices
   void check_block_jacobi_matrices(parallel::distributed::Vector<Number> const &src) const
   {
     calculate_block_jacobi_matrices();
@@ -3482,7 +3499,11 @@ public:
     parallel::distributed::Vector<Number> tmp1(src), tmp2(src), diff(src);
     tmp1 = 0.0;
     tmp2 = 0.0;
+
+    // variant 1
     vmult_block_jacobi(tmp1,src);
+
+    // variant 2
     vmult_block_jacobi_2(tmp2,src);
 
     diff = tmp2;
