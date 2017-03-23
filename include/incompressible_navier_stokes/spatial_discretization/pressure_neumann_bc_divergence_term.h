@@ -54,7 +54,7 @@ public:
 
   void initialize (MatrixFree<dim,value_type> const         &mf_data,
                    PressureNeumannBCDivergenceTermData<dim> &my_data_in,
-                   LaplaceOperator<dim> const               &laplace_operator_in)
+                   LaplaceOperator<dim, fe_degree_p> const  &laplace_operator_in)
   {
     this->data = &mf_data;
     my_data = my_data_in;
@@ -135,7 +135,7 @@ private:
   MatrixFree<dim,value_type> const * data;
   PressureNeumannBCDivergenceTermData<dim> my_data;
 
-  LaplaceOperator<dim> const *laplace_operator;
+  LaplaceOperator<dim, fe_degree_p> const *laplace_operator;
 };
 
 

@@ -16,8 +16,8 @@
 #include "../../incompressible_navier_stokes/preconditioners/pressure_convection_diffusion_operator.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/helmholtz_operator.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/velocity_convection_diffusion_operator.h"
+#include "../../poisson/laplace_operator.h"
 #include "../../poisson/multigrid_preconditioner_laplace.h"
-#include "../../poisson/poisson_solver.h"
 #include "solvers_and_preconditioners/check_multigrid.h"
 #include "solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
 #include "solvers_and_preconditioners/iterative_solvers.h"
@@ -577,7 +577,7 @@ private:
 
       MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
 
-      typedef MyMultigridPreconditionerLaplace<dim,value_type,LaplaceOperator<dim,Number>,LaplaceOperatorData<dim> > MULTIGRID;
+      typedef MyMultigridPreconditionerLaplace<dim,value_type,LaplaceOperator<dim,fe_degree_p, Number>,LaplaceOperatorData<dim> > MULTIGRID;
 
       multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
 
@@ -614,13 +614,13 @@ private:
       laplace_operator_data.penalty_factor = 1.0;
       laplace_operator_data.bc = underlying_operator->boundary_descriptor_laplace;
       laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
-      laplace_operator_classical.reset(new LaplaceOperator<dim>());
+      laplace_operator_classical.reset(new LaplaceOperator<dim, fe_degree_p>());
       laplace_operator_classical->reinit(
           underlying_operator->get_data(),
           underlying_operator->get_mapping(),
           laplace_operator_data);
 
-      solver_pressure_block.reset(new CGSolver<LaplaceOperator<dim>,PreconditionerBase<value_type>,parallel::distributed::Vector<value_type> >(
+      solver_pressure_block.reset(new CGSolver<LaplaceOperator<dim, fe_degree_p>,PreconditionerBase<value_type>,parallel::distributed::Vector<value_type> >(
           *laplace_operator_classical,
           *multigrid_preconditioner_schur_complement,
           solver_data));
@@ -962,7 +962,7 @@ private:
   std_cxx11::shared_ptr<PreconditionerBase<value_type> > inv_mass_matrix_preconditioner_schur_complement;
 
   std_cxx11::shared_ptr<PressureConvectionDiffusionOperator<dim, fe_degree_p, fe_degree, value_type> > pressure_convection_diffusion_operator;
-  std_cxx11::shared_ptr<LaplaceOperator<dim> > laplace_operator_classical;
+  std_cxx11::shared_ptr<LaplaceOperator<dim, fe_degree_p> > laplace_operator_classical;
   std_cxx11::shared_ptr<CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > laplace_operator_compatible;
   std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > solver_pressure_block;
 

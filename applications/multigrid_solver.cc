@@ -55,18 +55,30 @@
 #include <fstream>
 #include <sstream>
 
+#include "../include/poisson/laplace_operator.h"
+
 #include "../include/poisson/multigrid_preconditioner_laplace.h"
-#include "../include/poisson/poisson_solver.h"
+#include "solvers_and_preconditioners/iterative_solvers.h"
 
 namespace Step37
 {
   using namespace dealii;
 
+  // dimension
+  const unsigned int DIM = 2;
+  // polynomial degree of shape functions
+  const unsigned int FE_DEGREE = 2;
 
-  const unsigned int dimension = 3;
-  const bool run_variable_sizes = true;
-  const bool do_adaptive = false;
-  const unsigned int n_tests = 3;
+  // penalty factor interior penalty method
+  const double PENALTY_FACTOR = 0.25;
+
+  // mesh refinement strategy
+  const bool RUN_VARIABLE_SIZES = false; //true;
+  const unsigned int N_REFINEMENTS = 5; // only relevant if RUN_VARIABLE_SIZES == false
+  const bool DO_ADAPTIVE = false;
+
+  // number of repetitions used to calculate minimum wall time
+  const unsigned int N_REPETITIONS = 3;
 
 
   // Definition of analytic solution for testing the Poisson solver
@@ -114,6 +126,8 @@ namespace Step37
   public:
     Solution () : Function<dim>() {}
 
+    virtual ~Solution(){}
+
     virtual double value (const Point<dim>   &p,
                           const unsigned int  component = 0) const;
 
@@ -130,11 +144,11 @@ namespace Step37
     const double pi = numbers::PI;
     double return_value = 0;
     for (unsigned int i=0; i<this->n_source_centers; ++i)
-      {
-        const Tensor<1,dim> x_minus_xi = p - this->source_centers[i];
-        return_value += std::exp(-x_minus_xi.norm_square() /
-                                 (this->width * this->width));
-      }
+    {
+      const Tensor<1,dim> x_minus_xi = p - this->source_centers[i];
+      return_value += std::exp(-x_minus_xi.norm_square() /
+                               (this->width * this->width));
+    }
 
     return return_value /
       Utilities::fixed_power<dim>(std::sqrt(2 * pi) * this->width);
@@ -150,14 +164,14 @@ namespace Step37
     Tensor<1,dim> return_value;
 
     for (unsigned int i=0; i<this->n_source_centers; ++i)
-      {
-        const Tensor<1,dim> x_minus_xi = p - this->source_centers[i];
+    {
+      const Tensor<1,dim> x_minus_xi = p - this->source_centers[i];
 
-        return_value += (-2 / (this->width * this->width) *
-                         std::exp(-x_minus_xi.norm_square() /
-                                  (this->width * this->width)) *
-                         x_minus_xi);
-      }
+      return_value += (-2 / (this->width * this->width) *
+                       std::exp(-x_minus_xi.norm_square() /
+                                (this->width * this->width)) *
+                       x_minus_xi);
+    }
 
     return return_value / Utilities::fixed_power<dim>(std::sqrt(2 * pi) *
                                                       this->width);
@@ -172,6 +186,8 @@ namespace Step37
   public:
     RightHandSide () : Function<dim>() {}
 
+    virtual ~RightHandSide(){}
+
     virtual double value (const Point<dim>   &p,
 			  const unsigned int  component = 0) const;
   };
@@ -184,18 +200,17 @@ namespace Step37
     const double pi = numbers::PI;
     double return_value = 0;
     for (unsigned int i=0; i<this->n_source_centers; ++i)
-      {
-        const Tensor<1,dim> x_minus_xi = p - this->source_centers[i];
+    {
+      const Tensor<1,dim> x_minus_xi = p - this->source_centers[i];
 
-        // The first contribution is the
-        // Laplacian:
-        return_value +=
-          ((2*dim - 4*x_minus_xi.norm_square()/
-            (this->width * this->width)) /
-           (this->width * this->width) *
-           std::exp(-x_minus_xi.norm_square() /
-                    (this->width * this->width)));
-      }
+      // The first contribution is the Laplacian:
+      return_value +=
+        ((2*dim - 4*x_minus_xi.norm_square()/
+          (this->width * this->width)) /
+         (this->width * this->width) *
+         std::exp(-x_minus_xi.norm_square() /
+                  (this->width * this->width)));
+    }
 
     return return_value / Utilities::fixed_power<dim>(std::sqrt(2 * pi) *
                                                       this->width);
@@ -209,6 +224,8 @@ namespace Step37
   {
   public:
     SolutionNegGrad () : Function<dim>(dim) {}
+
+    virtual ~SolutionNegGrad(){}
 
     virtual void vector_value (const Point<dim>   &p,
                                Vector<double>     &v) const
@@ -280,20 +297,22 @@ namespace Step37
   }
 
 
-  template <int dim>
+  template <int dim, int fe_degree>
   class LaplaceProblem
   {
   public:
     typedef float Number;
 
-    LaplaceProblem (const unsigned int degree_finite_element,
-                    const bool use_dg);
+    /*
+     *  Constructor
+     */
+    LaplaceProblem (const bool use_dg);
+
     void run ();
 
   private:
     void setup_system ();
-//    void assemble_system (const PoissonSolver<dim> &solver);
-    void assemble_system (const LaplaceOperator<dim,double> &laplace_operator);
+    void assemble_system (const LaplaceOperator<dim,fe_degree,double> &laplace_operator);
     void solve ();
     void output_results (const unsigned int cycle) const;
 
@@ -317,30 +336,28 @@ namespace Step37
 
 
 
-  template <int dim>
-  LaplaceProblem<dim>::LaplaceProblem (const unsigned int degree_finite_element,
-                                       const bool use_dg)
+  template <int dim, int fe_degree>
+  LaplaceProblem<dim, fe_degree>::LaplaceProblem (const bool use_dg)
     :
     triangulation(MPI_COMM_WORLD,
                   Triangulation<dim>::none,
                   parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
-    mapping (degree_finite_element),
+    mapping (fe_degree),
     dof_handler (triangulation),
+    setup_time(0.0),
     pcout (std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0),
     time_details (std::cout, true &&
                   Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
   {
     if (!use_dg)
-      fe.reset(new FE_Q<dim>(QGaussLobatto<1>(degree_finite_element+1)));
+      fe.reset(new FE_Q<dim>(QGaussLobatto<1>(fe_degree+1)));
     else
-      fe.reset(new FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(degree_finite_element+1)));
+      fe.reset(new FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(fe_degree+1)));
   }
 
 
-
-
-  template <int dim>
-  void LaplaceProblem<dim>::setup_system ()
+  template <int dim, int fe_degree>
+  void LaplaceProblem<dim, fe_degree>::setup_system ()
   {
     Timer time;
     time.start ();
@@ -390,8 +407,8 @@ namespace Step37
 
 
 
-  template <int dim>
-  void LaplaceProblem<dim>::assemble_system (const LaplaceOperator<dim,double> &laplace_operator)
+  template <int dim, int fe_degree>
+  void LaplaceProblem<dim, fe_degree>::assemble_system (const LaplaceOperator<dim,fe_degree,double> &laplace_operator)
   {
     Timer time;
     std::map<types::global_dof_index, double> boundary_values;
@@ -484,25 +501,25 @@ namespace Step37
 
 
 
-  template <int dim>
-  void LaplaceProblem<dim>::solve ()
+  template <int dim, int fe_degree>
+  void LaplaceProblem<dim, fe_degree>::solve ()
   {
     Timer time;
 
-    LaplaceOperatorData<dim> laplace_operator_data;
-
-    // TODO
-//    laplace_operator_data.dirichlet_boundaries.insert(1);
-//    laplace_operator_data.neumann_boundaries.insert(0);
     std_cxx11::shared_ptr<BoundaryDescriptorLaplace<dim> > boundary_descriptor;
+    boundary_descriptor.reset(new BoundaryDescriptorLaplace<dim>());
+
     std_cxx11::shared_ptr<Function<dim> > zero_function;
-    zero_function.reset(new ZeroFunction<dim>(1));
+    zero_function.reset(new ZeroFunction<dim>());
+
     boundary_descriptor->dirichlet.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >(1,zero_function));
     boundary_descriptor->neumann.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >(0,zero_function));
-    laplace_operator_data.bc = boundary_descriptor;
 
-    laplace_operator_data.penalty_factor = 0.25;
-    LaplaceOperator<dim,double> laplace_operator;
+    LaplaceOperatorData<dim> laplace_operator_data;
+    laplace_operator_data.bc = boundary_descriptor;
+    laplace_operator_data.penalty_factor = PENALTY_FACTOR;
+
+    LaplaceOperator<dim,fe_degree,double> laplace_operator;
     laplace_operator.reinit(matrix_free, mapping, laplace_operator_data);
 
     MultigridData mg_data;
@@ -513,24 +530,25 @@ namespace Step37
     typedef float Number;
     std_cxx11::shared_ptr<PreconditionerBase<double> > preconditioner;
 
-    typedef MyMultigridPreconditionerLaplace<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> > MULTIGRID;
+    typedef MyMultigridPreconditionerLaplace<dim, double, LaplaceOperator<dim,fe_degree,Number>, LaplaceOperatorData<dim> > MULTIGRID;
     preconditioner.reset(new MULTIGRID());
 
     std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
-
     mg_preconditioner->initialize(mg_data, dof_handler, mapping, laplace_operator_data, laplace_operator_data.bc->dirichlet);
 
-    PoissonSolverData solver_data;
+    // setup solver data
+    CGSolverData solver_data;
     solver_data.solver_tolerance_rel = 1e-8;
     solver_data.use_preconditioner = true;
-    PoissonSolver<dim> solver;
-    solver.initialize(laplace_operator, *preconditioner, matrix_free, solver_data);
+
+    // setup solver
+    CGSolver<LaplaceOperator<dim,fe_degree,double>,PreconditionerBase<double>, parallel::distributed::Vector<double> >
+       solver(laplace_operator,*preconditioner,solver_data);
 
     setup_time += time.wall_time();
     pcout << "Initialize multigrid solver(CPU/wall) " << time() << "s/"
           << time.wall_time() << "s\n";
 
-//    assemble_system(solver);
     assemble_system(laplace_operator);
     laplace_operator.apply_nullspace_projection(system_rhs);
 
@@ -538,42 +556,45 @@ namespace Step37
     pcout << "Number of multigrid levels: " << triangulation.n_global_levels()
           << std::endl;
 
-    for (unsigned int i=0; i<n_tests; ++i)
-      {
-        solution_update = 0;
-        time.restart();
+    // measure time for applying the multigrid V-cycle
+    for (unsigned int i=0; i<N_REPETITIONS; ++i)
+    {
+      solution_update = 0;
+      time.restart();
 
-//        solver.apply_precondition(solution_update, system_rhs);
-        preconditioner->vmult(solution_update, system_rhs);
+      preconditioner->vmult(solution_update, system_rhs);
 
-        pcout << "Time V-cycle precondition  (CPU/wall) " << time() << "s/"
-              << time.wall_time() << "s\n";
-      }
+      pcout << "Time V-cycle precondition  (CPU/wall) " << time() << "s/"
+            << time.wall_time() << "s\n";
+    }
 
-    for (unsigned int i=0; i<n_tests; ++i)
-      {
-        solution_update = 0;
-        time.restart();
+    // measure time for applying the matrix-vector product
+    for (unsigned int i=0; i<N_REPETITIONS; ++i)
+    {
+      solution_update = 0;
+      time.restart();
 
-        laplace_operator.vmult(solution_update, system_rhs);
+      laplace_operator.vmult(solution_update, system_rhs);
 
-        pcout << "Time matrix-vector         (CPU/wall) " << time() << "s/"
-              << time.wall_time() << "s\n";
-      }
+      pcout << "Time matrix-vector         (CPU/wall) " << time() << "s/"
+            << time.wall_time() << "s\n";
+    }
 
+    // solve problem
     double sol_time = 1e10;
-    for (unsigned int i=0; i<n_tests; ++i)
-      {
-        solution_update = 0;
-        time.restart();
+    for (unsigned int i=0; i<N_REPETITIONS; ++i)
+    {
+      solution_update = 0;
+      time.restart();
 
-        unsigned int n_iter = solver.solve(solution_update, system_rhs);
+      unsigned int n_iter = solver.solve(solution_update, system_rhs);
 
-        sol_time = std::min(sol_time, time.wall_time());
-        pcout << "Time solve (" << n_iter
-              << " iterations)  (CPU/wall) " << time() << "s/"
-              << time.wall_time() << "s\n";
-      }
+      sol_time = std::min(sol_time, time.wall_time());
+      pcout << "Time solve (" << n_iter
+            << " iterations)  (CPU/wall) " << time() << "s/"
+            << time.wall_time() << "s\n";
+    }
+
     if (fe->dofs_per_vertex > 0)
       constraints.distribute(solution_update);
     solution += solution_update;
@@ -590,6 +611,7 @@ namespace Step37
             << std::endl;
     }
 
+    // calculate L2 error
     Vector<float> difference_per_cell (triangulation.n_active_cells());
     VectorTools::integrate_difference (dof_handler,
                                        solution,
@@ -600,8 +622,9 @@ namespace Step37
     const double L2_error = std::sqrt(Utilities::MPI::sum(difference_per_cell.norm_sqr(),
                                                           MPI_COMM_WORLD));
 
-    std::cout.precision(6);
-    pcout << "L2 error: " << L2_error << std::endl;
+    pcout << "L2 error: " << std::scientific << std::setprecision(6) << L2_error << std::endl;
+
+    // calculate H1 error
     VectorTools::integrate_difference (dof_handler,
                                        solution,
                                        Solution<dim>(),
@@ -611,10 +634,13 @@ namespace Step37
     const double H1_error = std::sqrt(Utilities::MPI::sum(difference_per_cell.norm_sqr(),
                                                           MPI_COMM_WORLD));
 
+    pcout << "H1 error: " << std::scientific << std::setprecision(6) << H1_error << std::endl;
+
+    const unsigned int level = triangulation.n_global_levels()-1;
     const unsigned int n_active_cells=triangulation.n_global_active_cells();
     const unsigned int n_dofs=dof_handler.n_dofs();
 
-    convergence_table.add_value("cycle", triangulation.n_global_levels()-1);
+    convergence_table.add_value("cycle", level);
     convergence_table.add_value("cells", n_active_cells);
     convergence_table.add_value("dofs", n_dofs);
     convergence_table.add_value("L2", L2_error);
@@ -622,11 +648,8 @@ namespace Step37
     convergence_table.add_value("Sol time", sol_time);
   }
 
-
-
-
-  template <int dim>
-  void LaplaceProblem<dim>::output_results (const unsigned int cycle) const
+  template <int dim, int fe_degree>
+  void LaplaceProblem<dim, fe_degree>::output_results (const unsigned int cycle) const
   {
     return;
     DataOut<dim> data_out;
@@ -644,87 +667,94 @@ namespace Step37
     data_out.write_vtu (output);
   }
 
-
-
-
-  template <int dim>
-  void LaplaceProblem<dim>::run ()
+  template <int dim, int fe_degree>
+  void LaplaceProblem<dim, fe_degree>::run ()
   {
     pcout << "Number of MPI processes: " << Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) << std::endl;
     pcout << "Testing " << fe->get_name() << std::endl << std::endl;
 
-    unsigned int n_cycles = 5;
+    unsigned int n_cycles = 1;
     unsigned int sizes [] = {1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20, 24, 28, 32, 40, 48, 56, 64, 80, 96, 112, 128};
-    if (run_variable_sizes)
+    if (RUN_VARIABLE_SIZES)
       n_cycles = sizeof(sizes)/sizeof(unsigned int);
+    else
+      n_cycles = N_REFINEMENTS;
+
     for (unsigned int cycle=0; cycle<n_cycles; ++cycle)
+    {
+      pcout << "Cycle " << cycle << std::endl;
+
+      if (RUN_VARIABLE_SIZES)
       {
-        pcout << "Cycle " << cycle << std::endl;
-
-        if (run_variable_sizes)
+        triangulation.clear();
+        unsigned int n_refinements = 0;
+        unsigned int n_subdiv = sizes[cycle];
+        if (n_subdiv > 1)
+          while (n_subdiv%2 == 0)
+            {
+              n_refinements += 1;
+              n_subdiv /= 2;
+            }
+        if (dim == 2)
+          n_refinements += 3;
+        unsigned int njobs = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+        while (njobs > 0)
           {
-            triangulation.clear();
-            unsigned int n_refinements = 0;
-            unsigned int n_subdiv = sizes[cycle];
-            if (n_subdiv > 1)
-              while (n_subdiv%2 == 0)
-                {
-                  n_refinements += 1;
-                  n_subdiv /= 2;
-                }
-            if (dim == 2)
-              n_refinements += 3;
-            unsigned int njobs = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
-            while (njobs > 0)
-              {
-                njobs >>= dim;
-                n_refinements++;
-              }
-            GridGenerator::subdivided_hyper_cube (triangulation, n_subdiv, -1, 1);
-            triangulation.refine_global(n_refinements);
-            if (do_adaptive)
-              {
-                for (typename Triangulation<dim>::active_cell_iterator cell=triangulation.begin_active(); cell != triangulation.end(); ++cell)
-                  if (cell->is_locally_owned() &&
-                      cell->center().norm() < 0.55)
-                    cell->set_refine_flag();
-                triangulation.execute_coarsening_and_refinement();
-                for (typename Triangulation<dim>::active_cell_iterator cell=triangulation.begin_active(); cell != triangulation.end(); ++cell)
-                  if (cell->is_locally_owned() &&
-                      cell->center().norm() > 0.3 && cell->center().norm() < 0.42)
-                    cell->set_refine_flag();
-                triangulation.execute_coarsening_and_refinement();
-                for (typename Triangulation<dim>::active_cell_iterator cell=triangulation.begin_active(); cell != triangulation.end(); ++cell)
-                  if (cell->is_locally_owned() &&
-                      cell->center().norm() > 0.335 && cell->center().norm() < 0.39)
-                    cell->set_refine_flag();
-                triangulation.execute_coarsening_and_refinement();
-              }
+            njobs >>= dim;
+            n_refinements++;
           }
-        else
+        GridGenerator::subdivided_hyper_cube (triangulation, n_subdiv, -1, 1);
+        triangulation.refine_global(n_refinements);
+        if (DO_ADAPTIVE)
           {
-            if (cycle == 0)
-              {
-                GridGenerator::hyper_cube (triangulation, -1, 1.);
-                //triangulation.refine_global (3-dim);
-              }
-            triangulation.refine_global (1);
-            //triangulation.begin_active()->set_refine_flag();
-            //triangulation.execute_coarsening_and_refinement();
+            for (typename Triangulation<dim>::active_cell_iterator cell=triangulation.begin_active(); cell != triangulation.end(); ++cell)
+              if (cell->is_locally_owned() &&
+                  cell->center().norm() < 0.55)
+                cell->set_refine_flag();
+            triangulation.execute_coarsening_and_refinement();
+            for (typename Triangulation<dim>::active_cell_iterator cell=triangulation.begin_active(); cell != triangulation.end(); ++cell)
+              if (cell->is_locally_owned() &&
+                  cell->center().norm() > 0.3 && cell->center().norm() < 0.42)
+                cell->set_refine_flag();
+            triangulation.execute_coarsening_and_refinement();
+            for (typename Triangulation<dim>::active_cell_iterator cell=triangulation.begin_active(); cell != triangulation.end(); ++cell)
+              if (cell->is_locally_owned() &&
+                  cell->center().norm() > 0.335 && cell->center().norm() < 0.39)
+                cell->set_refine_flag();
+            triangulation.execute_coarsening_and_refinement();
           }
-        for (typename Triangulation<dim>::cell_iterator cell=triangulation.begin();
-             cell != triangulation.end(); ++cell)
-          for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
-            if (cell->face(f)->at_boundary())
-              cell->face(f)->set_all_boundary_ids(1);
+      }
+      else
+      {
+        if (cycle == 0)
+        {
+          GridGenerator::hyper_cube (triangulation, -1, 1.);
+          //triangulation.refine_global (3-dim);
+        }
+        triangulation.refine_global (1);
+        //triangulation.begin_active()->set_refine_flag();
+        //triangulation.execute_coarsening_and_refinement();
+      }
 
-        setup_system ();
-        solve ();
-        output_results (cycle);
-        pcout << std::endl;
-        if (dof_handler.n_dofs() > types::global_dof_index(4000000)*Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
-          break;
-      };
+      // set boundary ID's
+      for (typename Triangulation<dim>::cell_iterator cell=triangulation.begin();
+           cell != triangulation.end(); ++cell)
+      {
+        for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
+        {
+          if (cell->face(f)->at_boundary())
+            cell->face(f)->set_all_boundary_ids(1);
+        }
+      }
+
+      setup_system ();
+      solve ();
+      output_results (cycle);
+
+      pcout << std::endl;
+      if (dof_handler.n_dofs() > types::global_dof_index(4000000)*Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
+        break;
+    }
 
     convergence_table.set_precision("L2", 3);
     convergence_table.set_precision("H1", 3);
@@ -732,17 +762,13 @@ namespace Step37
     convergence_table.set_scientific("L2", true);
     convergence_table.set_scientific("H1", true);
 
-    convergence_table
-      .evaluate_convergence_rates("L2", "cells", ConvergenceTable::reduction_rate_log2, dim);
-    convergence_table
-      .evaluate_convergence_rates("H1", "cells", ConvergenceTable::reduction_rate_log2, dim);
+    convergence_table.evaluate_convergence_rates("L2", "cells", ConvergenceTable::reduction_rate_log2, dim);
+    convergence_table.evaluate_convergence_rates("H1", "cells", ConvergenceTable::reduction_rate_log2, dim);
+
     if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
       convergence_table.write_text(std::cout);
   }
 }
-
-
-
 
 int main (int argc, char** argv)
 {
@@ -752,16 +778,12 @@ int main (int argc, char** argv)
       Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
       deallog.depth_console(0);
-      unsigned int degree = 3;
       bool do_dg = true;
       if (argc > 1)
-        degree = atoi(argv[1]);
-      if (argc > 2)
-        do_dg = atoi(argv[2]);
-      {
-        LaplaceProblem<dimension> laplace_problem(degree, do_dg);
-        laplace_problem.run ();
-      }
+        do_dg = atoi(argv[1]);
+
+      LaplaceProblem<DIM, FE_DEGREE> laplace_problem(do_dg);
+      laplace_problem.run ();
     }
   catch (std::exception &exc)
     {

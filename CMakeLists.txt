@@ -33,7 +33,6 @@ DEAL_II_INITIALIZE_CACHED_VARIABLES()
 
 # Set the source files to be compiled
 SET( TARGET_SRC
-     source/poisson_solver.cc
      #source/fe_navierstokes_evaluator.cc
      #source/fe_navierstokes_solver.cc
      source/fluid_base_algorithm.cc
