@@ -10,16 +10,16 @@ INCLUDE_DIRECTORIES(
         )
 
 SET( SOURCE_FILES
-     SteadyNavierStokes.cc
-     UnsteadyNavierStokesDualSplitting.cc
-     UnsteadyNavierStokesPressureCorrection.cc
-     UnsteadyNavierStokesCoupledSolver.cc
+     steady_navier_stokes.cc
+     unsteady_navier_stokes_dual_splitting.cc
+     unsteady_navier_stokes_pressure_correction.cc
+     unsteady_navier_stokes_coupled_solver.cc
      multigrid_solver.cc
      #fe_flow_past_cylinder.cc
      #fe_turbulent_channel.cc
      #fe_poiseuille.cc
-     SteadyConvectionDiffusion.cc
-     UnsteadyConvectionDiffusion.cc
+     steady_convection_diffusion.cc
+     unsteady_convection_diffusion.cc
      #step-7.cc
      )
 

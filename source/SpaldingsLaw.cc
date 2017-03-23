@@ -5,7 +5,7 @@
  *      Author: krank
  */
 
-#include <SpaldingsLaw.h>
+#include "../include/incompressible_navier_stokes/xwall/SpaldingsLaw.h"
 
 //define a number of helper-functions to allow vectorized and non-vectorized V
 namespace internalSpalding

@@ -1,8 +1,10 @@
 
+#include "../include/incompressible_navier_stokes/postprocessor/statistics_manager.h"
+
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/distributed/tria_base.h>
-#include <statistics_manager.h>
-#include <SpaldingsLaw.h>
+
+#include "../include/incompressible_navier_stokes/xwall/SpaldingsLaw.h"
 
 template <int dim>
 StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> &dof_handler_velocity)

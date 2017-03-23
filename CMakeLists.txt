@@ -40,7 +40,6 @@ SET( TARGET_SRC
      source/SpaldingsLaw.cc
      source/statistics_manager.cc
      source/statistics_manager_ph.cc
-     source/PrintFunctions.cc
    )
 
 # Set the include directory and the name of the project

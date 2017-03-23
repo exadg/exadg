@@ -55,19 +55,18 @@
 
 #include <deal.II/integrators/laplace.h>
 
-#include <../include/statistics_manager.h>
-
 #include <fstream>
 #include <sstream>
 
-#include "../include/DGNavierStokesDualSplittingXWall.h"
-#include "../include/DGNavierStokesCoupled.h"
+#include "../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../include/incompressible_navier_stokes/postprocessor/statistics_manager.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.h"
+#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h"
+#include "../include/incompressible_navier_stokes/xwall/DGNavierStokesDualSplittingXWall.h"
+#include "../include/incompressible_navier_stokes/xwall/PostProcessorXWall.h"
+#include "../include/incompressible_navier_stokes/xwall/TimeIntBDFDualSplittingXWallSpalartAllmaras.h"
 #include "../include/InputParametersNavierStokes.h"
 
-#include "TimeIntBDFDualSplittingXWallSpalartAllmaras.h"
-#include "TimeIntBDFCoupled.h"
-#include "../include/PostProcessor.h"
-#include "../include/PostProcessorXWall.h"
 #include "PrintInputParameters.h"
 
 const unsigned int FE_DEGREE = 3;
