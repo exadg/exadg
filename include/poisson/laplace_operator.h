@@ -226,6 +226,19 @@ private:
   void run_vmult_loop(parallel::distributed::Vector<Number>       &dst,
                       const parallel::distributed::Vector<Number> &src) const;
 
+  template<typename FEEvaluation>
+  inline void do_cell_integral(FEEvaluation &fe_eval) const
+  {
+    fe_eval.evaluate (false,true,false);
+
+    for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+    {
+      fe_eval.submit_gradient (fe_eval.get_gradient(q), q);
+    }
+
+    fe_eval.integrate (false,true);
+  }
+
   void local_apply (const MatrixFree<dim,Number>                &data,
                     parallel::distributed::Vector<Number>       &dst,
                     const parallel::distributed::Vector<Number> &src,
@@ -278,7 +291,23 @@ private:
   /*
    *  This function calculates the block Jacobi matrices.
    */
-  void add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const;
+  void add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<Number> > &matrices) const;
+
+  void cell_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>                 &data,
+                                                  std::vector<LAPACKFullMatrix<Number> >       &matrices,
+                                                  const parallel::distributed::Vector<Number>  &,
+                                                  const std::pair<unsigned int,unsigned int>   &cell_range) const;
+
+  void face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>                &data,
+                                                  std::vector<LAPACKFullMatrix<Number> >      &matrices,
+                                                  const parallel::distributed::Vector<Number> &,
+                                                  const std::pair<unsigned int,unsigned int>  &face_range) const;
+
+  void boundary_face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>                &data,
+                                                           std::vector<LAPACKFullMatrix<Number> >      &matrices,
+                                                           const parallel::distributed::Vector<Number> &,
+                                                           const std::pair<unsigned int,unsigned int>  &face_range) const;
+
   /*
    *  This function loops over all cells and applies the inverse block Jacobi matrices elementwise.
    */
@@ -292,7 +321,6 @@ private:
 
   LaplaceOperatorData<dim> operator_data;
 
-//  unsigned int fe_degree;
   bool needs_mean_value_constraint;
   bool apply_mean_value_constraint_in_matvec;
   AlignedVector<VectorizedArray<Number> > array_penalty_parameter;
@@ -321,7 +349,6 @@ template <int dim, int degree, typename Number>
 LaplaceOperator<dim,degree,Number>::LaplaceOperator ()
   :
   data (0),
-//  fe_degree (numbers::invalid_unsigned_int),
   needs_mean_value_constraint (false),
   apply_mean_value_constraint_in_matvec (false),
   block_jacobi_matrices_have_been_initialized(false)
@@ -333,7 +360,6 @@ void LaplaceOperator<dim,degree,Number>::clear()
 {
   operator_data = LaplaceOperatorData<dim>();
   data = 0;
-//  fe_degree = numbers::invalid_unsigned_int;
   needs_mean_value_constraint = false;
   apply_mean_value_constraint_in_matvec = false;
   own_matrix_free_storage.clear();
@@ -350,7 +376,7 @@ void LaplaceOperator<dim,degree,Number>::reinit (const MatrixFree<dim,Number>   
   this->data = &mf_data;
   this->operator_data = operator_data;
 //  this->fe_degree = mf_data.get_dof_handler(operator_data.laplace_dof_index).get_fe().degree;
-  AssertThrow (Utilities::fixed_power<dim>(degree+1) ==
+  AssertThrow (Utilities::fixed_power<dim>((unsigned int)degree+1) ==
                mf_data.get_n_q_points(operator_data.laplace_quad_index),
                ExcMessage("Expected fe_degree+1 quadrature points"));
 
@@ -866,7 +892,7 @@ void LaplaceOperator<dim,degree,Number>::run_rhs_loop(parallel::distributed::Vec
 {
   Assert(dst.partitioners_are_globally_compatible(*data->get_dof_info(operator_data.laplace_dof_index).vector_partitioner), ExcInternalError());
 
-  parallel::distributed::Vector<value_type> src;
+  parallel::distributed::Vector<Number> src;
 
   data->loop (&LaplaceOperator<dim, degree, Number>::local_rhs,
               &LaplaceOperator<dim, degree, Number>::local_rhs_face,
@@ -1046,10 +1072,9 @@ local_apply (const MatrixFree<dim,Number>                &data,
   {
     phi.reinit (cell);
     phi.read_dof_values(src);
-    phi.evaluate (false,true,false);
-    for (unsigned int q=0; q<phi.n_q_points; ++q)
-      phi.submit_gradient (phi.get_gradient(q), q);
-    phi.integrate (false,true);
+
+    do_cell_integral(phi);
+
     phi.distribute_local_to_global (dst);
   }
 }
@@ -1225,11 +1250,11 @@ local_rhs_boundary (const MatrixFree<dim,Number>                &data,
       if(it != operator_data.bc->dirichlet.end())
       {
         // u+ = 2g , grad+ = 0 (inhomogeneous parts)
-        VectorizedArray<value_type> g = make_vectorized_array<Number>(0.0);
+        VectorizedArray<Number> g = make_vectorized_array<Number>(0.0);
 
-        Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
-        value_type array [VectorizedArray<value_type>::n_array_elements];
-        for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+        Point<dim,VectorizedArray<Number> > q_points = fe_eval.quadrature_point(q);
+        Number array [VectorizedArray<Number>::n_array_elements];
+        for (unsigned int n=0; n<VectorizedArray<Number>::n_array_elements; ++n)
         {
           Point<dim> q_point;
           for (unsigned int d=0; d<dim; ++d)
@@ -1253,9 +1278,9 @@ local_rhs_boundary (const MatrixFree<dim,Number>                &data,
         VectorizedArray<Number> jump_value = make_vectorized_array<Number>(0.0);
         VectorizedArray<Number> average_gradient = make_vectorized_array<Number>(0.0);
 
-        Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
-        value_type array [VectorizedArray<value_type>::n_array_elements];
-        for (unsigned int n=0; n<VectorizedArray<value_type>::n_array_elements; ++n)
+        Point<dim,VectorizedArray<Number> > q_points = fe_eval.quadrature_point(q);
+        Number array [VectorizedArray<Number>::n_array_elements];
+        for (unsigned int n=0; n<VectorizedArray<Number>::n_array_elements; ++n)
         {
           Point<dim> q_point;
           for (unsigned int d=0; d<dim; ++d)
@@ -1299,10 +1324,9 @@ local_diagonal_cell (const MatrixFree<dim,Number>                &data,
       for (unsigned int j=0; j<phi.dofs_per_cell; ++j)
         phi.begin_dof_values()[j] = VectorizedArray<Number>();
       phi.begin_dof_values()[i] = 1.;
-      phi.evaluate (false,true,false);
-      for (unsigned int q=0; q<phi.n_q_points; ++q)
-        phi.submit_gradient (phi.get_gradient(q), q);
-      phi.integrate (false,true);
+
+      do_cell_integral(phi);
+
       local_diagonal_vector[i] = phi.begin_dof_values()[i];
     }
     for (unsigned int i=0; i<phi.tensor_dofs_per_cell; ++i)
@@ -1522,13 +1546,222 @@ local_diagonal_boundary (const MatrixFree<dim,Number>                &data,
 
 template <int dim, int degree, typename Number>
 void LaplaceOperator<dim,degree,Number>::
-add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
+add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<Number> > &matrices) const
 {
-  parallel::distributed::Vector<value_type>  src;
+  parallel::distributed::Vector<Number>  src;
 
-//  data->loop(&LaplaceOperator<dim,degree,Number>::cell_loop_calculate_block_jacobi_matrices,
-//             &LaplaceOperator<dim,degree,Number>::face_loop_calculate_block_jacobi_matrices,
-//             &LaplaceOperator<dim,degree,Number>::boundary_face_loop_calculate_block_jacobi_matrices, this, matrices, src);
+  data->loop(&LaplaceOperator<dim,degree,Number>::cell_loop_calculate_block_jacobi_matrices,
+             &LaplaceOperator<dim,degree,Number>::face_loop_calculate_block_jacobi_matrices,
+             &LaplaceOperator<dim,degree,Number>::boundary_face_loop_calculate_block_jacobi_matrices, this, matrices, src);
+}
+
+template <int dim, int degree, typename Number>
+void LaplaceOperator<dim,degree,Number>::
+cell_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>                 &data,
+                                           std::vector<LAPACKFullMatrix<Number> >       &matrices,
+                                           const parallel::distributed::Vector<Number>  &,
+                                           const std::pair<unsigned int,unsigned int>   &cell_range) const
+{
+  FEEvaluation<dim,degree,degree+1,1,Number> phi (data,
+                                                  operator_data.laplace_dof_index,
+                                                  operator_data.laplace_quad_index);
+
+  for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+  {
+    phi.reinit(cell);
+
+    for (unsigned int j=0; j<phi.dofs_per_cell; ++j)
+    {
+      for (unsigned int i=0; i<phi.dofs_per_cell; ++i)
+        phi.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+      phi.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+
+      do_cell_integral(phi);
+
+      for(unsigned int i=0; i<phi.dofs_per_cell; ++i)
+        for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
+          matrices[cell*VectorizedArray<Number>::n_array_elements+v](i,j) += phi.begin_dof_values()[i][v];
+    }
+  }
+}
+
+template <int dim, int degree, typename Number>
+void LaplaceOperator<dim,degree,Number>::
+face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>                &data,
+                                           std::vector<LAPACKFullMatrix<Number> >      &matrices,
+                                           const parallel::distributed::Vector<Number> &,
+                                           const std::pair<unsigned int,unsigned int>  &face_range) const
+{
+  FEFaceEvaluation<dim,degree,degree+1,1,Number> phi(data,true,
+                                                     operator_data.laplace_dof_index,
+                                                     operator_data.laplace_quad_index);
+  FEFaceEvaluation<dim,degree,degree+1,1,Number> phi_outer(data,false,
+                                                           operator_data.laplace_dof_index,
+                                                           operator_data.laplace_quad_index);
+
+  // Perform face intergrals for element e⁻.
+  for(unsigned int face=face_range.first; face<face_range.second; face++)
+  {
+    phi.reinit (face);
+    phi_outer.reinit (face);
+
+    VectorizedArray<Number> sigmaF =
+      std::max(phi.read_cell_data(array_penalty_parameter),
+               phi_outer.read_cell_data(array_penalty_parameter)) *
+      get_penalty_factor();
+
+    for (unsigned int j=0; j<phi.dofs_per_cell; ++j)
+    {
+      // set dof value j of element- to 1 and all other dof values of element- to zero
+      for (unsigned int i=0; i<phi.dofs_per_cell; ++i)
+        phi.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+      phi.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+
+      phi.evaluate(true,true);
+
+      for(unsigned int q=0;q<phi.n_q_points;++q)
+      {
+        VectorizedArray<Number> jump_value = phi.get_value(q);
+        VectorizedArray<Number> average_gradient = 0.5 * phi.get_normal_gradient(q);
+        average_gradient = average_gradient - jump_value * sigmaF;
+
+        phi.submit_normal_gradient(-0.5*jump_value,q);
+        phi.submit_value(-average_gradient,q);
+      }
+
+      phi.integrate(true,true);
+
+      for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
+      {
+        const unsigned int cell_number = data.faces[face].left_cell[v];
+        if (cell_number != numbers::invalid_unsigned_int)
+          for(unsigned int i=0; i<phi.dofs_per_cell; ++i)
+            matrices[cell_number](i,j) += phi.begin_dof_values()[i][v];
+      }
+    }
+  }
+
+
+
+  // TODO: This has to be removed as soon as the new infrastructure is used that
+  // allows to perform face integrals over all faces of the current element.
+  // Perform face intergrals for element e⁺.
+  for(unsigned int face=face_range.first; face<face_range.second; face++)
+  {
+    phi.reinit (face);
+    phi_outer.reinit (face);
+
+    VectorizedArray<Number> sigmaF =
+      std::max(phi.read_cell_data(array_penalty_parameter),
+               phi_outer.read_cell_data(array_penalty_parameter)) *
+      get_penalty_factor();
+
+    for (unsigned int j=0; j<phi_outer.dofs_per_cell; ++j)
+    {
+      // set dof value j of element+ to 1 and all other dof values of element+ to zero
+      for (unsigned int i=0; i<phi_outer.dofs_per_cell; ++i)
+        phi_outer.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+      phi_outer.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+
+      phi_outer.evaluate(true,true);
+
+      for(unsigned int q=0;q<phi.n_q_points;++q)
+      {
+        VectorizedArray<Number> jump_value = phi_outer.get_value(q);
+        // minus sign to get the correct normal vector n⁺ = -n⁻
+        VectorizedArray<Number> average_gradient = -0.5 * phi_outer.get_normal_gradient(q);
+        average_gradient = average_gradient - jump_value * sigmaF;
+
+        // plus sign since n⁺ = -n⁻
+        phi_outer.submit_normal_gradient(0.5*jump_value,q);
+        phi_outer.submit_value(-average_gradient,q);
+      }
+      phi_outer.integrate(true,true);
+
+      for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
+      {
+        const unsigned int cell_number = data.faces[face].right_cell[v];
+        if (cell_number != numbers::invalid_unsigned_int)
+          for(unsigned int i=0; i<phi_outer.dofs_per_cell; ++i)
+            matrices[cell_number](i,j) += phi_outer.begin_dof_values()[i][v];
+      }
+    }
+  }
+}
+
+// TODO: This function has to be removed as soon as the new infrastructure is used that
+// allows to perform face integrals over all faces of the current element.
+template <int dim, int degree, typename Number>
+void LaplaceOperator<dim,degree,Number>::
+boundary_face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>                &data,
+                                                    std::vector<LAPACKFullMatrix<Number> >      &matrices,
+                                                    const parallel::distributed::Vector<Number> &,
+                                                    const std::pair<unsigned int,unsigned int>  &face_range) const
+{
+  FEFaceEvaluation<dim,degree,degree+1,1,Number> phi (data, true,
+                                                      operator_data.laplace_dof_index,
+                                                      operator_data.laplace_quad_index);
+
+  for(unsigned int face=face_range.first; face<face_range.second; face++)
+  {
+    phi.reinit (face);
+
+    VectorizedArray<Number> sigmaF =
+      phi.read_cell_data(array_penalty_parameter) *
+      get_penalty_factor();
+
+    typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+    types::boundary_id boundary_id = data.get_boundary_indicator(face);
+
+    for (unsigned int j=0; j<phi.dofs_per_cell; ++j)
+    {
+      // set dof value j of element- to 1 and all other dof values of element- to zero
+      for (unsigned int i=0; i<phi.dofs_per_cell; ++i)
+        phi.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+      phi.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+
+      phi.evaluate(true,true);
+
+      for(unsigned int q=0;q<phi.n_q_points;++q)
+      {
+        it = operator_data.bc->dirichlet.find(boundary_id);
+        if(it != operator_data.bc->dirichlet.end())
+        {
+          //set value to zero, i.e. u+ = - u- , grad+ = grad-
+          VectorizedArray<Number> valueM = phi.get_value(q);
+
+          VectorizedArray<Number> jump_value = 2.0*valueM;
+          VectorizedArray<Number> average_gradient = phi.get_normal_gradient(q);
+          average_gradient = average_gradient - jump_value * sigmaF;
+
+          phi.submit_normal_gradient(-0.5*jump_value,q);
+          phi.submit_value(-average_gradient,q);
+        }
+
+        it = operator_data.bc->neumann.find(boundary_id);
+        if (it != operator_data.bc->neumann.end())
+        {
+          //set solution gradient in normal direction to zero, i.e. u+ = u-, grad+ = -grad-
+          VectorizedArray<Number> jump_value = make_vectorized_array<Number>(0.0);
+          VectorizedArray<Number> average_gradient = make_vectorized_array<Number>(0.0);
+          average_gradient = average_gradient - jump_value * sigmaF;
+
+          phi.submit_normal_gradient(-0.5*jump_value,q);
+          phi.submit_value(-average_gradient,q);
+        }
+      }
+
+      phi.integrate(true,true);
+
+      for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
+      {
+        const unsigned int cell_number = data.faces[face].left_cell[v];
+        if (cell_number != numbers::invalid_unsigned_int)
+          for(unsigned int i=0; i<phi.dofs_per_cell; ++i)
+            matrices[cell_number](i,j) += phi.begin_dof_values()[i][v];
+      }
+    }
+  }
 }
 
 #endif // ifndef __indexa_poisson_solver_h

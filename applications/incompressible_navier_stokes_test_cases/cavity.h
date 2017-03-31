@@ -187,7 +187,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::GMRES;
   multigrid_data_momentum_preconditioner.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
   multigrid_data_momentum_preconditioner.gmres_smoother_data.number_of_iterations = 5;
-  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_Jacobi; //ChebyshevNonsymmetricOperator;//GMRES_Jacobi;
+  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_PointJacobi; //ChebyshevNonsymmetricOperator;//GMRES_Jacobi;
   exact_inversion_of_momentum_block = true;
   rel_tol_solver_momentum_preconditioner = 1.e-6;
   max_n_tmp_vectors_solver_momentum_preconditioner = 100;

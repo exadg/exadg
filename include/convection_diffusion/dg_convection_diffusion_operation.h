@@ -81,7 +81,7 @@ public:
     }
     else if(param.preconditioner == ConvDiff::Preconditioner::BlockJacobi)
     {
-      preconditioner.reset(new BlockJacobiPreconditioner<dim, value_type,
+      preconditioner.reset(new BlockJacobiPreconditioner<value_type,
           ScalarConvDiffOperators::ConvectionDiffusionOperator<dim,fe_degree,value_type> >(conv_diff_operator));
     }
     else if(param.preconditioner == ConvDiff::Preconditioner::MultigridDiffusion)

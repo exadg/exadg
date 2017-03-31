@@ -3231,8 +3231,8 @@ public:
                                               const std::pair<unsigned int,unsigned int>   &cell_range) const
   {
     FEEvaluation<dim,fe_degree,fe_degree+1,1,Number> fe_eval(data,
-                                                                 mass_matrix_operator->get_operator_data().dof_index,
-                                                                 mass_matrix_operator->get_operator_data().quad_index);
+                                                             mass_matrix_operator->get_operator_data().dof_index,
+                                                             mass_matrix_operator->get_operator_data().quad_index);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
@@ -3366,6 +3366,7 @@ public:
     calculate_lu_factorization_block_jacobi(matrices);
   }
 
+  // TODO
 //  /*
 //   *  Initialize block Jacobi matrices.
 //   */
@@ -3414,7 +3415,7 @@ public:
     }
   }
 
-//
+//TODO
 //  /*
 //   *  This function calculates the LU factorization for a given vector
 //   *  of matrices of type LAPACKFullMatrix.
@@ -3538,7 +3539,6 @@ private:
     }
   }
 
-  // TODO
   mutable std::vector<LAPACKFullMatrix<Number> > matrices;
   mutable bool block_jacobi_matrices_have_been_initialized;
 

@@ -26,11 +26,11 @@
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 8;
+const unsigned int FE_DEGREE = 16;
 
 // set the number of refine levels for spatial convergence tests
 const unsigned int REFINE_STEPS_SPACE_MIN = 1;
-const unsigned int REFINE_STEPS_SPACE_MAX = 8;
+const unsigned int REFINE_STEPS_SPACE_MAX = 6;
 
 // set the number of refine levels for temporal convergence tests
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
@@ -47,7 +47,7 @@ void InputParametersConvDiff::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Steady;
-  equation_type = EquationType::ConvectionDiffusion;
+  equation_type = EquationType::Diffusion; //ConvectionDiffusion;
   right_hand_side = true;
 
   // PHYSICAL QUANTITIES
@@ -73,7 +73,7 @@ void InputParametersConvDiff::set_input_parameters()
   IP_factor = 1.0;
 
   // SOLVER
-  solver = Solver::GMRES;
+  solver = Solver::PCG; //GMRES;
   abs_tol = 1.e-20;
   rel_tol = 1.e-8;
   max_iter = 1e3;
@@ -82,17 +82,24 @@ void InputParametersConvDiff::set_input_parameters()
   // MG smoother
   multigrid_data.smoother = MultigridSmoother::GMRES; //Jacobi; //GMRES; //Chebyshev; //ChebyshevNonsymmetricOperator;
 
+  // MG smoother data: Chebyshev smoother
+  multigrid_data.chebyshev_smoother_data.smoother_poly_degree = 3;
+
   // MG smoother data: GMRES smoother
   multigrid_data.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi; //None; //PointJacobi; //BlockJacobi;
-  multigrid_data.gmres_smoother_data.number_of_iterations = 10;
+  multigrid_data.gmres_smoother_data.number_of_iterations = 4;
+
+  // MG smoother data: CG smoother
+  multigrid_data.cg_smoother_data.preconditioner = PreconditionerCGSmoother::BlockJacobi; //None; //PointJacobi; //BlockJacobi;
+  multigrid_data.cg_smoother_data.number_of_iterations = 4;
 
   // MG smoother data: Jacobi smoother
-  multigrid_data.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi; //None; //PointJacobi; //BlockJacobi;
-  multigrid_data.jacobi_smoother_data.number_of_smoothing_steps = 5;
-  multigrid_data.jacobi_smoother_data.damping_factor = 0.8;
+  multigrid_data.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
+  multigrid_data.jacobi_smoother_data.number_of_smoothing_steps = 4;
+  multigrid_data.jacobi_smoother_data.damping_factor = 0.7;
 
   // MG coarse grid solver
-  multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner; //Chebyshev; //GMRES_Jacobi;
+  multigrid_data.coarse_solver = MultigridCoarseGridSolver::PCG_NoPreconditioner; //PCG_NoPreconditioner; //Chebyshev; //GMRES_Jacobi;
 
   update_preconditioner = false;
 
