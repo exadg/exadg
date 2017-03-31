@@ -354,7 +354,6 @@ private:
 
     // initialize matrix_free_data
     typename MatrixFree<dim,value_type>::AdditionalData additional_data;
-    additional_data.mpi_communicator = MPI_COMM_WORLD;
     additional_data.tasks_parallel_scheme =
       MatrixFree<dim,value_type>::AdditionalData::partition_partition;
     additional_data.build_face_info = true;

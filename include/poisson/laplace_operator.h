@@ -471,9 +471,6 @@ void LaplaceOperator<dim,degree,Number>::reinit (const DoFHandler<dim>          
   if (dof_handler.get_fe().dofs_per_vertex == 0)
     addit_data.build_face_info = true;
   addit_data.level_mg_handler = level;
-  addit_data.mpi_communicator =
-    dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()) ?
-    (dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()))->get_communicator() : MPI_COMM_SELF;
   addit_data.periodic_face_pairs_level_0 = operator_data.periodic_face_pairs_level0;
 
   ConstraintMatrix constraints;
@@ -558,7 +555,7 @@ void LaplaceOperator<dim,degree,Number>::reinit (const DoFHandler<dim>          
   // Dirichlet constraints on parts of the boundary and no such transformation
   // is required.
   if (verify_boundary_conditions(dof_handler, operator_data)
-      && is_feq && Utilities::MPI::sum(edge_constrained_indices.size(),addit_data.mpi_communicator)==0
+      && is_feq && Utilities::MPI::sum(edge_constrained_indices.size(),MPI_COMM_WORLD)==0
       && constraints.can_store_line(0))
   {
     // if dof 0 is constrained, it must be a periodic dof, so we take the
