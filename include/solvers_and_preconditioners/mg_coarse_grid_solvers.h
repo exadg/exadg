@@ -16,22 +16,58 @@
 #include "preconditioner_base.h"
 #include "solvers_and_preconditioners/jacobi_preconditioner.h"
 
+enum class PreconditionerCoarseGridSolver
+{
+  None,
+  PointJacobi,
+  BlockJacobi
+};
+
 template<typename Operator>
 class MGCoarsePCG : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type> >
 {
 public:
-  MGCoarsePCG(const Operator &matrix,
-              const bool     use_preconditioner_in)
+  struct AdditionalData
+  {
+    /**
+     * Constructor.
+     */
+    AdditionalData()
+     :
+     preconditioner(PreconditionerCoarseGridSolver::None)
+    {}
+
+    // preconditioner
+    PreconditionerCoarseGridSolver preconditioner;
+  };
+
+  MGCoarsePCG(Operator const       &matrix,
+              AdditionalData const &additional_data)
     :
     coarse_matrix (matrix),
-    use_preconditioner(use_preconditioner_in)
+    use_preconditioner(false)
   {
-    if (use_preconditioner)
+    if (additional_data.preconditioner == PreconditionerCoarseGridSolver::PointJacobi)
     {
+      use_preconditioner = true;
+
       preconditioner.reset(new JacobiPreconditioner<typename Operator::value_type,Operator>(coarse_matrix));
       std_cxx11::shared_ptr<JacobiPreconditioner<typename Operator::value_type,Operator> > precon =
           std::dynamic_pointer_cast<JacobiPreconditioner<typename Operator::value_type,Operator> > (preconditioner);
       AssertDimension(precon->get_size_of_diagonal(), coarse_matrix.m());
+    }
+    else if(additional_data.preconditioner == PreconditionerCoarseGridSolver::BlockJacobi)
+    {
+      use_preconditioner = true;
+
+      preconditioner.reset(new BlockJacobiPreconditioner<typename Operator::value_type,Operator>(coarse_matrix));
+    }
+    else
+    {
+      AssertThrow(additional_data.preconditioner == PreconditionerCoarseGridSolver::None ||
+                  additional_data.preconditioner == PreconditionerCoarseGridSolver::PointJacobi ||
+                  additional_data.preconditioner == PreconditionerCoarseGridSolver::BlockJacobi,
+                  ExcMessage("Specified preconditioner for PCG coarse grid solver not implemented."));
     }
   }
 
@@ -59,6 +95,7 @@ public:
     typename VectorMemory<parallel::distributed::Vector<typename Operator::value_type> >::Pointer r(solver_memory);
     *r = src;
     coarse_matrix.apply_nullspace_projection(*r);
+
     if (use_preconditioner)
       solver_coarse.solve (coarse_matrix, dst, *r, *preconditioner);
     else
@@ -71,7 +108,7 @@ private:
   const Operator &coarse_matrix;
   std_cxx11::shared_ptr<PreconditionerBase<typename Operator::value_type> > preconditioner;
   mutable GrowingVectorMemory<parallel::distributed::Vector<typename Operator::value_type> > solver_memory;
-  const bool use_preconditioner;
+  bool use_preconditioner;
 };
 
 
@@ -79,18 +116,47 @@ template<typename Operator>
 class MGCoarseGMRES : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type> >
 {
 public:
-  MGCoarseGMRES(const Operator &matrix,
-                const bool     use_preconditioner_in)
+  struct AdditionalData
+  {
+    /**
+     * Constructor.
+     */
+    AdditionalData()
+     :
+     preconditioner(PreconditionerCoarseGridSolver::None)
+    {}
+
+    // preconditioner
+    PreconditionerCoarseGridSolver preconditioner;
+  };
+
+  MGCoarseGMRES(Operator const       &matrix,
+                AdditionalData const &additional_data)
     :
     coarse_matrix (matrix),
-    use_preconditioner(use_preconditioner_in)
+    use_preconditioner(false)
   {
-    if (use_preconditioner)
+    if (additional_data.preconditioner == PreconditionerCoarseGridSolver::PointJacobi)
     {
+      use_preconditioner = true;
+
       preconditioner.reset(new JacobiPreconditioner<typename Operator::value_type,Operator>(coarse_matrix));
       std_cxx11::shared_ptr<JacobiPreconditioner<typename Operator::value_type,Operator> > precon =
-          std::dynamic_pointer_cast<JacobiPreconditioner<typename Operator::value_type,Operator> >(preconditioner);
+          std::dynamic_pointer_cast<JacobiPreconditioner<typename Operator::value_type,Operator> > (preconditioner);
       AssertDimension(precon->get_size_of_diagonal(), coarse_matrix.m());
+    }
+    else if(additional_data.preconditioner == PreconditionerCoarseGridSolver::BlockJacobi)
+    {
+      use_preconditioner = true;
+
+      preconditioner.reset(new BlockJacobiPreconditioner<typename Operator::value_type,Operator>(coarse_matrix));
+    }
+    else
+    {
+      AssertThrow(additional_data.preconditioner == PreconditionerCoarseGridSolver::None ||
+                  additional_data.preconditioner == PreconditionerCoarseGridSolver::PointJacobi ||
+                  additional_data.preconditioner == PreconditionerCoarseGridSolver::BlockJacobi,
+                  ExcMessage("Specified preconditioner for PCG coarse grid solver not implemented."));
     }
   }
 
@@ -114,7 +180,7 @@ public:
     ReductionControl solver_control (1e4, abs_tol, rel_tol);
 
     typename SolverGMRES<parallel::distributed::Vector<typename Operator::value_type> >::AdditionalData additional_data;
-    additional_data.max_n_tmp_vectors = 100;
+    additional_data.max_n_tmp_vectors = 200;
     additional_data.right_preconditioning = true;
 
     SolverGMRES<parallel::distributed::Vector<typename Operator::value_type> >
@@ -129,6 +195,9 @@ public:
     else
       solver_coarse.solve (coarse_matrix, dst, *r, PreconditionIdentity());
 
+    if(solver_control.last_step() > 2*additional_data.max_n_tmp_vectors)
+      std::cout << "Number of iterations of GMRES coarse grid solver significantly larger than max_n_tmp_vectors." << std::endl;
+
 //    std::cout << "Iterations coarse grid solver = " << solver_control.last_step() << std::endl;
   }
 
@@ -136,7 +205,7 @@ private:
   const Operator &coarse_matrix;
   std_cxx11::shared_ptr<PreconditionerBase<typename Operator::value_type> > preconditioner;
   mutable GrowingVectorMemory<parallel::distributed::Vector<typename Operator::value_type> > solver_memory;
-  const bool use_preconditioner;
+  bool use_preconditioner;
 };
 
 

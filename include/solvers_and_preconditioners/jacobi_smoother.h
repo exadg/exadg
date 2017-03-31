@@ -40,7 +40,7 @@ public:
      */
     AdditionalData()
      :
-     preconditioner(PreconditionerJacobiSmoother::None),
+     preconditioner(PreconditionerJacobiSmoother::Undefined),
      number_of_smoothing_steps(5),
      damping_factor(1.0)
     {}
@@ -66,12 +66,13 @@ public:
     }
     else if(data.preconditioner == PreconditionerJacobiSmoother::BlockJacobi)
     {
-      preconditioner = new BlockJacobiPreconditioner<dim,typename Operator::value_type,Operator>(*underlying_operator);
+      preconditioner = new BlockJacobiPreconditioner<typename Operator::value_type,Operator>(*underlying_operator);
     }
     else
     {
-      AssertThrow(data.preconditioner == PreconditionerJacobiSmoother::None,
-          ExcMessage("Specified preconditioner not implemented for Jacobi smoother"));
+      AssertThrow(data.preconditioner == PreconditionerJacobiSmoother::PointJacobi ||
+                  data.preconditioner == PreconditionerJacobiSmoother::BlockJacobi,
+          ExcMessage("Specified type of preconditioner for Jacobi smoother not implemented."));
     }
   }
 

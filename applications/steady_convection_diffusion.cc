@@ -24,8 +24,8 @@ using namespace ConvDiff;
 
 // SPECIFY THE TEST CASE THAT HAS TO BE SOLVED
 
-#include "convection_diffusion_test_cases/boundary_layer_problem.h"
-//#include "convection_diffusion_test_cases/const_rhs_const_and_circular_wind.h"
+//#include "convection_diffusion_test_cases/boundary_layer_problem.h"
+#include "convection_diffusion_test_cases/const_rhs_const_and_circular_wind.h"
 
 
 template<int dim, int fe_degree>

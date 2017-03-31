@@ -15,6 +15,7 @@
 #include "smoother_base.h"
 #include "solvers_and_preconditioners/chebyshev_smoother.h"
 #include "solvers_and_preconditioners/gmres_smoother.h"
+#include "solvers_and_preconditioners/cg_smoother.h"
 #include "solvers_and_preconditioners/jacobi_smoother.h"
 #include "solvers_and_preconditioners/mg_coarse_grid_solvers.h"
 #include "solvers_and_preconditioners/multigrid_input_parameters.h"
@@ -196,6 +197,19 @@ protected:
         smoother->initialize(mg_matrices[level],smoother_data);
         break;
       }
+      case MultigridSmoother::CG:
+      {
+        typedef CGSmoother<dim,Operator,VECTOR_TYPE> CG_SMOOTHER;
+        mg_smoother[level].reset(new CG_SMOOTHER());
+
+        typename CG_SMOOTHER::AdditionalData smoother_data;
+        smoother_data.preconditioner = mg_data.cg_smoother_data.preconditioner;
+        smoother_data.number_of_iterations = mg_data.cg_smoother_data.number_of_iterations;
+
+        std_cxx11::shared_ptr<CG_SMOOTHER> smoother = std::dynamic_pointer_cast<CG_SMOOTHER>(mg_smoother[level]);
+        smoother->initialize(mg_matrices[level],smoother_data);
+        break;
+      }
       case MultigridSmoother::Jacobi:
       {
         typedef JacobiSmoother<dim,Operator,VECTOR_TYPE> JACOBI_SMOOTHER;
@@ -240,6 +254,13 @@ protected:
         smoother->update();
         break;
       }
+      case MultigridSmoother::CG:
+      {
+        typedef CGSmoother<dim,Operator,VECTOR_TYPE> CG_SMOOTHER;
+        std_cxx11::shared_ptr<CG_SMOOTHER> smoother = std::dynamic_pointer_cast<CG_SMOOTHER>(mg_smoother[level]);
+        smoother->update();
+        break;
+      }
       case MultigridSmoother::Jacobi:
       {
         typedef JacobiSmoother<dim,Operator,VECTOR_TYPE> JACOBI_SMOOTHER;
@@ -276,27 +297,55 @@ protected:
       }
       case MultigridCoarseGridSolver::PCG_NoPreconditioner:
       {
-        mg_coarse.reset(new MGCoarsePCG<Operator>(mg_matrices[0],false));
+        typename MGCoarsePCG<Operator>::AdditionalData additional_data;
+        additional_data.preconditioner = PreconditionerCoarseGridSolver::None;
+
+        mg_coarse.reset(new MGCoarsePCG<Operator>(mg_matrices[0],additional_data));
         break;
       }
-      case MultigridCoarseGridSolver::PCG_Jacobi:
+      case MultigridCoarseGridSolver::PCG_PointJacobi:
       {
-        mg_coarse.reset(new MGCoarsePCG<Operator>(mg_matrices[0],true));
+        typename MGCoarsePCG<Operator>::AdditionalData additional_data;
+        additional_data.preconditioner = PreconditionerCoarseGridSolver::PointJacobi;
+
+        mg_coarse.reset(new MGCoarsePCG<Operator>(mg_matrices[0],additional_data));
+        break;
+      }
+      case MultigridCoarseGridSolver::PCG_BlockJacobi:
+      {
+        typename MGCoarsePCG<Operator>::AdditionalData additional_data;
+        additional_data.preconditioner = PreconditionerCoarseGridSolver::BlockJacobi;
+
+        mg_coarse.reset(new MGCoarsePCG<Operator>(mg_matrices[0],additional_data));
         break;
       }
       case MultigridCoarseGridSolver::GMRES_NoPreconditioner:
       {
-        mg_coarse.reset(new MGCoarseGMRES<Operator>(mg_matrices[0],false));
+        typename MGCoarseGMRES<Operator>::AdditionalData additional_data;
+        additional_data.preconditioner = PreconditionerCoarseGridSolver::None;
+
+        mg_coarse.reset(new MGCoarseGMRES<Operator>(mg_matrices[0],additional_data));
         break;
       }
-      case MultigridCoarseGridSolver::GMRES_Jacobi:
+      case MultigridCoarseGridSolver::GMRES_PointJacobi:
       {
-        mg_coarse.reset(new MGCoarseGMRES<Operator>(mg_matrices[0],true));
+        typename MGCoarseGMRES<Operator>::AdditionalData additional_data;
+        additional_data.preconditioner = PreconditionerCoarseGridSolver::PointJacobi;
+
+        mg_coarse.reset(new MGCoarseGMRES<Operator>(mg_matrices[0],additional_data));
+        break;
+      }
+      case MultigridCoarseGridSolver::GMRES_BlockJacobi:
+      {
+        typename MGCoarseGMRES<Operator>::AdditionalData additional_data;
+        additional_data.preconditioner = PreconditionerCoarseGridSolver::BlockJacobi;
+
+        mg_coarse.reset(new MGCoarseGMRES<Operator>(mg_matrices[0],additional_data));
         break;
       }
       default:
       {
-        AssertThrow(false, ExcMessage("Unknown coarse-grid solver given"));
+        AssertThrow(false, ExcMessage("Unknown coarse-grid solver specified."));
       }
     }
   }
@@ -325,7 +374,15 @@ protected:
         // do nothing
         break;
       }
-      case MultigridCoarseGridSolver::PCG_Jacobi:
+      case MultigridCoarseGridSolver::PCG_PointJacobi:
+      {
+        std_cxx11::shared_ptr<MGCoarsePCG<Operator> >
+          coarse_solver = std::dynamic_pointer_cast<MGCoarsePCG<Operator> >(mg_coarse);
+        coarse_solver->update_preconditioner(this->mg_matrices[0]);
+
+        break;
+      }
+      case MultigridCoarseGridSolver::PCG_BlockJacobi:
       {
         std_cxx11::shared_ptr<MGCoarsePCG<Operator> >
           coarse_solver = std::dynamic_pointer_cast<MGCoarsePCG<Operator> >(mg_coarse);
@@ -338,7 +395,14 @@ protected:
         // do nothing
         break;
       }
-      case MultigridCoarseGridSolver::GMRES_Jacobi:
+      case MultigridCoarseGridSolver::GMRES_PointJacobi:
+      {
+        std_cxx11::shared_ptr<MGCoarseGMRES<Operator> >
+          coarse_solver = std::dynamic_pointer_cast<MGCoarseGMRES<Operator> >(mg_coarse);
+        coarse_solver->update_preconditioner(this->mg_matrices[0]);
+        break;
+      }
+      case MultigridCoarseGridSolver::GMRES_BlockJacobi:
       {
         std_cxx11::shared_ptr<MGCoarseGMRES<Operator> >
           coarse_solver = std::dynamic_pointer_cast<MGCoarseGMRES<Operator> >(mg_coarse);

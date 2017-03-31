@@ -13,7 +13,7 @@
 #include "operators/matrix_operator_base.h"
 #include "preconditioner_base.h"
 
-template<int dim, typename value_type, typename UnderlyingOperator>
+template<typename value_type, typename UnderlyingOperator>
 class BlockJacobiPreconditioner : public PreconditionerBase<value_type>
 {
 public:

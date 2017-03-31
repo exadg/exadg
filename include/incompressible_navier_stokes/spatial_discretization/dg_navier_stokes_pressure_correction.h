@@ -207,7 +207,7 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
   }
   else if(this->param.preconditioner_momentum == PreconditionerMomentum::BlockJacobi)
   {
-    momentum_preconditioner.reset(new BlockJacobiPreconditioner<dim, value_type,
+    momentum_preconditioner.reset(new BlockJacobiPreconditioner<value_type,
         VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> >
       (velocity_conv_diff_operator));
   }

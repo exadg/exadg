@@ -23,7 +23,7 @@
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 2;
+unsigned int const FE_DEGREE_VELOCITY = 8;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -31,7 +31,7 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 0;
+unsigned int const REFINE_STEPS_SPACE_MIN = 3;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
@@ -67,12 +67,15 @@ const ManifoldType MANIFOLD_TYPE = ManifoldType::VolumeManifold;
 // Type2: two layers of spherical cells around cylinder
 // Type3: coarse mesh has only one element in direction perpendicular to flow direction,
 //        one layer of spherical cells around cylinder for coarsest mesh
-enum class MeshType{ Type1, Type2, Type3 };
-const MeshType MESH_TYPE = MeshType::Type2;
+// Type4: no refinement around cylinder, coarsest mesh consists of 4 cells for the block that
+//        that surrounds the cylinder
+
+enum class MeshType{ Type1, Type2, Type3, Type4 };
+const MeshType MESH_TYPE = MeshType::Type4; //Type2;
 
 const double END_TIME = 8.0;
-std::string OUTPUT_PREFIX = "2D_3_cfl_0-2";
-std::string OUTPUT_FOLDER = "/paper/coupled_solver_bdf2_mesh2/"; // "/paper/pressure_correction_bdf2_mesh2/"; // "/paper/dual_splitting_bdf2_mesh2/"; //"/comparison_lehrenfeld/pressure_correction/"; // "/paper/pressure_correction";
+std::string OUTPUT_PREFIX = "2D_3_cfl_0-05";
+std::string OUTPUT_FOLDER = "/dual_splitting_bdf3_mesh4/"; // "/paper/dual_splitting_bdf2_mesh2/"; // "/paper/pressure_correction_bdf2_mesh2/"; // "/paper/dual_splitting_bdf2_mesh2/"; //"/comparison_lehrenfeld/pressure_correction/";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -95,11 +98,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified; //ConstTimeStepCFL;
   max_velocity = Um;
-  cfl = 0.2;//0.6;//2.5e-1;
+  cfl = 0.05;//0.6;//2.5e-1;
   cfl_exponent_fe_degree_velocity = 1.0;
   time_step_size = 1.0e-3;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 2; //2; // 1; // 2; // 3;
+  order_time_integrator = 3; //2; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
 
 
@@ -133,7 +136,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   solver_pressure_poisson = SolverPressurePoisson::FGMRES; //PCG; //FGMRES;
   max_n_tmp_vectors_pressure_poisson = 60;
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid; //Jacobi; //GeometricMultigrid;
-  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::PCG_Jacobi; //Chebyshev;
+  multigrid_data_pressure_poisson.smoother = MultigridSmoother::Chebyshev; // Chebyshev; //Jacobi; //GMRES;
+  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::PCG_PointJacobi; //PCG_NoPreconditioner; //PCG_PointJacobi; //Chebyshev;
   abs_tol_pressure = 1.e-12;
   rel_tol_pressure = 1.e-8;
 
@@ -172,7 +176,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // viscous step
   solver_viscous = SolverViscous::PCG; //PCG;
   preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
-  multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::PCG_Jacobi; //PCG_Jacobi; //Chebyshev;
+  multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::PCG_PointJacobi;  //Chebyshev;
   abs_tol_viscous = 1.e-12;
   rel_tol_viscous = 1.e-8;
 
@@ -189,7 +193,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // linear solver
   solver_momentum = SolverMomentum::FGMRES; //GMRES; //FGMRES;
   preconditioner_momentum = PreconditionerMomentum::InverseMassMatrix; //InverseMassMatrix; //VelocityDiffusion;
-  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::GMRES_Jacobi; //Chebyshev;
+  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::GMRES_PointJacobi; //Chebyshev;
   abs_tol_momentum_linear = 1.e-12;
   rel_tol_momentum_linear = 1.e-8;
   max_iter_momentum_linear = 1e4;
@@ -221,7 +225,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // preconditioner velocity/momentum block
   momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion; //InverseMassMatrix; //VelocityDiffusion;
-  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_Jacobi;
+  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_PointJacobi;
   exact_inversion_of_momentum_block = false;
   rel_tol_solver_momentum_preconditioner = 1.e-3;
   max_n_tmp_vectors_solver_momentum_preconditioner = 100;
@@ -229,7 +233,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // preconditioner Schur-complement block
   schur_complement_preconditioner = SchurComplementPreconditioner::PressureConvectionDiffusion;
   discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
-  multigrid_data_schur_complement_preconditioner.coarse_solver = MultigridCoarseGridSolver::PCG_Jacobi;
+  multigrid_data_schur_complement_preconditioner.coarse_solver = MultigridCoarseGridSolver::PCG_PointJacobi;
   exact_inversion_of_laplace_operator = false;
   rel_tol_solver_schur_complement_preconditioner = 1.e-6;
 
@@ -238,7 +242,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   print_input_parameters = true;
 
   // write output for visualization of results
-  output_data.write_output = false; //true;
+  output_data.write_output = true;
   output_data.output_prefix = OUTPUT_PREFIX;
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
@@ -904,26 +908,95 @@ void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = tru
       }
     }
   }
+  else if(MESH_TYPE == MeshType::Type4)
+  {
+    Triangulation<2> left, middle, circle, right, tmp_3D;
 
-  // Set boundary ID's
-  // Set the cylinder boundary to 2, outflow to 1, the rest to 0.
-//  for (Triangulation<2>::active_cell_iterator cell=tria.begin(); cell != tria.end(); ++cell)
-//  {
-//    for (unsigned int f=0; f<GeometryInfo<2>::faces_per_cell; ++f)// loop over cells
-//    {
-//      if (cell->face(f)->at_boundary())
-//      {
-//        if (std::abs(cell->face(f)->center()[0] - (compute_in_2d ? L1 : X_0)) < 1e-12)
-//          cell->face(f)->set_all_boundary_ids(0);
-//        else if (std::abs(cell->face(f)->center()[0]-L2) < 1e-12)
-//          cell->face(f)->set_all_boundary_ids(1);
-//        else if (center.distance(cell->face(f)->center()) <= R)
-//          cell->face(f)->set_all_boundary_ids(2);
-//        else
-//          cell->face(f)->set_all_boundary_ids(0);
-//      }
-//    }
-//  }
+    // left part (only needed for 3D problem)
+    std::vector<unsigned int> ref_1(2, 1);
+    GridGenerator::subdivided_hyper_rectangle(left, ref_1 ,Point<2>(X_0,Y_0), Point<2>(X_1, H), false);
+
+    // right part (2D and 3D)
+    std::vector<unsigned int> ref_2(2, 4);
+    ref_2[1] = 1; //only one cell over channel height
+    GridGenerator::subdivided_hyper_rectangle(right, ref_2, Point<2>(X_2, Y_0), Point<2>(L2, H), false);
+
+    // middle part
+    const double outer_radius = (X_2-X_1)/2.0;
+    const unsigned int n_cells = 4;
+    Point<2> origin;
+
+    // create middle part first as a hyper shell
+    GridGenerator::hyper_shell(middle, origin, R, outer_radius*std::sqrt(2.0), n_cells, true);
+    GridTools::rotate(numbers::PI/4, middle);
+    GridTools::shift(Point<2>(outer_radius+X_1,outer_radius),middle);
+
+    // then move the vertices to the points where we want them to be
+    for (Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
+    {
+      for (unsigned int v=0; v < GeometryInfo<2>::vertices_per_cell; ++v)
+      {
+        Point<2> &vertex = cell->vertex(v);
+        if (std::abs(vertex[0] - X_1) < 1e-10 && std::abs(vertex[1] - (X_2-X_1)) < 1e-10)
+        {
+          vertex = Point<2>(X_1, H);
+        }
+        else if (std::abs(vertex[0] - X_2) < 1e-10 && std::abs(vertex[1] - (X_2-X_1)) < 1e-10)
+        {
+          vertex = Point<2>(X_2, H);
+        }
+      }
+    }
+
+
+    if (compute_in_2d)
+    {
+      GridGenerator::merge_triangulations(middle,right,tria);
+    }
+    else // 3D
+    {
+      GridGenerator::merge_triangulations (left, middle, tmp_3D);
+      GridGenerator::merge_triangulations (tmp_3D, right, tria);
+    }
+
+    if (compute_in_2d)
+    {
+      // set manifold ID's
+      tria.set_all_manifold_ids(0);
+
+      for (Triangulation<2>::active_cell_iterator cell=tria.begin(); cell != tria.end(); ++cell)
+      {
+        if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
+        {
+          for (unsigned int f=0; f<GeometryInfo<2>::faces_per_cell; ++f)
+          {
+            bool face_at_sphere_boundary = true;
+            for (unsigned int v=0; v<GeometryInfo<2-1>::vertices_per_cell; ++v)
+            {
+              if (std::abs(center.distance(cell->face(f)->vertex(v)) - R) > 1e-12)
+                face_at_sphere_boundary = false;
+            }
+            if (face_at_sphere_boundary)
+            {
+              face_ids.push_back(f);
+              unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
+              cell->set_all_manifold_ids(manifold_id);
+              manifold_ids.push_back(manifold_id);
+            }
+          }
+        }
+        else
+        {
+          AssertThrow(MANIFOLD_TYPE == ManifoldType::VolumeManifold, ExcMessage("Specified manifold type not implemented."));
+        }
+      }
+    }
+  }
+  else
+  {
+    AssertThrow(MESH_TYPE == MeshType::Type1 || MESH_TYPE == MeshType::Type2 || MESH_TYPE == MeshType::Type3 || MESH_TYPE == MeshType::Type4,
+        ExcMessage("Specified mesh type not implemented"));
+  }
 
   if(compute_in_2d == true)
   {
@@ -1073,31 +1146,45 @@ void create_triangulation(Triangulation<3> &tria)
     AssertThrow(MANIFOLD_TYPE == ManifoldType::VolumeManifold, ExcMessage("Specified manifold type not implemented"));
   }
  }
+ else if(MESH_TYPE == MeshType::Type4)
+ {
+   GridGenerator::extrude_triangulation(tria_2d, 2, H, tria);
+
+   // set manifold ID's
+   tria.set_all_manifold_ids(0);
+
+   if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
+   {
+    for (Triangulation<3>::active_cell_iterator cell=tria.begin();cell != tria.end(); ++cell)
+    {
+      for (unsigned int f=0; f<GeometryInfo<3>::faces_per_cell; ++f)
+      {
+        bool face_at_sphere_boundary = true;
+        for (unsigned int v=0; v<GeometryInfo<3-1>::vertices_per_cell; ++v)
+        {
+          if (std::abs(Point<3>(X_C,Y_C,cell->face(f)->vertex(v)[2]).distance(cell->face(f)->vertex(v)) - R) > 1e-12)
+            face_at_sphere_boundary = false;
+        }
+        if (face_at_sphere_boundary)
+        {
+          face_ids.push_back(f);
+          unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
+          cell->set_all_manifold_ids(manifold_id);
+          manifold_ids.push_back(manifold_id);
+        }
+      }
+    }
+  }
+  else
+  {
+    AssertThrow(MANIFOLD_TYPE == ManifoldType::VolumeManifold, ExcMessage("Specified manifold type not implemented"));
+  }
+ }
  else
  {
-   AssertThrow(MESH_TYPE == MeshType::Type1 || MESH_TYPE == MeshType::Type2 || MESH_TYPE == MeshType::Type3,
+   AssertThrow(MESH_TYPE == MeshType::Type1 || MESH_TYPE == MeshType::Type2 || MESH_TYPE == MeshType::Type3 || MESH_TYPE == MeshType::Type4,
        ExcMessage("Specified mesh type not implemented"));
  }
-
-// // Set boundary ID's
-// // Set the cylinder boundary to 2, outflow to 1, the rest to 0.
-// for (Triangulation<3>::active_cell_iterator cell=tria.begin();cell != tria.end(); ++cell)
-// {
-//   for (unsigned int f=0; f<GeometryInfo<3>::faces_per_cell; ++f)
-//   {
-//     if (cell->face(f)->at_boundary())
-//     {
-//       if (std::abs(cell->face(f)->center()[0] - X_0) < 1e-12)
-//         cell->face(f)->set_all_boundary_ids(0);
-//       else if (std::abs(cell->face(f)->center()[0]-L2) < 1e-12)
-//         cell->face(f)->set_all_boundary_ids(1);
-//       else if (Point<3>(X_C,Y_C,cell->face(f)->center()[2]).distance(cell->face(f)->center()) <= R)
-//         cell->face(f)->set_all_boundary_ids(2);
-//       else
-//         cell->face(f)->set_all_boundary_ids(0);
-//     }
-//   }
-// }
 
   // Set boundary ID's
   set_boundary_ids<3>(tria, false);
