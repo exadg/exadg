@@ -2675,9 +2675,6 @@ public:
 //                                       update_values);
 
     addit_data.level_mg_handler = level;
-    addit_data.mpi_communicator =
-      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()) ?
-      (dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()))->get_communicator() : MPI_COMM_SELF;
     addit_data.periodic_face_pairs_level_0 = periodic_face_pairs_level0;
 
     ConstraintMatrix constraints;
@@ -3005,9 +3002,6 @@ public:
                                        update_values);
 
     addit_data.level_mg_handler = level;
-    addit_data.mpi_communicator =
-      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()) ?
-      (dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation()))->get_communicator() : MPI_COMM_SELF;
     addit_data.periodic_face_pairs_level_0 = periodic_face_pairs_level0;
 
     ConstraintMatrix constraints;

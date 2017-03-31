@@ -391,7 +391,6 @@ namespace Step37
     typename MatrixFree<dim,double>::AdditionalData addit_data;
     addit_data.tasks_parallel_scheme = MatrixFree<dim,double>::AdditionalData::none;
     addit_data.build_face_info = true;
-    addit_data.mpi_communicator = triangulation.get_communicator();
     matrix_free.reinit(mapping, dof_handler, constraints,
                        quad, addit_data);
     matrix_free.initialize_dof_vector(system_rhs);
