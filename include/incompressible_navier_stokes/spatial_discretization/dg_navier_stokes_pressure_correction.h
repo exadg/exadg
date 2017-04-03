@@ -56,7 +56,7 @@ public:
                                           double const                                    &eval_time,
                                           double const                                    &scaling_factor_mass_matrix_term,
                                           unsigned int                                    &newton_iterations,
-                                          double                                          &average_linear_iterations);
+                                          unsigned int                                    &linear_iterations);
 
 
   /*
@@ -443,7 +443,7 @@ solve_nonlinear_momentum_equation(parallel::distributed::Vector<value_type>     
                                   double const                                    &eval_time,
                                   double const                                    &scaling_factor_mass_matrix_term,
                                   unsigned int                                    &newton_iterations,
-                                  double                                          &average_linear_iterations)
+                                  unsigned int                                    &linear_iterations)
 {
   // Set rhs_vector, this variable is used when evaluating the nonlinear residual
   this->rhs_vector = &rhs_vector;
@@ -459,7 +459,7 @@ solve_nonlinear_momentum_equation(parallel::distributed::Vector<value_type>     
   velocity_conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor_mass_matrix_term);
 
   // Solve nonlinear problem
-  momentum_newton_solver->solve(dst,newton_iterations,average_linear_iterations);
+  momentum_newton_solver->solve(dst,newton_iterations,linear_iterations);
 
   // Reset rhs_vector
   this->rhs_vector = nullptr;

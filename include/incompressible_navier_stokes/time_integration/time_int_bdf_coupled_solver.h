@@ -322,26 +322,28 @@ solve_timestep()
   {
     // Newton solver
     unsigned int newton_iterations = 0;
-    double average_linear_iterations = 0.0;
+    unsigned int linear_iterations = 0;
     navier_stokes_operation->solve_nonlinear_problem(solution_np,
                                                      sum_alphai_ui,
                                                      this->time + this->time_steps[0],
                                                      this->get_scaling_factor_time_derivative_term(),
                                                      newton_iterations,
-                                                     average_linear_iterations);
+                                                     linear_iterations);
 
     N_iter_newton_average += newton_iterations;
-    N_iter_linear_average += average_linear_iterations;
+    N_iter_linear_average += linear_iterations;
     solver_time_average += timer.wall_time();
 
     // write output
     if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
     {
       ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+
       pcout << "Solve nonlinear Navier-Stokes problem:" << std::endl
-            << "  Linear iterations (avg): " << std::setw(6) << std::right << average_linear_iterations << std::endl
-            << "  Newton iterations:       " << std::setw(6) << std::right << newton_iterations
-            << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+            << "  Newton iterations: " << std::setw(6) << std::right << newton_iterations
+            << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl
+            << "  Linear iterations: " << std::setw(6) << std::fixed << std::setprecision(2) << std::right << double(linear_iterations)/(double)newton_iterations << " (avg)" << std::endl
+            << "  Linear iterations: " << std::setw(6) << std::fixed << std::setprecision(2) << std::right << linear_iterations << " (tot)" << std::endl;
     }
   }
 
@@ -357,6 +359,10 @@ solve_timestep()
       navier_stokes_operation->shift_pressure(solution_np.block(1),this->time + this->time_steps[0]);
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
       navier_stokes_operation->apply_zero_mean(solution_np.block(1));
+    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
+      navier_stokes_operation->shift_pressure_mean_value(solution_np.block(1),this->time + this->time_steps[0]);
+    else
+      AssertThrow(false,ExcMessage("Specified method to adjust pressure level is not implemented."));
   }
 }
 
@@ -427,9 +433,15 @@ analyze_computing_times() const
   }
   else
   {
+    double n_iter_nonlinear_average = N_iter_newton_average/(this->time_step_number-1);
+    double n_iter_linear_average_accumulated = N_iter_linear_average/(this->time_step_number-1);
+
     pcout << std::endl << "Number of time steps = " << (this->time_step_number-1) << std::endl
-                       << "Average number of linear iterations = " << std::fixed << std::setprecision(3) << N_iter_linear_average/(this->time_step_number-1) << std::endl
-                       << "Average number of Newton iterations = " << std::fixed << std::setprecision(3) << N_iter_newton_average/(this->time_step_number-1) << std::endl
+                       << "Average number of Newton iterations = " << std::fixed << std::setprecision(3) << n_iter_nonlinear_average << std::endl
+                       << "Average number of linear iterations = " << std::fixed << std::setprecision(3)
+                       << n_iter_linear_average_accumulated/n_iter_nonlinear_average << " (per nonlinear iteration)" << std::endl
+                       << "Average number of linear iterations = " << std::fixed << std::setprecision(3)
+                       << n_iter_linear_average_accumulated << " (accumulated)" << std::endl
                        << "Average wall time per time step = " << std::scientific << std::setprecision(3) << solver_time_average/(this->time_step_number-1) << std::endl;
   }
 

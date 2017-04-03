@@ -428,7 +428,7 @@ momentum_step()
                 this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit,
         ExcMessage("There is a logical error. Probably, the specified combination of input parameters is not implemented."));
 
-    double linear_iterations_momentum;
+    unsigned int linear_iterations_momentum;
     unsigned int nonlinear_iterations_momentum;
     navier_stokes_operation->solve_nonlinear_momentum_equation(velocity_np,
                                                               rhs_vec_momentum,
@@ -442,9 +442,9 @@ momentum_step()
     {
       this->pcout << std::endl
                   << "Solve nonlinear momentum equation for intermediate velocity:" << std::endl
-                  << "  Linear iterations: " << std::setw(6) << std::right << std::fixed << std::setprecision(2) << linear_iterations_momentum << std::endl
-                  << "  Newton iterations: " << std::setw(6) << std::right << nonlinear_iterations_momentum
-                  << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+                  << "  Newton iterations: " << std::setw(6) << std::right << nonlinear_iterations_momentum << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl
+                  << "  Linear iterations: " << std::setw(6) << std::right << std::fixed << std::setprecision(2) << (double)linear_iterations_momentum/(double)nonlinear_iterations_momentum << " (avg)" << std::endl
+                  << "  Linear iterations: " << std::setw(6) << std::right << std::fixed << std::setprecision(2) << linear_iterations_momentum << " (tot)" << std::endl;
     }
 
     N_iter_linear_momentum_average += linear_iterations_momentum;
@@ -570,6 +570,10 @@ pressure_step()
       navier_stokes_operation->shift_pressure(pressure_np,this->time + this->time_steps[0]);
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
       navier_stokes_operation->apply_zero_mean(pressure_np);
+    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
+      navier_stokes_operation->shift_pressure_mean_value(pressure_np,this->time + this->time_steps[0]);
+    else
+      AssertThrow(false,ExcMessage("Specified method to adjust pressure level is not implemented."));
   }
 
   // write output
@@ -822,12 +826,17 @@ analyze_computing_times() const
   }
   else
   {
+    double n_iter_nonlinear_average = N_iter_nonlinear_momentum_average/(this->time_step_number-1);
+    double n_iter_linear_average_accumulated = N_iter_linear_momentum_average/(this->time_step_number-1);
+
     this->pcout << std::endl
                 << "Number of time steps = " << (this->time_step_number-1) << std::endl
-                << "Average number of linear iterations momentum step = " << std::scientific << std::setprecision(3)
-                << N_iter_linear_momentum_average/(this->time_step_number-1) << std::endl
                 << "Average number of nonlinear iterations momentum step = " << std::scientific << std::setprecision(3)
-                << N_iter_nonlinear_momentum_average/(this->time_step_number-1) << std::endl;
+                << n_iter_nonlinear_average << std::endl
+                << "Average number of linear iterations momentum step = " << std::scientific << std::setprecision(3)
+                << n_iter_linear_average_accumulated/n_iter_nonlinear_average << " (per nonlinear iteration)" << std::endl
+                << "Average number of linear iterations momentum step = " << std::scientific << std::setprecision(3)
+                << n_iter_linear_average_accumulated << " (accumulated)" << std::endl;
   }
 
   this->pcout << "Average number of iterations pressure Poisson = " << std::scientific << std::setprecision(3)

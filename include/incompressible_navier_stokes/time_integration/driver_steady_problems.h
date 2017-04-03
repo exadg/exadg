@@ -118,25 +118,26 @@ solve()
     {
       std::cout << std:: endl
                 << "Solve linear Stokes problem:" << std::endl
-                << "  Iterations: " << std::setw(6) << std::right << iterations
-                << "\t Wall time [s]: " << std::scientific << std::setprecision(4) << timer.wall_time() << std::endl;
+                << "  Iterations:   " << std::setw(12) << std::right << iterations << std::endl
+                << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(4) << timer.wall_time() << std::endl;
     }
   }
   else // Steady Navier-Stokes equations
   {
     // Newton solver
     unsigned int newton_iterations;
-    double average_linear_iterations;
-    navier_stokes_operation->solve_nonlinear_steady_problem(solution,newton_iterations,average_linear_iterations);
+    unsigned int linear_iterations;
+    navier_stokes_operation->solve_nonlinear_steady_problem(solution,newton_iterations,linear_iterations);
 
     // write output
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
-      std::cout << std:: endl
+      std::cout << std::endl
                 << "Solve nonlinear Navier-Stokes problem:" << std::endl
-                << "  Linear iterations (avg):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << average_linear_iterations << std::endl
-                << "  Newton iterations:      " << std::setw(12) << std::right << newton_iterations
-                << "\t Wall time [s]: " << std::scientific << std::setprecision(4) << timer.wall_time() << std::endl;
+                << "  Newton iterations:      " << std::setw(12) << std::right << newton_iterations << std::endl
+                << "  Linear iterations (avg):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << double(linear_iterations)/double(newton_iterations) << std::endl
+                << "  Linear iterations (tot):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << linear_iterations << std::endl
+                << "  Wall time [s]:          " << std::setw(12) << std::scientific << std::setprecision(4) << timer.wall_time() << std::endl;
     }
   }
 

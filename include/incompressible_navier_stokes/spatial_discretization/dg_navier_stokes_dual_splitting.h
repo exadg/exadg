@@ -49,7 +49,7 @@ public:
                                            double const                                    &eval_time,
                                            double const                                    &scaling_factor_mass_matrix_term,
                                            unsigned int                                    &newton_iterations,
-                                           double                                          &average_linear_iterations);
+                                           unsigned int                                    &linear_iterations);
 
   /*
    *  The implementation of the Newton solver requires that the underlying operator
@@ -464,7 +464,7 @@ solve_nonlinear_convective_problem (parallel::distributed::Vector<value_type>   
                                     double const                                    &eval_time,
                                     double const                                    &scaling_factor_mass_matrix_term,
                                     unsigned int                                    &newton_iterations,
-                                    double                                          &average_linear_iterations)
+                                    unsigned int                                    &linear_iterations)
 {
   // Set sum_alphai_ui, this variable is used when evaluating the nonlinear residual
   this->sum_alphai_ui = &sum_alphai_ui;
@@ -477,7 +477,7 @@ solve_nonlinear_convective_problem (parallel::distributed::Vector<value_type>   
   scaling_factor_time_derivative_term = scaling_factor_mass_matrix_term;
 
   // solve nonlinear problem
-  newton_solver->solve(dst,newton_iterations,average_linear_iterations);
+  newton_solver->solve(dst,newton_iterations,linear_iterations);
 
   // Reset sum_alphai_ui
   this->sum_alphai_ui = nullptr;
