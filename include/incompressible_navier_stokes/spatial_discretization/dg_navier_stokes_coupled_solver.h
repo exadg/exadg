@@ -132,7 +132,7 @@ public:
    */
   void solve_nonlinear_steady_problem (parallel::distributed::BlockVector<value_type>  &dst,
                                        unsigned int                                    &newton_iterations,
-                                       double                                          &average_linear_iterations);
+                                       unsigned int                                    &linear_iterations);
 
   /*
    *  This function solves the nonlinear problem for unsteady problems.
@@ -142,7 +142,7 @@ public:
                                 double const                                    &eval_time,
                                 double const                                    &scaling_factor_mass_matrix_term,
                                 unsigned int                                    &newton_iterations,
-                                double                                          &average_linear_iterations);
+                                unsigned int                                    &linear_iterations);
 
   /*
    *  This function evaluates the nonlinear residual.
@@ -460,10 +460,10 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall
 void DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 solve_nonlinear_steady_problem (parallel::distributed::BlockVector<value_type>  &dst,
                                 unsigned int                                    &newton_iterations,
-                                double                                          &average_linear_iterations)
+                                unsigned int                                    &linear_iterations)
 {
   // solve nonlinear problem
-  newton_solver->solve(dst,newton_iterations,average_linear_iterations);
+  newton_solver->solve(dst,newton_iterations,linear_iterations);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
@@ -473,7 +473,7 @@ solve_nonlinear_problem (parallel::distributed::BlockVector<value_type>  &dst,
                          double const                                    &eval_time,
                          double const                                    &scaling_factor_mass_matrix_term,
                          unsigned int                                    &newton_iterations,
-                         double                                          &average_linear_iterations)
+                         unsigned int                                    &linear_iterations)
 {
   // Set sum_alphai_ui (this variable is used when evaluating the nonlinear residual).
   this->sum_alphai_ui = &sum_alphai_ui;
@@ -489,7 +489,7 @@ solve_nonlinear_problem (parallel::distributed::BlockVector<value_type>  &dst,
   velocity_conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor_mass_matrix_term);
 
   // Solve nonlinear problem
-  newton_solver->solve(dst,newton_iterations,average_linear_iterations);
+  newton_solver->solve(dst,newton_iterations,linear_iterations);
 
   // Reset sum_alphai_ui
   this->sum_alphai_ui = nullptr;

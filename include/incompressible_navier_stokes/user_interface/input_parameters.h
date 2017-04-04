@@ -151,6 +151,7 @@ enum class PenaltyTermDivergenceFormulation
 enum class AdjustPressureLevel
 {
   ApplyZeroMeanValue,
+  ApplyAnalyticalMeanValue,
   ApplyAnalyticalSolutionInPoint
 };
 
@@ -684,9 +685,10 @@ public:
 
     if(pure_dirichlet_bc == true)
     {
-      if(adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
+      if(adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint ||
+         adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
         AssertThrow(error_data.analytical_solution_available == true,
-                    ExcMessage("To adjust the pressure level as specified an analytical solution has to be available."));
+                    ExcMessage("To adjust the pressure level as specified, an analytical solution has to be available."));
     }
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -964,6 +966,7 @@ public:
     if(pure_dirichlet_bc == true)
     {
       std::string str_pressure_level[] = { "applying zero mean value",
+                                           "applying correct (analytical) mean value",
                                            "applying analytical solution in point"};
 
       print_parameter(pcout,

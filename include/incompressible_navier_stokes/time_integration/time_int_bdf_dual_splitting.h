@@ -435,22 +435,22 @@ convective_step()
         ExcMessage("Use TREATMENT_OF_CONVECTIVE_TERM = Explicit when solving the Stokes equations or when using the STS approach."));
 
     unsigned int newton_iterations;
-    double average_linear_iterations;
+    unsigned int linear_iterations;
     navier_stokes_operation->solve_nonlinear_convective_problem(velocity_np,
                                                                 sum_alphai_ui,
                                                                 this->time + this->time_steps[0],
                                                                 this->get_scaling_factor_time_derivative_term(),
                                                                 newton_iterations,
-                                                                average_linear_iterations);
+                                                                linear_iterations);
 
     // write output implicit case
     if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
     {
       this->pcout << std::endl
                   << "Solve nonlinear convective step for intermediate velocity:" << std::endl
-                  << "  Linear iterations: " << std::setw(6) << std::right << std::fixed << std::setprecision(2) << average_linear_iterations << std::endl
-                  << "  Newton iterations: " << std::setw(6) << std::right << newton_iterations
-                  << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+                  << "  Newton iterations: " << std::setw(6) << std::right << newton_iterations << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl
+                  << "  Linear iterations: " << std::setw(6) << std::right << std::fixed << std::setprecision(2) << (double)linear_iterations/(double)newton_iterations << " (avg)" << std::endl
+                  << "  Linear iterations: " << std::setw(6) << std::right << std::fixed << std::setprecision(2) << linear_iterations << " (tot)" << std::endl;
     }
   }
 
@@ -487,6 +487,10 @@ pressure_step()
       navier_stokes_operation->shift_pressure(pressure_np,this->time + this->time_steps[0]);
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
       navier_stokes_operation->apply_zero_mean(pressure_np);
+    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
+      navier_stokes_operation->shift_pressure_mean_value(pressure_np,this->time + this->time_steps[0]);
+    else
+      AssertThrow(false,ExcMessage("Specified method to adjust pressure level is not implemented."));
   }
 
   // write output

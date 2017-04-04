@@ -234,6 +234,13 @@ public:
                         double const                              &eval_time = 0.0) const;
 
   // special case: pure Dirichlet boundary conditions
+  // if analytical solution is available: shift pressure so that the numerical pressure solution
+  // has a mean value identical to the "exact pressure solution" obtained by interpolation of analytical solution.
+  // Note that the parameter 'eval_time' is only needed for unsteady problems.
+  void  shift_pressure_mean_value (parallel::distributed::Vector<value_type> &pressure,
+                                   double const                              &eval_time = 0.0) const;
+
+  // special case: pure Dirichlet boundary conditions
   // if no analytical solution is available: set mean value of pressure vector to zero
   void apply_zero_mean (parallel::distributed::Vector<value_type>  &dst) const;
 
@@ -548,6 +555,27 @@ shift_pressure (parallel::distributed::Vector<value_type>  &pressure,
     current = pressure(dof_index_first_point);
   current = Utilities::MPI::sum(current, MPI_COMM_WORLD);
   pressure.add(exact-current,vec1);
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+shift_pressure_mean_value (parallel::distributed::Vector<value_type>  &pressure,
+                           double const                               &eval_time) const
+{
+  AssertThrow(this->param.error_data.analytical_solution_available == true,
+              ExcMessage("The function shift_pressure_mean_value is intended to be used only if an analytical solution is available!"));
+
+  parallel::distributed::Vector<value_type> vec_temp(pressure);
+  this->field_functions->analytical_solution_pressure->set_time(eval_time);
+  VectorTools::interpolate(mapping, dof_handler_p, *(this->field_functions->analytical_solution_pressure), vec_temp);
+
+  const value_type exact = vec_temp.mean_value();
+  const value_type current = pressure.mean_value();
+
+  for(unsigned int i=0;i<vec_temp.local_size();++i)
+    vec_temp.local_element(i) = 1.;
+
+  pressure.add(exact-current,vec_temp);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
