@@ -605,6 +605,8 @@ public:
     update_preconditioner(false),
 
     // TURBULENCE
+    use_turbulence_model(false),
+    turbulence_model_constant(1.0),
     turb_stat_data(TurbulenceStatisticsData()),
     xwall_turb(XWallTurbulenceApproach::Undefined),
     variabletauw(true),
@@ -770,8 +772,7 @@ public:
        print_parameters_coupled_solver(pcout);
    
     // TURBULENCE
-    if(false) // TODO
-      print_parameters_turbulence(pcout);
+    print_parameters_turbulence(pcout);
   
     // OUTPUT AND POSTPROCESSING
     print_parameters_output_and_postprocessing(pcout);
@@ -1326,15 +1327,24 @@ public:
   {
     pcout << std::endl
           << "Turbulence:" << std::endl;
-    std::string str_xwall_turbulence_approach[] = { "Undefined",
-                                                    "None",
-                                                    "RANSSpalartAllmaras",
-                                                    "ClassicalDES",
-                                                    "MultiscaleDES"};
 
-    print_parameter(pcout,
-                    "Turbulence model for xwall",
-                    str_xwall_turbulence_approach[(int)xwall_turb]);
+    print_parameter(pcout,"Use turbulence model",use_turbulence_model);
+
+    if(use_turbulence_model == true)
+      print_parameter(pcout,"Turbulence model constant",turbulence_model_constant);
+
+    if(false)
+    {
+      std::string str_xwall_turbulence_approach[] = { "Undefined",
+                                                      "None",
+                                                      "RANSSpalartAllmaras",
+                                                      "ClassicalDES",
+                                                      "MultiscaleDES"};
+
+      print_parameter(pcout,
+                      "Turbulence model for xwall",
+                      str_xwall_turbulence_approach[(int)xwall_turb]);
+    }
   }
 
   void print_parameters_output_and_postprocessing(ConditionalOStream &pcout)
@@ -1727,6 +1737,12 @@ public:
   /*                                     TURBULENCE                                     */
   /*                                                                                    */
   /**************************************************************************************/
+
+  // use turbulence model
+  bool use_turbulence_model;
+
+  // scaling factor for turbulent viscosity model
+  double turbulence_model_constant;
 
   // turublence parameters that are required for statistics (post-processing)
   TurbulenceStatisticsData turb_stat_data;

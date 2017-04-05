@@ -670,10 +670,25 @@ viscous_step()
   Timer timer;
   timer.restart();
 
+  // if a turbulence model is used
+  // update turbulence model before calculating rhs_viscous
+  if(this->param.use_turbulence_model == true)
+  {
+    // extrapolate velocity to time t_n+1 and use this velocity field to
+    // update the turbulence model (to recalculate the turbulent viscosity)
+    parallel::distributed::Vector<value_type> velocity_extrapolated(velocity[0]);
+    velocity_extrapolated = 0;
+    for (unsigned int i=0; i<velocity.size(); ++i)
+      velocity_extrapolated.add(this->extra.get_beta(i),velocity[i]);
+
+    navier_stokes_operation->update_turbulence_model(velocity_extrapolated);
+  }
+
   // compute right-hand-side vector
   rhs_viscous();
 
-  // extrapolate old solution to get a good initial estimate for the solver
+  // Extrapolate old solution to get a good initial estimate for the solver.
+  // Note that this has to be done after calling rhs_viscous()!
   velocity_np = 0;
   for (unsigned int i=0; i<velocity.size(); ++i)
     velocity_np.add(this->extra.get_beta(i),velocity[i]);

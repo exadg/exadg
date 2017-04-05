@@ -381,14 +381,6 @@ momentum_step()
   Timer timer;
   timer.restart();
 
-  /*  Calculate the right-hand side of the linear system of equations
-   *  (in case of an explicit formulation of the convective term or Stokes equations)
-   *  or the vector that is constant when solving the nonlinear momentum equation
-   *  (where constant means that the vector does not change from one Newton iteration
-   *  to the next, i.e., it does not depend on the current solution of the nonlinear solver)
-   */
-  rhs_momentum();
-
   /*
    *  Extrapolate old solution to get a good initial estimate for the solver.
    */
@@ -397,6 +389,22 @@ momentum_step()
   {
     velocity_np.add(this->extra.get_beta(i),velocity[i]);
   }
+
+  /*
+   *  if a turbulence model is used:
+   *  update turbulence model before calculating rhs_momentum
+   */
+  if(this->param.use_turbulence_model == true)
+    navier_stokes_operation->update_turbulence_model(velocity_np);
+
+
+  /*  Calculate the right-hand side of the linear system of equations
+   *  (in case of an explicit formulation of the convective term or Stokes equations)
+   *  or the vector that is constant when solving the nonlinear momentum equation
+   *  (where constant means that the vector does not change from one Newton iteration
+   *  to the next, i.e., it does not depend on the current solution of the nonlinear solver)
+   */
+  rhs_momentum();
 
   /*
    *  Solve the linear or nonlinear problem.

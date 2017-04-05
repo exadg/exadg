@@ -265,6 +265,10 @@ solve_timestep()
   for(unsigned int i=1;i<solution.size();++i)
     solution_np.add(this->extra.get_beta(i),solution[i]);
 
+  // if a turbulence model is used
+  if(this->param.use_turbulence_model == true)
+    navier_stokes_operation->update_turbulence_model(solution_np.block(0));
+
   // calculate auxiliary variable p^{*} = 1/scaling_factor * p
   solution_np.block(1) *= 1.0/scaling_factor_continuity;
 
