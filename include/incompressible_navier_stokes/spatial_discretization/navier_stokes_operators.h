@@ -322,6 +322,11 @@ public:
     const_viscosity = operator_data.viscosity;
   }
 
+  FEParameters<dim> * get_fe_param() const
+  {
+    return this->fe_param;
+  }
+
   void set_constant_viscosity(double const viscosity_in)
   {
     const_viscosity = viscosity_in;
@@ -343,7 +348,7 @@ public:
 
   void initialize_viscous_coefficients()
   {
-    Assert(xwall_quad_rule > fe_degree +1, ExcMessage("this may cause a memory error"));
+    Assert(xwall_quad_rule > fe_degree+1, ExcMessage("this may cause a memory error"));
 
     this->viscous_coefficient_cell.reinit(this->data->n_macro_cells(),
                                           Utilities::fixed_int_power<FEEval_Velocity_Velocity_linear::n_q_points,dim>::value);

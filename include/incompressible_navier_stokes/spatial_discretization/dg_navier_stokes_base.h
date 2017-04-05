@@ -27,6 +27,7 @@
 #include "../infrastructure/fe_parameters.h"
 #include "operators/matrix_operator_base.h"
 #include "operators/inverse_mass_matrix.h"
+#include "turbulence_model.h"
 
 
 using namespace dealii;
@@ -256,6 +257,11 @@ public:
                                  parallel::distributed::Vector<value_type> const &src,
                                  value_type const                                evaluation_time) const;
 
+  /*
+   *  Update turbulence model, i.e., calculate turbulent viscosity
+   */
+  void update_turbulence_model (parallel::distributed::Vector<value_type> const &velocity) const;
+
 protected:
   MatrixFree<dim,value_type> data;
 
@@ -305,6 +311,9 @@ protected:
 
   VorticityCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> vorticity_calculator;
   DivergenceCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> divergence_calculator;
+
+  // turbulence modeling LES
+  TurbulenceModel<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> turbulence_model;
 
 private:
   virtual void create_dofs();
@@ -415,6 +424,14 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   viscous_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
   viscous_operator_data.viscosity = param.viscosity;
   viscous_operator.initialize(mapping,data,viscous_operator_data);
+
+  // turbulence model
+  if(this->param.use_turbulence_model == true)
+  {
+    TurbulenceModelData model_data;
+    model_data.constant = this->param.turbulence_model_constant;
+    turbulence_model.initialize(data,mapping,viscous_operator,model_data);
+  }
 
   // vorticity
   vorticity_calculator.initialize(data,
@@ -613,6 +630,13 @@ evaluate_convective_term (parallel::distributed::Vector<value_type>       &dst,
                           value_type const                                evaluation_time) const
 {
   convective_operator.evaluate(dst,src,evaluation_time);
+}
+
+template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+update_turbulence_model (parallel::distributed::Vector<value_type> const &velocity) const
+{
+  turbulence_model.calculate_turbulent_viscosity(velocity);
 }
 
 
