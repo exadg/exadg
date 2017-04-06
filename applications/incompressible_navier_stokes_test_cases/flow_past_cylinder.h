@@ -20,10 +20,10 @@
 /**************************************************************************************/
 
 // set the number of space dimensions: dimension = 2, 3
-unsigned int const DIMENSION = 2;
+unsigned int const DIMENSION = 3;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 8;
+unsigned int const FE_DEGREE_VELOCITY = 2;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -31,7 +31,7 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 3;
+unsigned int const REFINE_STEPS_SPACE_MIN = 0;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
@@ -71,11 +71,11 @@ const ManifoldType MANIFOLD_TYPE = ManifoldType::VolumeManifold;
 //        that surrounds the cylinder
 
 enum class MeshType{ Type1, Type2, Type3, Type4 };
-const MeshType MESH_TYPE = MeshType::Type4; //Type2;
+const MeshType MESH_TYPE = MeshType::Type2;
 
 const double END_TIME = 8.0;
-std::string OUTPUT_PREFIX = "2D_3_cfl_0-05";
-std::string OUTPUT_FOLDER = "/dual_splitting_bdf3_mesh4/"; // "/paper/dual_splitting_bdf2_mesh2/"; // "/paper/pressure_correction_bdf2_mesh2/"; // "/paper/dual_splitting_bdf2_mesh2/"; //"/comparison_lehrenfeld/pressure_correction/";
+std::string OUTPUT_PREFIX = "3D_3_cfl_0-2"; //"2D_3_cfl_0-05";
+std::string OUTPUT_FOLDER = "/3D_3_dual_splitting_bdf3_mesh2/"; // "/paper/dual_splitting_bdf2_mesh2/"; // "/paper/pressure_correction_bdf2_mesh2/"; // "/paper/dual_splitting_bdf2_mesh2/"; //"/comparison_lehrenfeld/pressure_correction/";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -98,7 +98,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified; //ConstTimeStepCFL;
   max_velocity = Um;
-  cfl = 0.05;//0.6;//2.5e-1;
+  cfl = 0.2;//0.6;//2.5e-1;
   cfl_exponent_fe_degree_velocity = 1.0;
   time_step_size = 1.0e-3;
   max_number_of_time_steps = 1e8;
@@ -116,7 +116,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
   IP_factor_viscous = 1.0;
-  penalty_term_div_formulation = PenaltyTermDivergenceFormulation::NotSymmetrized; //Symmetrized;
+  penalty_term_div_formulation = PenaltyTermDivergenceFormulation::Symmetrized;
 
   // gradient term
   gradp_integrated_by_parts = true;
@@ -139,7 +139,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   multigrid_data_pressure_poisson.smoother = MultigridSmoother::Chebyshev; // Chebyshev; //Jacobi; //GMRES;
   multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::PCG_PointJacobi; //PCG_NoPreconditioner; //PCG_PointJacobi; //Chebyshev;
   abs_tol_pressure = 1.e-12;
-  rel_tol_pressure = 1.e-8;
+  rel_tol_pressure = 1.e-6; //1.e-8;
 
   // stability in the limit of small time steps
   use_approach_of_ferrer = false;
@@ -178,7 +178,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
   multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::PCG_PointJacobi;  //Chebyshev;
   abs_tol_viscous = 1.e-12;
-  rel_tol_viscous = 1.e-8;
+  rel_tol_viscous = 1.e-6; //1.e-8;
 
 
   // PRESSURE-CORRECTION SCHEME
@@ -255,7 +255,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
   // output of solver information
-  output_solver_info_every_timesteps = 1e5;
+  output_solver_info_every_timesteps = 1e3; // 1e5;
 
   // restart
   write_restart = false;
