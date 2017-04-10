@@ -41,7 +41,7 @@ template<int dim, int fe_degree, typename value_type, int n_components=dim>
 class InverseMassMatrixPreconditionerPtr : public PreconditionerBase<value_type>
 {
 public:
-  InverseMassMatrixPreconditionerPtr(std_cxx11::shared_ptr<InverseMassMatrixOperator<dim,fe_degree,value_type,n_components> > inv_mass_operator)
+  InverseMassMatrixPreconditionerPtr(std::shared_ptr<InverseMassMatrixOperator<dim,fe_degree,value_type,n_components> > inv_mass_operator)
     :
     inverse_mass_matrix_operator(inv_mass_operator)
   {}
@@ -55,7 +55,7 @@ public:
   void update(MatrixOperatorBase const * /*matrix_operator*/) {} // do nothing
 
 private:
-  std_cxx11::shared_ptr<InverseMassMatrixOperator<dim,fe_degree,value_type,n_components> > inverse_mass_matrix_operator;
+  std::shared_ptr<InverseMassMatrixOperator<dim,fe_degree,value_type,n_components> > inverse_mass_matrix_operator;
 };
 
 

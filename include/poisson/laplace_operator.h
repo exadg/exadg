@@ -51,7 +51,7 @@ struct LaplaceOperatorData
   bool needs_mean_value_constraint;
 
   // boundary descriptor:
-  std_cxx11::shared_ptr<BoundaryDescriptorLaplace<dim> >  bc;
+  std::shared_ptr<BoundaryDescriptorLaplace<dim> >  bc;
 
   // If periodic boundaries are present, this variable collects matching faces
   // on the two sides of the domain
@@ -482,7 +482,7 @@ void LaplaceOperator<dim,degree,Number>::reinit (const DoFHandler<dim>          
   {
     ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
     typename FunctionMap<dim>::type dirichlet_boundary;
-    for (typename std::map<types::boundary_id, std_cxx11::shared_ptr<Function<dim> > >::const_iterator it =
+    for (typename std::map<types::boundary_id, std::shared_ptr<Function<dim> > >::const_iterator it =
            operator_data.bc->dirichlet.begin();
          it != operator_data.bc->dirichlet.end(); ++it)
       dirichlet_boundary[it->first] = &zero_function;
@@ -1161,7 +1161,7 @@ local_apply_boundary (const MatrixFree<dim,Number>                &data,
       fe_eval.read_cell_data(array_penalty_parameter) *
       get_penalty_factor();
 
-    typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+    typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
     types::boundary_id boundary_id = data.get_boundary_indicator(face);
 
     for(unsigned int q=0;q<fe_eval.n_q_points;++q)
@@ -1241,7 +1241,7 @@ local_rhs_boundary (const MatrixFree<dim,Number>                &data,
       fe_eval.read_cell_data(array_penalty_parameter) *
       get_penalty_factor();
 
-    typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+    typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
     types::boundary_id boundary_id = data.get_boundary_indicator(face);
 
     for(unsigned int q=0;q<fe_eval.n_q_points;++q)
@@ -1495,7 +1495,7 @@ local_diagonal_boundary (const MatrixFree<dim,Number>                &data,
       phi.read_cell_data(array_penalty_parameter) *
       get_penalty_factor();
 
-    typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+    typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
     types::boundary_id boundary_id = data.get_boundary_indicator(face);
 
     for (unsigned int i=0; i<phi.dofs_per_cell; ++i)
@@ -1710,7 +1710,7 @@ boundary_face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>
       phi.read_cell_data(array_penalty_parameter) *
       get_penalty_factor();
 
-    typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+    typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
     types::boundary_id boundary_id = data.get_boundary_indicator(face);
 
     for (unsigned int j=0; j<phi.dofs_per_cell; ++j)

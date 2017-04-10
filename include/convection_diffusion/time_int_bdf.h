@@ -26,10 +26,10 @@ template<int dim, int fe_degree, typename value_type>
 class TimeIntBDFConvDiff
 {
 public:
-  TimeIntBDFConvDiff(std_cxx11::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation_in,
-                     std_cxx11::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> >         postprocessor_in,
+  TimeIntBDFConvDiff(std::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation_in,
+                     std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> >         postprocessor_in,
                      ConvDiff::InputParametersConvDiff const                                 &param_in,
-                     std_cxx11::shared_ptr<Function<dim> >                                   velocity_in,
+                     std::shared_ptr<Function<dim> >                                   velocity_in,
                      unsigned int const                                                      n_refine_time_in)
     :
     conv_diff_operation(conv_diff_operation_in),
@@ -75,10 +75,10 @@ private:
   void postprocessing() const;
   void analyze_computing_times() const;
 
-  std_cxx11::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation;
-  std_cxx11::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> > postprocessor;
+  std::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation;
+  std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> > postprocessor;
   ConvDiff::InputParametersConvDiff const & param;
-  std_cxx11::shared_ptr<Function<dim> > velocity;
+  std::shared_ptr<Function<dim> > velocity;
 
   unsigned int const n_refine_time;
   double const cfl_number;

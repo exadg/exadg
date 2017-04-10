@@ -227,7 +227,7 @@ template<int dim>
 void create_grid_and_set_boundary_conditions(
     parallel::distributed::Triangulation<dim>               &triangulation,
     unsigned int const                                      n_refine_space,
-    std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor)
+    std::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor)
 {
   // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
   const double left = -1.0, right = 1.0;
@@ -249,22 +249,22 @@ void create_grid_and_set_boundary_conditions(
   }
   triangulation.refine_global(n_refine_space);
 
-  std_cxx11::shared_ptr<Function<dim> > neumann_bc;
+  std::shared_ptr<Function<dim> > neumann_bc;
   neumann_bc.reset(new NeumannBoundary<dim>());
-  boundary_descriptor->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >(1,neumann_bc));
+  boundary_descriptor->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,neumann_bc));
 }
 
 template<int dim>
-void set_field_functions(std_cxx11::shared_ptr<FieldFunctionsConvDiff<dim> > field_functions)
+void set_field_functions(std::shared_ptr<FieldFunctionsConvDiff<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
-  std_cxx11::shared_ptr<Function<dim> > analytical_solution;
+  std::shared_ptr<Function<dim> > analytical_solution;
   analytical_solution.reset(new AnalyticalSolution<dim>());
 
-  std_cxx11::shared_ptr<Function<dim> > right_hand_side;
+  std::shared_ptr<Function<dim> > right_hand_side;
   right_hand_side.reset(new RightHandSide<dim>());
 
-  std_cxx11::shared_ptr<Function<dim> > velocity;
+  std::shared_ptr<Function<dim> > velocity;
   velocity.reset(new VelocityField<dim>());
 
   field_functions->analytical_solution = analytical_solution;
@@ -273,7 +273,7 @@ void set_field_functions(std_cxx11::shared_ptr<FieldFunctionsConvDiff<dim> > fie
 }
 
 template<int dim>
-void set_analytical_solution(std_cxx11::shared_ptr<AnalyticalSolutionConvDiff<dim> > analytical_solution)
+void set_analytical_solution(std::shared_ptr<AnalyticalSolutionConvDiff<dim> > analytical_solution)
 {
   analytical_solution->solution.reset(new AnalyticalSolution<dim>(1));
 }

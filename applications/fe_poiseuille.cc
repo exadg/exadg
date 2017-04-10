@@ -186,9 +186,9 @@ void ChannelFlowProblem<dim>::run ()
 
   solver.set_no_slip_boundary(0);
   solver.set_symmetry_boundary(3);
-  solver.set_open_boundary_with_normal_flux(1, std_cxx11::shared_ptr<Function<dim> > (new ExactSolutionP<dim>()));
-  solver.set_velocity_dirichlet_boundary(2, std_cxx11::shared_ptr<Function<dim> > (new ExactSolutionU<dim>(0.1)));
-  //solver.set_open_boundary_with_normal_flux(2, std_cxx11::shared_ptr<Function<dim> > (new ExactSolutionP<dim>()));
+  solver.set_open_boundary_with_normal_flux(1, std::shared_ptr<Function<dim> > (new ExactSolutionP<dim>()));
+  solver.set_velocity_dirichlet_boundary(2, std::shared_ptr<Function<dim> > (new ExactSolutionU<dim>(0.1)));
+  //solver.set_open_boundary_with_normal_flux(2, std::shared_ptr<Function<dim> > (new ExactSolutionP<dim>()));
 
   solver.setup_problem(ExactSolutionU<dim>(0.1,0));
   solver.set_time_step(0.0005);

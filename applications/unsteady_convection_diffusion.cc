@@ -64,16 +64,16 @@ private:
   const unsigned int n_refine_space;
   const unsigned int n_refine_time;
 
-  std_cxx11::shared_ptr<FieldFunctionsConvDiff<dim> > field_functions;
-  std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor;
+  std::shared_ptr<FieldFunctionsConvDiff<dim> > field_functions;
+  std::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor;
 
-  std_cxx11::shared_ptr<AnalyticalSolutionConvDiff<dim> > analytical_solution;
+  std::shared_ptr<AnalyticalSolutionConvDiff<dim> > analytical_solution;
 
-  std_cxx11::shared_ptr<DGConvDiffOperation<dim,fe_degree, value_type> > conv_diff_operation;
-  std_cxx11::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> > postprocessor;
+  std::shared_ptr<DGConvDiffOperation<dim,fe_degree, value_type> > conv_diff_operation;
+  std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> > postprocessor;
 
-  std_cxx11::shared_ptr<TimeIntExplRKConvDiff<dim, fe_degree, value_type> > time_integrator_explRK;
-  std_cxx11::shared_ptr<TimeIntBDFConvDiff<dim,fe_degree,value_type> > time_integrator_BDF;
+  std::shared_ptr<TimeIntExplRKConvDiff<dim, fe_degree, value_type> > time_integrator_explRK;
+  std::shared_ptr<TimeIntBDFConvDiff<dim,fe_degree,value_type> > time_integrator_BDF;
 };
 
 template<int dim, int fe_degree>

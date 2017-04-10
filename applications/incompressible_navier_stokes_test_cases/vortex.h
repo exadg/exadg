@@ -63,7 +63,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;//BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepCFL; //ConstTimeStepUserSpecified;
   max_velocity = 1.4 * U_X_MAX;
@@ -508,8 +508,8 @@ template<int dim>
 void create_grid_and_set_boundary_conditions(
     parallel::distributed::Triangulation<dim>                   &triangulation,
     unsigned int const                                          n_refine_space,
-    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
-    std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
+    std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
       Triangulation<dim>::cell_iterator> >                      &/*periodic_faces*/)
 {
@@ -599,7 +599,7 @@ void create_grid_and_set_boundary_conditions(
     }
 
     // generate vector of manifolds and apply manifold to all cells that have been marked
-    static std::vector<std_cxx11::shared_ptr<Manifold<dim> > > manifold_vec;
+    static std::vector<std::shared_ptr<Manifold<dim> > > manifold_vec;
     manifold_vec.resize(manifold_ids.size());
 
     for(unsigned int i=0;i<manifold_ids.size();++i)
@@ -608,7 +608,7 @@ void create_grid_and_set_boundary_conditions(
       {
         if(cell->manifold_id() == manifold_ids[i])
         {
-          manifold_vec[i] = std_cxx11::shared_ptr<Manifold<dim> >(
+          manifold_vec[i] = std::shared_ptr<Manifold<dim> >(
               static_cast<Manifold<dim>*>(new OneSidedCylindricalManifold<dim>(cell,face_ids[i],center)));
           triangulation.set_manifold(manifold_ids[i],*(manifold_vec[i]));
         }
@@ -634,39 +634,39 @@ void create_grid_and_set_boundary_conditions(
   triangulation.refine_global(n_refine_space);
 
   // fill boundary descriptor velocity
-  std_cxx11::shared_ptr<Function<dim> > analytical_solution_velocity;
+  std::shared_ptr<Function<dim> > analytical_solution_velocity;
   analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
   // Dirichlet boundaries: ID = 0
-  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >(0,analytical_solution_velocity));
+  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,analytical_solution_velocity));
 
-  std_cxx11::shared_ptr<Function<dim> > neumann_bc_velocity;
+  std::shared_ptr<Function<dim> > neumann_bc_velocity;
   neumann_bc_velocity.reset(new NeumannBoundaryVelocity<dim>());
   // Neumann boundaris: ID = 1
-  boundary_descriptor_velocity->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >(1,neumann_bc_velocity));
+  boundary_descriptor_velocity->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,neumann_bc_velocity));
 
   // fill boundary descriptor pressure
-  std_cxx11::shared_ptr<Function<dim> > pressure_bc_dudt;
+  std::shared_ptr<Function<dim> > pressure_bc_dudt;
   pressure_bc_dudt.reset(new PressureBC_dudt<dim>());
   // Dirichlet boundaries: ID = 0
-  boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >(0,pressure_bc_dudt));
+  boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,pressure_bc_dudt));
 
-  std_cxx11::shared_ptr<Function<dim> > analytical_solution_pressure;
+  std::shared_ptr<Function<dim> > analytical_solution_pressure;
   analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
   // Neumann boundaries: ID = 1
-  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >(1,analytical_solution_pressure));
+  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,analytical_solution_pressure));
 }
 
 
 template<int dim>
-void set_field_functions(std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
-  std_cxx11::shared_ptr<Function<dim> > analytical_solution_velocity;
+  std::shared_ptr<Function<dim> > analytical_solution_velocity;
   analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
-  std_cxx11::shared_ptr<Function<dim> > analytical_solution_pressure;
+  std::shared_ptr<Function<dim> > analytical_solution_pressure;
   analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
 
-  std_cxx11::shared_ptr<Function<dim> > right_hand_side;
+  std::shared_ptr<Function<dim> > right_hand_side;
   right_hand_side.reset(new RightHandSide<dim>());
 
   field_functions->initial_solution_velocity = analytical_solution_velocity;
@@ -676,14 +676,14 @@ void set_field_functions(std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> >
 }
 
 template<int dim>
-void set_analytical_solution(std_cxx11::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
+void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
 {
   analytical_solution->velocity.reset(new AnalyticalSolutionVelocity<dim>());
   analytical_solution->pressure.reset(new AnalyticalSolutionPressure<dim>());
 }
 
 template<int dim>
-std_cxx11::shared_ptr<PostProcessorBase<dim> >
+std::shared_ptr<PostProcessorBase<dim> >
 construct_postprocessor(InputParametersNavierStokes<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -694,7 +694,7 @@ construct_postprocessor(InputParametersNavierStokes<dim> const &param)
   pp_data.pressure_difference_data = param.pressure_difference_data;
   pp_data.mass_data = param.mass_data;
 
-  std_cxx11::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE> > pp;
+  std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE> > pp;
   pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE>(pp_data));
 
   return pp;

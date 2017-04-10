@@ -32,7 +32,7 @@ private:
 
   parallel::distributed::Triangulation<dim>   triangulation;
 
-  FENavierStokesSolver<dim> solver; //std_cxx11::shared_ptr<FluidBaseAlgorithm<dim> > solver;
+  FENavierStokesSolver<dim> solver; //std::shared_ptr<FluidBaseAlgorithm<dim> > solver;
 };
 
 template <int dim>
@@ -105,7 +105,7 @@ void CylinderFlowProblem<dim>::run ()
   solver.set_no_slip_boundary(5);
   solver.set_no_slip_boundary(6);
   solver.set_open_boundary(3);
-  solver.set_velocity_dirichlet_boundary(2, std_cxx11::shared_ptr<Function<dim> >(new QuadraticVelocityProfile<dim>()));
+  solver.set_velocity_dirichlet_boundary(2, std::shared_ptr<Function<dim> >(new QuadraticVelocityProfile<dim>()));
 
   solver.setup_problem(QuadraticVelocityProfile<dim>());
 

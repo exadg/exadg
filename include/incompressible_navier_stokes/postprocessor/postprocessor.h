@@ -49,7 +49,7 @@ public:
                      Mapping<dim> const                                           &mapping_in,
                      MatrixFree<dim,double> const                                 &matrix_free_data_in,
                      DofQuadIndexData const                                       &dof_quad_index_data_in,
-                     std_cxx11::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution_in)
+                     std::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution_in)
   {
     output_generator.setup(dof_handler_velocity_in,
                            dof_handler_pressure_in,

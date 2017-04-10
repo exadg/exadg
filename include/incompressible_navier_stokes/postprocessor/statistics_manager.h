@@ -3,7 +3,6 @@
 #define __indexa_statistics_manager_h
 
 #include <deal.II/lac/parallel_vector.h>
-#include <deal.II/base/std_cxx11/function.h>
 #include <fluid_base_algorithm.h>
 #include "../../incompressible_navier_stokes/infrastructure/fe_parameters.h"
 
@@ -17,7 +16,7 @@ public:
   // initially distributed from [0,1] to the actual grid. This must match the
   // transform applied to the triangulation, otherwise the identification of
   // data will fail
-  void setup(const std_cxx11::function<Point<dim>(const Point<dim> &)> &grid_tranform);
+  void setup(const std::function<Point<dim>(const Point<dim> &)> &grid_tranform);
 
   void evaluate(const parallel::distributed::Vector<double> &velocity);
 

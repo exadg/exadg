@@ -490,7 +490,7 @@ private:
 
       preconditioner_momentum.reset(new MULTIGRID());
 
-      std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
+      std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
 
       mg_preconditioner->initialize(mg_data,
                                     underlying_operator->get_dof_handler_u(),
@@ -507,7 +507,7 @@ private:
 
       preconditioner_momentum.reset(new MULTIGRID());
 
-      std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
+      std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
 
       mg_preconditioner->initialize(mg_data,
                                     underlying_operator->get_dof_handler_u(),
@@ -569,7 +569,7 @@ private:
 
       multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
 
-      std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
+      std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
 
       mg_preconditioner->initialize(mg_data,
                                     underlying_operator->get_dof_handler_p(),
@@ -597,7 +597,7 @@ private:
 
       multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
 
-      std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
+      std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
 
       mg_preconditioner->initialize(mg_data,
                                     underlying_operator->get_dof_handler_p(),
@@ -671,31 +671,31 @@ private:
     mass_matrix_operator_data.dof_index = underlying_operator->get_dof_index_pressure();
     mass_matrix_operator_data.quad_index = underlying_operator->get_quad_index_pressure();
 
-    std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor;
+    std::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor;
     boundary_descriptor.reset(new BoundaryDescriptorConvDiff<dim>());
 
     // for the pressure convection-diffusion operator the homogeneous operators (convective, diffusive) are applied,
     // so there is no need to specify functions for boundary conditions since they will not be used (must not be used)
     // -> use ConstantFunction as dummy, initialized with NAN in order to detect a possible incorrect access to boundary values
-    std_cxx11::shared_ptr<Function<dim> > dummy;
+    std::shared_ptr<Function<dim> > dummy;
     dummy.reset(new ConstantFunction<dim>(NAN));
 
     // set boundary ID's for pressure convection-diffusion operator
 
     // Dirichlet BC for velocity -> Neumann BC for pressure
-    for (typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::
+    for (typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::
          const_iterator it = underlying_operator->boundary_descriptor_velocity->dirichlet_bc.begin();
          it != underlying_operator->boundary_descriptor_velocity->dirichlet_bc.end(); ++it)
     {
-      boundary_descriptor->neumann_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+      boundary_descriptor->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
                                               (it->first, dummy));
     }
     // Neumann BC for velocity -> Dirichlet BC for pressure
-    for (typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::
+    for (typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::
          const_iterator it = underlying_operator->boundary_descriptor_velocity->neumann_bc.begin();
          it != underlying_operator->boundary_descriptor_velocity->neumann_bc.end(); ++it)
     {
-      boundary_descriptor->dirichlet_bc.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+      boundary_descriptor->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
                                                 (it->first, dummy));
     }
 
@@ -780,7 +780,7 @@ private:
       else // exact_inversion_of_momentum_block == true
       {
         // CheckMultigrid
-//        std_cxx11::shared_ptr<MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
+//        std::shared_ptr<MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
 //                                VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
 //                                VelocityConvDiffOperatorData<dim>,
 //                                VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
@@ -977,18 +977,18 @@ private:
   BlockPreconditionerData preconditioner_data;
 
   // preconditioner velocity/momentum block
-  std_cxx11::shared_ptr<PreconditionerBase<value_type> > preconditioner_momentum;
+  std::shared_ptr<PreconditionerBase<value_type> > preconditioner_momentum;
 
-  std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > solver_velocity_block;
+  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > solver_velocity_block;
 
   // preconditioner pressure/Schur-complement block
-  std_cxx11::shared_ptr<PreconditionerBase<value_type> > multigrid_preconditioner_schur_complement;
-  std_cxx11::shared_ptr<PreconditionerBase<value_type> > inv_mass_matrix_preconditioner_schur_complement;
+  std::shared_ptr<PreconditionerBase<value_type> > multigrid_preconditioner_schur_complement;
+  std::shared_ptr<PreconditionerBase<value_type> > inv_mass_matrix_preconditioner_schur_complement;
 
-  std_cxx11::shared_ptr<PressureConvectionDiffusionOperator<dim, fe_degree_p, fe_degree, value_type> > pressure_convection_diffusion_operator;
-  std_cxx11::shared_ptr<LaplaceOperator<dim, fe_degree_p> > laplace_operator_classical;
-  std_cxx11::shared_ptr<CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > laplace_operator_compatible;
-  std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > solver_pressure_block;
+  std::shared_ptr<PressureConvectionDiffusionOperator<dim, fe_degree_p, fe_degree, value_type> > pressure_convection_diffusion_operator;
+  std::shared_ptr<LaplaceOperator<dim, fe_degree_p> > laplace_operator_classical;
+  std::shared_ptr<CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > laplace_operator_compatible;
+  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > solver_pressure_block;
 
   // temporary vectors that are necessary when using preconditioners of block-triangular type
   parallel::distributed::Vector<value_type> mutable vec_tmp_pressure;

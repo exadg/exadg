@@ -15,7 +15,7 @@ using namespace dealii;
 template<int dim>
 struct AnalyticalSolutionConvDiff
 {
-  std_cxx11::shared_ptr<Function<dim> > solution;
+  std::shared_ptr<Function<dim> > solution;
 };
 
 

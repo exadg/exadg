@@ -205,7 +205,7 @@ struct RHSOperatorData
 
   unsigned int dof_index;
   unsigned int quad_index;
-  std_cxx11::shared_ptr<Function<dim> > rhs;
+  std::shared_ptr<Function<dim> > rhs;
 };
 
 template <int dim, int fe_degree, typename value_type>
@@ -294,7 +294,7 @@ struct DiffusiveOperatorData
 
   double IP_factor;
 
-  std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorConvDiff<dim> > bc;
 
   double diffusivity;
 };
@@ -543,7 +543,7 @@ private:
       if(boundary_type == BoundaryType::dirichlet)
       {
         VectorizedArray<value_type> g = make_vectorized_array<value_type>(0.0);
-        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->dirichlet_bc.find(boundary_id);
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
         evaluate_scalar_function(g, it->second, q_points, eval_time);
@@ -579,7 +579,7 @@ private:
       if(boundary_type == BoundaryType::dirichlet)
       {
         VectorizedArray<value_type> g = make_vectorized_array<value_type>(0.0);
-        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->dirichlet_bc.find(boundary_id);
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
         evaluate_scalar_function(g,it->second,q_points,eval_time);
@@ -661,7 +661,7 @@ private:
       else if(boundary_type == BoundaryType::neumann)
       {
         VectorizedArray<value_type> h = make_vectorized_array<value_type>(0.0);
-        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->neumann_bc.find(boundary_id);
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
         evaluate_scalar_function(h, it->second, q_points, eval_time);
@@ -697,7 +697,7 @@ private:
       else if(boundary_type == BoundaryType::neumann)
       {
         VectorizedArray<value_type> h = make_vectorized_array<value_type>(0.0);
-        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->neumann_bc.find(boundary_id);
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
         evaluate_scalar_function(h, it->second, q_points, eval_time);
@@ -1458,8 +1458,8 @@ struct ConvectiveOperatorData
   unsigned int quad_index;
   NumericalFluxConvectiveOperator numerical_flux_formulation;
 
-  std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > bc;
-  std_cxx11::shared_ptr<Function<dim> > velocity;
+  std::shared_ptr<BoundaryDescriptorConvDiff<dim> > bc;
+  std::shared_ptr<Function<dim> > velocity;
 };
 
 template <int dim, int fe_degree, typename value_type>
@@ -1727,7 +1727,7 @@ private:
       if(boundary_type == BoundaryType::dirichlet)
       {
         VectorizedArray<value_type> g = make_vectorized_array<value_type>(0.0);
-        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->dirichlet_bc.find(boundary_id);
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
         evaluate_scalar_function(g,it->second,q_points,eval_time);
@@ -1763,7 +1763,7 @@ private:
       if(boundary_type == BoundaryType::dirichlet)
       {
         VectorizedArray<value_type> g = make_vectorized_array<value_type>(0.0);
-        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->dirichlet_bc.find(boundary_id);
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
         evaluate_scalar_function(g,it->second,q_points,eval_time);
@@ -2403,7 +2403,7 @@ struct ConvectiveOperatorDataDiscontinuousVelocity
   unsigned int dof_index_velocity;
   unsigned int quad_index;
 
-  std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorConvDiff<dim> > bc;
 };
 
 template <int dim, int fe_degree, int fe_degree_velocity, typename value_type>
@@ -2557,7 +2557,7 @@ private:
       fe_eval_velocity.read_dof_values(*velocity);
       fe_eval_velocity.evaluate(true,false);
 
-      typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+      typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
       types::boundary_id boundary_id = data.get_boundary_indicator(face);
 
       for(unsigned int q=0;q<fe_eval.n_q_points;++q)
@@ -3875,7 +3875,7 @@ private:
       VectorizedArray<value_type> tau_IP = fe_eval.read_cell_data(array_penalty_parameter)
                                               * get_penalty_factor();
 
-      typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+      typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
       types::boundary_id boundary_id = data.get_boundary_indicator(face);
 
       for(unsigned int q=0;q<fe_eval.n_q_points;++q)

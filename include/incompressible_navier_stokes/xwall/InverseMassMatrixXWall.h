@@ -116,7 +116,7 @@ public:
   }
 
 private:
-  mutable std_cxx11::shared_ptr<Threads::ThreadLocalStorage<InverseMassMatrixXWallData<dim,fe_degree,fe_degree_xwall,n_q_points_1d,value_type,n_components> > > mass_matrix_data_xwall;
+  mutable std::shared_ptr<Threads::ThreadLocalStorage<InverseMassMatrixXWallData<dim,fe_degree,fe_degree_xwall,n_q_points_1d,value_type,n_components> > > mass_matrix_data_xwall;
   AlignedVector<AlignedVector<LAPACKFullMatrix<value_type> > > matrices;
   void local_apply_inverse_mass_matrix (const MatrixFree<dim,value_type>                 &,
                                         parallel::distributed::Vector<value_type>        &dst,

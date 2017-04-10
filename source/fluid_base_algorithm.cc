@@ -40,7 +40,7 @@ template <int dim>
 void
 FluidBaseAlgorithm<dim>::set_velocity_dirichlet_boundary
 (const types::boundary_id                     boundary_id,
- const std_cxx11::shared_ptr<Function<dim> > &velocity_function)
+ const std::shared_ptr<Function<dim> > &velocity_function)
 {
   if (velocity_function.get() == 0)
     return set_no_slip_boundary(boundary_id);
@@ -55,10 +55,10 @@ template <int dim>
 void
 FluidBaseAlgorithm<dim>::set_open_boundary
 (const types::boundary_id                     boundary_id,
- const std_cxx11::shared_ptr<Function<dim> > &pressure_function)
+ const std::shared_ptr<Function<dim> > &pressure_function)
 {
   if (pressure_function.get() == 0)
-    boundary->open_conditions_p[boundary_id] = std_cxx11::shared_ptr<Function<dim> >(new ZeroFunction<dim>(1));
+    boundary->open_conditions_p[boundary_id] = std::shared_ptr<Function<dim> >(new ZeroFunction<dim>(1));
   else
     {
       AssertThrow (pressure_function->n_components == 1,
@@ -73,10 +73,10 @@ template <int dim>
 void
 FluidBaseAlgorithm<dim>::set_open_boundary_with_normal_flux
 (const types::boundary_id                     boundary_id,
- const std_cxx11::shared_ptr<Function<dim> > &pressure_function)
+ const std::shared_ptr<Function<dim> > &pressure_function)
 {
   if (pressure_function.get() == 0)
-    boundary->open_conditions_p[boundary_id] = std_cxx11::shared_ptr<Function<dim> >(new ZeroFunction<dim>(1));
+    boundary->open_conditions_p[boundary_id] = std::shared_ptr<Function<dim> >(new ZeroFunction<dim>(1));
   else
     {
       AssertThrow (pressure_function->n_components == 1,
@@ -92,7 +92,7 @@ template <int dim>
 void
 FluidBaseAlgorithm<dim>::fix_pressure_constant
 (const types::boundary_id                     boundary_id,
- const std_cxx11::shared_ptr<Function<dim> > &pressure_function)
+ const std::shared_ptr<Function<dim> > &pressure_function)
 {
   AssertThrow (pressure_function.get() == 0 ||
                pressure_function->n_components == 1,
@@ -142,7 +142,7 @@ FluidBaseAlgorithm<dim>::set_body_force(const Tensor<1,dim> constant_body_force)
 
 template<int dim>
 void
-FluidBaseAlgorithm<dim>::set_body_force(const std_cxx11::shared_ptr<TensorFunction<1,dim> > body_force)
+FluidBaseAlgorithm<dim>::set_body_force(const std::shared_ptr<TensorFunction<1,dim> > body_force)
 {
   this->body_force = body_force;
   this->constant_body_force = Tensor<1,dim>();

@@ -54,15 +54,15 @@ private:
 
   const unsigned int n_refine_space;
 
-  std_cxx11::shared_ptr<FieldFunctionsConvDiff<dim> > field_functions;
-  std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor;
+  std::shared_ptr<FieldFunctionsConvDiff<dim> > field_functions;
+  std::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor;
 
-  std_cxx11::shared_ptr<AnalyticalSolutionConvDiff<dim> > analytical_solution;
+  std::shared_ptr<AnalyticalSolutionConvDiff<dim> > analytical_solution;
 
-  std_cxx11::shared_ptr<DGConvDiffOperation<dim,fe_degree, value_type> > conv_diff_operation;
-  std_cxx11::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> > postprocessor;
+  std::shared_ptr<DGConvDiffOperation<dim,fe_degree, value_type> > conv_diff_operation;
+  std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> > postprocessor;
 
-  std_cxx11::shared_ptr<DriverSteadyConvDiff<dim, fe_degree, value_type,
+  std::shared_ptr<DriverSteadyConvDiff<dim, fe_degree, value_type,
       DGConvDiffOperation<dim,fe_degree, value_type> > > driver_steady_conv_diff;
 };
 

@@ -272,7 +272,7 @@ struct ContinuityPenaltyOperatorData
   double penalty_parameter;
   bool use_boundary_data;
 
-  std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
 };
 
 
@@ -588,7 +588,7 @@ private:
           {
             Tensor<1,dim,VectorizedArray<value_type> > g;
 
-            typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+            typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
             it = operator_data.bc->dirichlet_bc.find(boundary_id);
             Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
             evaluate_vectorial_function(g,it->second,q_points,eval_time);
@@ -666,7 +666,7 @@ private:
           {
             Tensor<1,dim,VectorizedArray<value_type> > g;
 
-            typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+            typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
             it = operator_data.bc->dirichlet_bc.find(boundary_id);
             Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
             evaluate_vectorial_function(g,it->second,q_points,eval_time);

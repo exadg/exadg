@@ -37,7 +37,7 @@ struct BodyForceOperatorData
   {}
 
   unsigned int dof_index;
-  std_cxx11::shared_ptr<Function<dim> > rhs;
+  std::shared_ptr<Function<dim> > rhs;
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
@@ -305,7 +305,7 @@ struct ViscousOperatorData
   double IP_factor_viscous;
   unsigned int dof_index;
 
-  std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
 
   /*
    * This variable 'viscosity' is only used when initializing the ViscousOperator.
@@ -742,7 +742,7 @@ private:
       if(boundary_type == BoundaryType::dirichlet)
       {
         Tensor<1,dim,VectorizedArray<Number> > g;
-        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->dirichlet_bc.find(boundary_id);
         Point<dim,VectorizedArray<Number> > q_points = fe_eval.quadrature_point(q);
         evaluate_vectorial_function(g,it->second,q_points,eval_time);
@@ -778,7 +778,7 @@ private:
       if(boundary_type == BoundaryType::dirichlet)
       {
         Tensor<1,dim,VectorizedArray<Number> > g;
-        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->dirichlet_bc.find(boundary_id);
         Point<dim,VectorizedArray<Number> > q_points = fe_eval.quadrature_point(q);
         evaluate_vectorial_function(g,it->second,q_points,eval_time);
@@ -972,7 +972,7 @@ private:
       else if(boundary_type == BoundaryType::neumann)
       {
         Tensor<1,dim,VectorizedArray<Number> > h;
-        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->neumann_bc.find(boundary_id);
         Point<dim,VectorizedArray<Number> > q_points = fe_eval.quadrature_point(q);
         evaluate_vectorial_function(h,it->second,q_points,eval_time);
@@ -1008,7 +1008,7 @@ private:
       else if(boundary_type == BoundaryType::neumann)
       {
         Tensor<1,dim,VectorizedArray<Number> > h;
-        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->neumann_bc.find(boundary_id);
         Point<dim,VectorizedArray<Number> > q_points = fe_eval.quadrature_point(q);
         evaluate_vectorial_function(h,it->second,q_points,eval_time);
@@ -1839,7 +1839,7 @@ struct GradientOperatorData
   bool integration_by_parts_of_gradP;
   bool use_boundary_data;
 
-  std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
 };
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
@@ -2031,7 +2031,7 @@ private:
       else if(boundary_type == BoundaryType::neumann)
       {
         VectorizedArray<value_type> g;
-        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->neumann_bc.find(boundary_id);
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval_pressure.quadrature_point(q);
         evaluate_scalar_function(g,it->second,q_points,eval_time);
@@ -2067,7 +2067,7 @@ private:
       else if(boundary_type == BoundaryType::neumann)
       {
         VectorizedArray<value_type> g;
-        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->neumann_bc.find(boundary_id);
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval_pressure.quadrature_point(q);
         evaluate_scalar_function(g,it->second,q_points,eval_time);
@@ -2355,7 +2355,7 @@ struct DivergenceOperatorData
   bool integration_by_parts_of_divU;
   bool use_boundary_data;
 
-  std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
 };
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
@@ -2533,7 +2533,7 @@ private:
       {
         Tensor<1,dim,VectorizedArray<value_type> > g;
 
-        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->dirichlet_bc.find(boundary_id);
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval_velocity.quadrature_point(q);
         evaluate_vectorial_function(g,it->second,q_points,eval_time);
@@ -2570,7 +2570,7 @@ private:
       {
         Tensor<1,dim,VectorizedArray<value_type> > g;
 
-        typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+        typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
         it = operator_data.bc->dirichlet_bc.find(boundary_id);
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval_velocity.quadrature_point(q);
         evaluate_vectorial_function(g,it->second,q_points,eval_time);
@@ -2842,7 +2842,7 @@ struct ConvectiveOperatorData
 
   unsigned int dof_index;
 
-  std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
 };
 
 
@@ -3103,7 +3103,7 @@ private:
     if(boundary_type == BoundaryType::dirichlet)
     {
       Tensor<1,dim,VectorizedArray<value_type> > g;
-      typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+      typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
       it = operator_data.bc->dirichlet_bc.find(boundary_id);
       Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
       evaluate_vectorial_function(g,it->second,q_points,eval_time);

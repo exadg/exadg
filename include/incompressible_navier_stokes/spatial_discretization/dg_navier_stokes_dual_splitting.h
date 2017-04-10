@@ -136,11 +136,11 @@ public:
 protected:
   FEParameters<dim> fe_param;
   HelmholtzOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type> helmholtz_operator;
-  std_cxx11::shared_ptr<PreconditionerBase<value_type> > helmholtz_preconditioner;
+  std::shared_ptr<PreconditionerBase<value_type> > helmholtz_preconditioner;
 
 private:
   // Helmholtz solver
-  std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > helmholtz_solver;
+  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > helmholtz_solver;
 
   // Implicit solution of convective step
   parallel::distributed::Vector<value_type> velocity_linearization;
@@ -148,9 +148,9 @@ private:
   parallel::distributed::Vector<value_type> const * sum_alphai_ui;
 
   // implicit solution of convective step
-  std_cxx11::shared_ptr<InverseMassMatrixPreconditioner<dim,fe_degree,value_type> > preconditioner_convective_problem;
-  std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > linear_solver;
-  std_cxx11::shared_ptr<NewtonSolver<parallel::distributed::Vector<value_type>,
+  std::shared_ptr<InverseMassMatrixPreconditioner<dim,fe_degree,value_type> > preconditioner_convective_problem;
+  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > linear_solver;
+  std::shared_ptr<NewtonSolver<parallel::distributed::Vector<value_type>,
                                      DGNavierStokesDualSplitting<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
                                      DGNavierStokesDualSplitting<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
                                      IterativeSolverBase<parallel::distributed::Vector<value_type> > > > newton_solver;
@@ -455,7 +455,7 @@ setup_helmholtz_preconditioner ()
 
     helmholtz_preconditioner.reset(new MULTIGRID());
 
-    std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(helmholtz_preconditioner);
+    std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(helmholtz_preconditioner);
 
     mg_preconditioner->initialize(mg_data,
                                   this->dof_handler_u,
@@ -630,7 +630,7 @@ local_rhs_ppe_div_term_body_forces_boundary_face (const MatrixFree<dim,value_typ
   {
     fe_eval.reinit (face);
 
-    typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+    typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
     types::boundary_id boundary_id = data.get_boundary_indicator(face);
 
     for(unsigned int q=0;q<fe_eval.n_q_points;++q)
@@ -725,7 +725,7 @@ local_rhs_ppe_nbc_add_boundary_face (const MatrixFree<dim,value_type>           
   {
     fe_eval.reinit (face);
 
-    typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+    typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
     types::boundary_id boundary_id = data.get_boundary_indicator(face);
 
     for(unsigned int q=0;q<fe_eval.n_q_points;++q)

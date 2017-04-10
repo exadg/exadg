@@ -16,8 +16,8 @@ using namespace dealii;
 template<int dim>
 struct BoundaryDescriptorLaplace
 {
-  std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > > dirichlet;
-  std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > > neumann;
+  std::map<types::boundary_id,std::shared_ptr<Function<dim> > > dirichlet;
+  std::map<types::boundary_id,std::shared_ptr<Function<dim> > > neumann;
 };
 
 

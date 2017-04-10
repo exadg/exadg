@@ -26,7 +26,7 @@ public:
                   const Mapping<dim>                              &mapping,
                   const OperatorData                              &operator_data_in,
                   std::map<types::boundary_id,
-                    std_cxx11::shared_ptr<Function<dim> > > const &dirichlet_bc)
+                    std::shared_ptr<Function<dim> > > const &dirichlet_bc)
   {
     this->mg_data = mg_data_in;
 
@@ -51,12 +51,12 @@ public:
 private:
   void initialize_mg_constrained_dofs(const DoFHandler<dim>                           &dof_handler,
                                       std::map<types::boundary_id,
-                                        std_cxx11::shared_ptr<Function<dim> > > const &dirichlet_bc)
+                                        std::shared_ptr<Function<dim> > > const &dirichlet_bc)
   {
     // needed for continuous elements
     this->mg_constrained_dofs.clear();
     std::set<types::boundary_id> dirichlet_boundary;
-    for(typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::const_iterator
+    for(typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::const_iterator
         it = dirichlet_bc.begin(); it != dirichlet_bc.end(); ++it)
       dirichlet_boundary.insert(it->first);
     this->mg_constrained_dofs.initialize(dof_handler);

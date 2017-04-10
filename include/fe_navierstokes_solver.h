@@ -91,7 +91,7 @@ private:
                                parallel::distributed::Vector<double> &dst) const;
 
   MatrixFree<dim>          matrix_free;
-  std_cxx11::shared_ptr<PreconditionerBase<double> > preconditioner;
+  std::shared_ptr<PreconditionerBase<double> > preconditioner;
   PoissonSolver<dim>       poisson_solver;
 
   LaplaceOperator<dim,double> laplace_operator;

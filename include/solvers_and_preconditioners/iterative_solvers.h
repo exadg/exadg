@@ -156,8 +156,8 @@ public:
 
     if(solver_data.compute_eigenvalues == true)
     {
-      solver.connect_eigenvalues_slot(std_cxx11::bind(
-          output_eigenvalues<std::complex<double> >,std_cxx11::_1,"Eigenvalues: "),true);
+      solver.connect_eigenvalues_slot(std::bind(
+        output_eigenvalues<std::complex<double> >,std::placeholders::_1,"Eigenvalues: "),true);
     }
 
     if(solver_data.use_preconditioner == false)

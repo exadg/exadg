@@ -44,7 +44,7 @@ public:
                       parallel::distributed::Vector<double> &dst) const;
 
 private:
-  std_cxx11::shared_ptr<const helpers::FENavierStokesEvaluator<dim> > evaluator;
+  std::shared_ptr<const helpers::FENavierStokesEvaluator<dim> > evaluator;
 };
 
 

@@ -16,9 +16,9 @@ class TimeIntBDFDualSplittingXWallSpalartAllmaras : virtual public TimeIntBDFDua
 {
 public:
   TimeIntBDFDualSplittingXWallSpalartAllmaras(
-      std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
+      std::shared_ptr<DGNavierStokesBase<dim, fe_degree,
         fe_degree_p, fe_degree_xwall, xwall_quad_rule> >  ns_operation_in,
-      std_cxx11::shared_ptr<PostProcessorBase<dim> >          postprocessor_in,
+      std::shared_ptr<PostProcessorBase<dim> >          postprocessor_in,
       InputParametersNavierStokes<dim> const                  &param_in,
       unsigned int const                                      n_refine_time_in,
       bool const                                              use_adaptive_time_stepping)
@@ -108,7 +108,7 @@ private:
 
   unsigned int num_sa_substeps;
 
-  std_cxx11::shared_ptr<DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> >
+  std::shared_ptr<DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> >
      ns_operation_xwall_sa;
 
   parallel::distributed::Vector<value_type> vt_np;

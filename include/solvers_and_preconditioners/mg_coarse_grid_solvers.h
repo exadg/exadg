@@ -52,7 +52,7 @@ public:
       use_preconditioner = true;
 
       preconditioner.reset(new JacobiPreconditioner<typename Operator::value_type,Operator>(coarse_matrix));
-      std_cxx11::shared_ptr<JacobiPreconditioner<typename Operator::value_type,Operator> > precon =
+      std::shared_ptr<JacobiPreconditioner<typename Operator::value_type,Operator> > precon =
           std::dynamic_pointer_cast<JacobiPreconditioner<typename Operator::value_type,Operator> > (preconditioner);
       AssertDimension(precon->get_size_of_diagonal(), coarse_matrix.m());
     }
@@ -106,7 +106,7 @@ public:
 
 private:
   const Operator &coarse_matrix;
-  std_cxx11::shared_ptr<PreconditionerBase<typename Operator::value_type> > preconditioner;
+  std::shared_ptr<PreconditionerBase<typename Operator::value_type> > preconditioner;
   mutable GrowingVectorMemory<parallel::distributed::Vector<typename Operator::value_type> > solver_memory;
   bool use_preconditioner;
 };
@@ -141,7 +141,7 @@ public:
       use_preconditioner = true;
 
       preconditioner.reset(new JacobiPreconditioner<typename Operator::value_type,Operator>(coarse_matrix));
-      std_cxx11::shared_ptr<JacobiPreconditioner<typename Operator::value_type,Operator> > precon =
+      std::shared_ptr<JacobiPreconditioner<typename Operator::value_type,Operator> > precon =
           std::dynamic_pointer_cast<JacobiPreconditioner<typename Operator::value_type,Operator> > (preconditioner);
       AssertDimension(precon->get_size_of_diagonal(), coarse_matrix.m());
     }
@@ -203,7 +203,7 @@ public:
 
 private:
   const Operator &coarse_matrix;
-  std_cxx11::shared_ptr<PreconditionerBase<typename Operator::value_type> > preconditioner;
+  std::shared_ptr<PreconditionerBase<typename Operator::value_type> > preconditioner;
   mutable GrowingVectorMemory<parallel::distributed::Vector<typename Operator::value_type> > solver_memory;
   bool use_preconditioner;
 };
@@ -213,7 +213,7 @@ template<typename Vector, typename InverseOperator>
 class MGCoarseInverseOperator : public MGCoarseGridBase<Vector>
 {
 public:
-  MGCoarseInverseOperator(std_cxx11::shared_ptr<InverseOperator const> inverse_coarse_grid_operator)
+  MGCoarseInverseOperator(std::shared_ptr<InverseOperator const> inverse_coarse_grid_operator)
     : inverse_operator(inverse_coarse_grid_operator)
   {}
 
@@ -230,7 +230,7 @@ public:
     inverse_operator->vmult(dst, src);
   }
 
-  std_cxx11::shared_ptr<InverseOperator const> inverse_operator;
+  std::shared_ptr<InverseOperator const> inverse_operator;
 };
 
 

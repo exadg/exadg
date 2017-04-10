@@ -317,7 +317,7 @@ namespace Step37
     void output_results (const unsigned int cycle) const;
 
     parallel::distributed::Triangulation<dim>  triangulation;
-    std_cxx11::shared_ptr<FiniteElement<dim> > fe;
+    std::shared_ptr<FiniteElement<dim> > fe;
     MappingQGeneric<dim>             mapping;
     DoFHandler<dim>                  dof_handler;
     ConstraintMatrix                 constraints;
@@ -505,14 +505,14 @@ namespace Step37
   {
     Timer time;
 
-    std_cxx11::shared_ptr<BoundaryDescriptorLaplace<dim> > boundary_descriptor;
+    std::shared_ptr<BoundaryDescriptorLaplace<dim> > boundary_descriptor;
     boundary_descriptor.reset(new BoundaryDescriptorLaplace<dim>());
 
-    std_cxx11::shared_ptr<Function<dim> > zero_function;
+    std::shared_ptr<Function<dim> > zero_function;
     zero_function.reset(new ZeroFunction<dim>());
 
-    boundary_descriptor->dirichlet.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >(1,zero_function));
-    boundary_descriptor->neumann.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >(0,zero_function));
+    boundary_descriptor->dirichlet.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,zero_function));
+    boundary_descriptor->neumann.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function));
 
     LaplaceOperatorData<dim> laplace_operator_data;
     laplace_operator_data.bc = boundary_descriptor;
@@ -527,12 +527,12 @@ namespace Step37
     mg_data.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
     typedef float Number;
-    std_cxx11::shared_ptr<PreconditionerBase<double> > preconditioner;
+    std::shared_ptr<PreconditionerBase<double> > preconditioner;
 
     typedef MyMultigridPreconditionerLaplace<dim, double, LaplaceOperator<dim,fe_degree,Number>, LaplaceOperatorData<dim> > MULTIGRID;
     preconditioner.reset(new MULTIGRID());
 
-    std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
+    std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
     mg_preconditioner->initialize(mg_data, dof_handler, mapping, laplace_operator_data, laplace_operator_data.bc->dirichlet);
 
     // setup solver data

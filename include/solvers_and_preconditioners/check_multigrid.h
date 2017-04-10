@@ -15,7 +15,7 @@ class CheckMultigrid
 {
 public:
   CheckMultigrid(Operator const                        &underlying_operator_in,
-                 std_cxx11::shared_ptr<Preconditioner> preconditioner_in)
+                 std::shared_ptr<Preconditioner> preconditioner_in)
     :
     underlying_operator(underlying_operator_in),
     preconditioner(preconditioner_in)
@@ -105,7 +105,7 @@ public:
 
 private:
   Operator const &underlying_operator;
-  std_cxx11::shared_ptr<Preconditioner> preconditioner;
+  std::shared_ptr<Preconditioner> preconditioner;
 };
 
 

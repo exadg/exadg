@@ -47,19 +47,19 @@ private:
 
   const unsigned int n_refine_space;
 
-  std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions;
-  std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity;
-  std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure;
+  std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions;
+  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure;
 
-  std_cxx11::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution;
+  std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution;
 
   InputParametersNavierStokes<dim> param;
 
-  std_cxx11::shared_ptr<DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > navier_stokes_operation;
+  std::shared_ptr<DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > navier_stokes_operation;
 
-  std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor;
+  std::shared_ptr<PostProcessorBase<dim> > postprocessor;
 
-  std_cxx11::shared_ptr<DriverSteadyProblems<dim, value_type,
+  std::shared_ptr<DriverSteadyProblems<dim, value_type,
     DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > > driver_steady;
 };
 

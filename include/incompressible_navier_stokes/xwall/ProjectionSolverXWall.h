@@ -132,7 +132,7 @@ public:
                                            const unsigned int dof_index_in,
                                            const unsigned int quad_index_in,
                                            ProjectionOperatorData const projection_operator_data_in,
-                                           std_cxx11::shared_ptr< InverseMassMatrixXWallOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type> > inv_mass_xw)
+                                           std::shared_ptr< InverseMassMatrixXWallOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type> > inv_mass_xw)
     :
     ProjectionOperatorBaseOld<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(data_in, dof_index_in,quad_index_in,projection_operator_data_in),
     fe_eval(1,FEEval_Velocity_Velocity_linear(data_in, fe_param_in, dof_index_in, quad_index_in)),
@@ -180,7 +180,7 @@ public:
 
 private:
   mutable AlignedVector<FEEval_Velocity_Velocity_linear> fe_eval;
-  std_cxx11::shared_ptr< InverseMassMatrixXWallOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type> > inverse_mass_matrix_operator_xwall;
+  std::shared_ptr< InverseMassMatrixXWallOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type> > inverse_mass_matrix_operator_xwall;
   AlignedVector<VectorizedArray<double> > tau;
   unsigned int curr_cell;
 };

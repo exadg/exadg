@@ -20,7 +20,7 @@ StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> &dof_handler_vel
 
 
 template <int dim>
-void StatisticsManager<dim>::setup(const std_cxx11::function<Point<dim>(const Point<dim> &)> &grid_transform)
+void StatisticsManager<dim>::setup(const std::function<Point<dim>(const Point<dim> &)> &grid_transform)
 {
   // note: this code only works on structured meshes where the faces in
   // y-direction are faces 2 and 3
@@ -160,7 +160,7 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const parallel::distribute
   std::vector<double> veluv_loc(vel_glob[0].size());
 
   const unsigned int fe_degree = dof_handler.get_fe().degree;
-  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y);
+  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y);
   QGauss<dim-1> gauss_2d(fe_degree+1);
 
   for (unsigned int i=0; i<n_points_y; ++i)
@@ -321,9 +321,9 @@ StatisticsManager<dim>::do_evaluate_xwall(const std::vector<const parallel::dist
   std::vector<double> veluv_loc(vel_glob[0].size());
 
   const unsigned int fe_degree = dof_handler.get_fe().degree;
-  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y);
-  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_xwall(n_points_y);
-  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_tauw(n_points_y);
+  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y);
+  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values_xwall(n_points_y);
+  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values_tauw(n_points_y);
   QGauss<dim-1> gauss_2d(fe_degree+1);
   for (unsigned int i=0; i<n_points_y; ++i)
   {

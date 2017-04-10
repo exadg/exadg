@@ -126,7 +126,7 @@
   class PostProcessorXWall: public PostProcessorBase<dim>
   {
   public:
-    PostProcessorXWall(std_cxx11::shared_ptr<DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule> >  ns_operation,
+    PostProcessorXWall(std::shared_ptr<DGNavierStokesBase<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule> >  ns_operation,
                        PostProcessorData<dim> const                                                                          &pp_data)
         :
       PostProcessorBase<dim>(),
@@ -146,7 +146,7 @@
                        Mapping<dim> const                                           &mapping_in,
                        MatrixFree<dim,double> const                                 &,
                        DofQuadIndexData const                                       &,
-                       std_cxx11::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  )
+                       std::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  )
     {
       dof_handler_velocity = &dof_handler_velocity_in;
       dof_handler_pressure = &dof_handler_pressure_in;
@@ -178,7 +178,7 @@
     };
 protected:
 
-    std_cxx11::shared_ptr< const DGNavierStokesDualSplittingXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule> > ns_operation_xw_;
+    std::shared_ptr< const DGNavierStokesDualSplittingXWall<dim,fe_degree,fe_degree_p,fe_degree_xwall,xwall_quad_rule> > ns_operation_xw_;
     PostProcessorData<dim> pp_data;
     unsigned int output_counter;
     SmartPointer< DoFHandler<dim> const > dof_handler_velocity;
@@ -275,7 +275,7 @@ private:
   pressure.update_ghost_values();
   data_out.add_data_vector (*(this->dof_handler_pressure),pressure, "p");
   {
-    std_cxx11::shared_ptr< const DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > nsa;
+    std::shared_ptr< const DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > nsa;
     nsa = std::dynamic_pointer_cast<const DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > (ns_operation_xw_);
     if(nsa != nullptr)
     {

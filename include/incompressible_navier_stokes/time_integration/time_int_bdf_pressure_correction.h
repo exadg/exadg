@@ -16,8 +16,8 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 class TimeIntBDFPressureCorrection : public TimeIntBDFNavierStokes<dim,fe_degree_u,value_type,NavierStokesOperation>
 {
 public:
-  TimeIntBDFPressureCorrection(std_cxx11::shared_ptr<NavierStokesOperation >  navier_stokes_operation_in,
-                               std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor_in,
+  TimeIntBDFPressureCorrection(std::shared_ptr<NavierStokesOperation >  navier_stokes_operation_in,
+                               std::shared_ptr<PostProcessorBase<dim> > postprocessor_in,
                                InputParametersNavierStokes<dim> const         &param_in,
                                unsigned int const                             n_refine_time_in,
                                bool const                                     use_adaptive_time_stepping)
@@ -109,7 +109,7 @@ private:
   // postprocessing: divergence of intermediate velocity
   mutable parallel::distributed::Vector<value_type> divergence;
 
-  std_cxx11::shared_ptr<NavierStokesOperation> navier_stokes_operation;
+  std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
   // incremental formulation of pressure-correction scheme
   unsigned int order_pressure_extrapolation;

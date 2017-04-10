@@ -221,7 +221,7 @@ void FENavierStokesSolver<dim>::setup_problem
     ZeroFunction<dim> zero_func(dim);
     typename FunctionMap<dim>::type homogeneous_dirichlet;
     for (typename std::map<types::boundary_id,
-         std_cxx11::shared_ptr<Function<dim> > >::
+         std::shared_ptr<Function<dim> > >::
          const_iterator it = this->boundary->dirichlet_conditions_u.begin();
          it != this->boundary->dirichlet_conditions_u.end(); ++it)
       {
@@ -270,7 +270,7 @@ void FENavierStokesSolver<dim>::setup_problem
     // implement nonzero pressure values for the momentum equation on Neumann
     // boundaries).
     for (typename std::map<types::boundary_id,
-         std_cxx11::shared_ptr<Function<dim> > >::
+         std::shared_ptr<Function<dim> > >::
          const_iterator it = this->boundary->open_conditions_p.begin();
          it != this->boundary->open_conditions_p.end(); ++it)
       {
@@ -322,7 +322,7 @@ void FENavierStokesSolver<dim>::setup_problem
 
   preconditioner.reset(new MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> >());
 
-  std_cxx11::shared_ptr<MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> > >
+  std::shared_ptr<MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> > >
        mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> > >
     (preconditioner);
 
@@ -356,7 +356,7 @@ void FENavierStokesSolver<dim>::setup_problem
     ZeroFunction<dim> zero(dim);
     typename FunctionMap<dim>::type inhom_dirichlet;
     for (typename std::map<types::boundary_id,
-           std_cxx11::shared_ptr<Function<dim> > >::iterator it =
+           std::shared_ptr<Function<dim> > >::iterator it =
          this->boundary->dirichlet_conditions_u.begin();
        it != this->boundary->dirichlet_conditions_u.end(); ++it)
     {
@@ -448,7 +448,7 @@ FENavierStokesSolver<dim>::apply_inhomogeneous_velocity_boundary_conditions
 
   // set the correct time in the function
   for (typename std::map<types::boundary_id,
-         std_cxx11::shared_ptr<Function<dim> > >::iterator it =
+         std::shared_ptr<Function<dim> > >::iterator it =
          this->boundary->dirichlet_conditions_u.begin();
        it != this->boundary->dirichlet_conditions_u.end(); ++it)
     {
@@ -645,7 +645,7 @@ FENavierStokesSolver<dim>::advance_time_step()
 
   // set the correct time in the function
   for (typename std::map<types::boundary_id,
-         std_cxx11::shared_ptr<Function<dim> > >::iterator it =
+         std::shared_ptr<Function<dim> > >::iterator it =
          this->boundary->open_conditions_p.begin();
        it != this->boundary->open_conditions_p.end(); ++it)
     {
