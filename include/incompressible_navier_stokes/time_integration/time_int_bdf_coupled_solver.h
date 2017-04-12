@@ -54,6 +54,8 @@ private:
   void initialize_vec_convective_term();
 
   virtual void solve_timestep();
+  void postprocess_velocity();
+
   virtual void postprocessing() const;
 
   virtual void prepare_vectors_for_next_timestep();
@@ -280,14 +282,15 @@ solve_timestep()
   }
 
   // Update divegence and continuity penalty operator
-  if(this->param.use_divergence_penalty == true)
-  {
-    navier_stokes_operation->update_divergence_penalty_operator(solution[0].block(0));
-  }
-  if(this->param.use_continuity_penalty == true)
-  {
-    navier_stokes_operation->update_continuity_penalty_operator(solution[0].block(0));
-  }
+  // TODO
+//  if(this->param.use_divergence_penalty == true)
+//  {
+//    navier_stokes_operation->update_divergence_penalty_operator(solution[0].block(0));
+//  }
+//  if(this->param.use_continuity_penalty == true)
+//  {
+//    navier_stokes_operation->update_continuity_penalty_operator(solution[0].block(0));
+//  }
 
   // if the problem to be solved is linear
   if(this->param.equation_type == EquationType::Stokes ||
@@ -367,6 +370,42 @@ solve_timestep()
       navier_stokes_operation->shift_pressure_mean_value(solution_np.block(1),this->time + this->time_steps[0]);
     else
       AssertThrow(false,ExcMessage("Specified method to adjust pressure level is not implemented."));
+  }
+
+  // postprocess velocity field using divergence and/or continuity penalty terms
+  if(this->param.use_divergence_penalty == true ||
+     this->param.use_continuity_penalty == true)
+  {
+    postprocess_velocity();
+  }
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
+postprocess_velocity()
+{
+  Timer timer;
+  timer.restart();
+
+  parallel::distributed::Vector<value_type> temp(solution_np.block(0));
+  navier_stokes_operation->apply_mass_matrix(temp,solution_np.block(0));
+
+  // update projection operator
+  navier_stokes_operation->update_projection_operator(solution_np.block(0),this->time_steps[0]);
+
+  // calculate inhomongeneous boundary faces integrals and add to rhs
+  navier_stokes_operation->rhs_projection_add(temp,this->time + this->time_steps[0],this->time_steps[0]);
+
+  // solve projection
+  unsigned int iterations = navier_stokes_operation->solve_projection(solution_np.block(0),temp,solution_np.block(0),this->time_steps[0]);
+
+  // write output
+  if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
+  {
+    this->pcout << std::endl
+                << "Postprocessing of velocity field:" << std::endl
+                << "  Iterations: " << std::setw(6) << std::right << iterations
+                << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
   }
 }
 

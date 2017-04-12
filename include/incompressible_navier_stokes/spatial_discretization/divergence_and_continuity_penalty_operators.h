@@ -221,14 +221,19 @@ private:
 /*
  *  Operator data.
  */
+template<int dim>
 struct ContinuityPenaltyOperatorData
 {
   ContinuityPenaltyOperatorData()
     :
-    penalty_parameter(1.0)
+    penalty_parameter(1.0),
+    use_boundary_data(false)
   {}
 
   double penalty_parameter;
+  bool use_boundary_data;
+
+  std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
 };
 
 
@@ -244,6 +249,12 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall
 class ContinuityPenaltyOperator : public BaseOperator<dim>
 {
 public:
+  enum class BoundaryType {
+    undefined,
+    dirichlet,
+    neumann
+  };
+
   static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
@@ -251,16 +262,17 @@ public:
 
   typedef ContinuityPenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> This;
 
-  ContinuityPenaltyOperator(MatrixFree<dim,value_type> const    &data_in,
-                            unsigned int const                  dof_index_in,
-                            unsigned int const                  quad_index_in,
-                            ContinuityPenaltyOperatorData const operator_data_in)
+  ContinuityPenaltyOperator(MatrixFree<dim,value_type> const         &data_in,
+                            unsigned int const                       dof_index_in,
+                            unsigned int const                       quad_index_in,
+                            ContinuityPenaltyOperatorData<dim> const operator_data_in)
     :
     data(data_in),
     dof_index(dof_index_in),
     quad_index(quad_index_in),
     array_penalty_parameter(0),
-    operator_data(operator_data_in)
+    operator_data(operator_data_in),
+    eval_time(0.0)
   {
     array_penalty_parameter.resize(data.n_macro_cells()+data.n_macro_ghost_cells());
   }
@@ -334,7 +346,42 @@ public:
                   parallel::distributed::Vector<value_type> const &src) const
   {
     this->get_data().loop(&This::cell_loop,&This::face_loop,
-                          &This::boundary_face_loop,this, dst, src);
+                          &This::boundary_face_loop_hom_operator, this, dst, src);
+  }
+
+  void rhs (parallel::distributed::Vector<value_type> &dst,
+            double const                              evaluation_time) const
+  {
+    dst = 0;
+    rhs_add(dst,evaluation_time);
+  }
+
+  void rhs_add (parallel::distributed::Vector<value_type> &dst,
+                double const                              evaluation_time) const
+  {
+    this->eval_time = evaluation_time;
+
+    parallel::distributed::Vector<value_type> src;
+    this->get_data().loop(&This::cell_loop_inhom_operator,&This::face_loop_inhom_operator,
+                          &This::boundary_face_loop_inhom_operator, this, dst, src);
+  }
+
+  void evaluate (parallel::distributed::Vector<value_type>       &dst,
+                 const parallel::distributed::Vector<value_type> &src,
+                 double const                                    evaluation_time) const
+  {
+    dst = 0;
+    evaluate_add(dst,src,evaluation_time);
+  }
+
+  void evaluate_add (parallel::distributed::Vector<value_type>       &dst,
+                     const parallel::distributed::Vector<value_type> &src,
+                     double const                                    evaluation_time) const
+  {
+    this->eval_time = evaluation_time;
+
+    this->get_data().loop (&This::cell_loop,&This::face_loop,
+                           &This::boundary_face_loop_full_operator, this, dst, src);
   }
 
   void calculate_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
@@ -352,7 +399,6 @@ public:
   }
 
 private:
-
   void cell_loop (const MatrixFree<dim,value_type>                &data,
                   parallel::distributed::Vector<value_type>       &dst,
                   const parallel::distributed::Vector<value_type> &src,
@@ -400,12 +446,201 @@ private:
     }
   }
 
-  void boundary_face_loop (const MatrixFree<dim,value_type>                &,
-                           parallel::distributed::Vector<value_type>       &,
-                           const parallel::distributed::Vector<value_type> &,
-                           const std::pair<unsigned int,unsigned int>      &) const
+  void boundary_face_loop_hom_operator (const MatrixFree<dim,value_type>                &data,
+                                        parallel::distributed::Vector<value_type>       &dst,
+                                        const parallel::distributed::Vector<value_type> &src,
+                                        const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    // do nothing, i.e. no continuity penalty on boundary faces
+    if(operator_data.use_boundary_data == true)
+    {
+      FEFaceEval_Velocity_Velocity_linear fe_eval(data,this->get_fe_param(),true,this->get_dof_index());
+
+      for(unsigned int face=face_range.first; face<face_range.second; face++)
+      {
+        types::boundary_id boundary_id = data.get_boundary_indicator(face);
+        BoundaryType boundary_type = BoundaryType::undefined;
+
+        if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
+          boundary_type = BoundaryType::dirichlet;
+        else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
+          boundary_type = BoundaryType::neumann;
+
+        AssertThrow(boundary_type != BoundaryType::undefined,
+            ExcMessage("Boundary type of face is invalid or not implemented."));
+
+        fe_eval.reinit (face);
+        fe_eval.read_dof_values(src);
+        fe_eval.evaluate(true,false);
+
+        VectorizedArray<value_type> tau = fe_eval.read_cell_data(this->get_array_penalty_parameter());
+
+        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        {
+          Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval.get_value(q);
+          Tensor<1,dim,VectorizedArray<value_type> > uP;
+
+          if(boundary_type == BoundaryType::dirichlet)
+          {
+            uP = -uM;
+          }
+          else if(boundary_type == BoundaryType::neumann)
+          {
+            uP = uM;
+          }
+          else
+          {
+            AssertThrow(false,ExcMessage("Boundary type of face is invalid or not implemented."));
+          }
+
+          Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
+
+          fe_eval.submit_value(tau*jump_value,q);
+        }
+        fe_eval.integrate(true,false);
+
+        fe_eval.distribute_local_to_global(dst);
+      }
+    }
+  }
+
+  void boundary_face_loop_full_operator (const MatrixFree<dim,value_type>                &data,
+                                         parallel::distributed::Vector<value_type>       &dst,
+                                         const parallel::distributed::Vector<value_type> &src,
+                                         const std::pair<unsigned int,unsigned int>      &face_range) const
+  {
+    if(operator_data.use_boundary_data == true)
+    {
+      FEFaceEval_Velocity_Velocity_linear fe_eval(data,this->get_fe_param(),true,this->get_dof_index());
+
+      for(unsigned int face=face_range.first; face<face_range.second; face++)
+      {
+        types::boundary_id boundary_id = data.get_boundary_indicator(face);
+        BoundaryType boundary_type = BoundaryType::undefined;
+
+        if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
+          boundary_type = BoundaryType::dirichlet;
+        else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
+          boundary_type = BoundaryType::neumann;
+
+        AssertThrow(boundary_type != BoundaryType::undefined,
+            ExcMessage("Boundary type of face is invalid or not implemented."));
+
+        fe_eval.reinit (face);
+        fe_eval.read_dof_values(src);
+        fe_eval.evaluate(true,false);
+
+        VectorizedArray<value_type> tau = fe_eval.read_cell_data(this->get_array_penalty_parameter());
+
+        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        {
+          Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval.get_value(q);
+          Tensor<1,dim,VectorizedArray<value_type> > uP;
+
+          if(boundary_type == BoundaryType::dirichlet)
+          {
+            Tensor<1,dim,VectorizedArray<value_type> > g;
+
+            typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+            it = operator_data.bc->dirichlet_bc.find(boundary_id);
+            Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
+            evaluate_vectorial_function(g,it->second,q_points,eval_time);
+
+            uP = -uM + make_vectorized_array<value_type>(2.0)*g;
+          }
+          else if(boundary_type == BoundaryType::neumann)
+          {
+            uP = uM;
+          }
+          else
+          {
+            AssertThrow(false,ExcMessage("Boundary type of face is invalid or not implemented."));
+          }
+
+          Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
+
+          fe_eval.submit_value(tau*jump_value,q);
+        }
+        fe_eval.integrate(true,false);
+
+        fe_eval.distribute_local_to_global(dst);
+      }
+    }
+  }
+
+
+  void cell_loop_inhom_operator (const MatrixFree<dim,value_type>                &data,
+                                 parallel::distributed::Vector<value_type>       &dst,
+                                 const parallel::distributed::Vector<value_type> &src,
+                                 const std::pair<unsigned int,unsigned int>      &cell_range) const
+  {
+    // do nothing, i.e. no volume integrals
+  }
+
+  void face_loop_inhom_operator (const MatrixFree<dim,value_type>                 &data,
+                                 parallel::distributed::Vector<value_type>        &dst,
+                                 const parallel::distributed::Vector<value_type>  &src,
+                                 const std::pair<unsigned int,unsigned int>       &face_range) const
+  {
+    // do nothing, i.e. no volume integrals
+  }
+
+  void boundary_face_loop_inhom_operator (const MatrixFree<dim,value_type>                &data,
+                                          parallel::distributed::Vector<value_type>       &dst,
+                                          const parallel::distributed::Vector<value_type> &,
+                                          const std::pair<unsigned int,unsigned int>      &face_range) const
+  {
+    if(operator_data.use_boundary_data == true)
+    {
+      FEFaceEval_Velocity_Velocity_linear fe_eval(data,this->get_fe_param(),true,this->get_dof_index());
+
+      for(unsigned int face=face_range.first; face<face_range.second; face++)
+      {
+        types::boundary_id boundary_id = data.get_boundary_indicator(face);
+        BoundaryType boundary_type = BoundaryType::undefined;
+
+        if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
+          boundary_type = BoundaryType::dirichlet;
+        else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
+          boundary_type = BoundaryType::neumann;
+
+        AssertThrow(boundary_type != BoundaryType::undefined,
+            ExcMessage("Boundary type of face is invalid or not implemented."));
+
+        fe_eval.reinit (face);
+
+        VectorizedArray<value_type> tau = fe_eval.read_cell_data(this->get_array_penalty_parameter());
+
+        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        {
+          Tensor<1,dim,VectorizedArray<value_type> > jump_value;
+
+          if(boundary_type == BoundaryType::dirichlet)
+          {
+            Tensor<1,dim,VectorizedArray<value_type> > g;
+
+            typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+            it = operator_data.bc->dirichlet_bc.find(boundary_id);
+            Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
+            evaluate_vectorial_function(g,it->second,q_points,eval_time);
+
+            jump_value = make_vectorized_array<value_type>(2.0)*g; // + sign since this term appears on the rhs of the equations
+          }
+          else if(boundary_type == BoundaryType::neumann)
+          {
+            // do nothing (jump_value = 0)
+          }
+          else
+          {
+            AssertThrow(false,ExcMessage("Boundary type of face is invalid or not implemented."));
+          }
+
+          fe_eval.submit_value(tau*jump_value,q);
+        }
+        fe_eval.integrate(true,false);
+
+        fe_eval.distribute_local_to_global(dst);
+      }
+    }
   }
 
   void cell_loop_diagonal (const MatrixFree<dim,value_type>                &data,
@@ -496,19 +731,83 @@ private:
     }
   }
 
-  void boundary_face_loop_diagonal (const MatrixFree<dim,value_type>                &,
-                                    parallel::distributed::Vector<value_type>       &,
+  void boundary_face_loop_diagonal (const MatrixFree<dim,value_type>                &data,
+                                    parallel::distributed::Vector<value_type>       &dst,
                                     const parallel::distributed::Vector<value_type> &,
-                                    const std::pair<unsigned int,unsigned int>      &) const
+                                    const std::pair<unsigned int,unsigned int>      &face_range) const
   {
-    // do nothing, i.e. no continuity penalty on boundary faces
+    if(operator_data.use_boundary_data == true)
+    {
+      FEFaceEval_Velocity_Velocity_linear fe_eval(data,this->get_fe_param(),true,this->get_dof_index());
+
+      for(unsigned int face=face_range.first; face<face_range.second; face++)
+      {
+        types::boundary_id boundary_id = data.get_boundary_indicator(face);
+        BoundaryType boundary_type = BoundaryType::undefined;
+
+        if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
+          boundary_type = BoundaryType::dirichlet;
+        else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
+          boundary_type = BoundaryType::neumann;
+
+        AssertThrow(boundary_type != BoundaryType::undefined,
+            ExcMessage("Boundary type of face is invalid or not implemented."));
+
+        fe_eval.reinit (face);
+
+        VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell*dim];
+        for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+        {
+          // set dof value j of element- to 1 and all other dof values of element- to zero
+          for (unsigned int i=0; i<fe_eval.dofs_per_cell*dim; ++i)
+            fe_eval.write_cellwise_dof_value(i,make_vectorized_array(0.));
+          fe_eval.write_cellwise_dof_value(j,make_vectorized_array(1.));
+
+          fe_eval.evaluate(true,false);
+
+          VectorizedArray<value_type> tau = fe_eval.read_cell_data(this->get_array_penalty_parameter());
+
+          for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+          {
+            Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval.get_value(q);
+            Tensor<1,dim,VectorizedArray<value_type> > uP;
+
+            if(boundary_type == BoundaryType::dirichlet)
+            {
+              uP = -uM;
+            }
+            else if(boundary_type == BoundaryType::neumann)
+            {
+              uP = uM;
+            }
+            else
+            {
+              AssertThrow(false,ExcMessage("Boundary type of face is invalid or not implemented."));
+            }
+
+            Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
+
+            fe_eval.submit_value(tau*jump_value,q);
+          }
+
+          fe_eval.integrate(true,false);
+
+          local_diagonal_vector[j] = fe_eval.read_cellwise_dof_value(j);
+        }
+        for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+          fe_eval.write_cellwise_dof_value(j, local_diagonal_vector[j]);
+
+        fe_eval.distribute_local_to_global(dst);
+      }
+    }
   }
 
   MatrixFree<dim,value_type> const & data;
   unsigned int const dof_index;
   unsigned int const quad_index;
   AlignedVector<VectorizedArray<value_type> > array_penalty_parameter;
-  ContinuityPenaltyOperatorData operator_data;
+  ContinuityPenaltyOperatorData<dim> operator_data;
+  double mutable eval_time;
 };
 
 
