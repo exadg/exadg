@@ -497,10 +497,10 @@ public:
     adjust_pressure_level(AdjustPressureLevel::ApplyZeroMeanValue),
 
     // div-div and continuity penalty
-    // currently for coupled solver only (TODO)
     use_divergence_penalty(false),
     divergence_penalty_factor(1.),
     use_continuity_penalty(false),
+    continuity_penalty_use_boundary_data(false),
     continuity_penalty_factor(1.),
 
     // PROJECTION METHODS
@@ -677,27 +677,41 @@ public:
       AssertThrow(c_eff > 0.,ExcMessage("parameter must be defined"));
 
 
-
     // SPATIAL DISCRETIZATION
-    AssertThrow(spatial_discretization != SpatialDiscretization::Undefined ,ExcMessage("parameter must be defined"));
-    AssertThrow(IP_formulation_viscous != InteriorPenaltyFormulation::Undefined ,ExcMessage("parameter must be defined"));
+    AssertThrow(spatial_discretization != SpatialDiscretization::Undefined,ExcMessage("parameter must be defined"));
+    AssertThrow(IP_formulation_viscous != InteriorPenaltyFormulation::Undefined,ExcMessage("parameter must be defined"));
 
     if(formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
-      AssertThrow(penalty_term_div_formulation != PenaltyTermDivergenceFormulation::Undefined ,ExcMessage("parameter must be defined"));
+      AssertThrow(penalty_term_div_formulation != PenaltyTermDivergenceFormulation::Undefined,ExcMessage("parameter must be defined"));
 
     if(pure_dirichlet_bc == true)
     {
       if(adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint ||
          adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
+      {
         AssertThrow(error_data.analytical_solution_available == true,
-                    ExcMessage("To adjust the pressure level as specified, an analytical solution has to be available."));
+            ExcMessage("To adjust the pressure level as specified, an analytical solution has to be available."));
+      }
+    }
+
+    if(use_continuity_penalty == true)
+    {
+      // in case of projection solvers, the projected velocity field does not fulfill
+      // the velocity boundary conditions
+      // --> make sure that use_boundary_data == false
+      if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme ||
+         temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+      {
+        AssertThrow(continuity_penalty_use_boundary_data == false,
+            ExcMessage("continuity_penalty_use_boundary_data has to be false in case of projection solvers."));
+      }
     }
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
     if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
       AssertThrow(order_extrapolation_pressure_nbc >= 0 && order_extrapolation_pressure_nbc <= order_time_integrator,
-                  ExcMessage("Invalid input parameter order_extrapolation_pressure_nbc!"));
+          ExcMessage("Invalid input parameter order_extrapolation_pressure_nbc!"));
 
       if(order_extrapolation_pressure_nbc > 2)
       {
@@ -983,7 +997,10 @@ public:
     print_parameter(pcout,"Use continuity penalty term",use_continuity_penalty);
 
     if(use_continuity_penalty == true)
+    {
+      print_parameter(pcout,"Continuity penalty use boundary data",continuity_penalty_use_boundary_data);
       print_parameter(pcout,"Penalty factor continuity",continuity_penalty_factor);
+    }
   } 
 
   void print_parameters_projection_methods(ConditionalOStream &pcout)
@@ -1512,6 +1529,9 @@ public:
   // use continuity penalty term
   // Note that this parameter is currently only relevant for the coupled solver
   bool use_continuity_penalty;
+
+  // use Dirichlet boundary data when applying the continuity penalty operator
+  bool continuity_penalty_use_boundary_data;
 
   // penalty factor of continuity penalty term
   double continuity_penalty_factor;

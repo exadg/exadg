@@ -250,6 +250,36 @@ public:
   }
 
   /*
+   *  This function calculates inhomogeneous boundary face integrals appearing on the rhs.
+   *  The only operator that is relevant in this respect is the continuity penalty operator.
+   *  A prerequisite to call this function is that the time step size is set correctly.
+   */
+  void rhs (parallel::distributed::Vector<value_type> &dst,
+            double const                              eval_time) const
+  {
+    dst = 0;
+
+    rhs_add(dst,eval_time);
+  }
+
+
+  /*
+   *  This function calculates inhomogeneous boundary face integrals appearing on the rhs
+   *  and adds the result to the dst-vector.
+   *  The only operator that is relevant in this respect is the continuity penalty operator.
+   *  A prerequisite to call this function is that the time step size is set correctly.
+   */
+  void rhs_add (parallel::distributed::Vector<value_type> &dst,
+                double const                              eval_time) const
+  {
+    parallel::distributed::Vector<value_type> temp(dst);
+
+    continuity_penalty_operator->rhs(temp,eval_time);
+
+    dst.add(this->get_time_step_size(),temp);
+  }
+
+  /*
    *  Calculate inverse diagonal which is needed for the Jacobi preconditioner.
    */
   void calculate_inverse_diagonal(parallel::distributed::Vector<value_type> &diagonal) const

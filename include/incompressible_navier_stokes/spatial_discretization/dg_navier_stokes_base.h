@@ -118,6 +118,9 @@ public:
                       std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
                       std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> >     field_functions);
 
+  void apply_mass_matrix(parallel::distributed::Vector<value_type>       &dst,
+                         parallel::distributed::Vector<value_type> const &src) const;
+
   virtual void prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
                                             parallel::distributed::Vector<value_type> &pressure,
                                             double const                              evaluation_time) const;
@@ -552,6 +555,14 @@ prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity
 
   VectorTools::interpolate(mapping, dof_handler_u, *(this->field_functions->initial_solution_velocity), velocity);
   VectorTools::interpolate(mapping, dof_handler_p, *(this->field_functions->initial_solution_pressure), pressure);
+}
+
+template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+apply_mass_matrix (parallel::distributed::Vector<value_type>       &dst,
+                   parallel::distributed::Vector<value_type> const &src) const
+{
+  this->mass_matrix_operator.apply(dst,src);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>

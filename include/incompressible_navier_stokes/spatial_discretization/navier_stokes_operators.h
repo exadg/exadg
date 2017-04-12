@@ -2128,7 +2128,7 @@ public:
                   const parallel::distributed::Vector<value_type> &src) const
   {
     data->loop (&This::cell_loop,&This::face_loop,
-                &This::boundary_face_loop_hom_operator,this, dst, src);
+                &This::boundary_face_loop_hom_operator, this, dst, src);
   }
 
   void rhs (parallel::distributed::Vector<value_type> &dst,
@@ -2145,7 +2145,7 @@ public:
 
     parallel::distributed::Vector<value_type> src;
     data->loop (&This::cell_loop_inhom_operator,&This::face_loop_inhom_operator,
-                &This::boundary_face_loop_inhom_operator,this, dst, src);
+                &This::boundary_face_loop_inhom_operator, this, dst, src);
   }
 
   void evaluate (parallel::distributed::Vector<value_type>       &dst,
@@ -2163,7 +2163,7 @@ public:
     this->eval_time = evaluation_time;
 
     data->loop (&This::cell_loop,&This::face_loop,
-                &This::boundary_face_loop_full_operator,this, dst, src);
+                &This::boundary_face_loop_full_operator, this, dst, src);
   }
 
 private:

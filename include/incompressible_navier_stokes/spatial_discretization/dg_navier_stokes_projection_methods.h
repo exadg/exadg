@@ -45,8 +45,8 @@ public:
                                          const double                                     evaluation_time) const;
 
   // mass_matrix
-  void apply_mass_matrix(parallel::distributed::Vector<value_type>       &dst,
-                         parallel::distributed::Vector<value_type> const &src) const;
+//  void apply_mass_matrix(parallel::distributed::Vector<value_type>       &dst,
+//                         parallel::distributed::Vector<value_type> const &src) const;
 
   // pressure gradient term
   void evaluate_pressure_gradient_term(parallel::distributed::Vector<value_type>       &dst,
@@ -252,8 +252,12 @@ setup_projection_solver ()
 
   if(this->param.use_continuity_penalty == true)
   {
-    ContinuityPenaltyOperatorData conti_penalty_data;
+    ContinuityPenaltyOperatorData<dim> conti_penalty_data;
     conti_penalty_data.penalty_parameter = this->param.continuity_penalty_factor;
+    // The projected velocity field does not fulfill the velocity Dirichlet boundary conditions.
+    // Hence, do not use the prescribed boundary data when applying the continuity penalty operator.
+    conti_penalty_data.use_boundary_data = false;
+    conti_penalty_data.bc = this->boundary_descriptor_velocity;
 
     continuity_penalty_operator.reset(new ContinuityPenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(
         this->data,
@@ -420,13 +424,13 @@ evaluate_velocity_divergence_term(parallel::distributed::Vector<value_type>     
   this->divergence_operator.evaluate(dst,src,evaluation_time);
 }
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-apply_mass_matrix (parallel::distributed::Vector<value_type>       &dst,
-                   parallel::distributed::Vector<value_type> const &src) const
-{
-  this->mass_matrix_operator.apply(dst,src);
-}
+//template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+//void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+//apply_mass_matrix (parallel::distributed::Vector<value_type>       &dst,
+//                   parallel::distributed::Vector<value_type> const &src) const
+//{
+//  this->mass_matrix_operator.apply(dst,src);
+//}
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
@@ -477,7 +481,7 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall
 unsigned int DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 solve_projection (parallel::distributed::Vector<value_type>       &dst,
                   const parallel::distributed::Vector<value_type> &src,
-                  const parallel::distributed::Vector<value_type> &velocity_n,
+                  const parallel::distributed::Vector<value_type> &velocity,
                   double const                                    cfl,
                   double const                                    time_step_size) const
 {
@@ -485,11 +489,11 @@ solve_projection (parallel::distributed::Vector<value_type>       &dst,
   // the current solution (velocity field).
   if(this->param.use_divergence_penalty == true)
   {
-    divergence_penalty_operator->calculate_array_penalty_parameter(velocity_n);
+    divergence_penalty_operator->calculate_array_penalty_parameter(velocity);
   }
   if(this->param.use_continuity_penalty == true)
   {
-    continuity_penalty_operator->calculate_array_penalty_parameter(velocity_n);
+    continuity_penalty_operator->calculate_array_penalty_parameter(velocity);
   }
 
   // Set the correct time step size.
