@@ -23,7 +23,7 @@
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 8;
+unsigned int const FE_DEGREE_VELOCITY = 4;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -32,7 +32,7 @@ unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
 unsigned int const REFINE_STEPS_SPACE_MIN = 0;
-unsigned int const REFINE_STEPS_SPACE_MAX = 3;//REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MAX = 4;//REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -44,7 +44,7 @@ const double VISCOSITY = 0.025; //1.e-6; //2.5e-2;
 const FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::LaplaceFormulation; //LaplaceFormulation; //DivergenceFormulation;
 
 enum class MeshType{ UniformCartesian, ComplexSurfaceManifold, ComplexVolumeManifold };
-const MeshType MESH_TYPE = MeshType::ComplexSurfaceManifold; //ComplexVolumeManifold; //UniformCartesian;
+const MeshType MESH_TYPE = MeshType::UniformCartesian; //ComplexVolumeManifold; //ComplexSurfaceManifold; //UniformCartesian;
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -70,7 +70,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   cfl = 1.0; // 0.006;
   cfl_exponent_fe_degree_velocity = 1.0; // 0.0;
   c_eff = 0.125e0;
-  time_step_size = 1.e-4; //1.e-4;
+  time_step_size = 1.e-3; //1.e-4;
   max_number_of_time_steps = 1e8;
   order_time_integrator = 3;
   start_with_low_order = false; // true; // false;
@@ -100,10 +100,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   pure_dirichlet_bc = false;
 
   // div-div and continuity penalty
-  use_divergence_penalty = false; //true;
+  use_divergence_penalty = true; // TODO
   divergence_penalty_factor = 1.0e0;
-  use_continuity_penalty = false; //true;
-  continuity_penalty_factor = 1.0e0;
+  use_continuity_penalty = true; // TODO
+  continuity_penalty_use_boundary_data = false;
+  continuity_penalty_factor = divergence_penalty_factor;
 
 
   // PROJECTION METHODS
@@ -167,7 +168,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // linear solver
   solver_momentum = SolverMomentum::GMRES;
-  preconditioner_momentum = PreconditionerMomentum::VelocityDiffusion; //PointJacobi; //VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
+  preconditioner_momentum = MomentumPreconditioner::VelocityDiffusion; //PointJacobi; //VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
   multigrid_data_momentum.smoother = MultigridSmoother::Chebyshev;
 //  multigrid_data_momentum.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
@@ -228,7 +229,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // write output for visualization of results
   output_data.write_output = true;
-  output_data.output_prefix = "vortex";
+  output_data.output_folder = "output/";
+  output_data.output_name = "vortex";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time); // /10;
   output_data.compute_divergence = true;

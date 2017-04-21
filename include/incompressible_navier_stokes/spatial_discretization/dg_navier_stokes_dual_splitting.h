@@ -338,7 +338,8 @@ setup_helmholtz_solver (double const &scaling_factor_time_derivative_term)
     solver_data.solver_tolerance_abs = this->param.abs_tol_viscous;
     solver_data.solver_tolerance_rel = this->param.rel_tol_viscous;
     // default value of use_preconditioner = false
-    if(this->param.preconditioner_viscous == PreconditionerViscous::Jacobi ||
+    if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi ||
+       this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi ||
        this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix ||
        this->param.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
     {
@@ -367,7 +368,8 @@ setup_helmholtz_solver (double const &scaling_factor_time_derivative_term)
     solver_data.update_preconditioner = this->param.update_preconditioner_viscous;
 
     // default value of use_preconditioner = false
-    if(this->param.preconditioner_viscous == PreconditionerViscous::Jacobi ||
+    if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi ||
+       this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi ||
        this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix ||
        this->param.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
     {
@@ -391,7 +393,8 @@ setup_helmholtz_solver (double const &scaling_factor_time_derivative_term)
     // use default value of max_n_tmp_vectors
     solver_data.update_preconditioner = this->param.update_preconditioner_viscous;
 
-    if(this->param.preconditioner_viscous == PreconditionerViscous::Jacobi ||
+    if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi ||
+       this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi ||
        this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix ||
        this->param.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
     {
@@ -428,9 +431,14 @@ setup_helmholtz_preconditioner ()
         static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
         static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity)));
   }
-  else if(this->param.preconditioner_viscous == PreconditionerViscous::Jacobi)
+  else if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi)
   {
     helmholtz_preconditioner.reset(new JacobiPreconditioner<value_type,
+        HelmholtzOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule, value_type> >(helmholtz_operator));
+  }
+  else if(this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi)
+  {
+    helmholtz_preconditioner.reset(new BlockJacobiPreconditioner<value_type,
         HelmholtzOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule, value_type> >(helmholtz_operator));
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)

@@ -46,8 +46,8 @@ void write_output_navier_stokes(OutputDataNavierStokes const                &out
   }
 
   std::ostringstream filename;
-  filename << "output/"
-           << output_data.output_prefix
+  filename << output_data.output_folder
+           << output_data.output_name
            << "_Proc"
            << Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)
            << "_"
@@ -65,7 +65,7 @@ void write_output_navier_stokes(OutputDataNavierStokes const                &out
     for (unsigned int i=0;i<Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);++i)
     {
       std::ostringstream filename;
-      filename << output_data.output_prefix
+      filename << output_data.output_name
                << "_Proc"
                << i
                << "_"
@@ -74,7 +74,7 @@ void write_output_navier_stokes(OutputDataNavierStokes const                &out
 
       filenames.push_back(filename.str().c_str());
     }
-    std::string master_name = "output/" + output_data.output_prefix + "_" + Utilities::int_to_string(output_counter) + ".pvtu";
+    std::string master_name = output_data.output_folder + output_data.output_name + "_" + Utilities::int_to_string(output_counter) + ".pvtu";
     std::ofstream master_output (master_name.c_str());
     data_out.write_pvtu_record (master_output, filenames);
   }

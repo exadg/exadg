@@ -81,6 +81,8 @@ public:
     // convective term
     if(operator_data.convective_problem == true)
     {
+      AssertThrow(velocity_vector != nullptr, ExcMessage("velocity_vector is invalid."));
+
       convective_operator.apply_add(dst,src,velocity_vector);
     }
   }

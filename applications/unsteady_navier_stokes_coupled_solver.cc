@@ -28,9 +28,9 @@ using namespace dealii;
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
 //#include "incompressible_navier_stokes_test_cases/vortex.h"
 //#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
-#include "incompressible_navier_stokes_test_cases/beltrami.h"
+//#include "incompressible_navier_stokes_test_cases/beltrami.h"
 //#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
-//#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
+#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 class NavierStokesProblem

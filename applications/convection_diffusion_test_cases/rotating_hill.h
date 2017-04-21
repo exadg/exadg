@@ -93,7 +93,8 @@ void InputParametersConvDiff::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = false;
   output_data.write_output = false;
-  output_data.output_prefix = "rotating_hill";
+  output_data.output_folder = "output_conv_diff/";
+  output_data.output_name = "rotating_hill";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time);// /20;
   output_data.number_of_patches = FE_DEGREE;

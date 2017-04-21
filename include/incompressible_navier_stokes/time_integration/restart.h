@@ -20,7 +20,7 @@ template<int dim> class PostProcessorBase;
 template<int dim>
 const std::string restart_filename(InputParametersNavierStokes<dim> const & param)
 {
-  const std::string filename = param.output_data.output_prefix + "." +
+  const std::string filename = param.output_data.output_name + "." +
     Utilities::int_to_string(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)) +
     ".restart";
   return filename;
@@ -113,10 +113,10 @@ void write_restart_preamble(boost::archive::binary_oarchive & oa, InputParameter
       for (unsigned int n = 0; n < n_ranks; n++)
       {
         const std::string rank_string = Utilities::int_to_string(n);
-        const int error = rename ((param.output_data.output_prefix  +"." + rank_string + ".restart").c_str(), (param.output_data.output_prefix +"." + rank_string + ".restart" + ".old").c_str());
+        const int error = rename ((param.output_data.output_name  +"." + rank_string + ".restart").c_str(), (param.output_data.output_name +"." + rank_string + ".restart" + ".old").c_str());
         AssertThrow (error == 0, ExcMessage(std::string ("Can't move files: ")
                         +
-                        param.output_data.output_prefix  +"." + rank_string + ".restart" + " -> " + param.output_data.output_prefix  +"." + rank_string + ".restart" +".old"));
+                        param.output_data.output_name  +"." + rank_string + ".restart" + " -> " + param.output_data.output_name  +"." + rank_string + ".restart" +".old"));
       }
     }
 

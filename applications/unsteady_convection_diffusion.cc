@@ -26,8 +26,8 @@ using namespace ConvDiff;
 
 // SPECIFY THE TEST CASE THAT HAS TO BE SOLVED
 
-//#include "convection_diffusion_test_cases/propagating_sine_wave.h"
-#include "convection_diffusion_test_cases/rotating_hill.h"
+#include "convection_diffusion_test_cases/propagating_sine_wave.h"
+//#include "convection_diffusion_test_cases/rotating_hill.h"
 //#include "convection_diffusion_test_cases/deforming_hill.h"
 //#include "convection_diffusion_test_cases/diffusive_problem_homogeneous_dbc.h"
 //#include "convection_diffusion_test_cases/diffusive_problem_homogeneous_nbc.h"

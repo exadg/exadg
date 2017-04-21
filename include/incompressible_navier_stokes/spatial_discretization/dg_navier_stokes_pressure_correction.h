@@ -189,7 +189,7 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
 
 
   // setup preconditioner for momentum equation
-  if(this->param.preconditioner_momentum == PreconditionerMomentum::InverseMassMatrix)
+  if(this->param.preconditioner_momentum == MomentumPreconditioner::InverseMassMatrix)
   {
     typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector DofHandlerSelector;
     typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector QuadratureSelector;
@@ -199,19 +199,19 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
         static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
         static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity)));
   }
-  else if(this->param.preconditioner_momentum == PreconditionerMomentum::PointJacobi)
+  else if(this->param.preconditioner_momentum == MomentumPreconditioner::PointJacobi)
   {
     momentum_preconditioner.reset(new JacobiPreconditioner<value_type,
         VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> >
       (velocity_conv_diff_operator));
   }
-  else if(this->param.preconditioner_momentum == PreconditionerMomentum::BlockJacobi)
+  else if(this->param.preconditioner_momentum == MomentumPreconditioner::BlockJacobi)
   {
     momentum_preconditioner.reset(new BlockJacobiPreconditioner<value_type,
         VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> >
       (velocity_conv_diff_operator));
   }
-  else if(this->param.preconditioner_momentum == PreconditionerMomentum::VelocityDiffusion)
+  else if(this->param.preconditioner_momentum == MomentumPreconditioner::VelocityDiffusion)
   {
     typedef float Number;
 
@@ -229,7 +229,7 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
                                   velocity_conv_diff_operator,
                                   this->periodic_face_pairs);
   }
-  else if(this->param.preconditioner_momentum == PreconditionerMomentum::VelocityConvectionDiffusion)
+  else if(this->param.preconditioner_momentum == MomentumPreconditioner::VelocityConvectionDiffusion)
   {
     typedef float Number;
 
@@ -257,11 +257,11 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
     solver_data.solver_tolerance_rel = this->param.rel_tol_momentum_linear;
     solver_data.max_iter = this->param.max_iter_momentum_linear;
 
-    if(this->param.preconditioner_momentum == PreconditionerMomentum::PointJacobi ||
-       this->param.preconditioner_momentum == PreconditionerMomentum::BlockJacobi ||
-       this->param.preconditioner_momentum == PreconditionerMomentum::InverseMassMatrix ||
-       this->param.preconditioner_momentum == PreconditionerMomentum::VelocityDiffusion ||
-       this->param.preconditioner_momentum == PreconditionerMomentum::VelocityConvectionDiffusion)
+    if(this->param.preconditioner_momentum == MomentumPreconditioner::PointJacobi ||
+       this->param.preconditioner_momentum == MomentumPreconditioner::BlockJacobi ||
+       this->param.preconditioner_momentum == MomentumPreconditioner::InverseMassMatrix ||
+       this->param.preconditioner_momentum == MomentumPreconditioner::VelocityDiffusion ||
+       this->param.preconditioner_momentum == MomentumPreconditioner::VelocityConvectionDiffusion)
     {
       solver_data.use_preconditioner = true;
     }
@@ -286,11 +286,11 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
     solver_data.max_n_tmp_vectors = this->param.max_n_tmp_vectors_momentum;
     solver_data.compute_eigenvalues = false;
 
-    if(this->param.preconditioner_momentum == PreconditionerMomentum::PointJacobi ||
-       this->param.preconditioner_momentum == PreconditionerMomentum::BlockJacobi ||
-       this->param.preconditioner_momentum == PreconditionerMomentum::InverseMassMatrix ||
-       this->param.preconditioner_momentum == PreconditionerMomentum::VelocityDiffusion ||
-       this->param.preconditioner_momentum == PreconditionerMomentum::VelocityConvectionDiffusion)
+    if(this->param.preconditioner_momentum == MomentumPreconditioner::PointJacobi ||
+       this->param.preconditioner_momentum == MomentumPreconditioner::BlockJacobi ||
+       this->param.preconditioner_momentum == MomentumPreconditioner::InverseMassMatrix ||
+       this->param.preconditioner_momentum == MomentumPreconditioner::VelocityDiffusion ||
+       this->param.preconditioner_momentum == MomentumPreconditioner::VelocityConvectionDiffusion)
     {
       solver_data.use_preconditioner = true;
     }
@@ -312,11 +312,11 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
     solver_data.solver_tolerance_rel = this->param.rel_tol_momentum_linear;
     solver_data.max_n_tmp_vectors = this->param.max_n_tmp_vectors_momentum;
 
-    if(this->param.preconditioner_momentum == PreconditionerMomentum::PointJacobi ||
-       this->param.preconditioner_momentum == PreconditionerMomentum::BlockJacobi ||
-       this->param.preconditioner_momentum == PreconditionerMomentum::InverseMassMatrix ||
-       this->param.preconditioner_momentum == PreconditionerMomentum::VelocityDiffusion ||
-       this->param.preconditioner_momentum == PreconditionerMomentum::VelocityConvectionDiffusion)
+    if(this->param.preconditioner_momentum == MomentumPreconditioner::PointJacobi ||
+       this->param.preconditioner_momentum == MomentumPreconditioner::BlockJacobi ||
+       this->param.preconditioner_momentum == MomentumPreconditioner::InverseMassMatrix ||
+       this->param.preconditioner_momentum == MomentumPreconditioner::VelocityDiffusion ||
+       this->param.preconditioner_momentum == MomentumPreconditioner::VelocityConvectionDiffusion)
     {
       solver_data.use_preconditioner = true;
     }

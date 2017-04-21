@@ -196,10 +196,26 @@ public:
     /*********** initialization of temporary vector ***************/
 
     /********** preconditioner velocity/momentum block ************/
-    if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::InverseMassMatrix)
+    if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::PointJacobi)
+    {
+      // Point Jacobi preconditioner
+      // TODO
+      preconditioner_momentum.reset(new JacobiPreconditioner<value_type,
+          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> >
+        (underlying_operator->velocity_conv_diff_operator));
+    }
+    else if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::BlockJacobi)
+    {
+      // Block Jacobi preconditioner
+      // TODO
+      preconditioner_momentum.reset(new BlockJacobiPreconditioner<value_type,
+          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> >
+        (underlying_operator->velocity_conv_diff_operator));
+    }
+    else if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::InverseMassMatrix)
     {
       // inverse mass matrix
-      inv_mass_matrix_preconditioner_momentum.reset(new InverseMassMatrixPreconditioner<dim,fe_degree,value_type>(
+      preconditioner_momentum.reset(new InverseMassMatrixPreconditioner<dim,fe_degree,value_type>(
         underlying_operator->get_data(),
         underlying_operator->get_dof_index_velocity(),
         underlying_operator->get_quad_index_velocity_linear()));
@@ -472,9 +488,9 @@ private:
           HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
           VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
 
-      multigrid_preconditioner_momentum.reset(new MULTIGRID());
+      preconditioner_momentum.reset(new MULTIGRID());
 
-      std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_momentum);
+      std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
 
       mg_preconditioner->initialize(mg_data,
                                     underlying_operator->get_dof_handler_u(),
@@ -489,9 +505,9 @@ private:
           VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
           VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
 
-      multigrid_preconditioner_momentum.reset(new MULTIGRID());
+      preconditioner_momentum.reset(new MULTIGRID());
 
-      std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_momentum);
+      std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
 
       mg_preconditioner->initialize(mg_data,
                                     underlying_operator->get_dof_handler_u(),
@@ -503,7 +519,7 @@ private:
 
   void setup_iterative_solver_momentum()
   {
-    AssertThrow(multigrid_preconditioner_momentum.get() != 0,
+    AssertThrow(preconditioner_momentum.get() != 0,
                 ExcMessage("Setup of iterative solver for momentum preconditioner: Multigrid preconditioner is uninitialized"));
 
     // use FMGRES for "exact" solution of velocity block system if GMRES is used as a smoother for the multigrid algorithm
@@ -520,7 +536,7 @@ private:
                                                    PreconditionerBase<value_type>,
                                                    parallel::distributed::Vector<value_type> >
          (underlying_operator->velocity_conv_diff_operator,
-          *multigrid_preconditioner_momentum,
+          *preconditioner_momentum,
           gmres_data));
     }
     else
@@ -536,7 +552,7 @@ private:
                                                   PreconditionerBase<value_type>,
                                                   parallel::distributed::Vector<value_type> >
          (underlying_operator->velocity_conv_diff_operator,
-          *multigrid_preconditioner_momentum,
+          *preconditioner_momentum,
           gmres_data));
     }
   }
@@ -724,7 +740,7 @@ private:
   void update(UnderlyingOperator const * /*underlying_op*/)
   {
     // momentum block
-    multigrid_preconditioner_momentum->update(&underlying_operator->velocity_conv_diff_operator);
+    preconditioner_momentum->update(&underlying_operator->velocity_conv_diff_operator);
 
     // pressure block
     if(preconditioner_data.schur_complement_preconditioner == SchurComplementPreconditioner::PressureConvectionDiffusion)
@@ -742,11 +758,15 @@ private:
     {
       dst = src;
     }
+    else if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::PointJacobi ||
+            preconditioner_data.momentum_preconditioner == MomentumPreconditioner::BlockJacobi)
+    {
+      preconditioner_momentum->vmult(dst,src);
+    }
     else if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::InverseMassMatrix)
     {
       // use the inverse mass matrix as an approximation to the momentum block
-      // this approach is expected to perform well for small time steps and/or small viscosities
-      inv_mass_matrix_preconditioner_momentum->vmult(dst,src);
+      preconditioner_momentum->vmult(dst,src);
       dst *= 1./underlying_operator->velocity_conv_diff_operator.get_scaling_factor_time_derivative_term();
     }
     else if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::VelocityDiffusion ||
@@ -755,7 +775,7 @@ private:
       if(preconditioner_data.exact_inversion_of_momentum_block == false)
       {
         // perform one geometric multigrid V-cylce for the Helmholtz operator or viscous operator (in case of steady-state problem)
-        multigrid_preconditioner_momentum->vmult(dst,src);
+        preconditioner_momentum->vmult(dst,src);
       }
       else // exact_inversion_of_momentum_block == true
       {
@@ -768,7 +788,7 @@ private:
 //                                                          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
 //                                                          VelocityConvDiffOperatorData<dim>,
 //                                                          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
-//              (multigrid_preconditioner_momentum);
+//              (preconditioner_momentum);
 //
 //        CheckMultigrid<dim, value_type,
 //                       VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>,
@@ -792,6 +812,8 @@ private:
     else
     {
       AssertThrow(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::None ||
+                  preconditioner_data.momentum_preconditioner == MomentumPreconditioner::PointJacobi ||
+                  preconditioner_data.momentum_preconditioner == MomentumPreconditioner::BlockJacobi ||
                   preconditioner_data.momentum_preconditioner == MomentumPreconditioner::InverseMassMatrix ||
                   preconditioner_data.momentum_preconditioner == MomentumPreconditioner::VelocityDiffusion ||
                   preconditioner_data.momentum_preconditioner == MomentumPreconditioner::VelocityConvectionDiffusion,
@@ -898,7 +920,10 @@ private:
       apply_inverse_negative_laplace_operator(tmp_scp_pressure,src);
 
       // II. pressure convection diffusion operator A_p
-      pressure_convection_diffusion_operator->apply(dst,tmp_scp_pressure,&underlying_operator->get_velocity_linearization());
+      if(underlying_operator->nonlinear_problem_has_to_be_solved() == true)
+        pressure_convection_diffusion_operator->apply(dst,tmp_scp_pressure,&underlying_operator->get_velocity_linearization());
+      else
+        pressure_convection_diffusion_operator->apply(dst,tmp_scp_pressure,nullptr);
 
       // III. inverse pressure mass matrix M_p^{-1}
       inv_mass_matrix_preconditioner_schur_complement->vmult(dst,dst);
@@ -952,8 +977,7 @@ private:
   BlockPreconditionerData preconditioner_data;
 
   // preconditioner velocity/momentum block
-  std_cxx11::shared_ptr<PreconditionerBase<value_type> > multigrid_preconditioner_momentum;
-  std_cxx11::shared_ptr<InverseMassMatrixPreconditioner<dim,fe_degree,value_type> > inv_mass_matrix_preconditioner_momentum;
+  std_cxx11::shared_ptr<PreconditionerBase<value_type> > preconditioner_momentum;
 
   std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > solver_velocity_block;
 
