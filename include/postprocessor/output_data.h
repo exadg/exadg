@@ -16,7 +16,8 @@ struct OutputData
     :
     write_output(false),
     output_counter_start(0),
-    output_prefix("output"),
+    output_folder("output"),
+    output_name("name"),
     output_start_time(std::numeric_limits<double>::max()),
     output_interval_time(std::numeric_limits<double>::max()),
     number_of_patches(1)
@@ -29,7 +30,8 @@ struct OutputData
     if(write_output == true)
     {
       print_parameter(pcout,"Output counter start",output_counter_start);
-      print_parameter(pcout,"Name of output files",output_prefix);
+      print_parameter(pcout,"Output folder",output_folder);
+      print_parameter(pcout,"Name of output files",output_name);
       if(unsteady == true)
       {
         print_parameter(pcout,"Output start time",output_start_time);
@@ -44,8 +46,11 @@ struct OutputData
 
   unsigned int output_counter_start;
 
+  // output_folder
+  std::string output_folder;
+
   // name of generated output files
-  std::string output_prefix;
+  std::string output_name;
 
   // before then no output will be written
   double output_start_time;

@@ -80,7 +80,7 @@ void InputParametersConvDiff::set_input_parameters()
   multigrid_data.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::None;
   multigrid_data.gmres_smoother_data.number_of_iterations = 5;
   // MG coarse grid solver
-  multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_Jacobi;
+  multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_PointJacobi;
 
   update_preconditioner = false;
 
@@ -90,7 +90,8 @@ void InputParametersConvDiff::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
   output_data.write_output = true;
-  output_data.output_prefix = "boundary_layer_problem";
+  output_data.output_folder = "output_conv_diff/boundary_layer_problem/";
+  output_data.output_name = "boundary_layer_problem";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time) /20;
   output_data.number_of_patches = FE_DEGREE;

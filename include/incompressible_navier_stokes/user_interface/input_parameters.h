@@ -209,7 +209,8 @@ enum class SolverProjection
 enum class PreconditionerProjection
 {
   None,
-  Jacobi,
+  PointJacobi,
+  BlockJacobi,
   InverseMassMatrix
 };
 
@@ -229,7 +230,8 @@ enum class SolverViscous
 enum class PreconditionerViscous
 {
   None,
-  Jacobi,
+  PointJacobi,
+  BlockJacobi,
   InverseMassMatrix,
   GeometricMultigrid
 };
@@ -251,17 +253,10 @@ enum class SolverMomentum
 };
 
 /*
- *  Preconditioner type for solution of momentum equation
+ *  Preconditioner type for solution of momentum equation:
+ *
+ *  see coupled solution approach below
  */
-enum class PreconditionerMomentum
-{
-  None,
-  PointJacobi,
-  BlockJacobi,
-  InverseMassMatrix,
-  VelocityDiffusion,
-  VelocityConvectionDiffusion
-};
 
 
 /**************************************************************************************/
@@ -299,6 +294,8 @@ enum class MomentumPreconditioner
 {
   Undefined,
   None,
+  PointJacobi,
+  BlockJacobi,
   InverseMassMatrix,
   VelocityDiffusion,
   VelocityConvectionDiffusion
@@ -521,6 +518,7 @@ public:
     // projection step
     solver_projection(SolverProjection::PCG),
     preconditioner_projection(PreconditionerProjection::InverseMassMatrix),
+    update_preconditioner_projection(true),
     abs_tol_projection(1.e-20),
     rel_tol_projection(1.e-12),
 
@@ -553,7 +551,7 @@ public:
     // momentum step
     newton_solver_data_momentum(NewtonSolverData()),
     solver_momentum(SolverMomentum::GMRES),
-    preconditioner_momentum(PreconditionerMomentum::InverseMassMatrix),
+    preconditioner_momentum(MomentumPreconditioner::Undefined),
     multigrid_data_momentum(MultigridData()),
     abs_tol_momentum_linear(1.e-20),
     rel_tol_momentum_linear(1.e-12),
@@ -722,8 +720,18 @@ public:
 
     // PRESSURE-CORRECTION SCHEME
     if(temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
       AssertThrow(order_pressure_extrapolation >= 0 && order_pressure_extrapolation <= order_time_integrator,
                   ExcMessage("Invalid input parameter order_pressure_extrapolation!"));
+
+      AssertThrow(preconditioner_momentum != MomentumPreconditioner::Undefined,ExcMessage("parameter must be defined"));
+
+      if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+      {
+        AssertThrow(preconditioner_momentum != MomentumPreconditioner::VelocityConvectionDiffusion,
+                    ExcMessage("Use VelocityConvectionDiffusion preconditioner only if convective term is treated implicitly."));
+      }
+    }
 
     // COUPLED NAVIER-STOKES SOLVER
     if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
@@ -734,6 +742,12 @@ public:
       AssertThrow(preconditioner_linearized_navier_stokes != PreconditionerLinearizedNavierStokes::Undefined,ExcMessage("parameter must be defined"));
 
       AssertThrow(momentum_preconditioner != MomentumPreconditioner::Undefined,ExcMessage("parameter must be defined"));
+
+      if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+      {
+        AssertThrow(momentum_preconditioner != MomentumPreconditioner::VelocityConvectionDiffusion,
+                    ExcMessage("Use VelocityConvectionDiffusion preconditioner only if convective term is treated implicitly."));
+      }
 
       AssertThrow(schur_complement_preconditioner != SchurComplementPreconditioner::Undefined,ExcMessage("parameter must be defined"));
       if(schur_complement_preconditioner == SchurComplementPreconditioner::LaplaceOperator ||
@@ -1056,12 +1070,15 @@ public:
       if(use_divergence_penalty == true && use_continuity_penalty == true)
       {
         std::string str_precon_proj[] = { "None",
-                                          "Jacobi",
+                                          "PointJacobi",
+                                          "BlockJacobi",
                                           "InverseMassMatrix" };
 
         print_parameter(pcout,
                         "Preconditioner projection step",
                         str_precon_proj[(int)preconditioner_projection]);
+
+        print_parameter(pcout,"Update preconditioner projection step",update_preconditioner_projection);
       }
 
       print_parameter(pcout,"Absolute solver tolerance", abs_tol_projection);
@@ -1127,7 +1144,8 @@ public:
                     str_solver_viscous[(int)solver_viscous]);
 
     std::string str_precon_viscous[] = { "None",
-                                         "Jacobi",
+                                         "PointJacobi",
+                                         "BlockJacobi",
                                          "InverseMassMatrix",
                                          "GeometricMultigrid" };
 
@@ -1275,9 +1293,11 @@ public:
     // preconditioner momentum block
     std::string str_momentum_precon[] = { "Undefined",
                                           "None",
+                                          "PointJacobi",
+                                          "BlockJacobi",
                                           "InverseMassMatrix",
                                           "VelocityDiffusion",
-                                          "VelocityConvectionDiffusion"};
+                                          "VelocityConvectionDiffusion" };
 
     print_parameter(pcout,
                     "Preconditioner momentum block",
@@ -1578,6 +1598,11 @@ public:
   // description: see enum declaration
   PreconditionerProjection preconditioner_projection;
 
+  // Update preconditioner before solving the linear system of equations.
+  // Note that this variable is only used when using an iterative method
+  // to solve the global projection equation.
+  bool update_preconditioner_projection;
+
   // solver tolerances for projection step
   double abs_tol_projection;
   double rel_tol_projection;
@@ -1645,7 +1670,7 @@ public:
   SolverMomentum solver_momentum;
 
   // description: see enum declaration
-  PreconditionerMomentum preconditioner_momentum;
+  MomentumPreconditioner preconditioner_momentum;
 
   // description: see declaration of MultigridData
   MultigridData multigrid_data_momentum;
@@ -1746,8 +1771,7 @@ public:
   double rel_tol_solver_schur_complement_preconditioner;
 
 
-  // Update preconditioner: this variable is also relevant for other solver
-  // strategies also it is currently listed in the coupled solver section
+  // Update preconditioner
   bool update_preconditioner;
 
 

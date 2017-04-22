@@ -79,7 +79,8 @@ void InputParametersConvDiff::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
   output_data.write_output = true;
-  output_data.output_prefix = "diffusive_problem_homogeneous_NBC_2";
+  output_data.output_folder = "output_conv_diff/diffusive_problem_homogeneous_NBC_2/";
+  output_data.output_name = "diffusive_problem_homogeneous_NBC_2";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
   output_data.number_of_patches = FE_DEGREE;

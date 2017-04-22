@@ -43,7 +43,8 @@ void verify_calculation_of_diagonal(Operator                                  &o
   value_type norm_diagonal = diagonal.l2_norm();
   value_type norm_diagonal_check = diagonal_check.l2_norm();
 
-  pcout << "L2 norm diagonal - Variant 1: " << std::setprecision(10)
+  pcout << std::endl
+        << "L2 norm diagonal - Variant 1: " << std::setprecision(10)
         << norm_diagonal << std::endl;
   pcout << "L2 norm diagonal - Variant 2: " << std::setprecision(10)
         << norm_diagonal_check << std::endl;

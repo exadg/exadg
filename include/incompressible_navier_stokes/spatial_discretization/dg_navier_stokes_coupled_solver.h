@@ -84,14 +84,14 @@ public:
    *  Update divergence penalty operator by recalculating the penalty parameter
    *  which depends on the current velocity field
    */
-  void update_divergence_penalty_operator (parallel::distributed::Vector<value_type> const &velocity) const;
+//  void update_divergence_penalty_operator (parallel::distributed::Vector<value_type> const &velocity) const;
 
 
   /*
    *  Update continuity penalty operator by recalculating the penalty parameter
    *  which depends on the current velocity field
    */
-  void update_continuity_penalty_operator (parallel::distributed::Vector<value_type> const &velocity) const;
+//  void update_continuity_penalty_operator (parallel::distributed::Vector<value_type> const &velocity) const;
 
 
   /*
@@ -160,6 +160,9 @@ public:
 
   parallel::distributed::Vector<value_type> const &get_velocity_linearization() const
   {
+    AssertThrow(nonlinear_problem_has_to_be_solved() == true,
+        ExcMessage("Attempt to access velocity_linearization which has not been initialized."));
+
     return velocity_conv_diff_operator.get_solution_linearization();
   }
 
@@ -477,7 +480,7 @@ setup_divergence_and_continuity_penalty()
           static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
           static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity)));
     }
-    else if(this->param.preconditioner_projection == PreconditionerProjection::Jacobi)
+    else if(this->param.preconditioner_projection == PreconditionerProjection::PointJacobi)
     {
       // Note that at this point (when initializing the Jacobi preconditioner and calculating the diagonal)
       // the penalty parameter of the projection operator has not been calculated and the time step size has
@@ -486,11 +489,21 @@ setup_divergence_and_continuity_penalty()
       preconditioner_projection.reset(new JacobiPreconditioner<value_type,PROJ_OPERATOR>
           (*std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
     }
+    else if(this->param.preconditioner_projection == PreconditionerProjection::BlockJacobi)
+    {
+      // Note that at this point (when initializing the Jacobi preconditioner)
+      // the penalty parameter of the projection operator has not been calculated and the time step size has
+      // not been set. Hence, update_preconditioner = true should be used for the Jacobi preconditioner in order
+      // to use to correct diagonal blocks for preconditioning.
+      preconditioner_projection.reset(new BlockJacobiPreconditioner<value_type,PROJ_OPERATOR>
+          (*std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
+    }
     else
     {
       AssertThrow(this->param.preconditioner_projection == PreconditionerProjection::None ||
                   this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix ||
-                  this->param.preconditioner_projection == PreconditionerProjection::Jacobi,
+                  this->param.preconditioner_projection == PreconditionerProjection::PointJacobi ||
+                  this->param.preconditioner_projection == PreconditionerProjection::BlockJacobi,
                   ExcMessage("Specified preconditioner of projection solver not implemented."));
     }
 
@@ -504,18 +517,18 @@ setup_divergence_and_continuity_penalty()
       projection_solver_data.solver_tolerance_rel = this->param.rel_tol_projection;
       // default value of use_preconditioner = false
       if(this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix ||
-         this->param.preconditioner_projection == PreconditionerProjection::Jacobi)
+         this->param.preconditioner_projection == PreconditionerProjection::PointJacobi ||
+         this->param.preconditioner_projection == PreconditionerProjection::BlockJacobi)
       {
         projection_solver_data.use_preconditioner = true;
-
-        if(this->param.preconditioner_projection == PreconditionerProjection::Jacobi)
-          projection_solver_data.update_preconditioner = true;
+        projection_solver_data.update_preconditioner = this->param.update_preconditioner_projection;
       }
       else
       {
         AssertThrow(this->param.preconditioner_projection == PreconditionerProjection::None ||
                     this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix ||
-                    this->param.preconditioner_projection == PreconditionerProjection::Jacobi,
+                    this->param.preconditioner_projection == PreconditionerProjection::PointJacobi ||
+                    this->param.preconditioner_projection == PreconditionerProjection::BlockJacobi,
                     ExcMessage("Specified preconditioner of projection solver not implemented."));
       }
 
@@ -538,19 +551,21 @@ setup_divergence_and_continuity_penalty()
 
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-update_divergence_penalty_operator (parallel::distributed::Vector<value_type> const &velocity) const
-{
-  this->divergence_penalty_operator->calculate_array_penalty_parameter(velocity);
-}
+// TODO: this function can be removed when performing the projection in a postprocessing step
+//template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+//void DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+//update_divergence_penalty_operator (parallel::distributed::Vector<value_type> const &velocity) const
+//{
+//  this->divergence_penalty_operator->calculate_array_penalty_parameter(velocity);
+//}
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-update_continuity_penalty_operator (parallel::distributed::Vector<value_type> const &velocity) const
-{
-  this->continuity_penalty_operator->calculate_array_penalty_parameter(velocity);
-}
+// TODO: this function can be removed when performing the projection in a postprocessing step
+//template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+//void DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+//update_continuity_penalty_operator (parallel::distributed::Vector<value_type> const &velocity) const
+//{
+//  this->continuity_penalty_operator->calculate_array_penalty_parameter(velocity);
+//}
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 unsigned int DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::

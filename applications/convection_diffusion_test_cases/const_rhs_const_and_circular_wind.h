@@ -26,7 +26,7 @@
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 16;
+const unsigned int FE_DEGREE = 1;
 
 // set the number of refine levels for spatial convergence tests
 const unsigned int REFINE_STEPS_SPACE_MIN = 1;
@@ -78,7 +78,7 @@ void InputParametersConvDiff::set_input_parameters()
   rel_tol = 1.e-8;
   max_iter = 1e3;
   max_n_tmp_vectors = 100;
-  preconditioner = Preconditioner::MultigridConvectionDiffusion; //PointJacobi; //BlockJacobi; //MultigridDiffusion; //MultigridConvectionDiffusion;
+  preconditioner = Preconditioner::MultigridDiffusion; //MultigridConvectionDiffusion; //PointJacobi; //BlockJacobi; //MultigridDiffusion; //MultigridConvectionDiffusion;
   // MG smoother
   multigrid_data.smoother = MultigridSmoother::GMRES; //Jacobi; //GMRES; //Chebyshev; //ChebyshevNonsymmetricOperator;
 
@@ -109,7 +109,8 @@ void InputParametersConvDiff::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = false;
   output_data.write_output = false; //true;
-  output_data.output_prefix = "const_wind_const_rhs";
+  output_data.output_folder = "output_conv_diff/";
+  output_data.output_name = "const_wind_const_rhs";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time);// /20;
   output_data.number_of_patches = FE_DEGREE;

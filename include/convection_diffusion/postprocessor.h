@@ -150,7 +150,7 @@ write_output(parallel::distributed::Vector<double> const &solution_vector) const
   data_out.add_data_vector (solution_vector, "solution");
   data_out.build_patches (pp_data.output_data.number_of_patches);
 
-  const std::string filename = "output_conv_diff/" + pp_data.output_data.output_prefix + "_" + Utilities::int_to_string (output_counter, 3);
+  const std::string filename = "output_conv_diff/" + pp_data.output_data.output_name + "_" + Utilities::int_to_string (output_counter, 3);
 
   std::ofstream output_data ((filename + ".vtu").c_str());
   data_out.write_vtu (output_data);

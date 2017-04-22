@@ -167,7 +167,9 @@ public:
     else
     {
       if(solver_data.update_preconditioner == true)
+      {
         preconditioner.update(&this->underlying_operator);
+      }
 
       solver.solve(this->underlying_operator, dst, rhs, this->preconditioner);
     }

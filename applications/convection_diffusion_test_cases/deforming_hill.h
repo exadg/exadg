@@ -78,7 +78,8 @@ void InputParametersConvDiff::set_input_parameters()
 
   // writing output
   output_data.write_output = true;
-  output_data.output_prefix = "deforming_hill";
+  output_data.output_folder = "output_conv_diff/deforming_hill/";
+  output_data.output_name = "deforming_hill";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
   output_data.number_of_patches = FE_DEGREE;

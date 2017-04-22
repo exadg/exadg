@@ -30,8 +30,8 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 0;
-unsigned int const REFINE_STEPS_SPACE_MAX = 4;//REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 1;
+unsigned int const REFINE_STEPS_SPACE_MAX = 5; //REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -54,7 +54,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // PHYSICAL QUANTITIES
   start_time = 0.0;
   end_time = 1.0e6;
-  viscosity = 1.e0;
+  viscosity = 2.e-3;
 
 
   // TEMPORAL DISCRETIZATION
@@ -79,6 +79,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
   IP_factor_viscous = 1.0;
+  penalty_term_div_formulation = PenaltyTermDivergenceFormulation::NotSymmetrized;
 
   // gradient term
   gradp_integrated_by_parts = true;
@@ -151,7 +152,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // linear solver
   solver_momentum = SolverMomentum::GMRES;
-  preconditioner_momentum = PreconditionerMomentum::VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
+  preconditioner_momentum = MomentumPreconditioner::VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_momentum_linear = 1.e-20;
   rel_tol_momentum_linear = 1.e-4;
@@ -173,7 +174,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   newton_solver_data_coupled.max_iter = 100;
 
   // linear solver
-  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::FGMRES;
+  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::FGMRES; //FGMRES;
   abs_tol_linear = 1.e-20;
   rel_tol_linear = 1.e-6;
   max_iter_linear = 1e4;
@@ -181,14 +182,24 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // preconditioning linear solver
   preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
+  update_preconditioner = true;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityConvectionDiffusion;
-  multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::GMRES;
-  multigrid_data_momentum_preconditioner.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
+  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion;
+  multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::GMRES; //Jacobi; //Chebyshev; //GMRES;
+
+  // GMRES smoother data
+  multigrid_data_momentum_preconditioner.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
   multigrid_data_momentum_preconditioner.gmres_smoother_data.number_of_iterations = 5;
-  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_PointJacobi; //ChebyshevNonsymmetricOperator;//GMRES_Jacobi;
-  exact_inversion_of_momentum_block = true;
+
+  // Jacobi smoother data
+  multigrid_data_momentum_preconditioner.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::PointJacobi; //PointJacobi; //BlockJacobi;
+  multigrid_data_momentum_preconditioner.jacobi_smoother_data.number_of_smoothing_steps = 5;
+  multigrid_data_momentum_preconditioner.jacobi_smoother_data.damping_factor = 0.7;
+
+  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner; //NoPreconditioner; //Chebyshev; //Chebyshev; //ChebyshevNonsymmetricOperator;
+
+  exact_inversion_of_momentum_block = false;
   rel_tol_solver_momentum_preconditioner = 1.e-6;
   max_n_tmp_vectors_solver_momentum_preconditioner = 100;
 
@@ -199,16 +210,14 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   exact_inversion_of_laplace_operator = false;
   rel_tol_solver_schur_complement_preconditioner = 1.e-6;
 
-  // update of preconditioner
-  update_preconditioner = false;
-
 
   // OUTPUT AND POSTPROCESSING
 
   // write output for visualization of results
-  print_input_parameters = true;
+  print_input_parameters = false; //true;
   output_data.write_output = true;
-  output_data.output_prefix = "cavity";
+  output_data.output_folder = "output/";
+  output_data.output_name = "cavity";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
   output_data.compute_divergence = false;

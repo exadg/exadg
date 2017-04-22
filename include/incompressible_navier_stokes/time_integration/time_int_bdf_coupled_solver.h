@@ -396,7 +396,7 @@ postprocess_velocity()
   // calculate inhomongeneous boundary faces integrals and add to rhs
   navier_stokes_operation->rhs_projection_add(temp,this->time + this->time_steps[0],this->time_steps[0]);
 
-  // solve projection
+  // solve projection (the preconditioner is updated here)
   unsigned int iterations = navier_stokes_operation->solve_projection(solution_np.block(0),temp,solution_np.block(0),this->time_steps[0]);
 
   // write output

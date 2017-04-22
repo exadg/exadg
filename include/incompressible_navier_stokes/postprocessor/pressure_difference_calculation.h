@@ -51,8 +51,7 @@ public:
 
       if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
       {
-        std::string filename = "output/FPC/"
-            + pressure_difference_data.filename_prefix_pressure_difference
+        std::string filename = pressure_difference_data.filename_prefix_pressure_difference
             + "_refine_" + Utilities::int_to_string(dof_handler_pressure->get_triangulation().n_levels()-1)
             + "_fe_degree_" + Utilities::int_to_string(fe_degree_u) + "-" + Utilities::int_to_string(fe_degree_p)
             + "_pressure_difference.txt";

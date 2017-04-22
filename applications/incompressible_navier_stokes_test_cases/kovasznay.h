@@ -154,7 +154,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // linear solver
   solver_momentum = SolverMomentum::GMRES;
-  preconditioner_momentum = PreconditionerMomentum::VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
+  preconditioner_momentum = MomentumPreconditioner::VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_momentum_linear = 1.e-20;
   rel_tol_momentum_linear = 1.e-4;
@@ -200,7 +200,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // write output for visualization of results
   output_data.write_output = true;
-  output_data.output_prefix = "kovasznay";
+  output_data.output_folder = "output/kovasznay/";
+  output_data.output_name = "kovasznay";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
   output_data.compute_divergence = true;

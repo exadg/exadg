@@ -21,6 +21,7 @@
 #include "solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
 #include "solvers_and_preconditioners/invert_diagonal.h"
 #include "solvers_and_preconditioners/verify_calculation_of_diagonal.h"
+#include "solvers_and_preconditioners/block_jacobi_matrices.h"
 
 
 /*
@@ -218,6 +219,11 @@ public:
   typedef ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree,
       fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> This;
 
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
+  typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,
+                              dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
+
   /*
    *  Constructor
    */
@@ -226,6 +232,7 @@ public:
       DivergencePenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> const &divergence_penalty_operator_in,
       ContinuityPenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> const &continuity_penalty_operator_in)
     :
+    block_jacobi_matrices_have_been_initialized(false),
     mass_matrix_operator(&mass_matrix_operator_in),
     divergence_penalty_operator(&divergence_penalty_operator_in),
     continuity_penalty_operator(&continuity_penalty_operator_in)
@@ -286,9 +293,42 @@ public:
   {
     calculate_diagonal(diagonal);
 
-//    verify_calculation_of_diagonal(*this,diagonal);
+    // verify_calculation_of_diagonal(*this,diagonal);
 
     invert_diagonal(diagonal);
+  }
+
+  /*
+   *  Apply block Jacobi preconditioner.
+   */
+  void apply_block_jacobi (parallel::distributed::Vector<value_type>       &dst,
+                           parallel::distributed::Vector<value_type> const &src) const
+  {
+    this->mass_matrix_operator->get_data().cell_loop(&This::cell_loop_apply_inverse_block_jacobi_matrices, this, dst, src);
+  }
+
+
+  /*
+   *  This function updates the block Jacobi preconditioner.
+   *  Since this function also initializes the block Jacobi preconditioner,
+   *  make sure that the block Jacobi matrices are allocated before calculating
+   *  the matrices and the LU factorization.
+   */
+  void update_block_jacobi () const
+  {
+    if(block_jacobi_matrices_have_been_initialized == false)
+    {
+      // Note that the velocity has dim components.
+      unsigned int dofs_per_cell = this->mass_matrix_operator->get_data().get_shape_info().dofs_per_cell*dim;
+
+      matrices.resize(this->mass_matrix_operator->get_data().n_macro_cells()*VectorizedArray<value_type>::n_array_elements,
+        LAPACKFullMatrix<value_type>(dofs_per_cell, dofs_per_cell));
+
+      block_jacobi_matrices_have_been_initialized = true;
+    }
+
+    calculate_block_jacobi_matrices();
+    calculate_lu_factorization_block_jacobi(matrices);
   }
 
   /*
@@ -317,6 +357,69 @@ private:
 
     mass_matrix_operator->add_diagonal(diagonal);
   }
+
+  /*
+   * This function calculates the block Jacobi matrices.
+   * This is done sequentially for the different operators.
+   */
+  void calculate_block_jacobi_matrices() const
+  {
+    // initialize block Jacobi matrices with zeros
+    initialize_block_jacobi_matrices_with_zero(matrices);
+
+    divergence_penalty_operator->add_block_jacobi_matrices(matrices);
+    continuity_penalty_operator->add_block_jacobi_matrices(matrices);
+
+    for(typename std::vector<LAPACKFullMatrix<value_type> >::iterator
+        it = matrices.begin(); it != matrices.end(); ++it)
+    {
+      (*it) *= this->get_time_step_size();
+    }
+
+    mass_matrix_operator->add_block_jacobi_matrices(matrices);
+  }
+
+  /*
+   *  This function loops over all cells and applies the inverse block Jacobi matrices elementwise.
+   */
+  void cell_loop_apply_inverse_block_jacobi_matrices (MatrixFree<dim,value_type> const                &data,
+                                                      parallel::distributed::Vector<value_type>       &dst,
+                                                      parallel::distributed::Vector<value_type> const &src,
+                                                      std::pair<unsigned int,unsigned int> const      &cell_range) const
+  {
+    FEEval_Velocity_Velocity_linear fe_eval(this->mass_matrix_operator->get_data(),
+                                            this->mass_matrix_operator->get_fe_param(),
+                                            this->mass_matrix_operator->get_operator_data().dof_index);
+
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval.reinit(cell);
+      fe_eval.read_dof_values(src);
+
+      // Note that the velocity has dim components.
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell*dim;
+
+      for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+      {
+        // fill source vector
+        Vector<value_type> src_vector(dofs_per_cell);
+        for (unsigned int j=0; j<dofs_per_cell; ++j)
+          src_vector(j) = fe_eval.begin_dof_values()[j][v];
+
+        // apply inverse matrix
+        matrices[cell*VectorizedArray<value_type>::n_array_elements+v].apply_lu_factorization(src_vector,false);
+
+        // write solution to dst-vector
+        for (unsigned int j=0; j<dofs_per_cell; ++j)
+          fe_eval.begin_dof_values()[j][v] = src_vector(j);
+      }
+
+      fe_eval.set_dof_values (dst);
+    }
+  }
+
+  mutable std::vector<LAPACKFullMatrix<value_type> > matrices;
+  mutable bool block_jacobi_matrices_have_been_initialized;
 
   MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>  const * mass_matrix_operator;
   DivergencePenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> const * divergence_penalty_operator;

@@ -140,6 +140,13 @@ public:
     this->get_data().cell_loop(&This::cell_loop_diagonal, this, diagonal, src_dummy);
   }
 
+  void add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
+  {
+    parallel::distributed::Vector<value_type>  src;
+
+    this->get_data().cell_loop(&This::cell_loop_calculate_block_jacobi_matrices, this, matrices, src);
+  }
+
 private:
   template<typename FEEvaluation>
   inline void do_cell_integral(FEEvaluation       &fe_eval,
@@ -192,10 +199,13 @@ private:
     {
       fe_eval.reinit (cell);
 
+      // Note that the velocity has dim components.
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell*dim;
+
       VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell*dim];
-      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
       {
-        for (unsigned int i=0; i<fe_eval.dofs_per_cell*dim; ++i)
+        for (unsigned int i=0; i<dofs_per_cell; ++i)
           fe_eval.write_cellwise_dof_value(i,make_vectorized_array<value_type>(0.));
         fe_eval.write_cellwise_dof_value(j,make_vectorized_array<value_type>(1.));
 
@@ -203,10 +213,39 @@ private:
 
         local_diagonal_vector[j] = fe_eval.read_cellwise_dof_value(j);
       }
-      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
         fe_eval.write_cellwise_dof_value(j,local_diagonal_vector[j]);
 
       fe_eval.distribute_local_to_global (dst);
+    }
+  }
+
+  void cell_loop_calculate_block_jacobi_matrices (MatrixFree<dim,value_type> const                &data,
+                                                  std::vector<LAPACKFullMatrix<value_type> >      &matrices,
+                                                  parallel::distributed::Vector<value_type> const &,
+                                                  std::pair<unsigned int,unsigned int> const      &cell_range) const
+  {
+    FEEval_Velocity_Velocity_linear fe_eval(data,this->get_fe_param(),this->get_dof_index());
+
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval.reinit(cell);
+
+      // Note that the velocity has dim components.
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell*dim;
+
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
+      {
+        for (unsigned int i=0; i<dofs_per_cell; ++i)
+          fe_eval.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
+        fe_eval.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+
+        do_cell_integral(fe_eval,cell);
+
+        for(unsigned int i=0; i<dofs_per_cell; ++i)
+          for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+            matrices[cell*VectorizedArray<value_type>::n_array_elements+v](i,j) += fe_eval.begin_dof_values()[i][v];
+      }
     }
   }
 
@@ -396,6 +435,15 @@ public:
     parallel::distributed::Vector<value_type>  src_dummy(diagonal);
     this->get_data().loop(&This::cell_loop_diagonal,&This::face_loop_diagonal,
                           &This::boundary_face_loop_diagonal, this, diagonal, src_dummy);
+  }
+
+  void add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
+  {
+    parallel::distributed::Vector<value_type>  src;
+
+    this->get_data().loop(&This::cell_loop_calculate_block_jacobi_matrices,
+                          &This::face_loop_calculate_block_jacobi_matrices,
+                          &This::boundary_face_loop_calculate_block_jacobi_matrices, this, matrices, src);
   }
 
 private:
@@ -798,6 +846,190 @@ private:
           fe_eval.write_cellwise_dof_value(j, local_diagonal_vector[j]);
 
         fe_eval.distribute_local_to_global(dst);
+      }
+    }
+  }
+
+  void cell_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,value_type>                 &data,
+                                                  std::vector<LAPACKFullMatrix<value_type> >       &matrices,
+                                                  const parallel::distributed::Vector<value_type>  &,
+                                                  const std::pair<unsigned int,unsigned int>       &cell_range) const
+  {
+    // do nothing
+  }
+
+  void face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,value_type>                &data,
+                                                  std::vector<LAPACKFullMatrix<value_type> >      &matrices,
+                                                  const parallel::distributed::Vector<value_type> &,
+                                                  const std::pair<unsigned int,unsigned int>      &face_range) const
+  {
+    // TODO
+    FEFaceEval_Velocity_Velocity_linear fe_eval(data,this->get_fe_param(),true,this->get_dof_index());
+    FEFaceEval_Velocity_Velocity_linear fe_eval_neighbor(data,this->get_fe_param(),false,this->get_dof_index());
+
+    // Perform face intergrals for element e⁻.
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval.reinit (face);
+      fe_eval_neighbor.reinit (face);
+
+      VectorizedArray<value_type> tau = 0.5*(fe_eval.read_cell_data(this->get_array_penalty_parameter())
+                                             + fe_eval_neighbor.read_cell_data(this->get_array_penalty_parameter()));
+
+      // Note that the velocity has dim components.
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell*dim;
+
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
+      {
+        // set dof value j of element- to 1 and all other dof values of element- to zero
+        for (unsigned int i=0; i<dofs_per_cell; ++i)
+          fe_eval.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
+        fe_eval.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+
+        fe_eval.evaluate(true,false);
+
+        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        {
+          Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval.get_value(q);
+          // set uP to zero
+          Tensor<1,dim,VectorizedArray<value_type> > uP;
+          Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
+
+          fe_eval.submit_value(tau*jump_value,q);
+        }
+
+        fe_eval.integrate(true,false);
+
+        for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+        {
+          const unsigned int cell_number = data.faces[face].left_cell[v];
+          if (cell_number != numbers::invalid_unsigned_int)
+            for(unsigned int i=0; i<dofs_per_cell; ++i)
+              matrices[cell_number](i,j) += fe_eval.begin_dof_values()[i][v];
+        }
+      }
+    }
+
+
+
+    // TODO: This has to be removed as soon as the new infrastructure is used that
+    // allows to perform face integrals over all faces of the current element.
+    // Perform face intergrals for element e⁺.
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval.reinit (face);
+      fe_eval_neighbor.reinit (face);
+
+      VectorizedArray<value_type> tau = 0.5*(fe_eval.read_cell_data(this->get_array_penalty_parameter())
+                                             + fe_eval_neighbor.read_cell_data(this->get_array_penalty_parameter()));
+
+      // Note that the velocity has dim components.
+      unsigned int dofs_per_cell = fe_eval_neighbor.dofs_per_cell*dim;
+
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
+      {
+        // set dof value j of element+ to 1 and all other dof values of element+ to zero
+        for (unsigned int i=0; i<dofs_per_cell; ++i)
+          fe_eval_neighbor.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
+        fe_eval_neighbor.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+
+        fe_eval_neighbor.evaluate(true,false);
+
+        for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+        {
+          // set uM to zero
+          Tensor<1,dim,VectorizedArray<value_type> > uM;
+          Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_neighbor.get_value(q);
+          Tensor<1,dim,VectorizedArray<value_type> > jump_value = uP - uM; // interior - exterior = uP - uM (neighbor!)
+
+          fe_eval_neighbor.submit_value(tau*jump_value,q);
+        }
+        fe_eval_neighbor.integrate(true,false);
+
+        for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+        {
+          const unsigned int cell_number = data.faces[face].right_cell[v];
+          if (cell_number != numbers::invalid_unsigned_int)
+            for(unsigned int i=0; i<dofs_per_cell; ++i)
+              matrices[cell_number](i,j) += fe_eval_neighbor.begin_dof_values()[i][v];
+        }
+      }
+    }
+  }
+
+  // TODO: This function has to be removed as soon as the new infrastructure is used that
+  // allows to perform face integrals over all faces of the current element.
+  void boundary_face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,value_type>                &data,
+                                                           std::vector<LAPACKFullMatrix<value_type> >      &matrices,
+                                                           const parallel::distributed::Vector<value_type> &,
+                                                           const std::pair<unsigned int,unsigned int>      &face_range) const
+  {
+    if(operator_data.use_boundary_data == true)
+    {
+      FEFaceEval_Velocity_Velocity_linear fe_eval(data,this->get_fe_param(),true,this->get_dof_index());
+
+      for(unsigned int face=face_range.first; face<face_range.second; face++)
+      {
+        types::boundary_id boundary_id = data.get_boundary_indicator(face);
+        BoundaryType boundary_type = BoundaryType::undefined;
+
+        if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
+          boundary_type = BoundaryType::dirichlet;
+        else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
+          boundary_type = BoundaryType::neumann;
+
+        AssertThrow(boundary_type != BoundaryType::undefined,
+            ExcMessage("Boundary type of face is invalid or not implemented."));
+
+        fe_eval.reinit (face);
+
+        // Note that the velocity has dim components.
+        unsigned int dofs_per_cell = fe_eval.dofs_per_cell*dim;
+
+        VectorizedArray<value_type> tau = fe_eval.read_cell_data(this->get_array_penalty_parameter());
+
+        for (unsigned int j=0; j<dofs_per_cell; ++j)
+        {
+          // set dof value j of element- to 1 and all other dof values of element- to zero
+          for (unsigned int i=0; i<dofs_per_cell; ++i)
+            fe_eval.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
+          fe_eval.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+
+          fe_eval.evaluate(true,false);
+
+          for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+          {
+            Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval.get_value(q);
+            Tensor<1,dim,VectorizedArray<value_type> > uP;
+
+            if(boundary_type == BoundaryType::dirichlet)
+            {
+              uP = -uM;
+            }
+            else if(boundary_type == BoundaryType::neumann)
+            {
+              uP = uM;
+            }
+            else
+            {
+              AssertThrow(false,ExcMessage("Boundary type of face is invalid or not implemented."));
+            }
+
+            Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
+
+            fe_eval.submit_value(tau*jump_value,q);
+          }
+
+          fe_eval.integrate(true,false);
+
+          for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+          {
+            const unsigned int cell_number = data.faces[face].left_cell[v];
+            if (cell_number != numbers::invalid_unsigned_int)
+              for(unsigned int i=0; i<dofs_per_cell; ++i)
+                matrices[cell_number](i,j) += fe_eval.begin_dof_values()[i][v];
+          }
+        }
       }
     }
   }

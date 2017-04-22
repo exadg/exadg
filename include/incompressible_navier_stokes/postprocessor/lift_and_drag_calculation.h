@@ -122,13 +122,11 @@ public:
        if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
        {
          std::string filename_drag, filename_lift;
-         filename_drag = "output/FPC/"
-             + lift_and_drag_data.filename_prefix_drag
+         filename_drag = lift_and_drag_data.filename_prefix_drag
              + "_refine_" + Utilities::int_to_string(dof_handler_velocity->get_triangulation().n_levels()-1)
              + "_fe_degree_" + Utilities::int_to_string(fe_degree_u) + "-" + Utilities::int_to_string(fe_degree_p)
              + "_drag.txt";
-         filename_lift = "output/FPC/"
-             + lift_and_drag_data.filename_prefix_lift
+         filename_lift = lift_and_drag_data.filename_prefix_lift
              + "_refine_" + Utilities::int_to_string(dof_handler_velocity->get_triangulation().n_levels()-1)
              + "_fe_degree_" + Utilities::int_to_string(fe_degree_u) + "-" + Utilities::int_to_string(fe_degree_p)
              + "_lift.txt";

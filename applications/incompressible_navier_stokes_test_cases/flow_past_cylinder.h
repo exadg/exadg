@@ -23,7 +23,7 @@
 unsigned int const DIMENSION = 3;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 2;
+unsigned int const FE_DEGREE_VELOCITY = 8;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -74,8 +74,10 @@ enum class MeshType{ Type1, Type2, Type3, Type4 };
 const MeshType MESH_TYPE = MeshType::Type2;
 
 const double END_TIME = 8.0;
-std::string OUTPUT_PREFIX = "3D_3_cfl_0-2"; //"2D_3_cfl_0-05";
-std::string OUTPUT_FOLDER = "/3D_3_dual_splitting_bdf3_mesh2/"; // "/paper/dual_splitting_bdf2_mesh2/"; // "/paper/pressure_correction_bdf2_mesh2/"; // "/paper/dual_splitting_bdf2_mesh2/"; //"/comparison_lehrenfeld/pressure_correction/";
+
+std::string OUTPUT_FOLDER = "output/FPC/3D_3_dual_splitting_bdf3_mesh2/";
+std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
+std::string OUTPUT_NAME = "3D_3_cfl_0-2";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -89,7 +91,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // PHYSICAL QUANTITIES
   start_time = 0.0;
-  end_time = END_TIME; //END_TIME is also needed somewhere else
+  end_time = END_TIME;
   viscosity = 1.e-3;
 
 
@@ -192,7 +194,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // linear solver
   solver_momentum = SolverMomentum::FGMRES; //GMRES; //FGMRES;
-  preconditioner_momentum = PreconditionerMomentum::InverseMassMatrix; //InverseMassMatrix; //VelocityDiffusion;
+  preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; //InverseMassMatrix; //VelocityDiffusion;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::GMRES_PointJacobi; //Chebyshev;
   abs_tol_momentum_linear = 1.e-12;
   rel_tol_momentum_linear = 1.e-8;
@@ -243,7 +245,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // write output for visualization of results
   output_data.write_output = true;
-  output_data.output_prefix = OUTPUT_PREFIX;
+  output_data.output_folder = OUTPUT_FOLDER_VTU;
+  output_data.output_name = OUTPUT_NAME;
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
   output_data.compute_divergence = true;
@@ -275,8 +278,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // surfaces for calculation of lift and drag coefficients have boundary_ID = 2
   lift_and_drag_data.boundary_IDs.insert(2);
 
-  lift_and_drag_data.filename_prefix_lift = OUTPUT_FOLDER + output_data.output_prefix; //"paper/pressure_correction/" + output_data.output_prefix;
-  lift_and_drag_data.filename_prefix_drag = OUTPUT_FOLDER + output_data.output_prefix; //"paper/pressure_correction/" + output_data.output_prefix;
+  lift_and_drag_data.filename_prefix_lift = OUTPUT_FOLDER + OUTPUT_NAME;
+  lift_and_drag_data.filename_prefix_drag = OUTPUT_FOLDER + OUTPUT_NAME;
 
   // pressure difference
   pressure_difference_data.calculate_pressure_difference = true;
@@ -293,12 +296,12 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
     pressure_difference_data.point_2 = point_2_3D;
   }
 
-  pressure_difference_data.filename_prefix_pressure_difference = OUTPUT_FOLDER + output_data.output_prefix; //"paper/pressure_correction/" + output_data.output_prefix;
+  pressure_difference_data.filename_prefix_pressure_difference = OUTPUT_FOLDER + OUTPUT_NAME;
 
   mass_data.calculate_error = false; //true;
   mass_data.start_time = 0.0;
   mass_data.sample_every_time_steps = 1;
-  mass_data.filename_prefix = OUTPUT_PREFIX;
+  mass_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
 }
 
 /**************************************************************************************/

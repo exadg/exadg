@@ -355,7 +355,7 @@ setup_projection_solver ()
           static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
           static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity)));
     }
-    else if(this->param.preconditioner_projection == PreconditionerProjection::Jacobi)
+    else if(this->param.preconditioner_projection == PreconditionerProjection::PointJacobi)
     {
       // Note that at this point (when initializing the Jacobi preconditioner and calculating the diagonal)
       // the penalty parameter of the projection operator has not been calculated and the time step size has
@@ -364,11 +364,21 @@ setup_projection_solver ()
       preconditioner_projection.reset(new JacobiPreconditioner<value_type,PROJ_OPERATOR>
           (*std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
     }
+    else if(this->param.preconditioner_projection == PreconditionerProjection::BlockJacobi)
+    {
+      // Note that at this point (when initializing the Jacobi preconditioner)
+      // the penalty parameter of the projection operator has not been calculated and the time step size has
+      // not been set. Hence, update_preconditioner = true should be used for the Jacobi preconditioner in order
+      // to use to correct diagonal blocks for preconditioning.
+      preconditioner_projection.reset(new BlockJacobiPreconditioner<value_type,PROJ_OPERATOR>
+          (*std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
+    }
     else
     {
       AssertThrow(this->param.preconditioner_projection == PreconditionerProjection::None ||
                   this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix ||
-                  this->param.preconditioner_projection == PreconditionerProjection::Jacobi,
+                  this->param.preconditioner_projection == PreconditionerProjection::PointJacobi ||
+                  this->param.preconditioner_projection == PreconditionerProjection::BlockJacobi,
                   ExcMessage("Specified preconditioner of projection solver not implemented."));
     }
 
@@ -382,18 +392,18 @@ setup_projection_solver ()
       projection_solver_data.solver_tolerance_rel = this->param.rel_tol_projection;
       // default value of use_preconditioner = false
       if(this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix ||
-         this->param.preconditioner_projection == PreconditionerProjection::Jacobi)
+         this->param.preconditioner_projection == PreconditionerProjection::PointJacobi ||
+         this->param.preconditioner_projection == PreconditionerProjection::BlockJacobi)
       {
         projection_solver_data.use_preconditioner = true;
-
-        if(this->param.preconditioner_projection == PreconditionerProjection::Jacobi)
-          projection_solver_data.update_preconditioner = true;
+        projection_solver_data.update_preconditioner = this->param.update_preconditioner_projection;
       }
       else
       {
         AssertThrow(this->param.preconditioner_projection == PreconditionerProjection::None ||
                     this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix ||
-                    this->param.preconditioner_projection == PreconditionerProjection::Jacobi,
+                    this->param.preconditioner_projection == PreconditionerProjection::PointJacobi ||
+                    this->param.preconditioner_projection == PreconditionerProjection::BlockJacobi,
                     ExcMessage("Specified preconditioner of projection solver not implemented."));
       }
 
