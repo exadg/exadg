@@ -114,9 +114,9 @@ public:
 
   virtual void setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
                                                                                   periodic_face_pairs,
-                      std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
-                      std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
-                      std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> >     field_functions);
+                      std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
+                      std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
+                      std::shared_ptr<FieldFunctionsNavierStokes<dim> >     field_functions);
 
   void apply_mass_matrix(parallel::distributed::Vector<value_type>       &dst,
                          parallel::distributed::Vector<value_type> const &src) const;
@@ -206,7 +206,7 @@ public:
     return divergence_operator_data;
   }
 
-  std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > const get_field_functions() const
+  std::shared_ptr<FieldFunctionsNavierStokes<dim> > const get_field_functions() const
   {
     return field_functions;
   }
@@ -268,7 +268,7 @@ public:
 protected:
   MatrixFree<dim,value_type> data;
 
-  std_cxx11::shared_ptr< FESystem<dim> > fe_u;
+  std::shared_ptr< FESystem<dim> > fe_u;
   FE_DGQArbitraryNodes<dim> fe_p;
 
   MappingQGeneric<dim> mapping;
@@ -283,9 +283,9 @@ protected:
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs;
 
-  std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity;
-  std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure;
-  std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions;
+  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure;
+  std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions;
 
   // In case of projection type Navier-Stokes solvers this variable
   // is needed to solve the pressure Poisson equation.
@@ -294,7 +294,7 @@ protected:
   // (or more precisely for the Schur-complement preconditioner and the GMG method
   // used to approximately invert the Laplace operator).
   // In that case, the functions specified in BoundaryDescriptorLaplace are irrelevant.
-  std_cxx11::shared_ptr<BoundaryDescriptorLaplace<dim> > boundary_descriptor_laplace;
+  std::shared_ptr<BoundaryDescriptorLaplace<dim> > boundary_descriptor_laplace;
 
   InputParametersNavierStokes<dim> const &param;
 
@@ -306,7 +306,7 @@ protected:
 
   MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> mass_matrix_operator;
   ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> convective_operator;
-  std_cxx11::shared_ptr< InverseMassMatrixOperator<dim,fe_degree,value_type> > inverse_mass_matrix_operator;
+  std::shared_ptr< InverseMassMatrixOperator<dim,fe_degree,value_type> > inverse_mass_matrix_operator;
   ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> viscous_operator;
   BodyForceOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> body_force_operator;
   GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> gradient_operator;
@@ -339,13 +339,13 @@ initialize_boundary_descriptor_laplace()
   // This is necessary for projection type Navier-Stokes solvers.
   // For the coupled solution approach, the functions
   // specified in the boundary descriptor are not evaluated.
-  for (typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::
+  for (typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::
        const_iterator it = boundary_descriptor_pressure->dirichlet_bc.begin();
        it != boundary_descriptor_pressure->dirichlet_bc.end(); ++it)
   {
-    std_cxx11::shared_ptr<Function<dim> > zero_function;
+    std::shared_ptr<Function<dim> > zero_function;
     zero_function.reset(new ZeroFunction<dim>(1));
-    boundary_descriptor_laplace->neumann.insert(std::pair<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >
+    boundary_descriptor_laplace->neumann.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
       (it->first,zero_function));
   }
 }
@@ -354,9 +354,9 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall
 void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
                                                                    periodic_face_pairs,
-       std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity_in,
-       std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure_in,
-       std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> >     field_functions_in)
+       std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity_in,
+       std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure_in,
+       std::shared_ptr<FieldFunctionsNavierStokes<dim> >     field_functions_in)
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Setup Navier-Stokes operation ..." << std::endl;

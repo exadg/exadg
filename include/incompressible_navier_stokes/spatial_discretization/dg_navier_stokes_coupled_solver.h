@@ -193,26 +193,26 @@ private:
   VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> velocity_conv_diff_operator;
 
   // div-div-penalty and continuity penalty operator
-  std_cxx11::shared_ptr<DivergencePenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > divergence_penalty_operator;
-  std_cxx11::shared_ptr<ContinuityPenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > continuity_penalty_operator;
+  std::shared_ptr<DivergencePenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > divergence_penalty_operator;
+  std::shared_ptr<ContinuityPenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > continuity_penalty_operator;
 
   // projection operator
-  std_cxx11::shared_ptr<ProjectionOperatorBase<dim> > projection_operator;
+  std::shared_ptr<ProjectionOperatorBase<dim> > projection_operator;
 
   // projection solver
-  std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > projection_solver;
-  std_cxx11::shared_ptr<PreconditionerBase<value_type> > preconditioner_projection;
+  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > projection_solver;
+  std::shared_ptr<PreconditionerBase<value_type> > preconditioner_projection;
 
   parallel::distributed::Vector<value_type> mutable temp_vector;
   parallel::distributed::Vector<value_type> const *sum_alphai_ui;
   parallel::distributed::BlockVector<value_type> const *vector_linearization;
 
-  std_cxx11::shared_ptr<PreconditionerNavierStokesBase<value_type,
+  std::shared_ptr<PreconditionerNavierStokesBase<value_type,
     DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > > preconditioner;
 
-  std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::BlockVector<value_type> > > linear_solver;
+  std::shared_ptr<IterativeSolverBase<parallel::distributed::BlockVector<value_type> > > linear_solver;
 
-  std_cxx11::shared_ptr<NewtonSolver<parallel::distributed::BlockVector<value_type>,
+  std::shared_ptr<NewtonSolver<parallel::distributed::BlockVector<value_type>,
                                      DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
                                      DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
                                      IterativeSolverBase<parallel::distributed::BlockVector<value_type> > > > newton_solver;
@@ -784,7 +784,7 @@ rhs_projection_add (parallel::distributed::Vector<value_type> &dst,
     typedef ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree,
         fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> PROJ_OPERATOR;
 
-    std_cxx11::shared_ptr<PROJ_OPERATOR> proj_operator_div_and_conti_penalty
+    std::shared_ptr<PROJ_OPERATOR> proj_operator_div_and_conti_penalty
       = std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator);
     proj_operator_div_and_conti_penalty->rhs_add(dst,eval_time);
  }

@@ -58,7 +58,7 @@ double calculate_min_cell_diameter(Triangulation<dim> const &triangulation)
  */
 template<int dim>
 double calculate_max_velocity(Triangulation<dim> const              &triangulation,
-                              std_cxx11::shared_ptr<Function<dim> > velocity,
+                              std::shared_ptr<Function<dim> > velocity,
                               double const                          time)
 {
   typename Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(), endc = triangulation.end();

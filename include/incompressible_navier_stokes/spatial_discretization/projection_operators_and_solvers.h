@@ -472,7 +472,7 @@ public:
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
 
-  DirectProjectionSolverDivergencePenalty(std_cxx11::shared_ptr<PROJ_OPERATOR> projection_operator_in)
+  DirectProjectionSolverDivergencePenalty(std::shared_ptr<PROJ_OPERATOR> projection_operator_in)
     :
     projection_operator(projection_operator_in)
   {}
@@ -563,7 +563,7 @@ public:
     }
   }
 
-  std_cxx11::shared_ptr<PROJ_OPERATOR> projection_operator;
+  std::shared_ptr<PROJ_OPERATOR> projection_operator;
 };
 
 /*

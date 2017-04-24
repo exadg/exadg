@@ -3,7 +3,6 @@
 #define __indexa_statistics_manager_PH_h
 
 #include <deal.II/lac/parallel_vector.h>
-#include <deal.II/base/std_cxx11/function.h>
 #include <deal.II/lac/parallel_block_vector.h>
 #include <fluid_base_algorithm.h>
 #include <deal.II/fe/mapping_q.h>

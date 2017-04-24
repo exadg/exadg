@@ -25,7 +25,7 @@ public:
   void setup(DoFHandler<dim> const                                        &dof_handler_velocity_in,
              DoFHandler<dim> const                                        &dof_handler_pressure_in,
              Mapping<dim> const                                           &mapping_in,
-             std_cxx11::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution_in,
+             std::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution_in,
              ErrorCalculationData const                                   &error_data_in)
   {
     dof_handler_velocity = &dof_handler_velocity_in;
@@ -80,7 +80,7 @@ private:
   SmartPointer< DoFHandler<dim> const > dof_handler_pressure;
   SmartPointer< Mapping<dim> const > mapping;
 
-  std_cxx11::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution;
+  std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution;
 
   ErrorCalculationData error_data;
 

@@ -14,9 +14,9 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall
 class TimeIntBDFDualSplittingXWall : public virtual TimeIntBDFDualSplitting<dim,fe_degree,value_type, DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> >
 {
 public:
-  TimeIntBDFDualSplittingXWall(std_cxx11::shared_ptr<DGNavierStokesBase<dim, fe_degree,
+  TimeIntBDFDualSplittingXWall(std::shared_ptr<DGNavierStokesBase<dim, fe_degree,
                                  fe_degree_p, fe_degree_xwall, xwall_quad_rule> >      ns_operation_in,
-                               std_cxx11::shared_ptr<PostProcessorBase<dim> >          postprocessor_in,
+                               std::shared_ptr<PostProcessorBase<dim> >          postprocessor_in,
                                InputParametersNavierStokes<dim> const                  &param_in,
                                unsigned int const                                      n_refine_time_in,
                                bool const                                              use_adaptive_time_stepping)
@@ -67,7 +67,7 @@ protected:
 
   virtual void setup_derived();
 
-  std_cxx11::shared_ptr<DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> >
+  std::shared_ptr<DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> >
      ns_operation_xwall;
 
 };

@@ -82,7 +82,7 @@ public:
 
 protected:
   MatrixFree<dim,value_type> const * matrix_free_data;
-  mutable std_cxx11::shared_ptr<Threads::ThreadLocalStorage<InverseMassMatrixData<dim,fe_degree,value_type,n_components> > > mass_matrix_data;
+  mutable std::shared_ptr<Threads::ThreadLocalStorage<InverseMassMatrixData<dim,fe_degree,value_type,n_components> > > mass_matrix_data;
 
 private:
   virtual void local_apply (const MatrixFree<dim,value_type>                 &,

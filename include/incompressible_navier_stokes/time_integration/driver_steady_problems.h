@@ -16,8 +16,8 @@ template<int dim, typename value_type, typename NavierStokesOperation>
 class DriverSteadyProblems
 {
 public:
-  DriverSteadyProblems(std_cxx11::shared_ptr<NavierStokesOperation>   navier_stokes_operation_in,
-                       std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor_in,
+  DriverSteadyProblems(std::shared_ptr<NavierStokesOperation>   navier_stokes_operation_in,
+                       std::shared_ptr<PostProcessorBase<dim> > postprocessor_in,
                        InputParametersNavierStokes<dim> const         &param_in)
     :
     navier_stokes_operation(navier_stokes_operation_in),
@@ -39,9 +39,9 @@ private:
   void solve();
   void postprocessing();
 
-  std_cxx11::shared_ptr<NavierStokesOperation> navier_stokes_operation;
+  std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
-  std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor;
+  std::shared_ptr<PostProcessorBase<dim> > postprocessor;
   InputParametersNavierStokes<dim> const &param;
 
   Timer global_timer;

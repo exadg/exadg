@@ -79,21 +79,21 @@ protected:
 
   // Pressure Poisson equation
   LaplaceOperator<dim,fe_degree_p, value_type> laplace_operator;
-  std_cxx11::shared_ptr<PreconditionerBase<value_type> > preconditioner_pressure_poisson;
-  std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > pressure_poisson_solver;
+  std::shared_ptr<PreconditionerBase<value_type> > preconditioner_pressure_poisson;
+  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > pressure_poisson_solver;
 
   // Projection method
 
   // div-div-penalty and continuity penalty operator
-  std_cxx11::shared_ptr<DivergencePenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > divergence_penalty_operator;
-  std_cxx11::shared_ptr<ContinuityPenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > continuity_penalty_operator;
+  std::shared_ptr<DivergencePenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > divergence_penalty_operator;
+  std::shared_ptr<ContinuityPenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > continuity_penalty_operator;
 
   // projection operator
-  std_cxx11::shared_ptr<ProjectionOperatorBase<dim> > projection_operator;
+  std::shared_ptr<ProjectionOperatorBase<dim> > projection_operator;
 
   // projection solver
-  std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > projection_solver;
-  std_cxx11::shared_ptr<PreconditionerBase<value_type> > preconditioner_projection;
+  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > projection_solver;
+  std::shared_ptr<PreconditionerBase<value_type> > preconditioner_projection;
 
 private:
 };
@@ -162,7 +162,7 @@ setup_pressure_poisson_solver (double const time_step_size)
 
     preconditioner_pressure_poisson.reset(new MULTIGRID());
 
-    std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
+    std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
 
     mg_preconditioner->initialize(mg_data,
                                   this->dof_handler_p,
@@ -468,7 +468,7 @@ rhs_ppe_laplace_add(parallel::distributed::Vector<value_type> &dst,
 
   // Set correct time for evaluation of functions on pressure Dirichlet boundaries
   // (not needed for pressure Neumann boundaries because all functions are ZeroFunction in Neumann BC map!)
-  for(typename std::map<types::boundary_id, std_cxx11::shared_ptr<Function<dim> > >::const_iterator
+  for(typename std::map<types::boundary_id, std::shared_ptr<Function<dim> > >::const_iterator
         it = data.bc->dirichlet.begin(); it != data.bc->dirichlet.end(); ++it)
   {
     it->second->set_time(evaluation_time);

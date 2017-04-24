@@ -21,8 +21,8 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 class TimeIntBDFNavierStokes
 {
 public:
-  TimeIntBDFNavierStokes(std_cxx11::shared_ptr<NavierStokesOperation>   navier_stokes_operation_in,
-                         std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor_in,
+  TimeIntBDFNavierStokes(std::shared_ptr<NavierStokesOperation>   navier_stokes_operation_in,
+                         std::shared_ptr<PostProcessorBase<dim> > postprocessor_in,
                          InputParametersNavierStokes<dim> const         &param_in,
                          unsigned int const                             n_refine_time_in,
                          bool const                                     use_adaptive_time_stepping)
@@ -62,7 +62,7 @@ public:
   }
 
 protected:
-  std_cxx11::shared_ptr<PostProcessorBase<dim> > postprocessor;
+  std::shared_ptr<PostProcessorBase<dim> > postprocessor;
 
   virtual void initialize_time_integrator_constants();
   virtual void update_time_integrator_constants();
@@ -124,7 +124,7 @@ private:
 
   unsigned int const n_refine_time;
 
-  std_cxx11::shared_ptr<NavierStokesOperation> navier_stokes_operation;
+  std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 };
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>

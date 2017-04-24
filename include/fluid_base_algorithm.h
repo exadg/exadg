@@ -4,7 +4,6 @@
 
 #include <deal.II/base/function.h>
 #include <deal.II/base/tensor_function.h>
-#include <deal.II/base/std_cxx11/shared_ptr.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/fe/mapping_q.h>
@@ -14,7 +13,7 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
-
+#include <memory>
 
 using namespace dealii;
 
@@ -29,9 +28,9 @@ namespace helpers
   template <int dim>
   struct BoundaryDescriptor
   {
-    std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > > dirichlet_conditions_u;
-    std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > > open_conditions_p;
-    std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > > pressure_fix;
+    std::map<types::boundary_id,std::shared_ptr<Function<dim> > > dirichlet_conditions_u;
+    std::map<types::boundary_id,std::shared_ptr<Function<dim> > > open_conditions_p;
+    std::map<types::boundary_id,std::shared_ptr<Function<dim> > > pressure_fix;
 
     std::set<types::boundary_id> normal_flux;
     std::set<types::boundary_id> symmetry;
@@ -120,7 +119,7 @@ class FluidBaseAlgorithm
    * Prerequisite: The given function must consist of dim components.
    */
   void set_velocity_dirichlet_boundary (const types::boundary_id  boundary_id,
-                                        const std_cxx11::shared_ptr<Function<dim> > &velocity_function);
+                                        const std::shared_ptr<Function<dim> > &velocity_function);
 
   /*
    * Sets a pressure condition on the boundary of the domain with the given
@@ -134,8 +133,8 @@ class FluidBaseAlgorithm
    * Prerequisite: The given function must be scalar.
    */
   void set_open_boundary (const types::boundary_id  boundary_id,
-                          const std_cxx11::shared_ptr<Function<dim> > &pressure_function
-                          = std_cxx11::shared_ptr<Function<dim> >());
+                          const std::shared_ptr<Function<dim> > &pressure_function
+                          = std::shared_ptr<Function<dim> >());
 
   /*
    * Sets a pressure condition on the boundary of the domain with the given
@@ -151,8 +150,8 @@ class FluidBaseAlgorithm
    * Prerequisite: The given function must be scalar.
    */
   void set_open_boundary_with_normal_flux (const types::boundary_id  boundary_id,
-                                           const std_cxx11::shared_ptr<Function<dim> > &pressure_function
-                                           = std_cxx11::shared_ptr<Function<dim> >());
+                                           const std::shared_ptr<Function<dim> > &pressure_function
+                                           = std::shared_ptr<Function<dim> >());
 
   /*
    * Fix one boundary node to a value specified by the given function,
@@ -165,8 +164,8 @@ class FluidBaseAlgorithm
    * Prerequisite: The given function must be scalar.
    */
   void fix_pressure_constant (const types::boundary_id  boundary_id,
-                              const std_cxx11::shared_ptr<Function<dim> > &pressure_function
-                              = std_cxx11::shared_ptr<Function<dim> >());
+                              const std::shared_ptr<Function<dim> > &pressure_function
+                              = std::shared_ptr<Function<dim> >());
 
   /*
    * Sets symmetry boundary conditions on the given boundaries. A symmetry
@@ -212,7 +211,7 @@ class FluidBaseAlgorithm
    * Sets a general function for the body force. This is slower than the other
    * function, so prefer the other one whenever the function is constant.
    */
-  void set_body_force(const std_cxx11::shared_ptr<TensorFunction<1,dim> > body_force);
+  void set_body_force(const std::shared_ptr<TensorFunction<1,dim> > body_force);
 
   /**
    * Returns the body force on a given point.
@@ -267,7 +266,7 @@ protected:
    * The data container holding all boundary conditions for use in derived
    * classes.
    */
-  std_cxx11::shared_ptr<helpers::BoundaryDescriptor<dim> > boundary;
+  std::shared_ptr<helpers::BoundaryDescriptor<dim> > boundary;
 
   /**
    * Tensor holding constant body forces.
@@ -277,7 +276,7 @@ protected:
   /**
    * Function holding the body force.
    */
-  std_cxx11::shared_ptr<TensorFunction<1,dim> > body_force;
+  std::shared_ptr<TensorFunction<1,dim> > body_force;
 
   /**
    * The mapping used for representing curved boundaries.

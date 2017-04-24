@@ -55,7 +55,7 @@ public:
                      Mapping<dim> const                                           &mapping,
                      MatrixFree<dim,double> const                                 &matrix_free_data,
                      DofQuadIndexData const                                       &dof_quad_index_data,
-                     std_cxx11::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution) = 0;
+                     std::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution) = 0;
 
 
   /*

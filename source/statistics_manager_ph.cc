@@ -25,7 +25,7 @@ namespace patch
 }
 
 template <int dim>
-//void StatisticsManagerPH<dim>::setup(const std_cxx11::function<Point<dim>(const Point<dim> &)> &grid_transform)
+//void StatisticsManagerPH<dim>::setup(const std::function<Point<dim>(const Point<dim> &)> &grid_transform)
 void StatisticsManagerPH<dim>::setup(const Function< dim > &push_forward_function, const std::string output_prefix,const bool enriched)
 {
   // note: this code only works on structured meshes where the faces in
@@ -142,7 +142,7 @@ void StatisticsManagerPH<dim>::setup(const Function< dim > &push_forward_functio
 #ifdef DEBUG_Y
     std::cout << "### current x/h position (i_x=" << i_x << "): " << x_over_h[i_x] << std::endl;
 #endif
-    std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y);
+    std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y);
     QGauss<1> gauss_1d(fe_degree+1);
     std::vector<double> y_loc;
     y_loc.resize(n_points_y_glob,-1);
@@ -382,7 +382,7 @@ void StatisticsManagerPH<dim>::setup(const Function< dim > &push_forward_functio
     // in order to evaluate the geometry approximation error
     // ---------------------------------------------------
 
-    std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_x);
+    std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_x);
 
     for (unsigned int i=0; i<n_points_x; ++i)
      {
@@ -692,7 +692,7 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
       for(unsigned int i=0;i<dim;i++)
         epsii_loc[i].resize(vel_glob[0][0].size());
     const unsigned int fe_degree = dof_handler.get_fe().degree;
-    std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y);
+    std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y);
     QGauss<1> gauss_1d(fe_degree+1);
 
     // get xi1 position to the considered x position x_pos
@@ -933,8 +933,8 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
   std::vector<double> p_w_loc(dudy_bottom_glob.size(),0.0);
 
   const unsigned int fe_degree = dof_handler.get_fe().degree;
-  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_x);
-  std::vector<std_cxx11::shared_ptr<FEFaceValues<dim,dim> > > fe_face_values(n_points_x);
+  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_x);
+  std::vector<std::shared_ptr<FEFaceValues<dim,dim> > > fe_face_values(n_points_x);
   QGauss<1> gauss_1d(fe_degree+1);
 
   for (unsigned int i=0; i<n_points_x; ++i)
@@ -1114,7 +1114,7 @@ StatisticsManagerPH<dim>::do_evaluate(const std::vector<const parallel::distribu
     std::vector<double> p_top_loc(p_top_glob.size(),0.0);
 
 //    const unsigned int fe_degree = dof_handler.get_fe().degree;
-    std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_top(n_points_x);
+    std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values_top(n_points_x);
 //    QGauss<1> gauss_1d(fe_degree+1);
 
     for (unsigned int i=0; i<n_points_x; ++i)
@@ -1285,9 +1285,9 @@ StatisticsManagerPH<dim>::do_evaluate_xwall(const std::vector<const parallel::di
     std::vector<double> veluv_loc(vel_glob[0][0].size());
 
     const unsigned int fe_degree = dof_handler.get_fe().degree;
-    std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y);
-    std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_xwall(n_points_y);
-    std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_tauw(n_points_y);
+    std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y);
+    std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values_xwall(n_points_y);
+    std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values_tauw(n_points_y);
     QGauss<1> gauss_1d(fe_degree+1);
 
     // get xi1 position to the considered x position x_pos
@@ -1524,10 +1524,10 @@ StatisticsManagerPH<dim>::do_evaluate_xwall(const std::vector<const parallel::di
   std::vector<double> p_w_loc(dudy_bottom_glob.size(),0.0);
 
   const unsigned int fe_degree = dof_handler.get_fe().degree;
-  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_x);
-  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_xwall(n_points_x);
-  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_p(n_points_x);
-  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_tauw(n_points_x);
+  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_x);
+  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values_xwall(n_points_x);
+  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values_p(n_points_x);
+  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values_tauw(n_points_x);
   QGauss<1> gauss_1d(fe_degree+1);
 
   for (unsigned int i=0; i<n_points_x; ++i)
@@ -1742,10 +1742,10 @@ StatisticsManagerPH<dim>::do_evaluate_xwall(const std::vector<const parallel::di
   std::vector<double> dudy_top_loc(dudy_top_glob.size(),0.0);
   std::vector<double> p_top_loc(p_top_glob.size(),0.0);
 
-  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_top(n_points_x);
-  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_p_top(n_points_x);
-  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_xwall_top(n_points_x);
-  std::vector<std_cxx11::shared_ptr<FEValues<dim,dim> > > fe_values_tauw_top(n_points_x);
+  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values_top(n_points_x);
+  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values_p_top(n_points_x);
+  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values_xwall_top(n_points_x);
+  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values_tauw_top(n_points_x);
 
   for (unsigned int i=0; i<n_points_x; ++i)
   {

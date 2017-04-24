@@ -68,7 +68,7 @@ public:
                           const MGLevelObject<MatrixType>                                 &matrix,
                           const MGCoarseGridBase<VectorType>                              &coarse,
                           const TransferType                                              &transfer,
-                          const MGLevelObject<std_cxx11::shared_ptr<PreconditionerType> > &smooth,
+                          const MGLevelObject<std::shared_ptr<PreconditionerType> > &smooth,
                           const unsigned int                                              n_cycles = 1)
     :
     dof_handler(&dof_handler),
@@ -164,7 +164,7 @@ private:
   /**
    * The smoothing object.
    */
-  SmartPointer<const MGLevelObject<std_cxx11::shared_ptr<PreconditionerType> > > smooth;
+  SmartPointer<const MGLevelObject<std::shared_ptr<PreconditionerType> > > smooth;
 
   const unsigned int n_cycles;
 

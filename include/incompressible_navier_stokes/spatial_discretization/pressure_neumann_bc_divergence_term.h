@@ -22,7 +22,7 @@ public:
 
   unsigned int dof_index_velocity;
   unsigned int dof_index_pressure;
-  std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
 };
 
 template <int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
@@ -105,7 +105,7 @@ private:
       VectorizedArray<value_type> penalty_parameter = (value_type)factor *
           fe_eval_pressure.read_cell_data(laplace_operator->get_array_penalty_parameter());
 
-      typename std::map<types::boundary_id,std_cxx11::shared_ptr<Function<dim> > >::iterator it;
+      typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
       types::boundary_id boundary_id = data.get_boundary_indicator(face);
 
       for(unsigned int q=0;q<fe_eval_pressure.n_q_points;++q)

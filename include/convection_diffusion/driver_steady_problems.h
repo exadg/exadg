@@ -23,8 +23,8 @@ template<int dim, int fe_degree, typename value_type, typename ConvDiffOperation
 class DriverSteadyConvDiff
 {
 public:
-  DriverSteadyConvDiff(std_cxx11::shared_ptr<ConvDiffOperation>                       conv_diff_operation_in,
-                       std_cxx11::shared_ptr<ConvDiff::PostProcessor<dim,fe_degree> > postprocessor_in,
+  DriverSteadyConvDiff(std::shared_ptr<ConvDiffOperation>                       conv_diff_operation_in,
+                       std::shared_ptr<ConvDiff::PostProcessor<dim,fe_degree> > postprocessor_in,
                        ConvDiff::InputParametersConvDiff const                        &param_in)
     :
     conv_diff_operation(conv_diff_operation_in),
@@ -124,8 +124,8 @@ private:
     this->postprocessor->do_postprocessing(solution);
   }
 
-  std_cxx11::shared_ptr<ConvDiffOperation> conv_diff_operation;
-  std_cxx11::shared_ptr<ConvDiff::PostProcessor<dim,fe_degree> > postprocessor;
+  std::shared_ptr<ConvDiffOperation> conv_diff_operation;
+  std::shared_ptr<ConvDiff::PostProcessor<dim,fe_degree> > postprocessor;
   ConvDiff::InputParametersConvDiff const &param;
 
   // timer

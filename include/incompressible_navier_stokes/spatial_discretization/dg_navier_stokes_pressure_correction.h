@@ -101,10 +101,10 @@ public:
 private:
   // momentum equation
   VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> velocity_conv_diff_operator;
-  std_cxx11::shared_ptr<PreconditionerBase<value_type> > momentum_preconditioner;
-  std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > momentum_linear_solver;
+  std::shared_ptr<PreconditionerBase<value_type> > momentum_preconditioner;
+  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > momentum_linear_solver;
 
-  std_cxx11::shared_ptr<NewtonSolver<parallel::distributed::Vector<value_type>,
+  std::shared_ptr<NewtonSolver<parallel::distributed::Vector<value_type>,
                                      DGNavierStokesPressureCorrection<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>,
                                      VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>,
                                      IterativeSolverBase<parallel::distributed::Vector<value_type> > > >
@@ -221,7 +221,7 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
 
     momentum_preconditioner.reset(new MULTIGRID());
 
-    std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(momentum_preconditioner);
+    std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(momentum_preconditioner);
 
     mg_preconditioner->initialize(this->param.multigrid_data_momentum,
                                   this->dof_handler_u,
@@ -239,7 +239,7 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
 
     momentum_preconditioner.reset(new MULTIGRID());
 
-    std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(momentum_preconditioner);
+    std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(momentum_preconditioner);
 
     mg_preconditioner->initialize(this->param.multigrid_data_momentum,
                                   this->get_dof_handler_u(),

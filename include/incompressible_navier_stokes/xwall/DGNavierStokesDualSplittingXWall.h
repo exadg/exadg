@@ -54,9 +54,9 @@ public:
   virtual ~DGNavierStokesDualSplittingXWall(){}
 
   void setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
-              std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
-              std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
-              std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> >     field_functions);
+              std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
+              std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
+              std::shared_ptr<FieldFunctionsNavierStokes<dim> >     field_functions);
 
   void update_tauw(parallel::distributed::Vector<value_type> &velocity);
 
@@ -149,7 +149,7 @@ private:
   std::vector<unsigned int> vector_to_tauw_boundary;
 
   FEParameters<dim> fe_param_n;
-  std_cxx11::shared_ptr< InverseMassMatrixXWallOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type> > inverse_mass_matrix_operator_xwall;
+  std::shared_ptr< InverseMassMatrixXWallOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,value_type> > inverse_mass_matrix_operator_xwall;
   AlignedVector<AlignedVector<VectorizedArray<value_type> > > enrichment;
   AlignedVector<AlignedVector<Tensor<1,dim,VectorizedArray<value_type> > > > enrichment_gradient;
 };
@@ -157,9 +157,9 @@ private:
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
-        std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> >                                boundary_descriptor_velocity,
-        std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> >                                boundary_descriptor_pressure,
-        std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> >                                    field_functions)
+        std::shared_ptr<BoundaryDescriptorNavierStokes<dim> >                                boundary_descriptor_velocity,
+        std::shared_ptr<BoundaryDescriptorNavierStokes<dim> >                                boundary_descriptor_pressure,
+        std::shared_ptr<FieldFunctionsNavierStokes<dim> >                                    field_functions)
 {
   DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
         setup(periodic_face_pairs,boundary_descriptor_velocity,boundary_descriptor_pressure,field_functions);
@@ -199,7 +199,7 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   tauw_n.update_ghost_values();
 
   this->fe_param.setup(&wdist,&tauw,&enrichment,&enrichment_gradient);
-  std_cxx11::shared_ptr<Function<dim> > test;
+  std::shared_ptr<Function<dim> > test;
   test.reset(new Enrichment<dim>(this->param.max_wdist_xwall));
   this->fe_param.enrichment_is_within = test;
   fe_param_n.setup(&wdist,&tauw_n);
@@ -492,7 +492,7 @@ init_wdist()
 
   // create partitioner for exchange of ghost data (after having computed
   // the vector of wall shear stresses)
-  std_cxx11::shared_ptr<const Utilities::MPI::Partitioner> vector_partitioner
+  std::shared_ptr<const Utilities::MPI::Partitioner> vector_partitioner
     (new Utilities::MPI::Partitioner(this->dof_handler_wdist.locally_owned_dofs(),
                                      accessed_indices, MPI_COMM_WORLD));
   tauw_boundary.reinit(vector_partitioner);

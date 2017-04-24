@@ -19,7 +19,7 @@ template<int dim>
 void calculate_L2_error(DoFHandler<dim> const                       &dof_handler,
                         Mapping<dim> const                          &mapping,
                         parallel::distributed::Vector<double> const &numerical_solution,
-                        std_cxx11::shared_ptr<Function<dim> >       analytical_solution,
+                        std::shared_ptr<Function<dim> >       analytical_solution,
                         double                                      &error,
                         bool                                        &relative_error,
                         unsigned int const                          additional_quadrature_points = 3)

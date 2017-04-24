@@ -636,9 +636,9 @@ public:
   }
 
   void setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
-              std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
-              std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
-              std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions);
+              std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
+              std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
+              std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions);
 
   void prescribe_initial_condition_vt(parallel::distributed::Vector<value_type> &vt) const
   {
@@ -694,9 +694,9 @@ private:
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesDualSplittingXWallSpalartAllmaras<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
 setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs,
-        std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
-        std_cxx11::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
-        std_cxx11::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+        std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
+        std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
+        std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
 {
   DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
   setup(periodic_face_pairs,

@@ -12,9 +12,9 @@
 template<int dim>
 struct FieldFunctionsConvDiff
 {
-  std_cxx11::shared_ptr<Function<dim> > analytical_solution;
-  std_cxx11::shared_ptr<Function<dim> > right_hand_side;
-  std_cxx11::shared_ptr<Function<dim> > velocity;
+  std::shared_ptr<Function<dim> > analytical_solution;
+  std::shared_ptr<Function<dim> > right_hand_side;
+  std::shared_ptr<Function<dim> > velocity;
 };
 
 

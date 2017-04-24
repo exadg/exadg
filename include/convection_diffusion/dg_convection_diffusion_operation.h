@@ -42,8 +42,8 @@ public:
 
   void setup(const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
                                                                      periodic_face_pairs,
-             std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor_in,
-             std_cxx11::shared_ptr<FieldFunctionsConvDiff<dim> >     field_functions_in)
+             std::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor_in,
+             std::shared_ptr<FieldFunctionsConvDiff<dim> >     field_functions_in)
   {
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
     pcout << std::endl << "Setup convection-diffusion operation ..." << std::endl;
@@ -96,7 +96,7 @@ public:
           ScalarConvDiffOperators::ConvectionDiffusionOperator<dim,fe_degree,value_type> > MULTIGRID;
 
       preconditioner.reset(new MULTIGRID());
-      std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
+      std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
       mg_preconditioner->initialize(mg_data,dof_handler,mapping,conv_diff_operator,this->periodic_face_pairs);
     }
     else if(param.preconditioner == ConvDiff::Preconditioner::MultigridConvectionDiffusion)
@@ -111,7 +111,7 @@ public:
            ScalarConvDiffOperators::ConvectionDiffusionOperator<dim,fe_degree,value_type> > MULTIGRID;
 
        preconditioner.reset(new MULTIGRID());
-       std_cxx11::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
+       std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
        mg_preconditioner->initialize(mg_data,dof_handler,mapping,conv_diff_operator,this->periodic_face_pairs);
     }
     else
@@ -463,8 +463,8 @@ private:
   // TODO This variable is only needed when using the GeometricMultigrid preconditioner
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs;
 
-  std_cxx11::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor;
-  std_cxx11::shared_ptr<FieldFunctionsConvDiff<dim> > field_functions;
+  std::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor;
+  std::shared_ptr<FieldFunctionsConvDiff<dim> > field_functions;
 
   ScalarConvDiffOperators::MassMatrixOperatorData mass_matrix_operator_data;
   ScalarConvDiffOperators::MassMatrixOperator<dim, fe_degree, value_type> mass_matrix_operator;
@@ -482,8 +482,8 @@ private:
   // convection-diffusion operator for runtime optimization (also includes rhs operator)
   ScalarConvDiffOperators::ConvectionDiffusionOperatorEfficiency<dim, fe_degree, value_type> convection_diffusion_operator_efficiency;
 
-  std_cxx11::shared_ptr<PreconditionerBase<value_type> > preconditioner;
-  std_cxx11::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > iterative_solver;
+  std::shared_ptr<PreconditionerBase<value_type> > preconditioner;
+  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > iterative_solver;
 };
 
 

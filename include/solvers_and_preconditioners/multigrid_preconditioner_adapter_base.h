@@ -43,9 +43,9 @@ namespace
     SolverControl control(eig_n_iter, right.l2_norm()*1e-5);
     internal::PreconditionChebyshev::EigenvalueTracker eigenvalue_tracker;
     SolverCG<parallel::distributed::Vector<value_type> > solver (control);
-    solver.connect_eigenvalues_slot(std_cxx11::bind(&internal::PreconditionChebyshev::EigenvalueTracker::slot,
-                                                    &eigenvalue_tracker,
-                                                    std_cxx11::_1));
+    solver.connect_eigenvalues_slot(std::bind(&internal::PreconditionChebyshev::EigenvalueTracker::slot,
+                                              &eigenvalue_tracker,
+                                              std::placeholders::_1));
     JacobiPreconditioner<value_type, Operator> preconditioner(op);
     try
     {
@@ -101,9 +101,9 @@ namespace
 
     EigenvalueTracker<std::complex<double> > eigenvalue_tracker;
     SolverGMRES<parallel::distributed::Vector<value_type> > solver (control);
-    solver.connect_eigenvalues_slot(std_cxx11::bind(&EigenvalueTracker<std::complex<double> >::slot,
-                                                    &eigenvalue_tracker,
-                                                    std_cxx11::_1));
+    solver.connect_eigenvalues_slot(std::bind(&EigenvalueTracker<std::complex<double> >::slot,
+                                              &eigenvalue_tracker,
+                                              std::placeholders::_1));
     JacobiPreconditioner<value_type, Operator> preconditioner(op);
     try
     {
@@ -193,7 +193,7 @@ protected:
         smoother_data.preconditioner = mg_data.gmres_smoother_data.preconditioner;
         smoother_data.number_of_iterations = mg_data.gmres_smoother_data.number_of_iterations;
 
-        std_cxx11::shared_ptr<GMRES_SMOOTHER> smoother = std::dynamic_pointer_cast<GMRES_SMOOTHER>(mg_smoother[level]);
+        std::shared_ptr<GMRES_SMOOTHER> smoother = std::dynamic_pointer_cast<GMRES_SMOOTHER>(mg_smoother[level]);
         smoother->initialize(mg_matrices[level],smoother_data);
         break;
       }
@@ -206,7 +206,7 @@ protected:
         smoother_data.preconditioner = mg_data.cg_smoother_data.preconditioner;
         smoother_data.number_of_iterations = mg_data.cg_smoother_data.number_of_iterations;
 
-        std_cxx11::shared_ptr<CG_SMOOTHER> smoother = std::dynamic_pointer_cast<CG_SMOOTHER>(mg_smoother[level]);
+        std::shared_ptr<CG_SMOOTHER> smoother = std::dynamic_pointer_cast<CG_SMOOTHER>(mg_smoother[level]);
         smoother->initialize(mg_matrices[level],smoother_data);
         break;
       }
@@ -220,7 +220,7 @@ protected:
         smoother_data.number_of_smoothing_steps = mg_data.jacobi_smoother_data.number_of_smoothing_steps;
         smoother_data.damping_factor = mg_data.jacobi_smoother_data.damping_factor;
 
-        std_cxx11::shared_ptr<JACOBI_SMOOTHER> smoother = std::dynamic_pointer_cast<JACOBI_SMOOTHER>(mg_smoother[level]);
+        std::shared_ptr<JACOBI_SMOOTHER> smoother = std::dynamic_pointer_cast<JACOBI_SMOOTHER>(mg_smoother[level]);
         smoother->initialize(mg_matrices[level],smoother_data);
         break;
       }
@@ -250,21 +250,21 @@ protected:
       case MultigridSmoother::GMRES:
       {
         typedef GMRESSmoother<dim,Operator,VECTOR_TYPE> GMRES_SMOOTHER;
-        std_cxx11::shared_ptr<GMRES_SMOOTHER> smoother = std::dynamic_pointer_cast<GMRES_SMOOTHER>(mg_smoother[level]);
+        std::shared_ptr<GMRES_SMOOTHER> smoother = std::dynamic_pointer_cast<GMRES_SMOOTHER>(mg_smoother[level]);
         smoother->update();
         break;
       }
       case MultigridSmoother::CG:
       {
         typedef CGSmoother<dim,Operator,VECTOR_TYPE> CG_SMOOTHER;
-        std_cxx11::shared_ptr<CG_SMOOTHER> smoother = std::dynamic_pointer_cast<CG_SMOOTHER>(mg_smoother[level]);
+        std::shared_ptr<CG_SMOOTHER> smoother = std::dynamic_pointer_cast<CG_SMOOTHER>(mg_smoother[level]);
         smoother->update();
         break;
       }
       case MultigridSmoother::Jacobi:
       {
         typedef JacobiSmoother<dim,Operator,VECTOR_TYPE> JACOBI_SMOOTHER;
-        std_cxx11::shared_ptr<JACOBI_SMOOTHER> smoother = std::dynamic_pointer_cast<JACOBI_SMOOTHER>(mg_smoother[level]);
+        std::shared_ptr<JACOBI_SMOOTHER> smoother = std::dynamic_pointer_cast<JACOBI_SMOOTHER>(mg_smoother[level]);
         smoother->update();
         break;
       }
@@ -376,7 +376,7 @@ protected:
       }
       case MultigridCoarseGridSolver::PCG_PointJacobi:
       {
-        std_cxx11::shared_ptr<MGCoarsePCG<Operator> >
+        std::shared_ptr<MGCoarsePCG<Operator> >
           coarse_solver = std::dynamic_pointer_cast<MGCoarsePCG<Operator> >(mg_coarse);
         coarse_solver->update_preconditioner(this->mg_matrices[0]);
 
@@ -384,7 +384,7 @@ protected:
       }
       case MultigridCoarseGridSolver::PCG_BlockJacobi:
       {
-        std_cxx11::shared_ptr<MGCoarsePCG<Operator> >
+        std::shared_ptr<MGCoarsePCG<Operator> >
           coarse_solver = std::dynamic_pointer_cast<MGCoarsePCG<Operator> >(mg_coarse);
         coarse_solver->update_preconditioner(this->mg_matrices[0]);
 
@@ -397,14 +397,14 @@ protected:
       }
       case MultigridCoarseGridSolver::GMRES_PointJacobi:
       {
-        std_cxx11::shared_ptr<MGCoarseGMRES<Operator> >
+        std::shared_ptr<MGCoarseGMRES<Operator> >
           coarse_solver = std::dynamic_pointer_cast<MGCoarseGMRES<Operator> >(mg_coarse);
         coarse_solver->update_preconditioner(this->mg_matrices[0]);
         break;
       }
       case MultigridCoarseGridSolver::GMRES_BlockJacobi:
       {
-        std_cxx11::shared_ptr<MGCoarseGMRES<Operator> >
+        std::shared_ptr<MGCoarseGMRES<Operator> >
           coarse_solver = std::dynamic_pointer_cast<MGCoarseGMRES<Operator> >(mg_coarse);
         coarse_solver->update_preconditioner(this->mg_matrices[0]);
         break;
@@ -440,11 +440,11 @@ protected:
 
   typedef parallel::distributed::Vector<typename Operator::value_type> VECTOR_TYPE;
   typedef SmootherBase<VECTOR_TYPE> SMOOTHER;
-  MGLevelObject<std_cxx11::shared_ptr<SMOOTHER> > mg_smoother;
+  MGLevelObject<std::shared_ptr<SMOOTHER> > mg_smoother;
 
-  std_cxx11::shared_ptr<MGCoarseGridBase<VECTOR_TYPE> > mg_coarse;
+  std::shared_ptr<MGCoarseGridBase<VECTOR_TYPE> > mg_coarse;
 
-  std_cxx11::shared_ptr<MultigridPreconditioner<dim, VECTOR_TYPE, Operator, MG_TRANSFER, SMOOTHER> > multigrid_preconditioner;
+  std::shared_ptr<MultigridPreconditioner<dim, VECTOR_TYPE, Operator, MG_TRANSFER, SMOOTHER> > multigrid_preconditioner;
 
   unsigned int n_global_levels;
 
@@ -466,7 +466,7 @@ private:
     smoother_data.degree = mg_data.chebyshev_smoother_data.smoother_poly_degree;
     smoother_data.eig_cg_n_iterations = mg_data.chebyshev_smoother_data.eig_cg_n_iterations;
 
-    std_cxx11::shared_ptr<CHEBYSHEV_SMOOTHER> smoother = std::dynamic_pointer_cast<CHEBYSHEV_SMOOTHER>(mg_smoother[level]);
+    std::shared_ptr<CHEBYSHEV_SMOOTHER> smoother = std::dynamic_pointer_cast<CHEBYSHEV_SMOOTHER>(mg_smoother[level]);
     smoother->initialize(mg_matrices[level], smoother_data);
   }
 
@@ -487,7 +487,7 @@ private:
     smoother_data.degree = std::log(1./eps+std::sqrt(1./eps/eps-1))/std::log(1./sigma);
     smoother_data.eig_cg_n_iterations = 0;
 
-    std_cxx11::shared_ptr<CHEBYSHEV_SMOOTHER> smoother = std::dynamic_pointer_cast<CHEBYSHEV_SMOOTHER>(mg_smoother[0]);
+    std::shared_ptr<CHEBYSHEV_SMOOTHER> smoother = std::dynamic_pointer_cast<CHEBYSHEV_SMOOTHER>(mg_smoother[0]);
     smoother->initialize(mg_matrices[0], smoother_data);
   }
 
@@ -514,7 +514,7 @@ private:
     smoother_data.degree = mg_data.chebyshev_smoother_data.smoother_poly_degree;
     smoother_data.eig_cg_n_iterations = 0;
 
-    std_cxx11::shared_ptr<CHEBYSHEV_SMOOTHER> smoother = std::dynamic_pointer_cast<CHEBYSHEV_SMOOTHER>(mg_smoother[level]);
+    std::shared_ptr<CHEBYSHEV_SMOOTHER> smoother = std::dynamic_pointer_cast<CHEBYSHEV_SMOOTHER>(mg_smoother[level]);
     smoother->initialize(mg_matrices[level], smoother_data);
   }
 
@@ -536,7 +536,7 @@ private:
     smoother_data.degree = std::log(1./eps+std::sqrt(1./eps/eps-1))/std::log(1./sigma);
     smoother_data.eig_cg_n_iterations = 0;
 
-    std_cxx11::shared_ptr<CHEBYSHEV_SMOOTHER> smoother = std::dynamic_pointer_cast<CHEBYSHEV_SMOOTHER>(mg_smoother[0]);
+    std::shared_ptr<CHEBYSHEV_SMOOTHER> smoother = std::dynamic_pointer_cast<CHEBYSHEV_SMOOTHER>(mg_smoother[0]);
     smoother->initialize(this->mg_matrices[0], smoother_data);
   }
 };

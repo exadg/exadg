@@ -46,7 +46,7 @@ public:
              DoFHandler<dim> const                                    &dof_handler_in,
              Mapping<dim> const                                       &mapping_in,
              MatrixFree<dim,double> const                             &matrix_free_data_in,
-             std_cxx11::shared_ptr<AnalyticalSolutionConvDiff<dim> >  solution)
+             std::shared_ptr<AnalyticalSolutionConvDiff<dim> >  solution)
   {
     pp_data = postprocessor_data;
     dof_handler = &dof_handler_in;
@@ -73,7 +73,7 @@ private:
   MatrixFree<dim,double> const * matrix_free_data;
 
   PostProcessorData pp_data;
-  std_cxx11::shared_ptr<AnalyticalSolutionConvDiff<dim> > analytical_solution;
+  std::shared_ptr<AnalyticalSolutionConvDiff<dim> > analytical_solution;
 
   unsigned int output_counter;
   unsigned int error_counter;

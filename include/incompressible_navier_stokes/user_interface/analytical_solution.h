@@ -18,12 +18,12 @@ struct AnalyticalSolutionNavierStokes
   /*
    *  velocity
    */
-  std_cxx11::shared_ptr<Function<dim> > velocity;
+  std::shared_ptr<Function<dim> > velocity;
 
   /*
    *  pressure
    */
-  std_cxx11::shared_ptr<Function<dim> > pressure;
+  std::shared_ptr<Function<dim> > pressure;
 };
 
 
