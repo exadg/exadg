@@ -150,9 +150,54 @@ private:
         // restrict vector_linearization from fine to coarse level
         parallel::distributed::Vector<typename Operator::value_type> & vector_fine_level = this->mg_matrices[level+1].get_solution_linearization();
         parallel::distributed::Vector<typename Operator::value_type> & vector_coarse_level = this->mg_matrices[level].get_solution_linearization();
-        // set vector_coarse_level to zero since ..._add is called
-        vector_coarse_level = 0.0;
-        this->mg_transfer.restrict_and_add(level+1,vector_coarse_level,vector_fine_level);
+
+        unsigned int dof_index_velocity = this->mg_matrices[level].get_velocity_conv_diff_operator_data().dof_index;
+        DoFHandler<dim> const & dof_handler_velocity = this->mg_matrices[level].get_data().get_dof_handler(dof_index_velocity);
+        unsigned int dofs_per_cell = dof_handler_velocity.get_fe().dofs_per_cell;
+
+        IndexSet relevant_dofs;
+        DoFTools::extract_locally_relevant_level_dofs(dof_handler_velocity, level+1, relevant_dofs);
+        LinearAlgebra::distributed::Vector<typename Operator::value_type> ghosted_vector(dof_handler_velocity.locally_owned_mg_dofs(level+1),
+                                                                 relevant_dofs, MPI_COMM_WORLD);
+        ghosted_vector = vector_fine_level;
+        ghosted_vector.update_ghost_values();
+
+        Vector<typename Operator::value_type> dof_values_fine(dofs_per_cell);
+        Vector<typename Operator::value_type> tmp(dofs_per_cell);
+        std::vector<types::global_dof_index> dof_indices(dofs_per_cell);
+        std::vector<typename Operator::value_type> dof_values_coarse(dofs_per_cell);
+
+        typename DoFHandler<dim>::cell_iterator cell=dof_handler_velocity.begin(level);
+        typename DoFHandler<dim>::cell_iterator endc=dof_handler_velocity.end(level);
+        for ( ; cell != endc; ++cell)
+        {
+          if (cell->is_locally_owned_on_level())
+          {
+            Assert(cell->has_children(), ExcNotImplemented());
+            std::fill(dof_values_coarse.begin(), dof_values_coarse.end(), 0.);
+
+            for (unsigned int child=0; child<cell->n_children(); ++child)
+            {
+              cell->child(child)->get_mg_dof_indices(dof_indices);
+              for (unsigned int i=0; i<dofs_per_cell; ++i)
+                dof_values_fine(i) = ghosted_vector(dof_indices[i]);
+
+              dof_handler_velocity.get_fe().get_restriction_matrix(child, cell->refinement_case()).vmult (tmp, dof_values_fine);
+
+              for (unsigned int i=0; i<dofs_per_cell; ++i)
+              {
+                if (dof_handler_velocity.get_fe().restriction_is_additive(i)) // discontinuous case
+                  dof_values_coarse[i] += tmp[i];
+                else if (tmp[i] != 0.) // continuous case
+                  dof_values_coarse[i] = tmp[i];
+              }
+            }
+            cell->get_mg_dof_indices(dof_indices);
+            for (unsigned int i=0; i<dofs_per_cell; ++i)
+              vector_coarse_level(dof_indices[i]) = dof_values_coarse[i];
+          }
+        }
+        vector_coarse_level.compress(VectorOperation::insert); //continuous case
       }
     }
   }

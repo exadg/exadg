@@ -235,7 +235,7 @@ private:
     {
       fe_eval.reinit (cell);
 
-      VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell*dim];
+      VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell*dim]; //tensor_dofs_per_cell >= dofs_per_cell
       for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
       {
         for (unsigned int i=0; i<fe_eval.dofs_per_cell*dim; ++i)
