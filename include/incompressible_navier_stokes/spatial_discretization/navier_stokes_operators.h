@@ -389,19 +389,20 @@ public:
 
   void initialize_viscous_coefficients()
   {
-    Assert(xwall_quad_rule > fe_degree+1, ExcMessage("this may cause a memory error"));
-
     this->viscous_coefficient_cell.reinit(this->data->n_macro_cells(),
-                                          Utilities::fixed_int_power<FEEval_Velocity_Velocity_linear::n_q_points,dim>::value);
+                                          Utilities::fixed_int_power<n_actual_q_points_vel_linear,dim>::value);
     this->viscous_coefficient_cell.fill(make_vectorized_array<Number>(const_viscosity));
 
     this->viscous_coefficient_face.reinit(this->data->n_macro_inner_faces()+this->data->n_macro_boundary_faces(),
-                                          Utilities::fixed_int_power<FEFaceEval_Velocity_Velocity_linear::n_q_points,dim-1>::value);
+                                          Utilities::fixed_int_power<n_actual_q_points_vel_linear,dim-1>::value);
     this->viscous_coefficient_face.fill(make_vectorized_array<Number>(const_viscosity));
 
-    this->viscous_coefficient_face_neighbor.reinit(this->data->n_macro_inner_faces()+this->data->n_macro_boundary_faces(),
-                                                   Utilities::fixed_int_power<FEFaceEval_Velocity_Velocity_linear::n_q_points,dim-1>::value);
+    this->viscous_coefficient_face_neighbor.reinit(this->data->n_macro_inner_faces(),
+                                                   Utilities::fixed_int_power<n_actual_q_points_vel_linear,dim-1>::value);
     this->viscous_coefficient_face_neighbor.fill(make_vectorized_array<Number>(const_viscosity));
+
+    // TODO: currently, the viscosity dof vector is initialized here
+    this->data->initialize_dof_vector(viscosity,operator_data.dof_index);
   }
 
   void set_viscous_coefficient_cell(unsigned int const            cell,
@@ -535,6 +536,21 @@ public:
     return operator_data;
   }
 
+  void extract_viscous_coefficient_from_dof_vector ()
+  {
+    parallel::distributed::Vector<Number>  dummy;
+
+    data->loop(&This::cell_loop_extract_viscous_coeff,
+               &This::face_loop_extract_viscous_coeff,
+               &This::boundary_face_loop_extract_viscous_coeff,
+               this, dummy, this->viscosity);
+  }
+
+  parallel::distributed::Vector<Number> & get_viscosity_dof_vector()
+  {
+    return this->viscosity;
+  }
+
 private:
   void compute_array_penalty_parameter(const Mapping<dim> &mapping)
   {
@@ -633,8 +649,15 @@ private:
                                           unsigned int const      face,
                                           unsigned int const      q) const
   {
+    // harmonic mean
     average_viscosity = 2.0 * viscous_coefficient_face[face][q] * viscous_coefficient_face_neighbor[face][q] /
                        (viscous_coefficient_face[face][q] + viscous_coefficient_face_neighbor[face][q]);
+
+    // arithmetic mean
+//    average_viscosity = 0.5 * (viscous_coefficient_face[face][q] + viscous_coefficient_face_neighbor[face][q]);
+
+    // maximum value
+//    average_viscosity = std::max(viscous_coefficient_face[face][q], viscous_coefficient_face_neighbor[face][q]);
   }
 
 
@@ -1808,6 +1831,114 @@ private:
     }
   }
 
+  void cell_loop_extract_viscous_coeff (MatrixFree<dim,Number> const                &data,
+                                        parallel::distributed::Vector<Number>       &,
+                                        parallel::distributed::Vector<Number> const &src,
+                                        std::pair<unsigned int,unsigned int> const  &cell_range)
+  {
+    FEEval_Velocity_Velocity_linear fe_eval(data,this->fe_param,operator_data.dof_index);
+
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval.reinit(cell);
+      fe_eval.read_dof_values(src);
+
+      fe_eval.evaluate(true,false,false);
+
+      for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+      {
+        VectorizedArray<Number> viscosity = make_vectorized_array<Number>(const_viscosity);
+        if(viscosity_is_variable())
+        {
+          // The viscosity is stored in a vector with dim components (as the velocity field)
+          // but we only use the first component (TODO).
+          Tensor<1,dim,VectorizedArray<Number> > viscosity_vector = fe_eval.get_value(q);
+          // make sure that the turbulent viscosity is not negative.
+          for(unsigned int n=0; n<VectorizedArray<Number>::n_array_elements; ++n)
+            viscosity[n] = std::max(get_const_viscosity(),viscosity_vector[0][n]);
+
+          // set viscous coefficient
+          set_viscous_coefficient_cell(cell,q,viscosity);
+        }
+      }
+    }
+  }
+
+  void face_loop_extract_viscous_coeff(MatrixFree<dim,Number> const                &data,
+                                       parallel::distributed::Vector<Number>       &,
+                                       parallel::distributed::Vector<Number> const &src,
+                                       std::pair<unsigned int,unsigned int> const  &face_range)
+  {
+    FEFaceEval_Velocity_Velocity_linear fe_eval(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_neighbor(data,this->fe_param,false,operator_data.dof_index);
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval.reinit (face);
+      fe_eval_neighbor.reinit (face);
+
+      fe_eval.read_dof_values(src);
+      fe_eval_neighbor.read_dof_values(src);
+
+      // we only want to evaluate the gradient
+      fe_eval.evaluate(true,false);
+      fe_eval_neighbor.evaluate(true,false);
+
+      for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+      {
+        VectorizedArray<Number> viscosity = make_vectorized_array<Number>(get_const_viscosity());
+        VectorizedArray<Number> viscosity_neighbor = make_vectorized_array<Number>(get_const_viscosity());
+
+        // The viscosity is stored in a vector with dim components (as the velocity field)
+        // but we only use the first component (TODO).
+        Tensor<1,dim,VectorizedArray<Number> > viscosity_vector = fe_eval.get_value(q);
+        // make sure that the turbulent viscosity is not negative.
+        for(unsigned int n=0; n<VectorizedArray<Number>::n_array_elements; ++n)
+          viscosity[n] = std::max(get_const_viscosity(),viscosity_vector[0][n]);
+
+        Tensor<1,dim,VectorizedArray<Number> > viscosity_vector_neighbor = fe_eval_neighbor.get_value(q);
+        // make sure that the turbulent viscosity is not negative.
+        for(unsigned int n=0; n<VectorizedArray<Number>::n_array_elements; ++n)
+          viscosity_neighbor[n] = std::max(get_const_viscosity(),viscosity_vector_neighbor[0][n]);
+
+        // set viscous coefficient
+        set_viscous_coefficient_face(face,q,viscosity);
+        set_viscous_coefficient_face_neighbor(face,q,viscosity_neighbor);
+      }
+    }
+  }
+
+  void boundary_face_loop_extract_viscous_coeff(MatrixFree<dim,Number> const                &data,
+                                                parallel::distributed::Vector<Number>       &,
+                                                parallel::distributed::Vector<Number> const &src,
+                                                std::pair<unsigned int,unsigned int> const  &face_range)
+  {
+    FEFaceEval_Velocity_Velocity_linear fe_eval(data,this->fe_param,true,operator_data.dof_index);
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval.reinit (face);
+      fe_eval.read_dof_values(src);
+
+      fe_eval.evaluate(true,false);
+
+      for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+      {
+        VectorizedArray<Number> viscosity = make_vectorized_array<Number>(get_const_viscosity());
+
+        // The viscosity is stored in a vector with dim components (as the velocity field)
+        // but we only use the first component (TODO).
+        Tensor<1,dim,VectorizedArray<Number> > viscosity_vector = fe_eval.get_value(q);
+        // make sure that the turbulent viscosity is not negative.
+        for(unsigned int n=0; n<VectorizedArray<Number>::n_array_elements; ++n)
+          viscosity[n] = std::max(get_const_viscosity(),viscosity_vector[0][n]);
+
+        // set viscous coefficient
+        set_viscous_coefficient_face(face,q,viscosity);
+      }
+    }
+  }
+
 
 protected:
   MatrixFree<dim,Number> const * data;
@@ -1816,6 +1947,10 @@ protected:
 private:
   AlignedVector<VectorizedArray<Number> > array_penalty_parameter;
   Number const_viscosity;
+
+  // TODO dof-vector for variable viscosity field
+  parallel::distributed::Vector<Number>  viscosity;
+
   Table<2,VectorizedArray<Number> > viscous_coefficient_cell;
   Table<2,VectorizedArray<Number> > viscous_coefficient_face;
   Table<2,VectorizedArray<Number> > viscous_coefficient_face_neighbor;

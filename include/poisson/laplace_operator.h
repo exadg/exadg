@@ -13,6 +13,7 @@
 #include <deal.II/multigrid/mg_smoother.h>
 #include <deal.II/multigrid/mg_matrix.h>
 #include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/lapack_full_matrix.h>
 
 using namespace dealii;
 
@@ -50,7 +51,7 @@ struct LaplaceOperatorData
   // to solve a transformed system of equations based on Krylov projection
   bool needs_mean_value_constraint;
 
-  // boundary descriptor:
+  // boundary descriptor
   std::shared_ptr<BoundaryDescriptorLaplace<dim> >  bc;
 
   // If periodic boundaries are present, this variable collects matching faces
@@ -680,12 +681,12 @@ void LaplaceOperator<dim,degree,Number>::compute_array_penalty_parameter(const M
 {
   std::set<types::boundary_id> periodic_boundary_ids;
   for (unsigned int i=0; i<operator_data.periodic_face_pairs_level0.size(); ++i)
-    {
-      AssertThrow(operator_data.periodic_face_pairs_level0[i].cell[0]->level() == 0,
-                  ExcMessage("Received periodic cell pairs on non-zero level"));
-      periodic_boundary_ids.insert(operator_data.periodic_face_pairs_level0[i].cell[0]->face(operator_data.periodic_face_pairs_level0[i].face_idx[0])->boundary_id());
-      periodic_boundary_ids.insert(operator_data.periodic_face_pairs_level0[i].cell[1]->face(operator_data.periodic_face_pairs_level0[i].face_idx[1])->boundary_id());
-    }
+  {
+    AssertThrow(operator_data.periodic_face_pairs_level0[i].cell[0]->level() == 0,
+                ExcMessage("Received periodic cell pairs on non-zero level"));
+    periodic_boundary_ids.insert(operator_data.periodic_face_pairs_level0[i].cell[0]->face(operator_data.periodic_face_pairs_level0[i].face_idx[0])->boundary_id());
+    periodic_boundary_ids.insert(operator_data.periodic_face_pairs_level0[i].cell[1]->face(operator_data.periodic_face_pairs_level0[i].face_idx[1])->boundary_id());
+  }
 
   // Compute penalty parameter for each cell
   array_penalty_parameter.resize(data->n_macro_cells()+data->n_macro_ghost_cells());

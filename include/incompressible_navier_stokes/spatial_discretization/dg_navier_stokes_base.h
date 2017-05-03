@@ -29,6 +29,10 @@
 #include "operators/inverse_mass_matrix.h"
 #include "turbulence_model.h"
 
+#include "solvers_and_preconditioners/iterative_solvers.h"
+#include "solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
+
+
 
 using namespace dealii;
 
@@ -98,7 +102,6 @@ public:
     mapping(fe_degree),
     dof_handler_u(triangulation),
     dof_handler_p(triangulation),
-    viscosity(parameter.viscosity),
     dof_index_first_point(0),
     param(parameter),
     inverse_mass_matrix_operator(nullptr)
@@ -178,7 +181,7 @@ public:
 
   double get_viscosity() const
   {
-    return viscosity;
+    return viscous_operator.get_const_viscosity();
   }
 
   MassMatrixOperatorData const & get_mass_matrix_operator_data() const
@@ -263,20 +266,28 @@ public:
   /*
    *  Update turbulence model, i.e., calculate turbulent viscosity
    */
-  void update_turbulence_model (parallel::distributed::Vector<value_type> const &velocity) const;
+  void update_turbulence_model (parallel::distributed::Vector<value_type> const &velocity);
+
+  parallel::distributed::Vector<value_type> & get_viscosity_dof_vector()
+  {
+    return viscous_operator.get_viscosity_dof_vector();
+  }
+
+private:
+  virtual void create_dofs();
+
+  virtual void data_reinit(typename MatrixFree<dim,value_type>::AdditionalData & additional_data);
 
 protected:
   MatrixFree<dim,value_type> data;
 
-  std::shared_ptr< FESystem<dim> > fe_u;
+  std::shared_ptr<FESystem<dim> > fe_u;
   FE_DGQArbitraryNodes<dim> fe_p;
 
   MappingQGeneric<dim> mapping;
 
   DoFHandler<dim> dof_handler_u;
   DoFHandler<dim> dof_handler_p;
-
-  const double viscosity;
 
   Point<dim> first_point;
   types::global_dof_index dof_index_first_point;
@@ -315,14 +326,16 @@ protected:
   VorticityCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> vorticity_calculator;
   DivergenceCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> divergence_calculator;
 
+private:
   // turbulence modeling LES
   TurbulenceModel<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> turbulence_model;
 
-private:
-  virtual void create_dofs();
-
-  virtual void data_reinit(typename MatrixFree<dim,value_type>::AdditionalData & additional_data);
-
+  // TODO (used for turbulence models to obtain a smooth viscosity field)
+  // projection operator
+  std::shared_ptr<ProjectionOperatorViscosity<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > viscosity_projection_operator;
+  // projection solver
+  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > viscosity_projection_solver;
+  std::shared_ptr<PreconditionerBase<value_type> > preconditioner_viscosity_projection;
 };
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
@@ -388,33 +401,33 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   // inverse mass matrix operator
   inverse_mass_matrix_operator.reset(new InverseMassMatrixOperator<dim,fe_degree,value_type>());
   inverse_mass_matrix_operator->initialize(data,
-          static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity),
-          static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity));
+          static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
+          static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity));
 
   // body force operator
   BodyForceOperatorData<dim> body_force_operator_data;
-  body_force_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
+  body_force_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity);
   body_force_operator_data.rhs = field_functions->right_hand_side;
   body_force_operator.initialize(data,body_force_operator_data);
 
   // gradient operator
-  gradient_operator_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
-  gradient_operator_data.dof_index_pressure = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure);
+  gradient_operator_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity);
+  gradient_operator_data.dof_index_pressure = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::pressure);
   gradient_operator_data.integration_by_parts_of_gradP = param.gradp_integrated_by_parts;
   gradient_operator_data.use_boundary_data = param.gradp_use_boundary_data;
   gradient_operator_data.bc = boundary_descriptor_pressure;
   gradient_operator.initialize(data,gradient_operator_data);
 
   // divergence operator
-  divergence_operator_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
-  divergence_operator_data.dof_index_pressure = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure);
+  divergence_operator_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity);
+  divergence_operator_data.dof_index_pressure = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::pressure);
   divergence_operator_data.integration_by_parts_of_divU = param.divu_integrated_by_parts;
   divergence_operator_data.use_boundary_data = param.divu_use_boundary_data;
   divergence_operator_data.bc = boundary_descriptor_velocity;
   divergence_operator.initialize(data,divergence_operator_data);
 
   // convective operator
-  convective_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
+  convective_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity);
   convective_operator_data.bc = boundary_descriptor_velocity;
   convective_operator.initialize(data,convective_operator_data);
 
@@ -424,24 +437,54 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   viscous_operator_data.IP_formulation_viscous = param.IP_formulation_viscous;
   viscous_operator_data.IP_factor_viscous = param.IP_factor_viscous;
   viscous_operator_data.bc = boundary_descriptor_velocity;
-  viscous_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
+  viscous_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity);
   viscous_operator_data.viscosity = param.viscosity;
   viscous_operator.initialize(mapping,data,viscous_operator_data);
 
   // turbulence model
   if(this->param.use_turbulence_model == true)
   {
+    // make sure that viscous coefficients are initialized
+    viscous_operator.initialize_viscous_coefficients();
+
+    // initialize turbulence model
     TurbulenceModelData model_data;
+    model_data.turbulence_model = this->param.turbulence_model;
     model_data.constant = this->param.turbulence_model_constant;
     turbulence_model.initialize(data,mapping,viscous_operator,model_data);
+
+    // TODO
+    // setup viscosity projection operator
+    typedef ProjectionOperatorViscosity<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> PROJ_OPERATOR;
+
+    viscosity_projection_operator.reset(new PROJ_OPERATOR
+       (this->data,
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity)));
+
+    // setup preconditioner (inverse mass matrix preconditioner)
+    preconditioner_viscosity_projection.reset(new InverseMassMatrixPreconditioner<dim,fe_degree,value_type>
+       (this->data,
+        static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
+        static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity)));
+
+    // setup solver data
+    CGSolverData viscosity_projection_solver_data;
+    viscosity_projection_solver_data.use_preconditioner = true;
+
+    // setup solver
+    viscosity_projection_solver.reset(new CGSolver<PROJ_OPERATOR,PreconditionerBase<value_type>,parallel::distributed::Vector<value_type> >
+       (*std::dynamic_pointer_cast<PROJ_OPERATOR>(viscosity_projection_operator),
+        *preconditioner_viscosity_projection,
+        viscosity_projection_solver_data));
   }
 
   // vorticity
   vorticity_calculator.initialize(data,
-      static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
+      static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity));
   // diveregnce
   divergence_calculator.initialize(data,
-      static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
+      static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity));
 
   dof_index_first_point = 0;
   for(unsigned int d=0;d<dim;++d)
@@ -505,8 +548,6 @@ create_dofs()
   print_parameter(pcout,"degree of 1D polynomials",fe_degree_p);
   print_parameter(pcout,"number of dofs per cell",ndofs_per_cell_pressure);
   print_parameter(pcout,"number of dofs (total)",dof_handler_p.n_dofs());
-
-
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
@@ -515,30 +556,30 @@ data_reinit(typename MatrixFree<dim,value_type>::AdditionalData &additional_data
 {
   std::vector<const DoFHandler<dim> * >  dof_handler_vec;
 
-  dof_handler_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::n_variants));
-  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity)] = &dof_handler_u;
-  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure)] = &dof_handler_p;
+  dof_handler_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::n_variants));
+  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity)] = &dof_handler_u;
+  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::pressure)] = &dof_handler_p;
 
   std::vector<const ConstraintMatrix *> constraint_matrix_vec;
-  constraint_matrix_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::n_variants));
+  constraint_matrix_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::n_variants));
   ConstraintMatrix constraint_u, constraint_p;
   constraint_u.close();
   constraint_p.close();
-  constraint_matrix_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity)] = &constraint_u;
-  constraint_matrix_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure)] = &constraint_p;
+  constraint_matrix_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity)] = &constraint_u;
+  constraint_matrix_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::pressure)] = &constraint_p;
 
   std::vector<Quadrature<1> > quadratures;
 
   // resize quadratures
-  quadratures.resize(static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::n_variants));
+  quadratures.resize(static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::n_variants));
   // velocity
-  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity)]
+  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity)]
               = QGauss<1>(fe_degree+1);
   // pressure
-  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::pressure)]
+  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::pressure)]
               = QGauss<1>(fe_degree_p+1);
   // exact integration of nonlinear convective term
-  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity_nonlinear)]
+  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity_nonlinear)]
               = QGauss<1>(fe_degree + (fe_degree+2)/2);
 
   data.reinit (mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
@@ -645,9 +686,38 @@ evaluate_convective_term (parallel::distributed::Vector<value_type>       &dst,
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-update_turbulence_model (parallel::distributed::Vector<value_type> const &velocity) const
+update_turbulence_model (parallel::distributed::Vector<value_type> const &velocity)
 {
+  // TODO
+
+  // Variant 1: calculate turbulent viscosity locally in each cell and face quadrature point
   turbulence_model.calculate_turbulent_viscosity(velocity);
+
+
+  // TODO
+  /*
+  // Variant 2: Calculate viscosity dof-vector in a first step by solving a projection equation.
+  //            In a second step, the viscous coefficient required in each quadrature point
+  //            is extracted from the viscosity dof vector.
+
+  // calculate rhs-vector of projection equation
+  parallel::distributed::Vector<value_type> rhs_vector(velocity);
+  turbulence_model.calculate_turbulent_viscosity(rhs_vector,velocity);
+
+  parallel::distributed::Vector<value_type> &viscosity = viscous_operator.get_viscosity_dof_vector();
+
+  // 2a) apply inverse mass matrix (linear operator = mass matrix), i.e., viscosity field is projected
+  // onto the space of polynomials of degree fe_degree_u.
+//  inverse_mass_matrix_operator->apply(viscosity,rhs_vector);
+
+  // 2b) solve linear system of equations (linear operator = mass matrix + continuity penalty),
+  // continuity penalty is used to obtain a smooth viscosity field
+  unsigned int n_iter = viscosity_projection_solver->solve(viscosity,rhs_vector);
+  // std::cout << "Number of iterations = " << n_iter << std::endl;
+
+  // write viscosity field from dof-vector into tables viscous_coeff_cell, viscous_coeff_face, ...
+  viscous_operator.extract_viscous_coefficient_from_dof_vector();
+  */
 }
 
 

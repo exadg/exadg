@@ -267,9 +267,21 @@ solve_timestep()
   for(unsigned int i=1;i<solution.size();++i)
     solution_np.add(this->extra.get_beta(i),solution[i]);
 
-  // if a turbulence model is used
+  // update of turbulence model
   if(this->param.use_turbulence_model == true)
+  {
+    Timer timer_turbulence;
+    timer_turbulence.restart();
+
     navier_stokes_operation->update_turbulence_model(solution_np.block(0));
+
+    if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
+    {
+      this->pcout << std::endl
+                  << "Update of turbulent viscosity:   Wall time [s]: "
+                  << std::scientific << timer_turbulence.wall_time() << std::endl;
+    }
+  }
 
   // calculate auxiliary variable p^{*} = 1/scaling_factor * p
   solution_np.block(1) *= 1.0/scaling_factor_continuity;

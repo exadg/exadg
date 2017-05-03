@@ -349,6 +349,18 @@ enum class XWallTurbulenceApproach
   MultiscaleDESSpalartAllmaras
 };
 
+/*
+ *  Algebraic subgrid-scale turbulence models for LES
+ */
+enum class TurbulenceEddyViscosityModel
+{
+  Undefined,
+  Smagorinsky,
+  Vreman,
+  WALE,
+  Sigma
+};
+
 
 
 /**************************************************************************************/
@@ -605,6 +617,7 @@ public:
     // TURBULENCE
     use_turbulence_model(false),
     turbulence_model_constant(1.0),
+    turbulence_model(TurbulenceEddyViscosityModel::Undefined),
     turb_stat_data(TurbulenceStatisticsData()),
     xwall_turb(XWallTurbulenceApproach::Undefined),
     variabletauw(true),
@@ -760,6 +773,11 @@ public:
     }
 
     // TURBULENCE
+    if(use_turbulence_model)
+    {
+      AssertThrow(turbulence_model != TurbulenceEddyViscosityModel::Undefined,ExcMessage("parameter must be defined"));
+      AssertThrow(turbulence_model_constant > 0, ExcMessage("parameter must be greater than zero"));
+    }
 
     // OUTPUT AND POSTPROCESSING
 
@@ -1368,7 +1386,16 @@ public:
     print_parameter(pcout,"Use turbulence model",use_turbulence_model);
 
     if(use_turbulence_model == true)
+    {
+      std::string str_turbulence_model[] = { "Undefined",
+                                             "Smagorinsky",
+                                             "Vreman",
+                                             "WALE",
+                                             "Sigma" };
+
+      print_parameter(pcout,"Turbulence model",str_turbulence_model[(int)turbulence_model]);
       print_parameter(pcout,"Turbulence model constant",turbulence_model_constant);
+    }
 
     if(false)
     {
@@ -1787,6 +1814,9 @@ public:
 
   // scaling factor for turbulent viscosity model
   double turbulence_model_constant;
+
+  //turbulence model
+  TurbulenceEddyViscosityModel turbulence_model;
 
   // turublence parameters that are required for statistics (post-processing)
   TurbulenceStatisticsData turb_stat_data;
