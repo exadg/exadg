@@ -332,6 +332,7 @@ postprocessing() const
     navier_stokes_operation->compute_divergence(divergence, intermediate_velocity);
   }
 
+  // TODO
   this->postprocessor->do_postprocessing(velocity[0],
                                          intermediate_velocity,
                                          pressure[0],
@@ -339,6 +340,17 @@ postprocessing() const
                                          divergence,
                                          this->time,
                                          this->time_step_number);
+
+  // TODO: plot viscosity field instead of divergence field (needed when considering turbulence models)
+//  this->postprocessor->do_postprocessing(velocity[0],
+//                                         intermediate_velocity,
+//                                         pressure[0],
+//                                         vorticity[0],
+//                                         navier_stokes_operation->get_viscosity_dof_vector(),
+//                                         this->time,
+//                                         this->time_step_number);
+
+
 
   // check pressure error and velocity error
 //  parallel::distributed::Vector<value_type> velocity_exact;
@@ -670,10 +682,13 @@ viscous_step()
   Timer timer;
   timer.restart();
 
-  // if a turbulence model is used
+  // if a turbulence model is used:
   // update turbulence model before calculating rhs_viscous
   if(this->param.use_turbulence_model == true)
   {
+    Timer timer_turbulence;
+    timer_turbulence.restart();
+
     // extrapolate velocity to time t_n+1 and use this velocity field to
     // update the turbulence model (to recalculate the turbulent viscosity)
     parallel::distributed::Vector<value_type> velocity_extrapolated(velocity[0]);
@@ -682,6 +697,13 @@ viscous_step()
       velocity_extrapolated.add(this->extra.get_beta(i),velocity[i]);
 
     navier_stokes_operation->update_turbulence_model(velocity_extrapolated);
+
+    if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
+    {
+      this->pcout << std::endl
+                  << "Update of turbulent viscosity:   Wall time [s]: "
+                  << std::scientific << timer_turbulence.wall_time() << std::endl;
+    }
   }
 
   // compute right-hand-side vector

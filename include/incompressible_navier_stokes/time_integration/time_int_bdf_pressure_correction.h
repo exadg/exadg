@@ -395,7 +395,19 @@ momentum_step()
    *  update turbulence model before calculating rhs_momentum
    */
   if(this->param.use_turbulence_model == true)
+  {
+    Timer timer_turbulence;
+    timer_turbulence.restart();
+
     navier_stokes_operation->update_turbulence_model(velocity_np);
+
+    if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
+    {
+      this->pcout << std::endl
+                  << "Update of turbulent viscosity:   Wall time [s]: "
+                  << std::scientific << timer_turbulence.wall_time() << std::endl;
+    }
+  }
 
 
   /*  Calculate the right-hand side of the linear system of equations

@@ -29,7 +29,7 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 3;
+unsigned int const REFINE_STEPS_SPACE_MIN = 4;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
@@ -51,7 +51,7 @@ double const END_TIME = 50.0;
 
 std::string OUTPUT_FOLDER = "output/turb_ch/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "dual_splitting_bdf2_CFL2-0_nu_180_l3_k2-1_divergence_form_div_conti_penalty_1-0_test"; //"turb_ch_dual_splitting_nu_180_l2_p4-3_CFL1_div_and_conti_penalty"; //"turb_ch_press_corr_nu_180_l2_p4_p3_mixed_order_weak_projection_CFL10_implicit";
+std::string OUTPUT_NAME = "dual_splitting_bdf2_CFL1-0_nu_180_l4_k2-1_divergence_form_sigma_model_1-35_IP_factor_pressure_viscous_2-0"; //"turb_ch_dual_splitting_nu_180_l2_p4-3_CFL1_div_and_conti_penalty"; //"turb_ch_press_corr_nu_180_l2_p4_p3_mixed_order_weak_projection_CFL10_implicit";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -74,7 +74,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; // AdaptiveTimeStepCFL
   max_velocity = MAX_VELOCITY;
-  cfl = 2.0;
+  cfl = 1.0;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
@@ -91,7 +91,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
-  IP_factor_viscous = 1.0;
+  IP_factor_viscous = 2.0; //1.0; // TODO
   penalty_term_div_formulation = PenaltyTermDivergenceFormulation::Symmetrized;
 
   // gradient term
@@ -107,17 +107,26 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // div-div and continuity penalty
   // these parameters are only used for the coupled solver
-  use_divergence_penalty = true;
+  use_divergence_penalty = false;
   divergence_penalty_factor = 1.0e0;
-  use_continuity_penalty = true;
+  use_continuity_penalty = false;
   continuity_penalty_use_boundary_data = false;
   continuity_penalty_factor = divergence_penalty_factor;
+
+  // TURBULENCE
+  use_turbulence_model = true;
+  turbulence_model = TurbulenceEddyViscosityModel::Sigma;
+  // Smagorinsky: 0.165
+  // Vreman: 0.28
+  // WALE: 0.50
+  // Sigma: 1.35
+  turbulence_model_constant = 1.35;
 
 
   // PROJECTION METHODS
 
   // pressure Poisson equation
-  IP_factor_pressure = 1.0;
+  IP_factor_pressure = 2.0; //1.0; //TODO
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
   multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_pressure = 1.e-12;
@@ -225,7 +234,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   update_preconditioner = true;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion; //InverseMassMatrix; //VelocityDiffusion; //VelocityConvectionDiffusion;
+  momentum_preconditioner = MomentumPreconditioner::InverseMassMatrix; //InverseMassMatrix; //VelocityDiffusion; //VelocityConvectionDiffusion;
   multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::Jacobi;
   // MG smoother data: GMRES smoother
   multigrid_data_momentum_preconditioner.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
@@ -266,7 +275,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
   // output of solver information
-  output_solver_info_every_timesteps = 1e3; //1e4; //1e3;
+  output_solver_info_every_timesteps = 1e3; //1e4;
 
   // restart
   write_restart = false;
