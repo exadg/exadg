@@ -1163,7 +1163,7 @@ local_apply_boundary (const MatrixFree<dim,Number>                &data,
       get_penalty_factor();
 
     typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
-    types::boundary_id boundary_id = data.get_boundary_indicator(face);
+    types::boundary_id boundary_id = data.get_boundary_id(face);
 
     for(unsigned int q=0;q<fe_eval.n_q_points;++q)
     {
@@ -1243,7 +1243,7 @@ local_rhs_boundary (const MatrixFree<dim,Number>                &data,
       get_penalty_factor();
 
     typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
-    types::boundary_id boundary_id = data.get_boundary_indicator(face);
+    types::boundary_id boundary_id = data.get_boundary_id(face);
 
     for(unsigned int q=0;q<fe_eval.n_q_points;++q)
     {
@@ -1497,7 +1497,7 @@ local_diagonal_boundary (const MatrixFree<dim,Number>                &data,
       get_penalty_factor();
 
     typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
-    types::boundary_id boundary_id = data.get_boundary_indicator(face);
+    types::boundary_id boundary_id = data.get_boundary_id(face);
 
     for (unsigned int i=0; i<phi.dofs_per_cell; ++i)
     {
@@ -1634,7 +1634,7 @@ face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>         
 
       for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
       {
-        const unsigned int cell_number = data.faces[face].left_cell[v];
+        const unsigned int cell_number = data.face_info.faces[face].cells_minus[v];
         if (cell_number != numbers::invalid_unsigned_int)
           for(unsigned int i=0; i<phi.dofs_per_cell; ++i)
             matrices[cell_number](i,j) += phi.begin_dof_values()[i][v];
@@ -1681,7 +1681,7 @@ face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>         
 
       for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
       {
-        const unsigned int cell_number = data.faces[face].right_cell[v];
+        const unsigned int cell_number = data.face_info.faces[face].cells_plus[v];
         if (cell_number != numbers::invalid_unsigned_int)
           for(unsigned int i=0; i<phi_outer.dofs_per_cell; ++i)
             matrices[cell_number](i,j) += phi_outer.begin_dof_values()[i][v];
@@ -1712,7 +1712,7 @@ boundary_face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>
       get_penalty_factor();
 
     typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
-    types::boundary_id boundary_id = data.get_boundary_indicator(face);
+    types::boundary_id boundary_id = data.get_boundary_id(face);
 
     for (unsigned int j=0; j<phi.dofs_per_cell; ++j)
     {
@@ -1756,7 +1756,7 @@ boundary_face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>
 
       for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
       {
-        const unsigned int cell_number = data.faces[face].left_cell[v];
+        const unsigned int cell_number = data.face_info.faces[face].cells_minus[v];
         if (cell_number != numbers::invalid_unsigned_int)
           for(unsigned int i=0; i<phi.dofs_per_cell; ++i)
             matrices[cell_number](i,j) += phi.begin_dof_values()[i][v];

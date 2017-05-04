@@ -103,7 +103,7 @@ private:
       fe_eval_pressure.reinit (face);
 
       typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
-      types::boundary_id boundary_id = data.get_boundary_indicator(face);
+      types::boundary_id boundary_id = data.get_boundary_id(face);
 
       for(unsigned int q=0;q<fe_eval_pressure.n_q_points;++q)
       {

@@ -1112,7 +1112,7 @@ private:
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
-      types::boundary_id boundary_id = data.get_boundary_indicator(face);
+      types::boundary_id boundary_id = data.get_boundary_id(face);
       BoundaryType boundary_type = BoundaryType::undefined;
 
       if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
@@ -1165,7 +1165,7 @@ private:
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
-      types::boundary_id boundary_id = data.get_boundary_indicator(face);
+      types::boundary_id boundary_id = data.get_boundary_id(face);
       BoundaryType boundary_type = BoundaryType::undefined;
 
       if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
@@ -1235,7 +1235,7 @@ private:
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
-      types::boundary_id boundary_id = data.get_boundary_indicator(face);
+      types::boundary_id boundary_id = data.get_boundary_id(face);
       BoundaryType boundary_type = BoundaryType::undefined;
 
       if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
@@ -1542,7 +1542,7 @@ private:
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
-      types::boundary_id boundary_id = data.get_boundary_indicator(face);
+      types::boundary_id boundary_id = data.get_boundary_id(face);
       BoundaryType boundary_type = BoundaryType::undefined;
 
       if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
@@ -1686,7 +1686,7 @@ private:
 
         for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
         {
-          const unsigned int cell_number = data.faces[face].left_cell[v];
+          const unsigned int cell_number = data.face_info.faces[face].cells_minus[v];
           if (cell_number != numbers::invalid_unsigned_int)
             for(unsigned int i=0; i<dofs_per_cell; ++i)
               matrices[cell_number](i,j) += fe_eval.begin_dof_values()[i][v];
@@ -1749,7 +1749,7 @@ private:
 
         for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
         {
-          const unsigned int cell_number = data.faces[face].right_cell[v];
+          const unsigned int cell_number = data.face_info.faces[face].cells_plus[v];
           if (cell_number != numbers::invalid_unsigned_int)
             for(unsigned int i=0; i<dofs_per_cell; ++i)
               matrices[cell_number](i,j) += fe_eval_neighbor.begin_dof_values()[i][v];
@@ -1769,7 +1769,7 @@ private:
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
-      types::boundary_id boundary_id = data.get_boundary_indicator(face);
+      types::boundary_id boundary_id = data.get_boundary_id(face);
       BoundaryType boundary_type = BoundaryType::undefined;
 
       if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
@@ -1822,7 +1822,7 @@ private:
 
         for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
         {
-          const unsigned int cell_number = data.faces[face].left_cell[v];
+          const unsigned int cell_number = data.face_info.faces[face].cells_minus[v];
           if (cell_number != numbers::invalid_unsigned_int)
             for(unsigned int i=0; i<dofs_per_cell; ++i)
               matrices[cell_number](i,j) += fe_eval.begin_dof_values()[i][v];
@@ -2304,7 +2304,7 @@ private:
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
-        types::boundary_id boundary_id = data.get_boundary_indicator(face);
+        types::boundary_id boundary_id = data.get_boundary_id(face);
         BoundaryType boundary_type = BoundaryType::undefined;
 
         if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
@@ -2359,7 +2359,7 @@ private:
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
-        types::boundary_id boundary_id = data.get_boundary_indicator(face);
+        types::boundary_id boundary_id = data.get_boundary_id(face);
         BoundaryType boundary_type = BoundaryType::undefined;
 
         if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
@@ -2431,7 +2431,7 @@ private:
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
-        types::boundary_id boundary_id = data.get_boundary_indicator(face);
+        types::boundary_id boundary_id = data.get_boundary_id(face);
         BoundaryType boundary_type = BoundaryType::undefined;
 
         if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
@@ -2809,7 +2809,7 @@ private:
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
-        types::boundary_id boundary_id = data.get_boundary_indicator(face);
+        types::boundary_id boundary_id = data.get_boundary_id(face);
         BoundaryType boundary_type = BoundaryType::undefined;
 
         if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
@@ -2863,7 +2863,7 @@ private:
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
-        types::boundary_id boundary_id = data.get_boundary_indicator(face);
+        types::boundary_id boundary_id = data.get_boundary_id(face);
         BoundaryType boundary_type = BoundaryType::undefined;
 
         if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
@@ -2934,7 +2934,7 @@ private:
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
-        types::boundary_id boundary_id = data.get_boundary_indicator(face);
+        types::boundary_id boundary_id = data.get_boundary_id(face);
         BoundaryType boundary_type = BoundaryType::undefined;
 
         if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
@@ -3362,7 +3362,7 @@ private:
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
-      types::boundary_id boundary_id = data.get_boundary_indicator(face);
+      types::boundary_id boundary_id = data.get_boundary_id(face);
       BoundaryType boundary_type = BoundaryType::undefined;
 
       if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
@@ -3480,7 +3480,7 @@ private:
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
-      types::boundary_id boundary_id = data.get_boundary_indicator(face);
+      types::boundary_id boundary_id = data.get_boundary_id(face);
       BoundaryType boundary_type = BoundaryType::undefined;
 
       if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
@@ -3760,7 +3760,7 @@ private:
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
-      types::boundary_id boundary_id = data.get_boundary_indicator(face);
+      types::boundary_id boundary_id = data.get_boundary_id(face);
       BoundaryType boundary_type = BoundaryType::undefined;
 
       if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
@@ -3896,7 +3896,7 @@ private:
 
         for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
         {
-          const unsigned int cell_number = data.faces[face].left_cell[v];
+          const unsigned int cell_number = data.face_info.faces[face].cells_minus[v];
           if (cell_number != numbers::invalid_unsigned_int)
             for(unsigned int i=0; i<dofs_per_cell; ++i)
               matrices[cell_number](i,j) += fe_eval.begin_dof_values()[i][v];
@@ -3950,7 +3950,7 @@ private:
 
         for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
         {
-          const unsigned int cell_number = data.faces[face].right_cell[v];
+          const unsigned int cell_number = data.face_info.faces[face].cells_plus[v];
           if (cell_number != numbers::invalid_unsigned_int)
             for(unsigned int i=0; i<dofs_per_cell; ++i)
               matrices[cell_number](i,j) += fe_eval_neighbor.begin_dof_values()[i][v];
@@ -3971,7 +3971,7 @@ private:
 
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
-      types::boundary_id boundary_id = data.get_boundary_indicator(face);
+      types::boundary_id boundary_id = data.get_boundary_id(face);
       BoundaryType boundary_type = BoundaryType::undefined;
 
       if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
@@ -4015,7 +4015,7 @@ private:
 
         for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
         {
-          const unsigned int cell_number = data.faces[face].left_cell[v];
+          const unsigned int cell_number = data.face_info.faces[face].cells_minus[v];
           if (cell_number != numbers::invalid_unsigned_int)
             for(unsigned int i=0; i<dofs_per_cell; ++i)
               matrices[cell_number](i,j) += fe_eval.begin_dof_values()[i][v];
