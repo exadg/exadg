@@ -21,6 +21,7 @@ SET( SOURCE_FILES
      steady_convection_diffusion.cc
      unsteady_convection_diffusion.cc
      #step-7.cc
+     laplace_operator_matrix_free.cc
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )
