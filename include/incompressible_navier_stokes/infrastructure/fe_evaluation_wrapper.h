@@ -29,7 +29,6 @@ template <int dim, int fe_degree, int fe_degree_xwall = 1, int n_q_points_1d = f
   };
 */
 
-//template <typename Template>
 template <int dim, int fe_degree = 1, int fe_degree_xwall = 1, int n_q_points_1d = fe_degree+1,
 	    int n_components_ = 1, typename Number = double, bool is_enriched = false>
 class FEEvaluationWrapper : public FEEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number>
@@ -41,14 +40,17 @@ private:
     if(quad_no < 0)
     {
       const unsigned int n_q_points = std::pow(n_q_points_1d,dim);
-      for ( ; quad_index < mf.get_mapping_info().data_cells.size(); quad_index++)
+      for ( ; quad_index < mf.get_mapping_info().cell_data.size(); quad_index++)
       {
-        if (mf.get_mapping_info().data_cells[quad_index].n_q_points[0] == n_q_points)
+        if (mf.get_mapping_info().cell_data[quad_index].storage_descriptor[0].n_q_points == n_q_points)
           break;
       }
     }
     else
+    {
       quad_index = (unsigned int)quad_no;
+    }
+
     return quad_index;
   }
 
@@ -57,7 +59,7 @@ public:
   const MatrixFree<dim,Number>  &matrix_free,
   const FEParameters<dim>       * in_fe_param,
   const unsigned int            fe_no = 0,
-  const int            quad_no = -1)
+  const int                     quad_no = -1)
     :
     //    FEEvaluation<Templates::dimension,....,dim,fe_degree,n_q_points_1d,n_components_,Number>(matrix_free,fe_no,find_quadrature_slot(matrix_free,quad_no)),
     FEEvaluation<dim,fe_degree,n_q_points_1d,n_components_,Number>(matrix_free,fe_no,find_quadrature_slot(matrix_free,quad_no)),
@@ -111,7 +113,6 @@ public:
   const FEParameters<dim> * fe_param;
 };
 
-//template <typename Template>
 template <int dim, int fe_degree = 1, int fe_degree_xwall = 1, int n_q_points_1d = fe_degree+1,
       int n_components_ = 1, typename Number = double, bool is_enriched = false>
 class FEEvaluationWrapperPressure : public FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,n_components_,Number,is_enriched>
@@ -124,8 +125,7 @@ public:
   const int                    quad_no = -1)
     :
     FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_q_points_1d,n_components_,Number,is_enriched>(matrix_free,in_fe_param,fe_no,quad_no)
-    {
-    }
+  {}
 };
 
 template <int dim, int fe_degree = 1, int fe_degree_xwall = 1, int n_q_points_1d = fe_degree+1,
@@ -139,14 +139,17 @@ private:
     if(quad_no < 0)
     {
       const unsigned int n_q_points = std::pow(n_q_points_1d,dim);
-      for ( ; quad_index < mf.get_mapping_info().data_cells.size(); quad_index++)
+      for ( ; quad_index < mf.get_mapping_info().cell_data.size(); quad_index++)
       {
-        if (mf.get_mapping_info().data_cells[quad_index].n_q_points[0] == n_q_points)
+        if (mf.get_mapping_info().cell_data[quad_index].storage_descriptor[0].n_q_points == n_q_points)
           break;
       }
     }
     else
+    {
       quad_index = (unsigned int)quad_no;
+    }
+
     return quad_index;
   }
 public:

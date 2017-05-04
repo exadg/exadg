@@ -51,7 +51,7 @@ void calculate_lift_and_drag_force(MatrixFree<dim,double> const                &
     fe_eval_pressure.evaluate(true,false);
 
     typename std::set<types::boundary_id>::iterator it;
-    types::boundary_id boundary_id = matrix_free_data.get_boundary_indicator(face);
+    types::boundary_id boundary_id = matrix_free_data.get_boundary_id(face);
 
     it = boundary_IDs.find(boundary_id);
     if (it != boundary_IDs.end())

@@ -631,7 +631,7 @@ local_rhs_ppe_div_term_body_forces_boundary_face (const MatrixFree<dim,value_typ
     fe_eval.reinit (face);
 
     typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
-    types::boundary_id boundary_id = data.get_boundary_indicator(face);
+    types::boundary_id boundary_id = data.get_boundary_id(face);
 
     for(unsigned int q=0;q<fe_eval.n_q_points;++q)
     {
@@ -726,7 +726,7 @@ local_rhs_ppe_nbc_add_boundary_face (const MatrixFree<dim,value_type>           
     fe_eval.reinit (face);
 
     typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
-    types::boundary_id boundary_id = data.get_boundary_indicator(face);
+    types::boundary_id boundary_id = data.get_boundary_id(face);
 
     for(unsigned int q=0;q<fe_eval.n_q_points;++q)
     {
