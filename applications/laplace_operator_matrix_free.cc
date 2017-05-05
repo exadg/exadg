@@ -374,10 +374,16 @@ void LaplaceOperator<dim,degree,Number>::
 run_vmult_loop(parallel::distributed::Vector<Number>       &dst,
                parallel::distributed::Vector<Number> const &src) const
 {
-  data->loop (&LaplaceOperator<dim, degree, Number>::cell_loop,
-              &LaplaceOperator<dim, degree, Number>::face_loop,
-              &LaplaceOperator<dim, degree, Number>::boundary_face_loop,
-              this, dst, src);
+  if (this->operator_data.compute_face_integrals == false)
+    data->cell_loop (&LaplaceOperator<dim, degree, Number>::cell_loop,
+                     this, dst, src);
+  else
+    data->loop (&LaplaceOperator<dim, degree, Number>::cell_loop,
+                &LaplaceOperator<dim, degree, Number>::face_loop,
+                &LaplaceOperator<dim, degree, Number>::boundary_face_loop,
+                this, dst, src,
+                MatrixFree<dim,Number>::values_and_gradients,
+                MatrixFree<dim,Number>::values_and_gradients);
 }
 
 template <int dim, int degree, typename Number>
@@ -551,7 +557,7 @@ public:
     :
   pcout (std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0),
   triangulation(MPI_COMM_WORLD),
-  fe(QGaussLobatto<1>(fe_degree+1)),
+  fe(fe_degree),
   mapping(fe_degree),
   dof_handler(triangulation),
   n_refinements(refine_steps_space),
@@ -716,7 +722,7 @@ private:
   std::shared_ptr<BoundaryDescriptorLaplace<dim> > boundary_descriptor;
 
   // Discontinuous Galerkin finite element
-  FE_DGQArbitraryNodes<dim> fe;
+  FE_DGQ<dim> fe;
 
   // Mapping
   MappingQGeneric<dim> mapping;
