@@ -28,6 +28,7 @@
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/tensor_product_kernels.h>
 #include <deal.II/lac/parallel_vector.h>
 
 // timer
@@ -66,7 +67,7 @@ MeshType MESH_TYPE = MeshType::Cartesian; //Cartesian; //NonCartesian;
 // compute cell integrals (default: true)
 bool const COMPUTE_CELL_INTEGRALS = true;
 // compute face integrals (default: true)
-bool const COMPUTE_FACE_INTEGRALS = true;
+bool const COMPUTE_FACE_INTEGRALS = false;
 
 // float or double precision
 //typedef float VALUE_TYPE;
@@ -213,6 +214,16 @@ public:
   // Performs matrix-vector multiplication
   void vmult(parallel::distributed::Vector<Number>       &dst,
              const parallel::distributed::Vector<Number> &src) const;
+
+  // Performs cell loop manually
+  void cell_loop_manual_1(parallel::distributed::Vector<Number>       &dst,
+                          const parallel::distributed::Vector<Number> &src) const;
+  // Performs cell loop manually
+  void cell_loop_manual_2(parallel::distributed::Vector<Number>       &dst,
+                          const parallel::distributed::Vector<Number> &src) const;
+  // Performs cell loop manually
+  void cell_loop_manual_3(parallel::distributed::Vector<Number>       &dst,
+                          const parallel::distributed::Vector<Number> &src) const;
 
   // Performs a matrix-vector multiplication, adding the result in
   // the previous content of dst
@@ -540,6 +551,163 @@ do_cell_integral(FEEvaluation &fe_eval) const
 
 
 
+template <int dim, int degree, typename Number>
+void LaplaceOperator<dim,degree,Number>::
+cell_loop_manual_1(parallel::distributed::Vector<Number> &dst,
+                   const parallel::distributed::Vector<Number> &src) const
+{
+  // do not exchange data or zero out, assume DG operator does not need to
+  // exchange and that the loop below takes care of the zeroing
+
+  // global data structures
+  const unsigned int dofs_per_cell = Utilities::fixed_int_power<degree+1,dim>::value;
+  AlignedVector<VectorizedArray<Number> > *scratch_data_array = data->acquire_scratch_data();
+  scratch_data_array->resize_fast((dim+2)*dofs_per_cell);
+  VectorizedArray<Number> *data_ptr = scratch_data_array->begin();
+
+  typedef internal::EvaluatorTensorProduct<internal::evaluate_evenodd, dim, degree, degree+1,
+                                           VectorizedArray<Number> > Eval;
+  Eval eval_val (data->get_shape_info().shape_values_eo);
+  Eval eval(AlignedVector<VectorizedArray<Number> >(),
+            data->get_shape_info().shape_gradients_collocation_eo,
+            data->get_shape_info().shape_hessians_collocation_eo);
+  const Number* quadrature_weights =
+    data->get_mapping_info().cell_data[0].storage_descriptor[0].quadrature_weights.begin();
+
+  for (unsigned int cell=0; cell<data->n_macro_cells(); ++cell)
+    {
+      // read from src vector
+      const unsigned int *dof_indices =
+        &data->get_dof_info().dof_indices[cell*VectorizedArray<Number>::n_array_elements];
+      const unsigned int vectorization_populated =
+        data->n_components_filled(cell);
+      // transform array-of-struct to struct-of-array
+      if (vectorization_populated == VectorizedArray<Number>::n_array_elements)
+        vectorized_load_and_transpose(dofs_per_cell, src.begin(),
+                                      dof_indices, data_ptr);
+      else
+        {
+          for (unsigned int i=0; i<dofs_per_cell; ++i)
+            data_ptr[i] = VectorizedArray<Number>();
+          for (unsigned int v=0; v<vectorization_populated; ++v)
+            for (unsigned int i=0; i<dofs_per_cell; ++i)
+              data_ptr[i][v] = src.local_element(dof_indices[v]+i);
+        }
+
+      // apply tensor product kernels
+      if (dim == 1)
+        eval_val.template values<0,true,false>(data_ptr, data_ptr+dofs_per_cell);
+      else if (dim == 2)
+        {
+          eval_val.template values<0,true,false>(data_ptr, data_ptr+2*dofs_per_cell);
+          eval_val.template values<1,true,false>(data_ptr+2*dofs_per_cell, data_ptr+dofs_per_cell);
+        }
+      else if (dim == 3)
+        {
+          eval_val.template values<0,true,false>(data_ptr, data_ptr+dofs_per_cell);
+          eval_val.template values<1,true,false>(data_ptr+dofs_per_cell, data_ptr+2*dofs_per_cell);
+          eval_val.template values<2,true,false>(data_ptr+2*dofs_per_cell, data_ptr+dofs_per_cell);
+        }
+      eval.template gradients<0,true,false>(data_ptr+dofs_per_cell, data_ptr+2*dofs_per_cell);
+      if (dim > 1)
+        eval.template gradients<1,true,false>(data_ptr+dofs_per_cell, data_ptr+3*dofs_per_cell);
+      if (dim > 2)
+        eval.template gradients<2,true,false>(data_ptr+dofs_per_cell, data_ptr+4*dofs_per_cell);
+
+
+      // loop over quadrature points. depends on the data layout in
+      // MappingInfo
+      const VectorizedArray<Number> *__restrict geometry_data_ptr =
+        data->get_mapping_info().cell_data[0].data_storage.begin() +
+        data->get_mapping_info().cell_data[0].global_index_offsets[cell];
+      // Cartesian cell case
+      if (data->get_mapping_info().cell_type[cell] == internal::MatrixFreeFunctions::cartesian)
+        for (unsigned int q=0; q<dofs_per_cell; ++q)
+          for (unsigned int d=0; d<dim; ++d)
+            data_ptr[(2+d)*dofs_per_cell+q] *= geometry_data_ptr[1+d*dim+d] *
+              geometry_data_ptr[1+d*dim+d] * (geometry_data_ptr[0] * quadrature_weights[q]);
+      // affine cell case
+      else if (data->get_mapping_info().cell_type[cell] == internal::MatrixFreeFunctions::affine)
+        for (unsigned int q=0; q<dofs_per_cell; ++q)
+          {
+            VectorizedArray<Number> grad[dim];
+            // get gradient
+            for (unsigned int d=0; d<dim; ++d)
+              {
+                grad[d] = geometry_data_ptr[1+d*dim] * data_ptr[2*dofs_per_cell+q];
+                for (unsigned int e=1; e<dim; ++e)
+                  grad[d] += geometry_data_ptr[1+d*dim+e] * data_ptr[(2+e)*dofs_per_cell+q];
+              }
+            // apply gradient of test function
+            for (unsigned int d=0; d<dim; ++d)
+              {
+                data_ptr[(2+d)*dofs_per_cell+q] = geometry_data_ptr[1+d] * grad[0];
+                for (unsigned int e=1; e<dim; ++e)
+                  data_ptr[(2+d)*dofs_per_cell+q] += geometry_data_ptr[1+e*dim+d] * grad[e];
+                // multiply by quadrature weight
+                data_ptr[(2+d)*dofs_per_cell+q] *= geometry_data_ptr[0] * quadrature_weights[q];
+              }
+          }
+      else
+        // non-affine cell case
+        for (unsigned int q=0; q<dofs_per_cell; ++q)
+          {
+            VectorizedArray<Number> grad[dim];
+            // get gradient
+            for (unsigned int d=0; d<dim; ++d)
+              {
+                grad[d] = geometry_data_ptr[dofs_per_cell+q*dim*dim+d*dim] * data_ptr[2*dofs_per_cell+q];
+                for (unsigned int e=1; e<dim; ++e)
+                  grad[d] += geometry_data_ptr[dofs_per_cell+q*dim*dim+d*dim+e] * data_ptr[(2+e)*dofs_per_cell+q];
+              }
+            // apply gradient of test function
+            for (unsigned int d=0; d<dim; ++d)
+              {
+                data_ptr[(2+d)*dofs_per_cell+q] = geometry_data_ptr[dofs_per_cell+q*dim*dim+d] * grad[0];
+                for (unsigned int e=1; e<dim; ++e)
+                  data_ptr[(2+d)*dofs_per_cell+q] += geometry_data_ptr[dofs_per_cell+q*dim*dim+e*dim+d] * grad[e];
+                // multiply by quadrature weight
+                data_ptr[(2+d)*dofs_per_cell+q] *= geometry_data_ptr[q];
+              }
+          }
+
+      // apply tensor product kernels
+      eval.template gradients<0,false,false>(data_ptr+2*dofs_per_cell, data_ptr+dofs_per_cell);
+      if (dim > 1)
+        eval.template gradients<1,false,true>(data_ptr+3*dofs_per_cell, data_ptr+dofs_per_cell);
+      if (dim > 2)
+        eval.template gradients<2,false,true>(data_ptr+4*dofs_per_cell, data_ptr+dofs_per_cell);
+
+      if (dim == 1)
+        eval_val.template values<0,false,false>(data_ptr+dofs_per_cell, data_ptr);
+      else if (dim == 2)
+        {
+          eval_val.template values<0,false,false>(data_ptr+dofs_per_cell, data_ptr+2*dofs_per_cell);
+          eval_val.template values<1,false,false>(data_ptr+2*dofs_per_cell, data_ptr);
+        }
+      else if (dim == 3)
+        {
+          eval_val.template values<0,false,false>(data_ptr+dofs_per_cell, data_ptr+2*dofs_per_cell);
+          eval_val.template values<1,false,false>(data_ptr+2*dofs_per_cell, data_ptr+dofs_per_cell);
+          eval_val.template values<2,false,false>(data_ptr+dofs_per_cell, data_ptr);
+        }
+      // write into the solution vector, overwrite rather than sum-into
+      if (vectorization_populated == VectorizedArray<Number>::n_array_elements)
+        // transform struct-of-array to array-of-struct
+        vectorized_transpose_and_store(false, dofs_per_cell, data_ptr,
+                                       dof_indices, dst.begin());
+      else
+        {
+          for (unsigned int v=0; v<vectorization_populated; ++v)
+            for (unsigned int i=0; i<dofs_per_cell; ++i)
+              dst.local_element(dof_indices[v]+i) = data_ptr[i][v];
+        }
+    }
+  data->release_scratch_data(scratch_data_array);
+}
+
+
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                                LAPLACE PROBLEM                                     */
@@ -607,7 +775,8 @@ public:
     parallel::distributed::Vector<Number> dst, src;
     matrix_free_data.initialize_dof_vector(src);
     matrix_free_data.initialize_dof_vector(dst);
-    src = 1.0;
+    for (unsigned int i=0; i<src.local_size(); ++i)
+      src.local_element(i) = i%16;
 
     // Timer and wall times
     Timer timer;
@@ -638,16 +807,54 @@ public:
     if(wall_time_calculation == WallTimeCalculation::Average)
       wall_time /= (double)n_repetitions;
 
-    unsigned int dofs = dof_handler.n_dofs();
+    types::global_dof_index dofs = dof_handler.n_dofs();
 
     wall_time /= (double) dofs;
 
     pcout << std::endl << std::scientific << std::setprecision(4)
           << "Wall time / dofs [s]: " << wall_time << std::endl;
 
+    wall_times.push_back(std::pair<unsigned int,double>(fe_degree,wall_time));
+
+    if (COMPUTE_FACE_INTEGRALS == false)
+      {
+        parallel::distributed::Vector<Number> dst2;
+        matrix_free_data.initialize_dof_vector(dst2);
+        wall_time = 0.0;
+
+        if(wall_time_calculation == WallTimeCalculation::Minimum)
+          wall_time = std::numeric_limits<double>::max();
+
+
+        // apply matrix-vector product several times
+        for(unsigned int i=0; i<n_repetitions; ++i)
+          {
+            timer.restart();
+
+            laplace_operator.cell_loop_manual_1(dst2,src);
+
+            double const current_wall_time = timer.wall_time();
+
+            if(wall_time_calculation == WallTimeCalculation::Average)
+              wall_time += current_wall_time;
+            else if(wall_time_calculation == WallTimeCalculation::Minimum)
+              wall_time = std::min(wall_time,current_wall_time);
+          }
+
+
+        // compute wall times
+        if(wall_time_calculation == WallTimeCalculation::Average)
+          wall_time /= (double)n_repetitions;
+        wall_time /= (double) dofs;
+
+        dst2 -= dst;
+        pcout << std::scientific << std::setprecision(4)
+              << "Wall time / dofs [s]: " << wall_time << ", error to nice code: "
+              << dst2.linfty_norm() << std::endl;
+      }
+
     pcout << std::endl << " ... done." << std::endl << std::endl;
 
-    wall_times.push_back(std::pair<unsigned int,double>(fe_degree,wall_time));
   }
 
 private:
@@ -672,7 +879,7 @@ private:
    */
   void setup_matrix_free()
   {
-    pcout << std::endl << "Setup matrix-free object ...";
+    pcout << std::endl << "Setup matrix-free object ..." << std::flush;
 
     // quadrature formula used to perform integrals
     QGauss<1> quadrature (fe_degree+1);
@@ -699,7 +906,7 @@ private:
    */
   void setup_laplace_operator()
   {
-    pcout << std::endl << "Setup Laplace operator ...";
+    pcout << std::endl << "Setup Laplace operator ..." << std::flush;
 
     LaplaceOperatorData<dim> operator_data;
     operator_data.bc = boundary_descriptor;
@@ -847,4 +1054,3 @@ int main (int argc, char** argv)
 
   return 0;
 }
-
