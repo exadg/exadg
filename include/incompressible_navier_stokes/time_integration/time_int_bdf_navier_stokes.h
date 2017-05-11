@@ -15,17 +15,17 @@
 #include "time_integration/extrapolation_scheme.h"
 #include "time_integration/time_step_calculation.h"
 
-template<int dim> class PostProcessorBase;
+template<int dim,typename Number> class PostProcessorBase;
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 class TimeIntBDFNavierStokes
 {
 public:
-  TimeIntBDFNavierStokes(std::shared_ptr<NavierStokesOperation>   navier_stokes_operation_in,
-                         std::shared_ptr<PostProcessorBase<dim> > postprocessor_in,
-                         InputParametersNavierStokes<dim> const         &param_in,
-                         unsigned int const                             n_refine_time_in,
-                         bool const                                     use_adaptive_time_stepping)
+  TimeIntBDFNavierStokes(std::shared_ptr<NavierStokesOperation>              navier_stokes_operation_in,
+                         std::shared_ptr<PostProcessorBase<dim,value_type> > postprocessor_in,
+                         InputParametersNavierStokes<dim> const              &param_in,
+                         unsigned int const                                  n_refine_time_in,
+                         bool const                                          use_adaptive_time_stepping)
     :
     postprocessor(postprocessor_in),
     param(param_in),
@@ -62,7 +62,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<PostProcessorBase<dim> > postprocessor;
+  std::shared_ptr<PostProcessorBase<dim,value_type> > postprocessor;
 
   virtual void initialize_time_integrator_constants();
   virtual void update_time_integrator_constants();

@@ -447,10 +447,10 @@ public:
   }
 
 private:
-  void cell_loop (const MatrixFree<dim,value_type>                &data,
-                  parallel::distributed::Vector<value_type>       &dst,
-                  const parallel::distributed::Vector<value_type> &src,
-                  const std::pair<unsigned int,unsigned int>      &cell_range) const
+  void cell_loop (const MatrixFree<dim,value_type>                &,
+                  parallel::distributed::Vector<value_type>       &,
+                  const parallel::distributed::Vector<value_type> &,
+                  const std::pair<unsigned int,unsigned int>      &) const
   {
     // do nothing, i.e. no volume integrals
   }
@@ -616,18 +616,18 @@ private:
   }
 
 
-  void cell_loop_inhom_operator (const MatrixFree<dim,value_type>                &data,
-                                 parallel::distributed::Vector<value_type>       &dst,
-                                 const parallel::distributed::Vector<value_type> &src,
-                                 const std::pair<unsigned int,unsigned int>      &cell_range) const
+  void cell_loop_inhom_operator (const MatrixFree<dim,value_type>                &,
+                                 parallel::distributed::Vector<value_type>       &,
+                                 const parallel::distributed::Vector<value_type> &,
+                                 const std::pair<unsigned int,unsigned int>      &) const
   {
     // do nothing, i.e. no volume integrals
   }
 
-  void face_loop_inhom_operator (const MatrixFree<dim,value_type>                 &data,
-                                 parallel::distributed::Vector<value_type>        &dst,
-                                 const parallel::distributed::Vector<value_type>  &src,
-                                 const std::pair<unsigned int,unsigned int>       &face_range) const
+  void face_loop_inhom_operator (const MatrixFree<dim,value_type>                 &,
+                                 parallel::distributed::Vector<value_type>        &,
+                                 const parallel::distributed::Vector<value_type>  &,
+                                 const std::pair<unsigned int,unsigned int>       &) const
   {
     // do nothing, i.e. no volume integrals
   }
@@ -691,10 +691,10 @@ private:
     }
   }
 
-  void cell_loop_diagonal (const MatrixFree<dim,value_type>                &data,
-                           parallel::distributed::Vector<value_type>       &dst,
+  void cell_loop_diagonal (const MatrixFree<dim,value_type>                &,
+                           parallel::distributed::Vector<value_type>       &,
                            const parallel::distributed::Vector<value_type> &,
-                           const std::pair<unsigned int,unsigned int>      &cell_range) const
+                           const std::pair<unsigned int,unsigned int>      &) const
   {
     // do nothing, i.e. no volume integrals
   }
@@ -718,8 +718,8 @@ private:
       {
         // set dof value j of element- to 1 and all other dof values of element- to zero
         for (unsigned int i=0; i<fe_eval.dofs_per_cell*dim; ++i)
-          fe_eval.write_cellwise_dof_value(i,make_vectorized_array(0.));
-        fe_eval.write_cellwise_dof_value(j,make_vectorized_array(1.));
+          fe_eval.write_cellwise_dof_value(i,make_vectorized_array<value_type>(0.));
+        fe_eval.write_cellwise_dof_value(j,make_vectorized_array<value_type>(1.));
 
         fe_eval.evaluate(true,false);
 
@@ -751,8 +751,8 @@ private:
       {
         // set dof value j of element+ to 1 and all other dof values of element+ to zero
         for (unsigned int i=0; i<fe_eval_neighbor.dofs_per_cell*dim; ++i)
-          fe_eval_neighbor.write_cellwise_dof_value(i, make_vectorized_array(0.));
-        fe_eval_neighbor.write_cellwise_dof_value(j,make_vectorized_array(1.));
+          fe_eval_neighbor.write_cellwise_dof_value(i, make_vectorized_array<value_type>(0.));
+        fe_eval_neighbor.write_cellwise_dof_value(j,make_vectorized_array<value_type>(1.));
 
         fe_eval_neighbor.evaluate(true,false);
 
@@ -808,8 +808,8 @@ private:
         {
           // set dof value j of element- to 1 and all other dof values of element- to zero
           for (unsigned int i=0; i<fe_eval.dofs_per_cell*dim; ++i)
-            fe_eval.write_cellwise_dof_value(i,make_vectorized_array(0.));
-          fe_eval.write_cellwise_dof_value(j,make_vectorized_array(1.));
+            fe_eval.write_cellwise_dof_value(i,make_vectorized_array<value_type>(0.));
+          fe_eval.write_cellwise_dof_value(j,make_vectorized_array<value_type>(1.));
 
           fe_eval.evaluate(true,false);
 
@@ -850,10 +850,10 @@ private:
     }
   }
 
-  void cell_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,value_type>                 &data,
-                                                  std::vector<LAPACKFullMatrix<value_type> >       &matrices,
+  void cell_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,value_type>                 &,
+                                                  std::vector<LAPACKFullMatrix<value_type> >       &,
                                                   const parallel::distributed::Vector<value_type>  &,
-                                                  const std::pair<unsigned int,unsigned int>       &cell_range) const
+                                                  const std::pair<unsigned int,unsigned int>       &) const
   {
     // do nothing
   }

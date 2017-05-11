@@ -16,11 +16,11 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 class TimeIntBDFPressureCorrection : public TimeIntBDFNavierStokes<dim,fe_degree_u,value_type,NavierStokesOperation>
 {
 public:
-  TimeIntBDFPressureCorrection(std::shared_ptr<NavierStokesOperation >  navier_stokes_operation_in,
-                               std::shared_ptr<PostProcessorBase<dim> > postprocessor_in,
-                               InputParametersNavierStokes<dim> const         &param_in,
-                               unsigned int const                             n_refine_time_in,
-                               bool const                                     use_adaptive_time_stepping)
+  TimeIntBDFPressureCorrection(std::shared_ptr<NavierStokesOperation >             navier_stokes_operation_in,
+                               std::shared_ptr<PostProcessorBase<dim,value_type> > postprocessor_in,
+                               InputParametersNavierStokes<dim> const              &param_in,
+                               unsigned int const                                  n_refine_time_in,
+                               bool const                                          use_adaptive_time_stepping)
     :
     TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>
             (navier_stokes_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
@@ -339,6 +339,15 @@ postprocessing() const
 //                                         pressure_exact,
 //                                         vorticity,
 //                                         divergence,
+//                                         this->time,
+//                                         this->time_step_number);
+
+  // TODO: plot viscosity field instead of divergence field (needed when considering turbulence models)
+//  this->postprocessor->do_postprocessing(velocity[0],
+//                                         velocity[0],
+//                                         pressure[0],
+//                                         vorticity,
+//                                         navier_stokes_operation->get_viscosity_dof_vector(),
 //                                         this->time,
 //                                         this->time_step_number);
 
@@ -776,7 +785,7 @@ projection_step()
   rhs_projection();
 
   // solve linear system of equations
-  unsigned int iterations_projection = navier_stokes_operation->solve_projection(velocity_np,rhs_vec_projection,velocity[0],this->cfl,this->time_steps[0]);
+  unsigned int iterations_projection = navier_stokes_operation->solve_projection(velocity_np,rhs_vec_projection,velocity[0],this->time_steps[0]);
 
   // write output
   if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)

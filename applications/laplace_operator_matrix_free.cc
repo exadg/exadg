@@ -718,9 +718,8 @@ template<int dim, int fe_degree, typename Number=double>
 class LaplaceProblem
 {
 public:
-  /*
-   *  Constructor.
-   */
+
+  // Constructor.
   LaplaceProblem(unsigned int const refine_steps_space)
     :
   pcout (std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0),
@@ -743,9 +742,7 @@ public:
     boundary_descriptor.reset(new BoundaryDescriptorLaplace<dim>());
   }
 
-  /*
-   *  Setup of grid, dofs, matrix-free object and Laplace operator.
-   */
+  // Setup of grid, dofs, matrix-free object and Laplace operator.
   void setup()
   {
     // create grid
@@ -762,11 +759,8 @@ public:
     setup_laplace_operator();
   }
 
-  /*
-   *  This function applies the matrix-vector product several times
-   *  and computes the required average wall time as well as the
-   *  average wall time per degree of freedom.
-   */
+  // This function applies the matrix-vector product several times
+  // and computes the required average wall time per degree of freedom.
   void apply_laplace_operator() const
   {
     pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
@@ -858,9 +852,7 @@ public:
   }
 
 private:
-  /*
-   *  Setup dofs
-   */
+  // Setup dofs
   void setup_dofs()
   {
     dof_handler.distribute_dofs(fe);
@@ -874,9 +866,7 @@ private:
           << "number of dofs (total):   " << dof_handler.n_dofs() << std::endl;
   }
 
-  /*
-   *  Setup matrix free data
-   */
+  // Setup matrix free data
   void setup_matrix_free()
   {
     pcout << std::endl << "Setup matrix-free object ..." << std::flush;
@@ -901,9 +891,7 @@ private:
     pcout << " done." << std::endl;
   }
 
-  /*
-   *  Setup of Laplace operator
-   */
+  // Setup of Laplace operator
   void setup_laplace_operator()
   {
     pcout << std::endl << "Setup Laplace operator ..." << std::flush;
@@ -944,13 +932,13 @@ private:
   LaplaceOperator<dim, fe_degree, Number> laplace_operator;
 
   // number of refinement levels
-  const unsigned int n_refinements;
+  unsigned int const n_refinements;
 
   // number of matrix-vector products
-  const unsigned int n_repetitions;
+  unsigned int const n_repetitions;
 
   // wall time calculation
-  WallTimeCalculation wall_time_calculation;
+  WallTimeCalculation const wall_time_calculation;
 };
 
 

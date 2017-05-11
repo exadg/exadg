@@ -18,6 +18,9 @@
 /*                                                                                    */
 /**************************************************************************************/
 
+// single or double precision?
+//typedef float VALUE_TYPE;
+typedef double VALUE_TYPE;
 
 // set the number of space dimensions: dimension = 2, 3
 unsigned int const DIMENSION = 2;
@@ -31,8 +34,8 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 0;
-unsigned int const REFINE_STEPS_SPACE_MAX = 4;//REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 1;
+unsigned int const REFINE_STEPS_SPACE_MAX = 1;//REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -52,7 +55,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
   equation_type = EquationType::NavierStokes;
-  formulation_viscous_term = FORMULATION_VISCOUS_TERM; // FORMULATION_VISCOUS_TERM is also needed somewhere else
+  formulation_viscous_term = FORMULATION_VISCOUS_TERM;
   right_hand_side = false;
 
 
@@ -63,8 +66,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;//BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepCFL; //ConstTimeStepUserSpecified;
   max_velocity = 1.4 * U_X_MAX;
   cfl = 1.0; // 0.006;
@@ -72,7 +75,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   c_eff = 0.125e0;
   time_step_size = 1.e-3; //1.e-4;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 3;
+  order_time_integrator = 2;
   start_with_low_order = false; // true; // false;
 
 
@@ -682,8 +685,10 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim>
   analytical_solution->pressure.reset(new AnalyticalSolutionPressure<dim>());
 }
 
-template<int dim>
-std::shared_ptr<PostProcessorBase<dim> >
+#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+
+template<int dim, typename Number>
+std::shared_ptr<PostProcessorBase<dim,Number> >
 construct_postprocessor(InputParametersNavierStokes<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -694,8 +699,8 @@ construct_postprocessor(InputParametersNavierStokes<dim> const &param)
   pp_data.pressure_difference_data = param.pressure_difference_data;
   pp_data.mass_data = param.mass_data;
 
-  std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE> > pp;
-  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE>(pp_data));
+  std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,Number> > pp;
+  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,Number>(pp_data));
 
   return pp;
 }

@@ -284,8 +284,8 @@ double VelocityField<dim>::value(const Point<dim>   &point,
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>               &triangulation,
-    unsigned int const                                      n_refine_space,
+    parallel::distributed::Triangulation<dim>         &triangulation,
+    unsigned int const                                n_refine_space,
     std::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor)
 {
   // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim

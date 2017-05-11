@@ -15,18 +15,17 @@
 #include <fstream>
 #include <sstream>
 
-template<int dim> class PostProcessorBase;
-
 template<int dim>
-const std::string restart_filename(InputParametersNavierStokes<dim> const & param)
+std::string const restart_filename(InputParametersNavierStokes<dim> const &param)
 {
-  const std::string filename = param.output_data.output_name + "." +
+  std::string const filename = param.output_data.output_name + "." +
     Utilities::int_to_string(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)) +
     ".restart";
   return filename;
 }
 
-void check_file(std::ifstream const & in, const std::string filename)
+void check_file(std::ifstream const &in,
+                std::string const filename)
 {
   if (!in)
     AssertThrow (false,
@@ -39,8 +38,11 @@ void check_file(std::ifstream const & in, const std::string filename)
 }
 
 template<int dim,typename value_type>
-void resume_restart(boost::archive::binary_iarchive & ia, InputParametersNavierStokes<dim> const & param, double & time,
-    std::vector<value_type> & time_steps, unsigned int const order)
+void resume_restart(boost::archive::binary_iarchive &ia,
+                    InputParametersNavierStokes<dim> const &param,
+                    double &time,
+                    std::vector<double> &time_steps,
+                    unsigned int const order)
 {
 
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
@@ -90,8 +92,11 @@ void resume_restart(boost::archive::binary_iarchive & ia, InputParametersNavierS
 }
 
 template<int dim, typename value_type>
-void write_restart_preamble(boost::archive::binary_oarchive & oa, InputParametersNavierStokes<dim> const & param, std::vector<value_type> const & time_steps,
-                   double const time, unsigned int const order)
+void write_restart_preamble(boost::archive::binary_oarchive &oa,
+                            InputParametersNavierStokes<dim> const &param,
+                            std::vector<double> const &time_steps,
+                            double const time,
+                            unsigned int const order)
 {
 
   unsigned int n_ranks = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
@@ -132,7 +137,8 @@ void write_restart_preamble(boost::archive::binary_oarchive & oa, InputParameter
 }
 
 template<int dim>
-void write_restart_file(std::ostringstream & oss, InputParametersNavierStokes<dim> const & param)
+void write_restart_file(std::ostringstream &oss,
+                        InputParametersNavierStokes<dim> const &param)
 {
   const std::string filename = restart_filename(param);
   std::ofstream stream(filename.c_str());

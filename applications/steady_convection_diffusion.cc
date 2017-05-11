@@ -28,7 +28,7 @@ using namespace ConvDiff;
 #include "convection_diffusion_test_cases/const_rhs_const_and_circular_wind.h"
 
 
-template<int dim, int fe_degree>
+template<int dim, int fe_degree, typename Number=double>
 class ConvDiffProblem
 {
 public:
@@ -66,8 +66,8 @@ private:
       DGConvDiffOperation<dim,fe_degree, value_type> > > driver_steady_conv_diff;
 };
 
-template<int dim, int fe_degree>
-ConvDiffProblem<dim, fe_degree>::
+template<int dim, int fe_degree, typename Number>
+ConvDiffProblem<dim, fe_degree, Number>::
 ConvDiffProblem(const unsigned int n_refine_space_in)
   :
   pcout (std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0),
@@ -105,8 +105,8 @@ ConvDiffProblem(const unsigned int n_refine_space_in)
       DGConvDiffOperation<dim,fe_degree, value_type> >(conv_diff_operation,postprocessor,param));
 }
 
-template<int dim, int fe_degree>
-void ConvDiffProblem<dim, fe_degree>::
+template<int dim, int fe_degree, typename Number>
+void ConvDiffProblem<dim, fe_degree, Number>::
 print_header()
 {
   pcout << std::endl << std::endl << std::endl
@@ -118,8 +118,8 @@ print_header()
   << std::endl;
 }
 
-template<int dim, int fe_degree>
-void ConvDiffProblem<dim, fe_degree>::
+template<int dim, int fe_degree, typename Number>
+void ConvDiffProblem<dim, fe_degree, Number>::
 print_grid_data()
 {
   pcout << std::endl
@@ -132,8 +132,8 @@ print_grid_data()
   print_parameter(pcout,"Number of vertices",triangulation.n_vertices());
 }
 
-template<int dim, int fe_degree>
-void ConvDiffProblem<dim, fe_degree>::
+template<int dim, int fe_degree, typename Number>
+void ConvDiffProblem<dim, fe_degree, Number>::
 setup_postprocessor()
 {
   ConvDiff::PostProcessorData pp_data;
@@ -148,8 +148,8 @@ setup_postprocessor()
                        analytical_solution);
 }
 
-template<int dim, int fe_degree>
-void ConvDiffProblem<dim, fe_degree>::
+template<int dim, int fe_degree, typename Number>
+void ConvDiffProblem<dim, fe_degree, Number>::
 solve_problem()
 {
   // this function has to be defined in the header file that implements

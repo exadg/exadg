@@ -42,9 +42,6 @@ public:
 
   HelmholtzOperator()
     :
-    // TODO Benjamin: remove this from Helmholtz operator
-    strong_homogeneous_dirichlet_bc(false),
-    // TODO Benjamin: remove this from Helmholtz operator
     block_jacobi_matrices_have_been_initialized(false),
     data(nullptr),
     mass_matrix_operator(nullptr),
@@ -157,30 +154,6 @@ public:
     return viscous_operator->get_operator_data();
   }
 
-  // TODO Benjamin: remove this from Helmholtz operator
-  void initialize_strong_homogeneous_dirichlet_boundary_conditions()
-  {
-    strong_homogeneous_dirichlet_bc = true;
-    std::vector<types::global_dof_index> dof_indices(data->get_dof_handler(0).get_fe().dofs_per_cell);
-    for (typename DoFHandler<dim>::active_cell_iterator cell = data->get_dof_handler(0).begin_active();
-        cell != data->get_dof_handler(0).end(); ++cell)
-    if (cell->is_locally_owned())
-      for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
-        if (cell->at_boundary(f) && cell->face(f)->boundary_id() == 0)
-        {
-          cell->get_dof_indices(dof_indices);
-          for (unsigned int i=0; i<data->get_dof_handler(0).get_fe().dofs_per_cell; ++i)
-            if (data->get_dof_handler(0).get_fe().has_support_on_face(i,f))
-            {
-              const std::pair<unsigned int,unsigned int> comp =
-              data->get_dof_handler(0).get_fe().system_to_component_index(i);
-              if (comp.first < dim)
-                dbc_indices.push_back(dof_indices[i]);
-            }
-        }
-  }
-  // TODO Benjamin: remove this from Helmholtz operator
-
   /*
    *  This function does nothing in case of the velocity conv diff operator.
    *  IT is only necessary due to the interface of the multigrid preconditioner
@@ -239,16 +212,7 @@ public:
       dst = 0.0;
     }
 
-    // TODO Benjamin: remove this from Helmholtz operator
-    std::vector<std::pair<Number,Number> > dbc_values;
-    strong_homogeneous_dirichlet_pre(src,dst,dbc_values);
-    // TODO Benjamin: remove this from Helmholtz operator
-
     viscous_operator->apply_add(dst,src);
-
-    // TODO Benjamin: remove this from Helmholtz operator
-    strong_homogeneous_dirichlet_post(src,dst,dbc_values);
-    // TODO Benjamin: remove this from Helmholtz operator
   }
 
   /*
@@ -270,16 +234,7 @@ public:
       dst += temp;
     }
 
-    // TODO Benjamin: remove this from Helmholtz operator
-    std::vector<std::pair<Number,Number> > dbc_values;
-    strong_homogeneous_dirichlet_pre(src,dst,dbc_values);
-    // TODO Benjamin: remove this from Helmholtz operator
-
     viscous_operator->apply_add(dst,src);
-
-    // TODO Benjamin: remove this from Helmholtz operator
-    strong_homogeneous_dirichlet_post(src,dst,dbc_values);
-    // TODO Benjamin: remove this from Helmholtz operator
   }
 
   unsigned int get_dof_index() const
@@ -531,51 +486,6 @@ private:
        fe_eval.set_dof_values (dst);
      }
    }
-
-
-  // TODO Benjamin: remove this from Helmholtz operator
-  void strong_homogeneous_dirichlet_pre(const parallel::distributed::Vector<Number> & src,
-                                        parallel::distributed::Vector<Number> &       dst,
-                                        std::vector<std::pair<Number,Number> > &      dbc_values) const
-  {
-    if(strong_homogeneous_dirichlet_bc)
-    {
-      // save source and set DBC to zero
-      dbc_values.resize(dbc_indices.size());
-      for (unsigned int i=0; i<dbc_indices.size(); ++i)
-      {
-        dbc_values[i] =
-          std::pair<Number,Number>(src(dbc_indices[i]),
-                                   dst(dbc_indices[i]));
-        const_cast<parallel::distributed::Vector<Number>&>(src)(dbc_indices[i]) = 0.;
-      }
-    }
-  }
-  // TODO Benjamin: remove this from Helmholtz operator
-
-  // TODO Benjamin: remove this from Helmholtz operator
-  void strong_homogeneous_dirichlet_post(const parallel::distributed::Vector<Number> &  src,
-                                         parallel::distributed::Vector<Number> &        dst,
-                                         std::vector<std::pair<Number,Number> > const & dbc_values) const
-  {
-    if(strong_homogeneous_dirichlet_bc)
-    {
-      // reset edge constrained values, multiply by unit matrix and add into
-      // destination
-      for (unsigned int i=0; i<dbc_indices.size(); ++i)
-      {
-        const_cast<parallel::distributed::Vector<Number>&>(src)(dbc_indices[i]) = dbc_values[i].first;
-        dst(dbc_indices[i]) = dbc_values[i].second + dbc_values[i].first;
-      }
-    }
-  }
-  // TODO Benjamin: remove this from Helmholtz operator
-
-  // TODO Benjamin: remove this from Helmholtz operator
-  bool strong_homogeneous_dirichlet_bc;
-  std::vector<unsigned int> dbc_indices;
-  std::vector<std::pair<Number,Number> > dbc_values;
-  // TODO Benjamin: remove this from Helmholtz operator
 
   mutable std::vector<LAPACKFullMatrix<Number> > matrices;
   mutable bool block_jacobi_matrices_have_been_initialized;

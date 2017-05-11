@@ -350,9 +350,9 @@ public:
 
   typedef ViscousOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number> This;
 
-  void initialize(Mapping<dim> const              &mapping,
-                  MatrixFree<dim,Number> const    &mf_data,
-                  ViscousOperatorData<dim> const  &operator_data_in)
+  void initialize(Mapping<dim> const             &mapping,
+                  MatrixFree<dim,Number> const   &mf_data,
+                  ViscousOperatorData<dim> const &operator_data_in)
   {
 
     this->data = &mf_data;
@@ -642,14 +642,13 @@ private:
   }
 
   /*
-   *  This function calculates the average viscosity for interior faces using
-   *  a harmonic weighting according to Schott and Rasthofer et al. (2015).
+   *  This function calculates the average viscosity for interior faces.
    */
   inline void calculate_average_viscosity(VectorizedArray<Number> &average_viscosity,
                                           unsigned int const      face,
                                           unsigned int const      q) const
   {
-    // harmonic mean
+    // harmonic mean (harmonic weighting according to Schott and Rasthofer et al. (2015))
     average_viscosity = 2.0 * viscous_coefficient_face[face][q] * viscous_coefficient_face_neighbor[face][q] /
                        (viscous_coefficient_face[face][q] + viscous_coefficient_face_neighbor[face][q]);
 

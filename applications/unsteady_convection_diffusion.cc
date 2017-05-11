@@ -38,7 +38,7 @@ using namespace ConvDiff;
 
 
 
-template<int dim, int fe_degree>
+template<int dim, int fe_degree, typename Number=double>
 class ConvDiffProblem
 {
 public:
@@ -76,8 +76,8 @@ private:
   std::shared_ptr<TimeIntBDFConvDiff<dim,fe_degree,value_type> > time_integrator_BDF;
 };
 
-template<int dim, int fe_degree>
-ConvDiffProblem<dim, fe_degree>::
+template<int dim, int fe_degree, typename Number>
+ConvDiffProblem<dim, fe_degree, Number>::
 ConvDiffProblem(const unsigned int n_refine_space_in,
                 const unsigned int n_refine_time_in)
   :
@@ -145,8 +145,8 @@ ConvDiffProblem(const unsigned int n_refine_space_in,
   }
 }
 
-template<int dim, int fe_degree>
-void ConvDiffProblem<dim, fe_degree>::
+template<int dim, int fe_degree, typename Number>
+void ConvDiffProblem<dim, fe_degree, Number>::
 print_grid_data()
 {
   pcout << std::endl
@@ -159,8 +159,8 @@ print_grid_data()
   print_parameter(pcout,"Number of vertices",triangulation.n_vertices());
 }
 
-template<int dim, int fe_degree>
-void ConvDiffProblem<dim, fe_degree>::
+template<int dim, int fe_degree, typename Number>
+void ConvDiffProblem<dim, fe_degree, Number>::
 setup_postprocessor()
 {
   ConvDiff::PostProcessorData pp_data;
@@ -175,8 +175,8 @@ setup_postprocessor()
                        analytical_solution);
 }
 
-template<int dim, int fe_degree>
-void ConvDiffProblem<dim, fe_degree>::
+template<int dim, int fe_degree, typename Number>
+void ConvDiffProblem<dim, fe_degree, Number>::
 solve_problem()
 {
   // this function has to be defined in the header file that implements

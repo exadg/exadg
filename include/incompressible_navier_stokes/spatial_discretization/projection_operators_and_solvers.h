@@ -75,12 +75,12 @@ template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwal
 class ProjectionOperatorDivergencePenaltyIterative : public ProjectionOperatorBase<dim>
 {
 public:
-  typedef FEEvaluation<dim,fe_degree,fe_degree+1,dim,double> EvalType;
+  typedef FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> EvalType;
 
   ProjectionOperatorDivergencePenaltyIterative(DivergencePenaltyOperator<dim, fe_degree, fe_degree_p,
                                                  fe_degree_xwall, xwall_quad_rule, value_type> const &div_div_penalty)
     :
-    fe_eval(1,FEEvaluation<dim,fe_degree,fe_degree+1,dim,double>(
+    fe_eval(1,FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type>(
                   div_div_penalty.get_data(),
                   div_div_penalty.get_dof_index(),
                   div_div_penalty.get_quad_index())),
@@ -113,14 +113,14 @@ public:
     inverse.fill_inverse_JxW_values(coefficients);
   }
 
-  void precondition(VectorizedArray<double>       *dst,
-                    const VectorizedArray<double> *src) const
+  void precondition(VectorizedArray<value_type>       *dst,
+                    const VectorizedArray<value_type> *src) const
   {
     inverse.apply(coefficients, dim, src, dst);
   }
 
-  void vmult(VectorizedArray<double> *dst,
-             VectorizedArray<double> *src) const
+  void vmult(VectorizedArray<value_type> *dst,
+             VectorizedArray<value_type> *src) const
   {
     Assert(fe_eval[0].get_shape_info().element_type <=
         dealii::internal::MatrixFreeFunctions::tensor_symmetric,
@@ -131,7 +131,7 @@ public:
 
     for (unsigned int q=0; q<fe_eval[0].n_q_points; ++q)
     {
-      VectorizedArray<double> tau_times_div = tau[0] * fe_eval[0].get_divergence(q);
+      VectorizedArray<value_type> tau_times_div = tau[0] * fe_eval[0].get_divergence(q);
       fe_eval[0].submit_divergence(this->get_time_step_size()*tau_times_div, q);
       fe_eval[0].submit_value (fe_eval[0].get_value(q), q);
     }
@@ -140,10 +140,10 @@ public:
   }
 
 private:
-  mutable AlignedVector<FEEvaluation<dim,fe_degree,fe_degree+1,dim,double> > fe_eval;
-  AlignedVector<VectorizedArray<double> > coefficients;
-  MatrixFreeOperators::CellwiseInverseMassMatrix<dim,fe_degree,dim,double> inverse;
-  AlignedVector<VectorizedArray<double> > tau;
+  mutable AlignedVector<FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> > fe_eval;
+  AlignedVector<VectorizedArray<value_type> > coefficients;
+  MatrixFreeOperators::CellwiseInverseMassMatrix<dim,fe_degree,dim,value_type> inverse;
+  AlignedVector<VectorizedArray<value_type> > tau;
   DivergencePenaltyOperator<dim, fe_degree, fe_degree_p,
       fe_degree_xwall, xwall_quad_rule, value_type> const * divergence_penalty_operator;
 };
@@ -387,7 +387,7 @@ private:
                                                       parallel::distributed::Vector<value_type> const &src,
                                                       std::pair<unsigned int,unsigned int> const      &cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval(this->mass_matrix_operator->get_data(),
+    FEEval_Velocity_Velocity_linear fe_eval(data,
                                             this->mass_matrix_operator->get_fe_param(),
                                             this->mass_matrix_operator->get_operator_data().dof_index);
 
@@ -512,8 +512,8 @@ public:
       for (unsigned int j=0; j<total_dofs_per_cell; ++j)
       {
         for (unsigned int i=0; i<total_dofs_per_cell; ++i)
-          fe_eval_velocity.write_cellwise_dof_value(i,make_vectorized_array(0.));
-        fe_eval_velocity.write_cellwise_dof_value(j,make_vectorized_array(1.));
+          fe_eval_velocity.write_cellwise_dof_value(i,make_vectorized_array<value_type>(0.));
+        fe_eval_velocity.write_cellwise_dof_value(j,make_vectorized_array<value_type>(1.));
 
         fe_eval_velocity.evaluate (true,true,false);
         for (unsigned int q=0; q<fe_eval_velocity.n_q_points; ++q)
@@ -629,10 +629,10 @@ public:
     const unsigned int total_dofs_per_cell = fe_eval.dofs_per_cell * dim;
     AlignedVector<VectorizedArray<value_type> > solution(total_dofs_per_cell);
 
-    InternalSolvers::SolverCG<VectorizedArray<double> > cg_solver(total_dofs_per_cell,
-                                                                  solver_data.solver_tolerance_abs,
-                                                                  solver_data.solver_tolerance_rel,
-                                                                  solver_data.max_iter);
+    InternalSolvers::SolverCG<VectorizedArray<value_type> > cg_solver(total_dofs_per_cell,
+                                                                      solver_data.solver_tolerance_abs,
+                                                                      solver_data.solver_tolerance_rel,
+                                                                      solver_data.max_iter);
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {

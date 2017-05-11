@@ -13,7 +13,7 @@
 
 #include "../../../include/incompressible_navier_stokes/user_interface/analytical_solution.h"
 
-template<int dim>
+template<int dim, typename Number>
 class ErrorCalculator
 {
 public:
@@ -22,11 +22,11 @@ public:
     error_counter(0)
   {}
 
-  void setup(DoFHandler<dim> const                                        &dof_handler_velocity_in,
-             DoFHandler<dim> const                                        &dof_handler_pressure_in,
-             Mapping<dim> const                                           &mapping_in,
-             std::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution_in,
-             ErrorCalculationData const                                   &error_data_in)
+  void setup(DoFHandler<dim> const                                 &dof_handler_velocity_in,
+             DoFHandler<dim> const                                 &dof_handler_pressure_in,
+             Mapping<dim> const                                    &mapping_in,
+             std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution_in,
+             ErrorCalculationData const                            &error_data_in)
   {
     dof_handler_velocity = &dof_handler_velocity_in;
     dof_handler_pressure = &dof_handler_pressure_in;
@@ -35,8 +35,8 @@ public:
     error_data = error_data_in;
   }
 
-  void evaluate(parallel::distributed::Vector<double> const  &velocity,
-                parallel::distributed::Vector<double> const  &pressure,
+  void evaluate(parallel::distributed::Vector<Number> const  &velocity,
+                parallel::distributed::Vector<Number> const  &pressure,
                 double const                                 &time,
                 int const                                    &time_step_number)
   {
@@ -84,8 +84,8 @@ private:
 
   ErrorCalculationData error_data;
 
-  void do_evaluate(parallel::distributed::Vector<double> const  &velocity,
-                   parallel::distributed::Vector<double> const  &pressure,
+  void do_evaluate(parallel::distributed::Vector<Number> const  &velocity,
+                   parallel::distributed::Vector<Number> const  &pressure,
                    double const                                 &time)
   {
     ConditionalOStream pcout(std::cout,
@@ -96,9 +96,12 @@ private:
     double error_velocity = 1.0;
     bool relative_velocity = true;
 
+    parallel::distributed::Vector<double> velocity_double;
+    velocity_double = velocity;
+
     calculate_L2_error<dim>(*dof_handler_velocity,
                             *mapping,
-                            velocity,
+                            velocity_double,
                             analytical_solution->velocity,
                             error_velocity,
                             relative_velocity);
@@ -111,9 +114,12 @@ private:
     double error_pressure = 1.0;
     bool relative_pressure = true;
 
+    parallel::distributed::Vector<double> pressure_double;
+    pressure_double = pressure;
+
     calculate_L2_error<dim>(*dof_handler_pressure,
                             *mapping,
-                            pressure,
+                            pressure_double,
                             analytical_solution->pressure,
                             error_pressure,
                             relative_pressure);

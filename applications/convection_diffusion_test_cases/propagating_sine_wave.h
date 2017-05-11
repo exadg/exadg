@@ -178,7 +178,7 @@ public:
 };
 
 template<int dim>
-double NeumannBoundary<dim>::value(const Point<dim>   &p,
+double NeumannBoundary<dim>::value(const Point<dim>   &/* p */,
                                    const unsigned int /* component */) const
 {
   double result = 0.0;
@@ -206,7 +206,7 @@ public:
 };
 
 template<int dim>
-double VelocityField<dim>::value(const Point<dim>   &point,
+double VelocityField<dim>::value(const Point<dim>   &/*point*/,
                                  const unsigned int component) const
 {
   double value = 0.0;
@@ -224,8 +224,8 @@ double VelocityField<dim>::value(const Point<dim>   &point,
 /**************************************************************************************/
 
 template<int dim>
-void create_grid_and_set_boundary_conditions(parallel::distributed::Triangulation<dim>               &triangulation,
-                                             unsigned int const                                      n_refine_space,
+void create_grid_and_set_boundary_conditions(parallel::distributed::Triangulation<dim>         &triangulation,
+                                             unsigned int const                                n_refine_space,
                                              std::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor)
 {
   // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim

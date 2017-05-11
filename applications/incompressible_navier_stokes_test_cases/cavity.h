@@ -17,12 +17,15 @@
 /*                                                                                    */
 /**************************************************************************************/
 
+// single or double precision?
+//typedef float VALUE_TYPE;
+typedef double VALUE_TYPE;
 
 // set the number of space dimensions: dimension = 2, 3
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 5;
+unsigned int const FE_DEGREE_VELOCITY = 2;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -30,15 +33,15 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 1;
-unsigned int const REFINE_STEPS_SPACE_MAX = 5; //REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 4;
+unsigned int const REFINE_STEPS_SPACE_MAX = 6; //REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
-const ProblemType PROBLEM_TYPE = ProblemType::Steady;
+const ProblemType PROBLEM_TYPE = ProblemType::Unsteady; //Steady; // TODO
 const double L = 1.0;
 
 template<int dim>
@@ -46,15 +49,15 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = PROBLEM_TYPE; // PROBLEM_TYPE is also needed somewhere else
-  equation_type = EquationType::NavierStokes;
+  equation_type = EquationType::Stokes; //NavierStokes; //TODO
   formulation_viscous_term = FormulationViscousTerm::DivergenceFormulation;
   right_hand_side = false;
 
 
   // PHYSICAL QUANTITIES
   start_time = 0.0;
-  end_time = 1.0e6;
-  viscosity = 2.e-3;
+  end_time = 1.0e2;
+  viscosity = 1.e-1;
 
 
   // TEMPORAL DISCRETIZATION
@@ -170,30 +173,30 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // nonlinear solver (Newton solver)
   newton_solver_data_coupled.abs_tol = 1.e-20;
-  newton_solver_data_coupled.rel_tol = 1.e-5;
+  newton_solver_data_coupled.rel_tol = 1.e-4; //1.e-5;
   newton_solver_data_coupled.max_iter = 100;
 
   // linear solver
   solver_linearized_navier_stokes = SolverLinearizedNavierStokes::FGMRES; //FGMRES;
   abs_tol_linear = 1.e-20;
-  rel_tol_linear = 1.e-6;
+  rel_tol_linear = 1.e-5; //1.e-6;
   max_iter_linear = 1e4;
-  max_n_tmp_vectors = 1000;
+  max_n_tmp_vectors = 200; //1000;
 
   // preconditioning linear solver
   preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
   update_preconditioner = true;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion;
-  multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::GMRES; //Jacobi; //Chebyshev; //GMRES;
+  momentum_preconditioner = MomentumPreconditioner::VelocityConvectionDiffusion;
+  multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::Jacobi; //Jacobi; //Chebyshev; //GMRES;
 
   // GMRES smoother data
   multigrid_data_momentum_preconditioner.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
   multigrid_data_momentum_preconditioner.gmres_smoother_data.number_of_iterations = 5;
 
   // Jacobi smoother data
-  multigrid_data_momentum_preconditioner.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::PointJacobi; //PointJacobi; //BlockJacobi;
+  multigrid_data_momentum_preconditioner.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
   multigrid_data_momentum_preconditioner.jacobi_smoother_data.number_of_smoothing_steps = 5;
   multigrid_data_momentum_preconditioner.jacobi_smoother_data.damping_factor = 0.7;
 
@@ -215,7 +218,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // write output for visualization of results
   print_input_parameters = false; //true;
-  output_data.write_output = true;
+  output_data.write_output = false; //true;
   output_data.output_folder = "output/";
   output_data.output_name = "cavity";
   output_data.output_start_time = start_time;
@@ -440,7 +443,7 @@ void create_grid_and_set_boundary_conditions(
     std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
     std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                      &periodic_faces)
+      Triangulation<dim>::cell_iterator> >                      &/*periodic_faces*/)
 {
   Point<dim> point1(0.0,0.0), point2(L,L);
   GridGenerator::hyper_rectangle(triangulation,point1,point2);
@@ -490,8 +493,10 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim>
   analytical_solution->pressure.reset(new ZeroFunction<dim>(1));
 }
 
-template<int dim>
-std::shared_ptr<PostProcessorBase<dim> >
+#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+
+template<int dim, typename Number>
+std::shared_ptr<PostProcessorBase<dim,Number> >
 construct_postprocessor(InputParametersNavierStokes<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -502,8 +507,8 @@ construct_postprocessor(InputParametersNavierStokes<dim> const &param)
   pp_data.pressure_difference_data = param.pressure_difference_data;
   pp_data.mass_data = param.mass_data;
 
-  std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE> > pp;
-  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE>(pp_data));
+  std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE, Number> > pp;
+  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE, Number>(pp_data));
 
   return pp;
 }

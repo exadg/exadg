@@ -10,13 +10,13 @@
 
 #include <deal.II/lac/parallel_vector.h>
 
-template<int dim>
+template<int dim, typename Number>
 void my_point_value(const Mapping<dim>                                &mapping,
                     const DoFHandler<dim>                             &dof_handler,
-                    const parallel::distributed::Vector<double>       &solution,
+                    const parallel::distributed::Vector<Number>       &solution,
                     typename DoFHandler<dim>::active_cell_iterator const &cell,
                     Point<dim>  const                                 &point_in_ref_coord,
-                    Vector<double>                                    &value)
+                    Vector<Number>                                    &value)
 {
   Assert(GeometryInfo<dim>::distance_to_unit_cell(point_in_ref_coord) < 1e-10,ExcInternalError());
 
@@ -28,17 +28,17 @@ void my_point_value(const Mapping<dim>                                &mapping,
   fe_values.reinit(cell);
 
   // then use this to get the values of the given fe_function at this point
-  std::vector<Vector<double> > solution_value(1, Vector<double> (fe.n_components()));
+  std::vector<Vector<Number> > solution_value(1, Vector<Number> (fe.n_components()));
   fe_values.get_function_values(solution, solution_value);
   value = solution_value[0];
 }
 
-template<int dim>
+template<int dim, typename Number>
 void evaluate_solution_in_point(DoFHandler<dim> const                       &dof_handler,
                                 Mapping<dim> const                          &mapping,
-                                parallel::distributed::Vector<double> const &numerical_solution,
+                                parallel::distributed::Vector<Number> const &numerical_solution,
                                 Point<dim> const                            &point,
-                                double                                      &solution_value)
+                                Number                                      &solution_value)
 {
   // processor local variables: initialize with zeros since we add values to these variables
   unsigned int counter = 0;
@@ -61,7 +61,7 @@ void evaluate_solution_in_point(DoFHandler<dim> const                       &dof
     if((*cell)->is_locally_owned())
     {
       // this is a safety factor and might be insufficient for strongly distorted elements
-      double const factor = 1.1;
+      Number const factor = 1.1;
       Point<dim> point_in_ref_coord;
       // This if() is needed because the function transform_real_to_unit_cell() throws exception
       // if the point is too far away from the cell.
@@ -80,12 +80,12 @@ void evaluate_solution_in_point(DoFHandler<dim> const                       &dof
                     << std::endl;
         }
 
-        const double distance = GeometryInfo<dim>::distance_to_unit_cell(point_in_ref_coord);
+        const Number distance = GeometryInfo<dim>::distance_to_unit_cell(point_in_ref_coord);
 
         // if point lies on the current cell
         if(distance < 1.0e-10)
         {
-          Vector<double> value(1);
+          Vector<Number> value(1);
           my_point_value(mapping,
                          dof_handler,
                          numerical_solution,
@@ -105,7 +105,7 @@ void evaluate_solution_in_point(DoFHandler<dim> const                       &dof
   Assert(counter>0,ExcMessage("No points found."));
 
   solution_value = Utilities::MPI::sum(solution_value,MPI_COMM_WORLD);
-  solution_value /= (double)counter;
+  solution_value /= (Number)counter;
 }
 
 ///*

@@ -33,8 +33,8 @@ struct PostProcessorData
   TurbulenceStatisticsData turb_stat_data;
 };
 
-template<int dim, int fe_degree_u, int fe_degree_p>
-class PostProcessor : public PostProcessorBase<dim>
+template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
+class PostProcessor : public PostProcessorBase<dim, Number>
 {
 public:
   PostProcessor(PostProcessorData<dim> const &postprocessor_data)
@@ -44,12 +44,12 @@ public:
 
   virtual ~PostProcessor(){}
 
-  virtual void setup(DoFHandler<dim> const                                        &dof_handler_velocity_in,
-                     DoFHandler<dim> const                                        &dof_handler_pressure_in,
-                     Mapping<dim> const                                           &mapping_in,
-                     MatrixFree<dim,double> const                                 &matrix_free_data_in,
-                     DofQuadIndexData const                                       &dof_quad_index_data_in,
-                     std::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution_in)
+  virtual void setup(DoFHandler<dim> const                                 &dof_handler_velocity_in,
+                     DoFHandler<dim> const                                 &dof_handler_pressure_in,
+                     Mapping<dim> const                                    &mapping_in,
+                     MatrixFree<dim,Number> const                          &matrix_free_data_in,
+                     DofQuadIndexData const                                &dof_quad_index_data_in,
+                     std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution_in)
   {
     output_generator.setup(dof_handler_velocity_in,
                            dof_handler_pressure_in,
@@ -76,11 +76,11 @@ public:
                                         pp_data.mass_data);
   }
 
-  virtual void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
-                                 parallel::distributed::Vector<double> const &intermediate_velocity,
-                                 parallel::distributed::Vector<double> const &pressure,
-                                 parallel::distributed::Vector<double> const &vorticity,
-                                 parallel::distributed::Vector<double> const &divergence,
+  virtual void do_postprocessing(parallel::distributed::Vector<Number> const &velocity,
+                                 parallel::distributed::Vector<Number> const &intermediate_velocity,
+                                 parallel::distributed::Vector<Number> const &pressure,
+                                 parallel::distributed::Vector<Number> const &vorticity,
+                                 parallel::distributed::Vector<Number> const &divergence,
                                  double const                                time,
                                  int const                                   time_step_number)
   {
@@ -114,11 +114,11 @@ public:
 private:
   PostProcessorData<dim> pp_data;
 
-  OutputGenerator<dim> output_generator;
-  ErrorCalculator<dim> error_calculator;
-  LiftAndDragCalculator<dim,fe_degree_u,fe_degree_p> lift_and_drag_calculator;
-  PressureDifferenceCalculator<dim, fe_degree_u, fe_degree_p> pressure_difference_calculator;
-  DivergenceAndMassErrorCalculator<dim,fe_degree_u> div_and_mass_error_calculator;
+  OutputGenerator<dim,Number> output_generator;
+  ErrorCalculator<dim,Number> error_calculator;
+  LiftAndDragCalculator<dim,fe_degree_u,fe_degree_p,Number> lift_and_drag_calculator;
+  PressureDifferenceCalculator<dim,fe_degree_u,fe_degree_p,Number> pressure_difference_calculator;
+  DivergenceAndMassErrorCalculator<dim,fe_degree_u,Number> div_and_mass_error_calculator;
 };
 
 

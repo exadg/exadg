@@ -32,12 +32,13 @@ using namespace dealii;
 //#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
 #include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number=double>
 class NavierStokesProblem
 {
 public:
-  typedef typename DGNavierStokesBase<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::value_type value_type;
-  NavierStokesProblem(const unsigned int refine_steps_space, const unsigned int refine_steps_time=0);
+  NavierStokesProblem(unsigned int const refine_steps_space,
+                      unsigned int const refine_steps_time = 0);
+
   void solve_problem(bool do_restart);
 
 private:
@@ -61,21 +62,23 @@ private:
 
   InputParametersNavierStokes<dim> param;
 
-  std::shared_ptr<DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > navier_stokes_operation;
+  std::shared_ptr<DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> > navier_stokes_operation;
 
-  std::shared_ptr<PostProcessorBase<dim> > postprocessor;
+  std::shared_ptr<PostProcessorBase<dim,Number> > postprocessor;
 
-  std::shared_ptr<TimeIntBDFNavierStokes<dim, fe_degree_u, value_type,
-    DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > > time_integrator;
+  std::shared_ptr<TimeIntBDFNavierStokes<dim, fe_degree_u, Number,
+    DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> > > time_integrator;
 };
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 NavierStokesProblem(unsigned int const refine_steps_space,
                     unsigned int const refine_steps_time)
   :
   pcout(std::cout,Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0),
-  triangulation(MPI_COMM_WORLD,dealii::Triangulation<dim>::none,parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
+  triangulation(MPI_COMM_WORLD,
+                dealii::Triangulation<dim>::none,
+                parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
   n_refine_space(refine_steps_space)
 {
   param.set_input_parameters();
@@ -109,24 +112,23 @@ NavierStokesProblem(unsigned int const refine_steps_space,
               param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution,
               ExcMessage("UnsteadyNavierStokesCoupled is an unsteady solver. Hence, problem type has to be unsteady and temporal discretization has to be BDFCoupledSolution to solve this problem."))
 
-  // initialize navier_stokes_operation
-  navier_stokes_operation.reset(new DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>
-      (triangulation,param));
+  navier_stokes_operation.reset(new DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
+          (triangulation,param));
 
   // initialize postprocessor
   // this function has to be defined in the header file
   // that implements all problem specific things like
   // parameters, geometry, boundary conditions, etc.
-  postprocessor = construct_postprocessor<dim>(param);
+  postprocessor = construct_postprocessor<dim,Number>(param);
 
   // initialize time integrator that depends on both navier_stokes_operation and postprocessor
-  time_integrator.reset(new TimeIntBDFCoupled<dim, fe_degree_u, value_type,
-      DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule> >
+  time_integrator.reset(new TimeIntBDFCoupled<dim, fe_degree_u, Number,
+      DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> >
       (navier_stokes_operation,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
 }
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 print_header()
 {
   pcout << std::endl << std::endl << std::endl
@@ -139,16 +141,16 @@ print_header()
   << std::endl;
 }
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 print_mpi_info()
 {
   pcout << std::endl << "MPI info:" << std::endl << std::endl;
   print_parameter(pcout,"Number of processes",Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD));
 }
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 print_grid_data()
 {
   pcout << std::endl
@@ -161,8 +163,8 @@ print_grid_data()
   print_parameter(pcout,"Number of vertices",triangulation.n_vertices());
 }
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 setup_postprocessor()
 {
   DofQuadIndexData dof_quad_index_data;
@@ -178,8 +180,8 @@ setup_postprocessor()
                        analytical_solution);
 }
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 solve_problem(bool do_restart)
 {
   // this function has to be defined in the header file that implements all
@@ -237,7 +239,7 @@ int main (int argc, char** argv)
       //time refinements in order to perform temporal convergence tests
       for(unsigned int refine_steps_time = REFINE_STEPS_TIME_MIN;refine_steps_time <= REFINE_STEPS_TIME_MAX;++refine_steps_time)
       {
-        NavierStokesProblem<DIMENSION, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
+        NavierStokesProblem<DIMENSION, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, VALUE_TYPE>
             navier_stokes_problem(refine_steps_space,refine_steps_time);
 
         navier_stokes_problem.solve_problem(do_restart);

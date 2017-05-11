@@ -12,7 +12,7 @@
 
 template<int dim, typename value_type>
 inline void evaluate_scalar_function (VectorizedArray<value_type>                   &value,
-                                      std::shared_ptr<Function<dim> >         function,
+                                      std::shared_ptr<Function<dim> >               function,
                                       Point<dim,VectorizedArray<value_type> > const &q_points,
                                       double const                                  &eval_time)
 {
@@ -31,7 +31,7 @@ inline void evaluate_scalar_function (VectorizedArray<value_type>               
 
 template<int dim, typename value_type>
 inline void evaluate_vectorial_function(Tensor<1,dim,VectorizedArray<value_type> >    &value,
-                                        std::shared_ptr<Function<dim> >         function,
+                                        std::shared_ptr<Function<dim> >               function,
                                         Point<dim,VectorizedArray<value_type> > const &q_points,
                                         double const                                  &eval_time)
 {

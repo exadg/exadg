@@ -21,16 +21,16 @@
  *  the high-order dual splitting scheme (velocity-correction) or
  *  pressure correction schemes
  */
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-class DGNavierStokesProjectionMethods : public DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+class DGNavierStokesProjectionMethods : public DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
 {
 public:
-  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::value_type value_type;
+  typedef DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> BASE;
 
   DGNavierStokesProjectionMethods(parallel::distributed::Triangulation<dim> const &triangulation,
                                   InputParametersNavierStokes<dim> const          &parameter)
     :
-    DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>(triangulation,parameter)//,
+    BASE(triangulation,parameter)
   {}
 
   virtual ~DGNavierStokesProjectionMethods()
@@ -40,75 +40,67 @@ public:
                              double const &scaling_factor_time_derivative_term) = 0;
 
   // velocity divergence
-  void evaluate_velocity_divergence_term(parallel::distributed::Vector<value_type>        &dst,
-                                         const parallel::distributed::Vector<value_type>  &src,
-                                         const double                                     evaluation_time) const;
-
-  // mass_matrix
-//  void apply_mass_matrix(parallel::distributed::Vector<value_type>       &dst,
-//                         parallel::distributed::Vector<value_type> const &src) const;
+  void evaluate_velocity_divergence_term(parallel::distributed::Vector<Number>       &dst,
+                                         parallel::distributed::Vector<Number> const &src,
+                                         double const                                evaluation_time) const;
 
   // pressure gradient term
-  void evaluate_pressure_gradient_term(parallel::distributed::Vector<value_type>       &dst,
-                                       parallel::distributed::Vector<value_type> const &src,
-                                       value_type const                                evaluation_time) const;
+  void evaluate_pressure_gradient_term(parallel::distributed::Vector<Number>       &dst,
+                                       parallel::distributed::Vector<Number> const &src,
+                                       double const                                evaluation_time) const;
 
   // rhs viscous term (add)
-  void rhs_add_viscous_term(parallel::distributed::Vector<value_type> &dst,
-                            const value_type                          evaluation_time) const;
+  void rhs_add_viscous_term(parallel::distributed::Vector<Number> &dst,
+                            double const                          evaluation_time) const;
 
   // rhs pressure Poisson equation: inhomogeneous parts of boundary face
   // integrals of negative Laplace operator
-  void rhs_ppe_laplace_add(parallel::distributed::Vector<value_type> &dst,
-                           double const                              &evaluation_time) const;
+  void rhs_ppe_laplace_add(parallel::distributed::Vector<Number> &dst,
+                           double const                          &evaluation_time) const;
 
   // solve pressure step
-  unsigned int solve_pressure (parallel::distributed::Vector<value_type>        &dst,
-                               const parallel::distributed::Vector<value_type>  &src) const;
+  unsigned int solve_pressure (parallel::distributed::Vector<Number>       &dst,
+                               parallel::distributed::Vector<Number> const &src) const;
 
   // solve projection step
-  unsigned int solve_projection (parallel::distributed::Vector<value_type>       &dst,
-                                 const parallel::distributed::Vector<value_type> &src,
-                                 const parallel::distributed::Vector<value_type> &velocity_n,
-                                 double const                                    cfl,
-                                 double const                                    time_step_size) const;
+  unsigned int solve_projection (parallel::distributed::Vector<Number>       &dst,
+                                 parallel::distributed::Vector<Number> const &src,
+                                 parallel::distributed::Vector<Number> const &velocity_n,
+                                 double const                                time_step_size) const;
 
 protected:
   virtual void setup_pressure_poisson_solver(double const time_step_size);
   void setup_projection_solver();
 
   // Pressure Poisson equation
-  LaplaceOperator<dim,fe_degree_p, value_type> laplace_operator;
-  std::shared_ptr<PreconditionerBase<value_type> > preconditioner_pressure_poisson;
-  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > pressure_poisson_solver;
+  LaplaceOperator<dim,fe_degree_p, Number> laplace_operator;
+  std::shared_ptr<PreconditionerBase<Number> > preconditioner_pressure_poisson;
+  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<Number> > > pressure_poisson_solver;
 
   // Projection method
 
   // div-div-penalty and continuity penalty operator
-  std::shared_ptr<DivergencePenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > divergence_penalty_operator;
-  std::shared_ptr<ContinuityPenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > continuity_penalty_operator;
+  std::shared_ptr<DivergencePenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> > divergence_penalty_operator;
+  std::shared_ptr<ContinuityPenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> > continuity_penalty_operator;
 
   // projection operator
   std::shared_ptr<ProjectionOperatorBase<dim> > projection_operator;
 
   // projection solver
-  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > projection_solver;
-  std::shared_ptr<PreconditionerBase<value_type> > preconditioner_projection;
+  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<Number> > > projection_solver;
+  std::shared_ptr<PreconditionerBase<Number> > preconditioner_projection;
 
 private:
 };
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 setup_pressure_poisson_solver (double const time_step_size)
 {
-  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector DofHandlerSelector;
-  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector QuadratureSelector;
-
   // setup Laplace operator
   LaplaceOperatorData<dim> laplace_operator_data;
-  laplace_operator_data.laplace_dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::pressure);
-  laplace_operator_data.laplace_quad_index = static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::pressure);
+  laplace_operator_data.laplace_dof_index = this->get_dof_index_pressure();
+  laplace_operator_data.laplace_quad_index = this->get_quad_index_pressure();
   laplace_operator_data.penalty_factor = this->param.IP_factor_pressure;
 
   // TODO: do this in derived classes
@@ -148,7 +140,7 @@ setup_pressure_poisson_solver (double const time_step_size)
   // setup preconditioner
   if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Jacobi)
   {
-    preconditioner_pressure_poisson.reset(new JacobiPreconditioner<value_type, LaplaceOperator<dim, fe_degree_p, value_type> >(laplace_operator));
+    preconditioner_pressure_poisson.reset(new JacobiPreconditioner<Number, LaplaceOperator<dim, fe_degree_p, Number> >(laplace_operator));
   }
   else if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::GeometricMultigrid)
   {
@@ -156,9 +148,9 @@ setup_pressure_poisson_solver (double const time_step_size)
     mg_data = this->param.multigrid_data_pressure_poisson;
 
     // use single precision for multigrid
-    typedef float Number;
+    typedef float MultigridNumber;
 
-    typedef MyMultigridPreconditionerLaplace<dim, value_type, LaplaceOperator<dim, fe_degree_p, Number>, LaplaceOperatorData<dim> > MULTIGRID;
+    typedef MyMultigridPreconditionerLaplace<dim, Number, LaplaceOperator<dim, fe_degree_p, MultigridNumber>, LaplaceOperatorData<dim> > MULTIGRID;
 
     preconditioner_pressure_poisson.reset(new MULTIGRID());
 
@@ -193,9 +185,9 @@ setup_pressure_poisson_solver (double const time_step_size)
     }
 
     // setup solver
-    pressure_poisson_solver.reset(new CGSolver<LaplaceOperator<dim, fe_degree_p, value_type>,
-                                               PreconditionerBase<value_type>,
-                                               parallel::distributed::Vector<value_type> >
+    pressure_poisson_solver.reset(new CGSolver<LaplaceOperator<dim, fe_degree_p, Number>,
+                                               PreconditionerBase<Number>,
+                                               parallel::distributed::Vector<Number> >
        (laplace_operator,
         *preconditioner_pressure_poisson,
         solver_data));
@@ -215,9 +207,9 @@ setup_pressure_poisson_solver (double const time_step_size)
       solver_data.use_preconditioner = true;
     }
 
-    pressure_poisson_solver.reset(new FGMRESSolver<LaplaceOperator<dim, fe_degree_p, value_type>,
-                                                   PreconditionerBase<value_type>,
-                                                   parallel::distributed::Vector<value_type> >
+    pressure_poisson_solver.reset(new FGMRESSolver<LaplaceOperator<dim, fe_degree_p, Number>,
+                                                   PreconditionerBase<Number>,
+                                                   parallel::distributed::Vector<Number> >
         (laplace_operator,
          *preconditioner_pressure_poisson,
          solver_data));
@@ -230,23 +222,20 @@ setup_pressure_poisson_solver (double const time_step_size)
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 setup_projection_solver ()
 {
-  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::DofHandlerSelector DofHandlerSelector;
-  typedef typename DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::QuadratureSelector QuadratureSelector;
-
   // setup divergence and continuity penalty operators
   if(this->param.use_divergence_penalty == true)
   {
     DivergencePenaltyOperatorData div_penalty_data;
     div_penalty_data.penalty_parameter = this->param.divergence_penalty_factor;
 
-    divergence_penalty_operator.reset(new DivergencePenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(
+    divergence_penalty_operator.reset(new DivergencePenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>(
         this->data,
-        static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity),
+        this->get_dof_index_velocity(),
+        this->get_quad_index_velocity_linear(),
         div_penalty_data));
   }
 
@@ -259,10 +248,10 @@ setup_projection_solver ()
     conti_penalty_data.use_boundary_data = false;
     conti_penalty_data.bc = this->boundary_descriptor_velocity;
 
-    continuity_penalty_operator.reset(new ContinuityPenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>(
+    continuity_penalty_operator.reset(new ContinuityPenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>(
         this->data,
-        static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity),
+        this->get_dof_index_velocity(),
+        this->get_quad_index_velocity_linear(),
         conti_penalty_data));
   }
 
@@ -272,10 +261,10 @@ setup_projection_solver ()
   if(this->param.use_divergence_penalty == false &&
      this->param.use_continuity_penalty == false)
   {
-    projection_solver.reset(new ProjectionSolverNoPenalty<dim, fe_degree, value_type>(
+    projection_solver.reset(new ProjectionSolverNoPenalty<dim, fe_degree, Number>(
         this->data,
-        static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity)));
+        this->get_dof_index_velocity(),
+        this->get_quad_index_velocity_linear()));
   }
   // divergence penalty only
   else if(this->param.use_divergence_penalty == true &&
@@ -289,12 +278,12 @@ setup_projection_solver ()
 
       // projection operator
       typedef ProjectionOperatorDivergencePenaltyDirect<dim, fe_degree, fe_degree_p,
-          fe_degree_xwall, xwall_quad_rule, value_type> PROJ_OPERATOR;
+          fe_degree_xwall, xwall_quad_rule, Number> PROJ_OPERATOR;
 
       projection_operator.reset(new PROJ_OPERATOR(*divergence_penalty_operator));
 
       typedef DirectProjectionSolverDivergencePenalty<dim, fe_degree,
-          fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> PROJ_SOLVER;
+          fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> PROJ_SOLVER;
 
       projection_solver.reset(new PROJ_SOLVER(std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
     }
@@ -306,7 +295,7 @@ setup_projection_solver ()
 
       // projection operator
       typedef ProjectionOperatorDivergencePenaltyIterative<dim, fe_degree, fe_degree_p,
-          fe_degree_xwall, xwall_quad_rule, value_type> PROJ_OPERATOR;
+          fe_degree_xwall, xwall_quad_rule, Number> PROJ_OPERATOR;
 
       projection_operator.reset(new PROJ_OPERATOR(*divergence_penalty_operator));
 
@@ -316,7 +305,7 @@ setup_projection_solver ()
       projection_solver_data.solver_tolerance_rel = this->param.rel_tol_projection;
 
       typedef IterativeProjectionSolverDivergencePenalty<dim, fe_degree,
-          fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> PROJ_SOLVER;
+          fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> PROJ_SOLVER;
 
       projection_solver.reset(new PROJ_SOLVER(*std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator),
                                               projection_solver_data));
@@ -341,7 +330,7 @@ setup_projection_solver ()
     // projection operator consisting of mass matrix operator,
     // divergence penalty operator, and continuity penalty operator
     typedef ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree,
-        fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> PROJ_OPERATOR;
+        fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> PROJ_OPERATOR;
 
     projection_operator.reset(new PROJ_OPERATOR(this->mass_matrix_operator,
                                                 *this->divergence_penalty_operator,
@@ -350,10 +339,10 @@ setup_projection_solver ()
     // preconditioner
     if(this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
     {
-      preconditioner_projection.reset(new InverseMassMatrixPreconditioner<dim,fe_degree,value_type>
+      preconditioner_projection.reset(new InverseMassMatrixPreconditioner<dim,fe_degree,Number>
          (this->data,
-          static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
-          static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity)));
+          this->get_dof_index_velocity(),
+          this->get_quad_index_velocity_linear()));
     }
     else if(this->param.preconditioner_projection == PreconditionerProjection::PointJacobi)
     {
@@ -361,7 +350,7 @@ setup_projection_solver ()
       // the penalty parameter of the projection operator has not been calculated and the time step size has
       // not been set. Hence, update_preconditioner = true should be used for the Jacobi preconditioner in order
       // to use to correct diagonal for preconditioning.
-      preconditioner_projection.reset(new JacobiPreconditioner<value_type,PROJ_OPERATOR>
+      preconditioner_projection.reset(new JacobiPreconditioner<Number,PROJ_OPERATOR>
           (*std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
     }
     else if(this->param.preconditioner_projection == PreconditionerProjection::BlockJacobi)
@@ -370,7 +359,7 @@ setup_projection_solver ()
       // the penalty parameter of the projection operator has not been calculated and the time step size has
       // not been set. Hence, update_preconditioner = true should be used for the Jacobi preconditioner in order
       // to use to correct diagonal blocks for preconditioning.
-      preconditioner_projection.reset(new BlockJacobiPreconditioner<value_type,PROJ_OPERATOR>
+      preconditioner_projection.reset(new BlockJacobiPreconditioner<Number,PROJ_OPERATOR>
           (*std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
     }
     else
@@ -408,7 +397,7 @@ setup_projection_solver ()
       }
 
       // setup solver
-      projection_solver.reset(new CGSolver<PROJ_OPERATOR,PreconditionerBase<value_type>,parallel::distributed::Vector<value_type> >
+      projection_solver.reset(new CGSolver<PROJ_OPERATOR,PreconditionerBase<Number>,parallel::distributed::Vector<Number> >
          (*std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator),
           *preconditioner_projection,
           projection_solver_data));
@@ -425,44 +414,36 @@ setup_projection_solver ()
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-evaluate_velocity_divergence_term(parallel::distributed::Vector<value_type>        &dst,
-                                  const parallel::distributed::Vector<value_type>  &src,
-                                  const double                                     evaluation_time) const
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+evaluate_velocity_divergence_term(parallel::distributed::Vector<Number>       &dst,
+                                  parallel::distributed::Vector<Number> const &src,
+                                  double const                                evaluation_time) const
 {
   this->divergence_operator.evaluate(dst,src,evaluation_time);
 }
 
-//template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-//void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-//apply_mass_matrix (parallel::distributed::Vector<value_type>       &dst,
-//                   parallel::distributed::Vector<value_type> const &src) const
-//{
-//  this->mass_matrix_operator.apply(dst,src);
-//}
-
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-evaluate_pressure_gradient_term (parallel::distributed::Vector<value_type>       &dst,
-                                 parallel::distributed::Vector<value_type> const &src,
-                                 value_type const                                evaluation_time) const
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+evaluate_pressure_gradient_term (parallel::distributed::Vector<Number>       &dst,
+                                 parallel::distributed::Vector<Number> const &src,
+                                 double const                                evaluation_time) const
 {
   this->gradient_operator.evaluate(dst,src,evaluation_time);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-rhs_add_viscous_term(parallel::distributed::Vector<value_type>  &dst,
-                     const value_type                           evaluation_time) const
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+rhs_add_viscous_term(parallel::distributed::Vector<Number> &dst,
+                     double const                          evaluation_time) const
 {
   this->viscous_operator.rhs_add(dst,evaluation_time);
 }
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-rhs_ppe_laplace_add(parallel::distributed::Vector<value_type> &dst,
-                    double const                              &evaluation_time) const
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+rhs_ppe_laplace_add(parallel::distributed::Vector<Number> &dst,
+                    double const                          &evaluation_time) const
 {
   const LaplaceOperatorData<dim> &data = this->laplace_operator.get_operator_data();
 
@@ -477,23 +458,22 @@ rhs_ppe_laplace_add(parallel::distributed::Vector<value_type> &dst,
   this->laplace_operator.rhs_add(dst);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-unsigned int DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-solve_pressure (parallel::distributed::Vector<value_type>        &dst,
-                const parallel::distributed::Vector<value_type>  &src) const
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+unsigned int DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+solve_pressure (parallel::distributed::Vector<Number>       &dst,
+                parallel::distributed::Vector<Number> const &src) const
 {
   unsigned int n_iter = this->pressure_poisson_solver->solve(dst,src);
 
   return n_iter;
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-unsigned int DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-solve_projection (parallel::distributed::Vector<value_type>       &dst,
-                  const parallel::distributed::Vector<value_type> &src,
-                  const parallel::distributed::Vector<value_type> &velocity,
-                  double const                                    cfl,
-                  double const                                    time_step_size) const
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+unsigned int DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+solve_projection (parallel::distributed::Vector<Number>       &dst,
+                  parallel::distributed::Vector<Number> const &src,
+                  parallel::distributed::Vector<Number> const &velocity,
+                  double const                                time_step_size) const
 {
   // Update projection operator, i.e., the penalty parameters that depend on
   // the current solution (velocity field).

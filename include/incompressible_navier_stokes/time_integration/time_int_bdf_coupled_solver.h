@@ -19,11 +19,11 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 class TimeIntBDFCoupled : public TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>
 {
 public:
-  TimeIntBDFCoupled(std::shared_ptr<NavierStokesOperation>   navier_stokes_operation_in,
-                    std::shared_ptr<PostProcessorBase<dim> > postprocessor_in,
-                    InputParametersNavierStokes<dim> const         &param_in,
-                    unsigned int const                             n_refine_time_in,
-                    bool const                                     use_adaptive_time_stepping)
+  TimeIntBDFCoupled(std::shared_ptr<NavierStokesOperation>              navier_stokes_operation_in,
+                    std::shared_ptr<PostProcessorBase<dim,value_type> > postprocessor_in,
+                    InputParametersNavierStokes<dim> const              &param_in,
+                    unsigned int const                                  n_refine_time_in,
+                    bool const                                          use_adaptive_time_stepping)
     :
     TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>
             (navier_stokes_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
@@ -212,19 +212,19 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 write_restart_vectors(boost::archive::binary_oarchive & oa) const
 {
-  VectorView<double> tmp(solution[0].block(0).local_size(),
-                         solution[0].block(0).begin());
+  VectorView<value_type> tmp(solution[0].block(0).local_size(),
+                             solution[0].block(0).begin());
   oa << tmp;
   for (unsigned int i=1; i<solution.size(); i++)
   {
     tmp.reinit(solution[i].block(0).local_size(),
-        solution[i].block(0).begin());
+               solution[i].block(0).begin());
     oa << tmp;
   }
   for (unsigned int i=0; i<solution.size(); i++)
   {
     tmp.reinit(solution[i].block(1).local_size(),
-        solution[i].block(1).begin());
+               solution[i].block(1).begin());
     oa << tmp;
   }
 }
@@ -406,10 +406,10 @@ postprocess_velocity()
   navier_stokes_operation->update_projection_operator(solution_np.block(0),this->time_steps[0]);
 
   // calculate inhomongeneous boundary faces integrals and add to rhs
-  navier_stokes_operation->rhs_projection_add(temp,this->time + this->time_steps[0],this->time_steps[0]);
+  navier_stokes_operation->rhs_projection_add(temp,this->time + this->time_steps[0]);
 
   // solve projection (the preconditioner is updated here)
-  unsigned int iterations = navier_stokes_operation->solve_projection(solution_np.block(0),temp,solution_np.block(0),this->time_steps[0]);
+  unsigned int iterations = navier_stokes_operation->solve_projection(solution_np.block(0),temp);
 
   // write output
   if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)

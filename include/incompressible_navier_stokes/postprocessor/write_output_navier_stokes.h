@@ -12,15 +12,15 @@
 
 #include "../../incompressible_navier_stokes/postprocessor/output_data_navier_stokes.h"
 
-template<int dim>
+template<int dim, typename Number>
 void write_output_navier_stokes(OutputDataNavierStokes const                &output_data,
                                 DoFHandler<dim> const                       &dof_handler_velocity,
                                 DoFHandler<dim> const                       &dof_handler_pressure,
                                 Mapping<dim> const                          &mapping,
-                                parallel::distributed::Vector<double> const &velocity,
-                                parallel::distributed::Vector<double> const &pressure,
-                                parallel::distributed::Vector<double> const &vorticity,
-                                parallel::distributed::Vector<double> const &divergence,
+                                parallel::distributed::Vector<Number> const &velocity,
+                                parallel::distributed::Vector<Number> const &pressure,
+                                parallel::distributed::Vector<Number> const &vorticity,
+                                parallel::distributed::Vector<Number> const &divergence,
                                 unsigned int const                          output_counter)
 {
   DataOut<dim> data_out;
@@ -80,7 +80,7 @@ void write_output_navier_stokes(OutputDataNavierStokes const                &out
   }
 }
 
-template<int dim>
+template<int dim, typename Number>
 class OutputGenerator
 {
 public:
@@ -103,10 +103,10 @@ public:
     output_counter = output_data.output_counter_start;
   }
 
-  void write_output(parallel::distributed::Vector<double> const &velocity,
-                    parallel::distributed::Vector<double> const &pressure,
-                    parallel::distributed::Vector<double> const &vorticity,
-                    parallel::distributed::Vector<double> const &divergence,
+  void write_output(parallel::distributed::Vector<Number> const &velocity,
+                    parallel::distributed::Vector<Number> const &pressure,
+                    parallel::distributed::Vector<Number> const &vorticity,
+                    parallel::distributed::Vector<Number> const &divergence,
                     double const                                &time,
                     int const                                   &time_step_number)
   {
