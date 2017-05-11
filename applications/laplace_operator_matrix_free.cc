@@ -36,6 +36,9 @@
 
 using namespace dealii;
 
+#ifdef LIKWID_PERFMON
+  #include <likwid.h>
+#endif
 
 
 /**************************************************************************************/
@@ -49,11 +52,12 @@ unsigned int const DIMENSION = 3;
 
 // set the polynomial degree of the shape functions k = 1,...,10
 unsigned int const FE_DEGREE_MIN = 1;
-unsigned int const FE_DEGREE_MAX = 10;
+unsigned int const FE_DEGREE_MAX = 3;
+bool const RUN_EQUAL_SIZE = true;
 
 // set the number of refinement levels
-unsigned int const REFINE_STEPS_SPACE_MIN = 3;
-unsigned int const REFINE_STEPS_SPACE_MAX = 4;
+unsigned int const REFINE_STEPS_SPACE_MIN = 6;
+unsigned int const REFINE_STEPS_SPACE_MAX = 6;
 
 // mesh type: currently, a cartesian mesh is implemented (hyper cube)
 // and a non-cartesian mesh (hyper shell)
@@ -62,7 +66,7 @@ enum class MeshType{
   NonCartesian
 };
 
-MeshType MESH_TYPE = MeshType::NonCartesian; //Cartesian; //NonCartesian;
+MeshType MESH_TYPE = MeshType::Cartesian; //Cartesian; //NonCartesian;
 
 // compute cell integrals (default: true)
 bool const COMPUTE_CELL_INTEGRALS = true;
@@ -385,6 +389,9 @@ void LaplaceOperator<dim,degree,Number>::
 run_vmult_loop(parallel::distributed::Vector<Number>       &dst,
                parallel::distributed::Vector<Number> const &src) const
 {
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_START(("cell_loop_basic_p" + std::to_string(degree)).c_str());
+#endif
   if (this->operator_data.compute_face_integrals == false)
     data->cell_loop (&LaplaceOperator<dim, degree, Number>::cell_loop,
                      this, dst, src);
@@ -395,6 +402,9 @@ run_vmult_loop(parallel::distributed::Vector<Number>       &dst,
                 this, dst, src,
                 MatrixFree<dim,Number>::values_and_gradients,
                 MatrixFree<dim,Number>::values_and_gradients);
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_STOP(("cell_loop_basic_p" + std::to_string(degree)).c_str());
+#endif
 }
 
 template <int dim, int degree, typename Number>
@@ -556,6 +566,9 @@ void LaplaceOperator<dim,degree,Number>::
 cell_loop_manual_1(parallel::distributed::Vector<Number> &dst,
                    const parallel::distributed::Vector<Number> &src) const
 {
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_START(("cell_loop_1_p" + std::to_string(degree)).c_str());
+#endif
   // do not exchange data or zero out, assume DG operator does not need to
   // exchange and that the loop below takes care of the zeroing
 
@@ -703,6 +716,9 @@ cell_loop_manual_1(parallel::distributed::Vector<Number> &dst,
         }
     }
   data->release_scratch_data(scratch_data_array);
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_STOP(("cell_loop_1_p" + std::to_string(degree)).c_str());
+#endif
 }
 
 
@@ -714,6 +730,9 @@ cell_loop_manual_2(parallel::distributed::Vector<Number> &dst,
 {
   if (dim != 3 || degree < 1)
     return;
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_START(("cell_loop_2_p" + std::to_string(degree)).c_str());
+#endif
   // simlar to cell_loop_manual_1 but expanding the loops of eval_val.value
   // and eval.gradient
 
@@ -1226,6 +1245,9 @@ cell_loop_manual_2(parallel::distributed::Vector<Number> &dst,
         }
     }
   data->release_scratch_data(scratch_data_array);
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_STOP(("cell_loop_2_p" + std::to_string(degree)).c_str());
+#endif
 }
 
 
@@ -1239,6 +1261,10 @@ cell_loop_manual_3(parallel::distributed::Vector<Number> &dst,
     return;
   // simlar to cell_loop_manual_1 but expanding the loops of eval_val.value
   // and eval.gradient
+
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_START(("cell_loop_3_p" + std::to_string(degree)).c_str());
+#endif
 
   // do not exchange data or zero out, assume DG operator does not need to
   // exchange and that the loop below takes care of the zeroing
@@ -1429,13 +1455,13 @@ cell_loop_manual_3(parallel::distributed::Vector<Number> &dst,
               }
         }
 
-      for (unsigned int i2=0; i2<nn; ++i2)
+      for (unsigned int i2=0; i2<nn; ++i2)  // loop over z layers
         {
           VectorizedArray<Number> *__restrict in = data_ptr + i2*nn*nn;
           VectorizedArray<Number> *__restrict outz = data_ptr + dofs_per_cell;
           VectorizedArray<Number> outy[nn*nn];
           // y-derivative
-          for (unsigned int i1=0; i1<nn; ++i1)
+          for (unsigned int i1=0; i1<nn; ++i1) // loop over x layers
             {
               VectorizedArray<Number> xp[mid>0?mid:1], xm[mid>0?mid:1];
               for (unsigned int i=0; i<mid; ++i)
@@ -1467,8 +1493,9 @@ cell_loop_manual_3(parallel::distributed::Vector<Number> &dst,
                   outy[i1+nn*mid] = r0;
                 }
             }
+
           // x-derivative
-          for (unsigned int i1=0; i1<nn; ++i1)
+          for (unsigned int i1=0; i1<nn; ++i1) // loop over y layers
             {
               VectorizedArray<Number> outx[nn];
               VectorizedArray<Number> xp[mid>0?mid:1], xm[mid>0?mid:1];
@@ -1579,9 +1606,10 @@ cell_loop_manual_3(parallel::distributed::Vector<Number> &dst,
                     r0 += shape_grads[ind+mid*offset] * xm[ind];
                   in[i1*nn+mid] = r0;
                 }
-            }
+            } // end of loop over y layers
+
           // y-derivative
-          for (unsigned int i1=0; i1<nn; ++i1)
+          for (unsigned int i1=0; i1<nn; ++i1) // loop over x layers
             {
               VectorizedArray<Number> xp[mid>0?mid:1], xm[mid>0?mid:1];
               for (unsigned int i=0; i<mid; ++i)
@@ -1613,7 +1641,7 @@ cell_loop_manual_3(parallel::distributed::Vector<Number> &dst,
                   in[i1+nn*mid] = r0;
                 }
             }
-        }
+        } // end of loop over z layers
 
       // z direction
       for (unsigned int i1 = 0; i1<nn*nn; ++i1)
@@ -1762,6 +1790,10 @@ cell_loop_manual_3(parallel::distributed::Vector<Number> &dst,
         }
     }
   data->release_scratch_data(scratch_data_array);
+
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_STOP(("cell_loop_3_p" + std::to_string(degree)).c_str());
+#endif
 }
 
 
@@ -1875,6 +1907,7 @@ public:
         matrix_free_data.initialize_dof_vector(dst2);
         wall_time = 0.0;
 
+#if 0
         if(wall_time_calculation == WallTimeCalculation::Minimum)
           wall_time = std::numeric_limits<double>::max();
         MPI_Barrier(MPI_COMM_WORLD);
@@ -1940,7 +1973,7 @@ public:
               << dst2.linfty_norm() << std::endl;
         times[2] = wall_time;
 
-
+#endif
 
         if(wall_time_calculation == WallTimeCalculation::Minimum)
           wall_time = std::numeric_limits<double>::max();
@@ -2086,7 +2119,11 @@ public:
   static void run(unsigned int const refine_steps_space)
   {
     LaplaceRunTime<dim,degree,degree,value_type>::run(refine_steps_space);
-    LaplaceRunTime<dim,degree+1,max_degree,value_type>::run(refine_steps_space);
+    const unsigned int next_degree =
+      RUN_EQUAL_SIZE ? ((2*(degree+1)-1)>max_degree?max_degree:(2*(degree+1)-1)) :
+      degree+1;
+    LaplaceRunTime<dim,next_degree,max_degree,value_type>::run(refine_steps_space-
+                                                               (RUN_EQUAL_SIZE ? 1 : 0));
   }
 };
 
@@ -2130,6 +2167,23 @@ void print_wall_times(std::vector<std::pair<unsigned int, std::array<double,4> >
 
 int main (int argc, char** argv)
 {
+#ifdef LIKWID_PERFMON
+LIKWID_MARKER_INIT;
+#pragma omp parallel
+{
+  LIKWID_MARKER_THREADINIT;
+}
+// On the first MARKER_START likwid forks all threads. They inherit the parents
+// memory usage, which is the full allocate amount for the domain. This can easily
+// become too much and likwid crashes. As a workaround the forks are called here,
+// where hardly any memory is reserved.
+#pragma omp parallel
+{
+  LIKWID_MARKER_START("zzzdummy");
+  LIKWID_MARKER_STOP("zzzdummy");
+}
+#endif
+
   try
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
@@ -2170,6 +2224,10 @@ int main (int argc, char** argv)
               << std::endl;
     return 1;
   }
+
+#ifdef LIKWID_PERFMON
+LIKWID_MARKER_CLOSE;
+#endif
 
   return 0;
 }
