@@ -34,7 +34,7 @@ public:
   DGConvDiffOperation(parallel::distributed::Triangulation<dim> const &triangulation,
                       ConvDiff::InputParametersConvDiff const         &param_in)
     :
-    fe(QGaussLobatto<1>(fe_degree+1)),
+    fe(fe_degree),
     mapping(fe_degree),
     dof_handler(triangulation),
     param(param_in)
@@ -460,7 +460,7 @@ private:
   }
 
 
-  FE_DGQArbitraryNodes<dim> fe;
+  FE_DGQ<dim> fe;
   MappingQGeneric<dim> mapping;
   DoFHandler<dim> dof_handler;
 
