@@ -709,7 +709,7 @@ private:
     /*
      *  Compute singular values manually using a self-contained method
      *  (see appendix in Nicoud et al. (2011)). This approach is more efficient
-     *  that calculating eigenvalues or singular values using LAPACK routines.
+     *  than calculating eigenvalues or singular values using LAPACK routines.
      */
     VectorizedArray<Number> D = make_vectorized_array<Number>(0.0);
 
@@ -727,9 +727,12 @@ private:
       {
         Number alpha1 = invariant1[n]*invariant1[n]/9.0 - invariant2[n]/3.0;
         Number alpha2 = invariant1[n]*invariant1[n]*invariant1[n]/27.0 - invariant1[n]*invariant2[n]/6.0 + invariant3[n]/2.0;
-        AssertThrow(alpha1>=0.0+1.0e-12,ExcMessage("alpha1 has to be larger than zero."));
+        AssertThrow(alpha1>= std::numeric_limits<double>::denorm_min() /*smallest positive value*/,
+            ExcMessage("alpha1 has to be larger than zero."));
+
         Number factor = alpha2/std::pow(alpha1,1.5);
-        AssertThrow(std::abs(factor)<=1.0+1.0e-12,ExcMessage("Cannot compute arccos(value) if abs(value)>1.0."));
+        AssertThrow(std::abs(factor)<=1.0+1.0e-12,
+            ExcMessage("Cannot compute arccos(value) if abs(value)>1.0."));
 
         // Ensure that the argument of arccos() is in the interval [-1,1].
         if(factor > 1.0)

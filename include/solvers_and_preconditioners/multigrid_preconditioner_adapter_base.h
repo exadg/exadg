@@ -418,7 +418,7 @@ protected:
 
   virtual void initialize_mg_transfer(const DoFHandler<dim> &dof_handler,
                                       const std::vector<GridTools::PeriodicFacePair<typename
-                                        Triangulation<dim>::cell_iterator> > &periodic_face_pairs_level0)
+                                        Triangulation<dim>::cell_iterator> > &/*periodic_face_pairs_level0*/)
   {
     mg_transfer.set_operator(mg_matrices);
     mg_transfer.initialize_constraints(mg_constrained_dofs);

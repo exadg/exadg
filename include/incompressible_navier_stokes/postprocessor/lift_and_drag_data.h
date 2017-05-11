@@ -8,6 +8,9 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_LIFT_AND_DRAG_DATA_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_LIFT_AND_DRAG_DATA_H_
 
+#include <deal.II/base/types.h>
+
+using namespace dealii;
 
 struct LiftAndDragData
 {
@@ -36,8 +39,8 @@ struct LiftAndDragData
   double reference_value;
 
   /*
-   *  set with boundary ID's of the surface area used
-   *  to calculate lift and drag coefficient
+   *  set containing boundary ID's of the surface area used
+   *  to calculate lift and drag coefficients
    */
   std::set<types::boundary_id> boundary_IDs;
 

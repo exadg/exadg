@@ -2670,10 +2670,18 @@ public:
     if (dof_handler.get_fe().dofs_per_vertex == 0)
       addit_data.build_face_info = true;
 
-    // TODO
-//    addit_data.mapping_update_flags = (update_gradients | update_JxW_values |
-//                                       update_quadrature_points | update_normal_vectors |
-//                                       update_values);
+    addit_data.mapping_update_flags = (update_gradients | update_JxW_values |
+                                       update_quadrature_points | update_normal_vectors |
+                                       update_values);
+
+    addit_data.mapping_update_flags_inner_faces = (update_gradients | update_JxW_values |
+                                                   update_quadrature_points | update_normal_vectors |
+                                                   update_values);
+
+    addit_data.mapping_update_flags_boundary_faces = (update_gradients | update_JxW_values |
+                                                      update_quadrature_points | update_normal_vectors |
+                                                      update_values);
+
 
     addit_data.level_mg_handler = level;
     addit_data.periodic_face_pairs_level_0 = periodic_face_pairs_level0;
@@ -3077,10 +3085,18 @@ public:
     addit_data.tasks_parallel_scheme = MatrixFree<dim,Number>::AdditionalData::none;
     if (dof_handler.get_fe().dofs_per_vertex == 0)
       addit_data.build_face_info = true;
-    // TODO
+
     addit_data.mapping_update_flags = (update_gradients | update_JxW_values |
                                        update_quadrature_points | update_normal_vectors |
                                        update_values);
+
+    addit_data.mapping_update_flags_inner_faces = (update_gradients | update_JxW_values |
+                                                   update_quadrature_points | update_normal_vectors |
+                                                   update_values);
+
+    addit_data.mapping_update_flags_boundary_faces = (update_gradients | update_JxW_values |
+                                                      update_quadrature_points | update_normal_vectors |
+                                                      update_values);
 
     addit_data.level_mg_handler = level;
     addit_data.periodic_face_pairs_level_0 = periodic_face_pairs_level0;
@@ -3633,7 +3649,7 @@ private:
 //   The implicit solution of linear systems of equations (in case of implicit time integration)
 //   is currently not available for this implementation.
 
-template<int dim>
+template<int dim,typename Number>
 struct ConvectionDiffusionOperatorDataEfficiency
 {
   ConvectionDiffusionOperatorDataEfficiency (){}
@@ -3653,9 +3669,9 @@ public:
     diffusivity(-1.0)
   {}
 
-  void initialize(Mapping<dim> const                                   &mapping,
-                  MatrixFree<dim,value_type> const                     &mf_data,
-                  ConvectionDiffusionOperatorDataEfficiency<dim> const &operator_data_in)
+  void initialize(Mapping<dim> const                                              &mapping,
+                  MatrixFree<dim,value_type> const                                &mf_data,
+                  ConvectionDiffusionOperatorDataEfficiency<dim,value_type> const &operator_data_in)
   {
     this->data = &mf_data;
     this->operator_data = operator_data_in;
@@ -4012,7 +4028,7 @@ private:
   }
 
   MatrixFree<dim,value_type> const * data;
-  ConvectionDiffusionOperatorDataEfficiency<dim> operator_data;
+  ConvectionDiffusionOperatorDataEfficiency<dim,value_type> operator_data;
   AlignedVector<VectorizedArray<value_type> > array_penalty_parameter;
   double diffusivity;
   mutable value_type eval_time;

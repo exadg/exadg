@@ -140,6 +140,15 @@ public:
                                        update_quadrature_points | update_normal_vectors |
                                        update_values);
 
+    addit_data.mapping_update_flags_inner_faces = (update_gradients | update_JxW_values |
+                                                   update_quadrature_points | update_normal_vectors |
+                                                   update_values);
+
+    addit_data.mapping_update_flags_boundary_faces = (update_gradients | update_JxW_values |
+                                                      update_quadrature_points | update_normal_vectors |
+                                                      update_values);
+
+
     addit_data.level_mg_handler = level;
     addit_data.periodic_face_pairs_level_0 = periodic_face_pairs_level0;
 

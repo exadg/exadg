@@ -40,27 +40,26 @@ using namespace dealii;
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 class DGNavierStokesDualSplittingXWall;
 
-//struct MassMatrixOperatorData;
 template<int dim> struct ViscousOperatorData;
 template<int dim> struct ConvectiveOperatorData;
 template<int dim> struct GradientOperatorData;
 template<int dim> struct DivergenceOperatorData;
 template<int dim> struct BodyForceOperatorData;
 
-template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 class MassMatrixOperator;
-template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 class ConvectiveOperator;
-template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 class ViscousOperator;
-template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 class BodyForceOperator;
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 class GradientOperator;
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 class DivergenceOperator;
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number=double>
 class DGNavierStokesBase : public MatrixOperatorBase
 {
 public:
@@ -77,10 +76,16 @@ public:
     n_variants = velocity_nonlinear+1
   };
 
-  typedef double value_type;
   static const unsigned int number_vorticity_components = (dim==2) ? 1 : dim;
   static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
+
+  static const unsigned int dof_index_u = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity);
+  static const unsigned int dof_index_p = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure);
+
+  static const unsigned int quad_index_u = static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity);
+  static const unsigned int quad_index_p = static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::pressure);
+  static const unsigned int quad_index_u_nonlinear = static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity_nonlinear);
 
   /*
    * nomenclature typdedef FEEvaluationWrapper:
@@ -89,11 +94,11 @@ public:
    * quadrature formula with fe_degree_velocity+1 quadrature points
    */
 
-  typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
+  typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,Number,is_xwall> FEEval_Velocity_Velocity_linear;
 
-  typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEFaceEval_Velocity_Velocity_linear;
+  typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,Number,is_xwall> FEFaceEval_Velocity_Velocity_linear;
 
-  // constructor
+  // Constructor
   DGNavierStokesBase(parallel::distributed::Triangulation<dim> const &triangulation,
                      InputParametersNavierStokes<dim> const          &parameter)
     :
@@ -107,7 +112,7 @@ public:
     inverse_mass_matrix_operator(nullptr)
   {}
 
-  // destructor
+  // Destructor
   virtual ~DGNavierStokesBase()
   {
     data.clear();
@@ -116,42 +121,42 @@ public:
   void initialize_boundary_descriptor_laplace();
 
   virtual void setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
-                                                                                  periodic_face_pairs,
+                                                                            periodic_face_pairs,
                       std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
                       std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
                       std::shared_ptr<FieldFunctionsNavierStokes<dim> >     field_functions);
 
-  void apply_mass_matrix(parallel::distributed::Vector<value_type>       &dst,
-                         parallel::distributed::Vector<value_type> const &src) const;
+  void apply_mass_matrix(parallel::distributed::Vector<Number>       &dst,
+                         parallel::distributed::Vector<Number> const &src) const;
 
-  virtual void prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
-                                            parallel::distributed::Vector<value_type> &pressure,
-                                            double const                              evaluation_time) const;
+  virtual void prescribe_initial_conditions(parallel::distributed::Vector<Number> &velocity,
+                                            parallel::distributed::Vector<Number> &pressure,
+                                            double const                          evaluation_time) const;
 
 
-  MatrixFree<dim,value_type> const & get_data() const
+  MatrixFree<dim,Number> const & get_data() const
   {
     return data;
   }
 
   unsigned int get_dof_index_velocity() const
   {
-    return static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity);
+    return dof_index_u;
   }
 
   unsigned int get_quad_index_velocity_linear() const
   {
-    return static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity);
+    return quad_index_u;
   }
 
   unsigned int get_dof_index_pressure() const
   {
-    return static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure);
+    return dof_index_p;
   }
 
   unsigned int get_quad_index_pressure() const
   {
-    return static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::pressure);
+    return quad_index_p;
   }
 
   Mapping<dim> const & get_mapping() const
@@ -215,60 +220,57 @@ public:
   }
 
   // initialization of vectors
-  void initialize_vector_velocity(parallel::distributed::Vector<value_type> &src) const
+  void initialize_vector_velocity(parallel::distributed::Vector<Number> &src) const
   {
-    this->data.initialize_dof_vector(src,
-        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
+    this->data.initialize_dof_vector(src,dof_index_u);
   }
 
-  void initialize_vector_vorticity(parallel::distributed::Vector<value_type> &src) const
+  void initialize_vector_vorticity(parallel::distributed::Vector<Number> &src) const
   {
-    this->data.initialize_dof_vector(src,
-        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity));
+    this->data.initialize_dof_vector(src,dof_index_u);
   }
 
-  void initialize_vector_pressure(parallel::distributed::Vector<value_type> &src) const
+  void initialize_vector_pressure(parallel::distributed::Vector<Number> &src) const
   {
-    this->data.initialize_dof_vector(src,
-        static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure));
+    this->data.initialize_dof_vector(src,dof_index_p);
   }
 
   // special case: pure Dirichlet boundary conditions
   // if analytical solution is available: shift pressure so that the numerical pressure solution
   // coincides the the analytical pressure solution in an arbitrary point.
   // Note that the parameter 'eval_time' is only needed for unsteady problems.
-  void  shift_pressure (parallel::distributed::Vector<value_type> &pressure,
+  void  shift_pressure (parallel::distributed::Vector<Number> &pressure,
                         double const                              &eval_time = 0.0) const;
 
   // special case: pure Dirichlet boundary conditions
   // if analytical solution is available: shift pressure so that the numerical pressure solution
   // has a mean value identical to the "exact pressure solution" obtained by interpolation of analytical solution.
   // Note that the parameter 'eval_time' is only needed for unsteady problems.
-  void  shift_pressure_mean_value (parallel::distributed::Vector<value_type> &pressure,
+  void  shift_pressure_mean_value (parallel::distributed::Vector<Number> &pressure,
                                    double const                              &eval_time = 0.0) const;
 
   // special case: pure Dirichlet boundary conditions
   // if no analytical solution is available: set mean value of pressure vector to zero
-  void apply_zero_mean (parallel::distributed::Vector<value_type>  &dst) const;
+  void apply_zero_mean (parallel::distributed::Vector<Number>  &dst) const;
 
   // vorticity
-  void compute_vorticity (parallel::distributed::Vector<value_type>       &dst,
-                          const parallel::distributed::Vector<value_type> &src) const;
+  void compute_vorticity (parallel::distributed::Vector<Number>       &dst,
+                          const parallel::distributed::Vector<Number> &src) const;
 
   // divergence
-  void compute_divergence (parallel::distributed::Vector<value_type>       &dst,
-                           const parallel::distributed::Vector<value_type> &src) const;
+  void compute_divergence (parallel::distributed::Vector<Number>       &dst,
+                           const parallel::distributed::Vector<Number> &src) const;
 
-  void evaluate_convective_term (parallel::distributed::Vector<value_type>       &dst,
-                                 parallel::distributed::Vector<value_type> const &src,
-                                 value_type const                                evaluation_time) const;
+  void evaluate_convective_term (parallel::distributed::Vector<Number>       &dst,
+                                 parallel::distributed::Vector<Number> const &src,
+                                 Number const                                evaluation_time) const;
 
   /*
    *  Update turbulence model, i.e., calculate turbulent viscosity
    */
-  void update_turbulence_model (parallel::distributed::Vector<value_type> const &velocity);
+  void update_turbulence_model (parallel::distributed::Vector<Number> const &velocity);
 
-  parallel::distributed::Vector<value_type> & get_viscosity_dof_vector()
+  parallel::distributed::Vector<Number> & get_viscosity_dof_vector()
   {
     return viscous_operator.get_viscosity_dof_vector();
   }
@@ -276,10 +278,10 @@ public:
 private:
   virtual void create_dofs();
 
-  virtual void data_reinit(typename MatrixFree<dim,value_type>::AdditionalData & additional_data);
+  virtual void data_reinit(typename MatrixFree<dim,Number>::AdditionalData & additional_data);
 
 protected:
-  MatrixFree<dim,value_type> data;
+  MatrixFree<dim,Number> data;
 
   std::shared_ptr<FESystem<dim> > fe_u;
   FE_DGQArbitraryNodes<dim> fe_p;
@@ -315,31 +317,31 @@ protected:
   GradientOperatorData<dim> gradient_operator_data;
   DivergenceOperatorData<dim> divergence_operator_data;
 
-  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> mass_matrix_operator;
-  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> convective_operator;
-  std::shared_ptr< InverseMassMatrixOperator<dim,fe_degree,value_type> > inverse_mass_matrix_operator;
-  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> viscous_operator;
-  BodyForceOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> body_force_operator;
-  GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> gradient_operator;
-  DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> divergence_operator;
+  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> mass_matrix_operator;
+  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> convective_operator;
+  std::shared_ptr< InverseMassMatrixOperator<dim,fe_degree,Number> > inverse_mass_matrix_operator;
+  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> viscous_operator;
+  BodyForceOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> body_force_operator;
+  GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> gradient_operator;
+  DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> divergence_operator;
 
-  VorticityCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> vorticity_calculator;
-  DivergenceCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> divergence_calculator;
+  VorticityCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> vorticity_calculator;
+  DivergenceCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> divergence_calculator;
 
 private:
   // turbulence modeling LES
-  TurbulenceModel<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> turbulence_model;
+  TurbulenceModel<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> turbulence_model;
 
   // TODO (used for turbulence models to obtain a smooth viscosity field)
   // projection operator
-  std::shared_ptr<ProjectionOperatorViscosity<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > viscosity_projection_operator;
+  std::shared_ptr<ProjectionOperatorViscosity<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> > viscosity_projection_operator;
   // projection solver
-  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > viscosity_projection_solver;
-  std::shared_ptr<PreconditionerBase<value_type> > preconditioner_viscosity_projection;
+  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<Number> > > viscosity_projection_solver;
+  std::shared_ptr<PreconditionerBase<Number> > preconditioner_viscosity_projection;
 };
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 initialize_boundary_descriptor_laplace()
 {
   boundary_descriptor_laplace.reset(new BoundaryDescriptorLaplace<dim>());
@@ -363,16 +365,16 @@ initialize_boundary_descriptor_laplace()
   }
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
-                                                                   periodic_face_pairs,
+                                                             periodic_face_pairs,
        std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity_in,
        std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure_in,
        std::shared_ptr<FieldFunctionsNavierStokes<dim> >     field_functions_in)
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-  pcout << std::endl << "Setup Navier-Stokes operation ..." << std::endl;
+  pcout << std::endl << "Setup Navier-Stokes operation ..." << std::endl << std::flush;
 
   this->periodic_face_pairs = periodic_face_pairs;
   this->boundary_descriptor_velocity = boundary_descriptor_velocity_in;
@@ -384,12 +386,21 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   create_dofs();
 
   // initialize matrix_free_data
-  typename MatrixFree<dim,value_type>::AdditionalData additional_data;
-  additional_data.tasks_parallel_scheme = MatrixFree<dim,value_type>::AdditionalData::partition_partition;
+  typename MatrixFree<dim,Number>::AdditionalData additional_data;
+  additional_data.tasks_parallel_scheme = MatrixFree<dim,Number>::AdditionalData::partition_partition;
   additional_data.build_face_info = true;
   additional_data.mapping_update_flags = (update_gradients | update_JxW_values |
                                           update_quadrature_points | update_normal_vectors |
                                           update_values);
+
+  additional_data.mapping_update_flags_inner_faces = (update_gradients | update_JxW_values |
+                                                      update_quadrature_points | update_normal_vectors |
+                                                      update_values);
+
+  additional_data.mapping_update_flags_boundary_faces = (update_gradients | update_JxW_values |
+                                                         update_quadrature_points | update_normal_vectors |
+                                                         update_values);
+
   additional_data.periodic_face_pairs_level_0 = periodic_face_pairs;
 
   data_reinit(additional_data);
@@ -399,35 +410,33 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   mass_matrix_operator.initialize(data,mass_matrix_operator_data);
 
   // inverse mass matrix operator
-  inverse_mass_matrix_operator.reset(new InverseMassMatrixOperator<dim,fe_degree,value_type>());
-  inverse_mass_matrix_operator->initialize(data,
-          static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
-          static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity));
+  inverse_mass_matrix_operator.reset(new InverseMassMatrixOperator<dim,fe_degree,Number>());
+  inverse_mass_matrix_operator->initialize(data,dof_index_u,quad_index_u);
 
   // body force operator
   BodyForceOperatorData<dim> body_force_operator_data;
-  body_force_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity);
+  body_force_operator_data.dof_index = dof_index_u;
   body_force_operator_data.rhs = field_functions->right_hand_side;
   body_force_operator.initialize(data,body_force_operator_data);
 
   // gradient operator
-  gradient_operator_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity);
-  gradient_operator_data.dof_index_pressure = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::pressure);
+  gradient_operator_data.dof_index_velocity = dof_index_u;
+  gradient_operator_data.dof_index_pressure = dof_index_p;
   gradient_operator_data.integration_by_parts_of_gradP = param.gradp_integrated_by_parts;
   gradient_operator_data.use_boundary_data = param.gradp_use_boundary_data;
   gradient_operator_data.bc = boundary_descriptor_pressure;
   gradient_operator.initialize(data,gradient_operator_data);
 
   // divergence operator
-  divergence_operator_data.dof_index_velocity = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity);
-  divergence_operator_data.dof_index_pressure = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::pressure);
+  divergence_operator_data.dof_index_velocity = dof_index_u;
+  divergence_operator_data.dof_index_pressure = dof_index_p;
   divergence_operator_data.integration_by_parts_of_divU = param.divu_integrated_by_parts;
   divergence_operator_data.use_boundary_data = param.divu_use_boundary_data;
   divergence_operator_data.bc = boundary_descriptor_velocity;
   divergence_operator.initialize(data,divergence_operator_data);
 
   // convective operator
-  convective_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity);
+  convective_operator_data.dof_index = dof_index_u;
   convective_operator_data.bc = boundary_descriptor_velocity;
   convective_operator.initialize(data,convective_operator_data);
 
@@ -437,7 +446,7 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   viscous_operator_data.IP_formulation_viscous = param.IP_formulation_viscous;
   viscous_operator_data.IP_factor_viscous = param.IP_factor_viscous;
   viscous_operator_data.bc = boundary_descriptor_velocity;
-  viscous_operator_data.dof_index = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity);
+  viscous_operator_data.dof_index = dof_index_u;
   viscous_operator_data.viscosity = param.viscosity;
   viscous_operator.initialize(mapping,data,viscous_operator_data);
 
@@ -455,36 +464,28 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
 
     // TODO
     // setup viscosity projection operator
-    typedef ProjectionOperatorViscosity<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> PROJ_OPERATOR;
+    typedef ProjectionOperatorViscosity<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> PROJ_OPERATOR;
 
-    viscosity_projection_operator.reset(new PROJ_OPERATOR
-       (this->data,
-        static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity)));
+    viscosity_projection_operator.reset(new PROJ_OPERATOR(this->data,dof_index_u,quad_index_u));
 
     // setup preconditioner (inverse mass matrix preconditioner)
-    preconditioner_viscosity_projection.reset(new InverseMassMatrixPreconditioner<dim,fe_degree,value_type>
-       (this->data,
-        static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity),
-        static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity)));
+    preconditioner_viscosity_projection.reset(new InverseMassMatrixPreconditioner<dim,fe_degree,Number>(this->data,dof_index_u,quad_index_u));
 
     // setup solver data
     CGSolverData viscosity_projection_solver_data;
     viscosity_projection_solver_data.use_preconditioner = true;
 
     // setup solver
-    viscosity_projection_solver.reset(new CGSolver<PROJ_OPERATOR,PreconditionerBase<value_type>,parallel::distributed::Vector<value_type> >
+    viscosity_projection_solver.reset(new CGSolver<PROJ_OPERATOR,PreconditionerBase<Number>,parallel::distributed::Vector<Number> >
        (*std::dynamic_pointer_cast<PROJ_OPERATOR>(viscosity_projection_operator),
         *preconditioner_viscosity_projection,
         viscosity_projection_solver_data));
   }
 
   // vorticity
-  vorticity_calculator.initialize(data,
-      static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity));
+  vorticity_calculator.initialize(data,dof_index_u);
   // diveregnce
-  divergence_calculator.initialize(data,
-      static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity));
+  divergence_calculator.initialize(data,dof_index_u);
 
   dof_index_first_point = 0;
   for(unsigned int d=0;d<dim;++d)
@@ -518,11 +519,11 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
     first_point[d] = Utilities::MPI::sum(first_point[d],MPI_COMM_WORLD);
   }
 
-  pcout << std::endl << "... done!" << std::endl;
+  pcout << std::endl << "... done!" << std::endl << std::flush;
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 create_dofs()
 {
   // enumerate degrees of freedom
@@ -537,7 +538,8 @@ create_dofs()
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
   pcout << std::endl
-        << "Discontinuous Galerkin finite element discretization:" << std::endl << std::endl;
+        << "Discontinuous Galerkin finite element discretization:"
+        << std::endl << std::endl << std::flush;
 
   pcout << "Velocity:" << std::endl;
   print_parameter(pcout,"degree of 1D polynomials",fe_degree);
@@ -548,77 +550,85 @@ create_dofs()
   print_parameter(pcout,"degree of 1D polynomials",fe_degree_p);
   print_parameter(pcout,"number of dofs per cell",ndofs_per_cell_pressure);
   print_parameter(pcout,"number of dofs (total)",dof_handler_p.n_dofs());
+
+  pcout << std::flush;
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-data_reinit(typename MatrixFree<dim,value_type>::AdditionalData &additional_data)
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+data_reinit(typename MatrixFree<dim,Number>::AdditionalData &additional_data)
 {
   std::vector<const DoFHandler<dim> * >  dof_handler_vec;
 
   dof_handler_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::n_variants));
-  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity)] = &dof_handler_u;
-  dof_handler_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::pressure)] = &dof_handler_p;
+  dof_handler_vec[dof_index_u] = &dof_handler_u;
+  dof_handler_vec[dof_index_p] = &dof_handler_p;
 
   std::vector<const ConstraintMatrix *> constraint_matrix_vec;
   constraint_matrix_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::n_variants));
   ConstraintMatrix constraint_u, constraint_p;
   constraint_u.close();
   constraint_p.close();
-  constraint_matrix_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity)] = &constraint_u;
-  constraint_matrix_vec[static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::pressure)] = &constraint_p;
+  constraint_matrix_vec[dof_index_u] = &constraint_u;
+  constraint_matrix_vec[dof_index_p] = &constraint_p;
 
   std::vector<Quadrature<1> > quadratures;
 
   // resize quadratures
   quadratures.resize(static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::n_variants));
   // velocity
-  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity)]
-              = QGauss<1>(fe_degree+1);
+  quadratures[quad_index_u] = QGauss<1>(fe_degree+1);
   // pressure
-  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::pressure)]
-              = QGauss<1>(fe_degree_p+1);
+  quadratures[quad_index_p] = QGauss<1>(fe_degree_p+1);
   // exact integration of nonlinear convective term
-  quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity_nonlinear)]
-              = QGauss<1>(fe_degree + (fe_degree+2)/2);
+  quadratures[quad_index_u_nonlinear] = QGauss<1>(fe_degree + (fe_degree+2)/2);
 
   data.reinit (mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-prescribe_initial_conditions(parallel::distributed::Vector<value_type> &velocity,
-                             parallel::distributed::Vector<value_type> &pressure,
-                             double const                              evaluation_time) const
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+prescribe_initial_conditions(parallel::distributed::Vector<Number> &velocity,
+                             parallel::distributed::Vector<Number> &pressure,
+                             double const                          evaluation_time) const
 {
   this->field_functions->initial_solution_velocity->set_time(evaluation_time);
   this->field_functions->initial_solution_pressure->set_time(evaluation_time);
 
-  VectorTools::interpolate(mapping, dof_handler_u, *(this->field_functions->initial_solution_velocity), velocity);
-  VectorTools::interpolate(mapping, dof_handler_p, *(this->field_functions->initial_solution_pressure), pressure);
+  // This is necessary if Number == float
+  parallel::distributed::Vector<double> velocity_double;
+  parallel::distributed::Vector<double> pressure_double;
+  velocity_double = velocity;
+  pressure_double = pressure;
+
+  VectorTools::interpolate(mapping, dof_handler_u, *(this->field_functions->initial_solution_velocity), velocity_double);
+  VectorTools::interpolate(mapping, dof_handler_p, *(this->field_functions->initial_solution_pressure), pressure_double);
+
+  velocity = velocity_double;
+  pressure = pressure_double;
 }
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-apply_mass_matrix (parallel::distributed::Vector<value_type>       &dst,
-                   parallel::distributed::Vector<value_type> const &src) const
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+apply_mass_matrix (parallel::distributed::Vector<Number>       &dst,
+                   parallel::distributed::Vector<Number> const &src) const
 {
   this->mass_matrix_operator.apply(dst,src);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-shift_pressure (parallel::distributed::Vector<value_type>  &pressure,
-                double const                               &eval_time) const
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+shift_pressure (parallel::distributed::Vector<Number>  &pressure,
+                double const                           &eval_time) const
 {
   AssertThrow(this->param.error_data.analytical_solution_available == true,
               ExcMessage("The function shift_pressure is intended to be used only if an analytical solution is available!"));
 
-  parallel::distributed::Vector<value_type> vec1(pressure);
+  parallel::distributed::Vector<Number> vec1(pressure);
   for(unsigned int i=0;i<vec1.local_size();++i)
     vec1.local_element(i) = 1.;
   this->field_functions->analytical_solution_pressure->set_time(eval_time);
-  double exact = this->field_functions->analytical_solution_pressure->value(first_point);
+  double const exact = this->field_functions->analytical_solution_pressure->value(first_point);
   double current = 0.;
   if (pressure.locally_owned_elements().is_element(dof_index_first_point))
     current = pressure(dof_index_first_point);
@@ -626,67 +636,72 @@ shift_pressure (parallel::distributed::Vector<value_type>  &pressure,
   pressure.add(exact-current,vec1);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-shift_pressure_mean_value (parallel::distributed::Vector<value_type>  &pressure,
-                           double const                               &eval_time) const
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+shift_pressure_mean_value (parallel::distributed::Vector<Number>  &pressure,
+                           double const                           &eval_time) const
 {
   AssertThrow(this->param.error_data.analytical_solution_available == true,
               ExcMessage("The function shift_pressure_mean_value is intended to be used only if an analytical solution is available!"));
 
-  parallel::distributed::Vector<value_type> vec_temp(pressure);
+  // one cannot use Number as template here since Number might be float
+  // while analytical_solution_pressure is of type Function<dim,double>
+  parallel::distributed::Vector<double> vec_double;
+  vec_double = pressure; //initialize
+
   this->field_functions->analytical_solution_pressure->set_time(eval_time);
-  VectorTools::interpolate(mapping, dof_handler_p, *(this->field_functions->analytical_solution_pressure), vec_temp);
+  VectorTools::interpolate(mapping, dof_handler_p, *(this->field_functions->analytical_solution_pressure), vec_double);
 
-  const value_type exact = vec_temp.mean_value();
-  const value_type current = pressure.mean_value();
+  double const exact = vec_double.mean_value();
+  double const current = pressure.mean_value();
 
-  for(unsigned int i=0;i<vec_temp.local_size();++i)
-    vec_temp.local_element(i) = 1.;
+  parallel::distributed::Vector<Number> vec_temp2(pressure);
+  for(unsigned int i=0;i<vec_temp2.local_size();++i)
+    vec_temp2.local_element(i) = 1.;
 
-  pressure.add(exact-current,vec_temp);
+  pressure.add(exact-current,vec_temp2);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-apply_zero_mean (parallel::distributed::Vector<value_type>  &vector) const
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+apply_zero_mean (parallel::distributed::Vector<Number>  &vector) const
 {
-  const value_type mean_value = vector.mean_value();
+  const Number mean_value = vector.mean_value();
   vector.add(-mean_value);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-compute_vorticity (parallel::distributed::Vector<value_type>       &dst,
-                   const parallel::distributed::Vector<value_type> &src) const
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+compute_vorticity (parallel::distributed::Vector<Number>       &dst,
+                   const parallel::distributed::Vector<Number> &src) const
 {
   vorticity_calculator.compute_vorticity(dst,src);
 
   inverse_mass_matrix_operator->apply(dst,dst);
 }
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-compute_divergence (parallel::distributed::Vector<value_type>       &dst,
-                    const parallel::distributed::Vector<value_type> &src) const
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+compute_divergence (parallel::distributed::Vector<Number>       &dst,
+                    const parallel::distributed::Vector<Number> &src) const
 {
   divergence_calculator.compute_divergence(dst,src);
 
   inverse_mass_matrix_operator->apply(dst,dst);
 }
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-evaluate_convective_term (parallel::distributed::Vector<value_type>       &dst,
-                          parallel::distributed::Vector<value_type> const &src,
-                          value_type const                                evaluation_time) const
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+evaluate_convective_term (parallel::distributed::Vector<Number>       &dst,
+                          parallel::distributed::Vector<Number> const &src,
+                          Number const                                evaluation_time) const
 {
   convective_operator.evaluate(dst,src,evaluation_time);
 }
 
-template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
-void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule>::
-update_turbulence_model (parallel::distributed::Vector<value_type> const &velocity)
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+update_turbulence_model (parallel::distributed::Vector<Number> const &velocity)
 {
   // TODO
 
@@ -701,14 +716,14 @@ update_turbulence_model (parallel::distributed::Vector<value_type> const &veloci
   //            is extracted from the viscosity dof vector.
 
   // calculate rhs-vector of projection equation
-  parallel::distributed::Vector<value_type> rhs_vector(velocity);
+  parallel::distributed::Vector<Number> rhs_vector(velocity);
   turbulence_model.calculate_turbulent_viscosity(rhs_vector,velocity);
 
-  parallel::distributed::Vector<value_type> &viscosity = viscous_operator.get_viscosity_dof_vector();
+  parallel::distributed::Vector<Number> &viscosity = viscous_operator.get_viscosity_dof_vector();
 
   // 2a) apply inverse mass matrix (linear operator = mass matrix), i.e., viscosity field is projected
   // onto the space of polynomials of degree fe_degree_u.
-//  inverse_mass_matrix_operator->apply(viscosity,rhs_vector);
+  //inverse_mass_matrix_operator->apply(viscosity,rhs_vector);
 
   // 2b) solve linear system of equations (linear operator = mass matrix + continuity penalty),
   // continuity penalty is used to obtain a smooth viscosity field

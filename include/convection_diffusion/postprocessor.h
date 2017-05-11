@@ -42,11 +42,11 @@ public:
     error_counter(0)
   {}
 
-  void setup(PostProcessorData const                                  &postprocessor_data,
-             DoFHandler<dim> const                                    &dof_handler_in,
-             Mapping<dim> const                                       &mapping_in,
-             MatrixFree<dim,double> const                             &matrix_free_data_in,
-             std::shared_ptr<AnalyticalSolutionConvDiff<dim> >  solution)
+  void setup(PostProcessorData const                           &postprocessor_data,
+             DoFHandler<dim> const                             &dof_handler_in,
+             Mapping<dim> const                                &mapping_in,
+             MatrixFree<dim,double> const                      &matrix_free_data_in,
+             std::shared_ptr<AnalyticalSolutionConvDiff<dim> > solution)
   {
     pp_data = postprocessor_data;
     dof_handler = &dof_handler_in;

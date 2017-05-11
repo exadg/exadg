@@ -41,7 +41,7 @@ public:
   {}
 
   void setup(const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
-                                                                     periodic_face_pairs,
+                                                               periodic_face_pairs,
              std::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor_in,
              std::shared_ptr<FieldFunctionsConvDiff<dim> >     field_functions_in)
   {
@@ -358,8 +358,16 @@ private:
       MatrixFree<dim,value_type>::AdditionalData::partition_partition;
     additional_data.build_face_info = true;
     additional_data.mapping_update_flags = (update_gradients | update_JxW_values |
-                        update_quadrature_points | update_normal_vectors |
-                        update_values);
+                                            update_quadrature_points | update_normal_vectors |
+                                            update_values);
+
+    additional_data.mapping_update_flags_inner_faces = (update_gradients | update_JxW_values |
+                                                        update_quadrature_points | update_normal_vectors |
+                                                        update_values);
+
+    additional_data.mapping_update_flags_boundary_faces = (update_gradients | update_JxW_values |
+                                                           update_quadrature_points | update_normal_vectors |
+                                                           update_values);
 
     ConstraintMatrix dummy;
     dummy.close();
@@ -444,7 +452,7 @@ private:
 
 
     // convection-diffusion operator (efficient implementation, only for explicit time integration, includes also rhs operator)
-    ScalarConvDiffOperators::ConvectionDiffusionOperatorDataEfficiency<dim> conv_diff_operator_data_eff;
+    ScalarConvDiffOperators::ConvectionDiffusionOperatorDataEfficiency<dim,value_type> conv_diff_operator_data_eff;
     conv_diff_operator_data_eff.conv_data = convective_operator_data;
     conv_diff_operator_data_eff.diff_data = diffusive_operator_data;
     conv_diff_operator_data_eff.rhs_data = rhs_operator_data;

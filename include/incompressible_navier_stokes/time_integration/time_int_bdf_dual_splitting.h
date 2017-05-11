@@ -16,11 +16,11 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 class TimeIntBDFDualSplitting : public TimeIntBDFNavierStokes<dim,fe_degree_u,value_type,NavierStokesOperation>
 {
 public:
-  TimeIntBDFDualSplitting(std::shared_ptr<NavierStokesOperation>   navier_stokes_operation_in,
-                          std::shared_ptr<PostProcessorBase<dim> > postprocessor_in,
-                          InputParametersNavierStokes<dim> const         &param_in,
-                          unsigned int const                             n_refine_time_in,
-                          bool const                                     use_adaptive_time_stepping)
+  TimeIntBDFDualSplitting(std::shared_ptr<NavierStokesOperation>              navier_stokes_operation_in,
+                          std::shared_ptr<PostProcessorBase<dim,value_type> > postprocessor_in,
+                          InputParametersNavierStokes<dim> const              &param_in,
+                          unsigned int const                                  n_refine_time_in,
+                          bool const                                          use_adaptive_time_stepping)
     :
     TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>
             (navier_stokes_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
@@ -636,7 +636,6 @@ projection_step()
   unsigned int iterations_projection = navier_stokes_operation->solve_projection(velocity_np,
                                                                                  rhs_vec_projection,
                                                                                  velocity[0],
-                                                                                 this->cfl,
                                                                                  this->time_steps[0]);
 
   // write output

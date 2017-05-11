@@ -17,6 +17,10 @@
 /*                                                                                    */
 /**************************************************************************************/
 
+// single or double precision?
+//typedef float VALUE_TYPE;
+typedef double VALUE_TYPE;
+
 // set the number of space dimensions: dimension = 2, 3
 unsigned int const DIMENSION = 3;
 
@@ -29,7 +33,7 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 4;
+unsigned int const REFINE_STEPS_SPACE_MIN = 3;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
@@ -51,7 +55,7 @@ double const END_TIME = 50.0;
 
 std::string OUTPUT_FOLDER = "output/turb_ch/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "dual_splitting_bdf2_CFL1-0_nu_180_l4_k2-1_divergence_form_sigma_model_1-35_IP_factor_pressure_viscous_2-0"; //"turb_ch_dual_splitting_nu_180_l2_p4-3_CFL1_div_and_conti_penalty"; //"turb_ch_press_corr_nu_180_l2_p4_p3_mixed_order_weak_projection_CFL10_implicit";
+std::string OUTPUT_NAME = "test"; //"pressure_correction_incr_std_BDF2_CFL0-5_nu_180_l3_k2-1_divergence_form_sigma_model_1-35_IP_factor_2"; //"turb_ch_dual_splitting_nu_180_l2_p4-3_CFL1_div_and_conti_penalty"; //"turb_ch_press_corr_nu_180_l2_p4_p3_mixed_order_weak_projection_CFL10_implicit";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -70,11 +74,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; // BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
+  temporal_discretization = TemporalDiscretization::BDFPressureCorrection; // BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; // AdaptiveTimeStepCFL
   max_velocity = MAX_VELOCITY;
-  cfl = 1.0;
+  cfl = 0.5;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
@@ -189,7 +193,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // linear solver
   solver_momentum = SolverMomentum::GMRES;
-  preconditioner_momentum = MomentumPreconditioner::VelocityConvectionDiffusion; //InverseMassMatrix; //VelocityDiffusion; //VelocityConvectionDiffusion;
+  preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; //InverseMassMatrix; //VelocityDiffusion; //VelocityConvectionDiffusion;
   multigrid_data_momentum.smoother = MultigridSmoother::Jacobi;
 
   // MG smoother data: GMRES smoother
@@ -204,15 +208,15 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner;
 
   abs_tol_momentum_linear = 1.e-12;
-  rel_tol_momentum_linear = 1.e-3;
+  rel_tol_momentum_linear = 1.e-6;
   max_iter_momentum_linear = 1e4;
   use_right_preconditioning_momentum = true;
   max_n_tmp_vectors_momentum = 100;
-  update_preconditioner_momentum = true; //false; // TODO
+  update_preconditioner_momentum = false;
 
   // formulation
   order_pressure_extrapolation = 1; // use 0 for non-incremental formulation
-  rotational_formulation = true;
+  rotational_formulation = false; //true;
 
 
   // COUPLED NAVIER-STOKES SOLVER
@@ -401,7 +405,7 @@ public:
 };
 
 template<int dim>
-double AnalyticalSolutionPressure<dim>::value(const Point<dim>    &p,
+double AnalyticalSolutionPressure<dim>::value(const Point<dim>    &/* p */,
                                               const unsigned int  /* component */) const
 {
   double result = 0.0;
@@ -435,7 +439,7 @@ public:
 };
 
 template<int dim>
-double NeumannBoundaryVelocity<dim>::value(const Point<dim> &p,const unsigned int component) const
+double NeumannBoundaryVelocity<dim>::value(const Point<dim> &/* p */,const unsigned int /* component */) const
 {
   double result = 0.0;
   return result;
@@ -473,8 +477,8 @@ public:
 };
 
 template<int dim>
-double PressureBC_dudt<dim>::value(const Point<dim>   &p,
-                                   const unsigned int component) const
+double PressureBC_dudt<dim>::value(const Point<dim>   &/* p */,
+                                   const unsigned int /* component */) const
 {
   double result = 0.0;
 
@@ -501,7 +505,7 @@ template<int dim>
  };
 
  template<int dim>
- double RightHandSide<dim>::value(const Point<dim>   &p,
+ double RightHandSide<dim>::value(const Point<dim>   &/* p */,
                                   const unsigned int component) const
  {
    double result = 0.0;
@@ -641,13 +645,13 @@ struct PostProcessorDataTurbulentChannel
   TurbulentChannelData turb_ch_data;
 };
 
-template<int dim, int fe_degree_u, int fe_degree_p>
-class PostProcessorTurbulentChannel : public PostProcessor<dim, fe_degree_u, fe_degree_p>
+template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
+class PostProcessorTurbulentChannel : public PostProcessor<dim, fe_degree_u, fe_degree_p, Number>
 {
 public:
   PostProcessorTurbulentChannel(PostProcessorDataTurbulentChannel<dim> const & pp_data_turb_channel)
     :
-    PostProcessor<dim,fe_degree_u,fe_degree_p>(pp_data_turb_channel.pp_data),
+    PostProcessor<dim,fe_degree_u,fe_degree_p, Number>(pp_data_turb_channel.pp_data),
     write_final_output(true),
     turb_ch_data(pp_data_turb_channel.turb_ch_data)
   {}
@@ -655,12 +659,12 @@ public:
   void setup(DoFHandler<dim> const                                        &dof_handler_velocity_in,
              DoFHandler<dim> const                                        &dof_handler_pressure_in,
              Mapping<dim> const                                           &mapping_in,
-             MatrixFree<dim,double> const                                 &matrix_free_data_in,
+             MatrixFree<dim,Number> const                                 &matrix_free_data_in,
              DofQuadIndexData const                                       &dof_quad_index_data_in,
              std::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution_in)
   {
     // call setup function of base class
-    PostProcessor<dim,fe_degree_u,fe_degree_p>::setup(
+    PostProcessor<dim,fe_degree_u,fe_degree_p,Number>::setup(
         dof_handler_velocity_in,
         dof_handler_pressure_in,
         mapping_in,
@@ -673,15 +677,15 @@ public:
     statistics_turb_ch->setup(&grid_transform<dim>);
   }
 
-  void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
-                         parallel::distributed::Vector<double> const &intermediate_velocity,
-                         parallel::distributed::Vector<double> const &pressure,
-                         parallel::distributed::Vector<double> const &vorticity,
-                         parallel::distributed::Vector<double> const &divergence,
+  void do_postprocessing(parallel::distributed::Vector<Number> const &velocity,
+                         parallel::distributed::Vector<Number> const &intermediate_velocity,
+                         parallel::distributed::Vector<Number> const &pressure,
+                         parallel::distributed::Vector<Number> const &vorticity,
+                         parallel::distributed::Vector<Number> const &divergence,
                          double const                                time,
                          int const                                   time_step_number = -1)
   {
-    PostProcessor<dim,fe_degree_u,fe_degree_p>::do_postprocessing(
+    PostProcessor<dim,fe_degree_u,fe_degree_p,Number>::do_postprocessing(
 	      velocity,
         intermediate_velocity,
         pressure,
@@ -720,8 +724,10 @@ public:
   std::shared_ptr<StatisticsManager<dim> > statistics_turb_ch;
 };
 
-template<int dim>
-std::shared_ptr<PostProcessorBase<dim> >
+#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+
+template<int dim, typename Number>
+std::shared_ptr<PostProcessorBase<dim,Number> >
 construct_postprocessor(InputParametersNavierStokes<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -735,8 +741,8 @@ construct_postprocessor(InputParametersNavierStokes<dim> const &param)
   pp_data_turb_ch.pp_data = pp_data;
   pp_data_turb_ch.turb_ch_data = param.turb_ch_data;
 
-  std::shared_ptr<PostProcessorBase<dim> > pp;
-  pp.reset(new PostProcessorTurbulentChannel<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE>(pp_data_turb_ch));
+  std::shared_ptr<PostProcessorBase<dim,Number> > pp;
+  pp.reset(new PostProcessorTurbulentChannel<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,Number>(pp_data_turb_ch));
 
   return pp;
 }

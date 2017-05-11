@@ -24,7 +24,7 @@
 
 
 // forward declaration
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 class DGNavierStokesCoupled;
 
 template<int dim> struct HelmholtzOperatorData;
@@ -175,9 +175,9 @@ class BlockPreconditionerNavierStokes : public PreconditionerNavierStokesBase<va
 public:
   typedef float Number;
 
-  BlockPreconditionerNavierStokes(DGNavierStokesCoupled<dim, fe_degree,
-                                    fe_degree_p, fe_degree_xwall, xwall_quad_rule> *underlying_operator_in,
-                                  BlockPreconditionerData const                    &preconditioner_data_in)
+  BlockPreconditionerNavierStokes(DGNavierStokesCoupled<dim, fe_degree, fe_degree_p,
+                                      fe_degree_xwall, xwall_quad_rule, value_type> *underlying_operator_in,
+                                  BlockPreconditionerData const                     &preconditioner_data_in)
   {
     underlying_operator = underlying_operator_in;
     preconditioner_data = preconditioner_data_in;
@@ -565,7 +565,7 @@ private:
       // use DGNavierStokesCoupled as underlying operator for multigrid applied to compatible Laplace operator
       typedef MyMultigridPreconditionerDG<dim,value_type,
                 CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>,
-                DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> > MULTIGRID;
+                DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule,value_type> > MULTIGRID;
 
       multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
 
@@ -630,13 +630,15 @@ private:
       laplace_operator_data.penalty_factor = 1.0;
       laplace_operator_data.bc = underlying_operator->boundary_descriptor_laplace;
       laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
-      laplace_operator_classical.reset(new LaplaceOperator<dim, fe_degree_p>());
+      laplace_operator_classical.reset(new LaplaceOperator<dim, fe_degree_p, value_type>());
       laplace_operator_classical->reinit(
           underlying_operator->get_data(),
           underlying_operator->get_mapping(),
           laplace_operator_data);
 
-      solver_pressure_block.reset(new CGSolver<LaplaceOperator<dim, fe_degree_p>,PreconditionerBase<value_type>,parallel::distributed::Vector<value_type> >(
+      solver_pressure_block.reset(new CGSolver<LaplaceOperator<dim, fe_degree_p, value_type>,
+                                               PreconditionerBase<value_type>,
+                                               parallel::distributed::Vector<value_type> >(
           *laplace_operator_classical,
           *multigrid_preconditioner_schur_complement,
           solver_data));
@@ -973,7 +975,7 @@ private:
   }
 
 private:
-  DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> *underlying_operator;
+  DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> *underlying_operator;
   BlockPreconditionerData preconditioner_data;
 
   // preconditioner velocity/momentum block
@@ -986,7 +988,7 @@ private:
   std::shared_ptr<PreconditionerBase<value_type> > inv_mass_matrix_preconditioner_schur_complement;
 
   std::shared_ptr<PressureConvectionDiffusionOperator<dim, fe_degree_p, fe_degree, value_type> > pressure_convection_diffusion_operator;
-  std::shared_ptr<LaplaceOperator<dim, fe_degree_p> > laplace_operator_classical;
+  std::shared_ptr<LaplaceOperator<dim, fe_degree_p, value_type> > laplace_operator_classical;
   std::shared_ptr<CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > laplace_operator_compatible;
   std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > solver_pressure_block;
 

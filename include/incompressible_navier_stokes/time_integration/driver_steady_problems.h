@@ -10,15 +10,15 @@
 
 #include <deal.II/base/timer.h>
 
-template<int dim> class PostProcessorBase;
+template<int dim,typename Number> class PostProcessorBase;
 
 template<int dim, typename value_type, typename NavierStokesOperation>
 class DriverSteadyProblems
 {
 public:
-  DriverSteadyProblems(std::shared_ptr<NavierStokesOperation>   navier_stokes_operation_in,
-                       std::shared_ptr<PostProcessorBase<dim> > postprocessor_in,
-                       InputParametersNavierStokes<dim> const         &param_in)
+  DriverSteadyProblems(std::shared_ptr<NavierStokesOperation>              navier_stokes_operation_in,
+                       std::shared_ptr<PostProcessorBase<dim,value_type> > postprocessor_in,
+                       InputParametersNavierStokes<dim> const              &param_in)
     :
     navier_stokes_operation(navier_stokes_operation_in),
     postprocessor(postprocessor_in),
@@ -41,7 +41,7 @@ private:
 
   std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
-  std::shared_ptr<PostProcessorBase<dim> > postprocessor;
+  std::shared_ptr<PostProcessorBase<dim,value_type> > postprocessor;
   InputParametersNavierStokes<dim> const &param;
 
   Timer global_timer;

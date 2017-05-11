@@ -39,7 +39,7 @@ struct DofQuadIndexData
  *  incompressible Navier-Stokes equation.
  *
  */
-template<int dim>
+template<int dim, typename Number>
 class PostProcessorBase
 {
 public:
@@ -50,12 +50,12 @@ public:
   /*
    * Setup function.
    */
-  virtual void setup(DoFHandler<dim> const                                        &dof_handler_velocity,
-                     DoFHandler<dim> const                                        &dof_handler_pressure,
-                     Mapping<dim> const                                           &mapping,
-                     MatrixFree<dim,double> const                                 &matrix_free_data,
-                     DofQuadIndexData const                                       &dof_quad_index_data,
-                     std::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution) = 0;
+  virtual void setup(DoFHandler<dim> const                                 &dof_handler_velocity,
+                     DoFHandler<dim> const                                 &dof_handler_pressure,
+                     Mapping<dim> const                                    &mapping,
+                     MatrixFree<dim,Number> const                          &matrix_free_data,
+                     DofQuadIndexData const                                &dof_quad_index_data,
+                     std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution) = 0;
 
 
   /*
@@ -64,11 +64,11 @@ public:
    * function also for the steady solver and that the individual postprocessing
    * tools decide whether to apply the steady or unsteady postprocessing functions.
    */
-  virtual void do_postprocessing(parallel::distributed::Vector<double> const &velocity,
-                                 parallel::distributed::Vector<double> const &intermediate_velocity,
-                                 parallel::distributed::Vector<double> const &pressure,
-                                 parallel::distributed::Vector<double> const &vorticity,
-                                 parallel::distributed::Vector<double> const &divergence,
+  virtual void do_postprocessing(parallel::distributed::Vector<Number> const &velocity,
+                                 parallel::distributed::Vector<Number> const &intermediate_velocity,
+                                 parallel::distributed::Vector<Number> const &pressure,
+                                 parallel::distributed::Vector<Number> const &vorticity,
+                                 parallel::distributed::Vector<Number> const &divergence,
                                  double const                                time = 0.0,
                                  int const                                   time_step_number = -1) = 0;
 };

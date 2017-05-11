@@ -17,6 +17,10 @@
 /*                                                                                    */
 /**************************************************************************************/
 
+// single or double precision?
+//typedef float VALUE_TYPE;
+typedef double VALUE_TYPE;
+
 //Taylor vortex problem (Shahbazi et al.,2007)
 
 // set the number of space dimensions: dimension = 2, 3
@@ -474,8 +478,10 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim>
   analytical_solution->pressure.reset(new AnalyticalSolutionPressure<dim>());
 }
 
-template<int dim>
-std::shared_ptr<PostProcessorBase<dim> >
+#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+
+template<int dim, typename Number>
+std::shared_ptr<PostProcessorBase<dim,Number> >
 construct_postprocessor(InputParametersNavierStokes<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -486,8 +492,8 @@ construct_postprocessor(InputParametersNavierStokes<dim> const &param)
   pp_data.pressure_difference_data = param.pressure_difference_data;
   pp_data.mass_data = param.mass_data;
 
-  std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE> > pp;
-  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE>(pp_data));
+  std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,Number> > pp;
+  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,Number>(pp_data));
 
   return pp;
 }

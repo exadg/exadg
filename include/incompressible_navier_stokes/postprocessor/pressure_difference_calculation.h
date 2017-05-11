@@ -15,7 +15,7 @@
 
 #include "../postprocessor/pressure_difference_data.h"
 
-template<int dim, int fe_degree_u, int fe_degree_p>
+template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
 class PressureDifferenceCalculator
 {
 public:
@@ -33,21 +33,21 @@ public:
     pressure_difference_data = pressure_difference_data_in;
   }
 
-  void evaluate(parallel::distributed::Vector<double> const &pressure,
+  void evaluate(parallel::distributed::Vector<Number> const &pressure,
                 double const                                &time) const
   {
     if(pressure_difference_data.calculate_pressure_difference == true)
     {
-      double pressure_1 = 0.0, pressure_2 = 0.0;
+      Number pressure_1 = 0.0, pressure_2 = 0.0;
 
       Point<dim> point_1, point_2;
       point_1 = pressure_difference_data.point_1;
       point_2 = pressure_difference_data.point_2;
 
-      evaluate_solution_in_point<dim>(*dof_handler_pressure,*mapping,pressure,point_1,pressure_1);
-      evaluate_solution_in_point<dim>(*dof_handler_pressure,*mapping,pressure,point_2,pressure_2);
+      evaluate_solution_in_point<dim, Number>(*dof_handler_pressure,*mapping,pressure,point_1,pressure_1);
+      evaluate_solution_in_point<dim, Number>(*dof_handler_pressure,*mapping,pressure,point_2,pressure_2);
 
-      double const pressure_difference = pressure_1 - pressure_2;
+      Number const pressure_difference = pressure_1 - pressure_2;
 
       if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
       {

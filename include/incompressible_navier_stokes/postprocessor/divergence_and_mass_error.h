@@ -22,7 +22,7 @@
 
 using namespace dealii;
 
-template<int dim, int fe_degree>
+template<int dim, int fe_degree, typename Number>
 class DivergenceAndMassErrorCalculator
 {
 public:
@@ -35,16 +35,16 @@ public:
     matrix_free_data(nullptr)
     {}
 
-  void setup(MatrixFree<dim> const      &matrix_free_data_in,
-             DofQuadIndexData const     &dof_quad_index_data_in,
-             MassConservationData const &div_and_mass_data_in)
+  void setup(MatrixFree<dim,Number> const &matrix_free_data_in,
+             DofQuadIndexData const       &dof_quad_index_data_in,
+             MassConservationData const   &div_and_mass_data_in)
   {
     matrix_free_data = &matrix_free_data_in;
     dof_quad_index_data = dof_quad_index_data_in;
     div_and_mass_data = div_and_mass_data_in;
   }
 
-  void evaluate(parallel::distributed::Vector<double> const &velocity,
+  void evaluate(parallel::distributed::Vector<Number> const &velocity,
                 double const                                &time,
                 int const                                   &time_step_number)
   {
@@ -60,10 +60,10 @@ public:
 private:
   bool clear_files_mass_error;
   int number_of_samples;
-  double divergence_sample;
-  double mass_sample;
+  Number divergence_sample;
+  Number mass_sample;
 
-  MatrixFree<dim,double> const * matrix_free_data;
+  MatrixFree<dim,Number> const * matrix_free_data;
   DofQuadIndexData dof_quad_index_data;
   MassConservationData div_and_mass_data;
 
@@ -77,17 +77,17 @@ private:
    *  Mass error: (1,|(um - up)*n|)_dOmegaI
    *  Reference value for mass error: (1,|0.5(um + up)*n|)_dOmegaI
    */
-  void do_evaluate(MatrixFree<dim,double> const                &matrix_free_data,
-                   parallel::distributed::Vector<double> const &velocity,
-                   double                                      &div_error,
-                   double                                      &div_error_reference,
-                   double                                      &mass_error,
-                   double                                      &mass_error_reference)
+  void do_evaluate(MatrixFree<dim,Number> const                &matrix_free_data,
+                   parallel::distributed::Vector<Number> const &velocity,
+                   Number                                      &div_error,
+                   Number                                      &div_error_reference,
+                   Number                                      &mass_error,
+                   Number                                      &mass_error_reference)
   {
-    std::vector<double> dst(4,0.0);
-    matrix_free_data.loop (&DivergenceAndMassErrorCalculator<dim,fe_degree>::local_compute_div,
-                           &DivergenceAndMassErrorCalculator<dim,fe_degree>::local_compute_div_face,
-                           &DivergenceAndMassErrorCalculator<dim,fe_degree>::local_compute_div_boundary_face,
+    std::vector<Number> dst(4,0.0);
+    matrix_free_data.loop (&DivergenceAndMassErrorCalculator<dim,fe_degree,Number>::local_compute_div,
+                           &DivergenceAndMassErrorCalculator<dim,fe_degree,Number>::local_compute_div_face,
+                           &DivergenceAndMassErrorCalculator<dim,fe_degree,Number>::local_compute_div_boundary_face,
                            this, dst, velocity);
 
     div_error = Utilities::MPI::sum (dst.at(0), MPI_COMM_WORLD);
@@ -96,16 +96,16 @@ private:
     mass_error_reference = Utilities::MPI::sum (dst.at(3), MPI_COMM_WORLD);
   }
 
-  void local_compute_div(const MatrixFree<dim,double>                &data,
-                         std::vector<double>                         &dst,
-                         const parallel::distributed::Vector<double> &source,
+  void local_compute_div(const MatrixFree<dim,Number>                &data,
+                         std::vector<Number>                         &dst,
+                         const parallel::distributed::Vector<Number> &source,
                          const std::pair<unsigned int,unsigned int>  &cell_range)
   {
-    FEEvaluation<dim,fe_degree,fe_degree+1,dim,double> phi(data,dof_quad_index_data.dof_index_velocity,dof_quad_index_data.quad_index_velocity);
+    FEEvaluation<dim,fe_degree,fe_degree+1,dim,Number> phi(data,dof_quad_index_data.dof_index_velocity,dof_quad_index_data.quad_index_velocity);
 
-    AlignedVector<VectorizedArray<double> > JxW_values(phi.n_q_points);
-    VectorizedArray<double> div_vec = make_vectorized_array(0.);
-    VectorizedArray<double> vol_vec = make_vectorized_array(0.);
+    AlignedVector<VectorizedArray<Number> > JxW_values(phi.n_q_points);
+    VectorizedArray<Number> div_vec = make_vectorized_array<Number>(0.);
+    VectorizedArray<Number> vol_vec = make_vectorized_array<Number>(0.);
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
       phi.reinit(cell);
@@ -119,9 +119,9 @@ private:
         div_vec += JxW_values[q]*std::abs(phi.get_divergence(q));
       }
     }
-    double div = 0.;
-    double vol = 0.;
-    for (unsigned int v=0;v<VectorizedArray<double>::n_array_elements;v++)
+    Number div = 0.;
+    Number vol = 0.;
+    for (unsigned int v=0;v<VectorizedArray<Number>::n_array_elements;v++)
     {
       div += div_vec[v];
       vol += vol_vec[v];
@@ -130,18 +130,18 @@ private:
     dst.at(1) += vol;
   }
 
-  void local_compute_div_face (const MatrixFree<dim,double>                &data,
-                               std::vector<double >                        &dst,
-                               const parallel::distributed::Vector<double> &source,
+  void local_compute_div_face (const MatrixFree<dim,Number>                &data,
+                               std::vector<Number>                         &dst,
+                               const parallel::distributed::Vector<Number> &source,
                                const std::pair<unsigned int,unsigned int>  &face_range)
   {
 
-    FEFaceEvaluation<dim,fe_degree, fe_degree+1,dim,double> fe_eval(data,true,dof_quad_index_data.dof_index_velocity,dof_quad_index_data.quad_index_velocity);
-    FEFaceEvaluation<dim,fe_degree, fe_degree+1,dim,double> fe_eval_neighbor(data,false,dof_quad_index_data.dof_index_velocity,dof_quad_index_data.quad_index_velocity);
+    FEFaceEvaluation<dim,fe_degree, fe_degree+1,dim,Number> fe_eval(data,true,dof_quad_index_data.dof_index_velocity,dof_quad_index_data.quad_index_velocity);
+    FEFaceEvaluation<dim,fe_degree, fe_degree+1,dim,Number> fe_eval_neighbor(data,false,dof_quad_index_data.dof_index_velocity,dof_quad_index_data.quad_index_velocity);
 
-    AlignedVector<VectorizedArray<double> > JxW_values(fe_eval.n_q_points);
-    VectorizedArray<double> diff_mass_flux_vec = make_vectorized_array(0.);
-    VectorizedArray<double> mean_mass_flux_vec = make_vectorized_array(0.);
+    AlignedVector<VectorizedArray<Number> > JxW_values(fe_eval.n_q_points);
+    VectorizedArray<Number> diff_mass_flux_vec = make_vectorized_array<Number>(0.);
+    VectorizedArray<Number> mean_mass_flux_vec = make_vectorized_array<Number>(0.);
     for (unsigned int face=face_range.first; face<face_range.second; ++face)
     {
       fe_eval.reinit(face);
@@ -159,9 +159,9 @@ private:
         diff_mass_flux_vec += JxW_values[q]*std::abs((fe_eval.get_value(q)-fe_eval_neighbor.get_value(q))*fe_eval.get_normal_vector(q));
       }
     }
-    double diff_mass_flux = 0.;
-    double mean_mass_flux = 0.;
-    for (unsigned int v=0;v<VectorizedArray<double>::n_array_elements;v++)
+    Number diff_mass_flux = 0.;
+    Number mean_mass_flux = 0.;
+    for (unsigned int v=0;v<VectorizedArray<Number>::n_array_elements;v++)
     {
       diff_mass_flux += diff_mass_flux_vec[v];
       mean_mass_flux += mean_mass_flux_vec[v];
@@ -170,26 +170,26 @@ private:
     dst.at(3) += mean_mass_flux;
   }
 
-  void local_compute_div_boundary_face (const MatrixFree<dim,double>                 &,
-                                        std::vector<double >                         &,
-                                        const parallel::distributed::Vector<double>  &,
-                                        const std::pair<unsigned int,unsigned int>   &)
+  void local_compute_div_boundary_face (const MatrixFree<dim,Number>                &,
+                                        std::vector<Number>                         &,
+                                        const parallel::distributed::Vector<Number> &,
+                                        const std::pair<unsigned int,unsigned int>  &)
   {
 
   }
 
-  void analyze_div_and_mass_error_unsteady(parallel::distributed::Vector<double> const &velocity,
+  void analyze_div_and_mass_error_unsteady(parallel::distributed::Vector<Number> const &velocity,
                                            double const                                time,
                                            unsigned int const                          time_step_number)
   {
     if(time > div_and_mass_data.start_time - 1.e-10)
     {
-      double div_error = 1.0, div_error_reference = 1.0, mass_error = 1.0, mass_error_reference = 1.0;
+      Number div_error = 1.0, div_error_reference = 1.0, mass_error = 1.0, mass_error_reference = 1.0;
 
       // calculate divergence and mass error
       do_evaluate(*matrix_free_data,velocity, div_error, div_error_reference, mass_error, mass_error_reference);
-      double div_error_normalized = div_error/div_error_reference;
-      double mass_error_normalized = 1.0;
+      Number div_error_normalized = div_error/div_error_reference;
+      Number mass_error_normalized = 1.0;
       if(mass_error_reference > 1.e-12)
         mass_error_normalized = mass_error/mass_error_reference;
       else
@@ -250,14 +250,14 @@ private:
     }
   }
 
-   void analyze_div_and_mass_error_steady(parallel::distributed::Vector<double> const &velocity)
+   void analyze_div_and_mass_error_steady(parallel::distributed::Vector<Number> const &velocity)
    {
-     double div_error = 1.0, div_error_reference = 1.0, mass_error = 1.0, mass_error_reference = 1.0;
+     Number div_error = 1.0, div_error_reference = 1.0, mass_error = 1.0, mass_error_reference = 1.0;
 
      // calculate divergence and mass error
      do_evaluate(*matrix_free_data,velocity, div_error, div_error_reference, mass_error, mass_error_reference);
-     double div_error_normalized = div_error/div_error_reference;
-     double mass_error_normalized = 1.0;
+     Number div_error_normalized = div_error/div_error_reference;
+     Number mass_error_normalized = 1.0;
      if(mass_error_reference > 1.e-12)
        mass_error_normalized = mass_error/mass_error_reference;
      else
