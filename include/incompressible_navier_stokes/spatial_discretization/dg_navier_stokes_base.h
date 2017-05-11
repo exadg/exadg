@@ -102,8 +102,8 @@ public:
   DGNavierStokesBase(parallel::distributed::Triangulation<dim> const &triangulation,
                      InputParametersNavierStokes<dim> const          &parameter)
     :
-    fe_u(new FESystem<dim>(FE_DGQArbitraryNodes<dim>(QGaussLobatto<1>(fe_degree+1)),dim)),
-    fe_p(QGaussLobatto<1>(fe_degree_p+1)),
+    fe_u(new FESystem<dim>(FE_DGQ<dim>(fe_degree),dim)),
+    fe_p(fe_degree_p),
     mapping(fe_degree),
     dof_handler_u(triangulation),
     dof_handler_p(triangulation),
@@ -169,7 +169,7 @@ public:
     return *fe_u;
   }
 
-  FE_DGQArbitraryNodes<dim> const & get_fe_p() const
+  FE_DGQ<dim> const & get_fe_p() const
   {
     return fe_p;
   }
@@ -284,7 +284,7 @@ protected:
   MatrixFree<dim,Number> data;
 
   std::shared_ptr<FESystem<dim> > fe_u;
-  FE_DGQArbitraryNodes<dim> fe_p;
+  FE_DGQ<dim> fe_p;
 
   MappingQGeneric<dim> mapping;
 

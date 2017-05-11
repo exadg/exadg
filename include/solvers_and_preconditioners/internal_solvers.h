@@ -304,8 +304,8 @@ namespace InternalSolvers
   {
     for(unsigned int i=0; i<dimension; ++i)
     {
-      h[i] = inner_product(w, orthogonal_vectors[i]);
-      w.add(-h[i],orthogonal_vectors[i]);
+      //h[i] = inner_product(w, orthogonal_vectors[i]);
+      //w.add(-h[i],orthogonal_vectors[i]);
     }
 
     double const h_new = l2_norm(w);
