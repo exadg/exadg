@@ -405,8 +405,6 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
                                                          update_quadrature_points | update_normal_vectors |
                                                          update_values);
 
-  additional_data.periodic_face_pairs_level_0 = periodic_face_pairs;
-
   data_reinit(additional_data);
 
   // mass matrix operator

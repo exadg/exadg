@@ -585,7 +585,7 @@ cell_loop_manual_1(parallel::distributed::Vector<Number> &dst,
             data->get_shape_info().shape_gradients_collocation_eo,
             data->get_shape_info().shape_hessians_collocation_eo);
   const Number*__restrict quadrature_weights =
-    data->get_mapping_info().cell_data[0].storage_descriptor[0].quadrature_weights.begin();
+    data->get_mapping_info().cell_data[0].descriptor[0].quadrature_weights.begin();
 
   for (unsigned int cell=0; cell<data->n_macro_cells(); ++cell)
     {

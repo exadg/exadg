@@ -474,7 +474,6 @@ void LaplaceOperator<dim,degree,Number>::reinit (const DoFHandler<dim>          
   if (dof_handler.get_fe().dofs_per_vertex == 0)
     addit_data.build_face_info = true;
   addit_data.level_mg_handler = level;
-  addit_data.periodic_face_pairs_level_0 = operator_data.periodic_face_pairs_level0;
 
   ConstraintMatrix constraints;
   const bool is_feq = dof_handler.get_fe().dofs_per_vertex > 0;
@@ -1642,7 +1641,7 @@ face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>         
 
       for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
       {
-        const unsigned int cell_number = data.face_info.faces[face].cells_minus[v];
+        const unsigned int cell_number = data.get_face_info(face).cells_minus[v];
         if (cell_number != numbers::invalid_unsigned_int)
           for(unsigned int i=0; i<phi.dofs_per_cell; ++i)
             matrices[cell_number](i,j) += phi.begin_dof_values()[i][v];
@@ -1689,7 +1688,7 @@ face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>         
 
       for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
       {
-        const unsigned int cell_number = data.face_info.faces[face].cells_plus[v];
+        const unsigned int cell_number = data.get_face_info(face).cells_plus[v];
         if (cell_number != numbers::invalid_unsigned_int)
           for(unsigned int i=0; i<phi_outer.dofs_per_cell; ++i)
             matrices[cell_number](i,j) += phi_outer.begin_dof_values()[i][v];
@@ -1764,7 +1763,7 @@ boundary_face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>
 
       for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
       {
-        const unsigned int cell_number = data.face_info.faces[face].cells_minus[v];
+        const unsigned int cell_number = data.get_face_info(face).cells_minus[v];
         if (cell_number != numbers::invalid_unsigned_int)
           for(unsigned int i=0; i<phi.dofs_per_cell; ++i)
             matrices[cell_number](i,j) += phi.begin_dof_values()[i][v];

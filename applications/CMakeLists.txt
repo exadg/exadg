@@ -22,7 +22,7 @@ SET( SOURCE_FILES
      steady_convection_diffusion.cc
      unsteady_convection_diffusion.cc
      #step-7.cc
-     laplace_operator_matrix_free.cc
+     #laplace_operator_matrix_free.cc
      navier_stokes_operator_matrix_free.cc
      )
 

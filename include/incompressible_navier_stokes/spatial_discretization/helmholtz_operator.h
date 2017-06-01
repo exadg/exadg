@@ -84,7 +84,6 @@ public:
     if (dof_handler.get_fe().dofs_per_vertex == 0)
       addit_data.build_face_info = true;
     addit_data.level_mg_handler = level;
-    addit_data.periodic_face_pairs_level_0 = periodic_face_pairs_level0;
 
     ConstraintMatrix constraints;
 
