@@ -61,7 +61,7 @@ OperatorType OPERATOR_TYPE = OperatorType::Linearized; //Nonlinear; //Linearized
 
 // number of repetitions used to determine the average/minimum wall time required
 // to compute the matrix-vector product
-unsigned int const N_REPETITIONS = 10;
+unsigned int const N_REPETITIONS = 100;
 
 // Type of wall time calculation used to measure efficiency
 enum class WallTimeCalculation{

@@ -71,8 +71,15 @@ private:
    *  This function calculates the divergence error and the error of mass flux
    *  over interior element faces.
    *
-   *  Divergence error: (1,|divu|)_Omega
-   *  Reference value for divergence error: (1,1)_Omega
+   *  Divergence error: (1,|divu|)_Omega or L * (1,|divu|)_Omega
+   *  Reference value for divergence error: (1,1)_Omega or (1,|| u ||)_Omega
+   *
+   *  or
+   *
+   *  Divergence error: L * (1,|divu|)_Omega, L is a reference length scale
+   *  Reference value for divergence error: (1,|| u ||)_Omega
+   *
+   *  and
    *
    *  Mass error: (1,|(um - up)*n|)_dOmegaI
    *  Reference value for mass error: (1,|0.5(um + up)*n|)_dOmegaI
@@ -110,12 +117,15 @@ private:
     {
       phi.reinit(cell);
       phi.read_dof_values(source);
-      phi.evaluate(false,true);
+//      phi.evaluate(false,true);
+      phi.evaluate(true,true);
       phi.fill_JxW_values(JxW_values);
 
       for (unsigned int q=0; q<phi.n_q_points; ++q)
       {
-        vol_vec += JxW_values[q];
+//        vol_vec += JxW_values[q];
+        Tensor<1,dim,VectorizedArray<Number> > velocity = phi.get_value(q);
+        vol_vec += JxW_values[q]*velocity.norm();
         div_vec += JxW_values[q]*std::abs(phi.get_divergence(q));
       }
     }
@@ -126,7 +136,8 @@ private:
       div += div_vec[v];
       vol += vol_vec[v];
     }
-    dst.at(0) += div;
+//    dst.at(0) += div;
+    dst.at(0) += div * this->div_and_mass_data.reference_length_scale;
     dst.at(1) += vol;
   }
 

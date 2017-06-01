@@ -21,6 +21,8 @@ using namespace dealii;
 
 #include "../poisson/boundary_descriptor_laplace.h"
 
+#include "solvers_and_preconditioners/verify_calculation_of_diagonal.h"
+
 template<int dim>
 struct LaplaceOperatorData
 {
@@ -973,6 +975,12 @@ void LaplaceOperator<dim,degree,Number>::calculate_inverse_diagonal (parallel::d
     double factor = vec1*d;
     inverse_diagonal_entries.add(-2./length,d,factor/pow(length,2.),vec1);
   }
+
+//  verify_calculation_of_diagonal(*this,inverse_diagonal_entries);
+
+//  const double l2_norm = inverse_diagonal_entries.l2_norm();
+//  ConditionalOStream pcout (std::cout,Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0);
+//  pcout << "L2 norm diagonal = "<< std::scientific << std::setprecision(15) << l2_norm << std::endl;
 
   const std::vector<unsigned int> &
     constrained_dofs = data->get_constrained_dofs();

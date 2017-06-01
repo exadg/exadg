@@ -93,14 +93,14 @@ public:
    *  Update divergence penalty operator by recalculating the penalty parameter
    *  which depends on the current velocity field
    */
-//  void update_divergence_penalty_operator (parallel::distributed::Vector<Number> const &velocity) const;
+//  void update_divergence_penalty_operator (parallel::distributed::Vector<Number> const *velocity) const;
 
   // TODO
   /*
    *  Update continuity penalty operator by recalculating the penalty parameter
    *  which depends on the current velocity field
    */
-//  void update_continuity_penalty_operator (parallel::distributed::Vector<Number> const &velocity) const;
+//  void update_continuity_penalty_operator (parallel::distributed::Vector<Number> const *velocity) const;
 
 
   /*
@@ -575,17 +575,19 @@ setup_divergence_and_continuity_penalty_operators_and_solvers()
 // TODO: this function can be removed when performing the projection in a postprocessing step
 //template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 //void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-//update_divergence_penalty_operator (parallel::distributed::Vector<Number> const &velocity) const
+//update_divergence_penalty_operator (parallel::distributed::Vector<Number> const *velocity) const
 //{
-//  this->divergence_penalty_operator->calculate_array_penalty_parameter(velocity);
+//  AssertThrow(velocity != nullptr, ExcMessage("Invalid pointer."));
+//  this->divergence_penalty_operator->calculate_array_penalty_parameter(*velocity);
 //}
 
 // TODO: this function can be removed when performing the projection in a postprocessing step
 //template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 //void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-//update_continuity_penalty_operator (parallel::distributed::Vector<Number> const &velocity) const
+//update_continuity_penalty_operator (parallel::distributed::Vector<Number> const *velocity) const
 //{
-//  this->continuity_penalty_operator->calculate_array_penalty_parameter(velocity);
+//  AssertThrow(velocity != nullptr, ExcMessage("Invalid pointer."));
+//  this->continuity_penalty_operator->calculate_array_penalty_parameter(*velocity);
 //}
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>

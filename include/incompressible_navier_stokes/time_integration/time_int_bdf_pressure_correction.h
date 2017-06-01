@@ -663,19 +663,6 @@ rhs_pressure()
     rhs_vec_pressure.add(-extra_pressure_gradient.get_beta(i),rhs_vec_pressure_temp);
   }
 
-  // TODO remove this
-  // rotational formulation of pressure-correction scheme
-//  if(this->param.rotational_formulation == true)
-//  {
-//    rhs_vec_pressure_temp = 0.0; // set rhs_vec_pressure_temp to zero since rhs_ppe_nbc_divergence_term_add() adds into dst-vector
-//    navier_stokes_operation->rhs_ppe_divergence_term_add(rhs_vec_pressure_temp,velocity_np);
-//
-//    double chi = 0.0;
-//    calculate_chi(chi);
-//
-//    rhs_vec_pressure.add(chi * this->param.viscosity,rhs_vec_pressure_temp);
-//  }
-
   // special case: pure Dirichlet BC's
   // TODO:
   // check if this is really necessary, because from a theoretical
@@ -757,21 +744,6 @@ rhs_projection()
     navier_stokes_operation->rhs_pressure_gradient_term(rhs_vec_projection_temp, this->time + this->time_steps[0] - time_offset);
     rhs_vec_projection.add(-extra_pressure_gradient.get_beta(i)*this->time_steps[0]/this->bdf.get_gamma0(),rhs_vec_projection_temp);
   }
-
-  // TODO remove this
-  /*
-   *  IV. pressure gradient term: boundary condition chi*nu*div(u_hat)
-   *      in case of rotational formulation of pressure-correction scheme
-   */
-//  if(this->param.rotational_formulation == true)
-//  {
-//    rhs_vec_projection_temp = 0.0;
-//    navier_stokes_operation->pressure_gradient_bc_term_div_term_add(rhs_vec_projection_temp,velocity_np);
-//
-//    double chi = 0.0;
-//    calculate_chi(chi);
-//    rhs_vec_projection.add(-chi*this->param.viscosity*this->time_steps[0]/this->bdf.get_gamma0(),rhs_vec_projection_temp);
-//  }
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -784,8 +756,23 @@ projection_step()
   // compute right-hand-side vector
   rhs_projection();
 
+  parallel::distributed::Vector<value_type> velocity_extrapolated;
+
+  // extrapolate velocity to time t_n+1 and use this velocity field to
+  // caculate the penalty parameter for the divergence and continuity penalty term
+  if(this->param.use_divergence_penalty == true ||
+     this->param.use_continuity_penalty == true)
+  {
+    velocity_extrapolated.reinit(velocity[0]);
+    for (unsigned int i=0; i<velocity.size(); ++i)
+      velocity_extrapolated.add(this->extra.get_beta(i),velocity[i]);
+  }
+
   // solve linear system of equations
-  unsigned int iterations_projection = navier_stokes_operation->solve_projection(velocity_np,rhs_vec_projection,velocity[0],this->time_steps[0]);
+  unsigned int iterations_projection = navier_stokes_operation->solve_projection(velocity_np,
+                                                                                 rhs_vec_projection,
+                                                                                 velocity_extrapolated,
+                                                                                 this->time_steps[0]);
 
   // write output
   if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)

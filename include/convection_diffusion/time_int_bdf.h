@@ -237,7 +237,7 @@ calculate_timestep()
 
     // calculate minimum vertex distance
     const double global_min_cell_diameter =
-        calculate_min_cell_diameter(conv_diff_operation->get_data().get_dof_handler().get_triangulation());
+        calculate_minimum_vertex_distance(conv_diff_operation->get_data().get_dof_handler().get_triangulation());
 
     print_parameter(pcout,"h_min",global_min_cell_diameter);
 
@@ -265,7 +265,7 @@ calculate_timestep()
   {
     // calculate minimum vertex distance
     const double global_min_cell_diameter =
-        calculate_min_cell_diameter(conv_diff_operation->get_data().get_dof_handler().get_triangulation());
+        calculate_minimum_vertex_distance(conv_diff_operation->get_data().get_dof_handler().get_triangulation());
 
     double time_step = calculate_time_step_max_efficiency(param.c_eff,
                                                           global_min_cell_diameter,

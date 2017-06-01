@@ -38,11 +38,11 @@ using namespace dealii;
 //#include "incompressible_navier_stokes_test_cases/stokes_guermond.h"
 //#include "incompressible_navier_stokes_test_cases/stokes_shahbazi.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
-#include "incompressible_navier_stokes_test_cases/vortex.h"
+//#include "incompressible_navier_stokes_test_cases/vortex.h"
 //#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/beltrami.h"
 //#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
-//#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
+#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number=double>
 class NavierStokesProblem
@@ -224,7 +224,7 @@ print_header()
   << "                                                                                 " << std::endl
   << "                High-order discontinuous Galerkin solver for the                 " << std::endl
   << "                unsteady, incompressible Navier-Stokes equations                 " << std::endl
-  << "            based on coupled solution approach of Newton-Krylov type             " << std::endl
+  << "                     based on a matrix-free implementation                       " << std::endl
   << "_________________________________________________________________________________" << std::endl
   << std::endl;
 }

@@ -34,7 +34,7 @@ public:
     N_iter_newton_average(0.0),
     solver_time_average(0.0),
     scaling_factor_continuity(1.0),
-    element_length(1.0)
+    characteristic_element_length(1.0)
   {}
 
   virtual ~TimeIntBDFCoupled(){}
@@ -85,7 +85,7 @@ private:
 
   // scaling factor continuity equation
   double scaling_factor_continuity;
-  double element_length;
+  double characteristic_element_length;
 };
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -143,8 +143,11 @@ setup_derived()
 {
   // scaling factor continuity equation:
   // Calculate characteristic element length h
-  element_length = calculate_min_cell_diameter(
+  characteristic_element_length = calculate_minimum_vertex_distance(
         navier_stokes_operation->get_dof_handler_u().get_triangulation());
+
+  // TODO
+  characteristic_element_length = calculate_characteristic_element_length(characteristic_element_length,fe_degree_u);
 
   if(this->param.equation_type == EquationType::NavierStokes &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit &&
@@ -254,7 +257,7 @@ solve_timestep()
   // update scaling factor of continuity equation
   if(this->param.use_scaling_continuity == true)
   {
-    scaling_factor_continuity = this->param.scaling_factor_continuity*element_length/this->time_steps[0];
+    scaling_factor_continuity = this->param.scaling_factor_continuity*characteristic_element_length/this->time_steps[0];
     navier_stokes_operation->set_scaling_factor_continuity(scaling_factor_continuity);
   }
   else // use_scaling_continuity == false
@@ -293,15 +296,32 @@ solve_timestep()
     sum_alphai_ui.add(this->bdf.get_alpha(i)/this->time_steps[0],solution[i].block(0));
   }
 
-  // Update divegence and continuity penalty operator
   // TODO
+  // Update divegence and continuity penalty operator
+//  parallel::distributed::Vector<value_type> const * velocity_ptr = nullptr;
+//
+//  // extrapolate velocity to time t_n+1 and use this velocity field to
+//  // caculate the penalty parameter for the divergence and continuity penalty term
+//  if(this->param.use_divergence_penalty == true ||
+//     this->param.use_continuity_penalty == true)
+//  {
+//    parallel::distributed::Vector<value_type> velocity_extrapolated(solution[0].block(0));
+//    velocity_extrapolated = 0;
+//    for (unsigned int i=0; i<solution.size(); ++i)
+//      velocity_extrapolated.add(this->extra.get_beta(i),solution[i].block(0));
+//
+//    velocity_ptr = &velocity_extrapolated;
+//  }
+//
 //  if(this->param.use_divergence_penalty == true)
 //  {
-//    navier_stokes_operation->update_divergence_penalty_operator(solution[0].block(0));
+//    //navier_stokes_operation->update_divergence_penalty_operator(solution[0].block(0));
+//    navier_stokes_operation->update_divergence_penalty_operator(velocity_ptr);
 //  }
 //  if(this->param.use_continuity_penalty == true)
 //  {
-//    navier_stokes_operation->update_continuity_penalty_operator(solution[0].block(0));
+//    //navier_stokes_operation->update_continuity_penalty_operator(solution[0].block(0));
+//    navier_stokes_operation->update_continuity_penalty_operator(velocity_ptr);
 //  }
 
   // if the problem to be solved is linear
@@ -402,8 +422,15 @@ postprocess_velocity()
   parallel::distributed::Vector<value_type> temp(solution_np.block(0));
   navier_stokes_operation->apply_mass_matrix(temp,solution_np.block(0));
 
+  // extrapolate velocity to time t_n+1 and use this velocity field to
+  // caculate the penalty parameter for the divergence and continuity penalty term
+  parallel::distributed::Vector<value_type> velocity_extrapolated(solution[0].block(0));
+  velocity_extrapolated = 0;
+  for (unsigned int i=0; i<solution.size(); ++i)
+    velocity_extrapolated.add(this->extra.get_beta(i),solution[i].block(0));
+
   // update projection operator
-  navier_stokes_operation->update_projection_operator(solution_np.block(0),this->time_steps[0]);
+  navier_stokes_operation->update_projection_operator(velocity_extrapolated,this->time_steps[0]);
 
   // calculate inhomongeneous boundary faces integrals and add to rhs
   navier_stokes_operation->rhs_projection_add(temp,this->time + this->time_steps[0]);
