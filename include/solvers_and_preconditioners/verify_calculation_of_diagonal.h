@@ -21,6 +21,12 @@ template<typename Operator, typename value_type>
 void verify_calculation_of_diagonal(Operator                                  &op,
                                     parallel::distributed::Vector<value_type> &diagonal)
 {
+  AssertThrow(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) == 1,
+      ExcMessage("Number of MPI processes has to be 1."));
+
+  ConditionalOStream pcout (std::cout,Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0);
+  pcout << "Verify calculation of diagonal:"<<std::endl;
+
   parallel::distributed::Vector<value_type>  diagonal_check(diagonal);
   parallel::distributed::Vector<value_type>  src(diagonal);
   parallel::distributed::Vector<value_type>  dst(diagonal);
@@ -39,7 +45,6 @@ void verify_calculation_of_diagonal(Operator                                  &o
     src.local_element(i) = 0.0;
   }
 
-  ConditionalOStream pcout (std::cout,Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0);
   value_type norm_diagonal = diagonal.l2_norm();
   value_type norm_diagonal_check = diagonal_check.l2_norm();
 

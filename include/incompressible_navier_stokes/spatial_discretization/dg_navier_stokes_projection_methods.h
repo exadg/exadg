@@ -65,7 +65,7 @@ public:
   // solve projection step
   unsigned int solve_projection (parallel::distributed::Vector<Number>       &dst,
                                  parallel::distributed::Vector<Number> const &src,
-                                 parallel::distributed::Vector<Number> const &velocity_n,
+                                 parallel::distributed::Vector<Number> const &velocity,
                                  double const                                time_step_size) const;
 
 protected:

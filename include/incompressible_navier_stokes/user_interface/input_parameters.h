@@ -380,7 +380,8 @@ struct MassConservationData
   calculate_error(false),
   start_time(std::numeric_limits<double>::max()),
   sample_every_time_steps(std::numeric_limits<unsigned int>::max()),
-  filename_prefix("indexa")
+  filename_prefix("indexa"),
+  reference_length_scale(1.0)
   {}
 
   void print(ConditionalOStream &pcout)
@@ -399,6 +400,7 @@ struct MassConservationData
   double start_time;
   unsigned int sample_every_time_steps;
   std::string filename_prefix;
+  double reference_length_scale;
 };
 
 // turbulent channel data

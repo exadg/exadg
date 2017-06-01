@@ -270,7 +270,7 @@ calculate_time_step()
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL)
   {
-    const double global_min_cell_diameter = calculate_min_cell_diameter(
+    const double global_min_cell_diameter = calculate_minimum_vertex_distance(
         navier_stokes_operation->get_dof_handler_u().get_triangulation());
 
     double time_step = calculate_const_time_step_cfl(cfl,
@@ -308,7 +308,7 @@ calculate_time_step()
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepMaxEfficiency)
   {
-    const double global_min_cell_diameter = calculate_min_cell_diameter(
+    const double global_min_cell_diameter = calculate_minimum_vertex_distance(
         navier_stokes_operation->get_dof_handler_u().get_triangulation());
 
     double time_step = calculate_time_step_max_efficiency(param.c_eff,

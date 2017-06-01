@@ -265,6 +265,10 @@ public:
                                  parallel::distributed::Vector<Number> const &src,
                                  Number const                                evaluation_time) const;
 
+  // inverse velocity mass matrix
+  void apply_inverse_mass_matrix (parallel::distributed::Vector<Number>       &dst,
+                                  parallel::distributed::Vector<Number> const &src) const;
+
   /*
    *  Update turbulence model, i.e., calculate turbulent viscosity
    */
@@ -487,36 +491,44 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   // diveregnce
   divergence_calculator.initialize(data,dof_index_u);
 
-  dof_index_first_point = 0;
-  for(unsigned int d=0;d<dim;++d)
-    first_point[d] = 0.0;
+  if(this->param.pure_dirichlet_bc == true &&
+     this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
+  {
+    dof_index_first_point = 0;
+    for(unsigned int d=0;d<dim;++d)
+      first_point[d] = 0.0;
 
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-  {
-    typename DoFHandler<dim>::active_cell_iterator first_cell;
-    typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_p.begin_active(), endc = dof_handler_p.end();
-    for(;cell!=endc;++cell)
+    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
-      if (cell->is_locally_owned())
+      typename DoFHandler<dim>::active_cell_iterator first_cell;
+      typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_p.begin_active(), endc = dof_handler_p.end();
+      bool processor_has_active_cells = false;
+      for(;cell!=endc;++cell)
       {
-        first_cell = cell;
-        break;
+        if (cell->is_locally_owned())
+        {
+          first_cell = cell;
+          processor_has_active_cells = true;
+          break;
+        }
       }
+      AssertThrow(processor_has_active_cells == true,ExcMessage("No active cells on Processor with ID=0"));
+
+      FEValues<dim> fe_values(dof_handler_p.get_fe(),
+                  Quadrature<dim>(dof_handler_p.get_fe().get_unit_support_points()),
+                  update_quadrature_points);
+      fe_values.reinit(first_cell);
+      first_point = fe_values.quadrature_point(0);
+      std::vector<types::global_dof_index>
+      dof_indices(dof_handler_p.get_fe().dofs_per_cell);
+      first_cell->get_dof_indices(dof_indices);
+      dof_index_first_point = dof_indices[0];
     }
-    FEValues<dim> fe_values(dof_handler_p.get_fe(),
-                Quadrature<dim>(dof_handler_p.get_fe().get_unit_support_points()),
-                update_quadrature_points);
-    fe_values.reinit(first_cell);
-    first_point = fe_values.quadrature_point(0);
-    std::vector<types::global_dof_index>
-    dof_indices(dof_handler_p.get_fe().dofs_per_cell);
-    first_cell->get_dof_indices(dof_indices);
-    dof_index_first_point = dof_indices[0];
-  }
-  dof_index_first_point = Utilities::MPI::sum(dof_index_first_point,MPI_COMM_WORLD);
-  for(unsigned int d=0;d<dim;++d)
-  {
-    first_point[d] = Utilities::MPI::sum(first_point[d],MPI_COMM_WORLD);
+    dof_index_first_point = Utilities::MPI::sum(dof_index_first_point,MPI_COMM_WORLD);
+    for(unsigned int d=0;d<dim;++d)
+    {
+      first_point[d] = Utilities::MPI::sum(first_point[d],MPI_COMM_WORLD);
+    }
   }
 
   pcout << std::endl << "... done!" << std::endl << std::flush;
@@ -688,6 +700,14 @@ compute_divergence (parallel::distributed::Vector<Number>       &dst,
   divergence_calculator.compute_divergence(dst,src);
 
   inverse_mass_matrix_operator->apply(dst,dst);
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+apply_inverse_mass_matrix (parallel::distributed::Vector<Number>       &dst,
+                           parallel::distributed::Vector<Number> const &src) const
+{
+  inverse_mass_matrix_operator->apply(dst,src);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>

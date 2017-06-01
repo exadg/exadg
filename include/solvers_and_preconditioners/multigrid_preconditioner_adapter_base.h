@@ -26,9 +26,9 @@ namespace
   // manually compute eigenvalues for the coarsest level for proper setup of the Chebyshev iteration
   template <typename Operator>
   std::pair<double,double>
-  compute_eigenvalues(const Operator &op,
-                      const parallel::distributed::Vector<typename Operator::value_type> &inverse_diagonal,
-                      const unsigned int eig_n_iter = 10000)
+  compute_eigenvalues(const Operator                                                      &op,
+                      const parallel::distributed::Vector<typename Operator::value_type>  &inverse_diagonal,
+                      const unsigned int                                                  eig_n_iter = 10000)
   {
     typedef typename Operator::value_type value_type;
     parallel::distributed::Vector<value_type> left, right;
@@ -46,18 +46,23 @@ namespace
     solver.connect_eigenvalues_slot(std::bind(&internal::PreconditionChebyshev::EigenvalueTracker::slot,
                                               &eigenvalue_tracker,
                                               std::placeholders::_1));
+
     JacobiPreconditioner<value_type, Operator> preconditioner(op);
+
     try
     {
       solver.solve(op, left, right, preconditioner);
     }
     catch (SolverControl::NoConvergence &)
     {
+
     }
 
     std::pair<double,double> eigenvalues;
     if (eigenvalue_tracker.values.empty())
-      eigenvalues.first = eigenvalues.second = 1;
+    {
+      eigenvalues.first = eigenvalues.second = 1.;
+    }
     else
     {
       eigenvalues.first = eigenvalue_tracker.values.front();
@@ -82,9 +87,9 @@ namespace
   // manually compute eigenvalues for the coarsest level for proper setup of the Chebyshev iteration
   template <typename Operator>
   std::pair<std::complex<double>,std::complex<double> >
-  compute_eigenvalues_gmres(const Operator &op,
-                            const parallel::distributed::Vector<typename Operator::value_type> &inverse_diagonal,
-                            const unsigned int eig_n_iter = 10000)
+  compute_eigenvalues_gmres(const Operator                                                      &op,
+                            const parallel::distributed::Vector<typename Operator::value_type>  &inverse_diagonal,
+                            const unsigned int                                                  eig_n_iter = 10000)
   {
     typedef typename Operator::value_type value_type;
     parallel::distributed::Vector<value_type> left, right;
@@ -96,7 +101,6 @@ namespace
       right.local_element(i) = (double)rand()/RAND_MAX;
     op.apply_nullspace_projection(right);
 
-//    SolverControl control(10000, right.l2_norm()*1e-5);
     ReductionControl control (eig_n_iter, right.l2_norm()*1.0e-5, 1.0e-5);
 
     EigenvalueTracker<std::complex<double> > eigenvalue_tracker;
@@ -104,18 +108,23 @@ namespace
     solver.connect_eigenvalues_slot(std::bind(&EigenvalueTracker<std::complex<double> >::slot,
                                               &eigenvalue_tracker,
                                               std::placeholders::_1));
+
     JacobiPreconditioner<value_type, Operator> preconditioner(op);
+
     try
     {
       solver.solve(op, left, right, preconditioner);
     }
     catch (SolverControl::NoConvergence &)
     {
+
     }
 
     std::pair<std::complex<double>,std::complex<double> > eigenvalues;
     if (eigenvalue_tracker.values.empty())
-      eigenvalues.first = eigenvalues.second = 1;
+    {
+      eigenvalues.first = eigenvalues.second = 1.;
+    }
     else
     {
       eigenvalues.first = eigenvalue_tracker.values.front();
@@ -459,7 +468,7 @@ private:
 
     /*
     std::pair<double,double> eigenvalues = compute_eigenvalues(mg_matrices[level], smoother_data.matrix_diagonal_inverse);
-    std::cout<<"Max EW = "<< eigenvalues.second <<" : Min EW = "<<eigenvalues.first<<std::endl;
+    std::cout << "Max EV = " << eigenvalues.second << " : Min EV = " << eigenvalues.first << std::endl;
     */
 
     smoother_data.smoothing_range = mg_data.chebyshev_smoother_data.smoother_smoothing_range;
@@ -480,11 +489,12 @@ private:
     mg_matrices[0].calculate_inverse_diagonal(smoother_data.matrix_diagonal_inverse);
 
     std::pair<double,double> eigenvalues = compute_eigenvalues(mg_matrices[0], smoother_data.matrix_diagonal_inverse);
-    smoother_data.max_eigenvalue = 1.1 * eigenvalues.second;
-    smoother_data.smoothing_range = eigenvalues.second/eigenvalues.first*1.1;
+    double const factor = 1.1;
+    smoother_data.max_eigenvalue = factor * eigenvalues.second;
+    smoother_data.smoothing_range = eigenvalues.second/eigenvalues.first*factor;
     double sigma = (1.-std::sqrt(1./smoother_data.smoothing_range))/(1.+std::sqrt(1./smoother_data.smoothing_range));
-    const double eps = 1e-3;
-    smoother_data.degree = std::log(1./eps+std::sqrt(1./eps/eps-1))/std::log(1./sigma);
+    const double eps = 1.e-3;
+    smoother_data.degree = std::log(1./eps+std::sqrt(1./eps/eps-1.))/std::log(1./sigma);
     smoother_data.eig_cg_n_iterations = 0;
 
     std::shared_ptr<CHEBYSHEV_SMOOTHER> smoother = std::dynamic_pointer_cast<CHEBYSHEV_SMOOTHER>(mg_smoother[0]);

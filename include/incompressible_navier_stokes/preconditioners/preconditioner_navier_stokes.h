@@ -429,7 +429,7 @@ public:
       //              = -1.0 * (dst.block(1) + (-B) * dst.block(0));
       // I. dst.block(1) += (-B) * dst.block(0);
       // Note that B represents NEGATIVE divergence operator, i.e.,
-      // applying the divergence operator means appyling -B
+      // applying -B is equal to applying the divergence operator
       underlying_operator->divergence_operator.apply(vec_tmp_pressure,dst.block(0));
       dst.block(1).add(underlying_operator->scaling_factor_continuity,vec_tmp_pressure);
       // II. dst.block(1) = -dst.block(1);
@@ -943,7 +943,7 @@ private:
 
     // scaling_factor_continuity: Since the Schur complement includes both the velocity divergence
     // and the pressure gradient operators as factors, we have to scale by
-    // 1/scaling_factor*scaling_factor when applying (an approximation of) the inverse Schur complement.
+    // 1/(scaling_factor*scaling_factor) when applying (an approximation of) the inverse Schur complement.
     double inverse_scaling_factor = 1.0/underlying_operator->scaling_factor_continuity;
     dst *= inverse_scaling_factor*inverse_scaling_factor;
   }

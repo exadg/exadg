@@ -13,6 +13,7 @@
 #include <deal.II/matrix_free/fe_evaluation.h>
 #include <deal.II/lac/parallel_vector.h>
 #include <deal.II/base/function.h>
+#include "../functionalities/calculate_characteristic_element_length.h"
 
 /*
  *  This function calculates the time step size for a given time step size
@@ -25,30 +26,6 @@ double calculate_const_time_step(double const       dt,
   double time_step = dt/std::pow(2.,n_refine_time);
 
   return time_step;
-}
-
-/*
- *  This function calculates the characteristic element length h
- *  defined as the minimum vertex distance.
- */
-template<int dim>
-double calculate_min_cell_diameter(Triangulation<dim> const &triangulation)
-{
-  typename Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(), endc = triangulation.end();
-
-  double diameter = 0.0, min_cell_diameter = std::numeric_limits<double>::max();
-  for (; cell!=endc; ++cell)
-  {
-    if (cell->is_locally_owned())
-    {
-      diameter = cell->minimum_vertex_distance();
-      if (diameter < min_cell_diameter)
-        min_cell_diameter = diameter;
-    }
-  }
-  const double global_min_cell_diameter = -Utilities::MPI::max(-min_cell_diameter, MPI_COMM_WORLD);
-
-  return global_min_cell_diameter;
 }
 
 /*

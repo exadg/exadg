@@ -25,7 +25,8 @@ struct DivergencePenaltyOperatorData
  *  Divergence penalty operator: ( div(v_h) , tau_div * div(u_h) )_Omega^e where
  *   v_h : test function
  *   u_h : solution
- *   tau_div: divergence penalty factor tau_div = K * || U_mean || * h
+ *   tau_div: divergence penalty factor tau_div = K * || U_mean || * h_eff
+ *            where h_eff = h / (k_u+1) and h = V_e^{1/3} with the element volume V_e
  *   Omega^e : element e
  */
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
@@ -78,7 +79,11 @@ public:
       U_mean /= volume;
       norm_U_mean = U_mean.norm();
 
-      array_penalty_parameter[cell] = operator_data.penalty_parameter * norm_U_mean * std::exp(std::log(volume)/(double)dim);
+      // TODO
+//      array_penalty_parameter[cell] = operator_data.penalty_parameter * norm_U_mean * std::exp(std::log(volume)/(double)dim);
+
+      array_penalty_parameter[cell] = operator_data.penalty_parameter * norm_U_mean
+          * std::exp(std::log(volume)/(double)dim) / (double)(fe_degree+1);
     }
   }
 

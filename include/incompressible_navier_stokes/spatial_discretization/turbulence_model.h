@@ -483,9 +483,9 @@ private:
         // take polynomial degree of shape functions into account:
         // TODO
         // h/(k_u + 1)
-//        h /= (double)(fe_degree+1);
-        //h/(k_u)
-        h /= (double)(fe_degree);
+        h /= (double)(fe_degree+1);
+        // h/(k_u)
+        // h /= (double)(fe_degree);
 
         filter_width_vector[i][v] = h;
       }
