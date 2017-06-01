@@ -42,7 +42,7 @@ private:
       const unsigned int n_q_points = std::pow(n_q_points_1d,dim);
       for ( ; quad_index < mf.get_mapping_info().cell_data.size(); quad_index++)
       {
-        if (mf.get_mapping_info().cell_data[quad_index].storage_descriptor[0].n_q_points == n_q_points)
+        if (mf.get_mapping_info().cell_data[quad_index].descriptor[0].n_q_points == n_q_points)
           break;
       }
     }
@@ -141,7 +141,7 @@ private:
       const unsigned int n_q_points = std::pow(n_q_points_1d,dim);
       for ( ; quad_index < mf.get_mapping_info().cell_data.size(); quad_index++)
       {
-        if (mf.get_mapping_info().cell_data[quad_index].storage_descriptor[0].n_q_points == n_q_points)
+        if (mf.get_mapping_info().cell_data[quad_index].descriptor[0].n_q_points == n_q_points)
           break;
       }
     }

@@ -139,7 +139,6 @@ public:
     if (dof_handler_p.get_fe().dofs_per_vertex == 0)
       addit_data.build_face_info = true;
     addit_data.level_mg_handler = level;
-    addit_data.periodic_face_pairs_level_0 = periodic_face_pairs_level0;
 
     // reinit
     own_matrix_free_storage.reinit(mapping, dof_handler_vec, constraint_matrix_vec, quad, addit_data);

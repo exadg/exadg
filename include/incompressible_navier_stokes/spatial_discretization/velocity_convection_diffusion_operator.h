@@ -150,7 +150,6 @@ public:
 
 
     addit_data.level_mg_handler = level;
-    addit_data.periodic_face_pairs_level_0 = periodic_face_pairs_level0;
 
     // reinit
     own_matrix_free_storage.reinit(mapping, dof_handler_vec, constraint_matrix_vec, quadrature_vec, addit_data);
