@@ -148,6 +148,30 @@ private:
       fe_degree_xwall, xwall_quad_rule, value_type> const * divergence_penalty_operator;
 };
 
+/*
+ *  TODO:
+ *  Elementwise inverse mass matrix preconditioner.
+ *  The Preconditioner is currently implemented in the class
+ *    "ProjectionOperatorDivergencePenaltyIterative"
+ */
+template<typename value_type, typename Operator>
+class ElementwiseInverseMassMatrixPreconditioner : public InternalSolvers::PreconditionerBase<value_type>
+{
+public:
+  ElementwiseInverseMassMatrixPreconditioner(Operator &operator_in)
+  :
+    op(operator_in)
+  {}
+
+  void vmult(value_type *dst, value_type const *src) const
+  {
+    op.precondition(dst,src);
+  }
+
+private:
+  Operator &op;
+};
+
 
 /*
  *  Projection operator using a divergence penalty term and
@@ -634,6 +658,17 @@ public:
                                                                       solver_data.solver_tolerance_rel,
                                                                       solver_data.max_iter);
 
+    //TODO
+//    InternalSolvers::SolverGMRES<VectorizedArray<value_type> > cg_solver(total_dofs_per_cell,
+//                                                                         solver_data.solver_tolerance_abs,
+//                                                                         solver_data.solver_tolerance_rel,
+//                                                                         solver_data.max_iter);
+
+    //TODO
+//    InternalSolvers::PreconditionerIdentity<VectorizedArray<value_type> > preconditioner(total_dofs_per_cell);
+
+    ElementwiseInverseMassMatrixPreconditioner<VectorizedArray<value_type>,PROJ_OPERATOR> preconditioner(projection_operator);
+
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
       fe_eval.reinit(cell);
@@ -642,7 +677,8 @@ public:
       projection_operator.setup(cell);
       cg_solver.solve(&projection_operator,
                       solution.begin(),
-                      fe_eval.begin_dof_values());
+                      fe_eval.begin_dof_values(),
+                      &preconditioner);
 
       for (unsigned int j=0; j<total_dofs_per_cell; ++j)
         fe_eval.begin_dof_values()[j] = solution[j];

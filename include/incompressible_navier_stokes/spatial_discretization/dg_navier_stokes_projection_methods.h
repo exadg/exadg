@@ -31,7 +31,11 @@ public:
                                   InputParametersNavierStokes<dim> const          &parameter)
     :
     BASE(triangulation,parameter)
-  {}
+  {
+    AssertThrow(fe_degree_p > 0,
+        ExcMessage("Polynomial degree of pressure shape functions has to be larger than "
+            "zero for dual splitting scheme and pressure-correction scheme."));
+  }
 
   virtual ~DGNavierStokesProjectionMethods()
   {}
