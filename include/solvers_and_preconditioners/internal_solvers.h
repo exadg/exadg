@@ -28,9 +28,9 @@ namespace InternalSolvers
   }
 
   template<typename Number>
-  bool all_true (const bool a)
+  bool all_true (const Number a)
   {
-    return (a > 0);
+    return (a >= 0);
   }
 
   template<typename Number>
