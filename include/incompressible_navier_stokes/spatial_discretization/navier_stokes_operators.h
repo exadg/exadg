@@ -3023,6 +3023,23 @@ public:
     evaluate_add(dst,src,evaluation_time);
   }
 
+  //TODO: OIF splitting approach
+  void evaluate_test (parallel::distributed::Vector<value_type>       &dst,
+                      parallel::distributed::Vector<value_type> const &src,
+                      double const                                    evaluation_time,
+                      parallel::distributed::Vector<value_type> const &velocity) const
+  {
+    dst = 0;
+
+    this->eval_time = evaluation_time;
+    velocity_linearization = &velocity;
+
+    data->loop(&This::cell_loop_OIF,&This::face_loop_OIF,
+               &This::boundary_face_loop_OIF,this, dst, src);
+
+    velocity_linearization = nullptr;
+  }
+
   void evaluate_add (parallel::distributed::Vector<value_type>       &dst,
                      parallel::distributed::Vector<value_type> const &src,
                      double const                                    evaluation_time) const
@@ -3506,6 +3523,145 @@ private:
 
         Tensor<1,dim,VectorizedArray<value_type> > flux;
         calculate_flux_linearized_operator_boundary_face(flux,uM,uP,q,fe_eval,boundary_type);
+
+        fe_eval.submit_value(flux,q);
+      }
+      fe_eval.integrate(true,false);
+      fe_eval.distribute_local_to_global(dst);
+    }
+  }
+
+  /*
+   *  OIF splitting approach
+   */
+  void cell_loop_OIF(const MatrixFree<dim,value_type>                &data,
+                     parallel::distributed::Vector<value_type>       &dst,
+                     const parallel::distributed::Vector<value_type> &src,
+                     const std::pair<unsigned int,unsigned int>      &cell_range) const
+  {
+    FEEval_Velocity_Velocity_nonlinear fe_eval(data,this->fe_param,operator_data.dof_index);
+    FEEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,this->fe_param,operator_data.dof_index);
+
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval.reinit(cell);
+      fe_eval.read_dof_values(src);
+
+      fe_eval_linearization.reinit(cell);
+      fe_eval_linearization.read_dof_values(*velocity_linearization);
+
+      fe_eval.evaluate (true,false,false);
+      fe_eval_linearization.evaluate (true,false,false);
+
+      for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+      {
+        Tensor<1,dim,VectorizedArray<value_type> > u = fe_eval.get_value(q);
+        Tensor<1,dim,VectorizedArray<value_type> > u_ref = fe_eval_linearization.get_value(q);
+        Tensor<2,dim,VectorizedArray<value_type> > F = outer_product(u,u_ref);
+        fe_eval.submit_gradient (-F, q); // minus sign due to integration by parts
+      }
+      fe_eval.integrate (false,true);
+
+      fe_eval.distribute_local_to_global (dst);
+    }
+  }
+
+  void face_loop_OIF (const MatrixFree<dim,value_type>                &data,
+                      parallel::distributed::Vector<value_type>       &dst,
+                      const parallel::distributed::Vector<value_type> &src,
+                      const std::pair<unsigned int,unsigned int>      &face_range) const
+  {
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_neighbor(data,this->fe_param,false,operator_data.dof_index);
+
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization_neighbor(data,this->fe_param,false,operator_data.dof_index);
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval.reinit(face);
+      fe_eval.read_dof_values(src);
+      fe_eval.evaluate(true, false);
+
+      fe_eval_neighbor.reinit (face);
+      fe_eval_neighbor.read_dof_values(src);
+      fe_eval_neighbor.evaluate(true, false);
+
+      fe_eval_linearization.reinit(face);
+      fe_eval_linearization.read_dof_values(*velocity_linearization);
+      fe_eval_linearization.evaluate(true, false);
+
+      fe_eval_linearization_neighbor.reinit (face);
+      fe_eval_linearization_neighbor.read_dof_values(*velocity_linearization);
+      fe_eval_linearization_neighbor.evaluate(true, false);
+
+      for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+      {
+        Tensor<1,dim,VectorizedArray<value_type> > uM_ref = fe_eval_linearization.get_value(q);
+        Tensor<1,dim,VectorizedArray<value_type> > uP_ref = fe_eval_linearization_neighbor.get_value(q);
+        Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval.get_value(q);
+        Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_neighbor.get_value(q);
+        Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+        Tensor<1,dim,VectorizedArray<value_type> > flux;
+
+        VectorizedArray<value_type> average_normal_velocity = 0.5 * ((uM_ref + uP_ref) * normal);
+        flux = 0.5 * average_normal_velocity * (uM + uP) + 0.5 * std::abs(average_normal_velocity) * (uM-uP);
+
+        fe_eval.submit_value(flux,q);
+        fe_eval_neighbor.submit_value(-flux,q); // minus sign since n⁺ = -n⁻
+      }
+      fe_eval.integrate(true,false);
+      fe_eval_neighbor.integrate(true,false);
+
+      fe_eval.distribute_local_to_global(dst);
+      fe_eval_neighbor.distribute_local_to_global(dst);
+    }
+  }
+
+  void boundary_face_loop_OIF (const MatrixFree<dim,value_type>                &data,
+                               parallel::distributed::Vector<value_type>       &dst,
+                               const parallel::distributed::Vector<value_type> &src,
+                               const std::pair<unsigned int,unsigned int>      &face_range) const
+  {
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,this->fe_param,true,operator_data.dof_index);
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      types::boundary_id boundary_id = data.get_boundary_id(face);
+      BoundaryType boundary_type = BoundaryType::undefined;
+
+      if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
+        boundary_type = BoundaryType::dirichlet;
+      else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
+        boundary_type = BoundaryType::neumann;
+
+      AssertThrow(boundary_type != BoundaryType::undefined,
+          ExcMessage("Boundary type of face is invalid or not implemented."));
+
+      fe_eval.reinit (face);
+      fe_eval.read_dof_values(src);
+      fe_eval.evaluate(true,false);
+
+      fe_eval_linearization.reinit (face);
+      fe_eval_linearization.read_dof_values(*velocity_linearization);
+      fe_eval_linearization.evaluate(true,false);
+
+      for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+      {
+        Tensor<1,dim,VectorizedArray<value_type> > uM_ref = fe_eval_linearization.get_value(q);
+        Tensor<1,dim,VectorizedArray<value_type> > uP_ref;
+        calculate_exterior_velocity_boundary_face(uP_ref,uM_ref,q,fe_eval_linearization,boundary_type,boundary_id);
+
+        Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval.get_value(q);
+        Tensor<1,dim,VectorizedArray<value_type> > uP;
+        calculate_exterior_velocity_boundary_face(uP,uM,q,fe_eval,boundary_type,boundary_id);
+
+        Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+
+        Tensor<1,dim,VectorizedArray<value_type> > flux;
+        VectorizedArray<value_type> average_normal_velocity = 0.5 * ((uM_ref + uP_ref) * normal);
+        flux = 0.5 * average_normal_velocity * (uM + uP) + 0.5 * std::abs(average_normal_velocity) * (uM-uP);
 
         fe_eval.submit_value(flux,q);
       }

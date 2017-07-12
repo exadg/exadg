@@ -129,6 +129,9 @@ public:
   void apply_mass_matrix(parallel::distributed::Vector<Number>       &dst,
                          parallel::distributed::Vector<Number> const &src) const;
 
+  void apply_mass_matrix_add(parallel::distributed::Vector<Number>       &dst,
+                             parallel::distributed::Vector<Number> const &src) const;
+
   virtual void prescribe_initial_conditions(parallel::distributed::Vector<Number> &velocity,
                                             parallel::distributed::Vector<Number> &pressure,
                                             double const                          evaluation_time) const;
@@ -264,6 +267,18 @@ public:
   void evaluate_convective_term (parallel::distributed::Vector<Number>       &dst,
                                  parallel::distributed::Vector<Number> const &src,
                                  Number const                                evaluation_time) const;
+
+  // TODO OIF splitting
+//  void evaluate_negative_convective_term_and_apply_inverse_mass_matrix (
+//                                 parallel::distributed::Vector<Number>       &dst,
+//                                 parallel::distributed::Vector<Number> const &src,
+//                                 Number const                                evaluation_time) const;
+
+  void evaluate_negative_convective_term_and_apply_inverse_mass_matrix (
+                            parallel::distributed::Vector<Number>       &dst,
+                            parallel::distributed::Vector<Number> const &src,
+                            Number const                                evaluation_time,
+                            parallel::distributed::Vector<Number> const &velocity) const;
 
   // inverse velocity mass matrix
   void apply_inverse_mass_matrix (parallel::distributed::Vector<Number>       &dst,
@@ -628,6 +643,14 @@ apply_mass_matrix (parallel::distributed::Vector<Number>       &dst,
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+apply_mass_matrix_add (parallel::distributed::Vector<Number>       &dst,
+                       parallel::distributed::Vector<Number> const &src) const
+{
+  this->mass_matrix_operator.apply_add(dst,src);
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 shift_pressure (parallel::distributed::Vector<Number>  &pressure,
                 double const                           &eval_time) const
 {
@@ -717,6 +740,38 @@ evaluate_convective_term (parallel::distributed::Vector<Number>       &dst,
   convective_operator.evaluate(dst,src,evaluation_time);
 }
 
+//TODO OIF splitting
+//template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+//void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+//evaluate_negative_convective_term_and_apply_inverse_mass_matrix (
+//                          parallel::distributed::Vector<Number>       &dst,
+//                          parallel::distributed::Vector<Number> const &src,
+//                          Number const                                evaluation_time) const
+//{
+//  convective_operator.evaluate(dst,src,evaluation_time);
+//
+//  // shift convective term to the rhs of the equation
+//  dst *= -1.0;
+//
+//  inverse_mass_matrix_operator->apply(dst,dst);
+//}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+evaluate_negative_convective_term_and_apply_inverse_mass_matrix (
+                          parallel::distributed::Vector<Number>       &dst,
+                          parallel::distributed::Vector<Number> const &src,
+                          Number const                                evaluation_time,
+                          parallel::distributed::Vector<Number> const &velocity) const
+{
+  convective_operator.evaluate_test(dst,src,evaluation_time,velocity);
+
+  // shift convective term to the rhs of the equation
+  dst *= -1.0;
+
+  inverse_mass_matrix_operator->apply(dst,dst);
+}
+
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 update_turbulence_model (parallel::distributed::Vector<Number> const &velocity)
@@ -752,6 +807,40 @@ update_turbulence_model (parallel::distributed::Vector<Number> const &velocity)
   viscous_operator.extract_viscous_coefficient_from_dof_vector();
   */
 }
+
+template<typename Operator, typename value_type>
+class ConvectiveOperatorNavierStokes
+{
+public:
+  ConvectiveOperatorNavierStokes(std::shared_ptr<Operator> operation_in)
+    :
+    underlying_operator(operation_in)
+  {}
+
+  // TODO OIF splitting
+//  void evaluate(parallel::distributed::Vector<value_type>       &dst,
+//                parallel::distributed::Vector<value_type> const &src,
+//                value_type const                                evaluation_time) const
+//  {
+//    underlying_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(dst,src,evaluation_time);
+//  }
+
+  void evaluate(parallel::distributed::Vector<value_type>       &dst,
+                parallel::distributed::Vector<value_type> const &src,
+                value_type const                                evaluation_time,
+                parallel::distributed::Vector<value_type> const &velocity) const
+  {
+    underlying_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(dst,src,evaluation_time,velocity);
+  }
+
+  void initialize_dof_vector(parallel::distributed::Vector<value_type> &src) const
+  {
+    underlying_operator->initialize_vector_velocity(src);
+  }
+
+private:
+  std::shared_ptr<Operator> underlying_operator;
+};
 
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_BASE_H_ */

@@ -706,6 +706,8 @@ private:
                     double const                                 &C,
                     VectorizedArray<Number>                      &viscosity) const
   {
+    AssertThrow(dim==3,ExcMessage("Number of dimensions has to be dim==3 to evaluate Sigma turbulence model."));
+
     /*
      *  Compute singular values manually using a self-contained method
      *  (see appendix in Nicoud et al. (2011)). This approach is more efficient

@@ -91,6 +91,7 @@ enum class TreatmentOfConvectiveTerm
 {
   Undefined,
   Explicit,
+  ExplicitOIF,
   Implicit
 };
 
@@ -477,6 +478,7 @@ public:
     calculation_of_time_step_size(TimeStepCalculation::Undefined),
     max_velocity(-1.),
     cfl(-1.),
+    cfl_oif(-1.),
     cfl_exponent_fe_degree_velocity(2.0),
     c_eff(-1.),
     time_step_size(-1.),
@@ -774,6 +776,13 @@ public:
       }
     }
 
+    // OPERATOR-INTEGRATION-FACTOR SPLITTING
+    if(treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+    {
+      AssertThrow(cfl > 0., ExcMessage("parameter must be defined"));
+      AssertThrow(cfl_oif > 0., ExcMessage("parameter must be defined"));
+    }
+
     // TURBULENCE
     if(use_turbulence_model)
     {
@@ -909,6 +918,7 @@ public:
     // treatment of convective term
     std::string str_conv_term[] = { "Undefined",
                                     "Explicit",
+                                    "ExplicitOIF",
                                     "Implicit" };
        
     print_parameter(pcout,
@@ -1506,7 +1516,13 @@ public:
 
   // cfl number: note that this cfl number is the first in a series of cfl numbers
   // when performing temporal convergence tests, i.e., cfl_real = cfl, cfl/2, cfl/4, ...
+  // ("global" CFL number, can be larger than critical CFL in case
+  // of operator-integration-factor splitting)
   double cfl;
+
+  // cfl number for operator-integration-factor splitting (has to be smaller than the
+  // critical time step size arising from the CFL restriction)
+  double cfl_oif;
 
   // dt = CFL/k_u^{exp} * h / || u ||
   double cfl_exponent_fe_degree_velocity;

@@ -240,6 +240,19 @@ public:
     convective_operator.evaluate(dst,src,evaluation_time);
   }
 
+  void evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
+      parallel::distributed::Vector<value_type>       &dst,
+      parallel::distributed::Vector<value_type> const &src,
+      const value_type                                evaluation_time) const
+  {
+    convective_operator.evaluate(dst,src,evaluation_time);
+
+    // shift convective term to the rhs of the equation
+    dst *= -1.0;
+
+    inverse_mass_matrix_operator.apply(dst,dst);
+  }
+
   /*
    *  This function calculates the inhomogeneous parts of all operators
    *  arising e.g. from inhomogeneous boundary conditions or the solution
@@ -251,26 +264,10 @@ public:
    *  added to the right-hand side of the equations.
    */
   void rhs(parallel::distributed::Vector<value_type>       &dst,
-           parallel::distributed::Vector<value_type> const *src = nullptr,
            double const                                    evaluation_time = 0.0) const
   {
-    // mass matrix operator
-    if(param.problem_type == ConvDiff::ProblemType::Steady)
-    {
-      dst = 0;
-    }
-    else if(param.problem_type == ConvDiff::ProblemType::Unsteady)
-    {
-      AssertThrow(src != nullptr, ExcMessage("src-Vector is invalid when evaluating rhs of scalar convection-diffusion equation."));
-
-      mass_matrix_operator.apply(dst,*src);
-    }
-    else
-    {
-      AssertThrow(param.problem_type == ConvDiff::ProblemType::Steady ||
-                  param.problem_type == ConvDiff::ProblemType::Unsteady,
-                  ExcMessage("Specified problem type for convection-diffusion equation not implemented."));
-    }
+    // set dst to zero since we call functions of type ..._add()
+    dst = 0;
 
     // diffusive operator
     if(param.equation_type == ConvDiff::EquationType::Diffusion ||
@@ -292,10 +289,21 @@ public:
       }
     }
 
+    // rhs operator f(t)
     if(param.right_hand_side == true)
     {
       rhs_operator.evaluate_add(dst,evaluation_time);
     }
+  }
+
+  /*
+   *  This function applies the mass matrix operator to the src-vector
+   *  and adds the result to the dst-vector.
+   */
+  void apply_mass_matrix_add(parallel::distributed::Vector<value_type>       &dst,
+                             parallel::distributed::Vector<value_type> const &src) const
+  {
+    mass_matrix_operator.apply_add(dst,src);
   }
 
   unsigned int solve(parallel::distributed::Vector<value_type>       &sol,
@@ -492,6 +500,31 @@ private:
 
   std::shared_ptr<PreconditionerBase<value_type> > preconditioner;
   std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > iterative_solver;
+};
+
+template<int dim, int fe_degree, typename value_type>
+class ConvectiveOperatorOIFSplitting
+{
+public:
+  ConvectiveOperatorOIFSplitting(std::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation_in)
+    :
+    conv_diff_operation(conv_diff_operation_in)
+  {}
+
+  void evaluate(parallel::distributed::Vector<value_type>       &dst,
+                parallel::distributed::Vector<value_type> const &src,
+                const value_type                                evaluation_time) const
+  {
+    conv_diff_operation->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(dst,src,evaluation_time);
+  }
+
+  void initialize_dof_vector(parallel::distributed::Vector<value_type> &src) const
+  {
+    conv_diff_operation->initialize_dof_vector(src);
+  }
+
+private:
+  std::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation;
 };
 
 

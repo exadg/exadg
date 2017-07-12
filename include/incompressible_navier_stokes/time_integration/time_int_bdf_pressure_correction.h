@@ -431,7 +431,8 @@ momentum_step()
    *  Solve the linear or nonlinear problem.
    */
   if(this->param.equation_type == EquationType::Stokes ||
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
     // solve linear system of equations
     unsigned int linear_iterations_momentum;
@@ -487,16 +488,7 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
 rhs_momentum()
 {
-  /*
-   *  calculate sum (alpha_i/dt * u_i): This term is relevant for both the explicit
-   *  and the implicit formulation of the convective term
-   */
-  sum_alphai_ui.equ(this->bdf.get_alpha(0)/this->time_steps[0],velocity[0]);
-  for (unsigned int i=1;i<velocity.size();++i)
-  {
-    sum_alphai_ui.add(this->bdf.get_alpha(i)/this->time_steps[0],velocity[i]);
-  }
-  navier_stokes_operation->apply_mass_matrix(rhs_vec_momentum,sum_alphai_ui);
+  rhs_vec_momentum = 0;
 
   /*
    *  Add extrapolation of pressure gradient term to the rhs in case of incremental formulation
@@ -520,7 +512,7 @@ rhs_momentum()
   }
 
   /*
-   *  Convective term formulated explicitly:
+   *  Convective term formulated explicitly (additive decomposition):
    *  Evaluate convective term and add extrapolation of convective term to the rhs
    */
   if(this->param.equation_type == EquationType::NavierStokes &&
@@ -533,13 +525,80 @@ rhs_momentum()
   }
 
   /*
+   *  calculate sum (alpha_i/dt * u_i): This term is relevant for both the explicit
+   *  and the implicit formulation of the convective term
+   */
+  //TODO OIF splitting
+  // calculate sum (alpha_i/dt * u_tilde_i) in case of explicit treatment of convective term
+  // and operator-integration-factor splitting
+  if(this->param.equation_type == EquationType::NavierStokes &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+  {
+    // fill vectors with old velocity solutions and old time instants for
+    // interpolation of velocity field
+    std::vector<parallel::distributed::Vector<value_type> *> solutions;
+    std::vector<double> times;
+    for(unsigned int i=0;i<velocity.size();++i)
+    {
+      solutions.push_back(&velocity[i]);
+      times.push_back(this->time - (double)(i) * this->time_steps[0]);
+    }
+
+    // Loop over all previous time instants required by the BDF scheme
+    // and calculate u_tilde by substepping algorithm, i.e.,
+    // integrate over time interval t_{n-i} <= t <= t_{n+1}
+    // using explicit Runge-Kutta methods.
+    for(unsigned int i=0;i<velocity.size();++i)
+    {
+      // initialize solution: u_tilde(s=0) = u(t_{n-i})
+      this->solution_tilde_m = velocity[i];
+
+      // calculate start time t_{n-i} (assume equidistant time step sizes!!!)
+      double const time_n_i = this->time - (double)(i) * this->time_steps[i];
+
+      // time loop substepping: t_{n-i} <= t <= t_{n+1}
+      for(unsigned int m=0; m<this->M*(i+1);++m)
+      {
+        // solve time step
+        this->rk_time_integrator_OIF->solve_timestep(this->solution_tilde_mp,
+                                                     this->solution_tilde_m,
+                                                     time_n_i + this->delta_s*m,
+                                                     this->delta_s,
+                                                     solutions,
+                                                     times);
+
+        this->solution_tilde_mp.swap(this->solution_tilde_m);
+      }
+
+      // calculate sum (alpha_i/dt * u_tilde_i)
+      if(i==0)
+        sum_alphai_ui.equ(this->bdf.get_alpha(i)/this->time_steps[0],this->solution_tilde_m);
+      else // i>0
+        sum_alphai_ui.add(this->bdf.get_alpha(i)/this->time_steps[0],this->solution_tilde_m);
+    }
+  }
+  // calculate sum (alpha_i/dt * u_i) for standard BDF discretization
+  else
+  {
+    sum_alphai_ui.equ(this->bdf.get_alpha(0)/this->time_steps[0],velocity[0]);
+    for (unsigned int i=1;i<velocity.size();++i)
+    {
+      sum_alphai_ui.add(this->bdf.get_alpha(i)/this->time_steps[0],velocity[i]);
+    }
+  }
+  //TODO OIF splitting
+
+  navier_stokes_operation->apply_mass_matrix_add(rhs_vec_momentum,sum_alphai_ui);
+
+  /*
    *  Right-hand side viscous term:
    *  If a linear system of equations has to be solved,
    *  inhomogeneous parts of boundary face integrals of the viscous operator
    *  have to be shifted to the right-hand side of the equation.
    */
   if(this->param.equation_type == EquationType::Stokes ||
-      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
     navier_stokes_operation->rhs_add_viscous_term(rhs_vec_momentum,this->time+this->time_steps[0]);
   }
@@ -833,7 +892,8 @@ analyze_computing_times() const
               << "Number of MPI processes = " << Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) << std::endl;
 
   if(this->param.equation_type == EquationType::Stokes ||
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
     this->pcout << std::endl
                 << "Number of time steps = " << (this->time_step_number-1) << std::endl

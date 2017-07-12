@@ -411,17 +411,73 @@ convective_step()
     velocity_np = 0.0;
 
   // compute convective term and extrapolate convective term (if not Stokes equations)
-  if(this->param.equation_type == EquationType::NavierStokes)
+  if(this->param.equation_type == EquationType::NavierStokes &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     navier_stokes_operation->evaluate_convective_term_and_apply_inverse_mass_matrix(vec_convective_term[0],velocity[0],this->time);
     for(unsigned int i=0;i<vec_convective_term.size();++i)
       velocity_np.add(-this->extra.get_beta(i),vec_convective_term[i]);
   }
 
-  // calculate sum (alpha_i/dt * u_i)
-  sum_alphai_ui.equ(this->bdf.get_alpha(0)/this->time_steps[0],velocity[0]);
-  for (unsigned int i=1;i<velocity.size();++i)
-    sum_alphai_ui.add(this->bdf.get_alpha(i)/this->time_steps[0],velocity[i]);
+  //TODO OIF splitting
+  // calculate sum (alpha_i/dt * u_tilde_i) in case of explicit treatment of convective term
+  // and operator-integration-factor splitting
+  if(this->param.equation_type == EquationType::NavierStokes &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+  {
+    // fill vectors with old velocity solutions and old time instants for
+    // interpolation of velocity field
+    std::vector<parallel::distributed::Vector<value_type> *> solutions;
+    std::vector<double> times;
+    for(unsigned int i=0;i<velocity.size();++i)
+    {
+      solutions.push_back(&velocity[i]);
+      times.push_back(this->time - (double)(i) * this->time_steps[0]);
+    }
+
+    // Loop over all previous time instants required by the BDF scheme
+    // and calculate u_tilde by substepping algorithm, i.e.,
+    // integrate over time interval t_{n-i} <= t <= t_{n+1}
+    // using explicit Runge-Kutta methods.
+    for(unsigned int i=0;i<velocity.size();++i)
+    {
+      // initialize solution: u_tilde(s=0) = u(t_{n-i})
+      this->solution_tilde_m = velocity[i];
+
+      // calculate start time t_{n-i} (assume equidistant time step sizes!!!)
+      double const time_n_i = this->time - (double)(i) * this->time_steps[i];
+
+      // time loop substepping: t_{n-i} <= t <= t_{n+1}
+      for(unsigned int m=0; m<this->M*(i+1);++m)
+      {
+        // solve time step
+        this->rk_time_integrator_OIF->solve_timestep(this->solution_tilde_mp,
+                                                     this->solution_tilde_m,
+                                                     time_n_i + this->delta_s*m,
+                                                     this->delta_s,
+                                                     solutions,
+                                                     times);
+
+        this->solution_tilde_mp.swap(this->solution_tilde_m);
+      }
+
+      // calculate sum (alpha_i/dt * u_tilde_i)
+      if(i==0)
+        sum_alphai_ui.equ(this->bdf.get_alpha(i)/this->time_steps[0],this->solution_tilde_m);
+      else // i>0
+        sum_alphai_ui.add(this->bdf.get_alpha(i)/this->time_steps[0],this->solution_tilde_m);
+    }
+  }
+  // calculate sum (alpha_i/dt * u_i) for standard BDF discretization
+  else
+  {
+    sum_alphai_ui.equ(this->bdf.get_alpha(0)/this->time_steps[0],velocity[0]);
+    for (unsigned int i=1;i<velocity.size();++i)
+    {
+      sum_alphai_ui.add(this->bdf.get_alpha(i)/this->time_steps[0],velocity[i]);
+    }
+  }
+  //TODO OIF splitting
 
   // solve discrete temporal derivative term for intermediate velocity u_hat (if not STS approach)
   if(this->param.small_time_steps_stability == false)
@@ -430,7 +486,8 @@ convective_step()
     velocity_np *= this->time_steps[0]/this->bdf.get_gamma0();
   }
 
-  if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
     // write output explicit case
     if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
@@ -445,6 +502,11 @@ convective_step()
     AssertThrow(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit &&
                 !(this->param.equation_type == EquationType::Stokes || this->param.small_time_steps_stability),
         ExcMessage("Use TREATMENT_OF_CONVECTIVE_TERM = Explicit when solving the Stokes equations or when using the STS approach."));
+
+    // calculate sum (alpha_i/dt * u_i)
+    sum_alphai_ui.equ(this->bdf.get_alpha(0)/this->time_steps[0],velocity[0]);
+    for (unsigned int i=1;i<velocity.size();++i)
+      sum_alphai_ui.add(this->bdf.get_alpha(i)/this->time_steps[0],velocity[i]);
 
     unsigned int newton_iterations;
     unsigned int linear_iterations;

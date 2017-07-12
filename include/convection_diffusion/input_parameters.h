@@ -80,7 +80,8 @@ enum class TemporalDiscretization
 enum class TreatmentOfConvectiveTerm
 {
   Undefined,
-  Explicit,
+  Explicit, // additive decomposition (IMEX)
+  ExplicitOIF, // operator-integration-factor splitting (Maday et al. 1990)
   Implicit
 };
 
@@ -176,6 +177,7 @@ public:
     calculation_of_time_step_size(TimeStepCalculation::Undefined),
     time_step_size(-1.),
     cfl_number(-1.),
+    cfl_oif(-1.),
     diffusion_number(-1.),
     c_eff(-1.),
 
@@ -240,8 +242,10 @@ public:
                 ExcMessage("parameter must be defined"));
 
     if(temporal_discretization == TemporalDiscretization::BDF)
+    {
       AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::Undefined,
                   ExcMessage("parameter must be defined"));
+    }
 
     AssertThrow(calculation_of_time_step_size != TimeStepCalculation::Undefined,
                 ExcMessage("parameter must be defined"));
@@ -264,9 +268,19 @@ public:
     }
 
     if(temporal_discretization == TemporalDiscretization::BDF)
+    {
       AssertThrow(order_time_integrator >= 1 && order_time_integrator <= 4,
                   ExcMessage("Specified order of time integrator BDF not implemented!"));
+    }
 
+    if(treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+    {
+      AssertThrow(temporal_discretization == TemporalDiscretization::BDF,
+          ExcMessage("Operator-integration-factor splitting of convective term is only available for BDF time integration."));
+
+      AssertThrow(cfl_number > 0., ExcMessage("parameter must be defined"));
+      AssertThrow(cfl_oif > 0., ExcMessage("parameter must be defined"));
+    }
 
 
     // SPATIAL DISCRETIZATION
@@ -413,6 +427,7 @@ public:
     {
       std::string str_treatment_conv[] = { "Undefined",
                                            "Explicit",
+                                           "ExplicitOIF",
                                            "Implicit" };
 
       print_parameter(pcout,
@@ -591,8 +606,13 @@ public:
   // i.e., delta_t = time_step_size, time_step_size/2, ...
   double time_step_size;
 
-  // cfl number
+  // cfl number ("global" CFL number, can be larger than critical CFL in case
+  // of operator-integration-factor splitting)
   double cfl_number;
+
+  // cfl number for operator-integration-factor splitting (has to be smaller than the
+  // critical time step size arising from the CFL restriction)
+  double cfl_oif;
 
   // diffusion number (relevant number for limitation of time step size
   // when treating the diffusive term explicitly)
@@ -602,7 +622,6 @@ public:
   // MaxEfficiency, which means that the time step is selected such that the errors of
   // the temporal and spatial discretization are comparable
   double c_eff;
-
 
   /**************************************************************************************/
   /*                                                                                    */

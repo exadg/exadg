@@ -16,6 +16,7 @@
 #include "time_integration/extrapolation_scheme.h"
 #include "time_integration/push_back_vectors.h"
 #include "time_integration/time_step_calculation.h"
+#include "time_integration/explicit_runge_kutta.h"
 
 namespace ConvDiff
 {
@@ -28,9 +29,9 @@ class TimeIntBDFConvDiff
 public:
   TimeIntBDFConvDiff(std::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation_in,
                      std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> >         postprocessor_in,
-                     ConvDiff::InputParametersConvDiff const                                 &param_in,
+                     ConvDiff::InputParametersConvDiff const                           &param_in,
                      std::shared_ptr<Function<dim> >                                   velocity_in,
-                     unsigned int const                                                      n_refine_time_in)
+                     unsigned int const                                                n_refine_time_in)
     :
     conv_diff_operation(conv_diff_operation_in),
     postprocessor(postprocessor_in),
@@ -47,6 +48,9 @@ public:
     extra(param_in.order_time_integrator,param_in.start_with_low_order),
     solution(this->order),
     vec_convective_term(this->order),
+    cfl_oif(param.cfl_oif/std::pow(2.0,n_refine_time)),
+    M(1),
+    delta_s(1.0),
     N_iter_average(0.0),
     solver_time_average(.0)
   {}
@@ -106,6 +110,21 @@ private:
   std::vector<parallel::distributed::Vector<value_type> > solution;
   std::vector<parallel::distributed::Vector<value_type> > vec_convective_term;
 
+  std::shared_ptr<ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type> > convective_operator_OIF;
+  std::shared_ptr<ExplicitRungeKuttaTimeIntegrator<
+    ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>,
+    parallel::distributed::Vector<value_type> > > rk_time_integrator;
+
+  // cfl number cfl_oif for operator-integration-factor splitting
+  double const cfl_oif;
+  // number of substeps for operator-integration-factor splitting per time step dt
+  unsigned int M;
+  // substepping time step size delta_s for operator-integration-factor splitting
+  double delta_s;
+
+  parallel::distributed::Vector<value_type> solution_tilde_m;
+  parallel::distributed::Vector<value_type> solution_tilde_mp;
+
   parallel::distributed::Vector<value_type> sum_alphai_ui;
   parallel::distributed::Vector<value_type> rhs_vector;
 
@@ -146,6 +165,15 @@ setup(bool /*do_restart*/)
 
   // set the parameters that DGConvDiffOperation depends on
 //  conv_diff_operation->set_scaling_factor_time_derivative_term(gamma0/time_steps[0]);
+
+  // Operator-integration-factor splitting
+  if(this->param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::ExplicitOIF)
+  {
+    convective_operator_OIF.reset(new ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>(conv_diff_operation));
+    rk_time_integrator.reset(new ExplicitRungeKuttaTimeIntegrator<
+        ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>,
+        parallel::distributed::Vector<value_type> >(order,convective_operator_OIF));
+  }
 
   pcout << std::endl << "... done!" << std::endl;
 }
@@ -191,6 +219,12 @@ initialize_vectors()
   {
     for(unsigned int i=0;i<vec_convective_term.size();++i)
       conv_diff_operation->initialize_dof_vector(vec_convective_term[i]);
+  }
+
+  if(this->param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::ExplicitOIF)
+  {
+    conv_diff_operation->initialize_dof_vector(solution_tilde_m);
+    conv_diff_operation->initialize_dof_vector(solution_tilde_mp);
   }
 }
 
@@ -291,6 +325,29 @@ calculate_timestep()
   // fill time_steps array
   for(unsigned int i=1;i<order;++i)
     time_steps[i] = time_steps[0];
+
+  if(this->param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::ExplicitOIF)
+  {
+    // make sure that CFL condition is used for the calculation of the time step size (the aim
+    // of the OIF splitting approach is to overcome limitations of the CFL condition)
+    AssertThrow(param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepCFL,
+                ExcMessage("Specified calculation of time step size not compatible with OIF splitting approach!"));
+
+    // calculate number of substeps M
+    double tol = 1.0e-6;
+    M = (int)(cfl_number/(cfl_oif-tol));
+
+    if(cfl_oif < cfl_number/double(M)-tol)
+      M += 1;
+
+    // calculate substepping time step size delta_s
+    delta_s = this->time_steps[0]/(double)M;
+
+    pcout << std::endl << "Calculation of OIF substepping time step size:" << std::endl << std::endl;
+    print_parameter(pcout,"CFL (OIF)",cfl_oif);
+    print_parameter(pcout,"Number of substeps",M);
+    print_parameter(pcout,"Substepping time step size",delta_s);
+  }
 }
 
 
@@ -377,16 +434,11 @@ solve_timestep()
   Timer timer;
   timer.restart();
 
-  // calculate sum (alpha_i/dt * u_i)
-  sum_alphai_ui.equ(this->bdf.get_alpha(0)/this->time_steps[0],solution[0]);
-  for (unsigned int i=1;i<solution.size();++i)
-    sum_alphai_ui.add(this->bdf.get_alpha(i)/this->time_steps[0],solution[i]);
-
-  // calculate rhs
-  conv_diff_operation->rhs(rhs_vector,&sum_alphai_ui,this->time+this->time_steps[0]);
+  // calculate rhs (rhs-vector f and inhomogeneous boundary face integrals)
+  conv_diff_operation->rhs(rhs_vector,this->time+this->time_steps[0]);
 
   // add the convective term to the right-hand side of the equations
-  // if the convective term is treated explicitly
+  // if the convective term is treated explicitly (additive decomposition)
   if(param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::Explicit)
   {
     // only if convective term is really involved
@@ -399,6 +451,54 @@ solve_timestep()
         rhs_vector.add(-this->extra.get_beta(i),vec_convective_term[i]);
     }
   }
+
+  // calculate sum (alpha_i/dt * u_tilde_i) in case of explicit treatment of convective term
+  // and operator-integration-factor splitting
+  if(this->param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::ExplicitOIF)
+  {
+    // start time t_{n-i} initialized with t_{n+1}
+    double time_n_i = time + this->time_steps[0];
+
+    // Loop over all previous time instants required by the BDF scheme
+    // and calculate u_tilde by substepping algorithm, i.e.,
+    // integrate over time interval t_{n-i} <= t <= t_{n+1}
+    // using explicit Runge-Kutta methods.
+    for(unsigned int i=0;i<solution.size();++i)
+    {
+      // initialize solution: u_tilde(s=0) = u(t_{n-i})
+      solution_tilde_m = solution[i];
+      // calculate start time t_{n-i}
+      time_n_i -= this->time_steps[i];
+
+      // time loop substepping: t_{n-i} <= t <= t_{n+1}
+      for(unsigned int m=0; m<M*(i+1)/*assume equidistant time step sizes*/;++m)
+      {
+        rk_time_integrator->solve_timestep(solution_tilde_mp,
+                                           solution_tilde_m,
+                                           time_n_i + delta_s*m,
+                                           delta_s);
+
+        solution_tilde_mp.swap(solution_tilde_m);
+      }
+
+      // calculate sum (alpha_i/dt * u_tilde_i)
+      if(i==0)
+        sum_alphai_ui.equ(this->bdf.get_alpha(i)/this->time_steps[0],solution_tilde_m);
+      else // i>0
+        sum_alphai_ui.add(this->bdf.get_alpha(i)/this->time_steps[0],solution_tilde_m);
+    }
+  }
+  // calculate sum (alpha_i/dt * u_i) for standard BDF discretization
+  else
+  {
+    sum_alphai_ui.equ(this->bdf.get_alpha(0)/this->time_steps[0],solution[0]);
+    for (unsigned int i=1;i<solution.size();++i)
+      sum_alphai_ui.add(this->bdf.get_alpha(i)/this->time_steps[0],solution[i]);
+  }
+
+  // apply mass matrix to sum_alphai_ui and add to rhs vector
+  conv_diff_operation->apply_mass_matrix_add(rhs_vector,sum_alphai_ui);
+
 
   // extrapolate old solution to obtain a good initial guess for the solver
   solution_np.equ(this->extra.get_beta(0),solution[0]);

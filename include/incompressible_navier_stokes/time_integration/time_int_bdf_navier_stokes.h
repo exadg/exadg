@@ -15,6 +15,145 @@
 #include "time_integration/extrapolation_scheme.h"
 #include "time_integration/time_step_calculation.h"
 
+template<typename Operator, typename Vector>
+class ExplicitRungeKuttaTimeIntegratorOIF
+{
+public:
+  // Constructor
+  ExplicitRungeKuttaTimeIntegratorOIF(unsigned int              order_time_integrator,
+                                      std::shared_ptr<Operator> underlying_operator_in)
+    :
+    order(order_time_integrator),
+    underlying_operator(underlying_operator_in)
+  {
+    underlying_operator->initialize_dof_vector(solution_interpolated);
+
+    // initialize vectors
+    if(order >= 2)
+      underlying_operator->initialize_dof_vector(vec_rhs);
+    if(order >= 3)
+      underlying_operator->initialize_dof_vector(vec_temp);
+  }
+
+  void interpolate(Vector                      &dst,
+                   double const                evaluation_time,
+                   std::vector<Vector *> const solutions,
+                   std::vector<double> const   times) const
+  {
+    dst = 0;
+
+    // loop over all interpolation points
+    for(unsigned int k=0; k<solutions.size();++k)
+    {
+      // evaluate lagrange polynomial l_k
+      double l_k = 1.0;
+
+      for(unsigned int j=0; j<solutions.size(); ++j)
+      {
+        if(j != k)
+        {
+          l_k *= (evaluation_time - times[j])/(times[k] - times[j]);
+        }
+      }
+
+      dst.add(l_k,*solutions[k]);
+    }
+  }
+
+  void solve_timestep(Vector                      &dst,
+                      Vector const                &src,
+                      double                      time_n,
+                      double                      time_step,
+                      std::vector<Vector *> const solutions,
+                      std::vector<double> const   times)
+  {
+    if(order == 1) // explicit Euler method
+    {
+      interpolate(solution_interpolated,time_n,solutions,times);
+      underlying_operator->evaluate(dst,src,time_n,solution_interpolated);
+      dst *= time_step;
+      dst.add(1.0,src);
+    }
+    else if(order == 2) // Runge-Kutta method of order 2
+    {
+      // stage 1
+      interpolate(solution_interpolated,time_n,solutions,times);
+      underlying_operator->evaluate(vec_rhs,src,time_n,solution_interpolated);
+
+      // stage 2
+      vec_rhs *= time_step/2.;
+      vec_rhs.add(1.0,src);
+      interpolate(solution_interpolated,time_n + time_step/2.,solutions,times);
+      underlying_operator->evaluate(dst,vec_rhs,time_n + time_step/2.,solution_interpolated);
+      dst *= time_step;
+      dst.add(1.0,src);
+    }
+    else if(order == 3) //Heun's method of order 3
+    {
+      dst = src;
+
+      // stage 1
+      interpolate(solution_interpolated,time_n,solutions,times);
+      underlying_operator->evaluate(vec_temp,src,time_n,solution_interpolated);
+      dst.add(1.*time_step/4.,vec_temp);
+
+      // stage 2
+      vec_rhs.equ(1.,src);
+      vec_rhs.add(time_step/3.,vec_temp);
+      interpolate(solution_interpolated,time_n+time_step/3.,solutions,times);
+      underlying_operator->evaluate(vec_temp,vec_rhs,time_n+time_step/3.,solution_interpolated);
+
+      // stage 3
+      vec_rhs.equ(1.,src);
+      vec_rhs.add(2.0*time_step/3.0,vec_temp);
+      interpolate(solution_interpolated,time_n+2.*time_step/3.,solutions,times);
+      underlying_operator->evaluate(vec_temp,vec_rhs,time_n+2.*time_step/3.,solution_interpolated);
+      dst.add(3.*time_step/4.,vec_temp);
+    }
+    else if(order == 4) //classical 4th order Runge-Kutta method
+    {
+      dst = src;
+
+      // stage 1
+      interpolate(solution_interpolated,time_n,solutions,times);
+      underlying_operator->evaluate(vec_temp,src,time_n,solution_interpolated);
+      dst.add(time_step/6., vec_temp);
+
+      // stage 2
+      vec_rhs.equ(1.,src);
+      vec_rhs.add(time_step/2., vec_temp);
+      interpolate(solution_interpolated,time_n+time_step/2.,solutions,times);
+      underlying_operator->evaluate(vec_temp,vec_rhs,time_n+time_step/2.,solution_interpolated);
+      dst.add(time_step/3., vec_temp);
+
+      // stage 3
+      vec_rhs.equ(1., src);
+      vec_rhs.add(time_step/2., vec_temp);
+      interpolate(solution_interpolated,time_n+time_step/2.,solutions,times);
+      underlying_operator->evaluate(vec_temp,vec_rhs,time_n+time_step/2.,solution_interpolated);
+      dst.add(time_step/3., vec_temp);
+
+      // stage 4
+      vec_rhs.equ(1., src);
+      vec_rhs.add(time_step, vec_temp);
+      interpolate(solution_interpolated,time_n+time_step,solutions,times);
+      underlying_operator->evaluate(vec_temp,vec_rhs,time_n+time_step,solution_interpolated);
+      dst.add(time_step/6., vec_temp);
+    }
+    else
+    {
+      AssertThrow(order <= 1,ExcMessage("Explicit Runge-Kutta method only implemented for order <= 4!"));
+    }
+  }
+
+private:
+  unsigned int order;
+  std::shared_ptr<Operator> underlying_operator;
+
+  Vector vec_rhs, vec_temp;
+  Vector solution_interpolated;
+};
+
 template<int dim,typename Number> class PostProcessorBase;
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -38,6 +177,9 @@ public:
     extra(param_in.order_time_integrator,param_in.start_with_low_order),
     adaptive_time_stepping(use_adaptive_time_stepping),
     cfl(param.cfl/std::pow(2.0,n_refine_time_in)),
+    cfl_oif(param_in.cfl_oif/std::pow(2.0,n_refine_time_in)),
+    M(1),
+    delta_s(1.0),
     pcout(std::cout,Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     n_refine_time(n_refine_time_in),
     navier_stokes_operation(navier_stokes_operation_in)
@@ -66,6 +208,8 @@ protected:
 
   virtual void initialize_time_integrator_constants();
   virtual void update_time_integrator_constants();
+
+  void initialize_oif();
 
   virtual void calculate_time_step();
 
@@ -100,7 +244,24 @@ protected:
   // use adaptive time stepping?
   bool const adaptive_time_stepping;
 
+  // gobal cfl number
   double const cfl;
+
+  // Operator-integration-factor splitting for convective term
+  std::shared_ptr<ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type> > convective_operator_OIF;
+  std::shared_ptr<ExplicitRungeKuttaTimeIntegratorOIF<
+    ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
+    parallel::distributed::Vector<value_type> > > rk_time_integrator_OIF;
+
+  // cfl number cfl_oif for operator-integration-factor splitting
+  double const cfl_oif;
+  // number of substeps for operator-integration-factor splitting per time step dt
+  unsigned int M;
+  // substepping time step size delta_s for operator-integration-factor splitting
+  double delta_s;
+
+  parallel::distributed::Vector<value_type> solution_tilde_m;
+  parallel::distributed::Vector<value_type> solution_tilde_mp;
 
   ConditionalOStream pcout;
 
@@ -145,6 +306,9 @@ setup(bool do_restart)
   // in case of start_with_low_order == true the time integrator constants
   // have to be adjusted in timeloop().
   initialize_time_integrator_constants();
+
+  // operator-integration-factor splitting
+  initialize_oif();
 
   // initialize global solution vectors (allocation)
   initialize_vectors();
@@ -218,6 +382,27 @@ initialize_solution_and_calculate_timestep(bool do_restart)
     // now: prescribe initial conditions at former time instants t = time - time_step, time - 2.0*time_step, etc.
     if(param.start_with_low_order == false)
       initialize_former_solution();
+  }
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+initialize_oif()
+{
+  // Operator-integration-factor splitting
+  if(this->param.equation_type == EquationType::NavierStokes &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+  {
+    convective_operator_OIF.reset(new ConvectiveOperatorNavierStokes<
+        NavierStokesOperation, value_type>(navier_stokes_operation));
+
+    rk_time_integrator_OIF.reset(new ExplicitRungeKuttaTimeIntegratorOIF<
+        ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
+        parallel::distributed::Vector<value_type> >(this->order,convective_operator_OIF));
+
+    // temporary vectors required for operator-integration-factor splitting of convective term
+    navier_stokes_operation->initialize_vector_velocity(solution_tilde_m);
+    navier_stokes_operation->initialize_vector_velocity(solution_tilde_mp);
   }
 }
 
@@ -337,6 +522,29 @@ calculate_time_step()
   // fill time_steps array
   for(unsigned int i=1;i<order;++i)
     time_steps[i] = time_steps[0];
+
+  if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+  {
+    // make sure that CFL condition is used for the calculation of the time step size (the aim
+    // of the OIF splitting approach is to overcome limitations of the CFL condition)
+    AssertThrow(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL,
+                ExcMessage("Specified calculation of time step size not compatible with OIF splitting approach!"));
+
+    // calculate number of substeps M
+    double tol = 1.0e-6;
+    M = (int)(this->cfl/(cfl_oif-tol));
+
+    if(cfl_oif < this->cfl/double(M)-tol)
+      M += 1;
+
+    // calculate substepping time step size delta_s
+    delta_s = this->time_steps[0]/(double)M;
+
+    pcout << std::endl << "Calculation of OIF substepping time step size:" << std::endl << std::endl;
+    print_parameter(pcout,"CFL (OIF)",cfl_oif);
+    print_parameter(pcout,"Number of substeps",M);
+    print_parameter(pcout,"Substepping time step size",delta_s);
+  }
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>

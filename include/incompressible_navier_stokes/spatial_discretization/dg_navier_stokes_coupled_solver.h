@@ -134,7 +134,6 @@ public:
    *  For steady problems these parameters are omitted.
    */
   void rhs_stokes_problem (parallel::distributed::BlockVector<Number>  &dst,
-                           parallel::distributed::Vector<Number> const *src = nullptr,
                            double const                                &eval_time = 0.0) const;
 
 
@@ -609,7 +608,6 @@ solve_linear_stokes_problem (parallel::distributed::BlockVector<Number>       &d
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 rhs_stokes_problem (parallel::distributed::BlockVector<Number>  &dst,
-                    parallel::distributed::Vector<Number> const *src,
                     double const                                &eval_time) const
 {
   // velocity-block
@@ -617,9 +615,6 @@ rhs_stokes_problem (parallel::distributed::BlockVector<Number>  &dst,
   dst.block(0) *= scaling_factor_continuity;
 
   this->viscous_operator.rhs_add(dst.block(0),eval_time);
-
-  if(unsteady_problem_has_to_be_solved())
-    this->mass_matrix_operator.apply_add(dst.block(0),*src);
 
   if(this->param.right_hand_side == true)
     this->body_force_operator.evaluate_add(dst.block(0),eval_time);

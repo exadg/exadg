@@ -28,9 +28,9 @@ class TimeIntExplRKConvDiff
 public:
   TimeIntExplRKConvDiff(std::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation_in,
                         std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> >         postprocessor_in,
-                        ConvDiff::InputParametersConvDiff const                                 &param_in,
+                        ConvDiff::InputParametersConvDiff const                           &param_in,
                         std::shared_ptr<Function<dim> >                                   velocity_in,
-                        unsigned int const                                                      n_refine_time_in)
+                        unsigned int const                                                n_refine_time_in)
     :
     conv_diff_operation(conv_diff_operation_in),
     postprocessor(postprocessor_in),
@@ -59,6 +59,11 @@ private:
   void analyze_computing_times() const;
 
   std::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation;
+
+  std::shared_ptr<ExplicitRungeKuttaTimeIntegrator<
+    DGConvDiffOperation<dim, fe_degree, value_type>,
+    parallel::distributed::Vector<value_type> > > rk_time_integrator;
+
   std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> > postprocessor;
   ConvDiff::InputParametersConvDiff const & param;
   std::shared_ptr<Function<dim> > velocity;
@@ -67,8 +72,6 @@ private:
   double total_time;
 
   parallel::distributed::Vector<value_type> solution_n, solution_np;
-
-  parallel::distributed::Vector<value_type> vec_rhs, vec_temp;
 
   double time, time_step;
   unsigned int const order;
@@ -93,6 +96,11 @@ void TimeIntExplRKConvDiff<dim,fe_degree,value_type>::setup()
   // calculate time step size
   calculate_timestep();
 
+  // initialize Runge-Kutta time integrator
+  rk_time_integrator.reset(new ExplicitRungeKuttaTimeIntegrator<
+      DGConvDiffOperation<dim, fe_degree, value_type>,
+      parallel::distributed::Vector<value_type> >(order,conv_diff_operation));
+
   pcout << std::endl << "... done!" << std::endl;
 }
 
@@ -101,11 +109,6 @@ void TimeIntExplRKConvDiff<dim,fe_degree,value_type>::initialize_vectors()
 {
   conv_diff_operation->initialize_dof_vector(solution_n);
   conv_diff_operation->initialize_dof_vector(solution_np);
-
-  if(order >= 2)
-    conv_diff_operation->initialize_dof_vector(vec_rhs);
-  if(order >= 3)
-    conv_diff_operation->initialize_dof_vector(vec_temp);
 }
 
 template<int dim, int fe_degree, typename value_type>
@@ -311,79 +314,10 @@ template<int dim, int fe_degree, typename value_type>
 void TimeIntExplRKConvDiff<dim,fe_degree,value_type>::
 solve_timestep()
 {
-  if(order == 1) // explicit Euler method
-  {
-    if(true)
-    {
-      conv_diff_operation->evaluate(solution_np,solution_n,time);
-      solution_np *= time_step;
-      solution_np.add(1.0,solution_n);
-    }
-  }
-  else if(order == 2) // Runge-Kutta method of order 2
-  {
-    if(true)
-    {
-      // stage 1
-      conv_diff_operation->evaluate(vec_rhs,solution_n,time);
-
-      // stage 2
-      vec_rhs *= time_step/2.;
-      vec_rhs.add(1.0,solution_n);
-      conv_diff_operation->evaluate(solution_np,vec_rhs,time + time_step/2.);
-      solution_np *= time_step;
-      solution_np.add(1.0,solution_n);
-    }
-  }
-  else if(order == 3) //Heun's method of order 3
-  {
-    solution_np = solution_n;
-
-    // stage 1
-    conv_diff_operation->evaluate(vec_temp,solution_n,time);
-    solution_np.add(1.*time_step/4.,vec_temp);
-
-    // stage 2
-    vec_rhs.equ(1.,solution_n);
-    vec_rhs.add(time_step/3.,vec_temp);
-    conv_diff_operation->evaluate(vec_temp,vec_rhs,time+time_step/3.);
-
-    // stage 3
-    vec_rhs.equ(1.,solution_n);
-    vec_rhs.add(2.0*time_step/3.0,vec_temp);
-    conv_diff_operation->evaluate(vec_temp,vec_rhs,time+2.*time_step/3.);
-    solution_np.add(3.*time_step/4.,vec_temp);
-  }
-  else if(order == 4) //classical 4th order Runge-Kutta method
-  {
-    solution_np = solution_n;
-
-    // stage 1
-    conv_diff_operation->evaluate(vec_temp,solution_n,time);
-    solution_np.add(time_step/6., vec_temp);
-
-    // stage 2
-    vec_rhs.equ(1.,solution_n);
-    vec_rhs.add(time_step/2., vec_temp);
-    conv_diff_operation->evaluate(vec_temp,vec_rhs,time+time_step/2.);
-    solution_np.add(time_step/3., vec_temp);
-
-    // stage 3
-    vec_rhs.equ(1., solution_n);
-    vec_rhs.add(time_step/2., vec_temp);
-    conv_diff_operation->evaluate(vec_temp,vec_rhs,time+time_step/2.);
-    solution_np.add(time_step/3., vec_temp);
-
-    // stage 4
-    vec_rhs.equ(1., solution_n);
-    vec_rhs.add(time_step, vec_temp);
-    conv_diff_operation->evaluate(vec_temp,vec_rhs,time+time_step);
-    solution_np.add(time_step/6., vec_temp);
-  }
-  else
-  {
-    AssertThrow(order <= 4,ExcMessage("Explicit Runge-Kutta method only implemented for order <= 4!"));
-  }
+  rk_time_integrator->solve_timestep(solution_np,
+                                     solution_n,
+                                     time,
+                                     time_step);
 }
 
 template<int dim, int fe_degree, typename value_type>
