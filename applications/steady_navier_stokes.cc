@@ -47,8 +47,8 @@ private:
   const unsigned int n_refine_space;
 
   std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions;
-  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure;
+  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure;
 
   std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution;
 
@@ -91,8 +91,8 @@ NavierStokesProblem(unsigned int const refine_steps_space,
   // parameters, geometry, boundary conditions, etc.
   set_analytical_solution(analytical_solution);
 
-  boundary_descriptor_velocity.reset(new BoundaryDescriptorNavierStokes<dim>());
-  boundary_descriptor_pressure.reset(new BoundaryDescriptorNavierStokes<dim>());
+  boundary_descriptor_velocity.reset(new BoundaryDescriptorNavierStokesU<dim>());
+  boundary_descriptor_pressure.reset(new BoundaryDescriptorNavierStokesP<dim>());
 
   AssertThrow(param.problem_type == ProblemType::Steady,
       ExcMessage("SteadyNavierStokes is a steady solver. Select steady as problem type."))

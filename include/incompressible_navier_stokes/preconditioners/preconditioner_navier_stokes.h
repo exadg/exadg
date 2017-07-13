@@ -680,25 +680,24 @@ private:
     // so there is no need to specify functions for boundary conditions since they will not be used (must not be used)
     // -> use ConstantFunction as dummy, initialized with NAN in order to detect a possible incorrect access to boundary values
     std::shared_ptr<Function<dim> > dummy;
-    dummy.reset(new ConstantFunction<dim>(NAN));
 
     // set boundary ID's for pressure convection-diffusion operator
 
-    // Dirichlet BC for velocity -> Neumann BC for pressure
+    // Dirichlet BC for pressure
     for (typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::
-         const_iterator it = underlying_operator->boundary_descriptor_velocity->dirichlet_bc.begin();
-         it != underlying_operator->boundary_descriptor_velocity->dirichlet_bc.end(); ++it)
+         const_iterator it = underlying_operator->boundary_descriptor_pressure->dirichlet_bc.begin();
+         it != underlying_operator->boundary_descriptor_pressure->dirichlet_bc.end(); ++it)
+    {
+      boundary_descriptor->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
+                                              (it->first, dummy));
+    }
+    // Neumann BC for pressure
+    for (typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::
+         const_iterator it = underlying_operator->boundary_descriptor_pressure->neumann_bc.begin();
+         it != underlying_operator->boundary_descriptor_pressure->neumann_bc.end(); ++it)
     {
       boundary_descriptor->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
                                               (it->first, dummy));
-    }
-    // Neumann BC for velocity -> Dirichlet BC for pressure
-    for (typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::
-         const_iterator it = underlying_operator->boundary_descriptor_velocity->neumann_bc.begin();
-         it != underlying_operator->boundary_descriptor_velocity->neumann_bc.end(); ++it)
-    {
-      boundary_descriptor->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                (it->first, dummy));
     }
 
     // b) diffusive operator

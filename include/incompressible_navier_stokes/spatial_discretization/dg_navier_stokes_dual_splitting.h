@@ -614,13 +614,22 @@ local_rhs_ppe_div_term_body_forces_boundary_face (const MatrixFree<dim,Number>  
   {
     fe_eval.reinit (face);
 
-    typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
     types::boundary_id boundary_id = data.get_boundary_id(face);
+    BoundaryTypeU boundary_type = BoundaryTypeU::Undefined;
+
+    if(this->boundary_descriptor_velocity->dirichlet_bc.find(boundary_id) != this->boundary_descriptor_velocity->dirichlet_bc.end())
+      boundary_type = BoundaryTypeU::Dirichlet;
+    else if(this->boundary_descriptor_velocity->neumann_bc.find(boundary_id) != this->boundary_descriptor_velocity->neumann_bc.end())
+      boundary_type = BoundaryTypeU::Neumann;
+    else if(this->boundary_descriptor_velocity->symmetry_bc.find(boundary_id) != this->boundary_descriptor_velocity->symmetry_bc.end())
+      boundary_type = BoundaryTypeU::Symmetry;
+
+    AssertThrow(boundary_type != BoundaryTypeU::Undefined,
+        ExcMessage("Boundary type of face is invalid or not implemented."));
 
     for(unsigned int q=0;q<fe_eval.n_q_points;++q)
     {
-      it = this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id);
-      if(it != this->boundary_descriptor_pressure->dirichlet_bc.end())
+      if(boundary_type == BoundaryTypeU::Dirichlet)
       {
         Point<dim,VectorizedArray<Number> > q_points = fe_eval.quadrature_point(q);
 
@@ -633,13 +642,24 @@ local_rhs_ppe_div_term_body_forces_boundary_face (const MatrixFree<dim,Number>  
         // and avoids a scaling of the resulting vector by the factor -1.0
         fe_eval.submit_value(-flux_times_normal,q);
       }
-
-      it = this->boundary_descriptor_pressure->neumann_bc.find(boundary_id);
-      if (it != this->boundary_descriptor_pressure->neumann_bc.end())
+      else if(boundary_type == BoundaryTypeU::Neumann ||
+              boundary_type == BoundaryTypeU::Symmetry)
       {
-        // do nothing on Neumann boundaries
+        // do nothing on Neumann and Symmetry boundaries
+        // Remark: on symmetry boundaries we prescribe g_u * n = 0, and also
+        // g_{u_hat}*n = 0 in case of the dual splitting scheme.
+        // This is in contrast to Dirichlet boundaries where we prescribe a
+        // consistent boundary condition for g_{u_hat} derived from the convective step
+        // of the dual splitting scheme which differs from the DBC g_u.
+        // Applying this consistent DBC to symmetry boundaries and using g_u*n=0 as well
+        // as exploiting symmetry, we obtain g_{u_hat}*n=0 on symmetry boundaries.
+        // Hence, there are no inhomogeneous contributions for g_{u_hat}*n.
         VectorizedArray<Number> zero = make_vectorized_array<Number>(0.0);
         fe_eval.submit_value(zero,q);
+      }
+      else
+      {
+        AssertThrow(false,ExcMessage("Boundary type of face is invalid or not implemented."));
       }
     }
     fe_eval.integrate(true,false);
@@ -706,13 +726,20 @@ local_rhs_ppe_nbc_add_boundary_face (const MatrixFree<dim,Number>               
   {
     fe_eval.reinit (face);
 
-    typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
     types::boundary_id boundary_id = data.get_boundary_id(face);
+    BoundaryTypeP boundary_type = BoundaryTypeP::Undefined;
+
+    if(this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id) != this->boundary_descriptor_pressure->dirichlet_bc.end())
+      boundary_type = BoundaryTypeP::Dirichlet;
+    else if(this->boundary_descriptor_pressure->neumann_bc.find(boundary_id) != this->boundary_descriptor_pressure->neumann_bc.end())
+      boundary_type = BoundaryTypeP::Neumann;
+
+    AssertThrow(boundary_type != BoundaryTypeP::Undefined,
+        ExcMessage("Boundary type of face is invalid or not implemented."));
 
     for(unsigned int q=0;q<fe_eval.n_q_points;++q)
     {
-      it = this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id);
-      if(it != this->boundary_descriptor_pressure->dirichlet_bc.end())
+      if(boundary_type == BoundaryTypeP::Neumann)
       {
         Point<dim,VectorizedArray<Number> > q_points = fe_eval.quadrature_point(q);
 
@@ -722,6 +749,8 @@ local_rhs_ppe_nbc_add_boundary_face (const MatrixFree<dim,Number>               
 
         // evaluate boundary condition
         Tensor<1,dim,VectorizedArray<Number> > dudt;
+        typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
+        it = this->boundary_descriptor_pressure->neumann_bc.find(boundary_id);
         evaluate_vectorial_function(dudt,it->second,q_points,evaluation_time);
 
         Tensor<1,dim,VectorizedArray<Number> > normal = fe_eval.get_normal_vector(q);
@@ -731,12 +760,14 @@ local_rhs_ppe_nbc_add_boundary_face (const MatrixFree<dim,Number>               
 
         fe_eval.submit_value(h,q);
       }
-
-      it = this->boundary_descriptor_pressure->neumann_bc.find(boundary_id);
-      if (it != this->boundary_descriptor_pressure->neumann_bc.end())
+      else if(boundary_type == BoundaryTypeP::Dirichlet)
       {
         VectorizedArray<Number> zero = make_vectorized_array<Number>(0.0);
         fe_eval.submit_value(zero,q);
+      }
+      else
+      {
+        AssertThrow(false,ExcMessage("Boundary type of face is invalid or not implemented."));
       }
     }
     fe_eval.integrate(true,false);

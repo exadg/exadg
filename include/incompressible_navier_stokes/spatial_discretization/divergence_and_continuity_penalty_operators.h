@@ -277,7 +277,7 @@ struct ContinuityPenaltyOperatorData
   double penalty_parameter;
   bool use_boundary_data;
 
-  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > bc;
 };
 
 

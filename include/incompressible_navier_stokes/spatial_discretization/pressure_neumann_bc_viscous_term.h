@@ -25,7 +25,7 @@ public:
 
   unsigned int dof_index_velocity;
   unsigned int dof_index_pressure;
-  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > bc;
 };
 
 template <int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
@@ -106,8 +106,16 @@ private:
       fe_eval_omega.read_dof_values(src);
       fe_eval_omega.evaluate (false,true);
 
-      typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
       types::boundary_id boundary_id = data.get_boundary_id(face);
+      BoundaryTypeP boundary_type = BoundaryTypeP::Undefined;
+
+      if(my_data.bc->dirichlet_bc.find(boundary_id) != my_data.bc->dirichlet_bc.end())
+        boundary_type = BoundaryTypeP::Dirichlet;
+      else if(my_data.bc->neumann_bc.find(boundary_id) != my_data.bc->neumann_bc.end())
+        boundary_type = BoundaryTypeP::Neumann;
+
+      AssertThrow(boundary_type != BoundaryTypeP::Undefined,
+          ExcMessage("Boundary type of face is invalid or not implemented."));
 
       for(unsigned int q=0;q<fe_eval_pressure.n_q_points;++q)
       {
@@ -117,8 +125,7 @@ private:
         else
           viscosity = make_vectorized_array<value_type>(this->viscous_operator->get_const_viscosity());
 
-        it = my_data.bc->dirichlet_bc.find(boundary_id);
-        if(it != my_data.bc->dirichlet_bc.end())
+        if(boundary_type == BoundaryTypeP::Neumann)
         {
           VectorizedArray<value_type> h;
           Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_pressure.get_normal_vector(q);
@@ -129,11 +136,13 @@ private:
 
           fe_eval_pressure.submit_value(h,q);
         }
-
-        it = my_data.bc->neumann_bc.find(boundary_id);
-        if (it != my_data.bc->neumann_bc.end())
+        else if(boundary_type == BoundaryTypeP::Dirichlet)
         {
           fe_eval_pressure.submit_value(make_vectorized_array<value_type>(0.0),q);
+        }
+        else
+        {
+          AssertThrow(false,ExcMessage("Boundary type of face is invalid or not implemented."));
         }
       }
       fe_eval_pressure.integrate(true,false);

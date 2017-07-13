@@ -121,10 +121,10 @@ public:
   void initialize_boundary_descriptor_laplace();
 
   virtual void setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
-                                                                            periodic_face_pairs,
-                      std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
-                      std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
-                      std::shared_ptr<FieldFunctionsNavierStokes<dim> >     field_functions);
+                                                                             periodic_face_pairs,
+                      std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
+                      std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
+                      std::shared_ptr<FieldFunctionsNavierStokes<dim> >      field_functions);
 
   void apply_mass_matrix(parallel::distributed::Vector<Number>       &dst,
                          parallel::distributed::Vector<Number> const &src) const;
@@ -315,8 +315,8 @@ protected:
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs;
 
-  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure;
+  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure;
   std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions;
 
   // In case of projection type Navier-Stokes solvers this variable
@@ -365,17 +365,19 @@ initialize_boundary_descriptor_laplace()
 {
   boundary_descriptor_laplace.reset(new BoundaryDescriptorLaplace<dim>());
 
-  // Neumann BC Navier-Stokes -> Dirichlet BC for Laplace operator of pressure Poisson equation
-  this->boundary_descriptor_laplace->dirichlet = boundary_descriptor_pressure->neumann_bc;
+  // Dirichlet BCs for pressure
+  this->boundary_descriptor_laplace->dirichlet = boundary_descriptor_pressure->dirichlet_bc;
 
-  // Dirichlet BC Navier-Stokes -> Neumann BC for Laplace operator of pressure Poisson equation
-  // on pressure Neumann boundaries: prescribe h=0 -> set all functions to ZeroFunction
-  // This is necessary for projection type Navier-Stokes solvers.
-  // For the coupled solution approach, the functions
-  // specified in the boundary descriptor are not evaluated.
+  // Neumann BCs for pressure
+  // Note: for the dual splitting scheme, neumann_bc contains functions corresponding
+  //       to dudt term required in pressure NBC.
+  // Here: set this functions explicitly to ZeroFunction when filling the boundary
+  //       descriptor for the Laplace operator because these inhomogeneous
+  //       boundary conditions have to be implemented seperately
+  //       and can not be applied by the Laplace operator.
   for (typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::
-       const_iterator it = boundary_descriptor_pressure->dirichlet_bc.begin();
-       it != boundary_descriptor_pressure->dirichlet_bc.end(); ++it)
+       const_iterator it = boundary_descriptor_pressure->neumann_bc.begin();
+       it != boundary_descriptor_pressure->neumann_bc.end(); ++it)
   {
     std::shared_ptr<Function<dim> > zero_function;
     zero_function.reset(new ZeroFunction<dim>(1));
@@ -387,10 +389,10 @@ initialize_boundary_descriptor_laplace()
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
-                                                             periodic_face_pairs,
-       std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity_in,
-       std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure_in,
-       std::shared_ptr<FieldFunctionsNavierStokes<dim> >     field_functions_in)
+                                                              periodic_face_pairs,
+       std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity_in,
+       std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure_in,
+       std::shared_ptr<FieldFunctionsNavierStokes<dim> >      field_functions_in)
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Setup Navier-Stokes operation ..." << std::endl << std::flush;
@@ -764,7 +766,7 @@ evaluate_negative_convective_term_and_apply_inverse_mass_matrix (
                           Number const                                evaluation_time,
                           parallel::distributed::Vector<Number> const &velocity) const
 {
-  convective_operator.evaluate_test(dst,src,evaluation_time,velocity);
+  convective_operator.evaluate_oif(dst,src,evaluation_time,velocity);
 
   // shift convective term to the rhs of the equation
   dst *= -1.0;
