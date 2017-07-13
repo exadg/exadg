@@ -26,7 +26,7 @@ public:
 
   unsigned int dof_index_velocity;
   unsigned int dof_index_pressure;
-  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > bc;
 };
 
 template <int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
@@ -104,13 +104,22 @@ private:
 
       fe_eval_pressure.reinit (face);
 
-      typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
       types::boundary_id boundary_id = data.get_boundary_id(face);
+      BoundaryTypeU boundary_type = BoundaryTypeU::Undefined;
+
+      if(my_data.bc->dirichlet_bc.find(boundary_id) != my_data.bc->dirichlet_bc.end())
+        boundary_type = BoundaryTypeU::Dirichlet;
+      else if(my_data.bc->neumann_bc.find(boundary_id) != my_data.bc->neumann_bc.end())
+        boundary_type = BoundaryTypeU::Neumann;
+      else if(my_data.bc->symmetry_bc.find(boundary_id) != my_data.bc->symmetry_bc.end())
+        boundary_type = BoundaryTypeU::Symmetry;
+
+      AssertThrow(boundary_type != BoundaryTypeU::Undefined,
+          ExcMessage("Boundary type of face is invalid or not implemented."));
 
       for(unsigned int q=0;q<fe_eval_pressure.n_q_points;++q)
       {
-        it = my_data.bc->dirichlet_bc.find(boundary_id);
-        if(it != my_data.bc->dirichlet_bc.end())
+        if(boundary_type == BoundaryTypeU::Dirichlet)
         {
           Tensor<1,dim,VectorizedArray<value_type> > u = fe_eval_velocity.get_value(q);
           Tensor<2,dim,VectorizedArray<value_type> > grad_u = fe_eval_velocity.get_gradient(q);
@@ -120,13 +129,24 @@ private:
 
           fe_eval_pressure.submit_value(flux_times_normal,q);
         }
-
-        it = my_data.bc->neumann_bc.find(boundary_id);
-        if (it != my_data.bc->neumann_bc.end())
+        else if(boundary_type == BoundaryTypeU::Neumann ||
+                boundary_type == BoundaryTypeU::Symmetry)
         {
-          // do nothing on Neumann boundaries
+          // do nothing on Neumann and Symmetry boundaries
+          // Remark: on symmetry boundaries we prescribe g_u * n = 0, and also
+          // g_{u_hat}*n = 0 in case of the dual splitting scheme.
+          // This is in contrast to Dirichlet boundaries where we prescribe a
+          // consistent boundary condition for g_{u_hat} derived from the convective step
+          // of the dual splitting scheme which differs from the DBC g_u.
+          // Applying this consistent DBC to symmetry boundaries and using g_u*n=0 as well
+          // as exploiting symmetry, we obtain g_{u_hat}*n=0 on symmetry boundaries.
+          // Hence, there are no inhomogeneous contributions for g_{u_hat}*n.
           VectorizedArray<value_type> zero = make_vectorized_array<value_type>(0.0);
           fe_eval_pressure.submit_value(zero,q);
+        }
+        else
+        {
+          AssertThrow(false,ExcMessage("Boundary type of face is invalid or not implemented."));
         }
       }
       fe_eval_pressure.integrate(true,false);

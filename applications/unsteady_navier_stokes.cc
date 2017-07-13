@@ -38,11 +38,11 @@ using namespace dealii;
 //#include "incompressible_navier_stokes_test_cases/stokes_guermond.h"
 //#include "incompressible_navier_stokes_test_cases/stokes_shahbazi.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
-//#include "incompressible_navier_stokes_test_cases/vortex.h"
+#include "incompressible_navier_stokes_test_cases/vortex.h"
 //#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/beltrami.h"
 //#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
-#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
+//#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number=double>
 class NavierStokesProblem
@@ -72,8 +72,8 @@ private:
   const unsigned int n_refine_space;
 
   std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions;
-  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure;
+  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure;
 
   std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution;
 
@@ -137,8 +137,8 @@ NavierStokesProblem(unsigned int const refine_steps_space,
   // parameters, geometry, boundary conditions, etc.
   set_analytical_solution(analytical_solution);
 
-  boundary_descriptor_velocity.reset(new BoundaryDescriptorNavierStokes<dim>());
-  boundary_descriptor_pressure.reset(new BoundaryDescriptorNavierStokes<dim>());
+  boundary_descriptor_velocity.reset(new BoundaryDescriptorNavierStokesU<dim>());
+  boundary_descriptor_pressure.reset(new BoundaryDescriptorNavierStokesP<dim>());
 
   bool use_adaptive_time_stepping = false;
   if(param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)

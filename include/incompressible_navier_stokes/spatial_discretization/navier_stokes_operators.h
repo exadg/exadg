@@ -305,7 +305,7 @@ struct ViscousOperatorData
   double IP_factor_viscous;
   unsigned int dof_index;
 
-  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > bc;
 
   /*
    * This variable 'viscosity' is only used when initializing the ViscousOperator.
@@ -321,12 +321,6 @@ class ViscousOperator : public BaseOperator<dim>
 {
 public:
   typedef Number value_type;
-
-  enum class BoundaryType {
-    undefined,
-    dirichlet,
-    neumann
-  };
 
   enum class OperatorType {
     full,
@@ -721,15 +715,15 @@ private:
    *  and the given boundary conditions. The jump_value has to be calculated in order
    *  to evaluate both the value_flux and the gradient_flux.
    *
-   *                            +----------------------+--------------------+
-   *                            | Dirichlet boundaries | Neumann boundaries |
-   *  +-------------------------+----------------------+--------------------+
-   *  | full operator           | u⁺ = -u⁻ + 2g        | u⁺ = u⁻            |
-   *  +-------------------------+----------------------+--------------------+
-   *  | homogeneous operator    | u⁺ = -u⁻             | u⁺ = u⁻            |
-   *  +-------------------------+----------------------+--------------------+
-   *  | inhomogeneous operator  | u⁻ = 0, u⁺ = 2g      | u⁻ = 0, u⁺ = 0     |
-   *  +-------------------------+----------------------+--------------------+
+   *                            +----------------------+--------------------+------------------------+
+   *                            | Dirichlet boundaries | Neumann boundaries | symmetry boundaries    |
+   *  +-------------------------+----------------------+--------------------+------------------------+
+   *  | full operator           | u⁺ = -u⁻ + 2g        | u⁺ = u⁻            | u⁺ = u⁻ - 2(u⁻*n)n     |
+   *  +-------------------------+----------------------+--------------------+------------------------+
+   *  | homogeneous operator    | u⁺ = -u⁻             | u⁺ = u⁻            | u⁺ = u⁻ - 2(u⁻*n)n     |
+   *  +-------------------------+----------------------+--------------------+------------------------+
+   *  | inhomogeneous operator  | u⁻ = 0, u⁺ = 2g      | u⁻ = 0, u⁺ = 0     | u⁻ = 0, u+ = 0         |
+   *  +-------------------------+----------------------+--------------------+------------------------+
    */
   template<typename FEEvaluation>
   inline void calculate_jump_value_boundary_face(
@@ -737,7 +731,7 @@ private:
       unsigned int const                     q,
       FEEvaluation const                     &fe_eval,
       OperatorType const                     &operator_type,
-      BoundaryType const                     &boundary_type,
+      BoundaryTypeU const                    &boundary_type,
       types::boundary_id const               boundary_id = types::boundary_id()) const
   {
     // velocity on element e⁻
@@ -761,7 +755,7 @@ private:
 
     if(operator_type == OperatorType::full)
     {
-      if(boundary_type == BoundaryType::dirichlet)
+      if(boundary_type == BoundaryTypeU::Dirichlet)
       {
         Tensor<1,dim,VectorizedArray<Number> > g;
         typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
@@ -771,9 +765,14 @@ private:
 
         velocity_p = - velocity_m + 2.0*g;
       }
-      else if(boundary_type == BoundaryType::neumann)
+      else if(boundary_type == BoundaryTypeU::Neumann)
       {
         velocity_p = velocity_m;
+      }
+      else if(boundary_type == BoundaryTypeU::Symmetry)
+      {
+        Tensor<1,dim,VectorizedArray<Number> > normal_m = fe_eval.get_normal_vector(q);
+        velocity_p = velocity_m - 2.0 * (velocity_m*normal_m) * normal_m;
       }
       else
       {
@@ -782,13 +781,18 @@ private:
     }
     else if(operator_type == OperatorType::homogeneous)
     {
-      if(boundary_type == BoundaryType::dirichlet)
+      if(boundary_type == BoundaryTypeU::Dirichlet)
       {
         velocity_p = - velocity_m;
       }
-      else if(boundary_type == BoundaryType::neumann)
+      else if(boundary_type == BoundaryTypeU::Neumann)
       {
         velocity_p = velocity_m;
+      }
+      else if(boundary_type == BoundaryTypeU::Symmetry)
+      {
+        Tensor<1,dim,VectorizedArray<Number> > normal_m = fe_eval.get_normal_vector(q);
+        velocity_p = velocity_m - 2.0 * (velocity_m*normal_m) * normal_m;
       }
       else
       {
@@ -797,7 +801,7 @@ private:
     }
     else if(operator_type == OperatorType::inhomogeneous)
     {
-      if(boundary_type == BoundaryType::dirichlet)
+      if(boundary_type == BoundaryTypeU::Dirichlet)
       {
         Tensor<1,dim,VectorizedArray<Number> > g;
         typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
@@ -807,7 +811,11 @@ private:
 
         velocity_p = 2.0*g;
       }
-      else if(boundary_type == BoundaryType::neumann)
+      else if(boundary_type == BoundaryTypeU::Neumann)
+      {
+        // do nothing since velocity_p is already initialized with zeros
+      }
+      else if(boundary_type == BoundaryTypeU::Symmetry)
       {
         // do nothing since velocity_p is already initialized with zeros
       }
@@ -956,25 +964,25 @@ private:
    *  Divergence formulation: F(u) = nu * ( grad(u) + grad(u)^T )
    *  Laplace formulation: F(u) = nu * grad(u)
    *
-   *                            +---------------------------------+-----------------------------------+
-   *                            | Dirichlet boundaries            | Neumann boundaries                |
-   *  +-------------------------+---------------------------------+-----------------------------------+
-   *  | full operator           | F(u⁺)*n = F(u⁻)*n               | F(u⁺)*n = -F(u⁻)*n + 2h           |
-   *  +-------------------------+---------------------------------+-----------------------------------+
-   *  | homogeneous operator    | F(u⁺)*n = F(u⁻)*n               | F(u⁺)*n = -F(u⁻)*n                |
-   *  +-------------------------+---------------------------------+-----------------------------------+
-   *  | inhomogeneous operator  | F(u⁻)*n  = 0, F(u⁺)*n = 0       | F(u⁻)*n  = 0, F(u⁺)*n = 2h        |
-   *  +-------------------------+---------------------------------+-----------------------------------+
+   *                            +---------------------------------+-----------------------------------+---------------------------------------+
+   *                            | Dirichlet boundaries            | Neumann boundaries                | symmetry boundaries                   |
+   *  +-------------------------+---------------------------------+-----------------------------------+---------------------------------------+
+   *  | full operator           | F(u⁺)*n = F(u⁻)*n               | F(u⁺)*n = -F(u⁻)*n + 2h           | F(u⁺)*n = -F(u⁻)*n + 2*[(F(u⁻)*n)*n]n |
+   *  +-------------------------+---------------------------------+-----------------------------------+---------------------------------------+
+   *  | homogeneous operator    | F(u⁺)*n = F(u⁻)*n               | F(u⁺)*n = -F(u⁻)*n                | F(u⁺)*n = -F(u⁻)*n + 2*[(F(u⁻)*n)*n]n |
+   *  +-------------------------+---------------------------------+-----------------------------------+---------------------------------------+
+   *  | inhomogeneous operator  | F(u⁻)*n  = 0, F(u⁺)*n = 0       | F(u⁻)*n  = 0, F(u⁺)*n = 2h        | F(u⁻)*n  = 0, F(u⁺)*n = 0             |
+   *  +-------------------------+---------------------------------+-----------------------------------+---------------------------------------+
    *
-   *                            +---------------------------------+-----------------------------------+
-   *                            | Dirichlet boundaries            | Neumann boundaries                |
-   *  +-------------------------+---------------------------------+-----------------------------------+
-   *  | full operator           | {{F(u)}}*n = F(u⁻)*n            | {{F(u)}}*n = h                    |
-   *  +-------------------------+---------------------------------+-----------------------------------+
-   *  | homogeneous operator    | {{F(u)}}*n = F(u⁻)*n            | {{F(u)}}*n = 0                    |
-   *  +-------------------------+---------------------------------+-----------------------------------+
-   *  | inhomogeneous operator  | {{F(u)}}*n = 0                  | {{F(u)}}*n = h                    |
-   *  +-------------------------+---------------------------------+-----------------------------------+
+   *                            +---------------------------------+-----------------------------------+---------------------------------------+
+   *                            | Dirichlet boundaries            | Neumann boundaries                | symmetry boundaries                   |
+   *  +-------------------------+---------------------------------+-----------------------------------+---------------------------------------+
+   *  | full operator           | {{F(u)}}*n = F(u⁻)*n            | {{F(u)}}*n = h                    | {{F(u)}}*n = 2*[(F(u⁻)*n)*n]n         |
+   *  +-------------------------+---------------------------------+-----------------------------------+---------------------------------------+
+   *  | homogeneous operator    | {{F(u)}}*n = F(u⁻)*n            | {{F(u)}}*n = 0                    | {{F(u)}}*n = 2*[(F(u⁻)*n)*n]n         |
+   *  +-------------------------+---------------------------------+-----------------------------------+---------------------------------------+
+   *  | inhomogeneous operator  | {{F(u)}}*n = 0                  | {{F(u)}}*n = h                    | {{F(u)}}*n = 0                        |
+   *  +-------------------------+---------------------------------+-----------------------------------+---------------------------------------+
    */
   template<typename FEEvaluation>
   inline void calculate_average_normal_gradient_boundary_face(
@@ -982,16 +990,16 @@ private:
       unsigned int const                     q,
       FEEvaluation const                     &fe_eval,
       OperatorType const                     &operator_type,
-      BoundaryType const                     &boundary_type,
+      BoundaryTypeU const                    &boundary_type,
       types::boundary_id const               boundary_id = types::boundary_id()) const
   {
     if(operator_type == OperatorType::full)
     {
-      if(boundary_type == BoundaryType::dirichlet)
+      if(boundary_type == BoundaryTypeU::Dirichlet)
       {
         calculate_normal_gradient(average_normal_gradient,q,fe_eval);
       }
-      else if(boundary_type == BoundaryType::neumann)
+      else if(boundary_type == BoundaryTypeU::Neumann)
       {
         Tensor<1,dim,VectorizedArray<Number> > h;
         typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
@@ -1000,6 +1008,12 @@ private:
         evaluate_vectorial_function(h,it->second,q_points,eval_time);
 
         average_normal_gradient = h;
+      }
+      else if(boundary_type == BoundaryTypeU::Symmetry)
+      {
+        calculate_normal_gradient(average_normal_gradient,q,fe_eval);
+        Tensor<1,dim,VectorizedArray<Number> > normal_m = fe_eval.get_normal_vector(q);
+        average_normal_gradient = 2.0 * (average_normal_gradient*normal_m) * normal_m;
       }
       else
       {
@@ -1008,13 +1022,19 @@ private:
     }
     else if(operator_type == OperatorType::homogeneous)
     {
-      if(boundary_type == BoundaryType::dirichlet)
+      if(boundary_type == BoundaryTypeU::Dirichlet)
       {
         calculate_normal_gradient(average_normal_gradient,q,fe_eval);
       }
-      else if(boundary_type == BoundaryType::neumann)
+      else if(boundary_type == BoundaryTypeU::Neumann)
       {
         // do nothing since average_normal_gradient is already initialized with zeros
+      }
+      else if(boundary_type == BoundaryTypeU::Symmetry)
+      {
+        calculate_normal_gradient(average_normal_gradient,q,fe_eval);
+        Tensor<1,dim,VectorizedArray<Number> > normal_m = fe_eval.get_normal_vector(q);
+        average_normal_gradient = 2.0 * (average_normal_gradient*normal_m) * normal_m;
       }
       else
       {
@@ -1023,11 +1043,11 @@ private:
     }
     else if(operator_type == OperatorType::inhomogeneous)
     {
-      if(boundary_type == BoundaryType::dirichlet)
+      if(boundary_type == BoundaryTypeU::Dirichlet)
       {
         // do nothing since average_normal_gradient is already initialized with zeros
       }
-      else if(boundary_type == BoundaryType::neumann)
+      else if(boundary_type == BoundaryTypeU::Neumann)
       {
         Tensor<1,dim,VectorizedArray<Number> > h;
         typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
@@ -1036,6 +1056,10 @@ private:
         evaluate_vectorial_function(h,it->second,q_points,eval_time);
 
         average_normal_gradient = h;
+      }
+      else if(boundary_type == BoundaryTypeU::Symmetry)
+      {
+        // do nothing since average_normal_gradient is already initialized with zeros
       }
       else
       {
@@ -1112,14 +1136,16 @@ private:
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       types::boundary_id boundary_id = data.get_boundary_id(face);
-      BoundaryType boundary_type = BoundaryType::undefined;
+      BoundaryTypeU boundary_type = BoundaryTypeU::Undefined;
 
       if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
-        boundary_type = BoundaryType::dirichlet;
+        boundary_type = BoundaryTypeU::Dirichlet;
       else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
-        boundary_type = BoundaryType::neumann;
+        boundary_type = BoundaryTypeU::Neumann;
+      else if(operator_data.bc->symmetry_bc.find(boundary_id) != operator_data.bc->symmetry_bc.end())
+        boundary_type = BoundaryTypeU::Symmetry;
 
-      AssertThrow(boundary_type != BoundaryType::undefined,
+      AssertThrow(boundary_type != BoundaryTypeU::Undefined,
           ExcMessage("Boundary type of face is invalid or not implemented."));
 
       fe_eval.reinit (face);
@@ -1165,14 +1191,16 @@ private:
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       types::boundary_id boundary_id = data.get_boundary_id(face);
-      BoundaryType boundary_type = BoundaryType::undefined;
+      BoundaryTypeU boundary_type = BoundaryTypeU::Undefined;
 
       if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
-        boundary_type = BoundaryType::dirichlet;
+        boundary_type = BoundaryTypeU::Dirichlet;
       else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
-        boundary_type = BoundaryType::neumann;
+        boundary_type = BoundaryTypeU::Neumann;
+      else if(operator_data.bc->symmetry_bc.find(boundary_id) != operator_data.bc->symmetry_bc.end())
+        boundary_type = BoundaryTypeU::Symmetry;
 
-      AssertThrow(boundary_type != BoundaryType::undefined,
+      AssertThrow(boundary_type != BoundaryTypeU::Undefined,
           ExcMessage("Boundary type of face is invalid or not implemented."));
 
       fe_eval.reinit (face);
@@ -1235,14 +1263,16 @@ private:
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       types::boundary_id boundary_id = data.get_boundary_id(face);
-      BoundaryType boundary_type = BoundaryType::undefined;
+      BoundaryTypeU boundary_type = BoundaryTypeU::Undefined;
 
       if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
-        boundary_type = BoundaryType::dirichlet;
+        boundary_type = BoundaryTypeU::Dirichlet;
       else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
-        boundary_type = BoundaryType::neumann;
+        boundary_type = BoundaryTypeU::Neumann;
+      else if(operator_data.bc->symmetry_bc.find(boundary_id) != operator_data.bc->symmetry_bc.end())
+        boundary_type = BoundaryTypeU::Symmetry;
 
-      AssertThrow(boundary_type != BoundaryType::undefined,
+      AssertThrow(boundary_type != BoundaryTypeU::Undefined,
           ExcMessage("Boundary type of face is invalid or not implemented."));
 
       fe_eval.reinit (face);
@@ -1542,14 +1572,16 @@ private:
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       types::boundary_id boundary_id = data.get_boundary_id(face);
-      BoundaryType boundary_type = BoundaryType::undefined;
+      BoundaryTypeU boundary_type = BoundaryTypeU::Undefined;
 
       if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
-        boundary_type = BoundaryType::dirichlet;
+        boundary_type = BoundaryTypeU::Dirichlet;
       else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
-        boundary_type = BoundaryType::neumann;
+        boundary_type = BoundaryTypeU::Neumann;
+      else if(operator_data.bc->symmetry_bc.find(boundary_id) != operator_data.bc->symmetry_bc.end())
+        boundary_type = BoundaryTypeU::Symmetry;
 
-      AssertThrow(boundary_type != BoundaryType::undefined,
+      AssertThrow(boundary_type != BoundaryTypeU::Undefined,
           ExcMessage("Boundary type of face is invalid or not implemented."));
 
       fe_eval.reinit (face);
@@ -1769,14 +1801,16 @@ private:
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       types::boundary_id boundary_id = data.get_boundary_id(face);
-      BoundaryType boundary_type = BoundaryType::undefined;
+      BoundaryTypeU boundary_type = BoundaryTypeU::Undefined;
 
       if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
-        boundary_type = BoundaryType::dirichlet;
+        boundary_type = BoundaryTypeU::Dirichlet;
       else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
-        boundary_type = BoundaryType::neumann;
+        boundary_type = BoundaryTypeU::Neumann;
+      else if(operator_data.bc->symmetry_bc.find(boundary_id) != operator_data.bc->symmetry_bc.end())
+        boundary_type = BoundaryTypeU::Symmetry;
 
-      AssertThrow(boundary_type != BoundaryType::undefined,
+      AssertThrow(boundary_type != BoundaryTypeU::Undefined,
           ExcMessage("Boundary type of face is invalid or not implemented."));
 
       fe_eval.reinit (face);
@@ -1973,19 +2007,13 @@ struct GradientOperatorData
   bool integration_by_parts_of_gradP;
   bool use_boundary_data;
 
-  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > bc;
 };
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class GradientOperator: public BaseOperator<dim>
 {
 public:
-  enum class BoundaryType {
-    undefined,
-    dirichlet,
-    neumann
-  };
-
   enum class OperatorType {
     full,
     homogeneous,
@@ -2119,7 +2147,7 @@ private:
    *  and the given boundary conditions.
    *
    *                            +------------------------------+------------------------------+
-   *                            | Dirichlet boundaries         | Neumann boundaries           |
+   *                            | Neumann boundaries           | Dirichlet boundaries         |
    *  +-------------------------+------------------------------+------------------------------+
    *  | full operator           | p⁺ = p⁻        -> {{p}} = p⁻ | p⁺ = - p⁻ + 2g  -> {{p}} = g |
    *  +-------------------------+------------------------------+------------------------------+
@@ -2134,7 +2162,7 @@ private:
                                            unsigned int const          q,
                                            FEEvaluationPressure const  &fe_eval_pressure,
                                            OperatorType const          &operator_type,
-                                           BoundaryType const          &boundary_type,
+                                           BoundaryTypeP const         &boundary_type,
                                            types::boundary_id const    boundary_id = types::boundary_id()) const
   {
     // element e⁻
@@ -2158,15 +2186,15 @@ private:
 
     if(operator_type == OperatorType::full)
     {
-      if(boundary_type == BoundaryType::dirichlet)
+      if(boundary_type == BoundaryTypeP::Neumann)
       {
         value_p = value_m;
       }
-      else if(boundary_type == BoundaryType::neumann)
+      else if(boundary_type == BoundaryTypeP::Dirichlet)
       {
         VectorizedArray<value_type> g;
         typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
-        it = operator_data.bc->neumann_bc.find(boundary_id);
+        it = operator_data.bc->dirichlet_bc.find(boundary_id);
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval_pressure.quadrature_point(q);
         evaluate_scalar_function(g,it->second,q_points,eval_time);
 
@@ -2179,11 +2207,11 @@ private:
     }
     else if(operator_type == OperatorType::homogeneous)
     {
-      if(boundary_type == BoundaryType::dirichlet)
+      if(boundary_type == BoundaryTypeP::Neumann)
       {
         value_p = value_m;
       }
-      else if(boundary_type == BoundaryType::neumann)
+      else if(boundary_type == BoundaryTypeP::Dirichlet)
       {
         value_p = -value_m;
       }
@@ -2194,15 +2222,15 @@ private:
     }
     else if(operator_type == OperatorType::inhomogeneous)
     {
-      if(boundary_type == BoundaryType::dirichlet)
+      if(boundary_type == BoundaryTypeP::Neumann)
       {
         // do nothing since value_p is already initialized with zeros
       }
-      else if(boundary_type == BoundaryType::neumann)
+      else if(boundary_type == BoundaryTypeP::Dirichlet)
       {
         VectorizedArray<value_type> g;
         typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
-        it = operator_data.bc->neumann_bc.find(boundary_id);
+        it = operator_data.bc->dirichlet_bc.find(boundary_id);
         Point<dim,VectorizedArray<value_type> > q_points = fe_eval_pressure.quadrature_point(q);
         evaluate_scalar_function(g,it->second,q_points,eval_time);
 
@@ -2304,14 +2332,14 @@ private:
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
         types::boundary_id boundary_id = data.get_boundary_id(face);
-        BoundaryType boundary_type = BoundaryType::undefined;
+        BoundaryTypeP boundary_type = BoundaryTypeP::Undefined;
 
         if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
-          boundary_type = BoundaryType::dirichlet;
+          boundary_type = BoundaryTypeP::Dirichlet;
         else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
-          boundary_type = BoundaryType::neumann;
+          boundary_type = BoundaryTypeP::Neumann;
 
-        AssertThrow(boundary_type != BoundaryType::undefined,
+        AssertThrow(boundary_type != BoundaryTypeP::Undefined,
             ExcMessage("Boundary type of face is invalid or not implemented."));
 
         fe_eval_velocity.reinit (face);
@@ -2359,14 +2387,14 @@ private:
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
         types::boundary_id boundary_id = data.get_boundary_id(face);
-        BoundaryType boundary_type = BoundaryType::undefined;
+        BoundaryTypeP boundary_type = BoundaryTypeP::Undefined;
 
         if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
-          boundary_type = BoundaryType::dirichlet;
+          boundary_type = BoundaryTypeP::Dirichlet;
         else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
-          boundary_type = BoundaryType::neumann;
+          boundary_type = BoundaryTypeP::Neumann;
 
-        AssertThrow(boundary_type != BoundaryType::undefined,
+        AssertThrow(boundary_type != BoundaryTypeP::Undefined,
             ExcMessage("Boundary type of face is invalid or not implemented."));
 
         fe_eval_velocity.reinit (face);
@@ -2431,14 +2459,14 @@ private:
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
         types::boundary_id boundary_id = data.get_boundary_id(face);
-        BoundaryType boundary_type = BoundaryType::undefined;
+        BoundaryTypeP boundary_type = BoundaryTypeP::Undefined;
 
         if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
-          boundary_type = BoundaryType::dirichlet;
+          boundary_type = BoundaryTypeP::Dirichlet;
         else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
-          boundary_type = BoundaryType::neumann;
+          boundary_type = BoundaryTypeP::Neumann;
 
-        AssertThrow(boundary_type != BoundaryType::undefined,
+        AssertThrow(boundary_type != BoundaryTypeP::Undefined,
             ExcMessage("Boundary type of face is invalid or not implemented."));
 
         fe_eval_velocity.reinit (face);
@@ -2489,19 +2517,13 @@ struct DivergenceOperatorData
   bool integration_by_parts_of_divU;
   bool use_boundary_data;
 
-  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > bc;
 };
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class DivergenceOperator: public BaseOperator<dim>
 {
 public:
-  enum class BoundaryType {
-    undefined,
-    dirichlet,
-    neumann
-  };
-
   enum class OperatorType {
     full,
     homogeneous,
@@ -2622,15 +2644,15 @@ private:
    *  depending on the operator type, the type of the boundary face
    *  and the given boundary conditions.
    *
-   *                            +------------------------------+------------------------------+
-   *                            | Dirichlet boundaries         | Neumann boundaries           |
-   *  +-------------------------+------------------------------+------------------------------+
-   *  | full operator           | u⁺ = -u⁻ + 2g   -> {{u}} = g | u⁺ = u⁻        -> {{u}} = u⁻ |
-   *  +-------------------------+------------------------------+------------------------------+
-   *  | homogeneous operator    | u⁺ = -u⁻        -> {{u}} = 0 | u⁺ = u⁻        -> {{u}} = u⁻ |
-   *  +-------------------------+------------------------------+------------------------------+
-   *  | inhomogeneous operator  | u⁻ = 0, u⁺ = 2g -> {{u}} = g | u⁻ = 0, u⁺ = 0 -> {{u}} = 0  |
-   *  +-------------------------+------------------------------+------------------------------+
+   *                            +------------------------------+------------------------------+---------------------------------------------+
+   *                            | Dirichlet boundaries         | Neumann boundaries           | symmetry boundaries                         |
+   *  +-------------------------+------------------------------+------------------------------+---------------------------------------------+
+   *  | full operator           | u⁺ = -u⁻ + 2g   -> {{u}} = g | u⁺ = u⁻        -> {{u}} = u⁻ | u⁺ = u⁻ - 2 (u⁻*n)n -> {{u}} = u⁻ - (u⁻*n)n |
+   *  +-------------------------+------------------------------+------------------------------+---------------------------------------------+
+   *  | homogeneous operator    | u⁺ = -u⁻        -> {{u}} = 0 | u⁺ = u⁻        -> {{u}} = u⁻ | u⁺ = u⁻ - 2 (u⁻*n)n -> {{u}} = u⁻ - (u⁻*n)n |
+   *  +-------------------------+------------------------------+------------------------------+---------------------------------------------+
+   *  | inhomogeneous operator  | u⁻ = 0, u⁺ = 2g -> {{u}} = g | u⁻ = 0, u⁺ = 0 -> {{u}} = 0  | u⁻ = 0, u⁺ = 0      -> {{u}} = 0            |
+   *  +-------------------------+------------------------------+------------------------------+---------------------------------------------+
    *
    */
   template<typename FEEvaluationVelocity>
@@ -2639,7 +2661,7 @@ private:
       unsigned int const                         q,
       FEEvaluationVelocity const                 &fe_eval_velocity,
       OperatorType const                         &operator_type,
-      BoundaryType const                         &boundary_type,
+      BoundaryTypeU const                        &boundary_type,
       types::boundary_id const                   boundary_id = types::boundary_id()) const
   {
     // element e⁻
@@ -2663,7 +2685,7 @@ private:
 
     if(operator_type == OperatorType::full)
     {
-      if(boundary_type == BoundaryType::dirichlet)
+      if(boundary_type == BoundaryTypeU::Dirichlet)
       {
         Tensor<1,dim,VectorizedArray<value_type> > g;
 
@@ -2674,9 +2696,14 @@ private:
 
         value_p = -value_m + make_vectorized_array<value_type>(2.0)*g;
       }
-      else if(boundary_type == BoundaryType::neumann)
+      else if(boundary_type == BoundaryTypeU::Neumann)
       {
         value_p = value_m;
+      }
+      else if(boundary_type == BoundaryTypeU::Symmetry)
+      {
+        Tensor<1,dim,VectorizedArray<value_type> > normal_m = fe_eval_velocity.get_normal_vector(q);
+        value_p = value_m - 2.0 * (value_m*normal_m) * normal_m;
       }
       else
       {
@@ -2685,13 +2712,18 @@ private:
     }
     else if(operator_type == OperatorType::homogeneous)
     {
-      if(boundary_type == BoundaryType::dirichlet)
+      if(boundary_type == BoundaryTypeU::Dirichlet)
       {
         value_p = -value_m;
       }
-      else if(boundary_type == BoundaryType::neumann)
+      else if(boundary_type == BoundaryTypeU::Neumann)
       {
         value_p = value_m;
+      }
+      else if(boundary_type == BoundaryTypeU::Symmetry)
+      {
+        Tensor<1,dim,VectorizedArray<value_type> > normal_m = fe_eval_velocity.get_normal_vector(q);
+        value_p = value_m - 2.0 * (value_m*normal_m) * normal_m;
       }
       else
       {
@@ -2700,7 +2732,7 @@ private:
     }
     else if(operator_type == OperatorType::inhomogeneous)
     {
-      if(boundary_type == BoundaryType::dirichlet)
+      if(boundary_type == BoundaryTypeU::Dirichlet)
       {
         Tensor<1,dim,VectorizedArray<value_type> > g;
 
@@ -2711,7 +2743,11 @@ private:
 
         value_p = make_vectorized_array<value_type>(2.0)*g;
       }
-      else if(boundary_type == BoundaryType::neumann)
+      else if(boundary_type == BoundaryTypeU::Neumann)
+      {
+        // do nothing since value_p is already initialized with zeros
+      }
+      else if(boundary_type == BoundaryTypeU::Symmetry)
       {
         // do nothing since value_p is already initialized with zeros
       }
@@ -2809,14 +2845,16 @@ private:
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
         types::boundary_id boundary_id = data.get_boundary_id(face);
-        BoundaryType boundary_type = BoundaryType::undefined;
+        BoundaryTypeU boundary_type = BoundaryTypeU::Undefined;
 
         if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
-          boundary_type = BoundaryType::dirichlet;
+          boundary_type = BoundaryTypeU::Dirichlet;
         else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
-          boundary_type = BoundaryType::neumann;
+          boundary_type = BoundaryTypeU::Neumann;
+        else if(operator_data.bc->symmetry_bc.find(boundary_id) != operator_data.bc->symmetry_bc.end())
+          boundary_type = BoundaryTypeU::Symmetry;
 
-        AssertThrow(boundary_type != BoundaryType::undefined,
+        AssertThrow(boundary_type != BoundaryTypeU::Undefined,
             ExcMessage("Boundary type of face is invalid or not implemented."));
 
         fe_eval_pressure.reinit (face);
@@ -2863,14 +2901,16 @@ private:
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
         types::boundary_id boundary_id = data.get_boundary_id(face);
-        BoundaryType boundary_type = BoundaryType::undefined;
+        BoundaryTypeU boundary_type = BoundaryTypeU::Undefined;
 
         if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
-          boundary_type = BoundaryType::dirichlet;
+          boundary_type = BoundaryTypeU::Dirichlet;
         else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
-          boundary_type = BoundaryType::neumann;
+          boundary_type = BoundaryTypeU::Neumann;
+        else if(operator_data.bc->symmetry_bc.find(boundary_id) != operator_data.bc->symmetry_bc.end())
+          boundary_type = BoundaryTypeU::Symmetry;
 
-        AssertThrow(boundary_type != BoundaryType::undefined,
+        AssertThrow(boundary_type != BoundaryTypeU::Undefined,
             ExcMessage("Boundary type of face is invalid or not implemented."));
 
         fe_eval_pressure.reinit (face);
@@ -2934,14 +2974,16 @@ private:
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
         types::boundary_id boundary_id = data.get_boundary_id(face);
-        BoundaryType boundary_type = BoundaryType::undefined;
+        BoundaryTypeU boundary_type = BoundaryTypeU::Undefined;
 
         if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
-          boundary_type = BoundaryType::dirichlet;
+          boundary_type = BoundaryTypeU::Dirichlet;
         else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
-          boundary_type = BoundaryType::neumann;
+          boundary_type = BoundaryTypeU::Neumann;
+        else if(operator_data.bc->symmetry_bc.find(boundary_id) != operator_data.bc->symmetry_bc.end())
+          boundary_type = BoundaryTypeU::Symmetry;
 
-        AssertThrow(boundary_type != BoundaryType::undefined,
+        AssertThrow(boundary_type != BoundaryTypeU::Undefined,
             ExcMessage("Boundary type of face is invalid or not implemented."));
 
         fe_eval_pressure.reinit (face);
@@ -2976,7 +3018,7 @@ struct ConvectiveOperatorData
 
   unsigned int dof_index;
 
-  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > bc;
 };
 
 
@@ -2985,12 +3027,6 @@ template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, type
 class ConvectiveOperator: public BaseOperator<dim>
 {
 public:
-  enum class BoundaryType {
-    undefined,
-    dirichlet,
-    neumann
-  };
-
   ConvectiveOperator()
     :
     data(nullptr),
@@ -3024,10 +3060,10 @@ public:
   }
 
   //TODO: OIF splitting approach
-  void evaluate_test (parallel::distributed::Vector<value_type>       &dst,
-                      parallel::distributed::Vector<value_type> const &src,
-                      double const                                    evaluation_time,
-                      parallel::distributed::Vector<value_type> const &velocity) const
+  void evaluate_oif (parallel::distributed::Vector<value_type>       &dst,
+                     parallel::distributed::Vector<value_type> const &src,
+                     double const                                    evaluation_time,
+                     parallel::distributed::Vector<value_type> const &velocity) const
   {
     dst = 0;
 
@@ -3240,18 +3276,19 @@ private:
    *  This function calculates the exterior velocity on boundary faces
    *  according to:
    *
-   *  Dirichlet boundary faces: u⁺ = -u⁻ + 2g
-   *  Neumann boundary faces:   u⁺ = u⁻
+   *  Dirichlet boundary: u⁺ = -u⁻ + 2g
+   *  Neumann boundary:   u⁺ = u⁻
+   *  symmetry boundary:  u⁺ = u⁻ -(u⁻*n)n - (u⁻*n)n = u⁻ - 2 (u⁻*n)n
   */
   template<typename FEEvaluation>
   inline void calculate_exterior_velocity_boundary_face(Tensor<1,dim,VectorizedArray<value_type> >       &uP,
                                                         Tensor<1,dim,VectorizedArray<value_type> > const &uM,
                                                         unsigned int const                               q,
                                                         FEEvaluation                                     &fe_eval,
-                                                        BoundaryType const                               &boundary_type,
+                                                        BoundaryTypeU const                              &boundary_type,
                                                         types::boundary_id const                         boundary_id) const
   {
-    if(boundary_type == BoundaryType::dirichlet)
+    if(boundary_type == BoundaryTypeU::Dirichlet)
     {
       Tensor<1,dim,VectorizedArray<value_type> > g;
       typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
@@ -3261,9 +3298,14 @@ private:
 
       uP = -uM + make_vectorized_array<value_type>(2.0)*g;
     }
-    else if(boundary_type == BoundaryType::neumann)
+    else if(boundary_type == BoundaryTypeU::Neumann)
     {
       uP = uM;
+    }
+    else if(boundary_type == BoundaryTypeU::Symmetry)
+    {
+      Tensor<1,dim,VectorizedArray<value_type> > normalM = fe_eval.get_normal_vector(q);
+      uP = uM - 2. * (uM*normalM) * normalM;
     }
     else
     {
@@ -3275,8 +3317,9 @@ private:
    *  Calculate Lax-Friedrichs flux for linearized operator on boundary faces.
    *
    *  Homogeneous linearized operator:
-   *  Dirichlet boundary faces: delta_u⁺ = - delta_u⁻
-   *  Neumann boundary faces:   delta_u⁺ = + delta_u⁻
+   *  Dirichlet boundary: delta_u⁺ = - delta_u⁻
+   *  Neumann boundary:   delta_u⁺ = + delta_u⁻
+   *  symmetry boundary:  delta_u⁺ = delta_u⁻ - 2 (delta_u⁻*n)n
    */
   template<typename FEEvaluation>
   inline void calculate_flux_linearized_operator_boundary_face(Tensor<1,dim,VectorizedArray<value_type> > &flux,
@@ -3284,7 +3327,7 @@ private:
                                                                Tensor<1,dim,VectorizedArray<value_type> > &uP,
                                                                unsigned int const                         q,
                                                                FEEvaluation                               &fe_eval,
-                                                               BoundaryType const                         &boundary_type) const
+                                                               BoundaryTypeU const                        &boundary_type) const
   {
     // element e⁻
     Tensor<1,dim,VectorizedArray<value_type> > delta_uM = fe_eval.get_value(q);
@@ -3292,13 +3335,18 @@ private:
     // element e⁺
     Tensor<1,dim,VectorizedArray<value_type> > delta_uP;
 
-    if(boundary_type == BoundaryType::dirichlet)
+    if(boundary_type == BoundaryTypeU::Dirichlet)
     {
       delta_uP = - delta_uM;
     }
-    else if(boundary_type == BoundaryType::neumann)
+    else if(boundary_type == BoundaryTypeU::Neumann)
     {
       delta_uP = delta_uM;
+    }
+    else if(boundary_type == BoundaryTypeU::Symmetry)
+    {
+      Tensor<1,dim,VectorizedArray<value_type> > normalM = fe_eval.get_normal_vector(q);
+      delta_uP = delta_uM - 2. * (delta_uM*normalM) * normalM;
     }
     else
     {
@@ -3379,14 +3427,16 @@ private:
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       types::boundary_id boundary_id = data.get_boundary_id(face);
-      BoundaryType boundary_type = BoundaryType::undefined;
+      BoundaryTypeU boundary_type = BoundaryTypeU::Undefined;
 
       if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
-        boundary_type = BoundaryType::dirichlet;
+        boundary_type = BoundaryTypeU::Dirichlet;
       else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
-        boundary_type = BoundaryType::neumann;
+        boundary_type = BoundaryTypeU::Neumann;
+      else if(operator_data.bc->symmetry_bc.find(boundary_id) != operator_data.bc->symmetry_bc.end())
+        boundary_type = BoundaryTypeU::Symmetry;
 
-      AssertThrow(boundary_type != BoundaryType::undefined,
+      AssertThrow(boundary_type != BoundaryTypeU::Undefined,
           ExcMessage("Boundary type of face is invalid or not implemented."));
 
       fe_eval.reinit(face);
@@ -3497,14 +3547,16 @@ private:
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       types::boundary_id boundary_id = data.get_boundary_id(face);
-      BoundaryType boundary_type = BoundaryType::undefined;
+      BoundaryTypeU boundary_type = BoundaryTypeU::Undefined;
 
       if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
-        boundary_type = BoundaryType::dirichlet;
+        boundary_type = BoundaryTypeU::Dirichlet;
       else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
-        boundary_type = BoundaryType::neumann;
+        boundary_type = BoundaryTypeU::Neumann;
+      else if(operator_data.bc->symmetry_bc.find(boundary_id) != operator_data.bc->symmetry_bc.end())
+        boundary_type = BoundaryTypeU::Symmetry;
 
-      AssertThrow(boundary_type != BoundaryType::undefined,
+      AssertThrow(boundary_type != BoundaryTypeU::Undefined,
           ExcMessage("Boundary type of face is invalid or not implemented."));
 
       fe_eval.reinit (face);
@@ -3629,14 +3681,16 @@ private:
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       types::boundary_id boundary_id = data.get_boundary_id(face);
-      BoundaryType boundary_type = BoundaryType::undefined;
+      BoundaryTypeU boundary_type = BoundaryTypeU::Undefined;
 
       if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
-        boundary_type = BoundaryType::dirichlet;
+        boundary_type = BoundaryTypeU::Dirichlet;
       else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
-        boundary_type = BoundaryType::neumann;
+        boundary_type = BoundaryTypeU::Neumann;
+      else if(operator_data.bc->symmetry_bc.find(boundary_id) != operator_data.bc->symmetry_bc.end())
+        boundary_type = BoundaryTypeU::Symmetry;
 
-      AssertThrow(boundary_type != BoundaryType::undefined,
+      AssertThrow(boundary_type != BoundaryTypeU::Undefined,
           ExcMessage("Boundary type of face is invalid or not implemented."));
 
       fe_eval.reinit (face);
@@ -3916,14 +3970,16 @@ private:
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       types::boundary_id boundary_id = data.get_boundary_id(face);
-      BoundaryType boundary_type = BoundaryType::undefined;
+      BoundaryTypeU boundary_type = BoundaryTypeU::Undefined;
 
       if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
-        boundary_type = BoundaryType::dirichlet;
+        boundary_type = BoundaryTypeU::Dirichlet;
       else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
-        boundary_type = BoundaryType::neumann;
+        boundary_type = BoundaryTypeU::Neumann;
+      else if(operator_data.bc->symmetry_bc.find(boundary_id) != operator_data.bc->symmetry_bc.end())
+        boundary_type = BoundaryTypeU::Symmetry;
 
-      AssertThrow(boundary_type != BoundaryType::undefined,
+      AssertThrow(boundary_type != BoundaryTypeU::Undefined,
           ExcMessage("Boundary type of face is invalid or not implemented."));
 
       fe_eval.reinit (face);
@@ -4127,14 +4183,16 @@ private:
     for(unsigned int face=face_range.first; face<face_range.second; face++)
     {
       types::boundary_id boundary_id = data.get_boundary_id(face);
-      BoundaryType boundary_type = BoundaryType::undefined;
+      BoundaryTypeU boundary_type = BoundaryTypeU::Undefined;
 
       if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
-        boundary_type = BoundaryType::dirichlet;
+        boundary_type = BoundaryTypeU::Dirichlet;
       else if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
-        boundary_type = BoundaryType::neumann;
+        boundary_type = BoundaryTypeU::Neumann;
+      else if(operator_data.bc->symmetry_bc.find(boundary_id) != operator_data.bc->symmetry_bc.end())
+        boundary_type = BoundaryTypeU::Symmetry;
 
-      AssertThrow(boundary_type != BoundaryType::undefined,
+      AssertThrow(boundary_type != BoundaryTypeU::Undefined,
           ExcMessage("Boundary type of face is invalid or not implemented."));
 
       fe_eval.reinit (face);

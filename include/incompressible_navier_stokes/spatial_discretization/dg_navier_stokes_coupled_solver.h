@@ -38,10 +38,10 @@ public:
   virtual ~DGNavierStokesCoupled(){};
 
   virtual void setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
-                                                                            periodic_face_pairs,
-                      std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
-                      std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
-                      std::shared_ptr<FieldFunctionsNavierStokes<dim> >     field_functions);
+                                                                             periodic_face_pairs,
+                      std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
+                      std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
+                      std::shared_ptr<FieldFunctionsNavierStokes<dim> >      field_functions);
 
   void setup_solvers(double const &scaling_factor_time_derivative_term = 1.0);
 
@@ -237,10 +237,10 @@ private:
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
-                                                             periodic_face_pairs,
-       std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity_in,
-       std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure_in,
-       std::shared_ptr<FieldFunctionsNavierStokes<dim> >     field_functions_in)
+                                                              periodic_face_pairs,
+       std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity_in,
+       std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure_in,
+       std::shared_ptr<FieldFunctionsNavierStokes<dim> >      field_functions_in)
 {
   BASE::setup(periodic_face_pairs,
               boundary_descriptor_velocity_in,

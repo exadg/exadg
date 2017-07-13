@@ -96,8 +96,8 @@ private:
   unsigned int const n_refine_space;
 
   std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions;
-  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure;
+  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure;
 
   std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution;
 
@@ -139,8 +139,8 @@ NavierStokesProblem(unsigned int const refine_steps_space)
   analytical_solution.reset(new AnalyticalSolutionNavierStokes<dim>());
   set_analytical_solution(analytical_solution);
 
-  boundary_descriptor_velocity.reset(new BoundaryDescriptorNavierStokes<dim>());
-  boundary_descriptor_pressure.reset(new BoundaryDescriptorNavierStokes<dim>());
+  boundary_descriptor_velocity.reset(new BoundaryDescriptorNavierStokesU<dim>());
+  boundary_descriptor_pressure.reset(new BoundaryDescriptorNavierStokesP<dim>());
 
   // initialize navier_stokes_operation
   navier_stokes_operation.reset(new DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
