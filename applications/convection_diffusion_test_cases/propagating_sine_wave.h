@@ -20,20 +20,19 @@
 // test case for purely convective problem
 // sine wave that is advected from left to right by a constant velocity field
 
-
 // set the number of space dimensions: DIMENSION = 2, 3
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 6;
+const unsigned int FE_DEGREE = 8;
 
 // set the number of refine levels for spatial convergence tests
-const unsigned int REFINE_STEPS_SPACE_MIN = 3;
-const unsigned int REFINE_STEPS_SPACE_MAX = 3;
+const unsigned int REFINE_STEPS_SPACE_MIN = 2;
+const unsigned int REFINE_STEPS_SPACE_MAX = 2;
 
 // set the number of refine levels for temporal convergence tests
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
-const unsigned int REFINE_STEPS_TIME_MAX = 5;
+const unsigned int REFINE_STEPS_TIME_MAX = 10;
 
 void InputParametersConvDiff::set_input_parameters()
 {
@@ -48,13 +47,14 @@ void InputParametersConvDiff::set_input_parameters()
   diffusivity = 0.0;
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDF; //ExplRK;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  order_time_integrator = 2;
+  temporal_discretization = TemporalDiscretization::BDF; //BDF; //ExplRK;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //ExplicitOIF; //Explicit;
+  order_time_integrator = 3;
   start_with_low_order = false;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
   time_step_size = 1.0e-1;
   cfl_number = 0.4;
+  cfl_oif = cfl_number/1.0;
   diffusion_number = 0.01;
 
   // SPATIAL DISCRETIZATION
@@ -150,7 +150,7 @@ public:
 };
 
 template<int dim>
-double RightHandSide<dim>::value(const Point<dim>     &p,
+double RightHandSide<dim>::value(const Point<dim>     &/* p */,
                                 const unsigned int   /* component */) const
 {
   double result = 0.0;

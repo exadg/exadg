@@ -24,10 +24,10 @@
 typedef double VALUE_TYPE;
 
 // set the number of space dimensions: dimension = 2, 3
-unsigned int const DIMENSION = 3;
+unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 8;
+unsigned int const FE_DEGREE_VELOCITY = 3;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -35,7 +35,7 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 0;
+unsigned int const REFINE_STEPS_SPACE_MIN = 1;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
@@ -79,9 +79,9 @@ const MeshType MESH_TYPE = MeshType::Type2;
 
 const double END_TIME = 8.0;
 
-std::string OUTPUT_FOLDER = "output/FPC/3D_3_dual_splitting_bdf3_mesh2/";
+std::string OUTPUT_FOLDER = "output/test/"; //"output/FPC/3D_3_dual_splitting_bdf3_mesh2/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "3D_3_cfl_0-2";
+std::string OUTPUT_NAME = "2D_3_cfl_0-2";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -248,7 +248,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   print_input_parameters = true;
 
   // write output for visualization of results
-  output_data.write_output = true;
+  output_data.write_output = false;
   output_data.output_folder = OUTPUT_FOLDER_VTU;
   output_data.output_name = OUTPUT_NAME;
   output_data.output_start_time = start_time;
@@ -1199,12 +1199,12 @@ void create_triangulation(Triangulation<3> &tria)
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-   parallel::distributed::Triangulation<dim>                   &triangulation,
-   unsigned int const                                          n_refine_space,
-   std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
-   std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
+   parallel::distributed::Triangulation<dim>              &triangulation,
+   unsigned int const                                     n_refine_space,
+   std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
+   std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
    std::vector<GridTools::PeriodicFacePair<typename
-     Triangulation<dim>::cell_iterator> >                      &/*periodic_faces*/)
+     Triangulation<dim>::cell_iterator> >                 &/*periodic_faces*/)
 {
  Point<dim> center;
  center[0] = X_C;
@@ -1271,16 +1271,16 @@ void create_grid_and_set_boundary_conditions(
  // fill boundary descriptor pressure
  std::shared_ptr<Function<dim> > pressure_bc_dudt;
  pressure_bc_dudt.reset(new PressureBC_dudt<dim>());
- // Dirichlet boundaries: ID = 0, 2
- boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
+ // Neumann boundaries: ID = 0, 2
+ boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
                                                     (0,pressure_bc_dudt));
- boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
+ boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
                                                     (2,pressure_bc_dudt));
 
  std::shared_ptr<Function<dim> > analytical_solution_pressure;
  analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
- // Neumann boundaries: ID = 1
- boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
+ // Dirichlet boundaries: ID = 1
+ boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
                                                   (1,analytical_solution_pressure));
 }
 

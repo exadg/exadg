@@ -33,7 +33,7 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 0;
+unsigned int const REFINE_STEPS_SPACE_MIN = 3;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
@@ -43,12 +43,17 @@ unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 // set problem specific parameters like physical dimensions, etc.
 const ProblemType PROBLEM_TYPE = ProblemType::Unsteady;
 const double MAX_VELOCITY = 1.0;
-const double VISCOSITY = 1.0e-2;
-const double H = 1.0;
+const double VISCOSITY = 1.0e-1;
+
+const double H = 2.0;
 const double L = 4.0;
 
+bool periodicBCs = false;
+
+bool symmetryBC = true;
+
 enum class InflowProfile { ConstantProfile, ParabolicProfile };
-const InflowProfile INFLOW_PROFILE = InflowProfile::ParabolicProfile;
+const InflowProfile INFLOW_PROFILE = InflowProfile::ParabolicProfile; //ConstantProfile; //ParabolicProfile;
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -56,8 +61,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // MATHEMATICAL MODEL
   problem_type = PROBLEM_TYPE; // PROBLEM_TYPE is also needed somewhere else
   equation_type = EquationType::NavierStokes;
-  formulation_viscous_term = FormulationViscousTerm::DivergenceFormulation;
-  right_hand_side = false;
+  formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
+  right_hand_side = periodicBCs; //prescribe body force in x-direction in case of perodic BC's
 
 
   // PHYSICAL QUANTITIES
@@ -67,12 +72,12 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFCoupledSolution;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFDualSplittingScheme; //BDFCoupledSolution;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
   max_velocity = MAX_VELOCITY; // MAX_VELOCITY is also needed somewhere else
   cfl = 1.0e-1;
-  time_step_size = 1.0e-1;
+  time_step_size = 1.0e-2;
   max_number_of_time_steps = 1e8;
   order_time_integrator = 2; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
@@ -88,6 +93,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
   IP_factor_viscous = 1.0;
+  penalty_term_div_formulation = PenaltyTermDivergenceFormulation::Symmetrized;
 
   // gradient term
   gradp_integrated_by_parts = true;
@@ -98,7 +104,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   divu_use_boundary_data = true;
 
   // special case: pure DBC's
-  pure_dirichlet_bc = false;
+  pure_dirichlet_bc = periodicBCs;
 
 
   // PROJECTION METHODS
@@ -178,21 +184,36 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // COUPLED NAVIER-STOKES SOLVER
 
   // nonlinear solver (Newton solver)
-  newton_solver_data_coupled.abs_tol = 1.e-20;
+  newton_solver_data_coupled.abs_tol = 1.e-10;
   newton_solver_data_coupled.rel_tol = 1.e-6;
   newton_solver_data_coupled.max_iter = 1e2;
 
   // linear solver
-  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;
+  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::FGMRES; //GMRES;
   abs_tol_linear = 1.e-12;
-  rel_tol_linear = 1.e-6;
+  rel_tol_linear = 1.e-2;
   max_iter_linear = 1e4;
+  max_n_tmp_vectors = 200;
 
   // preconditioning linear solver
   preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
+  update_preconditioner = true;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion;
+  momentum_preconditioner = MomentumPreconditioner::VelocityConvectionDiffusion;
+  multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::Jacobi; //Jacobi; //Chebyshev; //GMRES;
+
+  // GMRES smoother data
+  multigrid_data_momentum_preconditioner.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
+  multigrid_data_momentum_preconditioner.gmres_smoother_data.number_of_iterations = 5;
+
+  // Jacobi smoother data
+  multigrid_data_momentum_preconditioner.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
+  multigrid_data_momentum_preconditioner.jacobi_smoother_data.number_of_smoothing_steps = 5;
+  multigrid_data_momentum_preconditioner.jacobi_smoother_data.damping_factor = 0.7;
+
+  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner; //NoPreconditioner; //Chebyshev; //Chebyshev; //ChebyshevNonsymmetricOperator;
+
   exact_inversion_of_momentum_block = false;
   rel_tol_solver_momentum_preconditioner = 1.e-6;
   max_n_tmp_vectors_solver_momentum_preconditioner = 100;
@@ -200,8 +221,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // preconditioner Schur-complement block
   schur_complement_preconditioner = SchurComplementPreconditioner::PressureConvectionDiffusion;
   discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
+  multigrid_data_schur_complement_preconditioner.chebyshev_smoother_data.smoother_poly_degree = 5;
+  multigrid_data_schur_complement_preconditioner.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   exact_inversion_of_laplace_operator = false;
   rel_tol_solver_schur_complement_preconditioner = 1.e-6;
+
 
 
   // OUTPUT AND POSTPROCESSING
@@ -273,6 +297,9 @@ double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
   double t = this->get_time();
   double result = 0.0;
 
+  // initial velocity field = 0
+
+  //BC's specified below only relevant if periodicBCs == false
   if(PROBLEM_TYPE == ProblemType::Steady)
   {
     if(INFLOW_PROFILE == InflowProfile::ConstantProfile)
@@ -488,6 +515,13 @@ template<int dim>
                                   const unsigned int component) const
  {
    double result = 0.0;
+
+   if(periodicBCs == true)
+   {
+   if(component==0)
+     result = 0.02;
+   }
+
    return result;
  }
 
@@ -507,20 +541,68 @@ void create_grid_and_set_boundary_conditions(
     std::vector<GridTools::PeriodicFacePair<typename
       Triangulation<dim>::cell_iterator> >                      &periodic_faces)
 {
-  std::vector<unsigned int> repetitions({2,1});
-  Point<dim> point1(0.0,-H/2.), point2(L,H/2.);
-  GridGenerator::subdivided_hyper_rectangle(triangulation,repetitions,point1,point2);
-
-  // set boundary indicator
-  typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
-  for(;cell!=endc;++cell)
+  if(periodicBCs == true)
   {
-    for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+    std::vector<unsigned int> repetitions({1,1});
+    Point<dim> point1(0.0,-H/2.), point2(L,H/2.);
+    GridGenerator::subdivided_hyper_rectangle(triangulation,repetitions,point1,point2);
+
+    //periodicity in x-direction
+    //add 10 to avoid conflicts with dirichlet boundary, which is 0
+    typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+    for(;cell!=endc;++cell)
     {
-     if ((std::fabs(cell->face(face_number)->center()(0) - L)< 1e-12))
-        cell->face(face_number)->set_boundary_id (1);
+      for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+      {
+       if ((std::fabs(cell->face(face_number)->center()(0) - 0.0)< 1e-12))
+           cell->face(face_number)->set_boundary_id (0+10);
+       if ((std::fabs(cell->face(face_number)->center()(0) - L)< 1e-12))
+          cell->face(face_number)->set_boundary_id (1+10);
+      }
+    }
+    GridTools::collect_periodic_faces(triangulation, 0+10, 1+10, 0, periodic_faces);
+    triangulation.add_periodicity(periodic_faces);
+  }
+  else if(symmetryBC == true)
+  {
+    double y_upper_wall = 0.0;
+    std::vector<unsigned int> repetitions({4,1});
+    Point<dim> point1(0.0,-H/2.), point2(L,y_upper_wall);
+    GridGenerator::subdivided_hyper_rectangle(triangulation,repetitions,point1,point2);
+
+    // set boundary indicator
+    typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+    for(;cell!=endc;++cell)
+    {
+      for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+      {
+       if ((std::fabs(cell->face(face_number)->center()(0) - L)< 1e-12))
+          cell->face(face_number)->set_boundary_id (1);
+
+       // upper wall symmetry BC
+       if ((std::fabs(cell->face(face_number)->center()(1) - y_upper_wall)< 1e-12))
+          cell->face(face_number)->set_boundary_id (2);
+      }
     }
   }
+  else
+  {
+    std::vector<unsigned int> repetitions({2,1});
+    Point<dim> point1(0.0,-H/2.), point2(L,H/2.);
+    GridGenerator::subdivided_hyper_rectangle(triangulation,repetitions,point1,point2);
+
+    // set boundary indicator
+    typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+    for(;cell!=endc;++cell)
+    {
+      for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+      {
+       if ((std::fabs(cell->face(face_number)->center()(0) - L)< 1e-12))
+          cell->face(face_number)->set_boundary_id (1);
+      }
+    }
+  }
+
   triangulation.refine_global(n_refine_space);
 
   // fill boundary descriptor velocity
@@ -536,18 +618,41 @@ void create_grid_and_set_boundary_conditions(
   boundary_descriptor_velocity->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
                                                    (1,neumann_bc_velocity));
 
+  if(symmetryBC == true)
+  {
+    // slip boundary condition: always u*n=0
+    // function will not be used -> use ZeroFunction
+    std::shared_ptr<Function<dim> > zero_function;
+    zero_function.reset(new ZeroFunction<dim>(dim));
+    boundary_descriptor_velocity->symmetry_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
+                                                     (2,zero_function));
+  }
+
   // fill boundary descriptor pressure
   std::shared_ptr<Function<dim> > pressure_bc_dudt;
   pressure_bc_dudt.reset(new PressureBC_dudt<dim>());
-  // Dirichlet boundaries: ID = 0
-  boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
+  // Neumann boundaries: ID = 0
+  boundary_descriptor_pressure->neuman_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
                                                      (0,pressure_bc_dudt));
+
+  if(symmetryBC == true)
+  {
+    // prescribe Neumann BC for pressure on symmetry boundaries
+    // -> prescribe dudt for dual-splitting scheme, which is equal to zero since
+    // (du/dt)*n = d(u*n)/dt = d(0)/dt = 0, i.e., the time derivative term is multiplied by the normal vector
+    // and the normal velocity is zero (= symmetry boundary condition).
+    std::shared_ptr<Function<dim> > pressure_bc_dudt;
+    pressure_bc_dudt.reset(new ZeroFunction<dim>(1));
+    boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
+                                                     (2,pressure_bc_dudt));
+  }
 
   std::shared_ptr<Function<dim> > analytical_solution_pressure;
   analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
-  // Neumann boundaries: ID = 1
-  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
+  // Dirichlet boundaries: ID = 1
+  boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
                                                    (1,analytical_solution_pressure));
+
 }
 
 
@@ -556,7 +661,9 @@ void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > initial_solution_velocity;
+//  initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
   initial_solution_velocity.reset(new ZeroFunction<dim>(dim));
+  
   std::shared_ptr<Function<dim> > initial_solution_pressure;
   initial_solution_pressure.reset(new ZeroFunction<dim>(1));
   std::shared_ptr<Function<dim> > analytical_solution_pressure;
