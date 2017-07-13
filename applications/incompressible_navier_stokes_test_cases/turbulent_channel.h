@@ -33,7 +33,7 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 2;
+unsigned int const REFINE_STEPS_SPACE_MIN = 3;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
@@ -53,9 +53,9 @@ const double GRID_STRETCH_FAC = 1.8;
 double const VISCOSITY = 1./180.; // critical value: 1./50. - 1./75.
 double const END_TIME = 50.0;
 
-std::string OUTPUT_FOLDER = "output/turb_ch/paper/Re180/";
+std::string OUTPUT_FOLDER = "output/turb_ch/Re180/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "coupled_solver_BDF2_CFL_0-5_expl_Re180_div_formulation_l2_k3-2_grid_stretch_1-8_wale_model_0-5";
+std::string OUTPUT_NAME = "Re180_visualization_l3_k32"; //"coupled_solver_BDF2_CFL_0-5_expl_Re180_div_formulation_l2_k3-2_grid_stretch_1-8_wale_model_0-5";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -74,11 +74,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; // BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //CoupledSolution; // BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; // AdaptiveTimeStepCFL
   max_velocity = MAX_VELOCITY;
-  cfl = 0.5;
+  cfl = 1.0;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
@@ -111,20 +111,20 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // div-div and continuity penalty
   // these parameters are only used for the coupled solver
-  use_divergence_penalty = false;
+  use_divergence_penalty = true;
   divergence_penalty_factor = 1.0e0;
-  use_continuity_penalty = false;
+  use_continuity_penalty = true;
   continuity_penalty_use_boundary_data = false;
   continuity_penalty_factor = divergence_penalty_factor;
 
   // TURBULENCE
-  use_turbulence_model = true;
-  turbulence_model = TurbulenceEddyViscosityModel::WALE;
+  use_turbulence_model = false;
+  turbulence_model = TurbulenceEddyViscosityModel::Sigma;
   // Smagorinsky: 0.165
   // Vreman: 0.28
   // WALE: 0.50
   // Sigma: 1.35
-  turbulence_model_constant = 0.5;
+  turbulence_model_constant = 1.35;
 
   // PROJECTION METHODS
 
@@ -385,11 +385,26 @@ double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
   {
     if(dim==3)
     {
-      //TODO
+      // TODO
 //      if(component == 0)
 //        result = -MAX_VELOCITY*(pow(p[1],6.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*0.5-2./MAX_VELOCITY*std::sin(p[2]*8.));
-//      else if(component ==2)
+//      else if(component == 2)
 //        result = (pow(p[1],6.0)-1.0)*std::sin(p[0]*8.)*2.;
+
+      // TODO
+//      double const factor = 10;
+//      if(component == 0)
+//      {
+//        result = -MAX_VELOCITY*(pow(p[1],6.0)-1.0)*(1.0 + ((double)rand()/RAND_MAX-1.0)*0.5 - factor/MAX_VELOCITY*std::sin(p[1]*2.*numbers::PI));
+//      }
+//      else if(component == 1)
+//      {
+//        result = factor * std::sin(p[1]*2.*numbers::PI)*std::sin(p[0]*2.);
+//      }
+//      else if(component == 2)
+//      {
+//        result = factor * std::sin(p[1]*2.*numbers::PI)*std::sin(p[0]*2.);
+//      }
 
       if(component == 0)
       {
@@ -582,12 +597,12 @@ Point<dim> grid_transform (const Point<dim> &in)
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>                   &triangulation,
-    unsigned int const                                          n_refine_space,
-    std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
+    parallel::distributed::Triangulation<dim>              &triangulation,
+    unsigned int const                                     n_refine_space,
+    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                      &periodic_faces)
+      Triangulation<dim>::cell_iterator> >                 &periodic_faces)
 {
   /* --------------- Generate grid ------------------- */
    //turbulent channel flow
@@ -627,25 +642,12 @@ void create_grid_and_set_boundary_conditions(
    boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
                                                      (0,analytical_solution_velocity));
 
-   std::shared_ptr<Function<dim> > neumann_bc_velocity;
-   neumann_bc_velocity.reset(new NeumannBoundaryVelocity<dim>());
-   // Neumann boundaris: ID = 1
-   boundary_descriptor_velocity->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                   (1,neumann_bc_velocity));
-
    // fill boundary descriptor pressure
    std::shared_ptr<Function<dim> > pressure_bc_dudt;
    pressure_bc_dudt.reset(new PressureBC_dudt<dim>());
-   // Dirichlet boundaries: ID = 0
-   boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                     (0,pressure_bc_dudt));
-
-   std::shared_ptr<Function<dim> > analytical_solution_pressure;
-   analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
-   // Neumann boundaries: ID = 1
+   // Neumann boundaries: ID = 0
    boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                   (1,analytical_solution_pressure));
-
+                                                     (0,pressure_bc_dudt));
 }
 
 

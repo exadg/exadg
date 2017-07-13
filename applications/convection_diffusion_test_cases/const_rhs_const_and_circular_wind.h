@@ -26,11 +26,11 @@
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 1;
+const unsigned int FE_DEGREE = 4;
 
 // set the number of refine levels for spatial convergence tests
 const unsigned int REFINE_STEPS_SPACE_MIN = 1;
-const unsigned int REFINE_STEPS_SPACE_MAX = 6;
+const unsigned int REFINE_STEPS_SPACE_MAX = 4;
 
 // set the number of refine levels for temporal convergence tests
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
@@ -78,9 +78,9 @@ void InputParametersConvDiff::set_input_parameters()
   rel_tol = 1.e-8;
   max_iter = 1e3;
   max_n_tmp_vectors = 100;
-  preconditioner = Preconditioner::MultigridDiffusion; //MultigridConvectionDiffusion; //PointJacobi; //BlockJacobi; //MultigridDiffusion; //MultigridConvectionDiffusion;
+  preconditioner = Preconditioner::PointJacobi; //MultigridConvectionDiffusion; //PointJacobi; //BlockJacobi; //MultigridDiffusion; //MultigridConvectionDiffusion;
   // MG smoother
-  multigrid_data.smoother = MultigridSmoother::GMRES; //Jacobi; //GMRES; //Chebyshev; //ChebyshevNonsymmetricOperator;
+  multigrid_data.smoother = MultigridSmoother::Chebyshev; //Jacobi; //GMRES; //Chebyshev; //ChebyshevNonsymmetricOperator;
 
   // MG smoother data: Chebyshev smoother
   multigrid_data.chebyshev_smoother_data.smoother_poly_degree = 3;
