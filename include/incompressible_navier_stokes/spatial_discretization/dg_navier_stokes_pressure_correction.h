@@ -100,7 +100,7 @@ private:
                                IterativeSolverBase<parallel::distributed::Vector<Number> > > >
     momentum_newton_solver;
 
-  InverseMassMatrixOperator<dim,fe_degree_p,Number> inverse_mass_matrix_operator_pressure;
+  InverseMassMatrixOperator<dim,fe_degree_p,Number,1> inverse_mass_matrix_operator_pressure;
 
   parallel::distributed::Vector<Number> temp_vector;
   parallel::distributed::Vector<Number> const *rhs_vector;
