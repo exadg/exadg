@@ -18,6 +18,8 @@
 #include "../../incompressible_navier_stokes/postprocessor/pressure_difference_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/turbulence_statistics_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/write_output_navier_stokes.h"
+#include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_calculation.h"
+
 #include "../../incompressible_navier_stokes/user_interface/input_parameters.h"
 
 template<int dim>
@@ -31,6 +33,7 @@ struct PostProcessorData
   PressureDifferenceData<dim> pressure_difference_data;
   MassConservationData mass_data;
   TurbulenceStatisticsData turb_stat_data;
+  KineticEnergyData kinetic_energy_data;
 };
 
 template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
@@ -74,6 +77,10 @@ public:
     div_and_mass_error_calculator.setup(matrix_free_data_in,
                                         dof_quad_index_data_in,
                                         pp_data.mass_data);
+
+    kinetic_energy_calculator.setup(matrix_free_data_in,
+                                    dof_quad_index_data_in,
+                                    pp_data.kinetic_energy_data);
   }
 
   virtual void do_postprocessing(parallel::distributed::Vector<Number> const &velocity,
@@ -108,6 +115,11 @@ public:
      *  Analysis of divergence and mass error
      */
     div_and_mass_error_calculator.evaluate(intermediate_velocity,time,time_step_number);
+
+    /*
+     *  calculation of kinetic energy
+     */
+    kinetic_energy_calculator.evaluate(velocity,time,time_step_number);
   };
 
 
@@ -119,6 +131,7 @@ private:
   LiftAndDragCalculator<dim,fe_degree_u,fe_degree_p,Number> lift_and_drag_calculator;
   PressureDifferenceCalculator<dim,fe_degree_u,fe_degree_p,Number> pressure_difference_calculator;
   DivergenceAndMassErrorCalculator<dim,fe_degree_u,Number> div_and_mass_error_calculator;
+  KineticEnergyCalculator<dim,fe_degree_u,Number> kinetic_energy_calculator;
 };
 
 

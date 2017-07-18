@@ -450,6 +450,34 @@ struct TurbulentChannelData
   std::string filename_prefix;
 };
 
+// kinetic energy data
+
+struct KineticEnergyData
+{
+  KineticEnergyData()
+    :
+  calculate(false),
+  calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
+  viscosity(1.0),
+  filename_prefix("indexa")
+  {}
+
+  void print(ConditionalOStream &pcout)
+  {
+    if(calculate == true)
+    {
+      pcout << "  Calculate kinetic energy:" << std::endl;
+      print_parameter(pcout,"Calculate energy",calculate);
+      print_parameter(pcout,"Calculate every timesteps",calculate_every_time_steps);
+    }
+  }
+
+  bool calculate;
+  unsigned int calculate_every_time_steps;
+  double viscosity;
+  std::string filename_prefix;
+};
+
 
 
 
@@ -660,7 +688,10 @@ public:
     mass_data(MassConservationData()),
 
     // turbulent channel statistics
-    turb_ch_data(TurbulentChannelData())
+    turb_ch_data(TurbulentChannelData()),
+
+    // kinetic energy
+    kinetic_energy_data(KineticEnergyData())
   {}
 
   void set_input_parameters();
@@ -1456,6 +1487,9 @@ public:
 
     // turbulent channel statistics
     turb_ch_data.print(pcout); 
+
+    // kinetic energy
+    kinetic_energy_data.print(pcout);
   }
 
   /**************************************************************************************/
@@ -1896,6 +1930,9 @@ public:
 
   // turbulent channel statistics
   TurbulentChannelData turb_ch_data;
+
+  // kinetic energy
+  KineticEnergyData kinetic_energy_data;
 
 };
 
