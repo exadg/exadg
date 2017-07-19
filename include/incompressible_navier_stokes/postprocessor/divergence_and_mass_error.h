@@ -71,8 +71,8 @@ private:
    *  This function calculates the divergence error and the error of mass flux
    *  over interior element faces.
    *
-   *  Divergence error: (1,|divu|)_Omega or L * (1,|divu|)_Omega
-   *  Reference value for divergence error: (1,1)_Omega or (1,|| u ||)_Omega
+   *  Divergence error: (1,|divu|)_Omega
+   *  Reference value for divergence error: (1,1)_Omega
    *
    *  or
    *
