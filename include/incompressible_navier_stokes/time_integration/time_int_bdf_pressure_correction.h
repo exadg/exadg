@@ -315,7 +315,7 @@ postprocessing() const
   this->calculate_divergence(this->divergence,velocity[0]);
 
   this->calculate_velocity_magnitude(this->velocity_magnitude, velocity[0]);
-  this->calculate_velocity_magnitude(this->vorticity_magnitude, vorticity[0]);
+  this->calculate_velocity_magnitude(this->vorticity_magnitude, vorticity);
   this->calculate_q_criterion(this->q_criterion, velocity[0]);
 
   // check pressure error and formation of numerical boundary layers for standard vs. rotational formulation
