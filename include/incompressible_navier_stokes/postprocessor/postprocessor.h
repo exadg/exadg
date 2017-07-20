@@ -87,14 +87,14 @@ public:
                                  parallel::distributed::Vector<Number> const &intermediate_velocity,
                                  parallel::distributed::Vector<Number> const &pressure,
                                  parallel::distributed::Vector<Number> const &vorticity,
-                                 parallel::distributed::Vector<Number> const &divergence,
+                                 std::vector<SolutionField<dim,Number> > const &additional_fields,
                                  double const                                time,
                                  int const                                   time_step_number)
   {
     /*
      *  write output
      */
-    output_generator.write_output(velocity,pressure,vorticity,divergence,time,time_step_number);
+    output_generator.write_output(velocity,pressure,vorticity,additional_fields,time,time_step_number);
 
     /*
      *  calculate error

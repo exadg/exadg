@@ -66,7 +66,8 @@ public:
   enum class DofHandlerSelector {
     velocity = 0,
     pressure = 1,
-    n_variants = pressure+1
+    velocity_scalar = 2,
+    n_variants = velocity_scalar+1
   };
 
   enum class QuadratureSelector {
@@ -82,6 +83,7 @@ public:
 
   static const unsigned int dof_index_u = static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::velocity);
   static const unsigned int dof_index_p = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::pressure);
+  static const unsigned int dof_index_u_scalar = static_cast<typename std::underlying_type<DofHandlerSelector>::type >(DofHandlerSelector::velocity_scalar);
 
   static const unsigned int quad_index_u = static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::velocity);
   static const unsigned int quad_index_p = static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::pressure);
@@ -104,9 +106,11 @@ public:
     :
     fe_u(new FESystem<dim>(FE_DGQ<dim>(fe_degree),dim)),
     fe_p(fe_degree_p),
+    fe_u_scalar(fe_degree),
     mapping(fe_degree),
     dof_handler_u(triangulation),
     dof_handler_p(triangulation),
+    dof_handler_u_scalar(triangulation),
     dof_index_first_point(0),
     param(parameter),
     inverse_mass_matrix_operator(nullptr)
@@ -182,6 +186,11 @@ public:
     return dof_handler_u;
   }
 
+  DoFHandler<dim> const & get_dof_handler_u_scalar() const
+  {
+    return dof_handler_u_scalar;
+  }
+
   DoFHandler<dim> const & get_dof_handler_p() const
   {
     return dof_handler_p;
@@ -228,6 +237,11 @@ public:
     this->data.initialize_dof_vector(src,dof_index_u);
   }
 
+  void initialize_vector_velocity_scalar(parallel::distributed::Vector<Number> &src) const
+  {
+    this->data.initialize_dof_vector(src,dof_index_u_scalar);
+  }
+
   void initialize_vector_vorticity(parallel::distributed::Vector<Number> &src) const
   {
     this->data.initialize_dof_vector(src,dof_index_u);
@@ -263,6 +277,14 @@ public:
   // divergence
   void compute_divergence (parallel::distributed::Vector<Number>       &dst,
                            const parallel::distributed::Vector<Number> &src) const;
+
+  // velocity_magnitude
+  void compute_velocity_magnitude (parallel::distributed::Vector<Number>       &dst,
+                                   const parallel::distributed::Vector<Number> &src) const;
+
+  // Q criterion
+  void compute_q_criterion (parallel::distributed::Vector<Number>       &dst,
+                            const parallel::distributed::Vector<Number> &src) const;
 
   void evaluate_convective_term (parallel::distributed::Vector<Number>       &dst,
                                  parallel::distributed::Vector<Number> const &src,
@@ -304,11 +326,13 @@ protected:
 
   std::shared_ptr<FESystem<dim> > fe_u;
   FE_DGQ<dim> fe_p;
+  FE_DGQ<dim> fe_u_scalar;
 
   MappingQGeneric<dim> mapping;
 
   DoFHandler<dim> dof_handler_u;
   DoFHandler<dim> dof_handler_p;
+  DoFHandler<dim> dof_handler_u_scalar;
 
   Point<dim> first_point;
   types::global_dof_index dof_index_first_point;
@@ -338,7 +362,8 @@ protected:
 
   MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> mass_matrix_operator;
   ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> convective_operator;
-  std::shared_ptr< InverseMassMatrixOperator<dim,fe_degree,Number> > inverse_mass_matrix_operator;
+  std::shared_ptr<InverseMassMatrixOperator<dim,fe_degree,Number,dim> > inverse_mass_matrix_operator;
+  std::shared_ptr<InverseMassMatrixOperator<dim,fe_degree,Number,1> > inverse_velocity_mass_matrix_operator_scalar;
   ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> viscous_operator;
   BodyForceOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> body_force_operator;
   GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> gradient_operator;
@@ -346,6 +371,8 @@ protected:
 
   VorticityCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> vorticity_calculator;
   DivergenceCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> divergence_calculator;
+  VelocityMagnitudeCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> velocity_magnitude_calculator;
+  QCriterionCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> q_criterion_calculator;
 
 private:
   // turbulence modeling LES
@@ -429,8 +456,12 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   mass_matrix_operator.initialize(data,mass_matrix_operator_data);
 
   // inverse mass matrix operator
-  inverse_mass_matrix_operator.reset(new InverseMassMatrixOperator<dim,fe_degree,Number>());
+  inverse_mass_matrix_operator.reset(new InverseMassMatrixOperator<dim,fe_degree,Number,dim>());
   inverse_mass_matrix_operator->initialize(data,dof_index_u,quad_index_u);
+
+  // inverse mass matrix operator velocity scalar
+  inverse_velocity_mass_matrix_operator_scalar.reset(new InverseMassMatrixOperator<dim,fe_degree,Number,1>());
+  inverse_velocity_mass_matrix_operator_scalar->initialize(data,dof_index_u_scalar,quad_index_u);
 
   // body force operator
   BodyForceOperatorData<dim> body_force_operator_data;
@@ -503,8 +534,12 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
 
   // vorticity
   vorticity_calculator.initialize(data,dof_index_u);
-  // diveregnce
-  divergence_calculator.initialize(data,dof_index_u);
+  // divergence
+  divergence_calculator.initialize(data,dof_index_u,dof_index_u_scalar);
+  // velocity magnitude
+  velocity_magnitude_calculator.initialize(data,dof_index_u,dof_index_u_scalar);
+  // q criterion
+  q_criterion_calculator.initialize(data,dof_index_u,dof_index_u_scalar);
 
   if(this->param.pure_dirichlet_bc == true &&
      this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
@@ -558,6 +593,8 @@ create_dofs()
   dof_handler_u.distribute_mg_dofs(*fe_u);
   dof_handler_p.distribute_dofs(fe_p);
   dof_handler_p.distribute_mg_dofs(fe_p);
+  dof_handler_u_scalar.distribute_dofs(fe_u_scalar);
+  dof_handler_u_scalar.distribute_mg_dofs(fe_u_scalar); // probably, we don't need this
 
   unsigned int ndofs_per_cell_velocity = Utilities::fixed_int_power<fe_degree+1,dim>::value*dim;
   unsigned int ndofs_per_cell_pressure = Utilities::fixed_int_power<fe_degree_p+1,dim>::value;
@@ -590,14 +627,17 @@ data_reinit(typename MatrixFree<dim,Number>::AdditionalData &additional_data)
   dof_handler_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::n_variants));
   dof_handler_vec[dof_index_u] = &dof_handler_u;
   dof_handler_vec[dof_index_p] = &dof_handler_p;
+  dof_handler_vec[dof_index_u_scalar] = &dof_handler_u_scalar;
 
   std::vector<const ConstraintMatrix *> constraint_matrix_vec;
   constraint_matrix_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::n_variants));
-  ConstraintMatrix constraint_u, constraint_p;
+  ConstraintMatrix constraint_u, constraint_p, constraint_u_scalar;
   constraint_u.close();
   constraint_p.close();
+  constraint_u_scalar.close();
   constraint_matrix_vec[dof_index_u] = &constraint_u;
   constraint_matrix_vec[dof_index_p] = &constraint_p;
+  constraint_matrix_vec[dof_index_u_scalar] = &constraint_u_scalar;
 
   std::vector<Quadrature<1> > quadratures;
 
@@ -722,7 +762,27 @@ compute_divergence (parallel::distributed::Vector<Number>       &dst,
 {
   divergence_calculator.compute_divergence(dst,src);
 
-  inverse_mass_matrix_operator->apply(dst,dst);
+  inverse_velocity_mass_matrix_operator_scalar->apply(dst,dst);
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+compute_velocity_magnitude (parallel::distributed::Vector<Number>       &dst,
+                            const parallel::distributed::Vector<Number> &src) const
+{
+  velocity_magnitude_calculator.compute(dst,src);
+
+  inverse_velocity_mass_matrix_operator_scalar->apply(dst,dst);
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+compute_q_criterion (parallel::distributed::Vector<Number>       &dst,
+                     const parallel::distributed::Vector<Number> &src) const
+{
+  q_criterion_calculator.compute(dst,src);
+
+  inverse_velocity_mass_matrix_operator_scalar->apply(dst,dst);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>

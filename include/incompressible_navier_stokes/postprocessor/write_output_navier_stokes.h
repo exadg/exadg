@@ -20,7 +20,7 @@ void write_output_navier_stokes(OutputDataNavierStokes const                &out
                                 parallel::distributed::Vector<Number> const &velocity,
                                 parallel::distributed::Vector<Number> const &pressure,
                                 parallel::distributed::Vector<Number> const &vorticity,
-                                parallel::distributed::Vector<Number> const &divergence,
+                                std::vector<SolutionField<dim,Number> > const &additional_fields,
                                 unsigned int const                          output_counter)
 {
   DataOut<dim> data_out;
@@ -35,14 +35,12 @@ void write_output_navier_stokes(OutputDataNavierStokes const                &out
   data_out.add_data_vector (dof_handler_velocity, vorticity, vorticity_names, vorticity_component_interpretation);
 
   pressure.update_ghost_values();
-  data_out.add_data_vector (dof_handler_pressure,pressure, "p");
+  data_out.add_data_vector (dof_handler_pressure, pressure, "p");
 
-  if(output_data.compute_divergence == true)
+  for(typename std::vector<SolutionField<dim,Number> >::const_iterator
+      it = additional_fields.begin();it!=additional_fields.end();++it)
   {
-    std::vector<std::string> divergence_names (dim, "divergence");
-    std::vector<DataComponentInterpretation::DataComponentInterpretation>
-      divergence_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
-    data_out.add_data_vector (dof_handler_velocity, divergence, divergence_names, divergence_component_interpretation);
+    data_out.add_data_vector (*it->dof_handler, *it->vector, it->name);
   }
 
   std::ostringstream filename;
@@ -103,12 +101,12 @@ public:
     output_counter = output_data.output_counter_start;
   }
 
-  void write_output(parallel::distributed::Vector<Number> const &velocity,
-                    parallel::distributed::Vector<Number> const &pressure,
-                    parallel::distributed::Vector<Number> const &vorticity,
-                    parallel::distributed::Vector<Number> const &divergence,
-                    double const                                &time,
-                    int const                                   &time_step_number)
+  void write_output(parallel::distributed::Vector<Number> const   &velocity,
+                    parallel::distributed::Vector<Number> const   &pressure,
+                    parallel::distributed::Vector<Number> const   &vorticity,
+                    std::vector<SolutionField<dim,Number> > const &additional_fields,
+                    double const                                  &time,
+                    int const                                     &time_step_number)
   {
     const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
 
@@ -130,7 +128,7 @@ public:
                                           velocity,
                                           pressure,
                                           vorticity,
-                                          divergence,
+                                          additional_fields,
                                           output_counter);
 
           ++output_counter;
@@ -151,7 +149,7 @@ public:
                                         velocity,
                                         pressure,
                                         vorticity,
-                                        divergence,
+                                        additional_fields,
                                         output_counter);
 
         ++output_counter;

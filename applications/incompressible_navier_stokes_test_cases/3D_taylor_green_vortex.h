@@ -26,7 +26,7 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 3;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 7;
+unsigned int const FE_DEGREE_VELOCITY = 3;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -34,8 +34,8 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 4;
-unsigned int const REFINE_STEPS_SPACE_MAX = 4; //REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 3;
+unsigned int const REFINE_STEPS_SPACE_MAX = 3; //REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -54,7 +54,7 @@ const double CHARACTERISTIC_TIME = L/V_0;
 
 std::string OUTPUT_FOLDER = "output/taylor_green_vortex/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "Re1600_l4_k76_CFL_0-1";
+std::string OUTPUT_NAME = "Re1600_l3_k32_CFL_0-2";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -72,15 +72,16 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
+  temporal_discretization = TemporalDiscretization::BDFPressureCorrection; //BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit; //Implicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
   max_velocity = MAX_VELOCITY;
-  cfl = 0.1;
+  cfl = 0.2;
+  cfl_oif = cfl/5.0;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-3; // 1.0e-4;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 3; // 1; // 2; // 3;
+  order_time_integrator = 2; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
 
 
@@ -182,7 +183,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // linear solver
   solver_momentum = SolverMomentum::GMRES;
-  preconditioner_momentum = MomentumPreconditioner::VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
+  preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; //VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_momentum_linear = 1.e-12;
   rel_tol_momentum_linear = 1.e-6;
@@ -215,7 +216,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion;
+  momentum_preconditioner = MomentumPreconditioner::InverseMassMatrix; //VelocityDiffusion;
   exact_inversion_of_momentum_block = false;
   rel_tol_solver_momentum_preconditioner = 1.e-6;
   max_n_tmp_vectors_solver_momentum_preconditioner = 100;
@@ -230,7 +231,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
 
   // print input parameters
-  print_input_parameters = false;
+  print_input_parameters = true; //false;
 
   // write output for visualization of results
   output_data.write_output = true;
@@ -238,7 +239,10 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   output_data.output_name = OUTPUT_NAME;
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
-  output_data.compute_divergence = false;
+  output_data.write_divergence = false;
+  output_data.write_velocity_magnitude = true;
+  output_data.write_vorticity_magnitude = true;
+  output_data.write_q_criterion = true;
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error

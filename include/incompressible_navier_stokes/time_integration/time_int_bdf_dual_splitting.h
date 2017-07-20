@@ -110,9 +110,6 @@ private:
   parallel::distributed::Vector<value_type> rhs_vec_projection;
   parallel::distributed::Vector<value_type> rhs_vec_projection_temp;
 
-  // postprocessing: divergence of intermediate velocity
-  mutable parallel::distributed::Vector<value_type> divergence;
-
   std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
   double N_iter_pressure_average, N_iter_viscous_average;
@@ -168,6 +165,8 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
 initialize_vectors()
 {
+  TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::initialize_vectors();
+
   // velocity
   for(unsigned int i=0;i<velocity.size();++i)
     navier_stokes_operation->initialize_vector_velocity(velocity[i]);
@@ -202,14 +201,8 @@ initialize_vectors()
   navier_stokes_operation->initialize_vector_velocity(rhs_vec_projection_temp);
   navier_stokes_operation->initialize_vector_velocity(rhs_vec_viscous);
 
-  // divergence
-  if(this->param.output_data.compute_divergence == true)
-  {
-    navier_stokes_operation->initialize_vector_velocity(divergence);
-  }
-
   // intermediate velocity
-  if(this->param.output_data.compute_divergence == true ||
+  if(this->param.output_data.write_divergence == true ||
      this->param.mass_data.calculate_error == true)
   {
     navier_stokes_operation->initialize_vector_velocity(intermediate_velocity);
@@ -253,7 +246,7 @@ void TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation
 initialize_intermediate_velocity()
 {
   // intermediate velocity
-  if(this->param.output_data.compute_divergence == true ||
+  if(this->param.output_data.write_divergence == true ||
      this->param.mass_data.calculate_error == true)
   {
     intermediate_velocity = velocity[0];
@@ -327,17 +320,17 @@ postprocessing() const
   // because this is the velocity field that should be divergence-free.
   // Of course, also the final velocity field at the end of the time step
   // could be considered instead.
-  if(this->param.output_data.compute_divergence == true)
-  {
-    navier_stokes_operation->compute_divergence(divergence, intermediate_velocity);
-  }
+  this->calculate_divergence(this->divergence, intermediate_velocity);
 
-  // TODO
+  this->calculate_velocity_magnitude(this->velocity_magnitude, velocity[0]);
+  this->calculate_velocity_magnitude(this->vorticity_magnitude, vorticity[0]);
+  this->calculate_q_criterion(this->q_criterion, velocity[0]);
+
   this->postprocessor->do_postprocessing(velocity[0],
                                          intermediate_velocity,
                                          pressure[0],
                                          vorticity[0],
-                                         divergence,
+                                         this->additional_fields,
                                          this->time,
                                          this->time_step_number);
 
@@ -723,7 +716,7 @@ projection_step()
   
   // write velocity_np into intermediate_velocity which is needed for 
   // postprocessing reasons
-  if(this->param.output_data.compute_divergence == true ||
+  if(this->param.output_data.write_divergence == true ||
      this->param.mass_data.calculate_error == true)
   {
     intermediate_velocity = velocity_np;

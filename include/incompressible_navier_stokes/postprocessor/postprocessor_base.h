@@ -34,6 +34,22 @@ struct DofQuadIndexData
   unsigned int quad_index_velocity;
 };
 
+template<int dim, typename Number>
+class SolutionField
+{
+public:
+  SolutionField()
+    :
+    name("solution"),
+    dof_handler(nullptr),
+    vector(nullptr)
+  {}
+
+  std::string name;
+  DoFHandler<dim> const *dof_handler;
+  parallel::distributed::Vector<Number> const *vector;
+};
+
 /*
  *  Interface class for postprocessor of the
  *  incompressible Navier-Stokes equation.
@@ -64,13 +80,13 @@ public:
    * function also for the steady solver and that the individual postprocessing
    * tools decide whether to apply the steady or unsteady postprocessing functions.
    */
-  virtual void do_postprocessing(parallel::distributed::Vector<Number> const &velocity,
-                                 parallel::distributed::Vector<Number> const &intermediate_velocity,
-                                 parallel::distributed::Vector<Number> const &pressure,
-                                 parallel::distributed::Vector<Number> const &vorticity,
-                                 parallel::distributed::Vector<Number> const &divergence,
-                                 double const                                time = 0.0,
-                                 int const                                   time_step_number = -1) = 0;
+  virtual void do_postprocessing(parallel::distributed::Vector<Number> const   &velocity,
+                                 parallel::distributed::Vector<Number> const   &intermediate_velocity,
+                                 parallel::distributed::Vector<Number> const   &pressure,
+                                 parallel::distributed::Vector<Number> const   &vorticity,
+                                 std::vector<SolutionField<dim,Number> > const &additional_fields,
+                                 double const                                  time = 0.0,
+                                 int const                                     time_step_number = -1) = 0;
 };
 
 
