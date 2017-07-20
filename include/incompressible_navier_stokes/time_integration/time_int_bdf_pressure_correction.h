@@ -74,7 +74,6 @@ private:
   virtual void postprocessing() const;
 
   void calculate_vorticity() const;
-  void calculate_divergence() const;
 
   virtual void read_restart_vectors(boost::archive::binary_iarchive & ia);
   virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const;
@@ -105,9 +104,6 @@ private:
   // rhs vector projection step
   parallel::distributed::Vector<value_type> rhs_vec_projection;
   parallel::distributed::Vector<value_type> rhs_vec_projection_temp;
-
-  // postprocessing: divergence of intermediate velocity
-  mutable parallel::distributed::Vector<value_type> divergence;
 
   std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
@@ -182,6 +178,8 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
 initialize_vectors()
 {
+  TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::initialize_vectors();
+
   // velocity
   for(unsigned int i=0;i<velocity.size();++i)
     navier_stokes_operation->initialize_vector_velocity(velocity[i]);
@@ -221,12 +219,6 @@ initialize_vectors()
   // rhs vector projection
   navier_stokes_operation->initialize_vector_velocity(rhs_vec_projection);
   navier_stokes_operation->initialize_vector_velocity(rhs_vec_projection_temp);
-
-  // divergence
-  if(this->param.output_data.compute_divergence == true)
-  {
-    navier_stokes_operation->initialize_vector_velocity(divergence);
-  }
 }
 
 
@@ -320,7 +312,11 @@ void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOper
 postprocessing() const
 {
   calculate_vorticity();
-  calculate_divergence();
+  this->calculate_divergence(this->divergence,velocity[0]);
+
+  this->calculate_velocity_magnitude(this->velocity_magnitude, velocity[0]);
+  this->calculate_velocity_magnitude(this->vorticity_magnitude, vorticity);
+  this->calculate_q_criterion(this->q_criterion, velocity[0]);
 
   // check pressure error and formation of numerical boundary layers for standard vs. rotational formulation
 //  parallel::distributed::Vector<value_type> velocity_exact;
@@ -351,11 +347,12 @@ postprocessing() const
 //                                         this->time,
 //                                         this->time_step_number);
 
+
   this->postprocessor->do_postprocessing(velocity[0],
                                          velocity[0],
                                          pressure[0],
                                          vorticity,
-                                         divergence,
+                                         this->additional_fields,
                                          this->time,
                                          this->time_step_number);
 }
@@ -872,16 +869,6 @@ void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOper
 calculate_vorticity() const
 {
   navier_stokes_operation->compute_vorticity(vorticity, velocity[0]);
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-calculate_divergence() const
-{
-  if(this->param.output_data.compute_divergence == true)
-  {
-    navier_stokes_operation->compute_divergence(divergence, velocity[0]);
-  }
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>

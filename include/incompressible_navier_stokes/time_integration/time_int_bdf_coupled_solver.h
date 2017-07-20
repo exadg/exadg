@@ -49,7 +49,7 @@ private:
   virtual void initialize_former_solution();
 
   void calculate_vorticity() const;
-  void calculate_divergence() const;
+
   void initialize_vec_convective_term();
 
   virtual void solve_timestep();
@@ -74,8 +74,6 @@ private:
 
   mutable parallel::distributed::Vector<value_type> vorticity;
 
-  mutable parallel::distributed::Vector<value_type> divergence;
-
   std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
   // performance analysis: average number of iterations and solver time
@@ -91,6 +89,8 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 initialize_vectors()
 {
+  TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::initialize_vectors();
+
   // solution
   for(unsigned int i=0;i<solution.size();++i)
     navier_stokes_operation->initialize_block_vector_velocity_pressure(solution[i]);
@@ -117,10 +117,6 @@ initialize_vectors()
 
   // vorticity
   navier_stokes_operation->initialize_vector_vorticity(vorticity);
-
-  // divergence
-  if(this->param.output_data.compute_divergence == true)
-    navier_stokes_operation->initialize_vector_velocity(divergence);
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -168,24 +164,14 @@ calculate_vorticity() const
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
-calculate_divergence() const
-{
-  if(this->param.output_data.compute_divergence == true)
-  {
-    navier_stokes_operation->compute_divergence(divergence, solution[0].block(0));
-  }
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 initialize_vec_convective_term()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i=1;i<vec_convective_term.size();++i)
   {
     navier_stokes_operation->evaluate_convective_term(vec_convective_term[i],
-                                                   solution[i].block(0),
-                                                   this->time - double(i)*this->time_steps[0]);
+                                                      solution[i].block(0),
+                                                      this->time - double(i)*this->time_steps[0]);
   }
 }
 
@@ -524,15 +510,20 @@ void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 postprocessing() const
 {
   calculate_vorticity();
-  calculate_divergence();
+  this->calculate_divergence(this->divergence,solution[0].block(0));
+
+  this->calculate_velocity_magnitude(this->velocity_magnitude, solution[0].block(0));
+  this->calculate_velocity_magnitude(this->vorticity_magnitude, vorticity);
+  this->calculate_q_criterion(this->q_criterion, solution[0].block(0));
 
   this->postprocessor->do_postprocessing(solution[0].block(0),
                                          solution[0].block(0), // intermediate_velocity = velocity
                                          solution[0].block(1),
                                          vorticity,
-                                         divergence,
+                                         this->additional_fields,
                                          this->time,
                                          this->time_step_number);
+
 
   // check pressure error and formation of numerical boundary layers for standard vs. rotational formulation
 //  parallel::distributed::Vector<value_type> velocity_exact;

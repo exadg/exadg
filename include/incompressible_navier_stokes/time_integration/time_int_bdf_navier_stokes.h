@@ -206,8 +206,22 @@ public:
 protected:
   std::shared_ptr<PostProcessorBase<dim,value_type> > postprocessor;
 
+  virtual void initialize_vectors();
+
   virtual void initialize_time_integrator_constants();
   virtual void update_time_integrator_constants();
+
+  void calculate_divergence(parallel::distributed::Vector<value_type>       &dst,
+                            parallel::distributed::Vector<value_type> const &src) const;
+
+  void calculate_velocity_magnitude(parallel::distributed::Vector<value_type>       &dst,
+                                    parallel::distributed::Vector<value_type> const &src) const;
+
+  void calculate_vorticity_magnitude(parallel::distributed::Vector<value_type>       &dst,
+                                     parallel::distributed::Vector<value_type> const &src) const;
+
+  void calculate_q_criterion(parallel::distributed::Vector<value_type>       &dst,
+                             parallel::distributed::Vector<value_type> const &src) const;
 
   void initialize_oif();
 
@@ -265,10 +279,17 @@ protected:
 
   ConditionalOStream pcout;
 
+  // postprocessing: divergence of velocity
+  mutable parallel::distributed::Vector<value_type> divergence;
+  mutable parallel::distributed::Vector<value_type> velocity_magnitude;
+  mutable parallel::distributed::Vector<value_type> vorticity_magnitude;
+  mutable parallel::distributed::Vector<value_type> q_criterion;
+
+  std::vector<SolutionField<dim,value_type> > additional_fields;
+
 private:
   virtual void setup_derived() = 0;
 
-  virtual void initialize_vectors() = 0;
   virtual void initialize_current_solution() = 0;
   virtual void initialize_former_solution() = 0;
   void initialize_solution_and_calculate_timestep(bool do_restart);
@@ -351,6 +372,59 @@ update_time_integrator_constants()
 //  bdf.print();
 //  std::cout << "Coefficients extrapolation scheme:" << std::endl;
 //  extra.print();
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+initialize_vectors()
+{
+  // divergence
+  if(this->param.output_data.write_divergence == true)
+  {
+    navier_stokes_operation->initialize_vector_velocity_scalar(this->divergence);
+
+    SolutionField<dim,value_type> div;
+    div.name = "div_u";
+    div.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
+    div.vector = &divergence;
+    this->additional_fields.push_back(div);
+  }
+
+  // velocity magnitude
+  if(this->param.output_data.write_velocity_magnitude == true)
+  {
+    navier_stokes_operation->initialize_vector_velocity_scalar(this->velocity_magnitude);
+
+    SolutionField<dim,value_type> sol;
+    sol.name = "velocity_magnitude";
+    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
+    sol.vector = &velocity_magnitude;
+    this->additional_fields.push_back(sol);
+  }
+
+  // vorticity magnitude
+  if(this->param.output_data.write_vorticity_magnitude == true)
+  {
+    navier_stokes_operation->initialize_vector_velocity_scalar(this->vorticity_magnitude);
+
+    SolutionField<dim,value_type> sol;
+    sol.name = "vorticity_magnitude";
+    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
+    sol.vector = &vorticity_magnitude;
+    this->additional_fields.push_back(sol);
+  }
+
+  // q criterion
+  if(this->param.output_data.write_q_criterion == true)
+  {
+    navier_stokes_operation->initialize_vector_velocity_scalar(this->q_criterion);
+
+    SolutionField<dim,value_type> sol;
+    sol.name = "q_criterion";
+    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
+    sol.vector = &q_criterion;
+    this->additional_fields.push_back(sol);
+  }
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -439,6 +513,52 @@ write_restart() const
     write_restart_preamble<dim, value_type>(oa, param, time_steps, time, order);
     write_restart_vectors(oa);
     write_restart_file<dim>(oss, param);
+  }
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+calculate_divergence(parallel::distributed::Vector<value_type>       &dst,
+                     parallel::distributed::Vector<value_type> const &src) const
+{
+  if(this->param.output_data.write_divergence == true)
+  {
+    navier_stokes_operation->compute_divergence(dst, src);
+  }
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+calculate_velocity_magnitude(parallel::distributed::Vector<value_type>       &dst,
+                             parallel::distributed::Vector<value_type> const &src) const
+{
+  if(this->param.output_data.write_velocity_magnitude == true)
+  {
+    navier_stokes_operation->compute_velocity_magnitude(dst, src);
+  }
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+calculate_vorticity_magnitude(parallel::distributed::Vector<value_type>       &dst,
+                              parallel::distributed::Vector<value_type> const &src) const
+{
+  if(this->param.output_data.write_vorticity_magnitude == true)
+  {
+    // use the same implementation as for velocity_magnitude
+    navier_stokes_operation->compute_velocity_magnitude(dst, src);
+  }
+}
+
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+calculate_q_criterion(parallel::distributed::Vector<value_type>       &dst,
+                      parallel::distributed::Vector<value_type> const &src) const
+{
+  if(this->param.output_data.write_q_criterion == true)
+  {
+    navier_stokes_operation->compute_q_criterion(dst, src);
   }
 }
 

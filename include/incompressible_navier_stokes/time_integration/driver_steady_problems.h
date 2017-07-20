@@ -51,6 +51,11 @@ private:
   parallel::distributed::BlockVector<value_type> rhs_vector;
   parallel::distributed::Vector<value_type> vorticity;
   parallel::distributed::Vector<value_type> divergence;
+  parallel::distributed::Vector<value_type> velocity_magnitude;
+  parallel::distributed::Vector<value_type> vorticity_magnitude;
+  parallel::distributed::Vector<value_type> q_criterion;
+
+  std::vector<SolutionField<dim,value_type> > additional_fields;
 };
 
 template<int dim, typename value_type, typename NavierStokesOperation>
@@ -80,9 +85,51 @@ initialize_vectors()
   navier_stokes_operation->initialize_vector_vorticity(vorticity);
 
   // divergence
-  if(this->param.output_data.compute_divergence == true)
+  if(this->param.output_data.write_divergence == true)
   {
-    navier_stokes_operation->initialize_vector_velocity(divergence);
+    navier_stokes_operation->initialize_vector_velocity_scalar(divergence);
+
+    SolutionField<dim,value_type> div;
+    div.name = "div_u";
+    div.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
+    div.vector = &divergence;
+    this->additional_fields.push_back(div);
+  }
+
+  // velocity magnitude
+  if(this->param.output_data.write_velocity_magnitude == true)
+  {
+    navier_stokes_operation->initialize_vector_velocity_scalar(this->velocity_magnitude);
+
+    SolutionField<dim,value_type> sol;
+    sol.name = "velocity_magnitude";
+    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
+    sol.vector = &velocity_magnitude;
+    this->additional_fields.push_back(sol);
+  }
+
+  // vorticity magnitude
+  if(this->param.output_data.write_vorticity_magnitude == true)
+  {
+    navier_stokes_operation->initialize_vector_velocity_scalar(this->vorticity_magnitude);
+
+    SolutionField<dim,value_type> sol;
+    sol.name = "vorticity_magnitude";
+    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
+    sol.vector = &vorticity_magnitude;
+    this->additional_fields.push_back(sol);
+  }
+
+  // q criterion
+  if(this->param.output_data.write_q_criterion == true)
+  {
+    navier_stokes_operation->initialize_vector_velocity_scalar(this->q_criterion);
+
+    SolutionField<dim,value_type> sol;
+    sol.name = "q_criterion";
+    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
+    sol.vector = &q_criterion;
+    this->additional_fields.push_back(sol);
   }
 }
 
@@ -175,20 +222,38 @@ template<int dim, typename value_type, typename NavierStokesOperation>
 void DriverSteadyProblems<dim, value_type, NavierStokesOperation>::
 postprocessing()
 {
+  // calculate vorticity
+  navier_stokes_operation->compute_vorticity(vorticity,solution.block(0));
+
   // calculate divergence
-  if(this->param.output_data.compute_divergence == true)
+  if(this->param.output_data.write_divergence == true)
   {
     navier_stokes_operation->compute_divergence(divergence, solution.block(0));
   }
 
-  // calculate vorticity
-  navier_stokes_operation->compute_vorticity(vorticity,solution.block(0));
+  // calculate velocity magnitude
+  if(this->param.output_data.write_velocity_magnitude == true)
+  {
+    navier_stokes_operation->compute_velocity_magnitude(velocity_magnitude, solution.block(0));
+  }
+
+  // calculate vorticity magnitude
+  if(this->param.output_data.write_vorticity_magnitude == true)
+  {
+    navier_stokes_operation->compute_velocity_magnitude(vorticity_magnitude, solution.block(0));
+  }
+
+  // calculate q criterion
+  if(this->param.output_data.write_q_criterion == true)
+  {
+    navier_stokes_operation->compute_q_criterion(q_criterion, solution.block(0));
+  }
 
   this->postprocessor->do_postprocessing(solution.block(0),
                                          solution.block(0), // intermediate_velocity = velocity
                                          solution.block(1),
                                          vorticity,
-                                         divergence);
+                                         additional_fields);
 }
 
 template<int dim, typename value_type, typename NavierStokesOperation>

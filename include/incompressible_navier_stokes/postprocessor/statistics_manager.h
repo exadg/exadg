@@ -45,11 +45,18 @@ private:
   const DoFHandler<dim> &dof_handler;
   MPI_Comm communicator;
 
+  // vector of y-coordinates at which statistical quantities are computed
   std::vector<double> y_glob;
+
+  // mean velocity <u_i>, i=1,...,d (for all y-coordinates)
   std::vector<std::vector<double> > vel_glob;
+  // square velocity <u_i²>, i=1,...,d (for all y-coordinates)
   std::vector<std::vector<double> > velsq_glob;
+  // <u_1*u_2> = <u*v> (for all y-coordinates)
   std::vector<double> veluv_glob;
-  int numchsamp;
+
+  // number of samples
+  int number_of_samples;
 };
 
 #endif

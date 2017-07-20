@@ -14,7 +14,7 @@ StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> &dof_handler_vel
                 (dynamic_cast<const parallel::Triangulation<dim>*>(&dof_handler_velocity.get_triangulation())
                  ->get_communicator()) :
                 MPI_COMM_SELF),
-  numchsamp(0)
+  number_of_samples(0)
 {
 }
 
@@ -48,7 +48,7 @@ void StatisticsManager<dim>::setup(const std::function<Point<dim>(const Point<di
   for(unsigned int i=0;i<3;i++)
     velsq_glob[i].resize(n_points_y_glob);
   veluv_glob.resize(n_points_y_glob);
-  numchsamp = 0;
+  number_of_samples = 0;
 
   y_glob.reserve(n_points_y_glob);
   for (unsigned int ele = 0; ele < n_cells_y_dir;ele++)
@@ -104,28 +104,46 @@ StatisticsManager<dim>::write_output(const std::string output_prefix,
 {
   if(Utilities::MPI::this_mpi_process(communicator)==0)
   {
+    // tau_w = rho * nu * d<u>/dy = rho * nu * (<u>(y2)-<u>(y1))/(y2-y1), where rho = 1
+    double tau_w = viscosity*((vel_glob[0].at(1)-vel_glob[0].at(0))/(double)number_of_samples/(y_glob.at(1)-y_glob.at(0)));
+
+    // Re_tau = u_tau * delta / nu = sqrt(tau_w) * delta / nu, where delta = 1
+    double Re_tau = sqrt(tau_w) / viscosity;
+
     std::ofstream f;
-
     f.open((output_prefix + ".flow_statistics").c_str(),std::ios::trunc);
-    f<<"statistics of turbulent channel flow  "<<std::endl;
-    f<<"number of samples:   " << numchsamp << std::endl;
-    f<<"friction Reynolds number:   " << sqrt(viscosity*((vel_glob[0].at(1)-vel_glob[0].at(0))/((double)numchsamp)/(y_glob.at(1)+1.)))/viscosity << std::endl;
-    f<<"wall shear stress:   " << viscosity*((vel_glob[0].at(1)-vel_glob[0].at(0))/numchsamp/(y_glob.at(1)+1.)) << std::endl;
 
-    f<< "       y       |       u      |       v      |       w      |   rms(u')    |   rms(v')    |   rms(w')    |     u'v'     " << std::endl;
+    f << std::scientific << std::setprecision(7)
+      << "Statistics of turbulent channel flow" << std::endl         << std::endl
+      << "number of samples:             N = "  << number_of_samples << std::endl
+      << "friction Reynolds number: Re_tau = "  << Re_tau            << std::endl
+      << "wall shear stress:         tau_w = "  << tau_w             << std::endl
+      << std::endl;
+
+    f << "  y              u              v              w            "
+      << "  rms(u')        rms(v')        rms(w')        u'v'         " << std::endl;
+
     for (unsigned int idx = 0; idx<y_glob.size(); idx++)
     {
-      f<<std::scientific<<std::setprecision(7) << std::setw(15) << y_glob.at(idx);
-      f<<std::scientific<<std::setprecision(7) << std::setw(15) << vel_glob[0].at(idx)/(double)numchsamp;
-      f<<std::scientific<<std::setprecision(7) << std::setw(15) << vel_glob[1].at(idx)/(double)numchsamp;
-      f<<std::scientific<<std::setprecision(7) << std::setw(15) << vel_glob[2].at(idx)/(double)numchsamp;
-      f<<std::scientific<<std::setprecision(7) << std::setw(15) << std::sqrt(std::abs((velsq_glob[0].at(idx)/(double)(numchsamp)
-             -vel_glob[0].at(idx)*vel_glob[0].at(idx)/(((double)numchsamp)*((double)numchsamp)))));
-      f<<std::scientific<<std::setprecision(7) << std::setw(15) << sqrt(velsq_glob[1].at(idx)/(double)(numchsamp));
-      f<<std::scientific<<std::setprecision(7) << std::setw(15) << sqrt(velsq_glob[2].at(idx)/(double)(numchsamp));
-      f<<std::scientific<<std::setprecision(7) << std::setw(15) << (veluv_glob.at(idx))/(double)(numchsamp);
-      f << std::endl;
+      // y-values
+      f << std::scientific << std::setprecision(7)
+        << std::setw(15) << y_glob.at(idx);
+
+      // mean velocity <u_i>, i=1,...,d
+      f << std::setw(15) << vel_glob[0].at(idx)/(double)number_of_samples /* <u_1> */
+        << std::setw(15) << vel_glob[1].at(idx)/(double)number_of_samples /* <u_2> */
+        << std::setw(15) << vel_glob[2].at(idx)/(double)number_of_samples /* <u_3> */;
+
+      // rms values: sqrt( <u_i'²> ) = sqrt( <u_i²> - <u_i>² ) where <u_i> = 0 for i=2,3
+      double mean_u1 = vel_glob[0].at(idx)/(double)number_of_samples;
+      f << std::setw(15) << std::sqrt(std::abs((velsq_glob[0].at(idx)/(double)(number_of_samples)-mean_u1*mean_u1))) /* rms(u_1) */
+        << std::setw(15) << sqrt(velsq_glob[1].at(idx)/(double)(number_of_samples)) /* rms(u_2) */
+        << std::setw(15) << sqrt(velsq_glob[2].at(idx)/(double)(number_of_samples)) /* rms(u_3) */;
+
+      // <u'v'> = <u*v>
+      f << std::setw(15) << (veluv_glob.at(idx))/(double)(number_of_samples) << std::endl;
     }
+
     f.close();
   }
 }
@@ -141,15 +159,34 @@ StatisticsManager<dim>::reset()
   for(unsigned int i=0;i<dim;i++)
     std::fill(velsq_glob[i].begin(), velsq_glob[i].end(), 0.);
   std::fill(veluv_glob.begin(), veluv_glob.end(), 0.);
-  numchsamp = 0;
+  number_of_samples = 0;
 }
 
 
-
+/*
+ *  This function calculates the following statistical quantities of the flow ...
+ *
+ *   - Mean velocity:  <u>
+ *   - rms values of velocity: sqrt(<u'²>)
+ *   - and Reynolds shear stress: <u'v'>
+ *
+ *  Averaging is performed by ...
+ *
+ *   - averaging over homogeneous directions (=averaging over x-z-planes)
+ *   - and subsequently averaging the x-z-plane-averaged quantities over time samples
+ *
+ *  Therefore, we have to compute the following quantities: <u>, <u²>, <u*v>, since ...
+ *
+ *   - <u'²> = <(u-<u>)²> = <u² - 2*u<u> + <u>²> = <u²> - 2*<u>² + <u>² = <u²> - <u>²
+ *   - <u'v'> = <(u-<u>)*(v-<v>)> = <u*v> - <u*<v>> - <<u>*v> + <u><v> = <u*v> - <u><v>
+ *            = <u*v> since <v> = 0
+ */
 template <int dim>
 void
 StatisticsManager<dim>::do_evaluate(const std::vector<const parallel::distributed::Vector<double> *> &velocity)
 {
+  // Use local vectors xxx_loc in order to average/integrate over all
+  // locally owned cells of current processor.
   std::vector<double> area_loc(vel_glob[0].size());
   std::vector<std::vector<double> > vel_loc(dim);
   for(unsigned int i=0;i<dim;i++)
@@ -159,9 +196,12 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const parallel::distribute
     velsq_loc[i].resize(vel_glob[0].size());
   std::vector<double> veluv_loc(vel_glob[0].size());
 
+  // use 2d quadrature to integrate over x-z-planes
   const unsigned int fe_degree = dof_handler.get_fe().degree;
-  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y);
   QGauss<dim-1> gauss_2d(fe_degree+1);
+
+  // vector of FEValues for all x-z-planes of a cell
+  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y);
 
   for (unsigned int i=0; i<n_points_y; ++i)
   {
@@ -182,17 +222,21 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const parallel::distribute
   }
 
   const unsigned int scalar_dofs_per_cell = dof_handler.get_fe().base_element(0).dofs_per_cell;
-  std::vector<double> vel_values(fe_values[0]->n_quadrature_points);
+  // TODO this variable is not used
+//  std::vector<double> vel_values(fe_values[0]->n_quadrature_points);
   std::vector<Tensor<1,dim> > velocity_vector(scalar_dofs_per_cell);
   std::vector<types::global_dof_index> dof_indices(dof_handler.get_fe().dofs_per_cell);
 
+  // loop over all cells and perform averaging/integration for all locally owned cells
   for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler.begin_active(); cell!=dof_handler.end(); ++cell)
+  {
     if (cell->is_locally_owned())
     {
       cell->get_dof_indices(dof_indices);
-      // vector-valued FE where all components are explicitly listed in the
-      // DoFHandler
+
+      // vector-valued FE where all components are explicitly listed in the DoFHandler
       if (dof_handler.get_fe().element_multiplicity(0) >= dim)
+      {
         for (unsigned int j=0; j<dof_indices.size(); ++j)
         {
           const std::pair<unsigned int,unsigned int> comp =
@@ -200,9 +244,8 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const parallel::distribute
           if (comp.first < dim)
             velocity_vector[comp.second][comp.first] = (*velocity[0])(dof_indices[j]);
         }
-      else
-      // scalar FE where we have several vectors referring to the same
-      // DoFHandler
+      }
+      else // scalar FE where we have several vectors referring to the same DoFHandler
       {
         AssertDimension(dof_handler.get_fe().element_multiplicity(0), 1);
         for (unsigned int j=0; j<scalar_dofs_per_cell; ++j)
@@ -210,6 +253,7 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const parallel::distribute
             velocity_vector[j][d] = (*velocity[d])(dof_indices[j]);
       }
 
+      // loop over all x-z-planes of current cell
       for (unsigned int i=0; i<n_points_y; ++i)
       {
         fe_values[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
@@ -218,6 +262,7 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const parallel::distribute
         std::vector<double> velsq(dim,0.);
         double area = 0, veluv = 0;
 
+        // perform integral over current x-z-plane of current cell
         for (unsigned int q=0; q<fe_values[i]->n_quadrature_points; ++q)
         {
           // interpolate velocity to the quadrature point
@@ -248,22 +293,26 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const parallel::distribute
           veluv += velocity[0] * velocity[1] * area_ele;
         }
 
+        // Tranform cell index 'i' to global index 'idx' of y_glob-vector
+
         // find index within the y-values: first do a binary search to find
         // the next larger value of y in the list...
         const double y = fe_values[i]->quadrature_point(0)[1];
-        unsigned int idx = std::distance(y_glob.begin(),
-                                         std::lower_bound(y_glob.begin(), y_glob.end(),
-                                                          y));
-        // ..., then, check whether the point before was closer (but off
-        // by 1e-13 or less)
+        unsigned int idx = std::distance(y_glob.begin(),std::lower_bound(y_glob.begin(), y_glob.end(),y));
+
+        // ..., then, check whether the point before was closer (but off by 1e-13 or less)
         if (idx > 0 && std::abs(y_glob[idx-1]-y) < std::abs(y_glob[idx]-y))
           idx--;
+
         AssertThrow(std::abs(y_glob[idx]-y)<1e-13,
                     ExcMessage("Could not locate " + std::to_string(y) + " among "
                                "pre-evaluated points. Closest point is " +
                                std::to_string(y_glob[idx]) + " at distance " +
                                std::to_string(std::abs(y_glob[idx]-y)) +
                                ". Check transform() function given to constructor."));
+
+        // Add results of cellwise integral to xxx_loc vectors since we want
+        // to average/integrate over all locally owned cells.
         for(unsigned int i=0;i<dim;i++)
           vel_loc[i].at(idx) += vel[i];
         for(unsigned int i=0;i<dim;i++)
@@ -272,8 +321,11 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const parallel::distribute
         area_loc.at(idx) += area;
       }
     }
-  // accumulate data over all processors overwriting the processor-local data
-  // in xxx_loc
+  }
+
+  // accumulate data over all processors overwriting
+  // the processor-local data in xxx_loc since we want
+  // to average/integrate over the global x-z-plane.
   for(unsigned int i=0;i<dim;i++)
     Utilities::MPI::sum(vel_loc[i], communicator, vel_loc[i]);
   for(unsigned int i=0;i<dim;i++)
@@ -281,6 +333,9 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const parallel::distribute
   Utilities::MPI::sum(veluv_loc, communicator, veluv_loc);
   Utilities::MPI::sum(area_loc, communicator, area_loc);
 
+  // Add values averaged over global x-z-planes
+  // (=MPI::sum(xxx_loc)/MPI::sum(area_loc)) to xxx_glob vectors.
+  // Averaging over time-samples is performed when writing the output.
   for (unsigned int idx = 0; idx<y_glob.size(); idx++)
   {
     for(unsigned int i=0;i<dim;i++)
@@ -289,7 +344,9 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const parallel::distribute
       velsq_glob[i].at(idx) += velsq_loc[i][idx]/area_loc[idx];
     veluv_glob.at(idx) += veluv_loc[idx]/area_loc[idx];
   }
-  numchsamp++;
+
+  // increment number of samples
+  number_of_samples++;
 }
 
 template <int dim>
@@ -474,7 +531,7 @@ StatisticsManager<dim>::do_evaluate_xwall(const std::vector<const parallel::dist
       velsq_glob[i].at(idx) += velsq_loc[i][idx]/area_loc[idx];
     veluv_glob.at(idx) += veluv_loc[idx]/area_loc[idx];
   }
-  numchsamp++;
+  number_of_samples++;
 }
 
 // explicit instantiation
