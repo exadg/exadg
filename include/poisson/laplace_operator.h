@@ -218,6 +218,11 @@ public:
     return *data;
   }
 
+  unsigned int get_dof_index() const
+  {
+    return operator_data.laplace_dof_index;
+  }
+
 private:
 
   // Computes the array penalty parameter for later use of the symmetric

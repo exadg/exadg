@@ -467,6 +467,17 @@ unsigned int DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_deg
 solve_pressure (parallel::distributed::Vector<Number>       &dst,
                 parallel::distributed::Vector<Number> const &src) const
 {
+  typedef float MultigridNumber;
+  typedef MyMultigridPreconditionerLaplace<dim, Number,
+      LaplaceOperator<dim, fe_degree_p, MultigridNumber>, LaplaceOperatorData<dim> > MULTIGRID;
+
+  std::shared_ptr<MULTIGRID> mg_preconditioner
+    = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
+
+  CheckMultigrid<dim,Number,LaplaceOperator<dim,fe_degree_p, Number>,MULTIGRID>
+    check_multigrid(this->laplace_operator,mg_preconditioner);
+  check_multigrid.check();
+
   unsigned int n_iter = this->pressure_poisson_solver->solve(dst,src);
 
   return n_iter;
