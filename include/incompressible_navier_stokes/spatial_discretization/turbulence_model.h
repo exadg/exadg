@@ -584,20 +584,11 @@ private:
     VectorizedArray<Number> velocity_gradient_norm_square = scalar_product(velocity_gradient,velocity_gradient);
     Number const tolerance = 1.0e-12;
 
-    VectorizedArray<bool> is_zero = make_vectorized_array<bool>(false);
-    for(unsigned int i = 0; i < VectorizedArray<Number>::n_array_elements; i++)
-    {
-      if (velocity_gradient_norm_square[i] < tolerance)
-      {
-        is_zero[i] = true;
-      }
-    }
-
     Tensor<2,dim,VectorizedArray<Number> > tensor = velocity_gradient*transpose(velocity_gradient);
 
     AssertThrow(dim==3,ExcMessage("Number of dimensions has to be dim==3 to evaluate Vreman turbulence model."));
 
-    VectorizedArray<Number> B_gamma =   tensor[0][0]*tensor[1][1] - tensor[0][1]*tensor[0][1]
+    VectorizedArray<Number> B_gamma = + tensor[0][0]*tensor[1][1] - tensor[0][1]*tensor[0][1]
                                       + tensor[0][0]*tensor[2][2] - tensor[0][2]*tensor[0][2]
                                       + tensor[1][1]*tensor[2][2] - tensor[1][2]*tensor[1][2];
 
@@ -605,17 +596,14 @@ private:
 
     for(unsigned int i = 0; i < VectorizedArray<Number>::n_array_elements; i++)
     {
-      // If the norm of the velocity gradient tensor is zero (is_zero[i] == true),
-      // the subgrid-scale viscosity is defined as zero, so we do nothing in that case.
-
-      if (!is_zero[i])
+      // If the norm of the velocity gradient tensor is zero, the subgrid-scale
+      // viscosity is defined as zero, so we do nothing in that case.
+      // Make sure that B_gamma[i] is larger than zero since we calculate
+      // the square root of B_gamma[i].
+      if(velocity_gradient_norm_square[i] > tolerance &&
+         B_gamma[i] > tolerance)
       {
-        // make sure that B_gamma[i] is larger than zero since we calculate the square root of B_gamma[i].
-        Number const tolerance = 1.e-12;
-        if(B_gamma[i] > tolerance)
-        {
-          viscosity[i] += factor[i] * factor[i] * std::exp(0.5*std::log(B_gamma[i]/velocity_gradient_norm_square[i]));
-        }
+        viscosity[i] += factor[i] * factor[i] * std::exp(0.5*std::log(B_gamma[i]/velocity_gradient_norm_square[i]));
       }
     }
   }
