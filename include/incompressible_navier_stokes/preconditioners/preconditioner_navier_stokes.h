@@ -781,22 +781,13 @@ private:
       else // exact_inversion_of_momentum_block == true
       {
         // CheckMultigrid
-//        std::shared_ptr<MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
-//                                VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-//                                VelocityConvDiffOperatorData<dim>,
-//                                VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
-//          my_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
-//                                                          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-//                                                          VelocityConvDiffOperatorData<dim>,
-//                                                          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
-//              (preconditioner_momentum);
+//        typedef MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
+//            VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
+//            VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
 //
-//        CheckMultigrid<dim, value_type,
-//                       VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>,
-//                       MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
-//                         VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
-//                         VelocityConvDiffOperatorData<dim>,
-//                         VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > >
+//        std::shared_ptr<MULTIGRID> my_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
+//
+//        CheckMultigrid<dim, value_type,VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>,MULTIGRID>
 //          check_multigrid(underlying_operator->velocity_conv_diff_operator,my_preconditioner);
 //
 //        check_multigrid.check();

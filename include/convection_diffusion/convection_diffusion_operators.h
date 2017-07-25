@@ -3911,7 +3911,7 @@ public:
                              Mapping<dim> const                              &mapping,
                              UnderlyingOperator const                        &underlying_operator,
                              const std::vector<GridTools::PeriodicFacePair<
-                               typename Triangulation<dim>::cell_iterator> > &periodic_face_pairs_level0)
+                               typename Triangulation<dim>::cell_iterator> > &/*periodic_face_pairs_level0*/)
   {
     // setup own matrix free object
     const QGauss<1> quad(dof_handler.get_fe().degree+1);
@@ -4326,7 +4326,7 @@ public:
                              Mapping<dim> const                              &mapping,
                              UnderlyingOperator const                        &underlying_operator,
                              const std::vector<GridTools::PeriodicFacePair<
-                               typename Triangulation<dim>::cell_iterator> > &periodic_face_pairs_level0)
+                               typename Triangulation<dim>::cell_iterator> > &/*periodic_face_pairs_level0*/)
   {
     // setup own matrix free object
     const QGauss<1> quad(dof_handler.get_fe().degree+1);

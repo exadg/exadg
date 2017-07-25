@@ -468,7 +468,12 @@ private:
 
     /*
     std::pair<double,double> eigenvalues = compute_eigenvalues(mg_matrices[level], smoother_data.matrix_diagonal_inverse);
-    std::cout << "Max EV = " << eigenvalues.second << " : Min EV = " << eigenvalues.first << std::endl;
+    if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    {
+      std::cout << "Eigenvalues on level l = " << level << std::endl;
+      std::cout << std::scientific << std::setprecision(3)
+                <<"Max EV = " << eigenvalues.second << " : Min EV = " << eigenvalues.first << std::endl;
+    }
     */
 
     smoother_data.smoothing_range = mg_data.chebyshev_smoother_data.smoother_smoothing_range;
