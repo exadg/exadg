@@ -103,12 +103,12 @@ public:
    *  member function initialize(...).
    */
   template<typename UnderlyingOperator>
-  void initialize_mg_matrix (unsigned int const       level,
-                             DoFHandler<dim> const    &dof_handler,
-                             Mapping<dim> const       &mapping,
-                             UnderlyingOperator const &underlying_operator,
-                             const std::vector<GridTools::PeriodicFacePair<typename
-                               Triangulation<dim>::cell_iterator> > &periodic_face_pairs_level0)
+  void initialize_mg_matrix (unsigned int const                               level,
+                             DoFHandler<dim> const                            &dof_handler,
+                             Mapping<dim> const                               &mapping,
+                             UnderlyingOperator const                         &underlying_operator,
+                             std::vector<GridTools::PeriodicFacePair<typename
+                               Triangulation<dim>::cell_iterator> > const     &/*periodic_face_pairs_level0*/)
   {
     // setup own matrix free object
 

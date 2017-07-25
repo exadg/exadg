@@ -288,7 +288,7 @@ namespace InternalSolvers
       r_times_y = r_times_y_new;
     }
 
-    std::cout<<"Number of iterations = "<< n_iter << std::endl;
+//    std::cout<<"Number of iterations = "<< n_iter << std::endl;
   }
 
   template<typename value_type>
@@ -644,7 +644,7 @@ namespace InternalSolvers
                       iterations,MAX_ITER));
 
     // output convergence info
-    std::cout << "Number of iterations = " << iterations << std::endl;
+//    std::cout << "Number of iterations = " << iterations << std::endl;
 
 //    std::cout<<std::endl;
 //    print(convergence_status,"convergence status");
