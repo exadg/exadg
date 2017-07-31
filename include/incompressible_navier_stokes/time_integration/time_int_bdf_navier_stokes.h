@@ -206,10 +206,15 @@ public:
 protected:
   std::shared_ptr<PostProcessorBase<dim,value_type> > postprocessor;
 
+  void do_timestep();
+
   virtual void initialize_vectors();
 
   virtual void initialize_time_integrator_constants();
   virtual void update_time_integrator_constants();
+
+  void calculate_vorticity(parallel::distributed::Vector<value_type>       &dst,
+                           parallel::distributed::Vector<value_type> const &src) const;
 
   void calculate_divergence(parallel::distributed::Vector<value_type>       &dst,
                             parallel::distributed::Vector<value_type> const &src) const;
@@ -287,15 +292,14 @@ protected:
 
   std::vector<SolutionField<dim,value_type> > additional_fields;
 
+  virtual void recalculate_adaptive_time_step();
+
 private:
   virtual void setup_derived() = 0;
 
   virtual void initialize_current_solution() = 0;
   virtual void initialize_former_solution() = 0;
   void initialize_solution_and_calculate_timestep(bool do_restart);
-
-
-  virtual void recalculate_adaptive_time_step();
 
   virtual void solve_timestep() = 0;
   virtual void postprocessing() const = 0;
@@ -315,10 +319,6 @@ setup(bool do_restart)
 {
   pcout << std::endl << "Setup time integrator ..."
         << std::endl << std::endl;
-
-  AssertThrow(param.problem_type == ProblemType::Unsteady,
-              ExcMessage("In order to apply the BDF time integration scheme "
-                         "the problem_type has to be ProblemType::Unsteady !"));
 
   // initialize time integrator constants assuming that the time integrator
   // uses a high-order method in first time step, i.e., the default case is
@@ -518,6 +518,14 @@ write_restart() const
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+calculate_vorticity(parallel::distributed::Vector<value_type>       &dst,
+                    parallel::distributed::Vector<value_type> const &src) const
+{
+  navier_stokes_operation->compute_vorticity(dst,src);
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
 calculate_divergence(parallel::distributed::Vector<value_type>       &dst,
                      parallel::distributed::Vector<value_type> const &src) const
 {
@@ -708,25 +716,14 @@ timeloop()
 
   postprocessing();
 
-  const value_type EPSILON = 1.0e-10; // epsilon is a small number which is much smaller than the time step size
+  // a small number which is much smaller than the time step size
+  const value_type EPSILON = 1.0e-10;
+
   while(time<(param.end_time-EPSILON) && time_step_number<=param.max_number_of_time_steps)
   {
-    update_time_integrator_constants();
-
-    solve_timestep();
-
-    prepare_vectors_for_next_timestep();
-
-    time += time_steps[0];
-    ++time_step_number;
+    do_timestep();
 
     postprocessing();
-
-    if(param.write_restart == true)
-      write_restart();
-
-    if(adaptive_time_stepping == true)
-      recalculate_adaptive_time_step();
   }
 
   total_time += global_timer.wall_time();
@@ -734,6 +731,26 @@ timeloop()
   pcout << std::endl << "... done!" << std::endl;
 
   analyze_computing_times();
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+do_timestep()
+{
+  update_time_integrator_constants();
+
+  solve_timestep();
+
+  prepare_vectors_for_next_timestep();
+
+  time += time_steps[0];
+  ++time_step_number;
+
+  if(param.write_restart == true)
+    write_restart();
+
+  if(adaptive_time_stepping == true)
+    recalculate_adaptive_time_step();
 }
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_NAVIER_STOKES_H_ */

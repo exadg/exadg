@@ -61,14 +61,15 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
+  solver_type = SolverType::Unsteady;
   temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
   max_velocity = 1.0;
-  cfl = 1.0e-1;
+  cfl = 5.0e-1;
   time_step_size = 1.0e0;
-  max_number_of_time_steps = 100;//1e8;
-  order_time_integrator = 3; // 1; // 2; // 3;
+  max_number_of_time_steps = 1e4;//1e8;
+  order_time_integrator = 1; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
 
 
@@ -165,21 +166,25 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   update_preconditioner_momentum = false;
 
   // formulation
-  order_pressure_extrapolation = 1; // only relevant if icnremental=true
+  order_pressure_extrapolation = 1;
   rotational_formulation = true;
 
 
   // COUPLED NAVIER-STOKES SOLVER
 
+  // pseudo-timestepping for steady-state problems
+  abs_tol_residual_steady = 1.e-10;
+  rel_tol_residual_steady = 1.e-8;
+
   // nonlinear solver (Newton solver)
-  newton_solver_data_coupled.abs_tol = 1.e-20;
-  newton_solver_data_coupled.rel_tol = 1.e-6;
+  newton_solver_data_coupled.abs_tol = 1.e-12;
+  newton_solver_data_coupled.rel_tol = 1.e-1; //TODO
   newton_solver_data_coupled.max_iter = 100;
 
   // linear solver
   solver_linearized_navier_stokes = SolverLinearizedNavierStokes::FGMRES; //FGMRES;
-  abs_tol_linear = 1.e-20;
-  rel_tol_linear = 1.e-2;
+  abs_tol_linear = 1.e-12;
+  rel_tol_linear = 1.e-1; //TODO
   max_iter_linear = 1e4;
   max_n_tmp_vectors = 1000;
 
@@ -197,7 +202,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // Jacobi smoother data
   multigrid_data_momentum_preconditioner.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
-  multigrid_data_momentum_preconditioner.jacobi_smoother_data.number_of_smoothing_steps = 5; //TODO
+  multigrid_data_momentum_preconditioner.jacobi_smoother_data.number_of_smoothing_steps = 5;
   multigrid_data_momentum_preconditioner.jacobi_smoother_data.damping_factor = 0.7;
 
   multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner; //NoPreconditioner; //Chebyshev; //Chebyshev; //ChebyshevNonsymmetricOperator;
@@ -219,12 +224,12 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // write output for visualization of results
   print_input_parameters = false; //true;
-  output_data.write_output = true; //true;
-  output_data.output_folder = "output/";
+  output_data.write_output = true;
+  output_data.output_folder = "output/cavity/";
   output_data.output_name = "cavity";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
-  output_data.compute_divergence = false;
+  output_data.write_divergence = true;
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error
@@ -234,12 +239,6 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // output of solver information
   output_solver_info_every_timesteps = 1e0;
-
-  // restart
-  write_restart = false;
-  restart_interval_time = 1.e2;
-  restart_interval_wall_time = 1.e6;
-  restart_every_timesteps = 1e8;
 }
 
 /**************************************************************************************/
@@ -517,6 +516,7 @@ construct_postprocessor(InputParametersNavierStokes<dim> const &param)
   pp_data.lift_and_drag_data = param.lift_and_drag_data;
   pp_data.pressure_difference_data = param.pressure_difference_data;
   pp_data.mass_data = param.mass_data;
+  pp_data.kinetic_energy_data = param.kinetic_energy_data;
 
   std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE, Number> > pp;
   pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE, Number>(pp_data));

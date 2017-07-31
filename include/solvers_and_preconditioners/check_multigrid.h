@@ -72,54 +72,6 @@ public:
      *  Output
      */
     write_output(initial_solution,solution_after_mg_cylce,solution_after_smoothing);
-//    DataOut<dim> data_out;
-//    unsigned int dof_index = underlying_operator.get_dof_index();
-////    data_out.attach_dof_handler (underlying_operator.get_data().get_dof_handler(dof_index));
-//
-//    // velocity
-////    std::vector<std::string> initial (dim, "initial");
-////    std::vector<DataComponentInterpretation::DataComponentInterpretation>
-////      initial_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
-////    data_out.add_data_vector (underlying_operator.get_data().get_dof_handler(dof_index),initial_solution, initial, initial_component_interpretation);
-////
-////    std::vector<std::string> mg_cycle (dim, "mg_cycle");
-////    std::vector<DataComponentInterpretation::DataComponentInterpretation>
-////      mg_cylce_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
-////    data_out.add_data_vector (underlying_operator.get_data().get_dof_handler(dof_index),solution_after_mg_cylce, mg_cycle, mg_cylce_component_interpretation);
-////
-////    std::vector<std::string> smoother (dim, "smoother");
-////    std::vector<DataComponentInterpretation::DataComponentInterpretation>
-////      smoother_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
-////    data_out.add_data_vector (underlying_operator.get_data().get_dof_handler(dof_index),solution_after_smoothing, smoother, smoother_component_interpretation);
-//
-//    // pressure
-//    data_out.add_data_vector (underlying_operator.get_data().get_dof_handler(dof_index), initial_solution, "initial");
-//    data_out.add_data_vector (underlying_operator.get_data().get_dof_handler(dof_index), solution_after_mg_cylce, "mg_cycle");
-//    data_out.add_data_vector (underlying_operator.get_data().get_dof_handler(dof_index), solution_after_smoothing, "smoother");
-//
-//    data_out.build_patches (underlying_operator.get_data().get_dof_handler(dof_index).get_fe().degree);
-//
-//    std::ostringstream filename;
-//    std::string name = "smoothing";
-//    filename << name << "_Proc" << Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) << ".vtu";
-//
-//    std::ofstream output (filename.str().c_str());
-//    data_out.write_vtu(output);
-//
-//    if ( Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-//    {
-//      std::vector<std::string> filenames;
-//      for (unsigned int i=0; i<Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD); ++i)
-//      {
-//        std::ostringstream filename;
-//        filename << name << "_Proc" << i << ".vtu";
-//
-//        filenames.push_back(filename.str().c_str());
-//      }
-//      std::string master_name = name + ".pvtu";
-//      std::ofstream master_output (master_name.c_str());
-//      data_out.write_pvtu_record (master_output, filenames);
-//    }
 
     /*
      *  Terminate simulation

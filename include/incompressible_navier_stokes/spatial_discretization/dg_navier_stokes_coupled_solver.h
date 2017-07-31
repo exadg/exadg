@@ -68,14 +68,15 @@ public:
 
   bool nonlinear_problem_has_to_be_solved() const
   {
-    return ( this->param.equation_type == EquationType::NavierStokes &&
-             (this->param.problem_type == ProblemType::Steady ||
+    return this->param.equation_type == EquationType::NavierStokes &&
+           ( this->param.solver_type == SolverType::Steady ||
+             (this->param.solver_type == SolverType::Unsteady &&
               this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit) );
   }
 
   bool unsteady_problem_has_to_be_solved() const
   {
-    return ( this->param.problem_type == ProblemType::Unsteady );
+    return ( this->param.solver_type == SolverType::Unsteady );
   }
 
   /*
@@ -154,11 +155,20 @@ public:
                                 unsigned int                                &newton_iterations,
                                 unsigned int                                &linear_iterations);
 
+
   /*
    *  This function evaluates the nonlinear residual.
    */
   void evaluate_nonlinear_residual (parallel::distributed::BlockVector<Number>       &dst,
                                     parallel::distributed::BlockVector<Number> const &src);
+
+  /*
+   *  This function evaluates the nonlinear residual of the steady Navier-Stokes equations.
+   *  This function has to be implemented seperately (for example, the convective term will be
+   *  evaluated in case of the Navier-Stokes equations and the time-derivative term is never evaluated).
+   */
+  void evaluate_nonlinear_residual_steady (parallel::distributed::BlockVector<Number>       &dst,
+                                           parallel::distributed::BlockVector<Number> const &src);
 
 
   void set_solution_linearization(parallel::distributed::BlockVector<Number> const &solution_linearization)
@@ -757,6 +767,52 @@ evaluate_nonlinear_residual (parallel::distributed::BlockVector<Number>       &d
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+evaluate_nonlinear_residual_steady (parallel::distributed::BlockVector<Number>       &dst,
+                                    parallel::distributed::BlockVector<Number> const &src)
+{
+  // velocity-block
+
+  // set dst.block(0) to zero. This is necessary since subsequent operators
+  // call functions of type ..._add
+  dst.block(0) = 0.0;
+
+  if(this->param.right_hand_side == true)
+  {
+    this->body_force_operator.evaluate(dst.block(0),evaluation_time);
+    // Shift body force term to the left-hand side of the equation.
+    // This works since body_force_operator is the first operator
+    // that is evaluated.
+    dst.block(0) *= -1.0;
+  }
+
+  if(this->param.equation_type == EquationType::NavierStokes)
+    this->convective_operator.evaluate_add(dst.block(0),src.block(0),evaluation_time);
+
+  this->viscous_operator.evaluate_add(dst.block(0),src.block(0),evaluation_time);
+
+  // Divergence and continuity penalty operators
+  // TODO this function has to be removed when performing the projection in a postprocessing step
+//  if(this->param.use_divergence_penalty == true)
+//    divergence_penalty_operator->apply_add(dst.block(0),src.block(0));
+//  if(this->param.use_continuity_penalty == true)
+//    continuity_penalty_operator->apply_add(dst.block(0),src.block(0));
+
+  // gradient operator scaled by scaling_factor_continuity
+  this->gradient_operator.evaluate(temp_vector,src.block(1),evaluation_time);
+  dst.block(0).add(scaling_factor_continuity,temp_vector);
+
+
+  // pressure-block
+
+  this->divergence_operator.evaluate(dst.block(1),src.block(0),evaluation_time);
+  // multiply by -1.0 since we use a formulation with symmetric saddle point matrix
+  // with respect to pressure gradient term and velocity divergence term
+  // scale by scaling_factor_continuity
+  dst.block(1) *= - scaling_factor_continuity;
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 update_projection_operator(parallel::distributed::Vector<Number> const &velocity,
                            double const                                time_step_size) const
 {
@@ -795,14 +851,14 @@ rhs_projection_add (parallel::distributed::Vector<Number> &dst,
 {
   if(this->param.use_divergence_penalty == true &&
      this->param.use_continuity_penalty == true)
- {
+  {
     typedef ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree,
         fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> PROJ_OPERATOR;
 
     std::shared_ptr<PROJ_OPERATOR> proj_operator_div_and_conti_penalty
       = std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator);
     proj_operator_div_and_conti_penalty->rhs_add(dst,eval_time);
- }
+  }
 }
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_COUPLED_SOLVER_H_ */

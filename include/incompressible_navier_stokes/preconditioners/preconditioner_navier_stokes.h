@@ -255,7 +255,7 @@ public:
     }
     else if(preconditioner_data.schur_complement_preconditioner == SchurComplementPreconditioner::CahouetChabard)
     {
-      AssertThrow(underlying_operator->param.problem_type == ProblemType::Unsteady,
+      AssertThrow(underlying_operator->unsteady_problem_has_to_be_solved()==true,
           ExcMessage("CahouetChabard preconditioner only makes sense for unsteady problems."));
 
       // multigrid for negative Laplace operator (classical or compatible discretization)

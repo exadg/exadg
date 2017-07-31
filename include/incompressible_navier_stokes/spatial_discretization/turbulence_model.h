@@ -758,7 +758,7 @@ private:
     }
 
     /*
-     * The singular values of the velocity gradient g = grad(u)average_viscosity are
+     * The singular values of the velocity gradient g = grad(u) are
      * the square root of the eigenvalues of G = g^T * g.
      */
 
