@@ -323,7 +323,7 @@ postprocessing() const
   this->calculate_divergence(this->divergence, intermediate_velocity);
 
   this->calculate_velocity_magnitude(this->velocity_magnitude, velocity[0]);
-  this->calculate_velocity_magnitude(this->vorticity_magnitude, vorticity[0]);
+  this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity[0]);
   this->calculate_q_criterion(this->q_criterion, velocity[0]);
 
   this->postprocessor->do_postprocessing(velocity[0],

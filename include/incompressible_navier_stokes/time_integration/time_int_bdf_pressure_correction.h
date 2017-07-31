@@ -73,8 +73,6 @@ private:
 
   virtual void postprocessing() const;
 
-  void calculate_vorticity() const;
-
   virtual void read_restart_vectors(boost::archive::binary_iarchive & ia);
   virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const;
 
@@ -311,11 +309,11 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
 postprocessing() const
 {
-  calculate_vorticity();
+  this->calculate_vorticity(vorticity, velocity[0]);
   this->calculate_divergence(this->divergence,velocity[0]);
 
   this->calculate_velocity_magnitude(this->velocity_magnitude, velocity[0]);
-  this->calculate_velocity_magnitude(this->vorticity_magnitude, vorticity);
+  this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity);
   this->calculate_q_criterion(this->q_criterion, velocity[0]);
 
   // check pressure error and formation of numerical boundary layers for standard vs. rotational formulation
@@ -862,13 +860,6 @@ prepare_vectors_for_next_timestep()
   {
     push_back(vec_pressure_gradient_term);
   }
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-calculate_vorticity() const
-{
-  navier_stokes_operation->compute_vorticity(vorticity, velocity[0]);
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>

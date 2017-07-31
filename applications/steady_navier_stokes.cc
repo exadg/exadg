@@ -94,8 +94,8 @@ NavierStokesProblem(unsigned int const refine_steps_space,
   boundary_descriptor_velocity.reset(new BoundaryDescriptorNavierStokesU<dim>());
   boundary_descriptor_pressure.reset(new BoundaryDescriptorNavierStokesP<dim>());
 
-  AssertThrow(param.problem_type == ProblemType::Steady,
-      ExcMessage("SteadyNavierStokes is a steady solver. Select steady as problem type."))
+  AssertThrow(param.solver_type == SolverType::Steady,
+      ExcMessage("This is a steady solver. Check input parameters."));
 
   // initialize navier_stokes_operation
   navier_stokes_operation.reset(new DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>

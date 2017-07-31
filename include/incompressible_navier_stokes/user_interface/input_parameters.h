@@ -27,7 +27,11 @@
 /**************************************************************************************/
 
 /*
- *  ProblemType describes whether a steady or an unsteady problem has to be solved
+ *  ProblemType refers to the underlying physics of the flow problem and describes
+ *  whether the considered flow problem is expected to be a steady or unsteady solution
+ *  of the incompressible Navier-Stokes equations. This essentially depends on the
+ *  Reynolds number but, for example, also on the boundary conditions (in case of
+ *  time dependent boundary conditions, the problem type is always unsteady).
  */
 enum class ProblemType
 {
@@ -72,6 +76,20 @@ enum class FormulationViscousTerm
 /*                             TEMPORAL DISCRETIZATION                                */
 /*                                                                                    */
 /**************************************************************************************/
+
+/*
+ *  SolverType refers to the numerical solution of the incompressible Navier-Stokes
+ *  equations and describes whether a steady or an unsteady solver is used.
+ *  While it does not make sense to solve an unsteady problem with a steady solver,
+ *  a steady problem can be solved (potentially more efficiently) by using an
+ *  unsteady solver.
+ */
+enum class SolverType
+{
+  Undefined,
+  Steady,
+  Unsteady
+};
 
 /*
  *  Temporal discretization method
@@ -501,6 +519,7 @@ public:
     viscosity(-1.),
 
     // TEMPORAL DISCRETIZATION
+    solver_type(SolverType::Undefined),
     temporal_discretization(TemporalDiscretization::Undefined),
     treatment_of_convective_term(TreatmentOfConvectiveTerm::Undefined),
     calculation_of_time_step_size(TimeStepCalculation::Undefined),
@@ -615,6 +634,10 @@ public:
     use_scaling_continuity(false),
     scaling_factor_continuity(1.0),
 
+    // pseudo-timestepping
+    abs_tol_residual_steady(1.e-20),
+    rel_tol_residual_steady(1.e-12),
+
     // nonlinear solver (Newton solver)
     newton_solver_data_coupled(NewtonSolverData()),
 
@@ -708,9 +731,32 @@ public:
     AssertThrow(viscosity > 0.,ExcMessage("parameter must be defined"));
 
     // TEMPORAL DISCRETIZATION
+    AssertThrow(solver_type != SolverType::Undefined,ExcMessage("parameter must be defined"));
     AssertThrow(temporal_discretization != TemporalDiscretization::Undefined,ExcMessage("parameter must be defined"));
     AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::Undefined,ExcMessage("parameter must be defined"));
     AssertThrow(calculation_of_time_step_size != TimeStepCalculation::Undefined,ExcMessage("parameter must be defined"));
+
+    if(problem_type == ProblemType::Unsteady)
+    {
+      AssertThrow(solver_type == SolverType::Unsteady,ExcMessage("An unsteady solver has to be used to solve unsteady problems."));
+    }
+
+    if(solver_type == SolverType::Steady)
+    {
+      AssertThrow(treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit,
+          ExcMessage("Convective term has to be formulated implicitly when using a steady solver."));
+    }
+
+    if(problem_type == ProblemType::Steady && solver_type == SolverType::Unsteady)
+    {
+      AssertThrow(temporal_discretization == TemporalDiscretization::BDFCoupledSolution,
+          ExcMessage("The coupled solution approach has to be used to solve a steady problem."
+                     "Projection methods introduce a splitting error and cannot be used to solve the steady Navier-Stokes equations."));
+
+      AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::ExplicitOIF,
+          ExcMessage("Operator-integration-factor splitting approach introduces a splitting error. "
+                     "Hence, this approach cannot be used to solve the steady Navier-Stokes equations."));
+    }
 
     if(calculation_of_time_step_size != TimeStepCalculation::ConstTimeStepUserSpecified)
     {
@@ -1537,6 +1583,9 @@ public:
   /**************************************************************************************/
 
   // description: see enum declaration
+  SolverType solver_type;
+
+  // description: see enum declaration
   TemporalDiscretization temporal_discretization;
 
   // description: see enum declaration
@@ -1794,6 +1843,12 @@ public:
 
   // scaling factor continuity equation
   double scaling_factor_continuity;
+
+  // pseudo-timestepping for steady-state problems. These tolerances
+  // are only relevant when using an unsteady solver to solve the
+  // steady Navier-Stokes equations.
+  double abs_tol_residual_steady;
+  double rel_tol_residual_steady;
 
   // solver tolerances Newton solver
   NewtonSolverData newton_solver_data_coupled;
