@@ -25,7 +25,7 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 6;
+unsigned int const FE_DEGREE_VELOCITY = 2;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -33,15 +33,19 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 1;
-unsigned int const REFINE_STEPS_SPACE_MAX = 1; // REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 2;
+unsigned int const REFINE_STEPS_SPACE_MAX = 2; // REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
-unsigned int const REFINE_STEPS_TIME_MAX = 11; //REFINE_STEPS_TIME_MIN;
+unsigned int const REFINE_STEPS_TIME_MAX = 15; //REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
 const double VISCOSITY = 1.0e0;
+
+// perform stability analysis and compute eigenvalue spectrum
+// For this analysis one has to use the BDF1 scheme and homogeneous boundary conditions!!!
+bool stability_analysis = true;
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -60,14 +64,15 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
+  solver_type = SolverType::Unsteady;
   temporal_discretization = TemporalDiscretization::BDFPressureCorrection; //BDFPressureCorrection; //BDFCoupledSolution; //BDFDualSplittingScheme;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
   max_velocity = 1.0;
   cfl = 2.0e-1;
   time_step_size = 5.e-2;
-  max_number_of_time_steps = 1e8;
-  order_time_integrator = 2; // 1; // 2; // 3;
+  max_number_of_time_steps = 1; //TODO //1e8;
+  order_time_integrator = 1; // 1; // 2; // 3;
   start_with_low_order = false; // true; // false;
 
 
@@ -165,7 +170,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // formulation
   order_pressure_extrapolation = order_time_integrator-1;
-  rotational_formulation = false; //true;
+  rotational_formulation = false; //TODO //true;
 
 
   // COUPLED NAVIER-STOKES SOLVER
@@ -205,7 +210,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   output_data.output_name = "shahbazi";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time); // /10;
-  output_data.compute_divergence = false;
+  output_data.write_divergence = false;
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error
@@ -278,6 +283,9 @@ double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
   else if (component == 1)
     result = exp_t*cos_x*(cos_ay+cos_a*cosh_y);
 
+  if(stability_analysis == true)
+    result = 0;
+
   return result;
 }
 
@@ -324,6 +332,9 @@ double AnalyticalSolutionPressure<dim>::value(const Point<dim>    &p,
   double cos_a = std::cos(a);
   double sinh_y = std::sinh(p[1]);
   result = lambda*cos_a*cos_x*sinh_y*exp_t;
+
+  if(stability_analysis == true)
+    result = 0;
 
   return result;
 }
@@ -411,6 +422,9 @@ double PressureBC_dudt<dim>::value(const Point<dim>   &p,
     result = -lambda*exp_t*sin_x*(a*sin_ay-cos_a*sinh_y);
   else if (component == 1)
     result = -lambda*exp_t*cos_x*(cos_ay+cos_a*cosh_y);
+
+  if(stability_analysis == true)
+    result = 0;
 
   return result;
 }

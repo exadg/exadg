@@ -60,6 +60,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
+  solver_type = SolverType::Unsteady;
   temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; //Explicit; //Implicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
@@ -208,7 +209,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   output_data.output_name = "beltrami";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/10;
-  output_data.compute_divergence = false;
+  output_data.write_divergence = false;
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error

@@ -26,7 +26,7 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 8;
+unsigned int const FE_DEGREE_VELOCITY = 2;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -38,8 +38,8 @@ unsigned int const REFINE_STEPS_SPACE_MIN = 2;
 unsigned int const REFINE_STEPS_SPACE_MAX = 2; //REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
-unsigned int const REFINE_STEPS_TIME_MIN = 3;
-unsigned int const REFINE_STEPS_TIME_MAX = 3; //REFINE_STEPS_TIME_MIN;
+unsigned int const REFINE_STEPS_TIME_MIN = 0;
+unsigned int const REFINE_STEPS_TIME_MAX = 0; //REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
 const double U_X_MAX = 1.0;
@@ -62,15 +62,16 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // PHYSICAL QUANTITIES
   start_time = 0.0;
   end_time = 1.0; 
-  viscosity = VISCOSITY; // VISCOSITY is also needed somewhere else
+  viscosity = VISCOSITY;
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepMaxEfficiency; //ConstTimeStepUserSpecified; //ConstTimeStepCFL; //ConstTimeStepUserSpecified;
+  solver_type = SolverType::Unsteady;
+  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepMaxEfficiency; //ConstTimeStepUserSpecified; //ConstTimeStepCFL; //ConstTimeStepUserSpecified;
   max_velocity = 1.4 * U_X_MAX;
-  cfl = 0.6; // 0.006;
+  cfl = 0.1; // 0.006;
   cfl_oif = cfl/8.0;
   cfl_exponent_fe_degree_velocity = 1.0; // 0.0;
   c_eff = 8.0;
@@ -183,7 +184,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   newton_solver_data_momentum.max_iter = 100;
 
   abs_tol_momentum_linear = 1.e-12;
-  rel_tol_momentum_linear = 1.e-6;
+  rel_tol_momentum_linear = 1.e-2;
   max_iter_momentum_linear = 1e4;
   use_right_preconditioning_momentum = true;
   max_n_tmp_vectors_momentum = 100;
@@ -257,12 +258,12 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   print_input_parameters = true; //false; //true;
 
   // write output for visualization of results
-  output_data.write_output = false; //true;
+  output_data.write_output = true;
   output_data.output_folder = "output/";
-  output_data.output_name = "vortex";
+  output_data.output_name = "vortex_new";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
-  output_data.compute_divergence = true;
+  output_data.write_divergence = true;
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error

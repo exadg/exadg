@@ -1,12 +1,12 @@
 /*
- * Beltrami.h
+ * 3D_taylor_green_vortex.h
  *
  *  Created on: Aug 18, 2016
  *      Author: fehn
  */
 
-#ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_BELTRAMI_H_
-#define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_BELTRAMI_H_
+#ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_3D_TAYLOR_GREEN_VORTEX_H_
+#define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_3D_TAYLOR_GREEN_VORTEX_H_
 
 
 #include <deal.II/distributed/tria.h>
@@ -54,7 +54,7 @@ const double CHARACTERISTIC_TIME = L/V_0;
 
 std::string OUTPUT_FOLDER = "output/taylor_green_vortex/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "Re1600_l3_k32_CFL_0-2";
+std::string OUTPUT_NAME = "test"; //"Re1600_l3_k32_CFL_0-2";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -68,20 +68,21 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // PHYSICAL QUANTITIES
   start_time = 0.0;
   end_time = 20.0*CHARACTERISTIC_TIME;
-  viscosity = VISCOSITY; // VISCOSITY is also needed somewhere else
+  viscosity = VISCOSITY;
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFPressureCorrection; //BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
+  solver_type = SolverType::Unsteady;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit; //Implicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
   max_velocity = MAX_VELOCITY;
-  cfl = 0.2;
+  cfl = 0.1;
   cfl_oif = cfl/5.0;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-3; // 1.0e-4;
-  max_number_of_time_steps = 1e8;
-  order_time_integrator = 2; // 1; // 2; // 3;
+  max_number_of_time_steps = 100; //1e8;
+  order_time_integrator = 3; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
 
 
@@ -118,12 +119,12 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // TURBULENCE
   use_turbulence_model = false;
-  turbulence_model = TurbulenceEddyViscosityModel::Sigma;
+  turbulence_model = TurbulenceEddyViscosityModel::Vreman; //Sigma;
   // Smagorinsky: 0.165
   // Vreman: 0.28
   // WALE: 0.50
   // Sigma: 1.35
-  turbulence_model_constant = 1.35;
+  turbulence_model_constant = 0.28; //1.35;
 
   // PROJECTION METHODS
 
@@ -141,8 +142,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // projection step
   solver_projection = SolverProjection::PCG;
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
-  abs_tol_projection = 1.e-20;
-  rel_tol_projection = 1.e-12;
+  abs_tol_projection = 1.e-12;
+  rel_tol_projection = 1.e-6;
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
 
@@ -167,7 +168,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // viscous step
   solver_viscous = SolverViscous::PCG;
-  preconditioner_viscous = PreconditionerViscous::GeometricMultigrid;
+  preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; //GeometricMultigrid;
   multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_viscous = 1.e-12;
   rel_tol_viscous = 1.e-6;
@@ -217,12 +218,15 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // preconditioner velocity/momentum block
   momentum_preconditioner = MomentumPreconditioner::InverseMassMatrix; //VelocityDiffusion;
+  multigrid_data_momentum_preconditioner.chebyshev_smoother_data.smoother_poly_degree = 5;
+  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+
   exact_inversion_of_momentum_block = false;
   rel_tol_solver_momentum_preconditioner = 1.e-6;
   max_n_tmp_vectors_solver_momentum_preconditioner = 100;
 
   // preconditioner Schur-complement block
-  schur_complement_preconditioner = SchurComplementPreconditioner::PressureConvectionDiffusion; //CahouetChabard;
+  schur_complement_preconditioner = SchurComplementPreconditioner::CahouetChabard; //PressureConvectionDiffusion; //CahouetChabard;
   discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
   exact_inversion_of_laplace_operator = false;
   rel_tol_solver_schur_complement_preconditioner = 1.e-6;
@@ -257,7 +261,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   kinetic_energy_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
 
   // output of solver information
-  output_solver_info_every_timesteps = 1e5;
+  output_solver_info_every_timesteps = 1; //1e5;
 }
 
 /**************************************************************************************/
@@ -323,7 +327,6 @@ template<int dim>
 double InitialSolutionPressure<dim>::value(const Point<dim>    &p,
                                            const unsigned int  /* component */) const
 {
-  double t = this->get_time();
   double result = 0.0;
 
   result = p_0 + V_0 * V_0 / 16.0 * (std::cos(2.0*p[0]/L) + std::cos(2.0*p[1]/L)) * (std::cos(2.0*p[2]/L) + 2.0);
@@ -351,8 +354,8 @@ template<int dim>
  };
 
  template<int dim>
- double RightHandSide<dim>::value(const Point<dim>   &p,
-                                  const unsigned int component) const
+ double RightHandSide<dim>::value(const Point<dim>   &/*p*/,
+                                  const unsigned int /*component*/) const
  {
    double result = 0.0;
    return result;
@@ -369,8 +372,8 @@ template<int dim>
 void create_grid_and_set_boundary_conditions(
     parallel::distributed::Triangulation<dim>              &triangulation,
     unsigned int const                                     n_refine_space,
-    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
+    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > /*boundary_descriptor_velocity*/,
+    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > /*boundary_descriptor_pressure*/,
     std::vector<GridTools::PeriodicFacePair<typename
       Triangulation<dim>::cell_iterator> >                 &periodic_faces)
 {
@@ -451,4 +454,4 @@ construct_postprocessor(InputParametersNavierStokes<dim> const &param)
   return pp;
 }
 
-#endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_BELTRAMI_H_ */
+#endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_3D_TAYLOR_GREEN_VORTEX_H_ */

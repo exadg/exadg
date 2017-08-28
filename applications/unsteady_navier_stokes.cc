@@ -34,7 +34,7 @@ using namespace dealii;
 
 //#include "incompressible_navier_stokes_test_cases/couette.h"
 //#include "incompressible_navier_stokes_test_cases/poiseuille.h"
-#include "incompressible_navier_stokes_test_cases/cavity.h"
+//#include "incompressible_navier_stokes_test_cases/cavity.h"
 //#include "incompressible_navier_stokes_test_cases/stokes_guermond.h"
 //#include "incompressible_navier_stokes_test_cases/stokes_shahbazi.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
@@ -43,7 +43,7 @@ using namespace dealii;
 //#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/beltrami.h"
 //#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
-//#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
+#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number=double>
 class NavierStokesProblem
@@ -97,10 +97,6 @@ private:
   std::shared_ptr<TimeIntBDFCoupled<dim, fe_degree_u, Number,
                   DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p,
                     fe_degree_xwall, xwall_quad_rule, Number> > > time_integrator_coupled;
-
-  std::shared_ptr<TimeIntBDFCoupledSteadyProblem<dim, fe_degree_u, Number,
-                  DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p,
-                    fe_degree_xwall, xwall_quad_rule, Number> > > time_integrator_coupled_steady_problem;
 
   std::shared_ptr<TimeIntBDFDualSplitting<dim, fe_degree_u, Number,
                   DGNavierStokesDualSplitting<dim, fe_degree_u, fe_degree_p,
@@ -192,22 +188,9 @@ NavierStokesProblem(unsigned int const refine_steps_space,
   // initialize time integrator that depends on both navier_stokes_operation and postprocessor
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    if(this->param.problem_type == ProblemType::Steady)
-    {
-      time_integrator_coupled_steady_problem.reset(new TimeIntBDFCoupledSteadyProblem<dim, fe_degree_u, Number,
-          DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> >
-          (navier_stokes_operation_coupled,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
-    }
-    else if(this->param.problem_type == ProblemType::Unsteady)
-    {
     time_integrator_coupled.reset(new TimeIntBDFCoupled<dim, fe_degree_u, Number,
         DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> >
         (navier_stokes_operation_coupled,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
@@ -300,12 +283,7 @@ setup_time_integrator(bool const do_restart)
 {
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    if(this->param.problem_type == ProblemType::Steady)
-      time_integrator_coupled_steady_problem->setup(do_restart);
-    else if(this->param.problem_type == ProblemType::Unsteady)
-      time_integrator_coupled->setup(do_restart);
-    else
-      AssertThrow(false, ExcMessage("Not implemented."));
+    time_integrator_coupled->setup(do_restart);
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
@@ -327,12 +305,7 @@ setup_solvers()
 {
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    if(this->param.problem_type == ProblemType::Steady)
-      navier_stokes_operation_coupled->setup_solvers(time_integrator_coupled_steady_problem->get_scaling_factor_time_derivative_term());
-    else if(this->param.problem_type == ProblemType::Unsteady)
-      navier_stokes_operation_coupled->setup_solvers(time_integrator_coupled->get_scaling_factor_time_derivative_term());
-    else
-      AssertThrow(false, ExcMessage("Not implemented."));
+    navier_stokes_operation_coupled->setup_solvers(time_integrator_coupled->get_scaling_factor_time_derivative_term());
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
@@ -357,7 +330,7 @@ run_timeloop()
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
     if(this->param.problem_type == ProblemType::Steady)
-      time_integrator_coupled_steady_problem->timeloop();
+      time_integrator_coupled->timeloop_steady_problem();
     else if(this->param.problem_type == ProblemType::Unsteady)
       time_integrator_coupled->timeloop();
     else
@@ -365,11 +338,21 @@ run_timeloop()
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    time_integrator_dual_splitting->timeloop();
+    if(this->param.problem_type == ProblemType::Steady)
+      time_integrator_dual_splitting->timeloop_steady_problem();
+    else if(this->param.problem_type == ProblemType::Unsteady)
+      time_integrator_dual_splitting->timeloop();
+    else
+      AssertThrow(false, ExcMessage("Not implemented."));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    time_integrator_pressure_correction->timeloop();
+    if(this->param.problem_type == ProblemType::Steady)
+      time_integrator_pressure_correction->timeloop_steady_problem();
+    else if(this->param.problem_type == ProblemType::Unsteady)
+      time_integrator_pressure_correction->timeloop();
+    else
+      AssertThrow(false, ExcMessage("Not implemented."));
   }
   else
   {
