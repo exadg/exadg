@@ -125,6 +125,32 @@ enum class TimeStepCalculation
   ConstTimeStepMaxEfficiency
 };
 
+/*
+ *  Pseudo-timestepping for steady-state problems:
+ *  Define convergence criterion that is used to terminate simulation
+ *
+ *  option ResidualSteadyNavierStokes:
+ *   - evaluate residual of steady, coupled incompressible Navier-Stokes equations
+ *     and terminate simulation if norm of residual fulfills tolerances
+ *   - can be used for the coupled solution approach
+ *   - can be used for the pressure-correction scheme in case the incremental
+ *     formulation is used (for the nonincremental formulation the steady-state
+ *     solution cannot fulfill the residual of the steady Navier-Stokes equations
+ *     in general due to the splitting error)
+ *   - cannot be used for the dual splitting scheme (due to the splitting error
+ *     the residual of the steady Navier-Stokes equations is not fulfilled)
+ *
+ *  option SolutionIncrement:
+ *   - calculate solution increment from one time step to the next and terminate
+ *     simulation if solution doesn't change any more (defined by tolerances)
+ */
+enum class ConvergenceCriterionSteadyProblem
+{
+  Undefined,
+  ResidualSteadyNavierStokes,
+  SolutionIncrement
+};
+
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -533,6 +559,11 @@ public:
     order_time_integrator(1),
     start_with_low_order(true),
 
+    // pseudo-timestepping
+    convergence_criterion_steady_problem(ConvergenceCriterionSteadyProblem::Undefined),
+    abs_tol_steady(1.e-20),
+    rel_tol_steady(1.e-12),
+
     // SPATIAL DISCRETIZATION
     // spatial discretization method
     spatial_discretization(SpatialDiscretization::Undefined),
@@ -633,10 +664,6 @@ public:
     // scaling of continuity equation
     use_scaling_continuity(false),
     scaling_factor_continuity(1.0),
-
-    // pseudo-timestepping
-    abs_tol_residual_steady(1.e-20),
-    rel_tol_residual_steady(1.e-12),
 
     // nonlinear solver (Newton solver)
     newton_solver_data_coupled(NewtonSolverData()),
@@ -749,13 +776,12 @@ public:
 
     if(problem_type == ProblemType::Steady && solver_type == SolverType::Unsteady)
     {
-      AssertThrow(temporal_discretization == TemporalDiscretization::BDFCoupledSolution,
-          ExcMessage("The coupled solution approach has to be used to solve a steady problem."
-                     "Projection methods introduce a splitting error and cannot be used to solve the steady Navier-Stokes equations."));
-
-      AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::ExplicitOIF,
-          ExcMessage("Operator-integration-factor splitting approach introduces a splitting error. "
-                     "Hence, this approach cannot be used to solve the steady Navier-Stokes equations."));
+      if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+      {
+        AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::ExplicitOIF,
+            ExcMessage("Operator-integration-factor splitting approach introduces a splitting error. "
+                       "Hence, this approach cannot be used to solve the steady Navier-Stokes equations."));
+      }
     }
 
     if(calculation_of_time_step_size != TimeStepCalculation::ConstTimeStepUserSpecified)
@@ -884,7 +910,7 @@ public:
     print_parameters_physical_quantities(pcout);
 
     // TEMPORAL DISCRETIZATION
-    if(problem_type == ProblemType::Unsteady)
+    if(solver_type == SolverType::Unsteady)
       print_parameters_temporal_discretization(pcout);
 
     // SPATIAL DISCRETIZATION
@@ -900,8 +926,8 @@ public:
       print_parameters_pressure_correction(pcout);
    
     // COUPLED NAVIER-STOKES SOLVER
-    if(  problem_type == ProblemType::Steady ||
-        (problem_type == ProblemType::Unsteady &&
+    if(  solver_type == SolverType::Steady ||
+        (solver_type == SolverType::Unsteady &&
          temporal_discretization == TemporalDiscretization::BDFCoupledSolution) )
        print_parameters_coupled_solver(pcout);
    
@@ -1032,6 +1058,21 @@ public:
     print_parameter(pcout,
                     "Start with low order method",
                     start_with_low_order);
+
+    if(problem_type == ProblemType::Steady)
+    {
+      // treatment of convective term
+      std::string str_convergence_crit[] = { "Undefined",
+                                              "ResidualSteadyNavierStokes",
+                                              "SolutionIncrement" };
+
+      print_parameter(pcout,
+                      "Convergence criterion steady problems",
+                      str_convergence_crit[(int)convergence_criterion_steady_problem]);
+
+      print_parameter(pcout,"Absolute tolerance",abs_tol_steady);
+      print_parameter(pcout,"Relative tolerance",rel_tol_steady);
+    }
   }
 
   void print_parameters_spatial_discretization(ConditionalOStream &pcout)
@@ -1629,6 +1670,22 @@ public:
   // start time integrator with low order time integrator, i.e., first order Euler method
   bool start_with_low_order;
 
+  // description: see enum declaration
+  ConvergenceCriterionSteadyProblem convergence_criterion_steady_problem;
+
+  // pseudo-timestepping for steady-state problems. These tolerances
+  // are only relevant when using an unsteady solver to solve the
+  // steady Navier-Stokes equations.
+  //
+  // option ResidualNavierStokes:
+  // - these tolerances refer to the norm of the residual of the steady
+  //   Navier-Stokes equations.
+  //
+  // option SolutionIncrement:
+  // - these tolerances refer to the norm of the increment of the solution
+  //   vector from one time step to the next.
+  double abs_tol_steady;
+  double rel_tol_steady;
 
 
   /**************************************************************************************/
@@ -1843,12 +1900,6 @@ public:
 
   // scaling factor continuity equation
   double scaling_factor_continuity;
-
-  // pseudo-timestepping for steady-state problems. These tolerances
-  // are only relevant when using an unsteady solver to solve the
-  // steady Navier-Stokes equations.
-  double abs_tol_residual_steady;
-  double rel_tol_residual_steady;
 
   // solver tolerances Newton solver
   NewtonSolverData newton_solver_data_coupled;

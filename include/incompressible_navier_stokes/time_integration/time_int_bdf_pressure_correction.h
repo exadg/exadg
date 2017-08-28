@@ -26,9 +26,9 @@ public:
             (navier_stokes_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping),
     velocity(this->order),
     pressure(this->order),
-    vec_convective_term(this->order),
     vorticity(this->order),
     navier_stokes_operation(navier_stokes_operation_in),
+    vec_convective_term(this->order),
     order_pressure_extrapolation(this->param.order_pressure_extrapolation),
     extra_pressure_gradient(this->param.order_pressure_extrapolation,this->param.start_with_low_order),
     vec_pressure_gradient_term(this->param.order_pressure_extrapolation),
@@ -41,6 +41,17 @@ public:
   virtual ~TimeIntBDFPressureCorrection(){}
 
   virtual void analyze_computing_times() const;
+
+protected:
+  parallel::distributed::Vector<value_type> velocity_np;
+  std::vector<parallel::distributed::Vector<value_type> > velocity;
+
+  parallel::distributed::Vector<value_type> pressure_np;
+  std::vector<parallel::distributed::Vector<value_type> > pressure;
+
+  mutable parallel::distributed::Vector<value_type> vorticity;
+
+  std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
 private:
   virtual void initialize_time_integrator_constants();
@@ -57,6 +68,9 @@ private:
   void initialize_vec_pressure_gradient_term();
 
   virtual void solve_timestep();
+  virtual void solve_steady_problem();
+
+  double evaluate_residual();
 
   void momentum_step();
   void rhs_momentum();
@@ -72,22 +86,18 @@ private:
   virtual void prepare_vectors_for_next_timestep();
 
   virtual void postprocessing() const;
+  virtual void postprocessing_steady_problem() const;
+
+  virtual void postprocessing_stability_analysis();
 
   virtual void read_restart_vectors(boost::archive::binary_iarchive & ia);
   virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const;
 
   virtual parallel::distributed::Vector<value_type> const & get_velocity();
 
-  std::vector<parallel::distributed::Vector<value_type> > velocity;
-  parallel::distributed::Vector<value_type> velocity_np;
-
-  std::vector<parallel::distributed::Vector<value_type> > pressure;
-  parallel::distributed::Vector<value_type> pressure_np;
   parallel::distributed::Vector<value_type> pressure_increment;
 
   std::vector<parallel::distributed::Vector<value_type> > vec_convective_term;
-
-  mutable parallel::distributed::Vector<value_type> vorticity;
 
   // solve convective step implicitly
   parallel::distributed::Vector<value_type> sum_alphai_ui;
@@ -103,8 +113,6 @@ private:
   parallel::distributed::Vector<value_type> rhs_vec_projection;
   parallel::distributed::Vector<value_type> rhs_vec_projection_temp;
 
-  std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
-
   // incremental formulation of pressure-correction scheme
   unsigned int order_pressure_extrapolation;
 
@@ -117,6 +125,10 @@ private:
 
   double N_iter_pressure_average, N_iter_linear_momentum_average,
       N_iter_nonlinear_momentum_average;
+
+  // temporary vectors needed for pseudo-timestepping algorithm
+  parallel::distributed::Vector<value_type> velocity_tmp;
+  parallel::distributed::Vector<value_type> pressure_tmp;
 };
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -314,9 +326,18 @@ postprocessing() const
 
   this->calculate_velocity_magnitude(this->velocity_magnitude, velocity[0]);
   this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity);
+  this->calculate_streamfunction(this->streamfunction,vorticity);
   this->calculate_q_criterion(this->q_criterion, velocity[0]);
 
-  // check pressure error and formation of numerical boundary layers for standard vs. rotational formulation
+  this->postprocessor->do_postprocessing(velocity[0],
+                                         velocity[0],
+                                         pressure[0],
+                                         vorticity,
+                                         this->additional_fields,
+                                         this->time,
+                                         this->time_step_number);
+
+//  // check pressure error and formation of numerical boundary layers for standard vs. rotational formulation
 //  parallel::distributed::Vector<value_type> velocity_exact;
 //  navier_stokes_operation->initialize_vector_velocity(velocity_exact);
 //
@@ -332,27 +353,87 @@ postprocessing() const
 //                                         velocity[0],
 //                                         pressure_exact,
 //                                         vorticity,
-//                                         divergence,
+//                                         this->additional_fields,
 //                                         this->time,
 //                                         this->time_step_number);
+}
 
-  // TODO: plot viscosity field instead of divergence field (needed when considering turbulence models)
-//  this->postprocessor->do_postprocessing(velocity[0],
-//                                         velocity[0],
-//                                         pressure[0],
-//                                         vorticity,
-//                                         navier_stokes_operation->get_viscosity_dof_vector(),
-//                                         this->time,
-//                                         this->time_step_number);
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
+postprocessing_steady_problem() const
+{
+  this->calculate_vorticity(vorticity, velocity[0]);
+  this->calculate_divergence(this->divergence,velocity[0]);
 
+  this->calculate_velocity_magnitude(this->velocity_magnitude, velocity[0]);
+  this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity);
+  this->calculate_streamfunction(this->streamfunction,vorticity);
+  this->calculate_q_criterion(this->q_criterion, velocity[0]);
 
   this->postprocessor->do_postprocessing(velocity[0],
                                          velocity[0],
                                          pressure[0],
                                          vorticity,
-                                         this->additional_fields,
-                                         this->time,
-                                         this->time_step_number);
+                                         this->additional_fields);
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
+postprocessing_stability_analysis()
+{
+  AssertThrow(this->order==1,
+      ExcMessage("Order of BDF scheme has to be 1 for this stability analysis."));
+
+  AssertThrow(velocity[0].l2_norm()<1.e-15 && pressure[0].l2_norm()<1.e-15,
+      ExcMessage("Solution vector has to be zero for this stability analysis."));
+
+  AssertThrow(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) == 1,
+      ExcMessage("Number of MPI processes has to be 1."));
+
+  std::cout << std::endl << "Analysis of eigenvalue spectrum:" << std::endl;
+
+  const unsigned int size = velocity[0].local_size();
+
+  LAPACKFullMatrix<value_type> propagation_matrix(size,size);
+
+  // loop over all columns of propagation matrix
+  for(unsigned int j=0; j<size; ++j)
+  {
+    // set j-th element to 1
+    velocity[0].local_element(j) = 1.0;
+
+    // solve time step
+    solve_timestep();
+
+    // dst-vector velocity_np is j-th column of propagation matrix
+    for(unsigned int i=0; i<size; ++i)
+    {
+      propagation_matrix(i,j) = velocity_np.local_element(i);
+    }
+
+    // reset j-th element to 0
+    velocity[0].local_element(j) = 0.0;
+  }
+
+  // compute eigenvalues
+  propagation_matrix.compute_eigenvalues();
+
+  double norm_max = 0.0;
+
+  std::cout << "List of all eigenvalues:" << std::endl;
+
+  for(unsigned int i=0; i<size; ++i)
+  {
+    double norm = std::abs(propagation_matrix.eigenvalue(i));
+    if(norm>norm_max)
+      norm_max = norm;
+
+    // print eigenvalues
+//    std::cout << propagation_matrix.eigenvalue(i) << std::endl;
+  }
+
+  std::cout << std::endl << std::endl
+            << "Maximum eigenvalue = " << norm_max << std::endl;
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -468,7 +549,8 @@ momentum_step()
       this->pcout << std::endl
                   << "Solve nonlinear momentum equation for intermediate velocity:" << std::endl
                   << "  Newton iterations: " << std::setw(6) << std::right << nonlinear_iterations_momentum << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl
-                  << "  Linear iterations: " << std::setw(6) << std::right << std::fixed << std::setprecision(2) << (double)linear_iterations_momentum/(double)nonlinear_iterations_momentum << " (avg)" << std::endl
+                  << "  Linear iterations: " << std::setw(6) << std::right << std::fixed << std::setprecision(2)
+                  << (nonlinear_iterations_momentum>0 ? (double)linear_iterations_momentum/(double)nonlinear_iterations_momentum : linear_iterations_momentum) << " (avg)" << std::endl
                   << "  Linear iterations: " << std::setw(6) << std::right << std::fixed << std::setprecision(2) << linear_iterations_momentum << " (tot)" << std::endl;
     }
 
@@ -861,6 +943,123 @@ prepare_vectors_for_next_timestep()
     push_back(vec_pressure_gradient_term);
   }
 }
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
+solve_steady_problem()
+{
+  this->pcout << std::endl << "Starting time loop ..." << std::endl;
+
+  // pseudo-time integration in order to solve steady-state problem
+  bool converged = false;
+
+  if(this->param.convergence_criterion_steady_problem == ConvergenceCriterionSteadyProblem::SolutionIncrement)
+  {
+    while(!converged && this->time_step_number<=this->param.max_number_of_time_steps)
+    {
+      // save solution from previous time step
+      velocity_tmp = this->velocity[0];
+      pressure_tmp = this->pressure[0];
+
+      // calculate normm of solution
+      double const norm_u = velocity_tmp.l2_norm();
+      double const norm_p = pressure_tmp.l2_norm();
+      double const norm = std::sqrt(norm_u*norm_u + norm_p*norm_p);
+
+      // solve time step
+      this->do_timestep();
+
+      // calculate increment:
+      // increment = solution_{n+1} - solution_{n}
+      //           = solution[0] - solution_tmp
+      velocity_tmp *= -1.0;
+      pressure_tmp *= -1.0;
+      velocity_tmp.add(1.0,this->velocity[0]);
+      pressure_tmp.add(1.0,this->pressure[0]);
+
+      double const incr_u = velocity_tmp.l2_norm();
+      double const incr_p = pressure_tmp.l2_norm();
+      double const incr = std::sqrt(incr_u*incr_u + incr_p*incr_p);
+      double incr_rel = 1.0;
+      if(norm > 1.0e-10)
+        incr_rel = incr/norm;
+
+      // write output
+      if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
+      {
+        this->pcout << std::endl
+                    << "Norm of solution increment:" << std::endl
+                    << "  ||incr_abs|| = " << std::scientific<<std::setprecision(10) << incr << std::endl
+                    << "  ||incr_rel|| = " << std::scientific<<std::setprecision(10) << incr_rel << std::endl;
+      }
+
+      // check convergence
+      if(incr < this->param.abs_tol_steady ||
+         incr_rel < this->param.rel_tol_steady)
+      {
+        converged = true;
+      }
+    }
+  }
+  else if(this->param.convergence_criterion_steady_problem == ConvergenceCriterionSteadyProblem::ResidualSteadyNavierStokes)
+  {
+    double const initial_residual = evaluate_residual();
+
+    while(!converged && this->time_step_number<=this->param.max_number_of_time_steps)
+    {
+      this->do_timestep();
+
+      // check convergence by evaluating the residual of
+      // the steady-state incompressible Navier-Stokes equations
+      double const residual = evaluate_residual();
+
+      if(residual < this->param.abs_tol_steady ||
+         residual/initial_residual < this->param.rel_tol_steady)
+      {
+        converged = true;
+      }
+    }
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("not implemented."));
+  }
+
+  AssertThrow(converged==true,
+      ExcMessage("Maximum number of time steps exceeded! This might be due to the fact that "
+                 "(i) the maximum number of iterations is simply too small to reach a steady solution, "
+                 "(ii) the problem is unsteady so that the applied solution approach is inappropriate, "
+                 "(iii) some of the solver tolerances are in conflict."));
+
+  this->pcout << std::endl << "... done!" << std::endl;
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+double TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
+evaluate_residual()
+{
+  this->navier_stokes_operation->evaluate_nonlinear_residual_steady(this->velocity_np,
+                                                                    this->pressure_np,
+                                                                    this->velocity[0],
+                                                                    this->pressure[0],
+                                                                    this->time);
+
+  double const norm_u = this->velocity_np.l2_norm();
+  double const norm_p = this->pressure_np.l2_norm();
+
+  double residual = std::sqrt(norm_u*norm_u + norm_p*norm_p);
+
+  // write output
+  if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
+  {
+    this->pcout << std::endl
+                << "Norm of residual of steady Navier-Stokes equations:" << std::endl
+                << "  ||r|| = " << std::scientific << std::setprecision(10) << residual << std::endl;
+  }
+
+  return residual;
+}
+
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
