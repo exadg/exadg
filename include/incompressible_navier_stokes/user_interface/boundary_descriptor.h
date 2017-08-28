@@ -57,6 +57,7 @@ struct BoundaryDescriptorNavierStokesU
   // Symmetry: prescribe velocity normal to boundary (u*n=0) and normal velocity gradient
   //       in tangential directions (grad(u)*n - [(grad(u)*n)*n] n = 0)
   std::map<types::boundary_id,std::shared_ptr<Function<dim> > > symmetry_bc;
+
   // add more types of boundary conditions
 };
 

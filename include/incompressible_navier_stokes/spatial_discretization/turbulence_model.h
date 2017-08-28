@@ -481,11 +481,8 @@ private:
         double h = std::exp(std::log(volume)/(double)dim);
 
         // take polynomial degree of shape functions into account:
-        // TODO
         // h/(k_u + 1)
         h /= (double)(fe_degree+1);
-        // h/(k_u)
-        // h /= (double)(fe_degree);
 
         filter_width_vector[i][v] = h;
       }
@@ -721,7 +718,7 @@ private:
             ExcMessage("alpha1 has to be larger than zero."));
 
         Number factor = alpha2/std::pow(alpha1,1.5);
-        AssertThrow(std::abs(factor)<=1.0+1.0e-12,
+        AssertThrow(std::abs(factor)<=1.0+1.0e-12, /* we found that a larger tolerance (1e-8,1e-6,1e-4) might be necessary in some cases */
             ExcMessage("Cannot compute arccos(value) if abs(value)>1.0."));
 
         // Ensure that the argument of arccos() is in the interval [-1,1].
