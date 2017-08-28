@@ -51,9 +51,9 @@ template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
 {
   // MATHEMATICAL MODEL
-  problem_type = ProblemType::Unsteady; //Unsteady;
-  equation_type = EquationType::NavierStokes; //NavierStokes;
-  formulation_viscous_term = FORMULATION_VISCOUS_TERM; // FORMULATION_VISCOUS_TERM is also needed somewhere else
+  problem_type = ProblemType::Unsteady;
+  equation_type = EquationType::NavierStokes;
+  formulation_viscous_term = FORMULATION_VISCOUS_TERM;
   right_hand_side = false;
 
 
@@ -64,6 +64,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
+  solver_type = SolverType::Unsteady;
   temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
@@ -225,7 +226,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   output_data.output_name = "kovasznay";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
-  output_data.compute_divergence = true;
+  output_data.write_divergence = true;
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error

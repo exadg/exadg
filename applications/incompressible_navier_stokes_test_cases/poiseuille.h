@@ -50,7 +50,7 @@ const double L = 4.0;
 
 bool periodicBCs = false;
 
-bool symmetryBC = true;
+bool symmetryBC = false;
 
 enum class InflowProfile { ConstantProfile, ParabolicProfile };
 const InflowProfile INFLOW_PROFILE = InflowProfile::ParabolicProfile; //ConstantProfile; //ParabolicProfile;
@@ -72,6 +72,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
+  solver_type = SolverType::Unsteady;
   temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFDualSplittingScheme; //BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
@@ -236,7 +237,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   output_data.output_name = "poiseuille";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
-  output_data.compute_divergence = true;
+  output_data.write_divergence = true;
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error
@@ -329,7 +330,10 @@ double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
     {
       const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
       if(component == 0)
+      {
         result = 1.0/VISCOSITY * pressure_gradient * (pow(p[1],2.0)-1.0)/2.0 * (t<T ? std::sin(pi/2.*t/T) : 1.0);
+//        result = 1.0/VISCOSITY * pressure_gradient * (pow(p[1],2.0)-1.0)/2.0 * std::sin(pi*t/T);
+      }
     }
   }
 
@@ -534,12 +538,12 @@ template<int dim>
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>                   &triangulation,
-    unsigned int const                                          n_refine_space,
-    std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorNavierStokes<dim> > boundary_descriptor_pressure,
+    parallel::distributed::Triangulation<dim>              &triangulation,
+    unsigned int const                                     n_refine_space,
+    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                      &periodic_faces)
+      Triangulation<dim>::cell_iterator> >                 &periodic_faces)
 {
   if(periodicBCs == true)
   {
@@ -585,7 +589,7 @@ void create_grid_and_set_boundary_conditions(
       }
     }
   }
-  else
+  else // inflow at left boundary, no-slip on upper and lower wall, outflow at right boundary
   {
     std::vector<unsigned int> repetitions({2,1});
     Point<dim> point1(0.0,-H/2.), point2(L,H/2.);
@@ -632,7 +636,7 @@ void create_grid_and_set_boundary_conditions(
   std::shared_ptr<Function<dim> > pressure_bc_dudt;
   pressure_bc_dudt.reset(new PressureBC_dudt<dim>());
   // Neumann boundaries: ID = 0
-  boundary_descriptor_pressure->neuman_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
+  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
                                                      (0,pressure_bc_dudt));
 
   if(symmetryBC == true)

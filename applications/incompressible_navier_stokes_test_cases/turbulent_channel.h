@@ -33,7 +33,7 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 3;
+unsigned int const REFINE_STEPS_SPACE_MIN = 2;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
@@ -53,9 +53,9 @@ const double GRID_STRETCH_FAC = 1.8;
 double const VISCOSITY = 1./180.; // critical value: 1./50. - 1./75.
 double const END_TIME = 50.0;
 
-std::string OUTPUT_FOLDER = "output/turb_ch/Re180/";
+std::string OUTPUT_FOLDER = "output/turb_ch/paper/pressure_correction_Re180/"; //"output/turb_ch/paper/Re180/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "Re180_visualization_l3_k32"; //"coupled_solver_BDF2_CFL_0-5_expl_Re180_div_formulation_l2_k3-2_grid_stretch_1-8_wale_model_0-5";
+std::string OUTPUT_NAME = "Re180_pressure_correction_BDF2_CFL_1-0_l2_k3-2_grid_strech_1-8_div_conti_1-0"; //"coupled_solver_BDF2_CFL_1-0_expl_Re180_div_formulation_l0_k15-14_grid_stretch_1-8";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -69,12 +69,13 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // PHYSICAL QUANTITIES
   start_time = 0.0;
-  end_time = END_TIME; //END_TIME is also needed somewhere else
+  end_time = END_TIME;
   viscosity = VISCOSITY;
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //CoupledSolution; // BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
+  solver_type = SolverType::Unsteady;
+  temporal_discretization = TemporalDiscretization::BDFPressureCorrection; //CoupledSolution; // BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; // AdaptiveTimeStepCFL
   max_velocity = MAX_VELOCITY;
@@ -110,7 +111,6 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   pure_dirichlet_bc = true;
 
   // div-div and continuity penalty
-  // these parameters are only used for the coupled solver
   use_divergence_penalty = true;
   divergence_penalty_factor = 1.0e0;
   use_continuity_penalty = true;
@@ -224,8 +224,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   multigrid_data_momentum.smoother = MultigridSmoother::Jacobi;
 
   // MG smoother data: GMRES smoother
-  multigrid_data_momentum.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi; //None; //PointJacobi; //BlockJacobi;
-  multigrid_data_momentum.gmres_smoother_data.number_of_iterations = 4;
+//  multigrid_data_momentum.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi; //None; //PointJacobi; //BlockJacobi;
+//  multigrid_data_momentum.gmres_smoother_data.number_of_iterations = 4;
 
   // MG smoother data: Jacobi smoother
   multigrid_data_momentum.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
@@ -254,11 +254,14 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // preconditioning linear solver
   preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
-  update_preconditioner = true;
+  update_preconditioner = false;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::InverseMassMatrix; //InverseMassMatrix; //VelocityDiffusion; //VelocityConvectionDiffusion;
-  multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::Jacobi;
+  momentum_preconditioner = MomentumPreconditioner::InverseMassMatrix; //VelocityDiffusion; //VelocityConvectionDiffusion;
+  multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::Chebyshev;
+
+  // MG smoother data: Chebyshev smoother
+  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
   // MG smoother data: GMRES smoother
 //  multigrid_data_momentum_preconditioner.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
@@ -266,17 +269,17 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 //  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner;
 
   // MG smoother data: Jacobi smoother
-  multigrid_data_momentum_preconditioner.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
-  multigrid_data_momentum_preconditioner.jacobi_smoother_data.number_of_smoothing_steps = 4;
-  multigrid_data_momentum_preconditioner.jacobi_smoother_data.damping_factor = 0.7;
-  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner;
+//  multigrid_data_momentum_preconditioner.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
+//  multigrid_data_momentum_preconditioner.jacobi_smoother_data.number_of_smoothing_steps = 4;
+//  multigrid_data_momentum_preconditioner.jacobi_smoother_data.damping_factor = 0.7;
+//  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_BlockJacobi; //GMRES_NoPreconditioner;
 
   exact_inversion_of_momentum_block = false;
   rel_tol_solver_momentum_preconditioner = 1.e-3;
   max_n_tmp_vectors_solver_momentum_preconditioner = 100;
 
   // preconditioner Schur-complement block
-  schur_complement_preconditioner = SchurComplementPreconditioner::PressureConvectionDiffusion;
+  schur_complement_preconditioner = SchurComplementPreconditioner::CahouetChabard; //PressureConvectionDiffusion;
   discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
 
   // Chebyshev moother
@@ -297,12 +300,12 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   print_input_parameters = true;
 
   // write output for visualization of results
-  output_data.write_output = true; //false; //TODO
+  output_data.write_output = true;
   output_data.output_folder = OUTPUT_FOLDER_VTU;
   output_data.output_name = OUTPUT_NAME;
   output_data.output_start_time = start_time;
   output_data.output_interval_time = 1.0;
-  output_data.compute_divergence = true;
+  output_data.write_divergence = true;
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error
@@ -391,21 +394,6 @@ double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
 //      else if(component == 2)
 //        result = (pow(p[1],6.0)-1.0)*std::sin(p[0]*8.)*2.;
 
-      // TODO
-//      double const factor = 10;
-//      if(component == 0)
-//      {
-//        result = -MAX_VELOCITY*(pow(p[1],6.0)-1.0)*(1.0 + ((double)rand()/RAND_MAX-1.0)*0.5 - factor/MAX_VELOCITY*std::sin(p[1]*2.*numbers::PI));
-//      }
-//      else if(component == 1)
-//      {
-//        result = factor * std::sin(p[1]*2.*numbers::PI)*std::sin(p[0]*2.);
-//      }
-//      else if(component == 2)
-//      {
-//        result = factor * std::sin(p[1]*2.*numbers::PI)*std::sin(p[0]*2.);
-//      }
-
       if(component == 0)
       {
         double factor = 1.0;
@@ -425,6 +413,7 @@ double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
 
   return result;
 }
+
 
 /*
  *  Analytical solution pressure
@@ -631,8 +620,11 @@ void create_grid_and_set_boundary_conditions(
      GridTools::collect_periodic_faces(triangulation, 2+10, 3+10, 2, periodic_faces);
 
    triangulation.add_periodicity(periodic_faces);
+
+   // perform global refinements
    triangulation.refine_global(n_refine_space);
 
+   // perform grid transform
    GridTools::transform (&grid_transform<dim>, triangulation);
 
    // fill boundary descriptor velocity
@@ -721,20 +713,20 @@ public:
     statistics_turb_ch->setup(&grid_transform<dim>);
   }
 
-  void do_postprocessing(parallel::distributed::Vector<Number> const &velocity,
-                         parallel::distributed::Vector<Number> const &intermediate_velocity,
-                         parallel::distributed::Vector<Number> const &pressure,
-                         parallel::distributed::Vector<Number> const &vorticity,
-                         parallel::distributed::Vector<Number> const &divergence,
-                         double const                                time,
-                         int const                                   time_step_number = -1)
+  virtual void do_postprocessing(parallel::distributed::Vector<Number> const &velocity,
+                                 parallel::distributed::Vector<Number> const &intermediate_velocity,
+                                 parallel::distributed::Vector<Number> const &pressure,
+                                 parallel::distributed::Vector<Number> const &vorticity,
+                                 std::vector<SolutionField<dim,Number> > const &additional_fields,
+                                 double const                                time,
+                                 int const                                   time_step_number)
   {
     PostProcessor<dim,fe_degree_u,fe_degree_p,Number>::do_postprocessing(
 	      velocity,
         intermediate_velocity,
         pressure,
         vorticity,
-        divergence,
+        additional_fields,
         time,
         time_step_number);
    

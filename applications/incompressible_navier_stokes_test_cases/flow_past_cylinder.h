@@ -27,7 +27,7 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 3;
+unsigned int const FE_DEGREE_VELOCITY = 4;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -40,7 +40,7 @@ unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
-unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
+unsigned int const REFINE_STEPS_TIME_MAX = 0; //REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
 ProblemType PROBLEM_TYPE = ProblemType::Unsteady;
@@ -68,7 +68,7 @@ const ManifoldType MANIFOLD_TYPE = ManifoldType::VolumeManifold;
 
 // MeshType
 // Type1: no refinement around cylinder surface
-// Type2: two layers of spherical cells around cylinder
+// Type2: two layers of spherical cells around cylinder (used in paper "On the stability of projection methods ...")
 // Type3: coarse mesh has only one element in direction perpendicular to flow direction,
 //        one layer of spherical cells around cylinder for coarsest mesh
 // Type4: no refinement around cylinder, coarsest mesh consists of 4 cells for the block that
@@ -79,9 +79,9 @@ const MeshType MESH_TYPE = MeshType::Type2;
 
 const double END_TIME = 8.0;
 
-std::string OUTPUT_FOLDER = "output/test/"; //"output/FPC/3D_3_dual_splitting_bdf3_mesh2/";
+std::string OUTPUT_FOLDER = "output/FPC/paper/review/test/"; //"output/FPC/3D_3_dual_splitting_bdf3_mesh2/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "2D_3_cfl_0-2";
+std::string OUTPUT_NAME = "Re10000_l1_k4-3_2D_2_outflow_bc"; //"2D_3_l3_k43_cfl_0-4";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -100,6 +100,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
+  solver_type = SolverType::Unsteady;
   temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFPressureCorrection; //BDFDualSplittingScheme; //BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified; //ConstTimeStepCFL;
@@ -108,7 +109,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   cfl_exponent_fe_degree_velocity = 1.0;
   time_step_size = 1.0e-3;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 3; //2; // 1; // 2; // 3;
+  order_time_integrator = 2; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
 
 
@@ -125,12 +126,19 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   penalty_term_div_formulation = PenaltyTermDivergenceFormulation::Symmetrized;
 
   // gradient term
-  gradp_integrated_by_parts = true;
-  gradp_use_boundary_data = true;
+  gradp_integrated_by_parts = true; //false; //true;
+  gradp_use_boundary_data = true; //false; //true;
 
   // divergence term
-  divu_integrated_by_parts = true;
-  divu_use_boundary_data = true;
+  divu_integrated_by_parts = true; //false; //true;
+  divu_use_boundary_data = true; //false; //true;
+
+ // div-div and continuity penalty
+  use_divergence_penalty = false;
+  divergence_penalty_factor = 1.0e0;
+  use_continuity_penalty = false;
+  continuity_penalty_use_boundary_data = false;
+  continuity_penalty_factor = divergence_penalty_factor;
 
   // special case: pure DBC's
   pure_dirichlet_bc = false;
@@ -145,7 +153,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   multigrid_data_pressure_poisson.smoother = MultigridSmoother::Chebyshev; // Chebyshev; //Jacobi; //GMRES;
   multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::PCG_PointJacobi; //PCG_NoPreconditioner; //PCG_PointJacobi; //Chebyshev;
   abs_tol_pressure = 1.e-12;
-  rel_tol_pressure = 1.e-6; //1.e-8;
+  rel_tol_pressure = 1.e-8;
 
   // stability in the limit of small time steps
   use_approach_of_ferrer = false;
@@ -184,7 +192,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
   multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::PCG_PointJacobi;  //Chebyshev;
   abs_tol_viscous = 1.e-12;
-  rel_tol_viscous = 1.e-6; //1.e-8;
+  rel_tol_viscous = 1.e-8;
 
 
   // PRESSURE-CORRECTION SCHEME
@@ -248,12 +256,12 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   print_input_parameters = true;
 
   // write output for visualization of results
-  output_data.write_output = false;
+  output_data.write_output = true;
   output_data.output_folder = OUTPUT_FOLDER_VTU;
   output_data.output_name = OUTPUT_NAME;
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
-  output_data.compute_divergence = true;
+  output_data.write_divergence = true;
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error
@@ -1210,16 +1218,20 @@ void create_grid_and_set_boundary_conditions(
  center[0] = X_C;
  center[1] = Y_C;
 
+ Point<3> center_cyl_manifold;
+ center_cyl_manifold[0] = center[0];
+ center_cyl_manifold[1] = center[1];
+
  // apply this manifold for all mesh types
- Point<dim> direction;
- direction[dim-1] = 1.;
+ Point<3> direction;
+ direction[2] = 1.;
 
  static std::shared_ptr<Manifold<dim> > cylinder_manifold;
 
  if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
  {
    cylinder_manifold = std::shared_ptr<Manifold<dim> >(dim == 2 ? static_cast<Manifold<dim>*>(new SphericalManifold<dim>(center)) :
-                                           static_cast<Manifold<dim>*>(new CylindricalManifold<dim>(direction, center)));
+                                           reinterpret_cast<Manifold<dim>*>(new CylindricalManifold<3>(direction, center_cyl_manifold)));
  }
  else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
  {
