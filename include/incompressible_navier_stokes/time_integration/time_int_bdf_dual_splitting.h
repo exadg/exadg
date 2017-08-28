@@ -72,6 +72,7 @@ protected:
   parallel::distributed::Vector<value_type> intermediate_velocity;
 
   virtual void postprocessing() const;
+  virtual void postprocessing_steady_problem() const;
 
 private:
   virtual void initialize_time_integrator_constants();
@@ -91,7 +92,13 @@ private:
   virtual void viscous_step();
   void rhs_viscous();
   
+  virtual void solve_steady_problem();
+  double evaluate_residual();
+
   virtual parallel::distributed::Vector<value_type> const & get_velocity();
+
+  // TODO
+  void postprocessing_stability_analysis();
 
   // time integrator constants: extrapolation scheme
   ExtrapolationConstants extra_pressure_nbc;
@@ -113,6 +120,10 @@ private:
   std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
   double N_iter_pressure_average, N_iter_viscous_average;
+
+  // temporary vectors needed for pseudo-timestepping algorithm
+  parallel::distributed::Vector<value_type> velocity_tmp;
+  parallel::distributed::Vector<value_type> pressure_tmp;
 };
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -324,6 +335,7 @@ postprocessing() const
 
   this->calculate_velocity_magnitude(this->velocity_magnitude, velocity[0]);
   this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity[0]);
+  this->calculate_streamfunction(this->streamfunction,vorticity[0]);
   this->calculate_q_criterion(this->q_criterion, velocity[0]);
 
   this->postprocessor->do_postprocessing(velocity[0],
@@ -333,17 +345,6 @@ postprocessing() const
                                          this->additional_fields,
                                          this->time,
                                          this->time_step_number);
-
-  // TODO: plot viscosity field instead of divergence field (needed when considering turbulence models)
-//  this->postprocessor->do_postprocessing(velocity[0],
-//                                         intermediate_velocity,
-//                                         pressure[0],
-//                                         vorticity[0],
-//                                         navier_stokes_operation->get_viscosity_dof_vector(),
-//                                         this->time,
-//                                         this->time_step_number);
-
-
 
   // check pressure error and velocity error
 //  parallel::distributed::Vector<value_type> velocity_exact;
@@ -361,9 +362,94 @@ postprocessing() const
 //                                         intermediate_velocity,
 //                                         pressure_exact,
 //                                         vorticity[0],
-//                                         divergence,
+//                                         this->additional_fields,
 //                                         this->time,
 //                                         this->time_step_number);
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
+postprocessing_steady_problem() const
+{
+  // Calculate divergence of intermediate velocity field u_hathat,
+  // because this is the velocity field that should be divergence-free.
+  // Of course, also the final velocity field at the end of the time step
+  // could be considered instead.
+  this->calculate_divergence(this->divergence, intermediate_velocity);
+
+  this->calculate_velocity_magnitude(this->velocity_magnitude, velocity[0]);
+  this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity[0]);
+  this->calculate_streamfunction(this->streamfunction,vorticity[0]);
+  this->calculate_q_criterion(this->q_criterion, velocity[0]);
+
+  this->postprocessor->do_postprocessing(velocity[0],
+                                         intermediate_velocity,
+                                         pressure[0],
+                                         vorticity[0],
+                                         this->additional_fields);
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
+postprocessing_stability_analysis()
+{
+  AssertThrow(this->order==1,
+      ExcMessage("Order of BDF scheme has to be 1 for this stability analysis."));
+
+  AssertThrow(velocity[0].l2_norm()<1.e-15 && pressure[0].l2_norm()<1.e-15,
+      ExcMessage("Solution vector has to be zero for this stability analysis."));
+
+  AssertThrow(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) == 1,
+      ExcMessage("Number of MPI processes has to be 1."));
+
+  std::cout << std::endl << "Analysis of eigenvalue spectrum:" << std::endl;
+
+  const unsigned int size = velocity[0].local_size();
+
+  LAPACKFullMatrix<value_type> propagation_matrix(size,size);
+
+  // loop over all columns of propagation matrix
+  for(unsigned int j=0; j<size; ++j)
+  {
+    // set j-th element to 1
+    velocity[0].local_element(j) = 1.0;
+
+    // compute vorticity using the current velocity vector
+    // (dual splitting scheme !!!)
+    navier_stokes_operation->compute_vorticity(vorticity[0],velocity[0]);
+
+    // solve time step
+    solve_timestep();
+
+    // dst-vector velocity_np is j-th column of propagation matrix
+    for(unsigned int i=0; i<size; ++i)
+    {
+      propagation_matrix(i,j) = velocity_np.local_element(i);
+    }
+
+    // reset j-th element to 0
+    velocity[0].local_element(j) = 0.0;
+  }
+
+  // compute eigenvalues
+  propagation_matrix.compute_eigenvalues();
+
+  double norm_max = 0.0;
+
+  std::cout << "List of all eigenvalues:" << std::endl;
+
+  for(unsigned int i=0; i<size; ++i)
+  {
+    double norm = std::abs(propagation_matrix.eigenvalue(i));
+    if(norm>norm_max)
+      norm_max = norm;
+
+    // print eigenvalues
+//    std::cout << propagation_matrix.eigenvalue(i) << std::endl;
+  }
+
+  std::cout << std::endl << std::endl
+            << "Maximum eigenvalue = " << norm_max << std::endl;
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -626,7 +712,7 @@ rhs_pressure()
   }
 
   /*
-   *  II. calculate terms originating from inhomogeneous parts of boundary face integrals
+   *  II. calculate terms originating from inhomogeneous parts of boundary face integrals of Laplace operator
    */
 
   // II.1. inhomogeneous BC terms depending on prescribed boundary data,
@@ -834,6 +920,85 @@ prepare_vectors_for_next_timestep()
     push_back(vec_convective_term);
   }
 }
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
+solve_steady_problem()
+{
+  this->pcout << std::endl << "Starting time loop ..." << std::endl;
+
+  // pseudo-time integration in order to solve steady-state problem
+  bool converged = false;
+
+  if(this->param.convergence_criterion_steady_problem == ConvergenceCriterionSteadyProblem::SolutionIncrement)
+  {
+    while(!converged && this->time_step_number<=this->param.max_number_of_time_steps)
+    {
+      // save solution from previous time step
+      velocity_tmp = this->velocity[0];
+      pressure_tmp = this->pressure[0];
+
+      // calculate normm of solution
+      double const norm_u = velocity_tmp.l2_norm();
+      double const norm_p = pressure_tmp.l2_norm();
+      double const norm = std::sqrt(norm_u*norm_u + norm_p*norm_p);
+
+      // solve time step
+      this->do_timestep();
+
+      // calculate increment:
+      // increment = solution_{n+1} - solution_{n}
+      //           = solution[0] - solution_tmp
+      velocity_tmp *= -1.0;
+      pressure_tmp *= -1.0;
+      velocity_tmp.add(1.0,this->velocity[0]);
+      pressure_tmp.add(1.0,this->pressure[0]);
+
+      double const incr_u = velocity_tmp.l2_norm();
+      double const incr_p = pressure_tmp.l2_norm();
+      double const incr = std::sqrt(incr_u*incr_u + incr_p*incr_p);
+      double incr_rel = 1.0;
+      if(norm > 1.0e-10)
+        incr_rel = incr/norm;
+
+      // write output
+      if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
+      {
+        this->pcout << std::endl
+                    << "Norm of solution increment:" << std::endl
+                    << "  ||incr_abs|| = " << std::scientific<<std::setprecision(10) << incr << std::endl
+                    << "  ||incr_rel|| = " << std::scientific<<std::setprecision(10) << incr_rel << std::endl;
+      }
+
+      // check convergence
+      if(incr < this->param.abs_tol_steady ||
+         incr_rel < this->param.rel_tol_steady)
+      {
+        converged = true;
+      }
+    }
+  }
+  else if(this->param.convergence_criterion_steady_problem == ConvergenceCriterionSteadyProblem::ResidualSteadyNavierStokes)
+  {
+    AssertThrow(this->param.convergence_criterion_steady_problem != ConvergenceCriterionSteadyProblem::ResidualSteadyNavierStokes,
+        ExcMessage("This option is not available for the dual splitting scheme. "
+                   "Due to splitting errors the solution does not fulfill the "
+                   "residual of the steady, incompressible Navier-Stokes equations."));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("not implemented."));
+  }
+
+  AssertThrow(converged==true,
+      ExcMessage("Maximum number of time steps exceeded! This might be due to the fact that "
+                 "(i) the maximum number of iterations is simply too small to reach a steady solution, "
+                 "(ii) the problem is unsteady so that the applied solution approach is inappropriate, "
+                 "(iii) some of the solver tolerances are in conflict."));
+
+  this->pcout << std::endl << "... done!" << std::endl;
+}
+
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::

@@ -190,6 +190,7 @@ public:
   void setup(bool do_restart);
 
   void timeloop();
+  void timeloop_steady_problem();
 
   virtual void analyze_computing_times() const = 0;
 
@@ -224,6 +225,9 @@ protected:
 
   void calculate_vorticity_magnitude(parallel::distributed::Vector<value_type>       &dst,
                                      parallel::distributed::Vector<value_type> const &src) const;
+
+  void calculate_streamfunction(parallel::distributed::Vector<value_type>       &dst,
+                                parallel::distributed::Vector<value_type> const &src) const;
 
   void calculate_q_criterion(parallel::distributed::Vector<value_type>       &dst,
                              parallel::distributed::Vector<value_type> const &src) const;
@@ -288,6 +292,7 @@ protected:
   mutable parallel::distributed::Vector<value_type> divergence;
   mutable parallel::distributed::Vector<value_type> velocity_magnitude;
   mutable parallel::distributed::Vector<value_type> vorticity_magnitude;
+  mutable parallel::distributed::Vector<value_type> streamfunction;
   mutable parallel::distributed::Vector<value_type> q_criterion;
 
   std::vector<SolutionField<dim,value_type> > additional_fields;
@@ -302,7 +307,12 @@ private:
   void initialize_solution_and_calculate_timestep(bool do_restart);
 
   virtual void solve_timestep() = 0;
+  virtual void solve_steady_problem() = 0;
   virtual void postprocessing() const = 0;
+  virtual void postprocessing_steady_problem() const = 0;
+
+  // TODO
+  virtual void postprocessing_stability_analysis() = 0;
 
   virtual void prepare_vectors_for_next_timestep() = 0;
 
@@ -411,6 +421,19 @@ initialize_vectors()
     sol.name = "vorticity_magnitude";
     sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
     sol.vector = &vorticity_magnitude;
+    this->additional_fields.push_back(sol);
+  }
+
+
+  // streamfunction
+  if(this->param.output_data.write_streamfunction == true)
+  {
+    navier_stokes_operation->initialize_vector_velocity_scalar(this->streamfunction);
+
+    SolutionField<dim,value_type> sol;
+    sol.name = "streamfunction";
+    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
+    sol.vector = &streamfunction;
     this->additional_fields.push_back(sol);
   }
 
@@ -555,6 +578,17 @@ calculate_vorticity_magnitude(parallel::distributed::Vector<value_type>       &d
   {
     // use the same implementation as for velocity_magnitude
     navier_stokes_operation->compute_velocity_magnitude(dst, src);
+  }
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+calculate_streamfunction(parallel::distributed::Vector<value_type>       &dst,
+                         parallel::distributed::Vector<value_type> const &src) const
+{
+  if(this->param.output_data.write_streamfunction == true)
+  {
+    navier_stokes_operation->compute_streamfunction(dst,src);
   }
 }
 
@@ -716,6 +750,9 @@ timeloop()
 
   postprocessing();
 
+  // TODO
+//  postprocessing_stability_analysis();
+
   // a small number which is much smaller than the time step size
   const value_type EPSILON = 1.0e-10;
 
@@ -729,6 +766,34 @@ timeloop()
   total_time += global_timer.wall_time();
 
   pcout << std::endl << "... done!" << std::endl;
+
+  analyze_computing_times();
+}
+
+/*
+ *  Implementation of pseudo-timestepping to solve steady-state problems
+ *  applying an unsteady solution approach.
+ *  The aim/motivation is to obtain a solution algorithm that allows to
+ *  solve the steady Navier-Stokes equations more efficiently for large
+ *  Reynolds numbers as compared to a steady-state solver for which preconditioning
+ *  of the linearized, coupled system of equations becomes more difficult for
+ *  large Re numbers.
+ *  This solver differs from the unsteady solver only in the way that the simulation
+ *  is terminated in case a convergence criterion is fulfilled.
+ */
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+timeloop_steady_problem()
+{
+  global_timer.restart();
+
+  postprocessing_steady_problem();
+
+  solve_steady_problem();
+
+  postprocessing_steady_problem();
+
+  total_time += this->global_timer.wall_time();
 
   analyze_computing_times();
 }

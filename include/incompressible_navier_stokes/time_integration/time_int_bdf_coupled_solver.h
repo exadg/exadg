@@ -59,9 +59,15 @@ private:
   void initialize_vec_convective_term();
 
   virtual void solve_timestep();
+  virtual void solve_steady_problem();
+  double evaluate_residual();
+
   void postprocess_velocity();
 
   virtual void postprocessing() const;
+  virtual void postprocessing_steady_problem() const;
+
+  void postprocessing_stability_analysis();
 
   virtual void prepare_vectors_for_next_timestep();
 
@@ -82,6 +88,10 @@ private:
   // scaling factor continuity equation
   double scaling_factor_continuity;
   double characteristic_element_length;
+
+  // temporary vectors needed for pseudo-timestepping algorithm
+  parallel::distributed::Vector<value_type> velocity_tmp;
+  parallel::distributed::Vector<value_type> pressure_tmp;
 };
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -508,6 +518,7 @@ postprocessing() const
 
   this->calculate_velocity_magnitude(this->velocity_magnitude, solution[0].block(0));
   this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity);
+  this->calculate_streamfunction(this->streamfunction,vorticity);
   this->calculate_q_criterion(this->q_criterion, solution[0].block(0));
 
   this->postprocessor->do_postprocessing(solution[0].block(0),
@@ -542,6 +553,85 @@ postprocessing() const
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
+postprocessing_steady_problem() const
+{
+  this->calculate_vorticity(vorticity, solution[0].block(0));
+  this->calculate_divergence(this->divergence,solution[0].block(0));
+
+  this->calculate_velocity_magnitude(this->velocity_magnitude, solution[0].block(0));
+  this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity);
+  this->calculate_streamfunction(this->streamfunction,vorticity);
+  this->calculate_q_criterion(this->q_criterion, solution[0].block(0));
+
+  this->postprocessor->do_postprocessing(solution[0].block(0),
+                                         solution[0].block(0), // intermediate_velocity = velocity
+                                         solution[0].block(1),
+                                         vorticity,
+                                         this->additional_fields);
+}
+
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
+postprocessing_stability_analysis()
+{
+  AssertThrow(this->order==1,
+      ExcMessage("Order of BDF scheme has to be 1 for this stability analysis"));
+
+  AssertThrow(solution[0].block(0).l2_norm()<1.e-15 && solution[0].block(1).l2_norm()<1.e-15,
+      ExcMessage("Solution vector has to be zero for this stability analysis."));
+
+  AssertThrow(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) == 1,
+      ExcMessage("Number of MPI processes has to be 1."));
+
+  std::cout << std::endl << "Analysis of eigenvalue spectrum:" << std::endl;
+
+  const unsigned int size = solution[0].block(0).local_size();
+
+  LAPACKFullMatrix<value_type> propagation_matrix(size,size);
+
+  // loop over all columns of propagation matrix
+  for(unsigned int j=0; j<size; ++j)
+  {
+    // set j-th element to 1
+    solution[0].block(0).local_element(j) = 1.0;
+
+    // solve time step
+    solve_timestep();
+
+    // dst-vector velocity_np is j-th column of propagation matrix
+    for(unsigned int i=0; i<size; ++i)
+    {
+      propagation_matrix(i,j) = solution_np.block(0).local_element(i);
+    }
+
+    // reset j-th element to 0
+    solution[0].block(0).local_element(j) = 0.0;
+  }
+
+  // compute eigenvalues
+  propagation_matrix.compute_eigenvalues();
+
+  double norm_max = 0.0;
+
+  std::cout << "List of all eigenvalues:" << std::endl;
+
+  for(unsigned int i=0; i<size; ++i)
+  {
+    double norm = std::abs(propagation_matrix.eigenvalue(i));
+    if(norm>norm_max)
+      norm_max = norm;
+
+    // print eigenvalues
+    std::cout << propagation_matrix.eigenvalue(i) << std::endl;
+  }
+
+  std::cout << std::endl << std::endl
+            << "Maximum eigenvalue = " << norm_max << std::endl;
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 prepare_vectors_for_next_timestep()
 {
   push_back(solution);
@@ -552,6 +642,115 @@ prepare_vectors_for_next_timestep()
   {
     push_back(vec_convective_term);
   }
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
+solve_steady_problem()
+{
+  this->pcout << std::endl << "Starting time loop ..." << std::endl;
+
+  double const initial_residual = evaluate_residual();
+
+  // pseudo-time integration in order to solve steady-state problem
+  bool converged = false;
+
+  if(this->param.convergence_criterion_steady_problem == ConvergenceCriterionSteadyProblem::SolutionIncrement)
+  {
+    while(!converged && this->time_step_number<=this->param.max_number_of_time_steps)
+    {
+      // save solution from previous time step
+      velocity_tmp = this->solution[0].block(0);
+      pressure_tmp = this->solution[0].block(1);
+
+      // calculate normm of solution
+      double const norm_u = velocity_tmp.l2_norm();
+      double const norm_p = pressure_tmp.l2_norm();
+      double const norm = std::sqrt(norm_u*norm_u + norm_p*norm_p);
+
+      // solve time step
+      this->do_timestep();
+
+      // calculate increment:
+      // increment = solution_{n+1} - solution_{n}
+      //           = solution[0] - solution_tmp
+      velocity_tmp *= -1.0;
+      pressure_tmp *= -1.0;
+      velocity_tmp.add(1.0,this->solution[0].block(0));
+      pressure_tmp.add(1.0,this->solution[0].block(1));
+
+      double const incr_u = velocity_tmp.l2_norm();
+      double const incr_p = pressure_tmp.l2_norm();
+      double const incr = std::sqrt(incr_u*incr_u + incr_p*incr_p);
+      double incr_rel = 1.0;
+      if(norm > 1.0e-10)
+        incr_rel = incr/norm;
+
+      // write output
+      if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
+      {
+        this->pcout << std::endl
+                    << "Norm of solution increment:" << std::endl
+                    << "  ||incr_abs|| = " << std::scientific<<std::setprecision(10) << incr << std::endl
+                    << "  ||incr_rel|| = " << std::scientific<<std::setprecision(10) << incr_rel << std::endl;
+      }
+
+      // check convergence
+      if(incr < this->param.abs_tol_steady ||
+         incr_rel < this->param.rel_tol_steady)
+      {
+        converged = true;
+      }
+    }
+  }
+  else if(this->param.convergence_criterion_steady_problem == ConvergenceCriterionSteadyProblem::ResidualSteadyNavierStokes)
+  {
+    while(!converged && this->time_step_number<=this->param.max_number_of_time_steps)
+    {
+      this->do_timestep();
+
+      // check convergence by evaluating the residual of
+      // the steady-state incompressible Navier-Stokes equations
+      double const residual = evaluate_residual();
+
+      if(residual < this->param.abs_tol_steady ||
+         residual/initial_residual < this->param.rel_tol_steady)
+      {
+        converged = true;
+      }
+    }
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("not implemented."));
+  }
+
+  AssertThrow(converged==true,
+      ExcMessage("Maximum number of time steps exceeded! This might be due to the fact that "
+                 "(i) the maximum number of iterations is simply too small to reach a steady solution, "
+                 "(ii) the problem is unsteady so that the applied solution approach is inappropriate, "
+                 "(iii) some of the solver tolerances are in conflict."));
+
+  this->pcout << std::endl << "... done!" << std::endl;
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+double TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
+evaluate_residual()
+{
+  this->navier_stokes_operation->evaluate_nonlinear_residual_steady(this->solution_np,this->solution[0]);
+
+  double residual = this->solution_np.l2_norm();
+
+  // write output
+  if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
+  {
+    this->pcout << std::endl
+                << "Norm of residual of steady Navier-Stokes equations:" << std::endl
+                << "  ||r|| = " << std::scientific<<std::setprecision(10) << residual << std::endl;
+  }
+
+  return residual;
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -599,132 +798,6 @@ analyze_computing_times() const
         << std::setw(6) << std::left << data.max_index << std::endl
         << "_________________________________________________________________________________"
         << std::endl << std::endl;
-}
-
-
-/*
- *  Class that implements pseudo-timestepping based on
- *  BDF time integration and coupled solution approach.
- *  Hence, this class is derived from TimeIntBDFCoupled and is used
- *  to solve steady-state problems applying an unsteady solution approach.
- *  The aim/motivation is to obtain a solution algorithm that allows to
- *  solve the steady Navier-Stokes equations more efficiently for large
- *  Reynolds numbers as compared to a steady-state solver for which preconditioning
- *  of the linearized, coupled system of equations becomes more difficult for
- *  large Re numbers.
- */
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-class TimeIntBDFCoupledSteadyProblem : public TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>
-{
-public:
-  TimeIntBDFCoupledSteadyProblem(std::shared_ptr<NavierStokesOperation>              navier_stokes_operation_in,
-                                 std::shared_ptr<PostProcessorBase<dim,value_type> > postprocessor_in,
-                                 InputParametersNavierStokes<dim> const              &param_in,
-                                 unsigned int const                                  n_refine_time_in,
-                                 bool const                                          use_adaptive_time_stepping)
-    :
-    TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>
-      (navier_stokes_operation_in,postprocessor_in,param_in,n_refine_time_in,use_adaptive_time_stepping)
-  {}
-
-  void timeloop();
-
-private:
-  void solve();
-
-  double evaluate_residual();
-
-  void postprocessing() const;
-
-};
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void TimeIntBDFCoupledSteadyProblem<dim, fe_degree_u, value_type, NavierStokesOperation>::
-timeloop()
-{
-  this->global_timer.restart();
-
-  this->postprocessing();
-
-  solve();
-
-  this->postprocessing();
-
-  this->total_time += this->global_timer.wall_time();
-
-  this->analyze_computing_times();
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void TimeIntBDFCoupledSteadyProblem<dim, fe_degree_u, value_type, NavierStokesOperation>::
-solve()
-{
-  this->pcout << std::endl << "Starting time loop ..." << std::endl;
-
-  double const initial_residual = evaluate_residual();
-
-  // pseudo-time integration in order to solve steady-state problem
-  bool converged = false;
-  while(!converged && this->time_step_number<=this->param.max_number_of_time_steps)
-  {
-    this->do_timestep();
-
-    // check convergence by evaluating the residual of
-    // the steady-state incompressible Navier-Stokes equations
-    double const residual = evaluate_residual();
-
-    if(residual < this->param.abs_tol_residual_steady ||
-       residual/initial_residual < this->param.rel_tol_residual_steady)
-    {
-      converged = true;
-    }
-  }
-
-  AssertThrow(converged==true,
-      ExcMessage("Maximum number of time steps exceeded! This might be due to the fact that "
-                 "(i) the maximum number of iterations is simply too small to reach a steady solution, "
-                 "(ii) the problem is unsteady so that the applied solution approach is inappropriate, "
-                 "(iii) some of the solver tolerances are in conflict."));
-
-  this->pcout << std::endl << "... done!" << std::endl;
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-double TimeIntBDFCoupledSteadyProblem<dim, fe_degree_u, value_type, NavierStokesOperation>::
-evaluate_residual()
-{
-  this->navier_stokes_operation->evaluate_nonlinear_residual_steady(this->solution_np,this->solution[0]);
-
-  double residual = this->solution_np.l2_norm();
-
-  // write output
-  if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
-  {
-    this->pcout << std::endl
-                << "Norm of residual of steady Navier-Stokes equations:" << std::endl
-                << "  ||r|| = " << std::scientific<<std::setprecision(10) << residual << std::endl;
-  }
-
-  return residual;
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void TimeIntBDFCoupledSteadyProblem<dim, fe_degree_u, value_type, NavierStokesOperation>::
-postprocessing() const
-{
-  this->calculate_vorticity(this->vorticity, this->solution[0].block(0));
-  this->calculate_divergence(this->divergence, this->solution[0].block(0));
-
-  this->calculate_velocity_magnitude(this->velocity_magnitude, this->solution[0].block(0));
-  this->calculate_vorticity_magnitude(this->vorticity_magnitude, this->vorticity);
-  this->calculate_q_criterion(this->q_criterion, this->solution[0].block(0));
-
-  // call do_postprocessing() as for steady-state problems
-  this->postprocessor->do_postprocessing(this->solution[0].block(0),
-                                         this->solution[0].block(0), // intermediate_velocity = velocity
-                                         this->solution[0].block(1),
-                                         this->vorticity,
-                                         this->additional_fields);
 }
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_COUPLED_SOLVER_H_ */
