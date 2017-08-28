@@ -242,6 +242,86 @@ private:
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+class StreamfunctionCalculatorRHSOperator: public BaseOperator<dim>
+{
+  typedef StreamfunctionCalculatorRHSOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> THIS;
+
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
+
+  /*
+   * nomenclature typdedef FEEvaluationWrapper:
+   * FEEval_name1_name2 : name1 specifies the dof handler, name2 the quadrature formula
+   * example: FEEval_Pressure_Velocity_linear: dof handler for pressure (scalar quantity),
+   * quadrature formula with fe_degree_velocity+1 quadrature points
+   */
+
+  typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
+
+  typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,1,value_type,is_xwall> FEEval_Velocity_scalar_Velocity_linear;
+
+public:
+  StreamfunctionCalculatorRHSOperator()
+  :
+    data(nullptr),
+    dof_index_u(0),
+    dof_index_u_scalar(0)
+  {
+    AssertThrow(dim==2, ExcMessage("Calculation of streamfunction can only be used for dim==2."));
+  }
+
+  void initialize (MatrixFree<dim,value_type> const &mf_data,
+                   const unsigned int dof_index_u_in,
+                   const unsigned int dof_index_u_scalar_in)
+  {
+    this->data = &mf_data;
+    dof_index_u = dof_index_u_in;
+    dof_index_u_scalar = dof_index_u_scalar_in;
+  }
+
+  void apply(parallel::distributed::Vector<value_type>       &dst,
+             const parallel::distributed::Vector<value_type> &src) const
+  {
+    dst = 0;
+
+    data->cell_loop (&THIS::local_apply, this, dst, src);
+  }
+
+private:
+
+  void local_apply(const MatrixFree<dim,value_type>                 &data,
+                   parallel::distributed::Vector<value_type>        &dst,
+                   const parallel::distributed::Vector<value_type>  &src,
+                   const std::pair<unsigned int,unsigned int>       &cell_range) const
+  {
+    FEEval_Velocity_Velocity_linear fe_eval_velocity(data,this->fe_param,dof_index_u);
+    FEEval_Velocity_scalar_Velocity_linear fe_eval_velocity_scalar(data,this->fe_param,dof_index_u_scalar);
+
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval_velocity.reinit(cell);
+      fe_eval_velocity.read_dof_values(src);
+      fe_eval_velocity.evaluate(true,false);
+
+      fe_eval_velocity_scalar.reinit(cell);
+
+      for (unsigned int q=0; q<fe_eval_velocity_scalar.n_q_points; q++)
+      {
+        // we exploit that the (scalar) vorticity is stored in the first component of the vector
+        // in case of 2D problems
+        fe_eval_velocity_scalar.submit_value(fe_eval_velocity.get_value(q)[0],q);
+      }
+      fe_eval_velocity_scalar.integrate(true,false);
+      fe_eval_velocity_scalar.distribute_local_to_global(dst);
+    }
+  }
+
+  MatrixFree<dim,value_type> const * data;
+  unsigned int dof_index_u;
+  unsigned int dof_index_u_scalar;
+};
+
+template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class QCriterionCalculator: public BaseOperator<dim>
 {
   typedef QCriterionCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> THIS;

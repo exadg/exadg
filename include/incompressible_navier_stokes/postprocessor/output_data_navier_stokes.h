@@ -17,6 +17,7 @@ struct OutputDataNavierStokes : public OutputData
     write_divergence(false),
     write_velocity_magnitude(false),
     write_vorticity_magnitude(false),
+    write_streamfunction(false),
     write_q_criterion(false)
   {}
 
@@ -35,6 +36,15 @@ struct OutputDataNavierStokes : public OutputData
 
   // write vorticity magnitude
   bool write_vorticity_magnitude;
+
+  // Calculate streamfunction in order to visualize streamlines!
+  // Note that this option is only available in 2D!
+  // To calculate the streamfunction Psi a Poisson equation is solved
+  // with homogeneous Dirichlet BC's. Accordingly, this approach can only be
+  // used for flow problems where the whole boundary is one streamline, e.g.,
+  // cavity-type flow problems where the velocity is tangential to the boundary
+  // on one part of the boundary and 0 (no-slip) on the rest of the boundary.
+  bool write_streamfunction;
 
   // write Q criterion
   bool write_q_criterion;

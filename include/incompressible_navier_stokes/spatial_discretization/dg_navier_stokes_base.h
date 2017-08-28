@@ -151,6 +151,11 @@ public:
     return dof_index_u;
   }
 
+  unsigned int get_dof_index_velocity_scalar() const
+  {
+    return dof_index_u_scalar;
+  }
+
   unsigned int get_quad_index_velocity_linear() const
   {
     return quad_index_u;
@@ -281,6 +286,10 @@ public:
   // velocity_magnitude
   void compute_velocity_magnitude (parallel::distributed::Vector<Number>       &dst,
                                    const parallel::distributed::Vector<Number> &src) const;
+
+  // streamfunction
+  void compute_streamfunction (parallel::distributed::Vector<Number>       &dst,
+                               const parallel::distributed::Vector<Number> &src) const;
 
   // Q criterion
   void compute_q_criterion (parallel::distributed::Vector<Number>       &dst,
@@ -773,6 +782,94 @@ compute_velocity_magnitude (parallel::distributed::Vector<Number>       &dst,
   velocity_magnitude_calculator.compute(dst,src);
 
   inverse_velocity_mass_matrix_operator_scalar->apply(dst,dst);
+}
+
+/*
+ *  Streamfunction psi (2D only): defined as u1 = d(psi)/dx2, u2 = - d(psi)/dx1
+ *
+ *  Vorticity: omega = du2/dx1 - du1/dx2
+ *
+ *  --> laplace(psi) = (d²/dx1²+d²/dx2²)(psi)
+ *                   = d(d(psi)/dx1)/dx1 + d(d(psi)/dx2)/dx2
+ *                   = d(-u2)/dx1 + d(u1)/dx2 = - omega
+ *
+ *  or
+ *      - laplace(psi) = omega
+ *
+ *  with homogeneous Dirichlet BC's (assumption: boundary == streamline)
+ */
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+compute_streamfunction (parallel::distributed::Vector<Number>       &dst,
+                        parallel::distributed::Vector<Number> const &src) const
+{
+  AssertThrow(dim==2, ExcMessage("Calculation of streamfunction can only be used for dim==2."));
+
+  // compute rhs vector
+  StreamfunctionCalculatorRHSOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> rhs_operator;
+  rhs_operator.initialize(data,dof_index_u,dof_index_u_scalar);
+  parallel::distributed::Vector<Number> rhs;
+  this->initialize_vector_velocity_scalar(rhs);
+  rhs_operator.apply(rhs,src);
+
+  // setup Laplace operator for scalar velocity vector
+  LaplaceOperatorData<dim> laplace_operator_data;
+  laplace_operator_data.laplace_dof_index = this->get_dof_index_velocity_scalar();
+  laplace_operator_data.laplace_quad_index = this->get_quad_index_velocity_linear();
+  std::shared_ptr<BoundaryDescriptorLaplace<dim> > boundary_descriptor_streamfunction;
+  boundary_descriptor_streamfunction.reset(new BoundaryDescriptorLaplace<dim>());
+
+  // fill boundary descriptor: Assumption: only Dirichlet BC's
+  boundary_descriptor_streamfunction->dirichlet = boundary_descriptor_velocity->dirichlet_bc;
+
+  AssertThrow(boundary_descriptor_velocity->neumann_bc.empty() == true,
+      ExcMessage("Assumption is not fulfilled. Streamfunction calculator is "
+                 "not implemented for this type of boundary conditions."));
+  AssertThrow(boundary_descriptor_velocity->symmetry_bc.empty() == true,
+      ExcMessage("Assumption is not fulfilled. Streamfunction calculator is "
+                 "not implemented for this type of boundary conditions."));
+
+  laplace_operator_data.bc = boundary_descriptor_streamfunction;
+  laplace_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
+
+  LaplaceOperator<dim,fe_degree, Number> laplace_operator;
+  laplace_operator.reinit(this->data,this->mapping,laplace_operator_data);
+
+  // setup preconditioner
+  std::shared_ptr<PreconditionerBase<Number> > preconditioner;
+
+  // use multigrid preconditioner with Chebyshev smoother
+  MultigridData mg_data;
+
+  // use single precision for multigrid
+  typedef float MultigridNumber;
+  typedef MyMultigridPreconditionerLaplace<dim, Number,
+      LaplaceOperator<dim, fe_degree, MultigridNumber>,
+      LaplaceOperatorData<dim> > MULTIGRID;
+
+  preconditioner.reset(new MULTIGRID());
+
+  std::shared_ptr<MULTIGRID> mg_preconditioner =
+      std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
+
+  mg_preconditioner->initialize(mg_data,
+                                this->dof_handler_u_scalar,
+                                this->mapping,
+                                laplace_operator_data,
+                                laplace_operator_data.bc->dirichlet);
+
+  // setup solver
+  CGSolverData solver_data;
+  solver_data.solver_tolerance_rel = 1.e-10;
+  solver_data.use_preconditioner = true;
+
+  CGSolver<LaplaceOperator<dim, fe_degree, Number>,
+           PreconditionerBase<Number>,
+           parallel::distributed::Vector<Number> >
+    poisson_solver(laplace_operator,*preconditioner,solver_data);
+
+  // solve Poisson problem
+  unsigned int iterations = poisson_solver.solve(dst,rhs);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
