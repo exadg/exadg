@@ -3225,16 +3225,38 @@ private:
   /*
    *  Calculate Lax-Friedrichs flux for nonlinear operator on interior faces.
    */
-  inline void calculate_flux_nonlinear_operator(Tensor<1,dim,VectorizedArray<value_type> > &flux,
-                                                Tensor<1,dim,VectorizedArray<value_type> > &uM,
-                                                Tensor<1,dim,VectorizedArray<value_type> > &uP,
-                                                Tensor<1,dim,VectorizedArray<value_type> > &normalM) const
+  inline void calculate_flux_nonlinear_operator(Tensor<1,dim,VectorizedArray<value_type> >       &flux,
+                                                Tensor<1,dim,VectorizedArray<value_type> > const &uM,
+                                                Tensor<1,dim,VectorizedArray<value_type> > const &uP,
+                                                Tensor<1,dim,VectorizedArray<value_type> > const &normalM) const
   {
     VectorizedArray<value_type> uM_n = uM*normalM;
     VectorizedArray<value_type> uP_n = uP*normalM;
 
     Tensor<1,dim,VectorizedArray<value_type> > average_normal_flux =
         make_vectorized_array<value_type>(0.5) * (uM*uM_n + uP*uP_n);
+
+    Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
+
+    VectorizedArray<value_type> lambda;
+    calculate_lambda(lambda,uM_n,uP_n);
+
+    flux = average_normal_flux + 0.5 * lambda * jump_value;
+  }
+
+  // TODO outflow BC
+  inline void calculate_flux_nonlinear_operator_boundary(
+      Tensor<1,dim,VectorizedArray<value_type> >       &flux,
+      Tensor<1,dim,VectorizedArray<value_type> > const &uM,
+      Tensor<1,dim,VectorizedArray<value_type> > const &uP,
+      Tensor<1,dim,VectorizedArray<value_type> > const &normalM,
+      VectorizedArray<value_type> const                &factor) const
+  {
+    VectorizedArray<value_type> uM_n = uM*normalM;
+    VectorizedArray<value_type> uP_n = uP*normalM;
+
+    Tensor<1,dim,VectorizedArray<value_type> > average_normal_flux =
+        make_vectorized_array<value_type>(0.5) * (uM*uM_n + factor*uP*uP_n);
 
     Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
 
@@ -3451,7 +3473,27 @@ private:
         Tensor<1,dim,VectorizedArray<value_type> > normalM = fe_eval.get_normal_vector(q);
 
         Tensor<1,dim,VectorizedArray<value_type> > flux;
-        calculate_flux_nonlinear_operator(flux,uM,uP,normalM);
+        calculate_flux_nonlinear_operator(flux,uM,uP,normalM); // TODO outflow BC
+
+        // TODO outflow BC
+//        bool use_outflow_boundary_condition = true;
+//
+//        // outflow: do nothing, factor = 1.0
+//        // inflow: set convective flux to zero, value = -1.0
+//        VectorizedArray<value_type> outflow_on_neumann_boundary
+//          = make_vectorized_array<value_type>(1.0);
+//
+//        if(use_outflow_boundary_condition == true &&
+//           boundary_type == BoundaryTypeU::Neumann)
+//        {
+//          VectorizedArray<value_type> uM_n = uM*normalM;
+//
+//          for(unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
+//            if(uM_n[v] < 0.0) //inflow
+//              outflow_on_neumann_boundary[v] = -1.0;
+//        }
+//        calculate_flux_nonlinear_operator_boundary(flux,uM,uP,normalM,outflow_on_neumann_boundary);
+        // TODO outflow BC
 
         fe_eval.submit_value(flux,q);
       }
