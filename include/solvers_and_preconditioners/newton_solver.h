@@ -26,6 +26,7 @@ public:
   {
     nonlinear_operator.initialize_vector_for_newton_solver(residual);
     nonlinear_operator.initialize_vector_for_newton_solver(increment);
+    nonlinear_operator.initialize_vector_for_newton_solver(tmp);
   }
 
   void solve(Vector &dst, unsigned int &newton_iterations, unsigned int &linear_iterations)
@@ -57,21 +58,45 @@ public:
       if(false)//(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
         std::cout << "  Number of linear solver iterations: " << linear_iterations << std::endl;
 
-      // update solution
-      dst.add(1.0, increment);
+      // damped Newton scheme
+      double omega = 1.0; // damping factor
+      double tau = 0.5; // another parameter (has to be smaller than 1)
+      double norm_r_tmp = 1.0; // norm of residual using temporary solution
+      unsigned int n_iter_tmp = 0, N_ITER_TMP_MAX = 10; // iteration counts for damping scheme
+      do
+      {
+        // calculate temporary solution
+        tmp.equ(1.0, dst, omega, increment);
 
-      // evaluate residual using the new solution
-      nonlinear_operator.evaluate_nonlinear_residual(residual,dst);
+        // evaluate residual using the temporary solution
+        nonlinear_operator.evaluate_nonlinear_residual(residual,tmp);
 
-      norm_r = residual.l2_norm();
+        // calculate norm of residual (for temporary solution)
+        norm_r_tmp = residual.l2_norm();
 
+        // reduce step length
+        omega = omega/2.0;
+
+        // increment counter
+        n_iter_tmp++;
+      }
+      while(norm_r_tmp >= (1.0-tau*omega)*norm_r && n_iter_tmp <= N_ITER_TMP_MAX);
+
+      AssertThrow(n_iter_tmp <= N_ITER_TMP_MAX,
+          ExcMessage("Damped Newton iteration does not convergence."));
+
+      // update solution and residual
+      dst = tmp;
+      norm_r = norm_r_tmp;
+
+      // increment iteration counter
       ++n_iter;
     }
 
     if(n_iter >= solver_data.max_iter)
     {
       if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
-        std::cout<<"Newton solver failed to solve nonlinear problem to given tolerance. Maximum number of iterations exceeded!" << std::endl;
+        std::cout << "Newton solver failed to solve nonlinear problem to given tolerance. Maximum number of iterations exceeded!" << std::endl;
     }
 
     newton_iterations = n_iter;
@@ -85,6 +110,7 @@ private:
   LinearOperator &linear_operator;
   SolverLinearizedProblem &linear_solver;
   Vector residual, increment;
+  Vector tmp;
 };
 
 
