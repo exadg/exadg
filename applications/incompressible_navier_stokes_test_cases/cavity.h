@@ -25,7 +25,7 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 3;
+unsigned int const FE_DEGREE_VELOCITY = 8;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -33,20 +33,20 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 3;
-unsigned int const REFINE_STEPS_SPACE_MAX = 3; //REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 0;
+unsigned int const REFINE_STEPS_SPACE_MAX = 6; //REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
-const ProblemType PROBLEM_TYPE = ProblemType::Steady;
+const ProblemType PROBLEM_TYPE = ProblemType::Steady; //Unsteady; //Steady;
 const double L = 1.0;
 
-std::string OUTPUT_FOLDER = "output/cavity/";
+std::string OUTPUT_FOLDER = "output/cavity/paper/new/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "test"; //"Re1000_512_unsteady";
+std::string OUTPUT_NAME = "Re1e3"; //"Re1000_512_unsteady";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -61,14 +61,14 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // PHYSICAL QUANTITIES
   start_time = 0.0;
   end_time = 5.0e2;
-  viscosity = 1.0e-4;
+  viscosity = 1.0e-3;
 
 
   // TEMPORAL DISCRETIZATION
-  solver_type = SolverType::Unsteady;
+  solver_type = SolverType::Unsteady; //Steady; //Unsteady;
   temporal_discretization = TemporalDiscretization::BDFPressureCorrection; //BDFPressureCorrection; //BDFDualSplittingScheme; //BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; //Implicit;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepCFL; //ConstTimeStepUserSpecified;
   max_velocity = 1.0;
   cfl = 2.0;
   time_step_size = 1.0e-1;
@@ -159,20 +159,25 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // momentum step
 
   // Newton solver
-  newton_solver_data_momentum.abs_tol = 1.e-12;
+  newton_solver_data_momentum.abs_tol = 1.e-10;
   newton_solver_data_momentum.rel_tol = 1.e-2; //1.e-8; //TODO
   newton_solver_data_momentum.max_iter = 100;
 
   // linear solver
-  solver_momentum = SolverMomentum::GMRES;
-  preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; //VelocityDiffusion; //VelocityConvectionDiffusion;
-  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+  solver_momentum = SolverMomentum::FGMRES; //GMRES; //FGMRES;
+  preconditioner_momentum = MomentumPreconditioner::VelocityConvectionDiffusion; //InverseMassMatrix; //VelocityDiffusion; //VelocityConvectionDiffusion;
+//  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+  update_preconditioner_momentum = true;
+  multigrid_data_momentum.smoother = MultigridSmoother::Jacobi;
+  multigrid_data_momentum.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
+  multigrid_data_momentum.jacobi_smoother_data.number_of_smoothing_steps = 5;
+  multigrid_data_momentum.jacobi_smoother_data.damping_factor = 0.7;
+  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner;
   abs_tol_momentum_linear = 1.e-12;
   rel_tol_momentum_linear = 1.e-2; //1.e-8; //TODO
   max_iter_momentum_linear = 1e4;
   use_right_preconditioning_momentum = true;
   max_n_tmp_vectors_momentum = 100;
-  update_preconditioner_momentum = false;
 
   // formulation
   order_pressure_extrapolation = 1;
@@ -229,11 +234,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // write output for visualization of results
   print_input_parameters = true;
-  output_data.write_output = false; //true;
-  output_data.output_folder = OUTPUT_FOLDER;
+  output_data.write_output = false;
+  output_data.output_folder = OUTPUT_FOLDER_VTU;
   output_data.output_name = OUTPUT_NAME;
   output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time)/500;
+  output_data.output_interval_time = (end_time-start_time)/100;
   output_data.write_divergence = true;
   output_data.write_streamfunction = false;
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
@@ -244,7 +249,38 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
   // output of solver information
-  output_solver_info_every_timesteps = 1e2;
+  output_solver_info_every_timesteps = 1e3;
+
+  // line plot data
+  line_plot_data.write_output = true;
+  line_plot_data.filename_prefix = OUTPUT_FOLDER;
+
+  // which quantities
+  Quantity quantity_u;
+  quantity_u.type = QuantityType::Velocity;
+//  Quantity quantity_p;
+//  quantity_p.type = QuantityType::Pressure;
+
+  // lines
+  Line<dim> vert_line, hor_line;
+
+  // vertical line
+  vert_line.begin = Point<dim>(0.5,0.0);
+  vert_line.end = Point<dim>(0.5,1.0);
+  vert_line.name = "vert_line";
+  vert_line.n_points = 100001; //2001;
+  vert_line.quantities.push_back(quantity_u);
+  //vert_line.quantities.push_back(quantity_p);
+  line_plot_data.lines.push_back(vert_line);
+
+  // horizontal line
+  hor_line.begin = Point<dim>(0.0,0.5);
+  hor_line.end = Point<dim>(1.0,0.5);
+  hor_line.name = "hor_line";
+  hor_line.n_points = 10001; //2001;
+  hor_line.quantities.push_back(quantity_u);
+  //hor_line.quantities.push_back(quantity_p);
+  line_plot_data.lines.push_back(hor_line);
 }
 
 /**************************************************************************************/
@@ -523,6 +559,7 @@ construct_postprocessor(InputParametersNavierStokes<dim> const &param)
   pp_data.pressure_difference_data = param.pressure_difference_data;
   pp_data.mass_data = param.mass_data;
   pp_data.kinetic_energy_data = param.kinetic_energy_data;
+  pp_data.line_plot_data = param.line_plot_data;
 
   std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE, Number> > pp;
   pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE, Number>(pp_data));

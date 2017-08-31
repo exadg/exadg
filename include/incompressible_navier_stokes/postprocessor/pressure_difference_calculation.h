@@ -44,8 +44,8 @@ public:
       point_1 = pressure_difference_data.point_1;
       point_2 = pressure_difference_data.point_2;
 
-      evaluate_solution_in_point<dim, Number>(*dof_handler_pressure,*mapping,pressure,point_1,pressure_1);
-      evaluate_solution_in_point<dim, Number>(*dof_handler_pressure,*mapping,pressure,point_2,pressure_2);
+      evaluate_scalar_quantity_in_point(*dof_handler_pressure,*mapping,pressure,point_1,pressure_1);
+      evaluate_scalar_quantity_in_point(*dof_handler_pressure,*mapping,pressure,point_2,pressure_2);
 
       Number const pressure_difference = pressure_1 - pressure_2;
 

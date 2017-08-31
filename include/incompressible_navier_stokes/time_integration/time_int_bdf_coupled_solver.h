@@ -743,7 +743,7 @@ evaluate_residual()
   double residual = this->solution_np.l2_norm();
 
   // write output
-  if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
+  if((this->time_step_number-1)%this->param.output_solver_info_every_timesteps == 0)
   {
     this->pcout << std::endl
                 << "Norm of residual of steady Navier-Stokes equations:" << std::endl
