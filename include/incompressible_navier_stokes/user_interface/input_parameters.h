@@ -15,6 +15,7 @@
 #include "../../incompressible_navier_stokes/postprocessor/pressure_difference_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/turbulence_statistics_data.h"
 #include "../include/functionalities/print_functions.h"
+#include "../postprocessor/line_plot_data.h"
 #include "postprocessor/error_calculation_data.h"
 #include "solvers_and_preconditioners/multigrid_input_parameters.h"
 #include "solvers_and_preconditioners/newton_solver_data.h"
@@ -741,7 +742,10 @@ public:
     turb_ch_data(TurbulentChannelData()),
 
     // kinetic energy
-    kinetic_energy_data(KineticEnergyData())
+    kinetic_energy_data(KineticEnergyData()),
+
+    //plot data along line
+    line_plot_data(LinePlotData<dim>())
   {}
 
   void set_input_parameters();
@@ -2040,6 +2044,8 @@ public:
   // kinetic energy
   KineticEnergyData kinetic_energy_data;
 
+  // plot along lines
+  LinePlotData<dim> line_plot_data;
 };
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_ */
