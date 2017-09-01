@@ -523,6 +523,42 @@ struct KineticEnergyData
   std::string filename_prefix;
 };
 
+// calculation of perturbation energy for Orr-Sommerfeld problem
+
+struct PerturbationEnergyData
+{
+  PerturbationEnergyData()
+    :
+  calculate(false),
+  calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
+  filename_prefix("orr_sommerfeld"),
+  omega_i(0.0),
+  h(1.0),
+  U_max(1.0)
+  {}
+
+  void print(ConditionalOStream &pcout)
+  {
+    if(calculate == true)
+    {
+      pcout << "  Calculate perturbation energy:" << std::endl;
+      print_parameter(pcout,"Calculate perturbation energy",calculate);
+      print_parameter(pcout,"Calculate every timesteps",calculate_every_time_steps);
+      print_parameter(pcout,"Filename output",filename_prefix);
+      print_parameter(pcout,"Amplification omega_i",omega_i);
+      print_parameter(pcout,"Channel height h",h);
+      print_parameter(pcout,"Maximum velocity U_max",U_max);
+    }
+  }
+
+  bool calculate;
+  unsigned int calculate_every_time_steps;
+  std::string filename_prefix;
+  double omega_i;
+  double h;
+  double U_max;
+};
+
 
 
 
@@ -743,6 +779,9 @@ public:
 
     // kinetic energy
     kinetic_energy_data(KineticEnergyData()),
+
+    // perturbation energy data
+    perturbation_energy_data(PerturbationEnergyData()),
 
     //plot data along line
     line_plot_data(LinePlotData<dim>())
@@ -1348,7 +1387,8 @@ public:
                     "Solver for linear(ized) problem",
                     str_solver_momentum[(int)solver_momentum]);
 
-    std::string str_precon_momentum[] = { "None",
+    std::string str_precon_momentum[] = { "Undefined",
+                                          "None",
                                           "PointJacobi",
                                           "BlockJacobi",
                                           "InverseMassMatrix",
@@ -1581,6 +1621,9 @@ public:
 
     // kinetic energy
     kinetic_energy_data.print(pcout);
+
+    // perturbation energy
+    perturbation_energy_data.print(pcout);
   }
 
   /**************************************************************************************/
@@ -2043,6 +2086,9 @@ public:
 
   // kinetic energy
   KineticEnergyData kinetic_energy_data;
+
+  // perturbation energy data (Orr-Sommerfeld)
+  PerturbationEnergyData perturbation_energy_data;
 
   // plot along lines
   LinePlotData<dim> line_plot_data;

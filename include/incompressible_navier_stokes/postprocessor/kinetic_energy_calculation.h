@@ -188,7 +188,6 @@ private:
     {
       fe_eval.reinit(cell);
       fe_eval.read_dof_values(src);
-//      fe_eval.evaluate(true,false);
       fe_eval.evaluate(true,true);
       fe_eval.fill_JxW_values(JxW_values);
 
