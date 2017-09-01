@@ -50,9 +50,9 @@ using namespace dealii;
 // set the number of space dimensions: dimension = 2, 3
 unsigned int const DIMENSION = 3;
 
-// set the polynomial degree of the shape functions k = 1,...,10
+// set the polynomial degree of the shape functions k
 unsigned int const FE_DEGREE_MIN = 1;
-unsigned int const FE_DEGREE_MAX = 3;
+unsigned int const FE_DEGREE_MAX = 15;
 bool const RUN_EQUAL_SIZE = true;
 
 // set the number of refinement levels
@@ -272,10 +272,6 @@ private:
                            const parallel::distributed::Vector<Number> &src,
                            const std::pair<unsigned int,unsigned int>  &face_range) const;
 
-  // cell integral
-  template<typename FEEvaluation>
-  inline void do_cell_integral(FEEvaluation &fe_eval) const;
-
   MatrixFree<dim,Number> const *data;
 
   LaplaceOperatorData<dim> operator_data;
@@ -425,7 +421,14 @@ cell_loop (const MatrixFree<dim,Number>                &data,
       phi.reinit (cell);
       phi.read_dof_values(src);
 
-      do_cell_integral(phi);
+      phi.evaluate (false,true,false);
+
+      for (unsigned int q=0; q<phi.n_q_points; ++q)
+        {
+          phi.submit_gradient (phi.get_gradient(q), q);
+        }
+
+      phi.integrate (false,true);
 
       phi.distribute_local_to_global (dst);
     }
@@ -544,21 +547,6 @@ boundary_face_loop (const MatrixFree<dim,Number>                &data,
   }
 }
 
-template <int dim, int degree, typename Number>
-template<typename FEEvaluation>
-inline void LaplaceOperator<dim,degree,Number>::
-do_cell_integral(FEEvaluation &fe_eval) const
-{
-  fe_eval.evaluate (false,true,false);
-
-  for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
-  {
-    fe_eval.submit_gradient (fe_eval.get_gradient(q), q);
-  }
-
-  fe_eval.integrate (false,true);
-}
-
 
 
 template <int dim, int degree, typename Number>
@@ -578,7 +566,7 @@ cell_loop_manual_1(parallel::distributed::Vector<Number> &dst,
   scratch_data_array->resize_fast((dim+2)*dofs_per_cell);
   VectorizedArray<Number> *__restrict data_ptr = scratch_data_array->begin();
 
-  typedef internal::EvaluatorTensorProduct<internal::evaluate_evenodd, dim, degree, degree+1,
+  typedef internal::EvaluatorTensorProduct<internal::evaluate_evenodd, dim, degree+1, degree+1,
                                            VectorizedArray<Number> > Eval;
   Eval eval_val (data->get_shape_info().shape_values_eo);
   Eval eval(AlignedVector<VectorizedArray<Number> >(),
@@ -591,7 +579,7 @@ cell_loop_manual_1(parallel::distributed::Vector<Number> &dst,
     {
       // read from src vector
       const unsigned int *dof_indices =
-        &data->get_dof_info().dof_indices[cell*VectorizedArray<Number>::n_array_elements];
+        &data->get_dof_info().dof_indices_contiguous[2][cell*VectorizedArray<Number>::n_array_elements];
       const unsigned int vectorization_populated =
         data->n_components_filled(cell);
       // transform array-of-struct to struct-of-array
@@ -629,15 +617,18 @@ cell_loop_manual_1(parallel::distributed::Vector<Number> &dst,
 
       // loop over quadrature points. depends on the data layout in
       // MappingInfo
-      const VectorizedArray<Number> *__restrict geometry_data_ptr =
-        data->get_mapping_info().cell_data[0].data_storage.begin() +
-        data->get_mapping_info().cell_data[0].global_index_offsets[cell];
+      const VectorizedArray<Number> *__restrict jxw_ptr =
+        data->get_mapping_info().cell_data[0].JxW_values.begin() +
+        data->get_mapping_info().cell_data[0].data_index_offsets[cell];
+      const Tensor<2,dim,VectorizedArray<Number>> *__restrict jac_ptr =
+        data->get_mapping_info().cell_data[0].jacobians[0].begin() +
+        data->get_mapping_info().cell_data[0].data_index_offsets[cell];
       // Cartesian cell case
       if (data->get_mapping_info().cell_type[cell] == internal::MatrixFreeFunctions::cartesian)
         for (unsigned int q=0; q<dofs_per_cell; ++q)
           for (unsigned int d=0; d<dim; ++d)
-            data_ptr[(2+d)*dofs_per_cell+q] *= geometry_data_ptr[1+d*dim+d] *
-              geometry_data_ptr[1+d*dim+d] * (geometry_data_ptr[0] * quadrature_weights[q]);
+            data_ptr[(2+d)*dofs_per_cell+q] *= jac_ptr[0][d][d] *
+              jac_ptr[0][d][d] * (jxw_ptr[0] * quadrature_weights[q]);
       // affine cell case
       else if (data->get_mapping_info().cell_type[cell] == internal::MatrixFreeFunctions::affine)
         for (unsigned int q=0; q<dofs_per_cell; ++q)
@@ -646,18 +637,18 @@ cell_loop_manual_1(parallel::distributed::Vector<Number> &dst,
             // get gradient
             for (unsigned int d=0; d<dim; ++d)
               {
-                grad[d] = geometry_data_ptr[1+d*dim] * data_ptr[2*dofs_per_cell+q];
+                grad[d] = jac_ptr[0][d][0] * data_ptr[2*dofs_per_cell+q];
                 for (unsigned int e=1; e<dim; ++e)
-                  grad[d] += geometry_data_ptr[1+d*dim+e] * data_ptr[(2+e)*dofs_per_cell+q];
+                  grad[d] += jac_ptr[0][d][e] * data_ptr[(2+e)*dofs_per_cell+q];
               }
             // apply gradient of test function
             for (unsigned int d=0; d<dim; ++d)
               {
-                data_ptr[(2+d)*dofs_per_cell+q] = geometry_data_ptr[1+d] * grad[0];
+                data_ptr[(2+d)*dofs_per_cell+q] = jac_ptr[0][0][d] * grad[0];
                 for (unsigned int e=1; e<dim; ++e)
-                  data_ptr[(2+d)*dofs_per_cell+q] += geometry_data_ptr[1+e*dim+d] * grad[e];
+                  data_ptr[(2+d)*dofs_per_cell+q] += jac_ptr[0][e][d] * grad[e];
                 // multiply by quadrature weight
-                data_ptr[(2+d)*dofs_per_cell+q] *= geometry_data_ptr[0] * quadrature_weights[q];
+                data_ptr[(2+d)*dofs_per_cell+q] *= jxw_ptr[0] * quadrature_weights[q];
               }
           }
       else
@@ -668,18 +659,18 @@ cell_loop_manual_1(parallel::distributed::Vector<Number> &dst,
             // get gradient
             for (unsigned int d=0; d<dim; ++d)
               {
-                grad[d] = geometry_data_ptr[dofs_per_cell+q*dim*dim+d*dim] * data_ptr[2*dofs_per_cell+q];
+                grad[d] = jac_ptr[q][d][0] * data_ptr[2*dofs_per_cell+q];
                 for (unsigned int e=1; e<dim; ++e)
-                  grad[d] += geometry_data_ptr[dofs_per_cell+q*dim*dim+d*dim+e] * data_ptr[(2+e)*dofs_per_cell+q];
+                  grad[d] += jac_ptr[q][d][e] * data_ptr[(2+e)*dofs_per_cell+q];
               }
             // apply gradient of test function
             for (unsigned int d=0; d<dim; ++d)
               {
-                data_ptr[(2+d)*dofs_per_cell+q] = geometry_data_ptr[dofs_per_cell+q*dim*dim+d] * grad[0];
+                data_ptr[(2+d)*dofs_per_cell+q] = jac_ptr[q][0][d] * grad[0];
                 for (unsigned int e=1; e<dim; ++e)
-                  data_ptr[(2+d)*dofs_per_cell+q] += geometry_data_ptr[dofs_per_cell+q*dim*dim+e*dim+d] * grad[e];
+                  data_ptr[(2+d)*dofs_per_cell+q] += jac_ptr[q][e][d] * grad[e];
                 // multiply by quadrature weight
-                data_ptr[(2+d)*dofs_per_cell+q] *= geometry_data_ptr[q];
+                data_ptr[(2+d)*dofs_per_cell+q] *= jxw_ptr[q];
               }
           }
 
@@ -758,13 +749,13 @@ cell_loop_manual_2(parallel::distributed::Vector<Number> &dst,
             data->get_shape_info().shape_hessians_collocation_eo);
 
   const Number*__restrict quadrature_weights =
-    data->get_mapping_info().cell_data[0].storage_descriptor[0].quadrature_weights.begin();
+    data->get_mapping_info().cell_data[0].descriptor[0].quadrature_weights.begin();
 
   for (unsigned int cell=0; cell<data->n_macro_cells(); ++cell)
     {
       // read from src vector
       const unsigned int *dof_indices =
-        &data->get_dof_info().dof_indices[cell*VectorizedArray<Number>::n_array_elements];
+        &data->get_dof_info().dof_indices_contiguous[2][cell*VectorizedArray<Number>::n_array_elements];
       const unsigned int vectorization_populated =
         data->n_components_filled(cell);
       // transform array-of-struct to struct-of-array
@@ -970,15 +961,18 @@ cell_loop_manual_2(parallel::distributed::Vector<Number> &dst,
 
       // loop over quadrature points. depends on the data layout in
       // MappingInfo
-      const VectorizedArray<Number> *__restrict geometry_data_ptr =
-        data->get_mapping_info().cell_data[0].data_storage.begin() +
-        data->get_mapping_info().cell_data[0].global_index_offsets[cell];
+      const VectorizedArray<Number> *__restrict jxw_ptr =
+        data->get_mapping_info().cell_data[0].JxW_values.begin() +
+        data->get_mapping_info().cell_data[0].data_index_offsets[cell];
+      const Tensor<2,dim,VectorizedArray<Number>> *__restrict jac_ptr =
+        data->get_mapping_info().cell_data[0].jacobians[0].begin() +
+        data->get_mapping_info().cell_data[0].data_index_offsets[cell];
       // Cartesian cell case
       if (data->get_mapping_info().cell_type[cell] == internal::MatrixFreeFunctions::cartesian)
         for (unsigned int q=0; q<dofs_per_cell; ++q)
           for (unsigned int d=0; d<dim; ++d)
-            data_ptr[(1+d)*dofs_per_cell+q] *= geometry_data_ptr[1+d*dim+d] *
-              geometry_data_ptr[1+d*dim+d] * (geometry_data_ptr[0] * quadrature_weights[q]);
+            data_ptr[(1+d)*dofs_per_cell+q] *= jac_ptr[0][d][d] *
+              jac_ptr[0][d][d] * (jxw_ptr[0] * quadrature_weights[q]);
       // affine cell case
       else if (data->get_mapping_info().cell_type[cell] == internal::MatrixFreeFunctions::affine)
         for (unsigned int q=0; q<dofs_per_cell; ++q)
@@ -987,18 +981,18 @@ cell_loop_manual_2(parallel::distributed::Vector<Number> &dst,
             // get gradient
             for (unsigned int d=0; d<dim; ++d)
               {
-                grad[d] = geometry_data_ptr[1+d*dim] * data_ptr[1*dofs_per_cell+q];
+                grad[d] = jac_ptr[0][d][0] * data_ptr[1*dofs_per_cell+q];
                 for (unsigned int e=1; e<dim; ++e)
-                  grad[d] += geometry_data_ptr[1+d*dim+e] * data_ptr[(1+e)*dofs_per_cell+q];
+                  grad[d] += jac_ptr[0][d][e] * data_ptr[(1+e)*dofs_per_cell+q];
               }
             // apply gradient of test function
             for (unsigned int d=0; d<dim; ++d)
               {
-                data_ptr[(1+d)*dofs_per_cell+q] = geometry_data_ptr[1+d] * grad[0];
+                data_ptr[(1+d)*dofs_per_cell+q] = jac_ptr[0][0][d] * grad[0];
                 for (unsigned int e=1; e<dim; ++e)
-                  data_ptr[(1+d)*dofs_per_cell+q] += geometry_data_ptr[1+e*dim+d] * grad[e];
+                  data_ptr[(1+d)*dofs_per_cell+q] += jac_ptr[0][e][d] * grad[e];
                 // multiply by quadrature weight
-                data_ptr[(1+d)*dofs_per_cell+q] *= geometry_data_ptr[0] * quadrature_weights[q];
+                data_ptr[(1+d)*dofs_per_cell+q] *= jxw_ptr[0] * quadrature_weights[q];
               }
           }
       else
@@ -1009,18 +1003,18 @@ cell_loop_manual_2(parallel::distributed::Vector<Number> &dst,
             // get gradient
             for (unsigned int d=0; d<dim; ++d)
               {
-                grad[d] = geometry_data_ptr[dofs_per_cell+q*dim*dim+d*dim] * data_ptr[1*dofs_per_cell+q];
+                grad[d] = jac_ptr[q][d][0] * data_ptr[1*dofs_per_cell+q];
                 for (unsigned int e=1; e<dim; ++e)
-                  grad[d] += geometry_data_ptr[dofs_per_cell+q*dim*dim+d*dim+e] * data_ptr[(1+e)*dofs_per_cell+q];
+                  grad[d] += jac_ptr[q][d][e] * data_ptr[(1+e)*dofs_per_cell+q];
               }
             // apply gradient of test function
             for (unsigned int d=0; d<dim; ++d)
               {
-                data_ptr[(1+d)*dofs_per_cell+q] = geometry_data_ptr[dofs_per_cell+q*dim*dim+d] * grad[0];
+                data_ptr[(1+d)*dofs_per_cell+q] = jac_ptr[q][0][d] * grad[0];
                 for (unsigned int e=1; e<dim; ++e)
-                  data_ptr[(1+d)*dofs_per_cell+q] += geometry_data_ptr[dofs_per_cell+q*dim*dim+e*dim+d] * grad[e];
+                  data_ptr[(1+d)*dofs_per_cell+q] += jac_ptr[q][e][d] * grad[e];
                 // multiply by quadrature weight
-                data_ptr[(1+d)*dofs_per_cell+q] *= geometry_data_ptr[q];
+                data_ptr[(1+d)*dofs_per_cell+q] *= jxw_ptr[q];
               }
           }
 
@@ -1292,13 +1286,13 @@ cell_loop_manual_3(parallel::distributed::Vector<Number> &dst,
             data->get_shape_info().shape_hessians_collocation_eo);
 
   const Number*__restrict quadrature_weights =
-    data->get_mapping_info().cell_data[0].storage_descriptor[0].quadrature_weights.begin();
+    data->get_mapping_info().cell_data[0].descriptor[0].quadrature_weights.begin();
 
   for (unsigned int cell=0; cell<data->n_macro_cells(); ++cell)
     {
       // read from src vector
       const unsigned int *dof_indices =
-        &data->get_dof_info().dof_indices[cell*VectorizedArray<Number>::n_array_elements];
+        &data->get_dof_info().dof_indices_contiguous[2][cell*VectorizedArray<Number>::n_array_elements];
       const unsigned int vectorization_populated =
         data->n_components_filled(cell);
       // transform array-of-struct to struct-of-array
@@ -1432,26 +1426,26 @@ cell_loop_manual_3(parallel::distributed::Vector<Number> &dst,
       // --------------------------------------------------------------------
       // mix with loop over quadrature points. depends on the data layout in
       // MappingInfo
-      const VectorizedArray<Number> *__restrict geometry_data_ptr =
-        data->get_mapping_info().cell_data[0].data_storage.begin() +
-        data->get_mapping_info().cell_data[0].global_index_offsets[cell];
+      const VectorizedArray<Number> *__restrict jxw_ptr =
+        data->get_mapping_info().cell_data[0].JxW_values.begin() +
+        data->get_mapping_info().cell_data[0].data_index_offsets[cell];
+      const Tensor<2,dim,VectorizedArray<Number>> *__restrict jac_ptr =
+        data->get_mapping_info().cell_data[0].jacobians[0].begin() +
+        data->get_mapping_info().cell_data[0].data_index_offsets[cell];
       const internal::MatrixFreeFunctions::CellType cell_type =
         data->get_mapping_info().cell_type[cell];
       if (cell_type == internal::MatrixFreeFunctions::cartesian)
         for (unsigned int d=0; d<dim; ++d)
-          merged_array[d] = geometry_data_ptr[0] * geometry_data_ptr[1+d*dim+d] *
-            geometry_data_ptr[1+d*dim+d];
+          merged_array[d] = jxw_ptr[0] * jac_ptr[0][d][d] * jac_ptr[0][d][d];
       else if (cell_type == internal::MatrixFreeFunctions::affine)
         {
           for (unsigned int d=0, c=0; d<dim; ++d)
             for (unsigned int e=d; e<dim; ++e, ++c)
               {
-                VectorizedArray<Number> sum = geometry_data_ptr[1+0*dim+d] *
-                  geometry_data_ptr[1+0*dim+e];
+                VectorizedArray<Number> sum = jac_ptr[0][d] * jac_ptr[0][e];
                 for (unsigned int f=1; f<dim; ++f)
-                  sum += geometry_data_ptr[1+f*dim+d] *
-                    geometry_data_ptr[1+f*dim+e];
-                merged_array[c] = geometry_data_ptr[0] * sum;
+                  sum += jac_ptr[f][d] * jac_ptr[f][e];
+                merged_array[c] = jxw_ptr[0] * sum;
               }
         }
 
@@ -1560,21 +1554,20 @@ cell_loop_manual_3(parallel::distributed::Vector<Number> &dst,
                 for (unsigned int i=0; i<nn; ++i)
                   {
                     const unsigned int q=i2*nn*nn+i1*nn+i;
-                    const VectorizedArray<Number> *geo_ptr = geometry_data_ptr + dofs_per_cell+q*dim*dim;
                     VectorizedArray<Number> grad[dim];
                     // get gradient
                     for (unsigned int d=0; d<dim; ++d)
-                      grad[d] = geo_ptr[d*dim] * outx[i] + geo_ptr[d*dim+1] * outy[i1*nn+i]
-                        + geo_ptr[d*dim+2] * outz[q];
+                      grad[d] = jac_ptr[q][d][0] * outx[i] + jac_ptr[q][d][1] * outy[i1*nn+i]
+                        + jac_ptr[q][d][2] * outz[q];
 
                     // apply gradient of test function
-                    outx[i] = geometry_data_ptr[q] * (geo_ptr[0] * grad[0] + geo_ptr[dim] * grad[1]
-                                                      + geo_ptr[2*dim] * grad[2]);
-                    outy[i1*nn+i] = geometry_data_ptr[q] * (geo_ptr[1] * grad[0] +
-                                                            geo_ptr[1+dim] * grad[1] +
-                                                            geo_ptr[1+2*dim] * grad[2]);
-                    outz[q] = geometry_data_ptr[q] * (geo_ptr[2] * grad[0] + geo_ptr[2+dim] * grad[1]
-                                                      + geo_ptr[2+2*dim] * grad[2]);
+                    outx[i] = jxw_ptr[q] * (jac_ptr[q][0][0] * grad[0] + jac_ptr[q][1][0] * grad[1]
+                                            + jac_ptr[q][2][0] * grad[2]);
+                    outy[i1*nn+i] = jxw_ptr[q] * (jac_ptr[q][0][1] * grad[0] +
+                                                  jac_ptr[q][1][1] * grad[1] +
+                                                  jac_ptr[q][2][1] * grad[2]);
+                    outz[q] = jxw_ptr[q] * (jac_ptr[q][0][2] * grad[0] + jac_ptr[q][1][2] * grad[1]
+                                            + jac_ptr[q][2][2] * grad[2]);
                   }
 
               // x-derivative
@@ -1860,7 +1853,7 @@ public:
     matrix_free_data.initialize_dof_vector(src);
     matrix_free_data.initialize_dof_vector(dst);
     for (unsigned int i=0; i<src.local_size(); ++i)
-      src.local_element(i) = i%16;
+      src.local_element(i) = i%17;
 
     // Timer and wall times
     Timer timer;
@@ -1896,7 +1889,7 @@ public:
     wall_time /= (double) dofs;
 
     pcout << std::endl << std::scientific << std::setprecision(4)
-          << "Wall time / dofs [s]: " << wall_time << std::endl;
+          << "Wall time / dof [s]: " << wall_time << std::endl;
 
     std::array<double,4> times;
     times[0] = wall_time;
@@ -1907,7 +1900,6 @@ public:
         matrix_free_data.initialize_dof_vector(dst2);
         wall_time = 0.0;
 
-#if 0
         if(wall_time_calculation == WallTimeCalculation::Minimum)
           wall_time = std::numeric_limits<double>::max();
         MPI_Barrier(MPI_COMM_WORLD);
@@ -1935,7 +1927,7 @@ public:
 
         dst2 -= dst;
         pcout << std::scientific << std::setprecision(4)
-              << "Wall time / dofs [s]: " << wall_time << ", error to nice code: "
+              << "Wall time / dof [s]: " << wall_time << ", error to nice code: "
               << dst2.linfty_norm() << std::endl;
         times[1] = wall_time;
 
@@ -1969,11 +1961,9 @@ public:
 
         dst2 -= dst;
         pcout << std::scientific << std::setprecision(4)
-              << "Wall time / dofs [s]: " << wall_time << ", error to nice code: "
+              << "Wall time / dof [s]: " << wall_time << ", error to nice code: "
               << dst2.linfty_norm() << std::endl;
         times[2] = wall_time;
-
-#endif
 
         if(wall_time_calculation == WallTimeCalculation::Minimum)
           wall_time = std::numeric_limits<double>::max();
@@ -2002,7 +1992,7 @@ public:
 
         dst2 -= dst;
         pcout << std::scientific << std::setprecision(4)
-              << "Wall time / dofs [s]: " << wall_time << ", error to nice code: "
+              << "Wall time / dof [s]: " << wall_time << ", error to nice code: "
               << dst2.linfty_norm() << std::endl;
         times[3] = wall_time;
       }
@@ -2149,7 +2139,8 @@ void print_wall_times(std::vector<std::pair<unsigned int, std::array<double,4> >
               << std::endl << std::endl
               << "Wall times for refine level l = " << refine_steps_space << ":"
               << std::endl << std::endl
-              << "  k    " << "wall time / dofs [s]" << std::endl;
+              << "       " << "wall time / dof [s]" << std::endl
+              << "  k    " << "standard    manual_1    manual_2    manual_3" << std::endl;
 
     typedef typename std::vector<std::pair<unsigned int, std::array<double,4> > >::const_iterator ITERATOR;
     for(ITERATOR it=wall_times.begin(); it != wall_times.end(); ++it)
