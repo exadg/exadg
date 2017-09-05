@@ -27,7 +27,7 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 4;
+unsigned int const FE_DEGREE_VELOCITY = 7;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY;  // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -35,8 +35,8 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 3;
-unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 0;
+unsigned int const REFINE_STEPS_SPACE_MAX = 2; //REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -47,7 +47,7 @@ const ProblemType PROBLEM_TYPE = ProblemType::Unsteady;
 
 const double Re = 7500.0;
 
-const double H = 1.0e0;
+const double H = 1.0;
 const double PI = numbers::PI;
 const double L = 2.0*PI*H;
 
@@ -59,7 +59,7 @@ const double EPSILON = 1.0e-5; //perturbations are small (<< 1, linearization)
 // Orr-Sommerfeld solver: calculates unstable eigenvalue (OMEGA) of
 // Orr-Sommerfeld equation for Poiseuille flow and corresponding
 // eigenvector (EIG_VEC).
-const unsigned int DEGREE_OS_SOLVER = 100;
+const unsigned int DEGREE_OS_SOLVER = 200; // use not more than 300 due to conditioning of polynomials
 FE_DGQ<1> FE(DEGREE_OS_SOLVER);
 std::complex<double> OMEGA;
 std::vector<std::complex<double> > EIG_VEC(DEGREE_OS_SOLVER+1);
@@ -67,6 +67,7 @@ std::vector<std::complex<double> > EIG_VEC(DEGREE_OS_SOLVER+1);
 std::string OUTPUT_FOLDER = "output/orr_sommerfeld/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string OUTPUT_NAME = "Re7500";
+std::string FILENAME_ENERGY = "perturbation_energy_test"; //"perturbation_energy_l3_ku7_kp7_div_conti";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -95,10 +96,10 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified;
   max_velocity = MAX_VELOCITY; // MAX_VELOCITY is also needed somewhere else
-  cfl = 1.0e-1;
+  cfl = 2.0e-1;
   time_step_size = 1.0e-2;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 3; // 1; // 2; // 3;
+  order_time_integrator = 2; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
 
 
@@ -126,8 +127,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   pure_dirichlet_bc = true;
 
   // divergence and continuity penalty terms
-//  use_divergence_penalty = true;
-//  use_continuity_penalty = true;
+  use_divergence_penalty = true;
+  use_continuity_penalty = true;
 
   // PROJECTION METHODS
 
@@ -135,7 +136,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   IP_factor_pressure = 1.0;
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
   multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
-  abs_tol_pressure = 1.e-20;
+  abs_tol_pressure = 1.e-12;
   rel_tol_pressure = 1.e-6;
 
   // stability in the limit of small time steps
@@ -145,8 +146,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // projection step
   solver_projection = SolverProjection::PCG;
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
-  abs_tol_projection = 1.e-20;
-  rel_tol_projection = 1.e-12;
+  abs_tol_projection = 1.e-12;
+  rel_tol_projection = 1.e-6;
 
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -174,7 +175,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   solver_viscous = SolverViscous::PCG;
   preconditioner_viscous = PreconditionerViscous::GeometricMultigrid;
   multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
-  abs_tol_viscous = 1.e-20;
+  abs_tol_viscous = 1.e-12;
   rel_tol_viscous = 1.e-6;
 
 
@@ -222,7 +223,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   update_preconditioner = true;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityConvectionDiffusion;
+  momentum_preconditioner = MomentumPreconditioner::InverseMassMatrix; //VelocityConvectionDiffusion;
   multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::Jacobi; //Jacobi; //Chebyshev; //GMRES;
 
   // GMRES smoother data
@@ -274,7 +275,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // perturbation energy
   perturbation_energy_data.calculate = true;
   perturbation_energy_data.calculate_every_time_steps = 1;
-  perturbation_energy_data.filename_prefix = OUTPUT_FOLDER + "perturbation_energy";
+  perturbation_energy_data.filename_prefix = OUTPUT_FOLDER + FILENAME_ENERGY;
   perturbation_energy_data.U_max = MAX_VELOCITY;
   perturbation_energy_data.h = H;
   perturbation_energy_data.omega_i = OMEGA.imag();
@@ -303,7 +304,7 @@ public:
   AnalyticalSolutionVelocity (const unsigned int  n_components = dim,
                               const double        time = 0.)
     :
-    Function<dim>(n_components, time)//,
+    Function<dim>(n_components, time)
     {}
 
   virtual ~AnalyticalSolutionVelocity(){};
@@ -323,7 +324,7 @@ double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
   // transform from interval [-H,H] to interval [0,1]
   double const y = 0.5*(p[1]/H + 1.0);
   double const tol = 1.e-12;
-  AssertThrow(y<=1+tol and y>=0-tol, ExcMessage("Point in reference coordinates is invalid."));
+  AssertThrow(y<=1.0+tol and y>=0.0-tol, ExcMessage("Point in reference coordinates is invalid."));
 
   double cos = std::cos(ALPHA*x-OMEGA.real()*t);
   double sin = std::sin(ALPHA*x-OMEGA.real()*t);
@@ -403,19 +404,19 @@ double AnalyticalSolutionPressure<dim>::value(const Point<dim>    &/*p*/,
  *  right-hand side of the momentum equation of the Navier-Stokes equations
  */
 template<int dim>
- class RightHandSide : public Function<dim>
- {
- public:
-   RightHandSide (const double time = 0.)
-     :
-     Function<dim>(dim, time)
-   {}
+class RightHandSide : public Function<dim>
+{
+public:
+  RightHandSide (const double time = 0.)
+    :
+    Function<dim>(dim, time)
+  {}
 
-   virtual ~RightHandSide(){};
+  virtual ~RightHandSide(){};
 
-   virtual double value (const Point<dim>    &p,
-                         const unsigned int  component = 0) const;
- };
+  virtual double value (const Point<dim>    &p,
+                        const unsigned int  component = 0) const;
+};
 
  template<int dim>
  double RightHandSide<dim>::value(const Point<dim>   &/*p*/,

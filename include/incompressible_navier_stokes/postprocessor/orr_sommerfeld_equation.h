@@ -279,7 +279,8 @@ void compute_eigenvector(std::vector<std::complex<double> > &eigenvector,
       eigenvector[m-2] += constraints(3,i) * eigenvector[i+2];
       // eigenvector[m-1] = 0 (constraint)
     }
-
+ 
+    /*
     // print eigenvector
     std::cout << std::endl << "Eigenvector on uniform grid: " << std::endl;
     const int n_output = fe_degree + fe_degree%2;
@@ -297,6 +298,7 @@ void compute_eigenvector(std::vector<std::complex<double> > &eigenvector,
                 << std::endl;
     }
     std::cout << std::endl;
+    */
 
     /*
     // ensure correctness of constraint psi'(-1)=0 on the left

@@ -18,6 +18,8 @@ public:
     counter(0),
     initial_perturbation_energy_has_been_calculated(false),
     initial_perturbation_energy(1.0),
+    start_time(0.0), //TODO
+    initial_perturbation_energy_2(1.0), //TODO
     matrix_free_data(nullptr)
   {}
 
@@ -49,6 +51,10 @@ private:
   bool initial_perturbation_energy_has_been_calculated;
   Number initial_perturbation_energy;
 
+  //TODO
+  Number start_time;
+  Number initial_perturbation_energy_2;
+
   MatrixFree<dim,Number> const * matrix_free_data;
   DofQuadIndexData dof_quad_index_data;
   PerturbationEnergyData energy_data;
@@ -69,21 +75,32 @@ private:
         initial_perturbation_energy_has_been_calculated = true;
       }
 
+      // TODO
+      // use pertubation energy after the first time step as reference value
+      if(time_step_number == 2)
+      {
+        start_time = time;
+        initial_perturbation_energy_2 = perturbation_energy;
+      }
+
       // write output file
       if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
       {
+        unsigned int l = matrix_free_data->get_dof_handler(dof_quad_index_data.dof_index_velocity).get_triangulation().n_levels()-1;
         std::ostringstream filename;
-        filename << energy_data.filename_prefix;
+        filename << energy_data.filename_prefix + "_l" + Utilities::int_to_string(l);
 
         std::ofstream f;
         if(clear_files == true)
         {
           f.open(filename.str().c_str(),std::ios::trunc);
           f << "Perturbation energy: E = (1,(u-u_base)^2)_Omega" << std::endl
-            << "Error:               e = |exp(2*omega_i*t) - E(t)/E(0)|" << std::endl;
+            << "Error:               e = |exp(2*omega_i*t) - E(t)/E(0)|" << std::endl
+            << "Error2:              e2 = |exp(2*omega_i*(t-t_start)) - E(t)/E(t_start)|" << std::endl; //TODO
 
           f << std::endl
-            << "  Time           energy         error"<<std::endl;
+//            << "  Time           energy         error" << std::endl
+            << "  Time           energy         error          error2" << std::endl; //TODO
 
           clear_files = false;
         }
@@ -92,13 +109,18 @@ private:
           f.open(filename.str().c_str(),std::ios::app);
         }
 
-        double const rel = perturbation_energy/initial_perturbation_energy;
-        double const error = std::abs(std::exp<double>(2*energy_data.omega_i*time) - rel);
+        Number const rel = perturbation_energy/initial_perturbation_energy;
+        Number const error = std::abs(std::exp<Number>(2*energy_data.omega_i*time) - rel);
+
+        //TODO
+        Number const rel2 = perturbation_energy/initial_perturbation_energy_2;
+        Number const error2 = std::abs(std::exp<Number>(2*energy_data.omega_i*(time-start_time)) - rel2);
 
         f << std::scientific << std::setprecision(7)
           << std::setw(15) << time
           << std::setw(15) << perturbation_energy
           << std::setw(15) << error
+          << std::setw(15) << error2 //TODO
           << std::endl;
       }
     }
@@ -111,9 +133,9 @@ private:
   }
 
   /*
-   *  This function calculates the kinetic energy
+   *  This function calculates the perturbation energy
    *
-   *  Kinetic energy: E_k = 1/V * 1/2 * (1,u*u)_Omega, V=(1,1)_Omega is the volume
+   *  Perturbation energy: E = (1,u*u)_Omega
    */
   void integrate(MatrixFree<dim,Number> const                &matrix_free_data,
                  parallel::distributed::Vector<Number> const &velocity,
@@ -136,7 +158,6 @@ private:
                                                            dof_quad_index_data.quad_index_velocity);
 
     AlignedVector<VectorizedArray<Number> > JxW_values(fe_eval.n_q_points);
-    VectorizedArray<Number> energy_vec = make_vectorized_array<Number>(0.);
 
     // Loop over all elements
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
@@ -146,26 +167,24 @@ private:
       fe_eval.evaluate(true,false);
       fe_eval.fill_JxW_values(JxW_values);
 
+      VectorizedArray<Number> energy_vec = make_vectorized_array<Number>(0.);
       for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
       {
         Tensor<1,dim,VectorizedArray<Number> > velocity = fe_eval.get_value(q);
-
         Point<dim,VectorizedArray<Number> > q_points = fe_eval.quadrature_point(q);
         VectorizedArray<Number> y = q_points[1]/energy_data.h;
         Tensor<1,dim,VectorizedArray<Number> > velocity_base;
         velocity_base[0] = energy_data.U_max * (1.0 - y*y);
         energy_vec += JxW_values[q]*(velocity-velocity_base)*(velocity-velocity_base);
       }
-    }
 
-    // Vectorization: sum over entries of VectorizedArray
-    Number energy = 0.;
-    for (unsigned int v=0;v<VectorizedArray<Number>::n_array_elements;v++)
-    {
-      energy += energy_vec[v];
+      // sum over entries of VectorizedArray, but only over those
+      // that are "active"
+      for(unsigned int v=0; v<data.n_components_filled(cell); ++v)
+      {
+        dst.at(0) += energy_vec[v];
+      }
     }
-
-    dst.at(0) = energy;
   }
 };
 
