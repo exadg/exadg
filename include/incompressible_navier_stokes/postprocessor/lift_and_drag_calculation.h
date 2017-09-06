@@ -68,8 +68,10 @@ void calculate_lift_and_drag_force(MatrixFree<dim,Number> const                &
 
       // sum over all entries of VectorizedArray
       for (unsigned int d=0; d<dim; ++d)
-        for (unsigned int n=0; n<VectorizedArray<Number>::n_array_elements; ++n)
+      {
+        for (unsigned int n=0; n<matrix_free_data.n_active_entries_per_face_batch(face); ++n)
           Force[d] += Force_local[d][n];
+      }
     }
   }
   Force = Utilities::MPI::sum(Force,MPI_COMM_WORLD);
@@ -123,11 +125,11 @@ public:
        {
          std::string filename_drag, filename_lift;
          filename_drag = lift_and_drag_data.filename_prefix_drag
-             + "_refine_" + Utilities::int_to_string(dof_handler_velocity->get_triangulation().n_levels()-1)
+             + "_refine_" + Utilities::int_to_string(dof_handler_velocity->get_triangulation().n_global_levels()-1)
              + "_fe_degree_" + Utilities::int_to_string(fe_degree_u) + "-" + Utilities::int_to_string(fe_degree_p)
              + "_drag.txt";
          filename_lift = lift_and_drag_data.filename_prefix_lift
-             + "_refine_" + Utilities::int_to_string(dof_handler_velocity->get_triangulation().n_levels()-1)
+             + "_refine_" + Utilities::int_to_string(dof_handler_velocity->get_triangulation().n_global_levels()-1)
              + "_fe_degree_" + Utilities::int_to_string(fe_degree_u) + "-" + Utilities::int_to_string(fe_degree_p)
              + "_lift.txt";
 

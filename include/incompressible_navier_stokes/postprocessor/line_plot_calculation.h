@@ -61,7 +61,7 @@ public:
 
         // filename prefix for current line
         std::string filename_prefix = data.filename_prefix
-            + "l" + Utilities::int_to_string(dof_handler_velocity->get_triangulation().n_levels()-1)
+            + "l" + Utilities::int_to_string(dof_handler_velocity->get_triangulation().n_global_levels()-1)
             + "_ku" + Utilities::int_to_string(fe_degree_u) + "_kp" + Utilities::int_to_string(fe_degree_p)
             + "_" + line->name;
 
