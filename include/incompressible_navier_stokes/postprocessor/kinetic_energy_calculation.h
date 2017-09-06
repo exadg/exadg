@@ -178,10 +178,11 @@ private:
                                                            dof_quad_index_data.quad_index_velocity);
 
     AlignedVector<VectorizedArray<Number> > JxW_values(fe_eval.n_q_points);
-    VectorizedArray<Number> volume_vec = make_vectorized_array<Number>(0.);
-    VectorizedArray<Number> energy_vec = make_vectorized_array<Number>(0.);
-    VectorizedArray<Number> enstrophy_vec = make_vectorized_array<Number>(0.);
-    VectorizedArray<Number> dissipation_vec = make_vectorized_array<Number>(0.);
+
+    Number volume = 0.;
+    Number energy = 0.;
+    Number enstrophy = 0.;
+    Number dissipation = 0.;
 
     // Loop over all elements
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
@@ -190,6 +191,11 @@ private:
       fe_eval.read_dof_values(src);
       fe_eval.evaluate(true,true);
       fe_eval.fill_JxW_values(JxW_values);
+
+      VectorizedArray<Number> volume_vec = make_vectorized_array<Number>(0.);
+      VectorizedArray<Number> energy_vec = make_vectorized_array<Number>(0.);
+      VectorizedArray<Number> enstrophy_vec = make_vectorized_array<Number>(0.);
+      VectorizedArray<Number> dissipation_vec = make_vectorized_array<Number>(0.);
 
       for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
       {
@@ -204,21 +210,18 @@ private:
 
         Tensor<1,dim,VectorizedArray<Number> > rotation =
             CurlCompute<dim,FEEvaluation<dim,fe_degree,fe_degree+1,dim,Number> >::compute(fe_eval,q);
-        enstrophy_vec +=  JxW_values[q]*make_vectorized_array<Number>(0.5)*rotation*rotation;
+        enstrophy_vec += JxW_values[q]*make_vectorized_array<Number>(0.5)*rotation*rotation;
       }
-    }
 
-    // Vectorization: sum over entries of VectorizedArray
-    Number volume = 0.;
-    Number energy = 0.;
-    Number enstrophy = 0.;
-    Number dissipation = 0.;
-    for (unsigned int v=0;v<VectorizedArray<Number>::n_array_elements;v++)
-    {
-      volume += volume_vec[v];
-      energy += energy_vec[v];
-      enstrophy += enstrophy_vec[v];
-      dissipation += dissipation_vec[v];
+      // sum over entries of VectorizedArray, but only over those
+      // that are "active"
+      for (unsigned int v=0; v<data.n_active_entries_per_cell_batch(cell); ++v)
+      {
+        volume += volume_vec[v];
+        energy += energy_vec[v];
+        enstrophy += enstrophy_vec[v];
+        dissipation += dissipation_vec[v];
+      }
     }
 
     dst.at(0) += volume;

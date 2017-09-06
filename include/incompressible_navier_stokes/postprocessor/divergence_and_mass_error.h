@@ -111,8 +111,10 @@ private:
     FEEvaluation<dim,fe_degree,fe_degree+1,dim,Number> phi(data,dof_quad_index_data.dof_index_velocity,dof_quad_index_data.quad_index_velocity);
 
     AlignedVector<VectorizedArray<Number> > JxW_values(phi.n_q_points);
-    VectorizedArray<Number> div_vec = make_vectorized_array<Number>(0.);
-    VectorizedArray<Number> vol_vec = make_vectorized_array<Number>(0.);
+
+    Number div = 0.;
+    Number ref = 0.;
+
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
       phi.reinit(cell);
@@ -121,24 +123,29 @@ private:
       phi.evaluate(true,true);
       phi.fill_JxW_values(JxW_values);
 
+      VectorizedArray<Number> div_vec = make_vectorized_array<Number>(0.);
+      VectorizedArray<Number> ref_vec = make_vectorized_array<Number>(0.);
+
       for (unsigned int q=0; q<phi.n_q_points; ++q)
       {
-//        vol_vec += JxW_values[q];
+//        ref_vec += JxW_values[q];
         Tensor<1,dim,VectorizedArray<Number> > velocity = phi.get_value(q);
-        vol_vec += JxW_values[q]*velocity.norm();
+        ref_vec += JxW_values[q]*velocity.norm();
         div_vec += JxW_values[q]*std::abs(phi.get_divergence(q));
       }
+
+      // sum over entries of VectorizedArray, but only over those
+      // that are "active"
+      for (unsigned int v=0; v<data.n_active_entries_per_cell_batch(cell); ++v)
+      {
+        div += div_vec[v];
+        ref += ref_vec[v];
+      }
     }
-    Number div = 0.;
-    Number vol = 0.;
-    for (unsigned int v=0;v<VectorizedArray<Number>::n_array_elements;v++)
-    {
-      div += div_vec[v];
-      vol += vol_vec[v];
-    }
+
 //    dst.at(0) += div;
     dst.at(0) += div * this->div_and_mass_data.reference_length_scale;
-    dst.at(1) += vol;
+    dst.at(1) += ref;
   }
 
   void local_compute_div_face (const MatrixFree<dim,Number>                &data,
@@ -151,8 +158,9 @@ private:
     FEFaceEvaluation<dim,fe_degree, fe_degree+1,dim,Number> fe_eval_neighbor(data,false,dof_quad_index_data.dof_index_velocity,dof_quad_index_data.quad_index_velocity);
 
     AlignedVector<VectorizedArray<Number> > JxW_values(fe_eval.n_q_points);
-    VectorizedArray<Number> diff_mass_flux_vec = make_vectorized_array<Number>(0.);
-    VectorizedArray<Number> mean_mass_flux_vec = make_vectorized_array<Number>(0.);
+    Number diff_mass_flux = 0.;
+    Number mean_mass_flux = 0.;
+
     for (unsigned int face=face_range.first; face<face_range.second; ++face)
     {
       fe_eval.reinit(face);
@@ -163,20 +171,25 @@ private:
       fe_eval_neighbor.evaluate(true,false);
       fe_eval.fill_JxW_values(JxW_values);
 
+      VectorizedArray<Number> diff_mass_flux_vec = make_vectorized_array<Number>(0.);
+      VectorizedArray<Number> mean_mass_flux_vec = make_vectorized_array<Number>(0.);
+
       for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
       {
         mean_mass_flux_vec += JxW_values[q]*std::abs(0.5*(fe_eval.get_value(q)+fe_eval_neighbor.get_value(q))*fe_eval.get_normal_vector(q));
 
         diff_mass_flux_vec += JxW_values[q]*std::abs((fe_eval.get_value(q)-fe_eval_neighbor.get_value(q))*fe_eval.get_normal_vector(q));
       }
+
+      // sum over entries of VectorizedArray, but only over those
+      // that are "active"
+      for (unsigned int v=0; v<data.n_active_entries_per_face_batch(face); ++v)
+      {
+        diff_mass_flux += diff_mass_flux_vec[v];
+        mean_mass_flux += mean_mass_flux_vec[v];
+      }
     }
-    Number diff_mass_flux = 0.;
-    Number mean_mass_flux = 0.;
-    for (unsigned int v=0;v<VectorizedArray<Number>::n_array_elements;v++)
-    {
-      diff_mass_flux += diff_mass_flux_vec[v];
-      mean_mass_flux += mean_mass_flux_vec[v];
-    }
+
     dst.at(2) += diff_mass_flux;
     dst.at(3) += mean_mass_flux;
   }

@@ -18,8 +18,6 @@ public:
     counter(0),
     initial_perturbation_energy_has_been_calculated(false),
     initial_perturbation_energy(1.0),
-    start_time(0.0), //TODO
-    initial_perturbation_energy_2(1.0), //TODO
     matrix_free_data(nullptr)
   {}
 
@@ -51,10 +49,6 @@ private:
   bool initial_perturbation_energy_has_been_calculated;
   Number initial_perturbation_energy;
 
-  //TODO
-  Number start_time;
-  Number initial_perturbation_energy_2;
-
   MatrixFree<dim,Number> const * matrix_free_data;
   DofQuadIndexData dof_quad_index_data;
   PerturbationEnergyData energy_data;
@@ -75,18 +69,10 @@ private:
         initial_perturbation_energy_has_been_calculated = true;
       }
 
-      // TODO
-      // use pertubation energy after the first time step as reference value
-      if(time_step_number == 2)
-      {
-        start_time = time;
-        initial_perturbation_energy_2 = perturbation_energy;
-      }
-
       // write output file
       if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
       {
-        unsigned int l = matrix_free_data->get_dof_handler(dof_quad_index_data.dof_index_velocity).get_triangulation().n_levels()-1;
+        unsigned int l = matrix_free_data->get_dof_handler(dof_quad_index_data.dof_index_velocity).get_triangulation().n_global_levels()-1;
         std::ostringstream filename;
         filename << energy_data.filename_prefix + "_l" + Utilities::int_to_string(l);
 
@@ -95,12 +81,10 @@ private:
         {
           f.open(filename.str().c_str(),std::ios::trunc);
           f << "Perturbation energy: E = (1,(u-u_base)^2)_Omega" << std::endl
-            << "Error:               e = |exp(2*omega_i*t) - E(t)/E(0)|" << std::endl
-            << "Error2:              e2 = |exp(2*omega_i*(t-t_start)) - E(t)/E(t_start)|" << std::endl; //TODO
+            << "Error:               e = |exp(2*omega_i*t) - E(t)/E(0)|" << std::endl;
 
           f << std::endl
-//            << "  Time           energy         error" << std::endl
-            << "  Time           energy         error          error2" << std::endl; //TODO
+            << "  Time           energy         error" << std::endl;
 
           clear_files = false;
         }
@@ -112,15 +96,10 @@ private:
         Number const rel = perturbation_energy/initial_perturbation_energy;
         Number const error = std::abs(std::exp<Number>(2*energy_data.omega_i*time) - rel);
 
-        //TODO
-        Number const rel2 = perturbation_energy/initial_perturbation_energy_2;
-        Number const error2 = std::abs(std::exp<Number>(2*energy_data.omega_i*(time-start_time)) - rel2);
-
         f << std::scientific << std::setprecision(7)
           << std::setw(15) << time
           << std::setw(15) << perturbation_energy
           << std::setw(15) << error
-          << std::setw(15) << error2 //TODO
           << std::endl;
       }
     }
@@ -180,7 +159,7 @@ private:
 
       // sum over entries of VectorizedArray, but only over those
       // that are "active"
-      for(unsigned int v=0; v<data.n_components_filled(cell); ++v)
+      for(unsigned int v=0; v<data.n_active_entries_per_cell_batch(cell); ++v)
       {
         dst.at(0) += energy_vec[v];
       }

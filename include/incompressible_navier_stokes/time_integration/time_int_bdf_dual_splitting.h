@@ -338,6 +338,7 @@ postprocessing() const
   this->calculate_streamfunction(this->streamfunction,vorticity[0]);
   this->calculate_q_criterion(this->q_criterion, velocity[0]);
 
+  //TODO
   this->postprocessor->do_postprocessing(velocity[0],
                                          intermediate_velocity,
                                          pressure[0],
@@ -346,7 +347,7 @@ postprocessing() const
                                          this->time,
                                          this->time_step_number);
 
-  // check pressure error and velocity error
+//  // check pressure error and velocity error
 //  parallel::distributed::Vector<value_type> velocity_exact;
 //  navier_stokes_operation->initialize_vector_velocity(velocity_exact);
 //
@@ -361,6 +362,26 @@ postprocessing() const
 //  this->postprocessor->do_postprocessing(velocity_exact,
 //                                         intermediate_velocity,
 //                                         pressure_exact,
+//                                         vorticity[0],
+//                                         this->additional_fields,
+//                                         this->time,
+//                                         this->time_step_number);
+
+//  // plot solution increment
+//  parallel::distributed::Vector<value_type> velocity_incr;
+//  navier_stokes_operation->initialize_vector_velocity(velocity_incr);
+//
+//  parallel::distributed::Vector<value_type> pressure_incr;
+//  navier_stokes_operation->initialize_vector_pressure(pressure_incr);
+//
+//  velocity_incr = velocity[0];
+//  velocity_incr.add(-1.0,velocity[1]);
+//  pressure_incr = pressure[0];
+//  pressure_incr.add(-1.0,pressure[1]);
+//
+//  this->postprocessor->do_postprocessing(velocity_incr,
+//                                         intermediate_velocity,
+//                                         pressure_incr,
 //                                         vorticity[0],
 //                                         this->additional_fields,
 //                                         this->time,

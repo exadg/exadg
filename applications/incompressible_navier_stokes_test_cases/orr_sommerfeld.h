@@ -28,15 +28,15 @@ unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
 unsigned int const FE_DEGREE_VELOCITY = 7;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY;  // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
+unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;  // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
 unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 0;
-unsigned int const REFINE_STEPS_SPACE_MAX = 2; //REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 3;
+unsigned int const REFINE_STEPS_SPACE_MAX = 3; //REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -66,7 +66,7 @@ std::vector<std::complex<double> > EIG_VEC(DEGREE_OS_SOLVER+1);
 
 std::string OUTPUT_FOLDER = "output/orr_sommerfeld/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "Re7500";
+std::string OUTPUT_NAME = "Re7500_l1_76_div_conti";
 std::string FILENAME_ENERGY = "perturbation_energy_test"; //"perturbation_energy_l3_ku7_kp7_div_conti";
 
 template<int dim>
@@ -321,10 +321,10 @@ double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
   double result = 0.0;
 
   double const x = p[0]/H;
-  // transform from interval [-H,H] to interval [0,1]
-  double const y = 0.5*(p[1]/H + 1.0);
+  // transform from interval [-H,H] (-> y) to unit interval [0,1] (-> eta)
+  double const eta = 0.5*(p[1]/H + 1.0);
   double const tol = 1.e-12;
-  AssertThrow(y<=1.0+tol and y>=0.0-tol, ExcMessage("Point in reference coordinates is invalid."));
+  AssertThrow(eta<=1.0+tol and eta>=0.0-tol, ExcMessage("Point in reference coordinates is invalid."));
 
   double cos = std::cos(ALPHA*x-OMEGA.real()*t);
   double sin = std::sin(ALPHA*x-OMEGA.real()*t);
@@ -335,10 +335,14 @@ double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
   {
     double base = MAX_VELOCITY * (1.0 - pow(p[1]/H,2.0));
 
-    // evaluate derivative d(psi)/dy in y
+    // d(psi)/dy = d(psi)/d(eta) * d(eta)/dy
+    // evaluate derivative d(psi)/d(eta) in eta(y)
     std::complex<double> dpsi = 0;
     for (unsigned int i=0; i<FE.get_degree()+1; ++i)
-      dpsi += EIG_VEC[i] * FE.shape_grad(i,Point<1>(y))[0];
+      dpsi += EIG_VEC[i] * FE.shape_grad(i,Point<1>(eta))[0];
+
+    // multiply by d(eta)/dy to obtain derivative d(psi)/dy in physical space
+    dpsi *= 0.5/H;
 
     std::complex<double> perturbation_complex = dpsi*exp*amplification;
     double perturbation = perturbation_complex.real();
@@ -350,7 +354,7 @@ double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
     // evaluate function psi in y
     std::complex<double> psi = 0;
     for (unsigned int i=0; i<FE.get_degree()+1; ++i)
-      psi += EIG_VEC[i] * FE.shape_value(i,Point<1>(y));
+      psi += EIG_VEC[i] * FE.shape_value(i,Point<1>(eta));
 
     std::complex<double> i(0,1);
     std::complex<double> perturbation_complex = -i*ALPHA*psi*exp*amplification;
