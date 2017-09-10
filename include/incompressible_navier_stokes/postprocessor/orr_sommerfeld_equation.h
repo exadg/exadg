@@ -252,6 +252,7 @@ void compute_eigenvector(std::vector<std::complex<double> > &eigenvector,
   }
 
   // compute eigenvector
+  eigenvector.clear();
   if (positive_i != -1)
   {
     eigenvector.resize(m);
