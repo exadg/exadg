@@ -122,9 +122,7 @@ double calculate_adaptive_time_step_cfl(MatrixFree<dim,value_type> const        
                                         unsigned int const                              quad_index,
                                         parallel::distributed::Vector<value_type> const &velocity,
                                         double const                                    cfl,
-                                        double const                                    last_time_step,
-                                        bool const                                      use_limiter = true,
-                                        double const                                    exponent_fe_degree = 1.5)
+                                        double const                                    exponent_fe_degree)
 {
   FEEvaluation<dim,fe_degree,fe_degree+1,dim,value_type> fe_eval(data,dof_index,quad_index);
 
@@ -173,22 +171,25 @@ double calculate_adaptive_time_step_cfl(MatrixFree<dim,value_type> const        
   // find minimum over all processors
   new_time_step = Utilities::MPI::min(new_time_step, MPI_COMM_WORLD);
 
-  // limit the maximum increase/decrease of the time step size
-  if(use_limiter == true)
-  {
-    double fac = 1.2;
-    if (new_time_step >= fac*last_time_step)
-    {
-      new_time_step = fac*last_time_step;
-    }
+  return new_time_step;
+}
 
-    else if (new_time_step <= last_time_step/fac)
-    {
-      new_time_step = last_time_step/fac;
-    }
+/*
+ *  limit the maximum increase/decrease of the time step size
+ */
+void limit_time_step_change(double       &new_time_step,
+                            double const &last_time_step,
+                            double const &fac)
+{
+  if (new_time_step >= fac*last_time_step)
+  {
+    new_time_step = fac*last_time_step;
   }
 
-  return new_time_step;
+  else if (new_time_step <= last_time_step/fac)
+  {
+    new_time_step = last_time_step/fac;
+  }
 }
 
 template<int dim, int fe_degree, typename value_type>
@@ -247,20 +248,9 @@ double calculate_adaptive_time_step_diffusion(MatrixFree<dim,value_type> const  
   // find minimum over all processors
   new_time_step = Utilities::MPI::min(new_time_step, MPI_COMM_WORLD);
 
-  // limit the maximum increase/decrease of the time step size
-  if(use_limiter == true)
-  {
-    double fac = 1.2;
-    if (new_time_step >= fac*last_time_step)
-    {
-      new_time_step = fac*last_time_step;
-    }
-
-    else if (new_time_step <= last_time_step/fac)
-    {
-      new_time_step = last_time_step/fac;
-    }
-  }
+  // TODO
+  double factor = 1.2;
+  limit_time_step_change(new_time_step,last_time_step,factor);
 
   return new_time_step;
 }

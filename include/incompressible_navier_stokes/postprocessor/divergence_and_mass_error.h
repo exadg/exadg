@@ -176,9 +176,8 @@ private:
 
       for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
       {
-        mean_mass_flux_vec += JxW_values[q]*std::abs(0.5*(fe_eval.get_value(q)+fe_eval_neighbor.get_value(q))*fe_eval.get_normal_vector(q));
-
         diff_mass_flux_vec += JxW_values[q]*std::abs((fe_eval.get_value(q)-fe_eval_neighbor.get_value(q))*fe_eval.get_normal_vector(q));
+        mean_mass_flux_vec += JxW_values[q]*std::abs(0.5*(fe_eval.get_value(q)+fe_eval_neighbor.get_value(q))*fe_eval.get_normal_vector(q));
       }
 
       // sum over entries of VectorizedArray, but only over those
@@ -211,7 +210,7 @@ private:
       Number div_error = 1.0, div_error_reference = 1.0, mass_error = 1.0, mass_error_reference = 1.0;
 
       // calculate divergence and mass error
-      do_evaluate(*matrix_free_data,velocity, div_error, div_error_reference, mass_error, mass_error_reference);
+      do_evaluate(*matrix_free_data, velocity, div_error, div_error_reference, mass_error, mass_error_reference);
       Number div_error_normalized = div_error/div_error_reference;
       Number mass_error_normalized = 1.0;
       if(mass_error_reference > 1.e-12)

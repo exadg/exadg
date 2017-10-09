@@ -1208,7 +1208,7 @@ public:
     }
   } 
 
-  void print_parameters_projection_methods(ConditionalOStream &pcout)
+  void print_parameters_pressure_poisson(ConditionalOStream &pcout)
   {
     // pressure Poisson equation
     pcout << std::endl << "  Pressure Poisson equation (PPE):" << std::endl;
@@ -1245,12 +1245,12 @@ public:
     print_parameter(pcout,"Approach of Ferrer et al.",use_approach_of_ferrer);
     if(use_approach_of_ferrer == true)
       print_parameter(pcout,"Reference time step size (Ferrer)",deltat_ref);
+  }
 
-    // projection step
-    pcout << std::endl << "  Projection step:" << std::endl;
-
+  void print_parameters_projection_step(ConditionalOStream &pcout)
+  {
     if(use_divergence_penalty == true)
-    {  
+    {
       std::string str_solver_proj[] = { "LU",
                                         "PCG" };
 
@@ -1316,12 +1316,12 @@ public:
 
     print_parameter(pcout,"STS stability approach",small_time_steps_stability);
 
-
-
     // projection method
-    print_parameters_projection_methods(pcout);
+    print_parameters_pressure_poisson(pcout);
 
-
+    // projection step
+    pcout << std::endl << "  Projection step:" << std::endl;
+    print_parameters_projection_step(pcout);
 
     // Viscous step
     pcout << std::endl << "  Viscous step:" << std::endl;
@@ -1415,7 +1415,11 @@ public:
     print_parameter(pcout,"Rotational formulation",rotational_formulation);
 
     // projection method
-    print_parameters_projection_methods(pcout);
+    print_parameters_pressure_poisson(pcout);
+
+    // projection step
+    pcout << std::endl << "  Projection step:" << std::endl;
+    print_parameters_projection_step(pcout);
   }
 
 
@@ -1443,7 +1447,7 @@ public:
        (problem_type == ProblemType::Steady ||
         treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit) )
     {
-      pcout << "Newton solver" << std::endl;
+      pcout << "Newton solver:" << std::endl;
     
       print_parameter(pcout,"Absolute solver tolerance",newton_solver_data_coupled.abs_tol);
       print_parameter(pcout,"Relative solver tolerance",newton_solver_data_coupled.rel_tol);
@@ -1453,7 +1457,7 @@ public:
     }
 
     // Solver linearized problem    
-    pcout << "Linear solver" << std::endl;
+    pcout << "Linear solver:" << std::endl;
 
     std::string str_solver_linearized[] = { "Undefined",
                                             "GMRES",
@@ -1549,6 +1553,13 @@ public:
                         "Relative solver tolerance",
                         rel_tol_solver_schur_complement_preconditioner);
       }
+    }
+
+    //projection_step
+    if(use_divergence_penalty == true || use_continuity_penalty == true)
+    {
+      pcout << std::endl << "Postprocessing of velocity:" << std::endl;
+      print_parameters_projection_step(pcout);
     }
   }
 
