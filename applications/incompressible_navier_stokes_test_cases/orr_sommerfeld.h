@@ -35,8 +35,8 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 3;
-unsigned int const REFINE_STEPS_SPACE_MAX = 3; //REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 2;
+unsigned int const REFINE_STEPS_SPACE_MAX = 2; //REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -64,10 +64,10 @@ FE_DGQ<1> FE(DEGREE_OS_SOLVER);
 std::complex<double> OMEGA;
 std::vector<std::complex<double> > EIG_VEC(DEGREE_OS_SOLVER+1);
 
-std::string OUTPUT_FOLDER = "output/orr_sommerfeld/";
+std::string OUTPUT_FOLDER = "output/orr_sommerfeld_test/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string OUTPUT_NAME = "Re7500_l1_76_div_conti";
-std::string FILENAME_ENERGY = "perturbation_energy_test"; //"perturbation_energy_l3_ku7_kp7_div_conti";
+std::string FILENAME_ENERGY = "perturbation_energy_ku7_kp6";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -92,11 +92,14 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFDualSplittingScheme; //BDFCoupledSolution;
+  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFDualSplittingScheme; //BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified;
   max_velocity = MAX_VELOCITY; // MAX_VELOCITY is also needed somewhere else
-  cfl = 2.0e-1;
+  // approx. cfl_crit = 0.9 for BDF2 (and exponent = 1.5)
+  // approx. cfl_crit = 0.4 for BDF3 (and exponent = 1.5)
+  cfl = 0.6;
+  cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-2;
   max_number_of_time_steps = 1e8;
   order_time_integrator = 2; // 1; // 2; // 3;
@@ -255,7 +258,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // write output for visualization of results
   print_input_parameters = true;
-  output_data.write_output = true;
+  output_data.write_output = false; //true;
   output_data.output_folder = OUTPUT_FOLDER_VTU;
   output_data.output_name = OUTPUT_NAME;
   output_data.output_start_time = start_time;
@@ -264,13 +267,13 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error
-  error_data.analytical_solution_available = true; // TODO
+  error_data.analytical_solution_available = false; //true;
 
   error_data.error_calc_start_time = start_time;
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
   // output of solver information
-  output_solver_info_every_timesteps = 1e5;
+  output_solver_info_every_timesteps = 1e2; //1e5;
 
   // perturbation energy
   perturbation_energy_data.calculate = true;
