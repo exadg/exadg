@@ -16,7 +16,7 @@ public:
   // initially distributed from [0,1] to the actual grid. This must match the
   // transform applied to the triangulation, otherwise the identification of
   // data will fail
-  void setup(const std::function<Point<dim>(const Point<dim> &)> &grid_tranform);
+  void setup(const std::function<double(double const &)> &grid_tranform);
 
   void evaluate(const parallel::distributed::Vector<double> &velocity);
 
@@ -33,7 +33,7 @@ public:
   void reset();
 
 private:
-  static const int n_points_y = 201;
+  static const int n_points_y_per_cell = 201;
 
   void do_evaluate(const std::vector<const parallel::distributed::Vector<double> *> &velocity);
 

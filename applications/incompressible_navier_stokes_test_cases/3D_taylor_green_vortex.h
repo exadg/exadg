@@ -26,7 +26,7 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 3;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 3;
+unsigned int const FE_DEGREE_VELOCITY = 2;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -34,8 +34,8 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 3;
-unsigned int const REFINE_STEPS_SPACE_MAX = 3; //REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 4;
+unsigned int const REFINE_STEPS_SPACE_MAX = 4; //REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -77,12 +77,13 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit; //Implicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
   max_velocity = MAX_VELOCITY;
-  cfl = 0.1;
+  // (k_u,k_p)=(7,6), l=0: cfl = 0.00625 (for exponent = 1.5)
+  cfl = 0.05; //0.003125; //0.1;
   cfl_oif = cfl/5.0;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-3; // 1.0e-4;
-  max_number_of_time_steps = 100; //1e8;
-  order_time_integrator = 3; // 1; // 2; // 3;
+  max_number_of_time_steps = 1e8;
+  order_time_integrator = 2; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
 
 
@@ -111,9 +112,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // div-div and continuity penalty
   // these parameters are only used for the coupled solver
-  use_divergence_penalty = true;
+  use_divergence_penalty = false; //true;
   divergence_penalty_factor = 1.0e0;
-  use_continuity_penalty = true;
+  use_continuity_penalty = false; //true;
   continuity_penalty_use_boundary_data = false;
   continuity_penalty_factor = divergence_penalty_factor;
 
@@ -238,11 +239,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   print_input_parameters = true; //false;
 
   // write output for visualization of results
-  output_data.write_output = true;
+  output_data.write_output = false; //true;
   output_data.output_folder = OUTPUT_FOLDER_VTU;
   output_data.output_name = OUTPUT_NAME;
   output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time)/20;
+  output_data.output_interval_time = (end_time-start_time)/200;
   output_data.write_divergence = false;
   output_data.write_velocity_magnitude = true;
   output_data.write_vorticity_magnitude = true;
@@ -253,6 +254,13 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   error_data.analytical_solution_available = false;
   error_data.error_calc_start_time = start_time;
   error_data.error_calc_interval_time = output_data.output_interval_time;
+
+  // calculate div and mass error
+  mass_data.calculate_error = true;
+  mass_data.start_time = 0.0;
+  mass_data.sample_every_time_steps = 1e2;
+  mass_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
+  mass_data.reference_length_scale = 1.0;
 
   // kinetic energy
   kinetic_energy_data.calculate = true;

@@ -33,7 +33,7 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 2;
+unsigned int const REFINE_STEPS_SPACE_MIN = 3;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
@@ -41,10 +41,11 @@ unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
+double const DIMENSIONS_X1 = 2.0*numbers::PI;
+double const DIMENSIONS_X2 = 2.0;
+double const DIMENSIONS_X3 = numbers::PI;
 
 double const MAX_VELOCITY = 22.0;
-
-const double GRID_STRETCH_FAC = 1.8;
 
 // nu = 1/180  coarsest meshes: l2_ku3 or l3_ku2
 // nu = 1/395
@@ -53,9 +54,14 @@ const double GRID_STRETCH_FAC = 1.8;
 double const VISCOSITY = 1./180.; // critical value: 1./50. - 1./75.
 double const END_TIME = 50.0;
 
-std::string OUTPUT_FOLDER = "output/turb_ch/paper/pressure_correction_Re180/"; //"output/turb_ch/paper/Re180/";
+const double GRID_STRETCH_FAC = 1.8;
+
+enum class GridStretchType{ TransformGridCells, VolumeManifold };
+GridStretchType GRID_STRETCH_TYPE = GridStretchType::VolumeManifold; //TransformGridCells; //VolumeManifold;
+
+std::string OUTPUT_FOLDER = "output/turb_ch/paper/laplace_formulation_viscous/coupled_solver_Re180/"; //"output/turb_ch/paper/Re180/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "Re180_pressure_correction_BDF2_CFL_1-0_l2_k3-2_grid_strech_1-8_div_conti_1-0"; //"coupled_solver_BDF2_CFL_1-0_expl_Re180_div_formulation_l0_k15-14_grid_stretch_1-8";
+std::string OUTPUT_NAME = "Re180_coupled_solver_BDF2_CFL_1-0_l3_k3-2_grid_strech_1-8_div_conti_1-0"; //"coupled_solver_BDF2_CFL_1-0_expl_Re180_div_formulation_l0_k15-14_grid_stretch_1-8";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -63,7 +69,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
   equation_type = EquationType::NavierStokes;
-  formulation_viscous_term = FormulationViscousTerm::DivergenceFormulation; //LaplaceFormulation;
+  formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation; //LaplaceFormulation; //DivergenceFormulation;
   right_hand_side = true;
 
 
@@ -75,7 +81,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFPressureCorrection; //CoupledSolution; // BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
+  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //CoupledSolution; // BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; // AdaptiveTimeStepCFL
   max_velocity = MAX_VELOCITY;
@@ -172,12 +178,12 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // convective step
 
   // nonlinear solver
-  newton_solver_data_convective.abs_tol = 1.e-20;
+  newton_solver_data_convective.abs_tol = 1.e-12;
   newton_solver_data_convective.rel_tol = 1.e-6;
   newton_solver_data_convective.max_iter = 100;
   // linear solver
-  abs_tol_linear_convective = 1.e-20;
-  rel_tol_linear_convective = 1.e-3;
+  abs_tol_linear_convective = 1.e-12;
+  rel_tol_linear_convective = 1.e-6;
   max_iter_linear_convective = 1e4;
   use_right_preconditioning_convective = true;
   max_n_tmp_vectors_convective = 100;
@@ -325,7 +331,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // calculate div and mass error
   mass_data.calculate_error = true;
   mass_data.start_time = 0.0;
-  mass_data.sample_every_time_steps = 1e2;
+  mass_data.sample_every_time_steps = 1e0; //1e2;
   mass_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
   mass_data.reference_length_scale = 1.0;
 
@@ -384,31 +390,31 @@ double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
 {
   double result = 0.0;
 
-  if(p[1]<0.9999 && p[1]>-0.9999)
+  const double tol = 1.e-12;
+  AssertThrow(std::abs(p[1])<DIMENSIONS_X2/2.0+tol,ExcMessage("Invalid geometry parameters."));
+
+  if(dim==3)
   {
-    if(dim==3)
-    {
-      // TODO
+    // TODO
 //      if(component == 0)
 //        result = -MAX_VELOCITY*(pow(p[1],6.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*0.5-2./MAX_VELOCITY*std::sin(p[2]*8.));
 //      else if(component == 2)
 //        result = (pow(p[1],6.0)-1.0)*std::sin(p[0]*8.)*2.;
 
-      if(component == 0)
-      {
-        double factor = 1.0;
-        result = -MAX_VELOCITY*(pow(p[1],6.0)-1.0)*(1.0+((double)rand()/RAND_MAX-0.5)*factor);
-      }
-    }
-    else if(dim==2)
+    if(component == 0)
     {
-      if(component == 0)
-        result = -MAX_VELOCITY*(pow(p[1],6.0)-1.0);
+      double factor = 1.0;
+      result = -MAX_VELOCITY*(pow(p[1],6.0)-1.0)*(1.0+((double)rand()/RAND_MAX-0.5)*factor);
     }
-    else
-    {
-      AssertThrow(false, ExcMessage("Dimension has to be dim==2 or dim==3."));
-    }
+  }
+  else if(dim==2)
+  {
+    if(component == 0)
+      result = -MAX_VELOCITY*(pow(p[1],6.0)-1.0);
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Dimension has to be dim==2 or dim==3."));
   }
 
   return result;
@@ -568,21 +574,91 @@ template<int dim>
 /*                                                                                    */
 /**************************************************************************************/
 
- template <int dim>
+ /*
+  *  maps eta in [0,1] --> y in [-1,1]*length_y/2.0 (using a hyperbolic mesh stretching)
+  */
+double grid_transform_y(const double &eta)
+{
+  double y = 0.0;
+  y = DIMENSIONS_X2/2.0*std::tanh(GRID_STRETCH_FAC*(2.*eta-1.))/std::tanh(GRID_STRETCH_FAC);
+
+  return y;
+}
+
+/*
+ * inverse mapping:
+ *
+ *  maps y in [-1,1]*length_y/2.0 --> eta in [0,1]
+ */
+double inverse_grid_transform_y(const double &y)
+{
+  double eta = 0.0;
+  eta = (std::atanh(y*std::tanh(GRID_STRETCH_FAC)*2.0/DIMENSIONS_X2)/GRID_STRETCH_FAC+1.0)/2.0;
+
+  return eta;
+}
+
+template <int dim>
 Point<dim> grid_transform (const Point<dim> &in)
 {
   Point<dim> out = in;
 
   out[0] = in(0)-numbers::PI;
-
-  out[1] = std::tanh(GRID_STRETCH_FAC*(2.*in(1)-1.))/std::tanh(GRID_STRETCH_FAC);
-  // no grid stretching
-//  out[1] = 2.*in(1)-1.;
+  out[1] = grid_transform_y(in[1]);
 
   if(dim==3)
     out[2] = in(2)-0.5*numbers::PI;
   return out;
 }
+
+#include <deal.II/grid/manifold_lib.h>
+
+template <int dim>
+class ManifoldTurbulentChannel : public ChartManifold<dim,dim,dim>
+{
+public:
+  ManifoldTurbulentChannel(Tensor<1,dim> &dimensions_in)
+  {
+    dimensions = dimensions_in;
+  }
+
+  /*
+   *  push_forward operation that maps point xi in reference coordinates [0,1]^d to
+   *  point x in physical coordinates
+   */
+  Point<dim> push_forward(const Point<dim> &xi) const
+  {
+    Point<dim> x;
+
+    x[0] = xi[0]*dimensions[0]-dimensions[0]/2.0;
+    x[1] = grid_transform_y(xi[1]);
+
+    if(dim==3)
+      x[2] = xi[2]*dimensions[2]-dimensions[2]/2.0;
+
+    return x;
+  }
+
+  /*
+   *  pull_back operation that maps point x in physical coordinates
+   *  to point xi in reference coordinates [0,1]^d
+   */
+  Point<dim> pull_back(const Point<dim> &x) const
+  {
+    Point<dim> xi;
+
+    xi[0] = x[0]/dimensions[0]+0.5;
+    xi[1] = inverse_grid_transform_y(x[1]);
+
+    if(dim==3)
+      xi[2] = x[2]/dimensions[2]+0.5;
+
+    return xi;
+  }
+
+private:
+ Tensor<1,dim> dimensions;
+};
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
@@ -594,15 +670,42 @@ void create_grid_and_set_boundary_conditions(
       Triangulation<dim>::cell_iterator> >                 &periodic_faces)
 {
   /* --------------- Generate grid ------------------- */
-   //turbulent channel flow
-   Point<dim> coordinates;
-   coordinates[0] = 2.0*numbers::PI;
-   coordinates[1] = 1.0; // dimension in y-direction is 2.0, see also function grid_transform() that maps the y-coordinate from [0,1] to [-1,1]
-   if (dim == 3)
+  if(GRID_STRETCH_TYPE == GridStretchType::TransformGridCells)
+  {
+    Point<dim> coordinates;
+    coordinates[0] = 2.0*numbers::PI;
+    coordinates[1] = 1.0; // dimension in y-direction is 2.0, see also function grid_transform() that maps the y-coordinate from [0,1] to [-1,1]
+    if (dim == 3)
      coordinates[2] = numbers::PI;
-   // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
-   std::vector<unsigned int> refinements(dim, 1);
-   GridGenerator::subdivided_hyper_rectangle (triangulation, refinements,Point<dim>(),coordinates);
+
+    // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
+    std::vector<unsigned int> refinements(dim, 1);
+    GridGenerator::subdivided_hyper_rectangle (triangulation, refinements,Point<dim>(),coordinates);
+  }
+  else if (GRID_STRETCH_TYPE == GridStretchType::VolumeManifold)
+  {
+    Tensor<1,dim> dimensions;
+    dimensions[0] = DIMENSIONS_X1;
+    dimensions[1] = DIMENSIONS_X2;
+    if(dim==3)
+      dimensions[2] = DIMENSIONS_X3;
+
+    // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
+    std::vector<unsigned int> refinements(dim, 1);
+    GridGenerator::subdivided_hyper_rectangle (triangulation, refinements,Point<dim>(-dimensions/2.0),Point<dim>(dimensions/2.0));
+
+    // manifold
+    unsigned int manifold_id = 1;
+    for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin(); cell != triangulation.end(); ++cell)
+    {
+      cell->set_all_manifold_ids(manifold_id);
+    }
+
+    // apply mesh stretching towards no-slip boundaries in y-direction
+    typename Triangulation<dim>::cell_iterator cell = triangulation.begin();
+    static const ManifoldTurbulentChannel<dim> manifold(dimensions);
+    triangulation.set_manifold(manifold_id, manifold);
+  }
 
    //periodicity in x- and z-direction
    //add 10 to avoid conflicts with dirichlet boundary, which is 0
@@ -624,8 +727,11 @@ void create_grid_and_set_boundary_conditions(
    // perform global refinements
    triangulation.refine_global(n_refine_space);
 
-   // perform grid transform
-   GridTools::transform (&grid_transform<dim>, triangulation);
+   if(GRID_STRETCH_TYPE == GridStretchType::TransformGridCells)
+   {
+     // perform grid transform
+     GridTools::transform (&grid_transform<dim>, triangulation);
+   }
 
    // fill boundary descriptor velocity
    std::shared_ptr<Function<dim> > analytical_solution_velocity;
@@ -692,11 +798,11 @@ public:
     turb_ch_data(pp_data_turb_channel.turb_ch_data)
   {}
 
-  void setup(DoFHandler<dim> const                                        &dof_handler_velocity_in,
-             DoFHandler<dim> const                                        &dof_handler_pressure_in,
-             Mapping<dim> const                                           &mapping_in,
-             MatrixFree<dim,Number> const                                 &matrix_free_data_in,
-             DofQuadIndexData const                                       &dof_quad_index_data_in,
+  void setup(DoFHandler<dim> const                                  &dof_handler_velocity_in,
+             DoFHandler<dim> const                                  &dof_handler_pressure_in,
+             Mapping<dim> const                                     &mapping_in,
+             MatrixFree<dim,Number> const                           &matrix_free_data_in,
+             DofQuadIndexData const                                 &dof_quad_index_data_in,
              std::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution_in)
   {
     // call setup function of base class
@@ -710,16 +816,16 @@ public:
 
     // perform setup of turbulent channel related things
     statistics_turb_ch.reset(new StatisticsManager<dim>(dof_handler_velocity_in));
-    statistics_turb_ch->setup(&grid_transform<dim>);
+    statistics_turb_ch->setup(&grid_transform_y);
   }
 
-  virtual void do_postprocessing(parallel::distributed::Vector<Number> const &velocity,
-                                 parallel::distributed::Vector<Number> const &intermediate_velocity,
-                                 parallel::distributed::Vector<Number> const &pressure,
-                                 parallel::distributed::Vector<Number> const &vorticity,
-                                 std::vector<SolutionField<dim,Number> > const &additional_fields,
-                                 double const                                time,
-                                 int const                                   time_step_number)
+  void do_postprocessing(parallel::distributed::Vector<Number> const &velocity,
+                         parallel::distributed::Vector<Number> const &intermediate_velocity,
+                         parallel::distributed::Vector<Number> const &pressure,
+                         parallel::distributed::Vector<Number> const &vorticity,
+                         std::vector<SolutionField<dim,Number> > const &additional_fields,
+                         double const                                time,
+                         int const                                   time_step_number)
   {
     PostProcessor<dim,fe_degree_u,fe_degree_p,Number>::do_postprocessing(
 	      velocity,

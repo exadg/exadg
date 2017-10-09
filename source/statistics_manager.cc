@@ -15,62 +15,89 @@ StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> &dof_handler_vel
                  ->get_communicator()) :
                 MPI_COMM_SELF),
   number_of_samples(0)
-{
-}
+{}
 
 
 template <int dim>
-void StatisticsManager<dim>::setup(const std::function<Point<dim>(const Point<dim> &)> &grid_transform)
+void StatisticsManager<dim>::setup(const std::function<double(double const &)> &grid_transform)
 {
   // note: this code only works on structured meshes where the faces in
   // y-direction are faces 2 and 3
+
+  /*
+   *           face 3
+   *   __________________________
+   *  y      |       |
+   *         |_______|
+   * /|\     |       |
+   *  |      |_______| n_cells_y_dir = 3
+   *  |      |       |
+   *   ______|_______|___________
+   *
+   *           face 2
+   */
 
   // find the number of refinements in the mesh, first the number of coarse
   // cells in y-direction and then the number of refinements.
   unsigned int n_cells_y_dir = 1;
   typename Triangulation<dim>::cell_iterator cell = dof_handler.get_triangulation().begin(0);
   while (cell != dof_handler.get_triangulation().end(0) && !cell->at_boundary(2))
+  {
     ++cell;
+  }
   while (!cell->at_boundary(3))
-    {
-      ++n_cells_y_dir;
-      cell = cell->neighbor(3);
-    }
+  {
+    ++n_cells_y_dir;
+    cell = cell->neighbor(3);
+  }
 
   n_cells_y_dir *= std::pow(2, dof_handler.get_triangulation().n_global_levels()-1);
 
-  const unsigned int n_points_y_glob =  n_cells_y_dir*(n_points_y-1)+1;
-  //always define 3 vectors and then leave them empty
+  const unsigned int n_points_y_glob =  n_cells_y_dir*(n_points_y_per_cell-1)+1;
+
+  // velocity vector with 3-components
   vel_glob.resize(3);
+  for(unsigned int i=0;i<3;i++)
+    vel_glob[i].resize(n_points_y_glob); // vector for all y-coordinates
+
+  // velocity vector with 3-components
   velsq_glob.resize(3);
   for(unsigned int i=0;i<3;i++)
-    vel_glob[i].resize(n_points_y_glob);
-  for(unsigned int i=0;i<3;i++)
-    velsq_glob[i].resize(n_points_y_glob);
-  veluv_glob.resize(n_points_y_glob);
+    velsq_glob[i].resize(n_points_y_glob); // vector for all y-coordinates
+
+  // u*v (scalar quantity)
+  veluv_glob.resize(n_points_y_glob); // vector for all y-coordinates
+
+  // initialize number of samples
   number_of_samples = 0;
 
+  // calculate y-coordinates in physical space where we want to peform the sampling (averaging)
   y_glob.reserve(n_points_y_glob);
-  for (unsigned int ele = 0; ele < n_cells_y_dir;ele++)
+
+  // loop over all cells in y-direction
+  for (unsigned int cell = 0; cell < n_cells_y_dir; cell++)
+  {
+    // determine lower and upper y-coordinates of current cell in physical space
+    double pointlower = 1./(double)n_cells_y_dir*(double)cell;
+    double pointupper = 1./(double)n_cells_y_dir*(double)(cell+1);
+    double ylower = grid_transform(pointlower);
+    double yupper = grid_transform(pointupper);
+
+    // loop over all y-coordinates inside the current cell
+    for (unsigned int plane = 0; plane<n_points_y_per_cell-1;plane++)
     {
-      double elelower = 1./(double)n_cells_y_dir*(double)ele;
-      double eleupper = 1./(double)n_cells_y_dir*(double)(ele+1);
-      Point<dim> pointlower;
-      pointlower[1]=elelower;
-      Point<dim> pointupper;
-      pointupper[1]=eleupper;
-      double ylower = grid_transform(pointlower)[1];
-      double yupper = grid_transform(pointupper)[1];
-      for (unsigned int plane = 0; plane<n_points_y-1;plane++)
-        {
-          double coord = ylower + (yupper-ylower)/(n_points_y-1)*plane;
-          y_glob.push_back(coord);
-        }
+      // use a linear distribution inside each cell
+      double coord = ylower + (yupper-ylower)/(n_points_y_per_cell-1)*plane;
+      y_glob.push_back(coord);
     }
-  //push back last missing coordinate at upper wall
-  Point<dim> upper;
-  upper[1] = 1.;
-  y_glob.push_back(grid_transform(upper)[1]);
+
+    //push back last missing coordinate at upper cell/wall
+    if(cell == n_cells_y_dir-1)
+    {
+      y_glob.push_back(yupper);
+    }
+  }
+
   AssertThrow(y_glob.size() == n_points_y_glob, ExcInternalError());
 }
 
@@ -201,9 +228,9 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const parallel::distribute
   QGauss<dim-1> gauss_2d(fe_degree+1);
 
   // vector of FEValues for all x-z-planes of a cell
-  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y);
+  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y_per_cell);
 
-  for (unsigned int i=0; i<n_points_y; ++i)
+  for (unsigned int i=0; i<n_points_y_per_cell; ++i)
   {
     std::vector<Point<dim> > points(gauss_2d.size());
     std::vector<double> weights(gauss_2d.size());
@@ -212,7 +239,7 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const parallel::distribute
       points[j][0] = gauss_2d.point(j)[0];
       if(dim==3)
         points[j][2] = gauss_2d.point(j)[1];
-      points[j][1] = (double)i/(n_points_y-1);
+      points[j][1] = (double)i/(n_points_y_per_cell-1);
       weights[j] = gauss_2d.weight(j);
     }
     fe_values[i].reset(new FEValues<dim>(dof_handler.get_fe().base_element(0),
@@ -254,7 +281,7 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const parallel::distribute
       }
 
       // loop over all x-z-planes of current cell
-      for (unsigned int i=0; i<n_points_y; ++i)
+      for (unsigned int i=0; i<n_points_y_per_cell; ++i)
       {
         fe_values[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
 
@@ -378,11 +405,11 @@ StatisticsManager<dim>::do_evaluate_xwall(const std::vector<const parallel::dist
   std::vector<double> veluv_loc(vel_glob[0].size());
 
   const unsigned int fe_degree = dof_handler.get_fe().degree;
-  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y);
-  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values_xwall(n_points_y);
-  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values_tauw(n_points_y);
+  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y_per_cell);
+  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values_xwall(n_points_y_per_cell);
+  std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values_tauw(n_points_y_per_cell);
   QGauss<dim-1> gauss_2d(fe_degree+1);
-  for (unsigned int i=0; i<n_points_y; ++i)
+  for (unsigned int i=0; i<n_points_y_per_cell; ++i)
   {
     std::vector<Point<dim> > points(gauss_2d.size());
     std::vector<double> weights(gauss_2d.size());
@@ -391,7 +418,7 @@ StatisticsManager<dim>::do_evaluate_xwall(const std::vector<const parallel::dist
       points[j][0] = gauss_2d.point(j)[0];
       if(dim==3)
         points[j][2] = gauss_2d.point(j)[1];
-      points[j][1] = (double)i/(n_points_y-1);
+      points[j][1] = (double)i/(n_points_y_per_cell-1);
       weights[j] = gauss_2d.weight(j);
     }
     fe_values[i].reset(new FEValues<dim>(dof_handler.get_fe().base_element(0),
@@ -439,7 +466,7 @@ StatisticsManager<dim>::do_evaluate_xwall(const std::vector<const parallel::dist
         for (unsigned int j=0; j<scalar_dofs_per_cell_tauw; ++j)
           tauw_vector[j][0] = (*fe_param.tauw)(dof_indices_tauw[j]);
       }
-      for (unsigned int i=0; i<n_points_y; ++i)
+      for (unsigned int i=0; i<n_points_y_per_cell; ++i)
       {
         fe_values[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
         fe_values_xwall[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
