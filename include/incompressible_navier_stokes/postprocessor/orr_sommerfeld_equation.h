@@ -274,7 +274,7 @@ void compute_eigenvector(std::vector<std::complex<double> > &eigenvector,
 
     for (int i=0; i<m-4; ++i)
     {
-      // eigenvector[0] = 0 (contraint)
+      // eigenvector[0] = 0 (constraint)
       eigenvector[1] += constraints(2,i) * eigenvector[i+2];
       eigenvector[m-2] += constraints(3,i) * eigenvector[i+2];
       // eigenvector[m-1] = 0 (constraint)

@@ -639,18 +639,41 @@ calculate_time_step()
   }
   else if(adaptive_time_stepping == true)
   {
+    const double global_min_cell_diameter = calculate_minimum_vertex_distance(
+        navier_stokes_operation->get_dof_handler_u().get_triangulation());
+
+    // calculate a temporary time step size using a  guess for the maximum velocity
+    double time_step_tmp = calculate_const_time_step_cfl(cfl,
+                                                         param.max_velocity,
+                                                         global_min_cell_diameter,
+                                                         fe_degree_u,
+                                                         param.cfl_exponent_fe_degree_velocity);
+
+    pcout << "Calculation of time step size according to CFL condition:" << std::endl << std::endl;
+
+    print_parameter(pcout,"h_min",global_min_cell_diameter);
+    print_parameter(pcout,"U_max",param.max_velocity);
+    print_parameter(pcout,"CFL",cfl);
+    print_parameter(pcout,"exponent fe_degree_velocity",param.cfl_exponent_fe_degree_velocity);
+    print_parameter(pcout,"Time step size",time_step_tmp);
+
+    // if u(x,t=0)=0, this time step size will tend to infinity
     time_steps[0] = calculate_adaptive_time_step_cfl<dim, fe_degree_u, value_type>(
         navier_stokes_operation->get_data(),
         navier_stokes_operation->get_dof_index_velocity(),
         navier_stokes_operation->get_quad_index_velocity_linear(),
         get_velocity(),
         cfl,
-        time_steps[0],
-        false);
+        param.cfl_exponent_fe_degree_velocity);
 
-    pcout << "Calculation of time step size according to adaptive CFL condition:" << std::endl << std::endl;
+    // use adaptive time step size only if it is smaller, otherwise use temporary time step size
+    time_steps[0] = std::min(time_steps[0],time_step_tmp);
+
+    pcout << std::endl
+          << "Calculation of time step size according to adaptive CFL condition:" << std::endl << std::endl;
 
     print_parameter(pcout,"CFL",cfl);
+    print_parameter(pcout,"exponent fe_degree_velocity",param.cfl_exponent_fe_degree_velocity);
     print_parameter(pcout,"Time step size",time_steps[0]);
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepMaxEfficiency)
@@ -729,14 +752,22 @@ recalculate_adaptive_time_step()
   for(unsigned int i=order-1;i>0;--i)
     time_steps[i] = time_steps[i-1];
 
+  value_type last_time_step = time_steps[0];
+
   time_steps[0] = calculate_adaptive_time_step_cfl<dim, fe_degree_u, value_type>(
       navier_stokes_operation->get_data(),
       navier_stokes_operation->get_dof_index_velocity(),
       navier_stokes_operation->get_quad_index_velocity_linear(),
       get_velocity(),
       cfl,
-      time_steps[0]);
+      param.cfl_exponent_fe_degree_velocity);
 
+  bool use_limiter = true;
+  if(use_limiter == true)
+  {
+    double factor = 1.2;
+    limit_time_step_change(time_steps[0],last_time_step,factor);
+  }
 }
 
 
