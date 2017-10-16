@@ -84,7 +84,7 @@ private:
             << "Error:               e = |exp(2*omega_i*t) - E(t)/E(0)|" << std::endl;
 
           f << std::endl
-            << "  Time           energy         error" << std::endl;
+            << "  Time                energy              error" << std::endl;
 
           clear_files = false;
         }
@@ -96,10 +96,11 @@ private:
         Number const rel = perturbation_energy/initial_perturbation_energy;
         Number const error = std::abs(std::exp<Number>(2*energy_data.omega_i*time) - rel);
 
-        f << std::scientific << std::setprecision(7)
-          << std::setw(15) << time
-          << std::setw(15) << perturbation_energy
-          << std::setw(15) << error
+        unsigned int const precision = 12;
+        f << std::scientific << std::setprecision(precision)
+          << std::setw(precision + 8) << time
+          << std::setw(precision + 8) << perturbation_energy
+          << std::setw(precision + 8) << error
           << std::endl;
       }
     }

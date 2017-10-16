@@ -11,12 +11,14 @@ class StatisticsManager
 {
 public:
 
-  StatisticsManager(const DoFHandler<dim> &dof_handler_velocity);
+  StatisticsManager(const DoFHandler<dim> &dof_handler_velocity,
+                    const Mapping<dim>    &mapping);
   // The argument grid_transform indicates how the y-direction that is
   // initially distributed from [0,1] to the actual grid. This must match the
   // transform applied to the triangulation, otherwise the identification of
   // data will fail
-  void setup(const std::function<double(double const &)> &grid_tranform);
+  void setup(const std::function<double(double const &)> &grid_tranform,
+             const bool                                  &individual_cells_are_stretched);
 
   void evaluate(const parallel::distributed::Vector<double> &velocity);
 
@@ -33,7 +35,8 @@ public:
   void reset();
 
 private:
-  static const int n_points_y_per_cell = 201;
+  static const unsigned int n_points_y_per_cell_linear = 11;
+  unsigned int n_points_y_per_cell;
 
   void do_evaluate(const std::vector<const parallel::distributed::Vector<double> *> &velocity);
 
@@ -43,6 +46,7 @@ private:
                          const double                                                     viscosity);
 
   const DoFHandler<dim> &dof_handler;
+  const Mapping<dim> &mapping;
   MPI_Comm communicator;
 
   // vector of y-coordinates at which statistical quantities are computed
