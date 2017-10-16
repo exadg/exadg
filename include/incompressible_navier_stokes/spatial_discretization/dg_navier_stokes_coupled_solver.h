@@ -412,6 +412,7 @@ setup_divergence_and_continuity_penalty_operators_and_solvers()
   {
     ContinuityPenaltyOperatorData<dim> conti_penalty_data;
     conti_penalty_data.penalty_parameter = this->param.continuity_penalty_factor;
+    conti_penalty_data.which_components = this->param.continuity_penalty_components;
     conti_penalty_data.use_boundary_data = this->param.continuity_penalty_use_boundary_data;
     conti_penalty_data.bc = this->boundary_descriptor_velocity;
 

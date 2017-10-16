@@ -201,6 +201,12 @@ enum class AdjustPressureLevel
   ApplyAnalyticalSolutionInPoint
 };
 
+enum class ContinuityPenaltyComponents
+{
+  All,
+  Normal
+};
+
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -628,6 +634,7 @@ public:
     use_divergence_penalty(false),
     divergence_penalty_factor(1.),
     use_continuity_penalty(false),
+    continuity_penalty_components(ContinuityPenaltyComponents::Normal),
     continuity_penalty_use_boundary_data(false),
     continuity_penalty_factor(1.),
 
@@ -1792,6 +1799,10 @@ public:
   // use continuity penalty term
   // Note that this parameter is currently only relevant for the coupled solver
   bool use_continuity_penalty;
+
+  // specify which components of the velocity field to penalize, i.e., normal
+  // components only or all components
+  ContinuityPenaltyComponents continuity_penalty_components;
 
   // use Dirichlet boundary data when applying the continuity penalty operator
   bool continuity_penalty_use_boundary_data;
