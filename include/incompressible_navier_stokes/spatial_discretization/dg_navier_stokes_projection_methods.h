@@ -254,6 +254,7 @@ setup_projection_solver ()
   {
     ContinuityPenaltyOperatorData<dim> conti_penalty_data;
     conti_penalty_data.penalty_parameter = this->param.continuity_penalty_factor;
+    conti_penalty_data.which_components = this->param.continuity_penalty_components;
     // The projected velocity field does not fulfill the velocity Dirichlet boundary conditions.
     // Hence, do not use the prescribed boundary data when applying the continuity penalty operator.
     conti_penalty_data.use_boundary_data = false;

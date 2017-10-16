@@ -287,11 +287,13 @@ struct ContinuityPenaltyOperatorData
   ContinuityPenaltyOperatorData()
     :
     penalty_parameter(1.0),
-    use_boundary_data(false)
+    use_boundary_data(false),
+    which_components(ContinuityPenaltyComponents::Normal)
   {}
 
   double penalty_parameter;
   bool use_boundary_data;
+  ContinuityPenaltyComponents which_components;
 
   std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > bc;
 };
@@ -522,8 +524,26 @@ private:
         Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_neighbor.get_value(q);
         Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
 
-        fe_eval.submit_value(tau*jump_value,q);
-        fe_eval_neighbor.submit_value(-tau*jump_value,q);
+        if(operator_data.which_components == ContinuityPenaltyComponents::All)
+        {
+          //penalize all velocity components
+          fe_eval.submit_value(tau*jump_value,q);
+          fe_eval_neighbor.submit_value(-tau*jump_value,q);
+        }
+        else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
+        {
+          // penalize normal components only
+          Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+
+          fe_eval.submit_value(tau*(jump_value*normal)*normal,q);
+          fe_eval_neighbor.submit_value(-tau*(jump_value*normal)*normal,q);
+        }
+        else
+        {
+          AssertThrow(operator_data.which_components == ContinuityPenaltyComponents::All ||
+                      operator_data.which_components == ContinuityPenaltyComponents::Normal,
+                      ExcMessage("not implemented."));
+        }
       }
       fe_eval.integrate(true,false);
       fe_eval_neighbor.integrate(true,false);
@@ -581,7 +601,23 @@ private:
 
           Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
 
-          fe_eval.submit_value(tau*jump_value,q);
+          if(operator_data.which_components == ContinuityPenaltyComponents::All)
+          {
+            //penalize all velocity components
+            fe_eval.submit_value(tau*jump_value,q);
+          }
+          else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
+          {
+            // penalize normal components only
+            Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+            fe_eval.submit_value(tau*(jump_value*normal)*normal,q);
+          }
+          else
+          {
+            AssertThrow(operator_data.which_components == ContinuityPenaltyComponents::All ||
+                        operator_data.which_components == ContinuityPenaltyComponents::Normal,
+                        ExcMessage("not implemented."));
+          }
         }
         fe_eval.integrate(true,false);
 
@@ -645,7 +681,23 @@ private:
 
           Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
 
-          fe_eval.submit_value(tau*jump_value,q);
+          if(operator_data.which_components == ContinuityPenaltyComponents::All)
+          {
+            //penalize all velocity components
+            fe_eval.submit_value(tau*jump_value,q);
+          }
+          else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
+          {
+            // penalize normal components only
+            Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+            fe_eval.submit_value(tau*(jump_value*normal)*normal,q);
+          }
+          else
+          {
+            AssertThrow(operator_data.which_components == ContinuityPenaltyComponents::All ||
+                        operator_data.which_components == ContinuityPenaltyComponents::Normal,
+                        ExcMessage("not implemented."));
+          }
         }
         fe_eval.integrate(true,false);
 
@@ -721,7 +773,23 @@ private:
             AssertThrow(false,ExcMessage("Boundary type of face is invalid or not implemented."));
           }
 
-          fe_eval.submit_value(tau*jump_value,q);
+          if(operator_data.which_components == ContinuityPenaltyComponents::All)
+          {
+            //penalize all velocity components
+            fe_eval.submit_value(tau*jump_value,q);
+          }
+          else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
+          {
+            // penalize normal components only
+            Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+            fe_eval.submit_value(tau*(jump_value*normal)*normal,q);
+          }
+          else
+          {
+            AssertThrow(operator_data.which_components == ContinuityPenaltyComponents::All ||
+                        operator_data.which_components == ContinuityPenaltyComponents::Normal,
+                        ExcMessage("not implemented."));
+          }
         }
         fe_eval.integrate(true,false);
 
@@ -772,7 +840,23 @@ private:
           Tensor<1,dim,VectorizedArray<value_type> > uP;
           Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
 
-          fe_eval.submit_value(tau*jump_value,q);
+          if(operator_data.which_components == ContinuityPenaltyComponents::All)
+          {
+            //penalize all velocity components
+            fe_eval.submit_value(tau*jump_value,q);
+          }
+          else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
+          {
+            // penalize normal components only
+            Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+            fe_eval.submit_value(tau*(jump_value*normal)*normal,q);
+          }
+          else
+          {
+            AssertThrow(operator_data.which_components == ContinuityPenaltyComponents::All ||
+                        operator_data.which_components == ContinuityPenaltyComponents::Normal,
+                        ExcMessage("not implemented."));
+          }
         }
 
         fe_eval.integrate(true,false);
@@ -805,7 +889,23 @@ private:
           Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_neighbor.get_value(q);
           Tensor<1,dim,VectorizedArray<value_type> > jump_value = uP - uM; // interior - exterior = uP - uM (neighbor!)
 
-          fe_eval_neighbor.submit_value(tau*jump_value,q);
+          if(operator_data.which_components == ContinuityPenaltyComponents::All)
+          {
+            //penalize all velocity components
+            fe_eval_neighbor.submit_value(tau*jump_value,q);
+          }
+          else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
+          {
+            // penalize normal components only
+            Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_neighbor.get_normal_vector(q);
+            fe_eval_neighbor.submit_value(tau*(jump_value*normal)*normal,q);
+          }
+          else
+          {
+            AssertThrow(operator_data.which_components == ContinuityPenaltyComponents::All ||
+                        operator_data.which_components == ContinuityPenaltyComponents::Normal,
+                        ExcMessage("not implemented."));
+          }
         }
         fe_eval_neighbor.integrate(true,false);
 
@@ -874,7 +974,23 @@ private:
 
             Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
 
-            fe_eval.submit_value(tau*jump_value,q);
+            if(operator_data.which_components == ContinuityPenaltyComponents::All)
+            {
+              //penalize all velocity components
+              fe_eval.submit_value(tau*jump_value,q);
+            }
+            else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
+            {
+              // penalize normal components only
+              Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+              fe_eval.submit_value(tau*(jump_value*normal)*normal,q);
+            }
+            else
+            {
+              AssertThrow(operator_data.which_components == ContinuityPenaltyComponents::All ||
+                          operator_data.which_components == ContinuityPenaltyComponents::Normal,
+                          ExcMessage("not implemented."));
+            }
           }
 
           fe_eval.integrate(true,false);
@@ -934,7 +1050,23 @@ private:
           Tensor<1,dim,VectorizedArray<value_type> > uP;
           Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
 
-          fe_eval.submit_value(tau*jump_value,q);
+          if(operator_data.which_components == ContinuityPenaltyComponents::All)
+          {
+            //penalize all velocity components
+            fe_eval.submit_value(tau*jump_value,q);
+          }
+          else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
+          {
+            // penalize normal components only
+            Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+            fe_eval.submit_value(tau*(jump_value*normal)*normal,q);
+          }
+          else
+          {
+            AssertThrow(operator_data.which_components == ContinuityPenaltyComponents::All ||
+                        operator_data.which_components == ContinuityPenaltyComponents::Normal,
+                        ExcMessage("not implemented."));
+          }
         }
 
         fe_eval.integrate(true,false);
@@ -981,7 +1113,23 @@ private:
           Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_neighbor.get_value(q);
           Tensor<1,dim,VectorizedArray<value_type> > jump_value = uP - uM; // interior - exterior = uP - uM (neighbor!)
 
-          fe_eval_neighbor.submit_value(tau*jump_value,q);
+          if(operator_data.which_components == ContinuityPenaltyComponents::All)
+          {
+            //penalize all velocity components
+            fe_eval_neighbor.submit_value(tau*jump_value,q);
+          }
+          else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
+          {
+            // penalize normal components only
+            Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval_neighbor.get_normal_vector(q);
+            fe_eval_neighbor.submit_value(tau*(jump_value*normal)*normal,q);
+          }
+          else
+          {
+            AssertThrow(operator_data.which_components == ContinuityPenaltyComponents::All ||
+                        operator_data.which_components == ContinuityPenaltyComponents::Normal,
+                        ExcMessage("not implemented."));
+          }
         }
         fe_eval_neighbor.integrate(true,false);
 
@@ -1056,7 +1204,23 @@ private:
 
             Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
 
-            fe_eval.submit_value(tau*jump_value,q);
+            if(operator_data.which_components == ContinuityPenaltyComponents::All)
+            {
+              //penalize all velocity components
+              fe_eval.submit_value(tau*jump_value,q);
+            }
+            else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
+            {
+              // penalize normal components only
+              Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+              fe_eval.submit_value(tau*(jump_value*normal)*normal,q);
+            }
+            else
+            {
+              AssertThrow(operator_data.which_components == ContinuityPenaltyComponents::All ||
+                          operator_data.which_components == ContinuityPenaltyComponents::Normal,
+                          ExcMessage("not implemented."));
+            }
           }
 
           fe_eval.integrate(true,false);

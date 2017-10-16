@@ -52,16 +52,19 @@ double const MAX_VELOCITY = 22.0;
 // nu = 1/590
 // nu = 1/950
 double const VISCOSITY = 1./180.; // critical value: 1./50. - 1./75.
+
+double const START_TIME = 0.0;
+double const SAMPLE_START_TIME = 30.0;
 double const END_TIME = 50.0;
 
 const double GRID_STRETCH_FAC = 1.8;
 
 enum class GridStretchType{ TransformGridCells, VolumeManifold };
-GridStretchType GRID_STRETCH_TYPE = GridStretchType::VolumeManifold; //TransformGridCells; //VolumeManifold;
+GridStretchType GRID_STRETCH_TYPE = GridStretchType::VolumeManifold; //VolumeManifold; //TransformGridCells; //VolumeManifold;
 
-std::string OUTPUT_FOLDER = "output/turb_ch/paper/laplace_formulation_viscous/coupled_solver_Re180/"; //"output/turb_ch/paper/Re180/";
+std::string OUTPUT_FOLDER = "output/turb_ch/paper/laplace_formulation_viscous/coupled_solver_Re180/h_convergence/"; //"output/turb_ch/paper/Re180/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "Re180_coupled_solver_BDF2_CFL_1-0_l3_k3-2_grid_strech_1-8_div_conti_1-0"; //"coupled_solver_BDF2_CFL_1-0_expl_Re180_div_formulation_l0_k15-14_grid_stretch_1-8";
+std::string OUTPUT_NAME = "Re180_coupled_solver_BDF2_CFL_1-0_l3_k3-2_grid_strech_1-8_div_normal_conti_1-0"; //"coupled_solver_BDF2_CFL_1-0_expl_Re180_div_formulation_l0_k15-14_grid_stretch_1-8";
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -74,14 +77,14 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // PHYSICAL QUANTITIES
-  start_time = 0.0;
+  start_time = START_TIME;
   end_time = END_TIME;
   viscosity = VISCOSITY;
 
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //CoupledSolution; // BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
+  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; // BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; // AdaptiveTimeStepCFL
   max_velocity = MAX_VELOCITY;
@@ -120,6 +123,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   use_divergence_penalty = true;
   divergence_penalty_factor = 1.0e0;
   use_continuity_penalty = true;
+  continuity_penalty_components = ContinuityPenaltyComponents::Normal;
   continuity_penalty_use_boundary_data = false;
   continuity_penalty_factor = divergence_penalty_factor;
 
@@ -330,14 +334,14 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // calculate div and mass error
   mass_data.calculate_error = true;
-  mass_data.start_time = 0.0;
+  mass_data.start_time = START_TIME;
   mass_data.sample_every_time_steps = 1e0; //1e2;
   mass_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
   mass_data.reference_length_scale = 1.0;
 
   // turbulent channel statistics
   turb_ch_data.calculate_statistics = true;
-  turb_ch_data.sample_start_time = 30.0;
+  turb_ch_data.sample_start_time = SAMPLE_START_TIME;
   turb_ch_data.sample_end_time = END_TIME;
   turb_ch_data.sample_every_timesteps = 10;
   turb_ch_data.viscosity = VISCOSITY;
@@ -815,8 +819,14 @@ public:
         analytical_solution_in);
 
     // perform setup of turbulent channel related things
-    statistics_turb_ch.reset(new StatisticsManager<dim>(dof_handler_velocity_in));
-    statistics_turb_ch->setup(&grid_transform_y);
+    statistics_turb_ch.reset(new StatisticsManager<dim>(dof_handler_velocity_in,mapping_in));
+
+    bool individual_cells_are_stretched = false;
+
+    if(GRID_STRETCH_TYPE == GridStretchType::VolumeManifold)
+      individual_cells_are_stretched = true;
+
+    statistics_turb_ch->setup(&grid_transform_y,individual_cells_are_stretched);
   }
 
   void do_postprocessing(parallel::distributed::Vector<Number> const &velocity,
