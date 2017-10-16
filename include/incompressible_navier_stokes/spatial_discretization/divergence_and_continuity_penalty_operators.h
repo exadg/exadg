@@ -96,7 +96,7 @@ public:
         volume += JxW_values[q];
         norm_U_mean += JxW_values[q]*fe_eval.get_value(q).norm();
       }
-      norm_U_mean = norm_U_mean /= volume;
+      norm_U_mean /= volume;
 
       array_penalty_parameter[cell] = operator_data.penalty_parameter * norm_U_mean
           * std::exp(std::log(volume)/(double)dim) / (double)(fe_degree+1);
@@ -379,7 +379,7 @@ public:
         volume += JxW_values[q];
         norm_U_mean += JxW_values[q]*fe_eval.get_value(q).norm();
       }
-      norm_U_mean = norm_U_mean /= volume;
+      norm_U_mean /= volume;
 
       array_penalty_parameter[cell] = operator_data.penalty_parameter * norm_U_mean;
     }
