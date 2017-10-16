@@ -25,8 +25,10 @@ struct DivergencePenaltyOperatorData
  *  Divergence penalty operator: ( div(v_h) , tau_div * div(u_h) )_Omega^e where
  *   v_h : test function
  *   u_h : solution
- *   tau_div: divergence penalty factor tau_div = K * || U_mean || * h_eff
- *            where h_eff = h / (k_u+1) and h = V_e^{1/3} with the element volume V_e
+ *   TODO tau_div: divergence penalty factor tau_div = K * || U_mean || * h_eff
+ *   TODO         where h_eff = h / (k_u+1) and h = V_e^{1/3} with the element volume V_e
+ *   tau_div: divergence penalty factor tau_div = K * ||U||_mean * h_eff
+ *            where h_eff = h / (k_u+1) and h = V_e^{1/3} with the element volume V_e 
  *   Omega^e : element e
  */
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
@@ -63,12 +65,14 @@ public:
 
     for (unsigned int cell=0; cell<data.n_macro_cells()+data.n_macro_ghost_cells(); ++cell)
     {
+      // TODO
+      /*
       fe_eval.reinit(cell);
       fe_eval.read_dof_values(velocity);
       fe_eval.evaluate (true,false);
       VectorizedArray<value_type> volume = make_vectorized_array<value_type>(0.0);
       Tensor<1,dim,VectorizedArray<value_type> > U_mean;
-      VectorizedArray<value_type> norm_U_mean;
+      VectorizedArray<value_type> norm_U_mean = make_vectorized_array<value_type>(0.0);
       JxW_values.resize(fe_eval.n_q_points);
       fe_eval.fill_JxW_values(JxW_values);
       for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
@@ -78,9 +82,21 @@ public:
       }
       U_mean /= volume;
       norm_U_mean = U_mean.norm();
-
-      // TODO
-//      array_penalty_parameter[cell] = operator_data.penalty_parameter * norm_U_mean * std::exp(std::log(volume)/(double)dim);
+      */
+    
+      fe_eval.reinit(cell);
+      fe_eval.read_dof_values(velocity);
+      fe_eval.evaluate (true,false);
+      VectorizedArray<value_type> volume = make_vectorized_array<value_type>(0.0);
+      VectorizedArray<value_type> norm_U_mean = make_vectorized_array<value_type>(0.0);
+      JxW_values.resize(fe_eval.n_q_points);
+      fe_eval.fill_JxW_values(JxW_values);
+      for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+      {
+        volume += JxW_values[q];
+        norm_U_mean += JxW_values[q]*fe_eval.get_value(q).norm();
+      }
+      norm_U_mean /= volume;
 
       array_penalty_parameter[cell] = operator_data.penalty_parameter * norm_U_mean
           * std::exp(std::log(volume)/(double)dim) / (double)(fe_degree+1);
@@ -286,7 +302,8 @@ struct ContinuityPenaltyOperatorData
  *   v_h : test function
  *   u_h : solution
  *   jump(u_h) = u_h^{-} - u_h^{+} where "-" denotes interior information and "+" exterior information
- *   tau_conti: continuity penalty factor tau_conti = K * || U_mean ||
+ *   TODO: tau_conti: continuity penalty factor tau_conti = K * || U_mean ||
+ *   tau_conti: continuity penalty factor tau_conti = K * ||U||_mean
  *   dOmega^e : boundary of element e
  */
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
@@ -331,12 +348,14 @@ public:
 
     for (unsigned int cell=0; cell<data.n_macro_cells()+data.n_macro_ghost_cells(); ++cell)
     {
+      //TODO
+      /*
       fe_eval.reinit(cell);
       fe_eval.read_dof_values(velocity);
       fe_eval.evaluate (true,false);
       VectorizedArray<value_type> volume = make_vectorized_array<value_type>(0.0);
       Tensor<1,dim,VectorizedArray<value_type> > U_mean;
-      VectorizedArray<value_type> norm_U_mean;
+      VectorizedArray<value_type> norm_U_mean = make_vectorized_array<value_type>(0.0);
       JxW_values.resize(fe_eval.n_q_points);
       fe_eval.fill_JxW_values(JxW_values);
       for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
@@ -346,6 +365,21 @@ public:
       }
       U_mean /= volume;
       norm_U_mean = U_mean.norm();
+      */
+
+      fe_eval.reinit(cell);
+      fe_eval.read_dof_values(velocity);
+      fe_eval.evaluate (true,false);
+      VectorizedArray<value_type> volume = make_vectorized_array<value_type>(0.0);
+      VectorizedArray<value_type> norm_U_mean = make_vectorized_array<value_type>(0.0);
+      JxW_values.resize(fe_eval.n_q_points);
+      fe_eval.fill_JxW_values(JxW_values);
+      for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+      {
+        volume += JxW_values[q];
+        norm_U_mean += JxW_values[q]*fe_eval.get_value(q).norm();
+      }
+      norm_U_mean /= volume;
 
       array_penalty_parameter[cell] = operator_data.penalty_parameter * norm_U_mean;
     }

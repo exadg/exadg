@@ -76,7 +76,7 @@ private:
             << "Enstrophy: E = 1/V * 1/2 * (rot(u),rot(u))_Omega, where V=(1,1)_Omega" << std::endl;
 
           f << std::endl
-            << "  Time           Kin. energy    dissipation    enstrophy"<<std::endl;
+            << "  Time                Kin. energy         dissipation         enstrophy"<<std::endl;
 
           clear_files = false;
         }
@@ -85,11 +85,12 @@ private:
           f.open(filename.str().c_str(),std::ios::app);
         }
 
-        f << std::scientific << std::setprecision(7)
-          << std::setw(15) << time
-          << std::setw(15) << kinetic_energy
-          << std::setw(15) << dissipation
-          << std::setw(15) << enstrophy << std::endl;
+        unsigned int precision = 12;
+        f << std::scientific << std::setprecision(precision)
+          << std::setw(precision+8) << time
+          << std::setw(precision+8) << kinetic_energy
+          << std::setw(precision+8) << dissipation
+          << std::setw(precision+8) << enstrophy << std::endl;
       }
     }
   }
