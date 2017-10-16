@@ -7,9 +7,12 @@
 #include "../include/incompressible_navier_stokes/xwall/SpaldingsLaw.h"
 
 template <int dim>
-StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> &dof_handler_velocity)
+StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> &dof_handler_velocity,
+                                          const Mapping<dim>    &mapping_in)
   :
+  n_points_y_per_cell(0),
   dof_handler (dof_handler_velocity),
+  mapping(mapping_in),
   communicator (dynamic_cast<const parallel::Triangulation<dim>*>(&dof_handler_velocity.get_triangulation()) ?
                 (dynamic_cast<const parallel::Triangulation<dim>*>(&dof_handler_velocity.get_triangulation())
                  ->get_communicator()) :
@@ -19,7 +22,8 @@ StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> &dof_handler_vel
 
 
 template <int dim>
-void StatisticsManager<dim>::setup(const std::function<double(double const &)> &grid_transform)
+void StatisticsManager<dim>::setup(const std::function<double(double const &)> &grid_transform,
+                                   const bool                                  &individual_cells_are_stretched)
 {
   // note: this code only works on structured meshes where the faces in
   // y-direction are faces 2 and 3
@@ -51,6 +55,10 @@ void StatisticsManager<dim>::setup(const std::function<double(double const &)> &
     cell = cell->neighbor(3);
   }
 
+  const unsigned int fe_degree = dof_handler.get_fe().degree;
+  n_points_y_per_cell = n_points_y_per_cell_linear * fe_degree;
+  AssertThrow(n_points_y_per_cell >= 2, ExcMessage("Number of points in y-direction per cell is invalid."));
+
   n_cells_y_dir *= std::pow(2, dof_handler.get_triangulation().n_global_levels()-1);
 
   const unsigned int n_points_y_glob =  n_cells_y_dir*(n_points_y_per_cell-1)+1;
@@ -75,26 +83,128 @@ void StatisticsManager<dim>::setup(const std::function<double(double const &)> &
   y_glob.reserve(n_points_y_glob);
 
   // loop over all cells in y-direction
-  for (unsigned int cell = 0; cell < n_cells_y_dir; cell++)
+  if(individual_cells_are_stretched == true)
   {
-    // determine lower and upper y-coordinates of current cell in physical space
-    double pointlower = 1./(double)n_cells_y_dir*(double)cell;
-    double pointupper = 1./(double)n_cells_y_dir*(double)(cell+1);
-    double ylower = grid_transform(pointlower);
-    double yupper = grid_transform(pointupper);
-
-    // loop over all y-coordinates inside the current cell
-    for (unsigned int plane = 0; plane<n_points_y_per_cell-1;plane++)
+    for (unsigned int cell = 0; cell < n_cells_y_dir; cell++)
     {
-      // use a linear distribution inside each cell
-      double coord = ylower + (yupper-ylower)/(n_points_y_per_cell-1)*plane;
-      y_glob.push_back(coord);
+      // determine lower and upper y-coordinates of current cell in ref space [0,1]
+      double pointlower = 1./(double)n_cells_y_dir*(double)cell;
+      double pointupper = 1./(double)n_cells_y_dir*(double)(cell+1);
+
+      // loop over all y-coordinates inside the current cell
+      for (unsigned int plane = 0; plane<n_points_y_per_cell-1; plane++)
+      {
+        // reference space: use a linear distribution inside each cell [0,1]
+        double coord_ref = pointlower + (pointupper-pointlower)/(n_points_y_per_cell-1)*plane;
+
+        // transform ref coordinate [0,1] to physical space
+        double y_coord = grid_transform(coord_ref);
+
+        y_glob.push_back(y_coord);
+      }
+
+      //push back last missing coordinate at upper cell/wall
+      if(cell == n_cells_y_dir-1)
+      {
+        double y_coord = grid_transform(pointupper);
+        y_glob.push_back(y_coord);
+      }
     }
 
-    //push back last missing coordinate at upper cell/wall
-    if(cell == n_cells_y_dir-1)
+    // y_glob contains y-coordinates using the exact mapping
+
+    // However, when calculating the statistics we use the polynomial mapping of degree 'fe_degree'
+    // which leads to slightly different values as compared to the exact mapping.
+    // -> overwrite values in y_glob with values resulting from polynomial mapping
+
+    // use 2d quadrature to integrate over x-z-planes
+    const unsigned int fe_degree = dof_handler.get_fe().degree;
+    QGauss<dim-1> gauss_2d(fe_degree+1);
+
+    std::vector<double> y_processor;
+    y_processor.resize(n_points_y_glob,std::numeric_limits<double>::min());
+
+    // vector of FEValues for all x-z-planes of a cell
+    std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y_per_cell);
+
+    for (unsigned int i=0; i<n_points_y_per_cell; ++i)
     {
-      y_glob.push_back(yupper);
+      std::vector<Point<dim> > points(gauss_2d.size());
+      std::vector<double> weights(gauss_2d.size());
+      for (unsigned int j=0; j<gauss_2d.size(); ++j)
+      {
+        points[j][0] = gauss_2d.point(j)[0];
+        if(dim==3)
+          points[j][2] = gauss_2d.point(j)[1];
+        points[j][1] = (double)i/(n_points_y_per_cell-1);
+        weights[j] = gauss_2d.weight(j);
+      }
+      fe_values[i].reset(new FEValues<dim>(mapping,
+                                           dof_handler.get_fe().base_element(0),
+                                           Quadrature<dim>(points, weights),
+                                           update_values | update_jacobians |
+                                           update_quadrature_points));
+    }
+
+    // loop over all cells
+    for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler.begin_active(); cell!=dof_handler.end(); ++cell)
+    {
+      if (cell->is_locally_owned())
+      {
+        // loop over all y-coordinates of current cell
+        for (unsigned int i=0; i<n_points_y_per_cell; ++i)
+        {
+          fe_values[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
+
+          // Tranform cell index 'i' to global index 'idx' of y_glob-vector
+
+          // find index within the y-values: first do a binary search to find
+          // the next larger value of y in the list...
+          const double y = fe_values[i]->quadrature_point(0)[1];
+          // std::lower_bound: returns iterator to first element that is >= y
+          // Note that the vector y_glob has to be sorted. As a result, the
+          // index might be too large.
+          unsigned int idx = std::distance(y_glob.begin(),std::lower_bound(y_glob.begin(), y_glob.end(),y));
+
+          // make sure that the index does not exceed the array bounds in case of round-off errors
+          if(idx == y_glob.size())
+            idx--;
+
+          // reduce index by 1 in case that the previous point is closer to y than
+          // the next point
+          if (idx > 0 && std::abs(y_glob[idx-1]-y) < std::abs(y_glob[idx]-y))
+            idx--;
+
+          y_processor[idx]=y;
+        }
+      }
+    }
+
+    Utilities::MPI::max(y_processor, communicator, y_glob);
+  }
+  else
+  {
+    for (unsigned int cell = 0; cell < n_cells_y_dir; cell++)
+    {
+      // determine lower and upper y-coordinates of current cell in physical space
+      double pointlower = 1./(double)n_cells_y_dir*(double)cell;
+      double pointupper = 1./(double)n_cells_y_dir*(double)(cell+1);
+      double ylower = grid_transform(pointlower);
+      double yupper = grid_transform(pointupper);
+
+      // loop over all y-coordinates inside the current cell
+      for (unsigned int plane = 0; plane<n_points_y_per_cell-1; plane++)
+      {
+        // use a linear distribution inside each cell
+        double coord = ylower + (yupper-ylower)/(n_points_y_per_cell-1)*plane;
+        y_glob.push_back(coord);
+      }
+
+      //push back last missing coordinate at upper cell/wall
+      if(cell == n_cells_y_dir-1)
+      {
+        y_glob.push_back(yupper);
+      }
     }
   }
 
@@ -230,6 +340,8 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const parallel::distribute
   // vector of FEValues for all x-z-planes of a cell
   std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y_per_cell);
 
+  //TODO
+//  MappingQGeneric<dim> mapping(fe_degree);
   for (unsigned int i=0; i<n_points_y_per_cell; ++i)
   {
     std::vector<Point<dim> > points(gauss_2d.size());
@@ -242,7 +354,8 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const parallel::distribute
       points[j][1] = (double)i/(n_points_y_per_cell-1);
       weights[j] = gauss_2d.weight(j);
     }
-    fe_values[i].reset(new FEValues<dim>(dof_handler.get_fe().base_element(0),
+    fe_values[i].reset(new FEValues<dim>(mapping,
+                                         dof_handler.get_fe().base_element(0),
                                          Quadrature<dim>(points, weights),
                                          update_values | update_jacobians |
                                          update_quadrature_points));
@@ -325,9 +438,17 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const parallel::distribute
         // find index within the y-values: first do a binary search to find
         // the next larger value of y in the list...
         const double y = fe_values[i]->quadrature_point(0)[1];
+        // std::lower_bound: returns iterator to first element that is >= y.
+        // Note that the vector y_glob has to be sorted. As a result, the
+        // index might be too large.
         unsigned int idx = std::distance(y_glob.begin(),std::lower_bound(y_glob.begin(), y_glob.end(),y));
 
-        // ..., then, check whether the point before was closer (but off by 1e-13 or less)
+        // make sure that the index does not exceed the array bounds in case of round-off errors
+        if(idx == y_glob.size())
+          idx--;
+
+        // reduce index by 1 in case that the previous point is closer to y than
+        // the next point
         if (idx > 0 && std::abs(y_glob[idx-1]-y) < std::abs(y_glob[idx]-y))
           idx--;
 

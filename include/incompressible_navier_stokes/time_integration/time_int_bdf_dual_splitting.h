@@ -529,7 +529,22 @@ convective_step()
     // interpolation of velocity field
     std::vector<parallel::distributed::Vector<value_type> *> solutions;
     std::vector<double> times;
-    for(unsigned int i=0;i<velocity.size();++i)
+
+    unsigned int current_order = 0;
+
+    if(this->time_step_number <= this->order && this->param.start_with_low_order == true)
+    {
+      current_order = this->time_step_number;
+    }
+    else
+    {
+      current_order = this->order;
+    }
+
+    AssertThrow(current_order > 0 && current_order <= velocity.size(),
+        ExcMessage("Invalid parameter current_order"));
+
+    for(unsigned int i = 0; i < current_order; ++i)
     {
       solutions.push_back(&velocity[i]);
       times.push_back(this->time - (double)(i) * this->time_steps[0]);
@@ -539,7 +554,7 @@ convective_step()
     // and calculate u_tilde by substepping algorithm, i.e.,
     // integrate over time interval t_{n-i} <= t <= t_{n+1}
     // using explicit Runge-Kutta methods.
-    for(unsigned int i=0;i<velocity.size();++i)
+    for(unsigned int i = 0; i < current_order; ++i)
     {
       // initialize solution: u_tilde(s=0) = u(t_{n-i})
       this->solution_tilde_m = velocity[i];
