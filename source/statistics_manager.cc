@@ -122,7 +122,7 @@ void StatisticsManager<dim>::setup(const std::function<double(double const &)> &
     QGauss<dim-1> gauss_2d(fe_degree+1);
 
     std::vector<double> y_processor;
-    y_processor.resize(n_points_y_glob,std::numeric_limits<double>::min());
+    y_processor.resize(n_points_y_glob,std::numeric_limits<double>::lowest());
 
     // vector of FEValues for all x-z-planes of a cell
     std::vector<std::shared_ptr<FEValues<dim,dim> > > fe_values(n_points_y_per_cell);
