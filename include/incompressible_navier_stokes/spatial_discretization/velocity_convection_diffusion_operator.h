@@ -469,7 +469,7 @@ public:
     if(block_jacobi_matrices_have_been_initialized == false)
     {
       // Note that the velocity has dim components.
-      unsigned int dofs_per_cell = data->get_shape_info().dofs_per_cell*dim;
+      unsigned int dofs_per_cell = data->get_shape_info().dofs_per_component_on_cell*dim;
 
       matrices.resize(data->n_macro_cells()*VectorizedArray<Number>::n_array_elements,
         LAPACKFullMatrix<Number>(dofs_per_cell, dofs_per_cell));

@@ -869,7 +869,7 @@ compute_streamfunction (parallel::distributed::Vector<Number>       &dst,
     poisson_solver(laplace_operator,*preconditioner,solver_data);
 
   // solve Poisson problem
-  unsigned int iterations = poisson_solver.solve(dst,rhs);
+  poisson_solver.solve(dst,rhs);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>

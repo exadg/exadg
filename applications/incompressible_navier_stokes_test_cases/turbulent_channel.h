@@ -706,7 +706,6 @@ void create_grid_and_set_boundary_conditions(
     }
 
     // apply mesh stretching towards no-slip boundaries in y-direction
-    typename Triangulation<dim>::cell_iterator cell = triangulation.begin();
     static const ManifoldTurbulentChannel<dim> manifold(dimensions);
     triangulation.set_manifold(manifold_id, manifold);
   }

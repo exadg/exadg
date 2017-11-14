@@ -4117,7 +4117,7 @@ public:
     if(block_jacobi_matrices_have_been_initialized == false)
     {
       matrices.resize(data->n_macro_cells()*VectorizedArray<Number>::n_array_elements,
-        LAPACKFullMatrix<Number>(data->get_shape_info().dofs_per_cell, data->get_shape_info().dofs_per_cell));
+        LAPACKFullMatrix<Number>(data->get_shape_info().dofs_per_component_on_cell, data->get_shape_info().dofs_per_component_on_cell));
 
       block_jacobi_matrices_have_been_initialized = true;
     }
@@ -4659,7 +4659,7 @@ public:
     if(block_jacobi_matrices_have_been_initialized == false)
     {
       matrices.resize(data->n_macro_cells()*VectorizedArray<Number>::n_array_elements,
-        LAPACKFullMatrix<Number>(data->get_shape_info().dofs_per_cell, data->get_shape_info().dofs_per_cell));
+        LAPACKFullMatrix<Number>(data->get_shape_info().dofs_per_component_on_cell, data->get_shape_info().dofs_per_component_on_cell));
 
       block_jacobi_matrices_have_been_initialized = true;
     }

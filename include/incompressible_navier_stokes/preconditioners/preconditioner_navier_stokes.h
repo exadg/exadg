@@ -795,8 +795,9 @@ private:
 
         // solve velocity convection-diffusion problem using GMRES preconditioned by geometric multigrid
         dst = 0.0;
-        unsigned int iterations_velocity_block = solver_velocity_block->solve(dst,src);
+        solver_velocity_block->solve(dst,src);
 
+//        unsigned int iterations_velocity_block = solver_velocity_block->solve(dst,src);
 //        ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 //        pcout<<"Number of GMRES iterations = "<<iterations_velocity_block<<std::endl;
       }
