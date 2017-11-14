@@ -3191,6 +3191,21 @@ private:
       fe_eval.submit_gradient (-F, q); // minus sign due to integration by parts
     }
     fe_eval.integrate (false,true);
+
+    //TODO: energy preserving formulation of convective term
+//    fe_eval.evaluate (true,true,false);
+//    for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+//    {
+//      // nonlinear convective flux F(u) = uu
+//      Tensor<1,dim,VectorizedArray<value_type> > u = fe_eval.get_value(q);
+//      Tensor<2,dim,VectorizedArray<value_type> > F = outer_product(u,u);
+//      VectorizedArray<value_type> divergence = fe_eval.get_divergence(q);
+//      Tensor<1,dim,VectorizedArray<value_type> > div_term = -0.5*divergence*u;
+//      fe_eval.submit_gradient (-F, q); // minus sign due to integration by parts
+//      fe_eval.submit_value(div_term,q);
+//    }
+//    fe_eval.integrate (true,true);
+    //TODO: energy preserving formulation of convective term
   }
 
   template<typename FEEvaluation>
@@ -3430,6 +3445,22 @@ private:
 
         fe_eval.submit_value(flux,q);
         fe_eval_neighbor.submit_value(-flux,q); // minus sign since n⁺ = - n⁻
+
+        // TODO: energy preserving flux function
+//        Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval.get_value(q);
+//        Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_neighbor.get_value(q);
+//        Tensor<1,dim,VectorizedArray<value_type> > jump = uM - uP;
+//        Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+//
+//        Tensor<1,dim,VectorizedArray<value_type> > flux, flux_m, flux_p;
+//        calculate_flux_nonlinear_operator(flux,uM,uP,normal);
+//
+//        flux_m = flux + 0.25 * jump*normal * uP;
+//        flux_p = -flux + 0.25 * jump*normal * uM;
+//
+//        fe_eval.submit_value(flux_m,q);
+//        fe_eval_neighbor.submit_value(flux_p,q);
+        // TODO: energy preserving flux function
       }
       fe_eval.integrate(true,false);
       fe_eval_neighbor.integrate(true,false);
@@ -3467,15 +3498,24 @@ private:
 
       for(unsigned int q=0;q<fe_eval.n_q_points;++q)
       {
+        // TODO standard formulation
         Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval.get_value(q);
         Tensor<1,dim,VectorizedArray<value_type> > uP;
         calculate_exterior_velocity_boundary_face(uP,uM,q,fe_eval,boundary_type,boundary_id);
         Tensor<1,dim,VectorizedArray<value_type> > normalM = fe_eval.get_normal_vector(q);
 
         Tensor<1,dim,VectorizedArray<value_type> > flux;
-        calculate_flux_nonlinear_operator(flux,uM,uP,normalM); // TODO outflow BC
+        calculate_flux_nonlinear_operator(flux,uM,uP,normalM);
+        fe_eval.submit_value(flux,q);
+        // TODO standard formulation
 
         // TODO outflow BC
+//        Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval.get_value(q);
+//        Tensor<1,dim,VectorizedArray<value_type> > uP;
+//        calculate_exterior_velocity_boundary_face(uP,uM,q,fe_eval,boundary_type,boundary_id);
+//        Tensor<1,dim,VectorizedArray<value_type> > normalM = fe_eval.get_normal_vector(q);
+//
+//        Tensor<1,dim,VectorizedArray<value_type> > flux;
 //        bool use_outflow_boundary_condition = true;
 //
 //        // outflow: do nothing, factor = 1.0
@@ -3493,9 +3533,20 @@ private:
 //              outflow_on_neumann_boundary[v] = -1.0;
 //        }
 //        calculate_flux_nonlinear_operator_boundary(flux,uM,uP,normalM,outflow_on_neumann_boundary);
+//        fe_eval.submit_value(flux,q);
         // TODO outflow BC
 
-        fe_eval.submit_value(flux,q);
+        // TODO: energy preserving flux function
+//        Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval.get_value(q);
+//        Tensor<1,dim,VectorizedArray<value_type> > uP;
+//        calculate_exterior_velocity_boundary_face(uP,uM,q,fe_eval,boundary_type,boundary_id);
+//        Tensor<1,dim,VectorizedArray<value_type> > normalM = fe_eval.get_normal_vector(q);
+//
+//        Tensor<1,dim,VectorizedArray<value_type> > flux;
+//        calculate_flux_nonlinear_operator(flux,uM,uP,normalM);
+//        flux = flux + 0.25 * (uM-uP)*normalM * uP;
+//        fe_eval.submit_value(flux,q);
+        // TODO: energy preserving flux function
       }
       fe_eval.integrate(true,false);
       fe_eval.distribute_local_to_global(dst);

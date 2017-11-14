@@ -111,6 +111,12 @@ void StatisticsManager<dim>::setup(const std::function<double(double const &)> &
       }
     }
 
+//    std::cout<<std::endl<<"Intermediate vector with y-coordinates:"<<std::endl;
+//    for(unsigned int i=0; i<y_glob.size();++i)
+//      std::cout<<"y_glob["<<i<<"]="<<y_glob[i]<<std::endl;
+//    std::vector<double> y_temp;
+//    y_temp = y_glob;
+
     // y_glob contains y-coordinates using the exact mapping
 
     // However, when calculating the statistics we use the polynomial mapping of degree 'fe_degree'
@@ -181,6 +187,15 @@ void StatisticsManager<dim>::setup(const std::function<double(double const &)> &
     }
 
     Utilities::MPI::max(y_processor, communicator, y_glob);
+
+//    // print final vector
+//    std::cout<<std::endl<<"Final vector with y-coordinates:"<<std::endl;
+//    for(unsigned int i=0; i<y_glob.size();++i)
+//      std::cout<<"y_glob["<<i<<"]="<<y_glob[i]<<std::endl;
+//
+//    // compare intermediate and final vector
+//    for(unsigned int i=0; i<y_glob.size();++i)
+//      std::cout<<"y_temp["<<i<<"]="<<y_temp[i]<<"   "<<"y_glob["<<i<<"]="<<y_glob[i]<<std::endl;
   }
   else
   {

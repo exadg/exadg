@@ -203,6 +203,7 @@ enum class AdjustPressureLevel
 
 enum class ContinuityPenaltyComponents
 {
+  Undefined,
   All,
   Normal
 };
@@ -634,7 +635,7 @@ public:
     use_divergence_penalty(false),
     divergence_penalty_factor(1.),
     use_continuity_penalty(false),
-    continuity_penalty_components(ContinuityPenaltyComponents::Normal),
+    continuity_penalty_components(ContinuityPenaltyComponents::Undefined),
     continuity_penalty_use_boundary_data(false),
     continuity_penalty_factor(1.),
 
@@ -864,6 +865,9 @@ public:
 
     if(use_continuity_penalty == true)
     {
+      AssertThrow(continuity_penalty_components != ContinuityPenaltyComponents::Undefined,
+          ExcMessage("Parameter must be defined"));
+
       // in case of projection solvers, the projected velocity field does not fulfill
       // the velocity boundary conditions
       // --> make sure that use_boundary_data == false
@@ -1212,6 +1216,14 @@ public:
     {
       print_parameter(pcout,"Continuity penalty use boundary data",continuity_penalty_use_boundary_data);
       print_parameter(pcout,"Penalty factor continuity",continuity_penalty_factor);
+
+      std::string continuity_penalty_components_str [] = { "Undefined",
+                                                           "All",
+                                                           "Normal"};
+
+      print_parameter(pcout,
+                      "Continuity penalty term compenents",
+                      continuity_penalty_components_str[(int)continuity_penalty_components]);
     }
   } 
 
