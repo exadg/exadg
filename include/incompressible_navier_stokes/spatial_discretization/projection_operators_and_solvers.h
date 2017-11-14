@@ -420,8 +420,7 @@ private:
       fe_eval.reinit(cell);
       fe_eval.read_dof_values(src);
 
-      // Note that the velocity has dim components.
-      unsigned int dofs_per_cell = fe_eval.dofs_per_cell*dim;
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
 
       for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
       {
@@ -523,7 +522,7 @@ public:
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
       fe_eval_velocity.reinit(cell);
-      const unsigned int total_dofs_per_cell = fe_eval_velocity.dofs_per_cell * dim;
+      const unsigned int total_dofs_per_cell = fe_eval_velocity.dofs_per_cell;
 
       for (unsigned int v = 0; v < data.n_components_filled(cell); ++v)
         matrices[v].reinit(total_dofs_per_cell, total_dofs_per_cell);
@@ -560,8 +559,8 @@ public:
           }
           else//this is a non-enriched element
           {
-            if(j<fe_eval_velocity.std_dofs_per_cell*dim)
-              for (unsigned int i=0; i<fe_eval_velocity.std_dofs_per_cell*dim; ++i)
+            if(j<fe_eval_velocity.std_dofs_per_cell)
+              for (unsigned int i=0; i<fe_eval_velocity.std_dofs_per_cell; ++i)
                 (matrices[v])(i,j) = (fe_eval_velocity.read_cellwise_dof_value(i))[v];
             else //diagonal
               (matrices[v])(j,j) = 1.0;
@@ -650,7 +649,7 @@ public:
                                                                    projection_operator.get_dof_index(),
                                                                    projection_operator.get_quad_index());
 
-    const unsigned int total_dofs_per_cell = fe_eval.dofs_per_cell * dim;
+    const unsigned int total_dofs_per_cell = fe_eval.dofs_per_cell;
     AlignedVector<VectorizedArray<value_type> > solution(total_dofs_per_cell);
 
     InternalSolvers::SolverCG<VectorizedArray<value_type> > cg_solver(total_dofs_per_cell,

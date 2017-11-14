@@ -360,8 +360,7 @@ private:
       fe_eval.reinit(cell);
       fe_eval.read_dof_values(src);
 
-      // Note that the velocity has dim components.
-      unsigned int dofs_per_cell = fe_eval.dofs_per_cell*dim;
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
 
       for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
       {
@@ -463,8 +462,7 @@ private:
        fe_eval.reinit(cell);
        fe_eval.read_dof_values(src);
 
-       // Note that the velocity has dim components.
-       unsigned int dofs_per_cell = fe_eval.dofs_per_cell*dim;
+       unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
 
        for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
        {

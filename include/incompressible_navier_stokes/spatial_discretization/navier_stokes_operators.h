@@ -235,10 +235,11 @@ private:
     {
       fe_eval.reinit (cell);
 
-      VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell*dim]; //tensor_dofs_per_cell >= dofs_per_cell
-      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
+      VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell]; //tensor_dofs_per_cell >= dofs_per_cell
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
       {
-        for (unsigned int i=0; i<fe_eval.dofs_per_cell*dim; ++i)
+        for (unsigned int i=0; i<dofs_per_cell; ++i)
           fe_eval.write_cellwise_dof_value(i,make_vectorized_array<value_type>(0.));
         fe_eval.write_cellwise_dof_value(j,make_vectorized_array<value_type>(1.));
 
@@ -246,7 +247,7 @@ private:
 
         local_diagonal_vector[j] = fe_eval.read_cellwise_dof_value(j);
       }
-      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
         fe_eval.write_cellwise_dof_value(j,local_diagonal_vector[j]);
 
       fe_eval.distribute_local_to_global (dst);
@@ -264,8 +265,7 @@ private:
     {
       fe_eval.reinit(cell);
 
-      // Note that the velocity has dim components.
-      unsigned int dofs_per_cell = fe_eval.dofs_per_cell*dim;
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
 
       for (unsigned int j=0; j<dofs_per_cell; ++j)
       {
@@ -1423,10 +1423,11 @@ private:
     {
       fe_eval.reinit (cell);
 
-      VectorizedArray<Number> local_diagonal_vector[fe_eval.tensor_dofs_per_cell*dim];
-      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
+      VectorizedArray<Number> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
       {
-        for (unsigned int i=0; i<fe_eval.dofs_per_cell*dim; ++i)
+        for (unsigned int i=0; i<dofs_per_cell; ++i)
           fe_eval.write_cellwise_dof_value(i,make_vectorized_array<Number>(0.));
         fe_eval.write_cellwise_dof_value(j,make_vectorized_array<Number>(1.));
 
@@ -1434,7 +1435,7 @@ private:
 
         local_diagonal_vector[j] = fe_eval.read_cellwise_dof_value(j);
       }
-      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
         fe_eval.write_cellwise_dof_value(j,local_diagonal_vector[j]);
       fe_eval.distribute_local_to_global (dst);
     }
@@ -1457,11 +1458,12 @@ private:
       VectorizedArray<Number> penalty_parameter = get_penalty_factor() *
           std::max(fe_eval.read_cell_data(array_penalty_parameter),fe_eval_neighbor.read_cell_data(array_penalty_parameter));
 
-      VectorizedArray<Number> local_diagonal_vector[fe_eval.tensor_dofs_per_cell*dim];
-      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
+      VectorizedArray<Number> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
       {
         // set dof value j of element- to 1 and all other dof values of element- to zero
-        for (unsigned int i=0; i<fe_eval.dofs_per_cell*dim; ++i)
+        for (unsigned int i=0; i<dofs_per_cell; ++i)
           fe_eval.write_cellwise_dof_value(i,make_vectorized_array<Number>(0.));
         fe_eval.write_cellwise_dof_value(j,make_vectorized_array<Number>(1.));
 
@@ -1495,7 +1497,7 @@ private:
 
         local_diagonal_vector[j] = fe_eval.read_cellwise_dof_value(j);
       }
-      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
         fe_eval.write_cellwise_dof_value(j, local_diagonal_vector[j]);
 
       fe_eval.distribute_local_to_global(dst);
@@ -1513,11 +1515,12 @@ private:
       VectorizedArray<Number> penalty_parameter = get_penalty_factor() *
           std::max(fe_eval.read_cell_data(array_penalty_parameter),fe_eval_neighbor.read_cell_data(array_penalty_parameter));
 
-      VectorizedArray<Number> local_diagonal_vector_neighbor[fe_eval_neighbor.tensor_dofs_per_cell*dim];
-      for (unsigned int j=0; j<fe_eval_neighbor.dofs_per_cell*dim; ++j)
+      unsigned int dofs_per_cell = fe_eval_neighbor.dofs_per_cell;
+      VectorizedArray<Number> local_diagonal_vector_neighbor[fe_eval_neighbor.tensor_dofs_per_cell];
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
       {
         // set dof value j of element+ to 1 and all other dof values of element+ to zero
-        for (unsigned int i=0; i<fe_eval_neighbor.dofs_per_cell*dim; ++i)
+        for (unsigned int i=0; i<dofs_per_cell; ++i)
           fe_eval_neighbor.write_cellwise_dof_value(i, make_vectorized_array<Number>(0.));
         fe_eval_neighbor.write_cellwise_dof_value(j,make_vectorized_array<Number>(1.));
 
@@ -1553,7 +1556,7 @@ private:
 
         local_diagonal_vector_neighbor[j] = fe_eval_neighbor.read_cellwise_dof_value(j);
       }
-      for (unsigned int j=0; j<fe_eval_neighbor.dofs_per_cell*dim; ++j)
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
         fe_eval_neighbor.write_cellwise_dof_value(j, local_diagonal_vector_neighbor[j]);
 
       fe_eval_neighbor.distribute_local_to_global(dst);
@@ -1588,11 +1591,12 @@ private:
 
       VectorizedArray<Number> penalty_parameter = get_penalty_factor() * fe_eval.read_cell_data(array_penalty_parameter);
 
-      VectorizedArray<Number> local_diagonal_vector[fe_eval.tensor_dofs_per_cell*dim];
-      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
+      VectorizedArray<Number> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
       {
         // set dof value j of element- to 1 and all other dof values of element- to zero
-        for (unsigned int i=0; i<fe_eval.dofs_per_cell*dim; ++i)
+        for (unsigned int i=0; i<dofs_per_cell; ++i)
           fe_eval.write_cellwise_dof_value(i, make_vectorized_array<Number>(0.));
         fe_eval.write_cellwise_dof_value(j, make_vectorized_array<Number>(1.));
 
@@ -1624,7 +1628,7 @@ private:
 
         local_diagonal_vector[j] = fe_eval.read_cellwise_dof_value(j);
       }
-      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
         fe_eval.write_cellwise_dof_value(j, local_diagonal_vector[j]);
 
       fe_eval.distribute_local_to_global(dst);
@@ -1642,8 +1646,7 @@ private:
     {
       fe_eval.reinit(cell);
 
-      // Note that the velocity has dim components.
-      unsigned int dofs_per_cell = fe_eval.dofs_per_cell*dim;
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
 
       for (unsigned int j=0; j<dofs_per_cell; ++j)
       {
@@ -1674,8 +1677,7 @@ private:
       fe_eval.reinit (face);
       fe_eval_neighbor.reinit (face);
 
-      // Note that the velocity has dim components.
-      unsigned int dofs_per_cell = fe_eval.dofs_per_cell*dim;
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
 
       VectorizedArray<Number> penalty_parameter = get_penalty_factor() *
           std::max(fe_eval.read_cell_data(array_penalty_parameter),fe_eval_neighbor.read_cell_data(array_penalty_parameter));
@@ -1735,8 +1737,7 @@ private:
       fe_eval.reinit (face);
       fe_eval_neighbor.reinit (face);
 
-      // Note that the velocity has dim components.
-      unsigned int dofs_per_cell = fe_eval_neighbor.dofs_per_cell*dim;
+      unsigned int dofs_per_cell = fe_eval_neighbor.dofs_per_cell;
 
       VectorizedArray<Number> penalty_parameter = get_penalty_factor() *
           std::max(fe_eval.read_cell_data(array_penalty_parameter),fe_eval_neighbor.read_cell_data(array_penalty_parameter));
@@ -1815,8 +1816,7 @@ private:
 
       fe_eval.reinit (face);
 
-      // Note that the velocity has dim components.
-      unsigned int dofs_per_cell = fe_eval.dofs_per_cell*dim;
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
 
       VectorizedArray<Number> penalty_parameter = get_penalty_factor() * fe_eval.read_cell_data(array_penalty_parameter);
 
@@ -3922,11 +3922,12 @@ private:
 
       fe_eval.reinit(cell);
 
-      VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell*dim];
+      VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
 
-      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
       {
-        for (unsigned int i=0; i<fe_eval.dofs_per_cell*dim; ++i)
+        for (unsigned int i=0; i<dofs_per_cell; ++i)
           fe_eval.write_cellwise_dof_value(i,make_vectorized_array<value_type>(0.));
         fe_eval.write_cellwise_dof_value(j,make_vectorized_array<value_type>(1.));
 
@@ -3935,7 +3936,7 @@ private:
         local_diagonal_vector[j] = fe_eval.read_cellwise_dof_value(j);
       }
 
-      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
         fe_eval.write_cellwise_dof_value(j,local_diagonal_vector[j]);
 
       fe_eval.distribute_local_to_global (dst);
@@ -3966,11 +3967,13 @@ private:
 
       fe_eval.reinit(face);
 
-      VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell*dim];
-      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+      VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
+
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
       {
         // set dof value j of element- to 1 and all other dof values of element- to zero
-        for (unsigned int i=0; i<fe_eval.dofs_per_cell*dim; ++i)
+        for (unsigned int i=0; i<dofs_per_cell; ++i)
           fe_eval.write_cellwise_dof_value(i,make_vectorized_array<value_type>(0.));
         fe_eval.write_cellwise_dof_value(j,make_vectorized_array<value_type>(1.));
 
@@ -3993,7 +3996,7 @@ private:
 
         local_diagonal_vector[j] = fe_eval.read_cellwise_dof_value(j);
       }
-      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
         fe_eval.write_cellwise_dof_value(j, local_diagonal_vector[j]);
 
       fe_eval.distribute_local_to_global(dst);
@@ -4015,11 +4018,13 @@ private:
 
       fe_eval_neighbor.reinit (face);
 
-      VectorizedArray<value_type> local_diagonal_vector_neighbor[fe_eval_neighbor.tensor_dofs_per_cell*dim];
-      for (unsigned int j=0; j<fe_eval_neighbor.dofs_per_cell*dim; ++j)
+      VectorizedArray<value_type> local_diagonal_vector_neighbor[fe_eval_neighbor.tensor_dofs_per_cell];
+      unsigned int dofs_per_cell = fe_eval_neighbor.dofs_per_cell;
+
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
       {
         // set dof value j of element+ to 1 and all other dof values of element+ to zero
-        for (unsigned int i=0; i<fe_eval_neighbor.dofs_per_cell*dim; ++i)
+        for (unsigned int i=0; i<dofs_per_cell; ++i)
           fe_eval_neighbor.write_cellwise_dof_value(i, make_vectorized_array<value_type>(0.));
         fe_eval_neighbor.write_cellwise_dof_value(j,make_vectorized_array<value_type>(1.));
 
@@ -4042,7 +4047,7 @@ private:
 
         local_diagonal_vector_neighbor[j] = fe_eval_neighbor.read_cellwise_dof_value(j);
       }
-      for (unsigned int j=0; j<fe_eval_neighbor.dofs_per_cell*dim; ++j)
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
         fe_eval_neighbor.write_cellwise_dof_value(j, local_diagonal_vector_neighbor[j]);
 
       fe_eval_neighbor.distribute_local_to_global(dst);
@@ -4081,11 +4086,12 @@ private:
       fe_eval_linearization.read_dof_values(*velocity_linearization);
       fe_eval_linearization.evaluate(true,false);
 
-      VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell*dim];
-      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+      VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
       {
         // set dof value j of element- to 1 and all other dof values of element- to zero
-        for (unsigned int i=0; i<fe_eval.dofs_per_cell*dim; ++i)
+        for (unsigned int i=0; i<dofs_per_cell; ++i)
           fe_eval.write_cellwise_dof_value(i,make_vectorized_array<value_type>(0.));
         fe_eval.write_cellwise_dof_value(j,make_vectorized_array<value_type>(1.));
 
@@ -4107,7 +4113,7 @@ private:
         local_diagonal_vector[j] = fe_eval.read_cellwise_dof_value(j);
       }
 
-      for (unsigned int j=0; j<fe_eval.dofs_per_cell*dim; ++j)
+      for (unsigned int j=0; j<dofs_per_cell; ++j)
         fe_eval.write_cellwise_dof_value(j, local_diagonal_vector[j]);
 
       fe_eval.distribute_local_to_global(dst);
@@ -4129,8 +4135,7 @@ private:
 
       fe_eval.reinit(cell);
 
-      // Note that the velocity has dim components.
-      unsigned int dofs_per_cell = fe_eval.dofs_per_cell*dim;
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
 
       for (unsigned int j=0; j<dofs_per_cell; ++j)
       {
@@ -4171,8 +4176,7 @@ private:
 
       fe_eval.reinit(face);
 
-      // Note that the velocity has dim components.
-      unsigned int dofs_per_cell = fe_eval.dofs_per_cell*dim;
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
 
       for (unsigned int j=0; j<dofs_per_cell; ++j)
       {
@@ -4225,8 +4229,7 @@ private:
 
       fe_eval_neighbor.reinit (face);
 
-      // Note that the velocity has dim components.
-      unsigned int dofs_per_cell = fe_eval_neighbor.dofs_per_cell*dim;
+      unsigned int dofs_per_cell = fe_eval_neighbor.dofs_per_cell;
 
       for (unsigned int j=0; j<dofs_per_cell; ++j)
       {
@@ -4294,8 +4297,7 @@ private:
       fe_eval_linearization.read_dof_values(*velocity_linearization);
       fe_eval_linearization.evaluate(true,false);
 
-      // Note that the velocity has dim components.
-      unsigned int dofs_per_cell = fe_eval.dofs_per_cell*dim;
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
 
       for (unsigned int j=0; j<dofs_per_cell; ++j)
       {
