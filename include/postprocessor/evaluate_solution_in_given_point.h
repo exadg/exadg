@@ -288,7 +288,7 @@ void get_global_dof_index_and_shape_values(DoFHandler<dim> const                
       for (unsigned int i=0; i<fe.dofs_per_cell; ++i)
         fe_shape_values[i] = fe_values.shape_value(i,0);
 
-      global_dof_index_and_shape_values.push_back(std::pair<unsigned int,std::vector<Number> >(global_dof_index,fe_shape_values));
+      global_dof_index_and_shape_values.emplace_back(global_dof_index,fe_shape_values);
     }
   }
 }

@@ -541,8 +541,9 @@ run_timeloop()
       AssertThrow(false,ExcMessage("Not implemented."));
     }
 
-    // do coupling
-
+    // Note that the coupling of both solvers via the inflow boundary conditions is performed
+    // in the postprocessing step of the solver for DOMAIN 1, overwriting the data global structures
+    // which are subsequently used by the solver for DOMAIN 2 to evaluate the boundary conditions.
 
     // advance one time step for DOMAIN 2
     if(this->param_2.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
