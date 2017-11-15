@@ -11,10 +11,8 @@ INCLUDE_DIRECTORIES(
 
 SET( SOURCE_FILES
      steady_navier_stokes.cc
-     #unsteady_navier_stokes_dual_splitting.cc
-     #unsteady_navier_stokes_pressure_correction.cc
-     #unsteady_navier_stokes_coupled_solver.cc
      unsteady_navier_stokes.cc
+     unsteady_navier_stokes_two_domains.cc
      multigrid_solver.cc
      #fe_flow_past_cylinder.cc
      #fe_turbulent_channel.cc

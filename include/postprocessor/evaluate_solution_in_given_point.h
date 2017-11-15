@@ -230,18 +230,18 @@ void evaluate_vectorial_quantity_in_point(DoFHandler<dim> const                 
     // go on only if cell is owned by the processor
     if(cell->first->is_locally_owned())
     {
-        Vector<Number> value(dim);
-        my_point_value(mapping,
-                       dof_handler,
-                       numerical_solution,
-                       cell->first,
-                       cell->second,
-                       value);
+      Vector<Number> value(dim);
+      my_point_value(mapping,
+                     dof_handler,
+                     numerical_solution,
+                     cell->first,
+                     cell->second,
+                     value);
 
-        for(unsigned int d=0; d<dim; ++d)
-          solution_value[d] += value(d);
+      for(unsigned int d=0; d<dim; ++d)
+        solution_value[d] += value(d);
 
-        ++counter;
+      ++counter;
     }
   }
 
@@ -252,6 +252,62 @@ void evaluate_vectorial_quantity_in_point(DoFHandler<dim> const                 
   for(unsigned int d=0; d<dim; ++d)
     solution_value[d] = Utilities::MPI::sum(solution_value[d],MPI_COMM_WORLD);
   solution_value /= (double)counter;
+}
+
+/*
+ *  For a given point in physical space, find all adjacent cells and store the global dof index
+ *  as well as the shape function values (to be used for interpolation of the solution in the given point afterwards).
+ *  (global_dof_index, shape_values) are stored in a vector where each entry corresponds to one adjacent, locally-owned cell.
+ */
+template<int dim, typename Number>
+void get_global_dof_index_and_shape_values(DoFHandler<dim> const                                      &dof_handler,
+                                           Mapping<dim> const                                         &mapping,
+                                           parallel::distributed::Vector<double> const                &numerical_solution,
+                                           Point<dim> const                                           &point,
+                                           std::vector<std::pair<unsigned int,std::vector<Number> > > &global_dof_index_and_shape_values)
+{
+  typedef std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> > MY_PAIR;
+  std::vector<MY_PAIR> adjacent_cells = find_all_active_cells_around_point(mapping,dof_handler,point);
+
+  // loop over all adjacent cells
+  for (typename std::vector<MY_PAIR>::iterator cell = adjacent_cells.begin(); cell != adjacent_cells.end(); ++cell)
+  {
+    // go on only if cell is owned by the processor
+    if(cell->first->is_locally_owned())
+    {
+      Assert(GeometryInfo<dim>::distance_to_unit_cell(cell->second) < 1e-10,ExcInternalError());
+
+      const FiniteElement<dim> &fe = dof_handler.get_fe();
+      const Quadrature<dim> quadrature (GeometryInfo<dim>::project_to_unit_cell(cell->second));
+      FEValues<dim> fe_values(mapping, fe, quadrature, update_values);
+      fe_values.reinit(cell->first);
+      std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
+      cell->first->get_dof_indices(dof_indices);
+      unsigned int global_dof_index = numerical_solution.get_partitioner()->global_to_local(dof_indices[0]);
+      std::vector<Number> fe_shape_values(fe.dofs_per_cell);
+      for (unsigned int i=0; i<fe.dofs_per_cell; ++i)
+        fe_shape_values[i] = fe_values.shape_value(i,0);
+
+      global_dof_index_and_shape_values.push_back(std::pair<unsigned int,std::vector<Number> >(global_dof_index,fe_shape_values));
+    }
+  }
+}
+
+/*
+ *  Interpolate solution in point by using precomputed shape functions values (for efficiency!)
+ *  Noet that we assume that we are dealing in discontinuous finite elements.
+ */
+template<int dim, typename Number>
+void interpolate_value(DoFHandler<dim> const                                &dof_handler,
+                       parallel::distributed::Vector<Number> const          &solution,
+                       unsigned int const                                   &global_dof_index,
+                       std::vector<Number> const                            &fe_shape_values,
+                       Tensor<1,dim,Number>                                 &result)
+{
+  const FiniteElement<dim> &fe = dof_handler.get_fe();
+  Number const * sol_ptr = solution.begin() + global_dof_index;
+  for (unsigned int i=0; i<fe.dofs_per_cell; ++i)
+    result[fe.system_to_component_index(i).first] += sol_ptr[i] * fe_shape_values[i];
 }
 
 

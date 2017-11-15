@@ -190,6 +190,7 @@ public:
   void setup(bool do_restart);
 
   void timeloop();
+  bool advance_one_timestep(bool write_final_output);
   void timeloop_steady_problem();
 
   virtual void analyze_computing_times() const = 0;
@@ -197,6 +198,15 @@ public:
   double get_time_step_size()
   {
     return time_steps[0];
+  }
+
+  void set_time_step_size(double const &time_step)
+  {
+    time_steps[0] = time_step;
+
+    // fill time_steps array
+    for(unsigned int i=1;i<order;++i)
+      time_steps[i] = time_steps[0];
   }
 
   double get_scaling_factor_time_derivative_term()
@@ -799,6 +809,46 @@ timeloop()
   pcout << std::endl << "... done!" << std::endl;
 
   analyze_computing_times();
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+bool TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+advance_one_timestep(bool write_final_output)
+{
+  bool finished = false;
+
+  if(this->time_step_number == 1)
+  {
+    pcout << std::endl << "Starting time loop ..." << std::endl;
+
+    global_timer.restart();
+
+    postprocessing();
+  }
+
+  // a small number which is much smaller than the time step size
+  const value_type EPSILON = 1.0e-10;
+
+  // check if we have reached the end of the time loop
+  finished = !(time<(param.end_time-EPSILON) && time_step_number<=param.max_number_of_time_steps);
+
+  if(!finished)
+  {
+    // advance one time step
+    do_timestep();
+    postprocessing();
+  }
+
+  if(finished && write_final_output)
+  {
+    total_time += global_timer.wall_time();
+
+    pcout << std::endl << "... done!" << std::endl;
+
+    analyze_computing_times();
+  }
+
+  return finished;
 }
 
 /*

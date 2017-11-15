@@ -502,6 +502,51 @@ struct TurbulentChannelData
   std::string filename_prefix;
 };
 
+// inflow data: use velocity at the outflow of one domain as inflow-BC for another domain
+// The outflow boundary has to be the y-z plane at a given x-coordinate. The velocity is
+// written at n_points_y in y-direction and n_points_z in z-direction, which has to be
+// specified by the user.
+
+template<int dim>
+struct InflowData
+{
+  InflowData()
+   :
+   write_inflow_data(false),
+   x_coordinate(0.0),
+   n_points_y(2),
+   n_points_z(2),
+   y_values(nullptr),
+   z_values(nullptr),
+   array(nullptr)
+  {}
+
+  void print(ConditionalOStream &pcout)
+  {
+    if(write_inflow_data == true)
+    {
+      print_parameter(pcout,"x-coordinate",x_coordinate);
+      print_parameter(pcout,"Number of points in y-direction",n_points_y);
+      print_parameter(pcout,"Number of points in z-direction",n_points_z);
+    }
+  }
+
+  // write the data?
+  bool write_inflow_data;
+
+  // velocity field is written in y-z-plane for a specified x-coordinate
+  double x_coordinate;
+  // specify the number of data points (grid points) in y- and z-direction
+  unsigned int n_points_y;
+  unsigned int n_points_z;
+
+  // Vectors with the y-coordinates, z-coordinates (in physical space)
+  std::vector<double> *y_values;
+  std::vector<double> *z_values;
+  // and the velocity values at n_points_y*n_points_z points
+  std::vector<Tensor<1,dim,double> > *array;
+};
+
 // kinetic energy data
 
 struct KineticEnergyData
@@ -785,6 +830,9 @@ public:
     // turbulent channel statistics
     turb_ch_data(TurbulentChannelData()),
 
+    // inflow data
+    inflow_data(InflowData<dim>()),
+
     // kinetic energy
     kinetic_energy_data(KineticEnergyData()),
 
@@ -796,6 +844,8 @@ public:
   {}
 
   void set_input_parameters();
+
+  void set_input_parameters(unsigned int const domain_id);
 
   void check_input_parameters()
   {
@@ -1649,6 +1699,9 @@ public:
     // turbulent channel statistics
     turb_ch_data.print(pcout); 
 
+    // inflow data
+    inflow_data.print(pcout);
+
     // kinetic energy
     kinetic_energy_data.print(pcout);
 
@@ -2117,6 +2170,9 @@ public:
 
   // turbulent channel statistics
   TurbulentChannelData turb_ch_data;
+
+  // inflow data
+  InflowData<dim> inflow_data;
 
   // kinetic energy
   KineticEnergyData kinetic_energy_data;
