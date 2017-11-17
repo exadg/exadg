@@ -32,7 +32,7 @@ using namespace dealii;
 
 // specify the flow problem that has to be solved
 
-//#include "incompressible_navier_stokes_test_cases/vortex_two_domains.h"
+//#include "incompressible_navier_stokes_test_cases/turbulent_channel_two_domains.h"
 #include "incompressible_navier_stokes_test_cases/backward_facing_step_two_domains.h"
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number=double>
