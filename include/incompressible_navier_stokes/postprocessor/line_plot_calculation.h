@@ -66,10 +66,10 @@ public:
             + "_" + line->name;
 
         // write output for all specified quantities
-        for(std::vector<Quantity>::const_iterator
+        for(std::vector<Quantity*>::const_iterator
             quantity = line->quantities.begin(); quantity != line->quantities.end(); ++quantity)
         {
-          if(quantity->type == QuantityType::Velocity)
+          if((*quantity)->type == QuantityType::Velocity)
           {
             std::vector<Tensor<1,dim,Number> > solution_vector(n_points);
 
@@ -119,7 +119,7 @@ public:
               f.close();
             }
           }
-          else if(quantity->type == QuantityType::Pressure)
+          else if((*quantity)->type == QuantityType::Pressure)
           {
             std::vector<Number> solution_vector(n_points);
 
@@ -140,7 +140,8 @@ public:
               if(clear_files)
               {
                 f.open(filename.c_str(),std::ios::trunc);
-//                clear_files = false; // TODO
+                // TODO: overwrite the same files
+//                clear_files = false;
               }
               else
               {

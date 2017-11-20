@@ -16,6 +16,7 @@
 #include "../../incompressible_navier_stokes/postprocessor/turbulence_statistics_data.h"
 #include "../include/functionalities/print_functions.h"
 #include "../postprocessor/line_plot_data.h"
+#include "../postprocessor/mean_velocity_calculator.h"
 #include "postprocessor/error_calculation_data.h"
 #include "solvers_and_preconditioners/multigrid_input_parameters.h"
 #include "solvers_and_preconditioners/newton_solver_data.h"
@@ -502,6 +503,49 @@ struct TurbulentChannelData
   std::string filename_prefix;
 };
 
+
+// bfs data
+
+struct BFSStatistics
+{
+  BFSStatistics()
+   :
+   calculate_statistics(false),
+   sample_start_time(0.0),
+   sample_end_time(1.0),
+   sample_every_timesteps(1),
+   filename_prefix("indexa")
+  {}
+
+  void print(ConditionalOStream &pcout)
+  {
+    if(calculate_statistics == true)
+    {
+      pcout << "  BFS statistics:" << std::endl;
+      print_parameter(pcout,"Calculate statistics",calculate_statistics);
+      print_parameter(pcout,"Sample start time",sample_start_time);
+      print_parameter(pcout,"Sample end time",sample_end_time);
+      print_parameter(pcout,"Sample every timesteps",sample_every_timesteps);
+      print_parameter(pcout,"Filename prefix",filename_prefix);
+    }
+  }
+
+  // calculate statistics?
+  bool calculate_statistics;
+
+  // start time for sampling
+  double sample_start_time;
+
+  // end time for sampling
+  double sample_end_time;
+
+  // perform sampling every ... timesteps
+  unsigned int sample_every_timesteps;
+
+  std::string filename_prefix;
+};
+
+
 // inflow data: use velocity at the outflow of one domain as inflow-BC for another domain
 // The outflow boundary has to be the y-z plane at a given x-coordinate. The velocity is
 // written at n_points_y in y-direction and n_points_z in z-direction, which has to be
@@ -840,7 +884,10 @@ public:
     perturbation_energy_data(PerturbationEnergyData()),
 
     //plot data along line
-    line_plot_data(LinePlotData<dim>())
+    line_plot_data(LinePlotData<dim>()),
+
+    // BFS statistics
+    bfs_statistics(BFSStatistics())
   {}
 
   void set_input_parameters();
@@ -1707,6 +1754,9 @@ public:
 
     // perturbation energy
     perturbation_energy_data.print(pcout);
+
+    // bfs statistics
+    bfs_statistics.print(pcout);
   }
 
   /**************************************************************************************/
@@ -2182,6 +2232,12 @@ public:
 
   // plot along lines
   LinePlotData<dim> line_plot_data;
+
+  // backward facing step statistics
+  BFSStatistics bfs_statistics;
+
+  // mean flow
+  MeanVelocityCalculatorData<dim> mean_velocity_data;
 };
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_ */
