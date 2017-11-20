@@ -17,14 +17,70 @@ enum class QuantityType
 {
   Undefined,
   Velocity,
-  Pressure
+  Pressure,
+  SkinFriction,
+  ReynoldsStresses,
+  PressureCoefficient
 };
 
 struct Quantity
 {
-  QuantityType type;
+  Quantity()
+    :
+    type(QuantityType::Undefined)
+  {}
 
-  // Additional data
+  Quantity(QuantityType const &quantity_type)
+    :
+    type(quantity_type)
+  {}
+
+  virtual ~Quantity(){}
+
+  QuantityType type;
+};
+
+struct QuantityStatistics : Quantity
+{
+  QuantityStatistics()
+    :
+    Quantity(),
+    averaging_direction(0)
+  {}
+
+  unsigned int averaging_direction; //x = 0, y = 1, z = 2
+};
+
+template<int dim>
+struct QuantityStatisticsPressureCoefficient : QuantityStatistics
+{
+  QuantityStatisticsPressureCoefficient()
+    :
+    QuantityStatistics(),
+    reference_velocity(0.0),
+    reference_point(Point<dim>()),
+    reference_pressure(0.0)
+  {}
+
+  double reference_velocity;
+  Point<dim> reference_point;
+  double reference_pressure;
+};
+
+template<int dim>
+struct QuantityStatisticsSkinFriction : QuantityStatistics
+{
+  QuantityStatisticsSkinFriction()
+    :
+    QuantityStatistics(),
+    reference_velocity(0.0),
+    normal_vector(Tensor<1,dim,double>()),
+    tangent_vector(Tensor<1,dim,double>())
+  {}
+
+  double reference_velocity;
+  Tensor<1,dim,double> normal_vector;
+  Tensor<1,dim,double> tangent_vector;
 };
 
 template<int dim>
@@ -55,7 +111,7 @@ struct Line
   /*
    *  Specify for which fields/quantities to write output
    */
-  std::vector<Quantity> quantities;
+  std::vector<Quantity*> quantities;
 };
 
 
