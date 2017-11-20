@@ -13,7 +13,7 @@
 
 using namespace dealii;
 
-enum QuantityType
+enum class QuantityType
 {
   Undefined,
   Velocity,
