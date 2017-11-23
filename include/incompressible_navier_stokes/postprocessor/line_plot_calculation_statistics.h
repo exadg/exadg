@@ -412,11 +412,8 @@ private:
                   velocity_vector[j][d] = (*velocity[d])(dof_indices[j]);
             }
 
-            std::vector<std::vector<Tensor<1,dim, double> > > velocity_gradient(fe_values.n_quadrature_points);
-            for (unsigned int q = 0; q < fe_values.n_quadrature_points; q++)
-            {
-              velocity_gradient[q].resize(dim);
-            }
+            std::vector<std::vector<Tensor<1,dim, double> > > velocity_gradient(
+                fe_values.n_quadrature_points, std::vector<Tensor<1,dim, double> >(dim));
 
             if(quantity->type == QuantityType::SkinFriction)
             {
