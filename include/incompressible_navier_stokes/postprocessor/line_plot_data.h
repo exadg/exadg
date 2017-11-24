@@ -58,13 +58,11 @@ struct QuantityStatisticsPressureCoefficient : QuantityStatistics
     :
     QuantityStatistics(),
     reference_velocity(0.0),
-    reference_point(Point<dim>()),
-    reference_pressure(0.0)
+    reference_point(Point<dim>())
   {}
 
   double reference_velocity;
   Point<dim> reference_point;
-  double reference_pressure;
 };
 
 template<int dim>
