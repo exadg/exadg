@@ -27,7 +27,8 @@ struct MeanVelocityCalculatorData
   sample_end_time(1.0),
   sample_every_timesteps(1),
   filename_prefix("indexa"),
-  normal_vector(Tensor<1,dim,double>())
+  normal_vector(Tensor<1,dim,double>()),
+  area(1.0)
  {}
 
  void print(ConditionalOStream &pcout)
@@ -61,12 +62,13 @@ struct MeanVelocityCalculatorData
 
   std::string filename_prefix;
 
-  /*
-   *  set containing boundary ID's of the surface area for which we want to calculate the mean velocity
-   */
+  // set containing boundary ID's of the surface area for which we want to calculate the mean velocity
   std::set<types::boundary_id> boundary_IDs;
 
   Tensor<1,dim,double> normal_vector;
+
+  // we need the area to calculate the flow rate: velocity = volume_flux / area
+  double area;
 };
 
 template<int dim, int fe_degree, typename Number>
@@ -95,6 +97,8 @@ public:
                 dof_quad_index_data.quad_index_velocity,
                 velocity,
                 mean_velocity);
+
+    ++number_of_samples;
 
     mean_centerline_velocity_sum += mean_velocity;
     mean_centerline_velocity = mean_centerline_velocity_sum / (Number)number_of_samples;
@@ -145,6 +149,7 @@ public:
       }
     }
     mean_velocity = Utilities::MPI::sum(mean_velocity,MPI_COMM_WORLD);
+    mean_velocity = mean_velocity / data.area;
   }
 
 private:

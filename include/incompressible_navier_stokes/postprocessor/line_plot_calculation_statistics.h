@@ -197,7 +197,8 @@ public:
                 {
                   // equation <u_i' u_j'> = <u_i*u_j> - <u_i> * <u_j>
                   f << std::setw(precision+8) << std::left
-                    << (reynolds_global[line_iterator][p][i][j] - velocity_global[line_iterator][i]*velocity_global[line_iterator][j])/number_of_samples;
+                    << reynolds_global[line_iterator][p][i][j]/number_of_samples
+                    - (velocity_global[line_iterator][p][i]*velocity_global[line_iterator][p][j])/(number_of_samples*number_of_samples);
                 }
               }
 
@@ -242,8 +243,9 @@ public:
                                                  averaging_quantity->reference_velocity;
 
               // C_f = tau_w / (1/2 rho U^2)
+              double const viscosity = averaging_quantity->viscosity;
               f << std::setw(precision+8) << std::left
-                << 2.0*wall_shear_global[line_iterator][p]/ref_velocity_square/number_of_samples;
+                << 2.0*viscosity*wall_shear_global[line_iterator][p]/ref_velocity_square/number_of_samples;
 
               f << std::endl;
             }
@@ -410,14 +412,21 @@ private:
                   velocity_vector[j][d] = (*velocity[d])(dof_indices[j]);
             }
 
-            FEValuesExtractors::Vector vel(0);
-            std::vector<Tensor<2,dim, double> > velocity_gradient(fe_values.n_quadrature_points, Tensor<2,dim,double>());
+            std::vector<std::vector<Tensor<1,dim, double> > > velocity_gradient(
+                fe_values.n_quadrature_points, std::vector<Tensor<1,dim, double> >(dim));
+
             if(quantity->type == QuantityType::SkinFriction)
             {
               AssertThrow(dof_handler_velocity.get_fe().element_multiplicity(0) >= dim, ExcMessage("Not implemented."));
+              FEValues<dim> fe_values_gradients(mapping,
+                                                dof_handler_velocity.get_fe(),
+                                                Quadrature<dim>(points, weights),
+                                                update_values | update_jacobians |
+                                                update_quadrature_points |update_gradients);
 
+              fe_values_gradients.reinit(cell);
               // evaluate velocity gradient in all quadrature points
-              fe_values[vel].get_function_gradients(*velocity[0],velocity_gradient);
+              fe_values_gradients.get_function_gradients(*velocity[0],velocity_gradient);
             }
 
             // perform averaging in homogeneous direction
@@ -449,7 +458,7 @@ private:
               {
                 for(unsigned int i=0; i<dim; ++i)
                   for(unsigned int j=0; j<dim; ++j)
-                    reynolds_local[p][i][j] = velocity[i] * velocity[j] * JxW;
+                    reynolds_local[p][i][j] += velocity[i] * velocity[j] * JxW;
               }
 
               if(quantity->type == QuantityType::SkinFriction)

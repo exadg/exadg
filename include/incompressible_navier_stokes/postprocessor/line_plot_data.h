@@ -73,12 +73,14 @@ struct QuantityStatisticsSkinFriction : QuantityStatistics
   QuantityStatisticsSkinFriction()
     :
     QuantityStatistics(),
-    reference_velocity(0.0),
+    reference_velocity(1.0),
+    viscosity(1.0),
     normal_vector(Tensor<1,dim,double>()),
     tangent_vector(Tensor<1,dim,double>())
   {}
 
   double reference_velocity;
+  double viscosity;
   Tensor<1,dim,double> normal_vector;
   Tensor<1,dim,double> tangent_vector;
 };
