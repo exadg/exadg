@@ -43,6 +43,9 @@ public:
 
   void setup(LinePlotData<dim> const &line_statistics_data_in)
   {
+    // use a tolerance to check whether a point is inside the unit cell
+    double const tolerance = 1.e-12;
+
     data = line_statistics_data_in;
     AssertThrow(dim==3,ExcMessage("Not implemented."));
 
@@ -141,14 +144,28 @@ public:
               translated_point[averaging_direction] = cell->vertex(0)[averaging_direction];
 
               // If the new point lies in the current cell, we have to take the current cell into account
-              // We only consider affine geometries: use transform_real_to_unit_cell(stats_point) instead
-              // for more general geometries
               const Point<dim> p_unit = cell->real_to_unit_cell_affine_approximation(translated_point);
-              if(GeometryInfo<dim>::is_inside_unit_cell(p_unit))
+              if(GeometryInfo<dim>::is_inside_unit_cell(p_unit,tolerance))
               {
                 cells_and_ref_points_velocity[line_iterator][p].push_back(
                     std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> >(cell,p_unit));
               }
+
+//              Point<dim> p_unit = Point<dim>();
+//              try
+//              {
+//                p_unit = mapping.transform_real_to_unit_cell(cell, translated_point);
+//              }
+//              catch(...)
+//              {
+//                // A point that does not lie on the reference cell.
+//                p_unit[0] = 2.0;
+//              }
+//              if(GeometryInfo<dim>::is_inside_unit_cell(p_unit,1.e-12))
+//              {
+//                cells_and_ref_points_velocity[line_iterator][p].push_back(
+//                    std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> >(cell,p_unit));
+//              }
             }
           }
         }
@@ -184,14 +201,28 @@ public:
                 translated_point[averaging_direction] = cell->vertex(0)[averaging_direction];
 
                 // If the new point lies in the current cell, we have to take the current cell into account
-                // We only consider affine geometries: use transform_real_to_unit_cell(stats_point) instead
-                // for more general geometries
                 const Point<dim> p_unit = cell->real_to_unit_cell_affine_approximation(translated_point);
-                if(GeometryInfo<dim>::is_inside_unit_cell(p_unit))
+                if(GeometryInfo<dim>::is_inside_unit_cell(p_unit,tolerance))
                 {
                   cells_and_ref_points_pressure[line_iterator][p].push_back(
                       std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> >(cell,p_unit));
                 }
+
+//                Point<dim> p_unit = Point<dim>();
+//                try
+//                {
+//                  p_unit = mapping.transform_real_to_unit_cell(cell, translated_point);
+//                }
+//                catch(...)
+//                {
+//                  // A point that does not lie on the reference cell.
+//                  p_unit[0] = 2.0;
+//                }
+//                if(GeometryInfo<dim>::is_inside_unit_cell(p_unit,1.e-12))
+//                {
+//                  cells_and_ref_points_pressure[line_iterator][p].push_back(
+//                    std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> >(cell,p_unit));
+//                }
               }
             }
           }
@@ -212,14 +243,28 @@ public:
               translated_point[averaging_direction] = cell->vertex(0)[averaging_direction];
 
               // If the new point lies in the current cell, we have to take the current cell into account
-              // We only consider affine geometries: use transform_real_to_unit_cell(stats_point) instead
-              // for more general geometries
               const Point<dim> p_unit = cell->real_to_unit_cell_affine_approximation(translated_point);
-              if(GeometryInfo<dim>::is_inside_unit_cell(p_unit))
+              if(GeometryInfo<dim>::is_inside_unit_cell(p_unit,tolerance))
               {
                 ref_pressure_cells_and_ref_points[line_iterator].push_back(
                     std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> >(cell,p_unit));
               }
+
+//              Point<dim> p_unit = Point<dim>();
+//              try
+//              {
+//                p_unit = mapping.transform_real_to_unit_cell(cell, translated_point);
+//              }
+//              catch(...)
+//              {
+//                // A point that does not lie on the reference cell.
+//                p_unit[0] = 2.0;
+//              }
+//              if(GeometryInfo<dim>::is_inside_unit_cell(p_unit,1.e-12))
+//              {
+//                ref_pressure_cells_and_ref_points[line_iterator].push_back(
+//                    std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> >(cell,p_unit));
+//              }
             }
           }
         }
