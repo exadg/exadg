@@ -44,7 +44,7 @@ unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 const ProblemType PROBLEM_TYPE = ProblemType::Steady; //Unsteady; //Steady;
 const double L = 1.0;
 
-std::string OUTPUT_FOLDER = "output/cavity/paper/new/";
+std::string OUTPUT_FOLDER = "output/cavity/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string OUTPUT_NAME = "Re1e3"; //"Re1000_512_unsteady";
 
@@ -256,8 +256,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   line_plot_data.filename_prefix = OUTPUT_FOLDER;
 
   // which quantities
-  Quantity quantity_u;
-  quantity_u.type = QuantityType::Velocity;
+  Quantity* quantity_u = new Quantity();
+  quantity_u->type = QuantityType::Velocity;
 //  Quantity quantity_p;
 //  quantity_p.type = QuantityType::Pressure;
 

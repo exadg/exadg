@@ -497,6 +497,7 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
   // convective operator
   convective_operator_data.dof_index = dof_index_u;
   convective_operator_data.bc = boundary_descriptor_velocity;
+  convective_operator_data.use_outflow_bc = param.use_outflow_bc_convective_term;
   convective_operator.initialize(data,convective_operator_data);
 
   // viscous operator

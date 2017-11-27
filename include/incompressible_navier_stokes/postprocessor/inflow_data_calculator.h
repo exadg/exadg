@@ -42,10 +42,10 @@ double linear_interpolation_2d_cartesian(Point<dim> const                       
   double const weight_zp = (p[2]-z_values[iz-1])/(z_values[iz]-z_values[iz-1]);
   double const weight_zm = 1 - weight_zp;
 
-  AssertThrow(-1.e-12 < weight_yp < 1.+1e-12 &&
-              -1.e-12 < weight_ym < 1.+1e-12 &&
-              -1.e-12 < weight_zp < 1.+1e-12 &&
-              -1.e-12 < weight_zm < 1.+1e-12,
+  AssertThrow(-1.e-12 < weight_yp && weight_yp < 1.+1e-12 &&
+              -1.e-12 < weight_ym && weight_ym < 1.+1e-12 &&
+              -1.e-12 < weight_zp && weight_zp < 1.+1e-12 &&
+              -1.e-12 < weight_zm && weight_zm < 1.+1e-12,
               ExcMessage("invalid weights when interpolating solution in 2D."));
 
   result =   weight_ym * weight_zm * solution_values[(iy-1)*n_points_y + (iz-1)][component]
@@ -78,97 +78,96 @@ public:
 
   void calculate(parallel::distributed::Vector<Number> const &velocity)
   {
-    if(inflow_data.write_inflow_data == true)
-    {
-      bool naive_variant = false;
+    bool naive_variant = false;
 
-      if(naive_variant) // incredibly slow
+    if(naive_variant) // incredibly slow
+    {
+      for(unsigned int iy=0; iy<inflow_data.n_points_y; ++iy)
+      {
+        for(unsigned int iz=0; iz<inflow_data.n_points_z; ++iz)
+        {
+          Point<dim> point(inflow_data.x_coordinate,(*inflow_data.y_values)[iy],(*inflow_data.z_values)[iz]);
+          Tensor<1,dim,double> velocity_value;
+          evaluate_vectorial_quantity_in_point(*dof_handler_velocity,
+                                               *mapping,
+                                               velocity,
+                                               point,
+                                               velocity_value);
+
+          unsigned int array_index = iy*inflow_data.n_points_y + iz;
+          (*inflow_data.array)[array_index] = velocity_value;
+        }
+      }
+    }
+    else
+    {
+      // initial data: do this expensive step only once at the beginning of the simulation
+      if(inflow_data_has_been_initialized == false)
       {
         for(unsigned int iy=0; iy<inflow_data.n_points_y; ++iy)
         {
           for(unsigned int iz=0; iz<inflow_data.n_points_z; ++iz)
           {
             Point<dim> point(inflow_data.x_coordinate,(*inflow_data.y_values)[iy],(*inflow_data.z_values)[iz]);
-            Tensor<1,dim,double> velocity_value;
-            evaluate_vectorial_quantity_in_point(*dof_handler_velocity,
-                                                 *mapping,
-                                                 velocity,
-                                                 point,
-                                                 velocity_value);
+            std::vector<std::pair<unsigned int,std::vector<Number> > > global_dof_index_and_shape_values;
+            get_global_dof_index_and_shape_values(*dof_handler_velocity,
+                                                  *mapping,
+                                                  velocity,
+                                                  point,
+                                                  global_dof_index_and_shape_values);
 
-            (*inflow_data.array)[iy*inflow_data.n_points_y + iz] = velocity_value;
+            unsigned int array_index = iy*inflow_data.n_points_y + iz;
+            array_dof_index_and_shape_values[array_index] = global_dof_index_and_shape_values;
+          }
+        }
+
+        inflow_data_has_been_initialized = true;
+      }
+
+      for(unsigned int iy=0; iy<inflow_data.n_points_y; ++iy)
+      {
+        for(unsigned int iz=0; iz<inflow_data.n_points_z; ++iz)
+        {
+          unsigned int array_index = iy*inflow_data.n_points_y + iz;
+          (*inflow_data.array)[array_index] = 0.0;
+          array_counter[array_index] = 0;
+
+          std::vector<std::pair<unsigned int,std::vector<Number> > > & vector(array_dof_index_and_shape_values[array_index]);
+
+          // loop over all adjacent cells for a given point that are locally owned
+          for(typename std::vector<std::pair<unsigned int,std::vector<Number> > >::iterator iter = vector.begin(); iter != vector.end(); ++iter)
+          {
+            // increment counter (because this is a locally owned cell)
+            array_counter[array_index] += 1;
+
+            // interpolate solution using the precomputed shape values and the global dof index
+            Tensor<1,dim,double> velocity_value;
+            interpolate_value(*dof_handler_velocity,
+                              velocity,
+                              iter->first,
+                              iter->second,
+                              velocity_value);
+
+            // add result to array with velocity inflow data
+            (*inflow_data.array)[array_index] += velocity_value;
           }
         }
       }
-      else
+
+      // sum over all processors
+      Utilities::MPI::sum(array_counter,MPI_COMM_WORLD,array_counter);
+      Utilities::MPI::sum(ArrayView<const double>(&(*inflow_data.array)[0][0],dim*inflow_data.array->size()),
+                          MPI_COMM_WORLD,
+                          ArrayView<double>(&(*inflow_data.array)[0][0],dim*inflow_data.array->size()));
+
+      // divide by counter in order to get the mean value (averaged over all
+      // adjacent cells for a given point)
+      for(unsigned int iy=0; iy<inflow_data.n_points_y; ++iy)
       {
-        // initial data: do this expensive step only once at the beginning of the simulation
-        if(inflow_data_has_been_initialized == false)
+        for(unsigned int iz=0; iz<inflow_data.n_points_z; ++iz)
         {
-          for(unsigned int iy=0; iy<inflow_data.n_points_y; ++iy)
-          {
-            for(unsigned int iz=0; iz<inflow_data.n_points_z; ++iz)
-            {
-              Point<dim> point(inflow_data.x_coordinate,(*inflow_data.y_values)[iy],(*inflow_data.z_values)[iz]);
-              std::vector<std::pair<unsigned int,std::vector<Number> > > global_dof_index_and_shape_values;
-              get_global_dof_index_and_shape_values(*dof_handler_velocity,
-                                                    *mapping,
-                                                    velocity,
-                                                    point,
-                                                    global_dof_index_and_shape_values);
-
-              array_dof_index_and_shape_values[iy*inflow_data.n_points_y + iz] = global_dof_index_and_shape_values;
-            }
-          }
-
-          inflow_data_has_been_initialized = true;
-        }
-
-        for(unsigned int iy=0; iy<inflow_data.n_points_y; ++iy)
-        {
-          for(unsigned int iz=0; iz<inflow_data.n_points_z; ++iz)
-          {
-            unsigned int array_index = iy*inflow_data.n_points_y + iz;
-            (*inflow_data.array)[array_index] = 0.0;
-            array_counter[array_index] = 0;
-
-            std::vector<std::pair<unsigned int,std::vector<Number> > > & vector(array_dof_index_and_shape_values[array_index]);
-
-            // loop over all adjacent cells for a given point that are locally owned
-            for(typename std::vector<std::pair<unsigned int,std::vector<Number> > >::iterator iter = vector.begin(); iter != vector.end(); ++iter)
-            {
-              // increment counter (because this is a locally owned cell)
-              array_counter[iy*inflow_data.n_points_y + iz] += 1;
-
-              // interpolate solution using the precomputed shape values and the global dof index
-              Tensor<1,dim,double> velocity_value;
-              interpolate_value(*dof_handler_velocity,
-                                velocity,
-                                iter->first,
-                                iter->second,
-                                velocity_value);
-
-              // add result to array with velocity inflow data
-              (*inflow_data.array)[iy*inflow_data.n_points_y + iz] += velocity_value;
-            }
-          }
-        }
-
-        // sum over all processors
-        Utilities::MPI::sum(array_counter,MPI_COMM_WORLD,array_counter);
-        Utilities::MPI::sum(ArrayView<const double>(&(*inflow_data.array)[0][0],dim*inflow_data.array->size()),
-                            MPI_COMM_WORLD,
-                            ArrayView<double>(&(*inflow_data.array)[0][0],dim*inflow_data.array->size()));
-
-        // divide by counter in order to get the mean value (averaged over all
-        // adjacent cells for a given point)
-        for(unsigned int iy=0; iy<inflow_data.n_points_y; ++iy)
-        {
-          for(unsigned int iz=0; iz<inflow_data.n_points_z; ++iz)
-          {
-            unsigned int array_index = iy*inflow_data.n_points_y + iz;
-            (*inflow_data.array)[array_index] /= double(array_counter[array_index]);
-          }
+          unsigned int array_index = iy*inflow_data.n_points_y + iz;
+          (*inflow_data.array)[array_index] /= double(array_counter[array_index]);
         }
       }
     }
