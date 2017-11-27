@@ -669,6 +669,7 @@ public:
     // MATHEMATICAL MODEL
     problem_type(ProblemType::Undefined),
     equation_type(EquationType::Undefined),
+    use_outflow_bc_convective_term(false),
     formulation_viscous_term(FormulationViscousTerm::Undefined),
     right_hand_side(false),
 
@@ -1119,7 +1120,10 @@ public:
                      "Equation type", 
                      str_equation_type[(int)equation_type]);
      
-     // formulatiion of viscous term
+     // outflow BC for convective term
+     print_parameter(pcout,"Outflow BC for convective term", use_outflow_bc_convective_term);
+
+     // formulation of viscous term
      std::string str_form_viscous_term[] = {"Undefined", 
                                             "Divergence formulation", 
                                             "Laplace formulation"};
@@ -1770,6 +1774,10 @@ public:
 
   // description: see enum declaration
   EquationType equation_type;
+
+  // use stable outflow boundary condition for convective term according to
+  // Gravemeier et al. (2012)
+  bool use_outflow_bc_convective_term;
 
   // description: see enum declaration
   FormulationViscousTerm formulation_viscous_term;
