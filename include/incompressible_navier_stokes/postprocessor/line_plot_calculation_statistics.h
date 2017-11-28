@@ -279,7 +279,7 @@ public:
   }
 
   void print_headline(std::ofstream      &f,
-                      const unsigned int number_of_samples)
+                      const unsigned int number_of_samples) const
   {
     f << "number of samples: N = "  << number_of_samples << std::endl;
   }
@@ -393,11 +393,11 @@ private:
           // calculate integrals in homogeneous direction
           length_local[p] += JxW;
 
-          Tensor<1,dim> velocity;
-
           for (typename std::vector<Quantity*>::const_iterator quantity = line.quantities.begin();
               quantity != line.quantities.end(); ++quantity)
           {
+            Tensor<1,dim> velocity;
+
             if((*quantity)->type == QuantityType::Velocity ||
                (*quantity)->type == QuantityType::ReynoldsStresses)
             {
@@ -411,15 +411,15 @@ private:
               for(unsigned int i=0; i<dim; ++i)
                 velocity_local[p][i] += velocity[i] * JxW;
             }
-
-            if((*quantity)->type == QuantityType::ReynoldsStresses)
+            else if((*quantity)->type == QuantityType::ReynoldsStresses)
             {
               for(unsigned int i=0; i<dim; ++i)
                 for(unsigned int j=0; j<dim; ++j)
+                {
                   reynolds_local[p][i][j] += velocity[i] * velocity[j] * JxW;
+                }
             }
-
-            if((*quantity)->type == QuantityType::SkinFriction)
+            else if((*quantity)->type == QuantityType::SkinFriction)
             {
               Tensor<2,dim> velocity_gradient;
               for (unsigned int j=0; j<velocity_vector.size(); ++j)
@@ -461,8 +461,7 @@ private:
           }
         }
       }
-
-      if((*quantity)->type == QuantityType::ReynoldsStresses)
+      else if((*quantity)->type == QuantityType::ReynoldsStresses)
       {
         Utilities::MPI::sum(ArrayView<const double>(&reynolds_local[0][0][0],dim*dim*reynolds_local.size()),
                             communicator,
@@ -479,8 +478,7 @@ private:
           }
         }
       }
-
-      if((*quantity)->type == QuantityType::SkinFriction)
+      else if((*quantity)->type == QuantityType::SkinFriction)
       {
         Utilities::MPI::sum(wall_shear_local, communicator, wall_shear_local);
 
@@ -619,7 +617,7 @@ private:
     }
   }
 
-  void do_write_output(const std::string &output_prefix)
+  void do_write_output(const std::string &output_prefix) const
   {
     if(Utilities::MPI::this_mpi_process(communicator)== 0 && data.write_output == true)
     {
@@ -627,14 +625,14 @@ private:
 
       // Iterator for lines
       unsigned int line_iterator = 0;
-      for(typename std::vector<Line<dim> >::iterator line = data.lines.begin();
+      for(typename std::vector<Line<dim> >::const_iterator line = data.lines.begin();
           line != data.lines.end(); ++line, ++line_iterator)
       {
         std::string filename_prefix = output_prefix
                                       + "l" + Utilities::int_to_string(dof_handler_velocity.get_triangulation().n_global_levels()-1)
                                       + "_" + line->name + ".txt";
 
-        for (typename std::vector<Quantity*>::iterator quantity = line->quantities.begin();
+        for (typename std::vector<Quantity*>::const_iterator quantity = line->quantities.begin();
              quantity != line->quantities.end(); ++quantity)
         {
           if((*quantity)->type == QuantityType::Velocity)
@@ -720,7 +718,7 @@ private:
                   // equation <u_i' u_j'> = <u_i*u_j> - <u_i> * <u_j>
                   f << std::setw(precision+8) << std::left
                     << reynolds_global[line_iterator][p][i][j]/number_of_samples
-                    - (velocity_global[line_iterator][p][i]*velocity_global[line_iterator][p][j])/(number_of_samples*number_of_samples);
+                       - (velocity_global[line_iterator][p][i]/number_of_samples)*(velocity_global[line_iterator][p][j]/number_of_samples);
                 }
               }
 
@@ -870,6 +868,5 @@ private:
   std::vector<std::vector<double> > pressure_global;
   std::vector<double> reference_pressure_global;
 };
-
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_LINE_PLOT_CALCULATION_STATISTICS_H_ */
