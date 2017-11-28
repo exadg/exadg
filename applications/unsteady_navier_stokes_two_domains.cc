@@ -39,7 +39,8 @@ template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwa
 class NavierStokesProblem
 {
 public:
-  NavierStokesProblem(unsigned int const refine_steps_space,
+  NavierStokesProblem(unsigned int const refine_steps_space1,
+                      unsigned int const refine_steps_space2,
                       unsigned int const refine_steps_time = 0);
 
   void solve_problem(bool const do_restart);
@@ -60,7 +61,7 @@ private:
   parallel::distributed::Triangulation<dim> triangulation_1, triangulation_2;
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_faces_1, periodic_faces_2;
 
-  const unsigned int n_refine_space;
+  const unsigned int n_refine_space_domain1, n_refine_space_domain2;
 
   std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions_1, field_functions_2;
   std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity_1, boundary_descriptor_velocity_2;
@@ -99,7 +100,8 @@ private:
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-NavierStokesProblem(unsigned int const refine_steps_space,
+NavierStokesProblem(unsigned int const refine_steps_space1,
+                    unsigned int const refine_steps_space2,
                     unsigned int const refine_steps_time)
   :
   pcout(std::cout,Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0),
@@ -109,7 +111,8 @@ NavierStokesProblem(unsigned int const refine_steps_space,
   triangulation_2(MPI_COMM_WORLD,
                   dealii::Triangulation<dim>::none,
                   parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
-  n_refine_space(refine_steps_space)
+  n_refine_space_domain1(refine_steps_space1),
+  n_refine_space_domain2(refine_steps_space2)
 {
   param_1.set_input_parameters(1);
   param_1.check_input_parameters();
@@ -314,7 +317,7 @@ print_grid_data()
         << "Generating grid for DOMAIN 1 for " << dim << "-dimensional problem:" << std::endl
         << std::endl;
 
-  print_parameter(pcout,"Number of refinements",n_refine_space);
+  print_parameter(pcout,"Number of refinements",n_refine_space_domain1);
   print_parameter(pcout,"Number of cells",triangulation_1.n_global_active_cells());
   print_parameter(pcout,"Number of faces",triangulation_1.n_active_faces());
   print_parameter(pcout,"Number of vertices",triangulation_1.n_vertices());
@@ -323,7 +326,7 @@ print_grid_data()
         << "Generating grid for DOMAIN 2 for " << dim << "-dimensional problem:" << std::endl
         << std::endl;
 
-  print_parameter(pcout,"Number of refinements",n_refine_space);
+  print_parameter(pcout,"Number of refinements",n_refine_space_domain2);
   print_parameter(pcout,"Number of cells",triangulation_2.n_global_active_cells());
   print_parameter(pcout,"Number of faces",triangulation_2.n_active_faces());
   print_parameter(pcout,"Number of vertices",triangulation_2.n_vertices());
@@ -572,13 +575,13 @@ solve_problem(bool const do_restart)
   // this function has to be defined in the header file that implements all
   // problem specific things like parameters, geometry, boundary conditions, etc.
   create_grid_and_set_boundary_conditions_1(triangulation_1,
-                                            n_refine_space,
+                                            n_refine_space_domain1,
                                             boundary_descriptor_velocity_1,
                                             boundary_descriptor_pressure_1,
                                             periodic_faces_1);
 
   create_grid_and_set_boundary_conditions_2(triangulation_2,
-                                            n_refine_space,
+                                            n_refine_space_domain2,
                                             boundary_descriptor_velocity_2,
                                             boundary_descriptor_pressure_2,
                                             periodic_faces_2);
@@ -613,26 +616,21 @@ int main (int argc, char** argv)
       do_restart = std::atoi(argv[1]);
       if(do_restart)
       {
-        AssertThrow(REFINE_STEPS_SPACE_MIN == REFINE_STEPS_SPACE_MAX, ExcMessage("Spatial refinement with restart not possible!"));
-
-        //this does in principle work
-        //although it doesn't make much sense
+        // this does in principle work although it doesn't make much sense
         if(REFINE_STEPS_TIME_MIN != REFINE_STEPS_TIME_MAX && Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
           std::cout << "Warning: you are starting from a restart and refine the time steps!" << std::endl;
       }
     }
 
-    //mesh refinements in order to perform spatial convergence tests
-    for(unsigned int refine_steps_space = REFINE_STEPS_SPACE_MIN;refine_steps_space <= REFINE_STEPS_SPACE_MAX;++refine_steps_space)
+    //time refinements in order to perform temporal convergence tests
+    for(unsigned int refine_steps_time = REFINE_STEPS_TIME_MIN;refine_steps_time <= REFINE_STEPS_TIME_MAX;++refine_steps_time)
     {
-      //time refinements in order to perform temporal convergence tests
-      for(unsigned int refine_steps_time = REFINE_STEPS_TIME_MIN;refine_steps_time <= REFINE_STEPS_TIME_MAX;++refine_steps_time)
-      {
-        NavierStokesProblem<DIMENSION, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, VALUE_TYPE>
-            navier_stokes_problem(refine_steps_space,refine_steps_time);
+      NavierStokesProblem<DIMENSION, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, VALUE_TYPE>
+          navier_stokes_problem(REFINE_STEPS_SPACE_DOMAIN1,
+                                REFINE_STEPS_SPACE_DOMAIN2,
+                                refine_steps_time);
 
-        navier_stokes_problem.solve_problem(do_restart);
-      }
+      navier_stokes_problem.solve_problem(do_restart);
     }
   }
   catch (std::exception &exc)
