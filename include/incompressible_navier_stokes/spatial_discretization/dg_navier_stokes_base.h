@@ -386,13 +386,6 @@ protected:
 private:
   // turbulence modeling LES
   TurbulenceModel<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> turbulence_model;
-
-  // TODO (used for turbulence models to obtain a smooth viscosity field)
-  // projection operator
-  std::shared_ptr<ProjectionOperatorViscosity<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> > viscosity_projection_operator;
-  // projection solver
-  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<Number> > > viscosity_projection_solver;
-  std::shared_ptr<PreconditionerBase<Number> > preconditioner_viscosity_projection;
 };
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
@@ -521,25 +514,6 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
     model_data.turbulence_model = this->param.turbulence_model;
     model_data.constant = this->param.turbulence_model_constant;
     turbulence_model.initialize(data,mapping,viscous_operator,model_data);
-
-    // TODO
-    // setup viscosity projection operator
-    typedef ProjectionOperatorViscosity<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> PROJ_OPERATOR;
-
-    viscosity_projection_operator.reset(new PROJ_OPERATOR(this->data,dof_index_u,quad_index_u));
-
-    // setup preconditioner (inverse mass matrix preconditioner)
-    preconditioner_viscosity_projection.reset(new InverseMassMatrixPreconditioner<dim,fe_degree,Number>(this->data,dof_index_u,quad_index_u));
-
-    // setup solver data
-    CGSolverData viscosity_projection_solver_data;
-    viscosity_projection_solver_data.use_preconditioner = true;
-
-    // setup solver
-    viscosity_projection_solver.reset(new CGSolver<PROJ_OPERATOR,PreconditionerBase<Number>,parallel::distributed::Vector<Number> >
-       (*std::dynamic_pointer_cast<PROJ_OPERATOR>(viscosity_projection_operator),
-        *preconditioner_viscosity_projection,
-        viscosity_projection_solver_data));
   }
 
   // vorticity
@@ -936,36 +910,8 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall
 void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 update_turbulence_model (parallel::distributed::Vector<Number> const &velocity)
 {
-  // TODO
-
-  // Variant 1: calculate turbulent viscosity locally in each cell and face quadrature point
+  // calculate turbulent viscosity locally in each cell and face quadrature point
   turbulence_model.calculate_turbulent_viscosity(velocity);
-
-
-  // TODO
-  /*
-  // Variant 2: Calculate viscosity dof-vector in a first step by solving a projection equation.
-  //            In a second step, the viscous coefficient required in each quadrature point
-  //            is extracted from the viscosity dof vector.
-
-  // calculate rhs-vector of projection equation
-  parallel::distributed::Vector<Number> rhs_vector(velocity);
-  turbulence_model.calculate_turbulent_viscosity(rhs_vector,velocity);
-
-  parallel::distributed::Vector<Number> &viscosity = viscous_operator.get_viscosity_dof_vector();
-
-  // 2a) apply inverse mass matrix (linear operator = mass matrix), i.e., viscosity field is projected
-  // onto the space of polynomials of degree fe_degree_u.
-  //inverse_mass_matrix_operator->apply(viscosity,rhs_vector);
-
-  // 2b) solve linear system of equations (linear operator = mass matrix + continuity penalty),
-  // continuity penalty is used to obtain a smooth viscosity field
-  unsigned int n_iter = viscosity_projection_solver->solve(viscosity,rhs_vector);
-  // std::cout << "Number of iterations = " << n_iter << std::endl;
-
-  // write viscosity field from dof-vector into tables viscous_coeff_cell, viscous_coeff_face, ...
-  viscous_operator.extract_viscous_coefficient_from_dof_vector();
-  */
 }
 
 template<typename Operator, typename value_type>

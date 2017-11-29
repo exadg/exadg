@@ -89,19 +89,17 @@ public:
     this->gradient_operator.set_scaling_factor_pressure(scaling_factor);
   }
 
-  // TODO
   /*
    *  Update divergence penalty operator by recalculating the penalty parameter
    *  which depends on the current velocity field
    */
-//  void update_divergence_penalty_operator (parallel::distributed::Vector<Number> const *velocity) const;
+  void update_divergence_penalty_operator (parallel::distributed::Vector<Number> const &velocity) const;
 
-  // TODO
   /*
    *  Update continuity penalty operator by recalculating the penalty parameter
    *  which depends on the current velocity field
    */
-//  void update_continuity_penalty_operator (parallel::distributed::Vector<Number> const *velocity) const;
+  void update_continuity_penalty_operator (parallel::distributed::Vector<Number> const &velocity) const;
 
 
   /*
@@ -398,6 +396,8 @@ setup_divergence_and_continuity_penalty_operators_and_solvers()
   if(this->param.use_divergence_penalty == true)
   {
     DivergencePenaltyOperatorData div_penalty_data;
+    div_penalty_data.type_penalty_parameter = this->param.type_penalty_parameter;
+    div_penalty_data.viscosity = this->param.viscosity;
     div_penalty_data.penalty_parameter = this->param.divergence_penalty_factor;
 
     divergence_penalty_operator.reset(new DivergencePenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>(
@@ -411,6 +411,8 @@ setup_divergence_and_continuity_penalty_operators_and_solvers()
   if(this->param.use_continuity_penalty == true)
   {
     ContinuityPenaltyOperatorData<dim> conti_penalty_data;
+    conti_penalty_data.type_penalty_parameter = this->param.type_penalty_parameter;
+    conti_penalty_data.viscosity = this->param.viscosity;
     conti_penalty_data.penalty_parameter = this->param.continuity_penalty_factor;
     conti_penalty_data.which_components = this->param.continuity_penalty_components;
     conti_penalty_data.use_boundary_data = this->param.continuity_penalty_use_boundary_data;
@@ -582,23 +584,19 @@ setup_divergence_and_continuity_penalty_operators_and_solvers()
 
 }
 
-// TODO: this function can be removed when performing the projection in a postprocessing step
-//template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-//void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-//update_divergence_penalty_operator (parallel::distributed::Vector<Number> const *velocity) const
-//{
-//  AssertThrow(velocity != nullptr, ExcMessage("Invalid pointer."));
-//  this->divergence_penalty_operator->calculate_array_penalty_parameter(*velocity);
-//}
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+update_divergence_penalty_operator (parallel::distributed::Vector<Number> const &velocity) const
+{
+  this->divergence_penalty_operator->calculate_array_penalty_parameter(velocity);
+}
 
-// TODO: this function can be removed when performing the projection in a postprocessing step
-//template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-//void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-//update_continuity_penalty_operator (parallel::distributed::Vector<Number> const *velocity) const
-//{
-//  AssertThrow(velocity != nullptr, ExcMessage("Invalid pointer."));
-//  this->continuity_penalty_operator->calculate_array_penalty_parameter(*velocity);
-//}
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+update_continuity_penalty_operator (parallel::distributed::Vector<Number> const &velocity) const
+{
+  this->continuity_penalty_operator->calculate_array_penalty_parameter(velocity);
+}
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 unsigned int DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
@@ -630,6 +628,13 @@ rhs_stokes_problem (parallel::distributed::BlockVector<Number>  &dst,
   if(this->param.right_hand_side == true)
     this->body_force_operator.evaluate_add(dst.block(0),eval_time);
 
+  // Divergence and continuity penalty operators
+  if(this->param.add_penalty_terms_to_monolithic_system == true)
+  {
+    if(this->param.use_continuity_penalty == true)
+      continuity_penalty_operator->rhs_add(dst.block(0),eval_time);
+  }
+
   // pressure-block
   this->divergence_operator.rhs(dst.block(1),eval_time);
   // multiply by -1.0 since we use a formulation with symmetric saddle point matrix
@@ -656,11 +661,13 @@ apply_linearized_problem (parallel::distributed::BlockVector<Number>       &dst,
   velocity_conv_diff_operator.vmult(dst.block(0),src.block(0));
 
   // Divergence and continuity penalty operators
-  // TODO this function has to be removed when performing the projection in a postprocessing step
-//  if(this->param.use_divergence_penalty == true)
-//    divergence_penalty_operator->apply_add(dst.block(0),src.block(0));
-//  if(this->param.use_continuity_penalty == true)
-//    continuity_penalty_operator->apply_add(dst.block(0),src.block(0));
+  if(this->param.add_penalty_terms_to_monolithic_system == true)
+  {
+    if(this->param.use_divergence_penalty == true)
+      divergence_penalty_operator->apply_add(dst.block(0),src.block(0));
+    if(this->param.use_continuity_penalty == true)
+      continuity_penalty_operator->apply_add(dst.block(0),src.block(0));
+  }
 
   // (1,2) block of saddle point matrix
   // gradient operator: dst = velocity, src = pressure
@@ -746,11 +753,13 @@ evaluate_nonlinear_residual (parallel::distributed::BlockVector<Number>       &d
   this->viscous_operator.evaluate_add(dst.block(0),src.block(0),evaluation_time);
 
   // Divergence and continuity penalty operators
-  // TODO this function has to be removed when performing the projection in a postprocessing step
-//  if(this->param.use_divergence_penalty == true)
-//    divergence_penalty_operator->apply_add(dst.block(0),src.block(0));
-//  if(this->param.use_continuity_penalty == true)
-//    continuity_penalty_operator->apply_add(dst.block(0),src.block(0));
+  if(this->param.add_penalty_terms_to_monolithic_system == true)
+  {
+    if(this->param.use_divergence_penalty == true)
+      divergence_penalty_operator->apply_add(dst.block(0),src.block(0));
+    if(this->param.use_continuity_penalty == true)
+      continuity_penalty_operator->evaluate_add(dst.block(0),src.block(0),evaluation_time);
+  }
 
   // gradient operator scaled by scaling_factor_continuity
   this->gradient_operator.evaluate(temp_vector,src.block(1),evaluation_time);
@@ -792,11 +801,13 @@ evaluate_nonlinear_residual_steady (parallel::distributed::BlockVector<Number>  
   this->viscous_operator.evaluate_add(dst.block(0),src.block(0),evaluation_time);
 
   // Divergence and continuity penalty operators
-  // TODO this function has to be removed when performing the projection in a postprocessing step
-//  if(this->param.use_divergence_penalty == true)
-//    divergence_penalty_operator->apply_add(dst.block(0),src.block(0));
-//  if(this->param.use_continuity_penalty == true)
-//    continuity_penalty_operator->apply_add(dst.block(0),src.block(0));
+  if(this->param.add_penalty_terms_to_monolithic_system == true)
+  {
+    if(this->param.use_divergence_penalty == true)
+      divergence_penalty_operator->apply_add(dst.block(0),src.block(0));
+    if(this->param.use_continuity_penalty == true)
+      continuity_penalty_operator->apply_add(dst.block(0),src.block(0));
+  }
 
   // gradient operator scaled by scaling_factor_continuity
   this->gradient_operator.evaluate(temp_vector,src.block(1),evaluation_time);
@@ -821,11 +832,11 @@ update_projection_operator(parallel::distributed::Vector<Number> const &velocity
   // the current solution (velocity field).
   if(this->param.use_divergence_penalty == true)
   {
-    divergence_penalty_operator->calculate_array_penalty_parameter(velocity);
+    update_divergence_penalty_operator(velocity);
   }
   if(this->param.use_continuity_penalty == true)
   {
-    continuity_penalty_operator->calculate_array_penalty_parameter(velocity);
+    update_continuity_penalty_operator(velocity);
   }
 
   // Set the correct time step size.

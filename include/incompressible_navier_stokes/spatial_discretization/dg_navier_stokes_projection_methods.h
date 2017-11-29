@@ -241,6 +241,8 @@ setup_projection_solver ()
   if(this->param.use_divergence_penalty == true)
   {
     DivergencePenaltyOperatorData div_penalty_data;
+    div_penalty_data.type_penalty_parameter = this->param.type_penalty_parameter;
+    div_penalty_data.viscosity = this->param.viscosity;
     div_penalty_data.penalty_parameter = this->param.divergence_penalty_factor;
 
     divergence_penalty_operator.reset(new DivergencePenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>(
@@ -253,6 +255,8 @@ setup_projection_solver ()
   if(this->param.use_continuity_penalty == true)
   {
     ContinuityPenaltyOperatorData<dim> conti_penalty_data;
+    conti_penalty_data.type_penalty_parameter = this->param.type_penalty_parameter;
+    conti_penalty_data.viscosity = this->param.viscosity;
     conti_penalty_data.penalty_parameter = this->param.continuity_penalty_factor;
     conti_penalty_data.which_components = this->param.continuity_penalty_components;
     // The projected velocity field does not fulfill the velocity Dirichlet boundary conditions.

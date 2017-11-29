@@ -281,33 +281,31 @@ solve_timestep()
   // calculate auxiliary variable p^{*} = 1/scaling_factor * p
   solution_np.block(1) *= 1.0/scaling_factor_continuity;
 
-  // TODO
-  // Update divegence and continuity penalty operator
-//  parallel::distributed::Vector<value_type> const * velocity_ptr = nullptr;
-//
-//  // extrapolate velocity to time t_n+1 and use this velocity field to
-//  // caculate the penalty parameter for the divergence and continuity penalty term
-//  if(this->param.use_divergence_penalty == true ||
-//     this->param.use_continuity_penalty == true)
-//  {
-//    parallel::distributed::Vector<value_type> velocity_extrapolated(solution[0].block(0));
-//    velocity_extrapolated = 0;
-//    for (unsigned int i=0; i<solution.size(); ++i)
-//      velocity_extrapolated.add(this->extra.get_beta(i),solution[i].block(0));
-//
-//    velocity_ptr = &velocity_extrapolated;
-//  }
-//
-//  if(this->param.use_divergence_penalty == true)
-//  {
-//    //navier_stokes_operation->update_divergence_penalty_operator(solution[0].block(0));
-//    navier_stokes_operation->update_divergence_penalty_operator(velocity_ptr);
-//  }
-//  if(this->param.use_continuity_penalty == true)
-//  {
-//    //navier_stokes_operation->update_continuity_penalty_operator(solution[0].block(0));
-//    navier_stokes_operation->update_continuity_penalty_operator(velocity_ptr);
-//  }
+  // Update divegence and continuity penalty operator in case
+  // that these terms are added to the monolithic system of equations
+  // instead of applying these terms in a postprocessing step.
+  if(this->param.add_penalty_terms_to_monolithic_system == true)
+  {
+    if(this->param.use_divergence_penalty == true ||
+       this->param.use_continuity_penalty == true)
+    {
+      // extrapolate velocity to time t_n+1 and use this velocity field to
+      // caculate the penalty parameter for the divergence and continuity penalty term
+      parallel::distributed::Vector<value_type> velocity_extrapolated(solution[0].block(0));
+      velocity_extrapolated = 0;
+      for (unsigned int i=0; i<solution.size(); ++i)
+        velocity_extrapolated.add(this->extra.get_beta(i),solution[i].block(0));
+
+      if(this->param.use_divergence_penalty == true)
+      {
+        navier_stokes_operation->update_divergence_penalty_operator(velocity_extrapolated);
+      }
+      if(this->param.use_continuity_penalty == true)
+      {
+        navier_stokes_operation->update_continuity_penalty_operator(velocity_extrapolated);
+      }
+    }
+  }
 
   // if the problem to be solved is linear
   if(this->param.equation_type == EquationType::Stokes ||
@@ -480,11 +478,15 @@ solve_timestep()
       AssertThrow(false,ExcMessage("Specified method to adjust pressure level is not implemented."));
   }
 
-  // postprocess velocity field using divergence and/or continuity penalty terms
-  if(this->param.use_divergence_penalty == true ||
-     this->param.use_continuity_penalty == true)
+  // If the penalty terms are applied in a postprocessing step
+  if(this->param.add_penalty_terms_to_monolithic_system == false)
   {
-    postprocess_velocity();
+    // postprocess velocity field using divergence and/or continuity penalty terms
+    if(this->param.use_divergence_penalty == true ||
+       this->param.use_continuity_penalty == true)
+    {
+      postprocess_velocity();
+    }
   }
 }
 
@@ -508,10 +510,10 @@ postprocess_velocity()
   // update projection operator
   navier_stokes_operation->update_projection_operator(velocity_extrapolated,this->time_steps[0]);
 
-  // calculate inhomongeneous boundary faces integrals and add to rhs
+  // calculate inhomogeneous boundary faces integrals and add to rhs
   navier_stokes_operation->rhs_projection_add(temp,this->time + this->time_steps[0]);
 
-  // solve projection (the preconditioner is updated here)
+  // solve projection (where also the preconditioner is updated)
   unsigned int iterations = navier_stokes_operation->solve_projection(solution_np.block(0),temp);
 
   // write output
