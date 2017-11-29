@@ -15,9 +15,18 @@ struct DivergencePenaltyOperatorData
 {
   DivergencePenaltyOperatorData()
     :
+    type_penalty_parameter(TypePenaltyParameter::ConvectiveTerm),
+    viscosity(0.0),
     penalty_parameter(1.0)
   {}
 
+  // type of penalty parameter (viscous and/or convective terms)
+  TypePenaltyParameter type_penalty_parameter;
+
+  // kinematic viscosity
+  double viscosity;
+
+  // scaling factor
   double penalty_parameter;
 };
 
@@ -25,11 +34,16 @@ struct DivergencePenaltyOperatorData
  *  Divergence penalty operator: ( div(v_h) , tau_div * div(u_h) )_Omega^e where
  *   v_h : test function
  *   u_h : solution
- *   TODO tau_div: divergence penalty factor tau_div = K * || U_mean || * h_eff
- *   TODO         where h_eff = h / (k_u+1) and h = V_e^{1/3} with the element volume V_e
- *   tau_div: divergence penalty factor tau_div = K * ||U||_mean * h_eff
- *            where h_eff = h / (k_u+1) and h = V_e^{1/3} with the element volume V_e 
- *   Omega^e : element e
+ *   tau_div: divergence penalty factor
+ *
+ *            use convective term:  tau_div_conv = K * ||U||_mean * h_eff
+ *
+ *                                  where h_eff = h / (k_u+1) and
+ *                                  h = V_e^{1/3} with the element volume V_e
+ *
+ *            use viscous term:     tau_div_viscous = K * nu
+ *
+ *            use both terms:       tau_div = tau_div_conv + tau_div_viscous
  */
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class DivergencePenaltyOperator : public BaseOperator<dim>
@@ -65,41 +79,41 @@ public:
 
     for (unsigned int cell=0; cell<data.n_macro_cells()+data.n_macro_ghost_cells(); ++cell)
     {
-      // TODO
-      /*
-      fe_eval.reinit(cell);
-      fe_eval.read_dof_values(velocity);
-      fe_eval.evaluate (true,false);
-      VectorizedArray<value_type> volume = make_vectorized_array<value_type>(0.0);
-      Tensor<1,dim,VectorizedArray<value_type> > U_mean;
-      VectorizedArray<value_type> norm_U_mean = make_vectorized_array<value_type>(0.0);
-      JxW_values.resize(fe_eval.n_q_points);
-      fe_eval.fill_JxW_values(JxW_values);
-      for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
-      {
-        volume += JxW_values[q];
-        U_mean += JxW_values[q]*fe_eval.get_value(q);
-      }
-      U_mean /= volume;
-      norm_U_mean = U_mean.norm();
-      */
-    
-      fe_eval.reinit(cell);
-      fe_eval.read_dof_values(velocity);
-      fe_eval.evaluate (true,false);
-      VectorizedArray<value_type> volume = make_vectorized_array<value_type>(0.0);
-      VectorizedArray<value_type> norm_U_mean = make_vectorized_array<value_type>(0.0);
-      JxW_values.resize(fe_eval.n_q_points);
-      fe_eval.fill_JxW_values(JxW_values);
-      for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
-      {
-        volume += JxW_values[q];
-        norm_U_mean += JxW_values[q]*fe_eval.get_value(q).norm();
-      }
-      norm_U_mean /= volume;
+      VectorizedArray<value_type> tau_convective = make_vectorized_array<value_type>(0.0);
+      VectorizedArray<value_type> tau_viscous = make_vectorized_array<value_type>(operator_data.viscosity);
 
-      array_penalty_parameter[cell] = operator_data.penalty_parameter * norm_U_mean
-          * std::exp(std::log(volume)/(double)dim) / (double)(fe_degree+1);
+      if(operator_data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm ||
+          operator_data.type_penalty_parameter == TypePenaltyParameter::ViscousAndConvectiveTerms )
+      {
+        fe_eval.reinit(cell);
+        fe_eval.read_dof_values(velocity);
+        fe_eval.evaluate (true,false);
+        VectorizedArray<value_type> volume = make_vectorized_array<value_type>(0.0);
+        VectorizedArray<value_type> norm_U_mean = make_vectorized_array<value_type>(0.0);
+        JxW_values.resize(fe_eval.n_q_points);
+        fe_eval.fill_JxW_values(JxW_values);
+        for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+        {
+          volume += JxW_values[q];
+          norm_U_mean += JxW_values[q]*fe_eval.get_value(q).norm();
+        }
+        norm_U_mean /= volume;
+
+        tau_convective = norm_U_mean * std::exp(std::log(volume)/(double)dim) / (double)(fe_degree+1);
+      }
+
+      if(operator_data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm)
+      {
+        array_penalty_parameter[cell] = operator_data.penalty_parameter * tau_convective;
+      }
+      else if(operator_data.type_penalty_parameter == TypePenaltyParameter::ViscousTerm)
+      {
+        array_penalty_parameter[cell] = operator_data.penalty_parameter * tau_viscous;
+      }
+      else if(operator_data.type_penalty_parameter == TypePenaltyParameter::ViscousAndConvectiveTerms)
+      {
+        array_penalty_parameter[cell] = operator_data.penalty_parameter * (tau_convective + tau_viscous);
+      }
     }
   }
 
@@ -284,15 +298,30 @@ struct ContinuityPenaltyOperatorData
 {
   ContinuityPenaltyOperatorData()
     :
+    type_penalty_parameter(TypePenaltyParameter::ConvectiveTerm),
+    viscosity(0.0),
     penalty_parameter(1.0),
-    use_boundary_data(false),
-    which_components(ContinuityPenaltyComponents::Normal)
+    which_components(ContinuityPenaltyComponents::Normal),
+    use_boundary_data(false)
   {}
 
+  // type of penalty parameter (viscous and/or convective terms)
+  TypePenaltyParameter type_penalty_parameter;
+
+  // kinematic viscosity
+  double viscosity;
+
+  // scaling factor
   double penalty_parameter;
-  bool use_boundary_data;
+
+  // the continuity penalty term can be applied
+  // to all velocity components and to the normal
+  // component only
   ContinuityPenaltyComponents which_components;
 
+  // the continuity penalty term can be applied
+  // on boundary faces.
+  bool use_boundary_data;
   std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > bc;
 };
 
@@ -302,9 +331,17 @@ struct ContinuityPenaltyOperatorData
  *   v_h : test function
  *   u_h : solution
  *   jump(u_h) = u_h^{-} - u_h^{+} where "-" denotes interior information and "+" exterior information
- *   TODO: tau_conti: continuity penalty factor tau_conti = K * || U_mean ||
- *   tau_conti: continuity penalty factor tau_conti = K * ||U||_mean
- *   dOmega^e : boundary of element e
+ *
+ *   tau_conti: continuity penalty factor
+ *
+ *            use convective term:  tau_conti_conv = K * ||U||_mean
+ *
+ *            use viscous term:     tau_conti_viscous = K * nu / h
+ *
+ *                                  where h_eff = h / (k_u+1) and
+ *                                  h = V_e^{1/3} with the element volume V_e
+ *
+ *            use both terms:       tau_conti = tau_conti_conv + tau_conti_viscous
  */
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class ContinuityPenaltyOperator : public BaseOperator<dim>
@@ -348,25 +385,6 @@ public:
 
     for (unsigned int cell=0; cell<data.n_macro_cells()+data.n_macro_ghost_cells(); ++cell)
     {
-      //TODO
-      /*
-      fe_eval.reinit(cell);
-      fe_eval.read_dof_values(velocity);
-      fe_eval.evaluate (true,false);
-      VectorizedArray<value_type> volume = make_vectorized_array<value_type>(0.0);
-      Tensor<1,dim,VectorizedArray<value_type> > U_mean;
-      VectorizedArray<value_type> norm_U_mean = make_vectorized_array<value_type>(0.0);
-      JxW_values.resize(fe_eval.n_q_points);
-      fe_eval.fill_JxW_values(JxW_values);
-      for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
-      {
-        volume += JxW_values[q];
-        U_mean += JxW_values[q]*fe_eval.get_value(q);
-      }
-      U_mean /= volume;
-      norm_U_mean = U_mean.norm();
-      */
-
       fe_eval.reinit(cell);
       fe_eval.read_dof_values(velocity);
       fe_eval.evaluate (true,false);
@@ -381,7 +399,22 @@ public:
       }
       norm_U_mean /= volume;
 
-      array_penalty_parameter[cell] = operator_data.penalty_parameter * norm_U_mean;
+      VectorizedArray<value_type> tau_convective = norm_U_mean;
+      VectorizedArray<value_type> h = std::exp(std::log(volume)/(double)dim) / (double)(fe_degree+1);
+      VectorizedArray<value_type> tau_viscous = make_vectorized_array<value_type>(operator_data.viscosity) / h;
+
+      if(operator_data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm)
+      {
+        array_penalty_parameter[cell] = operator_data.penalty_parameter * tau_convective;
+      }
+      else if(operator_data.type_penalty_parameter == TypePenaltyParameter::ViscousTerm)
+      {
+        array_penalty_parameter[cell] = operator_data.penalty_parameter * tau_viscous;
+      }
+      else if(operator_data.type_penalty_parameter == TypePenaltyParameter::ViscousAndConvectiveTerms)
+      {
+        array_penalty_parameter[cell] = operator_data.penalty_parameter * (tau_convective + tau_viscous);
+      }
     }
   }
 
@@ -635,7 +668,7 @@ private:
 
       for(unsigned int face=face_range.first; face<face_range.second; face++)
       {
-        types::boundary_id boundary_id = data.get_boundary_indicator(face);
+        types::boundary_id boundary_id = data.get_boundary_id(face);
         BoundaryType boundary_type = BoundaryType::undefined;
 
         if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())

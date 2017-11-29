@@ -209,6 +209,14 @@ enum class ContinuityPenaltyComponents
   Normal
 };
 
+enum class TypePenaltyParameter
+{
+  Undefined,
+  ConvectiveTerm,
+  ViscousTerm,
+  ViscousAndConvectiveTerms
+};
+
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -728,6 +736,8 @@ public:
     continuity_penalty_components(ContinuityPenaltyComponents::Undefined),
     continuity_penalty_use_boundary_data(false),
     continuity_penalty_factor(1.),
+    type_penalty_parameter(TypePenaltyParameter::Undefined),
+    add_penalty_terms_to_monolithic_system(false),
 
     // PROJECTION METHODS
 
@@ -977,6 +987,12 @@ public:
       }
     }
 
+    if(use_divergence_penalty == true || use_continuity_penalty == true)
+    {
+      AssertThrow(type_penalty_parameter != TypePenaltyParameter::Undefined,
+          ExcMessage("Parameter must be defined"));
+    }
+
     // HIGH-ORDER DUAL SPLITTING SCHEME
     if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
@@ -1067,7 +1083,6 @@ public:
 
     // SPATIAL DISCRETIZATION
     print_parameters_spatial_discretization(pcout);
-
 
     // HIGH-ORDER DUAL SPLITTING SCHEME 
     if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
@@ -1325,6 +1340,24 @@ public:
       print_parameter(pcout,
                       "Continuity penalty term compenents",
                       continuity_penalty_components_str[(int)continuity_penalty_components]);
+    }
+
+    if(use_divergence_penalty == true || use_continuity_penalty == true)
+    {
+      std::string type_penalty_parameter_str[] = {"Undefined",
+                                                  "ConvectiveTerm",
+                                                  "ViscousTerm",
+                                                  "ViscousAndConvectiveTerms"};
+
+      print_parameter(pcout,"Type of penalty parameter",
+                      type_penalty_parameter_str[(int)type_penalty_parameter]);
+    }
+
+    if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+    {
+      if(use_divergence_penalty == true || use_continuity_penalty == true)
+        print_parameter(pcout,"Add penalty terms to monolithic system",
+                        add_penalty_terms_to_monolithic_system);
     }
   } 
 
@@ -1932,6 +1965,14 @@ public:
 
   // penalty factor of continuity penalty term
   double continuity_penalty_factor;
+
+  // type of penalty parameter (see enum declarationn for more information
+  TypePenaltyParameter type_penalty_parameter;
+
+  // Add divergence and continuity penalty terms to monolithic system of equations.
+  // This parameter is only relevant for the coupled solution approach but not for
+  // the projection-type solution methods.
+  bool add_penalty_terms_to_monolithic_system;
 
   /**************************************************************************************/
   /*                                                                                    */

@@ -152,6 +152,25 @@ solve()
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     std::cout << std::endl << "Solving steady state problem ..." << std::endl;
 
+  // Update divegence and continuity penalty operator in case
+  // that these terms are added to the monolithic system of equations
+  // instead of applying these terms in a postprocessing step.
+  if(this->param.add_penalty_terms_to_monolithic_system == true)
+  {
+    if(this->param.use_divergence_penalty == true ||
+       this->param.use_continuity_penalty == true)
+    {
+      if(this->param.use_divergence_penalty == true)
+      {
+        navier_stokes_operation->update_divergence_penalty_operator(solution.block(0));
+      }
+      if(this->param.use_continuity_penalty == true)
+      {
+        navier_stokes_operation->update_continuity_penalty_operator(solution.block(0));
+      }
+    }
+  }
+
   // Steady Stokes equations
   if(this->param.equation_type == EquationType::Stokes)
   {
