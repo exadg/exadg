@@ -90,7 +90,7 @@ public:
   void evaluate(const parallel::distributed::Vector<Number> &velocity)
   {
 
-    Number mean_velocity;
+    Number mean_velocity = 0.0;
 
     do_evaluate(matrix_free_data,
                 dof_quad_index_data.dof_index_velocity,
@@ -148,6 +148,7 @@ public:
           mean_velocity += mean_velocity_local[n];
       }
     }
+
     mean_velocity = Utilities::MPI::sum(mean_velocity,MPI_COMM_WORLD);
     mean_velocity = mean_velocity / data.area;
   }
