@@ -170,6 +170,20 @@ enum class SpatialDiscretization
   DGXWall
 };
 
+/*
+ *  Type of imposition of Dirichlet BC's:
+ *
+ *  direct: u⁺ = g
+ *  mirror: u⁺ = -u⁻ + 2g
+ *
+ *  A direct imposition might be advantageous with respect to the CFL condition
+ *  possibly allowing to use significantly larger time step sizes.
+ */
+enum class TypeDirichletBCs
+{
+  Direct,
+  Mirror
+};
 
 /*
  *   Interior penalty formulation of viscous term:
@@ -514,9 +528,9 @@ struct TurbulentChannelData
 
 // bfs data
 
-struct BFSStatistics
+struct BFSStatisticsData
 {
-  BFSStatistics()
+  BFSStatisticsData()
    :
    calculate_statistics(false),
    sample_start_time(0.0),
@@ -709,6 +723,7 @@ public:
     // SPATIAL DISCRETIZATION
     // spatial discretization method
     spatial_discretization(SpatialDiscretization::Undefined),
+    imposition_of_dirichlet_bc_convective(TypeDirichletBCs::Mirror),
 
     // convective term - currently no parameters
 
@@ -898,7 +913,7 @@ public:
     line_plot_data(LinePlotData<dim>()),
 
     // BFS statistics
-    bfs_statistics(BFSStatistics())
+    bfs_statistics(BFSStatisticsData())
   {}
 
   void set_input_parameters();
@@ -1264,6 +1279,13 @@ public:
     print_parameter(pcout,
                     "Spatial discretization method",
                     str_spatial_discret[(int)spatial_discretization]);
+
+    std::string str_type_dirichlet_convective[] = { "Direct" ,
+                                                    "Mirror" };
+
+    print_parameter(pcout,
+                    "Type of Dirichlet BC's (convective)",
+                    str_type_dirichlet_convective[(int)imposition_of_dirichlet_bc_convective]);
 
 
     // interior penalty formulation of viscous term
@@ -1919,6 +1941,9 @@ public:
   SpatialDiscretization spatial_discretization;
 
   // description: see enum declaration
+  TypeDirichletBCs imposition_of_dirichlet_bc_convective;
+
+  // description: see enum declaration
   InteriorPenaltyFormulation IP_formulation_viscous;
   // description: see enum declaration
   PenaltyTermDivergenceFormulation penalty_term_div_formulation;
@@ -2283,7 +2308,7 @@ public:
   LinePlotData<dim> line_plot_data;
 
   // backward facing step statistics
-  BFSStatistics bfs_statistics;
+  BFSStatisticsData bfs_statistics;
 
   // mean flow
   MeanVelocityCalculatorData<dim> mean_velocity_data;

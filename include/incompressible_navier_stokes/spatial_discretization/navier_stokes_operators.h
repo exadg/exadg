@@ -3014,12 +3014,13 @@ struct ConvectiveOperatorData
   ConvectiveOperatorData ()
     :
     dof_index(0),
-    use_outflow_bc(false)
+    use_outflow_bc(false),
+    type_imposition_of_dirichlet_values(TypeDirichletBCs::Mirror)
   {}
 
   unsigned int dof_index;
   bool use_outflow_bc;
-
+  TypeDirichletBCs type_imposition_of_dirichlet_values;
   std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > bc;
 };
 
@@ -3315,7 +3316,18 @@ private:
       Point<dim,VectorizedArray<value_type> > q_points = fe_eval.quadrature_point(q);
       evaluate_vectorial_function(g,it->second,q_points,eval_time);
 
-      uP = -uM + make_vectorized_array<value_type>(2.0)*g;
+      if(operator_data.type_imposition_of_dirichlet_values == TypeDirichletBCs::Mirror)
+      {
+        uP = -uM + make_vectorized_array<value_type>(2.0)*g;
+      }
+      else if(operator_data.type_imposition_of_dirichlet_values == TypeDirichletBCs::Direct)
+      {
+        uP = g;
+      }
+      else
+      {
+        AssertThrow(false,ExcMessage("Type of imposition of Dirichlet BC's for convective term is not implemented."));
+      }
     }
     else if(boundary_type == BoundaryTypeU::Neumann)
     {
@@ -3356,7 +3368,19 @@ private:
 
     if(boundary_type == BoundaryTypeU::Dirichlet)
     {
-      delta_uP = - delta_uM;
+      if(operator_data.type_imposition_of_dirichlet_values == TypeDirichletBCs::Mirror)
+      {
+        delta_uP = - delta_uM;
+      }
+      else if(operator_data.type_imposition_of_dirichlet_values == TypeDirichletBCs::Direct)
+      {
+        // delta_uP = 0
+        // do nothing, delta_uP is already initialized with zero
+      }
+      else
+      {
+        AssertThrow(false,ExcMessage("Type of imposition of Dirichlet BC's for convective term is not implemented."));
+      }
     }
     else if(boundary_type == BoundaryTypeU::Neumann)
     {
