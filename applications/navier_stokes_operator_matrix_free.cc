@@ -51,7 +51,7 @@ using namespace dealii;
 
 // set the polynomial degree of the shape functions k = 1,...,10
 unsigned int const FE_DEGREE_U_MIN = FE_DEGREE_VELOCITY;
-unsigned int const FE_DEGREE_U_MAX = FE_DEGREE_VELOCITY+8;
+unsigned int const FE_DEGREE_U_MAX = FE_DEGREE_VELOCITY+1;
 
 // Select the operator to be applied
 enum class OperatorType{
@@ -60,22 +60,16 @@ enum class OperatorType{
   PressurePoissonOperator,  // negative Laplace operator (scalar quantity, pressure)
   HelmholtzOperator,        // mass + viscous (vectorial quantity, velocity)
   ProjectionOperator,       // mass + divergence penalty + continuity penalty (vectorial quantity, velocity)
-  VelocityConvDiffOperator  // mass + convective + viscous (vectorial quantity, velocity)
+  VelocityConvDiffOperator, // mass + convective + viscous (vectorial quantity, velocity)
+  InverseMassMatrix         // inverse mass matrix operator (vectorial quantity, velocity)
 };
 
-OperatorType OPERATOR_TYPE = OperatorType::HelmholtzOperator; // CoupledLinearized;
+OperatorType OPERATOR_TYPE = OperatorType::InverseMassMatrix; // CoupledLinearized;
 
 // number of repetitions used to determine the average/minimum wall time required
 // to compute the matrix-vector product
-unsigned int const N_REPETITIONS = 100;
-
-// Type of wall time calculation used to measure efficiency
-enum class WallTimeCalculation{
-  Average,
-  Minimum
-};
-
-WallTimeCalculation const WALL_TIME_CALCULATION = WallTimeCalculation::Minimum; //Average; //Minimum;
+unsigned int const N_REPETITIONS_INNER = 100; // take the average of inner repetitions
+unsigned int const N_REPETITIONS_OUTER = 5;   // take the minimum of outer repetitions
 
 // global variable used to store the wall times for different polynomial degrees
 std::vector<std::pair<unsigned int, double> > wall_times;
@@ -122,10 +116,7 @@ private:
     fe_degree_xwall, xwall_quad_rule, Number> > navier_stokes_operation_pressure_correction;
 
   // number of matrix-vector products
-  unsigned int const n_repetitions;
-
-  // wall time calculation
-  WallTimeCalculation const wall_time_calculation;
+  unsigned int const n_repetitions_inner, n_repetitions_outer;
 };
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
@@ -137,8 +128,8 @@ NavierStokesProblem(unsigned int const refine_steps_space)
                 dealii::Triangulation<dim>::none,
                 parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
   n_refine_space(refine_steps_space),
-  n_repetitions(N_REPETITIONS),
-  wall_time_calculation(WALL_TIME_CALCULATION)
+  n_repetitions_inner(N_REPETITIONS_INNER),
+  n_repetitions_outer(N_REPETITIONS_OUTER)
 {
   print_header();
   print_mpi_info();
@@ -195,21 +186,24 @@ NavierStokesProblem(unsigned int const refine_steps_space)
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
     AssertThrow(OPERATOR_TYPE == OperatorType::CoupledNonlinearResidual ||
-                OPERATOR_TYPE == OperatorType::CoupledLinearized,
+                OPERATOR_TYPE == OperatorType::CoupledLinearized ||
+                OPERATOR_TYPE == OperatorType::InverseMassMatrix,
                 ExcMessage("Invalid operator specified for coupled solution approach."));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
     AssertThrow(OPERATOR_TYPE == OperatorType::PressurePoissonOperator ||
                 OPERATOR_TYPE == OperatorType::HelmholtzOperator ||
-                OPERATOR_TYPE == OperatorType::ProjectionOperator,
+                OPERATOR_TYPE == OperatorType::ProjectionOperator ||
+                OPERATOR_TYPE == OperatorType::InverseMassMatrix,
                 ExcMessage("Invalid operator specified for dual splitting scheme."));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
     AssertThrow(OPERATOR_TYPE == OperatorType::PressurePoissonOperator ||
                 OPERATOR_TYPE == OperatorType::VelocityConvDiffOperator ||
-                OPERATOR_TYPE == OperatorType::ProjectionOperator,
+                OPERATOR_TYPE == OperatorType::ProjectionOperator ||
+                OPERATOR_TYPE == OperatorType::InverseMassMatrix,
                 ExcMessage("Invalid operator specified for pressure-correction scheme."));
   }
   else
@@ -322,7 +316,8 @@ apply_operator()
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
     if(OPERATOR_TYPE == OperatorType::HelmholtzOperator ||
-       OPERATOR_TYPE == OperatorType::ProjectionOperator)
+       OPERATOR_TYPE == OperatorType::ProjectionOperator ||
+       OPERATOR_TYPE == OperatorType::InverseMassMatrix)
     {
       navier_stokes_operation_dual_splitting->initialize_vector_velocity(src2);
       navier_stokes_operation_dual_splitting->initialize_vector_velocity(dst2);
@@ -342,7 +337,8 @@ apply_operator()
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
     if(OPERATOR_TYPE == OperatorType::VelocityConvDiffOperator ||
-       OPERATOR_TYPE == OperatorType::ProjectionOperator)
+       OPERATOR_TYPE == OperatorType::ProjectionOperator ||
+       OPERATOR_TYPE == OperatorType::InverseMassMatrix)
     {
       navier_stokes_operation_dual_splitting->initialize_vector_velocity(src2);
       navier_stokes_operation_dual_splitting->initialize_vector_velocity(dst2);
@@ -367,64 +363,74 @@ apply_operator()
 
   // Timer and wall times
   Timer timer;
+  double wall_time = std::numeric_limits<double>::max();
 
-  double wall_time = 0.0;
-
-  if(wall_time_calculation == WallTimeCalculation::Minimum)
-    wall_time = std::numeric_limits<double>::max();
-
-  // apply matrix-vector product several times
-  for(unsigned int i=0; i<n_repetitions; ++i)
+  for(unsigned int i_outer=0; i_outer<n_repetitions_outer; ++i_outer)
   {
-    timer.restart();
+    double current_wall_time = 0.0;
 
-    if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+    // apply matrix-vector product several times
+    for(unsigned int i=0; i<n_repetitions_inner; ++i)
     {
-      if(OPERATOR_TYPE == OperatorType::CoupledNonlinearResidual)
-        navier_stokes_operation_coupled->evaluate_nonlinear_residual(dst1,src1);
-      else if(OPERATOR_TYPE == OperatorType::CoupledLinearized)
-        navier_stokes_operation_coupled->vmult(dst1,src1);
+      timer.restart();
+
+      if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+      {
+        if(OPERATOR_TYPE == OperatorType::CoupledNonlinearResidual)
+          navier_stokes_operation_coupled->evaluate_nonlinear_residual(dst1,src1);
+        else if(OPERATOR_TYPE == OperatorType::CoupledLinearized)
+          navier_stokes_operation_coupled->vmult(dst1,src1);
+        else if(OPERATOR_TYPE == OperatorType::InverseMassMatrix)
+          navier_stokes_operation_coupled->apply_inverse_mass_matrix(dst2,src2);
+        else
+          AssertThrow(false,ExcMessage("Not implemented."));
+      }
+      else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+      {
+        if(OPERATOR_TYPE == OperatorType::HelmholtzOperator)
+          navier_stokes_operation_dual_splitting->apply_helmholtz_operator(dst2,src2);
+        else if(OPERATOR_TYPE == OperatorType::ProjectionOperator)
+          navier_stokes_operation_dual_splitting->apply_projection_operator(dst2,src2);
+        else if(OPERATOR_TYPE == OperatorType::PressurePoissonOperator)
+          navier_stokes_operation_dual_splitting->apply_laplace_operator(dst2,src2);
+        else if(OPERATOR_TYPE == OperatorType::InverseMassMatrix)
+          navier_stokes_operation_dual_splitting->apply_inverse_mass_matrix(dst2,src2);
+        else
+          AssertThrow(false,ExcMessage("Not implemented."));
+      }
+      else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+      {
+        if(OPERATOR_TYPE == OperatorType::VelocityConvDiffOperator)
+          navier_stokes_operation_pressure_correction->apply_velocity_conv_diff_operator(dst2,src2,src2);
+        else if(OPERATOR_TYPE == OperatorType::ProjectionOperator)
+          navier_stokes_operation_pressure_correction->apply_projection_operator(dst2,src2);
+        else if(OPERATOR_TYPE == OperatorType::PressurePoissonOperator)
+          navier_stokes_operation_pressure_correction->apply_laplace_operator(dst2,src2);
+        else if(OPERATOR_TYPE == OperatorType::InverseMassMatrix)
+          navier_stokes_operation_pressure_correction->apply_inverse_mass_matrix(dst2,src2);
+        else
+          AssertThrow(false,ExcMessage("Not implemented."));
+      }
       else
+      {
         AssertThrow(false,ExcMessage("Not implemented."));
-    }
-    else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-    {
-      if(OPERATOR_TYPE == OperatorType::HelmholtzOperator)
-        navier_stokes_operation_dual_splitting->apply_helmholtz_operator(dst2,src2);
-      else if(OPERATOR_TYPE == OperatorType::ProjectionOperator)
-        navier_stokes_operation_dual_splitting->apply_projection_operator(dst2,src2);
-      else if(OPERATOR_TYPE == OperatorType::PressurePoissonOperator)
-        navier_stokes_operation_dual_splitting->apply_laplace_operator(dst2,src2);
-      else
-        AssertThrow(false,ExcMessage("Not implemented."));
-    }
-    else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-    {
-      if(OPERATOR_TYPE == OperatorType::VelocityConvDiffOperator)
-        navier_stokes_operation_pressure_correction->apply_velocity_conv_diff_operator(dst2,src2,src2);
-      else if(OPERATOR_TYPE == OperatorType::ProjectionOperator)
-        navier_stokes_operation_pressure_correction->apply_projection_operator(dst2,src2);
-      else if(OPERATOR_TYPE == OperatorType::PressurePoissonOperator)
-        navier_stokes_operation_pressure_correction->apply_laplace_operator(dst2,src2);
-      else
-        AssertThrow(false,ExcMessage("Not implemented."));
-    }
-    else
-    {
-      AssertThrow(false,ExcMessage("Not implemented."));
+      }
+
+      current_wall_time += timer.wall_time();
     }
 
-    double const current_wall_time = timer.wall_time();
+    // compute average wall time
+    current_wall_time /= (double)n_repetitions_inner;
 
-    if(wall_time_calculation == WallTimeCalculation::Average)
-      wall_time += current_wall_time;
-    else if(wall_time_calculation == WallTimeCalculation::Minimum)
-      wall_time = std::min(wall_time,current_wall_time);
+    wall_time = std::min(wall_time,current_wall_time);
   }
 
-  // compute wall times
-  if(wall_time_calculation == WallTimeCalculation::Average)
-    wall_time /= (double)n_repetitions;
+  if(wall_time*n_repetitions_inner*n_repetitions_outer < 1.0 /*wall time in seconds*/)
+  {
+    this->pcout << std::endl
+                << "WARNING: One should use a larger number of matrix-vector products to obtain reproducable results."
+                << std::endl;
+  }
 
   unsigned int dofs = 0;
   unsigned int fe_degree = 1;
@@ -439,7 +445,8 @@ apply_operator()
   }
   else if(OPERATOR_TYPE == OperatorType::VelocityConvDiffOperator ||
           OPERATOR_TYPE == OperatorType::HelmholtzOperator ||
-          OPERATOR_TYPE == OperatorType::ProjectionOperator)
+          OPERATOR_TYPE == OperatorType::ProjectionOperator ||
+          OPERATOR_TYPE == OperatorType::InverseMassMatrix)
   {
     dofs = navier_stokes_operation->get_dof_handler_u().n_dofs();
 
