@@ -1895,112 +1895,110 @@ public:
     times[0] = wall_time;
 
     if (COMPUTE_FACE_INTEGRALS == false)
+    {
+      parallel::distributed::Vector<Number> dst2;
+      matrix_free_data.initialize_dof_vector(dst2);
+      wall_time = 0.0;
+
+      if(wall_time_calculation == WallTimeCalculation::Minimum)
+        wall_time = std::numeric_limits<double>::max();
+      MPI_Barrier(MPI_COMM_WORLD);
+
+      // apply matrix-vector product several times
+      for(unsigned int i=0; i<n_repetitions; ++i)
       {
-        parallel::distributed::Vector<Number> dst2;
-        matrix_free_data.initialize_dof_vector(dst2);
-        wall_time = 0.0;
+        timer.restart();
 
-        if(wall_time_calculation == WallTimeCalculation::Minimum)
-          wall_time = std::numeric_limits<double>::max();
-        MPI_Barrier(MPI_COMM_WORLD);
+        laplace_operator.cell_loop_manual_1(dst2,src);
 
-        // apply matrix-vector product several times
-        for(unsigned int i=0; i<n_repetitions; ++i)
-          {
-            timer.restart();
+        double const current_wall_time = timer.wall_time();
 
-            laplace_operator.cell_loop_manual_1(dst2,src);
-
-            double const current_wall_time = timer.wall_time();
-
-            if(wall_time_calculation == WallTimeCalculation::Average)
-              wall_time += current_wall_time;
-            else if(wall_time_calculation == WallTimeCalculation::Minimum)
-              wall_time = std::min(wall_time,current_wall_time);
-          }
-
-
-        // compute wall times
         if(wall_time_calculation == WallTimeCalculation::Average)
-          wall_time /= (double)n_repetitions;
-        wall_time /= (double) dofs;
-
-        dst2 -= dst;
-        pcout << std::scientific << std::setprecision(4)
-              << "Wall time / dof [s]: " << wall_time << ", error to nice code: "
-              << dst2.linfty_norm() << std::endl;
-        times[1] = wall_time;
-
-
-
-
-        if(wall_time_calculation == WallTimeCalculation::Minimum)
-          wall_time = std::numeric_limits<double>::max();
-        MPI_Barrier(MPI_COMM_WORLD);
-
-        // apply matrix-vector product several times
-        for(unsigned int i=0; i<n_repetitions; ++i)
-          {
-            timer.restart();
-
-            laplace_operator.cell_loop_manual_2(dst2,src);
-
-            double const current_wall_time = timer.wall_time();
-
-            if(wall_time_calculation == WallTimeCalculation::Average)
-              wall_time += current_wall_time;
-            else if(wall_time_calculation == WallTimeCalculation::Minimum)
-              wall_time = std::min(wall_time,current_wall_time);
-          }
-
-
-        // compute wall times
-        if(wall_time_calculation == WallTimeCalculation::Average)
-          wall_time /= (double)n_repetitions;
-        wall_time /= (double) dofs;
-
-        dst2 -= dst;
-        pcout << std::scientific << std::setprecision(4)
-              << "Wall time / dof [s]: " << wall_time << ", error to nice code: "
-              << dst2.linfty_norm() << std::endl;
-        times[2] = wall_time;
-
-        if(wall_time_calculation == WallTimeCalculation::Minimum)
-          wall_time = std::numeric_limits<double>::max();
-        MPI_Barrier(MPI_COMM_WORLD);
-
-        // apply matrix-vector product several times
-        for(unsigned int i=0; i<n_repetitions; ++i)
-          {
-            timer.restart();
-
-            laplace_operator.cell_loop_manual_3(dst2,src);
-
-            double const current_wall_time = timer.wall_time();
-
-            if(wall_time_calculation == WallTimeCalculation::Average)
-              wall_time += current_wall_time;
-            else if(wall_time_calculation == WallTimeCalculation::Minimum)
-              wall_time = std::min(wall_time,current_wall_time);
-          }
-
-
-        // compute wall times
-        if(wall_time_calculation == WallTimeCalculation::Average)
-          wall_time /= (double)n_repetitions;
-        wall_time /= (double) dofs;
-
-        dst2 -= dst;
-        pcout << std::scientific << std::setprecision(4)
-              << "Wall time / dof [s]: " << wall_time << ", error to nice code: "
-              << dst2.linfty_norm() << std::endl;
-        times[3] = wall_time;
+          wall_time += current_wall_time;
+        else if(wall_time_calculation == WallTimeCalculation::Minimum)
+          wall_time = std::min(wall_time,current_wall_time);
       }
+
+      // compute wall times
+      if(wall_time_calculation == WallTimeCalculation::Average)
+        wall_time /= (double)n_repetitions;
+      wall_time /= (double) dofs;
+
+      dst2 -= dst;
+      pcout << std::scientific << std::setprecision(4)
+            << "Wall time / dof [s]: " << wall_time << ", error to nice code: "
+            << dst2.linfty_norm() << std::endl;
+      times[1] = wall_time;
+
+
+
+
+      if(wall_time_calculation == WallTimeCalculation::Minimum)
+        wall_time = std::numeric_limits<double>::max();
+      MPI_Barrier(MPI_COMM_WORLD);
+
+      // apply matrix-vector product several times
+      for(unsigned int i=0; i<n_repetitions; ++i)
+      {
+        timer.restart();
+
+        laplace_operator.cell_loop_manual_2(dst2,src);
+
+        double const current_wall_time = timer.wall_time();
+
+        if(wall_time_calculation == WallTimeCalculation::Average)
+          wall_time += current_wall_time;
+        else if(wall_time_calculation == WallTimeCalculation::Minimum)
+          wall_time = std::min(wall_time,current_wall_time);
+      }
+
+
+      // compute wall times
+      if(wall_time_calculation == WallTimeCalculation::Average)
+        wall_time /= (double)n_repetitions;
+      wall_time /= (double) dofs;
+
+      dst2 -= dst;
+      pcout << std::scientific << std::setprecision(4)
+            << "Wall time / dof [s]: " << wall_time << ", error to nice code: "
+            << dst2.linfty_norm() << std::endl;
+      times[2] = wall_time;
+
+      if(wall_time_calculation == WallTimeCalculation::Minimum)
+        wall_time = std::numeric_limits<double>::max();
+      MPI_Barrier(MPI_COMM_WORLD);
+
+      // apply matrix-vector product several times
+      for(unsigned int i=0; i<n_repetitions; ++i)
+      {
+        timer.restart();
+
+        laplace_operator.cell_loop_manual_3(dst2,src);
+
+        double const current_wall_time = timer.wall_time();
+
+        if(wall_time_calculation == WallTimeCalculation::Average)
+          wall_time += current_wall_time;
+        else if(wall_time_calculation == WallTimeCalculation::Minimum)
+          wall_time = std::min(wall_time,current_wall_time);
+      }
+
+
+      // compute wall times
+      if(wall_time_calculation == WallTimeCalculation::Average)
+        wall_time /= (double)n_repetitions;
+      wall_time /= (double) dofs;
+
+      dst2 -= dst;
+      pcout << std::scientific << std::setprecision(4)
+            << "Wall time / dof [s]: " << wall_time << ", error to nice code: "
+            << dst2.linfty_norm() << std::endl;
+      times[3] = wall_time;
+    }
 
     wall_times.emplace_back(fe_degree,times);
 
     pcout << std::endl << " ... done." << std::endl << std::endl;
-
   }
 
 private:
@@ -2143,7 +2141,7 @@ void print_wall_times(std::vector<std::pair<unsigned int, std::array<double,4> >
               << "  k    " << "standard    manual_1    manual_2    manual_3" << std::endl;
 
     typedef typename std::vector<std::pair<unsigned int, std::array<double,4> > >::const_iterator ITERATOR;
-    for(ITERATOR it=wall_times.begin(); it != wall_times.end(); ++it)
+    for(ITERATOR it = wall_times.begin(); it != wall_times.end(); ++it)
     {
       std::cout << "  " << std::setw(5) << std::left << it->first;
       for (unsigned int i=0; i<4; ++i)

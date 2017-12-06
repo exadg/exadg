@@ -407,12 +407,13 @@ void StatisticsManagerPH<dim>::setup(const Function< dim > &push_forward_functio
     y_loc.resize(n_points_x_glob,-1);
 
     for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler.begin_active(); cell!=dof_handler.end(); ++cell)
-     if (cell->is_locally_owned())
-       {
-       if (cell->at_boundary(2)) // just evaluate cells at the bottom of the domain
-       {
-         for (unsigned int i=0; i<n_points_x; ++i)
-         {
+    {
+      if (cell->is_locally_owned())
+      {
+        if (cell->at_boundary(2)) // just evaluate cells at the bottom of the domain
+        {
+          for (unsigned int i=0; i<n_points_x; ++i)
+          {
            fe_values[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
 
            const double x = fe_values[i]->quadrature_point(0)[0];
@@ -434,9 +435,10 @@ void StatisticsManagerPH<dim>::setup(const Function< dim > &push_forward_functio
                                   patch::to_string(std::abs(x_glob[idx]-x))));
 
            y_loc.at(idx) = y;
-         }
-         }
-       }
+          }
+        }
+      }
+    }
 
      Utilities::MPI::max(y_loc, communicator, y_hill_contour_actual); // after this step (*), all entries in y_vec_glob have been changed
 

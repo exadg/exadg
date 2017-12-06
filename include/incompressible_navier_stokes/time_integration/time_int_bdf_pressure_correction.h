@@ -33,9 +33,8 @@ public:
     extra_pressure_gradient(this->param.order_pressure_extrapolation,this->param.start_with_low_order),
     vec_pressure_gradient_term(this->param.order_pressure_extrapolation),
     computing_times(3),
-    N_iter_pressure_average(0.0),
-    N_iter_linear_momentum_average(0.0),
-    N_iter_nonlinear_momentum_average(0.0)
+    iterations(3),
+    N_iter_nonlinear_momentum(0)
   {}
 
   virtual ~TimeIntBDFPressureCorrection(){}
@@ -122,9 +121,9 @@ private:
   std::vector<parallel::distributed::Vector<value_type> > vec_pressure_gradient_term;
 
   std::vector<value_type> computing_times;
+  std::vector<unsigned int> iterations;
 
-  double N_iter_pressure_average, N_iter_linear_momentum_average,
-      N_iter_nonlinear_momentum_average;
+  unsigned int N_iter_nonlinear_momentum;
 
   // temporary vectors needed for pseudo-timestepping algorithm
   parallel::distributed::Vector<value_type> velocity_tmp;
@@ -526,7 +525,7 @@ momentum_step()
                   << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
     }
 
-    N_iter_linear_momentum_average += linear_iterations_momentum;
+    iterations[0] += linear_iterations_momentum;
   }
   else // treatment of convective term == Implicit
   {
@@ -554,8 +553,8 @@ momentum_step()
                   << "  Linear iterations: " << std::setw(6) << std::right << std::fixed << std::setprecision(2) << linear_iterations_momentum << " (tot)" << std::endl;
     }
 
-    N_iter_linear_momentum_average += linear_iterations_momentum;
-    N_iter_nonlinear_momentum_average += nonlinear_iterations_momentum;
+    iterations[0] += linear_iterations_momentum;
+    N_iter_nonlinear_momentum += nonlinear_iterations_momentum;
   }
 
   computing_times[0] += timer.wall_time();
@@ -766,8 +765,7 @@ pressure_step()
   }
 
   computing_times[1] += timer.wall_time();
-
-  N_iter_pressure_average += iterations_pressure;
+  iterations[1] += iterations_pressure;
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -827,7 +825,6 @@ rhs_pressure()
 
   if(this->param.pure_dirichlet_bc)
     navier_stokes_operation->apply_zero_mean(rhs_vec_pressure);
-
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -935,6 +932,7 @@ projection_step()
   }
 
   computing_times[2] += timer.wall_time();
+  iterations[2] += iterations_projection;
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -1080,39 +1078,50 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
 analyze_computing_times() const
 {
+  std::string names[3] = {"Momentum     ","Pressure     ","Projection   "};
+  unsigned int N_time_steps = this->time_step_number-1;
+
+  // iterations
   this->pcout << std::endl
-              << "Number of MPI processes = " << Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) << std::endl;
+              << "_________________________________________________________________________________"   << std::endl << std::endl
+              << "Average number of iterations:" << std::endl;
 
-  if(this->param.equation_type == EquationType::Stokes ||
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+  for (unsigned int i=0; i<iterations.size(); ++i)
   {
-    this->pcout << std::endl
-                << "Number of time steps = " << (this->time_step_number-1) << std::endl
-                << "Average number of linear iterations momentum step = " << std::scientific << std::setprecision(3)
-                << N_iter_linear_momentum_average/(this->time_step_number-1) << std::endl;
+    this->pcout << "  Step " << i+1 <<  ": " << names[i];
+
+    if(i==0) // momentum
+    {
+      if(this->param.equation_type == EquationType::Stokes ||
+         this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
+         this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+      {
+        this->pcout << std::scientific << std::setprecision(4) << std::setw(10)
+                    << iterations[i]/(double)N_time_steps << " linear iterations" << std::endl;
+      }
+      else
+      {
+        double n_iter_nonlinear = (double)N_iter_nonlinear_momentum/(double)N_time_steps;
+        double n_iter_linear_accumulated = (double)iterations[0]/(double)N_time_steps;
+
+        this->pcout << std::scientific << std::setprecision(4) << std::setw(10)
+                    << n_iter_nonlinear << " nonlinear iterations" << std::endl;
+
+        this->pcout << "                       " << std::scientific << std::setprecision(4) << std::setw(10)
+                    << n_iter_linear_accumulated << " linear iterations (accumulated)" << std::endl;
+
+        this->pcout << "                       " << std::scientific << std::setprecision(4) << std::setw(10)
+                    << n_iter_linear_accumulated / n_iter_nonlinear << " linear iterations (per nonlinear iteration)" << std::endl;
+      }
+    }
+    else
+    {
+      this->pcout << std::scientific << std::setprecision(4) << std::setw(10) << iterations[i]/(double)N_time_steps << std::endl;
+    }
   }
-  else
-  {
-    double n_iter_nonlinear_average = N_iter_nonlinear_momentum_average/(this->time_step_number-1);
-    double n_iter_linear_average_accumulated = N_iter_linear_momentum_average/(this->time_step_number-1);
+  this->pcout << "_________________________________________________________________________________" << std::endl << std::endl;
 
-    this->pcout << std::endl
-                << "Number of time steps = " << (this->time_step_number-1) << std::endl
-                << "Average number of nonlinear iterations momentum step = " << std::scientific << std::setprecision(3)
-                << n_iter_nonlinear_average << std::endl
-                << "Average number of linear iterations momentum step = " << std::scientific << std::setprecision(3)
-                << n_iter_linear_average_accumulated/n_iter_nonlinear_average << " (per nonlinear iteration)" << std::endl
-                << "Average number of linear iterations momentum step = " << std::scientific << std::setprecision(3)
-                << n_iter_linear_average_accumulated << " (accumulated)" << std::endl;
-  }
-
-  this->pcout << "Average number of iterations pressure Poisson = " << std::scientific << std::setprecision(3)
-              << N_iter_pressure_average/(this->time_step_number-1) << std::endl
-              << "Average wall time per time step = " << std::scientific << std::setprecision(3)
-              << this->total_time/(this->time_step_number-1) << std::endl;
-
-  std::string names[5] = {"Momentum     ","Pressure     ","Projection   "};
+  // Computing times
   this->pcout << std::endl
               << "_________________________________________________________________________________" << std::endl << std::endl
               << "Computing times:          min        avg        max        rel      p_min  p_max " << std::endl;
@@ -1142,6 +1151,7 @@ analyze_computing_times() const
                << "            "
                << std::setprecision(4) << std::setw(10) << total_avg_time/total_avg_time << std::endl;
 
+  // overall wall time
   Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg (this->total_time, MPI_COMM_WORLD);
   this->pcout  << "  Global time:         " << std::scientific
                << std::setprecision(4) << std::setw(10) << data.min << " "
@@ -1149,9 +1159,20 @@ analyze_computing_times() const
                << std::setprecision(4) << std::setw(10) << data.max << " "
                << "          " << "  "
                << std::setw(6) << std::left << data.min_index << " "
-               << std::setw(6) << std::left << data.max_index << std::endl
-               << "_________________________________________________________________________________"
-               << std::endl << std::endl;
+               << std::setw(6) << std::left << data.max_index << std::endl;
+
+  this->pcout << std::endl
+              << "Number of time steps =            " << std::left << N_time_steps << std::endl
+              << "Average wall time per time step = " << std::scientific << std::setprecision(4)
+              << data.avg/(double)N_time_steps << std::endl << std::endl;
+
+  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+
+  this->pcout << "Number of MPI processes =         " << N_mpi_processes << std::endl
+              << "Computational costs in [CPUs] =   " << data.avg * (double)N_mpi_processes << std::endl
+              << "Computational costs in [CPUh] =   " << data.avg * (double)N_mpi_processes / 3600.0 << std::endl
+              << "_________________________________________________________________________________"
+              << std::endl << std::endl;
 }
 
 

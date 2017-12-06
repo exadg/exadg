@@ -30,10 +30,9 @@ public:
     vorticity(this->param.order_extrapolation_pressure_nbc > 1 ? this->param.order_extrapolation_pressure_nbc : 1),
     vec_convective_term(this->order),
     computing_times(4),
+    iterations(4),
     extra_pressure_nbc(this->param.order_extrapolation_pressure_nbc,this->param.start_with_low_order),
-    navier_stokes_operation(navier_stokes_operation_in),
-    N_iter_pressure_average(0.0),
-    N_iter_viscous_average(0.0)
+    navier_stokes_operation(navier_stokes_operation_in)
   {}
 
   virtual ~TimeIntBDFDualSplitting(){}
@@ -65,6 +64,7 @@ protected:
   std::vector<parallel::distributed::Vector<value_type> > vec_convective_term;
 
   std::vector<double> computing_times;
+  std::vector<unsigned int> iterations;
 
   parallel::distributed::Vector<value_type> rhs_vec_viscous;
 
@@ -118,8 +118,6 @@ private:
   parallel::distributed::Vector<value_type> rhs_vec_projection_temp;
 
   std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
-
-  double N_iter_pressure_average, N_iter_viscous_average;
 
   // temporary vectors needed for pseudo-timestepping algorithm
   parallel::distributed::Vector<value_type> velocity_tmp;
@@ -664,7 +662,7 @@ pressure_step()
   }
 
   // solve linear system of equations
-  unsigned int pres_niter = navier_stokes_operation->solve_pressure(pressure_np, rhs_vec_pressure);
+  unsigned int iterations_pressure = navier_stokes_operation->solve_pressure(pressure_np, rhs_vec_pressure);
 
   // special case: pure Dirichlet BC's
   // Adjust the pressure level in order to allow a calculation of the pressure error.
@@ -687,13 +685,12 @@ pressure_step()
   {
     this->pcout << std::endl
                 << "Solve Poisson equation for pressure p:" << std::endl
-                << "  Iterations:        " << std::setw(6) << std::right << pres_niter
+                << "  Iterations:        " << std::setw(6) << std::right << iterations_pressure
                 << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
   }
 
   computing_times[1] += timer.wall_time();
-
-  N_iter_pressure_average += pres_niter;
+  iterations[1] += iterations_pressure;
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -845,6 +842,7 @@ projection_step()
   }  
 
   computing_times[2] += timer.wall_time();
+  iterations[2] += iterations_projection;
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -918,8 +916,7 @@ viscous_step()
   }
 
   computing_times[3] += timer.wall_time();
-
-  N_iter_viscous_average += iterations_viscous;
+  iterations[3] += iterations_viscous;
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -1040,23 +1037,25 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
 analyze_computing_times() const
 {
-
-  this->pcout << std::endl
-              << "Number of MPI processes = " << Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) << std::endl;
-
-  this->pcout << std::endl
-              << "Number of time steps = " << (this->time_step_number-1) << std::endl
-              << "Average number of iterations pressure Poisson = " << std::scientific << std::setprecision(3)
-              << N_iter_pressure_average/(this->time_step_number-1) << std::endl
-              << "Average number of iterations viscous step = " << std::scientific << std::setprecision(3)
-              << N_iter_viscous_average/(this->time_step_number-1) << std::endl
-              << "Average wall time per time step = " << std::scientific << std::setprecision(3)
-              << this->total_time/(this->time_step_number-1) << std::endl;
-
   std::string names[5] = {"Convection   ","Pressure     ","Projection   ","Viscous      "};
+  unsigned int N_time_steps = this->time_step_number-1;
+
+  // iterations
+  this->pcout << std::endl
+              << "_________________________________________________________________________________"   << std::endl << std::endl
+              << "Average number of iterations:" << std::endl;
+
+  for (unsigned int i=0; i<iterations.size(); ++i)
+  {
+    this->pcout << "  Step " << i+1 <<  ": " << names[i]  << std::scientific
+                << std::setprecision(4) << std::setw(10) << (double)iterations[i]/(double)N_time_steps << std::endl;
+  }
+  this->pcout << "_________________________________________________________________________________" << std::endl << std::endl;
+
+  // Computing times
   this->pcout << std::endl
               << "_________________________________________________________________________________" << std::endl << std::endl
-              << "Computing times:          min        avg        max        rel      p_min  p_max " << std::endl;
+              << "Computing times [s]:      min        avg        max        rel      p_min  p_max " << std::endl;
 
   double total_avg_time = 0.0;
 
@@ -1078,21 +1077,32 @@ analyze_computing_times() const
                 << std::setw(6) << std::left << data.max_index << std::endl;
   }
 
-  this->pcout  << "  Time in steps 1-" << computing_times.size() << ":              "
-               << std::setprecision(4) << std::setw(10) << total_avg_time
-               << "            "
-               << std::setprecision(4) << std::setw(10) << total_avg_time/total_avg_time << std::endl;
+  this->pcout << "  Time in steps 1-" << computing_times.size() << ":              "
+              << std::setprecision(4) << std::setw(10) << total_avg_time
+              << "            "
+              << std::setprecision(4) << std::setw(10) << total_avg_time/total_avg_time << std::endl;
 
   Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg (this->total_time, MPI_COMM_WORLD);
-  this->pcout  << "  Global time:         " << std::scientific
-               << std::setprecision(4) << std::setw(10) << data.min << " "
-               << std::setprecision(4) << std::setw(10) << data.avg << " "
-               << std::setprecision(4) << std::setw(10) << data.max << " "
-               << "          " << "  "
-               << std::setw(6) << std::left << data.min_index << " "
-               << std::setw(6) << std::left << data.max_index << std::endl
-               << "_________________________________________________________________________________"
-               << std::endl << std::endl;
+  this->pcout << "  Global time:         " << std::scientific
+              << std::setprecision(4) << std::setw(10) << data.min << " "
+              << std::setprecision(4) << std::setw(10) << data.avg << " "
+              << std::setprecision(4) << std::setw(10) << data.max << " "
+              << "          " << "  "
+              << std::setw(6) << std::left << data.min_index << " "
+              << std::setw(6) << std::left << data.max_index << std::endl;
+
+  this->pcout << std::endl
+              << "Number of time steps =            " << std::left << N_time_steps << std::endl
+              << "Average wall time per time step = " << std::scientific << std::setprecision(4)
+              << data.avg/(double)N_time_steps << std::endl << std::endl;
+
+  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+
+  this->pcout << "Number of MPI processes =         " << N_mpi_processes << std::endl
+              << "Computational costs in [CPUs] =   " << data.avg * (double)N_mpi_processes << std::endl
+              << "Computational costs in [CPUh] =   " << data.avg * (double)N_mpi_processes / 3600.0 << std::endl
+              << "_________________________________________________________________________________"
+              << std::endl << std::endl;
 }
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_ */

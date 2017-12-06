@@ -29,9 +29,9 @@ public:
     solution(this->order),
     navier_stokes_operation(navier_stokes_operation_in),
     vec_convective_term(this->order),
-    N_iter_linear_average(0.0),
-    N_iter_newton_average(0.0),
-    solver_time_average(0.0),
+    computing_times(2),
+    iterations(2),
+    N_iter_nonlinear(0.0),
     scaling_factor_continuity(1.0),
     characteristic_element_length(1.0)
   {}
@@ -82,8 +82,9 @@ private:
   std::vector<parallel::distributed::Vector<value_type> > vec_convective_term;
 
   // performance analysis: average number of iterations and solver time
-  double N_iter_linear_average, N_iter_newton_average;
-  double solver_time_average;
+  std::vector<value_type> computing_times;
+  std::vector<unsigned int> iterations;
+  unsigned int N_iter_nonlinear;
 
   // scaling factor continuity equation
   double scaling_factor_continuity;
@@ -406,19 +407,19 @@ solve_timestep()
     navier_stokes_operation->apply_mass_matrix_add(rhs_vector.block(0),sum_alphai_ui);
 
     // solve coupled system of equations
-    unsigned int iterations = navier_stokes_operation->solve_linear_stokes_problem(solution_np,
+    unsigned int linear_iterations = navier_stokes_operation->solve_linear_stokes_problem(solution_np,
                                                                                    rhs_vector,
                                                                                    this->get_scaling_factor_time_derivative_term());
 
-    N_iter_linear_average += iterations;
-    solver_time_average += timer.wall_time();
+    iterations[0] += linear_iterations;
+    computing_times[0] += timer.wall_time();
 
     // write output
     if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
     {
       ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
       pcout << "Solve linear Stokes problem:" << std::endl
-            << "  Iterations: " << std::setw(6) << std::right << iterations
+            << "  Iterations: " << std::setw(6) << std::right << linear_iterations
             << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
     }
   }
@@ -441,9 +442,9 @@ solve_timestep()
                                                      newton_iterations,
                                                      linear_iterations);
 
-    N_iter_newton_average += newton_iterations;
-    N_iter_linear_average += linear_iterations;
-    solver_time_average += timer.wall_time();
+    N_iter_nonlinear += newton_iterations;
+    iterations[0] += linear_iterations;
+    computing_times[0] += timer.wall_time();
 
     // write output
     if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
@@ -485,7 +486,11 @@ solve_timestep()
     if(this->param.use_divergence_penalty == true ||
        this->param.use_continuity_penalty == true)
     {
+      timer.restart();
+
       postprocess_velocity();
+
+      computing_times[1] += timer.wall_time();
     }
   }
 }
@@ -514,14 +519,15 @@ postprocess_velocity()
   navier_stokes_operation->rhs_projection_add(temp,this->time + this->time_steps[0]);
 
   // solve projection (where also the preconditioner is updated)
-  unsigned int iterations = navier_stokes_operation->solve_projection(solution_np.block(0),temp);
+  unsigned int iterations_postprocessing = navier_stokes_operation->solve_projection(solution_np.block(0),temp);
+  iterations[1] += iterations_postprocessing;
 
   // write output
   if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
   {
     this->pcout << std::endl
                 << "Postprocessing of velocity field:" << std::endl
-                << "  Iterations: " << std::setw(6) << std::right << iterations
+                << "  Iterations: " << std::setw(6) << std::right << iterations_postprocessing
                 << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
   }
 }
@@ -774,47 +780,108 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 analyze_computing_times() const
 {
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  std::string names[2] = {"Coupled system ","Postprocessing "};
+  unsigned int N_time_steps = this->time_step_number-1;
 
-  pcout << std::endl << "Number of MPI processes = " << Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) << std::endl;
+  // iterations
+  this->pcout << std::endl
+              << "_________________________________________________________________________________"   << std::endl << std::endl
+              << "Average number of iterations:" << std::endl;
 
-  if(this->param.equation_type == EquationType::Stokes ||
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+  for (unsigned int i=0; i<iterations.size(); ++i)
   {
-    pcout << std::endl << "Number of time steps = " << (this->time_step_number-1) << std::endl
-                       << "Average number of iterations = " << std::scientific << std::setprecision(3) << N_iter_linear_average/(this->time_step_number-1) << std::endl
-                       << "Average wall time per time step = " << std::scientific << std::setprecision(3) << solver_time_average/(this->time_step_number-1) << std::endl;
+    if(i==0) // coupled system
+    {
+      this->pcout << "  Step " << i+1 <<  ": " << names[i];
+
+      if(this->param.equation_type == EquationType::Stokes ||
+         this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
+         this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+      {
+        this->pcout << std::scientific << std::setprecision(4) << std::setw(10)
+                    << iterations[i]/(double)N_time_steps << " linear iterations" << std::endl;
+      }
+      else
+      {
+        double n_iter_nonlinear = (double)N_iter_nonlinear/(double)N_time_steps;
+        double n_iter_linear_accumulated = (double)iterations[0]/(double)N_time_steps;
+
+        this->pcout << std::scientific << std::setprecision(4) << std::setw(10)
+                    << n_iter_nonlinear << " nonlinear iterations" << std::endl;
+
+        this->pcout << "                         " << std::scientific << std::setprecision(4) << std::setw(10)
+                    << n_iter_linear_accumulated << " linear iterations (accumulated)" << std::endl;
+
+        this->pcout << "                         " << std::scientific << std::setprecision(4) << std::setw(10)
+                    << n_iter_linear_accumulated / n_iter_nonlinear << " linear iterations (per nonlinear iteration)" << std::endl;
+      }
+    }
+    else if(i==1) // postprocessing of velocity
+    {
+      this->pcout << "  Step " << i+1 <<  ": " << names[i];
+      this->pcout << std::scientific << std::setprecision(4) << std::setw(10) << iterations[i]/(double)N_time_steps << std::endl;
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
   }
-  else
+
+  this->pcout << "_________________________________________________________________________________" << std::endl << std::endl;
+
+  // computing times
+  this->pcout << std::endl
+              << "_________________________________________________________________________________" << std::endl << std::endl
+              << "Computing times:          min        avg        max        rel      p_min  p_max " << std::endl;
+
+  double total_avg_time = 0.0;
+
+  for (unsigned int i=0; i<computing_times.size(); ++i)
   {
-    double n_iter_nonlinear_average = N_iter_newton_average/(this->time_step_number-1);
-    double n_iter_linear_average_accumulated = N_iter_linear_average/(this->time_step_number-1);
-
-    pcout << std::endl << "Number of time steps = " << (this->time_step_number-1) << std::endl
-                       << "Average number of Newton iterations = " << std::fixed << std::setprecision(3) << n_iter_nonlinear_average << std::endl
-                       << "Average number of linear iterations = " << std::fixed << std::setprecision(3)
-                       << n_iter_linear_average_accumulated/n_iter_nonlinear_average << " (per nonlinear iteration)" << std::endl
-                       << "Average number of linear iterations = " << std::fixed << std::setprecision(3)
-                       << n_iter_linear_average_accumulated << " (accumulated)" << std::endl
-                       << "Average wall time per time step = " << std::scientific << std::setprecision(3) << solver_time_average/(this->time_step_number-1) << std::endl;
+    Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg (computing_times[i], MPI_COMM_WORLD);
+        total_avg_time += data.avg;
   }
 
-  pcout << std::endl
-        << "_________________________________________________________________________________" << std::endl << std::endl
-        << "Computing times:          min        avg        max        rel      p_min  p_max " << std::endl;
+  for (unsigned int i=0; i<computing_times.size(); ++i)
+  {
+    Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg (computing_times[i], MPI_COMM_WORLD);
+    this->pcout << "  Step " << i+1 <<  ": " << names[i]  << std::scientific
+                << std::setprecision(4) << std::setw(10) << data.min << " "
+                << std::setprecision(4) << std::setw(10) << data.avg << " "
+                << std::setprecision(4) << std::setw(10) << data.max << " "
+                << std::setprecision(4) << std::setw(10) << data.avg/total_avg_time << "  "
+                << std::setw(6) << std::left << data.min_index << " "
+                << std::setw(6) << std::left << data.max_index << std::endl;
+  }
 
+  this->pcout  << "  Time in steps 1-" << computing_times.size() << ":                "
+               << std::setprecision(4) << std::setw(10) << total_avg_time
+               << "            "
+               << std::setprecision(4) << std::setw(10) << total_avg_time/total_avg_time << std::endl;
+
+  // overall wall time
   Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg (this->total_time, MPI_COMM_WORLD);
 
-  pcout << "  Global time:         " << std::scientific
-        << std::setprecision(4) << std::setw(10) << data.min << " "
-        << std::setprecision(4) << std::setw(10) << data.avg << " "
-        << std::setprecision(4) << std::setw(10) << data.max << " "
-        << "          " << "  "
-        << std::setw(6) << std::left << data.min_index << " "
-        << std::setw(6) << std::left << data.max_index << std::endl
-        << "_________________________________________________________________________________"
-        << std::endl << std::endl;
+  this->pcout << "  Global time:           " << std::scientific
+              << std::setprecision(4) << std::setw(10) << data.min << " "
+              << std::setprecision(4) << std::setw(10) << data.avg << " "
+              << std::setprecision(4) << std::setw(10) << data.max << " "
+              << "          " << "  "
+              << std::setw(6) << std::left << data.min_index << " "
+              << std::setw(6) << std::left << data.max_index << std::endl;
+
+  this->pcout << std::endl
+              << "Number of time steps =              " << std::left << N_time_steps << std::endl
+              << "Average wall time per time step =   " << std::scientific << std::setprecision(4)
+              << data.avg/(double)N_time_steps << std::endl << std::endl;
+
+  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+
+  this->pcout << "Number of MPI processes =           " << N_mpi_processes << std::endl
+              << "Computational costs in [CPUs] =     " << data.avg * (double)N_mpi_processes << std::endl
+              << "Computational costs in [CPUh] =     " << data.avg * (double)N_mpi_processes / 3600.0 << std::endl
+              << "_________________________________________________________________________________"
+              << std::endl << std::endl;
 }
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_COUPLED_SOLVER_H_ */

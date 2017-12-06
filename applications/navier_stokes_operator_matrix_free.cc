@@ -22,6 +22,8 @@
 
 // Navier-Stokes operator
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_dual_splitting.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.h"
 
 using namespace dealii;
 
@@ -30,12 +32,13 @@ using namespace dealii;
 
 //#include "incompressible_navier_stokes_test_cases/couette.h"
 //#include "incompressible_navier_stokes_test_cases/poiseuille.h"
-#include "incompressible_navier_stokes_test_cases/cavity.h"
+//#include "incompressible_navier_stokes_test_cases/cavity.h"
 //#include "incompressible_navier_stokes_test_cases/stokes_guermond.h"
 //#include "incompressible_navier_stokes_test_cases/stokes_shahbazi.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
 //#include "incompressible_navier_stokes_test_cases/vortex.h"
 //#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
+#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/beltrami.h"
 //#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
 //#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
@@ -48,16 +51,19 @@ using namespace dealii;
 
 // set the polynomial degree of the shape functions k = 1,...,10
 unsigned int const FE_DEGREE_U_MIN = FE_DEGREE_VELOCITY;
-unsigned int const FE_DEGREE_U_MAX = 10;
+unsigned int const FE_DEGREE_U_MAX = FE_DEGREE_VELOCITY+8;
 
-// Decide whether to apply the nonlinear Navier-Stokes operator or the
-// linearized operator.
+// Select the operator to be applied
 enum class OperatorType{
-  Nonlinear,
-  Linearized
+  CoupledNonlinearResidual, // nonlinear residual of coupled system of equations
+  CoupledLinearized,        // linearized system of equations for coupled solution approach
+  PressurePoissonOperator,  // negative Laplace operator (scalar quantity, pressure)
+  HelmholtzOperator,        // mass + viscous (vectorial quantity, velocity)
+  ProjectionOperator,       // mass + divergence penalty + continuity penalty (vectorial quantity, velocity)
+  VelocityConvDiffOperator  // mass + convective + viscous (vectorial quantity, velocity)
 };
 
-OperatorType OPERATOR_TYPE = OperatorType::Linearized; //Nonlinear; //Linearized;
+OperatorType OPERATOR_TYPE = OperatorType::HelmholtzOperator; // CoupledLinearized;
 
 // number of repetitions used to determine the average/minimum wall time required
 // to compute the matrix-vector product
@@ -103,7 +109,17 @@ private:
 
   InputParametersNavierStokes<dim> param;
 
-  std::shared_ptr<DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> > navier_stokes_operation;
+  std::shared_ptr<DGNavierStokesBase<dim, fe_degree_u, fe_degree_p,
+    fe_degree_xwall, xwall_quad_rule, Number> > navier_stokes_operation;
+
+  std::shared_ptr<DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p,
+    fe_degree_xwall, xwall_quad_rule, Number> > navier_stokes_operation_coupled;
+
+  std::shared_ptr<DGNavierStokesDualSplitting<dim, fe_degree_u, fe_degree_p,
+    fe_degree_xwall, xwall_quad_rule, Number> > navier_stokes_operation_dual_splitting;
+
+  std::shared_ptr<DGNavierStokesPressureCorrection<dim, fe_degree_u, fe_degree_p,
+    fe_degree_xwall, xwall_quad_rule, Number> > navier_stokes_operation_pressure_correction;
 
   // number of matrix-vector products
   unsigned int const n_repetitions;
@@ -142,9 +158,64 @@ NavierStokesProblem(unsigned int const refine_steps_space)
   boundary_descriptor_velocity.reset(new BoundaryDescriptorNavierStokesU<dim>());
   boundary_descriptor_pressure.reset(new BoundaryDescriptorNavierStokesP<dim>());
 
+  AssertThrow(param.solver_type == SolverType::Unsteady,
+      ExcMessage("This is an unsteady solver. Check input parameters."));
+
   // initialize navier_stokes_operation
-  navier_stokes_operation.reset(new DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
-      (triangulation,param));
+  if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+  {
+    navier_stokes_operation_coupled.reset(
+        new DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
+        (triangulation,param));
+
+    navier_stokes_operation = navier_stokes_operation_coupled;
+  }
+  else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  {
+    navier_stokes_operation_dual_splitting.reset(
+        new DGNavierStokesDualSplitting<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
+        (triangulation,param));
+
+    navier_stokes_operation = navier_stokes_operation_dual_splitting;
+  }
+  else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+  {
+    navier_stokes_operation_pressure_correction.reset(
+        new DGNavierStokesPressureCorrection<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
+        (triangulation,param));
+
+    navier_stokes_operation = navier_stokes_operation_pressure_correction;
+  }
+  else
+  {
+    AssertThrow(false,ExcMessage("Not implemented."));
+  }
+
+  // check that the operator type is consistent with the solution approach (coupled vs. splitting)
+  if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+  {
+    AssertThrow(OPERATOR_TYPE == OperatorType::CoupledNonlinearResidual ||
+                OPERATOR_TYPE == OperatorType::CoupledLinearized,
+                ExcMessage("Invalid operator specified for coupled solution approach."));
+  }
+  else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  {
+    AssertThrow(OPERATOR_TYPE == OperatorType::PressurePoissonOperator ||
+                OPERATOR_TYPE == OperatorType::HelmholtzOperator ||
+                OPERATOR_TYPE == OperatorType::ProjectionOperator,
+                ExcMessage("Invalid operator specified for dual splitting scheme."));
+  }
+  else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+  {
+    AssertThrow(OPERATOR_TYPE == OperatorType::PressurePoissonOperator ||
+                OPERATOR_TYPE == OperatorType::VelocityConvDiffOperator ||
+                OPERATOR_TYPE == OperatorType::ProjectionOperator,
+                ExcMessage("Invalid operator specified for pressure-correction scheme."));
+  }
+  else
+  {
+    AssertThrow(false,ExcMessage("Not implemented."));
+  }
 }
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
@@ -194,14 +265,33 @@ setup()
                                           boundary_descriptor_velocity,
                                           boundary_descriptor_pressure,
                                           periodic_faces);
+
   print_grid_data();
 
+  // setup Navier-Stokes operation
+  AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
   navier_stokes_operation->setup(periodic_faces,
                                  boundary_descriptor_velocity,
                                  boundary_descriptor_pressure,
                                  field_functions);
 
-  navier_stokes_operation->setup_velocity_conv_diff_operator();
+  // setup Navier-Stokes solvers
+  if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+  {
+    navier_stokes_operation_coupled->setup_solvers(1.0);
+  }
+  else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  {
+    navier_stokes_operation_dual_splitting->setup_solvers(1.0,1.0);
+  }
+  else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+  {
+    navier_stokes_operation_pressure_correction->setup_solvers(1.0,1.0);
+  }
+  else
+  {
+    AssertThrow(false,ExcMessage("Not implemented."));
+  }
 }
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
@@ -210,11 +300,70 @@ apply_operator()
 {
   pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
 
+  // Vectors needed for coupled solution approach
+  parallel::distributed::BlockVector<VALUE_TYPE> dst1, src1;
+
+  // ... for dual splitting, pressure-correction.
+  parallel::distributed::Vector<VALUE_TYPE> dst2, src2;
+
   // initialize vectors
-  parallel::distributed::BlockVector<VALUE_TYPE> dst, src;
-  navier_stokes_operation->initialize_block_vector_velocity_pressure(dst);
-  navier_stokes_operation->initialize_block_vector_velocity_pressure(src);
-  src = 1.0;
+  if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+  {
+    navier_stokes_operation_coupled->initialize_block_vector_velocity_pressure(dst1);
+    navier_stokes_operation_coupled->initialize_block_vector_velocity_pressure(src1);
+    src1 = 1.0;
+
+    // set linearized solution -> required to evaluate the linearized operator
+    navier_stokes_operation_coupled->set_solution_linearization(src1);
+    // set sum_alphai_ui -> required to evaluate the nonlinear residual
+    // in case an unsteady problem is considered
+    navier_stokes_operation_coupled->set_sum_alphai_ui(&src1.block(0));
+  }
+  else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  {
+    if(OPERATOR_TYPE == OperatorType::HelmholtzOperator ||
+       OPERATOR_TYPE == OperatorType::ProjectionOperator)
+    {
+      navier_stokes_operation_dual_splitting->initialize_vector_velocity(src2);
+      navier_stokes_operation_dual_splitting->initialize_vector_velocity(dst2);
+    }
+    else if(OPERATOR_TYPE == OperatorType::PressurePoissonOperator)
+    {
+      navier_stokes_operation_dual_splitting->initialize_vector_pressure(src2);
+      navier_stokes_operation_dual_splitting->initialize_vector_pressure(dst2);
+    }
+    else
+    {
+      AssertThrow(false,ExcMessage("Not implemented."));
+    }
+
+    src2 = 1.0;
+  }
+  else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+  {
+    if(OPERATOR_TYPE == OperatorType::VelocityConvDiffOperator ||
+       OPERATOR_TYPE == OperatorType::ProjectionOperator)
+    {
+      navier_stokes_operation_dual_splitting->initialize_vector_velocity(src2);
+      navier_stokes_operation_dual_splitting->initialize_vector_velocity(dst2);
+    }
+    else if(OPERATOR_TYPE == OperatorType::PressurePoissonOperator)
+    {
+      navier_stokes_operation_dual_splitting->initialize_vector_pressure(src2);
+      navier_stokes_operation_dual_splitting->initialize_vector_pressure(dst2);
+    }
+    else
+    {
+      AssertThrow(false,ExcMessage("Not implemented."));
+    }
+
+    src2 = 1.0;
+  }
+  else
+  {
+    AssertThrow(false,ExcMessage("Not implemented."));
+  }
+
 
   // Timer and wall times
   Timer timer;
@@ -224,21 +373,46 @@ apply_operator()
   if(wall_time_calculation == WallTimeCalculation::Minimum)
     wall_time = std::numeric_limits<double>::max();
 
-  // set linearized solution -> required to evaluate the linearized operator
-  navier_stokes_operation->set_solution_linearization(src);
-  // set sum_alphai_ui -> required to evaluate the nonlinear residual
-  // in case an unsteady problem is considered
-  navier_stokes_operation->set_sum_alphai_ui(&src.block(0));
-
   // apply matrix-vector product several times
   for(unsigned int i=0; i<n_repetitions; ++i)
   {
     timer.restart();
 
-    if(OPERATOR_TYPE == OperatorType::Nonlinear)
-      navier_stokes_operation->evaluate_nonlinear_residual(dst,src);
-    else if(OPERATOR_TYPE == OperatorType::Linearized)
-      navier_stokes_operation->vmult(dst,src);
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+    {
+      if(OPERATOR_TYPE == OperatorType::CoupledNonlinearResidual)
+        navier_stokes_operation_coupled->evaluate_nonlinear_residual(dst1,src1);
+      else if(OPERATOR_TYPE == OperatorType::CoupledLinearized)
+        navier_stokes_operation_coupled->vmult(dst1,src1);
+      else
+        AssertThrow(false,ExcMessage("Not implemented."));
+    }
+    else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      if(OPERATOR_TYPE == OperatorType::HelmholtzOperator)
+        navier_stokes_operation_dual_splitting->apply_helmholtz_operator(dst2,src2);
+      else if(OPERATOR_TYPE == OperatorType::ProjectionOperator)
+        navier_stokes_operation_dual_splitting->apply_projection_operator(dst2,src2);
+      else if(OPERATOR_TYPE == OperatorType::PressurePoissonOperator)
+        navier_stokes_operation_dual_splitting->apply_laplace_operator(dst2,src2);
+      else
+        AssertThrow(false,ExcMessage("Not implemented."));
+    }
+    else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      if(OPERATOR_TYPE == OperatorType::VelocityConvDiffOperator)
+        navier_stokes_operation_pressure_correction->apply_velocity_conv_diff_operator(dst2,src2,src2);
+      else if(OPERATOR_TYPE == OperatorType::ProjectionOperator)
+        navier_stokes_operation_pressure_correction->apply_projection_operator(dst2,src2);
+      else if(OPERATOR_TYPE == OperatorType::PressurePoissonOperator)
+        navier_stokes_operation_pressure_correction->apply_laplace_operator(dst2,src2);
+      else
+        AssertThrow(false,ExcMessage("Not implemented."));
+    }
+    else
+    {
+      AssertThrow(false,ExcMessage("Not implemented."));
+    }
 
     double const current_wall_time = timer.wall_time();
 
@@ -247,24 +421,98 @@ apply_operator()
     else if(wall_time_calculation == WallTimeCalculation::Minimum)
       wall_time = std::min(wall_time,current_wall_time);
   }
-  // reset sum_alphai_ui
-  navier_stokes_operation->set_sum_alphai_ui(nullptr);
 
   // compute wall times
   if(wall_time_calculation == WallTimeCalculation::Average)
     wall_time /= (double)n_repetitions;
 
-  unsigned int dofs =   navier_stokes_operation->get_dof_handler_u().n_dofs()
-                      + navier_stokes_operation->get_dof_handler_p().n_dofs();
+  unsigned int dofs = 0;
+  unsigned int fe_degree = 1;
 
-  wall_time /= (double) dofs;
+  if(OPERATOR_TYPE == OperatorType::CoupledNonlinearResidual ||
+     OPERATOR_TYPE == OperatorType::CoupledLinearized)
+  {
+    dofs =   navier_stokes_operation->get_dof_handler_u().n_dofs()
+           + navier_stokes_operation->get_dof_handler_p().n_dofs();
 
-  pcout << std::endl << std::scientific << std::setprecision(4)
-        << "Wall time / dofs [s]: " << wall_time << std::endl;
+    fe_degree = fe_degree_u;
+  }
+  else if(OPERATOR_TYPE == OperatorType::VelocityConvDiffOperator ||
+          OPERATOR_TYPE == OperatorType::HelmholtzOperator ||
+          OPERATOR_TYPE == OperatorType::ProjectionOperator)
+  {
+    dofs = navier_stokes_operation->get_dof_handler_u().n_dofs();
 
-  wall_times.push_back(std::pair<unsigned int,double>(fe_degree_u,wall_time));
+    fe_degree = fe_degree_u;
+  }
+  else if(OPERATOR_TYPE == OperatorType::PressurePoissonOperator)
+  {
+    dofs = navier_stokes_operation->get_dof_handler_p().n_dofs();
+
+    fe_degree = fe_degree_p;
+  }
+  else
+  {
+    AssertThrow(false,ExcMessage("Not implemented."));
+  }
+
+  double wall_time_per_dofs = wall_time / (double) dofs;
+
+  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+
+  pcout << std::endl
+        << std::scientific << std::setprecision(4) << "t_wall/DoF [s]:  " << wall_time_per_dofs << std::endl
+        << std::scientific << std::setprecision(4) << "DoFs/sec:        " << 1./wall_time_per_dofs << std::endl
+        << std::scientific << std::setprecision(4) << "DoFs/(sec*core): " << 1./wall_time_per_dofs/(double)N_mpi_processes << std::endl;
+
+  wall_times.push_back(std::pair<unsigned int,double>(fe_degree,wall_time_per_dofs));
+
+
+  if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+  {
+    // reset sum_alphai_ui
+    navier_stokes_operation_coupled->set_sum_alphai_ui(nullptr);
+  }
+
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
+}
+
+void print_wall_times(std::vector<std::pair<unsigned int, double> > const &wall_times,
+                      unsigned int const                                  refine_steps_space)
+{
+  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+
+  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  {
+    std::string str_operator_type[] = {"CoupledNonlinearResidual",
+                                      "CoupledLinearized",
+                                      "PressurePoissonOperator",
+                                      "HelmholtzOperator",
+                                      "ProjectionOperator",
+                                      "VelocityConvDiffOperator"};
+
+    std::cout << std::endl
+              << "_________________________________________________________________________________"
+              << std::endl << std::endl
+              << "Operator type: " << str_operator_type[(int)OPERATOR_TYPE] << std::endl << std::endl
+              << "Wall times for refine level l = " << refine_steps_space << ":"
+              << std::endl << std::endl
+              << "  k    " << "t_wall/DoF [s] " << "DoFs/sec   " << "DoFs/(sec*core) " << std::endl;
+
+    typedef typename std::vector<std::pair<unsigned int, double> >::const_iterator ITERATOR;
+    for(ITERATOR it = wall_times.begin(); it != wall_times.end(); ++it)
+    {
+      std::cout << "  " << std::setw(5) << std::left << it->first
+                << std::setw(2) << std::left << std::scientific << std::setprecision(4) << it->second
+                << "     " << std::setw(2) << std::left << std::scientific << std::setprecision(4) << 1./it->second
+                << " " << std::setw(2) << std::left << std::scientific << std::setprecision(4) << 1./it->second/(double)N_mpi_processes
+                << std::endl;
+    }
+
+    std::cout << "_________________________________________________________________________________"
+              << std::endl << std::endl;
+  }
 }
 
 
@@ -309,31 +557,6 @@ public:
   }
 };
 
-void print_wall_times(std::vector<std::pair<unsigned int, double> > const &wall_times,
-                      unsigned int const                                  refine_steps_space)
-{
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-  {
-    std::cout << std::endl
-              << "_________________________________________________________________________________"
-              << std::endl << std::endl
-              << "Wall times for refine level l = " << refine_steps_space << ":"
-              << std::endl << std::endl
-              << "  k    " << "wall time / dofs [s]" << std::endl;
-
-    typedef typename std::vector<std::pair<unsigned int, double> >::const_iterator ITERATOR;
-    for(ITERATOR it=wall_times.begin(); it != wall_times.end(); ++it)
-    {
-      std::cout << "  " << std::setw(5) << std::left << it->first
-                << std::setw(2) << std::left << std::scientific << std::setprecision(4) << it->second
-                << std::endl;
-    }
-
-    std::cout << "_________________________________________________________________________________"
-              << std::endl << std::endl;
-  }
-}
-
 int main (int argc, char** argv)
 {
   try
@@ -344,7 +567,7 @@ int main (int argc, char** argv)
 
     //mesh refinements
     for(unsigned int refine_steps_space = REFINE_STEPS_SPACE_MIN;
-        refine_steps_space <= REFINE_STEPS_SPACE_MAX;++refine_steps_space)
+        refine_steps_space <= REFINE_STEPS_SPACE_MAX; ++refine_steps_space)
     {
       // increasing polynomial degrees
       typedef NavierStokesPrecompiled<DIMENSION,FE_DEGREE_U_MIN,FE_DEGREE_U_MAX,

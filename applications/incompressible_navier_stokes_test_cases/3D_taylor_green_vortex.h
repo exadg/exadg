@@ -77,8 +77,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit; //Implicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
   max_velocity = MAX_VELOCITY;
-  // (k_u,k_p)=(7,6), l=0: cfl = 0.00625 (for exponent = 1.5)
-  cfl = 0.05; //0.003125; //0.1;
+  cfl = 0.1;
   cfl_oif = cfl/5.0;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-3; // 1.0e-4;
@@ -112,20 +111,22 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // div-div and continuity penalty
   // these parameters are only used for the coupled solver
-  use_divergence_penalty = false; //true;
+  use_divergence_penalty = true;
   divergence_penalty_factor = 1.0e0;
-  use_continuity_penalty = false; //true;
+  use_continuity_penalty = true;
   continuity_penalty_use_boundary_data = false;
+  continuity_penalty_components = ContinuityPenaltyComponents::Normal;
+  type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
   continuity_penalty_factor = divergence_penalty_factor;
 
   // TURBULENCE
   use_turbulence_model = false;
-  turbulence_model = TurbulenceEddyViscosityModel::Vreman; //Sigma;
+  turbulence_model = TurbulenceEddyViscosityModel::Sigma;
   // Smagorinsky: 0.165
   // Vreman: 0.28
   // WALE: 0.50
   // Sigma: 1.35
-  turbulence_model_constant = 0.28; //1.35;
+  turbulence_model_constant = 1.35;
 
   // PROJECTION METHODS
 
