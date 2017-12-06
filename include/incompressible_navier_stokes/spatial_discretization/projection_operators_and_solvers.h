@@ -270,14 +270,12 @@ public:
   void vmult (parallel::distributed::Vector<value_type>       &dst,
               parallel::distributed::Vector<value_type> const &src) const
   {
-    dst = 0;
+    divergence_penalty_operator->apply(dst,src); // 2e9 dofs/s
+    continuity_penalty_operator->apply_add(dst,src); // 8e8 dofs/s
 
-    divergence_penalty_operator->apply_add(dst,src);
-    continuity_penalty_operator->apply_add(dst,src);
+    dst *= this->get_time_step_size(); // 3.5e9 dofs/s
 
-    dst *= this->get_time_step_size();
-
-    mass_matrix_operator->apply_add(dst,src);
+    mass_matrix_operator->apply_add(dst,src); // 2.2e9 dofs/s
   }
 
   /*
@@ -288,9 +286,11 @@ public:
   void rhs (parallel::distributed::Vector<value_type> &dst,
             double const                              eval_time) const
   {
-    dst = 0;
+    parallel::distributed::Vector<value_type> temp(dst);
 
-    rhs_add(dst,eval_time);
+    continuity_penalty_operator->rhs(temp,eval_time);
+
+    dst.equ(this->get_time_step_size(),temp);
   }
 
 
@@ -372,9 +372,7 @@ private:
    */
   void calculate_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
   {
-    diagonal = 0;
-
-    divergence_penalty_operator->add_diagonal(diagonal);
+    divergence_penalty_operator->calculate_diagonal(diagonal);
     continuity_penalty_operator->add_diagonal(diagonal);
 
     diagonal *= this->get_time_step_size();

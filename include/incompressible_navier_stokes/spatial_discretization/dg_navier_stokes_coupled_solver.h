@@ -581,7 +581,6 @@ setup_divergence_and_continuity_penalty_operators_and_solvers()
   {
     AssertThrow(false,ExcMessage("Specified combination of divergence and continuity penalty operators not implemented."));
   }
-
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>

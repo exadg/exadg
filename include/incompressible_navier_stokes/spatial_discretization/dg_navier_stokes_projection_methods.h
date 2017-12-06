@@ -72,12 +72,20 @@ public:
                                  parallel::distributed::Vector<Number> const &velocity,
                                  double const                                time_step_size) const;
 
+  // apply projection operator
+  void apply_projection_operator (parallel::distributed::Vector<Number>       &dst,
+                                  parallel::distributed::Vector<Number> const &src) const;
+
   // Evaluate residual of steady, coupled incompressible Navier-Stokes equations
   void evaluate_nonlinear_residual_steady (parallel::distributed::Vector<Number>       &dst_u,
                                            parallel::distributed::Vector<Number>       &dst_p,
                                            parallel::distributed::Vector<Number> const &src_u,
                                            parallel::distributed::Vector<Number> const &src_p,
                                            double const                                &evaluation_time);
+
+  // apply homogeneous Laplace operator
+  void apply_laplace_operator(parallel::distributed::Vector<Number>       &dst,
+                              parallel::distributed::Vector<Number> const &src) const;
 
 protected:
   virtual void setup_pressure_poisson_solver(double const time_step_size);
@@ -495,6 +503,15 @@ solve_pressure (parallel::distributed::Vector<Number>       &dst,
   return n_iter;
 }
 
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+apply_laplace_operator (parallel::distributed::Vector<Number>       &dst,
+                        parallel::distributed::Vector<Number> const &src) const
+{
+  this->laplace_operator.vmult(dst,src);
+}
+
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 unsigned int DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 solve_projection (parallel::distributed::Vector<Number>       &dst,
@@ -521,6 +538,20 @@ solve_projection (parallel::distributed::Vector<Number>       &dst,
   unsigned int n_iter = this->projection_solver->solve(dst,src);
 
   return n_iter;
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+apply_projection_operator (parallel::distributed::Vector<Number>       &dst,
+                           parallel::distributed::Vector<Number> const &src) const
+{
+  typedef ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree,
+      fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> PROJ_OPERATOR;
+
+  std::shared_ptr<PROJ_OPERATOR> proj_op = std::dynamic_pointer_cast<PROJ_OPERATOR>(this->projection_operator);
+  AssertThrow(proj_op.get() != 0, ExcMessage("Projection operator is not initialized correctly."));
+
+  proj_op->vmult(dst,src);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>

@@ -112,11 +112,6 @@ public:
 
     // viscous term:
 
-
-    // initialize temp vector: this is done in this function because
-    // the vector temp is only used in the function vmult_add(), i.e.,
-    // when using the multigrid preconditioner
-    initialize_dof_vector(temp);
   }
 
   /*
@@ -203,8 +198,7 @@ public:
       AssertThrow(scaling_factor_time_derivative_term > 0.0,
         ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
 
-      mass_matrix_operator->apply(dst,src);
-      dst *= scaling_factor_time_derivative_term;
+      mass_matrix_operator->apply_scale(dst,scaling_factor_time_derivative_term,src);
     }
     else
     {
@@ -222,15 +216,12 @@ public:
                  const parallel::distributed::Vector<Number> &src) const
   {
     // helmholtz operator = mass_matrix_operator + viscous_operator
-
     if(operator_data.unsteady_problem == true)
     {
       AssertThrow(scaling_factor_time_derivative_term > 0.0,
         ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
 
-      mass_matrix_operator->apply(temp,src);
-      temp *= scaling_factor_time_derivative_term;
-      dst += temp;
+      mass_matrix_operator->apply_scale_add(dst,scaling_factor_time_derivative_term,src);
     }
 
     viscous_operator->apply_add(dst,src);
@@ -425,8 +416,7 @@ private:
            ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
 
        // mass matrix operator has already "block Jacobi form" in DG
-       mass_matrix_operator->apply(dst,src);
-       dst *= scaling_factor_time_derivative_term;
+       mass_matrix_operator->apply_scale(dst,scaling_factor_time_derivative_term,src);
      }
      else
      {
@@ -491,7 +481,6 @@ private:
   MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const *mass_matrix_operator;
   ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const *viscous_operator;
   HelmholtzOperatorData<dim> operator_data;
-  parallel::distributed::Vector<Number> mutable temp;
   double scaling_factor_time_derivative_term;
 
   /*

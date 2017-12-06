@@ -59,6 +59,11 @@ public:
                                           unsigned int                                &newton_iterations,
                                           unsigned int                                &linear_iterations);
 
+  // apply velocity convection-diffusion operator
+  void apply_velocity_conv_diff_operator (parallel::distributed::Vector<Number>       &dst,
+                                          parallel::distributed::Vector<Number> const &src,
+                                          parallel::distributed::Vector<Number> const &solution_linearization);
+
 
   /*
    * The implementation of the Newton solver requires that the underlying operator
@@ -417,6 +422,16 @@ evaluate_nonlinear_residual (parallel::distributed::Vector<Number>             &
 
   // rhs vector
   dst.add(-1.0,*rhs_vector);
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesPressureCorrection<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+apply_velocity_conv_diff_operator (parallel::distributed::Vector<Number>       &dst,
+                                   parallel::distributed::Vector<Number> const &src,
+                                   parallel::distributed::Vector<Number> const &solution_linearization)
+{
+  velocity_conv_diff_operator.set_solution_linearization(solution_linearization);
+  velocity_conv_diff_operator.vmult(dst,src);
 }
 
 

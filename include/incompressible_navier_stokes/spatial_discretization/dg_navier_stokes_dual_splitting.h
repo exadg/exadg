@@ -130,6 +130,10 @@ public:
                               parallel::distributed::Vector<Number> const &src,
                               double const                                &scaling_factor_time_derivative_term);
 
+  // apply Helmholtz operator
+  void apply_helmholtz_operator (parallel::distributed::Vector<Number>       &dst,
+                                 parallel::distributed::Vector<Number> const &src) const;
+
   FEParameters<dim> const & get_fe_parameters() const
   {
     return this->fe_param;
@@ -804,6 +808,15 @@ solve_viscous (parallel::distributed::Vector<Number>       &dst,
   unsigned int n_iter = helmholtz_solver->solve(dst,src);
 
   return n_iter;
+}
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+apply_helmholtz_operator (parallel::distributed::Vector<Number>       &dst,
+                          parallel::distributed::Vector<Number> const &src) const
+{
+  // Update Helmholtz operator
+  helmholtz_operator.vmult(dst,src);
 }
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_DUAL_SPLITTING_H_ */

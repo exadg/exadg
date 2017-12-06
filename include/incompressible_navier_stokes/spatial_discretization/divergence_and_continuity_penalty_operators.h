@@ -151,35 +151,31 @@ public:
   void apply (parallel::distributed::Vector<value_type>       &dst,
               parallel::distributed::Vector<value_type> const &src) const
   {
-    dst = 0;
-
-    apply_add(dst,src);
+    this->get_data().cell_loop(&This::cell_loop, this, dst, src, true /*zero_dst_vector = true*/);
   }
 
   void apply_add (parallel::distributed::Vector<value_type>       &dst,
                   parallel::distributed::Vector<value_type> const &src) const
   {
-    this->get_data().cell_loop(&This::cell_loop, this, dst, src);
+    this->get_data().cell_loop(&This::cell_loop, this, dst, src, false /*zero_dst_vector = false*/);
   }
 
   void calculate_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
   {
-    diagonal = 0;
-
-    add_diagonal(diagonal);
+    parallel::distributed::Vector<value_type>  src;
+    this->get_data().cell_loop(&This::cell_loop_diagonal, this, diagonal, src, true /*zero_dst_vector = true*/);
   }
 
   void add_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
   {
-    parallel::distributed::Vector<value_type>  src_dummy(diagonal);
-    this->get_data().cell_loop(&This::cell_loop_diagonal, this, diagonal, src_dummy);
+    parallel::distributed::Vector<value_type>  src;
+    this->get_data().cell_loop(&This::cell_loop_diagonal, this, diagonal, src, false /*zero_dst_vector = false*/);
   }
 
   void add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
   {
     parallel::distributed::Vector<value_type>  src;
-
-    this->get_data().cell_loop(&This::cell_loop_calculate_block_jacobi_matrices, this, matrices, src);
+    this->get_data().cell_loop(&This::cell_loop_calculate_block_jacobi_matrices, this, matrices, src, false /*zero_dst_vector = false*/);
   }
 
 private:
@@ -448,23 +444,37 @@ public:
   void apply (parallel::distributed::Vector<value_type>       &dst,
               parallel::distributed::Vector<value_type> const &src) const
   {
-    dst = 0;
-
-    apply_add(dst,src);
+    this->get_data().loop(&This::cell_loop,
+                          &This::face_loop,
+                          &This::boundary_face_loop_hom_operator,
+                          this, dst, src, true /*zero dst vector = true*/,
+                          MatrixFree<dim,value_type>::only_values,
+                          MatrixFree<dim,value_type>::only_values);
   }
 
   void apply_add (parallel::distributed::Vector<value_type>       &dst,
                   parallel::distributed::Vector<value_type> const &src) const
   {
-    this->get_data().loop(&This::cell_loop,&This::face_loop,
-                          &This::boundary_face_loop_hom_operator, this, dst, src);
+    this->get_data().loop(&This::cell_loop,
+                          &This::face_loop,
+                          &This::boundary_face_loop_hom_operator,
+                          this, dst, src, false /*zero dst vector = false*/,
+                          MatrixFree<dim,value_type>::only_values,
+                          MatrixFree<dim,value_type>::only_values);
   }
 
   void rhs (parallel::distributed::Vector<value_type> &dst,
             double const                              evaluation_time) const
   {
-    dst = 0;
-    rhs_add(dst,evaluation_time);
+    this->eval_time = evaluation_time;
+
+    parallel::distributed::Vector<value_type> src;
+    this->get_data().loop(&This::cell_loop_inhom_operator,
+                          &This::face_loop_inhom_operator,
+                          &This::boundary_face_loop_inhom_operator,
+                          this, dst, src, true /*zero dst vector = true*/,
+                          MatrixFree<dim,value_type>::only_values,
+                          MatrixFree<dim,value_type>::only_values);
   }
 
   void rhs_add (parallel::distributed::Vector<value_type> &dst,
@@ -473,16 +483,26 @@ public:
     this->eval_time = evaluation_time;
 
     parallel::distributed::Vector<value_type> src;
-    this->get_data().loop(&This::cell_loop_inhom_operator,&This::face_loop_inhom_operator,
-                          &This::boundary_face_loop_inhom_operator, this, dst, src);
+    this->get_data().loop(&This::cell_loop_inhom_operator,
+                          &This::face_loop_inhom_operator,
+                          &This::boundary_face_loop_inhom_operator,
+                          this, dst, src, false /*zero dst vector = false*/,
+                          MatrixFree<dim,value_type>::only_values,
+                          MatrixFree<dim,value_type>::only_values);
   }
 
   void evaluate (parallel::distributed::Vector<value_type>       &dst,
-                 const parallel::distributed::Vector<value_type> &src,
+                 parallel::distributed::Vector<value_type> const &src,
                  double const                                    evaluation_time) const
   {
-    dst = 0;
-    evaluate_add(dst,src,evaluation_time);
+    this->eval_time = evaluation_time;
+
+    this->get_data().loop (&This::cell_loop,
+                           &This::face_loop,
+                           &This::boundary_face_loop_full_operator,
+                           this, dst, src, true /*zero dst vector = true*/,
+                           MatrixFree<dim,value_type>::only_values,
+                           MatrixFree<dim,value_type>::only_values);
   }
 
   void evaluate_add (parallel::distributed::Vector<value_type>       &dst,
@@ -491,22 +511,34 @@ public:
   {
     this->eval_time = evaluation_time;
 
-    this->get_data().loop (&This::cell_loop,&This::face_loop,
-                           &This::boundary_face_loop_full_operator, this, dst, src);
+    this->get_data().loop (&This::cell_loop,
+                           &This::face_loop,
+                           &This::boundary_face_loop_full_operator,
+                           this, dst, src, false /*zero dst vector = false*/,
+                           MatrixFree<dim,value_type>::only_values,
+                           MatrixFree<dim,value_type>::only_values);
   }
 
   void calculate_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
   {
-    diagonal = 0;
-
-    add_diagonal(diagonal);
+    parallel::distributed::Vector<value_type>  src_dummy(diagonal);
+    this->get_data().loop(&This::cell_loop_diagonal,
+                          &This::face_loop_diagonal,
+                          &This::boundary_face_loop_diagonal,
+                          this, diagonal, src_dummy, true /*zero dst vector = true*/,
+                          MatrixFree<dim,value_type>::only_values,
+                          MatrixFree<dim,value_type>::only_values);
   }
 
   void add_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
   {
     parallel::distributed::Vector<value_type>  src_dummy(diagonal);
-    this->get_data().loop(&This::cell_loop_diagonal,&This::face_loop_diagonal,
-                          &This::boundary_face_loop_diagonal, this, diagonal, src_dummy);
+    this->get_data().loop(&This::cell_loop_diagonal,
+                          &This::face_loop_diagonal,
+                          &This::boundary_face_loop_diagonal,
+                          this, diagonal, src_dummy, false /*zero dst vector = false*/,
+                          MatrixFree<dim,value_type>::only_values,
+                          MatrixFree<dim,value_type>::only_values);
   }
 
   void add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
@@ -539,6 +571,10 @@ private:
     {
       fe_eval.reinit (face);
       fe_eval_neighbor.reinit (face);
+
+      // TODO (Martin): will be included in matrix-free implementation for vectorial quantities (probably end of 2017)
+      //fe_eval.gather_evaluate(src, true, false);
+      //fe_eval_neighbor.gather_evaluate(src, true, false);
 
       fe_eval.read_dof_values(src);
       fe_eval_neighbor.read_dof_values(src);

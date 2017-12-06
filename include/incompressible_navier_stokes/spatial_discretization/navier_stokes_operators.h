@@ -67,8 +67,10 @@ public:
   void evaluate(parallel::distributed::Vector<value_type> &dst,
                 double const                              evaluation_time) const
   {
-    dst = 0;
-    evaluate_add(dst,evaluation_time);
+    this->eval_time = evaluation_time;
+
+    parallel::distributed::Vector<value_type> src;
+    data->cell_loop(&This::cell_loop, this, dst, src, true /*zero_dst_vector = true*/);
   }
 
   void evaluate_add(parallel::distributed::Vector<value_type> &dst,
@@ -77,7 +79,7 @@ public:
     this->eval_time = evaluation_time;
 
     parallel::distributed::Vector<value_type> src;
-    data->cell_loop(&This::cell_loop, this, dst, src);
+    data->cell_loop(&This::cell_loop, this, dst, src, false /*zero_dst_vector = false*/);
   }
 
 private:
@@ -127,7 +129,8 @@ class MassMatrixOperator: public BaseOperator<dim>
 public:
   MassMatrixOperator()
     :
-    data(nullptr)
+    data(nullptr),
+    scaling_factor(1.0)
   {}
 
   static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
@@ -146,33 +149,68 @@ public:
 
   // apply matrix vector multiplication
   void apply (parallel::distributed::Vector<value_type>       &dst,
-              const parallel::distributed::Vector<value_type> &src) const
+              parallel::distributed::Vector<value_type> const &src) const
   {
-    dst = 0;
-    apply_add(dst,src);
+    AssertThrow(std::abs(scaling_factor-1.0)<1.e-12,
+        ExcMessage("Invalid parameter scaling_factor."));
+
+    data->cell_loop(&This::cell_loop, this, dst, src, true /*zero_dst_vector = true*/);
+  }
+
+  void apply_scale (parallel::distributed::Vector<value_type>       &dst,
+                    value_type const                                &factor,
+                    parallel::distributed::Vector<value_type> const &src) const
+  {
+    scaling_factor = factor;
+
+    data->cell_loop(&This::cell_loop, this, dst, src, true /*zero_dst_vector = true*/);
+
+    scaling_factor = 1.0;
   }
 
   void apply_add (parallel::distributed::Vector<value_type>       &dst,
-                  const parallel::distributed::Vector<value_type> &src) const
+                  parallel::distributed::Vector<value_type> const &src) const
   {
-    data->cell_loop(&This::cell_loop, this, dst, src);
+    AssertThrow(std::abs(scaling_factor-1.0)<1.e-12,
+        ExcMessage("Invalid parameter scaling_factor."));
+
+    data->cell_loop(&This::cell_loop, this, dst, src, false /*zero_dst_vector = false*/);
+  }
+
+  void apply_scale_add (parallel::distributed::Vector<value_type>       &dst,
+                        value_type const                                &factor,
+                        parallel::distributed::Vector<value_type> const &src) const
+  {
+    scaling_factor = factor;
+
+    data->cell_loop(&This::cell_loop, this, dst, src, false /*zero_dst_vector = false*/);
+
+    scaling_factor = 1.0;
   }
 
   void calculate_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
   {
-    diagonal = 0;
+    AssertThrow(std::abs(scaling_factor-1.0)<1.e-12,
+        ExcMessage("Invalid parameter scaling_factor."));
 
-    add_diagonal(diagonal);
+    parallel::distributed::Vector<value_type>  src;
+    data->cell_loop(&This::cell_loop_diagonal, this, diagonal, src, true /*zero_dst_vector = true*/);
   }
 
   void add_diagonal(parallel::distributed::Vector<value_type> &diagonal) const
   {
-    parallel::distributed::Vector<value_type>  src_dummy(diagonal);
-    data->cell_loop(&This::cell_loop_diagonal, this, diagonal, src_dummy);
+    AssertThrow(std::abs(scaling_factor-1.0)<1.e-12,
+        ExcMessage("Invalid parameter scaling_factor."));
+
+    parallel::distributed::Vector<value_type>  src;
+    data->cell_loop(&This::cell_loop_diagonal, this, diagonal, src, false /*zero_dst_vector = false*/);
   }
 
   void add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
   {
+    AssertThrow(std::abs(scaling_factor-1.0)<1.e-12,
+        ExcMessage("Invalid parameter scaling_factor."));
+
     parallel::distributed::Vector<value_type>  src;
 
     data->cell_loop(&This::cell_loop_calculate_block_jacobi_matrices, this, matrices, src);
@@ -201,7 +239,7 @@ private:
 
     for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
     {
-      fe_eval.submit_value (fe_eval.get_value(q), q);
+      fe_eval.submit_value (this->scaling_factor*fe_eval.get_value(q), q);
     }
     fe_eval.integrate (true,false);
   }
@@ -284,6 +322,7 @@ private:
 
   MatrixFree<dim,value_type> const * data;
   MassMatrixOperatorData operator_data;
+  mutable value_type scaling_factor;
 };
 
 template<int dim>
@@ -441,37 +480,50 @@ public:
   void apply (parallel::distributed::Vector<Number>       &dst,
               const parallel::distributed::Vector<Number> &src) const
   {
-    dst = 0;
-    apply_add(dst,src);
+    data->loop(&This::cell_loop,
+               &This::face_loop,
+               &This::boundary_face_loop_hom_operator,
+               this, dst, src, true /*zero_dst_vector = true*/);
   }
 
   void apply_add (parallel::distributed::Vector<Number>       &dst,
                   const parallel::distributed::Vector<Number> &src) const
   {
-    data->loop(&This::cell_loop,&This::face_loop,
-               &This::boundary_face_loop_hom_operator,this, dst, src);
+    data->loop(&This::cell_loop,
+               &This::face_loop,
+               &This::boundary_face_loop_hom_operator,
+               this, dst, src, false /*zero_dst_vector = false*/);
   }
 
   // apply matrix vector multiplication for block Jacobi operator
   void apply_block_jacobi (parallel::distributed::Vector<Number>       &dst,
                            const parallel::distributed::Vector<Number> &src) const
   {
-    dst = 0;
-    apply_block_jacobi_add(dst,src);
+    data->loop(&This::cell_loop,
+               &This::face_loop_block_jacobi,
+               &This::boundary_face_loop_hom_operator,
+               this, dst, src, true /*zero_dst_vector = true*/);
   }
 
   void apply_block_jacobi_add (parallel::distributed::Vector<Number>       &dst,
                                const parallel::distributed::Vector<Number> &src) const
   {
-    data->loop(&This::cell_loop,&This::face_loop_block_jacobi,
-               &This::boundary_face_loop_hom_operator,this, dst, src);
+    data->loop(&This::cell_loop,
+               &This::face_loop_block_jacobi,
+               &This::boundary_face_loop_hom_operator,
+               this, dst, src, false /*zero_dst_vector = false*/);
   }
 
   void rhs (parallel::distributed::Vector<Number> &dst,
             double const                          evaluation_time) const
   {
-    dst = 0;
-    rhs_add(dst,evaluation_time);
+    this->eval_time = evaluation_time;
+
+    parallel::distributed::Vector<Number> src;
+    data->loop(&This::cell_loop_inhom_operator,
+               &This::face_loop_inhom_operator,
+               &This::boundary_face_loop_inhom_operator,
+               this, dst, src, true /*zero_dst_vector = true*/);
   }
 
   void rhs_add (parallel::distributed::Vector<Number> &dst,
@@ -480,16 +532,22 @@ public:
     this->eval_time = evaluation_time;
 
     parallel::distributed::Vector<Number> src;
-    data->loop(&This::cell_loop_inhom_operator,&This::face_loop_inhom_operator,
-               &This::boundary_face_loop_inhom_operator,this, dst, src);
+    data->loop(&This::cell_loop_inhom_operator,
+               &This::face_loop_inhom_operator,
+               &This::boundary_face_loop_inhom_operator,
+               this, dst, src, false /*zero_dst_vector = false*/);
   }
 
   void evaluate (parallel::distributed::Vector<Number>       &dst,
                  const parallel::distributed::Vector<Number> &src,
                  double const                                evaluation_time) const
   {
-    dst = 0;
-    evaluate_add(dst,src,evaluation_time);
+    this->eval_time = evaluation_time;
+
+    data->loop(&This::cell_loop,
+               &This::face_loop,
+               &This::boundary_face_loop_full_operator,
+               this, dst, src, true /*zero_dst_vector = true*/);
   }
 
   void evaluate_add (parallel::distributed::Vector<Number>       &dst,
@@ -498,31 +556,40 @@ public:
   {
     this->eval_time = evaluation_time;
 
-    data->loop(&This::cell_loop,&This::face_loop,
-               &This::boundary_face_loop_full_operator,this, dst, src);
+    data->loop(&This::cell_loop,
+               &This::face_loop,
+               &This::boundary_face_loop_full_operator,
+               this, dst, src, false /*zero_dst_vector = false*/);
   }
 
   void calculate_diagonal(parallel::distributed::Vector<Number> &diagonal) const
   {
-    diagonal = 0;
+    parallel::distributed::Vector<Number>  src;
 
-    add_diagonal(diagonal);
+    data->loop(&This::cell_loop_diagonal,
+               &This::face_loop_diagonal,
+               &This::boundary_face_loop_diagonal,
+               this, diagonal, src, true /*zero_dst_vector = true*/);
   }
 
   void add_diagonal(parallel::distributed::Vector<Number> &diagonal) const
   {
-    parallel::distributed::Vector<Number>  src_dummy(diagonal);
+    parallel::distributed::Vector<Number>  src;
 
-    data->loop(&This::cell_loop_diagonal,&This::face_loop_diagonal,
-               &This::boundary_face_loop_diagonal,this, diagonal, src_dummy);
+    data->loop(&This::cell_loop_diagonal,
+               &This::face_loop_diagonal,
+               &This::boundary_face_loop_diagonal,
+               this, diagonal, src, false /*zero_dst_vector = false*/);
   }
 
   void add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
   {
     parallel::distributed::Vector<value_type>  src;
 
-    data->loop(&This::cell_loop_calculate_block_jacobi_matrices,&This::face_loop_calculate_block_jacobi_matrices,
-               &This::boundary_face_loop_calculate_block_jacobi_matrices, this, matrices, src);
+    data->loop(&This::cell_loop_calculate_block_jacobi_matrices,
+               &This::face_loop_calculate_block_jacobi_matrices,
+               &This::boundary_face_loop_calculate_block_jacobi_matrices,
+               this, matrices, src);
   }
 
   ViscousOperatorData<dim> const & get_operator_data() const
@@ -2052,15 +2119,19 @@ public:
   void apply (parallel::distributed::Vector<value_type>       &dst,
               const parallel::distributed::Vector<value_type> &src) const
   {
-    dst = 0;
-    apply_add(dst,src);
+    data->loop (&This::cell_loop,
+                &This::face_loop,
+                &This::boundary_face_loop_hom_operator,
+                this, dst, src, true /*zero_dst_vector = true*/);
   }
 
   void apply_add (parallel::distributed::Vector<value_type>       &dst,
                   const parallel::distributed::Vector<value_type> &src) const
   {
-    data->loop (&This::cell_loop,&This::face_loop,
-                &This::boundary_face_loop_hom_operator,this, dst, src);
+    data->loop (&This::cell_loop,
+                &This::face_loop,
+                &This::boundary_face_loop_hom_operator,
+                this, dst, src, false /*zero_dst_vector = false*/);
   }
 
   void rhs (parallel::distributed::Vector<value_type> &dst,
@@ -2068,6 +2139,14 @@ public:
   {
     dst = 0;
     rhs_add(dst,evaluation_time);
+
+    this->eval_time = evaluation_time;
+
+    parallel::distributed::Vector<value_type> src;
+    data->loop (&This::cell_loop_inhom_operator,
+                &This::face_loop_inhom_operator,
+                &This::boundary_face_loop_inhom_operator,
+                this, dst, src,true /*zero_dst_vector = true*/);
   }
 
   void rhs_add (parallel::distributed::Vector<value_type> &dst,
@@ -2079,15 +2158,19 @@ public:
     data->loop (&This::cell_loop_inhom_operator,
                 &This::face_loop_inhom_operator,
                 &This::boundary_face_loop_inhom_operator,
-                this, dst, src);
+                this, dst, src, false /*zero_dst_vector = false*/);
   }
 
   void evaluate (parallel::distributed::Vector<value_type>       &dst,
                  const parallel::distributed::Vector<value_type> &src,
                  double const                                    evaluation_time) const
   {
-    dst = 0;
-    evaluate_add(dst,src,evaluation_time);
+    this->eval_time = evaluation_time;
+
+    data->loop (&This::cell_loop,
+                &This::face_loop,
+                &This::boundary_face_loop_full_operator,
+                this, dst, src, true /*zero_dst_vector = true*/);
   }
 
   void evaluate_add (parallel::distributed::Vector<value_type>       &dst,
@@ -2096,8 +2179,10 @@ public:
   {
     this->eval_time = evaluation_time;
 
-    data->loop (&This::cell_loop,&This::face_loop,
-                &This::boundary_face_loop_full_operator,this, dst, src);
+    data->loop (&This::cell_loop,
+                &This::face_loop,
+                &This::boundary_face_loop_full_operator,
+                this, dst, src, false /*zero_dst_vector = false*/);
   }
 
 private:
@@ -2557,22 +2642,31 @@ public:
   void apply (parallel::distributed::Vector<value_type>       &dst,
               const parallel::distributed::Vector<value_type> &src) const
   {
-    dst = 0;
-    apply_add(dst,src);
+    data->loop (&This::cell_loop,
+                &This::face_loop,
+                &This::boundary_face_loop_hom_operator,
+                this, dst, src, true /*zero_dst_vector = true*/);
   }
 
   void apply_add (parallel::distributed::Vector<value_type>       &dst,
                   const parallel::distributed::Vector<value_type> &src) const
   {
-    data->loop (&This::cell_loop,&This::face_loop,
-                &This::boundary_face_loop_hom_operator, this, dst, src);
+    data->loop (&This::cell_loop,
+                &This::face_loop,
+                &This::boundary_face_loop_hom_operator,
+                this, dst, src, false /*zero_dst_vector = false*/);
   }
 
   void rhs (parallel::distributed::Vector<value_type> &dst,
             double const                              evaluation_time) const
   {
-    dst = 0;
-    rhs_add(dst,evaluation_time);
+    this->eval_time = evaluation_time;
+
+    parallel::distributed::Vector<value_type> src;
+    data->loop (&This::cell_loop_inhom_operator,
+                &This::face_loop_inhom_operator,
+                &This::boundary_face_loop_inhom_operator,
+                this, dst, src, true /*zero_dst_vector = true*/);
   }
 
   void rhs_add (parallel::distributed::Vector<value_type> &dst,
@@ -2581,16 +2675,22 @@ public:
     this->eval_time = evaluation_time;
 
     parallel::distributed::Vector<value_type> src;
-    data->loop (&This::cell_loop_inhom_operator,&This::face_loop_inhom_operator,
-                &This::boundary_face_loop_inhom_operator, this, dst, src);
+    data->loop (&This::cell_loop_inhom_operator,
+                &This::face_loop_inhom_operator,
+                &This::boundary_face_loop_inhom_operator,
+                this, dst, src, false /*zero_dst_vector = false*/);
   }
 
   void evaluate (parallel::distributed::Vector<value_type>       &dst,
                  const parallel::distributed::Vector<value_type> &src,
                  double const                                    evaluation_time) const
   {
-    dst = 0;
-    evaluate_add(dst,src,evaluation_time);
+    this->eval_time = evaluation_time;
+
+    data->loop (&This::cell_loop,
+                &This::face_loop,
+                &This::boundary_face_loop_full_operator,
+                this, dst, src, true /*zero_dst_vector = true*/);
   }
 
   void evaluate_add (parallel::distributed::Vector<value_type>       &dst,
@@ -2599,8 +2699,10 @@ public:
   {
     this->eval_time = evaluation_time;
 
-    data->loop (&This::cell_loop,&This::face_loop,
-                &This::boundary_face_loop_full_operator, this, dst, src);
+    data->loop (&This::cell_loop,
+                &This::face_loop,
+                &This::boundary_face_loop_full_operator,
+                this, dst, src, false /*zero_dst_vector = false*/);
   }
 
 private:
@@ -3058,8 +3160,14 @@ public:
                  parallel::distributed::Vector<value_type> const &src,
                  double const                                    evaluation_time) const
   {
-    dst = 0;
-    evaluate_add(dst,src,evaluation_time);
+    this->eval_time = evaluation_time;
+
+    data->loop(&This::cell_loop_nonlinear_operator,
+               &This::face_loop_nonlinear_operator,
+               &This::boundary_face_loop_nonlinear_operator,
+               this, dst, src, true /*zero_dst_vector = true*/,
+               MatrixFree<dim,value_type>::only_values,
+               MatrixFree<dim,value_type>::only_values);
   }
 
   //TODO: OIF splitting approach
@@ -3068,13 +3176,15 @@ public:
                      double const                                    evaluation_time,
                      parallel::distributed::Vector<value_type> const &velocity) const
   {
-    dst = 0;
-
     this->eval_time = evaluation_time;
     velocity_linearization = &velocity;
 
-    data->loop(&This::cell_loop_OIF,&This::face_loop_OIF,
-               &This::boundary_face_loop_OIF,this, dst, src);
+    data->loop(&This::cell_loop_OIF,
+               &This::face_loop_OIF,
+               &This::boundary_face_loop_OIF,
+               this, dst, src, true /*zero_dst_vector = true*/,
+               MatrixFree<dim,value_type>::only_values,
+               MatrixFree<dim,value_type>::only_values);
 
     velocity_linearization = nullptr;
   }
@@ -3085,8 +3195,12 @@ public:
   {
     this->eval_time = evaluation_time;
 
-    data->loop(&This::cell_loop_nonlinear_operator,&This::face_loop_nonlinear_operator,
-               &This::boundary_face_loop_nonlinear_operator,this, dst, src);
+    data->loop(&This::cell_loop_nonlinear_operator,
+               &This::face_loop_nonlinear_operator,
+               &This::boundary_face_loop_nonlinear_operator,
+               this, dst, src, false /*zero_dst_vector = false*/,
+               MatrixFree<dim,value_type>::only_values,
+               MatrixFree<dim,value_type>::only_values);
   }
 
   void apply_linearized (parallel::distributed::Vector<value_type>       &dst,
@@ -3094,9 +3208,17 @@ public:
                          parallel::distributed::Vector<value_type> const *vector_linearization,
                          double const                                    evaluation_time) const
   {
-    dst = 0;
+    this->eval_time = evaluation_time;
+    velocity_linearization = vector_linearization;
 
-    apply_linearized_add(dst,src,vector_linearization,evaluation_time);
+    data->loop(&This::cell_loop_linearized_operator,
+               &This::face_loop_linearized_operator,
+               &This::boundary_face_loop_linearized_operator,
+               this, dst, src, true /*zero_dst_vector = true*/,
+               MatrixFree<dim,value_type>::only_values,
+               MatrixFree<dim,value_type>::only_values);
+
+    velocity_linearization = nullptr;
   }
 
   void apply_linearized_add (parallel::distributed::Vector<value_type>       &dst,
@@ -3107,8 +3229,12 @@ public:
     this->eval_time = evaluation_time;
     velocity_linearization = vector_linearization;
 
-    data->loop(&This::cell_loop_linearized_operator,&This::face_loop_linearized_operator,
-               &This::boundary_face_loop_linearized_operator,this, dst, src);
+    data->loop(&This::cell_loop_linearized_operator,
+               &This::face_loop_linearized_operator,
+               &This::boundary_face_loop_linearized_operator,
+               this, dst, src, false /*zero_dst_vector = false*/,
+               MatrixFree<dim,value_type>::only_values,
+               MatrixFree<dim,value_type>::only_values);
 
     velocity_linearization = nullptr;
   }
@@ -3118,8 +3244,17 @@ public:
                                       parallel::distributed::Vector<value_type> const *vector_linearization,
                                       double const                                    evaluation_time) const
   {
-    dst = 0;
-    apply_linearized_block_jacobi_add(dst,src,vector_linearization,evaluation_time);
+    this->eval_time = evaluation_time;
+    velocity_linearization = vector_linearization;
+
+    data->loop(&This::cell_loop_linearized_operator,
+               &This::face_loop_linearized_operator_block_jacobi,
+               &This::boundary_face_loop_linearized_operator,
+               this, dst, src, true /*zero_dst_vector = true*/,
+               MatrixFree<dim,value_type>::only_values,
+               MatrixFree<dim,value_type>::only_values);
+
+    velocity_linearization = nullptr;
   }
 
   void apply_linearized_block_jacobi_add (parallel::distributed::Vector<value_type>       &dst,
@@ -3130,8 +3265,12 @@ public:
     this->eval_time = evaluation_time;
     velocity_linearization = vector_linearization;
 
-    data->loop(&This::cell_loop_linearized_operator,&This::face_loop_linearized_operator_block_jacobi,
-               &This::boundary_face_loop_linearized_operator,this, dst, src);
+    data->loop(&This::cell_loop_linearized_operator,
+               &This::face_loop_linearized_operator_block_jacobi,
+               &This::boundary_face_loop_linearized_operator,
+               this, dst, src, false /*zero_dst_vector = false*/,
+               MatrixFree<dim,value_type>::only_values,
+               MatrixFree<dim,value_type>::only_values);
 
     velocity_linearization = nullptr;
   }
@@ -3140,9 +3279,19 @@ public:
                           parallel::distributed::Vector<value_type> const *vector_linearization,
                           double const                                    evaluation_time) const
   {
-    diagonal = 0;
+    this->eval_time = evaluation_time;
+    velocity_linearization = vector_linearization;
 
-    add_diagonal(diagonal,vector_linearization,evaluation_time);
+    parallel::distributed::Vector<value_type>  src;
+
+    data->loop(&This::cell_loop_diagonal,
+               &This::face_loop_diagonal,
+               &This::boundary_face_loop_diagonal,
+               this, diagonal, src, true /*zero_dst_vector = true*/,
+               MatrixFree<dim,value_type>::only_values,
+               MatrixFree<dim,value_type>::only_values);
+
+    velocity_linearization = nullptr;
   }
 
   void add_diagonal(parallel::distributed::Vector<value_type>       &diagonal,
@@ -3152,10 +3301,14 @@ public:
     this->eval_time = evaluation_time;
     velocity_linearization = vector_linearization;
 
-    parallel::distributed::Vector<value_type>  src_dummy(diagonal);
+    parallel::distributed::Vector<value_type>  src;
 
-    data->loop(&This::cell_loop_diagonal,&This::face_loop_diagonal,
-               &This::boundary_face_loop_diagonal,this,diagonal,src_dummy);
+    data->loop(&This::cell_loop_diagonal,
+               &This::face_loop_diagonal,
+               &This::boundary_face_loop_diagonal,
+               this, diagonal, src, false /*zero_dst_vector = false*/,
+               MatrixFree<dim,value_type>::only_values,
+               MatrixFree<dim,value_type>::only_values);
 
     velocity_linearization = nullptr;
   }
@@ -3169,7 +3322,8 @@ public:
 
     parallel::distributed::Vector<value_type>  src;
 
-    data->loop(&This::cell_loop_calculate_block_jacobi_matrices,&This::face_loop_calculate_block_jacobi_matrices,
+    data->loop(&This::cell_loop_calculate_block_jacobi_matrices,
+               &This::face_loop_calculate_block_jacobi_matrices,
                &This::boundary_face_loop_calculate_block_jacobi_matrices, this, matrices, src);
 
     velocity_linearization = nullptr;
