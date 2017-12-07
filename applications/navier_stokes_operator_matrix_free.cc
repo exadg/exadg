@@ -51,7 +51,7 @@ using namespace dealii;
 
 // set the polynomial degree of the shape functions k = 1,...,10
 unsigned int const FE_DEGREE_U_MIN = FE_DEGREE_VELOCITY;
-unsigned int const FE_DEGREE_U_MAX = FE_DEGREE_VELOCITY+1;
+unsigned int const FE_DEGREE_U_MAX = FE_DEGREE_VELOCITY+7;
 
 // Select the operator to be applied
 enum class OperatorType{
@@ -497,7 +497,8 @@ void print_wall_times(std::vector<std::pair<unsigned int, double> > const &wall_
                                       "PressurePoissonOperator",
                                       "HelmholtzOperator",
                                       "ProjectionOperator",
-                                      "VelocityConvDiffOperator"};
+                                      "VelocityConvDiffOperator",
+                                      "InverseMassMatrix"};
 
     std::cout << std::endl
               << "_________________________________________________________________________________"
