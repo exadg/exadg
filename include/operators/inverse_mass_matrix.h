@@ -67,16 +67,6 @@ public:
   void apply(parallel::distributed::Vector<value_type>        &dst,
              const parallel::distributed::Vector<value_type>  &src) const
   {
-    /*
-     * The function "local_apply" uses fe_eval.set_dof_values(dst,0);
-     * which overwrites dof values of dst, but not the ghosts elements
-     * that are subsequently added to the vector.
-     *
-     * -> ensure that ghost elements are set to zero before calling the cell_loop
-     */
-
-    dst.zero_out_ghosts();
-
     matrix_free_data->cell_loop(&InverseMassMatrixOperator<dim,fe_degree,value_type,n_components>::local_apply, this, dst, src);
   }
 
