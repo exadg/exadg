@@ -22,6 +22,7 @@ SET( SOURCE_FILES
      #step-7.cc
      #laplace_operator_matrix_free.cc
      navier_stokes_operator_matrix_free.cc
+     navier_stokes_operator_matrix_free_basic.cc
      gmres_test.cc
      )
 
