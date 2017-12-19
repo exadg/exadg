@@ -30,7 +30,8 @@ public:
   DGNavierStokesProjectionMethods(parallel::distributed::Triangulation<dim> const &triangulation,
                                   InputParametersNavierStokes<dim> const          &parameter)
     :
-    BASE(triangulation,parameter)
+    BASE(triangulation,parameter),
+    use_optimized_projection_operator(true)
   {
     AssertThrow(fe_degree_p > 0,
         ExcMessage("Polynomial degree of pressure shape functions has to be larger than "
@@ -103,6 +104,7 @@ protected:
   std::shared_ptr<ContinuityPenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> > continuity_penalty_operator;
 
   // projection operator
+  bool use_optimized_projection_operator;
   std::shared_ptr<ProjectionOperatorBase<dim> > projection_operator;
 
   // projection solver
@@ -343,7 +345,8 @@ setup_projection_solver ()
   }
   // both divergence and continuity penalty terms
   else if(this->param.use_divergence_penalty == true &&
-          this->param.use_continuity_penalty == true)
+          this->param.use_continuity_penalty == true &&
+          use_optimized_projection_operator == false)
   {
     AssertThrow(divergence_penalty_operator.get() != 0,
         ExcMessage("Divergence penalty operator has not been initialized."));
@@ -417,6 +420,77 @@ setup_projection_solver ()
                     this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix ||
                     this->param.preconditioner_projection == PreconditionerProjection::PointJacobi ||
                     this->param.preconditioner_projection == PreconditionerProjection::BlockJacobi,
+                    ExcMessage("Specified preconditioner of projection solver not implemented."));
+      }
+
+      // setup solver
+      projection_solver.reset(new CGSolver<PROJ_OPERATOR,PreconditionerBase<Number>,parallel::distributed::Vector<Number> >
+         (*std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator),
+          *preconditioner_projection,
+          projection_solver_data));
+    }
+    else
+    {
+      AssertThrow(this->param.solver_projection == SolverProjection::PCG,
+          ExcMessage("Specified projection solver not implemented."));
+    }
+  }
+  // TODO:
+  // both divergence and continuity penalty terms
+  else if(this->param.use_divergence_penalty == true &&
+          this->param.use_continuity_penalty == true &&
+          use_optimized_projection_operator == true)
+  {
+    OptimizedProjectionOperatorData<dim> proj_op_data;
+    proj_op_data.type_penalty_parameter = this->param.type_penalty_parameter;
+    proj_op_data.viscosity = this->param.viscosity;
+    proj_op_data.penalty_parameter = this->param.continuity_penalty_factor;
+    proj_op_data.which_components = this->param.continuity_penalty_components;
+    proj_op_data.use_boundary_data = false;
+    proj_op_data.bc = this->boundary_descriptor_velocity;
+
+    typedef ProjectionOperatorOptimized<dim, fe_degree, fe_degree_p,
+        fe_degree_xwall, xwall_quad_rule, Number> PROJ_OPERATOR;
+
+    projection_operator.reset(new PROJ_OPERATOR(
+        this->data,
+        this->get_dof_index_velocity(),
+        this->get_quad_index_velocity_linear(),
+        proj_op_data));
+
+    // preconditioner
+    if(this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
+    {
+      preconditioner_projection.reset(new InverseMassMatrixPreconditioner<dim,fe_degree,Number>
+         (this->data,
+          this->get_dof_index_velocity(),
+          this->get_quad_index_velocity_linear()));
+    }
+    else
+    {
+      AssertThrow(this->param.preconditioner_projection == PreconditionerProjection::None ||
+                  this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix,
+                  ExcMessage("Specified preconditioner of projection solver not implemented."));
+    }
+
+    // solver
+    if(this->param.solver_projection == SolverProjection::PCG)
+    {
+      // setup solver data
+      CGSolverData projection_solver_data;
+      // use default value of max_iter
+      projection_solver_data.solver_tolerance_abs = this->param.abs_tol_projection;
+      projection_solver_data.solver_tolerance_rel = this->param.rel_tol_projection;
+      // default value of use_preconditioner = false
+      if(this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
+      {
+        projection_solver_data.use_preconditioner = true;
+        projection_solver_data.update_preconditioner = this->param.update_preconditioner_projection;
+      }
+      else
+      {
+        AssertThrow(this->param.preconditioner_projection == PreconditionerProjection::None ||
+                    this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix,
                     ExcMessage("Specified preconditioner of projection solver not implemented."));
       }
 
@@ -519,15 +593,29 @@ solve_projection (parallel::distributed::Vector<Number>       &dst,
                   parallel::distributed::Vector<Number> const &velocity,
                   double const                                time_step_size) const
 {
-  // Update projection operator, i.e., the penalty parameters that depend on
-  // the current solution (velocity field).
-  if(this->param.use_divergence_penalty == true)
+  if(use_optimized_projection_operator == false)
   {
-    divergence_penalty_operator->calculate_array_penalty_parameter(velocity);
+    // Update projection operator, i.e., the penalty parameters that depend on
+    // the current solution (velocity field).
+    if(this->param.use_divergence_penalty == true)
+    {
+      divergence_penalty_operator->calculate_array_penalty_parameter(velocity);
+    }
+    if(this->param.use_continuity_penalty == true)
+    {
+      continuity_penalty_operator->calculate_array_penalty_parameter(velocity);
+    }
   }
-  if(this->param.use_continuity_penalty == true)
+  // TODO
+  else // use_optimized_projection_operator == true
   {
-    continuity_penalty_operator->calculate_array_penalty_parameter(velocity);
+    typedef ProjectionOperatorOptimized<dim, fe_degree, fe_degree_p,
+        fe_degree_xwall, xwall_quad_rule, Number> PROJ_OPERATOR;
+
+    std::shared_ptr<PROJ_OPERATOR> proj_op = std::dynamic_pointer_cast<PROJ_OPERATOR>(this->projection_operator);
+    AssertThrow(proj_op.get() != 0, ExcMessage("Projection operator is not initialized correctly."));
+
+    proj_op->calculate_array_penalty_parameter(velocity);
   }
 
   // Set the correct time step size.
@@ -545,13 +633,27 @@ void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwal
 apply_projection_operator (parallel::distributed::Vector<Number>       &dst,
                            parallel::distributed::Vector<Number> const &src) const
 {
-  typedef ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree,
-      fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> PROJ_OPERATOR;
+  if(use_optimized_projection_operator == false)
+  {
+    typedef ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree,
+        fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> PROJ_OPERATOR;
 
-  std::shared_ptr<PROJ_OPERATOR> proj_op = std::dynamic_pointer_cast<PROJ_OPERATOR>(this->projection_operator);
-  AssertThrow(proj_op.get() != 0, ExcMessage("Projection operator is not initialized correctly."));
+    std::shared_ptr<PROJ_OPERATOR> proj_op = std::dynamic_pointer_cast<PROJ_OPERATOR>(this->projection_operator);
+    AssertThrow(proj_op.get() != 0, ExcMessage("Projection operator is not initialized correctly."));
 
-  proj_op->vmult(dst,src);
+    proj_op->vmult(dst,src);
+  }
+  // TODO
+  else // use_optimized_projection_operator == true
+  {
+    typedef ProjectionOperatorOptimized<dim, fe_degree, fe_degree_p,
+        fe_degree_xwall, xwall_quad_rule, Number> PROJ_OPERATOR;
+
+    std::shared_ptr<PROJ_OPERATOR> proj_op = std::dynamic_pointer_cast<PROJ_OPERATOR>(this->projection_operator);
+    AssertThrow(proj_op.get() != 0, ExcMessage("Projection operator is not initialized correctly."));
+
+    proj_op->vmult(dst,src);
+  }
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
