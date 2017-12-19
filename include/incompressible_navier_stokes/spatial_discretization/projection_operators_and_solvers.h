@@ -821,8 +821,6 @@ public:
       {
         array_penalty_parameter_div[cell] = operator_data.penalty_parameter * (tau_convective + tau_viscous);
       }
-
-      array_penalty_parameter_conti[cell] = array_penalty_parameter_conti[cell];
     }
   }
 
@@ -866,8 +864,6 @@ public:
       {
         array_penalty_parameter_conti[cell] = operator_data.penalty_parameter * (tau_convective + tau_viscous);
       }
-
-      array_penalty_parameter_conti[cell] = array_penalty_parameter_conti[cell];
     }
   }
 
@@ -937,7 +933,7 @@ private:
       fe_eval.reinit(cell);
       fe_eval.gather_evaluate(src,true,true);
 
-      VectorizedArray<value_type> tau = this->get_array_penalty_parameter_div()[cell]*this->get_time_step_size();;
+      VectorizedArray<value_type> tau = this->get_array_penalty_parameter_div()[cell]*this->get_time_step_size();
 
       for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
       {
