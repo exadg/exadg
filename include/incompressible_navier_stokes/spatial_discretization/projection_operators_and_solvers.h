@@ -688,4 +688,316 @@ protected:
   ProjectionSolverData const solver_data;
 };
 
+
+
+/*
+ *  Performance-optimized implementation of projection-operator including
+ *  mass matrix operator, divergence penalty operator, and normal-continuity penalty operator.
+ *  This implementation of the operator should only be used for performance considerations since
+ *  it might not be up-to-date regarding the discretization methods currently used.
+ */
+
+/*
+ *  Operator data.
+ */
+template<int dim>
+struct OptimizedProjectionOperatorData
+{
+  OptimizedProjectionOperatorData()
+    :
+    type_penalty_parameter(TypePenaltyParameter::ConvectiveTerm),
+    viscosity(0.0),
+    penalty_parameter(1.0),
+    which_components(ContinuityPenaltyComponents::Normal),
+    use_boundary_data(false)
+  {}
+
+  // type of penalty parameter (viscous and/or convective terms)
+  TypePenaltyParameter type_penalty_parameter;
+
+  // kinematic viscosity
+  double viscosity;
+
+  // scaling factor
+  double penalty_parameter;
+
+  // the continuity penalty term can be applied
+  // to all velocity components and to the normal
+  // component only
+  ContinuityPenaltyComponents which_components;
+
+  // the continuity penalty term can be applied
+  // on boundary faces.
+  bool use_boundary_data;
+  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > bc;
+};
+
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+class ProjectionOperatorOptimized : public ProjectionOperatorBase<dim>
+{
+public:
+  enum class BoundaryType {
+    undefined,
+    dirichlet,
+    neumann
+  };
+
+  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
+  typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
+  typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEFaceEval_Velocity_Velocity_linear;
+
+  typedef ProjectionOperatorOptimized<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> This;
+
+  ProjectionOperatorOptimized(MatrixFree<dim,value_type> const         &data_in,
+                              unsigned int const                       dof_index_in,
+                              unsigned int const                       quad_index_in,
+                              OptimizedProjectionOperatorData<dim> const operator_data_in)
+    :
+    data(data_in),
+    dof_index(dof_index_in),
+    quad_index(quad_index_in),
+    array_penalty_parameter_conti(0),
+    array_penalty_parameter_div(0),
+    operator_data(operator_data_in),
+    eval_time(0.0)
+  {
+    array_penalty_parameter_conti.resize(data.n_macro_cells()+data.n_macro_ghost_cells());
+    array_penalty_parameter_div.resize(data.n_macro_cells()+data.n_macro_ghost_cells());
+
+    AssertThrow(operator_data.which_components == ContinuityPenaltyComponents::Normal &&
+                operator_data.use_boundary_data == false,
+                ExcMessage("Not implemented for performance-optimized projection operator"));
+  }
+
+  void calculate_array_penalty_parameter(parallel::distributed::Vector<value_type> const &velocity)
+  {
+    calculate_array_penalty_parameter_div(velocity);
+    calculate_array_penalty_parameter_conti(velocity);
+  }
+
+  void calculate_array_penalty_parameter_div(parallel::distributed::Vector<value_type> const &velocity)
+  {
+    velocity.update_ghost_values();
+
+    FEEval_Velocity_Velocity_linear fe_eval(data,this->fe_param,dof_index);
+
+    AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval.n_q_points);
+
+    for (unsigned int cell=0; cell<data.n_macro_cells()+data.n_macro_ghost_cells(); ++cell)
+    {
+      VectorizedArray<value_type> tau_convective = make_vectorized_array<value_type>(0.0);
+      VectorizedArray<value_type> tau_viscous = make_vectorized_array<value_type>(operator_data.viscosity);
+
+      if(operator_data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm ||
+          operator_data.type_penalty_parameter == TypePenaltyParameter::ViscousAndConvectiveTerms )
+      {
+        fe_eval.reinit(cell);
+        fe_eval.read_dof_values(velocity);
+        fe_eval.evaluate (true,false);
+        VectorizedArray<value_type> volume = make_vectorized_array<value_type>(0.0);
+        VectorizedArray<value_type> norm_U_mean = make_vectorized_array<value_type>(0.0);
+        JxW_values.resize(fe_eval.n_q_points);
+        fe_eval.fill_JxW_values(JxW_values);
+        for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+        {
+          volume += JxW_values[q];
+          norm_U_mean += JxW_values[q]*fe_eval.get_value(q).norm();
+        }
+        norm_U_mean /= volume;
+
+        tau_convective = norm_U_mean * std::exp(std::log(volume)/(double)dim) / (double)(fe_degree+1);
+      }
+
+      if(operator_data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm)
+      {
+        array_penalty_parameter_div[cell] = operator_data.penalty_parameter * tau_convective;
+      }
+      else if(operator_data.type_penalty_parameter == TypePenaltyParameter::ViscousTerm)
+      {
+        array_penalty_parameter_div[cell] = operator_data.penalty_parameter * tau_viscous;
+      }
+      else if(operator_data.type_penalty_parameter == TypePenaltyParameter::ViscousAndConvectiveTerms)
+      {
+        array_penalty_parameter_div[cell] = operator_data.penalty_parameter * (tau_convective + tau_viscous);
+      }
+    }
+  }
+
+  void calculate_array_penalty_parameter_conti(parallel::distributed::Vector<value_type> const &velocity)
+  {
+    velocity.update_ghost_values();
+
+    FEEval_Velocity_Velocity_linear fe_eval(data,this->fe_param,dof_index);
+
+    AlignedVector<VectorizedArray<value_type> > JxW_values(fe_eval.n_q_points);
+
+    for (unsigned int cell=0; cell<data.n_macro_cells()+data.n_macro_ghost_cells(); ++cell)
+    {
+      fe_eval.reinit(cell);
+      fe_eval.read_dof_values(velocity);
+      fe_eval.evaluate (true,false);
+      VectorizedArray<value_type> volume = make_vectorized_array<value_type>(0.0);
+      VectorizedArray<value_type> norm_U_mean = make_vectorized_array<value_type>(0.0);
+      JxW_values.resize(fe_eval.n_q_points);
+      fe_eval.fill_JxW_values(JxW_values);
+      for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+      {
+        volume += JxW_values[q];
+        norm_U_mean += JxW_values[q]*fe_eval.get_value(q).norm();
+      }
+      norm_U_mean /= volume;
+
+      VectorizedArray<value_type> tau_convective = norm_U_mean;
+      VectorizedArray<value_type> h = std::exp(std::log(volume)/(double)dim) / (double)(fe_degree+1);
+      VectorizedArray<value_type> tau_viscous = make_vectorized_array<value_type>(operator_data.viscosity) / h;
+
+      if(operator_data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm)
+      {
+        array_penalty_parameter_conti[cell] = operator_data.penalty_parameter * tau_convective;
+      }
+      else if(operator_data.type_penalty_parameter == TypePenaltyParameter::ViscousTerm)
+      {
+        array_penalty_parameter_conti[cell] = operator_data.penalty_parameter * tau_viscous;
+      }
+      else if(operator_data.type_penalty_parameter == TypePenaltyParameter::ViscousAndConvectiveTerms)
+      {
+        array_penalty_parameter_conti[cell] = operator_data.penalty_parameter * (tau_convective + tau_viscous);
+      }
+    }
+  }
+
+  MatrixFree<dim,value_type> const & get_data() const
+  {
+    return data;
+  }
+  AlignedVector<VectorizedArray<value_type> > const & get_array_penalty_parameter_conti() const
+  {
+    return array_penalty_parameter_conti;
+  }
+  AlignedVector<VectorizedArray<value_type> > const & get_array_penalty_parameter_div() const
+  {
+    return array_penalty_parameter_div;
+  }
+  unsigned int get_dof_index() const
+  {
+    return dof_index;
+  }
+  unsigned int get_quad_index() const
+  {
+    return quad_index;
+  }
+  FEParameters<dim> const * get_fe_param() const
+  {
+    return this->fe_param;
+  }
+
+  void vmult (parallel::distributed::Vector<value_type>       &dst,
+              parallel::distributed::Vector<value_type> const &src) const
+  {
+    apply(dst,src);
+  }
+
+  void apply (parallel::distributed::Vector<value_type>       &dst,
+              parallel::distributed::Vector<value_type> const &src) const
+  {
+    this->get_data().loop(&This::cell_loop,
+                          &This::face_loop,
+                          &This::boundary_face_loop,
+                          this, dst, src, /*zero dst vector = */ true,
+                          MatrixFree<dim,value_type>::only_values,
+                          MatrixFree<dim,value_type>::only_values);
+  }
+
+  void apply_add (parallel::distributed::Vector<value_type>       &dst,
+                  parallel::distributed::Vector<value_type> const &src) const
+  {
+    this->get_data().loop(&This::cell_loop,
+                          &This::face_loop,
+                          &This::boundary_face_loop,
+                          this, dst, src, /*zero dst vector = */ false,
+                          MatrixFree<dim,value_type>::only_values,
+                          MatrixFree<dim,value_type>::only_values);
+  }
+
+private:
+  void cell_loop (const MatrixFree<dim,value_type>                &data,
+                  parallel::distributed::Vector<value_type>       &dst,
+                  const parallel::distributed::Vector<value_type> &src,
+                  const std::pair<unsigned int,unsigned int>      &cell_range) const
+  {
+    FEEval_Velocity_Velocity_linear fe_eval(data,this->get_fe_param(),this->get_dof_index());
+
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval.reinit(cell);
+      fe_eval.gather_evaluate(src,true,true);
+
+      VectorizedArray<value_type> tau = this->get_array_penalty_parameter_div()[cell]*this->get_time_step_size();
+
+      for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+      {
+        fe_eval.submit_value(fe_eval.get_value(q), q);
+        fe_eval.submit_divergence(tau*fe_eval.get_divergence(q), q);
+      }
+
+      fe_eval.integrate_scatter(true,true,dst);
+    }
+  }
+
+  void face_loop (const MatrixFree<dim,value_type>                 &data,
+                  parallel::distributed::Vector<value_type>        &dst,
+                  const parallel::distributed::Vector<value_type>  &src,
+                  const std::pair<unsigned int,unsigned int>       &face_range) const
+  {
+    FEFaceEval_Velocity_Velocity_linear fe_eval(data,this->get_fe_param(),true,this->get_dof_index());
+    FEFaceEval_Velocity_Velocity_linear fe_eval_neighbor(data,this->get_fe_param(),false,this->get_dof_index());
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval.reinit (face);
+      fe_eval_neighbor.reinit (face);
+
+      fe_eval.gather_evaluate(src, true, false);
+      fe_eval_neighbor.gather_evaluate(src, true, false);
+
+      VectorizedArray<value_type> tau = 0.5*(fe_eval.read_cell_data(this->get_array_penalty_parameter_conti())
+                                             + fe_eval_neighbor.read_cell_data(this->get_array_penalty_parameter_conti()))
+                                        *this->get_time_step_size();
+
+      for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+      {
+        Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval.get_value(q);
+        Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_neighbor.get_value(q);
+        Tensor<1,dim,VectorizedArray<value_type> > jump_value = uM - uP;
+
+        // penalize normal components only
+        Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
+
+        fe_eval.submit_value(tau*(jump_value*normal)*normal,q);
+        fe_eval_neighbor.submit_value(-tau*(jump_value*normal)*normal,q);
+      }
+
+      fe_eval.integrate_scatter(true,false,dst);
+      fe_eval_neighbor.integrate_scatter(true,false,dst);
+    }
+  }
+
+  void boundary_face_loop(const MatrixFree<dim,value_type>                &data,
+                          parallel::distributed::Vector<value_type>       &dst,
+                          const parallel::distributed::Vector<value_type> &src,
+                          const std::pair<unsigned int,unsigned int>      &face_range) const
+  {
+
+  }
+
+  MatrixFree<dim,value_type> const & data;
+  unsigned int const dof_index;
+  unsigned int const quad_index;
+  AlignedVector<VectorizedArray<value_type> > array_penalty_parameter_conti;
+  AlignedVector<VectorizedArray<value_type> > array_penalty_parameter_div;
+  OptimizedProjectionOperatorData<dim> operator_data;
+  double mutable eval_time;
+};
+
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_PROJECTION_OPERATORS_AND_SOLVERS_H_ */
