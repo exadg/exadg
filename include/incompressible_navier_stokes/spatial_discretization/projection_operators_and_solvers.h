@@ -8,6 +8,9 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_PROJECTION_OPERATORS_AND_SOLVERS_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_PROJECTION_OPERATORS_AND_SOLVERS_H_
 
+// TODO
+#include <deal.II/base/timer.h>
+
 #include <deal.II/base/vectorization.h>
 #include <deal.II/lac/parallel_vector.h>
 #include <deal.II/lac/solver_cg.h>
@@ -259,8 +262,15 @@ public:
     block_jacobi_matrices_have_been_initialized(false),
     mass_matrix_operator(&mass_matrix_operator_in),
     divergence_penalty_operator(&divergence_penalty_operator_in),
-    continuity_penalty_operator(&continuity_penalty_operator_in)
+    continuity_penalty_operator(&continuity_penalty_operator_in),
+    wall_time(0.0) //TODO
   {}
+
+  //TODO
+  double get_wall_time() const
+  {
+    return wall_time;
+  }
 
   /*
    *  This function calculates the matrix-vector product for the projection operator including
@@ -270,12 +280,19 @@ public:
   void vmult (parallel::distributed::Vector<value_type>       &dst,
               parallel::distributed::Vector<value_type> const &src) const
   {
+    // TODO
+    Timer timer;
+    timer.restart();
+
     divergence_penalty_operator->apply(dst,src); // 2e9 dofs/s
     continuity_penalty_operator->apply_add(dst,src); // 8e8 dofs/s
 
     dst *= this->get_time_step_size(); // 3.5e9 dofs/s
 
     mass_matrix_operator->apply_add(dst,src); // 2.2e9 dofs/s
+
+    // TODO
+    wall_time += timer.wall_time();
   }
 
   /*
@@ -445,6 +462,9 @@ private:
   MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>  const * mass_matrix_operator;
   DivergencePenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> const * divergence_penalty_operator;
   ContinuityPenaltyOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> const * continuity_penalty_operator;
+
+  // TODO
+  mutable double wall_time;
 };
 
 
@@ -760,7 +780,8 @@ public:
     array_penalty_parameter_conti(0),
     array_penalty_parameter_div(0),
     operator_data(operator_data_in),
-    eval_time(0.0)
+    eval_time(0.0),
+    wall_time(0.0) //TODO
   {
     array_penalty_parameter_conti.resize(data.n_macro_cells()+data.n_macro_ghost_cells());
     array_penalty_parameter_div.resize(data.n_macro_cells()+data.n_macro_ghost_cells());
@@ -768,6 +789,12 @@ public:
     AssertThrow(operator_data.which_components == ContinuityPenaltyComponents::Normal &&
                 operator_data.use_boundary_data == false,
                 ExcMessage("Not implemented for performance-optimized projection operator"));
+  }
+
+  //TODO
+  double get_wall_time() const
+  {
+    return wall_time;
   }
 
   void calculate_array_penalty_parameter(parallel::distributed::Vector<value_type> const &velocity)
@@ -895,7 +922,14 @@ public:
   void vmult (parallel::distributed::Vector<value_type>       &dst,
               parallel::distributed::Vector<value_type> const &src) const
   {
+    // TODO
+    Timer timer;
+    timer.restart();
+
     apply(dst,src);
+
+    // TODO
+    wall_time += timer.wall_time();
   }
 
   void apply (parallel::distributed::Vector<value_type>       &dst,
@@ -998,6 +1032,9 @@ private:
   AlignedVector<VectorizedArray<value_type> > array_penalty_parameter_div;
   OptimizedProjectionOperatorData<dim> operator_data;
   double mutable eval_time;
+
+  // TODO
+  mutable double wall_time;
 };
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_PROJECTION_OPERATORS_AND_SOLVERS_H_ */

@@ -1103,6 +1103,20 @@ analyze_computing_times() const
               << "Computational costs in [CPUh] =   " << data.avg * (double)N_mpi_processes / 3600.0 << std::endl
               << "_________________________________________________________________________________"
               << std::endl << std::endl;
+
+  //TODO
+  double wall_time_projection = 0.0, wall_time_helmholtz = 0.0;
+  this->navier_stokes_operation->get_wall_times_projection_helmholtz_operator(wall_time_projection,wall_time_helmholtz);
+
+  this->pcout << "Projection operator:" << std::endl
+              << "Computational costs in [CPUs]   =   " << wall_time_projection * (double)N_mpi_processes << std::endl
+              << "Computational costs in [CPUh]   =   " << wall_time_projection * (double)N_mpi_processes / 3600.0 << std::endl
+              << "Relative share of overall costs =   " << wall_time_projection / data.avg << std::endl << std::endl;
+
+  this->pcout << "Helmholtz operator:" << std::endl
+              << "Computational costs in [CPUs]   =   " << wall_time_helmholtz * (double)N_mpi_processes << std::endl
+              << "Computational costs in [CPUh]   =   " << wall_time_helmholtz * (double)N_mpi_processes / 3600.0 << std::endl
+              << "Relative share of overall costs =   " << wall_time_helmholtz / data.avg << std::endl;
 }
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_ */

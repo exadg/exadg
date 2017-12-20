@@ -8,6 +8,9 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_HELMHOLTZ_OPERATOR_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_HELMHOLTZ_OPERATOR_H_
 
+// TODO
+#include <deal.II/base/timer.h>
+
 #include "../../incompressible_navier_stokes/spatial_discretization/navier_stokes_operators.h"
 #include "solvers_and_preconditioners/invert_diagonal.h"
 
@@ -46,8 +49,16 @@ public:
     data(nullptr),
     mass_matrix_operator(nullptr),
     viscous_operator(nullptr),
-    scaling_factor_time_derivative_term(-1.0)
+    scaling_factor_time_derivative_term(-1.0),
+    wall_time(0.0)
   {}
+
+  //TODO
+  double get_wall_time() const
+  {
+    return wall_time;
+  }
+
 
   void initialize(MatrixFree<dim,Number> const                                                        &mf_data_in,
                   HelmholtzOperatorData<dim> const                                                    &operator_data_in,
@@ -192,6 +203,10 @@ public:
   void vmult (parallel::distributed::Vector<Number>       &dst,
               const parallel::distributed::Vector<Number> &src) const
   {
+    // TODO
+    Timer timer;
+    timer.restart();
+
     // helmholtz operator = mass_matrix_operator + viscous_operator
     if(operator_data.unsteady_problem == true)
     {
@@ -206,6 +221,9 @@ public:
     }
 
     viscous_operator->apply_add(dst,src);
+
+    // TODO
+    wall_time += timer.wall_time();
   }
 
   /*
@@ -215,6 +233,10 @@ public:
   void vmult_add(parallel::distributed::Vector<Number>       &dst,
                  const parallel::distributed::Vector<Number> &src) const
   {
+    // TODO
+    Timer timer;
+    timer.restart();
+
     // helmholtz operator = mass_matrix_operator + viscous_operator
     if(operator_data.unsteady_problem == true)
     {
@@ -225,6 +247,9 @@ public:
     }
 
     viscous_operator->apply_add(dst,src);
+
+    // TODO
+    wall_time += timer.wall_time();
   }
 
   unsigned int get_dof_index() const
@@ -497,6 +522,9 @@ private:
   MatrixFree<dim,Number> own_matrix_free_storage;
   MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> own_mass_matrix_operator_storage;
   ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> own_viscous_operator_storage;
+
+  // TODO
+  mutable double wall_time;
 };
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_HELMHOLTZ_OPERATOR_H_ */
