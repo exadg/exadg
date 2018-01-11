@@ -859,21 +859,15 @@ analyze_computing_times() const
                << "            "
                << std::setprecision(4) << std::setw(10) << total_avg_time/total_avg_time << std::endl;
 
-  // overall wall time
-  Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg (this->total_time, MPI_COMM_WORLD);
-
-  this->pcout << "  Global time:           " << std::scientific
-              << std::setprecision(4) << std::setw(10) << data.min << " "
-              << std::setprecision(4) << std::setw(10) << data.avg << " "
-              << std::setprecision(4) << std::setw(10) << data.max << " "
-              << "          " << "  "
-              << std::setw(6) << std::left << data.min_index << " "
-              << std::setw(6) << std::left << data.max_index << std::endl;
-
   this->pcout << std::endl
               << "Number of time steps =              " << std::left << N_time_steps << std::endl
               << "Average wall time per time step =   " << std::scientific << std::setprecision(4)
-              << data.avg/(double)N_time_steps << std::endl << std::endl;
+              << total_avg_time/(double)N_time_steps << std::endl << std::endl;
+
+  // overall wall time including postprocessing
+  Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg (this->total_time, MPI_COMM_WORLD);
+  this->pcout << "Total wall time in [s] =            " << std::scientific
+              << std::setprecision(4) << data.avg << std::endl;
 
   unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
 

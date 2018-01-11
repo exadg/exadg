@@ -26,12 +26,15 @@ unsigned int const DIMENSION = 3;
 
 // set the polynomial degree of the shape functions for velocity and pressure.
 // currently, one has to use the same polynomial degree for both domains.
-unsigned int const FE_DEGREE_VELOCITY = 5;
+unsigned int const FE_DEGREE_VELOCITY = 2;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
 // set xwall specific parameters
 unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
+
+// DOMAIN 1: turbulent channel problem: used to generate inflow data for the BFS
+// DOMAIN 2: backward facing step (using results of the turbulent channel flow as velocity inflow profile)
 
 // set the number of refine levels for DOMAIN 1
 unsigned int const REFINE_STEPS_SPACE_DOMAIN1 = 3;
@@ -68,17 +71,26 @@ double const X1_COORDINATE_INFLOW = - LENGTH_BFS_UP;
 double const X1_COORDINATE_OUTFLOW = LENGTH_BFS_DOWN;
 double const X1_COORDINATE_OUTFLOW_CHANNEL = - LENGTH_BFS_UP - GAP_CHANNEL_BFS;
 
-// consider a friction Reynolds number of Re_tau = 290 = u_tau * H / nu
-//and body force f = tau_w/H with tau_w = u_tau^2.
+// mesh stretching parameters
+bool use_grid_stretching_in_y_direction = true;
+
+double const GAMMA_LOWER = 60.0;
+double const GAMMA_UPPER = 40.0;
+
+// consider a friction Reynolds number of Re_tau = u_tau * H / nu = 290
+// and body force f = tau_w/H with tau_w = u_tau^2.
 double const VISCOSITY = 1.5268e-5;
 
 // estimate the maximum velocity
 double const MAX_VELOCITY = 2.0;
 
+// times
 double const START_TIME = 0.0;
 double const SAMPLE_START_TIME = 2.0;
 double const END_TIME = 6.0;
+unsigned int const SAMPLE_EVERY_TIMESTEPS = 10;
 
+// postprocessing and output
 QuantityStatistics QUANTITY_VELOCITY;
 QuantityStatisticsSkinFriction<3> QUANTITY_SKIN_FRICTION;
 QuantityStatistics QUANTITY_REYNOLDS;
@@ -86,19 +98,16 @@ QuantityStatistics QUANTITY_PRESSURE;
 QuantityStatisticsPressureCoefficient<3> QUANTITY_PRESSURE_COEFF;
 const unsigned int N_POINTS_LINE = 101;
 
-// use a negative GRID_STRETCH_FAC to deactivate grid stretching
-const double GRID_STRETCH_FAC = 1.8;
-
-std::string OUTPUT_FOLDER = "output/bfs/test/";
+// output folders and names
+std::string OUTPUT_FOLDER = "output/bfs/test2/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string OUTPUT_NAME_1 = "precursor";
 std::string OUTPUT_NAME_2 = "bfs";
+bool WRITE_VTU_OUTPUT = false;
+unsigned int OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 100; //1e3;
 
-// DOMAIN 1: turbulent channel problem: used to generate inflow data for the BFS
-// DOMAIN 2: backward facing step (using results of the turbulent channel flow as velocity inflow profile)
-
-// data structures that we need to apply the velocity inflow profile
-// we currently use global variables for this purpose
+// data structures that we need in order to apply the velocity
+// inflow profile (we currently use global variables for this purpose)
 unsigned int N_POINTS_Y = 101;
 unsigned int N_POINTS_Z = N_POINTS_Y;
 std::vector<double> Y_VALUES(N_POINTS_Y);
@@ -171,7 +180,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; // AdaptiveTimeStepCFL
   max_velocity = MAX_VELOCITY;
-  cfl = 0.15;
+  cfl = 0.5;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
@@ -184,7 +193,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   // spatial discretization method
   spatial_discretization = SpatialDiscretization::DG;
 
-  // convective term - currently no parameters
+  // convective term
+
+  // variant Direct allows to use larger time step
+  // sizes due to CFL condition at inflow boundary
+  imposition_of_dirichlet_bc_convective = TypeDirichletBCs::Direct; //Mirror;
 
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
@@ -209,8 +222,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   use_divergence_penalty = true;
   divergence_penalty_factor = 1.0e0;
   use_continuity_penalty = true;
-  continuity_penalty_components = ContinuityPenaltyComponents::All;
+  continuity_penalty_components = ContinuityPenaltyComponents::Normal;
   continuity_penalty_use_boundary_data = false;
+  type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
   continuity_penalty_factor = divergence_penalty_factor;
 
   // TURBULENCE
@@ -332,32 +346,33 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   multigrid_data_schur_complement_preconditioner.smoother = MultigridSmoother::Chebyshev;
   multigrid_data_schur_complement_preconditioner.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
+  // OUTPUT AND POSTPROCESSING
+  print_input_parameters = true;
 
   if(domain_id == 1)
   {
-    // OUTPUT AND POSTPROCESSING
-    print_input_parameters = true;
-
     // write output for visualization of results
-    output_data.write_output = true;
+    output_data.write_output = WRITE_VTU_OUTPUT;
     output_data.output_folder = OUTPUT_FOLDER_VTU;
     output_data.output_name = OUTPUT_NAME_1;
-    output_data.output_start_time = start_time;
-    output_data.output_interval_time = (end_time-start_time)/20;
+    output_data.output_start_time = START_TIME;
+    output_data.output_interval_time = (END_TIME-START_TIME)/60;
     output_data.write_divergence = true;
+    output_data.write_q_criterion = true;
     output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
     // output of solver information
-    output_solver_info_every_timesteps = 1e3;
+    output_solver_info_every_timesteps = OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS;
 
     // turbulent channel statistics
-    turb_ch_data.calculate_statistics = false;
+    turb_ch_data.calculate_statistics = true;
     turb_ch_data.sample_start_time = SAMPLE_START_TIME;
     turb_ch_data.sample_end_time = END_TIME;
-    turb_ch_data.sample_every_timesteps = 10;
+    turb_ch_data.sample_every_timesteps = SAMPLE_EVERY_TIMESTEPS;
     turb_ch_data.viscosity = VISCOSITY;
     turb_ch_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME_1;
 
+    // use turbulent channel data to prescribe inflow velocity for BFS
     inflow_data.write_inflow_data = true;
     inflow_data.x_coordinate = X1_COORDINATE_OUTFLOW_CHANNEL;
     inflow_data.n_points_y = N_POINTS_Y;
@@ -368,60 +383,61 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   }
   else if(domain_id == 2)
   {
-    // OUTPUT AND POSTPROCESSING
-    print_input_parameters = true;
-
     // write output for visualization of results
-    output_data.write_output = true;
+    output_data.write_output = WRITE_VTU_OUTPUT;
     output_data.output_folder = OUTPUT_FOLDER_VTU;
     output_data.output_name = OUTPUT_NAME_2;
-    output_data.output_start_time = start_time;
-    output_data.output_interval_time = (end_time-start_time)/20;
+    output_data.output_start_time = START_TIME;
+    output_data.output_interval_time = (END_TIME-START_TIME)/60;
     output_data.write_divergence = true;
+    output_data.write_q_criterion = true;
     output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
     // output of solver information
-    output_solver_info_every_timesteps = 1e3;
+    output_solver_info_every_timesteps = OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS;
 
-    // turbulent channel statistics
-    turb_ch_data.calculate_statistics = false;
-    turb_ch_data.sample_start_time = SAMPLE_START_TIME;
-    turb_ch_data.sample_end_time = END_TIME;
-    turb_ch_data.sample_every_timesteps = 10;
-    turb_ch_data.viscosity = VISCOSITY;
-    turb_ch_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME_2;
+    // line plot data
+    line_plot_data.write_output = true;
 
+    // statistics computations for BFS
     bfs_statistics.calculate_statistics = true;
     bfs_statistics.sample_start_time = SAMPLE_START_TIME;
-    bfs_statistics.sample_end_time = end_time;
-    bfs_statistics.sample_every_timesteps = 10;
+    bfs_statistics.sample_end_time = END_TIME;
+    bfs_statistics.sample_every_timesteps = SAMPLE_EVERY_TIMESTEPS;
     bfs_statistics.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME_2;
 
+    // mean velocity
     QUANTITY_VELOCITY.type = QuantityType::Velocity;
     QUANTITY_VELOCITY.averaging_direction = 2;
 
+    // reynolds stresses
     QUANTITY_REYNOLDS.type = QuantityType::ReynoldsStresses;
     QUANTITY_REYNOLDS.averaging_direction = 2;
-
-    QUANTITY_PRESSURE.type = QuantityType::Pressure;
-    QUANTITY_PRESSURE.averaging_direction = 2;
     
-    QUANTITY_PRESSURE_COEFF.type = QuantityType::PressureCoefficient;
-    QUANTITY_PRESSURE_COEFF.averaging_direction = 2;
-    QUANTITY_PRESSURE_COEFF.reference_velocity = 1.0;
-    QUANTITY_PRESSURE_COEFF.reference_point = Point<DIMENSION>(X1_COORDINATE_INFLOW,0,0); //Jovic&Driver p.17
-
+    // skin friction
     Tensor<1,dim,double> normal; normal[1] = 1.0;
     Tensor<1,dim,double> tangent; tangent[0] = 1.0;
     QUANTITY_SKIN_FRICTION.type = QuantityType::SkinFriction;
     QUANTITY_SKIN_FRICTION.averaging_direction = 2;
-    QUANTITY_SKIN_FRICTION.reference_velocity = 1.0;
     QUANTITY_SKIN_FRICTION.normal_vector = normal;
     QUANTITY_SKIN_FRICTION.tangent_vector = tangent;
     QUANTITY_SKIN_FRICTION.viscosity = VISCOSITY;
 
-    Line<dim> vel_1, vel_2, vel_3, vel_4, vel_5, vel_6, vel_7, vel_8, vel_9, vel_10, vel_11, Cp_1, Cp_2, Cf;
+    // mean pressure
+    QUANTITY_PRESSURE.type = QuantityType::Pressure;
+    QUANTITY_PRESSURE.averaging_direction = 2;
 
+    // mean pressure coefficient
+    QUANTITY_PRESSURE_COEFF.type = QuantityType::PressureCoefficient;
+    QUANTITY_PRESSURE_COEFF.averaging_direction = 2;
+    QUANTITY_PRESSURE_COEFF.reference_point = Point<DIMENSION>(X1_COORDINATE_INFLOW,0,0);
+
+    // lines
+    Line<dim> vel_0, vel_1, vel_2, vel_3, vel_4, vel_5, vel_6, vel_7, vel_8, vel_9, vel_10, vel_11, Cp_1, Cp_2, Cf;
+
+    // begin and end points of all lines
+    vel_0.begin = Point<dim> (X1_COORDINATE_INFLOW,   0,0);
+    vel_0.end =   Point<dim> (X1_COORDINATE_INFLOW, 2*H,0);
     vel_1.begin = Point<dim> (0*H,   0,0);
     vel_1.end =   Point<dim> (0*H, 2*H,0);
     vel_2.begin = Point<dim> (1*H,-1*H,0);
@@ -444,7 +460,6 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
     vel_10.end =   Point<dim> (9*H, 2*H,0);
     vel_11.begin = Point<dim> (10*H,-1*H,0);
     vel_11.end =   Point<dim> (10*H, 2*H,0);
-    
     Cp_1.begin = Point<dim> (X1_COORDINATE_INFLOW,0,0);
     Cp_1.end =   Point<dim> (0,0,0);
     Cp_2.begin = Point<dim> (0,-H,0);
@@ -452,7 +467,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
     Cf.begin = Point<dim> (0,-H,0);
     Cf.end =   Point<dim> (X1_COORDINATE_OUTFLOW,-H,0);
 
-
+    // set the number of points along the lines
+    vel_0.n_points = N_POINTS_LINE;
     vel_1.n_points = N_POINTS_LINE;
     vel_2.n_points = N_POINTS_LINE;
     vel_3.n_points = N_POINTS_LINE;
@@ -468,6 +484,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
     Cp_2.n_points = N_POINTS_LINE;
     Cf.n_points = N_POINTS_LINE;
 
+    // set the quantities that we want to compute along the lines
+    vel_0.quantities.push_back(&QUANTITY_VELOCITY);
+    vel_0.quantities.push_back(&QUANTITY_REYNOLDS);
     vel_1.quantities.push_back(&QUANTITY_VELOCITY);
     vel_1.quantities.push_back(&QUANTITY_REYNOLDS);
     vel_2.quantities.push_back(&QUANTITY_VELOCITY);
@@ -496,6 +515,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
     Cp_2.quantities.push_back(&QUANTITY_PRESSURE_COEFF);
     Cf.quantities.push_back(&QUANTITY_SKIN_FRICTION);
 
+    // set line names
+    vel_0.name = "vel_0";
     vel_1.name = "vel_1";
     vel_2.name = "vel_2";
     vel_3.name = "vel_3";
@@ -511,6 +532,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
     Cp_2.name = "Cp_2";
     Cf.name = "Cf";
 
+    // insert lines
+    line_plot_data.lines.push_back(vel_0);
     line_plot_data.lines.push_back(vel_1);
     line_plot_data.lines.push_back(vel_2);
     line_plot_data.lines.push_back(vel_3);
@@ -526,18 +549,18 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
     line_plot_data.lines.push_back(Cp_2);
     line_plot_data.lines.push_back(Cf);
 
-    line_plot_data.write_output = true;
-
+    // computation of mean centerline velocity
+    /*
     mean_velocity_data.calculate_statistics = true;
-    mean_velocity_data.sample_start_time = bfs_statistics.sample_start_time;
-    mean_velocity_data.sample_end_time = bfs_statistics.sample_end_time;
-    mean_velocity_data.sample_every_timesteps = bfs_statistics.sample_every_timesteps;
+    mean_velocity_data.sample_start_time = SAMPLE_START_TIME;
+    mean_velocity_data.sample_end_time = END_TIME;
+    mean_velocity_data.sample_every_timesteps = SAMPLE_EVERY_TIMESTEPS;
     mean_velocity_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME_2;
-    Tensor<1,dim> normal_vector;
-    normal_vector[0] = 1;
+    Tensor<1,dim> normal_vector; normal_vector[0] = 1;
     mean_velocity_data.normal_vector = normal_vector;
     mean_velocity_data.boundary_IDs.insert(2);
     mean_velocity_data.area = HEIGHT_CHANNEL * WIDTH_CHANNEL;
+    */
   }
 }
 
@@ -748,109 +771,97 @@ template<int dim>
 /*                                                                                    */
 /**************************************************************************************/
 
-// TODO
-double grid_transform_y(const double &eta)
+/*
+ *  maps eta in [-H, 2*H] --> y in [-H,2*H]
+ */
+ double grid_transform_y(const double &eta)
+ {
+    double y = 0.0;
+    double gamma, xi;
+    if (eta < 0.0)
+    {
+      gamma = GAMMA_LOWER;
+      xi = -0.5*H;
+    }
+    else
+    {
+      gamma = GAMMA_UPPER;
+      xi = H;
+    }
+    y = xi * (1.0 - (std::tanh(gamma*(xi-eta))/std::tanh(gamma*xi)));
+    return y;
+ }
+
+ /*
+  *  grid transform function for turbulent channel statistics
+  *  requires that the input parameter is 0 < xi < 1
+  */
+ double grid_transform_turb_channel(const double &xi)
+ {
+   // map xi in [0,1] --> eta in [0, 2H]
+   double eta = HEIGHT_CHANNEL * xi;
+   return grid_transform_y(eta);
+ }
+
+ /*
+  * inverse mapping:
+  *
+  *  maps y in [-H,2*H] --> eta in [-H,2*H]
+  */
+ double inverse_grid_transform_y(const double &y)
+ {
+   double eta = 0.0;
+   double gamma, xi;
+   if (y < 0.0)
+   {
+     gamma = GAMMA_LOWER;
+     xi = -0.5*H;
+   }
+   else
+   {
+     gamma = GAMMA_UPPER;
+     xi = H;
+   }
+   eta = xi - (1.0/gamma)*std::atanh((1.0-y/xi)*std::tanh(gamma*xi));
+   return eta;
+ }
+
+#include <deal.II/grid/manifold_lib.h>
+
+template <int dim>
+class ManifoldTurbulentChannel : public ChartManifold<dim,dim,dim>
 {
- double y = eta;
+public:
+  ManifoldTurbulentChannel()
+  { }
 
- return y;
-}
+  /*
+   *  push_forward operation that maps point xi in reference coordinates [0,1]^d to
+   *  point x in physical coordinates
+   */
+  Point<dim> push_forward(const Point<dim> &xi) const
+  {
+    Point<dim> x = xi;
+    x[1] = grid_transform_y(xi[1]);
 
-// /*
-//  *  maps eta in [0,1] --> y in [-1,1]*length_y/2.0 (using a hyperbolic mesh stretching)
-//  */
-//double grid_transform_y(const double &eta)
-//{
-//  double y = 0.0;
-//
-//  if(GRID_STRETCH_FAC >= 0)
-//    y = DIMENSIONS_X2/2.0*std::tanh(GRID_STRETCH_FAC*(2.*eta-1.))/std::tanh(GRID_STRETCH_FAC);
-//  else // use a negative GRID_STRETCH_FACto deactivate grid stretching
-//    y = DIMENSIONS_X2/2.0*(2.*eta-1.);
-//
-//  return y;
-//}
-//
-///*
-// * inverse mapping:
-// *
-// *  maps y in [-1,1]*length_y/2.0 --> eta in [0,1]
-// */
-//double inverse_grid_transform_y(const double &y)
-//{
-//  double eta = 0.0;
-//
-//  if(GRID_STRETCH_FAC >= 0)
-//    eta = (std::atanh(y*std::tanh(GRID_STRETCH_FAC)*2.0/DIMENSIONS_X2)/GRID_STRETCH_FAC+1.0)/2.0;
-//  else // use a negative GRID_STRETCH_FACto deactivate grid stretching
-//    eta = (2.*y/DIMENSIONS_X2+1.)/2.0;
-//
-//  return eta;
-//}
-//
-//template <int dim>
-//Point<dim> grid_transform (const Point<dim> &in)
-//{
-//  Point<dim> out = in;
-//
-//  out[0] = in(0)-numbers::PI;
-//  out[1] = grid_transform_y(in[1]);
-//
-//  if(dim==3)
-//    out[2] = in(2)-0.5*numbers::PI;
-//  return out;
-//}
-//
+    return x;
+  }
 
-//#include <deal.II/grid/manifold_lib.h>
-//
-//template <int dim>
-//class ManifoldTurbulentChannel : public ChartManifold<dim,dim,dim>
-//{
-//public:
-//  ManifoldTurbulentChannel(Tensor<1,dim> &dimensions_in)
-//  {
-//    dimensions = dimensions_in;
-//  }
-//
-//  /*
-//   *  push_forward operation that maps point xi in reference coordinates [0,1]^d to
-//   *  point x in physical coordinates
-//   */
-//  Point<dim> push_forward(const Point<dim> &xi) const
-//  {
-//    Point<dim> x;
-//
-//    x[0] = xi[0]*dimensions[0]-dimensions[0]/2.0;
-//    x[1] = grid_transform_y(xi[1]);
-//
-//    if(dim==3)
-//      x[2] = xi[2]*dimensions[2]-dimensions[2]/2.0;
-//
-//    return x;
-//  }
-//
-//  /*
-//   *  pull_back operation that maps point x in physical coordinates
-//   *  to point xi in reference coordinates [0,1]^d
-//   */
-//  Point<dim> pull_back(const Point<dim> &x) const
-//  {
-//    Point<dim> xi;
-//
-//    xi[0] = x[0]/dimensions[0]+0.5;
-//    xi[1] = inverse_grid_transform_y(x[1]);
-//
-//    if(dim==3)
-//      xi[2] = x[2]/dimensions[2]+0.5;
-//
-//    return xi;
-//  }
-//
-//private:
-// Tensor<1,dim> dimensions;
-//};
+  /*
+   *  pull_back operation that maps point x in physical coordinates
+   *  to point xi in reference coordinates [0,1]^d
+   */
+  Point<dim> pull_back(const Point<dim> &x) const
+  {
+    Point<dim> xi = x;
+    xi[1] = inverse_grid_transform_y(x[1]);
 
+    return xi;
+  }
+
+private:
+ Tensor<1,dim> dimensions;
+};
 
 template<int dim>
 void create_grid_and_set_boundary_conditions_1(
@@ -862,53 +873,60 @@ void create_grid_and_set_boundary_conditions_1(
       Triangulation<dim>::cell_iterator> >                 &periodic_faces)
 {
   /* --------------- Generate grid ------------------- */
-  if(dim==2)
+  AssertThrow(dim==3, ExcMessage("NotImplemented"));
+
+  Tensor<1,dim> dimensions;
+  dimensions[0] = LENGTH_CHANNEL;
+  dimensions[1] = HEIGHT_CHANNEL;
+  dimensions[2] = WIDTH_CHANNEL;
+
+  Tensor<1,dim> center;
+  center[0] = - (LENGTH_BFS_UP + GAP_CHANNEL_BFS + LENGTH_CHANNEL/2.0);
+  center[1] = HEIGHT_CHANNEL/2.0;
+
+  GridGenerator::subdivided_hyper_rectangle (triangulation,
+                                             std::vector<unsigned int>({2,1,1}), //refinements
+                                             Point<dim>(center-dimensions/2.0),
+                                             Point<dim>(center+dimensions/2.0));
+
+  if(use_grid_stretching_in_y_direction == true)
   {
-    AssertThrow(false, ExcMessage("NotImplemented"));
+    // manifold
+    unsigned int manifold_id = 1;
+    for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin(); cell != triangulation.end(); ++cell)
+    {
+      cell->set_all_manifold_ids(manifold_id);
+    }
+
+    // apply mesh stretching towards no-slip boundaries in y-direction
+    static const ManifoldTurbulentChannel<dim> manifold;
+    triangulation.set_manifold(manifold_id, manifold);
   }
-  else if(dim==3)
+
+  // set boundary ID's: periodicity
+  typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+  for(;cell!=endc;++cell)
   {
-    Tensor<1,dim> dimensions;
-    dimensions[0] = LENGTH_CHANNEL;
-    dimensions[1] = HEIGHT_CHANNEL;
-    dimensions[2] = WIDTH_CHANNEL;
+    for(unsigned int face_number=0; face_number < GeometryInfo<dim>::faces_per_cell; ++face_number)
+    {
+      // periodicity in x-direction (add 10 to avoid conflicts with other boundaries)
+      if(std::fabs(cell->face(face_number)->center()(0) - (center[0] - dimensions[0]/2.0)) < 1.e-12)
+        cell->face(face_number)->set_all_boundary_ids (0+10);
+      // periodicity in x-direction (add 10 to avoid conflicts with other boundaries)
+      if(std::fabs(cell->face(face_number)->center()(0) - (center[0] + dimensions[0]/2.0)) < 1.e-12)
+        cell->face(face_number)->set_all_boundary_ids (1+10);
 
-    Tensor<1,dim> center;
-    center[0] = - (LENGTH_BFS_UP + GAP_CHANNEL_BFS + LENGTH_CHANNEL/2.0);
-    center[1] = HEIGHT_CHANNEL/2.0;
-
-    GridGenerator::subdivided_hyper_rectangle (triangulation,
-                                               std::vector<unsigned int>({1,1,1}), //refinements
-                                               Point<dim>(center-dimensions/2.0),
-                                               Point<dim>(center+dimensions/2.0));
-  }
-
-  // TODO
-//  // manifold
-//  unsigned int manifold_id = 1;
-//  for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin(); cell != triangulation.end(); ++cell)
-//  {
-//    cell->set_all_manifold_ids(manifold_id);
-//  }
-//
-//  // apply mesh stretching towards no-slip boundaries in y-direction
-//  static const ManifoldTurbulentChannel<dim> manifold(dimensions);
-//  triangulation.set_manifold(manifold_id, manifold);
-
-  //periodicity in x- and z-direction (add 10 to avoid conflicts with dirichlet boundary, which is 0)
-  triangulation.begin()->face(0)->set_all_boundary_ids(0+10);
-  triangulation.begin()->face(1)->set_all_boundary_ids(1+10);
-  //periodicity in z-direction
-  if (dim == 3)
-  {
-    triangulation.begin()->face(4)->set_all_boundary_ids(2+10);
-    triangulation.begin()->face(5)->set_all_boundary_ids(3+10);
+      // periodicity in z-direction (add 10 to avoid conflicts with other boundaries)
+      if(std::fabs(cell->face(face_number)->center()(2) - (center[2] - dimensions[2]/2.0)) < 1.e-12)
+        cell->face(face_number)->set_all_boundary_ids (2+10);
+      // periodicity in z-direction (add 10 to avoid conflicts with other boundaries)
+      if(std::fabs(cell->face(face_number)->center()(2) - (center[2] + dimensions[2]/2.0)) < 1.e-12)
+        cell->face(face_number)->set_all_boundary_ids (3+10);
+    }
   }
 
   GridTools::collect_periodic_faces(triangulation, 0+10, 1+10, 0, periodic_faces);
-  if (dim == 3)
-    GridTools::collect_periodic_faces(triangulation, 2+10, 3+10, 2, periodic_faces);
-
+  GridTools::collect_periodic_faces(triangulation, 2+10, 3+10, 2, periodic_faces);
   triangulation.add_periodicity(periodic_faces);
 
   // perform global refinements: use one level finer for the channel
@@ -977,28 +995,34 @@ void create_grid_and_set_boundary_conditions_2(
     for(unsigned int face_number=0; face_number < GeometryInfo<dim>::faces_per_cell; ++face_number)
     {
       // outflow boundary on the right has ID = 1
-      if ((std::fabs(cell->face(face_number)->center()(0) - X1_COORDINATE_OUTFLOW)< 1e-12))
+      if ((std::fabs(cell->face(face_number)->center()(0) - X1_COORDINATE_OUTFLOW)< 1.e-12))
         cell->face(face_number)->set_boundary_id (1);
       // inflow boundary on the left has ID = 2
-      if ((std::fabs(cell->face(face_number)->center()(0) - X1_COORDINATE_INFLOW)< 1e-12))
+      if ((std::fabs(cell->face(face_number)->center()(0) - X1_COORDINATE_INFLOW)< 1.e-12))
         cell->face(face_number)->set_boundary_id (2);
 
       // periodicity in z-direction (add 10 to avoid conflicts with other boundaries)
-      if((std::fabs(cell->face(face_number)->center()(2) - WIDTH_BFS/2.0)< 1e-12))
+      if((std::fabs(cell->face(face_number)->center()(2) - WIDTH_BFS/2.0)< 1.e-12))
         cell->face(face_number)->set_all_boundary_ids (2+10);
       // periodicity in z-direction (add 10 to avoid conflicts with other boundaries)
-      if((std::fabs(cell->face(face_number)->center()(2) + WIDTH_BFS/2.0)< 1e-12))
+      if((std::fabs(cell->face(face_number)->center()(2) + WIDTH_BFS/2.0)< 1.e-12))
         cell->face(face_number)->set_all_boundary_ids (3+10);
     }
   }
 
-  // TODO
-//  // manifold
-//  unsigned int manifold_id = 1;
-//  for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin(); cell != triangulation.end(); ++cell)
-//  {
-//    cell->set_all_manifold_ids(manifold_id);
-//  }
+  if(use_grid_stretching_in_y_direction == true)
+  {
+    // manifold
+    unsigned int manifold_id = 1;
+    for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin(); cell != triangulation.end(); ++cell)
+    {
+      cell->set_all_manifold_ids(manifold_id);
+    }
+
+    // apply mesh stretching towards no-slip boundaries in y-direction
+    static const ManifoldTurbulentChannel<dim> manifold;
+    triangulation.set_manifold(manifold_id, manifold);
+  }
 
   // periodicity in z-direction
   GridTools::collect_periodic_faces(triangulation, 2+10, 3+10, 2, periodic_faces);
@@ -1108,8 +1132,8 @@ struct PostProcessorDataBFS
   PostProcessorData<dim> pp_data;
   TurbulentChannelData turb_ch_data;
   InflowData<dim> inflow_data;
-  BFSStatistics bfs_data;
-  LinePlotData<dim> line_data;
+  BFSStatisticsData bfs_data;
+  LinePlotData<dim> line_plot_data;
   MeanVelocityCalculatorData<dim> mean_velocity_data;
 };
 
@@ -1144,15 +1168,14 @@ public:
         dof_quad_index_data_in,
         analytical_solution_in);
 
-    // perform setup of turbulent channel related things
-    statistics_turb_ch.reset(new StatisticsManager<dim>(dof_handler_velocity_in,mapping_in));
-
-    bool individual_cells_are_stretched = false;
-
-    // TODO
-//    individual_cells_are_stretched = true;
-
-    statistics_turb_ch->setup(&grid_transform_y,individual_cells_are_stretched);
+    // turbulent channel statistics for precursor simulation
+    if(pp_data_bfs.turb_ch_data.calculate_statistics == true)
+    {
+      // perform setup of turbulent channel related things
+      statistics_turb_ch.reset(new StatisticsManager<dim>(dof_handler_velocity_in,mapping_in));
+      bool volume_manifold_is_used = use_grid_stretching_in_y_direction;
+      statistics_turb_ch->setup(&grid_transform_turb_channel, volume_manifold_is_used);
+    }
 
     // inflow data
     if(pp_data_bfs.inflow_data.write_inflow_data == true)
@@ -1160,12 +1183,14 @@ public:
       inflow_data_calculator->setup(dof_handler_velocity_in,mapping_in);
     }
 
+    // statistics calculation for backward facing step
     if(pp_data_bfs.bfs_data.calculate_statistics == true)
     {
       statistics_bfs.reset(new LineStatisticsCalculator<dim>(dof_handler_velocity_in, dof_handler_pressure_in, mapping_in));
-      statistics_bfs->setup(pp_data_bfs.line_data);
+      statistics_bfs->setup(pp_data_bfs.line_plot_data);
     }
 
+    // computation of mean velocity
     if(pp_data_bfs.mean_velocity_data.calculate_statistics == true)
     {
       centerline_velocity.reset(new MeanVelocityCalculator<dim,fe_degree_u,Number>(
@@ -1181,9 +1206,6 @@ public:
                          double const                                time,
                          int const                                   time_step_number)
   {
-    Timer timer;
-    timer.restart();
-
     PostProcessor<dim,fe_degree_u,fe_degree_p,Number>::do_postprocessing(
         velocity,
         intermediate_velocity,
@@ -1303,7 +1325,7 @@ construct_postprocessor(InputParametersNavierStokes<dim> const &param)
   pp_data_bfs.turb_ch_data = param.turb_ch_data;
   pp_data_bfs.inflow_data = param.inflow_data;
   pp_data_bfs.bfs_data = param.bfs_statistics;
-  pp_data_bfs.line_data = param.line_plot_data;
+  pp_data_bfs.line_plot_data = param.line_plot_data;
   pp_data_bfs.mean_velocity_data = param.mean_velocity_data;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;

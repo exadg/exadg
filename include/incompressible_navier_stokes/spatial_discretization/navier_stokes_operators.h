@@ -371,6 +371,7 @@ public:
     :
     data(nullptr),
     const_viscosity(-1.0),
+    scaling_factor_time_derivative_term(0.0), //TODO
     eval_time(0.0)
   {}
 
@@ -493,6 +494,20 @@ public:
                &This::face_loop,
                &This::boundary_face_loop_hom_operator,
                this, dst, src, false /*zero_dst_vector = false*/);
+  }
+
+  // TODO optimized implementation
+  // apply matrix vector multiplication for Helmholtz operator
+  void apply_helmholtz_operator (parallel::distributed::Vector<Number>       &dst,
+                                 const double                                &scaling_factor,
+                                 const parallel::distributed::Vector<Number> &src) const
+  {
+    scaling_factor_time_derivative_term = scaling_factor;
+
+    data->loop(&This::cell_loop_opt,
+               &This::face_loop_opt,
+               &This::boundary_face_loop_hom_operator_opt,
+               this, dst, src, true /*zero_dst_vector = true*/);
   }
 
   // apply matrix vector multiplication for block Jacobi operator
@@ -1374,6 +1389,91 @@ private:
   }
 
 
+  // TODO: cell loop optimized implementation: viscous operator to mass matrix operator
+  // use this code version only for performance measurements since the implementation might
+  // not be up to date, e.g., only Laplace formulation implemented and constant viscosity
+  void cell_loop_opt (const MatrixFree<dim,Number>                 &data,
+                      parallel::distributed::Vector<Number>        &dst,
+                      const parallel::distributed::Vector<Number>  &src,
+                      const std::pair<unsigned int,unsigned int>   &cell_range) const
+  {
+    AssertThrow(operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation,
+                ExcMessage("Specified formulation of viscous term is not implemented."));
+
+    FEEval_Velocity_Velocity_linear fe_eval(data,this->fe_param,operator_data.dof_index);
+
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval.reinit(cell);
+      fe_eval.read_dof_values(src);
+      fe_eval.evaluate (true,true,false);
+
+      for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+      {
+        fe_eval.submit_value (scaling_factor_time_derivative_term*fe_eval.get_value(q),q);
+        fe_eval.submit_gradient (const_viscosity*fe_eval.get_gradient(q), q);
+      }
+      fe_eval.integrate (true,true);
+      fe_eval.distribute_local_to_global (dst);
+    }
+  }
+
+  void face_loop_opt (const MatrixFree<dim,Number>                &data,
+                      parallel::distributed::Vector<Number>       &dst,
+                      const parallel::distributed::Vector<Number> &src,
+                      const std::pair<unsigned int,unsigned int>  &face_range) const
+  {
+    FEFaceEval_Velocity_Velocity_linear fe_eval(data,this->fe_param,true,operator_data.dof_index);
+    FEFaceEval_Velocity_Velocity_linear fe_eval_neighbor(data,this->fe_param,false,operator_data.dof_index);
+
+    for(unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval.reinit (face);
+      fe_eval_neighbor.reinit (face);
+
+      fe_eval.read_dof_values(src);
+      fe_eval_neighbor.read_dof_values(src);
+
+      fe_eval.evaluate(true,true);
+      fe_eval_neighbor.evaluate(true,true);
+
+      VectorizedArray<Number> penalty_parameter = get_penalty_factor() *
+          std::max(fe_eval.read_cell_data(array_penalty_parameter),fe_eval_neighbor.read_cell_data(array_penalty_parameter));
+
+      for(unsigned int q=0;q<fe_eval.n_q_points;++q)
+      {
+        Tensor<1,dim,VectorizedArray<Number> > jump_value = fe_eval.get_value(q) - fe_eval_neighbor.get_value(q);
+        Tensor<1,dim,VectorizedArray<Number> > value_flux = -0.5 * const_viscosity * jump_value;
+
+        Tensor<1,dim,VectorizedArray<Number> > average_normal_gradient =
+          make_vectorized_array<Number>(0.5) * (fe_eval.get_normal_gradient(q) + fe_eval_neighbor.get_normal_gradient(q));
+
+        Tensor<1,dim,VectorizedArray<Number> > gradient_flux =
+          const_viscosity * average_normal_gradient - const_viscosity * penalty_parameter * jump_value;
+
+        fe_eval.submit_normal_gradient(value_flux,q);
+        fe_eval_neighbor.submit_normal_gradient(value_flux,q);
+
+        fe_eval.submit_value(-gradient_flux,q);
+        fe_eval_neighbor.submit_value(gradient_flux,q); // + sign since n⁺ = -n⁻
+      }
+      fe_eval.integrate(true,true);
+      fe_eval_neighbor.integrate(true,true);
+
+      fe_eval.distribute_local_to_global(dst);
+      fe_eval_neighbor.distribute_local_to_global(dst);
+    }
+  }
+
+  void boundary_face_loop_hom_operator_opt (const MatrixFree<dim,Number>                 &data,
+                                            parallel::distributed::Vector<Number>        &dst,
+                                            const parallel::distributed::Vector<Number>  &src,
+                                            const std::pair<unsigned int,unsigned int>   &face_range) const
+  {
+    AssertThrow(false, ExcMessage("Should not arrive here. Optimized viscous operator only implemented for periodic BCs."));
+  }
+
+
   /*
    *  Block-jacobi operator: re-implement face_loop; cell_loop and boundary_face_loop are
    *  identical to homogeneous operator.
@@ -2047,6 +2147,11 @@ protected:
 private:
   AlignedVector<VectorizedArray<Number> > array_penalty_parameter;
   Number const_viscosity;
+
+  // TODO: scaling factor time derivative term:
+  // only needed for optimized implementation where both the
+  // mass matrix term and the viscous term are applied
+  Number mutable scaling_factor_time_derivative_term;
 
   // TODO dof-vector for variable viscosity field
   parallel::distributed::Vector<Number>  viscosity;

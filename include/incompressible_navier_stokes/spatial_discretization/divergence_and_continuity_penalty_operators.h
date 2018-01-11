@@ -573,8 +573,8 @@ private:
       fe_eval_neighbor.reinit (face);
 
       // TODO (Martin): will be included in matrix-free implementation for vectorial quantities (probably end of 2017)
-      //fe_eval.gather_evaluate(src, true, false);
-      //fe_eval_neighbor.gather_evaluate(src, true, false);
+//      fe_eval.gather_evaluate(src, true, false);
+//      fe_eval_neighbor.gather_evaluate(src, true, false);
 
       fe_eval.read_dof_values(src);
       fe_eval_neighbor.read_dof_values(src);
@@ -617,6 +617,9 @@ private:
 
       fe_eval.distribute_local_to_global(dst);
       fe_eval_neighbor.distribute_local_to_global(dst);
+
+//      fe_eval.integrate_scatter(true,false,dst);
+//      fe_eval_neighbor.integrate_scatter(true,false,dst);
     }
   }
 
@@ -1312,6 +1315,8 @@ private:
   ContinuityPenaltyOperatorData<dim> operator_data;
   double mutable eval_time;
 };
+
+
 
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DIVERGENCE_AND_CONTINUITY_PENALTY_OPERATORS_H_ */

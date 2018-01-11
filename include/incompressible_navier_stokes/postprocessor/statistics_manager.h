@@ -13,10 +13,10 @@ public:
 
   StatisticsManager(const DoFHandler<dim> &dof_handler_velocity,
                     const Mapping<dim>    &mapping);
+
   // The argument grid_transform indicates how the y-direction that is
-  // initially distributed from [0,1] to the actual grid. This must match the
-  // transform applied to the triangulation, otherwise the identification of
-  // data will fail
+  // initially distributed from [0,1] is mapped to the actual grid. This must match the
+  // transformation applied to the triangulation, otherwise the identification of data will fail
   void setup(const std::function<double(double const &)> &grid_tranform,
              const bool                                  &individual_cells_are_stretched);
 

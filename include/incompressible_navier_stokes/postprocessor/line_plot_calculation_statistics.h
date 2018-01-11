@@ -175,7 +175,7 @@ public:
     // Save all cells and corresponding points on unit cell
     // that are relevant for a given point along the line.
     // We have to do the same for the pressure because the
-    // DoFHandlers for velocity and pressureare different.
+    // DoFHandlers for velocity and pressure are different.
     for(typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_pressure.begin_active();
         cell != dof_handler_pressure.end(); ++cell)
     {
@@ -414,10 +414,12 @@ private:
             else if((*quantity)->type == QuantityType::ReynoldsStresses)
             {
               for(unsigned int i=0; i<dim; ++i)
+              {
                 for(unsigned int j=0; j<dim; ++j)
                 {
                   reynolds_local[p][i][j] += velocity[i] * velocity[j] * JxW;
                 }
+              }
             }
             else if((*quantity)->type == QuantityType::SkinFriction)
             {
@@ -628,9 +630,7 @@ private:
       for(typename std::vector<Line<dim> >::const_iterator line = data.lines.begin();
           line != data.lines.end(); ++line, ++line_iterator)
       {
-        std::string filename_prefix = output_prefix
-                                      + "l" + Utilities::int_to_string(dof_handler_velocity.get_triangulation().n_global_levels()-1)
-                                      + "_" + line->name + ".txt";
+        std::string filename_prefix = output_prefix + "_" + line->name;
 
         for (typename std::vector<Quantity*>::const_iterator quantity = line->quantities.begin();
              quantity != line->quantities.end(); ++quantity)
@@ -732,7 +732,7 @@ private:
             QuantityStatisticsSkinFriction<dim>* averaging_quantity =
                 dynamic_cast<QuantityStatisticsSkinFriction<dim>* > (*quantity);
 
-            std::string filename = filename_prefix + "_skinfriction" + ".txt";
+            std::string filename = filename_prefix + "_wall_shear_stress" + ".txt";
             std::ofstream f;
             if(clear_files)
             {
@@ -748,7 +748,7 @@ private:
             for(unsigned int d=0; d<dim; ++d)
               f << std::setw(precision+8) << std::left << "x_" + Utilities::int_to_string(d+1);
 
-            f << std::setw(precision+8) << std::left << "C_f" << std::endl;
+            f << std::setw(precision+8) << std::left << "tau_w" << std::endl;
 
             // loop over all points
             for (unsigned int p=0; p<line->n_points; ++p)
@@ -759,13 +759,10 @@ private:
               for(unsigned int d=0; d<dim; ++d)
                 f << std::setw(precision+8) << std::left << global_points[line_iterator][p][d];
 
-              double const ref_velocity_square = averaging_quantity->reference_velocity *
-                                                 averaging_quantity->reference_velocity;
-
-              // C_f = tau_w / (1/2 rho U^2)
+              // tau_w -> C_f = tau_w / (1/2 rho u²)
               double const viscosity = averaging_quantity->viscosity;
               f << std::setw(precision+8) << std::left
-                << 2.0*viscosity*wall_shear_global[line_iterator][p]/ref_velocity_square/number_of_samples;
+                << viscosity*wall_shear_global[line_iterator][p]/number_of_samples;
 
               f << std::endl;
             }
@@ -795,7 +792,7 @@ private:
             f << std::setw(precision+8) << std::left << "p";
 
             if((*quantity) -> type == QuantityType::PressureCoefficient)
-              f << std::setw(precision+8) << std::left << "C_p";
+              f << std::setw(precision+8) << std::left << "p-p_ref";
 
             f << std::endl;
 
@@ -810,14 +807,8 @@ private:
 
               if((*quantity)->type == QuantityType::PressureCoefficient)
               {
-                QuantityStatisticsPressureCoefficient<dim>* averaging_quantity =
-                    dynamic_cast<QuantityStatisticsPressureCoefficient<dim>* > (*quantity);
-
-                double const ref_velocity_square = averaging_quantity->reference_velocity *
-                                                   averaging_quantity->reference_velocity;
-
-                // equation C_p = (p - p_0)/(1/2 rho U^2)
-                f << std::left << 2.0*(pressure_global[line_iterator][p] - reference_pressure_global[line_iterator])/ref_velocity_square/number_of_samples;
+                // p - p_ref -> C_p = (p - p_ref) / (1/2 rho u²)
+                f << std::left << (pressure_global[line_iterator][p] - reference_pressure_global[line_iterator])/number_of_samples;
               }
               f << std::endl;
             }
