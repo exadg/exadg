@@ -50,7 +50,8 @@ public:
     mass_matrix_operator(nullptr),
     viscous_operator(nullptr),
     scaling_factor_time_derivative_term(-1.0),
-    wall_time(0.0)
+    wall_time(0.0),
+    use_optimized_implementation(false) //TODO: use optimized implementation for performance measurements only
   {}
 
   //TODO
@@ -207,20 +208,27 @@ public:
     Timer timer;
     timer.restart();
 
-    // helmholtz operator = mass_matrix_operator + viscous_operator
-    if(operator_data.unsteady_problem == true)
+    if(use_optimized_implementation == true) // optimized version (use only for performance measurements)
     {
-      AssertThrow(scaling_factor_time_derivative_term > 0.0,
-        ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
-
-      mass_matrix_operator->apply_scale(dst,scaling_factor_time_derivative_term,src);
+      viscous_operator->apply_helmholtz_operator(dst,scaling_factor_time_derivative_term,src);
     }
-    else
+    else // standard implementation with modular implementation (operator by operator)
     {
-      dst = 0.0;
-    }
+      // helmholtz operator = mass_matrix_operator + viscous_operator
+      if(operator_data.unsteady_problem == true)
+      {
+        AssertThrow(scaling_factor_time_derivative_term > 0.0,
+          ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
 
-    viscous_operator->apply_add(dst,src);
+        mass_matrix_operator->apply_scale(dst,scaling_factor_time_derivative_term,src);
+      }
+      else
+      {
+        dst = 0.0;
+      }
+
+      viscous_operator->apply_add(dst,src);
+    }
 
     // TODO
     wall_time += timer.wall_time();
@@ -525,6 +533,9 @@ private:
 
   // TODO
   mutable double wall_time;
+
+  // TODO
+  bool use_optimized_implementation;
 };
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_HELMHOLTZ_OPERATOR_H_ */

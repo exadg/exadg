@@ -547,15 +547,17 @@ setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>
           break;
         }
       }
-      AssertThrow(processor_has_active_cells == true,ExcMessage("No active cells on Processor with ID=0"));
+
+      AssertThrow(processor_has_active_cells == true,
+          ExcMessage("No active cells on Processor with ID=0"));
 
       FEValues<dim> fe_values(dof_handler_p.get_fe(),
-                  Quadrature<dim>(dof_handler_p.get_fe().get_unit_support_points()),
-                  update_quadrature_points);
+                              Quadrature<dim>(dof_handler_p.get_fe().get_unit_support_points()),
+                              update_quadrature_points);
       fe_values.reinit(first_cell);
+
       first_point = fe_values.quadrature_point(0);
-      std::vector<types::global_dof_index>
-      dof_indices(dof_handler_p.get_fe().dofs_per_cell);
+      std::vector<types::global_dof_index> dof_indices(dof_handler_p.get_fe().dofs_per_cell);
       first_cell->get_dof_indices(dof_indices);
       dof_index_first_point = dof_indices[0];
     }

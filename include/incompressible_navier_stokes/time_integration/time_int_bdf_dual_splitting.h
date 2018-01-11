@@ -1082,19 +1082,31 @@ analyze_computing_times() const
               << "            "
               << std::setprecision(4) << std::setw(10) << total_avg_time/total_avg_time << std::endl;
 
-  Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg (this->total_time, MPI_COMM_WORLD);
-  this->pcout << "  Global time:         " << std::scientific
-              << std::setprecision(4) << std::setw(10) << data.min << " "
-              << std::setprecision(4) << std::setw(10) << data.avg << " "
-              << std::setprecision(4) << std::setw(10) << data.max << " "
-              << "          " << "  "
-              << std::setw(6) << std::left << data.min_index << " "
-              << std::setw(6) << std::left << data.max_index << std::endl;
-
   this->pcout << std::endl
               << "Number of time steps =            " << std::left << N_time_steps << std::endl
               << "Average wall time per time step = " << std::scientific << std::setprecision(4)
-              << data.avg/(double)N_time_steps << std::endl << std::endl;
+              << total_avg_time/(double)N_time_steps  << std::endl;
+
+  // TODO: measure relative share of wall time for application of projection operator and Helmholtz operator
+  double wall_time_projection = 0.0, wall_time_helmholtz = 0.0;
+  this->navier_stokes_operation->get_wall_times_projection_helmholtz_operator(wall_time_projection,wall_time_helmholtz);
+  Utilities::MPI::MinMaxAvg data_projection = Utilities::MPI::min_max_avg (wall_time_projection, MPI_COMM_WORLD);
+  Utilities::MPI::MinMaxAvg data_helmholtz = Utilities::MPI::min_max_avg (wall_time_helmholtz, MPI_COMM_WORLD);
+
+  this->pcout << std::endl
+              << "Projection operator:" << std::endl
+              << "Wall time [s]  = " << data_projection.avg << std::endl
+              << "Relative share = " << data_projection.avg / total_avg_time << std::endl << std::endl;
+
+  this->pcout << "Helmholtz operator:" << std::endl
+              << "Wall time [s]  = " << data_helmholtz.avg << std::endl
+              << "Relative share = " << data_helmholtz.avg / total_avg_time << std::endl << std::endl;
+  // TODO: measure relative share of wall time for application of projection operator and Helmholtz operator
+
+  // overall wall time including postprocessing
+  Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg (this->total_time, MPI_COMM_WORLD);
+  this->pcout << "Total wall time in [s] =          " << std::scientific
+              << std::setprecision(4) << data.avg << std::endl;
 
   unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
 
@@ -1103,20 +1115,6 @@ analyze_computing_times() const
               << "Computational costs in [CPUh] =   " << data.avg * (double)N_mpi_processes / 3600.0 << std::endl
               << "_________________________________________________________________________________"
               << std::endl << std::endl;
-
-  //TODO
-  double wall_time_projection = 0.0, wall_time_helmholtz = 0.0;
-  this->navier_stokes_operation->get_wall_times_projection_helmholtz_operator(wall_time_projection,wall_time_helmholtz);
-
-  this->pcout << "Projection operator:" << std::endl
-              << "Computational costs in [CPUs]   =   " << wall_time_projection * (double)N_mpi_processes << std::endl
-              << "Computational costs in [CPUh]   =   " << wall_time_projection * (double)N_mpi_processes / 3600.0 << std::endl
-              << "Relative share of overall costs =   " << wall_time_projection / data.avg << std::endl << std::endl;
-
-  this->pcout << "Helmholtz operator:" << std::endl
-              << "Computational costs in [CPUs]   =   " << wall_time_helmholtz * (double)N_mpi_processes << std::endl
-              << "Computational costs in [CPUh]   =   " << wall_time_helmholtz * (double)N_mpi_processes / 3600.0 << std::endl
-              << "Relative share of overall costs =   " << wall_time_helmholtz / data.avg << std::endl;
 }
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_ */
