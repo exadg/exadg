@@ -28,6 +28,7 @@ class VorticityCalculator: public BaseOperator<dim>
    */
 
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
+
 public:
   VorticityCalculator()
   :

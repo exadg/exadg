@@ -144,26 +144,33 @@ public:
                                                     double &wall_time_helmholtz)
   {
 
-    if(this->use_optimized_projection_operator == false)
+    if(this->param.use_divergence_penalty == true && this->param.use_continuity_penalty == true)
     {
-      typedef ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree,
-          fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> PROJ_OPERATOR;
+      if(this->use_optimized_projection_operator == false)
+      {
+        typedef ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree,
+            fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> PROJ_OPERATOR;
 
-      std::shared_ptr<PROJ_OPERATOR> proj_op = std::dynamic_pointer_cast<PROJ_OPERATOR>(this->projection_operator);
-      AssertThrow(proj_op.get() != 0, ExcMessage("Projection operator is not initialized correctly."));
+        std::shared_ptr<PROJ_OPERATOR> proj_op = std::dynamic_pointer_cast<PROJ_OPERATOR>(this->projection_operator);
+        AssertThrow(proj_op.get() != 0, ExcMessage("Projection operator is not initialized correctly."));
 
-      wall_time_projection = proj_op->get_wall_time();
+        wall_time_projection = proj_op->get_wall_time();
+      }
+      // TODO
+      else // use_optimized_projection_operator == true
+      {
+        typedef ProjectionOperatorOptimized<dim, fe_degree, fe_degree_p,
+            fe_degree_xwall, xwall_quad_rule, Number> PROJ_OPERATOR;
+
+        std::shared_ptr<PROJ_OPERATOR> proj_op = std::dynamic_pointer_cast<PROJ_OPERATOR>(this->projection_operator);
+        AssertThrow(proj_op.get() != 0, ExcMessage("Projection operator is not initialized correctly."));
+
+        wall_time_projection = proj_op->get_wall_time();
+      }
     }
-    // TODO
-    else // use_optimized_projection_operator == true
+    else
     {
-      typedef ProjectionOperatorOptimized<dim, fe_degree, fe_degree_p,
-          fe_degree_xwall, xwall_quad_rule, Number> PROJ_OPERATOR;
-
-      std::shared_ptr<PROJ_OPERATOR> proj_op = std::dynamic_pointer_cast<PROJ_OPERATOR>(this->projection_operator);
-      AssertThrow(proj_op.get() != 0, ExcMessage("Projection operator is not initialized correctly."));
-
-      wall_time_projection = proj_op->get_wall_time();
+      wall_time_projection = 0.0;
     }
 
     wall_time_helmholtz = this->helmholtz_operator.get_wall_time();

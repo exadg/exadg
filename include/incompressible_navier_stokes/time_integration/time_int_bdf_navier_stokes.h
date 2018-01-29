@@ -288,11 +288,14 @@ protected:
 
   // cfl number cfl_oif for operator-integration-factor splitting
   double const cfl_oif;
-  // number of substeps for operator-integration-factor splitting per time step dt
+
+  // number of substeps for operator-integration-factor splitting per macro time step dt
   unsigned int M;
+
   // substepping time step size delta_s for operator-integration-factor splitting
   double delta_s;
 
+  // solution vectors needed for substepping of convective term
   parallel::distributed::Vector<value_type> solution_tilde_m;
   parallel::distributed::Vector<value_type> solution_tilde_mp;
 

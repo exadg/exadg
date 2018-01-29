@@ -901,11 +901,13 @@ evaluate_negative_convective_term_and_apply_inverse_mass_matrix (
                           Number const                                evaluation_time,
                           parallel::distributed::Vector<Number> const &velocity) const
 {
+  // evaluate convective term using a "prescribed" advection velocity (which is divergence-free)
   convective_operator.evaluate_oif(dst,src,evaluation_time,velocity);
 
   // shift convective term to the rhs of the equation
   dst *= -1.0;
 
+  // apply inverse mass matrix
   inverse_mass_matrix_operator->apply(dst,dst);
 }
 
@@ -917,6 +919,9 @@ update_turbulence_model (parallel::distributed::Vector<Number> const &velocity)
   turbulence_model.calculate_turbulent_viscosity(velocity);
 }
 
+/*
+ *  Convective operator needed for OIF (operator integration factor splitting) substepping
+ */
 template<typename Operator, typename value_type>
 class ConvectiveOperatorNavierStokes
 {
