@@ -13,6 +13,8 @@
 template<int dim, int fe_degree, typename Number>
 class KineticEnergyCalculator
 {
+  static const unsigned int number_vorticity_components = (dim==2) ? 1 : dim;
+
 public:
   KineticEnergyCalculator()
     :
@@ -209,9 +211,10 @@ private:
         dissipation_vec += JxW_values[q]*make_vectorized_array<Number>(this->data.viscosity)
                            * scalar_product(velocity_gradient,velocity_gradient);
 
-        Tensor<1,dim,VectorizedArray<Number> > rotation =
-            CurlCompute<dim,FEEvaluation<dim,fe_degree,fe_degree+1,dim,Number> >::compute(fe_eval,q);
-        enstrophy_vec += JxW_values[q]*make_vectorized_array<Number>(0.5)*rotation*rotation;
+        Tensor<1,number_vorticity_components,VectorizedArray<Number> > omega = fe_eval.get_curl(q);
+        VectorizedArray<Number> norm_omega = omega*omega;
+
+        enstrophy_vec += JxW_values[q]*make_vectorized_array<Number>(0.5)*norm_omega;
       }
 
       // sum over entries of VectorizedArray, but only over those

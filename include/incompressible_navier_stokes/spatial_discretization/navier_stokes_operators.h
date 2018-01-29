@@ -4068,8 +4068,8 @@ private:
         calculate_exterior_velocity_boundary_face(uP,uM,q,fe_eval,boundary_type,boundary_id);
 
         Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
-
         Tensor<1,dim,VectorizedArray<value_type> > flux;
+
         VectorizedArray<value_type> average_normal_velocity = 0.5 * ((uM_ref + uP_ref) * normal);
         flux = 0.5 * average_normal_velocity * (uM + uP) + 0.5 * std::abs(average_normal_velocity) * (uM-uP);
 

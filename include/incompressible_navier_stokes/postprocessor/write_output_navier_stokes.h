@@ -43,6 +43,14 @@ void write_output_navier_stokes(OutputDataNavierStokes const                &out
     data_out.add_data_vector (*it->dof_handler, *it->vector, it->name);
   }
 
+  // visualize distribution of cells to processors
+  if(output_data.write_processor_id == true)
+  {
+    parallel::distributed::Vector<Number> processor_id(pressure);
+    processor_id = Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+    data_out.add_data_vector (dof_handler_pressure, processor_id, "processor id");
+  }
+
   std::ostringstream filename;
   filename << output_data.output_folder
            << output_data.output_name
@@ -57,7 +65,7 @@ void write_output_navier_stokes(OutputDataNavierStokes const                &out
   std::ofstream output (filename.str().c_str());
   data_out.write_vtu (output);
 
-  if ( Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
   {
     std::vector<std::string> filenames;
     for (unsigned int i=0;i<Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);++i)

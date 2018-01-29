@@ -18,7 +18,8 @@ struct OutputDataNavierStokes : public OutputData
     write_velocity_magnitude(false),
     write_vorticity_magnitude(false),
     write_streamfunction(false),
-    write_q_criterion(false)
+    write_q_criterion(false),
+    write_processor_id(false)
   {}
 
   void print(ConditionalOStream &pcout, bool unsteady)
@@ -39,7 +40,7 @@ struct OutputDataNavierStokes : public OutputData
 
   // Calculate streamfunction in order to visualize streamlines!
   // Note that this option is only available in 2D!
-  // To calculate the streamfunction Psi a Poisson equation is solved
+  // To calculate the streamfunction Psi, a Poisson equation is solved
   // with homogeneous Dirichlet BC's. Accordingly, this approach can only be
   // used for flow problems where the whole boundary is one streamline, e.g.,
   // cavity-type flow problems where the velocity is tangential to the boundary
@@ -48,6 +49,10 @@ struct OutputDataNavierStokes : public OutputData
 
   // write Q criterion
   bool write_q_criterion;
+
+  // write processor ID to scalar field in order to visualize the
+  // distribution of cells to processors
+  bool write_processor_id;
 };
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_DATA_NAVIER_STOKES_H_ */

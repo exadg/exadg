@@ -610,7 +610,7 @@ convective_step()
                   << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
     }
   }
-  else // param.formulation_of_convective_term == Implicit
+  else // param.treatment_of_convective_term == Implicit
   {
     AssertThrow(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit &&
                 !(this->param.equation_type == EquationType::Stokes || this->param.small_time_steps_stability),
