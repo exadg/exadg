@@ -671,7 +671,7 @@ private:
   template<typename FEEvaluation>
   inline void do_cell_integral(FEEvaluation &fe_eval, unsigned int const cell) const
   {
-    AssertThrow(const_viscosity > 0.0, ExcMessage("Constant viscosity has not been set!"));
+    AssertThrow(const_viscosity >= 0.0, ExcMessage("Constant viscosity has not been set!"));
 
     fe_eval.evaluate (false,true,false);
 

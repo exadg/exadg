@@ -929,7 +929,7 @@ public:
 
     // PHYSICAL QUANTITIES
     AssertThrow(end_time > start_time,ExcMessage("parameter end_time must be defined"));
-    AssertThrow(viscosity > 0.,ExcMessage("parameter must be defined"));
+    AssertThrow(viscosity >= 0.0,ExcMessage("parameter must be defined"));
 
     // TEMPORAL DISCRETIZATION
     AssertThrow(solver_type != SolverType::Undefined,ExcMessage("parameter must be defined"));
