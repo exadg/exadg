@@ -19,6 +19,7 @@
 #include "../../incompressible_navier_stokes/postprocessor/turbulence_statistics_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/write_output_navier_stokes.h"
 #include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_calculation.h"
+#include "../../incompressible_navier_stokes/postprocessor/energy_spectrum_calculation.h"
 #include "../../incompressible_navier_stokes/postprocessor/line_plot_data.h"
 
 #include "../../incompressible_navier_stokes/user_interface/input_parameters.h"
@@ -36,6 +37,7 @@ struct PostProcessorData
   MassConservationData mass_data;
   TurbulenceStatisticsData turb_stat_data;
   KineticEnergyData kinetic_energy_data;
+  KineticEnergySpectrumData kinetic_energy_spectrum_data;
   LinePlotData<dim> line_plot_data;
 };
 
@@ -85,6 +87,10 @@ public:
                                     dof_quad_index_data_in,
                                     pp_data.kinetic_energy_data);
 
+    kinetic_energy_spectrum_calculator.setup(matrix_free_data_in,
+                                             dof_quad_index_data_in,
+                                             pp_data.kinetic_energy_spectrum_data);
+
     line_plot_calculator.setup(dof_handler_velocity_in,
                                dof_handler_pressure_in,
                                mapping_in,
@@ -130,6 +136,11 @@ public:
     kinetic_energy_calculator.evaluate(velocity,time,time_step_number);
 
     /*
+     *  calculation of kinetic energy spectrum
+     */
+    kinetic_energy_spectrum_calculator.evaluate(velocity,time,time_step_number);
+
+    /*
      *  Evaluate fields along lines
      */
     line_plot_calculator.evaluate(velocity,pressure);
@@ -145,6 +156,7 @@ private:
   PressureDifferenceCalculator<dim,fe_degree_u,fe_degree_p,Number> pressure_difference_calculator;
   DivergenceAndMassErrorCalculator<dim,fe_degree_u,Number> div_and_mass_error_calculator;
   KineticEnergyCalculator<dim,fe_degree_u,Number> kinetic_energy_calculator;
+  KineticEnergySpectrumCalculator<dim,fe_degree_u,Number> kinetic_energy_spectrum_calculator;
   LinePlotCalculator<dim,fe_degree_u,fe_degree_p,Number> line_plot_calculator;
 };
 
