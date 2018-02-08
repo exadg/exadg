@@ -8,6 +8,7 @@
 // deal.II
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
+#include <deal.II/base/revision.h>
 
 // postprocessor
 #include "../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
@@ -37,13 +38,18 @@ using namespace dealii;
 //#include "incompressible_navier_stokes_test_cases/cavity.h"
 //#include "incompressible_navier_stokes_test_cases/stokes_guermond.h"
 //#include "incompressible_navier_stokes_test_cases/stokes_shahbazi.h"
+//#include "incompressible_navier_stokes_test_cases/stokes_curl_flow.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
 //#include "incompressible_navier_stokes_test_cases/vortex.h"
 //#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
-//#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
+#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/beltrami.h"
 //#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
-#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
+//#include "incompressible_navier_stokes_test_cases/orr_sommerfeld.h"
+//#include "incompressible_navier_stokes_test_cases/kelvin_helmholtz.h"
+//#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
+//#include "incompressible_navier_stokes_test_cases/cavity_3D.h"
+//#include "incompressible_navier_stokes_test_cases/backward_facing_step_tim.h"
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number=double>
 class NavierStokesProblem
@@ -371,6 +377,7 @@ solve_problem(bool const do_restart)
                                           boundary_descriptor_velocity,
                                           boundary_descriptor_pressure,
                                           periodic_faces);
+
   print_grid_data();
 
   setup_navier_stokes_operation();
@@ -392,6 +399,12 @@ int main (int argc, char** argv)
   try
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
+
+    if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    {
+      std::cout << "deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch "
+                << DEAL_II_GIT_BRANCH << std::endl << std::endl;
+    }
 
     deallog.depth_console(0);
 

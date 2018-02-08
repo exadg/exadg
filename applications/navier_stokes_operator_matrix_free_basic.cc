@@ -36,19 +36,19 @@ public:
     ConstraintMatrix constraints;
 
     if (do_renumber)
-      {
-        mf_data.initialize_mapping = false;
+    {
+      mf_data.initialize_mapping = false;
 
-        std::vector<types::global_dof_index> renumbering;
+      std::vector<types::global_dof_index> renumbering;
 
-        matrix_free.reinit(mapping, dof_handler, constraints,
-                           QGauss<1>(dof_handler.get_fe().degree+1), mf_data);
+      matrix_free.reinit(mapping, dof_handler, constraints,
+                         QGauss<1>(dof_handler.get_fe().degree+1), mf_data);
 
-        matrix_free.renumber_dofs(renumbering);
-        const_cast<DoFHandler<dim> &>(dof_handler).renumber_dofs(renumbering);
+      matrix_free.renumber_dofs(renumbering);
+      const_cast<DoFHandler<dim> &>(dof_handler).renumber_dofs(renumbering);
 
-        mf_data.initialize_mapping = true;
-      }
+      mf_data.initialize_mapping = true;
+    }
 
     matrix_free.reinit(mapping, dof_handler, constraints,
                        QGauss<1>(dof_handler.get_fe().degree+1), mf_data);
@@ -102,16 +102,16 @@ private:
     VectorizedArray<Number> factor = make_vectorized_array<Number>(time_step * viscosity);
 
     for (unsigned int cell=cell_range.first; cell!=cell_range.second; ++cell)
+    {
+      phi.reinit(cell);
+      phi.gather_evaluate(src, true, true);
+      for (unsigned int q=0; q<phi.static_n_q_points; ++q)
       {
-        phi.reinit(cell);
-        phi.gather_evaluate(src, true, true);
-        for (unsigned int q=0; q<phi.static_n_q_points; ++q)
-          {
-            phi.submit_value(phi.get_value(q), q);
-            phi.submit_gradient(factor * phi.get_gradient(q), q);
-          }
-        phi.integrate_scatter(true, true, dst);
+        phi.submit_value(phi.get_value(q), q);
+        phi.submit_gradient(factor * phi.get_gradient(q), q);
       }
+      phi.integrate_scatter(true, true, dst);
+    }
   }
 
   void helmholtz_face(const MatrixFree<dim,Number> &,
@@ -123,35 +123,35 @@ private:
     FEFaceEvaluation<dim,degree,degree+1,dim,Number> fe_eval_neighbor(matrix_free,false);
     typedef typename FEFaceEvaluation<dim,degree,degree+1,dim,Number>::value_type value_type;
     for (unsigned int face=face_range.first; face!=face_range.second; ++face)
+    {
+      fe_eval.reinit (face);
+      fe_eval_neighbor.reinit (face);
+
+      fe_eval.gather_evaluate(src,true,true);
+      fe_eval_neighbor.gather_evaluate(src,true,true);
+
+      VectorizedArray<Number> sigmaF = (std::abs(fe_eval.get_normal_volume_fraction()) +
+                                        std::abs(fe_eval_neighbor.get_normal_volume_fraction())) *
+        (Number)(degree * (degree + 1.0)) * 0.5 * 2.0;
+
+      for(unsigned int q=0;q<fe_eval.static_n_q_points;++q)
       {
-        fe_eval.reinit (face);
-        fe_eval_neighbor.reinit (face);
+        value_type half_jump = (fe_eval.get_value(q)-
+                                fe_eval_neighbor.get_value(q)) * make_vectorized_array<Number>(0.5);
+        value_type average_valgrad =
+          (fe_eval.get_normal_gradient(q) +
+           fe_eval_neighbor.get_normal_gradient(q)) * make_vectorized_array<Number>(0.5);
+        average_valgrad = half_jump * sigmaF - average_valgrad;
 
-        fe_eval.gather_evaluate(src,true,true);
-        fe_eval_neighbor.gather_evaluate(src,true,true);
-
-        VectorizedArray<Number> sigmaF = (std::abs(fe_eval.get_normal_volume_fraction()) +
-                                          std::abs(fe_eval_neighbor.get_normal_volume_fraction())) *
-          (Number)(degree * (degree + 1.0)) * 0.5 * 2.0;
-
-        for(unsigned int q=0;q<fe_eval.static_n_q_points;++q)
-          {
-            value_type half_jump = (fe_eval.get_value(q)-
-                                    fe_eval_neighbor.get_value(q)) * make_vectorized_array<Number>(0.5);
-            value_type average_valgrad =
-              (fe_eval.get_normal_gradient(q) +
-               fe_eval_neighbor.get_normal_gradient(q)) * make_vectorized_array<Number>(0.5);
-            average_valgrad = half_jump * sigmaF - average_valgrad;
-
-            fe_eval.submit_normal_gradient(-half_jump,q);
-            fe_eval_neighbor.submit_normal_gradient(-half_jump,q);
-            fe_eval.submit_value(average_valgrad,q);
-            fe_eval_neighbor.submit_value(-average_valgrad,q);
-          }
-
-        fe_eval.integrate_scatter(true,true,dst);
-        fe_eval_neighbor.integrate_scatter(true,true,dst);
+        fe_eval.submit_normal_gradient(-half_jump,q);
+        fe_eval_neighbor.submit_normal_gradient(-half_jump,q);
+        fe_eval.submit_value(average_valgrad,q);
+        fe_eval_neighbor.submit_value(-average_valgrad,q);
       }
+
+      fe_eval.integrate_scatter(true,true,dst);
+      fe_eval_neighbor.integrate_scatter(true,true,dst);
+    }
   }
 
   void helmholtz_boundary(const MatrixFree<dim,Number> &,
@@ -163,25 +163,25 @@ private:
     typedef typename FEFaceEvaluation<dim,degree,degree+1,dim,Number>::value_type value_type;
 
     for (unsigned int face=face_range.first; face!=face_range.second; ++face)
+    {
+      fe_eval.reinit (face);
+
+      fe_eval.gather_evaluate(src,true,true);
+
+      VectorizedArray<Number> sigmaF = (std::abs(fe_eval.get_normal_volume_fraction())) *
+        (Number)(degree * (degree + 1.0)) * 2.0;
+
+      for(unsigned int q=0;q<fe_eval.static_n_q_points;++q)
       {
-        fe_eval.reinit (face);
-
-        fe_eval.gather_evaluate(src,true,true);
-
-        VectorizedArray<Number> sigmaF = (std::abs(fe_eval.get_normal_volume_fraction())) *
-          (Number)(degree * (degree + 1.0)) * 2.0;
-
-        for(unsigned int q=0;q<fe_eval.static_n_q_points;++q)
-          {
-            value_type half_jump = fe_eval.get_value(q);
-            value_type average_valgrad = -fe_eval.get_normal_gradient(q);
-            fe_eval.submit_normal_gradient(-half_jump,q);
-            average_valgrad += half_jump * sigmaF;
-            fe_eval.submit_value(average_valgrad,q);
-          }
-
-        fe_eval.integrate_scatter(true,true,dst);
+        value_type half_jump = fe_eval.get_value(q);
+        value_type average_valgrad = -fe_eval.get_normal_gradient(q);
+        fe_eval.submit_normal_gradient(-half_jump,q);
+        average_valgrad += half_jump * sigmaF;
+        fe_eval.submit_value(average_valgrad,q);
       }
+
+      fe_eval.integrate_scatter(true,true,dst);
+    }
   }
 
   void project_cell(const MatrixFree<dim,Number> &,
@@ -193,16 +193,16 @@ private:
     VectorizedArray<Number> factor = make_vectorized_array<Number>(time_step * viscosity);
 
     for (unsigned int cell=cell_range.first; cell!=cell_range.second; ++cell)
+    {
+      phi.reinit(cell);
+      phi.gather_evaluate(src, true, true);
+      for (unsigned int q=0; q<phi.static_n_q_points; ++q)
       {
-        phi.reinit(cell);
-        phi.gather_evaluate(src, true, true);
-        for (unsigned int q=0; q<phi.static_n_q_points; ++q)
-          {
-            phi.submit_value(phi.get_value(q), q);
-            phi.submit_divergence(tau_projection * phi.get_divergence(q), q);
-          }
-        phi.integrate_scatter(true, true, dst);
+        phi.submit_value(phi.get_value(q), q);
+        phi.submit_divergence(tau_projection * phi.get_divergence(q), q);
       }
+      phi.integrate_scatter(true, true, dst);
+    }
   }
 
   void project_face(const MatrixFree<dim,Number> &,
@@ -214,24 +214,24 @@ private:
     FEFaceEvaluation<dim,degree,degree+1,dim,Number> fe_eval_neighbor(matrix_free,false);
     typedef typename FEFaceEvaluation<dim,degree,degree+1,dim,Number>::value_type value_type;
     for (unsigned int face=face_range.first; face!=face_range.second; ++face)
+    {
+      fe_eval.reinit (face);
+      fe_eval_neighbor.reinit (face);
+
+      fe_eval.gather_evaluate(src,true,false);
+      fe_eval_neighbor.gather_evaluate(src,true,false);
+
+      for(unsigned int q=0;q<fe_eval.static_n_q_points;++q)
       {
-        fe_eval.reinit (face);
-        fe_eval_neighbor.reinit (face);
-
-        fe_eval.gather_evaluate(src,true,false);
-        fe_eval_neighbor.gather_evaluate(src,true,false);
-
-        for(unsigned int q=0;q<fe_eval.static_n_q_points;++q)
-          {
-            Tensor<1,dim,VectorizedArray<Number> > normal = fe_eval.get_normal_vector(q);
-            VectorizedArray<Number> jump_val = normal * (fe_eval.get_value(q) - fe_eval_neighbor.get_value(q));
-            fe_eval.submit_value(normal * jump_val, q);
-            fe_eval.submit_value(-normal * jump_val, q);
-          }
-
-        fe_eval.integrate_scatter(true,false,dst);
-        fe_eval_neighbor.integrate_scatter(true,false,dst);
+        Tensor<1,dim,VectorizedArray<Number> > normal = fe_eval.get_normal_vector(q);
+        VectorizedArray<Number> jump_val = normal * (fe_eval.get_value(q) - fe_eval_neighbor.get_value(q));
+        fe_eval.submit_value(normal * jump_val, q);
+        fe_eval.submit_value(-normal * jump_val, q);
       }
+
+      fe_eval.integrate_scatter(true,false,dst);
+      fe_eval_neighbor.integrate_scatter(true,false,dst);
+    }
   }
 
   void project_boundary(const MatrixFree<dim,Number> &,
@@ -279,34 +279,35 @@ void do_test(const FiniteElement<dim> &fe_scalar,
     Timer time;
     double min_time = 1e10;
     for (unsigned int i=0; i<5; ++i)
-      {
-        time.restart();
-        for (unsigned int t=0; t<100; ++t)
-          test.helmholtz(v2, v1);
-        Utilities::MPI::MinMaxAvg data =
-          Utilities::MPI::min_max_avg (time.wall_time()/100, MPI_COMM_WORLD);
-        pcout << "Helmholtz mat-vec dp  "
-              << data.min << " (p" << data.min_index << ") " << data.avg
-              << " " << data.max << " (p" << data.max_index << ")" << std::endl;
-        min_time = std::min(min_time, data.max);
-      }
+    {
+      time.restart();
+      for (unsigned int t=0; t<100; ++t)
+        test.helmholtz(v2, v1);
+      Utilities::MPI::MinMaxAvg data =
+        Utilities::MPI::min_max_avg (time.wall_time()/100, MPI_COMM_WORLD);
+      pcout << "Helmholtz mat-vec dp  "
+            << data.min << " (p" << data.min_index << ") " << data.avg
+            << " " << data.max << " (p" << data.max_index << ")" << std::endl;
+      min_time = std::min(min_time, data.max);
+    }
+
     pcout << "Helmholtz dp deg=" << degree << " dofs=" << dof_handler.n_dofs() << " DoFs/s: "
           << dof_handler.n_dofs() / min_time << std::endl;
     pcout << std::endl;
 
     min_time = 1e10;
     for (unsigned int i=0; i<5; ++i)
-      {
-        time.restart();
-        for (unsigned int t=0; t<100; ++t)
-          test.projection(v2, v1);
-        Utilities::MPI::MinMaxAvg data =
-          Utilities::MPI::min_max_avg (time.wall_time()/100, MPI_COMM_WORLD);
-        pcout << "Projection mat-vec dp "
-              << data.min << " (p" << data.min_index << ") " << data.avg
-              << " " << data.max << " (p" << data.max_index << ")" << std::endl;
-        min_time = std::min(min_time, data.max);
-      }
+    {
+      time.restart();
+      for (unsigned int t=0; t<100; ++t)
+        test.projection(v2, v1);
+      Utilities::MPI::MinMaxAvg data =
+        Utilities::MPI::min_max_avg (time.wall_time()/100, MPI_COMM_WORLD);
+      pcout << "Projection mat-vec dp "
+            << data.min << " (p" << data.min_index << ") " << data.avg
+            << " " << data.max << " (p" << data.max_index << ")" << std::endl;
+      min_time = std::min(min_time, data.max);
+    }
     pcout << "Projection dp deg=" << degree << " dofs=" << dof_handler.n_dofs() << " DoFs/s: "
           << dof_handler.n_dofs() / min_time << std::endl;
     pcout << std::endl;
@@ -322,34 +323,36 @@ void do_test(const FiniteElement<dim> &fe_scalar,
     Timer time;
     double min_time = 1e10;
     for (unsigned int i=0; i<5; ++i)
-      {
-        time.restart();
-        for (unsigned int t=0; t<100; ++t)
-          test.helmholtz(v2, v1);
-        Utilities::MPI::MinMaxAvg data =
-          Utilities::MPI::min_max_avg (time.wall_time()/100, MPI_COMM_WORLD);
-        pcout << "Helmholtz mat-vec sp  "
-              << data.min << " (p" << data.min_index << ") " << data.avg
-              << " " << data.max << " (p" << data.max_index << ")" << std::endl;
-        min_time = std::min(min_time, data.max);
-      }
+    {
+      time.restart();
+      for (unsigned int t=0; t<100; ++t)
+        test.helmholtz(v2, v1);
+      Utilities::MPI::MinMaxAvg data =
+        Utilities::MPI::min_max_avg (time.wall_time()/100, MPI_COMM_WORLD);
+      pcout << "Helmholtz mat-vec sp  "
+            << data.min << " (p" << data.min_index << ") " << data.avg
+            << " " << data.max << " (p" << data.max_index << ")" << std::endl;
+      min_time = std::min(min_time, data.max);
+    }
+
     pcout << "Helmholtz sp deg=" << degree << " dofs=" << dof_handler.n_dofs() << " DoFs/s: "
           << dof_handler.n_dofs() / min_time << std::endl;
     pcout << std::endl;
 
     min_time = 1e10;
     for (unsigned int i=0; i<5; ++i)
-      {
-        time.restart();
-        for (unsigned int t=0; t<100; ++t)
-          test.projection(v2, v1);
-        Utilities::MPI::MinMaxAvg data =
-          Utilities::MPI::min_max_avg (time.wall_time()/100, MPI_COMM_WORLD);
-        pcout << "Projection mat-vec sp "
-              << data.min << " (p" << data.min_index << ") " << data.avg
-              << " " << data.max << " (p" << data.max_index << ")" << std::endl;
-        min_time = std::min(min_time, data.max);
-      }
+    {
+      time.restart();
+      for (unsigned int t=0; t<100; ++t)
+        test.projection(v2, v1);
+      Utilities::MPI::MinMaxAvg data =
+        Utilities::MPI::min_max_avg (time.wall_time()/100, MPI_COMM_WORLD);
+      pcout << "Projection mat-vec sp "
+            << data.min << " (p" << data.min_index << ") " << data.avg
+            << " " << data.max << " (p" << data.max_index << ")" << std::endl;
+      min_time = std::min(min_time, data.max);
+    }
+
     pcout << "Projection sp deg=" << degree << " dofs=" << dof_handler.n_dofs() << " DoFs/s: "
           << dof_handler.n_dofs() / min_time << std::endl;
     pcout << std::endl;
@@ -361,22 +364,24 @@ int main(int argc, char** argv)
 {
   Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
   if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    {
-      std::cout << "deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch "
-                << DEAL_II_GIT_BRANCH << std::endl << std::endl;
+  {
+    std::cout << "deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch "
+              << DEAL_II_GIT_BRANCH << std::endl << std::endl;
 
-      std::cout << std::endl
-                << "Number of MPI ranks:         "
-                << Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD)
-                << std::endl << std::endl;
-    }
+    std::cout << std::endl
+              << "Number of MPI ranks:         "
+              << Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD)
+              << std::endl << std::endl;
+  }
 
   const unsigned int dim = 3;
   do_test<dim,2>(FE_DGQ<dim>(2), false);
   do_test<dim,4>(FE_DGQ<dim>(4), false);
   do_test<dim,5>(FE_DGQ<dim>(5), false);
-  do_test<dim,4>(FE_DGQHermite<dim>(4), false);
-  do_test<dim,5>(FE_DGQHermite<dim>(5), false);
-  do_test<dim,4>(FE_DGQHermite<dim>(4), true);
-  do_test<dim,5>(FE_DGQHermite<dim>(5), true);
+  do_test<dim,7>(FE_DGQ<dim>(7), false);
+  do_test<dim,9>(FE_DGQ<dim>(9), false);
+//  do_test<dim,4>(FE_DGQHermite<dim>(4), false);
+//  do_test<dim,5>(FE_DGQHermite<dim>(5), false);
+//  do_test<dim,4>(FE_DGQHermite<dim>(4), true);
+//  do_test<dim,5>(FE_DGQHermite<dim>(5), true);
 }

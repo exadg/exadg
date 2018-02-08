@@ -2177,6 +2177,12 @@ LIKWID_MARKER_INIT;
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
+    if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    {
+      std::cout << "deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch "
+                << DEAL_II_GIT_BRANCH << std::endl << std::endl;
+    }
+
     deallog.depth_console(0);
 
     //mesh refinements

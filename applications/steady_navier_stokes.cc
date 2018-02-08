@@ -7,6 +7,7 @@
 
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
+#include <deal.II/base/revision.h>
 
 #include "../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.h"
@@ -20,9 +21,10 @@ using namespace dealii;
 
 // specify the flow problem that has to be solved
 
+#include "incompressible_navier_stokes_test_cases/stokes_curl_flow.h"
 //#include "incompressible_navier_stokes_test_cases/couette.h"
 //#include "incompressible_navier_stokes_test_cases/poiseuille.h"
-#include "incompressible_navier_stokes_test_cases/cavity.h"
+//#include "incompressible_navier_stokes_test_cases/cavity.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
 //#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
 
@@ -188,6 +190,12 @@ int main (int argc, char** argv)
   try
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
+
+    if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    {
+      std::cout << "deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch "
+                << DEAL_II_GIT_BRANCH << std::endl << std::endl;
+    }
 
     deallog.depth_console(0);
 

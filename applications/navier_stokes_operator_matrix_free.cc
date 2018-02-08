@@ -51,7 +51,7 @@ using namespace dealii;
 
 // set the polynomial degree of the shape functions k = 1,...,10
 unsigned int const FE_DEGREE_U_MIN = FE_DEGREE_VELOCITY;
-unsigned int const FE_DEGREE_U_MAX = FE_DEGREE_VELOCITY+7;
+unsigned int const FE_DEGREE_U_MAX = FE_DEGREE_VELOCITY+8;
 
 // Select the operator to be applied
 enum class OperatorType{
@@ -64,7 +64,7 @@ enum class OperatorType{
   InverseMassMatrix         // inverse mass matrix operator (vectorial quantity, velocity)
 };
 
-OperatorType OPERATOR_TYPE = OperatorType::InverseMassMatrix; // CoupledLinearized;
+OperatorType OPERATOR_TYPE = OperatorType::HelmholtzOperator; // CoupledLinearized;
 
 // number of repetitions used to determine the average/minimum wall time required
 // to compute the matrix-vector product
@@ -570,6 +570,12 @@ int main (int argc, char** argv)
   try
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
+
+    if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    {
+      std::cout << "deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch "
+                << DEAL_II_GIT_BRANCH << std::endl << std::endl;
+    }
 
     deallog.depth_console(0);
 

@@ -427,6 +427,12 @@ enum class XWallTurbulenceApproach
 
 /*
  *  Algebraic subgrid-scale turbulence models for LES
+ *
+ *  Standard constants according to literature:
+ *    Smagorinsky: 0.165
+ *    Vreman: 0.28
+ *    WALE: 0.50
+ *    Sigma: 1.35
  */
 enum class TurbulenceEddyViscosityModel
 {
@@ -638,6 +644,32 @@ struct KineticEnergyData
   bool calculate;
   unsigned int calculate_every_time_steps;
   double viscosity;
+  std::string filename_prefix;
+};
+
+// kinetic energy spectrum data
+
+struct KineticEnergySpectrumData
+{
+  KineticEnergySpectrumData()
+    :
+  calculate(false),
+  calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
+  filename_prefix("energy_spectrum")
+  {}
+
+  void print(ConditionalOStream &pcout)
+  {
+    if(calculate == true)
+    {
+      pcout << "  Calculate energy spectrum:" << std::endl;
+      print_parameter(pcout,"Calculate energy spectrum",calculate);
+      print_parameter(pcout,"Calculate every timesteps",calculate_every_time_steps);
+    }
+  }
+
+  bool calculate;
+  unsigned int calculate_every_time_steps;
   std::string filename_prefix;
 };
 
@@ -905,6 +937,9 @@ public:
 
     // kinetic energy
     kinetic_energy_data(KineticEnergyData()),
+
+    // kinetic energy spectrum
+    kinetic_energy_spectrum_data(KineticEnergySpectrumData()),
 
     // perturbation energy data
     perturbation_energy_data(PerturbationEnergyData()),
@@ -1811,6 +1846,9 @@ public:
     // kinetic energy
     kinetic_energy_data.print(pcout);
 
+    // kinetic energy spectrum
+    kinetic_energy_spectrum_data.print(pcout);
+
     // perturbation energy
     perturbation_energy_data.print(pcout);
 
@@ -2300,6 +2338,9 @@ public:
 
   // kinetic energy
   KineticEnergyData kinetic_energy_data;
+
+  // kinetic energy spectrum
+  KineticEnergySpectrumData kinetic_energy_spectrum_data;
 
   // perturbation energy data (Orr-Sommerfeld)
   PerturbationEnergyData perturbation_energy_data;

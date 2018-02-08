@@ -7,6 +7,7 @@
 
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
+#include <deal.II/base/revision.h>
 
 #include "../include/convection_diffusion/analytical_solution.h"
 #include "../include/convection_diffusion/boundary_descriptor.h"
@@ -179,6 +180,12 @@ int main (int argc, char** argv)
   {
     //using namespace ConvectionDiffusionProblem;
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
+
+    if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    {
+      std::cout << "deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch "
+                << DEAL_II_GIT_BRANCH << std::endl << std::endl;
+    }
 
     deallog.depth_console(0);
 
