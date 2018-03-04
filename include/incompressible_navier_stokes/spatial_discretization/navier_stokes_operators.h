@@ -1886,7 +1886,7 @@ private:
 
         for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
         {
-          const unsigned int cell_number = data.get_face_info(face).cells_minus[v];
+          const unsigned int cell_number = data.get_face_info(face).cells_interior[v];
           if (cell_number != numbers::invalid_unsigned_int)
             for(unsigned int i=0; i<dofs_per_cell; ++i)
               matrices[cell_number](i,j) += fe_eval.begin_dof_values()[i][v];
@@ -1948,7 +1948,7 @@ private:
 
         for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
         {
-          const unsigned int cell_number = data.get_face_info(face).cells_plus[v];
+          const unsigned int cell_number = data.get_face_info(face).cells_exterior[v];
           if (cell_number != numbers::invalid_unsigned_int)
             for(unsigned int i=0; i<dofs_per_cell; ++i)
               matrices[cell_number](i,j) += fe_eval_neighbor.begin_dof_values()[i][v];
@@ -2022,7 +2022,7 @@ private:
 
         for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
         {
-          const unsigned int cell_number = data.get_face_info(face).cells_minus[v];
+          const unsigned int cell_number = data.get_face_info(face).cells_interior[v];
           if (cell_number != numbers::invalid_unsigned_int)
             for(unsigned int i=0; i<dofs_per_cell; ++i)
               matrices[cell_number](i,j) += fe_eval.begin_dof_values()[i][v];
@@ -4467,7 +4467,7 @@ private:
 
         for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
         {
-          const unsigned int cell_number = data.get_face_info(face).cells_minus[v];
+          const unsigned int cell_number = data.get_face_info(face).cells_interior[v];
           if (cell_number != numbers::invalid_unsigned_int)
             for(unsigned int i=0; i<dofs_per_cell; ++i)
               matrices[cell_number](i,j) += fe_eval.begin_dof_values()[i][v];
@@ -4520,7 +4520,7 @@ private:
 
         for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
         {
-          const unsigned int cell_number = data.get_face_info(face).cells_plus[v];
+          const unsigned int cell_number = data.get_face_info(face).cells_exterior[v];
           if (cell_number != numbers::invalid_unsigned_int)
             for(unsigned int i=0; i<dofs_per_cell; ++i)
               matrices[cell_number](i,j) += fe_eval_neighbor.begin_dof_values()[i][v];
@@ -4586,7 +4586,7 @@ private:
 
         for (unsigned int v=0; v<VectorizedArray<value_type>::n_array_elements; ++v)
         {
-          const unsigned int cell_number = data.get_face_info(face).cells_minus[v];
+          const unsigned int cell_number = data.get_face_info(face).cells_interior[v];
           if (cell_number != numbers::invalid_unsigned_int)
             for(unsigned int i=0; i<dofs_per_cell; ++i)
               matrices[cell_number](i,j) += fe_eval.begin_dof_values()[i][v];

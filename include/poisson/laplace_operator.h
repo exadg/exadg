@@ -1646,7 +1646,7 @@ face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>         
 
       for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
       {
-        const unsigned int cell_number = data.get_face_info(face).cells_minus[v];
+        const unsigned int cell_number = data.get_face_info(face).cells_interior[v];
         if (cell_number != numbers::invalid_unsigned_int)
           for(unsigned int i=0; i<phi.dofs_per_cell; ++i)
             matrices[cell_number](i,j) += phi.begin_dof_values()[i][v];
@@ -1693,7 +1693,7 @@ face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>         
 
       for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
       {
-        const unsigned int cell_number = data.get_face_info(face).cells_plus[v];
+        const unsigned int cell_number = data.get_face_info(face).cells_exterior[v];
         if (cell_number != numbers::invalid_unsigned_int)
           for(unsigned int i=0; i<phi_outer.dofs_per_cell; ++i)
             matrices[cell_number](i,j) += phi_outer.begin_dof_values()[i][v];
@@ -1768,7 +1768,7 @@ boundary_face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>
 
       for (unsigned int v=0; v<VectorizedArray<Number>::n_array_elements; ++v)
       {
-        const unsigned int cell_number = data.get_face_info(face).cells_minus[v];
+        const unsigned int cell_number = data.get_face_info(face).cells_interior[v];
         if (cell_number != numbers::invalid_unsigned_int)
           for(unsigned int i=0; i<phi.dofs_per_cell; ++i)
             matrices[cell_number](i,j) += phi.begin_dof_values()[i][v];
