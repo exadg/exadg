@@ -66,6 +66,7 @@ public:
   void evaluate(parallel::distributed::Vector<Number> const &velocity,
                 double const                                &time,
                 int const                                   &time_step_number)
+  {
     if(data.calculate == true)
     {
       if(time_step_number >= 0) // unsteady problem
