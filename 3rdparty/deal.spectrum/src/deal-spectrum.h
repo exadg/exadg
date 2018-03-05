@@ -89,7 +89,7 @@ public:
      * @param src   current velocity field
      * 
      */
-    void execute(double* src){
+    void execute(const double* src){
         if(write){
             // flush flow field to hard drive
             s.writeHeader("TODO"); ipol.serialize("TODO", src);

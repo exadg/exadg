@@ -59,8 +59,7 @@ public:
 
     }
 
-    template<typename VECTOR>
-    void evaluate(VECTOR       &velocity,
+    void evaluate(parallel::distributed::Vector<Number> const &velocity,
                   double       time,
                   unsigned int time_step_number){
         if(data.calculate == true)
@@ -69,8 +68,7 @@ public:
 
 private:
 
-    template<typename VECTOR>
-    void do_evaluate(VECTOR       &velocity,
+    void do_evaluate(parallel::distributed::Vector<Number> const &velocity,
                      double       ,
                      unsigned int time_step_number) {
 
@@ -78,8 +76,8 @@ private:
             if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0) 
                 std::cout << "Calculate kinetic energy spectrum" << std::endl;
             
-            double& temp = velocity.local_element(0);
-            dsw.execute(&temp);
+            const double* temp = velocity.begin();
+            dsw.execute(temp);
 
             // write output file
             if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0) {

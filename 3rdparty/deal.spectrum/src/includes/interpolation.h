@@ -141,6 +141,7 @@ public:
      * for each point are grouped together. Use local source vector.
      */
     void interpolate() {
+        const double* src = this->src;
         interpolate(src);
     }
     
@@ -151,15 +152,14 @@ public:
      * 
      * @params src      source vector (vector to be interpolated)
      */
-    void interpolate(double*& src) {
+    void interpolate(const double*& src) {
         
         // allocate dst- and src-vector
         AlignedVector<double> temp1(MAX(dofs_source,dofs_target));
         AlignedVector<double> temp2(MAX(dofs_source,dofs_target));
         
         // get start point of arrays
-        double * src_ = src; double * dst_ = dst;
-        
+        const double * src_ = src; double * dst_ = dst;
         // loop over all cells
         for(int c = 0; c < cells; c++){
             // loop over all velocity directions
@@ -252,6 +252,7 @@ public:
      * @param filename  filename
      */
     void serialize(const char* filename) {
+        const double* src = this->src;
         serialize(filename, src);
     }
 
@@ -261,7 +262,7 @@ public:
      * @param filename  filename
      * @param src       source vector
      */
-    void serialize(const char* filename, double*& src) {
+    void serialize(const char* filename, const double*& src) {
         io(1, filename, src);
     }
     
@@ -272,7 +273,8 @@ public:
      * @param filename  filename
      * @param src       source vector
      */
-    void io(int type, const char* filename, double*& src){
+    template <typename VEC>
+    void io(int type, const char* filename, VEC& src){
         // dofs to read/write per field
         int dofs = cells*dofs_source;
         // local displacement in file (in bytes)
@@ -295,7 +297,7 @@ public:
         
         if(type == 0)
             // ... read file
-            MPI_File_read_all(fh, src, dofs*DIM, MPI_DOUBLE, MPI_STATUSES_IGNORE);
+            MPI_File_read_all(fh, (void*) src, dofs*DIM, MPI_DOUBLE, MPI_STATUSES_IGNORE);
         else
             // ... write file
             MPI_File_write_all(fh, src, dofs*DIM, MPI_DOUBLE, MPI_STATUSES_IGNORE);
