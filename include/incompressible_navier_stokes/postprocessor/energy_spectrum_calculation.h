@@ -99,7 +99,7 @@ private:
                 std::ofstream f;
                 if(clear_files == true) {
                     f.open(filename.str().c_str(),std::ios::trunc);
-                    f << "  Bin  Wave length          Energy" << std::endl;
+                    f << "  Bin  Wave number          Energy" << std::endl;
                     clear_files = false;
                 } else {
                     f.open(filename.str().c_str(),std::ios::app);
@@ -111,7 +111,7 @@ private:
                 
                 // ... and print it line by line:
                 for(int i = 0; i < len; i++)
-                    //if(E[i] > data.output_precision)
+                    if(E[i] > data.output_precision)
                         f << std::scientific << std::setprecision(0) << std::setw(2+ceil(std::max(3.0, log(len)/log(10)))) 
                           << i
                           << std::scientific << std::setprecision(precision) << std::setw(precision+8) 
