@@ -2,7 +2,7 @@
  * energy_spectrum_calculation.h
  *
  *  Created on: Feb 7, 2018
- *      Author: fehn
+ *      Author: fehn/muench
  */
 
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_ENERGY_SPECTRUM_CALCULATION_H_
