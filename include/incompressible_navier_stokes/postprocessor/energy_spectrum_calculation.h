@@ -59,7 +59,9 @@ public:
     MPI_Allreduce(MPI_IN_PLACE, &cells, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD);
     cells = round(pow(cells,1.0/dim));
     
-    dsw.init(dim, cells,fe_degree+1,fe_degree+1,local_cells);
+    dsw.init(dim, cells,fe_degree+1,
+            data.evaluation_points == 0 ? fe_degree+1 : data.evaluation_points,
+            local_cells);
 
   }
 
