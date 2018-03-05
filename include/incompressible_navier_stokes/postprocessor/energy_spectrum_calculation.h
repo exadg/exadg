@@ -82,7 +82,7 @@ public:
 
 private:
   void do_evaluate(parallel::distributed::Vector<Number> const &velocity,
-                   double const                                ,
+                   double const                                time,
                    unsigned int const                          time_step_number)
   {
         if((time_step_number-1)%data.calculate_every_time_steps == 0) {
@@ -110,6 +110,8 @@ private:
                 // get tabularized results ...
                 double* kappa; double* E; double* C;
                 int len = dsw.get_results(kappa, E, C);
+                
+                f << "Timestep " << time_step_number << " at " << time << " sec" << std::endl;
                 
                 // ... and print it line by line:
                 for(int i = 0; i < len; i++)
