@@ -12,6 +12,7 @@
 #include <vector>
 #include <cmath>
 #include <memory>
+#include <deal.II/lac/la_parallel_vector.h>
 
 #ifdef USE_DEAL_SPECTRUM
     #include "../../../3rdparty/deal.spectrum/src/deal-spectrum.h"
@@ -58,8 +59,6 @@ public:
     MPI_Allreduce(MPI_IN_PLACE, &cells, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD);
     cells = round(pow(cells,1.0/dim));
     
-    //std::cout << local_cells << std::endl; std::cout << cells << std::endl; exit(0);
-    
     dsw.init(dim, cells,fe_degree+1,fe_degree+1,local_cells);
 
   }
@@ -67,7 +66,6 @@ public:
   void evaluate(parallel::distributed::Vector<Number> const &velocity,
                 double const                                &time,
                 int const                                   &time_step_number)
-  {
     if(data.calculate == true)
     {
       if(time_step_number >= 0) // unsteady problem
@@ -88,8 +86,9 @@ private:
             if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0) 
                 std::cout << "Calculate kinetic energy spectrum" << std::endl;
             
-            const double& temp = velocity.local_element(0);
-            dsw.execute(&temp);
+            // extract beginning of vector...
+            const double* temp = velocity.begin();
+            dsw.execute(temp);
 
             // write output file
             if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0) {
