@@ -268,6 +268,10 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   kinetic_energy_data.calculate_every_time_steps = 1;
   kinetic_energy_data.viscosity = VISCOSITY;
   kinetic_energy_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
+  
+  kinetic_energy_spectrum_data.calculate = true;
+  kinetic_energy_spectrum_data.calculate_every_time_steps = 100;
+  kinetic_energy_spectrum_data.filename_prefix = OUTPUT_FOLDER + "spectrum";
 
   // output of solver information
   output_solver_info_every_timesteps = 1; //1e5;
@@ -456,6 +460,7 @@ construct_postprocessor(InputParametersNavierStokes<dim> const &param)
   pp_data.pressure_difference_data = param.pressure_difference_data;
   pp_data.mass_data = param.mass_data;
   pp_data.kinetic_energy_data = param.kinetic_energy_data;
+  pp_data.kinetic_energy_spectrum_data = param.kinetic_energy_spectrum_data;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
   pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,Number>(pp_data));
