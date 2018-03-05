@@ -112,12 +112,14 @@ int main(int argc, char **argv){
         }
 
         // perform FFT & post process...
-        fftw.execute(); fftw.calculate_energy_spectrum();
+        fftw.execute(); fftw.calculate_energy_spectrum(); fftw.calculate_energy();
         
         if(rank==0){
             // ... and print results
-            double* kappa; double* E; double* C; 
-            int len = fftw.get_results(kappa, E, C);
+            double* kappa; double* E; double* C; double e_d; double e_s;
+            int len = fftw.get_results(kappa, E, C, e_d, e_s);
+            printf("  Energy (domain):   %20.12f\n",   e_d);
+            printf("  Energy (spectral): %20.12f\n\n", e_s);
             printf("  Bin   Wave length          Count   Energy\n");
             for(int i = 0; i < len; i++)
                 if(E[i] > lower_limit /*|| lower_limit == std::numeric_limits<double>::min()*/)

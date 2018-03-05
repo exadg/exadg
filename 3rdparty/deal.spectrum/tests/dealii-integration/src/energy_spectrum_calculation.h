@@ -94,8 +94,8 @@ private:
                 }
 
                 // get tabularized results ...
-                double* kappa; double* E; double* C;
-                int len = dsw.get_results(kappa, E, C);
+                double* kappa; double* E; double* C; double e_d; double e_s;
+                int len = dsw.get_results(kappa, E, C, e_d, e_s);
                 
                 // ... and print it line by line:
                 for(int i = 0; i < len; i++)

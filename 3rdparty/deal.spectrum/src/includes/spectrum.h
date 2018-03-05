@@ -88,7 +88,6 @@ public:
         n[dim-1] = N / 2 + 1;
 
         // ...get local size of local output arrays
-        ptrdiff_t alloc_local;
         ptrdiff_t local_elements = 0;
         alloc_local = fftw_mpi_local_size(dim, n, MPI_COMM_WORLD, &local_elements, &local_start);
         local_end = local_start + local_elements;
@@ -188,12 +187,55 @@ public:
         }
     }
        
+    void calculate_energy(){
+        double scaling = pow(N,dim);
+        double e[2]; double E[2]; double& e_d = e[0]; double& e_s = e[1];
+        
+        for(int i = 0; i < 2 * alloc_local * dim; i++){
+            e_d +=  u_real[i]*u_real[i];
+        }
+        
+        // scale: integrate cell wise...
+        e_d  *= pow(2*M_PI/N, dim);
+        // ... and make to energy 0.5*u^2
+        e_d  *= 0.5;
+        
+        if(dim==2)
+            for(int j = local_start; j < local_end; j++) 
+                for(int i = 0; i < N; i++)
+                    e_s +=  u_comp2(MIN(i,N-i),j)[0]*u_comp2(MIN(i,N-i),j)[0]
+                            +u_comp2(MIN(i,N-i),j)[1]*u_comp2(MIN(i,N-i),j)[1]
+                            +v_comp2(MIN(i,N-i),j)[0]*v_comp2(MIN(i,N-i),j)[0]
+                            +v_comp2(MIN(i,N-i),j)[1]*v_comp2(MIN(i,N-i),j)[1];
+        else if (dim==3)
+            for(int k_ = local_start; k_ < local_end; k_++) 
+                for(int j = 0; j < N; j++)
+                    for(int i = 0; i < N; i++)
+                        e_s += u_comp3(MIN(i,N-i),j,k_)[0]*u_comp3(MIN(i,N-i),j,k_)[0]
+                              +u_comp3(MIN(i,N-i),j,k_)[1]*u_comp3(MIN(i,N-i),j,k_)[1]
+                              +v_comp3(MIN(i,N-i),j,k_)[0]*v_comp3(MIN(i,N-i),j,k_)[0]
+                              +v_comp3(MIN(i,N-i),j,k_)[1]*v_comp3(MIN(i,N-i),j,k_)[1]
+                              +w_comp3(MIN(i,N-i),j,k_)[0]*w_comp3(MIN(i,N-i),j,k_)[0]
+                              +w_comp3(MIN(i,N-i),j,k_)[1]*w_comp3(MIN(i,N-i),j,k_)[1];
+        
+        // scale: due to FFT...
+        e_s /= scaling*scaling;
+        // ... due to volume integral, and ..
+        e_s *= pow(2*M_PI,dim);
+        // ... and make to energy 0.5*u^2
+        e_s *= 0.5;
+        
+        MPI_Reduce(e, E, 2, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        this->e_d = E[0];
+        this->e_s = E[1];
+    } 
+    
     /**
      * Perform spectral analysis 
      */
     void calculate_energy_spectrum(){
 
-        double scaling = pow(2*M_PI*N,this->dim);
+        double scaling = pow(N, dim);
 
         // ... init with zero
         for(int i = 0; i < N; i++){
@@ -210,11 +252,10 @@ public:
                     // ... use for binning
                     int p    = round(r);
                     // ... update energy
-                    e[p] += 0.5*(
-                            +u_comp2(MIN(i,N-i),j)[0]*u_comp2(MIN(i,N-i),j)[0]
+                    e[p] +=  u_comp2(MIN(i,N-i),j)[0]*u_comp2(MIN(i,N-i),j)[0]
                             +u_comp2(MIN(i,N-i),j)[1]*u_comp2(MIN(i,N-i),j)[1]
                             +v_comp2(MIN(i,N-i),j)[0]*v_comp2(MIN(i,N-i),j)[0]
-                            +v_comp2(MIN(i,N-i),j)[1]*v_comp2(MIN(i,N-i),j)[1]);
+                            +v_comp2(MIN(i,N-i),j)[1]*v_comp2(MIN(i,N-i),j)[1];
                     
                     // ... update kappa results
                     k[p] += r; c[p]++;
@@ -229,13 +270,12 @@ public:
                         // ... use for binning
                         int p    = round(r);
                         // ... update energy
-                        e[p] += 0.5*(
-                                +u_comp3(MIN(i,N-i),j,k_)[0]*u_comp3(MIN(i,N-i),j,k_)[0]
+                        e[p] +=  u_comp3(MIN(i,N-i),j,k_)[0]*u_comp3(MIN(i,N-i),j,k_)[0]
                                 +u_comp3(MIN(i,N-i),j,k_)[1]*u_comp3(MIN(i,N-i),j,k_)[1]
                                 +v_comp3(MIN(i,N-i),j,k_)[0]*v_comp3(MIN(i,N-i),j,k_)[0]
                                 +v_comp3(MIN(i,N-i),j,k_)[1]*v_comp3(MIN(i,N-i),j,k_)[1]
                                 +w_comp3(MIN(i,N-i),j,k_)[0]*w_comp3(MIN(i,N-i),j,k_)[0]
-                                +w_comp3(MIN(i,N-i),j,k_)[1]*w_comp3(MIN(i,N-i),j,k_)[1]);
+                                +w_comp3(MIN(i,N-i),j,k_)[1]*w_comp3(MIN(i,N-i),j,k_)[1];
 
                         // ... update kappa results
                         k[p] += r; c[p]++;
@@ -249,11 +289,13 @@ public:
         // ... normalize results
         for(int i = 0; i < N; i++){
             // ... average energy and kappa
-            K[i] /= C[i]; E[i] /= C[i];
+            K[i] /= C[i]; //E[i] /= C[i];
             // ... factor from fft
             E[i] /= scaling*scaling;
-            // ... perform surface integral
-            E[i] *= (dim==2) ? (2*M_PI*K[i]) : (4*M_PI*K[i]*K[i]);
+            // ... such that zero mode fulfills equation
+            E[i] *= pow(2*M_PI,dim);
+            // ... and make to energy 0.5*u^2
+            E[i] *= 0.5;
         }
 
     }
@@ -265,8 +307,8 @@ public:
      * @param E         energy
      * @return          length of table
      */
-    int get_results(double*& K, double*& E, double*& C){
-        K = this->K; E = this->E; C = this->C;
+    int get_results(double*& K, double*& E, double*& C, double& e_d, double& e_s){
+        K = this->K; E = this->E; C = this->C; e_d = this->e_d; e_s = this->e_s;
         return N ;
     }
         
@@ -364,6 +406,7 @@ private:
     ptrdiff_t local_start;
     // ... end
     ptrdiff_t local_end;
+    ptrdiff_t alloc_local;
 public:
     // size of each real field
     int bsize;
@@ -393,6 +436,8 @@ private:
     double* K;
     // ... kappa count
     double* C;
+    double e_d;
+    double e_s;
         
 };
 

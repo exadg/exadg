@@ -108,10 +108,13 @@ private:
                 }
 
                 // get tabularized results ...
-                double* kappa; double* E; double* C;
-                int len = dsw.get_results(kappa, E, C);
+                double* kappa; double* E; double* C; double e_d; double e_s;
+                int len = dsw.get_results(kappa, E, C, e_d, e_s);
                 
-                f << "Timestep " << time_step_number << " at " << time << " sec" << std::endl;
+                f << "Timestep " << time_step_number << " at " << time << " sec"
+                        << " with E_d=" << std::setprecision(precision) << std::setw(precision+8) << e_d
+                        <<  " and E_s=" << std::setprecision(precision) << std::setw(precision+8) << e_s
+                        << std::endl;
                 
                 // ... and print it line by line:
                 for(int i = 0; i < len; i++)

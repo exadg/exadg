@@ -114,6 +114,7 @@ public:
             // ... spectral analysis
             timer.start("Postprocessing");
             fftw.calculate_energy_spectrum();
+            fftw.calculate_energy();
             timer.append("Postprocessing");
         }
             
@@ -127,9 +128,9 @@ public:
      * @return length of table
      * 
      */
-    int get_results(double*& K, double*& E, double*& C){
+    int get_results(double*& K, double*& E, double*& C, double& e_d, double& e_s){
         // simply return values from the spectral analysis tool
-        return this->fftw.get_results(K, E, C);
+        return this->fftw.get_results(K, E, C, e_d, e_s);
     } 
     
 private:
