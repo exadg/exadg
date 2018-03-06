@@ -19,7 +19,7 @@
 #include "../include/convection_diffusion/time_int_bdf.h"
 #include "../include/convection_diffusion/time_int_explicit_runge_kutta.h"
 #include "../include/functionalities/print_functions.h"
-
+#include "../include/functionalities/print_general_infos.h"
 
 using namespace dealii;
 using namespace ConvDiff;
@@ -100,6 +100,7 @@ ConvDiffProblem(const unsigned int n_refine_space_in,
   param.set_input_parameters();
   param.check_input_parameters();
 
+  print_MPI_info(pcout);
   if(param.print_input_parameters)
     param.print(pcout);
 
@@ -203,7 +204,7 @@ solve_problem()
   else if(param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
   {
     // call setup() of time_integrator before setup_solvers() of conv_diff_operation
-    // because setup_solvers() needs quantities such as the time step size for a
+    // because setup_solver() needs quantities such as the time step size for a
     // correct initialization of preconditioners
     time_integrator_BDF->setup();
 

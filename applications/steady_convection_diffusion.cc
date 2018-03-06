@@ -17,7 +17,7 @@
 #include "../include/convection_diffusion/input_parameters.h"
 #include "../include/convection_diffusion/postprocessor.h"
 #include "../include/functionalities/print_functions.h"
-
+#include "../include/functionalities/print_general_infos.h"
 
 using namespace dealii;
 using namespace ConvDiff;
@@ -82,6 +82,7 @@ ConvDiffProblem(const unsigned int n_refine_space_in)
   param.set_input_parameters();
   param.check_input_parameters();
 
+  print_MPI_info(pcout);
   if(param.print_input_parameters == true)
     param.print(pcout);
 
