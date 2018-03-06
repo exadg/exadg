@@ -9,13 +9,22 @@
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/base/revision.h>
 
+// postprocessor
 #include "../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+
+// spatial discretization
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.h"
+
+// temporal discretization
 #include "../include/incompressible_navier_stokes/time_integration/driver_steady_problems.h"
+
+// Paramters, BCs, etc.
 #include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
 #include "../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
 #include "../include/incompressible_navier_stokes/user_interface/analytical_solution.h"
+
+#include "../include/functionalities/print_general_infos.h"
 
 using namespace dealii;
 
@@ -38,7 +47,6 @@ public:
 
 private:
   void print_header();
-  void print_grid_data();
   void setup_postprocessor();
 
   ConditionalOStream pcout;
@@ -77,6 +85,7 @@ NavierStokesProblem(unsigned int const refine_steps_space,
   param.check_input_parameters();
 
   print_header();
+  print_MPI_info(pcout);
   if(param.print_input_parameters == true)
     param.print(pcout);
 
@@ -127,20 +136,6 @@ print_header()
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-print_grid_data()
-{
-  pcout << std::endl
-        << "Generating grid for " << dim << "-dimensional problem:" << std::endl
-        << std::endl;
-
-  print_parameter(pcout,"Number of refinements",n_refine_space);
-  print_parameter(pcout,"Number of cells",triangulation.n_global_active_cells());
-  print_parameter(pcout,"Number of faces",triangulation.n_active_faces());
-  print_parameter(pcout,"Number of vertices",triangulation.n_vertices());
-}
-
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 setup_postprocessor()
 {
   DofQuadIndexData dof_quad_index_data;
@@ -168,7 +163,10 @@ solve_problem()
                                           boundary_descriptor_velocity,
                                           boundary_descriptor_pressure,
                                           periodic_faces);
-  print_grid_data();
+
+  print_grid_data(pcout,
+                  n_refine_space,
+                  triangulation);
 
   navier_stokes_operation->setup(periodic_faces,
                                  boundary_descriptor_velocity,

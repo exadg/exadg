@@ -29,6 +29,8 @@
 #include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
 #include "../include/incompressible_navier_stokes/user_interface/analytical_solution.h"
 
+#include "../include/functionalities/print_general_infos.h"
+
 using namespace dealii;
 
 // specify the flow problem that has to be solved
@@ -48,8 +50,6 @@ public:
 
 private:
   void print_header();
-  void print_mpi_info();
-  void print_grid_data();
 
   void setup_navier_stokes_operation();
   void setup_time_integrator(bool const do_restart);
@@ -122,7 +122,7 @@ NavierStokesProblem(unsigned int const refine_steps_space1,
   param_2.check_input_parameters();
 
   print_header();
-  print_mpi_info();
+  print_MPI_info(pcout);
   if(param_1.print_input_parameters == true)
   {
     pcout << std::endl << "List of input parameters for DOMAIN 1:" << std::endl;
@@ -300,37 +300,6 @@ print_header()
   << "                     based on a matrix-free implementation                       " << std::endl
   << "_________________________________________________________________________________" << std::endl
   << std::endl;
-}
-
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-print_mpi_info()
-{
-  pcout << std::endl << "MPI info:" << std::endl << std::endl;
-  print_parameter(pcout,"Number of processes",Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD));
-}
-
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-print_grid_data()
-{
-  pcout << std::endl
-        << "Generating grid for DOMAIN 1 for " << dim << "-dimensional problem:" << std::endl
-        << std::endl;
-
-  print_parameter(pcout,"Number of refinements",n_refine_space_domain1);
-  print_parameter(pcout,"Number of cells",triangulation_1.n_global_active_cells());
-  print_parameter(pcout,"Number of faces",triangulation_1.n_active_faces());
-  print_parameter(pcout,"Number of vertices",triangulation_1.n_vertices());
-
-  pcout << std::endl
-        << "Generating grid for DOMAIN 2 for " << dim << "-dimensional problem:" << std::endl
-        << std::endl;
-
-  print_parameter(pcout,"Number of refinements",n_refine_space_domain2);
-  print_parameter(pcout,"Number of cells",triangulation_2.n_global_active_cells());
-  print_parameter(pcout,"Number of faces",triangulation_2.n_active_faces());
-  print_parameter(pcout,"Number of vertices",triangulation_2.n_vertices());
 }
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
@@ -587,7 +556,11 @@ solve_problem(bool const do_restart)
                                             boundary_descriptor_pressure_2,
                                             periodic_faces_2);
 
-  print_grid_data();
+  print_grid_data(pcout,
+                  n_refine_space_domain1,
+                  triangulation_1,
+                  n_refine_space_domain2,
+                  triangulation_2);
 
   setup_navier_stokes_operation();
 

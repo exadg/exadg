@@ -29,6 +29,8 @@
 #include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
 #include "../include/incompressible_navier_stokes/user_interface/analytical_solution.h"
 
+#include "../include/functionalities/print_general_infos.h"
+
 using namespace dealii;
 
 // specify the flow problem that has to be solved
@@ -62,8 +64,6 @@ public:
 
 private:
   void print_header();
-  void print_mpi_info();
-  void print_grid_data();
 
   void setup_navier_stokes_operation();
   void setup_time_integrator(bool const do_restart);
@@ -81,7 +81,6 @@ private:
   std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions;
   std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity;
   std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure;
-
   std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution;
 
   InputParametersNavierStokes<dim> param;
@@ -128,7 +127,8 @@ NavierStokesProblem(unsigned int const refine_steps_space,
   param.check_input_parameters();
 
   print_header();
-  print_mpi_info();
+
+  print_MPI_info(pcout);
   if(param.print_input_parameters == true)
     param.print(pcout);
 
@@ -228,28 +228,6 @@ print_header()
   << "                     based on a matrix-free implementation                       " << std::endl
   << "_________________________________________________________________________________" << std::endl
   << std::endl;
-}
-
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-print_mpi_info()
-{
-  pcout << std::endl << "MPI info:" << std::endl << std::endl;
-  print_parameter(pcout,"Number of processes",Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD));
-}
-
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-print_grid_data()
-{
-  pcout << std::endl
-        << "Generating grid for " << dim << "-dimensional problem:" << std::endl
-        << std::endl;
-
-  print_parameter(pcout,"Number of refinements",n_refine_space);
-  print_parameter(pcout,"Number of cells",triangulation.n_global_active_cells());
-  print_parameter(pcout,"Number of faces",triangulation.n_active_faces());
-  print_parameter(pcout,"Number of vertices",triangulation.n_vertices());
 }
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
@@ -378,7 +356,9 @@ solve_problem(bool const do_restart)
                                           boundary_descriptor_pressure,
                                           periodic_faces);
 
-  print_grid_data();
+  print_grid_data(pcout,
+                  n_refine_space,
+                  triangulation);
 
   setup_navier_stokes_operation();
 
@@ -424,10 +404,10 @@ int main (int argc, char** argv)
     }
 
     //mesh refinements in order to perform spatial convergence tests
-    for(unsigned int refine_steps_space = REFINE_STEPS_SPACE_MIN;refine_steps_space <= REFINE_STEPS_SPACE_MAX;++refine_steps_space)
+    for(unsigned int refine_steps_space = REFINE_STEPS_SPACE_MIN; refine_steps_space <= REFINE_STEPS_SPACE_MAX;++refine_steps_space)
     {
       //time refinements in order to perform temporal convergence tests
-      for(unsigned int refine_steps_time = REFINE_STEPS_TIME_MIN;refine_steps_time <= REFINE_STEPS_TIME_MAX;++refine_steps_time)
+      for(unsigned int refine_steps_time = REFINE_STEPS_TIME_MIN; refine_steps_time <= REFINE_STEPS_TIME_MAX;++refine_steps_time)
       {
         NavierStokesProblem<DIMENSION, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, VALUE_TYPE>
             navier_stokes_problem(refine_steps_space,refine_steps_time);
