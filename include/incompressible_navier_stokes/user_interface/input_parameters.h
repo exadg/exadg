@@ -655,7 +655,9 @@ struct KineticEnergySpectrumData
     :
   calculate(false),
   calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
-  filename_prefix("energy_spectrum")
+  filename_prefix("energy_spectrum"),
+  output_precision(std::numeric_limits<double>::min()),
+  evaluation_points(0)
   {}
 
   void print(ConditionalOStream &pcout)
@@ -671,6 +673,8 @@ struct KineticEnergySpectrumData
   bool calculate;
   unsigned int calculate_every_time_steps;
   std::string filename_prefix;
+  double output_precision;
+  int evaluation_points;
 };
 
 // calculation of perturbation energy for Orr-Sommerfeld problem

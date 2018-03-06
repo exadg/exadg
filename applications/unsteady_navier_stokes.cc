@@ -5,6 +5,9 @@
  *      Author: fehn
  */
 
+// use deal.spectum and fftw
+#define USE_DEAL_SPECTRUM
+
 // deal.II
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
