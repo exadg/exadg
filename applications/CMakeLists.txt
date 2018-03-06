@@ -33,14 +33,13 @@ FOREACH ( sourcefile ${SOURCE_FILES} )
         DEAL_II_SETUP_TARGET(${testname})
         TARGET_LINK_LIBRARIES(${testname} indexa)
 
-        include_directories(/lrz/sys/libraries/fftw/3.3.3/sse/include)
-
-        FIND_LIBRARY(LIKWID_FFTW3_1 fftw3_mpi HINTS /lrz/sys/libraries/fftw/3.3.3/intelmpi/lib)
-        FIND_LIBRARY(LIKWID_FFTW3_2 fftw3 HINTS /lrz/sys/libraries/fftw/3.3.3/sse/lib)
-
-        MESSAGE(${LIKWID_FFTW3_1})
-        MESSAGE(${LIKWID_FFTW3_2})
-
-        target_link_libraries(${testname} ${LIKWID_FFTW3_2} ${LIKWID_FFTW3_1})
+        option(USE_DEAL_SPECTRUM "Use deal.spectrum" OFF)
+        IF(${USE_DEAL_SPECTRUM})
+            include_directories(${FFTW_INC})
+            FIND_LIBRARY(FFTW3 fftw3_mpi HINTS ${FFTW_LIB})
+            add_definitions(-DUSE_DEAL_SPECTRUM)
+            MESSAGE(${FFTW3})
+            target_link_libraries(${testname} ${FFTW3})
+        ENDIF()
 
 ENDFOREACH ( sourcefile ${APP_SOURCES} )
