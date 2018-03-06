@@ -196,7 +196,7 @@ public:
         }
         
         // scale: integrate cell wise...
-        e_d  *= pow(2*M_PI/N, dim);
+        e_d  /= pow(N, dim);
         // ... and make to energy 0.5*u^2
         e_d  *= 0.5;
         
@@ -220,8 +220,6 @@ public:
         
         // scale: due to FFT...
         e_s /= scaling*scaling;
-        // ... due to volume integral, and ..
-        e_s *= pow(2*M_PI,dim);
         // ... and make to energy 0.5*u^2
         e_s *= 0.5;
         
@@ -289,11 +287,9 @@ public:
         // ... normalize results
         for(int i = 0; i < N; i++){
             // ... average energy and kappa
-            K[i] /= C[i]; //E[i] /= C[i];
+            K[i] /= C[i];
             // ... factor from fft
             E[i] /= scaling*scaling;
-            // ... such that zero mode fulfills equation
-            E[i] *= pow(2*M_PI,dim);
             // ... and make to energy 0.5*u^2
             E[i] *= 0.5;
         }
