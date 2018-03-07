@@ -1,12 +1,12 @@
 /*
- * DiffusiveProblemHomogeneousNBC2.h
+ * DiffusiveProblemHomogeneousDBC.h
  *
  *  Created on: Aug 18, 2016
  *      Author: fehn
  */
 
-#ifndef APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_DIFFUSIVE_PROBLEM_HOMOGENEOUS_NBC2_H_
-#define APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_DIFFUSIVE_PROBLEM_HOMOGENEOUS_NBC2_H_
+#ifndef APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_DIFFUSIVE_PROBLEM_H_
+#define APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_DIFFUSIVE_PROBLEM_H_
 
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
@@ -17,13 +17,11 @@
 /*                                                                                    */
 /**************************************************************************************/
 
-// diffusive problem with pure Neumann boundary conditions (homogeneous)
-
 // set the number of space dimensions: DIMENSION = 2, 3
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 2;
+const unsigned int FE_DEGREE = 5;
 
 // set the number of refine levels for spatial convergence tests
 const unsigned int REFINE_STEPS_SPACE_MIN = 3;
@@ -34,14 +32,24 @@ const unsigned int REFINE_STEPS_TIME_MIN = 0;
 const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
 // problem specific parameters
-const double DIFFUSIVITY = 0.2;
+const double DIFFUSIVITY = 1.0e-1;
 
-void InputParametersConvDiff::set_input_parameters()
+enum class BoundaryConditionType{
+  HomogeneousDBC,
+  HomogeneousNBC,
+  HomogeneousNBCWithRHS
+};
+
+const BoundaryConditionType BOUNDARY_TYPE = BoundaryConditionType::HomogeneousNBCWithRHS;
+
+const bool RIGHT_HAND_SIDE = (BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBCWithRHS) ? true : false;
+
+void ConvDiff::InputParameters::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
   equation_type = EquationType::Diffusion;
-  right_hand_side = false;
+  right_hand_side = RIGHT_HAND_SIDE;
 
   // PHYSICAL QUANTITIES
   start_time = 0.0;
@@ -49,13 +57,13 @@ void InputParametersConvDiff::set_input_parameters()
   diffusivity = DIFFUSIVITY;
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::ExplRK;
+  temporal_discretization = TemporalDiscretization::BDF;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  order_time_integrator = 4;
-  start_with_low_order = true;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFLAndDiffusion;
+  order_time_integrator = 2;
+  start_with_low_order = false;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
   time_step_size = 1.0e-2;
-  cfl_number = 0.2;
+  cfl_number = 0.1;
   diffusion_number = 0.01;
 
   // SPATIAL DISCRETIZATION
@@ -70,8 +78,10 @@ void InputParametersConvDiff::set_input_parameters()
   abs_tol = 1.e-20;
   rel_tol = 1.e-6;
   max_iter = 1e4;
-  preconditioner = Preconditioner::MultigridDiffusion;
-  // use default parameters of multigrid preconditioner
+  preconditioner = Preconditioner::MultigridConvectionDiffusion;
+  multigrid_data.smoother = MultigridSmoother::GMRES;
+
+  update_preconditioner = false;
 
   // NUMERICAL PARAMETERS
   runtime_optimization = false;
@@ -79,8 +89,8 @@ void InputParametersConvDiff::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
   output_data.write_output = true;
-  output_data.output_folder = "output_conv_diff/diffusive_problem_homogeneous_NBC_2/";
-  output_data.output_name = "diffusive_problem_homogeneous_NBC_2";
+  output_data.output_folder = "output_conv_diff/diffusive_problem_homogeneous_DBC/vtu/";
+  output_data.output_name = "output";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
   output_data.number_of_patches = FE_DEGREE;
@@ -89,7 +99,7 @@ void InputParametersConvDiff::set_input_parameters()
   error_data.error_calc_start_time = start_time;
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
-  output_solver_info_every_timesteps = 1e6;
+  output_solver_info_every_timesteps = 1e1;
 }
 
 
@@ -126,9 +136,28 @@ double AnalyticalSolution<dim>::value(const Point<dim>    &p,
   double t = this->get_time();
   double result = 1.0;
 
-  for(int d=0;d<dim;d++)
-    result *= std::cos(p[d]*numbers::PI);
-  result *= std::exp(-2.0*DIFFUSIVITY*pow(numbers::PI,2.0)*t);
+  if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousDBC)
+  {
+    for(int d=0;d<dim;d++)
+      result *= std::cos(p[d]*numbers::PI/2.0);
+    result *= std::exp(-0.5*DIFFUSIVITY*pow(numbers::PI,2.0)*t);
+  }
+  else if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBC)
+  {
+    for(int d=0;d<dim;d++)
+      result *= std::cos(p[d]*numbers::PI);
+    result *= std::exp(-2.0*DIFFUSIVITY*pow(numbers::PI,2.0)*t);
+  }
+  else if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBCWithRHS)
+  {
+    for(int d=0;d<dim;d++)
+      result *= std::cos(p[d]*numbers::PI)+1.0;
+    result *= std::exp(-2.0*DIFFUSIVITY*pow(numbers::PI,2.0)*t);
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
 
   return result;
 }
@@ -157,7 +186,26 @@ template<int dim>
 double RightHandSide<dim>::value(const Point<dim>     &p,
                                 const unsigned int   /* component */) const
 {
+  double t = this->get_time();
   double result = 0.0;
+
+  if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousDBC ||
+     BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBC)
+  {
+    // do nothing, rhs=0
+  }
+  else if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBCWithRHS)
+  {
+    for(int d=0;d<dim;++d)
+      result += std::cos(p[d]*numbers::PI)+1;
+    result *=  -std::pow(numbers::PI,2.0) * DIFFUSIVITY
+               * std::exp(-2.0*DIFFUSIVITY*pow(numbers::PI,2.0)*t);
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
+
   return result;
 }
 
@@ -214,6 +262,7 @@ double VelocityField<dim>::value(const Point<dim>   &point,
                                  const unsigned int component) const
 {
   double value = 0.0;
+
   return value;
 }
 
@@ -225,37 +274,38 @@ double VelocityField<dim>::value(const Point<dim>   &point,
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>               &triangulation,
-    unsigned int const                                      n_refine_space,
-    std::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor)
+    parallel::distributed::Triangulation<dim>           &triangulation,
+    unsigned int const                                  n_refine_space,
+    std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor)
 {
   // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
   const double left = -1.0, right = 1.0;
   GridGenerator::hyper_cube(triangulation,left,right);
 
-  // set boundary indicator to 1 on all boundaries (Neumann BCs)
-  typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
-  for(;cell!=endc;++cell)
-  {
-    for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-    {
-      // apply Neumann BC on all boundaries
-      if ((std::fabs(cell->face(face_number)->center()(0) - right) < 1e-12)||
-          (std::fabs(cell->face(face_number)->center()(0) - left) < 1e-12) ||
-          (std::fabs(cell->face(face_number)->center()(1) - right) < 1e-12)||
-          (std::fabs(cell->face(face_number)->center()(1) - left) < 1e-12))
-       cell->face(face_number)->set_boundary_id(1);
-    }
-  }
   triangulation.refine_global(n_refine_space);
 
-  std::shared_ptr<Function<dim> > neumann_bc;
-  neumann_bc.reset(new NeumannBoundary<dim>());
-  boundary_descriptor->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,neumann_bc));
+  if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousDBC)
+  {
+    std::shared_ptr<Function<dim> > analytical_solution;
+    analytical_solution.reset(new AnalyticalSolution<dim>());
+    //problem with pure Dirichlet boundary conditions
+    boundary_descriptor->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,analytical_solution));
+  }
+  else if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBC ||
+          BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBCWithRHS)
+  {
+    std::shared_ptr<Function<dim> > neumann_bc;
+    neumann_bc.reset(new NeumannBoundary<dim>());
+    boundary_descriptor->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,neumann_bc));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
 }
 
 template<int dim>
-void set_field_functions(std::shared_ptr<FieldFunctionsConvDiff<dim> > field_functions)
+void set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > analytical_solution;
@@ -273,9 +323,9 @@ void set_field_functions(std::shared_ptr<FieldFunctionsConvDiff<dim> > field_fun
 }
 
 template<int dim>
-void set_analytical_solution(std::shared_ptr<AnalyticalSolutionConvDiff<dim> > analytical_solution)
+void set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim> > analytical_solution)
 {
   analytical_solution->solution.reset(new AnalyticalSolution<dim>(1));
 }
 
-#endif /* APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_DIFFUSIVE_PROBLEM_HOMOGENEOUS_NBC2_H_ */
+#endif /* APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_DIFFUSIVE_PROBLEM_H_ */

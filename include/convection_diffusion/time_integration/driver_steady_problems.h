@@ -11,21 +11,21 @@
 #include <deal.II/base/timer.h>
 #include <deal.II/lac/parallel_vector.h>
 
-namespace ConvDiff
-{
-  template<int dim, int fe_degree> class PostProcessor;
-  class InputParametersConvDiff;
-}
-
 using namespace dealii;
 
+namespace ConvDiff
+{
+
+template<int dim, int fe_degree> class PostProcessor;
+class InputParameters;
+
 template<int dim, int fe_degree, typename value_type, typename ConvDiffOperation>
-class DriverSteadyConvDiff
+class DriverSteadyProblems
 {
 public:
-  DriverSteadyConvDiff(std::shared_ptr<ConvDiffOperation>                       conv_diff_operation_in,
+  DriverSteadyProblems(std::shared_ptr<ConvDiffOperation>                       conv_diff_operation_in,
                        std::shared_ptr<ConvDiff::PostProcessor<dim,fe_degree> > postprocessor_in,
-                       ConvDiff::InputParametersConvDiff const                        &param_in)
+                       ConvDiff::InputParameters const                          &param_in)
     :
     conv_diff_operation(conv_diff_operation_in),
     postprocessor(postprocessor_in),
@@ -126,7 +126,7 @@ private:
 
   std::shared_ptr<ConvDiffOperation> conv_diff_operation;
   std::shared_ptr<ConvDiff::PostProcessor<dim,fe_degree> > postprocessor;
-  ConvDiff::InputParametersConvDiff const &param;
+  ConvDiff::InputParameters const &param;
 
   // timer
   Timer global_timer;
@@ -136,5 +136,7 @@ private:
   parallel::distributed::Vector<value_type> solution;
   parallel::distributed::Vector<value_type> rhs_vector;
 };
+
+} // namespace ConvDiff
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_DRIVER_STEADY_PROBLEMS_H_ */

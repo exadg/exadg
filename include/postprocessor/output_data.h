@@ -60,7 +60,29 @@ struct OutputData
 
   // number of patches
   unsigned int number_of_patches;
+};
 
+enum class SolutionFieldType {
+  scalar,
+  vector
+};
+
+template<int dim, typename Number>
+class SolutionField
+{
+public:
+  SolutionField()
+    :
+    type(SolutionFieldType::scalar),
+    name("solution"),
+    dof_handler(nullptr),
+    vector(nullptr)
+  {}
+
+  SolutionFieldType type;
+  std::string name;
+  DoFHandler<dim> const *dof_handler;
+  parallel::distributed::Vector<Number> const *vector;
 };
 
 

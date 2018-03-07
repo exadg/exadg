@@ -31,7 +31,7 @@ const unsigned int REFINE_STEPS_SPACE_MAX = 3;
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
 const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
-void InputParametersConvDiff::set_input_parameters()
+void ConvDiff::InputParameters::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
@@ -217,9 +217,9 @@ double VelocityField<dim>::value(const Point<dim>   &point,
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>               &triangulation,
-    unsigned int const                                      n_refine_space,
-    std::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor)
+    parallel::distributed::Triangulation<dim>           &triangulation,
+    unsigned int const                                  n_refine_space,
+    std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor)
 {
   // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
   const double left = -1.0, right = 1.0;
@@ -247,7 +247,7 @@ void create_grid_and_set_boundary_conditions(
 }
 
 template<int dim>
-void set_field_functions(std::shared_ptr<FieldFunctionsConvDiff<dim> > field_functions)
+void set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > analytical_solution;
@@ -265,7 +265,7 @@ void set_field_functions(std::shared_ptr<FieldFunctionsConvDiff<dim> > field_fun
 }
 
 template<int dim>
-void set_analytical_solution(std::shared_ptr<AnalyticalSolutionConvDiff<dim> > analytical_solution)
+void set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim> > analytical_solution)
 {
   analytical_solution->solution.reset(new AnalyticalSolution<dim>(1));
 }

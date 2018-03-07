@@ -13,19 +13,17 @@
 #include <deal.II/lac/precondition.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
 
-#include "../convection_diffusion/boundary_descriptor.h"
-#include "../convection_diffusion/input_parameters.h"
+#include "convection_diffusion/user_interface/boundary_descriptor.h"
+#include "convection_diffusion/user_interface/input_parameters.h"
 #include "operators/matrix_operator_base.h"
 
-#include "../include/functionalities/evaluate_functions.h"
+#include "functionalities/evaluate_functions.h"
 #include "solvers_and_preconditioners/invert_diagonal.h"
 #include "solvers_and_preconditioners/verify_calculation_of_diagonal.h"
 #include "solvers_and_preconditioners/block_jacobi_matrices.h"
 
-namespace ScalarConvDiffOperators
+namespace ConvDiff
 {
-
-using namespace ConvDiff;
 
 struct MassMatrixOperatorData
 {
@@ -294,7 +292,7 @@ struct DiffusiveOperatorData
 
   double IP_factor;
 
-  std::shared_ptr<BoundaryDescriptorConvDiff<dim> > bc;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > bc;
 
   double diffusivity;
 };
@@ -2708,7 +2706,7 @@ struct ConvectiveOperatorData
   unsigned int quad_index;
   NumericalFluxConvectiveOperator numerical_flux_formulation;
 
-  std::shared_ptr<BoundaryDescriptorConvDiff<dim> > bc;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > bc;
   std::shared_ptr<Function<dim> > velocity;
 };
 
@@ -3653,7 +3651,7 @@ struct ConvectiveOperatorDataDiscontinuousVelocity
   unsigned int dof_index_velocity;
   unsigned int quad_index;
 
-  std::shared_ptr<BoundaryDescriptorConvDiff<dim> > bc;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > bc;
 };
 
 template <int dim, int fe_degree, int fe_degree_velocity, typename value_type>
@@ -4436,7 +4434,7 @@ public:
    */
   HelmholtzOperatorData<dim> const get_helmholtz_operator_data() const
   {
-    ScalarConvDiffOperators::HelmholtzOperatorData<dim> helmholtz_operator_data;
+    ConvDiff::HelmholtzOperatorData<dim> helmholtz_operator_data;
     helmholtz_operator_data.unsteady_problem = this->operator_data.unsteady_problem;
     helmholtz_operator_data.dof_index = 0;
 
@@ -5282,6 +5280,6 @@ private:
   mutable value_type eval_time;
 };
 
-}
+} // namespace ConvDiff
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_CONVECTION_DIFFUSION_OPERATORS_H_ */

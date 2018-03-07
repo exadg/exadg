@@ -1,5 +1,5 @@
 /*
- * UnsteadyConvectionDiffusion.cc
+ * unsteady_convection_diffusion.cc
  *
  *  Created on: Aug 18, 2016
  *      Author: fehn
@@ -10,34 +10,45 @@
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/base/revision.h>
 
-#include "../include/convection_diffusion/analytical_solution.h"
-#include "../include/convection_diffusion/boundary_descriptor.h"
-#include "../include/convection_diffusion/dg_convection_diffusion_operation.h"
-#include "../include/convection_diffusion/field_functions.h"
-#include "../include/convection_diffusion/input_parameters.h"
-#include "../include/convection_diffusion/postprocessor.h"
-#include "../include/convection_diffusion/time_int_bdf.h"
-#include "../include/convection_diffusion/time_int_explicit_runge_kutta.h"
-#include "../include/functionalities/print_functions.h"
-#include "../include/functionalities/print_general_infos.h"
+// postprocessor
+#include "convection_diffusion/postprocessor/postprocessor.h"
 
-using namespace dealii;
-using namespace ConvDiff;
+// spatial discretization
+#include "convection_diffusion/spatial_discretization/dg_convection_diffusion_operation.h"
+
+// time integration
+#include "convection_diffusion/time_integration/time_int_bdf.h"
+#include "convection_diffusion/time_integration/time_int_explicit_runge_kutta.h"
+
+// user interface, etc.
+#include "functionalities/print_functions.h"
+#include "functionalities/print_general_infos.h"
+#include "convection_diffusion/user_interface/field_functions.h"
+#include "convection_diffusion/user_interface/input_parameters.h"
+#include "convection_diffusion/user_interface/analytical_solution.h"
+#include "convection_diffusion/user_interface/boundary_descriptor.h"
 
 
 // SPECIFY THE TEST CASE THAT HAS TO BE SOLVED
 
-#include "convection_diffusion_test_cases/propagating_sine_wave.h"
+// convection problems
+
+//#include "convection_diffusion_test_cases/propagating_sine_wave.h"
 //#include "convection_diffusion_test_cases/rotating_hill.h"
 //#include "convection_diffusion_test_cases/deforming_hill.h"
-//#include "convection_diffusion_test_cases/diffusive_problem_homogeneous_dbc.h"
-//#include "convection_diffusion_test_cases/diffusive_problem_homogeneous_nbc.h"
-//#include "convection_diffusion_test_cases/diffusive_problem_homogeneous_nbc2.h"
+
+// diffusion problems
+
+#include "convection_diffusion_test_cases/diffusive_problem.h"
+
+// convection-diffusion problems
+
 //#include "convection_diffusion_test_cases/constant_rhs.h"
 //#include "convection_diffusion_test_cases/boundary_layer_problem.h"
 //#include "convection_diffusion_test_cases/const_rhs_const_and_circular_wind.h"
 
-
+using namespace dealii;
+using namespace ConvDiff;
 
 template<int dim, int fe_degree, typename Number=double>
 class ConvDiffProblem
@@ -60,21 +71,21 @@ private:
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_faces;
 
-  InputParametersConvDiff param;
+  ConvDiff::InputParameters param;
 
   const unsigned int n_refine_space;
   const unsigned int n_refine_time;
 
-  std::shared_ptr<FieldFunctionsConvDiff<dim> > field_functions;
-  std::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor;
+  std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functions;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor;
 
-  std::shared_ptr<AnalyticalSolutionConvDiff<dim> > analytical_solution;
+  std::shared_ptr<ConvDiff::AnalyticalSolution<dim> > analytical_solution;
 
-  std::shared_ptr<DGConvDiffOperation<dim,fe_degree, value_type> > conv_diff_operation;
+  std::shared_ptr<ConvDiff::DGOperation<dim,fe_degree, value_type> > conv_diff_operation;
   std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> > postprocessor;
 
-  std::shared_ptr<TimeIntExplRKConvDiff<dim, fe_degree, value_type> > time_integrator_explRK;
-  std::shared_ptr<TimeIntBDFConvDiff<dim,fe_degree,value_type> > time_integrator_BDF;
+  std::shared_ptr<ConvDiff::TimeIntExplRK<dim, fe_degree, value_type> > time_integrator_explRK;
+  std::shared_ptr<ConvDiff::TimeIntBDF<dim,fe_degree,value_type> > time_integrator_BDF;
 };
 
 template<int dim, int fe_degree, typename Number>
@@ -104,18 +115,18 @@ ConvDiffProblem(const unsigned int n_refine_space_in,
   if(param.print_input_parameters)
     param.print(pcout);
 
-  field_functions.reset(new FieldFunctionsConvDiff<dim>());
+  field_functions.reset(new ConvDiff::FieldFunctions<dim>());
   // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
   set_field_functions(field_functions);
 
-  analytical_solution.reset(new AnalyticalSolutionConvDiff<dim>());
+  analytical_solution.reset(new ConvDiff::AnalyticalSolution<dim>());
   set_analytical_solution(analytical_solution);
 
-  boundary_descriptor.reset(new BoundaryDescriptorConvDiff<dim>());
+  boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<dim>());
 
   // initialize convection diffusion operation
-  conv_diff_operation.reset(new DGConvDiffOperation<dim, fe_degree, value_type>(triangulation,param));
+  conv_diff_operation.reset(new ConvDiff::DGOperation<dim, fe_degree, value_type>(triangulation,param));
 
   // initialize postprocessor
   postprocessor.reset(new ConvDiff::PostProcessor<dim, fe_degree>());
@@ -123,7 +134,7 @@ ConvDiffProblem(const unsigned int n_refine_space_in,
   // initialize time integrator
   if(param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
   {
-    time_integrator_explRK.reset(new TimeIntExplRKConvDiff<dim, fe_degree, value_type>(
+    time_integrator_explRK.reset(new ConvDiff::TimeIntExplRK<dim, fe_degree, value_type>(
         conv_diff_operation,
         postprocessor,
         param,
@@ -132,7 +143,7 @@ ConvDiffProblem(const unsigned int n_refine_space_in,
   }
   else if(param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
   {
-    time_integrator_BDF.reset(new TimeIntBDFConvDiff<dim, fe_degree, value_type>(
+    time_integrator_BDF.reset(new ConvDiff::TimeIntBDF<dim, fe_degree, value_type>(
         conv_diff_operation,
         postprocessor,
         param,

@@ -153,11 +153,11 @@ enum class Preconditioner
 /**************************************************************************************/
 
 
-class InputParametersConvDiff
+class InputParameters
 {
 public:
   // standard constructor that initializes parameters with default values
-  InputParametersConvDiff()
+  InputParameters()
     :
     // MATHEMATICAL MODEL
     problem_type(ProblemType::Undefined),
