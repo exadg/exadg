@@ -635,7 +635,7 @@ struct KineticEnergyData
   {
     if(calculate == true)
     {
-      pcout << "  Calculate kinetic energy:" << std::endl;
+      pcout << std::endl << "  Calculate kinetic energy:" << std::endl;
       print_parameter(pcout,"Calculate energy",calculate);
       print_parameter(pcout,"Calculate every timesteps",calculate_every_time_steps);
     }
@@ -654,27 +654,36 @@ struct KineticEnergySpectrumData
   KineticEnergySpectrumData()
     :
   calculate(false),
-  calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
+  start_time(0.0),
+  calculate_every_time_steps(-1),
+  calculate_every_time_interval(-1.0),
   filename_prefix("energy_spectrum"),
-  output_precision(std::numeric_limits<double>::min()),
-  evaluation_points(0)
+  output_tolerance(std::numeric_limits<double>::min()),
+  evaluation_points_per_cell(0)
   {}
 
   void print(ConditionalOStream &pcout)
   {
     if(calculate == true)
     {
-      pcout << "  Calculate energy spectrum:" << std::endl;
-      print_parameter(pcout,"Calculate energy spectrum",calculate);
-      print_parameter(pcout,"Calculate every timesteps",calculate_every_time_steps);
+      pcout << std::endl << "  Calculate kinetic energy spectrum:" << std::endl;
+      print_parameter(pcout,"Start time",start_time);
+      if(calculate_every_time_steps >= 0)
+        print_parameter(pcout,"Calculate every timesteps",calculate_every_time_steps);
+      if(calculate_every_time_interval >= 0.0)
+        print_parameter(pcout,"Calculate every time interval",calculate_every_time_interval);
+      print_parameter(pcout,"Output precision",output_tolerance);
+      print_parameter(pcout,"Evaluation points per cell",evaluation_points_per_cell);
     }
   }
 
   bool calculate;
-  unsigned int calculate_every_time_steps;
+  double start_time;
+  int calculate_every_time_steps;
+  double calculate_every_time_interval;
   std::string filename_prefix;
-  double output_precision;
-  int evaluation_points;
+  double output_tolerance;
+  unsigned int evaluation_points_per_cell;
 };
 
 // calculation of perturbation energy for Orr-Sommerfeld problem
