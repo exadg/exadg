@@ -487,7 +487,7 @@ private:
 
   ConvDiff::MassMatrixOperatorData mass_matrix_operator_data;
   ConvDiff::MassMatrixOperator<dim, fe_degree, value_type> mass_matrix_operator;
-  InverseMassMatrixOperator<dim,fe_degree,value_type> inverse_mass_matrix_operator;
+  InverseMassMatrixOperator<dim,fe_degree,value_type,1> inverse_mass_matrix_operator;
 
   ConvDiff::ConvectiveOperatorData<dim> convective_operator_data;
   ConvDiff::ConvectiveOperator<dim, fe_degree, value_type> convective_operator;
