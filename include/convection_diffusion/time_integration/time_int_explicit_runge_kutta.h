@@ -37,8 +37,10 @@ public:
     param(param_in),
     velocity(velocity_in),
     total_time(0.0),
+    pcout(std::cout,Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     time(param.start_time),
     time_step(1.0),
+    time_step_number(1),
     order(param.order_time_integrator),
     n_refine_time(n_refine_time_in),
     cfl_number(param.cfl_number/std::pow(2.0,n_refine_time)),
@@ -68,12 +70,22 @@ private:
   ConvDiff::InputParameters const & param;
   std::shared_ptr<Function<dim> > velocity;
 
+  // timer
   Timer global_timer;
   double total_time;
 
+  // screen output
+  ConditionalOStream pcout;
+
+  // solution vectors
   parallel::distributed::Vector<value_type> solution_n, solution_np;
 
+  // current time and time step size
   double time, time_step;
+
+  // the number of the current time step starting with time_step_number = 1
+  unsigned int time_step_number;
+
   unsigned int const order;
   unsigned int const n_refine_time;
   double const cfl_number;
@@ -84,7 +96,6 @@ private:
 template<int dim, int fe_degree, typename value_type>
 void TimeIntExplRK<dim,fe_degree,value_type>::setup()
 {
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Setup time integrator ..." << std::endl;
 
   // initialize global solution vectors (allocation)
@@ -120,8 +131,6 @@ void TimeIntExplRK<dim,fe_degree,value_type>::initialize_solution()
 template<int dim, int fe_degree, typename value_type>
 void TimeIntExplRK<dim,fe_degree,value_type>::calculate_timestep()
 {
-  ConditionalOStream pcout(std::cout,
-      Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Calculation of time step size:" << std::endl << std::endl;
 
   if(param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepUserSpecified)
@@ -270,7 +279,6 @@ void TimeIntExplRK<dim,fe_degree,value_type>::calculate_timestep()
 template<int dim, int fe_degree, typename value_type>
 void TimeIntExplRK<dim,fe_degree,value_type>::timeloop()
 {
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Starting time loop ..." << std::endl;
 
   global_timer.restart();
@@ -285,6 +293,7 @@ void TimeIntExplRK<dim,fe_degree,value_type>::timeloop()
     prepare_vectors_for_next_timestep();
 
     time += time_step;
+    ++time_step_number;
 
     postprocessing();
   }
@@ -314,20 +323,51 @@ template<int dim, int fe_degree, typename value_type>
 void TimeIntExplRK<dim,fe_degree,value_type>::
 solve_timestep()
 {
+  // write output
+  if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
+  {
+    pcout << std::endl
+          << "______________________________________________________________________"
+          << std::endl
+          << std::endl
+          << " Number of TIME STEPS: " << std::left << std::setw(8) << this->time_step_number
+          << "t_n = " << std::scientific << std::setprecision(4) << this->time
+          << " -> t_n+1 = " << this->time + this->time_step << std::endl
+          << "______________________________________________________________________"
+          << std::endl << std::endl;
+  }
+
+  Timer timer;
+  timer.restart();
+
   rk_time_integrator->solve_timestep(solution_np,
                                      solution_n,
                                      time,
                                      time_step);
+
+  // write output
+  if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
+  {
+    pcout << std::endl
+          << "Solve time step explicitly: Wall time in [s] = " << std::scientific << timer.wall_time() << std::endl;
+
+    if(time > param.start_time)
+    {
+      double const remaining_time = global_timer.wall_time() * (param.end_time-time)/(time-param.start_time);
+      pcout << std::endl
+            << "Estimated time until completion is " << remaining_time << " s / " << remaining_time/3600. << " h."
+            << std::endl;
+    }
+  }
 }
 
 template<int dim, int fe_degree, typename value_type>
 void TimeIntExplRK<dim,fe_degree,value_type>::
 analyze_computing_times() const
 {
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl
         << "_________________________________________________________________________________" << std::endl << std::endl
-        << "Computing times:          min        avg        max        rel      p_min  p_max" << std::endl;
+        << "Computing times:          min        avg        max        rel      p_min  p_max " << std::endl;
 
   Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg (this->total_time, MPI_COMM_WORLD);
   pcout  << "  Global time:         " << std::scientific

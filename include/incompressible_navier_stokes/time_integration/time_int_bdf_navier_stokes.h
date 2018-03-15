@@ -246,6 +246,13 @@ protected:
 
   virtual void calculate_time_step();
 
+  virtual void recalculate_adaptive_time_step();
+
+  // output of solver information regarding iteration counts, wall times,
+  // and remaining time until completion of the simulation
+  void output_solver_info_header() const;
+  void output_remaining_time() const;
+
   virtual void read_restart_vectors(boost::archive::binary_iarchive & ia) = 0;
   virtual void write_restart_vectors(boost::archive::binary_oarchive & oa) const = 0;
   virtual void resume_from_restart();
@@ -309,8 +316,6 @@ protected:
   mutable parallel::distributed::Vector<value_type> q_criterion;
 
   std::vector<SolutionField<dim,value_type> > additional_fields;
-
-  virtual void recalculate_adaptive_time_step();
 
 private:
   virtual void setup_derived() = 0;
@@ -406,11 +411,12 @@ initialize_vectors()
   {
     navier_stokes_operation->initialize_vector_velocity_scalar(this->divergence);
 
-    SolutionField<dim,value_type> div;
-    div.name = "div_u";
-    div.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
-    div.vector = &divergence;
-    this->additional_fields.push_back(div);
+    SolutionField<dim,value_type> sol;
+    sol.type = SolutionFieldType::scalar;
+    sol.name = "div_u";
+    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
+    sol.vector = &divergence;
+    this->additional_fields.push_back(sol);
   }
 
   // velocity magnitude
@@ -419,6 +425,7 @@ initialize_vectors()
     navier_stokes_operation->initialize_vector_velocity_scalar(this->velocity_magnitude);
 
     SolutionField<dim,value_type> sol;
+    sol.type = SolutionFieldType::scalar;
     sol.name = "velocity_magnitude";
     sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
     sol.vector = &velocity_magnitude;
@@ -431,6 +438,7 @@ initialize_vectors()
     navier_stokes_operation->initialize_vector_velocity_scalar(this->vorticity_magnitude);
 
     SolutionField<dim,value_type> sol;
+    sol.type = SolutionFieldType::scalar;
     sol.name = "vorticity_magnitude";
     sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
     sol.vector = &vorticity_magnitude;
@@ -444,6 +452,7 @@ initialize_vectors()
     navier_stokes_operation->initialize_vector_velocity_scalar(this->streamfunction);
 
     SolutionField<dim,value_type> sol;
+    sol.type = SolutionFieldType::scalar;
     sol.name = "streamfunction";
     sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
     sol.vector = &streamfunction;
@@ -456,6 +465,7 @@ initialize_vectors()
     navier_stokes_operation->initialize_vector_velocity_scalar(this->q_criterion);
 
     SolutionField<dim,value_type> sol;
+    sol.type = SolutionFieldType::scalar;
     sol.name = "q_criterion";
     sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
     sol.vector = &q_criterion;
@@ -565,7 +575,7 @@ void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>
 calculate_divergence(parallel::distributed::Vector<value_type>       &dst,
                      parallel::distributed::Vector<value_type> const &src) const
 {
-  if(this->param.output_data.write_divergence == true)
+  if(this->param.output_data.write_output == true && this->param.output_data.write_divergence == true)
   {
     navier_stokes_operation->compute_divergence(dst, src);
   }
@@ -576,7 +586,7 @@ void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>
 calculate_velocity_magnitude(parallel::distributed::Vector<value_type>       &dst,
                              parallel::distributed::Vector<value_type> const &src) const
 {
-  if(this->param.output_data.write_velocity_magnitude == true)
+  if(this->param.output_data.write_output == true && this->param.output_data.write_velocity_magnitude == true)
   {
     navier_stokes_operation->compute_velocity_magnitude(dst, src);
   }
@@ -587,7 +597,7 @@ void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>
 calculate_vorticity_magnitude(parallel::distributed::Vector<value_type>       &dst,
                               parallel::distributed::Vector<value_type> const &src) const
 {
-  if(this->param.output_data.write_vorticity_magnitude == true)
+  if(this->param.output_data.write_output == true && this->param.output_data.write_vorticity_magnitude == true)
   {
     // use the same implementation as for velocity_magnitude
     navier_stokes_operation->compute_velocity_magnitude(dst, src);
@@ -599,7 +609,7 @@ void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>
 calculate_streamfunction(parallel::distributed::Vector<value_type>       &dst,
                          parallel::distributed::Vector<value_type> const &src) const
 {
-  if(this->param.output_data.write_streamfunction == true)
+  if(this->param.output_data.write_output == true && this->param.output_data.write_streamfunction == true)
   {
     navier_stokes_operation->compute_streamfunction(dst,src);
   }
@@ -611,7 +621,7 @@ void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>
 calculate_q_criterion(parallel::distributed::Vector<value_type>       &dst,
                       parallel::distributed::Vector<value_type> const &src) const
 {
-  if(this->param.output_data.write_q_criterion == true)
+  if(this->param.output_data.write_output == true && this->param.output_data.write_q_criterion == true)
   {
     navier_stokes_operation->compute_q_criterion(dst, src);
   }
@@ -888,7 +898,11 @@ do_timestep()
 {
   update_time_integrator_constants();
 
+  output_solver_info_header();
+
   solve_timestep();
+
+  output_remaining_time();
 
   prepare_vectors_for_next_timestep();
 
@@ -900,6 +914,38 @@ do_timestep()
 
   if(adaptive_time_stepping == true)
     recalculate_adaptive_time_step();
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+output_solver_info_header() const
+{
+  if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
+  {
+    this->pcout << std::endl
+                << "______________________________________________________________________" << std::endl
+                << std::endl
+                << " Number of TIME STEPS: " << std::left << std::setw(8) << this->time_step_number
+                << "t_n = " << std::scientific << std::setprecision(4) << this->time
+                << " -> t_n+1 = " << this->time + this->time_steps[0] << std::endl
+                << "______________________________________________________________________" << std::endl;
+  }
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+output_remaining_time() const
+{
+  if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
+  {
+    if(this->time > this->param.start_time)
+    {
+      double const remaining_time = this->global_timer.wall_time() * (this->param.end_time-this->time)/(this->time-this->param.start_time);
+      this->pcout << std::endl
+                  << "Estimated time until completion is " << remaining_time << " s / " << remaining_time/3600. << " h."
+                  << std::endl;
+    }
+  }
 }
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_NAVIER_STOKES_H_ */

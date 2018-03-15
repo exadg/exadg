@@ -439,17 +439,6 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
 solve_timestep()
 {
-  // write output
-  if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
-  {
-    this->pcout << std::endl
-                << "______________________________________________________________________" << std::endl << std::endl
-                << " Number of TIME STEPS: " << std::left << std::setw(8) << this->time_step_number
-                << "t_n = " << std::scientific << std::setprecision(4) << this->time
-                << " -> t_n+1 = " << this->time + this->time_steps[0] << std::endl
-                << "______________________________________________________________________" << std::endl;
-  }
-
   // perform the substeps of the pressure-correction scheme
   momentum_step();
 
