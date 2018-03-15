@@ -80,7 +80,7 @@ private:
                             const parallel::distributed::Vector<value_type>  &src,
                             const std::pair<unsigned int,unsigned int>       &cell_range) const
   {
-    InverseMassMatrixData<dim,fe_degree,value_type,n_components>& mass_data = mass_matrix_data->get();
+    InverseMassMatrixData<dim,fe_degree,value_type,n_components> & mass_data = mass_matrix_data->get();
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
