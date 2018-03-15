@@ -669,12 +669,12 @@ private:
   {
     // pressure convection-diffusion operator
     // a) mass matrix operator
-    ScalarConvDiffOperators::MassMatrixOperatorData mass_matrix_operator_data;
+    ConvDiff::MassMatrixOperatorData mass_matrix_operator_data;
     mass_matrix_operator_data.dof_index = underlying_operator->get_dof_index_pressure();
     mass_matrix_operator_data.quad_index = underlying_operator->get_quad_index_pressure();
 
-    std::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor;
-    boundary_descriptor.reset(new BoundaryDescriptorConvDiff<dim>());
+    std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor;
+    boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<dim>());
 
     // for the pressure convection-diffusion operator the homogeneous operators (convective, diffusive) are applied,
     // so there is no need to specify functions for boundary conditions since they will not be used (must not be used)
@@ -701,7 +701,7 @@ private:
     }
 
     // b) diffusive operator
-    ScalarConvDiffOperators::DiffusiveOperatorData<dim> diffusive_operator_data;
+    ConvDiff::DiffusiveOperatorData<dim> diffusive_operator_data;
     diffusive_operator_data.dof_index = underlying_operator->get_dof_index_pressure();
     diffusive_operator_data.quad_index = underlying_operator->get_quad_index_pressure();
     diffusive_operator_data.IP_factor = underlying_operator->param.IP_factor_viscous;
@@ -712,7 +712,7 @@ private:
     diffusive_operator_data.diffusivity = underlying_operator->get_viscosity();
 
     // c) convective operator
-    ScalarConvDiffOperators::ConvectiveOperatorDataDiscontinuousVelocity<dim> convective_operator_data;
+    ConvDiff::ConvectiveOperatorDataDiscontinuousVelocity<dim> convective_operator_data;
     convective_operator_data.dof_index = underlying_operator->get_dof_index_pressure();
     convective_operator_data.dof_index_velocity = underlying_operator->get_dof_index_velocity();
     convective_operator_data.quad_index = underlying_operator->get_quad_index_pressure();
