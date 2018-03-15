@@ -34,9 +34,9 @@ double calculate_const_time_step(double const       dt,
  *  velocity at the cell center.
  */
 template<int dim>
-double calculate_max_velocity(Triangulation<dim> const              &triangulation,
+double calculate_max_velocity(Triangulation<dim> const        &triangulation,
                               std::shared_ptr<Function<dim> > velocity,
-                              double const                          time)
+                              double const                    time)
 {
   typename Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(), endc = triangulation.end();
 
