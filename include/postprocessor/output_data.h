@@ -10,6 +10,8 @@
 
 #include "../include/functionalities/print_functions.h"
 
+using namespace dealii;
+
 struct OutputData
 {
   OutputData()
@@ -66,24 +68,5 @@ enum class SolutionFieldType {
   scalar,
   vector
 };
-
-template<int dim, typename Number>
-class SolutionField
-{
-public:
-  SolutionField()
-    :
-    type(SolutionFieldType::scalar),
-    name("solution"),
-    dof_handler(nullptr),
-    vector(nullptr)
-  {}
-
-  SolutionFieldType type;
-  std::string name;
-  DoFHandler<dim> const *dof_handler;
-  parallel::distributed::Vector<Number> const *vector;
-};
-
 
 #endif /* INCLUDE_POSTPROCESSOR_OUTPUT_DATA_H_ */

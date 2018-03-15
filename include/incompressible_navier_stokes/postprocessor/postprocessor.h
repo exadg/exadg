@@ -97,18 +97,18 @@ public:
                                pp_data.line_plot_data);
   }
 
-  virtual void do_postprocessing(parallel::distributed::Vector<Number> const &velocity,
-                                 parallel::distributed::Vector<Number> const &intermediate_velocity,
-                                 parallel::distributed::Vector<Number> const &pressure,
-                                 parallel::distributed::Vector<Number> const &vorticity,
+  virtual void do_postprocessing(parallel::distributed::Vector<Number> const   &velocity,
+                                 parallel::distributed::Vector<Number> const   &intermediate_velocity,
+                                 parallel::distributed::Vector<Number> const   &pressure,
+                                 parallel::distributed::Vector<Number> const   &vorticity,
                                  std::vector<SolutionField<dim,Number> > const &additional_fields,
-                                 double const                                time,
-                                 int const                                   time_step_number)
+                                 double const                                  time,
+                                 int const                                     time_step_number)
   {
     /*
      *  write output
      */
-    output_generator.write_output(velocity,pressure,vorticity,additional_fields,time,time_step_number);
+    output_generator.evaluate(velocity,pressure,vorticity,additional_fields,time,time_step_number);
 
     /*
      *  calculate error

@@ -82,7 +82,6 @@ private:
   SmartPointer< Mapping<dim> const > mapping;
 
   PressureDifferenceData<dim> pressure_difference_data;
-
 };
 
 

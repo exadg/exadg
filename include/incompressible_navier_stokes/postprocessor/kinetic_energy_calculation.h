@@ -78,7 +78,7 @@ private:
             << "Enstrophy: E = 1/V * 1/2 * (rot(u),rot(u))_Omega, where V=(1,1)_Omega" << std::endl;
 
           f << std::endl
-            << "  Time                Kin. energy         dissipation         enstrophy"<<std::endl;
+            << "  Time                Kin. energy         dissipation         enstrophy" << std::endl;
 
           clear_files = false;
         }

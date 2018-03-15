@@ -13,17 +13,18 @@
 #include "../../incompressible_navier_stokes/postprocessor/output_data_navier_stokes.h"
 
 template<int dim, typename Number>
-void write_output_navier_stokes(OutputDataNavierStokes const                &output_data,
-                                DoFHandler<dim> const                       &dof_handler_velocity,
-                                DoFHandler<dim> const                       &dof_handler_pressure,
-                                Mapping<dim> const                          &mapping,
-                                parallel::distributed::Vector<Number> const &velocity,
-                                parallel::distributed::Vector<Number> const &pressure,
-                                parallel::distributed::Vector<Number> const &vorticity,
-                                std::vector<SolutionField<dim,Number> > const &additional_fields,
-                                unsigned int const                          output_counter)
+void write_output(OutputDataNavierStokes const                &output_data,
+                  DoFHandler<dim> const                       &dof_handler_velocity,
+                  DoFHandler<dim> const                       &dof_handler_pressure,
+                  Mapping<dim> const                          &mapping,
+                  parallel::distributed::Vector<Number> const &velocity,
+                  parallel::distributed::Vector<Number> const &pressure,
+                  parallel::distributed::Vector<Number> const &vorticity,
+                  std::vector<SolutionField<dim,Number> > const &additional_fields,
+                  unsigned int const                          output_counter)
 {
   DataOut<dim> data_out;
+
   std::vector<std::string> velocity_names (dim, "velocity");
   std::vector<DataComponentInterpretation::DataComponentInterpretation>
     velocity_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
@@ -38,9 +39,24 @@ void write_output_navier_stokes(OutputDataNavierStokes const                &out
   data_out.add_data_vector (dof_handler_pressure, pressure, "p");
 
   for(typename std::vector<SolutionField<dim,Number> >::const_iterator
-      it = additional_fields.begin();it!=additional_fields.end();++it)
+      it = additional_fields.begin(); it!=additional_fields.end(); ++it)
   {
-    data_out.add_data_vector (*it->dof_handler, *it->vector, it->name);
+    if(it->type == SolutionFieldType::scalar)
+    {
+      data_out.add_data_vector (*it->dof_handler, *it->vector, it->name);
+    }
+    else if(it->type == SolutionFieldType::vector)
+    {
+      std::vector<std::string> names (dim, it->name);
+      std::vector<DataComponentInterpretation::DataComponentInterpretation>
+        component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
+
+      data_out.add_data_vector (*it->dof_handler, *it->vector, names, component_interpretation);
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
   }
 
   // visualize distribution of cells to processors
@@ -109,56 +125,53 @@ public:
     output_counter = output_data.output_counter_start;
   }
 
-  void write_output(parallel::distributed::Vector<Number> const   &velocity,
-                    parallel::distributed::Vector<Number> const   &pressure,
-                    parallel::distributed::Vector<Number> const   &vorticity,
-                    std::vector<SolutionField<dim,Number> > const &additional_fields,
-                    double const                                  &time,
-                    int const                                     &time_step_number)
+  void evaluate(parallel::distributed::Vector<Number> const   &velocity,
+                parallel::distributed::Vector<Number> const   &pressure,
+                parallel::distributed::Vector<Number> const   &vorticity,
+                std::vector<SolutionField<dim,Number> > const &additional_fields,
+                double const                                  &time,
+                int const                                     &time_step_number)
   {
-    const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
+    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
     if(output_data.write_output == true)
     {
       if(time_step_number >= 0) // unsteady problem
       {
+        const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
         if(time > (output_data.output_start_time + output_counter*output_data.output_interval_time - EPSILON))
         {
-          ConditionalOStream pcout(std::cout,
-              Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
           pcout << std::endl << "OUTPUT << Write data at time t = "
                 << std::scientific << std::setprecision(4) << time << std::endl;
 
-          write_output_navier_stokes<dim>(output_data,
-                                          *dof_handler_velocity,
-                                          *dof_handler_pressure,
-                                          *mapping,
-                                          velocity,
-                                          pressure,
-                                          vorticity,
-                                          additional_fields,
-                                          output_counter);
+          write_output<dim>(output_data,
+                            *dof_handler_velocity,
+                            *dof_handler_pressure,
+                            *mapping,
+                            velocity,
+                            pressure,
+                            vorticity,
+                            additional_fields,
+                            output_counter);
 
           ++output_counter;
         }
       }
       else // steady problem (time_step_number = -1)
       {
-        ConditionalOStream pcout(std::cout,
-            Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
         pcout << std::endl << "OUTPUT << Write "
               << (output_counter == 0 ? "initial" : "solution") << " data"
               << std::endl;
 
-        write_output_navier_stokes<dim>(output_data,
-                                        *dof_handler_velocity,
-                                        *dof_handler_pressure,
-                                        *mapping,
-                                        velocity,
-                                        pressure,
-                                        vorticity,
-                                        additional_fields,
-                                        output_counter);
+        write_output<dim>(output_data,
+                          *dof_handler_velocity,
+                          *dof_handler_pressure,
+                          *mapping,
+                          velocity,
+                          pressure,
+                          vorticity,
+                          additional_fields,
+                          output_counter);
 
         ++output_counter;
       }
