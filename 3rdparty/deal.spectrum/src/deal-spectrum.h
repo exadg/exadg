@@ -40,10 +40,7 @@ public:
     DealSpectrumWrapper(bool write, bool inplace) : 
         write(write), inplace(inplace), s(), h(s), ipol(s), fftc(s), fftw(s){}
         
-    virtual ~DealSpectrumWrapper() {
-        if(s.rank==0)
-            timer.printTimings();
-    }
+    virtual ~DealSpectrumWrapper() {}
 
     
     /**
@@ -133,6 +130,11 @@ public:
         return this->fftw.get_results(K, E, C, e_d, e_s);
     } 
     
+    void print_timings(){
+      if(s.rank==0)
+          timer.printTimings();
+    }
+
 private:
     // flush flow field to hard drive?
     const bool write;
