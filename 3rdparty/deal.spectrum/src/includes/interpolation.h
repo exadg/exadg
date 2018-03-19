@@ -15,12 +15,11 @@
 // include deal.II
 #include <deal.II/base/aligned_vector.h>
 #include <deal.II/base/point.h>
+#include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/utilities.h>
+#include <deal.II/fe/fe_values.h>
+#include <deal.II/fe/fe_dgq.h>
 #include <deal.II/matrix_free/evaluation_kernels.h>
-
-// include functions for gauss-points and polynomials (TODO: get from deal.II)
-#include "../util/gauss_formula.h"
-#include "../util/lagrange_polynomials.h"
 
 using namespace dealii;
 
@@ -110,11 +109,11 @@ public:
      * 
      * @params n_points     nr of points
      */
-    std::vector<double> get_equidistant_inner(const unsigned int n_points){
-        std::vector<double> points(n_points);
+    std::vector<dealii::Point<1>> get_equidistant_inner(const unsigned int n_points){
+        std::vector<dealii::Point<1>> points(n_points);
 
         for(unsigned int i = 0; i < n_points; i++)
-            points[i] = (i+0.5)/n_points;
+            points[i][0] = (i+0.5)/n_points;
 
         return points; 
     }
@@ -125,15 +124,17 @@ public:
      * @params shape_values     data structure to be filled
      */
     void fill_shape_values(AlignedVector<double>& shape_values){
-        LagrangePolynomialBasis basis_gll(get_gauss_lobatto_points(points_source));
-        std::vector<double> gauss_points(get_equidistant_inner(points_target));
+        // determine coefficients with deal.II functions
+        FE_DGQ<1>   fe(points_source-1);
+        FullMatrix< double > matrix(points_target, points_source);
+        FE_DGQArbitraryNodes<1>(Quadrature<1>( get_equidistant_inner(points_target)))
+                .get_interpolation_matrix(fe, matrix);
 
+        // ... and convert to linearized format
         shape_values.resize(points_source * points_target);
-
         for (unsigned int i = 0; i < points_source; ++i)
             for (unsigned int q = 0; q < points_target; ++q) 
-                shape_values[i * points_target + q] = basis_gll.value(i, gauss_points[q]);
-
+                shape_values[i * points_target + q] = matrix(q, i);
     }
     
     /**
