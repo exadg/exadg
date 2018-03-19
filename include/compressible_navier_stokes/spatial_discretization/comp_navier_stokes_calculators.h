@@ -41,8 +41,6 @@ public:
   void compute_vorticity (parallel::distributed::Vector<value_type>       &dst,
                           parallel::distributed::Vector<value_type> const &src) const
   {
-    dst = 0;
-
     data->cell_loop (&This::local_compute_vorticity, this, dst, src);
   }
 
@@ -74,7 +72,7 @@ private:
       }
 
       fe_eval.integrate(true,false);
-      fe_eval.distribute_local_to_global(dst);
+      fe_eval.set_dof_values(dst);
     }
   }
 
@@ -114,8 +112,6 @@ public:
   void compute_divergence (parallel::distributed::Vector<value_type>       &dst,
                            parallel::distributed::Vector<value_type> const &src) const
   {
-    dst = 0;
-
     data->cell_loop (&This::local_compute_divergence,this, dst, src);
   }
 
@@ -143,7 +139,7 @@ private:
       }
 
       fe_eval_scalar.integrate(true,false);
-      fe_eval_scalar.distribute_local_to_global(dst);
+      fe_eval_scalar.set_dof_values(dst);
     }
   }
 
@@ -198,8 +194,6 @@ public:
   void compute_pressure (parallel::distributed::Vector<value_type>       &pressure,
                          parallel::distributed::Vector<value_type> const &solution_conserved)
   {
-    pressure = 0;
-
     AssertThrow(heat_capacity_ratio > 0.0, ExcMessage("heat capacity ratio has not been set!"));
     AssertThrow(specific_gas_constant > 0.0, ExcMessage("specific gas constant has not been set!"));
 
@@ -209,16 +203,12 @@ public:
   void compute_velocity (parallel::distributed::Vector<value_type>       &velocity,
                          parallel::distributed::Vector<value_type> const &solution_conserved)
   {
-    velocity = 0;
-
     data->cell_loop (&This::local_apply_velocity, this, velocity, solution_conserved);
   }
 
   void compute_temperature (parallel::distributed::Vector<value_type>       &temperature,
                             parallel::distributed::Vector<value_type> const &solution_conserved)
   {
-    temperature = 0;
-
     AssertThrow(heat_capacity_ratio > 0.0, ExcMessage("heat capacity ratio has not been set!"));
     AssertThrow(specific_gas_constant > 0.0, ExcMessage("specific gas constant has not been set!"));
 
@@ -270,7 +260,7 @@ private:
       }
 
       fe_eval_pressure.integrate (true,false);
-      fe_eval_pressure.distribute_local_to_global(dst);
+      fe_eval_pressure.set_dof_values(dst);
     }
   }
 
@@ -312,7 +302,7 @@ private:
       }
 
       fe_eval_velocity.integrate (true,false);
-      fe_eval_velocity.distribute_local_to_global(dst);
+      fe_eval_velocity.set_dof_values(dst);
     }
   }
 
@@ -361,7 +351,7 @@ private:
       }
 
       fe_eval_temperature.integrate (true,false);
-      fe_eval_temperature.distribute_local_to_global(dst);
+      fe_eval_temperature.set_dof_values(dst);
     }
   }
 

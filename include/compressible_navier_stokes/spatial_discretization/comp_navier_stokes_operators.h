@@ -118,12 +118,12 @@ calculate_stress_tensor(Tensor<2,dim,VectorizedArray<value_type> > const &grad_u
  */
 template<int dim, typename value_type>
 inline VectorizedArray<value_type>
-calc_exterior_value(VectorizedArray<value_type> const                       &value_m,
-                    BoundaryType const                                      &boundary_type,
-                    std::shared_ptr<CompNS::BoundaryDescriptor<dim> > const &boundary_descriptor,
-                    types::boundary_id const                                &boundary_id,
-                    Point<dim,VectorizedArray<value_type> > const           &q_point,
-                    value_type const                                        &time)
+calculate_exterior_value(VectorizedArray<value_type> const                       &value_m,
+                         BoundaryType const                                      &boundary_type,
+                         std::shared_ptr<CompNS::BoundaryDescriptor<dim> > const &boundary_descriptor,
+                         types::boundary_id const                                &boundary_id,
+                         Point<dim,VectorizedArray<value_type> > const           &q_point,
+                         value_type const                                        &time)
 {
   VectorizedArray<value_type> value_p = make_vectorized_array<value_type>(0.);
 
@@ -153,12 +153,12 @@ calc_exterior_value(VectorizedArray<value_type> const                       &val
  */
 template<int dim, typename value_type>
 inline Tensor<1,dim,VectorizedArray<value_type> >
-calc_exterior_value(Tensor<1,dim,VectorizedArray<value_type> > const        &value_m,
-                    BoundaryType const                                      boundary_type,
-                    std::shared_ptr<CompNS::BoundaryDescriptor<dim> > const &boundary_descriptor,
-                    types::boundary_id const                                &boundary_id,
-                    Point<dim,VectorizedArray<value_type> > const           &q_point,
-                    value_type const                                        &time)
+calculate_exterior_value(Tensor<1,dim,VectorizedArray<value_type> > const        &value_m,
+                         BoundaryType const                                      boundary_type,
+                         std::shared_ptr<CompNS::BoundaryDescriptor<dim> > const &boundary_descriptor,
+                         types::boundary_id const                                &boundary_id,
+                         Point<dim,VectorizedArray<value_type> > const           &q_point,
+                         value_type const                                        &time)
 {
   Tensor<1,dim,VectorizedArray<value_type> > value_p;
 
@@ -188,12 +188,12 @@ calc_exterior_value(Tensor<1,dim,VectorizedArray<value_type> > const        &val
  */
 template<int dim, typename value_type>
 inline Tensor<1,dim,VectorizedArray<value_type> >
-calc_exterior_normal_grad(Tensor<1,dim,VectorizedArray<value_type> > const        &tau_M_normal,
-                          BoundaryType const                                      &boundary_type,
-                          std::shared_ptr<CompNS::BoundaryDescriptor<dim> > const &boundary_descriptor,
-                          types::boundary_id const                                &boundary_id,
-                          Point<dim,VectorizedArray<value_type> > const           &q_point,
-                          value_type const                                        &time)
+calculate_exterior_normal_grad(Tensor<1,dim,VectorizedArray<value_type> > const        &tau_M_normal,
+                               BoundaryType const                                      &boundary_type,
+                               std::shared_ptr<CompNS::BoundaryDescriptor<dim> > const &boundary_descriptor,
+                               types::boundary_id const                                &boundary_id,
+                               Point<dim,VectorizedArray<value_type> > const           &q_point,
+                               value_type const                                        &time)
 {
   Tensor<1,dim,VectorizedArray<value_type> > tau_P_normal;
 
@@ -224,12 +224,12 @@ calc_exterior_normal_grad(Tensor<1,dim,VectorizedArray<value_type> > const      
  */
 template<int dim, typename value_type>
 inline VectorizedArray<value_type>
-calc_exterior_normal_grad(VectorizedArray<value_type> const                       &grad_T_M_normal,
-                          BoundaryType const                                      &boundary_type,
-                          std::shared_ptr<CompNS::BoundaryDescriptor<dim> > const &boundary_descriptor,
-                          types::boundary_id const                                &boundary_id,
-                          Point<dim,VectorizedArray<value_type> > const           &q_point,
-                          value_type const                                        &time)
+calculate_exterior_normal_grad(VectorizedArray<value_type> const                       &grad_T_M_normal,
+                               BoundaryType const                                      &boundary_type,
+                               std::shared_ptr<CompNS::BoundaryDescriptor<dim> > const &boundary_descriptor,
+                               types::boundary_id const                                &boundary_id,
+                               Point<dim,VectorizedArray<value_type> > const           &q_point,
+                               value_type const                                        &time)
 {
   VectorizedArray<value_type> grad_T_P_normal = make_vectorized_array<value_type>(0.0);
 
@@ -787,32 +787,32 @@ private:
         // element e⁺
 
         // calculate rho_P
-        scalar rho_P = calc_exterior_value<dim,value_type>(rho_M, boundary_type_density, operator_data.bc_rho, boundary_id,
-                                                           fe_eval_density.quadrature_point(q), eval_time);
+        scalar rho_P = calculate_exterior_value<dim,value_type>(rho_M, boundary_type_density, operator_data.bc_rho, boundary_id,
+                                                                fe_eval_density.quadrature_point(q), eval_time);
 
         // calculate u_P
-        vector u_P = calc_exterior_value<dim,value_type>(u_M, boundary_type_velocity, operator_data.bc_u, boundary_id,
-                                                         fe_eval_momentum.quadrature_point(q), eval_time);
+        vector u_P = calculate_exterior_value<dim,value_type>(u_M, boundary_type_velocity, operator_data.bc_u, boundary_id,
+                                                              fe_eval_momentum.quadrature_point(q), eval_time);
 
         vector rho_u_P = rho_P * u_P;
 
         // calculate p_P
-        scalar p_P = calc_exterior_value<dim,value_type>(p_M, boundary_type_pressure, operator_data.bc_p, boundary_id,
-                                                         fe_eval_density.quadrature_point(q), eval_time);
+        scalar p_P = calculate_exterior_value<dim,value_type>(p_M, boundary_type_pressure, operator_data.bc_p, boundary_id,
+                                                              fe_eval_density.quadrature_point(q), eval_time);
 
         // calculate E_P
         scalar E_P = make_vectorized_array<value_type>(0.0);
         if(boundary_variable == EnergyBoundaryVariable::Energy)
         {
-          E_P = calc_exterior_value<dim,value_type>(E_M, boundary_type_energy, operator_data.bc_E, boundary_id,
-                                                    fe_eval_energy.quadrature_point(q), eval_time);
+          E_P = calculate_exterior_value<dim,value_type>(E_M, boundary_type_energy, operator_data.bc_E, boundary_id,
+                                                         fe_eval_energy.quadrature_point(q), eval_time);
 
         }
         else if(boundary_variable == EnergyBoundaryVariable::Temperature)
         {
           scalar T_M = calculate_temperature(p_M, rho_M, R);
-          scalar T_P = calc_exterior_value<dim,value_type>(T_M, boundary_type_energy, operator_data.bc_E, boundary_id,
-                                                           fe_eval_energy.quadrature_point(q), eval_time);
+          scalar T_P = calculate_exterior_value<dim,value_type>(T_M, boundary_type_energy, operator_data.bc_E, boundary_id,
+                                                                fe_eval_energy.quadrature_point(q), eval_time);
 
           value_type const c_v = R/(gamma-1.0);
           E_P = calculate_energy(T_P, u_P, c_v);
@@ -1204,8 +1204,8 @@ private:
         scalar rho_inv_M = 1.0 / rho_M;
         vector grad_rho_M = fe_eval_density.get_gradient(q);
 
-        scalar rho_P = calc_exterior_value<dim,value_type>(rho_M, boundary_type_density, operator_data.bc_rho, boundary_id,
-                                                           fe_eval_density.quadrature_point(q), eval_time);
+        scalar rho_P = calculate_exterior_value<dim,value_type>(rho_M, boundary_type_density, operator_data.bc_rho, boundary_id,
+                                                                fe_eval_density.quadrature_point(q), eval_time);
 
         scalar jump_density = rho_M - rho_P;
         scalar gradient_flux_density = - tau_IP * jump_density;
@@ -1215,16 +1215,16 @@ private:
         vector u_M = rho_inv_M * rho_u_M;
         tensor grad_rho_u_M = fe_eval_momentum.get_gradient(q);
 
-        vector u_P = calc_exterior_value<dim,value_type>(u_M, boundary_type_velocity, operator_data.bc_u, boundary_id,
-                                                         fe_eval_momentum.quadrature_point(q), eval_time);
+        vector u_P = calculate_exterior_value<dim,value_type>(u_M, boundary_type_velocity, operator_data.bc_u, boundary_id,
+                                                              fe_eval_momentum.quadrature_point(q), eval_time);
 
         vector rho_u_P = rho_P * u_P;
 
         tensor grad_u_M = calculate_grad_u(rho_inv_M, rho_u_M, grad_rho_M, grad_rho_u_M);
         tensor tau_M = calculate_stress_tensor(grad_u_M, mu);
 
-        vector tau_P_normal = calc_exterior_normal_grad(tau_M*normal, boundary_type_velocity, operator_data.bc_u, boundary_id,
-                                                        fe_eval_momentum.quadrature_point(q), eval_time);
+        vector tau_P_normal = calculate_exterior_normal_grad(tau_M*normal, boundary_type_velocity, operator_data.bc_u, boundary_id,
+                                                             fe_eval_momentum.quadrature_point(q), eval_time);
 
         vector jump_momentum = rho_u_M - rho_u_P;
         vector gradient_flux_momentum = 0.5 * (tau_M * normal + tau_P_normal) - tau_IP * jump_momentum;
@@ -1237,15 +1237,15 @@ private:
         scalar E_P = make_vectorized_array<value_type>(0.0);
         if(boundary_variable == EnergyBoundaryVariable::Energy)
         {
-          E_P = calc_exterior_value<dim,value_type>(E_M, boundary_type_energy, operator_data.bc_E, boundary_id,
-                                                    fe_eval_energy.quadrature_point(q), eval_time);
+          E_P = calculate_exterior_value<dim,value_type>(E_M, boundary_type_energy, operator_data.bc_E, boundary_id,
+                                                         fe_eval_energy.quadrature_point(q), eval_time);
         }
         else if(boundary_variable == EnergyBoundaryVariable::Temperature)
         {
           scalar p_M = calculate_pressure(rho_M, u_M, E_M, gamma);
           scalar T_M = calculate_temperature(p_M, rho_M, R);
-          scalar T_P = calc_exterior_value<dim,value_type>(T_M, boundary_type_energy, operator_data.bc_E, boundary_id,
-                                                           fe_eval_energy.quadrature_point(q), eval_time);
+          scalar T_P = calculate_exterior_value<dim,value_type>(T_M, boundary_type_energy, operator_data.bc_E, boundary_id,
+                                                                fe_eval_energy.quadrature_point(q), eval_time);
 
           value_type const c_v = R/(gamma-1.0);
           E_P = calculate_energy(T_P, u_P, c_v);
@@ -1256,8 +1256,8 @@ private:
         vector grad_T_M = calculate_grad_T(grad_E_M, u_M, grad_u_M, gamma, R);
 
         scalar grad_T_M_normal = grad_T_M*normal;
-        scalar grad_T_P_normal = calc_exterior_normal_grad<dim,value_type>(grad_T_M_normal, boundary_type_energy, operator_data.bc_E, boundary_id,
-                                                                           fe_eval_energy.quadrature_point(q), eval_time);
+        scalar grad_T_P_normal = calculate_exterior_normal_grad<dim,value_type>(grad_T_M_normal, boundary_type_energy, operator_data.bc_E, boundary_id,
+                                                                                fe_eval_energy.quadrature_point(q), eval_time);
 
         scalar jump_energy = rho_E_M - rho_E_P;
         scalar gradient_flux_energy = 0.5 * (u_M * tau_M * normal + u_P * tau_P_normal + lambda * (grad_T_M*normal + grad_T_P_normal)) - tau_IP * jump_energy;
@@ -1700,8 +1700,8 @@ private:
         scalar rho_inv_M = 1.0 / rho_M;
         vector grad_rho_M = fe_eval_density.get_gradient(q);
 
-        scalar rho_P = calc_exterior_value<dim,value_type>(rho_M, boundary_type_density, operator_data.bc_rho, boundary_id,
-                                                           fe_eval_density.quadrature_point(q), eval_time);
+        scalar rho_P = calculate_exterior_value<dim,value_type>(rho_M, boundary_type_density, operator_data.bc_rho, boundary_id,
+                                                                fe_eval_density.quadrature_point(q), eval_time);
 
         scalar jump_density = rho_M - rho_P;
         scalar gradient_flux_density = - tau_IP * jump_density;
@@ -1711,16 +1711,16 @@ private:
         vector u_M = rho_inv_M * rho_u_M;
         tensor grad_rho_u_M = fe_eval_momentum.get_gradient(q);
 
-        vector u_P = calc_exterior_value<dim,value_type>(u_M, boundary_type_velocity, operator_data.bc_u, boundary_id,
-                                                         fe_eval_momentum.quadrature_point(q), eval_time);
+        vector u_P = calculate_exterior_value<dim,value_type>(u_M, boundary_type_velocity, operator_data.bc_u, boundary_id,
+                                                              fe_eval_momentum.quadrature_point(q), eval_time);
 
         vector rho_u_P = rho_P * u_P;
 
         tensor grad_u_M = calculate_grad_u(rho_inv_M, rho_u_M, grad_rho_M, grad_rho_u_M);
         tensor tau_M = calculate_stress_tensor(grad_u_M, mu);
 
-        vector tau_P_normal = calc_exterior_normal_grad(tau_M*normal, boundary_type_velocity, operator_data.bc_u, boundary_id,
-                                                        fe_eval_momentum.quadrature_point(q), eval_time);
+        vector tau_P_normal = calculate_exterior_normal_grad(tau_M*normal, boundary_type_velocity, operator_data.bc_u, boundary_id,
+                                                             fe_eval_momentum.quadrature_point(q), eval_time);
 
         vector jump_momentum = rho_u_M - rho_u_P;
         vector gradient_flux_momentum = 0.5 * (tau_M * normal + tau_P_normal) - tau_IP * jump_momentum;
@@ -1733,15 +1733,15 @@ private:
         scalar E_P = make_vectorized_array<value_type>(0.0);
         if(boundary_variable == EnergyBoundaryVariable::Energy)
         {
-          E_P = calc_exterior_value<dim,value_type>(E_M, boundary_type_energy, operator_data.bc_E, boundary_id,
-                                                    fe_eval_energy.quadrature_point(q), eval_time);
+          E_P = calculate_exterior_value<dim,value_type>(E_M, boundary_type_energy, operator_data.bc_E, boundary_id,
+                                                         fe_eval_energy.quadrature_point(q), eval_time);
         }
         else if(boundary_variable == EnergyBoundaryVariable::Temperature)
         {
           scalar p_M = calculate_pressure(rho_M, u_M, E_M, gamma);
           scalar T_M = calculate_temperature(p_M, rho_M, R);
-          scalar T_P = calc_exterior_value<dim,value_type>(T_M, boundary_type_energy, operator_data.bc_E, boundary_id,
-                                                           fe_eval_energy.quadrature_point(q), eval_time);
+          scalar T_P = calculate_exterior_value<dim,value_type>(T_M, boundary_type_energy, operator_data.bc_E, boundary_id,
+                                                                fe_eval_energy.quadrature_point(q), eval_time);
 
           value_type const c_v = R/(gamma-1.0);
           E_P = calculate_energy(T_P, u_P, c_v);
@@ -1752,8 +1752,8 @@ private:
         vector grad_T_M = calculate_grad_T(grad_E_M, u_M, grad_u_M, gamma, R);
 
         scalar grad_T_M_normal = grad_T_M*normal;
-        scalar grad_T_P_normal = calc_exterior_normal_grad<dim,value_type>(grad_T_M_normal, boundary_type_energy, operator_data.bc_E, boundary_id,
-                                                                           fe_eval_energy.quadrature_point(q), eval_time);
+        scalar grad_T_P_normal = calculate_exterior_normal_grad<dim,value_type>(grad_T_M_normal, boundary_type_energy, operator_data.bc_E, boundary_id,
+                                                                                fe_eval_energy.quadrature_point(q), eval_time);
 
         scalar jump_energy = rho_E_M - rho_E_P;
         scalar gradient_flux_energy = 0.5 * (u_M * tau_M * normal + u_P * tau_P_normal + lambda * (grad_T_M*normal + grad_T_P_normal)) - tau_IP * jump_energy;
@@ -1774,8 +1774,8 @@ private:
 
         // CONVECTIVE TERM
         scalar p_M = calculate_pressure(rho_M, u_M, E_M, gamma);
-        scalar p_P = calc_exterior_value<dim,value_type>(p_M, boundary_type_pressure, operator_data.bc_p, boundary_id,
-                                                         fe_eval_density.quadrature_point(q), eval_time);
+        scalar p_P = calculate_exterior_value<dim,value_type>(p_M, boundary_type_pressure, operator_data.bc_p, boundary_id,
+                                                              fe_eval_density.quadrature_point(q), eval_time);
 
         // calculate lambda
         scalar lambda = calculate_lambda(rho_M,rho_P,u_M,u_P,p_M,p_P,gamma);
