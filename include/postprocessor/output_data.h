@@ -10,6 +10,8 @@
 
 #include "../include/functionalities/print_functions.h"
 
+using namespace dealii;
+
 struct OutputData
 {
   OutputData()
@@ -60,8 +62,11 @@ struct OutputData
 
   // number of patches
   unsigned int number_of_patches;
-
 };
 
+enum class SolutionFieldType {
+  scalar,
+  vector
+};
 
 #endif /* INCLUDE_POSTPROCESSOR_OUTPUT_DATA_H_ */

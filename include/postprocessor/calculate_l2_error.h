@@ -16,19 +16,19 @@
 using namespace dealii;
 
 template<int dim>
-void calculate_L2_error(DoFHandler<dim> const                       &dof_handler,
-                        Mapping<dim> const                          &mapping,
-                        parallel::distributed::Vector<double> const &numerical_solution,
-                        std::shared_ptr<Function<dim> >       analytical_solution,
-                        double                                      &error,
-                        bool                                        &relative_error,
-                        unsigned int const                          additional_quadrature_points = 3)
+double calculate_L2_error(bool                                        &relative_error,
+                          DoFHandler<dim> const                       &dof_handler,
+                          Mapping<dim> const                          &mapping,
+                          parallel::distributed::Vector<double> const &numerical_solution,
+                          std::shared_ptr<Function<dim> > const       analytical_solution,
+                          double const                                &time,
+                          unsigned int const                          additional_quadrature_points = 3)
 {
-  ConditionalOStream pcout(std::cout,
-      Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  double error = 1.0;
+  analytical_solution->set_time(time);
 
+  // calculate error norm
   Vector<double> error_norm_per_cell(dof_handler.get_triangulation().n_active_cells());
-  Vector<double> solution_norm_per_cell(dof_handler.get_triangulation().n_active_cells());
   VectorTools::integrate_difference (mapping,
                                      dof_handler,
                                      numerical_solution,
@@ -36,6 +36,11 @@ void calculate_L2_error(DoFHandler<dim> const                       &dof_handler
                                      error_norm_per_cell,
                                      QGauss<dim>(dof_handler.get_fe().degree + additional_quadrature_points),
                                      VectorTools::L2_norm);
+
+  double error_norm = std::sqrt(Utilities::MPI::sum (error_norm_per_cell.norm_sqr(), MPI_COMM_WORLD));
+
+  // calculate solution norm
+  Vector<double> solution_norm_per_cell(dof_handler.get_triangulation().n_active_cells());
   parallel::distributed::Vector<double> zero_solution;
   zero_solution.reinit(numerical_solution);
   VectorTools::integrate_difference (mapping,
@@ -46,7 +51,6 @@ void calculate_L2_error(DoFHandler<dim> const                       &dof_handler
                                      QGauss<dim>(dof_handler.get_fe().degree + additional_quadrature_points),
                                      VectorTools::L2_norm);
 
-  double error_norm = std::sqrt(Utilities::MPI::sum (error_norm_per_cell.norm_sqr(), MPI_COMM_WORLD));
   double solution_norm = std::sqrt(Utilities::MPI::sum (solution_norm_per_cell.norm_sqr(), MPI_COMM_WORLD));
 
   if(solution_norm > 1.e-12)
@@ -59,6 +63,8 @@ void calculate_L2_error(DoFHandler<dim> const                       &dof_handler
     error = error_norm;
     relative_error = false;
   }
+
+  return error;
 }
 
 #endif /* INCLUDE_POSTPROCESSOR_CALCULATE_L2_ERROR_H_ */

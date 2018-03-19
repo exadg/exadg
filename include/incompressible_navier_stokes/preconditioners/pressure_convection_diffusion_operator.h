@@ -8,7 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_PRESSURE_CONVECTION_DIFFUSION_OPERATOR_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_PRESSURE_CONVECTION_DIFFUSION_OPERATOR_H_
 
-#include "../../convection_diffusion/convection_diffusion_operators.h"
+#include "../../convection_diffusion/spatial_discretization/convection_diffusion_operators.h"
 #include "../../incompressible_navier_stokes/user_interface/input_parameters.h"
 
 template<int dim>
@@ -23,9 +23,9 @@ struct PressureConvectionDiffusionOperatorData
   bool unsteady_problem;
   bool convective_problem;
 
-  ScalarConvDiffOperators::MassMatrixOperatorData mass_matrix_operator_data;
-  ScalarConvDiffOperators::DiffusiveOperatorData<dim> diffusive_operator_data;
-  ScalarConvDiffOperators::ConvectiveOperatorDataDiscontinuousVelocity<dim> convective_operator_data;
+  ConvDiff::MassMatrixOperatorData mass_matrix_operator_data;
+  ConvDiff::DiffusiveOperatorData<dim> diffusive_operator_data;
+  ConvDiff::ConvectiveOperatorDataDiscontinuousVelocity<dim> convective_operator_data;
 };
 
 template<int dim, int fe_degree, int fe_degree_velocity, typename value_type>
@@ -96,9 +96,9 @@ private:
   MatrixFree<dim,value_type> const &matrix_free_data;
   PressureConvectionDiffusionOperatorData<dim> operator_data;
   double scaling_factor_time_derivative_term;
-  ScalarConvDiffOperators::MassMatrixOperator<dim, fe_degree, value_type> mass_matrix_operator;
-  ScalarConvDiffOperators::DiffusiveOperator<dim, fe_degree, value_type> diffusive_operator;
-  ScalarConvDiffOperators::ConvectiveOperatorDiscontinuousVelocity<dim, fe_degree, fe_degree_velocity, value_type> convective_operator;
+  ConvDiff::MassMatrixOperator<dim, fe_degree, value_type> mass_matrix_operator;
+  ConvDiff::DiffusiveOperator<dim, fe_degree, value_type> diffusive_operator;
+  ConvDiff::ConvectiveOperatorDiscontinuousVelocity<dim, fe_degree, fe_degree_velocity, value_type> convective_operator;
 };
 
 

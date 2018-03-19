@@ -89,17 +89,6 @@ public:
   static const unsigned int quad_index_p = static_cast<typename std::underlying_type<QuadratureSelector>::type >(QuadratureSelector::pressure);
   static const unsigned int quad_index_u_nonlinear = static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::velocity_nonlinear);
 
-  /*
-   * nomenclature typdedef FEEvaluationWrapper:
-   * FEEval_name1_name2 : name1 specifies the dof handler, name2 the quadrature formula
-   * example: FEEval_Pressure_Velocity_linear: dof handler for pressure (scalar quantity),
-   * quadrature formula with fe_degree_velocity+1 quadrature points
-   */
-
-  typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,Number,is_xwall> FEEval_Velocity_Velocity_linear;
-
-  typedef FEFaceEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,dim,Number,is_xwall> FEFaceEval_Velocity_Velocity_linear;
-
   // Constructor
   DGNavierStokesBase(parallel::distributed::Triangulation<dim> const &triangulation,
                      InputParametersNavierStokes<dim> const          &parameter)
@@ -262,14 +251,14 @@ public:
   // coincides the the analytical pressure solution in an arbitrary point.
   // Note that the parameter 'eval_time' is only needed for unsteady problems.
   void  shift_pressure (parallel::distributed::Vector<Number> &pressure,
-                        double const                              &eval_time = 0.0) const;
+                        double const                          &eval_time = 0.0) const;
 
   // special case: pure Dirichlet boundary conditions
   // if analytical solution is available: shift pressure so that the numerical pressure solution
   // has a mean value identical to the "exact pressure solution" obtained by interpolation of analytical solution.
   // Note that the parameter 'eval_time' is only needed for unsteady problems.
   void  shift_pressure_mean_value (parallel::distributed::Vector<Number> &pressure,
-                                   double const                              &eval_time = 0.0) const;
+                                   double const                          &eval_time = 0.0) const;
 
   // special case: pure Dirichlet boundary conditions
   // if no analytical solution is available: set mean value of pressure vector to zero

@@ -41,9 +41,9 @@ const double START_TIME = 0.0;
 const double DIFFUSIVITY = 1.0e0;
 
 enum class TypeVelocityField { Constant, Circular, CircularZeroAtBoundary };
-TypeVelocityField const TYPE_VELOCITY_FIELD = TypeVelocityField::Circular; //CircularZeroAtBoundary; //Circular; //Constant;
+TypeVelocityField const TYPE_VELOCITY_FIELD = TypeVelocityField::Circular;
 
-void InputParametersConvDiff::set_input_parameters()
+void ConvDiff::InputParameters::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Steady;
@@ -153,7 +153,6 @@ template<int dim>
 double AnalyticalSolution<dim>::value(const Point<dim>    &/* p */,
                                       const unsigned int  /* component */) const
 {
-  double t = this->get_time();
   double result = 0.0;
 
   return result;
@@ -284,9 +283,9 @@ double VelocityField<dim>::value(const Point<dim>   &point,
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>         &triangulation,
-    unsigned int const                                n_refine_space,
-    std::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor)
+    parallel::distributed::Triangulation<dim>           &triangulation,
+    unsigned int const                                  n_refine_space,
+    std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor)
 {
   // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
   const double left = -1.0, right = 1.0;
@@ -300,7 +299,7 @@ void create_grid_and_set_boundary_conditions(
 }
 
 template<int dim>
-void set_field_functions(std::shared_ptr<FieldFunctionsConvDiff<dim> > field_functions)
+void set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > analytical_solution;
@@ -318,7 +317,7 @@ void set_field_functions(std::shared_ptr<FieldFunctionsConvDiff<dim> > field_fun
 }
 
 template<int dim>
-void set_analytical_solution(std::shared_ptr<AnalyticalSolutionConvDiff<dim> > analytical_solution)
+void set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim> > analytical_solution)
 {
   analytical_solution->solution.reset(new AnalyticalSolution<dim>(1));
 }

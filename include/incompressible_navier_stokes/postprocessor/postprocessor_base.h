@@ -14,6 +14,8 @@
 #include <deal.II/lac/parallel_vector.h>
 
 #include "../../incompressible_navier_stokes/user_interface/analytical_solution.h"
+#include "../../postprocessor/output_data.h"
+#include "postprocessor/solution_field.h"
 
 /*
  *  This struct contains information about
@@ -34,21 +36,6 @@ struct DofQuadIndexData
   unsigned int quad_index_velocity;
 };
 
-template<int dim, typename Number>
-class SolutionField
-{
-public:
-  SolutionField()
-    :
-    name("solution"),
-    dof_handler(nullptr),
-    vector(nullptr)
-  {}
-
-  std::string name;
-  DoFHandler<dim> const *dof_handler;
-  parallel::distributed::Vector<Number> const *vector;
-};
 
 /*
  *  Interface class for postprocessor of the

@@ -18,6 +18,7 @@
 using namespace dealii;
 
 #include "operators/matrix_operator_base.h"
+#include "operators/interior_penalty_parameter.h"
 
 #include "../poisson/boundary_descriptor_laplace.h"
 
@@ -194,14 +195,6 @@ public:
     return array_penalty_parameter;
   }
 
-  // Returns the current factor by which array_penalty_parameter() is
-  // multiplied in the definition of the interior penalty parameter through
-  // get_array_penalty_parameter()[cell] * get_penalty_factor().
-  Number get_penalty_factor() const
-  {
-    return operator_data.penalty_factor * (degree + 1.0) * (degree + 1.0);
-  }
-
   const LaplaceOperatorData<dim> &
   get_operator_data() const
   {
@@ -227,7 +220,7 @@ private:
 
   // Computes the array penalty parameter for later use of the symmetric
   // interior penalty method. Called in reinit().
-  void compute_array_penalty_parameter(const Mapping<dim> &mapping);
+//  void compute_array_penalty_parameter(const Mapping<dim> &mapping);
 
   // Runs the loop over all cells and faces for use in matrix-vector
   // multiplication, adding the result in the previous content of dst
@@ -388,7 +381,12 @@ void LaplaceOperator<dim,degree,Number>::reinit (const MatrixFree<dim,Number>   
                mf_data.get_n_q_points(operator_data.laplace_quad_index),
                ExcMessage("Expected fe_degree+1 quadrature points"));
 
-  compute_array_penalty_parameter(mapping);
+//  compute_array_penalty_parameter(mapping);
+
+  IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
+                                                       *this->data,
+                                                       mapping,
+                                                       operator_data.laplace_dof_index);
 
   // TODO
 //  // Check whether the Poisson matrix is singular when applied to a vector
@@ -681,51 +679,52 @@ verify_boundary_conditions(DoFHandler<dim> const          &dof_handler,
 }
 
 
+// TODO: Martin, why do we need periodic_boundary_ids?
 
-template <int dim, int degree, typename Number>
-void LaplaceOperator<dim,degree,Number>::compute_array_penalty_parameter(const Mapping<dim> &mapping)
-{
-  std::set<types::boundary_id> periodic_boundary_ids;
-  for (unsigned int i=0; i<operator_data.periodic_face_pairs_level0.size(); ++i)
-  {
-    AssertThrow(operator_data.periodic_face_pairs_level0[i].cell[0]->level() == 0,
-                ExcMessage("Received periodic cell pairs on non-zero level"));
-    periodic_boundary_ids.insert(operator_data.periodic_face_pairs_level0[i].cell[0]->face(operator_data.periodic_face_pairs_level0[i].face_idx[0])->boundary_id());
-    periodic_boundary_ids.insert(operator_data.periodic_face_pairs_level0[i].cell[1]->face(operator_data.periodic_face_pairs_level0[i].face_idx[1])->boundary_id());
-  }
-
-  // Compute penalty parameter for each cell
-  array_penalty_parameter.resize(data->n_macro_cells()+data->n_macro_ghost_cells());
-  QGauss<dim> quadrature(degree+1);
-  FEValues<dim> fe_values(mapping,
-                          data->get_dof_handler(operator_data.laplace_dof_index).get_fe(),
-                          quadrature, update_JxW_values);
-  QGauss<dim-1> face_quadrature(degree+1);
-  FEFaceValues<dim> fe_face_values(mapping, data->get_dof_handler(operator_data.laplace_dof_index).get_fe(), face_quadrature, update_JxW_values);
-
-  for (unsigned int i=0; i<data->n_macro_cells()+data->n_macro_ghost_cells(); ++i)
-  {
-    for (unsigned int v=0; v<data->n_components_filled(i); ++v)
-    {
-      typename DoFHandler<dim>::cell_iterator cell = data->get_cell_iterator(i,v,operator_data.laplace_dof_index);
-      fe_values.reinit(cell);
-      double volume = 0;
-      for (unsigned int q=0; q<quadrature.size(); ++q)
-        volume += fe_values.JxW(q);
-      double surface_area = 0;
-      for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
-      {
-        fe_face_values.reinit(cell, f);
-        const double factor = (cell->at_boundary(f) &&
-                               periodic_boundary_ids.find(cell->face(f)->boundary_id()) ==
-                               periodic_boundary_ids.end()) ? 1. : 0.5;
-        for (unsigned int q=0; q<face_quadrature.size(); ++q)
-          surface_area += fe_face_values.JxW(q) * factor;
-      }
-      array_penalty_parameter[i][v] = surface_area / volume;
-    }
-  }
-}
+//template <int dim, int degree, typename Number>
+//void LaplaceOperator<dim,degree,Number>::compute_array_penalty_parameter(const Mapping<dim> &mapping)
+//{
+//  std::set<types::boundary_id> periodic_boundary_ids;
+//  for (unsigned int i=0; i<operator_data.periodic_face_pairs_level0.size(); ++i)
+//  {
+//    AssertThrow(operator_data.periodic_face_pairs_level0[i].cell[0]->level() == 0,
+//                ExcMessage("Received periodic cell pairs on non-zero level"));
+//    periodic_boundary_ids.insert(operator_data.periodic_face_pairs_level0[i].cell[0]->face(operator_data.periodic_face_pairs_level0[i].face_idx[0])->boundary_id());
+//    periodic_boundary_ids.insert(operator_data.periodic_face_pairs_level0[i].cell[1]->face(operator_data.periodic_face_pairs_level0[i].face_idx[1])->boundary_id());
+//  }
+//
+//  // Compute penalty parameter for each cell
+//  array_penalty_parameter.resize(data->n_macro_cells()+data->n_macro_ghost_cells());
+//  QGauss<dim> quadrature(degree+1);
+//  FEValues<dim> fe_values(mapping,
+//                          data->get_dof_handler(operator_data.laplace_dof_index).get_fe(),
+//                          quadrature, update_JxW_values);
+//  QGauss<dim-1> face_quadrature(degree+1);
+//  FEFaceValues<dim> fe_face_values(mapping, data->get_dof_handler(operator_data.laplace_dof_index).get_fe(), face_quadrature, update_JxW_values);
+//
+//  for (unsigned int i=0; i<data->n_macro_cells()+data->n_macro_ghost_cells(); ++i)
+//  {
+//    for (unsigned int v=0; v<data->n_components_filled(i); ++v)
+//    {
+//      typename DoFHandler<dim>::cell_iterator cell = data->get_cell_iterator(i,v,operator_data.laplace_dof_index);
+//      fe_values.reinit(cell);
+//      double volume = 0;
+//      for (unsigned int q=0; q<quadrature.size(); ++q)
+//        volume += fe_values.JxW(q);
+//      double surface_area = 0;
+//      for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
+//      {
+//        fe_face_values.reinit(cell, f);
+//        const double factor = (cell->at_boundary(f) &&
+//                               periodic_boundary_ids.find(cell->face(f)->boundary_id()) ==
+//                               periodic_boundary_ids.end()) ? 1. : 0.5;
+//        for (unsigned int q=0; q<face_quadrature.size(); ++q)
+//          surface_area += fe_face_values.JxW(q) * factor;
+//      }
+//      array_penalty_parameter[i][v] = surface_area / volume;
+//    }
+//  }
+//}
 
 
 
@@ -1125,7 +1124,7 @@ local_apply_face (const MatrixFree<dim,Number>                &data,
     VectorizedArray<Number> sigmaF =
       std::max(fe_eval.read_cell_data(array_penalty_parameter),
                fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-      get_penalty_factor();
+         IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
 
     for(unsigned int q=0;q<fe_eval.n_q_points;++q)
     {
@@ -1172,7 +1171,7 @@ local_apply_boundary (const MatrixFree<dim,Number>                &data,
     fe_eval.evaluate(true,true);
     VectorizedArray<Number> sigmaF =
       fe_eval.read_cell_data(array_penalty_parameter) *
-      get_penalty_factor();
+      IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
 
     typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
     types::boundary_id boundary_id = data.get_boundary_id(face);
@@ -1252,7 +1251,7 @@ local_rhs_boundary (const MatrixFree<dim,Number>                &data,
 
     VectorizedArray<Number> sigmaF =
       fe_eval.read_cell_data(array_penalty_parameter) *
-      get_penalty_factor();
+      IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
 
     typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
     types::boundary_id boundary_id = data.get_boundary_id(face);
@@ -1416,7 +1415,7 @@ local_diagonal_face (const MatrixFree<dim,Number>                &data,
     VectorizedArray<Number> sigmaF =
       std::max(phi.read_cell_data(array_penalty_parameter),
                phi_outer.read_cell_data(array_penalty_parameter)) *
-      get_penalty_factor();
+         IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
 
     // element-
     for (unsigned int j=0; j<phi.dofs_per_cell; ++j)
@@ -1506,7 +1505,7 @@ local_diagonal_boundary (const MatrixFree<dim,Number>                &data,
 
     VectorizedArray<Number> sigmaF =
       phi.read_cell_data(array_penalty_parameter) *
-      get_penalty_factor();
+      IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
 
     typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
     types::boundary_id boundary_id = data.get_boundary_id(face);
@@ -1621,7 +1620,7 @@ face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>         
     VectorizedArray<Number> sigmaF =
       std::max(phi.read_cell_data(array_penalty_parameter),
                phi_outer.read_cell_data(array_penalty_parameter)) *
-      get_penalty_factor();
+        IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
 
     for (unsigned int j=0; j<phi.dofs_per_cell; ++j)
     {
@@ -1667,7 +1666,7 @@ face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>         
     VectorizedArray<Number> sigmaF =
       std::max(phi.read_cell_data(array_penalty_parameter),
                phi_outer.read_cell_data(array_penalty_parameter)) *
-      get_penalty_factor();
+       IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
 
     for (unsigned int j=0; j<phi_outer.dofs_per_cell; ++j)
     {
@@ -1721,7 +1720,7 @@ boundary_face_loop_calculate_block_jacobi_matrices (const MatrixFree<dim,Number>
 
     VectorizedArray<Number> sigmaF =
       phi.read_cell_data(array_penalty_parameter) *
-      get_penalty_factor();
+      IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
 
     typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
     types::boundary_id boundary_id = data.get_boundary_id(face);

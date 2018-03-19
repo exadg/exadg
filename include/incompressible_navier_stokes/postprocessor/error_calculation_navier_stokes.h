@@ -11,7 +11,7 @@
 #include "postprocessor/calculate_l2_error.h"
 #include "postprocessor/error_calculation_data.h"
 
-#include "../../../include/incompressible_navier_stokes/user_interface/analytical_solution.h"
+#include "incompressible_navier_stokes/user_interface/analytical_solution.h"
 
 template<int dim, typename Number>
 class ErrorCalculator
@@ -40,16 +40,15 @@ public:
                 double const                                 &time,
                 int const                                    &time_step_number)
   {
-    const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
+    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
     if(error_data.analytical_solution_available == true)
     {
       if(time_step_number >= 0) // unsteady problem
       {
+        const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
         if((time > (error_data.error_calc_start_time + error_counter*error_data.error_calc_interval_time - EPSILON)) )
         {
-          ConditionalOStream pcout(std::cout,
-            Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
           pcout << std::endl << "Calculate error at time t = "
                 << std::scientific << std::setprecision(4) << time << ":" << std::endl;
 
@@ -60,8 +59,6 @@ public:
       }
       else // steady problem (time_step_number = -1)
       {
-        ConditionalOStream pcout(std::cout,
-            Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
         pcout << std::endl << "Calculate error for "
               << (error_counter == 0 ? "initial" : "solution") << " data"
               << std::endl;
@@ -88,41 +85,35 @@ private:
                    parallel::distributed::Vector<Number> const  &pressure,
                    double const                                 &time)
   {
-    ConditionalOStream pcout(std::cout,
-        Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-
     // velocity
-    analytical_solution->velocity->set_time(time);
-    double error_velocity = 1.0;
     bool relative_velocity = true;
 
     parallel::distributed::Vector<double> velocity_double;
     velocity_double = velocity;
 
-    calculate_L2_error<dim>(*dof_handler_velocity,
-                            *mapping,
-                            velocity_double,
-                            analytical_solution->velocity,
-                            error_velocity,
-                            relative_velocity);
+    double const error_velocity = calculate_L2_error<dim>(relative_velocity,
+                                                          *dof_handler_velocity,
+                                                          *mapping,
+                                                          velocity_double,
+                                                          analytical_solution->velocity,
+                                                          time);
 
+    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
     pcout << ((relative_velocity == true) ? "  Relative " : "  ABSOLUTE ") << "error (L2-norm) velocity u: "
           << std::scientific << std::setprecision(5) << error_velocity << std::endl;
 
     // pressure
-    analytical_solution->pressure->set_time(time);
-    double error_pressure = 1.0;
     bool relative_pressure = true;
 
     parallel::distributed::Vector<double> pressure_double;
     pressure_double = pressure;
 
-    calculate_L2_error<dim>(*dof_handler_pressure,
-                            *mapping,
-                            pressure_double,
-                            analytical_solution->pressure,
-                            error_pressure,
-                            relative_pressure);
+    double const error_pressure = calculate_L2_error<dim>(relative_pressure,
+                                                          *dof_handler_pressure,
+                                                          *mapping,
+                                                          pressure_double,
+                                                          analytical_solution->pressure,
+                                                          time);
 
     pcout << ((relative_pressure == true) ? "  Relative " : "  ABSOLUTE ") << "error (L2-norm) pressure p: "
           << std::scientific << std::setprecision(5) << error_pressure << std::endl;

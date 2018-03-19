@@ -14,6 +14,8 @@
 #include "../../incompressible_navier_stokes/postprocessor/output_data_navier_stokes.h"
 #include "../../incompressible_navier_stokes/postprocessor/pressure_difference_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/turbulence_statistics_data.h"
+#include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_data.h"
+#include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_spectrum_data.h"
 #include "../include/functionalities/print_functions.h"
 #include "../postprocessor/line_plot_data.h"
 #include "../postprocessor/mean_velocity_calculator.h"
@@ -617,64 +619,6 @@ struct InflowData
   std::vector<double> *z_values;
   // and the velocity values at n_points_y*n_points_z points
   std::vector<Tensor<1,dim,double> > *array;
-};
-
-// kinetic energy data
-
-struct KineticEnergyData
-{
-  KineticEnergyData()
-    :
-  calculate(false),
-  calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
-  viscosity(1.0),
-  filename_prefix("indexa")
-  {}
-
-  void print(ConditionalOStream &pcout)
-  {
-    if(calculate == true)
-    {
-      pcout << "  Calculate kinetic energy:" << std::endl;
-      print_parameter(pcout,"Calculate energy",calculate);
-      print_parameter(pcout,"Calculate every timesteps",calculate_every_time_steps);
-    }
-  }
-
-  bool calculate;
-  unsigned int calculate_every_time_steps;
-  double viscosity;
-  std::string filename_prefix;
-};
-
-// kinetic energy spectrum data
-
-struct KineticEnergySpectrumData
-{
-  KineticEnergySpectrumData()
-    :
-  calculate(false),
-  calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
-  filename_prefix("energy_spectrum"),
-  output_precision(std::numeric_limits<double>::min()),
-  evaluation_points(0)
-  {}
-
-  void print(ConditionalOStream &pcout)
-  {
-    if(calculate == true)
-    {
-      pcout << "  Calculate energy spectrum:" << std::endl;
-      print_parameter(pcout,"Calculate energy spectrum",calculate);
-      print_parameter(pcout,"Calculate every timesteps",calculate_every_time_steps);
-    }
-  }
-
-  bool calculate;
-  unsigned int calculate_every_time_steps;
-  std::string filename_prefix;
-  double output_precision;
-  int evaluation_points;
 };
 
 // calculation of perturbation energy for Orr-Sommerfeld problem

@@ -12,11 +12,15 @@
 
 using namespace dealii;
 
+namespace ConvDiff
+{
+
 template<int dim>
-struct AnalyticalSolutionConvDiff
+struct AnalyticalSolution
 {
   std::shared_ptr<Function<dim> > solution;
 };
 
+}
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_ANALYTICAL_SOLUTION_H_ */

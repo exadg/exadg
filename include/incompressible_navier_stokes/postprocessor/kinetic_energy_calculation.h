@@ -8,6 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_KINETIC_ENERGY_CALCULATION_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_KINETIC_ENERGY_CALCULATION_H_
 
+#include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_data.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/curl_compute.h"
 
 template<int dim, int fe_degree, typename Number>
@@ -78,7 +79,7 @@ private:
             << "Enstrophy: E = 1/V * 1/2 * (rot(u),rot(u))_Omega, where V=(1,1)_Omega" << std::endl;
 
           f << std::endl
-            << "  Time                Kin. energy         dissipation         enstrophy"<<std::endl;
+            << "  Time                Kin. energy         dissipation         enstrophy" << std::endl;
 
           clear_files = false;
         }

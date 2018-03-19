@@ -1,19 +1,20 @@
 /*
- * InputParametersConvDiff.h
+ * InputParametersCompNavierStokes.h
  *
- *  Created on: Aug 17, 2016
- *      Author: fehn
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_INPUT_PARAMETERS_H_
-#define INCLUDE_CONVECTION_DIFFUSION_INPUT_PARAMETERS_H_
+#ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_
+#define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_
 
 #include "../include/functionalities/print_functions.h"
 #include "postprocessor/error_calculation_data.h"
 #include "postprocessor/output_data.h"
 #include "solvers_and_preconditioners/multigrid_input_parameters.h"
+#include "../../incompressible_navier_stokes/postprocessor/lift_and_drag_data.h"
+#include "../../incompressible_navier_stokes/postprocessor/pressure_difference_data.h"
 
-namespace ConvDiff
+
+namespace CompNS
 {
 
 /**************************************************************************************/
@@ -35,15 +36,26 @@ enum class ProblemType
 
 /*
  *  EquationType describes the physical/mathematical model that has to be solved,
- *  i.e., diffusion problem, convective problem or convection-diffusion problem
+ *  i.e., Euler euqations or Navier-Stokes equations
  */
 enum class EquationType
 {
   Undefined,
-  Convection,
-  Diffusion,
-  ConvectionDiffusion
+  Euler,
+  NavierStokes
 };
+
+/*
+ *  For energy boundary conditions, one can prescribe the temperature or the energy
+ */
+enum class EnergyBoundaryVariable
+{
+  Undefined,
+  Energy,
+  Temperature
+};
+
+
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -69,8 +81,14 @@ enum class EquationType
 enum class TemporalDiscretization
 {
   Undefined,
-  ExplRK,
-  BDF
+  ExplRK, // specify order of time integration scheme
+  ExplRK3Stage4Reg2C,
+  ExplRK3Stage7Reg2, // optimized for maximum time step sizes in DG context
+  ExplRK4Stage5Reg2C,
+  ExplRK4Stage8Reg2, // optimized for maximum time step sizes in DG context
+  ExplRK4Stage5Reg3C,
+  ExplRK5Stage9Reg2S,
+  SSPRK // specify order and stages of time integration scheme
 };
 
 /*
@@ -80,8 +98,7 @@ enum class TemporalDiscretization
 enum class TreatmentOfConvectiveTerm
 {
   Undefined,
-  Explicit, // additive decomposition (IMEX)
-  ExplicitOIF, // operator-integration-factor splitting (Maday et al. 1990)
+  Explicit,
   Implicit
 };
 
@@ -94,8 +111,7 @@ enum class TimeStepCalculation
   ConstTimeStepUserSpecified,
   ConstTimeStepCFL,
   ConstTimeStepDiffusion,
-  ConstTimeStepCFLAndDiffusion,
-  ConstTimeStepMaxEfficiency
+  ConstTimeStepCFLAndDiffusion
 };
 
 /**************************************************************************************/
@@ -104,16 +120,7 @@ enum class TimeStepCalculation
 /*                                                                                    */
 /**************************************************************************************/
 
-/*
- *  Numerical flux formulation of convective term
- */
 
-enum class NumericalFluxConvectiveOperator
-{
-  Undefined,
-  CentralFlux,
-  LaxFriedrichsFlux
-};
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -121,29 +128,6 @@ enum class NumericalFluxConvectiveOperator
 /*                                                                                    */
 /**************************************************************************************/
 
-/*
- *   Solver for linear system of equations
- */
-enum class Solver
-{
-  Undefined,
-  PCG,
-  GMRES
-};
-
-/*
- *  Preconditioner type for solution of linear system of equations
- */
-enum class Preconditioner
-{
-  Undefined,
-  None,
-  InverseMassMatrix,
-  PointJacobi,
-  BlockJacobi,
-  MultigridDiffusion,
-  MultigridConvectionDiffusion,
-};
 
 
 /**************************************************************************************/
@@ -152,63 +136,110 @@ enum class Preconditioner
 /*                                                                                    */
 /**************************************************************************************/
 
+struct OutputDataCompNavierStokes : public OutputData
+{
+  OutputDataCompNavierStokes()
+    :
+    write_velocity(false),
+    write_pressure(false),
+    write_temperature(false),
+    write_vorticity(false),
+    write_divergence(false),
+    write_processor_id(false)
+  {}
 
-class InputParametersConvDiff
+  void print(ConditionalOStream &pcout, bool unsteady)
+  {
+    OutputData::print(pcout,unsteady);
+
+    print_parameter(pcout,"Write velocity", write_velocity);
+    print_parameter(pcout,"Write pressure", write_pressure);
+    print_parameter(pcout,"Write temperature", write_temperature);
+    print_parameter(pcout,"Write vorticity", write_vorticity);
+    print_parameter(pcout,"Write divergence", write_divergence);
+    print_parameter(pcout,"Write processor ID", write_processor_id);
+  }
+
+  // write velocity
+  bool write_velocity;
+
+  // write pressure
+  bool write_pressure;
+
+  // write temperature
+  bool write_temperature;
+
+  // write vorticity of velocity field
+  bool write_vorticity;
+
+  // write divergence of velocity field
+  bool write_divergence;
+
+  // write processor ID to scalar field in order to visualize the
+  // distribution of cells to processors
+  bool write_processor_id;
+};
+
+template<int dim>
+class InputParameters
 {
 public:
   // standard constructor that initializes parameters with default values
-  InputParametersConvDiff()
+  InputParameters()
     :
-    // MATHEMATICAL MODEL
-    problem_type(ProblemType::Undefined),
-    equation_type(EquationType::Undefined),
-    right_hand_side(false),
+  // MATHEMATICAL MODEL
+  problem_type(ProblemType::Undefined),
+  equation_type(EquationType::Undefined),
+  right_hand_side(false),
 
-    // PHYSICAL QUANTITIES
-    start_time(0.),
-    end_time(-1.),
-    diffusivity(0.),
+  // PHYSICAL QUANTITIES
+  start_time(0.),
+  end_time(-1.),
+  dynamic_viscosity(0.),
+  reference_density(1.0),
+	heat_capacity_ratio(1.4),
+	thermal_conductivity(0.0262),
+	specific_gas_constant(287.058),
+	max_temperature(273.15),
 
-    // TEMPORAL DISCRETIZATION
-    temporal_discretization(TemporalDiscretization::Undefined),
-    treatment_of_convective_term(TreatmentOfConvectiveTerm::Undefined),
-    order_time_integrator(1),
-    start_with_low_order(true),
-    calculation_of_time_step_size(TimeStepCalculation::Undefined),
-    time_step_size(-1.),
-    cfl_number(-1.),
-    cfl_oif(-1.),
-    diffusion_number(-1.),
-    c_eff(-1.),
+  // TEMPORAL DISCRETIZATION
+  temporal_discretization(TemporalDiscretization::Undefined),
+  order_time_integrator(1),
+  stages(1),
+  calculation_of_time_step_size(TimeStepCalculation::Undefined),
+  time_step_size(-1.),
+  max_velocity(-1.),
+  cfl_number(-1.),
+  diffusion_number(-1.),
+  exponent_fe_degree_cfl(2.0),
+	exponent_fe_degree_viscous(4.0),
 
-    // SPATIAL DISCRETIZATION
-    numerical_flux_convective_operator(NumericalFluxConvectiveOperator::Undefined),
-    IP_factor(1.0),
+  // SPATIAL DISCRETIZATION
+  IP_factor(1.0),
 
-    // SOLVER
-    solver(Solver::Undefined),
-    use_right_preconditioner(true),
-    max_n_tmp_vectors(30),
-    abs_tol(1.e-20),
-    rel_tol(1.e-12),
-    max_iter(std::numeric_limits<unsigned int>::max()),
-    preconditioner(Preconditioner::Undefined),
-    multigrid_data(MultigridData()),
-    update_preconditioner(false),
+  // SOLVER
 
-    // NUMERICAL PARAMETERS
-    runtime_optimization(false),
+  // NUMERICAL PARAMETERS
+  use_combined_operator(false),
 
-    // OUTPUT AND POSTPROCESSING
-    print_input_parameters(false),
+  // OUTPUT AND POSTPROCESSING
+  print_input_parameters(false),
+  calculate_velocity(false),
+  calculate_pressure(false),
 
-    // write output
-    output_data(OutputData()),
+	// write output for visualization of results
+	output_data(OutputDataCompNavierStokes()),
 
     // calculation of errors
-    error_data(ErrorCalculationData()),
+	error_data(ErrorCalculationData()),
 
-    output_solver_info_every_timesteps(1)
+	output_solver_info_every_timesteps(1),
+
+	// lift and drag
+	lift_and_drag_data(LiftAndDragData()),
+
+	// pressure difference
+	pressure_difference_data(PressureDifferenceData<dim>())
   {}
 
   /*
@@ -220,7 +251,6 @@ public:
   void check_input_parameters()
   {
     // MATHEMATICAL MODEL
-
     AssertThrow(problem_type != ProblemType::Undefined,
                 ExcMessage("parameter must be defined"));
 
@@ -231,21 +261,10 @@ public:
     // PHYSICAL QUANTITIES
     AssertThrow(end_time > start_time, ExcMessage("parameter must be defined"));
 
-    // Set the diffusivity whenever the diffusive term is involved.
-    if(equation_type == EquationType::Diffusion ||
-       equation_type == EquationType::ConvectionDiffusion)
-    AssertThrow(diffusivity > (0.0 + 1.0e-12), ExcMessage("parameter must be defined"));
-
 
     // TEMPORAL DISCRETIZATION
     AssertThrow(temporal_discretization != TemporalDiscretization::Undefined,
                 ExcMessage("parameter must be defined"));
-
-    if(temporal_discretization == TemporalDiscretization::BDF)
-    {
-      AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::Undefined,
-                  ExcMessage("parameter must be defined"));
-    }
 
     AssertThrow(calculation_of_time_step_size != TimeStepCalculation::Undefined,
                 ExcMessage("parameter must be defined"));
@@ -253,77 +272,40 @@ public:
     if(calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified)
       AssertThrow(time_step_size > 0.0, ExcMessage("parameter must be defined"));
 
-    if(calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepMaxEfficiency)
-      AssertThrow(c_eff > 0.,ExcMessage("parameter must be defined"));
-
     if(temporal_discretization == TemporalDiscretization::ExplRK)
     {
       AssertThrow(order_time_integrator >= 1 && order_time_integrator <= 4,
                   ExcMessage("Specified order of time integrator ExplRK not implemented!"));
-
-      // for the explicit RK method both the convective and the diffusive term are
-      // treated explicitly -> one has to specify both the CFL-number and the Diffusion-number
-      AssertThrow(cfl_number > 0., ExcMessage("parameter must be defined"));
-      AssertThrow(diffusion_number > 0., ExcMessage("parameter must be defined"));
     }
 
-    if(temporal_discretization == TemporalDiscretization::BDF)
+    if(temporal_discretization == TemporalDiscretization::SSPRK)
     {
-      AssertThrow(order_time_integrator >= 1 && order_time_integrator <= 4,
-                  ExcMessage("Specified order of time integrator BDF not implemented!"));
+      AssertThrow(stages >= 1, ExcMessage("Specify number of RK stages!"));
     }
 
-    if(treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+    if(calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFLAndDiffusion)
     {
-      AssertThrow(temporal_discretization == TemporalDiscretization::BDF,
-          ExcMessage("Operator-integration-factor splitting of convective term is only available for BDF time integration."));
-
-      AssertThrow(cfl_number > 0., ExcMessage("parameter must be defined"));
-      AssertThrow(cfl_oif > 0., ExcMessage("parameter must be defined"));
+      AssertThrow(max_velocity >= 0.0, ExcMessage("Invalid parameter max_velocity."));
+      AssertThrow(cfl_number > 0.0, ExcMessage("parameter must be defined"));
+      AssertThrow(diffusion_number > 0.0, ExcMessage("parameter must be defined"));
     }
 
 
     // SPATIAL DISCRETIZATION
-    if(equation_type == EquationType::Convection ||
-       equation_type == EquationType::ConvectionDiffusion ||
-       runtime_optimization == true)
-    {
-      AssertThrow(numerical_flux_convective_operator != 
-                  NumericalFluxConvectiveOperator::Undefined,
-                  ExcMessage("parameter must be defined"));
-    }
 
 
     // SOLVER
-    if(temporal_discretization != TemporalDiscretization::ExplRK)
-    {
-      AssertThrow(solver != Solver::Undefined,
-                  ExcMessage("parameter must be defined"));
-
-      AssertThrow(preconditioner != Preconditioner::Undefined,
-                  ExcMessage("parameter must be defined"));
-
-//      if(preconditioner == Preconditioner::MultigridDiffusion ||
-//         preconditioner == Preconditioner::MultigridConvectionDiffusion)
-//        AssertThrow(equation_type == EquationType::Diffusion ||
-//                    equation_type == EquationType::ConvectionDiffusion,
-//                    ExcMessage("Multigrid preconditioner is not available for the specified equation type"));
-//
-//      if(preconditioner == Preconditioner::PointJacobi)
-//        AssertThrow(equation_type == EquationType::Diffusion ||
-//                    equation_type == EquationType::ConvectionDiffusion,
-//                    ExcMessage("Point Jacobi preconditioner is not available for the specified equation type"));
-//
-//      if(preconditioner == Preconditioner::BlockJacobi)
-//        AssertThrow(equation_type == EquationType::ConvectionDiffusion,
-//                    ExcMessage("Block Jacobi preconditioner is not available for the specified equation type"));
-    }
 
 
     // NUMERICAL PARAMETERS
 
 
     // OUTPUT AND POSTPROCESSING
+    if(lift_and_drag_data.calculate_lift_and_drag == true)
+    {
+      AssertThrow(calculate_velocity==true && calculate_pressure ==true,
+          ExcMessage("Invalid parameters. One has to calculate velocity and pressure in order to compute lift and drag forces."));
+    }
 
   }
 
@@ -348,9 +330,8 @@ public:
 
     // SOLVER
     // If a linear system of equations has to be solved:
-    // for the currently implementation this means
-    if(temporal_discretization != TemporalDiscretization::ExplRK)
-      print_parameters_solver(pcout);
+    // for the current implementation this means
+    print_parameters_solver(pcout);
  
     // NUMERICAL PARAMETERS
     print_parameters_numerical_parameters(pcout);
@@ -376,10 +357,7 @@ public:
                                         "Diffusion",
                                         "ConvectionDiffusion" };
 
-     print_parameter(pcout, 
-                     "Equation type", 
-                     str_equation_type[(int)equation_type]);
-     
+
     // right hand side
      print_parameter(pcout,"Right-hand side",right_hand_side);
   }
@@ -396,12 +374,11 @@ public:
       print_parameter(pcout,"End time",end_time);
     }
     
-    // diffusivity
-    if(equation_type == EquationType::Diffusion ||
-       equation_type == EquationType::ConvectionDiffusion)
-    {
-      print_parameter(pcout,"Diffusivity",diffusivity);
-    }
+    print_parameter(pcout,"Dynamic viscosity",dynamic_viscosity);
+    print_parameter(pcout,"Reference density",reference_density);
+    print_parameter(pcout,"Heat capacity ratio",heat_capacity_ratio);
+    print_parameter(pcout,"Thermal conductivity",thermal_conductivity);
+    print_parameter(pcout,"Specific gas constant",specific_gas_constant);
   }  
 
   void print_parameters_temporal_discretization(ConditionalOStream &pcout)
@@ -409,36 +386,30 @@ public:
     pcout << std::endl
           << "Temporal discretization:" << std::endl;
 
-    /*
-     *  The definition of string-arrays in this function is somehow redundant with the
-     *  enum declarations but I think C++ does not offer a more elaborate conversion
-     *  from enums to strings
-     */
-
     std::string str_temp_discret[] = { "Undefined",
-                                       "ExplicitRungeKutta",
-                                       "BDF" };
+                                       "Classical, explicit Runge-Kutta",
+                                       "ExplRK3Stage4Reg2C",
+                                       "ExplRK3Stage7Reg2",
+                                       "ExplRK4Stage5Reg2C",
+                                       "ExplRK4Stage8Reg2",
+                                       "ExplRK4Stage5Reg3C",
+                                       "ExplRK5Stage9Reg2S",
+                                       "SSPRK" };
 
     print_parameter(pcout,
                     "Temporal discretization method",
                     str_temp_discret[(int)temporal_discretization]);
 
-    if(temporal_discretization == TemporalDiscretization::BDF)
+    if(temporal_discretization == TemporalDiscretization::ExplRK)
     {
-      std::string str_treatment_conv[] = { "Undefined",
-                                           "Explicit",
-                                           "ExplicitOIF",
-                                           "Implicit" };
-
-      print_parameter(pcout,
-                      "Treatment of convective term",
-                      str_treatment_conv[(int)treatment_of_convective_term]);
+      print_parameter(pcout,"Order of time integrator",order_time_integrator);
     }
 
-    print_parameter(pcout,"Order of time integrator",order_time_integrator);
-
-    if(temporal_discretization == TemporalDiscretization::BDF)
-      print_parameter(pcout,"Start with low order method",start_with_low_order);
+    if(temporal_discretization == TemporalDiscretization::SSPRK)
+    {
+      print_parameter(pcout,"Order of time integrator",order_time_integrator);
+      print_parameter(pcout,"Number of stages",stages);
+    }
 
     std::string str_time_step_calc[] = { "Undefined",
                                          "ConstTimeStepUserSpecified",
@@ -461,70 +432,15 @@ public:
     pcout << std::endl
           << "Spatial Discretization:" << std::endl;
    
-    if(equation_type == EquationType::Convection ||
-       equation_type == EquationType::ConvectionDiffusion)
-    {
-      std::string str_num_flux_convective[] = { "Undefined",
-                                                "Central flux",
-                                                "Lax-Friedrichs flux" };
-
-      print_parameter(pcout,
-                      "Numerical flux convective term",
-                      str_num_flux_convective[(int)numerical_flux_convective_operator]);
-    }
-
-    if(equation_type == EquationType::Diffusion ||
-       equation_type == EquationType::ConvectionDiffusion)
-    { 
-      print_parameter(pcout,"IP factor viscous term",IP_factor);
-    }
+    print_parameter(pcout,"IP factor viscous term",IP_factor);
   }
 
   void print_parameters_solver(ConditionalOStream &pcout)
   {
+    /*
     pcout << std::endl
           << "Solver:" << std::endl;
-
-    /*
-     *  The definition of string-arrays in this function is somehow redundant with the
-     *  enum declarations but I think C++ does not offer a more elaborate conversion
-     *  from enums to strings
-     */
-
-    std::string str_solver[] = { "Undefined",
-                                 "PCG",
-                                 "GMRES" };
-
-    print_parameter(pcout,"Solver",str_solver[(int)solver]);
-
-    if(solver == Solver::GMRES)
-    {
-      print_parameter(pcout,"Use right preconditioner",use_right_preconditioner);
-      print_parameter(pcout,"max_n_tmp_vectors",max_n_tmp_vectors);
-    }
-
-    print_parameter(pcout,"Absolute solver tolerance",abs_tol);
-    print_parameter(pcout,"Relative solver tolerance",rel_tol);
-    print_parameter(pcout,"Maximum number of iterations",max_iter);
-
-    std::string str_precon[] = { "Undefined",
-                                 "None",
-                                 "InverseMassMatrix",
-                                 "PointJacobi",
-                                 "BlockJacobi",
-                                 "GMG (Reaction-)Diffusion",
-                                 "GMG (Reaction-)Convection-Diffusion" };
-
-    print_parameter(pcout,"Preconditioner",str_precon[(int)preconditioner]);
-
-    if(preconditioner == Preconditioner::MultigridDiffusion ||
-       preconditioner == Preconditioner::MultigridConvectionDiffusion)
-    {
-      multigrid_data.print(pcout);
-    }
-
-    print_parameter(pcout,"Update preconditioner",update_preconditioner);
-
+    */
   }
 
 
@@ -533,7 +449,7 @@ public:
     pcout << std::endl
           << "Numerical parameters:" << std::endl;
 
-    print_parameter(pcout,"Runtime optimization",runtime_optimization);
+    print_parameter(pcout,"Use combined operator",use_combined_operator);
   }
 
 
@@ -541,10 +457,18 @@ public:
   {
     pcout << std::endl
           << "Output and postprocessing:" << std::endl;
-   
-    output_data.print(pcout,true /*problem_type == ProblemType::Unsteady*/);
 
-    error_data.print(pcout,true /*problem_type == ProblemType::Unsteady*/);
+    print_parameter(pcout,"Calculate velocity field",calculate_velocity);
+    print_parameter(pcout,"Calculate pressure field",calculate_pressure);
+
+    output_data.print(pcout,problem_type == ProblemType::Unsteady);
+    error_data.print(pcout,problem_type == ProblemType::Unsteady);
+
+    // kinetic energy
+    kinetic_energy_data.print(pcout);
+
+    // kinetic energy spectrum
+    kinetic_energy_spectrum_data.print(pcout);
   }
 
  
@@ -575,10 +499,24 @@ public:
   // end time of simulation
   double end_time;
 
-  // kinematic diffusivity
-  double diffusivity;
+  // dynamic viscosity
+  double dynamic_viscosity;
 
+  // reference density needed to calculate the kinematic viscosity from the specified
+  // dynamic viscosity
+  double reference_density;
 
+  // heat_capacity_ratio
+  double heat_capacity_ratio;
+
+  // thermal conductivity
+  double thermal_conductivity;
+
+  // specific gas constant
+  double specific_gas_constant;
+
+  // maximum temperature (needed to calculate time step size according to CFL condition)
+  double max_temperature;
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -589,14 +527,11 @@ public:
   // temporal discretization method
   TemporalDiscretization temporal_discretization;
 
-  // description: see enum declaration
-  TreatmentOfConvectiveTerm treatment_of_convective_term;
-
   // order of time integration scheme
   unsigned int order_time_integrator;
 
-  // start with low order
-  bool start_with_low_order;
+  // number of Runge-Kutta stages
+  unsigned int stages;
 
   // calculation of time step size
   TimeStepCalculation calculation_of_time_step_size;
@@ -606,22 +541,21 @@ public:
   // i.e., delta_t = time_step_size, time_step_size/2, ...
   double time_step_size;
 
-  // cfl number ("global" CFL number, can be larger than critical CFL in case
-  // of operator-integration-factor splitting)
-  double cfl_number;
+  // maximum velocity needed when calculating the time step according to cfl-condition
+  double max_velocity;
 
-  // cfl number for operator-integration-factor splitting (has to be smaller than the
-  // critical time step size arising from the CFL restriction)
-  double cfl_oif;
+  // cfl number
+  double cfl_number;
 
   // diffusion number (relevant number for limitation of time step size
   // when treating the diffusive term explicitly)
   double diffusion_number;
 
-  // C_eff: constant that has to be specified for time step calculation method
-  // MaxEfficiency, which means that the time step is selected such that the errors of
-  // the temporal and spatial discretization are comparable
-  double c_eff;
+  // exponent of fe_degree used in the calculation of the CFL time step size
+  double exponent_fe_degree_cfl;
+
+  // exponent of fe_degree used in the calculation of the diffusion time step size
+  double exponent_fe_degree_viscous;
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -629,16 +563,9 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // convective term: the convective term is written in divergence formulation
-
-  // description: see enum declaration
-  NumericalFluxConvectiveOperator numerical_flux_convective_operator;
-
-  // diffusive term: Symmetric interior penalty discretization Galerkin (SIPG)
+  // diffusive term: Symmetric interior penalty Galerkin (SIPG) discretization
   // interior penalty parameter scaling factor: default value is 1.0
   double IP_factor;
-
-
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -646,28 +573,6 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // description: see enum declaration
-  Solver solver;
-
-  // use right-preconditioner in case of GMRES solver
-  bool use_right_preconditioner;
-
-  // max_n_temp_vectors for GMRES solver
-  unsigned int max_n_tmp_vectors;
-
-  // solver tolerances
-  double abs_tol;
-  double rel_tol;
-  unsigned int max_iter;
-
-  // description: see enum declaration
-  Preconditioner preconditioner;
-
-  // description: see declaration of MultigridData
-  MultigridData multigrid_data;
-
-  // update preconditioner in case of varying parameters
-  bool update_preconditioner;
 
 
   /**************************************************************************************/
@@ -676,20 +581,9 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // Runtime optimization: Evaluate volume and surface integrals of convective term,
-  // diffusive term and rhs term in one function (local_apply, local_apply_face,
-  // local_apply_boundary_face) instead of implementing each operator seperately and
-  // subsequently looping over all operators.
-  // Note: if runtime_optimization == false:
-  //   If an operator is not used (e.g. purely diffusive problem) the volume and
-  //   surface integrals of this operator are simply not evaluated
-  // Note: if runtime_optimization == true:
-  //  ensure that the rhs-function, velocity-field and that the diffusivity is zero
-  //  if the rhs operator, convective operator or diffusive operator is "inactive"
-  //  because the volume and surface integrals of these operators will always be evaluated
-  bool runtime_optimization;
-
-
+  // use combined operator for viscous term and convective term in order to improve run
+  // time
+  bool use_combined_operator;
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -700,15 +594,34 @@ public:
   // print a list of all input parameters at the beginning of the simulation
   bool print_input_parameters;
 
+  // calculate velocity field
+  bool calculate_velocity;
+
+  // calculate pressure field
+  bool calculate_pressure;
+
   // writing output
-  OutputData output_data;
+  OutputDataCompNavierStokes output_data;
 
   // calculation of errors
   ErrorCalculationData error_data;
 
   // show solver performance (wall time, number of iterations) every ... timesteps
   unsigned int output_solver_info_every_timesteps;
+
+  // computation of lift and drag coefficients
+  LiftAndDragData lift_and_drag_data;
+
+  // computation of pressure difference between two points
+  PressureDifferenceData<dim> pressure_difference_data;
+
+  // kinetic energy
+  KineticEnergyData kinetic_energy_data;
+
+  // kinetic energy spectrum
+  KineticEnergySpectrumData kinetic_energy_spectrum_data;
 };
 
 }
-#endif /* INCLUDE_CONVECTION_DIFFUSION_INPUT_PARAMETERS_H_ */
+
+#endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_*/

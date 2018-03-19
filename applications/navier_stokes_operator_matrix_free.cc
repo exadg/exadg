@@ -7,6 +7,8 @@
 
 // deal.ii
 
+#include <deal.II/base/revision.h>
+
 // triangulation
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
@@ -24,6 +26,8 @@
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_dual_splitting.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.h"
+
+#include "../include/postprocessor/output_data.h"
 
 using namespace dealii;
 
@@ -51,7 +55,7 @@ using namespace dealii;
 
 // set the polynomial degree of the shape functions k = 1,...,10
 unsigned int const FE_DEGREE_U_MIN = FE_DEGREE_VELOCITY;
-unsigned int const FE_DEGREE_U_MAX = FE_DEGREE_VELOCITY+8;
+unsigned int const FE_DEGREE_U_MAX = FE_DEGREE_VELOCITY; // +8;
 
 // Select the operator to be applied
 enum class OperatorType{

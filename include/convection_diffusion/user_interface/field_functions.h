@@ -8,14 +8,17 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_FIELD_FUNCTIONS_H_
 #define INCLUDE_CONVECTION_DIFFUSION_FIELD_FUNCTIONS_H_
 
+namespace ConvDiff
+{
 
 template<int dim>
-struct FieldFunctionsConvDiff
+struct FieldFunctions
 {
   std::shared_ptr<Function<dim> > analytical_solution;
   std::shared_ptr<Function<dim> > right_hand_side;
   std::shared_ptr<Function<dim> > velocity;
 };
 
+}
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_FIELD_FUNCTIONS_H_ */

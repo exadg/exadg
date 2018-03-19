@@ -20,18 +20,18 @@
 
 namespace ConvDiff
 {
-  template<int dim,int fe_degree> class PostProcessor;
-}
+
+template<int dim,int fe_degree> class PostProcessor;
 
 template<int dim, int fe_degree, typename value_type>
-class TimeIntBDFConvDiff
+class TimeIntBDF
 {
 public:
-  TimeIntBDFConvDiff(std::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation_in,
-                     std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> >         postprocessor_in,
-                     ConvDiff::InputParametersConvDiff const                           &param_in,
-                     std::shared_ptr<Function<dim> >                                   velocity_in,
-                     unsigned int const                                                n_refine_time_in)
+  TimeIntBDF(std::shared_ptr<ConvDiff::DGOperation<dim, fe_degree, value_type> > conv_diff_operation_in,
+             std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> >           postprocessor_in,
+             ConvDiff::InputParameters const                                     &param_in,
+             std::shared_ptr<Function<dim> >                                     velocity_in,
+             unsigned int const                                                  n_refine_time_in)
     :
     conv_diff_operation(conv_diff_operation_in),
     postprocessor(postprocessor_in),
@@ -40,6 +40,7 @@ public:
     n_refine_time(n_refine_time_in),
     cfl_number(param.cfl_number/std::pow(2.0,n_refine_time)),
     total_time(0.0),
+    pcout(std::cout,Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     time(param.start_time),
     time_step_number(1),
     order(param_in.order_time_integrator),
@@ -55,7 +56,7 @@ public:
     solver_time_average(.0)
   {}
 
-  virtual ~TimeIntBDFConvDiff(){}
+  virtual ~TimeIntBDF(){}
 
   virtual void setup(bool do_restart=0);
 
@@ -79,17 +80,20 @@ private:
   void postprocessing() const;
   void analyze_computing_times() const;
 
-  std::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation;
+  std::shared_ptr<ConvDiff::DGOperation<dim, fe_degree, value_type> > conv_diff_operation;
   std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree> > postprocessor;
-  ConvDiff::InputParametersConvDiff const & param;
+  ConvDiff::InputParameters const & param;
   std::shared_ptr<Function<dim> > velocity;
 
   unsigned int const n_refine_time;
   double const cfl_number;
 
-  // computation time
+  // timer
   Timer global_timer;
   double total_time;
+
+  // screen output
+  ConditionalOStream pcout;
 
   // physical time
   double time;
@@ -100,12 +104,14 @@ private:
   // order of time integration scheme
   unsigned int const order;
 
-
+  // vector with time step sizes
   std::vector<double> time_steps;
 
+  // time integration constants
   BDFTimeIntegratorConstants bdf;
   ExtrapolationConstants extra;
 
+  // solution vectors
   parallel::distributed::Vector<value_type> solution_np;
   std::vector<parallel::distributed::Vector<value_type> > solution;
   std::vector<parallel::distributed::Vector<value_type> > vec_convective_term;
@@ -133,11 +139,9 @@ private:
 };
 
 template<int dim, int fe_degree, typename value_type>
-void TimeIntBDFConvDiff<dim,fe_degree,value_type>::
+void TimeIntBDF<dim,fe_degree,value_type>::
 setup(bool /*do_restart*/)
 {
-  ConditionalOStream pcout(std::cout,
-      Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Setup time integrator ..." << std::endl;
 
   // call function of base class to initialize the time integrator constants
@@ -163,9 +167,6 @@ setup(bool /*do_restart*/)
     initialize_vec_convective_term();
   }
 
-  // set the parameters that DGConvDiffOperation depends on
-//  conv_diff_operation->set_scaling_factor_time_derivative_term(gamma0/time_steps[0]);
-
   // Operator-integration-factor splitting
   if(this->param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::ExplicitOIF)
   {
@@ -179,7 +180,7 @@ setup(bool /*do_restart*/)
 }
 
 template<int dim, int fe_degree, typename value_type>
-void TimeIntBDFConvDiff<dim,fe_degree,value_type>::
+void TimeIntBDF<dim,fe_degree,value_type>::
 initialize_time_integrator_constants()
 {
   bdf.initialize();
@@ -187,7 +188,7 @@ initialize_time_integrator_constants()
 }
 
 template<int dim, int fe_degree, typename value_type>
-void TimeIntBDFConvDiff<dim,fe_degree,value_type>::
+void TimeIntBDF<dim,fe_degree,value_type>::
 update_time_integrator_constants()
 {
   bdf.update(time_step_number);
@@ -202,7 +203,7 @@ update_time_integrator_constants()
 }
 
 template<int dim, int fe_degree, typename value_type>
-void TimeIntBDFConvDiff<dim,fe_degree,value_type>::
+void TimeIntBDF<dim,fe_degree,value_type>::
 initialize_vectors()
 {
   for(unsigned int i=0;i<solution.size();++i)
@@ -229,7 +230,7 @@ initialize_vectors()
 }
 
 template<int dim, int fe_degree, typename value_type>
-void TimeIntBDFConvDiff<dim,fe_degree,value_type>::
+void TimeIntBDF<dim,fe_degree,value_type>::
 initialize_solution()
 {
   for(unsigned int i=0;i<solution.size();++i)
@@ -237,7 +238,7 @@ initialize_solution()
 }
 
 template<int dim, int fe_degree, typename value_type>
-void TimeIntBDFConvDiff<dim,fe_degree,value_type>::
+void TimeIntBDF<dim,fe_degree,value_type>::
 initialize_vec_convective_term()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
@@ -250,11 +251,9 @@ initialize_vec_convective_term()
 }
 
 template<int dim, int fe_degree, typename value_type>
-void TimeIntBDFConvDiff<dim,fe_degree,value_type>::
+void TimeIntBDF<dim,fe_degree,value_type>::
 calculate_timestep()
 {
-  ConditionalOStream pcout(std::cout,
-       Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Calculation of time step size:" << std::endl << std::endl;
 
   if(param.calculation_of_time_step_size == ConvDiff::TimeStepCalculation::ConstTimeStepUserSpecified)
@@ -352,11 +351,9 @@ calculate_timestep()
 
 
 template<int dim, int fe_degree, typename value_type>
-void TimeIntBDFConvDiff<dim,fe_degree,value_type>::
+void TimeIntBDF<dim,fe_degree,value_type>::
 timeloop()
 {
-  ConditionalOStream pcout(std::cout,
-      Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Starting time loop ..." << std::endl;
 
   global_timer.restart();
@@ -390,14 +387,14 @@ timeloop()
 }
 
 template<int dim, int fe_degree, typename value_type>
-void TimeIntBDFConvDiff<dim,fe_degree,value_type>::
+void TimeIntBDF<dim,fe_degree,value_type>::
 postprocessing() const
 {
-  postprocessor->do_postprocessing(solution[0],time);
+  postprocessor->do_postprocessing(solution[0],time,time_step_number);
 }
 
 template<int dim, int fe_degree, typename value_type>
-void TimeIntBDFConvDiff<dim,fe_degree,value_type>::
+void TimeIntBDF<dim,fe_degree,value_type>::
 prepare_vectors_for_next_timestep()
 {
   push_back(solution);
@@ -413,13 +410,12 @@ prepare_vectors_for_next_timestep()
 }
 
 template<int dim, int fe_degree, typename value_type>
-void TimeIntBDFConvDiff<dim,fe_degree,value_type>::
+void TimeIntBDF<dim,fe_degree,value_type>::
 solve_timestep()
 {
   // write output
   if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
   {
-    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
     pcout << std::endl
           << "______________________________________________________________________"
           << std::endl
@@ -517,19 +513,24 @@ solve_timestep()
   // write output
   if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
   {
-    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
     pcout << "Solve linear convection-diffusion problem:" << std::endl
           << "  Iterations: " << std::setw(6) << std::right << iterations
           << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+
+    if(time > param.start_time)
+    {
+      double const remaining_time = global_timer.wall_time() * (param.end_time-time)/(time-param.start_time);
+      pcout << std::endl
+            << "Estimated time until completion is " << remaining_time << " s / " << remaining_time/3600. << " h."
+            << std::endl;
+    }
   }
 }
 
 template<int dim, int fe_degree, typename value_type>
-void TimeIntBDFConvDiff<dim,fe_degree,value_type>::
+void TimeIntBDF<dim,fe_degree,value_type>::
 analyze_computing_times() const
 {
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-
   pcout << std::endl
         << "Number of time steps = " << (this->time_step_number-1) << std::endl
         << "Average number of iterations = " << std::scientific << std::setprecision(3)
@@ -557,5 +558,6 @@ analyze_computing_times() const
          << std::endl << std::endl;
 }
 
+} // namespace ConvDiff
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_TIME_INT_BDF_H_ */

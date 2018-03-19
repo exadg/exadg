@@ -14,6 +14,7 @@
 #include "../../incompressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "operators/base_operator.h"
 #include "../include/functionalities/evaluate_functions.h"
+#include "operators/interior_penalty_parameter.h"
 
 // forward declarations
 template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d,
@@ -392,7 +393,11 @@ public:
     this->data = &mf_data;
     this->operator_data = operator_data_in;
 
-    compute_array_penalty_parameter(mapping);
+    //compute_array_penalty_parameter(mapping);
+    IP::calculate_penalty_parameter<dim, fe_degree, value_type>(array_penalty_parameter,
+                                                                *this->data,
+                                                                mapping,
+                                                                operator_data.dof_index);
 
     const_viscosity = operator_data.viscosity;
   }
@@ -628,46 +633,6 @@ public:
   }
 
 private:
-  void compute_array_penalty_parameter(const Mapping<dim> &mapping)
-  {
-    // Compute penalty parameter for each cell
-    array_penalty_parameter.resize(data->n_macro_cells()+data->n_macro_ghost_cells());
-    QGauss<dim> quadrature(fe_degree+1);
-    FEValues<dim> fe_values(mapping,data->get_dof_handler(operator_data.dof_index).get_fe(),quadrature, update_JxW_values);
-    QGauss<dim-1> face_quadrature(fe_degree+1);
-    FEFaceValues<dim> fe_face_values(mapping, data->get_dof_handler(operator_data.dof_index).get_fe(), face_quadrature, update_JxW_values);
-
-    for (unsigned int i=0; i<data->n_macro_cells()+data->n_macro_ghost_cells(); ++i)
-    {
-      for (unsigned int v=0; v<data->n_components_filled(i); ++v)
-      {
-        typename DoFHandler<dim>::cell_iterator cell = data->get_cell_iterator(i,v,operator_data.dof_index);
-        fe_values.reinit(cell);
-        double volume = 0;
-        for (unsigned int q=0; q<quadrature.size(); ++q)
-          volume += fe_values.JxW(q);
-        double surface_area = 0;
-        for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
-        {
-          fe_face_values.reinit(cell, f);
-          const double factor = (cell->at_boundary(f) && !cell->has_periodic_neighbor(f)) ? 1. : 0.5;
-          for (unsigned int q=0; q<face_quadrature.size(); ++q)
-            surface_area += fe_face_values.JxW(q) * factor;
-        }
-        array_penalty_parameter[i][v] = surface_area / volume;
-      }
-    }
-  }
-
-  /*
-   *  This function returns the penalty factor of the interior penalty method
-   *  for quadrilateral/hexahedral elements.
-   */
-  Number get_penalty_factor() const
-  {
-    return operator_data.IP_factor_viscous * (fe_degree + 1.0) * (fe_degree + 1.0);
-  }
-
   template<typename FEEvaluation>
   inline void do_cell_integral(FEEvaluation &fe_eval, unsigned int const cell) const
   {
@@ -1173,7 +1138,7 @@ private:
       fe_eval.evaluate(true,true);
       fe_eval_neighbor.evaluate(true,true);
 
-      VectorizedArray<Number> penalty_parameter = get_penalty_factor() *
+      VectorizedArray<Number> penalty_parameter = IP::get_penalty_factor<Number>(fe_degree, operator_data.IP_factor_viscous) *
           std::max(fe_eval.read_cell_data(array_penalty_parameter),fe_eval_neighbor.read_cell_data(array_penalty_parameter));
 
       for(unsigned int q=0;q<fe_eval.n_q_points;++q)
@@ -1234,7 +1199,8 @@ private:
       fe_eval.read_dof_values(src);
       fe_eval.evaluate(true,true);
 
-      VectorizedArray<Number> penalty_parameter = get_penalty_factor() * fe_eval.read_cell_data(array_penalty_parameter);
+      VectorizedArray<Number> penalty_parameter = IP::get_penalty_factor<Number>(fe_degree, operator_data.IP_factor_viscous)
+                                                    * fe_eval.read_cell_data(array_penalty_parameter);
 
       for(unsigned int q=0;q<fe_eval.n_q_points;++q)
       {
@@ -1289,7 +1255,8 @@ private:
       fe_eval.read_dof_values(src);
       fe_eval.evaluate(true,true);
 
-      VectorizedArray<Number> penalty_parameter = get_penalty_factor() * fe_eval.read_cell_data(array_penalty_parameter);
+      VectorizedArray<Number> penalty_parameter = IP::get_penalty_factor<Number>(fe_degree, operator_data.IP_factor_viscous)
+                                                    * fe_eval.read_cell_data(array_penalty_parameter);
 
       for(unsigned int q=0;q<fe_eval.n_q_points;++q)
       {
@@ -1359,7 +1326,8 @@ private:
 
       fe_eval.reinit (face);
 
-      VectorizedArray<Number> penalty_parameter = get_penalty_factor() * fe_eval.read_cell_data(array_penalty_parameter);
+      VectorizedArray<Number> penalty_parameter = IP::get_penalty_factor<Number>(fe_degree, operator_data.IP_factor_viscous)
+                                                    * fe_eval.read_cell_data(array_penalty_parameter);
 
       for(unsigned int q=0;q<fe_eval.n_q_points;++q)
       {
@@ -1437,7 +1405,7 @@ private:
       fe_eval.evaluate(true,true);
       fe_eval_neighbor.evaluate(true,true);
 
-      VectorizedArray<Number> penalty_parameter = get_penalty_factor() *
+      VectorizedArray<Number> penalty_parameter = IP::get_penalty_factor<Number>(fe_degree, operator_data.IP_factor_viscous) *
           std::max(fe_eval.read_cell_data(array_penalty_parameter),fe_eval_neighbor.read_cell_data(array_penalty_parameter));
 
       for(unsigned int q=0;q<fe_eval.n_q_points;++q)
@@ -1495,7 +1463,7 @@ private:
 
       fe_eval_neighbor.reinit (face);
 
-      VectorizedArray<Number> penalty_parameter = get_penalty_factor() *
+      VectorizedArray<Number> penalty_parameter = IP::get_penalty_factor<Number>(fe_degree, operator_data.IP_factor_viscous) *
           std::max(fe_eval.read_cell_data(array_penalty_parameter),fe_eval_neighbor.read_cell_data(array_penalty_parameter));
 
       // integrate over face for element e⁻
@@ -1540,7 +1508,7 @@ private:
       fe_eval_neighbor.read_dof_values(src);
       fe_eval_neighbor.evaluate(true,true);
 
-      VectorizedArray<Number> penalty_parameter = get_penalty_factor() *
+      VectorizedArray<Number> penalty_parameter = IP::get_penalty_factor<Number>(fe_degree, operator_data.IP_factor_viscous) *
           std::max(fe_eval.read_cell_data(array_penalty_parameter),fe_eval_neighbor.read_cell_data(array_penalty_parameter));
 
       // integrate over face for element e⁺
@@ -1622,7 +1590,7 @@ private:
       fe_eval.reinit (face);
       fe_eval_neighbor.reinit (face);
 
-      VectorizedArray<Number> penalty_parameter = get_penalty_factor() *
+      VectorizedArray<Number> penalty_parameter = IP::get_penalty_factor<Number>(fe_degree, operator_data.IP_factor_viscous) *
           std::max(fe_eval.read_cell_data(array_penalty_parameter),fe_eval_neighbor.read_cell_data(array_penalty_parameter));
 
       unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
@@ -1679,7 +1647,7 @@ private:
       fe_eval.reinit (face);
       fe_eval_neighbor.reinit (face);
 
-      VectorizedArray<Number> penalty_parameter = get_penalty_factor() *
+      VectorizedArray<Number> penalty_parameter = IP::get_penalty_factor<Number>(fe_degree, operator_data.IP_factor_viscous) *
           std::max(fe_eval.read_cell_data(array_penalty_parameter),fe_eval_neighbor.read_cell_data(array_penalty_parameter));
 
       unsigned int dofs_per_cell = fe_eval_neighbor.dofs_per_cell;
@@ -1756,7 +1724,8 @@ private:
 
       fe_eval.reinit (face);
 
-      VectorizedArray<Number> penalty_parameter = get_penalty_factor() * fe_eval.read_cell_data(array_penalty_parameter);
+      VectorizedArray<Number> penalty_parameter = IP::get_penalty_factor<Number>(fe_degree, operator_data.IP_factor_viscous)
+                                                    * fe_eval.read_cell_data(array_penalty_parameter);
 
       unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
       VectorizedArray<Number> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
@@ -1846,7 +1815,7 @@ private:
 
       unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
 
-      VectorizedArray<Number> penalty_parameter = get_penalty_factor() *
+      VectorizedArray<Number> penalty_parameter = IP::get_penalty_factor<Number>(fe_degree, operator_data.IP_factor_viscous) *
           std::max(fe_eval.read_cell_data(array_penalty_parameter),fe_eval_neighbor.read_cell_data(array_penalty_parameter));
 
       for (unsigned int j=0; j<dofs_per_cell; ++j)
@@ -1906,7 +1875,7 @@ private:
 
       unsigned int dofs_per_cell = fe_eval_neighbor.dofs_per_cell;
 
-      VectorizedArray<Number> penalty_parameter = get_penalty_factor() *
+      VectorizedArray<Number> penalty_parameter = IP::get_penalty_factor<Number>(fe_degree, operator_data.IP_factor_viscous) *
           std::max(fe_eval.read_cell_data(array_penalty_parameter),fe_eval_neighbor.read_cell_data(array_penalty_parameter));
 
       for (unsigned int j=0; j<dofs_per_cell; ++j)
@@ -1985,7 +1954,8 @@ private:
 
       unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
 
-      VectorizedArray<Number> penalty_parameter = get_penalty_factor() * fe_eval.read_cell_data(array_penalty_parameter);
+      VectorizedArray<Number> penalty_parameter = IP::get_penalty_factor<Number>(fe_degree, operator_data.IP_factor_viscous)
+                                                    * fe_eval.read_cell_data(array_penalty_parameter);
 
       for (unsigned int j=0; j<dofs_per_cell; ++j)
       {

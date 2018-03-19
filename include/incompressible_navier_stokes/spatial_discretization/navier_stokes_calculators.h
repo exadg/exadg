@@ -37,7 +37,7 @@ public:
   {};
 
   void initialize (MatrixFree<dim,value_type> const &mf_data,
-                   const unsigned int dof_index_in)
+                   const unsigned int               dof_index_in)
   {
     this->data = &mf_data;
     dof_index = dof_index_in;
@@ -52,7 +52,6 @@ public:
   }
 
 private:
-
   void local_compute_vorticity(const MatrixFree<dim,value_type>                 &data,
                                parallel::distributed::Vector<value_type>        &dst,
                                const parallel::distributed::Vector<value_type>  &src,
@@ -65,6 +64,7 @@ private:
       velocity.reinit(cell);
       velocity.read_dof_values(src);
       velocity.evaluate (false,true,false);
+
       for (unsigned int q=0; q<velocity.n_q_points; ++q)
       {
         Tensor<1,number_vorticity_components,VectorizedArray<value_type> > omega = velocity.get_curl(q);
@@ -77,6 +77,7 @@ private:
           omega_vector[d] = omega[d];
         velocity.submit_value (omega_vector, q);
       }
+
       velocity.integrate (true,false);
       velocity.distribute_local_to_global(dst);
     }
@@ -154,6 +155,7 @@ private:
           div = fe_eval_velocity.get_divergence(q);
         fe_eval_velocity_scalar.submit_value(div,q);
       }
+
       fe_eval_velocity_scalar.integrate(true,false);
       fe_eval_velocity_scalar.distribute_local_to_global(dst);
     }
@@ -242,6 +244,14 @@ private:
   unsigned int dof_index_u_scalar;
 };
 
+/*
+ *  This function calculates the right-hand side of the Laplace equation that is solved in order to obtain
+ *  the streamfunction psi
+ *
+ *    - laplace(psi) = omega  (where omega is the vorticity).
+ *
+ *  Note that this function can only be used for the two-dimensional case (dim==2).
+ */
 template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class StreamfunctionCalculatorRHSOperator: public BaseOperator<dim>
 {

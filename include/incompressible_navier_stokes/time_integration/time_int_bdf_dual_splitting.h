@@ -327,10 +327,9 @@ postprocessing() const
 { 
   // Calculate divergence of intermediate velocity field u_hathat,
   // because this is the velocity field that should be divergence-free.
-  // Of course, also the final velocity field at the end of the time step
+  // Alternatively, also the final velocity field at the end of the time step
   // could be considered instead.
   this->calculate_divergence(this->divergence, intermediate_velocity);
-
   this->calculate_velocity_magnitude(this->velocity_magnitude, velocity[0]);
   this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity[0]);
   this->calculate_streamfunction(this->streamfunction,vorticity[0]);
@@ -392,10 +391,9 @@ postprocessing_steady_problem() const
 {
   // Calculate divergence of intermediate velocity field u_hathat,
   // because this is the velocity field that should be divergence-free.
-  // Of course, also the final velocity field at the end of the time step
+  // Alternatively, also the final velocity field at the end of the time step
   // could be considered instead.
   this->calculate_divergence(this->divergence, intermediate_velocity);
-
   this->calculate_velocity_magnitude(this->velocity_magnitude, velocity[0]);
   this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity[0]);
   this->calculate_streamfunction(this->streamfunction,vorticity[0]);
@@ -475,16 +473,6 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
 solve_timestep()
 {
-  // write output
-  if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
-  {
-    this->pcout << std::endl
-                << "______________________________________________________________________" << std::endl << std::endl
-                << " Number of TIME STEPS: " << std::left << std::setw(8) << this->time_step_number
-                << "t_n = " << std::scientific << std::setprecision(4) << this->time << " -> t_n+1 = " << this->time + this->time_steps[0] << std::endl
-                << "______________________________________________________________________" << std::endl;
-  }
-
   // perform the four substeps of the dual-splitting method
   convective_step();
 

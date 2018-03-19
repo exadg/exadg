@@ -232,21 +232,6 @@ solve_timestep()
   Timer timer;
   timer.restart();
 
-  // write output
-  if(this->time_step_number%this->param.output_solver_info_every_timesteps == 0)
-  {
-    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-    pcout << std::endl
-          << "______________________________________________________________________"
-          << std::endl
-          << std::endl
-          << " Number of TIME STEPS: " << std::left << std::setw(8) << this->time_step_number
-          << "t_n = " << std::scientific << std::setprecision(4) << this->time
-          << " -> t_n+1 = " << this->time + this->time_steps[0] << std::endl
-          << "______________________________________________________________________"
-          << std::endl << std::endl;
-  }
-
   // update scaling factor of continuity equation
   if(this->param.use_scaling_continuity == true)
   {
@@ -408,8 +393,8 @@ solve_timestep()
 
     // solve coupled system of equations
     unsigned int linear_iterations = navier_stokes_operation->solve_linear_stokes_problem(solution_np,
-                                                                                   rhs_vector,
-                                                                                   this->get_scaling_factor_time_derivative_term());
+                                                                                          rhs_vector,
+                                                                                          this->get_scaling_factor_time_derivative_term());
 
     iterations[0] += linear_iterations;
     computing_times[0] += timer.wall_time();

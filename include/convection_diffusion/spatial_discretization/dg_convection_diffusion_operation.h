@@ -14,25 +14,28 @@
 #include <deal.II/lac/parallel_vector.h>
 #include <deal.II/numerics/vector_tools.h>
 
-#include "../convection_diffusion/boundary_descriptor.h"
-#include "../convection_diffusion/convection_diffusion_operators.h"
-#include "../convection_diffusion/field_functions.h"
-#include "../convection_diffusion/input_parameters.h"
-#include "../convection_diffusion/multigrid_preconditioner.h"
 #include "operators/inverse_mass_matrix.h"
 #include "operators/matrix_operator_base.h"
 #include "solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
 #include "solvers_and_preconditioners/iterative_solvers.h"
 #include "solvers_and_preconditioners/jacobi_preconditioner.h"
 
+#include "convection_diffusion/user_interface/boundary_descriptor.h"
+#include "convection_diffusion/user_interface/field_functions.h"
+#include "convection_diffusion/user_interface/input_parameters.h"
+#include "convection_diffusion/spatial_discretization/convection_diffusion_operators.h"
+#include "convection_diffusion/preconditioners/multigrid_preconditioner.h"
+
+namespace ConvDiff
+{
 
 template<int dim, int fe_degree, typename value_type>
-class DGConvDiffOperation : public MatrixOperatorBase
+class DGOperation : public MatrixOperatorBase
 {
 public:
 
-  DGConvDiffOperation(parallel::distributed::Triangulation<dim> const &triangulation,
-                      ConvDiff::InputParametersConvDiff const         &param_in)
+  DGOperation(parallel::distributed::Triangulation<dim> const &triangulation,
+              ConvDiff::InputParameters const                 &param_in)
     :
     fe(fe_degree),
     mapping(fe_degree),
@@ -41,9 +44,9 @@ public:
   {}
 
   void setup(const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
-                                                               periodic_face_pairs,
-             std::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor_in,
-             std::shared_ptr<FieldFunctionsConvDiff<dim> >     field_functions_in)
+                                                                 periodic_face_pairs,
+             std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor_in,
+             std::shared_ptr<ConvDiff::FieldFunctions<dim> >     field_functions_in)
   {
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
     pcout << std::endl << "Setup convection-diffusion operation ..." << std::endl;
@@ -77,12 +80,12 @@ public:
     else if(param.preconditioner == ConvDiff::Preconditioner::PointJacobi)
     {
       preconditioner.reset(new JacobiPreconditioner<value_type,
-          ScalarConvDiffOperators::ConvectionDiffusionOperator<dim,fe_degree,value_type> >(conv_diff_operator));
+          ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,value_type> >(conv_diff_operator));
     }
     else if(param.preconditioner == ConvDiff::Preconditioner::BlockJacobi)
     {
       preconditioner.reset(new BlockJacobiPreconditioner<value_type,
-          ScalarConvDiffOperators::ConvectionDiffusionOperator<dim,fe_degree,value_type> >(conv_diff_operator));
+          ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,value_type> >(conv_diff_operator));
     }
     else if(param.preconditioner == ConvDiff::Preconditioner::MultigridDiffusion)
     {
@@ -92,8 +95,8 @@ public:
       typedef float Number;
 
       typedef MyMultigridPreconditionerScalarDiff<dim,value_type,
-          ScalarConvDiffOperators::HelmholtzOperator<dim,fe_degree,Number>,
-          ScalarConvDiffOperators::ConvectionDiffusionOperator<dim,fe_degree,value_type> > MULTIGRID;
+          ConvDiff::HelmholtzOperator<dim,fe_degree,Number>,
+          ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,value_type> > MULTIGRID;
 
       preconditioner.reset(new MULTIGRID());
       std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
@@ -107,8 +110,8 @@ public:
        typedef float Number;
 
        typedef MyMultigridPreconditionerScalarConvDiff<dim,value_type,
-           ScalarConvDiffOperators::ConvectionDiffusionOperator<dim,fe_degree,Number>,
-           ScalarConvDiffOperators::ConvectionDiffusionOperator<dim,fe_degree,value_type> > MULTIGRID;
+           ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,Number>,
+           ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,value_type> > MULTIGRID;
 
        preconditioner.reset(new MULTIGRID());
        std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
@@ -139,7 +142,7 @@ public:
         solver_data.use_preconditioner = true;
 
       // initialize solver
-      iterative_solver.reset(new CGSolver<ScalarConvDiffOperators::ConvectionDiffusionOperator<dim,fe_degree,value_type>,
+      iterative_solver.reset(new CGSolver<ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,value_type>,
                                           PreconditionerBase<value_type>,
                                           parallel::distributed::Vector<value_type> >
                                  (conv_diff_operator,*preconditioner,solver_data));
@@ -159,7 +162,7 @@ public:
         solver_data.use_preconditioner = true;
 
       // initialize solver
-      iterative_solver.reset(new GMRESSolver<ScalarConvDiffOperators::ConvectionDiffusionOperator<dim,fe_degree,value_type>,
+      iterative_solver.reset(new GMRESSolver<ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,value_type>,
                                              PreconditionerBase<value_type>,
                                              parallel::distributed::Vector<value_type> >
                                  (conv_diff_operator,*preconditioner,solver_data));
@@ -410,14 +413,14 @@ private:
     diffusive_operator.initialize(mapping,data,diffusive_operator_data);
 
     // rhs operator
-    ScalarConvDiffOperators::RHSOperatorData<dim> rhs_operator_data;
+    ConvDiff::RHSOperatorData<dim> rhs_operator_data;
     rhs_operator_data.dof_index = 0;
     rhs_operator_data.quad_index = 0;
     rhs_operator_data.rhs = field_functions->right_hand_side;
     rhs_operator.initialize(data,rhs_operator_data);
 
     // convection-diffusion operator
-    ScalarConvDiffOperators::ConvectionDiffusionOperatorData<dim> conv_diff_operator_data;
+    ConvDiff::ConvectionDiffusionOperatorData<dim> conv_diff_operator_data;
     if(this->param.problem_type == ConvDiff::ProblemType::Unsteady)
     {
       conv_diff_operator_data.unsteady_problem = true;
@@ -460,7 +463,7 @@ private:
 
 
     // convection-diffusion operator (efficient implementation, only for explicit time integration, includes also rhs operator)
-    ScalarConvDiffOperators::ConvectionDiffusionOperatorDataEfficiency<dim,value_type> conv_diff_operator_data_eff;
+    ConvDiff::ConvectionDiffusionOperatorDataEfficiency<dim,value_type> conv_diff_operator_data_eff;
     conv_diff_operator_data_eff.conv_data = convective_operator_data;
     conv_diff_operator_data_eff.diff_data = diffusive_operator_data;
     conv_diff_operator_data_eff.rhs_data = rhs_operator_data;
@@ -474,29 +477,29 @@ private:
 
   MatrixFree<dim,value_type> data;
 
-  ConvDiff::InputParametersConvDiff const &param;
+  ConvDiff::InputParameters const &param;
 
   // TODO This variable is only needed when using the GeometricMultigrid preconditioner
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs;
 
-  std::shared_ptr<BoundaryDescriptorConvDiff<dim> > boundary_descriptor;
-  std::shared_ptr<FieldFunctionsConvDiff<dim> > field_functions;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor;
+  std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functions;
 
-  ScalarConvDiffOperators::MassMatrixOperatorData mass_matrix_operator_data;
-  ScalarConvDiffOperators::MassMatrixOperator<dim, fe_degree, value_type> mass_matrix_operator;
-  InverseMassMatrixOperator<dim,fe_degree,value_type> inverse_mass_matrix_operator;
+  ConvDiff::MassMatrixOperatorData mass_matrix_operator_data;
+  ConvDiff::MassMatrixOperator<dim, fe_degree, value_type> mass_matrix_operator;
+  InverseMassMatrixOperator<dim,fe_degree,value_type,1> inverse_mass_matrix_operator;
 
-  ScalarConvDiffOperators::ConvectiveOperatorData<dim> convective_operator_data;
-  ScalarConvDiffOperators::ConvectiveOperator<dim, fe_degree, value_type> convective_operator;
+  ConvDiff::ConvectiveOperatorData<dim> convective_operator_data;
+  ConvDiff::ConvectiveOperator<dim, fe_degree, value_type> convective_operator;
 
-  ScalarConvDiffOperators::DiffusiveOperatorData<dim> diffusive_operator_data;
-  ScalarConvDiffOperators::DiffusiveOperator<dim, fe_degree, value_type> diffusive_operator;
-  ScalarConvDiffOperators::RHSOperator<dim, fe_degree, value_type> rhs_operator;
+  ConvDiff::DiffusiveOperatorData<dim> diffusive_operator_data;
+  ConvDiff::DiffusiveOperator<dim, fe_degree, value_type> diffusive_operator;
+  ConvDiff::RHSOperator<dim, fe_degree, value_type> rhs_operator;
 
-  ScalarConvDiffOperators::ConvectionDiffusionOperator<dim, fe_degree, value_type> conv_diff_operator;
+  ConvDiff::ConvectionDiffusionOperator<dim, fe_degree, value_type> conv_diff_operator;
 
   // convection-diffusion operator for runtime optimization (also includes rhs operator)
-  ScalarConvDiffOperators::ConvectionDiffusionOperatorEfficiency<dim, fe_degree, value_type> convection_diffusion_operator_efficiency;
+  ConvDiff::ConvectionDiffusionOperatorEfficiency<dim, fe_degree, value_type> convection_diffusion_operator_efficiency;
 
   std::shared_ptr<PreconditionerBase<value_type> > preconditioner;
   std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > iterative_solver;
@@ -506,7 +509,7 @@ template<int dim, int fe_degree, typename value_type>
 class ConvectiveOperatorOIFSplitting
 {
 public:
-  ConvectiveOperatorOIFSplitting(std::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation_in)
+  ConvectiveOperatorOIFSplitting(std::shared_ptr<ConvDiff::DGOperation<dim, fe_degree, value_type> > conv_diff_operation_in)
     :
     conv_diff_operation(conv_diff_operation_in)
   {}
@@ -524,8 +527,9 @@ public:
   }
 
 private:
-  std::shared_ptr<DGConvDiffOperation<dim, fe_degree, value_type> > conv_diff_operation;
+  std::shared_ptr<ConvDiff::DGOperation<dim, fe_degree, value_type> > conv_diff_operation;
 };
 
+} // namespace ConvDiff
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_DG_CONVECTION_DIFFUSION_OPERATION_H_ */

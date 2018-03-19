@@ -26,7 +26,12 @@ struct OutputDataNavierStokes : public OutputData
   {
     OutputData::print(pcout,unsteady);
 
-    print_parameter(pcout,"Compute divergence",write_divergence);
+    print_parameter(pcout,"Write divergence", write_divergence);
+    print_parameter(pcout,"Write velocity magnitude", write_velocity_magnitude);
+    print_parameter(pcout,"Write vorticity magnitude", write_vorticity_magnitude);
+    print_parameter(pcout,"Write streamfunction", write_streamfunction);
+    print_parameter(pcout,"Write Q criterion", write_q_criterion);
+    print_parameter(pcout,"Write processor ID", write_processor_id);
   }
 
   // write divergence of velocity field

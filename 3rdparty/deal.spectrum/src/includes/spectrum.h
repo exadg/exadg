@@ -305,7 +305,7 @@ public:
      */
     int get_results(double*& K, double*& E, double*& C, double& e_d, double& e_s){
         K = this->K; E = this->E; C = this->C; e_d = this->e_d; e_s = this->e_s;
-        return N ;
+        return N/2+1;
     }
         
     /**
