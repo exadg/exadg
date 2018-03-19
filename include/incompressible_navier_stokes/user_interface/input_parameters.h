@@ -14,6 +14,8 @@
 #include "../../incompressible_navier_stokes/postprocessor/output_data_navier_stokes.h"
 #include "../../incompressible_navier_stokes/postprocessor/pressure_difference_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/turbulence_statistics_data.h"
+#include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_data.h"
+#include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_spectrum_data.h"
 #include "../include/functionalities/print_functions.h"
 #include "../postprocessor/line_plot_data.h"
 #include "../postprocessor/mean_velocity_calculator.h"
@@ -617,73 +619,6 @@ struct InflowData
   std::vector<double> *z_values;
   // and the velocity values at n_points_y*n_points_z points
   std::vector<Tensor<1,dim,double> > *array;
-};
-
-// kinetic energy data
-
-struct KineticEnergyData
-{
-  KineticEnergyData()
-    :
-  calculate(false),
-  calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
-  viscosity(1.0),
-  filename_prefix("indexa")
-  {}
-
-  void print(ConditionalOStream &pcout)
-  {
-    if(calculate == true)
-    {
-      pcout << std::endl << "  Calculate kinetic energy:" << std::endl;
-      print_parameter(pcout,"Calculate energy",calculate);
-      print_parameter(pcout,"Calculate every timesteps",calculate_every_time_steps);
-    }
-  }
-
-  bool calculate;
-  unsigned int calculate_every_time_steps;
-  double viscosity;
-  std::string filename_prefix;
-};
-
-// kinetic energy spectrum data
-
-struct KineticEnergySpectrumData
-{
-  KineticEnergySpectrumData()
-    :
-  calculate(false),
-  start_time(0.0),
-  calculate_every_time_steps(-1),
-  calculate_every_time_interval(-1.0),
-  filename_prefix("energy_spectrum"),
-  output_tolerance(std::numeric_limits<double>::min()),
-  evaluation_points_per_cell(0)
-  {}
-
-  void print(ConditionalOStream &pcout)
-  {
-    if(calculate == true)
-    {
-      pcout << std::endl << "  Calculate kinetic energy spectrum:" << std::endl;
-      print_parameter(pcout,"Start time",start_time);
-      if(calculate_every_time_steps >= 0)
-        print_parameter(pcout,"Calculate every timesteps",calculate_every_time_steps);
-      if(calculate_every_time_interval >= 0.0)
-        print_parameter(pcout,"Calculate every time interval",calculate_every_time_interval);
-      print_parameter(pcout,"Output precision",output_tolerance);
-      print_parameter(pcout,"Evaluation points per cell",evaluation_points_per_cell);
-    }
-  }
-
-  bool calculate;
-  double start_time;
-  int calculate_every_time_steps;
-  double calculate_every_time_interval;
-  std::string filename_prefix;
-  double output_tolerance;
-  unsigned int evaluation_points_per_cell;
 };
 
 // calculation of perturbation energy for Orr-Sommerfeld problem
