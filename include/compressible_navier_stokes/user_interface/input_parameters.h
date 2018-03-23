@@ -220,6 +220,7 @@ public:
   // SOLVER
 
   // NUMERICAL PARAMETERS
+  detect_instabilities(true),
   use_combined_operator(false),
 
   // OUTPUT AND POSTPROCESSING
@@ -449,6 +450,7 @@ public:
     pcout << std::endl
           << "Numerical parameters:" << std::endl;
 
+    print_parameter(pcout,"Detect instabilities",detect_instabilities);
     print_parameter(pcout,"Use combined operator",use_combined_operator);
   }
 
@@ -580,6 +582,10 @@ public:
   /*                                NUMERICAL PARAMETERS                                */
   /*                                                                                    */
   /**************************************************************************************/
+
+  // detect instabilities (norm of solution vector grows by a large factor from one time
+  // step to the next
+  bool detect_instabilities;
 
   // use combined operator for viscous term and convective term in order to improve run
   // time
