@@ -53,9 +53,28 @@ using namespace dealii;
 /*                                                                                    */
 /**************************************************************************************/
 
-// set the polynomial degree of the shape functions k = 1,...,10
-unsigned int const FE_DEGREE_U_MIN = FE_DEGREE_VELOCITY;
-unsigned int const FE_DEGREE_U_MAX = FE_DEGREE_VELOCITY; // +8;
+// set the polynomial degree k of the shape functions
+unsigned int const FE_DEGREE_U_MIN = 2;
+unsigned int const FE_DEGREE_U_MAX = 2;
+
+// refinement level: l = REFINE_LEVELS[fe_degree-1]
+std::vector REFINE_LEVELS = {
+  7, /* k=1 */
+  6,
+  6, /* k=3 */
+  5,
+  5,
+  5,
+  5, /* k=7 */
+  4,
+  4,
+  4,
+  4,
+  4,
+  4,
+  4,
+  4  /* k=15 */
+};
 
 // Select the operator to be applied
 enum class OperatorType{
@@ -543,10 +562,10 @@ template<int dim, int fe_degree_u, int max_fe_degree_u, int fe_degree_xwall, int
 class NavierStokesPrecompiled
 {
 public:
-  static void run(unsigned int const refine_steps_space)
+  static void run()
   {
-    NavierStokesPrecompiled<dim,fe_degree_u,fe_degree_u,fe_degree_xwall,xwall_quad_rule,Number>::run(refine_steps_space);
-    NavierStokesPrecompiled<dim,fe_degree_u+1,max_fe_degree_u,fe_degree_xwall,xwall_quad_rule,Number>::run(refine_steps_space);
+    NavierStokesPrecompiled<dim,fe_degree_u,fe_degree_u,fe_degree_xwall,xwall_quad_rule,Number>::run();
+    NavierStokesPrecompiled<dim,fe_degree_u+1,max_fe_degree_u,fe_degree_xwall,xwall_quad_rule,Number>::run();
   }
 };
 
@@ -558,12 +577,12 @@ template <int dim, int fe_degree_u, int fe_degree_xwall, int xwall_quad_rule,typ
 class NavierStokesPrecompiled<dim, fe_degree_u, fe_degree_u, fe_degree_xwall, xwall_quad_rule, Number>
 {
 public:
-  static void run(unsigned int const refine_steps_space)
+  static void run()
   {
     typedef NavierStokesProblem<dim,fe_degree_u,fe_degree_u-1 /* fe_degree_p*/,
       fe_degree_xwall,xwall_quad_rule,Number> NAVIER_STOKES_PROBLEM;
 
-    NAVIER_STOKES_PROBLEM navier_stokes_problem(refine_steps_space);
+    NAVIER_STOKES_PROBLEM navier_stokes_problem(REFINE_LEVELS[fe_degree_u-1]);
     navier_stokes_problem.setup();
     navier_stokes_problem.apply_operator();
   }
@@ -591,7 +610,7 @@ int main (int argc, char** argv)
       typedef NavierStokesPrecompiled<DIMENSION,FE_DEGREE_U_MIN,FE_DEGREE_U_MAX,
           FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,VALUE_TYPE> NAVIER_STOKES;
 
-      NAVIER_STOKES::run(refine_steps_space);
+      NAVIER_STOKES::run();
 
       print_wall_times(wall_times, refine_steps_space);
       wall_times.clear();

@@ -461,10 +461,13 @@ template<int dim, int fe_degree, typename value_type, typename NavierStokesOpera
 void TimeIntExplRKCompNavierStokes<dim,fe_degree,value_type,NavierStokesOperation>::
 detect_instabilities()
 {
-  double const l2_norm_new = solution_n.l2_norm();
-  if(l2_norm > 1.e-12)
-    AssertThrow(l2_norm_new < 10. * l2_norm, ExcMessage("Instabilities detected. Norm of solution vector seems to explode."));
-  l2_norm = l2_norm_new;
+  if(this->param.detect_instabilities == true)
+  {
+    double const l2_norm_new = solution_n.l2_norm();
+    if(l2_norm > 1.e-12)
+      AssertThrow(l2_norm_new < 10. * l2_norm, ExcMessage("Instabilities detected. Norm of solution vector seems to explode."));
+    l2_norm = l2_norm_new;
+  }
 }
 
 template<int dim, int fe_degree, typename value_type, typename NavierStokesOperation>
