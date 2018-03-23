@@ -13,6 +13,7 @@
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/tria_accessor.h>
 #include <deal.II/grid/tria_iterator.h>
+#include <deal.II/grid/manifold_lib.h>
 #include <deal.II/grid/grid_out.h>
 #include <deal.II/base/function.h>
 
@@ -29,8 +30,8 @@ const unsigned int DIMENSION = 3;
 const unsigned int FE_DEGREE = 3;
 
 //number of quadrature points in 1D
-const unsigned int QPOINTS_CONV = FE_DEGREE + 1;
-//const unsigned int QPOINTS_CONV = FE_DEGREE + (FE_DEGREE+2)/2; // 3/2-overintegration
+//const unsigned int QPOINTS_CONV = FE_DEGREE + 1;
+const unsigned int QPOINTS_CONV = FE_DEGREE + (FE_DEGREE+2)/2; // 3/2-overintegration
 //const unsigned int QPOINTS_CONV = 2*FE_DEGREE+1;
 
 const unsigned int QPOINTS_VIS = QPOINTS_CONV;
@@ -44,7 +45,11 @@ const unsigned int REFINE_STEPS_SPACE_MAX = 4;
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
 const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
-const unsigned int N_CELLS_COARSE_GRID = 1;
+enum class MeshType{ Cartesian, Unstructured };
+const MeshType MESH_TYPE = MeshType::Cartesian;
+
+// only relevant for Cartesian mesh
+const unsigned int N_CELLS_1D_COARSE_GRID = 1;
 
 // set parameters according to Wiart et al. ("Assessment of discontinuous Galerkin method
 // for the simulation of vortical flows at high Reynolds number"):
@@ -73,7 +78,7 @@ const double MAX_VELOCITY = V_0;
 const double CHARACTERISTIC_TIME = L/V_0;
 
 std::string OUTPUT_FOLDER = "output_comp_ns/taylor_green_vortex/";
-std::string FILENAME = "test"; //"Re1600_l2_k15_overint";
+std::string FILENAME = "test"; // "Re1600_l2_k15_overint";
 
 template<int dim>
 void CompNS::InputParameters<dim>::set_input_parameters()
@@ -132,12 +137,12 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   // SPATIAL DISCRETIZATION
 
   // viscous term
-  IP_factor = 1.0e0;
+  IP_factor = 1.0;
 
   // SOLVER
 
   // NUMERICAL PARAMETERS
-  use_combined_operator = false; //true;
+  use_combined_operator = true;
 
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
@@ -161,7 +166,7 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   kinetic_energy_data.filename_prefix = OUTPUT_FOLDER + FILENAME;
 
   // kinetic energy spectrum
-  kinetic_energy_spectrum_data.calculate = true;
+  kinetic_energy_spectrum_data.calculate = false; //true;
   kinetic_energy_spectrum_data.calculate_every_time_steps = -1;
   kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
   kinetic_energy_spectrum_data.filename_prefix = OUTPUT_FOLDER + "spectrum_l2_k15_overint";
@@ -246,20 +251,54 @@ double AnalyticalSolution<dim>::value(const Point<dim>    &x,
    const double pi = numbers::PI;
    const double left = - pi * L, right = pi * L;
    
-   std::vector<unsigned int> repetitions({N_CELLS_COARSE_GRID,
-          				                        N_CELLS_COARSE_GRID,
-                                          N_CELLS_COARSE_GRID});
-   Point<dim> point1(left,left,left), point2(right,right,right);
-   GridGenerator::subdivided_hyper_rectangle(triangulation,repetitions,point1,point2);
+   if(MESH_TYPE == MeshType::Cartesian)
+   {
+     std::vector<unsigned int> repetitions({N_CELLS_1D_COARSE_GRID,
+                                            N_CELLS_1D_COARSE_GRID,
+                                            N_CELLS_1D_COARSE_GRID});
+
+     Point<dim> point1(left,left,left), point2(right,right,right);
+     GridGenerator::subdivided_hyper_rectangle(triangulation,repetitions,point1,point2);
+   }
+   else if(MESH_TYPE == MeshType::Unstructured)
+   {
+     // Complex Geometry
+     Triangulation<dim> tria1, tria2;
+     const double radius = (right-left)*0.25;
+     const double width = right-left;
+     GridGenerator::hyper_shell(tria1, Point<dim>(), radius, 0.5*width*std::sqrt(dim), 2*dim);
+     GridGenerator::hyper_ball(tria2, Point<dim>(), radius);
+     GridGenerator::merge_triangulations(tria1, tria2, triangulation);
+     triangulation.set_all_manifold_ids(0);
+     for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin();cell != triangulation.end(); ++cell)
+     {
+       for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
+       {
+         bool face_at_sphere_boundary = true;
+         for (unsigned int v=0; v<GeometryInfo<dim-1>::vertices_per_cell; ++v)
+         {
+           if (std::abs(cell->face(f)->vertex(v).norm()-radius) > 1e-12)
+             face_at_sphere_boundary = false;
+         }
+         if (face_at_sphere_boundary)
+         {
+           cell->face(f)->set_all_manifold_ids(1);
+         }
+       }
+     }
+     static const SphericalManifold<dim> spherical_manifold;
+     triangulation.set_manifold(1, spherical_manifold);
+     triangulation.set_boundary(0);
+   }
 
    // set boundary indicators
    AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim==3!"));
-   
+
    typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
    for(;cell!=endc;++cell)
    {
      for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-     { 
+     {
        // x-direction
        if((std::fabs(cell->face(face_number)->center()(0) - left)< 1e-12))
          cell->face(face_number)->set_all_boundary_ids (0);

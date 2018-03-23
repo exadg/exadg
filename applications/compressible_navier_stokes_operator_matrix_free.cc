@@ -45,9 +45,28 @@
 /*                                                                                    */
 /**************************************************************************************/
 
-// set the polynomial degree of the shape functions k = 1,...,10
-unsigned int const FE_DEGREE_MIN = FE_DEGREE;
-unsigned int const FE_DEGREE_MAX = FE_DEGREE+7;
+// set the polynomial degree k of the shape functions
+unsigned int const FE_DEGREE_MIN = 1;
+unsigned int const FE_DEGREE_MAX = 1;
+
+// refinement level: l = REFINE_LEVELS[fe_degree-1]
+std::vector REFINE_LEVELS = {
+  7, /* k=1 */
+  6,
+  6, /* k=3 */
+  5,
+  5,
+  5,
+  5, /* k=7 */
+  4,
+  4,
+  4,
+  4,
+  4,
+  4,
+  4,
+  4  /* k=15 */
+};
 
 // NOTE: the quadrature rule specified in the parameter file is irrelevant for these
 //       performance measurements. The quadrature rule has to be selected manually
@@ -59,9 +78,12 @@ enum class OperatorType{
   ViscousTerm,
   ViscousAndConvectiveTerms,
   InverseMassMatrix,
+  InverseMassMatrixDstOnly,
+  VectorUpdate,
+  EvaluateOperatorExplicit
 };
 
-OperatorType OPERATOR_TYPE = OperatorType::ViscousAndConvectiveTerms;
+OperatorType OPERATOR_TYPE = OperatorType::InverseMassMatrixDstOnly; //EvaluateOperatorExplicit; //ViscousAndConvectiveTerms;
 
 // number of repetitions used to determine the average/minimum wall time required
 // to compute the matrix-vector product
@@ -224,6 +246,12 @@ apply_operator()
         comp_navier_stokes_operator->evaluate_convective_and_viscous(dst,src,0.0);
       else if(OPERATOR_TYPE == OperatorType::InverseMassMatrix)
         comp_navier_stokes_operator->apply_inverse_mass(dst,src);
+      else if(OPERATOR_TYPE == OperatorType::InverseMassMatrixDstOnly)
+        comp_navier_stokes_operator->apply_inverse_mass(dst,dst);
+      else if(OPERATOR_TYPE == OperatorType::VectorUpdate)
+        dst.sadd(2.0,1.0,src);
+      else if(OPERATOR_TYPE == OperatorType::EvaluateOperatorExplicit)
+        comp_navier_stokes_operator->evaluate(dst,src,0.0);
       else
         AssertThrow(false, ExcMessage("Specified operator type not implemented"));
 
@@ -259,8 +287,7 @@ apply_operator()
   pcout << std::endl << " ... done." << std::endl << std::endl;
 }
 
-void print_wall_times(std::vector<std::pair<unsigned int, double> > const &wall_times,
-                      unsigned int const                                  refine_steps_space)
+void print_wall_times(std::vector<std::pair<unsigned int, double> > const &wall_times)
 {
   unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
 
@@ -270,13 +297,15 @@ void print_wall_times(std::vector<std::pair<unsigned int, double> > const &wall_
                                         "ViscousTerm",
                                         "ViscousAndConvectiveTerms",
                                         "InverseMassMatrix",
-                                        "NonlinearOperatorInverseMass"};
+                                        "InverseMassMatrixOnly",
+                                        "VectorUpdate",
+                                        "EvaluateOperatorExplicit" };
 
     std::cout << std::endl
               << "_________________________________________________________________________________"
               << std::endl << std::endl
               << "Operator type: " << str_operator_type[(int)OPERATOR_TYPE] << std::endl << std::endl
-              << "Wall times for refine level l = " << refine_steps_space << ":"
+              << "Wall times and throughput:"
               << std::endl << std::endl
               << "  k    " << "t_wall/DoF [s] " << "DoFs/sec   " << "DoFs/(sec*core) " << std::endl;
 
@@ -311,10 +340,10 @@ template<int dim, int fe_degree, int max_fe_degree>
 class NavierStokesPrecompiled
 {
 public:
-  static void run(unsigned int const refine_steps_space)
+  static void run()
   {
-    NavierStokesPrecompiled<dim, fe_degree, fe_degree>::run(refine_steps_space);
-    NavierStokesPrecompiled<dim, fe_degree+1, max_fe_degree>::run(refine_steps_space);
+    NavierStokesPrecompiled<dim, fe_degree, fe_degree>::run();
+    NavierStokesPrecompiled<dim, fe_degree+1, max_fe_degree>::run();
   }
 };
 
@@ -325,18 +354,19 @@ template<int dim, int fe_degree>
 class NavierStokesPrecompiled<dim, fe_degree, fe_degree>
 {
 public:
+
   /*
    *  Select the quadrature formula manually for convective term
    */
 
   // standard quadrature
-//  static const unsigned int n_q_points_conv = fe_degree+1;
+  static const unsigned int n_q_points_conv = fe_degree+1;
 
   // 3/2 dealiasing rule
 //  static const unsigned int n_q_points_conv = fe_degree+(fe_degree+2)/2;
 
-  // 2k dealiasing rul
-  static const unsigned int n_q_points_conv = 2*fe_degree+1;  
+  // 2k dealiasing rule
+//  static const unsigned int n_q_points_conv = 2*fe_degree+1;
 
   /*
    *  Select the quadrature formula manually for viscous term
@@ -350,11 +380,11 @@ public:
 
 
   // setup problem and apply operator
-  static void run(unsigned int const refine_steps_space)
+  static void run()
   {
-    typedef CompressibleNavierStokesProblem<dim,fe_degree,n_q_points_conv, n_q_points_vis> NAVIER_STOKES_PROBLEM;
+    typedef CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis> NAVIER_STOKES_PROBLEM;
 
-    NAVIER_STOKES_PROBLEM navier_stokes_problem(refine_steps_space);
+    NAVIER_STOKES_PROBLEM navier_stokes_problem(REFINE_LEVELS[fe_degree-1]);
     navier_stokes_problem.setup();
     navier_stokes_problem.apply_operator();
   }
@@ -374,18 +404,12 @@ int main (int argc, char** argv)
 
     deallog.depth_console(0);
 
-    //mesh refinements in order to perform spatial convergence tests
-    for(unsigned int refine_steps_space = REFINE_STEPS_SPACE_MIN;
-        refine_steps_space <= REFINE_STEPS_SPACE_MAX; ++refine_steps_space)
-    {
-      // increasing polynomial degrees
-      typedef NavierStokesPrecompiled<DIMENSION,FE_DEGREE_MIN,FE_DEGREE_MAX> NAVIER_STOKES;
+    // measure throughput for increasing polynomial degree
+    typedef NavierStokesPrecompiled<DIMENSION,FE_DEGREE_MIN,FE_DEGREE_MAX> NAVIER_STOKES;
+    NAVIER_STOKES::run();
 
-      NAVIER_STOKES::run(refine_steps_space);
-
-      print_wall_times(wall_times, refine_steps_space);
-      wall_times.clear();
-    }
+    print_wall_times(wall_times);
+    wall_times.clear();
   }
   catch (std::exception &exc)
   {
