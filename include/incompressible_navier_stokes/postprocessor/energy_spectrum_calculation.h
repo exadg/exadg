@@ -54,16 +54,19 @@ public:
              DofQuadIndexData const          &dof_quad_index_data_in,
              KineticEnergySpectrumData const &data_in)
   {
-    data = data_in;
-    
-    int local_cells = matrix_free_data_in.n_physical_cells();
-    int       cells = local_cells;
-    MPI_Allreduce(MPI_IN_PLACE, &cells, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD);
-    cells = round(pow(cells,1.0/dim));
-    
-    unsigned int evaluation_points = std::max(fe_degree+1,(int)data.evaluation_points_per_cell);
+    if(data.calculate == true)
+    {
+      data = data_in;
 
-    deal_spectrum_wrapper.init(dim, cells, fe_degree+1, evaluation_points, local_cells);
+      int local_cells = matrix_free_data_in.n_physical_cells();
+      int       cells = local_cells;
+      MPI_Allreduce(MPI_IN_PLACE, &cells, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD);
+      cells = round(pow(cells,1.0/dim));
+
+      unsigned int evaluation_points = std::max(fe_degree+1,(int)data.evaluation_points_per_cell);
+
+      deal_spectrum_wrapper.init(dim, cells, fe_degree+1, evaluation_points, local_cells);
+    }
   }
 
   void evaluate(parallel::distributed::Vector<Number> const &velocity,
