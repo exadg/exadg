@@ -41,9 +41,9 @@ namespace
     op.apply_nullspace_projection(right);
 
     SolverControl control(eig_n_iter, right.l2_norm()*1e-5);
-    internal::PreconditionChebyshev::EigenvalueTracker eigenvalue_tracker;
+    internal::PreconditionChebyshevImplementation::EigenvalueTracker eigenvalue_tracker;
     SolverCG<parallel::distributed::Vector<value_type> > solver (control);
-    solver.connect_eigenvalues_slot(std::bind(&internal::PreconditionChebyshev::EigenvalueTracker::slot,
+    solver.connect_eigenvalues_slot(std::bind(&internal::PreconditionChebyshevImplementation::EigenvalueTracker::slot,
                                               &eigenvalue_tracker,
                                               std::placeholders::_1));
 
