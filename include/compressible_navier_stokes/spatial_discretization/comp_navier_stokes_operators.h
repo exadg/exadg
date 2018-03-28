@@ -30,7 +30,7 @@ enum class BoundaryType {
 };
 
 template<int dim, typename value_type>
-inline VectorizedArray<value_type>
+inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
 calculate_pressure(Tensor<1,dim,VectorizedArray<value_type> > const &rho_u,
                    Tensor<1,dim,VectorizedArray<value_type> > const &u,
                    VectorizedArray<value_type> const                &rho_E,
@@ -40,7 +40,7 @@ calculate_pressure(Tensor<1,dim,VectorizedArray<value_type> > const &rho_u,
 }
 
 template<int dim, typename value_type>
-inline VectorizedArray<value_type>
+inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
 calculate_pressure(VectorizedArray<value_type> const                &rho,
                    Tensor<1,dim,VectorizedArray<value_type> > const &u,
                    VectorizedArray<value_type> const                &E,
@@ -50,7 +50,7 @@ calculate_pressure(VectorizedArray<value_type> const                &rho,
 }
 
 template<typename value_type>
-inline VectorizedArray<value_type>
+inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
 calculate_temperature(VectorizedArray<value_type> const &p,
                       VectorizedArray<value_type> const &rho,
                       value_type const                  &R)
@@ -68,7 +68,7 @@ calculate_energy(VectorizedArray<value_type> const                &T,
 }
 
 template<int dim, typename value_type>
-inline Tensor<1,dim,VectorizedArray<value_type> >
+inline DEAL_II_ALWAYS_INLINE Tensor<1,dim,VectorizedArray<value_type> >
 calculate_grad_E(VectorizedArray<value_type> const                &rho_inverse,
                  VectorizedArray<value_type> const                &rho_E,
                  Tensor<1,dim,VectorizedArray<value_type> > const &grad_rho,
@@ -80,19 +80,24 @@ calculate_grad_E(VectorizedArray<value_type> const                &rho_inverse,
 }
 
 template<int dim, typename value_type>
-inline Tensor<2,dim,VectorizedArray<value_type> >
+inline DEAL_II_ALWAYS_INLINE Tensor<2,dim,VectorizedArray<value_type> >
 calculate_grad_u(VectorizedArray<value_type> const                &rho_inverse,
                  Tensor<1,dim,VectorizedArray<value_type> > const &rho_u,
                  Tensor<1,dim,VectorizedArray<value_type> > const &grad_rho,
                  Tensor<2,dim,VectorizedArray<value_type> > const &grad_rho_u)
 {
-  Tensor<1,dim,VectorizedArray<value_type> > u = rho_inverse * rho_u;
-
-  return rho_inverse * (grad_rho_u - outer_product(u,grad_rho));
+  Tensor<2,dim,VectorizedArray<value_type> > out;
+  for (unsigned int d=0; d<dim; ++d)
+    {
+      VectorizedArray<value_type> ud = rho_inverse * rho_u[d];
+      for (unsigned int e=0; e<dim; ++e)
+        out[d][e] = rho_inverse * (grad_rho_u[d][e] - ud * grad_rho[e]);
+    }
+  return out;
 }
 
 template<int dim, typename value_type>
-inline Tensor<1,dim,VectorizedArray<value_type> >
+inline DEAL_II_ALWAYS_INLINE Tensor<1,dim,VectorizedArray<value_type> >
 calculate_grad_T(Tensor<1,dim,VectorizedArray<value_type> > const &grad_E,
                  Tensor<1,dim,VectorizedArray<value_type> > const &u,
                  Tensor<2,dim,VectorizedArray<value_type> > const &grad_u,
@@ -103,21 +108,26 @@ calculate_grad_T(Tensor<1,dim,VectorizedArray<value_type> > const &grad_E,
 }
 
 template<int dim, typename value_type>
-inline Tensor<2,dim,VectorizedArray<value_type> >
+inline DEAL_II_ALWAYS_INLINE Tensor<2,dim,VectorizedArray<value_type> >
 calculate_stress_tensor(Tensor<2,dim,VectorizedArray<value_type> > const &grad_u,
                         value_type const                                 &viscosity)
 {
-  SymmetricTensor<2,dim,VectorizedArray<value_type> > I =
-      unit_symmetric_tensor<dim,VectorizedArray<value_type> >();
-
-  return viscosity * (grad_u + transpose(grad_u) - 2.0/3.0 * trace(grad_u) * I);
+  Tensor<2,dim,VectorizedArray<value_type> > out;
+  const VectorizedArray<value_type> divu = (2./3.) * trace(grad_u);
+  for (unsigned int d=0; d<dim; ++d)
+    {
+      for (unsigned int e=0; e<dim; ++e)
+        out[d][e] = viscosity * (grad_u[d][e] + grad_u[e][d]);
+      out[d][d] -= viscosity * divu;
+    }
+  return out;
 }
 
 /*
  *  Calculate exterior state "+" for a scalar quantity depending on interior state "-" and boundary conditions.
  */
 template<int dim, typename value_type>
-inline VectorizedArray<value_type>
+inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
 calculate_exterior_value(VectorizedArray<value_type> const                       &value_m,
                          BoundaryType const                                      &boundary_type,
                          std::shared_ptr<CompNS::BoundaryDescriptor<dim> > const &boundary_descriptor,
@@ -152,7 +162,7 @@ calculate_exterior_value(VectorizedArray<value_type> const                      
  *  Calculate exterior state "+" for a scalar quantity depending on interior state "-" and boundary conditions.
  */
 template<int dim, typename value_type>
-inline Tensor<1,dim,VectorizedArray<value_type> >
+inline DEAL_II_ALWAYS_INLINE Tensor<1,dim,VectorizedArray<value_type> >
 calculate_exterior_value(Tensor<1,dim,VectorizedArray<value_type> > const        &value_m,
                          BoundaryType const                                      boundary_type,
                          std::shared_ptr<CompNS::BoundaryDescriptor<dim> > const &boundary_descriptor,
@@ -187,7 +197,7 @@ calculate_exterior_value(Tensor<1,dim,VectorizedArray<value_type> > const       
  *  Calculate exterior state of normal stresses depending on interior data and boundary conditions.
  */
 template<int dim, typename value_type>
-inline Tensor<1,dim,VectorizedArray<value_type> >
+inline DEAL_II_ALWAYS_INLINE Tensor<1,dim,VectorizedArray<value_type> >
 calculate_exterior_normal_grad(Tensor<1,dim,VectorizedArray<value_type> > const        &tau_M_normal,
                                BoundaryType const                                      &boundary_type,
                                std::shared_ptr<CompNS::BoundaryDescriptor<dim> > const &boundary_descriptor,
@@ -223,7 +233,7 @@ calculate_exterior_normal_grad(Tensor<1,dim,VectorizedArray<value_type> > const 
  *  Calculate exterior temperature gradient depending on interior data and boundary conditions.
  */
 template<int dim, typename value_type>
-inline VectorizedArray<value_type>
+inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
 calculate_exterior_normal_grad(VectorizedArray<value_type> const                       &grad_T_M_normal,
                                BoundaryType const                                      &boundary_type,
                                std::shared_ptr<CompNS::BoundaryDescriptor<dim> > const &boundary_descriptor,
@@ -259,7 +269,7 @@ calculate_exterior_normal_grad(VectorizedArray<value_type> const                
  *  This function calculates the Lax-Friedrichs flux for the momentum equation
  */
 template<int dim, typename value_type>
-inline Tensor<1,dim,VectorizedArray<value_type> >
+inline DEAL_II_ALWAYS_INLINE Tensor<1,dim,VectorizedArray<value_type> >
 calculate_flux(Tensor<2,dim,VectorizedArray<value_type> > const &momentum_flux_M,
                Tensor<2,dim,VectorizedArray<value_type> > const &momentum_flux_P,
                Tensor<1,dim,VectorizedArray<value_type> > const &rho_u_M,
@@ -267,17 +277,22 @@ calculate_flux(Tensor<2,dim,VectorizedArray<value_type> > const &momentum_flux_M
                VectorizedArray<value_type> const                &lambda,
                Tensor<1,dim,VectorizedArray<value_type> > const &normal)
 {
-  Tensor<2,dim,VectorizedArray<value_type> > average_flux =
-    make_vectorized_array<value_type>(0.5) * (momentum_flux_M + momentum_flux_P);
-
-  return average_flux * normal + 0.5 * lambda * (rho_u_M - rho_u_P);
+  Tensor<1,dim,VectorizedArray<value_type> > out;
+  for (unsigned int d=0; d<dim; ++d)
+    {
+      VectorizedArray<value_type> sum = VectorizedArray<value_type>();
+      for (unsigned int e=0; e<dim; ++e)
+        sum += (momentum_flux_M[d][e] + momentum_flux_P[d][e]) * normal[e];
+      out[d] = 0.5 * (sum + lambda * (rho_u_M[d] - rho_u_P[d]));
+    }
+  return out;
 }
 
 /*
  *  This function calculates the Lax-Friedrichs flux for scalar quantities (density/energy)
  */
 template<int dim, typename value_type>
-inline VectorizedArray<value_type>
+inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
 calculate_flux(Tensor<1,dim,VectorizedArray<value_type> > const &flux_M,
                Tensor<1,dim,VectorizedArray<value_type> > const &flux_P,
                VectorizedArray<value_type> const                &value_M,
@@ -295,7 +310,7 @@ calculate_flux(Tensor<1,dim,VectorizedArray<value_type> > const &flux_M,
  *  lambda = max( |u_M| + sqrt(|gamma * p_M / rho_M|) , |u_P| + sqrt(|gamma * p_P / rho_P|) )
  */
 template<int dim, typename value_type>
-inline VectorizedArray<value_type>
+inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
 calculate_lambda(VectorizedArray<value_type> const                &rho_m,
                  VectorizedArray<value_type> const                &rho_p,
                  Tensor<1,dim,VectorizedArray<value_type> > const &u_m,
@@ -1431,7 +1446,6 @@ private:
 
         // CONVECTIVE TERM
         scalar p = calculate_pressure(rho_u, u, rho_E, gamma);
-        symmetric_tensor I = unit_symmetric_tensor<dim,scalar>();
         // CONVECTIVE TERM
 
         // calculate flux momentum
@@ -1442,9 +1456,11 @@ private:
         vector grad_E = calculate_grad_E(rho_inv, rho_E, grad_rho, grad_rho_E);
         vector grad_T = calculate_grad_T(grad_E, u, grad_u, gamma, R);
         vector flux_energy = tau * u + lambda * grad_T;
+        for (unsigned int d=0; d<dim; ++d)
+          tau[d][d] -= p;
 
         fe_eval_density.submit_gradient(-rho_u /*CONV*/,q);
-        fe_eval_momentum.submit_gradient (-(outer_product(rho_u,u) /*CONV*/ + p*I) + tau /*VIS*/, q);
+        fe_eval_momentum.submit_gradient (-(outer_product(rho_u,u) /*CONV*/) + tau /*VIS*/, q);
         fe_eval_energy.submit_gradient (-(rho_E + p) * u /*CONV*/ + flux_energy /*VIS*/, q);
       }
 
@@ -1584,9 +1600,12 @@ private:
         scalar flux_density = calculate_flux(rho_u_M,rho_u_P,rho_M,rho_P,lambda,normal);
 
         // flux momentum
-        symmetric_tensor I = unit_symmetric_tensor<dim,scalar>();
-        tensor momentum_flux_M = outer_product(rho_u_M,u_M) + p_M*I;
-        tensor momentum_flux_P = outer_product(rho_u_P,u_P) + p_P*I;
+        tensor momentum_flux_M = outer_product(rho_u_M,u_M);
+        for (unsigned int d=0; d<dim; ++d)
+          momentum_flux_M[d][d] += p_M;
+        tensor momentum_flux_P = outer_product(rho_u_P,u_P);
+        for (unsigned int d=0; d<dim; ++d)
+          momentum_flux_P[d][d] += p_P;
         vector flux_momentum = calculate_flux(momentum_flux_M,momentum_flux_P,rho_u_M,rho_u_P,lambda,normal);
 
         // flux energy
@@ -1784,9 +1803,12 @@ private:
         scalar flux_density = calculate_flux(rho_u_M,rho_u_P,rho_M,rho_P,lambda,normal);
 
         // flux momentum
-        symmetric_tensor I = unit_symmetric_tensor<dim,scalar>();
-        tensor momentum_flux_M = outer_product(rho_u_M,u_M) + p_M * I;
-        tensor momentum_flux_P = outer_product(rho_u_P,u_P) + p_P * I;
+        tensor momentum_flux_M = outer_product(rho_u_M,u_M);
+        for (unsigned int d=0; d<dim; ++d)
+          momentum_flux_M[d][d] += p_M;
+        tensor momentum_flux_P = outer_product(rho_u_P,u_P);
+        for (unsigned int d=0; d<dim; ++d)
+          momentum_flux_P[d][d] += p_P;
         vector flux_momentum = calculate_flux(momentum_flux_M,momentum_flux_P,rho_u_M,rho_u_P,lambda,normal);
 
         // flux energy
