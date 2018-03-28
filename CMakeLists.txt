@@ -46,7 +46,7 @@ INCLUDE_DIRECTORIES(include)
 
 PROJECT(indexa)
 
-ADD_LIBRARY(indexa SHARED  ${TARGET_SRC})
+ADD_LIBRARY(indexa  ${TARGET_SRC})
 
 
 # Define custom targets to easily switch the build type:
@@ -66,6 +66,6 @@ DEAL_II_SETUP_TARGET(indexa)
 
 ADD_SUBDIRECTORY(applications)
 
-ADD_SUBDIRECTORY(xwall_applications)
+#ADD_SUBDIRECTORY(xwall_applications)
 
 MESSAGE("====================================================")
