@@ -8,7 +8,6 @@
 
 #include <deal.II/lac/parallel_vector.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
-#include <deal.II/base/symmetric_tensor.h>
 
 #include "../include/functionalities/evaluate_functions.h"
 #include "operators/interior_penalty_parameter.h"
@@ -559,7 +558,6 @@ public:
   typedef VectorizedArray<value_type> scalar;
   typedef Tensor<1,dim,VectorizedArray<value_type> > vector;
   typedef Tensor<2,dim,VectorizedArray<value_type> > tensor;
-  typedef SymmetricTensor<2,dim,VectorizedArray<value_type> > symmetric_tensor;
   typedef Point<dim,VectorizedArray<value_type> > point;
 
   void initialize(MatrixFree<dim,value_type> const  &mf_data,
@@ -616,11 +614,13 @@ private:
         vector rho_u = fe_eval_momentum.get_value(q);
         scalar rho_E = fe_eval_energy.get_value(q);
         vector u = rho_inv * rho_u;
+        tensor convective_flux = outer_product(rho_u,u);
         scalar p = calculate_pressure(rho_u, u, rho_E, gamma);
-        symmetric_tensor I = unit_symmetric_tensor<dim,scalar>();
+        for(unsigned int d=0; d<dim; ++d)
+          convective_flux[d][d] += p;
 
         fe_eval_density.submit_gradient(-rho_u,q);
-        fe_eval_momentum.submit_gradient(-(outer_product(rho_u,u) + p*I), q);
+        fe_eval_momentum.submit_gradient(-convective_flux, q);
         fe_eval_energy.submit_gradient(-(rho_E + p) * u, q);
       }
 
@@ -692,9 +692,14 @@ private:
         scalar flux_density = calculate_flux(rho_u_M,rho_u_P,rho_M,rho_P,lambda,normal);
 
         // flux momentum
-        symmetric_tensor I = unit_symmetric_tensor<dim,scalar>();
-        tensor momentum_flux_M = outer_product(rho_u_M,u_M) + p_M*I;
-        tensor momentum_flux_P = outer_product(rho_u_P,u_P) + p_P*I;
+        tensor momentum_flux_M = outer_product(rho_u_M,u_M);
+        for (unsigned int d=0; d<dim; ++d)
+          momentum_flux_M[d][d] += p_M;
+
+        tensor momentum_flux_P = outer_product(rho_u_P,u_P);
+        for (unsigned int d=0; d<dim; ++d)
+          momentum_flux_P[d][d] += p_P;
+
         vector flux_momentum = calculate_flux(momentum_flux_M,momentum_flux_P,rho_u_M,rho_u_P,lambda,normal);
 
         // flux energy
@@ -841,9 +846,14 @@ private:
         scalar flux_density = calculate_flux(rho_u_M,rho_u_P,rho_M,rho_P,lambda,normal);
 
         // flux momentum
-        symmetric_tensor I = unit_symmetric_tensor<dim,scalar>();
-        tensor momentum_flux_M = outer_product(rho_u_M,u_M) + p_M * I;
-        tensor momentum_flux_P = outer_product(rho_u_P,u_P) + p_P * I;
+        tensor momentum_flux_M = outer_product(rho_u_M,u_M);
+        for (unsigned int d=0; d<dim; ++d)
+          momentum_flux_M[d][d] += p_M;
+
+        tensor momentum_flux_P = outer_product(rho_u_P,u_P);
+        for (unsigned int d=0; d<dim; ++d)
+          momentum_flux_P[d][d] += p_P;
+
         vector flux_momentum = calculate_flux(momentum_flux_M,momentum_flux_P,rho_u_M,rho_u_P,lambda,normal);
 
         // flux energy
@@ -918,7 +928,6 @@ public:
   typedef VectorizedArray<value_type> scalar;
   typedef Tensor<1,dim,VectorizedArray<value_type> > vector;
   typedef Tensor<2,dim,VectorizedArray<value_type> > tensor;
-  typedef SymmetricTensor<2,dim,VectorizedArray<value_type> > symmetric_tensor;
   typedef Point<dim,VectorizedArray<value_type> > point;
 
   void initialize(Mapping<dim> const               &mapping,
@@ -1373,7 +1382,6 @@ public:
   typedef VectorizedArray<value_type> scalar;
   typedef Tensor<1,dim,VectorizedArray<value_type> > vector;
   typedef Tensor<2,dim,VectorizedArray<value_type> > tensor;
-  typedef SymmetricTensor<2,dim,VectorizedArray<value_type> > symmetric_tensor;
   typedef Point<dim,VectorizedArray<value_type> > point;
 
   void initialize(Mapping<dim> const               &mapping,
@@ -1445,7 +1453,10 @@ private:
         vector grad_rho_E = fe_eval_energy.get_gradient(q);
 
         // CONVECTIVE TERM
+        tensor convective_flux = outer_product(rho_u,u);
         scalar p = calculate_pressure(rho_u, u, rho_E, gamma);
+        for(unsigned int d=0; d<dim; ++d)
+          convective_flux[d][d] += p;
         // CONVECTIVE TERM
 
         // calculate flux momentum
@@ -1456,11 +1467,9 @@ private:
         vector grad_E = calculate_grad_E(rho_inv, rho_E, grad_rho, grad_rho_E);
         vector grad_T = calculate_grad_T(grad_E, u, grad_u, gamma, R);
         vector flux_energy = tau * u + lambda * grad_T;
-        for (unsigned int d=0; d<dim; ++d)
-          tau[d][d] -= p;
 
         fe_eval_density.submit_gradient(-rho_u /*CONV*/,q);
-        fe_eval_momentum.submit_gradient (-(outer_product(rho_u,u) /*CONV*/) + tau /*VIS*/, q);
+        fe_eval_momentum.submit_gradient (-convective_flux /*CONV*/ + tau /*VIS*/, q);
         fe_eval_energy.submit_gradient (-(rho_E + p) * u /*CONV*/ + flux_energy /*VIS*/, q);
       }
 
@@ -1603,9 +1612,11 @@ private:
         tensor momentum_flux_M = outer_product(rho_u_M,u_M);
         for (unsigned int d=0; d<dim; ++d)
           momentum_flux_M[d][d] += p_M;
+
         tensor momentum_flux_P = outer_product(rho_u_P,u_P);
         for (unsigned int d=0; d<dim; ++d)
           momentum_flux_P[d][d] += p_P;
+
         vector flux_momentum = calculate_flux(momentum_flux_M,momentum_flux_P,rho_u_M,rho_u_P,lambda,normal);
 
         // flux energy
@@ -1806,9 +1817,11 @@ private:
         tensor momentum_flux_M = outer_product(rho_u_M,u_M);
         for (unsigned int d=0; d<dim; ++d)
           momentum_flux_M[d][d] += p_M;
+
         tensor momentum_flux_P = outer_product(rho_u_P,u_P);
         for (unsigned int d=0; d<dim; ++d)
           momentum_flux_P[d][d] += p_P;
+
         vector flux_momentum = calculate_flux(momentum_flux_M,momentum_flux_P,rho_u_M,rho_u_P,lambda,normal);
 
         // flux energy
