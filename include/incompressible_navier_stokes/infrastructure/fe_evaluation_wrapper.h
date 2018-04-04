@@ -920,7 +920,7 @@ public:
   unsigned int std_dofs_per_cell;
   unsigned int dofs_per_cell;
   //this is the maximum value of dofs per cell occurring and can be used e.g. to define vector lengths
-  static const unsigned int tensor_dofs_per_cell = Utilities::fixed_int_power<fe_degree+1,dim>::value + Utilities::fixed_int_power<fe_degree_xwall+1,dim>::value;
+  static const unsigned int tensor_dofs_per_cell = Utilities::pow(fe_degree+1,dim) + Utilities::pow(fe_degree_xwall+1,dim);
   unsigned int n_q_points;
   bool enriched;
   unsigned int quad_type;
@@ -1657,7 +1657,7 @@ public:
   unsigned int std_dofs_per_cell;
   unsigned int dofs_per_cell;
   //this is the maximum value of dofs per cell occurring and can be used e.g. to define vector lengths
-  static const unsigned int tensor_dofs_per_cell = Utilities::fixed_int_power<fe_degree+1,dim>::value + Utilities::fixed_int_power<fe_degree_xwall+1,dim>::value;
+  static const unsigned int tensor_dofs_per_cell = Utilities::pow(fe_degree+1,dim) + Utilities::pow(fe_degree_xwall+1,dim);
   unsigned int n_q_points;
   bool enriched;
   unsigned int quad_type;

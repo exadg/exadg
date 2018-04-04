@@ -429,15 +429,15 @@ public:
   void initialize_viscous_coefficients()
   {
     this->viscous_coefficient_cell.reinit(this->data->n_macro_cells(),
-                                          Utilities::fixed_int_power<n_actual_q_points_vel_linear,dim>::value);
+                                          Utilities::pow(n_actual_q_points_vel_linear,dim));
     this->viscous_coefficient_cell.fill(make_vectorized_array<Number>(const_viscosity));
 
     this->viscous_coefficient_face.reinit(this->data->n_macro_inner_faces()+this->data->n_macro_boundary_faces(),
-                                          Utilities::fixed_int_power<n_actual_q_points_vel_linear,dim-1>::value);
+                                          Utilities::pow(n_actual_q_points_vel_linear,dim-1));
     this->viscous_coefficient_face.fill(make_vectorized_array<Number>(const_viscosity));
 
     this->viscous_coefficient_face_neighbor.reinit(this->data->n_macro_inner_faces(),
-                                                   Utilities::fixed_int_power<n_actual_q_points_vel_linear,dim-1>::value);
+                                                   Utilities::pow(n_actual_q_points_vel_linear,dim-1));
     this->viscous_coefficient_face_neighbor.fill(make_vectorized_array<Number>(const_viscosity));
 
     // TODO: currently, the viscosity dof vector is initialized here

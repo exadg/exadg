@@ -398,7 +398,7 @@ initialize_boundary_descriptor_laplace()
        it != boundary_descriptor_pressure->neumann_bc.end(); ++it)
   {
     std::shared_ptr<Function<dim> > zero_function;
-    zero_function.reset(new ZeroFunction<dim>(1));
+    zero_function.reset(new Functions::ZeroFunction<dim>(1));
     boundary_descriptor_laplace->neumann.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
       (it->first,zero_function));
   }
@@ -566,14 +566,14 @@ create_dofs()
 {
   // enumerate degrees of freedom
   dof_handler_u.distribute_dofs(*fe_u);
-  dof_handler_u.distribute_mg_dofs(*fe_u);
+  dof_handler_u.distribute_mg_dofs();
   dof_handler_p.distribute_dofs(fe_p);
-  dof_handler_p.distribute_mg_dofs(fe_p);
+  dof_handler_p.distribute_mg_dofs();
   dof_handler_u_scalar.distribute_dofs(fe_u_scalar);
-  dof_handler_u_scalar.distribute_mg_dofs(fe_u_scalar); // probably, we don't need this
+  dof_handler_u_scalar.distribute_mg_dofs(); // probably, we don't need this
 
-  unsigned int ndofs_per_cell_velocity = Utilities::fixed_int_power<fe_degree+1,dim>::value*dim;
-  unsigned int ndofs_per_cell_pressure = Utilities::fixed_int_power<fe_degree_p+1,dim>::value;
+  unsigned int ndofs_per_cell_velocity = Utilities::pow(fe_degree+1,dim)*dim;
+  unsigned int ndofs_per_cell_pressure = Utilities::pow(fe_degree_p+1,dim);
 
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 

@@ -485,7 +485,7 @@ void LaplaceOperator<dim,degree,Number>::reinit (const DoFHandler<dim>          
   // boundary conditions
   if (is_feq && level == numbers::invalid_unsigned_int)
   {
-    ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
+    Functions::ZeroFunction<dim> zero_function(dof_handler.get_fe().n_components());
     typename FunctionMap<dim>::type dirichlet_boundary;
     for (typename std::map<types::boundary_id, std::shared_ptr<Function<dim> > >::const_iterator it =
            operator_data.bc->dirichlet.begin();

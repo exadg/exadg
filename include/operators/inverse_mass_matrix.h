@@ -24,7 +24,7 @@ struct InverseMassMatrixData
                         const unsigned int quad_index = 0)
     :
     fe_eval(1, FEEvaluation<dim,fe_degree,fe_degree+1,n_components,Number>(data,fe_index,quad_index)),
-    coefficients(Utilities::fixed_int_power<fe_degree+1,dim>::value),
+    coefficients(Utilities::pow(fe_degree+1,dim)),
     inverse(fe_eval[0])
   {}
 

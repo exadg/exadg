@@ -99,7 +99,7 @@ public:
     // convert value_type --> Operator::value_type, e.g., double --> float, but only if necessary
     parallel::distributed::Vector<typename Operator::value_type> vector_multigrid_type_copy;
     parallel::distributed::Vector<typename Operator::value_type> const *vector_multigrid_type_ptr;
-    if (types_are_equal<typename Operator::value_type, value_type>::value)
+    if (std::is_same<typename Operator::value_type, value_type>::value)
     {
       vector_multigrid_type_ptr = reinterpret_cast<parallel::distributed::Vector<typename Operator::value_type> const*>(&vector_linearization);
     }
