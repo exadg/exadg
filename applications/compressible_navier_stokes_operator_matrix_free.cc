@@ -26,6 +26,10 @@
 
 #include "../include/functionalities/print_general_infos.h"
 
+#ifdef LIKWID_PERFMON
+#include <likwid.h>
+#endif
+
 // SPECIFY THE TEST CASE THAT HAS TO BE SOLVED
 
 // EULER EQUATIONS
@@ -47,10 +51,10 @@
 
 // set the polynomial degree k of the shape functions
 unsigned int const FE_DEGREE_MIN = 1;
-unsigned int const FE_DEGREE_MAX = 1;
+unsigned int const FE_DEGREE_MAX = 15;
 
 // refinement level: l = REFINE_LEVELS[fe_degree-1]
-std::vector REFINE_LEVELS = {
+std::vector<int> REFINE_LEVELS = {
   7, /* k=1 */
   6,
   6, /* k=3 */
@@ -78,17 +82,17 @@ enum class OperatorType{
   ViscousTerm,
   ViscousAndConvectiveTerms,
   InverseMassMatrix,
-  InverseMassMatrixDstOnly,
+  InverseMassMatrixDstDst,
   VectorUpdate,
   EvaluateOperatorExplicit
 };
 
-OperatorType OPERATOR_TYPE = OperatorType::InverseMassMatrixDstOnly; //EvaluateOperatorExplicit; //ViscousAndConvectiveTerms;
+OperatorType OPERATOR_TYPE = OperatorType::ViscousAndConvectiveTerms; //EvaluateOperatorExplicit; //ViscousAndConvectiveTerms;
 
 // number of repetitions used to determine the average/minimum wall time required
 // to compute the matrix-vector product
 unsigned int const N_REPETITIONS_INNER = 100; // take the average of inner repetitions
-unsigned int const N_REPETITIONS_OUTER = 2;   // take the minimum of outer repetitions
+unsigned int const N_REPETITIONS_OUTER = 1;   // take the minimum of outer repetitions
 
 // global variable used to store the wall times for different polynomial degrees
 std::vector<std::pair<unsigned int, double> > wall_times;
@@ -224,6 +228,8 @@ apply_operator()
   // initialize vectors
   comp_navier_stokes_operator->initialize_dof_vector(src);
   comp_navier_stokes_operator->initialize_dof_vector(dst);
+  src = 1.0;
+  dst = 1.0;
 
   // Timer and wall times
   Timer timer;
@@ -238,6 +244,10 @@ apply_operator()
     {
       timer.restart();
 
+#ifdef LIKWID_PERFMON
+      LIKWID_MARKER_START(("compressible_deg_" + std::to_string(fe_degree)).c_str());
+#endif
+
       if(OPERATOR_TYPE == OperatorType::ConvectiveTerm)
         comp_navier_stokes_operator->evaluate_convective(dst,src,0.0);
       else if(OPERATOR_TYPE == OperatorType::ViscousTerm)
@@ -246,7 +256,7 @@ apply_operator()
         comp_navier_stokes_operator->evaluate_convective_and_viscous(dst,src,0.0);
       else if(OPERATOR_TYPE == OperatorType::InverseMassMatrix)
         comp_navier_stokes_operator->apply_inverse_mass(dst,src);
-      else if(OPERATOR_TYPE == OperatorType::InverseMassMatrixDstOnly)
+      else if(OPERATOR_TYPE == OperatorType::InverseMassMatrixDstDst)
         comp_navier_stokes_operator->apply_inverse_mass(dst,dst);
       else if(OPERATOR_TYPE == OperatorType::VectorUpdate)
         dst.sadd(2.0,1.0,src);
@@ -254,6 +264,10 @@ apply_operator()
         comp_navier_stokes_operator->evaluate(dst,src,0.0);
       else
         AssertThrow(false, ExcMessage("Specified operator type not implemented"));
+
+#ifdef LIKWID_PERFMON
+      LIKWID_MARKER_STOP(("compressible_deg_" + std::to_string(fe_degree)).c_str());
+#endif
 
       current_wall_time += timer.wall_time();
     }
@@ -297,7 +311,7 @@ void print_wall_times(std::vector<std::pair<unsigned int, double> > const &wall_
                                         "ViscousTerm",
                                         "ViscousAndConvectiveTerms",
                                         "InverseMassMatrix",
-                                        "InverseMassMatrixOnly",
+                                        "InverseMassMatrixDstDst",
                                         "VectorUpdate",
                                         "EvaluateOperatorExplicit" };
 
@@ -360,13 +374,13 @@ public:
    */
 
   // standard quadrature
-  static const unsigned int n_q_points_conv = fe_degree+1;
+//  static const unsigned int n_q_points_conv = fe_degree+1;
 
   // 3/2 dealiasing rule
 //  static const unsigned int n_q_points_conv = fe_degree+(fe_degree+2)/2;
 
   // 2k dealiasing rule
-//  static const unsigned int n_q_points_conv = 2*fe_degree+1;
+  static const unsigned int n_q_points_conv = 2*fe_degree+1;
 
   /*
    *  Select the quadrature formula manually for viscous term
@@ -392,6 +406,10 @@ public:
 
 int main (int argc, char** argv)
 {
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_INIT;
+#endif
+
   try
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
@@ -434,5 +452,9 @@ int main (int argc, char** argv)
               << std::endl;
     return 1;
   }
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_CLOSE;
+#endif
+
   return 0;
 }
