@@ -45,8 +45,8 @@ const unsigned int REFINE_STEPS_SPACE_MAX = 4;
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
 const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
-enum class MeshType{ Cartesian, Unstructured };
-const MeshType MESH_TYPE = MeshType::Cartesian;
+enum class MeshType{ Cartesian, Curvilinear };
+const MeshType MESH_TYPE = MeshType::Curvilinear;
 
 // only relevant for Cartesian mesh
 const unsigned int N_CELLS_1D_COARSE_GRID = 1;
@@ -102,7 +102,7 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   temporal_discretization = TemporalDiscretization::ExplRK3Stage7Reg2; //ExplRK; //SSPRK; //ExplRK4Stage5Reg3C; //ExplRK3Stage7Reg2;
   order_time_integrator = 3;
   stages = 8;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFLAndDiffusion; //ConstTimeStepUserSpecified;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFLAndDiffusion;
   time_step_size = 1.0e-3;
   max_velocity = MAX_VELOCITY;
 
@@ -116,12 +116,12 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   // Kennedy et al.:
   // LowStorageRK3Stage3Reg2: CFL_crit = 0.3 - 0.4, costs = stages / CFL =  7.5 - 10
   // LowStorageRK3Stage4Reg2: CFL_crit = 0.4 - 0.5, costs = stages / CFL =  8 - 10
-  // LowStorageRK4Stage5Reg2: CFL_crit = 0.725 - 0.75, costs = stages/ CFL =  6.7 - 6.9
+  // LowStorageRK4Stage5Reg2: CFL_crit = 0.725 - 0.75, costs = stages / CFL =  6.7 - 6.9
   // LowStorageRK4Stage5Reg3: CFL_crit = 0.7 - 0.725, costs = stages / CFL =  6.9 - 7.1
   // LowStorageRK5Stage9Reg2: CFL_crit = 0.8 - 0.9, costs = stages / CFL =  10  - 11.3
 
   // Toulorge & Desmet: 3rd order scheme with 7 stages currently the most efficient scheme
-  // LowStorageRK3Stage7Reg2: CFL_crit = 1.3 - 1.35, costs = stages/ CFL =  5.2 - 5.4, computational costs = 0.69 CPUh
+  // LowStorageRK3Stage7Reg2: CFL_crit = 1.3 - 1.35, costs = stages / CFL =  5.2 - 5.4, computational costs = 0.69 CPUh
   // LowStorageRK4Stage8Reg2: CFL_crit = 1.25 - 1.3, costs = stages / CFL =  6.2 - 6.4 
 
   // Kubatko et al.:
@@ -237,6 +237,8 @@ double AnalyticalSolution<dim>::value(const Point<dim>    &x,
  /*                                                                                    */
  /**************************************************************************************/
 
+#include "../incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
+
  template<int dim>
  void create_grid_and_set_boundary_conditions(
    parallel::distributed::Triangulation<dim>                &triangulation,
@@ -250,45 +252,24 @@ double AnalyticalSolution<dim>::value(const Point<dim>    &x,
  {
    const double pi = numbers::PI;
    const double left = - pi * L, right = pi * L;
+   std::vector<unsigned int> repetitions({N_CELLS_1D_COARSE_GRID,
+                                          N_CELLS_1D_COARSE_GRID,
+                                          N_CELLS_1D_COARSE_GRID});
+
+   Point<dim> point1(left,left,left), point2(right,right,right);
+   GridGenerator::subdivided_hyper_rectangle(triangulation,repetitions,point1,point2);
    
    if(MESH_TYPE == MeshType::Cartesian)
    {
-     std::vector<unsigned int> repetitions({N_CELLS_1D_COARSE_GRID,
-                                            N_CELLS_1D_COARSE_GRID,
-                                            N_CELLS_1D_COARSE_GRID});
-
-     Point<dim> point1(left,left,left), point2(right,right,right);
-     GridGenerator::subdivided_hyper_rectangle(triangulation,repetitions,point1,point2);
+     // do nothing
    }
-   else if(MESH_TYPE == MeshType::Unstructured)
+   else if(MESH_TYPE == MeshType::Curvilinear)
    {
-     // Complex Geometry
-     Triangulation<dim> tria1, tria2;
-     const double radius = (right-left)*0.25;
-     const double width = right-left;
-     GridGenerator::hyper_shell(tria1, Point<dim>(), radius, 0.5*width*std::sqrt(dim), 2*dim);
-     GridGenerator::hyper_ball(tria2, Point<dim>(), radius);
-     GridGenerator::merge_triangulations(tria1, tria2, triangulation);
-     triangulation.set_all_manifold_ids(0);
-     for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin();cell != triangulation.end(); ++cell)
-     {
-       for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
-       {
-         bool face_at_sphere_boundary = true;
-         for (unsigned int v=0; v<GeometryInfo<dim-1>::vertices_per_cell; ++v)
-         {
-           if (std::abs(cell->face(f)->vertex(v).norm()-radius) > 1e-12)
-             face_at_sphere_boundary = false;
-         }
-         if (face_at_sphere_boundary)
-         {
-           cell->face(f)->set_all_manifold_ids(1);
-         }
-       }
-     }
-     static const SphericalManifold<dim> spherical_manifold;
-     triangulation.set_manifold(1, spherical_manifold);
-     triangulation.set_boundary(0);
+     triangulation.set_all_manifold_ids(1);
+     double const deformation = 0.5;
+     unsigned const frequency = 2;
+     static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
+     triangulation.set_manifold(1, manifold);
    }
 
    // set boundary indicators
