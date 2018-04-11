@@ -1412,6 +1412,9 @@ public:
     this->eval_time = evaluation_time;
 
     data->loop(&This::cell_loop, &This::face_loop, &This::boundary_face_loop, this, dst, src);
+
+    // perform cell integrals only for performance measurements
+//    data->cell_loop(&This::cell_loop, this, dst, src);
   }
 
 private:
@@ -1844,6 +1847,7 @@ private:
       fe_eval_energy.integrate_scatter(true,true,dst);
     }
   }
+
 
   MatrixFree<dim,value_type> const * data;
   CombinedOperatorData<dim> operator_data;

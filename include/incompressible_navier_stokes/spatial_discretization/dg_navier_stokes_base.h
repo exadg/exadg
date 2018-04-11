@@ -96,7 +96,7 @@ public:
     fe_u(new FESystem<dim>(FE_DGQ<dim>(fe_degree),dim)),
     fe_p(fe_degree_p),
     fe_u_scalar(fe_degree),
-    mapping(fe_degree <= 10 ? fe_degree : 10), //TODO
+    mapping(fe_degree), //mapping(fe_degree <= 10 ? fe_degree : 10), //TODO
     dof_handler_u(triangulation),
     dof_handler_p(triangulation),
     dof_handler_u_scalar(triangulation),

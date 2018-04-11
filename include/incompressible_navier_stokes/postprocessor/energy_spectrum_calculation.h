@@ -148,7 +148,7 @@ private:
         }
 
         // get tabularized results ...
-        double* kappa; double* E; double* C; double e_physical; double e_spectral;
+        double* kappa; double* E; double* C; double e_physical = 0.0; double e_spectral = 0.0;
         int len = deal_spectrum_wrapper.get_results(kappa, E, C /*unused*/, e_physical, e_spectral);
 
         f << std::endl
