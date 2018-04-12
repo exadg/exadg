@@ -54,11 +54,11 @@ using namespace dealii;
 /**************************************************************************************/
 
 // set the polynomial degree k of the shape functions
-unsigned int const FE_DEGREE_U_MIN = 2;
-unsigned int const FE_DEGREE_U_MAX = 2;
+unsigned int const FE_DEGREE_U_MIN = 1;
+unsigned int const FE_DEGREE_U_MAX = 15;
 
 // refinement level: l = REFINE_LEVELS[fe_degree-1]
-std::vector REFINE_LEVELS = {
+std::vector<int> REFINE_LEVELS = {
   7, /* k=1 */
   6,
   6, /* k=3 */
@@ -81,13 +81,14 @@ enum class OperatorType{
   CoupledNonlinearResidual, // nonlinear residual of coupled system of equations
   CoupledLinearized,        // linearized system of equations for coupled solution approach
   PressurePoissonOperator,  // negative Laplace operator (scalar quantity, pressure)
+  ConvectiveOperator,       // convective term (vectorial quantity, velocity)
   HelmholtzOperator,        // mass + viscous (vectorial quantity, velocity)
   ProjectionOperator,       // mass + divergence penalty + continuity penalty (vectorial quantity, velocity)
   VelocityConvDiffOperator, // mass + convective + viscous (vectorial quantity, velocity)
   InverseMassMatrix         // inverse mass matrix operator (vectorial quantity, velocity)
 };
 
-OperatorType OPERATOR_TYPE = OperatorType::HelmholtzOperator; // CoupledLinearized;
+OperatorType OPERATOR_TYPE = OperatorType::ConvectiveOperator; //HelmholtzOperator; // CoupledLinearized;
 
 // number of repetitions used to determine the average/minimum wall time required
 // to compute the matrix-vector product
@@ -208,14 +209,16 @@ NavierStokesProblem(unsigned int const refine_steps_space)
   // check that the operator type is consistent with the solution approach (coupled vs. splitting)
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    AssertThrow(OPERATOR_TYPE == OperatorType::CoupledNonlinearResidual ||
+    AssertThrow(OPERATOR_TYPE == OperatorType::ConvectiveOperator ||
+                OPERATOR_TYPE == OperatorType::CoupledNonlinearResidual ||
                 OPERATOR_TYPE == OperatorType::CoupledLinearized ||
                 OPERATOR_TYPE == OperatorType::InverseMassMatrix,
                 ExcMessage("Invalid operator specified for coupled solution approach."));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    AssertThrow(OPERATOR_TYPE == OperatorType::PressurePoissonOperator ||
+    AssertThrow(OPERATOR_TYPE == OperatorType::ConvectiveOperator ||
+                OPERATOR_TYPE == OperatorType::PressurePoissonOperator ||
                 OPERATOR_TYPE == OperatorType::HelmholtzOperator ||
                 OPERATOR_TYPE == OperatorType::ProjectionOperator ||
                 OPERATOR_TYPE == OperatorType::InverseMassMatrix,
@@ -223,7 +226,8 @@ NavierStokesProblem(unsigned int const refine_steps_space)
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    AssertThrow(OPERATOR_TYPE == OperatorType::PressurePoissonOperator ||
+    AssertThrow(OPERATOR_TYPE == OperatorType::ConvectiveOperator ||
+                OPERATOR_TYPE == OperatorType::PressurePoissonOperator ||
                 OPERATOR_TYPE == OperatorType::VelocityConvDiffOperator ||
                 OPERATOR_TYPE == OperatorType::ProjectionOperator ||
                 OPERATOR_TYPE == OperatorType::InverseMassMatrix,
@@ -335,10 +339,18 @@ apply_operator()
     // set sum_alphai_ui -> required to evaluate the nonlinear residual
     // in case an unsteady problem is considered
     navier_stokes_operation_coupled->set_sum_alphai_ui(&src1.block(0));
+
+    if(OPERATOR_TYPE == OperatorType::ConvectiveOperator ||
+       OPERATOR_TYPE == OperatorType::InverseMassMatrix)
+    {
+      navier_stokes_operation_coupled->initialize_vector_velocity(src2);
+      navier_stokes_operation_coupled->initialize_vector_velocity(dst2);
+    }
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    if(OPERATOR_TYPE == OperatorType::HelmholtzOperator ||
+    if(OPERATOR_TYPE == OperatorType::ConvectiveOperator ||
+       OPERATOR_TYPE == OperatorType::HelmholtzOperator ||
        OPERATOR_TYPE == OperatorType::ProjectionOperator ||
        OPERATOR_TYPE == OperatorType::InverseMassMatrix)
     {
@@ -359,7 +371,8 @@ apply_operator()
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    if(OPERATOR_TYPE == OperatorType::VelocityConvDiffOperator ||
+    if(OPERATOR_TYPE == OperatorType::ConvectiveOperator ||
+       OPERATOR_TYPE == OperatorType::VelocityConvDiffOperator ||
        OPERATOR_TYPE == OperatorType::ProjectionOperator ||
        OPERATOR_TYPE == OperatorType::InverseMassMatrix)
     {
@@ -403,6 +416,8 @@ apply_operator()
           navier_stokes_operation_coupled->evaluate_nonlinear_residual(dst1,src1);
         else if(OPERATOR_TYPE == OperatorType::CoupledLinearized)
           navier_stokes_operation_coupled->vmult(dst1,src1);
+        else if(OPERATOR_TYPE == OperatorType::ConvectiveOperator)
+          navier_stokes_operation_coupled->evaluate_convective_term(dst2,src2,0.0);
         else if(OPERATOR_TYPE == OperatorType::InverseMassMatrix)
           navier_stokes_operation_coupled->apply_inverse_mass_matrix(dst2,src2);
         else
@@ -412,6 +427,8 @@ apply_operator()
       {
         if(OPERATOR_TYPE == OperatorType::HelmholtzOperator)
           navier_stokes_operation_dual_splitting->apply_helmholtz_operator(dst2,src2);
+        else if(OPERATOR_TYPE == OperatorType::ConvectiveOperator)
+          navier_stokes_operation_dual_splitting->evaluate_convective_term(dst2,src2,0.0);
         else if(OPERATOR_TYPE == OperatorType::ProjectionOperator)
           navier_stokes_operation_dual_splitting->apply_projection_operator(dst2,src2);
         else if(OPERATOR_TYPE == OperatorType::PressurePoissonOperator)
@@ -425,6 +442,8 @@ apply_operator()
       {
         if(OPERATOR_TYPE == OperatorType::VelocityConvDiffOperator)
           navier_stokes_operation_pressure_correction->apply_velocity_conv_diff_operator(dst2,src2,src2);
+        else if(OPERATOR_TYPE == OperatorType::ConvectiveOperator)
+          navier_stokes_operation_dual_splitting->evaluate_convective_term(dst2,src2,0.0);
         else if(OPERATOR_TYPE == OperatorType::ProjectionOperator)
           navier_stokes_operation_pressure_correction->apply_projection_operator(dst2,src2);
         else if(OPERATOR_TYPE == OperatorType::PressurePoissonOperator)
@@ -466,7 +485,8 @@ apply_operator()
 
     fe_degree = fe_degree_u;
   }
-  else if(OPERATOR_TYPE == OperatorType::VelocityConvDiffOperator ||
+  else if(OPERATOR_TYPE == OperatorType::ConvectiveOperator ||
+          OPERATOR_TYPE == OperatorType::VelocityConvDiffOperator ||
           OPERATOR_TYPE == OperatorType::HelmholtzOperator ||
           OPERATOR_TYPE == OperatorType::ProjectionOperator ||
           OPERATOR_TYPE == OperatorType::InverseMassMatrix)
@@ -518,6 +538,7 @@ void print_wall_times(std::vector<std::pair<unsigned int, double> > const &wall_
     std::string str_operator_type[] = {"CoupledNonlinearResidual",
                                       "CoupledLinearized",
                                       "PressurePoissonOperator",
+                                      "ConvectiveOperator",
                                       "HelmholtzOperator",
                                       "ProjectionOperator",
                                       "VelocityConvDiffOperator",

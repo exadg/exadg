@@ -75,13 +75,13 @@ enum class EnergyBoundaryVariable
 
 /*
  *  Temporal discretization method:
- *  ExplRK: Explicit Runge-Kutta methods (implemented for orders 1-4)
- *  BDF: backward differentiation formulae (implemented for order 1-3)
+ *
+ *    Explicit Runge-Kutta methods
  */
 enum class TemporalDiscretization
 {
   Undefined,
-  ExplRK, // specify order of time integration scheme
+  ExplRK, // specify order of time integration scheme (order = stages)
   ExplRK3Stage4Reg2C,
   ExplRK3Stage7Reg2, // optimized for maximum time step sizes in DG context
   ExplRK4Stage5Reg2C,
