@@ -54,10 +54,10 @@ public:
              DofQuadIndexData const          &dof_quad_index_data_in,
              KineticEnergySpectrumData const &data_in)
   {
+    data = data_in;
+
     if(data.calculate == true)
     {
-      data = data_in;
-
       int local_cells = matrix_free_data_in.n_physical_cells();
       int       cells = local_cells;
       MPI_Allreduce(MPI_IN_PLACE, &cells, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD);

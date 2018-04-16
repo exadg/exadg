@@ -26,7 +26,7 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 3;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 15;
+unsigned int const FE_DEGREE_VELOCITY = 3;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -34,7 +34,7 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 1;
+unsigned int const REFINE_STEPS_SPACE_MIN = 3;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
@@ -52,12 +52,12 @@ const double VISCOSITY = V_0*L/Re;
 const double MAX_VELOCITY = V_0;
 const double CHARACTERISTIC_TIME = L/V_0;
 
-std::string OUTPUT_FOLDER = "output/taylor_green_vortex/curvilinear/";
+std::string OUTPUT_FOLDER = "output/taylor_green_vortex/test/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "mesh";//"Re1600_l2_k1514_CFL_0-125_div_conti_penalty";
+std::string OUTPUT_NAME = "test";//"Re1600_l2_k1514_CFL_0-125_div_conti_penalty";
 
 enum class MeshType{ Cartesian, Curvilinear };
-const MeshType MESH_TYPE = MeshType::Curvilinear;
+const MeshType MESH_TYPE = MeshType::Cartesian;
 
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -272,7 +272,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   kinetic_energy_data.viscosity = VISCOSITY;
   kinetic_energy_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
 
-  kinetic_energy_spectrum_data.calculate = false; //true;
+  kinetic_energy_spectrum_data.calculate = true;
   kinetic_energy_spectrum_data.calculate_every_time_steps = 100;
   kinetic_energy_spectrum_data.filename_prefix = OUTPUT_FOLDER + "spectrum";
 
