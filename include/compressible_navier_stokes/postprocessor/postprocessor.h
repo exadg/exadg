@@ -56,6 +56,7 @@ public:
   virtual ~PostProcessor(){}
 
   virtual void setup(DoFHandler<dim> const                             &dof_handler_in,
+                     DoFHandler<dim> const                             &dof_handler_vector_in,
                      DoFHandler<dim> const                             &dof_handler_scalar_in,
                      Mapping<dim> const                                &mapping_in,
                      MatrixFree<dim,double> const                      &matrix_free_data_in,

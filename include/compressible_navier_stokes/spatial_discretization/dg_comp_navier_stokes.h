@@ -65,7 +65,7 @@ public:
     fe(new FESystem<dim>(FE_DGQ<dim>(fe_degree),dim+2)),
     fe_vector(new FESystem<dim>(FE_DGQ<dim>(fe_degree),dim)),
     fe_scalar(fe_degree),
-    mapping(1), //TODO //(fe_degree),
+    mapping(fe_degree),
     dof_handler(triangulation),
     dof_handler_vector(triangulation),
     dof_handler_scalar(triangulation),

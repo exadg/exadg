@@ -269,7 +269,9 @@ apply_operator()
       LIKWID_MARKER_STOP(("compressible_deg_" + std::to_string(fe_degree)).c_str());
 #endif
 
-      current_wall_time += timer.wall_time();
+      Utilities::MPI::MinMaxAvg wall_time = Utilities::MPI::min_max_avg (timer.wall_time(), MPI_COMM_WORLD);
+
+      current_wall_time += wall_time.avg;
     }
 
     // compute average wall time

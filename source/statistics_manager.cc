@@ -17,14 +17,18 @@ StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> &dof_handler_vel
                 (dynamic_cast<const parallel::Triangulation<dim>*>(&dof_handler_velocity.get_triangulation())
                  ->get_communicator()) :
                 MPI_COMM_SELF),
-  number_of_samples(0)
+  number_of_samples(0),
+  write_final_output(true),
+  turb_channel_data(TurbulentChannelData())
 {}
 
 
 template <int dim>
 void StatisticsManager<dim>::setup(const std::function<double(double const &)> &grid_transform,
-                                   const bool                                  &individual_cells_are_stretched)
+                                   TurbulentChannelData const                  &turb_channel_data_in)
 {
+  turb_channel_data = turb_channel_data_in;
+
   // note: this code only works on structured meshes where the faces in
   // y-direction are faces 2 and 3
 
@@ -83,7 +87,7 @@ void StatisticsManager<dim>::setup(const std::function<double(double const &)> &
   y_glob.reserve(n_points_y_glob);
 
   // loop over all cells in y-direction
-  if(individual_cells_are_stretched == true)
+  if(turb_channel_data.cells_are_stretched == true)
   {
     for (unsigned int cell = 0; cell < n_cells_y_dir; cell++)
     {
@@ -226,6 +230,35 @@ void StatisticsManager<dim>::setup(const std::function<double(double const &)> &
   AssertThrow(y_glob.size() == n_points_y_glob, ExcInternalError());
 }
 
+template <int dim>
+void
+StatisticsManager<dim>::evaluate(const parallel::distributed::Vector<double> &velocity,
+                                 double const                                &time,
+                                 unsigned int const                          &time_step_number)
+{
+  // EPSILON: small number which is much smaller than the time step size
+  const double EPSILON = 1.0e-10;
+  if((time > turb_channel_data.sample_start_time-EPSILON) &&
+     (time < turb_channel_data.sample_end_time+EPSILON) &&
+     (time_step_number % turb_channel_data.sample_every_timesteps == 0))
+  {
+    // evaluate statistics
+    this->evaluate(velocity);
+
+    // write intermediate output
+    if(time_step_number % (turb_channel_data.sample_every_timesteps * 100) == 0)
+    {
+      this->write_output(turb_channel_data.filename_prefix, turb_channel_data.viscosity,turb_channel_data.density);
+    }
+  }
+
+  // write final output
+  if((time > turb_channel_data.sample_end_time-EPSILON) && write_final_output)
+  {
+    this->write_output(turb_channel_data.filename_prefix, turb_channel_data.viscosity,turb_channel_data.density);
+    write_final_output = false;
+  }
+}
 
 
 template <int dim>
@@ -252,15 +285,16 @@ StatisticsManager<dim>::evaluate(const std::vector<parallel::distributed::Vector
 template <int dim>
 void
 StatisticsManager<dim>::write_output(const std::string output_prefix,
-                                     const double      viscosity)
+                                     const double      dynamic_viscosity,
+                                     const double      density)
 {
   if(Utilities::MPI::this_mpi_process(communicator)==0)
   {
-    // tau_w = rho * nu * d<u>/dy = rho * nu * (<u>(y2)-<u>(y1))/(y2-y1), where rho = 1
-    double tau_w = viscosity*((vel_glob[0].at(1)-vel_glob[0].at(0))/(double)number_of_samples/(y_glob.at(1)-y_glob.at(0)));
+    // tau_w = mu * d<u>/dy = mu * (<u>(y2)-<u>(y1))/(y2-y1), where mu = rho * nu
+    double tau_w = dynamic_viscosity*((vel_glob[0].at(1)-vel_glob[0].at(0))/(double)number_of_samples/(y_glob.at(1)-y_glob.at(0)));
 
-    // Re_tau = u_tau * delta / nu = sqrt(tau_w) * delta / nu, where delta = 1
-    double Re_tau = sqrt(tau_w) / viscosity;
+    // Re_tau = u_tau * delta / nu = sqrt(tau_w/rho) * delta / (mu/rho), where delta = 1
+    double Re_tau = sqrt(tau_w/density) / (dynamic_viscosity/density);
 
     std::ofstream f;
     f.open((output_prefix + ".flow_statistics").c_str(),std::ios::trunc);

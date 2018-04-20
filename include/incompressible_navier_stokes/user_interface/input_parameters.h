@@ -16,6 +16,7 @@
 #include "../../incompressible_navier_stokes/postprocessor/turbulence_statistics_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_spectrum_data.h"
+#include "../../incompressible_navier_stokes/postprocessor/turbulent_channel_data.h"
 #include "../include/functionalities/print_functions.h"
 #include "../postprocessor/line_plot_data.h"
 #include "../postprocessor/mean_velocity_calculator.h"
@@ -486,53 +487,6 @@ struct MassConservationData
   std::string filename_prefix;
   double reference_length_scale;
 };
-
-// turbulent channel data
-
-struct TurbulentChannelData
-{
-  TurbulentChannelData()
-   :
-   calculate_statistics(false),
-   sample_start_time(0.0),
-   sample_end_time(1.0),
-   sample_every_timesteps(1),
-   viscosity(1.0),
-   filename_prefix("indexa")
-  {}
-
-  void print(ConditionalOStream &pcout)
-  {
-    if(calculate_statistics == true)
-    {
-      pcout << "  Turbulent channel statistics:" << std::endl;
-      print_parameter(pcout,"Calculate statistics",calculate_statistics);
-      print_parameter(pcout,"Sample start time",sample_start_time);
-      print_parameter(pcout,"Sample end time",sample_end_time);
-      print_parameter(pcout,"Sample every timesteps",sample_every_timesteps);
-      print_parameter(pcout,"Viscosity",viscosity);
-      print_parameter(pcout,"Filename prefix",filename_prefix);
-    }
-  }
-
-  // calculate statistics?
-  bool calculate_statistics;
-
-  // start time for sampling
-  double sample_start_time;
-
-  // end time for sampling
-  double sample_end_time;
-
-  // perform sampling every ... timesteps
-  unsigned int sample_every_timesteps;
- 
-  // viscosity
-  double viscosity;
-
-  std::string filename_prefix;
-};
-
 
 // bfs data
 

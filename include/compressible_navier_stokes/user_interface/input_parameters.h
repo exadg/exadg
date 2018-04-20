@@ -12,7 +12,7 @@
 #include "solvers_and_preconditioners/multigrid_input_parameters.h"
 #include "../../incompressible_navier_stokes/postprocessor/lift_and_drag_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/pressure_difference_data.h"
-
+#include "../../incompressible_navier_stokes/postprocessor/turbulent_channel_data.h"
 
 namespace CompNS
 {
@@ -471,6 +471,9 @@ public:
 
     // kinetic energy spectrum
     kinetic_energy_spectrum_data.print(pcout);
+
+    // turbulent channel data
+    turb_ch_data.print(pcout);
   }
 
  
@@ -626,6 +629,9 @@ public:
 
   // kinetic energy spectrum
   KineticEnergySpectrumData kinetic_energy_spectrum_data;
+
+  // turbulent channel
+  TurbulentChannelData turb_ch_data;
 };
 
 }
