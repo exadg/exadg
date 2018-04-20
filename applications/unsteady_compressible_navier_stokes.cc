@@ -37,7 +37,8 @@
 //#include "compressible_navier_stokes_test_cases/steady_shear_flow.h"
 //#include "compressible_navier_stokes_test_cases/manufactured_solution.h"
 //#include "compressible_navier_stokes_test_cases/flow_past_cylinder.h"
-#include "compressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
+//#include "compressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
+#include "compressible_navier_stokes_test_cases/turbulent_channel.h"
 
 using namespace dealii;
 using namespace CompNS;
@@ -154,6 +155,7 @@ setup_postprocessor()
   dof_quad_index_data.quad_index_velocity = comp_navier_stokes_operator->get_quad_index_standard();
 
   postprocessor->setup(comp_navier_stokes_operator->get_dof_handler(),
+                       comp_navier_stokes_operator->get_dof_handler_vector(),
                        comp_navier_stokes_operator->get_dof_handler_scalar(),
                        comp_navier_stokes_operator->get_mapping(),
                        comp_navier_stokes_operator->get_data(),

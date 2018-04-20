@@ -18,7 +18,11 @@ public:
   // initially distributed from [0,1] is mapped to the actual grid. This must match the
   // transformation applied to the triangulation, otherwise the identification of data will fail
   void setup(const std::function<double(double const &)> &grid_tranform,
-             const bool                                  &individual_cells_are_stretched);
+             TurbulentChannelData const                  &turb_channel_data);
+
+  void evaluate(const parallel::distributed::Vector<double> &velocity,
+                double const                                &time,
+                unsigned int const                          &time_step_number);
 
   void evaluate(const parallel::distributed::Vector<double> &velocity);
 
@@ -30,7 +34,8 @@ public:
                       const double                                viscosity);
 
   void write_output(const std::string output_prefix,
-                    const double      viscosity);
+                    const double      dynamic_viscosity,
+                    const double      density);
 
   void reset();
 
@@ -61,6 +66,9 @@ private:
 
   // number of samples
   int number_of_samples;
+
+  bool write_final_output;
+  TurbulentChannelData turb_channel_data;
 };
 
 #endif
