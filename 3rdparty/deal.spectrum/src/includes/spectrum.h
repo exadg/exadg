@@ -189,7 +189,7 @@ public:
        
     void calculate_energy(){
         double scaling = pow(N,dim);
-        double e[2]; double E[2]; double& e_d = e[0]; double& e_s = e[1];
+        double e[2]={0.0}; double E[2]; double& e_d = e[0]; double& e_s = e[1];
         
         for(int i = 0; i < 2 * alloc_local * dim; i++){
             e_d +=  u_real[i]*u_real[i];
