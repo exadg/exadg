@@ -69,7 +69,6 @@ public:
      * Initialize data structures
      */
     void init(){
-        
         // check if already initialized
         if(this->initialized) return;
         this->initialized = true;
@@ -189,50 +188,67 @@ public:
        
     void calculate_energy(){
         double scaling = pow(N,dim);
-        double e[2]; double E[2]; double& e_d = e[0]; double& e_s = e[1];
+        double e_physical = 0.0, e_spectral = 0.0;
         
-        for(int i = 0; i < 2 * alloc_local * dim; i++){
-            e_d +=  u_real[i]*u_real[i];
+        for(int i = 0; i < 2 * alloc_local * dim; i++)
+        {
+          e_physical += u_real[i]*u_real[i];
         }
         
         // scale: integrate cell wise...
-        e_d  /= pow(N, dim);
+        e_physical /= pow(N, dim);
         // ... and make to energy 0.5*u^2
-        e_d  *= 0.5;
+        e_physical *= 0.5;
         
         if(dim==2)
-            for(int j = local_start; j < local_end; j++) 
-                for(int i = 0; i < N; i++)
-                    e_s +=  u_comp2(MIN(i,N-i),j)[0]*u_comp2(MIN(i,N-i),j)[0]
+        {
+          for(int j = local_start; j < local_end; j++)
+          {
+            for(int i = 0; i < N; i++)
+            {
+              e_spectral +=  u_comp2(MIN(i,N-i),j)[0]*u_comp2(MIN(i,N-i),j)[0]
                             +u_comp2(MIN(i,N-i),j)[1]*u_comp2(MIN(i,N-i),j)[1]
                             +v_comp2(MIN(i,N-i),j)[0]*v_comp2(MIN(i,N-i),j)[0]
                             +v_comp2(MIN(i,N-i),j)[1]*v_comp2(MIN(i,N-i),j)[1];
+            }
+          }
+        }
         else if (dim==3)
-            for(int k_ = local_start; k_ < local_end; k_++) 
-                for(int j = 0; j < N; j++)
-                    for(int i = 0; i < N; i++)
-                        e_s += u_comp3(MIN(i,N-i),j,k_)[0]*u_comp3(MIN(i,N-i),j,k_)[0]
+        {
+          for(int k_ = local_start; k_ < local_end; k_++)
+          {
+            for(int j = 0; j < N; j++)
+            {
+              for(int i = 0; i < N; i++)
+              {
+                e_spectral +=  u_comp3(MIN(i,N-i),j,k_)[0]*u_comp3(MIN(i,N-i),j,k_)[0]
                               +u_comp3(MIN(i,N-i),j,k_)[1]*u_comp3(MIN(i,N-i),j,k_)[1]
                               +v_comp3(MIN(i,N-i),j,k_)[0]*v_comp3(MIN(i,N-i),j,k_)[0]
                               +v_comp3(MIN(i,N-i),j,k_)[1]*v_comp3(MIN(i,N-i),j,k_)[1]
                               +w_comp3(MIN(i,N-i),j,k_)[0]*w_comp3(MIN(i,N-i),j,k_)[0]
                               +w_comp3(MIN(i,N-i),j,k_)[1]*w_comp3(MIN(i,N-i),j,k_)[1];
+              }
+            }
+          }
+        }
+        else
+        {
+          AssertThrow(false, ExcMessage("Not implemented."));
+        }
         
         // scale: due to FFT...
-        e_s /= scaling*scaling;
+        e_spectral /= scaling*scaling;
         // ... and make to energy 0.5*u^2
-        e_s *= 0.5;
-        
-        MPI_Reduce(e, E, 2, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-        this->e_d = E[0];
-        this->e_s = E[1];
+        e_spectral *= 0.5;
+
+        MPI_Reduce(&e_physical, &this->e_d, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&e_spectral, &this->e_s, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     } 
     
     /**
      * Perform spectral analysis 
      */
     void calculate_energy_spectrum(){
-
         double scaling = pow(N, dim);
 
         // ... init with zero
@@ -293,7 +309,6 @@ public:
             // ... and make to energy 0.5*u^2
             E[i] *= 0.5;
         }
-
     }
      
     /**
@@ -382,7 +397,6 @@ public:
 
         MPI_File_close(&fh);
         MPI_Type_free(&stype);
-
     }
 
 private:
