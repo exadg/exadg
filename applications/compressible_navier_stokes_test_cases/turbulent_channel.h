@@ -40,8 +40,11 @@ const unsigned int QPOINTS_VIS = QPOINTS_CONV;
 //const unsigned int QPOINTS_VIS = FE_DEGREE + 1;
 
 // set the number of refine levels for spatial convergence tests
-const unsigned int REFINE_STEPS_SPACE_MIN = 2;
-const unsigned int REFINE_STEPS_SPACE_MAX = 2;
+const unsigned int REFINE_STEPS_SPACE_MIN = 3;
+const unsigned int REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
+
+// can only be used for GridStretchType::TransformGridCells, otherwise coarse grid consists of 1 cell
+const unsigned int N_CELLS_1D_COARSE_GRID = 1;
 
 // set the number of refine levels for temporal convergence tests
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
@@ -49,7 +52,7 @@ const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
 std::string OUTPUT_FOLDER = "output_comp_ns/turbulent_channel/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string FILENAME = "test";
+std::string FILENAME = "Re180_l3_k3";
 
 // set problem specific parameters like physical dimensions, etc.
 double const DIMENSIONS_X1 = 2.0*numbers::PI;
@@ -69,12 +72,11 @@ const double C_P = GAMMA/(GAMMA-1.0)*R;
 const double PRANDTL = 0.71; // Pr = mu * c_p / lambda
 const double LAMBDA = DYN_VISCOSITY * C_P / PRANDTL;
 
-// set Ma number -> calculate speed of sound c_0, temperature T_0, pressure p_0
+// set Ma number -> calculate speed of sound c_0, temperature T_0
 const double MACH = 0.1;
-const double MAX_VELOCITY = 22.0;
+const double MAX_VELOCITY =  18.3; //18.3 for Re_tau = 180; //22.0;
 const double SPEED_OF_SOUND = MAX_VELOCITY/MACH;
 const double T_0 = SPEED_OF_SOUND*SPEED_OF_SOUND/GAMMA/R;
-const double p_0 = RHO_0*R*T_0;
 
 // flow-through time based on mean centerline velocity
 const double CHARACTERISTIC_TIME = DIMENSIONS_X1/MAX_VELOCITY;
@@ -89,7 +91,7 @@ double const SAMPLE_END_TIME = END_TIME;
 const double GRID_STRETCH_FAC = 1.8;
 
 enum class GridStretchType{ TransformGridCells, VolumeManifold };
-GridStretchType GRID_STRETCH_TYPE = GridStretchType::VolumeManifold;
+GridStretchType GRID_STRETCH_TYPE = GridStretchType::TransformGridCells;
 
 template<int dim>
 void CompNS::InputParameters<dim>::set_input_parameters()
@@ -116,8 +118,8 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFLAndDiffusion;
   time_step_size = 1.0e-3;
   max_velocity = MAX_VELOCITY;
-  cfl_number = 1.0;
-  diffusion_number = 0.02;
+  cfl_number = 1.9;
+  diffusion_number = 0.17;
   exponent_fe_degree_cfl = 1.5;
   exponent_fe_degree_viscous = 3.0;
 
@@ -134,7 +136,7 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
   calculate_velocity = true; // activate this for kinetic energy calculations (see below)
-  output_data.write_output = true;
+  output_data.write_output = false;
   output_data.write_pressure = true;
   output_data.write_velocity = true;
   output_data.write_temperature = true;
@@ -143,7 +145,7 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   output_data.output_folder = OUTPUT_FOLDER + "vtu/";
   output_data.output_name = FILENAME;
   output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time)/100;
+  output_data.output_interval_time = 1.0;
   output_data.number_of_patches = FE_DEGREE;
 
   output_solver_info_every_timesteps = 1e3;
@@ -190,12 +192,16 @@ public:
     const double tol = 1.e-12;
     AssertThrow(std::abs(p[1])<DIMENSIONS_X2/2.0+tol,ExcMessage("Invalid geometry parameters."));
 
-    double factor = 0.2;
-    double velocity = -MAX_VELOCITY*(pow(p[1],6.0)-1.0)*(1.0+((double)rand()/RAND_MAX-0.5)*factor);
+    double velocity1 = -MAX_VELOCITY*(pow(p[1],6.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*0.5-2./MAX_VELOCITY*std::sin(p[2]*8.));
+    double velocity3 = (pow(p[1],6.0)-1.0)*std::sin(p[0]*8.)*2.;
 
-    double const u1 = velocity;
+    // viscous time step limitations: consider a laminar test case with a large viscosity
+//    double velocity1 =  -MAX_VELOCITY*(pow(p[1],2.0)-1.0);
+//    double velocity3 = 0.0;
+
+    double const u1 = velocity1;
     double const u2 = 0.0;
-    double const u3 = 0.0;
+    double const u3 = velocity3;
     double const rho = RHO_0;
     double const T = T_0;
     double const E = R/(GAMMA-1.0)*T /* e = c_v * T */
@@ -298,8 +304,26 @@ template<int dim>
         coordinates[2] = DIMENSIONS_X3;
 
       // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
-      std::vector<unsigned int> refinements(dim, 1);
+      std::vector<unsigned int> refinements(dim, N_CELLS_1D_COARSE_GRID);
       GridGenerator::subdivided_hyper_rectangle (triangulation, refinements,Point<dim>(),coordinates);
+
+      typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+      for(;cell!=endc;++cell)
+      {
+        for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+        {
+          // x-direction
+          if((std::fabs(cell->face(face_number)->center()(0) - 0.0)< 1e-12))
+            cell->face(face_number)->set_all_boundary_ids (0+10);
+          else if((std::fabs(cell->face(face_number)->center()(0) - DIMENSIONS_X1)< 1e-12))
+            cell->face(face_number)->set_all_boundary_ids (1+10);
+          // z-direction
+          else if((std::fabs(cell->face(face_number)->center()(2) - 0-0)< 1e-12))
+            cell->face(face_number)->set_all_boundary_ids (2+10);
+          else if((std::fabs(cell->face(face_number)->center()(2) - DIMENSIONS_X3)< 1e-12))
+            cell->face(face_number)->set_all_boundary_ids (3+10);
+        }
+      }
     }
     else if (GRID_STRETCH_TYPE == GridStretchType::VolumeManifold)
     {
@@ -310,7 +334,10 @@ template<int dim>
         dimensions[2] = DIMENSIONS_X3;
 
       // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
-      std::vector<unsigned int> refinements(dim, 1);
+      AssertThrow(N_CELLS_1D_COARSE_GRID == 1,
+          ExcMessage("Only N_CELLS_1D_COARSE_GRID=1 possible for curvilinear grid."));
+
+      std::vector<unsigned int> refinements(dim, N_CELLS_1D_COARSE_GRID);
       GridGenerator::subdivided_hyper_rectangle (triangulation, refinements,Point<dim>(-dimensions/2.0),Point<dim>(dimensions/2.0));
 
       // manifold
@@ -323,17 +350,17 @@ template<int dim>
       // apply mesh stretching towards no-slip boundaries in y-direction
       static const ManifoldTurbulentChannel<dim> manifold(dimensions);
       triangulation.set_manifold(manifold_id, manifold);
-    }
 
-    //periodicity in x- and z-direction
-    //add 10 to avoid conflicts with dirichlet boundary, which is 0
-    triangulation.begin()->face(0)->set_all_boundary_ids(0+10);
-    triangulation.begin()->face(1)->set_all_boundary_ids(1+10);
-    //periodicity in z-direction
-    if (dim == 3)
-    {
-      triangulation.begin()->face(4)->set_all_boundary_ids(2+10);
-      triangulation.begin()->face(5)->set_all_boundary_ids(3+10);
+      //periodicity in x- and z-direction
+      //add 10 to avoid conflicts with dirichlet boundary, which is 0
+      triangulation.begin()->face(0)->set_all_boundary_ids(0+10);
+      triangulation.begin()->face(1)->set_all_boundary_ids(1+10);
+      //periodicity in z-direction
+      if (dim == 3)
+      {
+        triangulation.begin()->face(4)->set_all_boundary_ids(2+10);
+        triangulation.begin()->face(5)->set_all_boundary_ids(3+10);
+      }
     }
 
     GridTools::collect_periodic_faces(triangulation, 0+10, 1+10, 0, periodic_faces);
