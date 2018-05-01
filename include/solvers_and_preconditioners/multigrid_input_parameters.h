@@ -31,7 +31,8 @@ enum class MultigridCoarseGridSolver
   PCG_BlockJacobi,
   GMRES_NoPreconditioner,
   GMRES_PointJacobi,
-  GMRES_BlockJacobi
+  GMRES_BlockJacobi,
+  AMG_ML
 };
 
 struct ChebyshevSmootherData

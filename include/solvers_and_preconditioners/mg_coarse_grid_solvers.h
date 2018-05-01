@@ -16,6 +16,45 @@
 #include "preconditioner_base.h"
 #include "solvers_and_preconditioners/jacobi_preconditioner.h"
 
+
+#include <deal.II/meshworker/dof_info.h>
+#include <deal.II/meshworker/integration_info.h>
+#include <deal.II/meshworker/simple.h>
+#include <deal.II/meshworker/loop.h>
+#include <deal.II/lac/dynamic_sparsity_pattern.h>
+#include <deal.II/lac/sparse_matrix.h>
+#include <deal.II/fe/fe_dgq.h>
+
+
+template <int dim, class T, class Number>
+class MeshWorkerWrapper : public MeshWorker::LocalIntegrator<dim,dim,Number>{
+    
+    public:
+        
+        MeshWorkerWrapper(T t) : t(t){
+            
+        }
+    
+    void cell(MeshWorker::DoFInfo<dim,dim,Number> &dinfo,
+          typename MeshWorker::IntegrationInfo<dim> &info) const {
+        t.cell(dinfo, info);
+    }
+
+    void boundary(MeshWorker::DoFInfo<dim,dim,Number> &dinfo,
+                  typename MeshWorker::IntegrationInfo<dim> &info) const{
+        t.boundary(dinfo, info);
+    }
+
+    void face(MeshWorker::DoFInfo<dim,dim,Number> &dinfo1,
+              MeshWorker::DoFInfo<dim,dim,Number> &dinfo2,
+              typename MeshWorker::IntegrationInfo<dim> &info1,
+              typename MeshWorker::IntegrationInfo<dim> &info2) const{ 
+        t.face(dinfo1, dinfo2, info1, info2);
+    }
+    
+    const T& t;
+};
+
 enum class PreconditionerCoarseGridSolver
 {
   None,
@@ -233,5 +272,69 @@ public:
   std::shared_ptr<InverseOperator const> inverse_operator;
 };
 
+template<int DIM, typename Operator>
+class MGCoarseML : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type> >
+{
+public:
+
+  MGCoarseML(Operator const &matrix) :  coarse_matrix (matrix){
+        this->reinit();
+    }
+
+  virtual ~MGCoarseML() { }
+  
+  void reinit(){
+      
+    const DoFHandler<DIM>& dof_handler = coarse_matrix.get_data().get_dof_handler()/*.get_triangulation()*/;
+    FE_DGQ<DIM> fe(dof_handler.get_fe().degree);
+      
+    DynamicSparsityPattern dsp(dof_handler.n_dofs());
+    DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
+    SparsityPattern sparsity_pattern;
+    sparsity_pattern.copy_from(dsp);
+    system_matrix.reinit(sparsity_pattern);
+      
+    {
+        
+        MappingQGeneric<DIM> mapping(dof_handler.get_fe().degree);
+        
+        MeshWorker::IntegrationInfoBox<DIM> info_box;
+        const unsigned int n_gauss_points = dof_handler.get_fe().degree+1;
+        info_box.initialize_gauss_quadrature(n_gauss_points,
+                                             n_gauss_points,
+                                             n_gauss_points);
+        info_box.initialize_update_flags();
+        UpdateFlags update_flags = update_quadrature_points |
+                                   update_values            |
+                                   update_gradients;
+        info_box.add_update_flags(update_flags, true, true, true, true);
+        info_box.initialize(fe, mapping);
+        MeshWorker::DoFInfo<DIM,DIM,double> dof_info(dof_handler);
+        
+        SparseMatrix<double> temp_m; Vector<double> temp_v;
+        MeshWorker::Assembler::SystemSimple<SparseMatrix<double>, Vector<double> > assembler;
+        assembler.initialize(temp_m, temp_v);
+        
+        MeshWorker::integration_loop<DIM, DIM> (
+            dof_handler.begin_active(), dof_handler.end(),
+            dof_info, info_box, MeshWorkerWrapper<DIM, Operator, double>(coarse_matrix), assembler);
+        
+        system_matrix.copy_from(temp_m);
+    }
+    
+  }
+
+  virtual void operator() (const unsigned int                                                  /*level*/,
+                           parallel::distributed::Vector<typename Operator::value_type>       & dst,
+                           const parallel::distributed::Vector<typename Operator::value_type> & src) const{
+      
+      system_matrix.vmult(dst,src);
+      
+  }
+
+private:
+    const Operator &coarse_matrix;
+    SparseMatrix<typename Operator::value_type> system_matrix;
+};
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MGCOARSEGRIDSOLVERS_H_ */

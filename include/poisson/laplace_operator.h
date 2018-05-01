@@ -215,6 +215,168 @@ public:
   {
     return operator_data.laplace_dof_index;
   }
+  
+    void cell(MeshWorker::DoFInfo<dim,dim> &dinfo,
+              typename MeshWorker::IntegrationInfo<dim> &info) const {
+
+        const FEValuesBase<dim> &fe_values = info.fe_values();
+        FullMatrix<double> &local_matrix = dinfo.matrix(0).matrix;
+        const std::vector<double> &JxW = fe_values.get_JxW_values ();
+
+        for (unsigned int point=0; point<fe_values.n_quadrature_points; ++point)
+            for (unsigned int i=0; i<fe_values.dofs_per_cell; ++i)
+                for (unsigned int j=0; j<fe_values.dofs_per_cell; ++j)
+                    local_matrix(i,j) +=  fe_values.shape_grad(i,point) * fe_values.shape_grad(j,point) * JxW[point];
+
+    }
+
+    void boundary(MeshWorker::DoFInfo<dim,dim> &dinfo,
+                  typename MeshWorker::IntegrationInfo<dim> &info) const{
+        
+        types::boundary_id boundary_id = dinfo.face->boundary_id();
+        typename std::map<types::boundary_id,std::shared_ptr<Function<dim> > >::iterator it;
+        it = operator_data.bc->dirichlet.find(boundary_id);
+        if(it != operator_data.bc->dirichlet.end()){
+            const FEValuesBase<dim> &fe_face_values = info.fe_values();
+            FullMatrix<double> &local_matrix = dinfo.matrix(0).matrix;
+
+            const std::vector<double> &JxW = fe_face_values.get_JxW_values ();
+            const std::vector<Tensor<1,dim> > &normals = fe_face_values.get_normal_vectors ();
+
+            double tau =
+                //std::max(penalty_1, penalty_2) * get_penalty_factor();
+                1.0;
+
+            for (unsigned int point=0; point<fe_face_values.n_quadrature_points; ++point){
+                    for (unsigned int i=0; i<fe_face_values.dofs_per_cell; ++i)
+                      for (unsigned int j=0; j<fe_face_values.dofs_per_cell; ++j)
+                        local_matrix(i,j) += 
+                                + 2.0 * fe_face_values.shape_value(i,point) *  fe_face_values.shape_value(j,point) * tau             * JxW[point]
+                                - 1.0 * fe_face_values.shape_grad (i,point) * (fe_face_values.shape_value(j,point) * normals[point]) * JxW[point]
+                                - 1.0 * fe_face_values.shape_value(i,point) * (fe_face_values.shape_grad (j,point) * normals[point]) * JxW[point]
+                                ;
+
+            }
+        }
+
+    }
+
+    void face(MeshWorker::DoFInfo<dim,dim> &dinfo1,
+              MeshWorker::DoFInfo<dim,dim> &dinfo2,
+              typename MeshWorker::IntegrationInfo<dim> &info1,
+              typename MeshWorker::IntegrationInfo<dim> &info2) const{ 
+
+        const FEValuesBase<dim> &fe_face_values_1 = info1.fe_values();
+        const FEValuesBase<dim> &fe_face_values_2 = info2.fe_values();
+        FullMatrix<double> &q1_p1_matrix = dinfo1.matrix(0,false).matrix;
+        FullMatrix<double> &q1_p2_matrix = dinfo1.matrix(0,true).matrix;
+        FullMatrix<double> &q2_p1_matrix = dinfo2.matrix(0,true).matrix;
+        FullMatrix<double> &q2_p2_matrix = dinfo2.matrix(0,false).matrix;
+
+        double penalty_1;
+        double penalty_2;
+
+        {
+            FEValues<dim> fe_values(
+                    fe_face_values_1.get_mapping(), 
+                    fe_face_values_1.get_fe(),
+                    QGauss<dim>(degree+1),
+                    update_JxW_values
+                    );
+            FEFaceValues<dim> fe_face_values(
+                    fe_face_values_1.get_mapping(), 
+                    fe_face_values_1.get_fe(), 
+                    QGauss<dim-1>(degree+1), 
+                    update_JxW_values);
+            fe_values.reinit(dinfo1.cell);
+            double volume = 0;
+            for (unsigned int q=0; q<fe_values.get_quadrature().size(); ++q)
+            volume += fe_values.JxW(q);
+            double surface_area = 0;
+            for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f) {
+                fe_face_values.reinit(dinfo1.cell, f);
+                //const double factor = (cell->at_boundary(f) &&
+                //                       periodic_boundary_ids.find(cell->face(f)->boundary_id()) ==
+                //                       periodic_boundary_ids.end()) ? 1. : 0.5;
+                const double factor = 0.5;
+                for (unsigned int q=0; q<fe_face_values.n_quadrature_points; ++q)
+                    surface_area += fe_face_values.JxW(q) * factor;
+            }
+
+            penalty_1 =  surface_area / volume;
+        }
+
+        {
+            FEValues<dim> fe_values(
+                    fe_face_values_2.get_mapping(), 
+                    fe_face_values_2.get_fe(),
+                    QGauss<dim>(degree+1),
+                    update_JxW_values
+                    );
+            FEFaceValues<dim> fe_face_values(
+                    fe_face_values_2.get_mapping(), 
+                    fe_face_values_2.get_fe(), 
+                    QGauss<dim-1>(degree+1), 
+                    update_JxW_values);
+            fe_values.reinit(dinfo2.cell);
+            double volume = 0;
+            for (unsigned int q=0; q<fe_values.get_quadrature().size(); ++q)
+            volume += fe_values.JxW(q);
+            double surface_area = 0;
+            for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f) {
+                fe_face_values.reinit(dinfo2.cell, f);
+                //const double factor = (cell->at_boundary(f) &&
+                //                       periodic_boundary_ids.find(cell->face(f)->boundary_id()) ==
+                //                       periodic_boundary_ids.end()) ? 1. : 0.5;
+                const double factor = 0.5;
+                for (unsigned int q=0; q<fe_face_values.n_quadrature_points; ++q)
+                    surface_area += fe_face_values.JxW(q) * factor;
+            }
+
+            penalty_2 =  surface_area / volume;
+        }
+
+        const std::vector<double> &JxW = fe_face_values_1.get_JxW_values ();
+        const std::vector<Tensor<1,dim> > &normals = fe_face_values_1.get_normal_vectors ();
+
+        double tau =
+            std::max(penalty_1, penalty_2) * IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
+
+        for (unsigned int point=0; point<fe_face_values_1.n_quadrature_points; ++point){
+                for (unsigned int i=0; i<fe_face_values_1.dofs_per_cell; ++i)
+                  for (unsigned int j=0; j<fe_face_values_1.dofs_per_cell; ++j)
+                    q1_p1_matrix(i,j) += 
+                            +       fe_face_values_1.shape_value(i,point) *  fe_face_values_1.shape_value(j,point) * tau             * JxW[point]
+                            + 0.5 * fe_face_values_1.shape_grad (i,point) * (fe_face_values_1.shape_value(j,point) * normals[point]) * JxW[point]
+                            - 0.5 * fe_face_values_1.shape_value(i,point) * (fe_face_values_1.shape_grad (j,point) * normals[point]) * JxW[point]
+                            ;
+
+                for (unsigned int i=0; i<fe_face_values_1.dofs_per_cell; ++i)
+                  for (unsigned int j=0; j<fe_face_values_2.dofs_per_cell; ++j)
+                    q1_p2_matrix(i,j) += 
+                            -       fe_face_values_1.shape_value(i,point) *  fe_face_values_2.shape_value(j,point) * tau             * JxW[point]
+                            - 0.5 * fe_face_values_1.shape_grad (i,point) * (fe_face_values_2.shape_value(j,point) * normals[point]) * JxW[point]
+                            - 0.5 * fe_face_values_1.shape_value(i,point) * (fe_face_values_2.shape_grad (j,point) * normals[point]) * JxW[point]
+                            ;
+
+                for (unsigned int i=0; i<fe_face_values_2.dofs_per_cell; ++i)
+                  for (unsigned int j=0; j<fe_face_values_1.dofs_per_cell; ++j)
+                    q2_p1_matrix(i,j) += 
+                            -       fe_face_values_2.shape_value(i,point) *  fe_face_values_1.shape_value(j,point) * tau             * JxW[point]
+                            + 0.5 * fe_face_values_2.shape_grad (i,point) * (fe_face_values_1.shape_value(j,point) * normals[point]) * JxW[point]
+                            + 0.5 * fe_face_values_2.shape_value(i,point) * (fe_face_values_1.shape_grad (j,point) * normals[point]) * JxW[point]
+                            ;
+
+                for (unsigned int i=0; i<fe_face_values_2.dofs_per_cell; ++i)
+                  for (unsigned int j=0; j<fe_face_values_2.dofs_per_cell; ++j)
+                    q2_p2_matrix(i,j) += 
+                            +       fe_face_values_2.shape_value(i,point) *  fe_face_values_2.shape_value(j,point) * tau             * JxW[point]
+                            - 0.5 * fe_face_values_2.shape_grad (i,point) * (fe_face_values_2.shape_value(j,point) * normals[point]) * JxW[point]
+                            + 0.5 * fe_face_values_2.shape_value(i,point) * (fe_face_values_2.shape_grad (j,point) * normals[point]) * JxW[point]
+                            ;
+        }
+
+      }
 
 private:
 

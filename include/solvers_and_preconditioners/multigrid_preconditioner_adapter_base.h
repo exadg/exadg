@@ -352,6 +352,11 @@ protected:
         mg_coarse.reset(new MGCoarseGMRES<Operator>(mg_matrices[0],additional_data));
         break;
       }
+      case MultigridCoarseGridSolver::AMG_ML:
+      {
+        mg_coarse.reset(new MGCoarseML<dim,Operator>(mg_matrices[0]));
+        break;
+      }
       default:
       {
         AssertThrow(false, ExcMessage("Unknown coarse-grid solver specified."));
