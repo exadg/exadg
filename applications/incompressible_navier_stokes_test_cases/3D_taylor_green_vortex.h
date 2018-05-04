@@ -59,6 +59,9 @@ std::string OUTPUT_NAME = "test";//"Re1600_l2_k1514_CFL_0-125_div_conti_penalty"
 enum class MeshType{ Cartesian, Curvilinear };
 const MeshType MESH_TYPE = MeshType::Cartesian;
 
+// only relevant for Cartesian mesh
+const unsigned int N_CELLS_1D_COARSE_GRID = 1;
+
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
 {
@@ -397,7 +400,12 @@ void create_grid_and_set_boundary_conditions(
 {
   const double pi = numbers::PI;
   const double left = - pi * L, right = pi * L;
-  GridGenerator::hyper_cube(triangulation,left,right);
+  std::vector<unsigned int> repetitions({N_CELLS_1D_COARSE_GRID,
+                                         N_CELLS_1D_COARSE_GRID,
+                                         N_CELLS_1D_COARSE_GRID});
+
+  Point<dim> point1(left,left,left), point2(right,right,right);
+  GridGenerator::subdivided_hyper_rectangle(triangulation,repetitions,point1,point2);
 
   if(MESH_TYPE == MeshType::Cartesian)
   {
@@ -405,6 +413,9 @@ void create_grid_and_set_boundary_conditions(
   }
   else if(MESH_TYPE == MeshType::Curvilinear)
   {
+    AssertThrow(N_CELLS_1D_COARSE_GRID == 1,
+        ExcMessage("Only N_CELLS_1D_COARSE_GRID=1 possible for curvilinear grid."));
+
     triangulation.set_all_manifold_ids(1);
     double const deformation = 0.5;
     unsigned int const frequency = 2;
