@@ -17,12 +17,12 @@
 
 using namespace dealii;
 
-#include "operators/matrix_operator_base.h"
-#include "operators/interior_penalty_parameter.h"
+#include "./boundary_descriptor_laplace.h"
 
-#include "../poisson/boundary_descriptor_laplace.h"
+#include "../operators/interior_penalty_parameter.h"
+#include "../operators/matrix_operator_base.h"
 
-#include "solvers_and_preconditioners/verify_calculation_of_diagonal.h"
+#include "../solvers_and_preconditioners/verify_calculation_of_diagonal.h"
 
 template<int dim>
 struct LaplaceOperatorData
@@ -243,9 +243,36 @@ public:
             const std::vector<double> &JxW = fe_face_values.get_JxW_values ();
             const std::vector<Tensor<1,dim> > &normals = fe_face_values.get_normal_vectors ();
 
-            double tau =
-                //std::max(penalty_1, penalty_2) * get_penalty_factor();
-                1.0;
+        double penalty;
+
+        {
+            FEValues<dim> fe_values(
+                    fe_face_values.get_mapping(), 
+                    fe_face_values.get_fe(),
+                    QGauss<dim>(degree+1),
+                    update_JxW_values
+                    );
+            FEFaceValues<dim> fe_face_values_(
+                    fe_face_values.get_mapping(), 
+                    fe_face_values.get_fe(), 
+                    QGauss<dim-1>(degree+1), 
+                    update_JxW_values);
+            fe_values.reinit(dinfo.cell);
+            double volume = 0;
+            for (unsigned int q=0; q<fe_values.get_quadrature().size(); ++q)
+            volume += fe_values.JxW(q);
+            double surface_area = 0;
+            for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f) {
+                fe_face_values_.reinit(dinfo.cell, f);
+                const double factor = (dinfo.cell->at_boundary(f) && !dinfo.cell->has_periodic_neighbor(f)) ? 1. : 0.5;
+                for (unsigned int q=0; q<fe_face_values_.n_quadrature_points; ++q)
+                    surface_area += fe_face_values_.JxW(q) * factor;
+            }
+
+            penalty =  surface_area / volume;
+        }
+            
+            double tau = penalty  * IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
 
             for (unsigned int point=0; point<fe_face_values.n_quadrature_points; ++point){
                     for (unsigned int i=0; i<fe_face_values.dofs_per_cell; ++i)
@@ -295,10 +322,7 @@ public:
             double surface_area = 0;
             for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f) {
                 fe_face_values.reinit(dinfo1.cell, f);
-                //const double factor = (cell->at_boundary(f) &&
-                //                       periodic_boundary_ids.find(cell->face(f)->boundary_id()) ==
-                //                       periodic_boundary_ids.end()) ? 1. : 0.5;
-                const double factor = 0.5;
+                const double factor = (dinfo1.cell->at_boundary(f) && !dinfo1.cell->has_periodic_neighbor(f)) ? 1. : 0.5;
                 for (unsigned int q=0; q<fe_face_values.n_quadrature_points; ++q)
                     surface_area += fe_face_values.JxW(q) * factor;
             }
@@ -325,10 +349,7 @@ public:
             double surface_area = 0;
             for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f) {
                 fe_face_values.reinit(dinfo2.cell, f);
-                //const double factor = (cell->at_boundary(f) &&
-                //                       periodic_boundary_ids.find(cell->face(f)->boundary_id()) ==
-                //                       periodic_boundary_ids.end()) ? 1. : 0.5;
-                const double factor = 0.5;
+                const double factor = (dinfo2.cell->at_boundary(f) && !dinfo2.cell->has_periodic_neighbor(f)) ? 1. : 0.5;
                 for (unsigned int q=0; q<fe_face_values.n_quadrature_points; ++q)
                     surface_area += fe_face_values.JxW(q) * factor;
             }
@@ -505,7 +526,7 @@ private:
 #include <deal.II/matrix_free/fe_evaluation.h>
 #include <deal.II/numerics/vector_tools.h>
 
-#include "solvers_and_preconditioners/block_jacobi_matrices.h"
+#include "../solvers_and_preconditioners/block_jacobi_matrices.h"
 
 
 template <int dim, int degree, typename Number>
