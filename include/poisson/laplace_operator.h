@@ -14,6 +14,7 @@
 #include <deal.II/multigrid/mg_matrix.h>
 #include <deal.II/lac/parallel_vector.h>
 #include <deal.II/lac/lapack_full_matrix.h>
+#include <deal.II/meshworker/dof_info.h>
 
 using namespace dealii;
 
@@ -243,36 +244,8 @@ public:
             const std::vector<double> &JxW = fe_face_values.get_JxW_values ();
             const std::vector<Tensor<1,dim> > &normals = fe_face_values.get_normal_vectors ();
 
-        double penalty;
-
-        {
-            FEValues<dim> fe_values(
-                    fe_face_values.get_mapping(), 
-                    fe_face_values.get_fe(),
-                    QGauss<dim>(degree+1),
-                    update_JxW_values
-                    );
-            FEFaceValues<dim> fe_face_values_(
-                    fe_face_values.get_mapping(), 
-                    fe_face_values.get_fe(), 
-                    QGauss<dim-1>(degree+1), 
-                    update_JxW_values);
-            fe_values.reinit(dinfo.cell);
-            double volume = 0;
-            for (unsigned int q=0; q<fe_values.get_quadrature().size(); ++q)
-            volume += fe_values.JxW(q);
-            double surface_area = 0;
-            for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f) {
-                fe_face_values_.reinit(dinfo.cell, f);
-                const double factor = (dinfo.cell->at_boundary(f) && !dinfo.cell->has_periodic_neighbor(f)) ? 1. : 0.5;
-                for (unsigned int q=0; q<fe_face_values_.n_quadrature_points; ++q)
-                    surface_area += fe_face_values_.JxW(q) * factor;
-            }
-
-            penalty =  surface_area / volume;
-        }
-            
-            double tau = penalty  * IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
+            double tau = array_penalty_parameter_nv[dinfo.cell->active_cell_index()] * 
+                IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
 
             for (unsigned int point=0; point<fe_face_values.n_quadrature_points; ++point){
                     for (unsigned int i=0; i<fe_face_values.dofs_per_cell; ++i)
@@ -300,68 +273,13 @@ public:
         FullMatrix<double> &q2_p1_matrix = dinfo2.matrix(0,true).matrix;
         FullMatrix<double> &q2_p2_matrix = dinfo2.matrix(0,false).matrix;
 
-        double penalty_1;
-        double penalty_2;
-
-        {
-            FEValues<dim> fe_values(
-                    fe_face_values_1.get_mapping(), 
-                    fe_face_values_1.get_fe(),
-                    QGauss<dim>(degree+1),
-                    update_JxW_values
-                    );
-            FEFaceValues<dim> fe_face_values(
-                    fe_face_values_1.get_mapping(), 
-                    fe_face_values_1.get_fe(), 
-                    QGauss<dim-1>(degree+1), 
-                    update_JxW_values);
-            fe_values.reinit(dinfo1.cell);
-            double volume = 0;
-            for (unsigned int q=0; q<fe_values.get_quadrature().size(); ++q)
-            volume += fe_values.JxW(q);
-            double surface_area = 0;
-            for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f) {
-                fe_face_values.reinit(dinfo1.cell, f);
-                const double factor = (dinfo1.cell->at_boundary(f) && !dinfo1.cell->has_periodic_neighbor(f)) ? 1. : 0.5;
-                for (unsigned int q=0; q<fe_face_values.n_quadrature_points; ++q)
-                    surface_area += fe_face_values.JxW(q) * factor;
-            }
-
-            penalty_1 =  surface_area / volume;
-        }
-
-        {
-            FEValues<dim> fe_values(
-                    fe_face_values_2.get_mapping(), 
-                    fe_face_values_2.get_fe(),
-                    QGauss<dim>(degree+1),
-                    update_JxW_values
-                    );
-            FEFaceValues<dim> fe_face_values(
-                    fe_face_values_2.get_mapping(), 
-                    fe_face_values_2.get_fe(), 
-                    QGauss<dim-1>(degree+1), 
-                    update_JxW_values);
-            fe_values.reinit(dinfo2.cell);
-            double volume = 0;
-            for (unsigned int q=0; q<fe_values.get_quadrature().size(); ++q)
-            volume += fe_values.JxW(q);
-            double surface_area = 0;
-            for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f) {
-                fe_face_values.reinit(dinfo2.cell, f);
-                const double factor = (dinfo2.cell->at_boundary(f) && !dinfo2.cell->has_periodic_neighbor(f)) ? 1. : 0.5;
-                for (unsigned int q=0; q<fe_face_values.n_quadrature_points; ++q)
-                    surface_area += fe_face_values.JxW(q) * factor;
-            }
-
-            penalty_2 =  surface_area / volume;
-        }
-
         const std::vector<double> &JxW = fe_face_values_1.get_JxW_values ();
         const std::vector<Tensor<1,dim> > &normals = fe_face_values_1.get_normal_vectors ();
 
-        double tau =
-            std::max(penalty_1, penalty_2) * IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
+        double tau = std::max(
+            array_penalty_parameter_nv[dinfo1.cell->active_cell_index()], 
+            array_penalty_parameter_nv[dinfo2.cell->active_cell_index()]
+                ) * IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
 
         for (unsigned int point=0; point<fe_face_values_1.n_quadrature_points; ++point){
                 for (unsigned int i=0; i<fe_face_values_1.dofs_per_cell; ++i)
@@ -508,6 +426,7 @@ private:
   bool needs_mean_value_constraint;
   bool apply_mean_value_constraint_in_matvec;
   AlignedVector<VectorizedArray<Number> > array_penalty_parameter;
+  AlignedVector<Number > array_penalty_parameter_nv;
   mutable parallel::distributed::Vector<Number> tmp_projection_vector;
 
   std::vector<unsigned int> edge_constrained_indices;
@@ -567,6 +486,7 @@ void LaplaceOperator<dim,degree,Number>::reinit (const MatrixFree<dim,Number>   
 //  compute_array_penalty_parameter(mapping);
 
   IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
+                                                       array_penalty_parameter_nv,
                                                        *this->data,
                                                        mapping,
                                                        operator_data.laplace_dof_index);

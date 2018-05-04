@@ -18,13 +18,16 @@ namespace IP // IP = interior penalty
  */
 template<int dim, int fe_degree, typename Number>
 void calculate_penalty_parameter(AlignedVector<VectorizedArray<Number> > &array_penalty_parameter,
+                                 AlignedVector<Number > &array_penalty_parameter_nv,
                                  MatrixFree<dim,Number> const            &data,
                                  Mapping<dim> const                      &mapping,
                                  unsigned int const                      dof_index = 0)
 {
   unsigned int n_cells = data.n_macro_cells()+data.n_macro_ghost_cells();
   array_penalty_parameter.resize(n_cells);
-
+  array_penalty_parameter_nv.resize(
+      data.get_dof_handler(dof_index).get_triangulation().n_active_cells());
+  
   QGauss<dim> quadrature(fe_degree+1);
   FEValues<dim> fe_values(mapping,
                           data.get_dof_handler(dof_index).get_fe(),
@@ -43,7 +46,7 @@ void calculate_penalty_parameter(AlignedVector<VectorizedArray<Number> > &array_
     {
       typename DoFHandler<dim>::cell_iterator cell = data.get_cell_iterator(i,v,dof_index);
       fe_values.reinit(cell);
-
+      
       // calculate cell volume
       Number volume = 0;
       for (unsigned int q=0; q<quadrature.size(); ++q)
@@ -64,8 +67,23 @@ void calculate_penalty_parameter(AlignedVector<VectorizedArray<Number> > &array_
       }
 
       array_penalty_parameter[i][v] = surface_area / volume;
+      array_penalty_parameter_nv[cell->active_cell_index()] = surface_area / volume;
     }
   }
+}
+
+template<int dim, int fe_degree, typename Number>
+void calculate_penalty_parameter(AlignedVector<VectorizedArray<Number> > &array_penalty_parameter,
+                                 MatrixFree<dim,Number> const            &data,
+                                 Mapping<dim> const                      &mapping,
+                                 unsigned int const                      dof_index = 0)
+{
+    // dummy temporal vector
+    AlignedVector<Number > array_penalty_parameter_nv;
+    
+    // call actual calculator
+    IP::calculate_penalty_parameter<dim, fe_degree, Number>(
+            array_penalty_parameter,array_penalty_parameter_nv, data, mapping, dof_index);
 }
 
 /*
