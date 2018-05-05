@@ -39,7 +39,7 @@ void calculate_penalty_parameter(AlignedVector<VectorizedArray<Number> > &array_
                                    data.get_dof_handler(dof_index).get_fe(),
                                    face_quadrature,
                                    update_JxW_values);
-
+  
   for (unsigned int i=0; i<n_cells; ++i)
   {
     for (unsigned int v=0; v<data.n_components_filled(i); ++v)
@@ -67,7 +67,7 @@ void calculate_penalty_parameter(AlignedVector<VectorizedArray<Number> > &array_
       }
 
       array_penalty_parameter[i][v] = surface_area / volume;
-      array_penalty_parameter_nv[cell->active_cell_index()] = surface_area / volume;
+      array_penalty_parameter_nv[cell->index()] = surface_area / volume;
     }
   }
 }

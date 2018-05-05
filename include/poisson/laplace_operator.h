@@ -244,7 +244,7 @@ public:
             const std::vector<double> &JxW = fe_face_values.get_JxW_values ();
             const std::vector<Tensor<1,dim> > &normals = fe_face_values.get_normal_vectors ();
 
-            double tau = array_penalty_parameter_nv[dinfo.cell->active_cell_index()] * 
+            double tau = array_penalty_parameter_nv[dinfo.cell->index()] * 
                 IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
 
             for (unsigned int point=0; point<fe_face_values.n_quadrature_points; ++point){
@@ -277,8 +277,8 @@ public:
         const std::vector<Tensor<1,dim> > &normals = fe_face_values_1.get_normal_vectors ();
 
         double tau = std::max(
-            array_penalty_parameter_nv[dinfo1.cell->active_cell_index()], 
-            array_penalty_parameter_nv[dinfo2.cell->active_cell_index()]
+            array_penalty_parameter_nv[dinfo1.cell->index()], 
+            array_penalty_parameter_nv[dinfo2.cell->index()]
                 ) * IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
 
         for (unsigned int point=0; point<fe_face_values_1.n_quadrature_points; ++point){
