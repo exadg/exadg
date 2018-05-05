@@ -312,7 +312,7 @@ public:
       
     // initialize the system matrix ...
     // ... create a sparsity pattern
-    TrilinosWrappers::SparsityPattern dsp(dof_handler.locally_owned_dofs(), MPI_COMM_WORLD);
+    TrilinosWrappers::SparsityPattern dsp(dof_handler.locally_owned_mg_dofs(0), MPI_COMM_WORLD);
     DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
     dsp.compress();
     system_matrix.reinit(dsp);
@@ -336,7 +336,7 @@ public:
     lc.faces_to_ghost = MeshWorker::LoopControl::both;
 
     MeshWorker::integration_loop<DIM, DIM> (
-        dof_handler.begin_active(), dof_handler.end(),
+        dof_handler.begin_mg(0), dof_handler.end_mg(0),
         dof_info, info_box, MeshWorkerWrapper<DIM, Operator, double>(coarse_matrix), assembler,lc);
     
     // intialize Trilinos' AMG
