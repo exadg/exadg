@@ -207,7 +207,8 @@ struct MultigridData
                                         "PCG - Block-Jacobi preconditioner",
                                         "GMRES - No preconditioner",
                                         "GMRES - Point-Jacobi preconditioner",
-                                        "GMRES - Block-Jacobi preconditioner" };
+                                        "GMRES - Block-Jacobi preconditioner",
+                                        "AMG - MueLu"};
 
     print_parameter(pcout,"Multigrid coarse grid solver",str_coarse_solver[(int)coarse_solver]);
 
