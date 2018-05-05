@@ -397,7 +397,7 @@ private:
           src_vector(j) = fe_eval.begin_dof_values()[j][v];
 
         // apply inverse matrix
-        matrices[cell*VectorizedArray<Number>::n_array_elements+v].apply_lu_factorization(src_vector,false);
+        matrices[cell*VectorizedArray<Number>::n_array_elements+v].solve(src_vector,false);
 
         // write solution to dst-vector
         for (unsigned int j=0; j<dofs_per_cell; ++j)

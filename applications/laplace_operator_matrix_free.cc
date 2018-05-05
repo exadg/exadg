@@ -129,7 +129,7 @@ void create_grid(parallel::distributed::Triangulation<dim>        &triangulation
 
   // boundary ID's are 0 by default -> pure Dirichlet BC's
   std::shared_ptr<Function<dim> > function;
-  function.reset(new ZeroFunction<dim>());
+  function.reset(new Functions::ZeroFunction<dim>());
   boundary_descriptor->dirichlet.insert(
       std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,function));
 

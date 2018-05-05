@@ -447,7 +447,7 @@ private:
           src_vector(j) = fe_eval.begin_dof_values()[j][v];
 
         // apply inverse matrix
-        matrices[cell*VectorizedArray<value_type>::n_array_elements+v].apply_lu_factorization(src_vector,false);
+        matrices[cell*VectorizedArray<value_type>::n_array_elements+v].solve(src_vector,false);
 
         // write solution to dst-vector
         for (unsigned int j=0; j<dofs_per_cell; ++j)
@@ -598,7 +598,7 @@ public:
         for (unsigned int j=0; j<total_dofs_per_cell; ++j)
           vector_input(j)=(fe_eval_velocity.read_cellwise_dof_value(j))[v];
 
-        (matrices[v]).apply_lu_factorization(vector_input,false);
+        (matrices[v]).solve(vector_input,false);
         for (unsigned int j=0; j<total_dofs_per_cell; ++j)
           fe_eval_velocity.write_cellwise_dof_value(j,vector_input(j),v);
       }
@@ -1019,10 +1019,10 @@ private:
     }
   }
 
-  void boundary_face_loop(const MatrixFree<dim,value_type>                &data,
-                          parallel::distributed::Vector<value_type>       &dst,
-                          const parallel::distributed::Vector<value_type> &src,
-                          const std::pair<unsigned int,unsigned int>      &face_range) const
+  void boundary_face_loop(const MatrixFree<dim,value_type>                &/*data*/,
+                          parallel::distributed::Vector<value_type>       &/*dst*/,
+                          const parallel::distributed::Vector<value_type> &/*src*/,
+                          const std::pair<unsigned int,unsigned int>      &/*face_range*/) const
   {
 
   }

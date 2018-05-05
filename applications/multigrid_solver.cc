@@ -377,7 +377,7 @@ namespace Step37
     constraints.clear();
     constraints.reinit(relevant_dofs);
     DoFTools::make_hanging_node_constraints(dof_handler, constraints);
-    VectorTools::interpolate_boundary_values(dof_handler, 1, ZeroFunction<dim>(),
+    VectorTools::interpolate_boundary_values(dof_handler, 1, Functions::ZeroFunction<dim>(),
                                              constraints);
     //constraints.add_line(0);
     constraints.close();
@@ -509,7 +509,7 @@ namespace Step37
     boundary_descriptor.reset(new BoundaryDescriptorLaplace<dim>());
 
     std::shared_ptr<Function<dim> > zero_function;
-    zero_function.reset(new ZeroFunction<dim>());
+    zero_function.reset(new Functions::ZeroFunction<dim>());
 
     boundary_descriptor->dirichlet.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,zero_function));
     boundary_descriptor->neumann.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function));

@@ -1437,10 +1437,10 @@ private:
     }
   }
 
-  void boundary_face_loop_hom_operator_opt (const MatrixFree<dim,Number>                 &data,
-                                            parallel::distributed::Vector<Number>        &dst,
-                                            const parallel::distributed::Vector<Number>  &src,
-                                            const std::pair<unsigned int,unsigned int>   &face_range) const
+  void boundary_face_loop_hom_operator_opt (const MatrixFree<dim,Number>                 &/*data*/,
+                                            parallel::distributed::Vector<Number>        &/*dst*/,
+                                            const parallel::distributed::Vector<Number>  &/*src*/,
+                                            const std::pair<unsigned int,unsigned int>   &/*face_range*/) const
   {
     AssertThrow(false, ExcMessage("Should not arrive here. Optimized viscous operator only implemented for periodic BCs."));
   }

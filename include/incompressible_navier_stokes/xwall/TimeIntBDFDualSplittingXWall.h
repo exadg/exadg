@@ -54,8 +54,11 @@ protected:
   {
     TimeIntBDFDualSplitting<dim, fe_degree, value_type, DGNavierStokesDualSplittingXWall<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> >::
         write_restart_vectors(oa);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     VectorView<double> tmp(ns_operation_xwall->get_fe_parameters().tauw->local_size(),
                            ns_operation_xwall->get_fe_parameters().tauw->begin());
+#pragma GCC diagnostic pop
     oa << tmp;
 
     tmp.reinit(ns_operation_xwall->get_fe_parameters_n().tauw->local_size(),

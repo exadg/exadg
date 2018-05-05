@@ -436,7 +436,7 @@ public:
     print_parameter(pcout,"IP factor viscous term",IP_factor);
   }
 
-  void print_parameters_solver(ConditionalOStream &pcout)
+  void print_parameters_solver(ConditionalOStream &/*pcout*/)
   {
     /*
     pcout << std::endl

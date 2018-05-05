@@ -463,8 +463,11 @@ private:
     typedef ChebyshevSmoother<Operator,VECTOR_TYPE> CHEBYSHEV_SMOOTHER;
     typename CHEBYSHEV_SMOOTHER::AdditionalData smoother_data;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     mg_matrices[level].initialize_dof_vector(smoother_data.matrix_diagonal_inverse);
     mg_matrices[level].calculate_inverse_diagonal(smoother_data.matrix_diagonal_inverse);
+#pragma GCC diagnostic pop
 
     /*
     std::pair<double,double> eigenvalues = compute_eigenvalues(mg_matrices[level], smoother_data.matrix_diagonal_inverse);
@@ -490,10 +493,16 @@ private:
     typedef ChebyshevSmoother<Operator,VECTOR_TYPE> CHEBYSHEV_SMOOTHER;
     typename CHEBYSHEV_SMOOTHER::AdditionalData smoother_data;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     mg_matrices[0].initialize_dof_vector(smoother_data.matrix_diagonal_inverse);
     mg_matrices[0].calculate_inverse_diagonal(smoother_data.matrix_diagonal_inverse);
+#pragma GCC diagnostic pop
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     std::pair<double,double> eigenvalues = compute_eigenvalues(mg_matrices[0], smoother_data.matrix_diagonal_inverse);
+#pragma GCC diagnostic pop
     double const factor = 1.1;
     smoother_data.max_eigenvalue = factor * eigenvalues.second;
     smoother_data.smoothing_range = eigenvalues.second/eigenvalues.first*factor;
@@ -511,8 +520,11 @@ private:
     typedef ChebyshevSmoother<Operator,VECTOR_TYPE> CHEBYSHEV_SMOOTHER;
     typename CHEBYSHEV_SMOOTHER::AdditionalData smoother_data;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     this->mg_matrices[level].initialize_dof_vector(smoother_data.matrix_diagonal_inverse);
     this->mg_matrices[level].calculate_inverse_diagonal(smoother_data.matrix_diagonal_inverse);
+#pragma GCC diagnostic pop
 
     /*
     std::pair<double,double> eigenvalues = compute_eigenvalues_gmres(mg_matrices[level], smoother_data.matrix_diagonal_inverse);
@@ -521,8 +533,10 @@ private:
 
     // use gmres to calculate eigenvalues for nonsymmetric problem
     const unsigned int eig_n_iter = 20;
-    std::pair<std::complex<double>,std::complex<double> > eigenvalues =
-        compute_eigenvalues_gmres(mg_matrices[level], smoother_data.matrix_diagonal_inverse,eig_n_iter);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    std::pair<std::complex<double>,std::complex<double> > eigenvalues = compute_eigenvalues_gmres(mg_matrices[level], smoother_data.matrix_diagonal_inverse,eig_n_iter);
+#pragma GCC diagnostic pop
     const double factor = 1.1;
     smoother_data.max_eigenvalue = factor * std::abs(eigenvalues.second);
     smoother_data.smoothing_range = mg_data.chebyshev_smoother_data.smoother_smoothing_range;
@@ -539,11 +553,17 @@ private:
     typedef ChebyshevSmoother<Operator,VECTOR_TYPE> CHEBYSHEV_SMOOTHER;
     typename CHEBYSHEV_SMOOTHER::AdditionalData smoother_data;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     mg_matrices[0].initialize_dof_vector(smoother_data.matrix_diagonal_inverse);
     mg_matrices[0].calculate_inverse_diagonal(smoother_data.matrix_diagonal_inverse);
+#pragma GCC diagnostic pop
 
     const double factor = 1.1;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     std::pair<std::complex<double>,std::complex<double> > eigenvalues = compute_eigenvalues_gmres(mg_matrices[0], smoother_data.matrix_diagonal_inverse);
+#pragma GCC diagnostic pop
     smoother_data.max_eigenvalue = factor * std::abs(eigenvalues.second);
     smoother_data.smoothing_range = factor * std::abs(eigenvalues.second)/std::abs(eigenvalues.first);
     double sigma = (1.-std::sqrt(1./smoother_data.smoothing_range))/(1.+std::sqrt(1./smoother_data.smoothing_range));

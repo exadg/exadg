@@ -714,8 +714,8 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 template<int dim>
 void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
 {
-  analytical_solution->velocity.reset(new ZeroFunction<dim>(dim));
-  analytical_solution->pressure.reset(new ZeroFunction<dim>(1));
+  analytical_solution->velocity.reset(new Functions::ZeroFunction<dim>(dim));
+  analytical_solution->pressure.reset(new Functions::ZeroFunction<dim>(1));
 }
 
 // Postprocessor

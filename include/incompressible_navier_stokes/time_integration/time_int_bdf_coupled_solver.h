@@ -211,8 +211,11 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 write_restart_vectors(boost::archive::binary_oarchive & oa) const
 {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   VectorView<value_type> tmp(solution[0].block(0).local_size(),
                              solution[0].block(0).begin());
+#pragma GCC diagnostic pop
   oa << tmp;
   for (unsigned int i=1; i<solution.size(); i++)
   {

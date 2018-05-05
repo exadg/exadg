@@ -66,7 +66,10 @@ public:
       do
       {
         // calculate temporary solution
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
         tmp.equ(1.0, dst, omega, increment);
+#pragma GCC diagnostic pop
 
         // evaluate residual using the temporary solution
         nonlinear_operator.evaluate_nonlinear_residual(residual,tmp);
