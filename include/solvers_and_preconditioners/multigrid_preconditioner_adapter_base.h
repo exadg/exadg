@@ -423,6 +423,11 @@ protected:
         coarse_solver->update_preconditioner(this->mg_matrices[0]);
         break;
       }
+      case MultigridCoarseGridSolver::AMG_ML:
+      {
+        // do nothing
+        break;
+      }
       default:
       {
         AssertThrow(false, ExcMessage("Unknown coarse-grid solver given"));
