@@ -288,9 +288,9 @@ public:
   /**
    * Constructor
    */
-  MGCoarseML(Operator const &matrix , bool setup = true) :  coarse_matrix (matrix){
+  MGCoarseML(Operator const &matrix , bool setup = true, int level = 0) :  coarse_matrix (matrix){
       if(setup)
-        this->reinit();
+        this->reinit(level);
   }
 
   /**
@@ -301,7 +301,7 @@ public:
   /**
    * Setup system matrix and AMG
    */
-  void reinit(){
+  void reinit(int level = 0){
       
     // extract relevant data structures
     const DoFHandler<DIM>& dof_handler = coarse_matrix.get_data().get_dof_handler();
@@ -312,8 +312,8 @@ public:
       
     // initialize the system matrix ...
     // ... create a sparsity pattern
-    TrilinosWrappers::SparsityPattern dsp(dof_handler.locally_owned_mg_dofs(0), MPI_COMM_WORLD);
-    MGTools::make_flux_sparsity_pattern(dof_handler, dsp,0);
+    TrilinosWrappers::SparsityPattern dsp(dof_handler.locally_owned_mg_dofs(level), MPI_COMM_WORLD);
+    MGTools::make_flux_sparsity_pattern(dof_handler, dsp,level);
     dsp.compress();
     system_matrix.reinit(dsp);
     
@@ -336,7 +336,7 @@ public:
     lc.faces_to_ghost = MeshWorker::LoopControl::both;
 
     MeshWorker::integration_loop<DIM, DIM> (
-        dof_handler.begin_mg(0), dof_handler.end_mg(0),
+        dof_handler.begin_mg(level), dof_handler.end_mg(level),
         dof_info, info_box, MeshWorkerWrapper<DIM, Operator, double>(coarse_matrix), assembler,lc);
     
     // intialize Trilinos' AMG
