@@ -313,7 +313,7 @@ public:
     // initialize the system matrix ...
     // ... create a sparsity pattern
     TrilinosWrappers::SparsityPattern dsp(dof_handler.locally_owned_mg_dofs(0), MPI_COMM_WORLD);
-    DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
+    MGTools::make_flux_sparsity_pattern(dof_handler, dsp,0);
     dsp.compress();
     system_matrix.reinit(dsp);
     
@@ -369,7 +369,7 @@ public:
       
       // convert TrilinosScalar to Operator::value_type
       dst.copy_locally_owned_data_from(dst_);
-      
+    
   }
 
   /**
