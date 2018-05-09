@@ -17,10 +17,10 @@ public:
   // The argument grid_transform indicates how the y-direction that is
   // initially distributed from [0,1] is mapped to the actual grid. This must match the
   // transformation applied to the triangulation, otherwise the identification of data will fail
-  void setup(const std::function<double(double const &)> &grid_tranform,
+  void setup(std::function<double(double const &)> const &grid_tranform,
              TurbulentChannelData const                  &turb_channel_data);
 
-  void evaluate(const parallel::distributed::Vector<double> &velocity,
+  void evaluate(parallel::distributed::Vector<double> const &velocity,
                 double const                                &time,
                 unsigned int const                          &time_step_number);
 
