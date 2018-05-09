@@ -535,13 +535,21 @@ struct BFSStatisticsData
 // written at n_points_y in y-direction and n_points_z in z-direction, which has to be
 // specified by the user.
 
+enum class InflowGeometry
+{
+  Cartesian,
+  Cylindrical
+};
+
 template<int dim>
 struct InflowData
 {
   InflowData()
    :
    write_inflow_data(false),
-   x_coordinate(0.0),
+   inflow_geometry(InflowGeometry::Cartesian),
+   normal_direction(0),
+   normal_coordinate(0.0),
    n_points_y(2),
    n_points_z(2),
    y_values(nullptr),
@@ -553,7 +561,8 @@ struct InflowData
   {
     if(write_inflow_data == true)
     {
-      print_parameter(pcout,"x-coordinate",x_coordinate);
+      print_parameter(pcout,"Normal direction",normal_direction);
+      print_parameter(pcout,"Normal coordinate",normal_coordinate);
       print_parameter(pcout,"Number of points in y-direction",n_points_y);
       print_parameter(pcout,"Number of points in z-direction",n_points_z);
     }
@@ -562,8 +571,12 @@ struct InflowData
   // write the data?
   bool write_inflow_data;
 
-  // velocity field is written in y-z-plane for a specified x-coordinate
-  double x_coordinate;
+  InflowGeometry inflow_geometry;
+
+  // direction normal to inflow surface: has to be 0 (x), 1 (y), or 2 (z)
+  unsigned int normal_direction;
+  // position of inflow plane in the direction normal to the inflow surface
+  double normal_coordinate;
   // specify the number of data points (grid points) in y- and z-direction
   unsigned int n_points_y;
   unsigned int n_points_z;

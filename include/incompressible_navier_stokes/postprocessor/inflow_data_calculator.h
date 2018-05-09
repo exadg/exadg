@@ -56,14 +56,80 @@ double linear_interpolation_2d_cartesian(Point<dim> const                       
   return result;
 }
 
+/*
+ *  2D interpolation for cylindrical cross-sections
+ */
+template<int dim>
+double linear_interpolation_2d_cylindrical(double const                             r_in,
+                                           double const                             phi,
+                                           std::vector<double> const                &r_values,
+                                           std::vector<double> const                &phi_values,
+                                           std::vector<Tensor<1,dim,double> > const &solution_values,
+                                           unsigned int const                       &component)
+{
+  AssertThrow(dim==3,ExcMessage("not implemented"));
+
+  double result = 0.0;
+
+  double const tol = 1.e-10;
+  unsigned int const n_points_r = r_values.size();
+  unsigned int const n_points_phi = phi_values.size();
+
+  double r = r_in;
+
+  if(r > r_values[n_points_r-1])
+    r = r_values[n_points_r-1];
+
+  AssertThrow(r   > (r_values[0]-tol)   && r   < (r_values[n_points_r-1]+tol) &&
+              phi > (phi_values[0]-tol) && phi < (phi_values[n_points_phi-1]+tol),
+              ExcMessage("invalid point found."));
+
+  // interpolate r and phi-coordinates
+  unsigned int i_r = 0, i_phi = 0;
+
+  i_r = std::distance(r_values.begin(),std::lower_bound(r_values.begin(), r_values.end(), r));
+  i_phi = std::distance(phi_values.begin(),std::lower_bound(phi_values.begin(), phi_values.end(), phi));
+
+  // make sure that the index does not exceed the array bounds in case of round-off errors
+  if(i_r == r_values.size())
+    i_r--;
+  if(i_phi == phi_values.size())
+    i_phi--;
+
+  if(i_r == 0)
+    i_r++;
+  if(i_phi == 0)
+    i_phi++;
+
+  AssertThrow(i_r > 0 && i_r < n_points_r && i_phi > 0 && i_phi < n_points_phi, ExcMessage("Invalid point found"));
+
+  double const weight_r_p = (r-r_values[i_r-1])/(r_values[i_r]-r_values[i_r-1]);
+  double const weight_r_m = 1 - weight_r_p;
+  double const weight_phi_p = (phi-phi_values[i_phi-1])/(phi_values[i_phi]-phi_values[i_phi-1]);
+  double const weight_phi_m = 1 - weight_phi_p;
+
+  AssertThrow(-1.e-12 < weight_r_p && weight_r_p < 1.+1e-12 &&
+              -1.e-12 < weight_r_m && weight_r_m < 1.+1e-12 &&
+              -1.e-12 < weight_phi_p && weight_phi_p < 1.+1e-12 &&
+              -1.e-12 < weight_phi_m && weight_phi_m < 1.+1e-12,
+              ExcMessage("invalid weights when interpolating solution in 2D."));
+
+  result =   weight_r_m * weight_phi_m * solution_values[(i_r-1)*n_points_r + (i_phi-1)][component]
+           + weight_r_m * weight_phi_p * solution_values[(i_r-1)*n_points_r + (i_phi)][component]
+           + weight_r_p * weight_phi_m * solution_values[(i_r)*n_points_r + (i_phi-1)][component]
+           + weight_r_p * weight_phi_p * solution_values[(i_r)*n_points_r + (i_phi)][component];
+
+  return result;
+}
+
 template<int dim, typename Number>
 class InflowDataCalculator
 {
 public:
   InflowDataCalculator(InflowData<dim> const &inflow_data_in)
     :
-  inflow_data(inflow_data_in),
-  inflow_data_has_been_initialized(false)
+    inflow_data(inflow_data_in),
+    inflow_data_has_been_initialized(false)
   {}
 
   void setup(DoFHandler<dim> const &dof_handler_velocity_in,
@@ -78,28 +144,7 @@ public:
 
   void calculate(parallel::distributed::Vector<Number> const &velocity)
   {
-    bool naive_variant = false;
-
-    if(naive_variant) // incredibly slow
-    {
-      for(unsigned int iy=0; iy<inflow_data.n_points_y; ++iy)
-      {
-        for(unsigned int iz=0; iz<inflow_data.n_points_z; ++iz)
-        {
-          Point<dim> point(inflow_data.x_coordinate,(*inflow_data.y_values)[iy],(*inflow_data.z_values)[iz]);
-          Tensor<1,dim,double> velocity_value;
-          evaluate_vectorial_quantity_in_point(*dof_handler_velocity,
-                                               *mapping,
-                                               velocity,
-                                               point,
-                                               velocity_value);
-
-          unsigned int array_index = iy*inflow_data.n_points_y + iz;
-          (*inflow_data.array)[array_index] = velocity_value;
-        }
-      }
-    }
-    else
+    if(inflow_data.write_inflow_data == true)
     {
       // initial data: do this expensive step only once at the beginning of the simulation
       if(inflow_data_has_been_initialized == false)
@@ -108,7 +153,27 @@ public:
         {
           for(unsigned int iz=0; iz<inflow_data.n_points_z; ++iz)
           {
-            Point<dim> point(inflow_data.x_coordinate,(*inflow_data.y_values)[iy],(*inflow_data.z_values)[iz]);
+            Point<dim> point;
+
+            if(inflow_data.inflow_geometry == InflowGeometry::Cartesian)
+            {
+              AssertThrow(inflow_data.normal_direction == 0, ExcMessage("Not implemented."));
+
+              point = Point<dim>(inflow_data.normal_coordinate,(*inflow_data.y_values)[iy],(*inflow_data.z_values)[iz]);
+            }
+            else if(inflow_data.inflow_geometry == InflowGeometry::Cylindrical)
+            {
+              AssertThrow(inflow_data.normal_direction == 2, ExcMessage("Not implemented."));
+
+              double const x = (*inflow_data.y_values)[iy] * std::cos((*inflow_data.z_values)[iz]);
+              double const y = (*inflow_data.y_values)[iy] * std::sin((*inflow_data.z_values)[iz]);
+              point = Point<dim>(x,y,inflow_data.normal_coordinate);
+            }
+            else
+            {
+              AssertThrow(false, ExcMessage("Not implemented."));
+            }
+
             std::vector<std::pair<unsigned int,std::vector<Number> > > global_dof_index_and_shape_values;
             get_global_dof_index_and_shape_values(*dof_handler_velocity,
                                                   *mapping,
@@ -124,17 +189,21 @@ public:
         inflow_data_has_been_initialized = true;
       }
 
+      // evaluate velocity in all points of the 2d grid
       for(unsigned int iy=0; iy<inflow_data.n_points_y; ++iy)
       {
         for(unsigned int iz=0; iz<inflow_data.n_points_z; ++iz)
         {
+          // determine the array index, will be needed several times below
           unsigned int array_index = iy*inflow_data.n_points_y + iz;
+
+          // initialize with zeros since we accumulate into these variables
           (*inflow_data.array)[array_index] = 0.0;
           array_counter[array_index] = 0;
 
           std::vector<std::pair<unsigned int,std::vector<Number> > > & vector(array_dof_index_and_shape_values[array_index]);
 
-          // loop over all adjacent cells for a given point that are locally owned
+          // loop over all adjacent, locally owned cells for the current point
           for(typename std::vector<std::pair<unsigned int,std::vector<Number> > >::iterator iter = vector.begin(); iter != vector.end(); ++iter)
           {
             // increment counter (because this is a locally owned cell)
@@ -152,22 +221,22 @@ public:
             (*inflow_data.array)[array_index] += velocity_value;
           }
         }
-      }
 
-      // sum over all processors
-      Utilities::MPI::sum(array_counter,MPI_COMM_WORLD,array_counter);
-      Utilities::MPI::sum(ArrayView<const double>(&(*inflow_data.array)[0][0],dim*inflow_data.array->size()),
-                          MPI_COMM_WORLD,
-                          ArrayView<double>(&(*inflow_data.array)[0][0],dim*inflow_data.array->size()));
+        // sum over all processors
+        Utilities::MPI::sum(array_counter,MPI_COMM_WORLD,array_counter);
+        Utilities::MPI::sum(ArrayView<const double>(&(*inflow_data.array)[0][0],dim*inflow_data.array->size()),
+                            MPI_COMM_WORLD,
+                            ArrayView<double>(&(*inflow_data.array)[0][0],dim*inflow_data.array->size()));
 
-      // divide by counter in order to get the mean value (averaged over all
-      // adjacent cells for a given point)
-      for(unsigned int iy=0; iy<inflow_data.n_points_y; ++iy)
-      {
-        for(unsigned int iz=0; iz<inflow_data.n_points_z; ++iz)
+        // divide by counter in order to get the mean value (averaged over all
+        // adjacent cells for a given point)
+        for(unsigned int iy=0; iy<inflow_data.n_points_y; ++iy)
         {
-          unsigned int array_index = iy*inflow_data.n_points_y + iz;
-          (*inflow_data.array)[array_index] /= double(array_counter[array_index]);
+          for(unsigned int iz=0; iz<inflow_data.n_points_z; ++iz)
+          {
+            unsigned int array_index = iy*inflow_data.n_points_y + iz;
+            (*inflow_data.array)[array_index] /= double(array_counter[array_index]);
+          }
         }
       }
     }
