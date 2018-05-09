@@ -74,8 +74,22 @@ double const Z2_PRECURSOR = - LENGTH_THROAT - LENGTH_CONE - LENGTH_INFLOW - OFFS
 double const Z1_PRECURSOR = - LENGTH_THROAT - LENGTH_CONE - LENGTH_INFLOW - OFFSET - LENGTH_PRECURSOR;
 
 // set target flow rate according to the desired Reynolds number
+// if (Re_t == 500)
 double const TARGET_FLOW_RATE = 5.21e-6;
+// else if (Re_t = 2000)
+//double const TARGET_FLOW_RATE = 2.08e-5;
+// else if (Re_t = 3500)
+//double const TARGET_FLOW_RATE = 3.64e-5;
+// else if (Re_t = 5000)
+//double const TARGET_FLOW_RATE = 5.21e-5;
+// else if (Re_t = 6500)
+//double const TARGET_FLOW_RATE = 6.77e-5;
+
 double const AREA_INFLOW = R_OUTER*R_OUTER*numbers::PI;
+double const MAX_VELOCITY = 2.0*TARGET_FLOW_RATE/AREA_INFLOW;
+
+// same viscosity for all Reynolds numbers
+double const VISCOSITY = 3.31e-6; //1.0/180.0;
 
 // data structures that we need to control the mass flow rate
 // NOTA BENE: this variable will be modified by the postprocessor!
@@ -90,9 +104,6 @@ unsigned int const N_CELLS_AXIAL_OUTFLOW = 4;
 
 unsigned int const MANIFOLD_ID_CYLINDER = 1234;
 unsigned int const MANIFOLD_ID_OFFSET_CONE = 7890;
-
-double const MAX_VELOCITY = 2.0*TARGET_FLOW_RATE/AREA_INFLOW;
-double const VISCOSITY = 1.0/180.0;
 
 double const START_TIME = 0.0;
 double const END_TIME = 2.0;
@@ -182,7 +193,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; // AdaptiveTimeStepCFL
   max_velocity = MAX_VELOCITY;
-  cfl = 0.25;
+  cfl = 0.15;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
@@ -408,13 +419,13 @@ double radius_function(double const z)
 {
   double radius = R_OUTER;
 
-  if(z >= Z1_INFLOW && z <= Z2_OUTFLOW)
+  if(z >= Z1_INFLOW && z <= Z2_INFLOW)
     radius = R_OUTER;
   else if(z >= Z1_CONE && z <= Z2_CONE)
     radius = R_OUTER * (1.0 - (z-Z1_CONE)/(Z2_CONE-Z1_CONE)*(R_OUTER-R_INNER)/R_OUTER);
   else if(z >= Z1_THROAT && z <= Z2_THROAT)
     radius = R_INNER;
-  else if(z >= Z1_OUTFLOW && z <= Z2_OUTFLOW)
+  else if(z > Z1_OUTFLOW && z <= Z2_OUTFLOW)
     radius = R_OUTER;
 
   return radius;
@@ -448,16 +459,17 @@ double InitialSolutionVelocity<dim>::value(const Point<dim>   &p,
   // flow in z-direction
   if(component == 2)
   {
-    double const radius = std::sqrt(p[0]*p[0]+p[1]*p[1]);
+    double radius = std::sqrt(p[0]*p[0]+p[1]*p[1]);
 
     double const mean_velocity = TARGET_FLOW_RATE/AREA_INFLOW;
 
     // assume parabolic profile u(r) = u_max * [1-(r/R)^2]
     //  -> u_max = 2 * u_mean = 2 * flow_rate / area
-    double const R = radius_function(p[2]);
-    AssertThrow(radius <= R + 1.0e-10, ExcMessage("Invalid position."));
-    double const max_velocity = 2.0 * mean_velocity * std::pow(R_OUTER/R,2.0);
-    result = max_velocity*(1.0-pow(radius/R,2.0));
+    double const RADIUS = radius_function(p[2]);
+    if(radius > RADIUS)
+      radius = RADIUS;
+    double const max_velocity = 2.0 * mean_velocity * std::pow(R_OUTER/RADIUS,2.0);
+    result = max_velocity*(1.0-pow(radius/RADIUS,2.0));
   }
 
   return result;
@@ -511,7 +523,7 @@ public:
    RightHandSide (const double time = 0.)
      :
      Function<dim>(dim, time),
-     f(10.0)
+     f(0.03)
    {}
 
    virtual ~RightHandSide(){};
@@ -525,7 +537,7 @@ public:
      if(component==2)
      {
        // TODO: how to select parameters of controller in an optimal way?
-       double const k = 1.0e3;
+       double const k = 1.0e0;
        // mean velocity is negative since the flow rate is measured at the
        // inflow boundary (normal vector points in upstream direction)
        f += k*(TARGET_FLOW_RATE - AREA_INFLOW*(-MEAN_VELOCITY));
