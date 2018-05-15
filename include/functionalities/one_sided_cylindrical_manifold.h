@@ -553,6 +553,11 @@ public:
       else if(xi[1] > 1.0)
         xi[1] = 1.0;
 
+      if(xi[2] < 0.0)
+        xi[2] = 0.0;
+      else if(xi[2] > 1.0)
+        xi[2] = 1.0;
+
       // evaluate residual
       residual = push_forward(xi) - x;
 

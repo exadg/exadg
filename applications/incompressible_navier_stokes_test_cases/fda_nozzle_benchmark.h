@@ -88,12 +88,14 @@ double const TARGET_FLOW_RATE = 5.21e-6;
 double const AREA_INFLOW = R_OUTER*R_OUTER*numbers::PI;
 double const MAX_VELOCITY = 2.0*TARGET_FLOW_RATE/AREA_INFLOW;
 
+// kinematic viscosity
 // same viscosity for all Reynolds numbers
-double const VISCOSITY = 3.31e-6; //1.0/180.0;
+double const VISCOSITY = 3.31e-6;
 
 // data structures that we need to control the mass flow rate
-// NOTA BENE: this variable will be modified by the postprocessor!
+// NOTA BENE: these variables will be modified by the postprocessor!
 double MEAN_VELOCITY = 0.0;
+double TIME_STEP_FLOW_RATE_CONTROLLER = 1.0;
 
 // mesh parameters
 unsigned int const N_CELLS_AXIAL_PRECURSOR = 2;
@@ -106,7 +108,10 @@ unsigned int const MANIFOLD_ID_CYLINDER = 1234;
 unsigned int const MANIFOLD_ID_OFFSET_CONE = 7890;
 
 double const START_TIME = 0.0;
-double const END_TIME = 2.0;
+// estimation of flow-through time T_0 based on the mean velocity (i.e. velocity averaged over cross section)
+double const MEAN_VELOCITY_TARGET = TARGET_FLOW_RATE/AREA_INFLOW;
+double const T_0 = (LENGTH_INFLOW+LENGTH_CONE+LENGTH_THROAT+LENGTH_OUTFLOW)/MEAN_VELOCITY_TARGET;
+double const END_TIME = 1.0*T_0;
 
 
 // output folders
@@ -150,6 +155,7 @@ void initialize_velocity_values()
     {
       Tensor<1,DIMENSION,double> velocity;
       // flow in z-direction
+      // TODO: initialize with zeros
       velocity[2] = MAX_VELOCITY*(1.0-std::pow(R_VALUES[iy]/R_OUTER,2.0));
       VELOCITY_VALUES[iy*N_POINTS_R + iz] = velocity;
     }
@@ -370,7 +376,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
     output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
     // output of solver information
-    output_solver_info_every_timesteps = 1; //1e4;
+    output_solver_info_every_timesteps = 1; //1e5;
 
     // inflow data
     inflow_data.write_inflow_data = true;
@@ -398,7 +404,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
     output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
     // output of solver information
-    output_solver_info_every_timesteps = 1; //1e4;
+    output_solver_info_every_timesteps = 1; //1e5;
 
     // measure mean velocity at inflow boundary of the nozzle domain
     // (since matrix-free implementation does not allow to integrate
@@ -457,19 +463,19 @@ double InitialSolutionVelocity<dim>::value(const Point<dim>   &p,
   double result = 0.0;
 
   // flow in z-direction
+  // TODO: initialize with zero function
   if(component == 2)
   {
     double radius = std::sqrt(p[0]*p[0]+p[1]*p[1]);
-
-    double const mean_velocity = TARGET_FLOW_RATE/AREA_INFLOW;
 
     // assume parabolic profile u(r) = u_max * [1-(r/R)^2]
     //  -> u_max = 2 * u_mean = 2 * flow_rate / area
     double const RADIUS = radius_function(p[2]);
     if(radius > RADIUS)
       radius = RADIUS;
-    double const max_velocity = 2.0 * mean_velocity * std::pow(R_OUTER/RADIUS,2.0);
-    result = max_velocity*(1.0-pow(radius/RADIUS,2.0));
+
+    double const max_velocity_z = MAX_VELOCITY * std::pow(R_OUTER/RADIUS,2.0);
+    result = max_velocity_z*(1.0-pow(radius/RADIUS,2.0));
   }
 
   return result;
@@ -513,7 +519,7 @@ public:
 
 
 /*
- *  Right-hand side function: Implements the body force vector occuring on the
+ *  Right-hand side function: Implements the body force vector occurring on the
  *  right-hand side of the momentum equation of the Navier-Stokes equations
  */
  template<int dim>
@@ -523,12 +529,12 @@ public:
    RightHandSide (const double time = 0.)
      :
      Function<dim>(dim, time),
-     f(0.03)
+     f(0.0) // f(t=t_0) = f_0
    {}
 
    virtual ~RightHandSide(){};
 
-   virtual double value (const Point<dim>    &p,
+   virtual double value (const Point<dim>    & /*p*/,
                          const unsigned int  component = 0) const
    {
      double result = 0.0;
@@ -536,11 +542,11 @@ public:
      //channel flow with periodic bc
      if(component==2)
      {
-       // TODO: how to select parameters of controller in an optimal way?
-       double const k = 1.0e0;
+       // dimensional analysis: [k] = 1/(m^2 s^2) -> k = const * nu^2 / A_inflow^3
+       double const k = 1.0*std::pow(VISCOSITY,2.0)/std::pow(AREA_INFLOW,3.0);
        // mean velocity is negative since the flow rate is measured at the
        // inflow boundary (normal vector points in upstream direction)
-       f += k*(TARGET_FLOW_RATE - AREA_INFLOW*(-MEAN_VELOCITY));
+       f += k*(TARGET_FLOW_RATE - AREA_INFLOW*(-MEAN_VELOCITY))*TIME_STEP_FLOW_RATE_CONTROLLER;
        result = f;
      }
 
@@ -667,7 +673,7 @@ void create_grid_and_set_boundary_conditions_1(
   // fill boundary descriptor pressure
   // no slip boundaries at lower and upper wall with ID=0
   std::shared_ptr<Function<dim> > pressure_bc_dudt;
-  pressure_bc_dudt.reset(new ZeroFunction<dim>());
+  pressure_bc_dudt.reset(new ZeroFunction<dim>(dim));
   boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,pressure_bc_dudt));
 }
 
@@ -678,7 +684,7 @@ void create_grid_and_set_boundary_conditions_2(
     std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
     std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                 &periodic_faces)
+      Triangulation<dim>::cell_iterator> >                 &/*periodic_faces*/)
 {
   /*
    *   Inflow
@@ -997,7 +1003,7 @@ void create_grid_and_set_boundary_conditions_2(
   // fill boundary descriptor pressure
   // no slip boundaries at the upper and lower wall with ID=0
   std::shared_ptr<Function<dim> > pressure_bc_dudt;
-  pressure_bc_dudt.reset(new ZeroFunction<dim>());
+  pressure_bc_dudt.reset(new ZeroFunction<dim>(dim));
   boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,pressure_bc_dudt));
 
   // inflow boundary condition at left boundary with ID=1
@@ -1079,7 +1085,8 @@ public:
   PostProcessorFDA(PostProcessorDataFDA<dim> const & pp_data_in)
     :
     PostProcessor<dim,fe_degree_u,fe_degree_p, Number>(pp_data_in.pp_data),
-    pp_data_fda(pp_data_in)
+    pp_data_fda(pp_data_in),
+    time_old(START_TIME)
   {
     inflow_data_calculator.reset(new InflowDataCalculator<dim,Number>(pp_data_in.inflow_data));
   }
@@ -1130,12 +1137,16 @@ public:
 
     // calculation of mean velocity
     MEAN_VELOCITY = mean_velocity_calculator->evaluate(velocity);
+    // set time step size for flow rate controller
+    TIME_STEP_FLOW_RATE_CONTROLLER = time-time_old;
+    time_old = time;
   }
 
 private:
   PostProcessorDataFDA<dim> pp_data_fda;
   std::shared_ptr<InflowDataCalculator<dim, Number> > inflow_data_calculator;
   std::shared_ptr<MeanVelocityCalculator<dim,fe_degree_u,Number> > mean_velocity_calculator;
+  double time_old;
 };
 
 template<int dim, typename Number>
