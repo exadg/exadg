@@ -221,22 +221,23 @@ public:
             (*inflow_data.array)[array_index] += velocity_value;
           }
         }
+      }
 
-        // sum over all processors
-        Utilities::MPI::sum(array_counter,MPI_COMM_WORLD,array_counter);
-        Utilities::MPI::sum(ArrayView<const double>(&(*inflow_data.array)[0][0],dim*inflow_data.array->size()),
-                            MPI_COMM_WORLD,
-                            ArrayView<double>(&(*inflow_data.array)[0][0],dim*inflow_data.array->size()));
+      // sum over all processors
+      Utilities::MPI::sum(array_counter,MPI_COMM_WORLD,array_counter);
+      Utilities::MPI::sum(ArrayView<const double>(&(*inflow_data.array)[0][0],dim*inflow_data.array->size()),
+                          MPI_COMM_WORLD,
+                          ArrayView<double>(&(*inflow_data.array)[0][0],dim*inflow_data.array->size()));
 
-        // divide by counter in order to get the mean value (averaged over all
-        // adjacent cells for a given point)
-        for(unsigned int iy=0; iy<inflow_data.n_points_y; ++iy)
+      // divide by counter in order to get the mean value (averaged over all
+      // adjacent cells for a given point)
+      for(unsigned int iy=0; iy<inflow_data.n_points_y; ++iy)
+      {
+        for(unsigned int iz=0; iz<inflow_data.n_points_z; ++iz)
         {
-          for(unsigned int iz=0; iz<inflow_data.n_points_z; ++iz)
-          {
-            unsigned int array_index = iy*inflow_data.n_points_y + iz;
+          unsigned int array_index = iy*inflow_data.n_points_y + iz;
+          if(array_counter[array_index] >= 1)
             (*inflow_data.array)[array_index] /= double(array_counter[array_index]);
-          }
         }
       }
     }
