@@ -76,7 +76,10 @@ public:
                                          dof_quad_index_data.quad_index_velocity,
                                          velocity);
 
-      std::cout << "Flow rate = " << -mean_velocity*this->area << " [m^3/s]" << std::endl;
+/*
+      if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+        std::cout << "Flow rate = " << -mean_velocity*this->area << " [m^3/s]" << std::endl;
+*/
 
       return mean_velocity;
     }
