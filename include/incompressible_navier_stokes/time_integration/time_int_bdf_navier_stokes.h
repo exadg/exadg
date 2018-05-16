@@ -202,11 +202,21 @@ public:
 
   void set_time_step_size(double const &time_step)
   {
+    // constant time step sizes
+    if(adaptive_time_stepping == false)
+    {
+      AssertThrow(time_step_number == 1, ExcMessage("For time integration with constant "
+          "time step sizes this function can only be called in the very first time step."));
+    }
+
     time_steps[0] = time_step;
 
     // fill time_steps array
-    for(unsigned int i=1;i<order;++i)
-      time_steps[i] = time_steps[0];
+    if(time_step_number==1)
+    {
+      for(unsigned int i=1;i<order;++i)
+        time_steps[i] = time_steps[0];
+    }
   }
 
   double get_scaling_factor_time_derivative_term()
@@ -824,12 +834,14 @@ timeloop()
   analyze_computing_times();
 }
 
+/*
+ *  For the two-domain solver we only want to advance one time step because
+ *  the solvers for the two domains have to communicate between the time steps.
+ */
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 bool TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
 advance_one_timestep(bool write_final_output)
 {
-  bool finished = false;
-
   if(this->time_step_number == 1)
   {
     pcout << std::endl << "Starting time loop ..." << std::endl;
@@ -843,7 +855,7 @@ advance_one_timestep(bool write_final_output)
   const value_type EPSILON = 1.0e-10;
 
   // check if we have reached the end of the time loop
-  finished = !(time<(param.end_time-EPSILON) && time_step_number<=param.max_number_of_time_steps);
+  bool finished = !(time<(param.end_time-EPSILON) && time_step_number<=param.max_number_of_time_steps);
 
   if(!finished)
   {
@@ -892,6 +904,11 @@ timeloop_steady_problem()
   analyze_computing_times();
 }
 
+/*
+ *  Solve on time step including the update of time integrator constants, counters,
+ *  the time step size (in case of adaptive time stepping) and the update of solution
+ *  vectors so that everything is pepared for the next time step.
+ */
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
 do_timestep()
@@ -932,6 +949,10 @@ output_solver_info_header() const
   }
 }
 
+/*
+ *  This function estimates the remaining wall time based on the overall time interval to be simulated
+ *  and the measured wall time already needed to simulate from the start time until the current time.
+ */
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
 output_remaining_time() const

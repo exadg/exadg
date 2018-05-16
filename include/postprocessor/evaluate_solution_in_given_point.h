@@ -255,8 +255,8 @@ void evaluate_vectorial_quantity_in_point(DoFHandler<dim> const                 
 }
 
 /*
- *  For a given point in physical space, find all adjacent cells and store the global dof index
- *  as well as the shape function values (to be used for interpolation of the solution in the given point afterwards).
+ *  For a given point in physical space, find all adjacent cells and store the global dof index of the first dof of the cell
+ *  as well as the shape function values of all dofs (to be used for interpolation of the solution in the given point afterwards).
  *  (global_dof_index, shape_values) are stored in a vector where each entry corresponds to one adjacent, locally-owned cell.
  */
 template<int dim, typename Number>
@@ -266,7 +266,7 @@ void get_global_dof_index_and_shape_values(DoFHandler<dim> const                
                                            Point<dim> const                                           &point,
                                            std::vector<std::pair<unsigned int,std::vector<Number> > > &global_dof_index_and_shape_values)
 {
-  typedef std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> > MY_PAIR;
+  typedef std::pair<typename DoFHandler<dim>::active_cell_iterator /*cell*/, Point<dim> /*in ref-coordinates*/ > MY_PAIR;
   std::vector<MY_PAIR> adjacent_cells = find_all_active_cells_around_point(mapping,dof_handler,point);
 
   // loop over all adjacent cells
@@ -275,7 +275,7 @@ void get_global_dof_index_and_shape_values(DoFHandler<dim> const                
     // go on only if cell is owned by the processor
     if(cell->first->is_locally_owned())
     {
-      Assert(GeometryInfo<dim>::distance_to_unit_cell(cell->second) < 1e-10,ExcInternalError());
+      Assert(GeometryInfo<dim>::distance_to_unit_cell(cell->second) < 1e-10, ExcInternalError());
 
       const FiniteElement<dim> &fe = dof_handler.get_fe();
       const Quadrature<dim> quadrature (GeometryInfo<dim>::project_to_unit_cell(cell->second));
@@ -295,7 +295,7 @@ void get_global_dof_index_and_shape_values(DoFHandler<dim> const                
 
 /*
  *  Interpolate solution in point by using precomputed shape functions values (for efficiency!)
- *  Noet that we assume that we are dealing in discontinuous finite elements.
+ *  Noet that we assume that we are dealing with discontinuous finite elements.
  */
 template<int dim, typename Number>
 void interpolate_value(DoFHandler<dim> const                                &dof_handler,
