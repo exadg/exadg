@@ -26,14 +26,14 @@ unsigned int const DIMENSION = 3;
 
 // set the polynomial degree of the shape functions for velocity and pressure
 unsigned int const FE_DEGREE_VELOCITY = 3;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
+unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
 // set xwall specific parameters
 unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for DOMAIN 1
-unsigned int const REFINE_STEPS_SPACE_DOMAIN1 = 0;
+unsigned int const REFINE_STEPS_SPACE_DOMAIN1 = 1;
 
 // set the number of refine levels for DOMAIN 2
 unsigned int const REFINE_STEPS_SPACE_DOMAIN2 = 0;
@@ -41,6 +41,12 @@ unsigned int const REFINE_STEPS_SPACE_DOMAIN2 = 0;
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
+
+// output folders
+std::string OUTPUT_FOLDER = "output/fda/";
+std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu_new/";
+std::string OUTPUT_NAME_1 = "precursor";
+std::string OUTPUT_NAME_2 = "nozzle";
 
 // set problem specific parameters like physical dimensions, etc.
 
@@ -56,6 +62,17 @@ double const LENGTH_CONE = (R_OUTER-R_INNER)/std::tan(20.0/2.0*numbers::PI/180.0
 double const LENGTH_THROAT = 0.04;
 double const LENGTH_OUTFLOW = 8.0*R_OUTER;
 double const OFFSET = 2.0*R_OUTER;
+
+// mesh parameters
+unsigned int const N_CELLS_AXIAL = 2;
+unsigned int const N_CELLS_AXIAL_PRECURSOR = 2*N_CELLS_AXIAL;
+unsigned int const N_CELLS_AXIAL_INFLOW = 4*N_CELLS_AXIAL;
+unsigned int const N_CELLS_AXIAL_CONE = 2*N_CELLS_AXIAL;
+unsigned int const N_CELLS_AXIAL_THROAT = 4*N_CELLS_AXIAL;
+unsigned int const N_CELLS_AXIAL_OUTFLOW = 4*N_CELLS_AXIAL;
+
+unsigned int const MANIFOLD_ID_CYLINDER = 1234;
+unsigned int const MANIFOLD_ID_OFFSET_CONE = 7890;
 
 // z-coordinates
 double const Z2_OUTFLOW = LENGTH_OUTFLOW;
@@ -73,59 +90,41 @@ double const Z1_INFLOW = - LENGTH_THROAT - LENGTH_CONE - LENGTH_INFLOW;
 double const Z2_PRECURSOR = - LENGTH_THROAT - LENGTH_CONE - LENGTH_INFLOW - OFFSET;
 double const Z1_PRECURSOR = - LENGTH_THROAT - LENGTH_CONE - LENGTH_INFLOW - OFFSET - LENGTH_PRECURSOR;
 
-// set target flow rate according to the desired Reynolds number
-// if (Re_t == 500)
-//double const TARGET_FLOW_RATE = 5.21e-6;
-// else if (Re_t = 2000)
-//double const TARGET_FLOW_RATE = 2.08e-5;
-// else if (Re_t = 3500)
-//double const TARGET_FLOW_RATE = 3.64e-5;
-// else if (Re_t = 5000)
-//double const TARGET_FLOW_RATE = 5.21e-5;
-// else if (Re_t = 6500)
-double const TARGET_FLOW_RATE = 6.77e-5;
-
 double const AREA_INFLOW = R_OUTER*R_OUTER*numbers::PI;
 double const AREA_THROAT = R_INNER*R_INNER*numbers::PI;
-double const MAX_VELOCITY = 2.0*TARGET_FLOW_RATE/AREA_INFLOW;
-double const MAX_VELOCITY_CFL = MAX_VELOCITY * AREA_INFLOW/AREA_THROAT;
 
-// kinematic viscosity
-// same viscosity for all Reynolds numbers
+// kinematic viscosity (same viscosity for all Reynolds numbers)
 double const VISCOSITY = 3.31e-6;
 
-// data structures that we need to control the mass flow rate
-// NOTA BENE: these variables will be modified by the postprocessor!
-double MEAN_VELOCITY = 0.0;
-// the flow rate controller needs the time step size as parameter
-double TIME_STEP_FLOW_RATE_CONTROLLER = 1.0;
+// set the throat Reynolds number Re_throat = U_{mean,throat} * (2 R_throat) / nu
+//double const RE = 500;
+//double const RE = 2000;
+double const RE = 3500;
+//double const RE = 5000;
+//double const RE = 6500;
 
-// mesh parameters
-unsigned int const N_CELLS_AXIAL_PRECURSOR = 2;
-unsigned int const N_CELLS_AXIAL_INFLOW = 4;
-unsigned int const N_CELLS_AXIAL_CONE = 2;
-unsigned int const N_CELLS_AXIAL_THROAT = 4;
-unsigned int const N_CELLS_AXIAL_OUTFLOW = 4;
+double const MEAN_VELOCITY_THROAT = RE * VISCOSITY / (2.0*R_INNER);
+double const TARGET_FLOW_RATE = MEAN_VELOCITY_THROAT*AREA_THROAT;
 
-unsigned int const MANIFOLD_ID_CYLINDER = 1234;
-unsigned int const MANIFOLD_ID_OFFSET_CONE = 7890;
+double const MAX_VELOCITY = 2.0*TARGET_FLOW_RATE/AREA_INFLOW;
+double const MAX_VELOCITY_CFL = 2.0*TARGET_FLOW_RATE/AREA_THROAT;
 
+// start and end time
 double const START_TIME = 0.0;
 // estimation of flow-through time T_0 (through nozzle section)
 // based on the mean velocity through throat
-double const MEAN_VELOCITY_THROAT = TARGET_FLOW_RATE/AREA_THROAT;
 double const T_0 = (LENGTH_THROAT)/MEAN_VELOCITY_THROAT;
-double const END_TIME = 1.0e2*T_0;
+double const END_TIME = 50.0*T_0;
 
+// sampling
+double const SAMPLE_START_TIME = 10.0*T_0;
+double const SAMPLE_END_TIME = END_TIME;
 
-// output folders
-std::string OUTPUT_FOLDER = "output/fda/";
-std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu_new/";
-std::string OUTPUT_NAME_1 = "precursor";
-std::string OUTPUT_NAME_2 = "nozzle";
-
-// DOMAIN 1: precursor (used to generate inflow data)
-// DOMAIN 2: nozzle (the actual domain of interest)
+// data structures that we need to control the mass flow rate
+// NOTA BENE: these variables will be modified by the postprocessor!
+double FLOW_RATE = 0.0;
+// the flow rate controller needs the time step size as parameter
+double TIME_STEP_FLOW_RATE_CONTROLLER = 1.0;
 
 // data structures that we need to apply the velocity inflow profile
 // we currently use global variables for this purpose
@@ -135,7 +134,7 @@ std::vector<double> R_VALUES(N_POINTS_R);
 std::vector<double> PHI_VALUES(N_POINTS_PHI);
 std::vector<Tensor<1,DIMENSION,double> > VELOCITY_VALUES(N_POINTS_R*N_POINTS_PHI);
 
-// initial vectors
+// initialize vectors
 void initialize_r_and_phi_values()
 {
   AssertThrow(N_POINTS_R >= 2, ExcMessage("Variable N_POINTS_R is invalid"));
@@ -179,6 +178,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
  *  else if(domain_id == 2){}
  *
  *  Most of the input parameters are the same for both domains!
+ *
+ *  DOMAIN 1: precursor (used to generate inflow data)
+ *  DOMAIN 2: nozzle (the actual domain of interest)
  */
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const domain_id)
@@ -205,7 +207,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   max_velocity = MAX_VELOCITY_CFL;
   // ConstTimeStepCFL: CFL_critical = 0.3 - 0.5 for k=3
   // AdaptiveTimeStepCFL: CFL_critical = 0.125 - 0.15 for k=3
-  cfl = 0.14;
+  cfl = 0.13;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
@@ -264,7 +266,6 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   solver_pressure_poisson = SolverPressurePoisson::PCG;
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::Jacobi; //GeometricMultigrid;
   multigrid_data_pressure_poisson.smoother = MultigridSmoother::Chebyshev; //Chebyshev; //Jacobi; //GMRES;
-  //Chebyshev
   multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
   abs_tol_pressure = 1.e-12;
@@ -380,9 +381,13 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
     output_data.output_folder = OUTPUT_FOLDER_VTU;
     output_data.output_name = OUTPUT_NAME_1;
     output_data.output_start_time = start_time;
-    output_data.output_interval_time = T_0;
+    output_data.output_interval_time = 1.0*T_0;
     output_data.write_divergence = true;
     output_data.write_processor_id = true;
+    output_data.mean_velocity.calculate = true;
+    output_data.mean_velocity.sample_start_time = SAMPLE_START_TIME;
+    output_data.mean_velocity.sample_end_time = SAMPLE_END_TIME;
+    output_data.mean_velocity.sample_every_timesteps = 1;
     output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
     // inflow data
@@ -405,9 +410,13 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
     output_data.output_folder = OUTPUT_FOLDER_VTU;
     output_data.output_name = OUTPUT_NAME_2;
     output_data.output_start_time = start_time;
-    output_data.output_interval_time = T_0;
+    output_data.output_interval_time = 1.0*T_0;
     output_data.write_divergence = true;
     output_data.write_processor_id = true;
+    output_data.mean_velocity.calculate = true;
+    output_data.mean_velocity.sample_start_time = SAMPLE_START_TIME;
+    output_data.mean_velocity.sample_end_time = SAMPLE_END_TIME;
+    output_data.mean_velocity.sample_every_timesteps = 1;
     output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
     // measure mean velocity at inflow boundary of the nozzle domain
@@ -415,7 +424,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
     // over one of the periodic boundaries of the precursor domain)
     mean_velocity_data.calculate = true;
     mean_velocity_data.boundary_IDs.insert(1); // left boundary has ID 1 (see below)
-    Tensor<1,dim> normal; normal[2] = 1.0;
+    mean_velocity_data.write_to_file = false; //true;
+    mean_velocity_data.filename_prefix = OUTPUT_FOLDER + "flow_rate";
   }
 }
 
@@ -479,8 +489,25 @@ double InitialSolutionVelocity<dim>::value(const Point<dim>   &p,
     if(radius > RADIUS)
       radius = RADIUS;
 
+    // parabolic velocity profile
     double const max_velocity_z = MAX_VELOCITY * std::pow(R_OUTER/RADIUS,2.0);
     result = max_velocity_z*(1.0-pow(radius/RADIUS,2.0));
+
+    // Add perturbation (sine + random) for the precursor to initiate
+    // a turbulent flow in case the Reynolds number is large enough
+    // (otherwise, the perturbations will be damped and the flow becomes laminar).
+    if(p[2] <= Z2_PRECURSOR)
+    {
+      double const phi = std::atan2(p[1],p[0]);
+      double const factor = 0.5;
+      double perturbation = factor * max_velocity_z * std::sin(4.0*phi) * std::sin(8.0*numbers::PI*p[2]/LENGTH_PRECURSOR)
+                            + factor * max_velocity_z * ((double)rand()/RAND_MAX-0.5)/0.5;
+
+      perturbation *= (1.0-pow(radius/RADIUS,6.0));
+
+      result += perturbation;
+    }
+
   }
 
   return result;
@@ -557,7 +584,7 @@ public:
 
        // mean velocity is negative since the flow rate is measured at the
        // inflow boundary (normal vector points in upstream direction)
-       f += k*(TARGET_FLOW_RATE - AREA_INFLOW*(-MEAN_VELOCITY))*TIME_STEP_FLOW_RATE_CONTROLLER;
+       f += k*(TARGET_FLOW_RATE - (-FLOW_RATE))*TIME_STEP_FLOW_RATE_CONTROLLER;
 
        result = f;
      }
@@ -1148,7 +1175,7 @@ public:
     inflow_data_calculator->calculate(velocity);
 
     // calculation of mean velocity
-    MEAN_VELOCITY = mean_velocity_calculator->evaluate(velocity);
+    FLOW_RATE = mean_velocity_calculator->calculate_flow_rate(velocity,time);
     // set time step size for flow rate controller
     TIME_STEP_FLOW_RATE_CONTROLLER = time-time_old;
     time_old = time;
