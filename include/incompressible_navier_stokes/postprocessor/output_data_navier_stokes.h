@@ -10,6 +10,39 @@
 
 #include "postprocessor/output_data.h"
 
+/*
+ *  Average velocity field over time for statistically steady, turbulent
+ *  flow problems in order to visualize the time-averaged velocity field.
+ *  Of course, this module can also be used for statistically unsteady problems,
+ *  but in this case the mean velocity field is probably not meaningful.
+ */
+struct OutputDataMeanVelocity
+{
+  OutputDataMeanVelocity()
+    :
+    calculate(false),
+    sample_start_time(0.0),
+    sample_end_time(0.0),
+    sample_every_timesteps(1)
+  {}
+
+  void print(ConditionalOStream &pcout, bool unsteady)
+  {
+    print_parameter(pcout,"Calculate mean velocity", calculate);
+    print_parameter(pcout,"  Sample start time", sample_start_time);
+    print_parameter(pcout,"  Sample end time", sample_end_time);
+    print_parameter(pcout,"  Sample every timesteps", sample_every_timesteps);
+  }
+
+  // calculate mean velocity field (for statistically steady, turbulent flows)
+  bool calculate;
+
+  // sampling information
+  double sample_start_time;
+  double sample_end_time;
+  unsigned int sample_every_timesteps;
+};
+
 struct OutputDataNavierStokes : public OutputData
 {
   OutputDataNavierStokes()
@@ -19,7 +52,8 @@ struct OutputDataNavierStokes : public OutputData
     write_vorticity_magnitude(false),
     write_streamfunction(false),
     write_q_criterion(false),
-    write_processor_id(false)
+    write_processor_id(false),
+    mean_velocity(OutputDataMeanVelocity())
   {}
 
   void print(ConditionalOStream &pcout, bool unsteady)
@@ -58,6 +92,9 @@ struct OutputDataNavierStokes : public OutputData
   // write processor ID to scalar field in order to visualize the
   // distribution of cells to processors
   bool write_processor_id;
+
+  // calculate mean velocity field (averaged over time)
+  OutputDataMeanVelocity mean_velocity;
 };
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_DATA_NAVIER_STOKES_H_ */

@@ -10,6 +10,11 @@
 
 using namespace dealii;
 
+enum class SolutionFieldType {
+  scalar,
+  vector
+};
+
 template<int dim, typename Number>
 class SolutionField
 {

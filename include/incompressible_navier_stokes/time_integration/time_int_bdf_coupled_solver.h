@@ -528,6 +528,8 @@ postprocessing() const
   this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity);
   this->calculate_streamfunction(this->streamfunction,vorticity);
   this->calculate_q_criterion(this->q_criterion, solution[0].block(0));
+  this->calculate_processor_id(this->processor_id);
+  this->calculate_mean_velocity(this->mean_velocity, solution[0].block(0));
 
   this->postprocessor->do_postprocessing(solution[0].block(0),
                                          solution[0].block(0), // intermediate_velocity = velocity
@@ -570,6 +572,7 @@ postprocessing_steady_problem() const
   this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity);
   this->calculate_streamfunction(this->streamfunction,vorticity);
   this->calculate_q_criterion(this->q_criterion, solution[0].block(0));
+  this->calculate_processor_id(this->processor_id);
 
   this->postprocessor->do_postprocessing(solution[0].block(0),
                                          solution[0].block(0), // intermediate_velocity = velocity

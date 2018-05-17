@@ -97,7 +97,6 @@ private:
 
   virtual parallel::distributed::Vector<value_type> const & get_velocity();
 
-  // TODO
   void postprocessing_stability_analysis();
 
   // time integrator constants: extrapolation scheme
@@ -334,8 +333,9 @@ postprocessing() const
   this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity[0]);
   this->calculate_streamfunction(this->streamfunction,vorticity[0]);
   this->calculate_q_criterion(this->q_criterion, velocity[0]);
+  this->calculate_processor_id(this->processor_id);
+  this->calculate_mean_velocity(this->mean_velocity, velocity[0]);
 
-  //TODO
   this->postprocessor->do_postprocessing(velocity[0],
                                          intermediate_velocity,
                                          pressure[0],
@@ -396,8 +396,9 @@ postprocessing_steady_problem() const
   this->calculate_divergence(this->divergence, intermediate_velocity);
   this->calculate_velocity_magnitude(this->velocity_magnitude, velocity[0]);
   this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity[0]);
-  this->calculate_streamfunction(this->streamfunction,vorticity[0]);
+  this->calculate_streamfunction(this->streamfunction, vorticity[0]);
   this->calculate_q_criterion(this->q_criterion, velocity[0]);
+  this->calculate_processor_id(this->processor_id);
 
   this->postprocessor->do_postprocessing(velocity[0],
                                          intermediate_velocity,

@@ -181,6 +181,7 @@ public:
     M(1),
     delta_s(1.0),
     pcout(std::cout,Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
+    counter_mean_velocity(0),
     n_refine_time(n_refine_time_in),
     navier_stokes_operation(navier_stokes_operation_in)
   {}
@@ -252,6 +253,11 @@ protected:
   void calculate_q_criterion(parallel::distributed::Vector<value_type>       &dst,
                              parallel::distributed::Vector<value_type> const &src) const;
 
+  void calculate_processor_id(parallel::distributed::Vector<value_type>       &dst) const;
+
+  void calculate_mean_velocity(parallel::distributed::Vector<value_type>       &dst,
+                               parallel::distributed::Vector<value_type> const &src) const;
+
   void initialize_oif();
 
   virtual void calculate_time_step();
@@ -288,6 +294,7 @@ protected:
   // one double for the time step size would be sufficient.
   std::vector<double> time_steps;
 
+  // Time integrator constants of BDF and extrapolation schemes
   BDFTimeIntegratorConstants bdf;
   ExtrapolationConstants extra;
 
@@ -312,18 +319,22 @@ protected:
   // substepping time step size delta_s for operator-integration-factor splitting
   double delta_s;
 
-  // solution vectors needed for substepping of convective term
+  // solution vectors needed for OIF substepping of convective term
   parallel::distributed::Vector<value_type> solution_tilde_m;
   parallel::distributed::Vector<value_type> solution_tilde_mp;
 
   ConditionalOStream pcout;
 
-  // postprocessing: divergence of velocity
+  // postprocessing: additional fields
   mutable parallel::distributed::Vector<value_type> divergence;
   mutable parallel::distributed::Vector<value_type> velocity_magnitude;
   mutable parallel::distributed::Vector<value_type> vorticity_magnitude;
   mutable parallel::distributed::Vector<value_type> streamfunction;
   mutable parallel::distributed::Vector<value_type> q_criterion;
+  mutable parallel::distributed::Vector<value_type> processor_id;
+  // mean velocity, i.e., velocity field averaged over time
+  mutable parallel::distributed::Vector<value_type> mean_velocity;
+  mutable unsigned int counter_mean_velocity;
 
   std::vector<SolutionField<dim,value_type> > additional_fields;
 
@@ -481,6 +492,32 @@ initialize_vectors()
     sol.vector = &q_criterion;
     this->additional_fields.push_back(sol);
   }
+
+  // processor id
+  if(this->param.output_data.write_processor_id == true)
+  {
+    navier_stokes_operation->initialize_vector_velocity_scalar(this->processor_id);
+
+    SolutionField<dim,value_type> sol;
+    sol.type = SolutionFieldType::scalar;
+    sol.name = "processor_id";
+    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
+    sol.vector = &processor_id;
+    this->additional_fields.push_back(sol);
+  }
+
+  // mean velocity
+  if(this->param.output_data.mean_velocity.calculate == true)
+  {
+    navier_stokes_operation->initialize_vector_velocity(this->mean_velocity);
+
+    SolutionField<dim,value_type> sol;
+    sol.type = SolutionFieldType::vector;
+    sol.name = "mean velocity";
+    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u();
+    sol.vector = &mean_velocity;
+    this->additional_fields.push_back(sol);
+  }
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -634,6 +671,34 @@ calculate_q_criterion(parallel::distributed::Vector<value_type>       &dst,
   if(this->param.output_data.write_output == true && this->param.output_data.write_q_criterion == true)
   {
     navier_stokes_operation->compute_q_criterion(dst, src);
+  }
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+calculate_processor_id(parallel::distributed::Vector<value_type>       &dst) const
+{
+  if(this->param.output_data.write_output == true && this->param.output_data.write_processor_id == true)
+  {
+    dst = Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+  }
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+calculate_mean_velocity(parallel::distributed::Vector<value_type>       &dst,
+                        parallel::distributed::Vector<value_type> const &src) const
+{
+  if(this->param.output_data.write_output == true && this->param.output_data.mean_velocity.calculate == true)
+  {
+    if(this->time >= this->param.output_data.mean_velocity.sample_start_time &&
+       this->time <= this->param.output_data.mean_velocity.sample_end_time &&
+       this->time_step_number%this->param.output_data.mean_velocity.sample_every_timesteps == 0)
+    {
+      dst.sadd((double)counter_mean_velocity,1.0,src);
+      ++counter_mean_velocity;
+      dst *= 1./(double)counter_mean_velocity;
+    }
   }
 }
 

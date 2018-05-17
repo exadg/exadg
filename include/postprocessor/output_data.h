@@ -64,9 +64,4 @@ struct OutputData
   unsigned int number_of_patches;
 };
 
-enum class SolutionFieldType {
-  scalar,
-  vector
-};
-
 #endif /* INCLUDE_POSTPROCESSOR_OUTPUT_DATA_H_ */
