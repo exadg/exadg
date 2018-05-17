@@ -1,7 +1,7 @@
 /*
- * TurbulentChannel.h
+ * fda_nozzle_benchmark.h
  *
- *  Created on: Oct 14, 2016
+ *  Created on: May, 2018
  *      Author: fehn
  */
 
@@ -75,7 +75,7 @@ double const Z1_PRECURSOR = - LENGTH_THROAT - LENGTH_CONE - LENGTH_INFLOW - OFFS
 
 // set target flow rate according to the desired Reynolds number
 // if (Re_t == 500)
-double const TARGET_FLOW_RATE = 5.21e-6;
+//double const TARGET_FLOW_RATE = 5.21e-6;
 // else if (Re_t = 2000)
 //double const TARGET_FLOW_RATE = 2.08e-5;
 // else if (Re_t = 3500)
@@ -83,10 +83,12 @@ double const TARGET_FLOW_RATE = 5.21e-6;
 // else if (Re_t = 5000)
 //double const TARGET_FLOW_RATE = 5.21e-5;
 // else if (Re_t = 6500)
-//double const TARGET_FLOW_RATE = 6.77e-5;
+double const TARGET_FLOW_RATE = 6.77e-5;
 
 double const AREA_INFLOW = R_OUTER*R_OUTER*numbers::PI;
+double const AREA_THROAT = R_INNER*R_INNER*numbers::PI;
 double const MAX_VELOCITY = 2.0*TARGET_FLOW_RATE/AREA_INFLOW;
+double const MAX_VELOCITY_CFL = MAX_VELOCITY * AREA_INFLOW/AREA_THROAT;
 
 // kinematic viscosity
 // same viscosity for all Reynolds numbers
@@ -95,6 +97,7 @@ double const VISCOSITY = 3.31e-6;
 // data structures that we need to control the mass flow rate
 // NOTA BENE: these variables will be modified by the postprocessor!
 double MEAN_VELOCITY = 0.0;
+// the flow rate controller needs the time step size as parameter
 double TIME_STEP_FLOW_RATE_CONTROLLER = 1.0;
 
 // mesh parameters
@@ -108,15 +111,16 @@ unsigned int const MANIFOLD_ID_CYLINDER = 1234;
 unsigned int const MANIFOLD_ID_OFFSET_CONE = 7890;
 
 double const START_TIME = 0.0;
-// estimation of flow-through time T_0 based on the mean velocity (i.e. velocity averaged over cross section)
-double const MEAN_VELOCITY_TARGET = TARGET_FLOW_RATE/AREA_INFLOW;
-double const T_0 = (LENGTH_INFLOW+LENGTH_CONE+LENGTH_THROAT+LENGTH_OUTFLOW)/MEAN_VELOCITY_TARGET;
-double const END_TIME = 1.0*T_0;
+// estimation of flow-through time T_0 (through nozzle section)
+// based on the mean velocity through throat
+double const MEAN_VELOCITY_THROAT = TARGET_FLOW_RATE/AREA_THROAT;
+double const T_0 = (LENGTH_THROAT)/MEAN_VELOCITY_THROAT;
+double const END_TIME = 1.0e2*T_0;
 
 
 // output folders
 std::string OUTPUT_FOLDER = "output/fda/";
-std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
+std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu_new/";
 std::string OUTPUT_NAME_1 = "precursor";
 std::string OUTPUT_NAME_2 = "nozzle";
 
@@ -155,7 +159,6 @@ void initialize_velocity_values()
     {
       Tensor<1,DIMENSION,double> velocity;
       // flow in z-direction
-      // TODO: initialize with zeros
       velocity[2] = MAX_VELOCITY*(1.0-std::pow(R_VALUES[iy]/R_OUTER,2.0));
       VELOCITY_VALUES[iy*N_POINTS_R + iz] = velocity;
     }
@@ -183,7 +186,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
   equation_type = EquationType::NavierStokes;
-  formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation; //LaplaceFormulation; //DivergenceFormulation;
+  use_outflow_bc_convective_term = true;
+  formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
   right_hand_side = true;
 
 
@@ -195,11 +199,13 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; // BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; // AdaptiveTimeStepCFL
-  max_velocity = MAX_VELOCITY;
-  cfl = 0.15;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  calculation_of_time_step_size = TimeStepCalculation::AdaptiveTimeStepCFL; // AdaptiveTimeStepCFL
+  max_velocity = MAX_VELOCITY_CFL;
+  // ConstTimeStepCFL: CFL_critical = 0.3 - 0.5 for k=3
+  // AdaptiveTimeStepCFL: CFL_critical = 0.125 - 0.15 for k=3
+  cfl = 0.14;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
@@ -256,7 +262,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   // pressure Poisson equation
   IP_factor_pressure = 1.0;
   solver_pressure_poisson = SolverPressurePoisson::PCG;
-  preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
+  preconditioner_pressure_poisson = PreconditionerPressurePoisson::Jacobi; //GeometricMultigrid;
   multigrid_data_pressure_poisson.smoother = MultigridSmoother::Chebyshev; //Chebyshev; //Jacobi; //GMRES;
   //Chebyshev
   multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
@@ -361,24 +367,27 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   multigrid_data_schur_complement_preconditioner.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
 
+  // OUTPUT AND POSTPROCESSING
+  print_input_parameters = true;
+
+  // output of solver information
+  output_solver_info_every_timesteps = 1e2; //1e5;
+
   if(domain_id == 1)
   {
-    // OUTPUT AND POSTPROCESSING
-    print_input_parameters = true;
-
     // write output for visualization of results
     output_data.write_output = true;
     output_data.output_folder = OUTPUT_FOLDER_VTU;
     output_data.output_name = OUTPUT_NAME_1;
     output_data.output_start_time = start_time;
-    output_data.output_interval_time = 0.1;
+    output_data.output_interval_time = T_0;
     output_data.write_divergence = true;
+    output_data.write_processor_id = true;
     output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
-    // output of solver information
-    output_solver_info_every_timesteps = 1; //1e5;
-
     // inflow data
+    // prescribe solution at the right boundary of the precursor domain
+    // as weak Dirichlet boundary condition at the left boundary of the nozzle domain
     inflow_data.write_inflow_data = true;
     inflow_data.inflow_geometry = InflowGeometry::Cylindrical;
     inflow_data.normal_direction = 2;
@@ -391,20 +400,15 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   }
   else if(domain_id == 2)
   {
-    // OUTPUT AND POSTPROCESSING
-    print_input_parameters = true;
-
     // write output for visualization of results
     output_data.write_output = true;
     output_data.output_folder = OUTPUT_FOLDER_VTU;
     output_data.output_name = OUTPUT_NAME_2;
     output_data.output_start_time = start_time;
-    output_data.output_interval_time = 0.1;
+    output_data.output_interval_time = T_0;
     output_data.write_divergence = true;
+    output_data.write_processor_id = true;
     output_data.number_of_patches = FE_DEGREE_VELOCITY;
-
-    // output of solver information
-    output_solver_info_every_timesteps = 1; //1e5;
 
     // measure mean velocity at inflow boundary of the nozzle domain
     // (since matrix-free implementation does not allow to integrate
@@ -414,6 +418,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
     Tensor<1,dim> normal; normal[2] = 1.0;
   }
 }
+
+
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -463,7 +469,6 @@ double InitialSolutionVelocity<dim>::value(const Point<dim>   &p,
   double result = 0.0;
 
   // flow in z-direction
-  // TODO: initialize with zero function
   if(component == 2)
   {
     double radius = std::sqrt(p[0]*p[0]+p[1]*p[1]);
@@ -487,8 +492,8 @@ template<int dim>
 class InflowProfile : public Function<dim>
 {
 public:
-  InflowProfile (const unsigned int  n_components = dim,
-                 const double        time = 0.)
+  InflowProfile (const unsigned int n_components = dim,
+                 const double       time = 0.)
     :
     Function<dim>(n_components, time)
   {
@@ -498,8 +503,8 @@ public:
 
   virtual ~InflowProfile(){};
 
-  virtual double value (const Point<dim>    &p,
-                        const unsigned int  component = 0) const
+  virtual double value (const Point<dim>   &p,
+                        const unsigned int component = 0) const
   {
     // compute polar coordinates (r, phi) from point p
     // given in Cartesian coordinates (x, y) = inflow plane
@@ -529,7 +534,9 @@ public:
    RightHandSide (const double time = 0.)
      :
      Function<dim>(dim, time),
-     f(0.0) // f(t=t_0) = f_0
+     // initialize the body force such that the desired flow rate is obtained
+     // under the assumption of a parabolic velocity profile in radial direction
+     f(4.0*VISCOSITY*MAX_VELOCITY/std::pow(R_OUTER,2.0)) // f(t=t_0) = f_0
    {}
 
    virtual ~RightHandSide(){};
@@ -539,14 +546,19 @@ public:
    {
      double result = 0.0;
 
-     //channel flow with periodic bc
+     // Channel flow with periodic bc in z-direction:
+     // The flow is driven by body force in z-direction
      if(component==2)
      {
+       // use an I-controller to asymptotically reach the desired target flow rate
+
        // dimensional analysis: [k] = 1/(m^2 s^2) -> k = const * nu^2 / A_inflow^3
        double const k = 1.0*std::pow(VISCOSITY,2.0)/std::pow(AREA_INFLOW,3.0);
+
        // mean velocity is negative since the flow rate is measured at the
        // inflow boundary (normal vector points in upstream direction)
        f += k*(TARGET_FLOW_RATE - AREA_INFLOW*(-MEAN_VELOCITY))*TIME_STEP_FLOW_RATE_CONTROLLER;
+
        result = f;
      }
 
