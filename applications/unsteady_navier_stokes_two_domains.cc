@@ -54,6 +54,7 @@ private:
 
   void setup_navier_stokes_operation();
   void setup_time_integrator(bool const do_restart);
+  void set_start_time();
   void set_combined_time_step_size();
   void setup_solvers();
   void setup_postprocessor();
@@ -422,6 +423,52 @@ setup_time_integrator(bool const do_restart)
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+set_start_time()
+{
+  // Setup time integrator and get time step size
+  double time_1 = param_1.start_time, time_2 = param_2.start_time;
+
+  double time = std::min(time_1,time_2);
+
+  // Set the same time step size for both time integrators (for the two domains)
+  // DOMAIN 1
+  if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+  {
+    time_integrator_coupled_1->set_time(time);
+  }
+  else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  {
+    time_integrator_dual_splitting_1->set_time(time);
+  }
+  else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+  {
+    time_integrator_pressure_correction_1->set_time(time);
+  }
+  else
+  {
+    AssertThrow(false,ExcMessage("Not implemented."));
+  }
+  // DOMAIN 2
+  if(this->param_2.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+  {
+    time_integrator_coupled_2->set_time(time);
+  }
+  else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  {
+    time_integrator_dual_splitting_2->set_time(time);
+  }
+  else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+  {
+    time_integrator_pressure_correction_2->set_time(time);
+  }
+  else
+  {
+    AssertThrow(false,ExcMessage("Not implemented."));
+  }
+}
+
+template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 set_combined_time_step_size()
 {
   // Setup time integrator and get time step size
@@ -559,6 +606,8 @@ void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_q
 run_timeloop()
 {
   bool finished_1 = false, finished_2 = false;
+
+  set_start_time();
 
   set_combined_time_step_size();
 
