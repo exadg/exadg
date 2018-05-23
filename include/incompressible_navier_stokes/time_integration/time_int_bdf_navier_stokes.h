@@ -196,7 +196,17 @@ public:
 
   virtual void analyze_computing_times() const = 0;
 
-  double get_time_step_size()
+  double get_time() const
+  {
+    return this->time;
+  }
+
+  void set_time(double const &current_time)
+  {
+    this->time = current_time;
+  }
+
+  double get_time_step_size() const
   {
     return time_steps[0];
   }
@@ -907,7 +917,17 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 bool TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
 advance_one_timestep(bool write_final_output)
 {
-  if(this->time_step_number == 1)
+  // a small number which is much smaller than the time step size
+  const value_type EPSILON = 1.0e-10;
+
+  bool started = time>param.start_time-EPSILON;
+
+  if(!started)
+  {
+    time += time_steps[0];
+  }
+
+  if(started && this->time_step_number == 1)
   {
     pcout << std::endl << "Starting time loop ..." << std::endl;
 
@@ -916,13 +936,10 @@ advance_one_timestep(bool write_final_output)
     postprocessing();
   }
 
-  // a small number which is much smaller than the time step size
-  const value_type EPSILON = 1.0e-10;
-
   // check if we have reached the end of the time loop
   bool finished = !(time<(param.end_time-EPSILON) && time_step_number<=param.max_number_of_time_steps);
 
-  if(!finished)
+  if(started && !finished)
   {
     // advance one time step
     do_timestep();

@@ -831,10 +831,10 @@ private:
   //Global points
   std::vector<std::vector<Point<dim> > > global_points;
 
-  // For all lines: for all ppints along the line: list of all relevant cells and points in ref coordinates
+  // For all lines: for all points along the line: list of all relevant cells and points in ref coordinates
   std::vector<std::vector<std::vector<std::pair<typename DoFHandler<dim>::active_cell_iterator,Point<dim> > > > > cells_and_ref_points_velocity;
 
-  // For all lines: for all ppints along the line: list of all relevant cells and points in ref coordinates
+  // For all lines: for all points along the line: list of all relevant cells and points in ref coordinates
   std::vector<std::vector<std::vector<std::pair<typename DoFHandler<dim>::active_cell_iterator,Point<dim> > > > > cells_and_ref_points_pressure;
 
   // For all lines: for pressure reference point: list of all relevant cells and points in ref coordinates

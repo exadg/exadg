@@ -24,6 +24,7 @@ struct MeanVelocityCalculatorData
   :
   calculate(false),
   write_to_file(false),
+  direction(Tensor<1,dim,double>()),
   filename_prefix("mean_velocity")
  {}
 
@@ -43,12 +44,17 @@ struct MeanVelocityCalculatorData
   // calculate mean velocity?
   bool calculate;
 
-  // set containing boundary ID's of the surface area
-  // for which we want to calculate the mean velocity
+  // Set containing boundary ID's of the surface area
+  // for which we want to calculate the mean velocity.
+  // This parameter is only relevant for area-based computation.
   std::set<types::boundary_id> boundary_IDs;
 
   // write results to file?
   bool write_to_file;
+
+  // Direction in which we want to compute the flow rate
+  // This parameter is only relevant for volume-based computation.
+  Tensor<1,dim,double> direction;
 
   // filename
   std::string filename_prefix;
@@ -66,60 +72,31 @@ public:
     matrix_free_data(matrix_free_data_in),
     dof_quad_index_data(dof_quad_index_data_in),
     area_has_been_initialized(false),
+    volume_has_been_initialized(false),
     area(0.0),
+    volume(0.0),
     clear_files(true)
   {}
 
-  Number calculate_mean_velocity(parallel::distributed::Vector<Number> const &velocity,
-                                 double const                                &time)
+  Number calculate_mean_velocity_area(parallel::distributed::Vector<Number> const &velocity,
+                                      double const                                &time)
   {
     if(data.calculate == true)
     {
       if(area_has_been_initialized == false)
       {
-        this->area = calculate_area(matrix_free_data,
-                                    dof_quad_index_data.dof_index_velocity,
-                                    dof_quad_index_data.quad_index_velocity);
+        this->area = calculate_area();
 
         area_has_been_initialized = true;
       }
 
-      Number flow_rate = do_calculate_flow_rate(matrix_free_data,
-                                                dof_quad_index_data.dof_index_velocity,
-                                                dof_quad_index_data.quad_index_velocity,
-                                                velocity);
+      Number flow_rate = do_calculate_flow_rate(velocity);
 
       AssertThrow(area_has_been_initialized == true, ExcMessage("Area has not been initialized."));
       AssertThrow(this->area != 0.0, ExcMessage("Area has not been initialized."));
       Number mean_velocity = flow_rate / this->area;
 
-//      if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-//        std::cout << "Mean velocity = " << -mean_velocity << " [m^3/s]" << std::endl;
-
-      // write output file
-      if(data.write_to_file == true && Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
-      {
-        std::ostringstream filename;
-        filename << data.filename_prefix;
-
-        std::ofstream f;
-        if(clear_files == true)
-        {
-          f.open(filename.str().c_str(),std::ios::trunc);
-          f << std::endl << "  Time                Mean velocity [m/s]" << std::endl;
-
-          clear_files = false;
-        }
-        else
-        {
-          f.open(filename.str().c_str(),std::ios::app);
-        }
-
-        unsigned int precision = 12;
-        f << std::scientific << std::setprecision(precision)
-          << std::setw(precision+8) << time
-          << std::setw(precision+8) << mean_velocity << std::endl;
-      }
+      write_output(mean_velocity,time,"Mean velocity [m/s]");
 
       return mean_velocity;
     }
@@ -129,43 +106,38 @@ public:
     }
   }
 
-  Number calculate_flow_rate(parallel::distributed::Vector<Number> const &velocity,
-                             double const                                &time)
+  Number calculate_mean_velocity_volume(parallel::distributed::Vector<Number> const &velocity,
+                                        double const                                &time)
   {
     if(data.calculate == true)
     {
-      Number flow_rate = do_calculate_flow_rate(matrix_free_data,
-                                                dof_quad_index_data.dof_index_velocity,
-                                                dof_quad_index_data.quad_index_velocity,
-                                                velocity);
-
-//      if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-//        std::cout << "Flow rate = " << -flow_rate << " [m^3/s]" << std::endl;
-
-      // write output file
-      if(data.write_to_file == true && Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+      if(volume_has_been_initialized == false)
       {
-        std::ostringstream filename;
-        filename << data.filename_prefix;
+        this->volume = calculate_volume();
 
-        std::ofstream f;
-        if(clear_files == true)
-        {
-          f.open(filename.str().c_str(),std::ios::trunc);
-          f << std::endl << "  Time                Flow rate [m^3/s]" << std::endl;
-
-          clear_files = false;
-        }
-        else
-        {
-          f.open(filename.str().c_str(),std::ios::app);
-        }
-
-        unsigned int precision = 12;
-        f << std::scientific << std::setprecision(precision)
-          << std::setw(precision+8) << time
-          << std::setw(precision+8) << flow_rate << std::endl;
+        volume_has_been_initialized = true;
       }
+
+      Number mean_velocity = do_calculate_mean_velocity_volume(velocity);
+
+      write_output(mean_velocity,time,"Mean velocity [m/s]");
+
+      return mean_velocity;
+    }
+    else
+    {
+      return -1.0;
+    }
+  }
+
+  Number calculate_flow_rate_area(parallel::distributed::Vector<Number> const &velocity,
+                                  double const                                &time)
+  {
+    if(data.calculate == true)
+    {
+      Number flow_rate = do_calculate_flow_rate_area(velocity);
+
+      write_output(flow_rate,time,"Flow rate [m^3/s]");
 
       return flow_rate;
     }
@@ -175,12 +147,43 @@ public:
     }
   }
 
-  Number calculate_area(MatrixFree<dim,Number> const &matrix_free_data,
-                        unsigned int const           &dof_index_velocity,
-                        unsigned int const           &quad_index_velocity)
+
+private:
+  void write_output(Number const      &value,
+                    double const      &time,
+                    std::string const &name)
+  {
+    // write output file
+    if(data.write_to_file == true && Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+    {
+      std::ostringstream filename;
+      filename << data.filename_prefix;
+
+      std::ofstream f;
+      if(clear_files == true)
+      {
+        f.open(filename.str().c_str(),std::ios::trunc);
+        f << std::endl << "  Time                " + name << std::endl;
+
+        clear_files = false;
+      }
+      else
+      {
+        f.open(filename.str().c_str(),std::ios::app);
+      }
+
+      unsigned int precision = 12;
+      f << std::scientific << std::setprecision(precision)
+        << std::setw(precision+8) << time
+        << std::setw(precision+8) << value << std::endl;
+    }
+  }
+
+  Number calculate_area() const
   {
     FEFaceEvaluation<dim,fe_degree,fe_degree+1,dim,Number>
-      fe_eval_velocity(matrix_free_data,true,dof_index_velocity,quad_index_velocity);
+      fe_eval_velocity(matrix_free_data,true,dof_quad_index_data.dof_index_velocity,
+                       dof_quad_index_data.quad_index_velocity);
 
     AlignedVector<VectorizedArray<Number> > JxW_values(fe_eval_velocity.n_q_points);
 
@@ -217,13 +220,61 @@ public:
     return area;
   }
 
-  Number do_calculate_flow_rate(MatrixFree<dim,Number> const                &matrix_free_data,
-                                unsigned int const                          &dof_index_velocity,
-                                unsigned int const                          &quad_index_velocity,
-                                parallel::distributed::Vector<Number> const &velocity)
+  Number calculate_volume()
+  {
+    std::vector<Number> dst(1,0.0);
+    parallel::distributed::Vector<Number> src_dummy;
+    matrix_free_data.cell_loop (&MeanVelocityCalculator<dim,fe_degree,Number>::local_calculate_volume, this, dst, src_dummy);
+
+    // sum over all MPI processes
+    Number volume = 1.0;
+    volume = Utilities::MPI::sum (dst.at(0), MPI_COMM_WORLD);
+
+    return volume;
+  }
+
+  void local_calculate_volume(const MatrixFree<dim,Number>                &data,
+                              std::vector<Number>                         &dst,
+                              const parallel::distributed::Vector<Number> &,
+                              const std::pair<unsigned int,unsigned int>  &cell_range)
+  {
+    FEEvaluation<dim,fe_degree,fe_degree+1,dim,Number> fe_eval(data,
+                                                               dof_quad_index_data.dof_index_velocity,
+                                                               dof_quad_index_data.quad_index_velocity);
+
+    AlignedVector<VectorizedArray<Number> > JxW_values(fe_eval.n_q_points);
+
+    Number volume = 0.;
+
+    // Loop over all elements
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval.reinit(cell);
+      fe_eval.fill_JxW_values(JxW_values);
+
+      VectorizedArray<Number> volume_vec = make_vectorized_array<Number>(0.);
+
+      for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+      {
+        volume_vec += JxW_values[q];
+      }
+
+      // sum over entries of VectorizedArray, but only over those
+      // that are "active"
+      for (unsigned int v=0; v<data.n_active_entries_per_cell_batch(cell); ++v)
+      {
+        volume += volume_vec[v];
+      }
+    }
+
+    dst.at(0) += volume;
+  }
+
+  Number do_calculate_flow_rate_area(parallel::distributed::Vector<Number> const &velocity)
   {
     FEFaceEvaluation<dim,fe_degree,fe_degree+1,dim,Number>
-      fe_eval_velocity(matrix_free_data,true,dof_index_velocity,quad_index_velocity);
+      fe_eval_velocity(matrix_free_data,true,dof_quad_index_data.dof_index_velocity,
+                       dof_quad_index_data.quad_index_velocity);
 
     AlignedVector<VectorizedArray<Number> > JxW_values(fe_eval_velocity.n_q_points);
 
@@ -263,12 +314,68 @@ public:
     return flow_rate;
   }
 
-private:
+  Number do_calculate_mean_velocity_volume(parallel::distributed::Vector<Number> const &velocity)
+  {
+    std::vector<Number> dst(1,0.0);
+    matrix_free_data.cell_loop (&MeanVelocityCalculator<dim,fe_degree,Number>::local_calculate_flow_rate_volume, this, dst, velocity);
+
+    // sum over all MPI processes
+    Number mean_velocity = Utilities::MPI::sum (dst.at(0), MPI_COMM_WORLD);
+
+    AssertThrow(volume_has_been_initialized == true, ExcMessage("Volume has not been initialized."));
+    AssertThrow(this->volume != 0.0, ExcMessage("Volume has not been initialized."));
+
+    mean_velocity /= this->volume;
+
+    return mean_velocity;
+  }
+
+  void local_calculate_flow_rate_volume(const MatrixFree<dim,Number>                &data,
+                                        std::vector<Number>                         &dst,
+                                        const parallel::distributed::Vector<Number> &src,
+                                        const std::pair<unsigned int,unsigned int>  &cell_range)
+  {
+    FEEvaluation<dim,fe_degree,fe_degree+1,dim,Number> fe_eval(data,
+                                                               dof_quad_index_data.dof_index_velocity,
+                                                               dof_quad_index_data.quad_index_velocity);
+
+    AlignedVector<VectorizedArray<Number> > JxW_values(fe_eval.n_q_points);
+
+    Number flow_rate = 0.;
+
+    // Loop over all elements
+    for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      fe_eval.reinit(cell);
+      fe_eval.read_dof_values(src);
+      fe_eval.evaluate(true,false);
+      fe_eval.fill_JxW_values(JxW_values);
+
+      VectorizedArray<Number> flow_rate_vec = make_vectorized_array<Number>(0.);
+
+      for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+      {
+        VectorizedArray<Number> velocity_direction = this->data.direction*fe_eval.get_value(q);
+
+        flow_rate_vec += velocity_direction*JxW_values[q];
+      }
+
+      // sum over entries of VectorizedArray, but only over those
+      // that are "active"
+      for (unsigned int v=0; v<data.n_active_entries_per_cell_batch(cell); ++v)
+      {
+        flow_rate += flow_rate_vec[v];
+      }
+    }
+
+    dst.at(0) += flow_rate;
+  }
+
   MeanVelocityCalculatorData<dim> const &data;
   MatrixFree<dim,Number> const &matrix_free_data;
   DofQuadIndexData dof_quad_index_data;
-  bool area_has_been_initialized;
-  double area;
+  bool area_has_been_initialized, volume_has_been_initialized;
+  double area, volume;
   bool clear_files;
 };
 
