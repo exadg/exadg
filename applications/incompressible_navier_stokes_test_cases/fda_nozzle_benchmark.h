@@ -33,7 +33,7 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for DOMAIN 1
-unsigned int const REFINE_STEPS_SPACE_DOMAIN1 = 1;
+unsigned int const REFINE_STEPS_SPACE_DOMAIN1 = 0;
 
 // set the number of refine levels for DOMAIN 2
 unsigned int const REFINE_STEPS_SPACE_DOMAIN2 = 0;
@@ -43,10 +43,11 @@ unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // output folders
-std::string OUTPUT_FOLDER = "output/fda/";
-std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu_new/";
+std::string OUTPUT_FOLDER = "output/fda/Re500/l0_k32/";
+std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string OUTPUT_NAME_1 = "precursor";
 std::string OUTPUT_NAME_2 = "nozzle";
+std::string FILENAME_FLOWRATE = "precursor_mean_velocity";
 
 // set problem specific parameters like physical dimensions, etc.
 
@@ -56,20 +57,20 @@ double const R_INNER = R;
 double const R_OUTER = 3.0*R;
 
 // lengths (dimensions in flow direction z)
-double const LENGTH_PRECURSOR = 4.0*R_OUTER;
+double const LENGTH_PRECURSOR = 8.0*R_OUTER;
 double const LENGTH_INFLOW = 8.0*R_OUTER;
 double const LENGTH_CONE = (R_OUTER-R_INNER)/std::tan(20.0/2.0*numbers::PI/180.0);
 double const LENGTH_THROAT = 0.04;
-double const LENGTH_OUTFLOW = 8.0*R_OUTER;
+double const LENGTH_OUTFLOW = 20.0*R_OUTER;
 double const OFFSET = 2.0*R_OUTER;
 
 // mesh parameters
 unsigned int const N_CELLS_AXIAL = 2;
-unsigned int const N_CELLS_AXIAL_PRECURSOR = 2*N_CELLS_AXIAL;
+unsigned int const N_CELLS_AXIAL_PRECURSOR = 4*N_CELLS_AXIAL;
 unsigned int const N_CELLS_AXIAL_INFLOW = 4*N_CELLS_AXIAL;
 unsigned int const N_CELLS_AXIAL_CONE = 2*N_CELLS_AXIAL;
 unsigned int const N_CELLS_AXIAL_THROAT = 4*N_CELLS_AXIAL;
-unsigned int const N_CELLS_AXIAL_OUTFLOW = 4*N_CELLS_AXIAL;
+unsigned int const N_CELLS_AXIAL_OUTFLOW = 10*N_CELLS_AXIAL;
 
 unsigned int const MANIFOLD_ID_CYLINDER = 1234;
 unsigned int const MANIFOLD_ID_OFFSET_CONE = 7890;
@@ -97,11 +98,7 @@ double const AREA_THROAT = R_INNER*R_INNER*numbers::PI;
 double const VISCOSITY = 3.31e-6;
 
 // set the throat Reynolds number Re_throat = U_{mean,throat} * (2 R_throat) / nu
-//double const RE = 500;
-//double const RE = 2000;
-double const RE = 3500;
-//double const RE = 5000;
-//double const RE = 6500;
+double const RE = 500; //500; //2000; //3500; //5000; //6500;
 
 double const MEAN_VELOCITY_THROAT = RE * VISCOSITY / (2.0*R_INNER);
 double const TARGET_FLOW_RATE = MEAN_VELOCITY_THROAT*AREA_THROAT;
@@ -110,25 +107,48 @@ double const MAX_VELOCITY = 2.0*TARGET_FLOW_RATE/AREA_INFLOW;
 double const MAX_VELOCITY_CFL = 2.0*TARGET_FLOW_RATE/AREA_THROAT;
 
 // start and end time
-double const START_TIME = 0.0;
+
 // estimation of flow-through time T_0 (through nozzle section)
 // based on the mean velocity through throat
-double const T_0 = (LENGTH_THROAT)/MEAN_VELOCITY_THROAT;
-double const END_TIME = 50.0*T_0;
+double const T_0 = LENGTH_THROAT/MEAN_VELOCITY_THROAT;
+double const START_TIME_PRECURSOR = -500.0*T_0; // let the flow develop
+double const START_TIME_NOZZLE = 0.0*T_0;
+double const END_TIME = 150.0*T_0;
+
+// output
+bool const WRITE_OUTPUT = true;
+double const OUTPUT_START_TIME_PRECURSOR = START_TIME_PRECURSOR;
+double const OUTPUT_START_TIME_NOZZLE = START_TIME_NOZZLE;
+double const OUTPUT_INTERVAL_TIME = 10.0*T_0;
 
 // sampling
-double const SAMPLE_START_TIME = 10.0*T_0;
-double const SAMPLE_END_TIME = END_TIME;
 
-// data structures that we need to control the mass flow rate
+// sampling interval should last over (100-200) * T_0 according to preliminary results
+// might be when using averaging in circumferential direction.
+double const SAMPLE_START_TIME = 50.0*T_0; // let the flow develop
+double const SAMPLE_END_TIME = END_TIME; // that's the only reasonable choice
+unsigned int SAMPLE_EVERY_TIMESTEPS = 1;
+unsigned int WRITE_OUTPUT_EVERY_TIMESTEPS = SAMPLE_EVERY_TIMESTEPS*100;
+
+// line plot data
+unsigned int N_POINTS_LINE_AXIAL = 400;
+unsigned int N_POINTS_LINE_RADIAL = 64;
+unsigned int N_POINTS_LINE_CIRCUMFERENTIAL = 32;
+QuantityStatistics<DIMENSION> QUANTITY_VELOCITY;
+QuantityStatistics<DIMENSION> QUANTITY_VELOCITY_CIRCUMFERENTIAL;
+
+// data structures that we need to control the mass flow rate:
+
 // NOTA BENE: these variables will be modified by the postprocessor!
 double FLOW_RATE = 0.0;
-// the flow rate controller needs the time step size as parameter
+// the flow rate controller also needs the time step size as parameter
 double TIME_STEP_FLOW_RATE_CONTROLLER = 1.0;
 
-// data structures that we need to apply the velocity inflow profile
-// we currently use global variables for this purpose
-unsigned int N_POINTS_R = 101;
+// data structures that we need to apply the velocity inflow profile:
+
+// - we currently use global variables for this purpose
+// - choose a large number of points to ensure a smooth inflow profile
+unsigned int N_POINTS_R = 10 * (FE_DEGREE_VELOCITY+1) * std::pow(2.0, REFINE_STEPS_SPACE_DOMAIN1);
 unsigned int N_POINTS_PHI = N_POINTS_R;
 std::vector<double> R_VALUES(N_POINTS_R);
 std::vector<double> PHI_VALUES(N_POINTS_PHI);
@@ -164,6 +184,26 @@ void initialize_velocity_values()
   }
 }
 
+/*
+ *  This function returns the radius of the cross-section at a
+ *  specified location z in streamwise direction.
+ */
+double radius_function(double const z)
+{
+  double radius = R_OUTER;
+
+  if(z >= Z1_INFLOW && z <= Z2_INFLOW)
+    radius = R_OUTER;
+  else if(z >= Z1_CONE && z <= Z2_CONE)
+    radius = R_OUTER * (1.0 - (z-Z1_CONE)/(Z2_CONE-Z1_CONE)*(R_OUTER-R_INNER)/R_OUTER);
+  else if(z >= Z1_THROAT && z <= Z2_THROAT)
+    radius = R_INNER;
+  else if(z > Z1_OUTFLOW && z <= Z2_OUTFLOW)
+    radius = R_OUTER;
+
+  return radius;
+}
+
 // we do not need this function here (but have to implement it)
 template<int dim>
 void InputParametersNavierStokes<dim>::set_input_parameters()
@@ -194,24 +234,39 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
 
 
   // PHYSICAL QUANTITIES
-  start_time = START_TIME;
+  if(domain_id == 1)
+    start_time = START_TIME_PRECURSOR;
+  else if(domain_id == 2)
+    start_time = START_TIME_NOZZLE;
+
   end_time = END_TIME;
   viscosity = VISCOSITY;
 
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  calculation_of_time_step_size = TimeStepCalculation::AdaptiveTimeStepCFL; // AdaptiveTimeStepCFL
+
+  // The pressure-correction scheme with an implicit treatment of the convective term
+  // (using CFL number > 1) was found to be more efficient for this test case
+  // than, e.g., the dual splitting scheme with explicit formulation of the convective term.
+  
+  //  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  //  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  //  calculation_of_time_step_size = TimeStepCalculation::AdaptiveTimeStepCFL;
+  temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
+
   max_velocity = MAX_VELOCITY_CFL;
   // ConstTimeStepCFL: CFL_critical = 0.3 - 0.5 for k=3
   // AdaptiveTimeStepCFL: CFL_critical = 0.125 - 0.15 for k=3
-  cfl = 0.13;
+  // Best pratice: use CFL = 4.0 for implicit treatment (e.g., pressure-correction scheme)
+  // and CFL = 0.13 with adaptive time stepping for an explicit treatment (e.g, dual splitting)
+  cfl = 4.0;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 2; // 1; // 2; // 3;
+  order_time_integrator = 2;
   start_with_low_order = true;
 
 
@@ -253,23 +308,24 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   // TURBULENCE
   use_turbulence_model = false;
   turbulence_model = TurbulenceEddyViscosityModel::Sigma;
-  // Smagorinsky: 0.165
-  // Vreman: 0.28
-  // WALE: 0.50
-  // Sigma: 1.35
+  // Smagorinsky: 0.165, Vreman: 0.28, WALE: 0.50, Sigma: 1.35
   turbulence_model_constant = 1.35;
 
   // PROJECTION METHODS
 
   // pressure Poisson equation
   IP_factor_pressure = 1.0;
-  solver_pressure_poisson = SolverPressurePoisson::PCG;
-  preconditioner_pressure_poisson = PreconditionerPressurePoisson::Jacobi; //GeometricMultigrid;
-  multigrid_data_pressure_poisson.smoother = MultigridSmoother::Chebyshev; //Chebyshev; //Jacobi; //GMRES;
-  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+
+  // Best practice: use PCG with Jacobi preconditioner for refine level l=0,
+  // and FGMRES solver with Chebyshev smoother and PCG_PointJaocbi coarse grid solver for
+  // refinement levels l=1 and larger.
+  solver_pressure_poisson = SolverPressurePoisson::PCG; //PCG; //FGMRES
+  preconditioner_pressure_poisson = PreconditionerPressurePoisson::Jacobi; //GeometricMultigrid; //Jacobi;
+  multigrid_data_pressure_poisson.smoother = MultigridSmoother::Chebyshev; //Chebyshev; //Jacobi;
+  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::PCG_PointJacobi;
 
   abs_tol_pressure = 1.e-12;
-  rel_tol_pressure = 1.e-6;
+  rel_tol_pressure = 1.e-3;
 
   // stability in the limit of small time steps
   use_approach_of_ferrer = false;
@@ -280,7 +336,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix; //BlockJacobi; //PointJacobi; //InverseMassMatrix;
   update_preconditioner_projection = true;
   abs_tol_projection = 1.e-12;
-  rel_tol_projection = 1.e-6;
+  rel_tol_projection = 1.e-3;
 
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -288,27 +344,11 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   // formulations
   order_extrapolation_pressure_nbc = order_time_integrator <=2 ? order_time_integrator : 2;
 
-  // convective step
-
-  // nonlinear solver
-  newton_solver_data_convective.abs_tol = 1.e-12;
-  newton_solver_data_convective.rel_tol = 1.e-6;
-  newton_solver_data_convective.max_iter = 100;
-  // linear solver
-  abs_tol_linear_convective = 1.e-12;
-  rel_tol_linear_convective = 1.e-6;
-  max_iter_linear_convective = 1e4;
-  use_right_preconditioning_convective = true;
-  max_n_tmp_vectors_convective = 100;
-
-  // stability in the limit of small time steps and projection step
-  small_time_steps_stability = false;
-
   // viscous step
   solver_viscous = SolverViscous::PCG;
-  preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; //GeometricMultigrid;
+  preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
   abs_tol_viscous = 1.e-12;
-  rel_tol_viscous = 1.e-6;
+  rel_tol_viscous = 1.e-3;
 
 
   // PRESSURE-CORRECTION SCHEME
@@ -321,12 +361,14 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
 
   // Newton solver
   newton_solver_data_momentum.abs_tol = 1.e-12;
-  newton_solver_data_momentum.rel_tol = 1.e-6;
+  newton_solver_data_momentum.rel_tol = 1.e-3;
   newton_solver_data_momentum.max_iter = 100;
 
   // linear solver
   abs_tol_momentum_linear = 1.e-12;
-  rel_tol_momentum_linear = 1.e-6;
+  if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+  { rel_tol_momentum_linear = 1.e-1; }
+  else{ rel_tol_momentum_linear = 1.e-3; }
   max_iter_momentum_linear = 1e4;
   use_right_preconditioning_momentum = true;
   max_n_tmp_vectors_momentum = 100;
@@ -342,13 +384,15 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
 
   // nonlinear solver (Newton solver)
   newton_solver_data_coupled.abs_tol = 1.e-12;
-  newton_solver_data_coupled.rel_tol = 1.e-6;
+  newton_solver_data_coupled.rel_tol = 1.e-3;
   newton_solver_data_coupled.max_iter = 1e2;
 
   // linear solver
   solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES; //GMRES; //FGMRES;
   abs_tol_linear = 1.e-12;
-  rel_tol_linear = 1.e-6;
+  if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+  { rel_tol_linear = 1.e-1; }
+  else{ rel_tol_linear = 1.e-3; }
   max_iter_linear = 1e3;
   max_n_tmp_vectors = 100;
 
@@ -372,16 +416,16 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   print_input_parameters = true;
 
   // output of solver information
-  output_solver_info_every_timesteps = 1e2; //1e5;
+  output_solver_info_every_timesteps = 1e3; //1e5;
 
   if(domain_id == 1)
   {
     // write output for visualization of results
-    output_data.write_output = true;
+    output_data.write_output = WRITE_OUTPUT;
     output_data.output_folder = OUTPUT_FOLDER_VTU;
     output_data.output_name = OUTPUT_NAME_1;
-    output_data.output_start_time = start_time;
-    output_data.output_interval_time = 1.0*T_0;
+    output_data.output_start_time = OUTPUT_START_TIME_PRECURSOR;
+    output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
     output_data.write_divergence = true;
     output_data.write_processor_id = true;
     output_data.mean_velocity.calculate = true;
@@ -402,15 +446,22 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
     inflow_data.y_values = &R_VALUES;
     inflow_data.z_values = &PHI_VALUES;
     inflow_data.array = &VELOCITY_VALUES;
+
+    // calculation of flow rate (use volume-based computation)
+    mean_velocity_data.calculate = true;
+    mean_velocity_data.filename_prefix = OUTPUT_FOLDER + FILENAME_FLOWRATE;
+    Tensor<1,dim,double> direction; direction[2] = 1.0;
+    mean_velocity_data.direction = direction;
+    mean_velocity_data.write_to_file = true;
   }
   else if(domain_id == 2)
   {
     // write output for visualization of results
-    output_data.write_output = true;
+    output_data.write_output = WRITE_OUTPUT;
     output_data.output_folder = OUTPUT_FOLDER_VTU;
     output_data.output_name = OUTPUT_NAME_2;
-    output_data.output_start_time = start_time;
-    output_data.output_interval_time = 1.0*T_0;
+    output_data.output_start_time = OUTPUT_START_TIME_NOZZLE;
+    output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
     output_data.write_divergence = true;
     output_data.write_processor_id = true;
     output_data.mean_velocity.calculate = true;
@@ -419,13 +470,122 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
     output_data.mean_velocity.sample_every_timesteps = 1;
     output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
-    // measure mean velocity at inflow boundary of the nozzle domain
-    // (since matrix-free implementation does not allow to integrate
-    // over one of the periodic boundaries of the precursor domain)
-    mean_velocity_data.calculate = true;
-    mean_velocity_data.boundary_IDs.insert(1); // left boundary has ID 1 (see below)
-    mean_velocity_data.write_to_file = false; //true;
-    mean_velocity_data.filename_prefix = OUTPUT_FOLDER + "flow_rate";
+    // evaluation of quantities along lines
+    line_plot_data.write_output = true;
+    line_plot_data.filename_prefix = OUTPUT_FOLDER;
+    line_plot_data.statistics_data.calculate_statistics = true;
+    line_plot_data.statistics_data.sample_start_time = SAMPLE_START_TIME;
+    line_plot_data.statistics_data.sample_end_time = END_TIME;
+    line_plot_data.statistics_data.sample_every_timesteps = SAMPLE_EVERY_TIMESTEPS;
+    line_plot_data.statistics_data.write_output_every_timesteps = WRITE_OUTPUT_EVERY_TIMESTEPS;
+
+    // lines
+    Line<dim> axial_profile, radial_profile_z1, radial_profile_z2, radial_profile_z3, radial_profile_z4,
+              radial_profile_z5, radial_profile_z6, radial_profile_z7, radial_profile_z8, radial_profile_z9,
+              radial_profile_z10, radial_profile_z11, radial_profile_z12;
+
+    double z_1 = -0.088, z_2 = - 0.064, z_3 = -0.048, z_4 = -0.02, z_5 = -0.008, z_6 = 0.0,
+           z_7 = 0.008, z_8 = 0.016, z_9 = 0.024, z_10 = 0.032, z_11 = 0.06, z_12 = 0.08;
+
+    // begin and end points of all lines
+    axial_profile.begin =      Point<dim> (0,0,Z1_INFLOW);
+    axial_profile.end =        Point<dim> (0,0,Z2_OUTFLOW);
+    radial_profile_z1.begin =  Point<dim> (0,0,z_1);
+    radial_profile_z1.end =    Point<dim> (radius_function(z_1),0,z_1);
+    radial_profile_z2.begin =  Point<dim> (0,0,z_2);
+    radial_profile_z2.end =    Point<dim> (radius_function(z_2),0,z_2);
+    radial_profile_z3.begin =  Point<dim> (0,0,z_3);
+    radial_profile_z3.end =    Point<dim> (radius_function(z_3),0,z_3);
+    radial_profile_z4.begin =  Point<dim> (0,0,z_4);
+    radial_profile_z4.end =    Point<dim> (radius_function(z_4),0,z_4);
+    radial_profile_z5.begin =  Point<dim> (0,0,z_5);
+    radial_profile_z5.end =    Point<dim> (radius_function(z_5),0,z_5);
+    radial_profile_z6.begin =  Point<dim> (0,0,z_6);
+    radial_profile_z6.end =    Point<dim> (radius_function(z_6),0,z_6);
+    radial_profile_z7.begin =  Point<dim> (0,0,z_7);
+    radial_profile_z7.end =    Point<dim> (radius_function(z_7),0,z_7);
+    radial_profile_z8.begin =  Point<dim> (0,0,z_8);
+    radial_profile_z8.end =    Point<dim> (radius_function(z_8),0,z_8);
+    radial_profile_z9.begin =  Point<dim> (0,0,z_9);
+    radial_profile_z9.end =    Point<dim> (radius_function(z_9),0,z_9);
+    radial_profile_z10.begin = Point<dim> (0,0,z_10);
+    radial_profile_z10.end =   Point<dim> (radius_function(z_10),0,z_10);
+    radial_profile_z11.begin = Point<dim> (0,0,z_11);
+    radial_profile_z11.end =   Point<dim> (radius_function(z_11),0,z_11);
+    radial_profile_z12.begin = Point<dim> (0,0,z_12);
+    radial_profile_z12.end =   Point<dim> (radius_function(z_12),0,z_12);
+
+    // number of points
+    axial_profile.n_points =      N_POINTS_LINE_AXIAL;
+    radial_profile_z1.n_points =  N_POINTS_LINE_RADIAL;
+    radial_profile_z2.n_points =  N_POINTS_LINE_RADIAL;
+    radial_profile_z3.n_points =  N_POINTS_LINE_RADIAL;
+    radial_profile_z4.n_points =  N_POINTS_LINE_RADIAL;
+    radial_profile_z5.n_points =  N_POINTS_LINE_RADIAL;
+    radial_profile_z6.n_points =  N_POINTS_LINE_RADIAL;
+    radial_profile_z7.n_points =  N_POINTS_LINE_RADIAL;
+    radial_profile_z8.n_points =  N_POINTS_LINE_RADIAL;
+    radial_profile_z9.n_points =  N_POINTS_LINE_RADIAL;
+    radial_profile_z10.n_points = N_POINTS_LINE_RADIAL;
+    radial_profile_z11.n_points = N_POINTS_LINE_RADIAL;
+    radial_profile_z12.n_points = N_POINTS_LINE_RADIAL;
+
+    // quantities
+
+    // no additional averaging in space for centerline velocity
+    QUANTITY_VELOCITY.type = QuantityType::Velocity;
+
+    // additional averaging is performed in circumferential direction
+    // for radial profiles (rotationally symmetric geometry)
+    QUANTITY_VELOCITY_CIRCUMFERENTIAL.type = QuantityType::Velocity;
+    QUANTITY_VELOCITY_CIRCUMFERENTIAL.average_circumferential = true;
+    QUANTITY_VELOCITY_CIRCUMFERENTIAL.n_points_circumferential = N_POINTS_LINE_CIRCUMFERENTIAL;
+    Tensor<1,dim,double> normal; normal[2] = 1.0;
+    QUANTITY_VELOCITY_CIRCUMFERENTIAL.normal_vector = normal;
+
+    axial_profile.quantities.push_back(&QUANTITY_VELOCITY);
+    radial_profile_z1.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
+    radial_profile_z2.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
+    radial_profile_z3.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
+    radial_profile_z4.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
+    radial_profile_z5.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
+    radial_profile_z6.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
+    radial_profile_z7.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
+    radial_profile_z8.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
+    radial_profile_z9.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
+    radial_profile_z10.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
+    radial_profile_z11.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
+    radial_profile_z12.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
+
+    // names
+    axial_profile.name = "axial_profile";
+    radial_profile_z1.name = "radial_profile_z1";
+    radial_profile_z2.name = "radial_profile_z2";
+    radial_profile_z3.name = "radial_profile_z3";
+    radial_profile_z4.name = "radial_profile_z4";
+    radial_profile_z5.name = "radial_profile_z5";
+    radial_profile_z6.name = "radial_profile_z6";
+    radial_profile_z7.name = "radial_profile_z7";
+    radial_profile_z8.name = "radial_profile_z8";
+    radial_profile_z9.name = "radial_profile_z9";
+    radial_profile_z10.name = "radial_profile_z10";
+    radial_profile_z11.name = "radial_profile_z11";
+    radial_profile_z12.name = "radial_profile_z12";
+
+    // insert lines
+    line_plot_data.lines.push_back(axial_profile);
+    line_plot_data.lines.push_back(radial_profile_z1);
+    line_plot_data.lines.push_back(radial_profile_z2);
+    line_plot_data.lines.push_back(radial_profile_z3);
+    line_plot_data.lines.push_back(radial_profile_z4);
+    line_plot_data.lines.push_back(radial_profile_z5);
+    line_plot_data.lines.push_back(radial_profile_z6);
+    line_plot_data.lines.push_back(radial_profile_z7);
+    line_plot_data.lines.push_back(radial_profile_z8);
+    line_plot_data.lines.push_back(radial_profile_z9);
+    line_plot_data.lines.push_back(radial_profile_z10);
+    line_plot_data.lines.push_back(radial_profile_z11);
+    line_plot_data.lines.push_back(radial_profile_z12);
   }
 }
 
@@ -436,22 +596,6 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
 /*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
 /*                                                                                    */
 /**************************************************************************************/
-
-double radius_function(double const z)
-{
-  double radius = R_OUTER;
-
-  if(z >= Z1_INFLOW && z <= Z2_INFLOW)
-    radius = R_OUTER;
-  else if(z >= Z1_CONE && z <= Z2_CONE)
-    radius = R_OUTER * (1.0 - (z-Z1_CONE)/(Z2_CONE-Z1_CONE)*(R_OUTER-R_INNER)/R_OUTER);
-  else if(z >= Z1_THROAT && z <= Z2_THROAT)
-    radius = R_INNER;
-  else if(z > Z1_OUTFLOW && z <= Z2_OUTFLOW)
-    radius = R_OUTER;
-
-  return radius;
-}
 
 template<int dim>
 class InitialSolutionVelocity : public Function<dim>
@@ -496,6 +640,9 @@ double InitialSolutionVelocity<dim>::value(const Point<dim>   &p,
     // Add perturbation (sine + random) for the precursor to initiate
     // a turbulent flow in case the Reynolds number is large enough
     // (otherwise, the perturbations will be damped and the flow becomes laminar).
+    // According to first numerical results, the perturbed flow returns to a laminar
+    // steady state in the precursor domain for Reynolds numbers Re_t = 500, 2000,
+    // 3500, 5000, and 6500.
     if(p[2] <= Z2_PRECURSOR)
     {
       double const phi = std::atan2(p[1],p[0]);
@@ -503,6 +650,7 @@ double InitialSolutionVelocity<dim>::value(const Point<dim>   &p,
       double perturbation = factor * max_velocity_z * std::sin(4.0*phi) * std::sin(8.0*numbers::PI*p[2]/LENGTH_PRECURSOR)
                             + factor * max_velocity_z * ((double)rand()/RAND_MAX-0.5)/0.5;
 
+      // the perturbations should fulfill the Dirichlet boundary conditions
       perturbation *= (1.0-pow(radius/RADIUS,6.0));
 
       result += perturbation;
@@ -582,9 +730,7 @@ public:
        // dimensional analysis: [k] = 1/(m^2 s^2) -> k = const * nu^2 / A_inflow^3
        double const k = 1.0*std::pow(VISCOSITY,2.0)/std::pow(AREA_INFLOW,3.0);
 
-       // mean velocity is negative since the flow rate is measured at the
-       // inflow boundary (normal vector points in upstream direction)
-       f += k*(TARGET_FLOW_RATE - (-FLOW_RATE))*TIME_STEP_FLOW_RATE_CONTROLLER;
+       f += k*(TARGET_FLOW_RATE - FLOW_RATE)*TIME_STEP_FLOW_RATE_CONTROLLER;
 
        result = f;
      }
@@ -1108,6 +1254,8 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim>
 // Postprocessor
 
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../../include/incompressible_navier_stokes/postprocessor/inflow_data_calculator.h"
+#include "../../include/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.h"
 
 template<int dim>
 struct PostProcessorDataFDA
@@ -1115,6 +1263,7 @@ struct PostProcessorDataFDA
   PostProcessorData<dim> pp_data;
   InflowData<dim> inflow_data;
   MeanVelocityCalculatorData<dim> mean_velocity_data;
+  LinePlotData<dim> line_plot_data;
 };
 
 template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
@@ -1125,7 +1274,7 @@ public:
     :
     PostProcessor<dim,fe_degree_u,fe_degree_p, Number>(pp_data_in.pp_data),
     pp_data_fda(pp_data_in),
-    time_old(START_TIME)
+    time_old(START_TIME_PRECURSOR)
   {
     inflow_data_calculator.reset(new InflowDataCalculator<dim,Number>(pp_data_in.inflow_data));
   }
@@ -1152,6 +1301,11 @@ public:
     // calculation of mean velocity
     mean_velocity_calculator.reset(new MeanVelocityCalculator<dim,fe_degree_u,Number>(
         matrix_free_data_in, dof_quad_index_data_in, pp_data_fda.mean_velocity_data));
+
+    // evaluation of results along lines
+    line_plot_calculator_statistics.reset(new LinePlotCalculatorStatistics<dim>(
+        dof_handler_velocity_in, dof_handler_pressure_in, mapping_in));
+    line_plot_calculator_statistics->setup(pp_data_fda.line_plot_data);
   }
 
   void do_postprocessing(parallel::distributed::Vector<Number> const   &velocity,
@@ -1174,24 +1328,39 @@ public:
     // inflow data
     inflow_data_calculator->calculate(velocity);
 
-    // calculation of mean velocity
-    FLOW_RATE = mean_velocity_calculator->calculate_flow_rate(velocity,time);
-    // set time step size for flow rate controller
-    TIME_STEP_FLOW_RATE_CONTROLLER = time-time_old;
-    time_old = time;
+    if(pp_data_fda.mean_velocity_data.calculate == true)
+    {
+      // calculation of flow rate
+      FLOW_RATE = AREA_INFLOW*mean_velocity_calculator->calculate_mean_velocity_volume(velocity,time);
+
+      // set time step size for flow rate controller
+      TIME_STEP_FLOW_RATE_CONTROLLER = time-time_old;
+      time_old = time;
+    }
+
+    // evaluation of results along lines
+    line_plot_calculator_statistics->evaluate(velocity,pressure,time,time_step_number);
   }
 
 private:
+  // postprocessor data supplemented with data required for FDA benchmark
   PostProcessorDataFDA<dim> pp_data_fda;
+  // interpolate velocity field to a predefined set of interpolation points
   std::shared_ptr<InflowDataCalculator<dim, Number> > inflow_data_calculator;
+  // calculate flow rate in precursor domain so that the flow rate can be
+  // dynamically adjusted by a flow rate controller.
   std::shared_ptr<MeanVelocityCalculator<dim,fe_degree_u,Number> > mean_velocity_calculator;
+  // the low rate controller needs the time step size, so we have to store the previous time instant
   double time_old;
+  // evaluation of results along lines
+  std::shared_ptr<LinePlotCalculatorStatistics<dim> > line_plot_calculator_statistics;
 };
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim,Number> >
 construct_postprocessor(InputParametersNavierStokes<dim> const &param)
 {
+  // basic modules
   PostProcessorData<dim> pp_data;
   pp_data.output_data = param.output_data;
   pp_data.error_data = param.error_data;
@@ -1199,10 +1368,12 @@ construct_postprocessor(InputParametersNavierStokes<dim> const &param)
   pp_data.pressure_difference_data = param.pressure_difference_data;
   pp_data.mass_data = param.mass_data;
 
+  // FDA specific modules
   PostProcessorDataFDA<dim> pp_data_fda;
   pp_data_fda.pp_data = pp_data;
   pp_data_fda.inflow_data = param.inflow_data;
   pp_data_fda.mean_velocity_data = param.mean_velocity_data;
+  pp_data_fda.line_plot_data = param.line_plot_data;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
   pp.reset(new PostProcessorFDA<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,Number>(pp_data_fda));
