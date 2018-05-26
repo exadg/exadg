@@ -11,24 +11,638 @@
 #include "line_plot_data.h"
 
 /*
+ * This function calculates statistics along lines by averaging over time.
+ *
+ * Additionally, averaging in circumferential direction can be performed if desired.
+ * 
+ * General assumptions:
+ *
+ *  - we assume straight lines and an equidistant distribution of the evaluation points along each line.
+ *
+ *  Assumptions for averaging in circumferential direction:
+ *
+ *  - to define the plane in which we want to perform the averaging in circumferential direction,
+ *    a normal vector has to be specified that has to be oriented normal to the straight line and
+ *    normal to the averaging plane. To construct the sample points for averaging in circumferential direction,
+ *    we assume that the first point of the line (line.begin) defines the center of the circle,
+ *    and that the other points in circumferential direction can be constructed by rotating the
+ *    vector from the center of the circle (line.begin) to the current point along the line around the
+ *    normal vector.
+ */
+
+template <int dim>
+class LinePlotCalculatorStatistics
+{
+public:
+  typedef typename std::vector<std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> > > TYPE;
+
+  LinePlotCalculatorStatistics(const DoFHandler<dim> &dof_handler_velocity_in,
+                               const DoFHandler<dim> &dof_handler_pressure_in,
+                               const Mapping<dim>    &mapping_in)
+    :
+    clear_files(true),
+    dof_handler_velocity(dof_handler_velocity_in),
+    dof_handler_pressure(dof_handler_pressure_in),
+    mapping (mapping_in),
+    communicator (dynamic_cast<const parallel::Triangulation<dim>*>(&dof_handler_velocity.get_triangulation()) ?
+                 (dynamic_cast<const parallel::Triangulation<dim>*>(&dof_handler_velocity.get_triangulation())
+                  ->get_communicator()) : MPI_COMM_SELF),
+    cell_data_has_been_initialized(false),
+    number_of_samples(0),
+    write_final_output(false)
+  {}
+
+  void setup(LinePlotData<dim> const &line_plot_data_in)
+  {
+    // initialize data
+    data = line_plot_data_in;
+
+    if(data.write_output)
+    {
+      // allocate data structures
+      AssertThrow(data.lines.size()>0, ExcMessage("Empty data"));
+      velocity_global.resize(data.lines.size());
+      pressure_global.resize(data.lines.size());
+      global_points.resize(data.lines.size());
+      cells_global_velocity.resize(data.lines.size());
+      cells_global_pressure.resize(data.lines.size());
+
+      unsigned int line_iterator = 0;
+      for(typename std::vector<Line<dim> >::iterator line = data.lines.begin();
+          line != data.lines.end(); ++line, ++line_iterator)
+      {
+        //Resize global variables for number of points on line
+        velocity_global[line_iterator].resize(line->n_points);
+        pressure_global[line_iterator].resize(line->n_points);
+
+        // initialize global_points: use/assume equidistant points along line
+        for(unsigned int i = 0; i < line->n_points; ++i)
+        {
+          Point<dim> point = line->begin + double(i)/double(line->n_points-1)*(line->end - line->begin);
+          global_points[line_iterator].push_back(point);
+        }
+
+        cells_global_velocity[line_iterator].resize(line->n_points);
+        cells_global_pressure[line_iterator].resize(line->n_points);
+      }
+    }
+  }
+
+  void evaluate(parallel::distributed::Vector<double> const &velocity,
+                parallel::distributed::Vector<double> const &pressure,
+                double const                                &time,
+                unsigned int const                          &time_step_number)
+  {
+    // EPSILON: small number which is much smaller than the time step size
+    const double EPSILON = 1.0e-10;
+    if(data.statistics_data.calculate_statistics == true)
+    {
+      if((time > data.statistics_data.sample_start_time-EPSILON) &&
+        (time < data.statistics_data.sample_end_time+EPSILON) &&
+        (time_step_number % data.statistics_data.sample_every_timesteps == 0))
+      {
+        // evaluate statistics
+        do_evaluate(velocity, pressure);
+
+        // write intermediate output
+        if(time_step_number % data.statistics_data.write_output_every_timesteps == 0)
+        {
+          write_output();
+        }
+      }
+      // write final output
+      if((time > data.statistics_data.sample_end_time-EPSILON) && write_final_output)
+      {
+        write_output();
+        write_final_output = false;
+      }
+    }
+  }
+
+  void print_headline(std::ofstream      &f,
+                      const unsigned int number_of_samples) const
+  {
+    f << "number of samples: N = "  << number_of_samples << std::endl;
+  }
+
+  void write_output()
+  {
+    do_write_output();
+  }
+
+private:
+  void do_evaluate(const parallel::distributed::Vector<double> &velocity,
+                   const parallel::distributed::Vector<double> &pressure)
+  {
+    // increment number of samples
+    number_of_samples++;
+
+    // Make sure that all data has been initialized before evaluating the solution.
+    if(cell_data_has_been_initialized == false)
+    {
+      // Save data related to all adjacent cells for a given point along the line.
+      unsigned int line_iterator = 0;
+      for(typename std::vector<Line<dim> >::iterator line = data.lines.begin();
+          line != data.lines.end(); ++line, ++line_iterator)
+      {
+        bool velocity_has_to_be_evaluated = false;
+        bool pressure_has_to_be_evaluated = false;
+        for (typename std::vector<Quantity*>::iterator quantity = line->quantities.begin();
+            quantity != line->quantities.end(); ++quantity)
+        {
+          // make sure that the averaging type is correct
+          const QuantityStatistics<dim>* quantity_statistics = dynamic_cast<const QuantityStatistics<dim>* > (*quantity);
+          AssertThrow(quantity_statistics->average_homogeneous_direction == false,
+              ExcMessage("Averaging type for QuantityStatistics is not compatible with this type of line plot "
+                         "calculation. Either select no averaging in space or averaging in circumferential direction."));
+
+          if((*quantity)->type == QuantityType::Velocity ||
+             (*quantity)->type == QuantityType::SkinFriction ||
+             (*quantity)->type == QuantityType::ReynoldsStresses)
+          {
+            velocity_has_to_be_evaluated = true;
+          }
+
+          if((*quantity)->type == QuantityType::Pressure)
+          {
+            pressure_has_to_be_evaluated = true;
+          }
+        }
+
+        // take the first quantity to get the normal vector. All quantities for the
+        // current line must have the same averaging type
+        const QuantityStatistics<dim>* quantity = dynamic_cast<const QuantityStatistics<dim>* > (line->quantities[0]);
+        Tensor<1,dim,double> normal_vector;
+        Tensor<1,dim,double> unit_vector_1, unit_vector_2;
+
+        if(quantity->average_circumferential == true)
+        {
+          normal_vector = quantity->normal_vector;
+
+          // We assume that line->begin is the center of the circle for
+          // circumferential averaging.
+
+          // Calculate two unit vectors in the plane that is normal to
+          // the normal_vector.
+          unit_vector_1 = line->end - line->begin;
+          double const norm_1 = unit_vector_1.norm();
+          AssertThrow(norm_1 > 1.e-12, ExcMessage("Invalid begin and end points found."));
+
+          unit_vector_1 /= norm_1;
+
+          AssertThrow(dim==3, ExcMessage("Not implemented."));
+          unit_vector_2 = cross_product_3d(normal_vector, unit_vector_1);
+          double const norm_2 = unit_vector_2.norm();
+          AssertThrow(norm_2 > 1.e-12, ExcMessage("Invalid begin and end points found."));
+
+          unit_vector_2 /= norm_2;
+        }
+
+        // for all points along a line
+        for(unsigned int p = 0; p < line->n_points; ++p)
+        {
+          Point<dim> point = global_points[line_iterator][p];
+
+          // In case no averaging in circumferential direction is performed,
+          // just insert point "point".
+          std::vector<Point<dim> > points;
+          points.push_back(point);
+
+          // If averaging in circumferential direction is used,
+          // we insert additional points along the circle for
+          // points p>=1. The first point p=0 lies in the
+          // center of the circle (point(p=0) == line.begin).
+          if(p >= 1 && quantity->average_circumferential == true)
+          {
+            // begin with 1 since the first point has already been inserted.
+            for(unsigned int i=1; i<quantity->n_points_circumferential; ++i)
+            {
+              double cos = std::cos((double(i)/quantity->n_points_circumferential)*2.0*numbers::PI);
+              double sin = std::sin((double(i)/quantity->n_points_circumferential)*2.0*numbers::PI);
+              double radius = (point - line->begin).norm();
+
+              Point<dim> new_point;
+              for (unsigned int d=0; d<dim; ++d)
+              {
+                new_point[d] = (line->begin)[d] + cos*radius*unit_vector_1[d] + sin*radius*unit_vector_2[d];
+              }
+
+              points.push_back(new_point);
+            }
+          }
+
+          for(typename std::vector<Point<dim> >::iterator point_it = points.begin(); point_it != points.end(); ++point_it)
+          {
+            if(velocity_has_to_be_evaluated == true)
+            {
+              // find adjacent cells and store data required later for evaluating the solution.
+              std::vector<std::pair<unsigned int,std::vector<double> > > dof_index_first_dof_and_shape_values_velocity;
+              get_global_dof_index_and_shape_values(dof_handler_velocity,
+                                                    mapping,
+                                                    velocity,
+                                                    *point_it,
+                                                    dof_index_first_dof_and_shape_values_velocity);
+
+              for(typename std::vector<std::pair<unsigned int,std::vector<double> > >::iterator
+                  iter = dof_index_first_dof_and_shape_values_velocity.begin();
+                  iter != dof_index_first_dof_and_shape_values_velocity.end(); ++iter)
+              {
+                cells_global_velocity[line_iterator][p].push_back(*iter);
+              }
+            }
+
+            if(pressure_has_to_be_evaluated == true)
+            {
+              // find adjacent cells and store data required later for evaluating the solution.
+              std::vector<std::pair<unsigned int,std::vector<double> > > dof_index_first_dof_and_shape_values_pressure;
+              get_global_dof_index_and_shape_values(dof_handler_pressure,
+                                                    mapping,
+                                                    pressure,
+                                                    *point_it,
+                                                    dof_index_first_dof_and_shape_values_pressure);
+
+              for(typename std::vector<std::pair<unsigned int,std::vector<double> > >::iterator
+                  iter = dof_index_first_dof_and_shape_values_pressure.begin();
+                  iter != dof_index_first_dof_and_shape_values_pressure.end(); ++iter)
+              {
+                cells_global_pressure[line_iterator][p].push_back(*iter);
+              }
+            }
+          }
+        }
+      }
+
+      cell_data_has_been_initialized = true;
+    }
+
+    //Iterator for lines
+    unsigned int line_iterator = 0;
+    for(typename std::vector<Line<dim> >::iterator line = data.lines.begin();
+        line != data.lines.end(); ++line, ++line_iterator)
+    {
+      bool evaluate_velocity = false;
+      for (typename std::vector<Quantity*>::iterator quantity = line->quantities.begin();
+          quantity != line->quantities.end(); ++quantity)
+      {
+        //evaluate quantities that involve velocity
+        if((*quantity)->type == QuantityType::Velocity ||
+           (*quantity)->type == QuantityType::SkinFriction ||
+           (*quantity)->type == QuantityType::ReynoldsStresses)
+        {
+          evaluate_velocity = true;
+        }
+      }
+      if(evaluate_velocity == true)
+      {
+        do_evaluate_velocity(velocity, *line, line_iterator);
+      }
+
+      bool evaluate_pressure = false;
+      for (typename std::vector<Quantity*>::iterator quantity = line->quantities.begin();
+          quantity != line->quantities.end(); ++quantity)
+      {
+        //evaluate quantities that involve velocity
+        if((*quantity)->type == QuantityType::Pressure ||
+           (*quantity)->type == QuantityType::PressureCoefficient)
+        {
+          evaluate_pressure = true;
+        }
+      }
+      if(evaluate_pressure == true)
+      {
+        do_evaluate_pressure(pressure, *line, line_iterator);
+      }
+    }
+  }
+
+  void do_evaluate_velocity(parallel::distributed::Vector<double> const &velocity,
+                            Line<dim> const                             &line,
+                            unsigned int const                          line_iterator)
+  {
+    //Local variables for the current line:
+
+    // for all points along the line: velocity vector
+    std::vector<Tensor<1, dim, double> > velocity_vector_local(line.n_points);
+    // for all points along the line: counter
+    std::vector<unsigned int> counter_vector_local(line.n_points);
+
+    for(unsigned int p = 0; p < line.n_points; ++p)
+    {
+      std::vector<std::pair<unsigned int,std::vector<double> > > & adjacent_cells(cells_global_velocity[line_iterator][p]);
+
+      // loop over all adjacent, locally owned cells for the current point
+      for(typename std::vector<std::pair<unsigned int,std::vector<double> > >::iterator
+          iter = adjacent_cells.begin(); iter != adjacent_cells.end(); ++iter)
+      {
+        // increment counter (because this is a locally owned cell)
+        counter_vector_local[p] += 1;
+
+        for (typename std::vector<Quantity*>::const_iterator quantity = line.quantities.begin();
+            quantity != line.quantities.end(); ++quantity)
+        {
+          if((*quantity)->type == QuantityType::Velocity)
+          {
+            // interpolate solution using the precomputed shape values and the global dof index
+            Tensor<1,dim,double> velocity_value;
+            interpolate_value_vectorial_quantity(dof_handler_velocity,
+                                                 velocity,
+                                                 iter->first,
+                                                 iter->second,
+                                                 velocity_value);
+
+            // add result to array with velocity values
+            velocity_vector_local[p] += velocity_value;
+          }
+          else
+          {
+            AssertThrow(false, ExcMessage("Not implemented."));
+          }
+        }
+      }
+    }
+
+    // Cells are distributed over processors, therefore we need
+    // to sum the contributions of every single processor.
+    Utilities::MPI::sum(counter_vector_local, communicator, counter_vector_local);
+
+    // Perform MPI communcation as well as averaging for all quantities of the current line.
+    for (typename std::vector<Quantity*>::const_iterator quantity = line.quantities.begin();
+        quantity != line.quantities.end(); ++quantity)
+    {
+      if((*quantity)->type == QuantityType::Velocity)
+      {
+        Utilities::MPI::sum(ArrayView<const double>(&velocity_vector_local[0][0],dim*velocity_vector_local.size()),
+                            communicator,
+                            ArrayView<double>(&velocity_vector_local[0][0],dim*velocity_vector_local.size()));
+
+        // Accumulate instantaneous values into global vector.
+        // When writing the output files, we calculate the time-averaged values
+        // by dividing the global (accumulated) values by the number of samples.
+        for(unsigned int p=0; p<line.n_points; ++p)
+        {
+          // Take average value over all adjacent cells for a given point.
+          for(unsigned int d=0; d<dim; ++d)
+          {
+            if(counter_vector_local[p] > 0)
+            {
+              velocity_global[line_iterator][p][d] += velocity_vector_local[p][d]/counter_vector_local[p];
+            }
+          }
+        }
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Not implemented."));
+      }
+    }
+  }
+
+  void do_evaluate_pressure(parallel::distributed::Vector<double> const &pressure,
+                            Line<dim> const                             &line,
+                            unsigned int const                          line_iterator)
+  {
+    //Local variables for the current line:
+
+    // for all points along the line: pressure value
+    std::vector<double> pressure_vector_local(line.n_points);
+    // for all points along the line: counter
+    std::vector<unsigned int> counter_vector_local(line.n_points);
+
+    for(unsigned int p = 0; p < line.n_points; ++p)
+    {
+      std::vector<std::pair<unsigned int,std::vector<double> > > & adjacent_cells(cells_global_pressure[line_iterator][p]);
+
+      // loop over all adjacent, locally owned cells for the current point
+      for(typename std::vector<std::pair<unsigned int,std::vector<double> > >::iterator
+          iter = adjacent_cells.begin(); iter != adjacent_cells.end(); ++iter)
+      {
+        // increment counter (because this is a locally owned cell)
+        counter_vector_local[p] += 1;
+
+        for (typename std::vector<Quantity*>::const_iterator quantity = line.quantities.begin();
+            quantity != line.quantities.end(); ++quantity)
+        {
+          if((*quantity)->type == QuantityType::Pressure)
+          {
+            // interpolate solution using the precomputed shape values and the global dof index
+            double pressure_value = 0.0;
+            interpolate_value_scalar_quantity(dof_handler_pressure,
+                                              pressure,
+                                              iter->first,
+                                              iter->second,
+                                              pressure_value);
+
+            // add result to array with pressure values
+            pressure_vector_local[p] += pressure_value;
+          }
+          else
+          {
+            AssertThrow(false, ExcMessage("Not implemented."));
+          }
+        }
+      }
+    }
+
+    // Cells are distributed over processors, therefore we need
+    // to sum the contributions of every single processor.
+    Utilities::MPI::sum(counter_vector_local, communicator, counter_vector_local);
+
+    // Perform MPI communcation as well as averaging for all quantities of the current line.
+    for (typename std::vector<Quantity*>::const_iterator quantity = line.quantities.begin();
+        quantity != line.quantities.end(); ++quantity)
+    {
+      if((*quantity)->type == QuantityType::Pressure)
+      {
+        Utilities::MPI::sum(pressure_vector_local, communicator, pressure_vector_local);
+
+        // Accumulate instantaneous values into global vector.
+        // When writing the output files, we calculate the time-averaged values
+        // by dividing the global (accumulated) values by the number of samples.
+        for(unsigned int p=0; p<line.n_points; ++p)
+        {
+          // Take average value over all adjacent cells for a given point.
+          if(counter_vector_local[p] > 0)
+          {
+            pressure_global[line_iterator][p] += pressure_vector_local[p]/counter_vector_local[p];
+          }
+        }
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Not implemented."));
+      }
+    }
+  }
+
+  void do_write_output() const
+  {
+    if(Utilities::MPI::this_mpi_process(communicator)== 0 && data.write_output == true)
+    {
+      unsigned int const precision = data.precision;
+
+      // Iterator for lines
+      unsigned int line_iterator = 0;
+      for(typename std::vector<Line<dim> >::const_iterator line = data.lines.begin();
+          line != data.lines.end(); ++line, ++line_iterator)
+      {
+        std::string filename_prefix = data.filename_prefix + line->name;
+
+        for (typename std::vector<Quantity*>::const_iterator quantity = line->quantities.begin();
+             quantity != line->quantities.end(); ++quantity)
+        {
+          // Velocity quantities ...
+          if((*quantity)->type == QuantityType::Velocity)
+          {
+            std::string filename = filename_prefix + "_velocity" + ".txt";
+            std::ofstream f;
+            if(clear_files)
+            {
+              f.open(filename.c_str(),std::ios::trunc);
+            }
+            else
+            {
+              f.open(filename.c_str(),std::ios::app);
+            }
+
+            print_headline(f,number_of_samples);
+
+            for(unsigned int d=0; d<dim; ++d)
+              f << std::setw(precision+8) << std::left << "x_" + Utilities::int_to_string(d+1);
+            for(unsigned int d=0; d<dim; ++d)
+              f << std::setw(precision+8) << std::left << "u_" + Utilities::int_to_string(d+1);
+
+            f << std::endl;
+
+            // loop over all points
+            for (unsigned int p=0; p<line->n_points; ++p)
+            {
+              f << std::scientific << std::setprecision(precision);
+
+              // write data
+              for(unsigned int d=0; d<dim; ++d)
+                f << std::setw(precision+8) << std::left << global_points[line_iterator][p][d];
+
+              // write velocity and average over time
+              for(unsigned int d=0; d<dim; ++d)
+                f << std::setw(precision+8) << std::left << velocity_global[line_iterator][p][d]/number_of_samples;
+
+              f << std::endl;
+            }
+            f.close();
+          }
+
+          if((*quantity) -> type == QuantityType::ReynoldsStresses)
+          {
+            AssertThrow(false, ExcMessage("Not implemented."));
+          }
+
+          if((*quantity) -> type == QuantityType::SkinFriction)
+          {
+            AssertThrow(false, ExcMessage("Not implemented."));
+          }
+
+          // ... and pressure quantities.
+          if((*quantity) -> type == QuantityType::Pressure)
+          {
+            std::string filename = filename_prefix + "_pressure" + ".txt";
+            std::ofstream f;
+
+            if(clear_files)
+            {
+              f.open(filename.c_str(),std::ios::trunc);
+            }
+            else
+            {
+              f.open(filename.c_str(),std::ios::app);
+            }
+
+            print_headline(f,number_of_samples);
+
+            for(unsigned int d=0; d<dim; ++d)
+              f << std::setw(precision+8) << std::left << "x_" + Utilities::int_to_string(d+1);
+
+            f << std::setw(precision+8) << std::left << "p";
+
+            f << std::endl;
+
+            for (unsigned int p=0; p<line->n_points; ++p)
+            {
+              f << std::scientific << std::setprecision(precision);
+
+              for(unsigned int d=0; d<dim; ++d)
+                f << std::setw(precision+8) << std::left << global_points[line_iterator][p][d];
+
+              f << std::setw(precision+8) << std::left << pressure_global[line_iterator][p]/number_of_samples;
+
+              f << std::endl;
+            }
+            f.close();
+          }
+
+          if((*quantity) -> type == QuantityType::PressureCoefficient)
+          {
+            AssertThrow(false, ExcMessage("Not implemented."));
+          }
+        }
+      }
+    }
+  }
+
+  mutable bool clear_files;
+
+  DoFHandler<dim> const &dof_handler_velocity;
+  DoFHandler<dim> const &dof_handler_pressure;
+  Mapping<dim>    const &mapping;
+  MPI_Comm communicator;
+
+  LinePlotData<dim> data;
+
+  //Global points
+  std::vector<std::vector<Point<dim> > > global_points;
+
+  bool cell_data_has_been_initialized;
+
+  // For all lines: for all points along the line: for all relevant cells: dof index of first dof of current cell and all shape function values
+  std::vector<std::vector<std::vector<std::pair<unsigned int,std::vector<double> > > > > cells_global_velocity;
+
+  // For all lines: for all points along the line: for all relevant cells: dof index of first dof of current cell and all shape function values
+  std::vector<std::vector<std::vector<std::pair<unsigned int,std::vector<double> > > > > cells_global_pressure;
+
+  // number of samples for averaging in time
+  unsigned int number_of_samples;
+
+  //Velocity quantities
+  // For all lines: for all points along the line
+  std::vector<std::vector<Tensor<1, dim, double> > > velocity_global;
+
+  //Pressure quantities
+  // For all lines: for all points along the line
+  std::vector<std::vector<double> > pressure_global;
+
+  bool write_final_output;
+};
+
+
+
+/*
  * This function calculates statistics along lines over time
  * and one spatial, homogeneous direction (averaging_direction = {0,1,2}), e.g.,
  * in the x-direction with a line in the y-z plane.
  *
- * NOTE: This function just works for geometries whose cells are aligned with the coordinate axis.
+ * NOTE: This function just works for geometries/meshes for which the cells are aligned with the coordinate axis.
  */
 
 //TODO Adapt code to geometries whose elements are not aligned with the coordinate axis.
 
 template <int dim>
-class LineStatisticsCalculator
+class LinePlotCalculatorStatisticsHomogeneousDirection
 {
 public:
   typedef typename std::vector<std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> > > TYPE;
 
-  LineStatisticsCalculator(const DoFHandler<dim> &dof_handler_velocity_in,
-                           const DoFHandler<dim> &dof_handler_pressure_in,
-                           const Mapping<dim>    &mapping_in)
+  LinePlotCalculatorStatisticsHomogeneousDirection(const DoFHandler<dim> &dof_handler_velocity_in,
+                                                   const DoFHandler<dim> &dof_handler_pressure_in,
+                                                   const Mapping<dim>    &mapping_in)
     :
     clear_files(true),
     dof_handler_velocity(dof_handler_velocity_in),
@@ -38,7 +652,8 @@ public:
                  (dynamic_cast<const parallel::Triangulation<dim>*>(&dof_handler_velocity.get_triangulation())
                   ->get_communicator()) : MPI_COMM_SELF),
     number_of_samples(0),
-    averaging_direction(2)
+    averaging_direction(2),
+    write_final_output(false)
   {}
 
   void setup(LinePlotData<dim> const &line_statistics_data_in)
@@ -72,7 +687,7 @@ public:
     // quantities are averaged over the same homogeneous direction for all lines
     AssertThrow(data.lines.size()>0, ExcMessage("Empty data"));
     AssertThrow(data.lines[0].quantities.size()>0, ExcMessage("Empty data"));
-    const QuantityStatistics* quantity = dynamic_cast<const QuantityStatistics* > (data.lines[0].quantities[0]);
+    const QuantityStatistics<dim>* quantity = dynamic_cast<const QuantityStatistics<dim>* > (data.lines[0].quantities[0]);
     averaging_direction = quantity->averaging_direction;
 
     AssertThrow(averaging_direction == 0 || averaging_direction == 1 || averaging_direction == 2,
@@ -93,7 +708,12 @@ public:
       for (typename std::vector<Quantity*>::iterator quantity = line->quantities.begin();
            quantity != line->quantities.end(); ++quantity)
       {
-        QuantityStatistics* stats_ptr = dynamic_cast<QuantityStatistics* > (*quantity);
+        QuantityStatistics<dim>* stats_ptr = dynamic_cast<QuantityStatistics<dim>* > (*quantity);
+
+        // make sure that the averaging type is correct
+        AssertThrow(stats_ptr->average_homogeneous_direction == true,
+            ExcMessage("Averaging type for QuantityStatistics is not compatible with this type of line "
+                       "plot calculation, where averaging is performed in the homogeneous direction."));
 
         unsigned int const direction = stats_ptr->averaging_direction;
 
@@ -185,11 +805,10 @@ public:
         for(typename std::vector<Line<dim> >::iterator line = data.lines.begin();
             line != data.lines.end(); ++line, ++line_iterator)
         {
-          // cells and reference points for reference pressure (only one point for each line)
           for (typename std::vector<Quantity*>::iterator quantity = line->quantities.begin();
               quantity != line->quantities.end(); ++quantity)
           {
-            //evaluate quantities that involve velocity
+            //evaluate quantities that involve pressure
             if((*quantity)->type == QuantityType::Pressure)
             {
               // cells and reference points for all points along a line
@@ -231,7 +850,7 @@ public:
           for (typename std::vector<Quantity*>::iterator quantity = line->quantities.begin();
               quantity != line->quantities.end(); ++quantity)
           {
-            //evaluate quantities that involve velocity
+            //evaluate quantities that involve pressure
             if((*quantity)->type == QuantityType::PressureCoefficient)
             {
               QuantityStatisticsPressureCoefficient<dim>* quantity_ref_pressure =
@@ -272,10 +891,35 @@ public:
     }
   }
 
-  void evaluate(const parallel::distributed::Vector<double> &velocity,
-                const parallel::distributed::Vector<double> &pressure)
+  void evaluate(parallel::distributed::Vector<double> const &velocity,
+                parallel::distributed::Vector<double> const &pressure,
+                double const                                &time,
+                unsigned int const                          &time_step_number)
   {
-    do_evaluate(velocity, pressure);
+    // EPSILON: small number which is much smaller than the time step size
+    const double EPSILON = 1.0e-10;
+    if(data.statistics_data.calculate_statistics == true)
+    {
+      if((time > data.statistics_data.sample_start_time-EPSILON) &&
+        (time < data.statistics_data.sample_end_time+EPSILON) &&
+        (time_step_number % data.statistics_data.sample_every_timesteps == 0))
+      {
+        // evaluate statistics
+        do_evaluate(velocity, pressure);
+
+        // write intermediate output
+        if(time_step_number % data.statistics_data.write_output_every_timesteps == 0)
+        {
+          write_output();
+        }
+      }
+      // write final output
+      if((time > data.statistics_data.sample_end_time-EPSILON) && write_final_output)
+      {
+        write_output();
+        write_final_output = false;
+      }
+    }
   }
 
   void print_headline(std::ofstream      &f,
@@ -284,9 +928,9 @@ public:
     f << "number of samples: N = "  << number_of_samples << std::endl;
   }
 
-  void write_output(const std::string &output_prefix)
+  void write_output()
   {
-    do_write_output(output_prefix);
+    do_write_output();
   }
 
 private:
@@ -619,7 +1263,7 @@ private:
     }
   }
 
-  void do_write_output(const std::string &output_prefix) const
+  void do_write_output() const
   {
     if(Utilities::MPI::this_mpi_process(communicator)== 0 && data.write_output == true)
     {
@@ -630,7 +1274,7 @@ private:
       for(typename std::vector<Line<dim> >::const_iterator line = data.lines.begin();
           line != data.lines.end(); ++line, ++line_iterator)
       {
-        std::string filename_prefix = output_prefix + "_" + line->name;
+        std::string filename_prefix = data.filename_prefix + line->name;
 
         for (typename std::vector<Quantity*>::const_iterator quantity = line->quantities.begin();
              quantity != line->quantities.end(); ++quantity)
@@ -847,17 +1491,25 @@ private:
   unsigned int averaging_direction;
 
   //Velocity quantities
+  // For all lines: for all points along the line
   std::vector<std::vector<Tensor<1, dim, double> > > velocity_global;
 
   //Skin Friction quantities
+  // For all lines: for all points along the line
   std::vector<std::vector<double> > wall_shear_global;
 
   //Reynolds Stress quantities
+  // For all lines: for all points along the line
   std::vector<std::vector<Tensor<2, dim, double> > > reynolds_global;
 
   //Pressure quantities
+  // For all lines: for all points along the line
   std::vector<std::vector<double> > pressure_global;
+  // For all lines
   std::vector<double> reference_pressure_global;
+
+  // write final output
+  bool write_final_output;
 };
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_LINE_PLOT_CALCULATION_STATISTICS_H_ */

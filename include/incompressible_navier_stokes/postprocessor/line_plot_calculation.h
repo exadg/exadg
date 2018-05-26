@@ -8,19 +8,27 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_LINE_PLOT_CALCULATION_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_LINE_PLOT_CALCULATION_H_
 
-
-#include <deal.II/matrix_free/matrix_free.h>
-#include <deal.II/matrix_free/fe_evaluation.h>
-#include <deal.II/matrix_free/operators.h>
-#include "../../postprocessor/evaluate_solution_in_given_point.h"
-
-
+// C++
 #include <fstream>
 #include <sstream>
 
+// deal.II
+#include <deal.II/matrix_free/matrix_free.h>
+#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/operators.h>
+
+#include "../../postprocessor/evaluate_solution_in_given_point.h"
 #include "../postprocessor/line_plot_data.h"
 
-
+/*
+ *  Evaluate quantities along lines.
+ *
+ *  Assumptions/Restrictions:
+ *
+ *   - straight lines, points are distributed equidistantly along the line
+ *
+ *   - no statistical averaging, instantaneous quantities are calculated
+ */
 template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
 class LinePlotCalculator
 {
@@ -56,13 +64,16 @@ public:
         // store all points along current line in a vector
         unsigned int n_points = line->n_points;
         std::vector<Point<dim> > points(n_points);
+
+        // we consider straight lines with an equidistant distribution of points along the line
         for(unsigned int i=0; i<n_points; ++i)
           points[i] = line->begin + double(i)/double(n_points-1)*(line->end - line->begin);
 
         // filename prefix for current line
         std::string filename_prefix = data.filename_prefix
             + "l" + Utilities::int_to_string(dof_handler_velocity->get_triangulation().n_global_levels()-1)
-            + "_ku" + Utilities::int_to_string(fe_degree_u) + "_kp" + Utilities::int_to_string(fe_degree_p)
+            + "_ku" + Utilities::int_to_string(fe_degree_u)
+            + "_kp" + Utilities::int_to_string(fe_degree_p)
             + "_" + line->name;
 
         // write output for all specified quantities

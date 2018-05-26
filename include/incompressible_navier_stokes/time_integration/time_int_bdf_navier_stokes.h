@@ -523,7 +523,7 @@ initialize_vectors()
 
     SolutionField<dim,value_type> sol;
     sol.type = SolutionFieldType::vector;
-    sol.name = "mean velocity";
+    sol.name = "mean_velocity";
     sol.dof_handler = &navier_stokes_operation->get_dof_handler_u();
     sol.vector = &mean_velocity;
     this->additional_fields.push_back(sol);

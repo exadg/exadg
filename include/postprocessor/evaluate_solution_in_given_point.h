@@ -156,14 +156,45 @@ find_all_active_cells_around_point(Mapping<dim> const           &mapping,
 //                << std::endl;
     }
 
-    const double distance = GeometryInfo<dim>::distance_to_unit_cell(point_in_ref_coord);
-
     // insert cell into vector if point lies on the current cell
+    const double distance = GeometryInfo<dim>::distance_to_unit_cell(point_in_ref_coord);
     double const tol = 1.0e-10;
     if(distance < tol)
     {
       cells.push_back(std::make_pair(*cell,point_in_ref_coord));
     }
+  }
+
+  // the above algorithm does - in general - not guarantee that the set of
+  // cells adjacent to the closest vertex contains the point (for example
+  // in case of highly stretched elements) although the point really lies inside
+  // a cell (and not outside the domain).
+
+  // if we could not find all adjacent cells as intended, then let's try
+  // to find at least one cell using the existing deal.II functionality
+  // which recursively searches within surrounding cell layers in case the
+  // initial search (closest vertex and adjacent cells) has not been successful.
+  
+  // find_active_cell_around_point() might throw an exception ...
+  try
+  {
+    std::pair<typename MeshType<dim, spacedim>::active_cell_iterator, Point<dim> >  
+    last_chance = GridTools::find_active_cell_around_point(mapping,mesh,p);
+
+    // we have to project the point onto the unit cell as written in deal.II docu
+    last_chance.second = GeometryInfo<dim>::project_to_unit_cell(last_chance.second);
+
+    // insert cell into vector if point lies on the current cell
+    const double distance = GeometryInfo<dim>::distance_to_unit_cell(last_chance.second);
+    double const tol = 1.0e-10;
+    if(distance < tol)
+    {
+      cells.push_back(last_chance);
+    }
+  }
+  catch(...)
+  {
+
   }
 
   return cells;
@@ -296,18 +327,39 @@ void get_global_dof_index_and_shape_values(DoFHandler<dim> const                
 /*
  *  Interpolate solution in point by using precomputed shape functions values (for efficiency!)
  *  Noet that we assume that we are dealing with discontinuous finite elements.
+ *
+ *  The quantity to be evaluated is of type Tensor<1,dim,Number>.
  */
 template<int dim, typename Number>
-void interpolate_value(DoFHandler<dim> const                                &dof_handler,
-                       parallel::distributed::Vector<Number> const          &solution,
-                       unsigned int const                                   &global_dof_index,
-                       std::vector<Number> const                            &fe_shape_values,
-                       Tensor<1,dim,Number>                                 &result)
+void interpolate_value_vectorial_quantity(DoFHandler<dim> const                       &dof_handler,
+                                          parallel::distributed::Vector<Number> const &solution,
+                                          unsigned int const                          &global_dof_index,
+                                          std::vector<Number> const                   &fe_shape_values,
+                                          Tensor<1,dim,Number>                        &result)
 {
-  const FiniteElement<dim> &fe = dof_handler.get_fe();
+  FiniteElement<dim> const &fe = dof_handler.get_fe();
   Number const * sol_ptr = solution.begin() + global_dof_index;
   for (unsigned int i=0; i<fe.dofs_per_cell; ++i)
     result[fe.system_to_component_index(i).first] += sol_ptr[i] * fe_shape_values[i];
+}
+
+/*
+ *  Interpolate solution in point by using precomputed shape functions values (for efficiency!)
+ *  Noet that we assume that we are dealing with discontinuous finite elements.
+ *
+ *  The quantity to be evaluated is a scalar quantity.
+ */
+template<int dim, typename Number>
+void interpolate_value_scalar_quantity(DoFHandler<dim> const                       &dof_handler,
+                                       parallel::distributed::Vector<Number> const &solution,
+                                       unsigned int const                          &global_dof_index,
+                                       std::vector<Number> const                   &fe_shape_values,
+                                       Number                                      &result)
+{
+  FiniteElement<dim> const &fe = dof_handler.get_fe();
+  Number const * sol_ptr = solution.begin() + global_dof_index;
+  for (unsigned int i=0; i<fe.dofs_per_cell; ++i)
+    result += sol_ptr[i] * fe_shape_values[i];
 }
 
 
