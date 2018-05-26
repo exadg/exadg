@@ -211,11 +211,11 @@ public:
 
             // interpolate solution using the precomputed shape values and the global dof index
             Tensor<1,dim,double> velocity_value;
-            interpolate_value(*dof_handler_velocity,
-                              velocity,
-                              iter->first,
-                              iter->second,
-                              velocity_value);
+            interpolate_value_vectorial_quantity(*dof_handler_velocity,
+                                                 velocity,
+                                                 iter->first,
+                                                 iter->second,
+                                                 velocity_value);
 
             // add result to array with velocity inflow data
             (*inflow_data.array)[array_index] += velocity_value;

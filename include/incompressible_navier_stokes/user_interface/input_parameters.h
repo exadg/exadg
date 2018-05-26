@@ -488,47 +488,6 @@ struct MassConservationData
   double reference_length_scale;
 };
 
-// bfs data
-
-struct BFSStatisticsData
-{
-  BFSStatisticsData()
-   :
-   calculate_statistics(false),
-   sample_start_time(0.0),
-   sample_end_time(1.0),
-   sample_every_timesteps(1),
-   filename_prefix("indexa")
-  {}
-
-  void print(ConditionalOStream &pcout)
-  {
-    if(calculate_statistics == true)
-    {
-      pcout << "  BFS statistics:" << std::endl;
-      print_parameter(pcout,"Calculate statistics",calculate_statistics);
-      print_parameter(pcout,"Sample start time",sample_start_time);
-      print_parameter(pcout,"Sample end time",sample_end_time);
-      print_parameter(pcout,"Sample every timesteps",sample_every_timesteps);
-      print_parameter(pcout,"Filename prefix",filename_prefix);
-    }
-  }
-
-  // calculate statistics?
-  bool calculate_statistics;
-
-  // start time for sampling
-  double sample_start_time;
-
-  // end time for sampling
-  double sample_end_time;
-
-  // perform sampling every ... timesteps
-  unsigned int sample_every_timesteps;
-
-  std::string filename_prefix;
-};
-
 
 // inflow data: use velocity at the outflow of one domain as inflow-BC for another domain
 // The outflow boundary has to be the y-z plane at a given x-coordinate. The velocity is
@@ -860,10 +819,7 @@ public:
     perturbation_energy_data(PerturbationEnergyData()),
 
     //plot data along line
-    line_plot_data(LinePlotData<dim>()),
-
-    // BFS statistics
-    bfs_statistics(BFSStatisticsData())
+    line_plot_data(LinePlotData<dim>())
   {}
 
   void set_input_parameters();
@@ -1766,9 +1722,6 @@ public:
 
     // perturbation energy
     perturbation_energy_data.print(pcout);
-
-    // bfs statistics
-    bfs_statistics.print(pcout);
   }
 
   /**************************************************************************************/
@@ -2262,9 +2215,6 @@ public:
 
   // plot along lines
   LinePlotData<dim> line_plot_data;
-
-  // backward facing step statistics
-  BFSStatisticsData bfs_statistics;
 
   // mean flow
   MeanVelocityCalculatorData<dim> mean_velocity_data;
