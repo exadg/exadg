@@ -38,9 +38,17 @@ unsigned int const REFINE_STEPS_SPACE_DOMAIN1 = 0;
 // set the number of refine levels for DOMAIN 2
 unsigned int const REFINE_STEPS_SPACE_DOMAIN2 = 0;
 
+// needed for single domain solver only
+unsigned int const REFINE_STEPS_SPACE_MIN = REFINE_STEPS_SPACE_DOMAIN2;
+unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_DOMAIN2;
+
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
+
+// prescribe velocity inflow profile for nozzle domain via precursor simulation?
+bool const USE_PRECURSOR_SIMULATION = false; //true;
+double const FACTOR_RANDOM_PERTURBATIONS = 0.05;
 
 // output folders
 std::string OUTPUT_FOLDER = "output/fda/Re500/l0_k32/";
@@ -123,8 +131,8 @@ double const OUTPUT_INTERVAL_TIME = 10.0*T_0;
 
 // sampling
 
-// sampling interval should last over (100-200) * T_0 according to preliminary results
-// might be when using averaging in circumferential direction.
+// sampling interval should last over (100-200) * T_0 according to preliminary results.
+// might be reduced when using averaging in circumferential direction.
 double const SAMPLE_START_TIME = 50.0*T_0; // let the flow develop
 double const SAMPLE_END_TIME = END_TIME; // that's the only reasonable choice
 unsigned int SAMPLE_EVERY_TIMESTEPS = 1;
@@ -179,6 +187,11 @@ void initialize_velocity_values()
       Tensor<1,DIMENSION,double> velocity;
       // flow in z-direction
       velocity[2] = MAX_VELOCITY*(1.0-std::pow(R_VALUES[iy]/R_OUTER,2.0));
+
+      // Add random perturbation
+      double perturbation = FACTOR_RANDOM_PERTURBATIONS * velocity[2] * ((double)rand()/RAND_MAX-0.5)/0.5;
+      velocity[2] += perturbation;
+
       VELOCITY_VALUES[iy*N_POINTS_R + iz] = velocity;
     }
   }
@@ -202,13 +215,6 @@ double radius_function(double const z)
     radius = R_OUTER;
 
   return radius;
-}
-
-// we do not need this function here (but have to implement it)
-template<int dim>
-void InputParametersNavierStokes<dim>::set_input_parameters()
-{
-
 }
 
 /*
@@ -250,9 +256,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   // (using CFL number > 1) was found to be more efficient for this test case
   // than, e.g., the dual splitting scheme with explicit formulation of the convective term.
   
-  //  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
-  //  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  //  calculation_of_time_step_size = TimeStepCalculation::AdaptiveTimeStepCFL;
+//  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+//  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+//  calculation_of_time_step_size = TimeStepCalculation::AdaptiveTimeStepCFL;
   temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
@@ -261,8 +267,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   // ConstTimeStepCFL: CFL_critical = 0.3 - 0.5 for k=3
   // AdaptiveTimeStepCFL: CFL_critical = 0.125 - 0.15 for k=3
   // Best pratice: use CFL = 4.0 for implicit treatment (e.g., pressure-correction scheme)
-  // and CFL = 0.13 with adaptive time stepping for an explicit treatment (e.g, dual splitting)
-  cfl = 4.0;
+  // and CFL = 0.13 with adaptive time stepping for an explicit treatment (e.g., dual splitting)
+  cfl = 0.13;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
@@ -319,10 +325,18 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   // Best practice: use PCG with Jacobi preconditioner for refine level l=0,
   // and FGMRES solver with Chebyshev smoother and PCG_PointJaocbi coarse grid solver for
   // refinement levels l=1 and larger.
-  solver_pressure_poisson = SolverPressurePoisson::PCG; //PCG; //FGMRES
-  preconditioner_pressure_poisson = PreconditionerPressurePoisson::Jacobi; //GeometricMultigrid; //Jacobi;
-  multigrid_data_pressure_poisson.smoother = MultigridSmoother::Chebyshev; //Chebyshev; //Jacobi;
-  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::PCG_PointJacobi;
+  if(REFINE_STEPS_SPACE_MIN == 0)
+  {
+    solver_pressure_poisson = SolverPressurePoisson::PCG;
+    preconditioner_pressure_poisson = PreconditionerPressurePoisson::Jacobi;
+  }
+  else
+  {
+    solver_pressure_poisson = SolverPressurePoisson::FGMRES;
+    preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
+    multigrid_data_pressure_poisson.smoother = MultigridSmoother::Chebyshev;
+    multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::PCG_PointJacobi;
+  }
 
   abs_tol_pressure = 1.e-12;
   rel_tol_pressure = 1.e-3;
@@ -355,7 +369,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
 
   // formulation
   order_pressure_extrapolation = 1; // use 0 for non-incremental formulation
-  rotational_formulation = true;
+  rotational_formulation = true; // use false for standard formulation
 
   // momentum step
 
@@ -589,6 +603,13 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
   }
 }
 
+// solve problem for DOMAIN 2 only (nozzle domain)
+template<int dim>
+void InputParametersNavierStokes<dim>::set_input_parameters()
+{
+  // call set_input_parameters() function for DOMAIN 2
+  this->set_input_parameters(2);
+}
 
 
 /**************************************************************************************/
@@ -700,7 +721,8 @@ public:
 
 /*
  *  Right-hand side function: Implements the body force vector occurring on the
- *  right-hand side of the momentum equation of the Navier-Stokes equations
+ *  right-hand side of the momentum equation of the Navier-Stokes equations.
+ *  Only relevant for precursor simulation.
  */
  template<int dim>
  class RightHandSide : public Function<dim>
@@ -751,6 +773,9 @@ private:
 
 #include "../../include/functionalities/one_sided_cylindrical_manifold.h"
 
+/*
+ *  Create grid for precursor domain (DOMAIN 1)
+ */
 template<int dim>
 void create_grid_and_set_boundary_conditions_1(
     parallel::distributed::Triangulation<dim>              &triangulation,
@@ -862,6 +887,9 @@ void create_grid_and_set_boundary_conditions_1(
   boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,pressure_bc_dudt));
 }
 
+/*
+ *  Create grid for precursor domain (DOMAIN 2)
+ */
 template<int dim>
 void create_grid_and_set_boundary_conditions_2(
     parallel::distributed::Triangulation<dim>              &triangulation,
@@ -1202,6 +1230,22 @@ void create_grid_and_set_boundary_conditions_2(
   boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(2,zero_function_pressure));
 }
 
+template<int dim>
+void create_grid_and_set_boundary_conditions(
+    parallel::distributed::Triangulation<dim>              &triangulation,
+    unsigned int const                                     n_refine_space,
+    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
+    std::vector<GridTools::PeriodicFacePair<typename
+      Triangulation<dim>::cell_iterator> >                 &periodic_faces)
+{
+  // call respective function for DOMAIN 2
+  create_grid_and_set_boundary_conditions_2(triangulation,
+                                            n_refine_space,
+                                            boundary_descriptor_velocity,
+                                            boundary_descriptor_pressure,
+                                            periodic_faces);
+}
 
 template<int dim>
 void set_field_functions_1(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
@@ -1243,6 +1287,14 @@ void set_field_functions_2(std::shared_ptr<FieldFunctionsNavierStokes<dim> > fie
   field_functions->analytical_solution_pressure = initial_solution_pressure;
   field_functions->right_hand_side = right_hand_side;
 }
+
+template<int dim>
+void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+{
+  // call respective function for DOMAIN 2
+  set_field_functions_2(field_functions);
+}
+
 
 template<int dim>
 void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
@@ -1325,8 +1377,15 @@ public:
         time,
         time_step_number);
 
-    // inflow data
-    inflow_data_calculator->calculate(velocity);
+    if(USE_PRECURSOR_SIMULATION == true)
+    {
+      // inflow data
+      inflow_data_calculator->calculate(velocity);
+    }
+    else
+    {
+      initialize_velocity_values();
+    }
 
     if(pp_data_fda.mean_velocity_data.calculate == true)
     {
