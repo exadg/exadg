@@ -83,13 +83,13 @@ public:
       while(norm_r_tmp >= (1.0-tau*omega)*norm_r && n_iter_tmp < N_ITER_TMP_MAX);
 
       AssertThrow(norm_r_tmp < (1.0-tau*omega)*norm_r,
-          ExcMessage("Damped Newton iteration did not convergence. "
+          ExcMessage("Damped Newton iteration did not converge. "
                      "Maximum number of iterations exceeded!"));
 
 //      if(norm_r_tmp >= (1.0-tau*omega)*norm_r)
 //      {
 //        if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
-//          std::cout << "Damped Newton iteration did not convergence." << std::endl
+//          std::cout << "Damped Newton iteration did not converge." << std::endl
 //                    << "Maximum number of iterations exceeded!" << std::endl;
 //      }
 
