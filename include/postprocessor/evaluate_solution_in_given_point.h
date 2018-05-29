@@ -9,6 +9,7 @@
 #define INCLUDE_POSTPROCESSOR_EVALUATE_SOLUTION_IN_GIVEN_POINT_H_
 
 #include <deal.II/lac/parallel_vector.h>
+#include <deal.II/grid/grid_tools.h>
 
 template<int dim, typename Number>
 void my_point_value(Mapping<dim> const                                   &mapping,
@@ -33,172 +34,101 @@ void my_point_value(Mapping<dim> const                                   &mappin
   value = solution_value[0];
 }
 
-//template<int dim, typename Number>
-//void evaluate_solution_in_point(DoFHandler<dim> const                       &dof_handler,
-//                                Mapping<dim> const                          &mapping,
-//                                parallel::distributed::Vector<Number> const &numerical_solution,
-//                                Point<dim> const                            &point,
-//                                Number                                      &solution_value)
-//{
-//  // processor local variables: initialize with zeros since we add values to these variables
-//  unsigned int counter = 0;
-//  solution_value = 0.0;
-//
-//  // find adjacent cells to specified point by calculating the closest vertex and the cells
-//  // surrounding this vertex, make sure that at least one cell is found
-//  unsigned int vertex_id = GridTools::find_closest_vertex(dof_handler, point);
-//  std::vector<typename DoFHandler<dim>::active_cell_iterator> adjacent_cells_tmp
-//    = GridTools::find_cells_adjacent_to_vertex(dof_handler,vertex_id);
-//  Assert(adjacent_cells_tmp.size()>0, ExcMessage("No adjacent cells found for given point."));
-//
-//  // copy adjacent cells into a set
-//  std::set<typename DoFHandler<dim>::active_cell_iterator> adjacent_cells (adjacent_cells_tmp.begin(),adjacent_cells_tmp.end());
-//
-//  // loop over all adjacent cells
-//  for (typename std::set<typename DoFHandler<dim>::active_cell_iterator>::iterator cell = adjacent_cells.begin(); cell != adjacent_cells.end(); ++cell)
-//  {
-//    // go on only if cell is owned by the processor
-//    if((*cell)->is_locally_owned())
-//    {
-//      // this is a safety factor and might be insufficient for strongly distorted elements
-//      Number const factor = 1.1;
-//      Point<dim> point_in_ref_coord;
-//      // This if() is needed because the function transform_real_to_unit_cell() throws exception
-//      // if the point is too far away from the cell.
-//      // Hence, we make sure that the cell is only considered if the point is close to the cell.
-//      if((*cell)->center().distance(point) < factor * (*cell)->center().distance(dof_handler.get_triangulation().get_vertices()[vertex_id]))
-//      {
-//        try
-//        {
-//          point_in_ref_coord = mapping.transform_real_to_unit_cell(*cell, point);
-//        }
-//        catch(...)
-//        {
-//          std::cerr << std::endl
-//                    << "Could not transform point from real to unit cell. "
-//                       "Probably, the specified point is too far away from the cell."
-//                    << std::endl;
-//        }
-//
-//        const Number distance = GeometryInfo<dim>::distance_to_unit_cell(point_in_ref_coord);
-//
-//        // if point lies on the current cell
-//        if(distance < 1.0e-10)
-//        {
-//          Vector<Number> value(1);
-//          my_point_value(mapping,
-//                         dof_handler,
-//                         numerical_solution,
-//                         *cell,
-//                         point_in_ref_coord,
-//                         value);
-//
-//          solution_value += value(0);
-//          ++counter;
-//        }
-//      }
-//    }
-//  }
-//
-//  // parallel computations: add results of all processors and calculate mean value
-//  counter = Utilities::MPI::sum(counter,MPI_COMM_WORLD);
-//  Assert(counter>0,ExcMessage("No points found."));
-//
-//  solution_value = Utilities::MPI::sum(solution_value,MPI_COMM_WORLD);
-//  solution_value /= (Number)counter;
-//}
-
 /*
  *  Find all active cells around a point given in physical space.
  *  The return value is a std::vector of std::pair<cell,point_in_ref_coordinates>.
  *  A <cell,point_in_ref_coordinates> pair is inserted in this vector only if the
  *  distance of the point to the cell (in reference space) is smaller than a tolerance.
+ *
+ *  NOTE: This function is no longer required since it has been implemented in deal.II
  */
-template<int dim, template<int,int> class MeshType, int spacedim = dim>
-std::vector<std::pair<typename MeshType<dim, spacedim>::active_cell_iterator, Point<dim> > >
-find_all_active_cells_around_point(Mapping<dim> const           &mapping,
-                                   MeshType<dim,spacedim> const &mesh,
-                                   Point<dim> const             &p)
-{
-  std::vector<std::pair<typename MeshType<dim, spacedim>::active_cell_iterator, Point<dim> > > cells;
+//template<int dim, template<int,int> class MeshType, int spacedim = dim>
+//std::vector<std::pair<typename MeshType<dim, spacedim>::active_cell_iterator, Point<dim> > >
+//find_all_active_cells_around_point(Mapping<dim> const           &mapping,
+//                                   MeshType<dim,spacedim> const &mesh,
+//                                   Point<dim> const             &p)
+//{
+//  std::vector<std::pair<typename MeshType<dim, spacedim>::active_cell_iterator, Point<dim> > > cells;
+//
+//  // find adjacent cells to specified point by calculating the closest vertex and the cells
+//  // surrounding this vertex, make sure that at least one cell is found
+//  unsigned int vertex_id = GridTools::find_closest_vertex(mesh, p);
+//  std::vector<typename MeshType<dim,spacedim>::active_cell_iterator>
+//      adjacent_cells_tmp = GridTools::find_cells_adjacent_to_vertex(mesh,vertex_id);
+//  Assert(adjacent_cells_tmp.size()>0, ExcMessage("No adjacent cells found for given point."));
+//
+//  // copy adjacent cells into a set
+//  std::set<typename MeshType<dim,spacedim>::active_cell_iterator>
+//    adjacent_cells (adjacent_cells_tmp.begin(),adjacent_cells_tmp.end());
+//
+//  // loop over all adjacent cells
+//  typename std::set<typename MeshType<dim,spacedim>::active_cell_iterator>::iterator
+//    cell = adjacent_cells.begin(), endc = adjacent_cells.end();
+//
+//  for (; cell != endc; ++cell)
+//  {
+//    Point<dim> point_in_ref_coord;
+//
+//    try
+//    {
+//      point_in_ref_coord = mapping.transform_real_to_unit_cell(*cell, p);
+//    }
+//    catch(...)
+//    {
+//      // A point that does not lie on the reference cell.
+//      point_in_ref_coord[0] = 2.0;
+//
+////      std::cerr << std::endl
+////                << "Could not transform point from real to unit cell. "
+////                   "Probably, the specified point is too far away from the cell."
+////                << std::endl;
+//    }
+//
+//    // insert cell into vector if point lies on the current cell
+//    const double distance = GeometryInfo<dim>::distance_to_unit_cell(point_in_ref_coord);
+//    double const tol = 1.0e-10;
+//    if(distance < tol)
+//    {
+//      cells.push_back(std::make_pair(*cell,point_in_ref_coord));
+//    }
+//  }
+//
+//  // the above algorithm does - in general - not guarantee that the set of
+//  // cells adjacent to the closest vertex contains the point (for example
+//  // in case of highly stretched elements) although the point really lies inside
+//  // a cell (and not outside the domain).
+//
+//  // if we could not find all adjacent cells as intended, then let's try
+//  // to find at least one cell using the existing deal.II functionality
+//  // which recursively searches within surrounding cell layers in case the
+//  // initial search (closest vertex and adjacent cells) has not been successful.
+//
+//  // find_active_cell_around_point() might throw an exception ...
+//  try
+//  {
+//    std::pair<typename MeshType<dim, spacedim>::active_cell_iterator, Point<dim> >
+//    last_chance = GridTools::find_active_cell_around_point(mapping,mesh,p);
+//
+//    // we have to project the point onto the unit cell as written in deal.II docu
+//    last_chance.second = GeometryInfo<dim>::project_to_unit_cell(last_chance.second);
+//
+//    // insert cell into vector if point lies on the current cell
+//    const double distance = GeometryInfo<dim>::distance_to_unit_cell(last_chance.second);
+//    double const tol = 1.0e-10;
+//    if(distance < tol)
+//    {
+//      cells.push_back(last_chance);
+//    }
+//  }
+//  catch(...)
+//  {
+//
+//  }
+//
+//  return cells;
+//}
 
-  // find adjacent cells to specified point by calculating the closest vertex and the cells
-  // surrounding this vertex, make sure that at least one cell is found
-  unsigned int vertex_id = GridTools::find_closest_vertex(mesh, p);
-  std::vector<typename MeshType<dim,spacedim>::active_cell_iterator>
-      adjacent_cells_tmp = GridTools::find_cells_adjacent_to_vertex(mesh,vertex_id);
-  Assert(adjacent_cells_tmp.size()>0, ExcMessage("No adjacent cells found for given point."));
 
-  // copy adjacent cells into a set
-  std::set<typename MeshType<dim,spacedim>::active_cell_iterator>
-    adjacent_cells (adjacent_cells_tmp.begin(),adjacent_cells_tmp.end());
-
-  // loop over all adjacent cells
-  typename std::set<typename MeshType<dim,spacedim>::active_cell_iterator>::iterator
-    cell = adjacent_cells.begin(), endc = adjacent_cells.end();
-
-  for (; cell != endc; ++cell)
-  {
-    Point<dim> point_in_ref_coord;
-
-    try
-    {
-      point_in_ref_coord = mapping.transform_real_to_unit_cell(*cell, p);
-    }
-    catch(...)
-    {
-      // A point that does not lie on the reference cell.
-      point_in_ref_coord[0] = 2.0;
-
-//      std::cerr << std::endl
-//                << "Could not transform point from real to unit cell. "
-//                   "Probably, the specified point is too far away from the cell."
-//                << std::endl;
-    }
-
-    // insert cell into vector if point lies on the current cell
-    const double distance = GeometryInfo<dim>::distance_to_unit_cell(point_in_ref_coord);
-    double const tol = 1.0e-10;
-    if(distance < tol)
-    {
-      cells.push_back(std::make_pair(*cell,point_in_ref_coord));
-    }
-  }
-
-  // the above algorithm does - in general - not guarantee that the set of
-  // cells adjacent to the closest vertex contains the point (for example
-  // in case of highly stretched elements) although the point really lies inside
-  // a cell (and not outside the domain).
-
-  // if we could not find all adjacent cells as intended, then let's try
-  // to find at least one cell using the existing deal.II functionality
-  // which recursively searches within surrounding cell layers in case the
-  // initial search (closest vertex and adjacent cells) has not been successful.
-  
-  // find_active_cell_around_point() might throw an exception ...
-  try
-  {
-    std::pair<typename MeshType<dim, spacedim>::active_cell_iterator, Point<dim> >  
-    last_chance = GridTools::find_active_cell_around_point(mapping,mesh,p);
-
-    // we have to project the point onto the unit cell as written in deal.II docu
-    last_chance.second = GeometryInfo<dim>::project_to_unit_cell(last_chance.second);
-
-    // insert cell into vector if point lies on the current cell
-    const double distance = GeometryInfo<dim>::distance_to_unit_cell(last_chance.second);
-    double const tol = 1.0e-10;
-    if(distance < tol)
-    {
-      cells.push_back(last_chance);
-    }
-  }
-  catch(...)
-  {
-
-  }
-
-  return cells;
-}
 
 template<int dim, typename Number>
 void evaluate_scalar_quantity_in_point(DoFHandler<dim> const                       &dof_handler,
@@ -212,7 +142,7 @@ void evaluate_scalar_quantity_in_point(DoFHandler<dim> const                    
   solution_value = 0.0;
 
   typedef std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> > MY_PAIR;
-  std::vector<MY_PAIR> adjacent_cells = find_all_active_cells_around_point(mapping,dof_handler,point);
+  std::vector<MY_PAIR> adjacent_cells = GridTools::find_all_active_cells_around_point(mapping,dof_handler,point);
 
   // loop over all adjacent cells
   for (typename std::vector<MY_PAIR>::iterator cell = adjacent_cells.begin(); cell != adjacent_cells.end(); ++cell)
@@ -253,7 +183,7 @@ void evaluate_vectorial_quantity_in_point(DoFHandler<dim> const                 
   solution_value = 0.0;
 
   typedef std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim> > MY_PAIR;
-  std::vector<MY_PAIR> adjacent_cells = find_all_active_cells_around_point(mapping,dof_handler,point);
+  std::vector<MY_PAIR> adjacent_cells = GridTools::find_all_active_cells_around_point(mapping,dof_handler,point);
 
   // loop over all adjacent cells
   for (typename std::vector<MY_PAIR>::iterator cell = adjacent_cells.begin(); cell != adjacent_cells.end(); ++cell)
@@ -298,7 +228,7 @@ void get_global_dof_index_and_shape_values(DoFHandler<dim> const                
                                            std::vector<std::pair<unsigned int,std::vector<Number> > > &global_dof_index_and_shape_values)
 {
   typedef std::pair<typename DoFHandler<dim>::active_cell_iterator /*cell*/, Point<dim> /*in ref-coordinates*/ > MY_PAIR;
-  std::vector<MY_PAIR> adjacent_cells = find_all_active_cells_around_point(mapping,dof_handler,point);
+  std::vector<MY_PAIR> adjacent_cells = GridTools::find_all_active_cells_around_point(mapping,dof_handler,point);
 
   // loop over all adjacent cells
   for (typename std::vector<MY_PAIR>::iterator cell = adjacent_cells.begin(); cell != adjacent_cells.end(); ++cell)
