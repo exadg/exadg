@@ -12,9 +12,9 @@
 #include <deal.II/lac/solver_cg.h>
 
 #include "smoother_base.h"
-#include "solvers_and_preconditioners/multigrid_input_parameters.h"
-#include "solvers_and_preconditioners/jacobi_preconditioner.h"
-#include "solvers_and_preconditioners/block_jacobi_preconditioner.h"
+#include "multigrid_input_parameters.h"
+#include "jacobi_preconditioner.h"
+#include "block_jacobi_preconditioner.h"
 
 template<int dim, typename Operator, typename VectorType>
 class CGSmoother : public SmootherBase<VectorType>

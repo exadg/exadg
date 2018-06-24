@@ -8,7 +8,7 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRIDINPUTPARAMETERS_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRIDINPUTPARAMETERS_H_
 
-#include "../include/functionalities/print_functions.h"
+#include "../functionalities/print_functions.h"
 
  enum class MultigridSmoother
  {

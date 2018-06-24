@@ -60,7 +60,7 @@ enum class MeshType{ Cartesian, Curvilinear };
 const MeshType MESH_TYPE = MeshType::Cartesian;
 
 // only relevant for Cartesian mesh
-const unsigned int N_CELLS_1D_COARSE_GRID = 1;
+const unsigned int N_CELLS_1D_COARSE_GRID = 4;
 
 template<int dim>
 void InputParameters<dim>::set_input_parameters()
@@ -139,8 +139,9 @@ void InputParameters<dim>::set_input_parameters()
   // pressure Poisson equation
   IP_factor_pressure = 1.0;
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
-  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
-  abs_tol_pressure = 1.e-12;
+//  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::AMG_ML;
+  abs_tol_pressure = 1.e-9;
   rel_tol_pressure = 1.e-6;
 
   // stability in the limit of small time steps

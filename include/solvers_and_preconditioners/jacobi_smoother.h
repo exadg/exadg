@@ -9,10 +9,10 @@
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_JACOBISMOOTHER_H_
 
 
-#include "../include/solvers_and_preconditioners/block_jacobi_preconditioner.h"
+#include "block_jacobi_preconditioner.h"
 #include "smoother_base.h"
-#include "solvers_and_preconditioners/multigrid_input_parameters.h"
-#include "solvers_and_preconditioners/jacobi_preconditioner.h"
+#include "multigrid_input_parameters.h"
+#include "jacobi_preconditioner.h"
 
 template<int dim, typename Operator, typename VectorType>
 class JacobiSmoother : public SmootherBase<VectorType>

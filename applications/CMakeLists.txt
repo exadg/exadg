@@ -10,7 +10,7 @@ INCLUDE_DIRECTORIES(
         )
 
 SET( SOURCE_FILES
-     compressible_navier_stokes_operator_matrix_free.cc 
+     #compressible_navier_stokes_operator_matrix_free.cc 
      #steady_navier_stokes.cc
      unsteady_navier_stokes.cc
      #unsteady_navier_stokes_two_domains.cc

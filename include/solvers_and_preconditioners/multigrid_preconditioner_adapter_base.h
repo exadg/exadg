@@ -13,13 +13,13 @@
 #include <deal.II/lac/precondition.h>
 
 #include "smoother_base.h"
-#include "solvers_and_preconditioners/chebyshev_smoother.h"
-#include "solvers_and_preconditioners/gmres_smoother.h"
-#include "solvers_and_preconditioners/cg_smoother.h"
-#include "solvers_and_preconditioners/jacobi_smoother.h"
-#include "solvers_and_preconditioners/mg_coarse_grid_solvers.h"
-#include "solvers_and_preconditioners/multigrid_input_parameters.h"
-#include "solvers_and_preconditioners/multigrid_preconditioner.h"
+#include "chebyshev_smoother.h"
+#include "gmres_smoother.h"
+#include "cg_smoother.h"
+#include "jacobi_smoother.h"
+#include "mg_coarse_grid_solvers.h"
+#include "multigrid_input_parameters.h"
+#include "multigrid_preconditioner.h"
 
 namespace
 {

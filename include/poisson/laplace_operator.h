@@ -15,6 +15,7 @@
 #include <deal.II/lac/parallel_vector.h>
 #include <deal.II/lac/lapack_full_matrix.h>
 #include <deal.II/meshworker/dof_info.h>
+#include <deal.II/meshworker/integration_info.h>
 
 using namespace dealii;
 
@@ -194,6 +195,11 @@ public:
   get_array_penalty_parameter() const
   {
     return array_penalty_parameter;
+  }
+  
+  double get_penalty_factor() const
+  {
+    return IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
   }
 
   const LaplaceOperatorData<dim> &

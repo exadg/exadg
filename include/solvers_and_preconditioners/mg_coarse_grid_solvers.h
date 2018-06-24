@@ -30,6 +30,8 @@
 #include <deal.II/lac/trilinos_sparsity_pattern.h>
 #include <deal.II/lac/trilinos_precondition.h>
 
+//#define AMG_TEST
+
 enum class PreconditionerCoarseGridSolver
 {
   None,
@@ -340,7 +342,8 @@ public:
         dof_info, info_box, MeshWorkerWrapper<DIM, Operator, double>(coarse_matrix), assembler,lc);
     
     // intialize Trilinos' AMG
-    pamg.initialize(system_matrix);
+    pamg.initialize(system_matrix,
+            TrilinosWrappers::PreconditionAMG::AdditionalData(true, true, 4));
     
   }
 
@@ -370,6 +373,18 @@ public:
       // convert TrilinosScalar to Operator::value_type
       dst.copy_locally_owned_data_from(dst_);
     
+#ifdef AMG_TEST
+      parallel::distributed::Vector<typename Operator::value_type> dst1; dst1.reinit(dst, true);
+      parallel::distributed::Vector<typename Operator::value_type> dst2; dst2.reinit(dst, true);
+      
+      this->vmult(dst1,src); this->coarse_matrix.vmult(dst2,src);
+      
+      for(int i = 0; i < dst1.local_size(); i++)
+        printf("%14.10f %14.10f %14.10f %14.10f\n", src.begin()[i], dst1.begin()[i], dst2.begin()[i], fabs(dst1.begin()[i]- dst2.begin()[i]));
+      std::cout << std::endl;
+      std::cout << std::endl;
+      //exit(0);
+#endif
   }
 
   /**

@@ -8,7 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_DATA_NAVIER_STOKES_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_DATA_NAVIER_STOKES_H_
 
-#include "postprocessor/output_data.h"
+#include "../../postprocessor/output_data.h"
 
 /*
  *  Average velocity field over time for statistically steady, turbulent

@@ -9,7 +9,7 @@
 #define INCLUDE_POISSON_MULTIGRID_PRECONDITIONER_LAPLACE_H_
 
 
-#include "solvers_and_preconditioners/multigrid_preconditioner_adapter_base.h"
+#include "../solvers_and_preconditioners/multigrid_preconditioner_adapter_base.h"
 
 template<int dim, typename value_type, typename Operator, typename OperatorData>
 class MyMultigridPreconditionerLaplace : public MyMultigridPreconditionerBase<dim,value_type,Operator>
