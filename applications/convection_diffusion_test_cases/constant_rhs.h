@@ -116,7 +116,7 @@ public:
 };
 
 template<int dim>
-double AnalyticalSolution<dim>::value(const Point<dim>    &p,
+double AnalyticalSolution<dim>::value(const Point<dim>    &/*p*/,
                                       const unsigned int  /* component */) const
 {
   double t = this->get_time();
@@ -147,7 +147,7 @@ public:
 };
 
 template<int dim>
-double RightHandSide<dim>::value(const Point<dim>     &p,
+double RightHandSide<dim>::value(const Point<dim>     &/*p*/,
                                 const unsigned int   /* component */) const
 {
   double result = 1.0;
@@ -175,7 +175,7 @@ public:
 };
 
 template<int dim>
-double NeumannBoundary<dim>::value(const Point<dim>   &p,
+double NeumannBoundary<dim>::value(const Point<dim>   &/*p*/,
                                    const unsigned int /* component */) const
 {
   double result = 0.0;
@@ -203,8 +203,8 @@ public:
 };
 
 template<int dim>
-double VelocityField<dim>::value(const Point<dim>   &point,
-                                 const unsigned int component) const
+double VelocityField<dim>::value(const Point<dim>   &/*point*/,
+                                 const unsigned int /*component*/) const
 {
   double value = 0.0;
   return value;

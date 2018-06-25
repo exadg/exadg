@@ -23,8 +23,9 @@
 
 // convection-diffusion problems
 
-//#include "convection_diffusion_test_cases/boundary_layer_problem.h"
-#include "convection_diffusion_test_cases/const_rhs_const_and_circular_wind.h"
+#include "convection_diffusion_test_cases/boundary_layer_problem.h"
+//#include "convection_diffusion_test_cases/const_rhs_const_and_circular_wind.h"
+//#include "convection_diffusion_test_cases/constant_rhs.h"
 
 using namespace dealii;
 using namespace ConvDiff;
