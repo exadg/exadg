@@ -123,8 +123,14 @@ void InputParameters<dim>::set_input_parameters()
   solver_pressure_poisson = SolverPressurePoisson::FGMRES; //PCG; //FGMRES;
   max_n_tmp_vectors_pressure_poisson = 60;
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid; //Jacobi; //GeometricMultigrid;
+  
   multigrid_data_pressure_poisson.smoother = MultigridSmoother::Chebyshev; // Chebyshev; //Jacobi; //GMRES;
-  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::PCG_PointJacobi; //PCG_NoPreconditioner; //PCG_PointJacobi; //Chebyshev;
+//multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::PCG_PointJacobi; //PCG_NoPreconditioner; //PCG_PointJacobi; //Chebyshev;
+  
+  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::AMG_ML;
+  multigrid_data_pressure_poisson.two_levels = false;
+  multigrid_data_pressure_poisson.type = MultigridType::PGMG;
+  
 //multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::AMG_ML;
   abs_tol_pressure = 1.e-12;
   rel_tol_pressure = 1.e-8;
