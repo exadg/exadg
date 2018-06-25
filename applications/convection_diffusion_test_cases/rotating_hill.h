@@ -170,7 +170,7 @@ public:
 };
 
 template<int dim>
-double RightHandSide<dim>::value(const Point<dim>     &p,
+double RightHandSide<dim>::value(const Point<dim>     &/*p*/,
                                 const unsigned int   /* component */) const
 {
   double result = 0.0;
