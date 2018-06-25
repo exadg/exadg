@@ -132,10 +132,10 @@ class MyMultigridPreconditionerBase
 
   typedef typename Operator::value_type value_type_operator;
 
-  Operator &underlying_operator;
+  std::shared_ptr<Operator> underlying_operator;
 
 public:
-  MyMultigridPreconditionerBase(Operator &underlying_operator);
+  MyMultigridPreconditionerBase(std::shared_ptr<Operator> underlying_operator);
 
   static unsigned int get_next(unsigned int degree) {
     if (degree == 1)

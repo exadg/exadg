@@ -58,7 +58,7 @@ template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule,typen
 class VelocityConvDiffOperator : public MatrixOperatorBase
 {
 public:
-  // Issue#1: shared_ptr?
+  // Issue#0: extend from Matrix-OperatorBase
   typedef Number value_type;
   static const int DIM = dim;
 

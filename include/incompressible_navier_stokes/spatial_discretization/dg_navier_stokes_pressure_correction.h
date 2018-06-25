@@ -202,9 +202,7 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
         HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, MultigridNumber>,
         VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> > MULTIGRID;
 
-    // Issue#1: shared_ptr?
-    HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, MultigridNumber> temp;
-    momentum_preconditioner.reset(new MULTIGRID(temp));
+    momentum_preconditioner.reset(new MULTIGRID());
 
     std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(momentum_preconditioner);
 
@@ -222,9 +220,7 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
         VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, MultigridNumber>,
         VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> > MULTIGRID;
 
-    // Issue#1: shared_ptr?
-    VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, MultigridNumber> temp;
-    momentum_preconditioner.reset(new MULTIGRID(temp));
+    momentum_preconditioner.reset(new MULTIGRID());
 
     std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(momentum_preconditioner);
 

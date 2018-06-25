@@ -491,9 +491,7 @@ private:
           HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
           VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
 
-      // Issue#1: shared_ptr?
-      HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> temp; // TODO
-      preconditioner_momentum.reset(new MULTIGRID(temp));
+      preconditioner_momentum.reset(new MULTIGRID());
 
       std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
 
@@ -510,9 +508,7 @@ private:
           VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
           VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
 
-      // Issue#1: shared_ptr?
-      VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> temp; // TODO
-      preconditioner_momentum.reset(new MULTIGRID(temp));
+      preconditioner_momentum.reset(new MULTIGRID());
 
       std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
 
@@ -574,9 +570,7 @@ private:
                 CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>,
                 DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule,value_type> > MULTIGRID;
 
-      // Issue#1: shared_ptr?
-      CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> temp;
-      multigrid_preconditioner_schur_complement.reset(new MULTIGRID(temp));
+      multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
 
       std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
 
@@ -602,10 +596,8 @@ private:
 
       MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
 
-      // Issue#1: shared_ptr?
       typedef MyMultigridPreconditionerLaplace<dim,value_type,LaplaceOperator<dim,fe_degree_p, Number>,LaplaceOperatorData<dim> > MULTIGRID;
-      LaplaceOperator<dim,fe_degree_p, Number> lap;
-      multigrid_preconditioner_schur_complement.reset(new MULTIGRID(lap));
+      multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
 
       std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
 

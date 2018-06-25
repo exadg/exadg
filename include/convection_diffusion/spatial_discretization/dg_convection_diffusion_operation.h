@@ -98,11 +98,9 @@ public:
            ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,Number>,
            ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,value_type> > MULTIGRID;
 
-       // Issue#1: make class variable 
-       ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,Number> temp;
-       preconditioner.reset(new MULTIGRID(temp));
-       std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
-       mg_preconditioner->initialize(mg_data,dof_handler,mapping,conv_diff_operator,this->periodic_face_pairs);
+      preconditioner.reset(new MULTIGRID());
+      std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
+      mg_preconditioner->initialize(mg_data,dof_handler,mapping,conv_diff_operator,this->periodic_face_pairs);
     }
     else
     {

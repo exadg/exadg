@@ -21,8 +21,8 @@ template<int dim, typename value_type, typename Operator, typename UnderlyingOpe
 class MultigridPreconditioner : public MyMultigridPreconditionerDG<dim,value_type,Operator,UnderlyingOperator>
 {
 public:
-  MultigridPreconditioner(Operator& o) : 
-    MultigridPreconditionerDG<dim,value_type,Operator,UnderlyingOperator>(o){}
+  MultigridPreconditioner() : 
+    MultigridPreconditionerDG<dim,value_type,Operator,UnderlyingOperator>(){}
 
   virtual ~MultigridPreconditioner(){};
 

@@ -484,9 +484,7 @@ setup_helmholtz_preconditioner ()
         HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, MultigridNumber>,
         HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> > MULTIGRID;
 
-    // Issue#1: shared_ptr?
-    HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, MultigridNumber> temp;
-    helmholtz_preconditioner.reset(new MULTIGRID(temp));
+    helmholtz_preconditioner.reset(new MULTIGRID());
 
     std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(helmholtz_preconditioner);
 

@@ -15,8 +15,8 @@ template<int dim, typename value_type, typename Operator, typename UnderlyingOpe
 class MyMultigridPreconditionerDG : public MyMultigridPreconditionerBase<dim,value_type,Operator>
 {
 public:
-  MyMultigridPreconditionerDG(Operator& o) : 
-    MyMultigridPreconditionerBase<dim,value_type,Operator>(o){}
+  MyMultigridPreconditionerDG() : 
+    MyMultigridPreconditionerBase<dim,value_type,Operator>(std::shared_ptr<Operator>(new Operator())){}
 
   virtual ~MyMultigridPreconditionerDG(){};
 
@@ -29,6 +29,8 @@ public:
                   const std::vector<GridTools::PeriodicFacePair<typename
                     Triangulation<dim>::cell_iterator> >                  &/*periodic_face_pairs_level0*/)
   {
+      
+      AssertThrow(false, ExcMessage("Function not implemented yet!"));
 //    this->mg_data = mg_data_in;
 //
 //    const parallel::Triangulation<dim> *tria =

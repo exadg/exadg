@@ -174,9 +174,7 @@ setup_pressure_poisson_solver (double const time_step_size)
 
     typedef MyMultigridPreconditionerLaplace<dim, Number, LaplaceOperator<dim, fe_degree_p, MultigridNumber>, LaplaceOperatorData<dim> > MULTIGRID;
 
-    // Issue#1: shared_ptr?
-    LaplaceOperator<dim, fe_degree_p, MultigridNumber> lap;
-    preconditioner_pressure_poisson.reset(new MULTIGRID(lap));
+    preconditioner_pressure_poisson.reset(new MULTIGRID());
 
     std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
 

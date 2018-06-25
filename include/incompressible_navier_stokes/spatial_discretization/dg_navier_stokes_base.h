@@ -816,10 +816,7 @@ compute_streamfunction (parallel::distributed::Vector<Number>       &dst,
       LaplaceOperator<dim, fe_degree, MultigridNumber>,
       LaplaceOperatorData<dim> > MULTIGRID;
 
-  // Issue#1: shared_ptr?
-  LaplaceOperator<dim, fe_degree, MultigridNumber> lap;
-  
-  preconditioner.reset(new MULTIGRID(lap));
+  preconditioner.reset(new MULTIGRID());
 
   std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner);

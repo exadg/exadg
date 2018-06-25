@@ -15,8 +15,8 @@ template <int dim, typename value_type, typename Operator,
 class MyMultigridPreconditionerLaplace
     : public MyMultigridPreconditionerBase<dim, value_type, MatrixOperatorBaseNew<dim, typename Operator::value_type>> {
 public:
-  MyMultigridPreconditionerLaplace(Operator &underlying_operator)
-      : BASE(underlying_operator) {}
+  MyMultigridPreconditionerLaplace()
+      : BASE(std::shared_ptr<MatrixOperatorBaseNew<dim, typename Operator::value_type>>(new Operator())) {}
 
   const DoFHandler<dim> *dof_handler;
   const Mapping<dim> *mapping;
