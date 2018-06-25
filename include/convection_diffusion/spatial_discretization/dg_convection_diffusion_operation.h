@@ -14,17 +14,17 @@
 #include <deal.II/lac/parallel_vector.h>
 #include <deal.II/numerics/vector_tools.h>
 
-#include "operators/inverse_mass_matrix.h"
-#include "operators/matrix_operator_base.h"
-#include "solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
-#include "solvers_and_preconditioners/iterative_solvers.h"
-#include "solvers_and_preconditioners/jacobi_preconditioner.h"
+#include "../../operators/inverse_mass_matrix.h"
+#include "../../operators/matrix_operator_base.h"
+#include "../../solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
+#include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
+#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 
-#include "convection_diffusion/user_interface/boundary_descriptor.h"
-#include "convection_diffusion/user_interface/field_functions.h"
-#include "convection_diffusion/user_interface/input_parameters.h"
-#include "convection_diffusion/spatial_discretization/convection_diffusion_operators.h"
-#include "convection_diffusion/preconditioners/multigrid_preconditioner.h"
+#include "../../convection_diffusion/user_interface/boundary_descriptor.h"
+#include "../../convection_diffusion/user_interface/field_functions.h"
+#include "../../convection_diffusion/user_interface/input_parameters.h"
+#include "../../convection_diffusion/spatial_discretization/convection_diffusion_operators.h"
+#include "../../convection_diffusion/preconditioners/multigrid_preconditioner.h"
 
 namespace ConvDiff
 {
@@ -79,12 +79,12 @@ public:
     }
     else if(param.preconditioner == ConvDiff::Preconditioner::PointJacobi)
     {
-      preconditioner.reset(new JacobiPreconditioner<value_type,
+      preconditioner.reset(new JacobiPreconditioner<
           ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,value_type> >(conv_diff_operator));
     }
     else if(param.preconditioner == ConvDiff::Preconditioner::BlockJacobi)
     {
-      preconditioner.reset(new BlockJacobiPreconditioner<value_type,
+      preconditioner.reset(new BlockJacobiPreconditioner<
           ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,value_type> >(conv_diff_operator));
     }
     else if(param.preconditioner == ConvDiff::Preconditioner::Multigrid)

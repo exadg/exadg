@@ -2502,8 +2502,10 @@ template <int dim, int fe_degree, typename Number = double>
 class ConvectionDiffusionOperator : public MatrixOperatorBase
 {
 public:
+  // TODO: Issue#2
   typedef Number value_type;
   typedef ConvectionDiffusionOperator<dim,fe_degree,Number> This;
+  static const int DIM = dim;
 
   ConvectionDiffusionOperator()
     :
