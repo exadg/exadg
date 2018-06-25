@@ -12,7 +12,7 @@
 #include "../../incompressible_navier_stokes/spatial_discretization/projection_operators_and_solvers.h"
 #include "../../poisson/laplace_operator.h"
 #include "../../poisson/multigrid_preconditioner_laplace.h"
-#include "solvers_and_preconditioners/iterative_solvers.h"
+#include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
 
 namespace IncNS
 {
@@ -162,7 +162,7 @@ setup_pressure_poisson_solver (double const time_step_size)
   // setup preconditioner
   if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Jacobi)
   {
-    preconditioner_pressure_poisson.reset(new JacobiPreconditioner<Number, LaplaceOperator<dim, fe_degree_p, Number> >(laplace_operator));
+    preconditioner_pressure_poisson.reset(new JacobiPreconditioner<LaplaceOperator<dim, fe_degree_p, Number> >(laplace_operator));
   }
   else if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::GeometricMultigrid)
   {
@@ -174,7 +174,9 @@ setup_pressure_poisson_solver (double const time_step_size)
 
     typedef MyMultigridPreconditionerLaplace<dim, Number, LaplaceOperator<dim, fe_degree_p, MultigridNumber>, LaplaceOperatorData<dim> > MULTIGRID;
 
-    preconditioner_pressure_poisson.reset(new MULTIGRID());
+    // Issue#1: shared_ptr?
+    LaplaceOperator<dim, fe_degree_p, MultigridNumber> lap;
+    preconditioner_pressure_poisson.reset(new MULTIGRID(lap));
 
     std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
 
@@ -378,7 +380,7 @@ setup_projection_solver ()
       // the penalty parameter of the projection operator has not been calculated and the time step size has
       // not been set. Hence, update_preconditioner = true should be used for the Jacobi preconditioner in order
       // to use to correct diagonal for preconditioning.
-      preconditioner_projection.reset(new JacobiPreconditioner<Number,PROJ_OPERATOR>
+      preconditioner_projection.reset(new JacobiPreconditioner<PROJ_OPERATOR>
           (*std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
     }
     else if(this->param.preconditioner_projection == PreconditionerProjection::BlockJacobi)
@@ -387,7 +389,7 @@ setup_projection_solver ()
       // the penalty parameter of the projection operator has not been calculated and the time step size has
       // not been set. Hence, update_preconditioner = true should be used for the Jacobi preconditioner in order
       // to use to correct diagonal blocks for preconditioning.
-      preconditioner_projection.reset(new BlockJacobiPreconditioner<Number,PROJ_OPERATOR>
+      preconditioner_projection.reset(new BlockJacobiPreconditioner<PROJ_OPERATOR>
           (*std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
     }
     else

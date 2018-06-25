@@ -21,7 +21,7 @@
 #include "../postprocessor/line_plot_data.h"
 #include "../postprocessor/mean_velocity_calculator.h"
 #include "../../postprocessor/error_calculation_data.h"
-#include "../../solvers_and_preconditioners/multigrid_input_parameters.h"
+#include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
 #include "../../solvers_and_preconditioners/newton_solver_data.h"
 
 namespace IncNS

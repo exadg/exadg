@@ -89,16 +89,18 @@ public:
     }
     else if(param.preconditioner == ConvDiff::Preconditioner::Multigrid)
     {
-       MultigridData mg_data;
-       mg_data = param.multigrid_data;
+      MultigridData mg_data;
+      mg_data = param.multigrid_data;
 
-       typedef float Number;
+      typedef float Number;
 
        typedef ConvDiff::MultigridPreconditioner<dim,value_type,
            ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,Number>,
            ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,value_type> > MULTIGRID;
 
-       preconditioner.reset(new MULTIGRID());
+       // Issue#1: make class variable 
+       ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,Number> temp;
+       preconditioner.reset(new MULTIGRID(temp));
        std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
        mg_preconditioner->initialize(mg_data,dof_handler,mapping,conv_diff_operator,this->periodic_face_pairs);
     }

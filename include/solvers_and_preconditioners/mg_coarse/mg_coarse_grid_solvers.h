@@ -13,10 +13,10 @@
 #include <deal.II/lac/solver_gmres.h>
 #include <deal.II/multigrid/mg_base.h>
 
-#include "./preconditioner_base.h"
+#include "../preconditioner/preconditioner_base.h"
 
-#include "../solvers_and_preconditioners/jacobi_preconditioner.h"
-#include "../solvers_and_preconditioners/block_jacobi_preconditioner.h"
+#include "../preconditioner/jacobi_preconditioner.h"
+#include "../preconditioner/block_jacobi_preconditioner.h"
 
 
 #include <deal.II/meshworker/dof_info.h>
@@ -26,9 +26,12 @@
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/fe/fe_dgq.h>
-#include <deal.II/lac/trilinos_sparse_matrix.h>
-#include <deal.II/lac/trilinos_sparsity_pattern.h>
-#include <deal.II/lac/trilinos_precondition.h>
+
+#include <deal.II/lac/trilinos_solver.h>
+#include <deal.II/lac/solver_control.h>
+
+#include "../mg_coarse_ml/mg_coarse_ml_cg.h"
+#include "../mg_coarse_ml/mg_coarse_ml_dg.h"
 
 //#define AMG_TEST
 
@@ -67,16 +70,16 @@ public:
     {
       use_preconditioner = true;
 
-      preconditioner.reset(new JacobiPreconditioner<typename Operator::value_type,Operator>(coarse_matrix));
-      std::shared_ptr<JacobiPreconditioner<typename Operator::value_type,Operator> > precon =
-          std::dynamic_pointer_cast<JacobiPreconditioner<typename Operator::value_type,Operator> > (preconditioner);
+      preconditioner.reset(new JacobiPreconditioner<Operator>(coarse_matrix));
+      std::shared_ptr<JacobiPreconditioner<Operator>> precon =
+          std::dynamic_pointer_cast<JacobiPreconditioner<Operator>> (preconditioner);
       AssertDimension(precon->get_size_of_diagonal(), coarse_matrix.m());
     }
     else if(additional_data.preconditioner == PreconditionerCoarseGridSolver::BlockJacobi)
     {
       use_preconditioner = true;
 
-      preconditioner.reset(new BlockJacobiPreconditioner<typename Operator::value_type,Operator>(coarse_matrix));
+      preconditioner.reset(new BlockJacobiPreconditioner<Operator>(coarse_matrix));
     }
     else
     {
@@ -156,16 +159,16 @@ public:
     {
       use_preconditioner = true;
 
-      preconditioner.reset(new JacobiPreconditioner<typename Operator::value_type,Operator>(coarse_matrix));
-      std::shared_ptr<JacobiPreconditioner<typename Operator::value_type,Operator> > precon =
-          std::dynamic_pointer_cast<JacobiPreconditioner<typename Operator::value_type,Operator> > (preconditioner);
+      preconditioner.reset(new JacobiPreconditioner<Operator>(coarse_matrix));
+      std::shared_ptr<JacobiPreconditioner<Operator> > precon =
+          std::dynamic_pointer_cast<JacobiPreconditioner<Operator> > (preconditioner);
       AssertDimension(precon->get_size_of_diagonal(), coarse_matrix.m());
     }
     else if(additional_data.preconditioner == PreconditionerCoarseGridSolver::BlockJacobi)
     {
       use_preconditioner = true;
 
-      preconditioner.reset(new BlockJacobiPreconditioner<typename Operator::value_type,Operator>(coarse_matrix));
+      preconditioner.reset(new BlockJacobiPreconditioner<Operator>(coarse_matrix));
     }
     else
     {
@@ -249,177 +252,5 @@ public:
   std::shared_ptr<InverseOperator const> inverse_operator;
 };
 
-
-template <int dim, class T, class Number>
-class MeshWorkerWrapper : public MeshWorker::LocalIntegrator<dim,dim,Number>{
-    
-    public:
-        
-        MeshWorkerWrapper(const T& t) : t(t){ }
-    
-    inline DEAL_II_ALWAYS_INLINE 
-    void cell(MeshWorker::DoFInfo<dim,dim,Number> &dinfo,
-          typename MeshWorker::IntegrationInfo<dim> &info) const {
-        t.cell(dinfo, info);
-    }
-
-    inline DEAL_II_ALWAYS_INLINE 
-    void boundary(MeshWorker::DoFInfo<dim,dim,Number> &dinfo,
-                  typename MeshWorker::IntegrationInfo<dim> &info) const{
-        t.boundary(dinfo, info);
-    }
-
-    inline DEAL_II_ALWAYS_INLINE 
-    void face(MeshWorker::DoFInfo<dim,dim,Number> &dinfo1,
-              MeshWorker::DoFInfo<dim,dim,Number> &dinfo2,
-              typename MeshWorker::IntegrationInfo<dim> &info1,
-              typename MeshWorker::IntegrationInfo<dim> &info2) const{ 
-        t.face(dinfo1, dinfo2, info1, info2);
-    }
-    
-    const T& t;
-};
-
-template<int DIM, typename Operator>
-class MGCoarseML : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type> >
-{
-public:
-    
-  typedef TrilinosWrappers::SparseMatrix MatrixType;
-
-  /**
-   * Constructor
-   */
-  MGCoarseML(Operator const &matrix , bool setup = true, int level = 0) :  coarse_matrix (matrix){
-      if(setup)
-        this->reinit(level);
-  }
-
-  /**
-   * Deconstructor
-   */
-  virtual ~MGCoarseML() { }
-  
-  /**
-   * Setup system matrix and AMG
-   */
-  void reinit(int level = 0){
-      
-    // extract relevant data structures
-    const DoFHandler<DIM>& dof_handler = coarse_matrix.get_data().get_dof_handler();
-    
-    // create temporal classes
-    FE_DGQ<DIM> fe(dof_handler.get_fe().degree);
-    MappingQGeneric<DIM> mapping(dof_handler.get_fe().degree);
-      
-    // initialize the system matrix ...
-    // ... create a sparsity pattern
-    TrilinosWrappers::SparsityPattern dsp(dof_handler.locally_owned_mg_dofs(level), MPI_COMM_WORLD);
-    MGTools::make_flux_sparsity_pattern(dof_handler, dsp,level);
-    dsp.compress();
-    system_matrix.reinit(dsp);
-    
-    // ... assemble system matrix with the help of MeshWorker and Assembler
-    MeshWorker::IntegrationInfoBox<DIM> info_box;
-    const unsigned int n_gauss_points = dof_handler.get_fe().degree+1;
-    info_box.initialize_gauss_quadrature(
-            n_gauss_points, n_gauss_points, n_gauss_points);
-    info_box.initialize_update_flags();
-    UpdateFlags update_flags = 
-            update_quadrature_points | update_values | update_gradients;
-    info_box.add_update_flags(update_flags, true, true, true, true);
-    info_box.initialize(fe, mapping);
-    MeshWorker::DoFInfo<DIM,DIM,double> dof_info(dof_handler);
-
-    MeshWorker::Assembler::MatrixSimple<MatrixType> assembler;
-    assembler.initialize(system_matrix);
-
-    MeshWorker::LoopControl lc;
-    lc.faces_to_ghost = MeshWorker::LoopControl::both;
-
-    MeshWorker::integration_loop<DIM, DIM> (
-        dof_handler.begin_mg(level), dof_handler.end_mg(level),
-        dof_info, info_box, MeshWorkerWrapper<DIM, Operator, double>(coarse_matrix), assembler,lc);
-    
-    // intialize Trilinos' AMG
-    pamg.initialize(system_matrix,
-            TrilinosWrappers::PreconditionAMG::AdditionalData(true, true, 4));
-    
-  }
-
-  /**
-   *  Solve Ax = b with Trilinos's AMG (default settings)
-   * 
-   * @param level not used
-   * @param dst solution vector x
-   * @param src right hand side b
-   */
-  virtual void operator() (const unsigned int                                                  /*level*/,
-                           parallel::distributed::Vector<typename Operator::value_type>       & dst,
-                           const parallel::distributed::Vector<typename Operator::value_type> & src) const{
-      
-      // create temporal vectors of type TrilinosScalar
-      parallel::distributed::Vector<TrilinosWrappers::SparseMatrix::value_type> dst_; 
-      dst_.reinit(dst, true);
-      parallel::distributed::Vector<TrilinosWrappers::SparseMatrix::value_type> src_; 
-      src_.reinit(src, true);
-      
-      // convert Operator::value_type to TrilinosScalar
-      src_.copy_locally_owned_data_from(src);
-      
-      // use Trilinos to perform AMG
-      pamg.vmult(dst_,src_);
-      
-      // convert TrilinosScalar to Operator::value_type
-      dst.copy_locally_owned_data_from(dst_);
-    
-#ifdef AMG_TEST
-      parallel::distributed::Vector<typename Operator::value_type> dst1; dst1.reinit(dst, true);
-      parallel::distributed::Vector<typename Operator::value_type> dst2; dst2.reinit(dst, true);
-      
-      this->vmult(dst1,src); this->coarse_matrix.vmult(dst2,src);
-      
-      for(int i = 0; i < dst1.local_size(); i++)
-        printf("%14.10f %14.10f %14.10f %14.10f\n", src.begin()[i], dst1.begin()[i], dst2.begin()[i], fabs(dst1.begin()[i]- dst2.begin()[i]));
-      std::cout << std::endl;
-      std::cout << std::endl;
-      //exit(0);
-#endif
-  }
-
-  /**
-   * Perform sparse matrix vector multiplication (SpMV): u = Av
-   * 
-   * @param dst input vector v
-   * @param src output vector u
-   */
-  virtual void vmult(parallel::distributed::Vector<typename Operator::value_type> & dst,
-               const parallel::distributed::Vector<typename Operator::value_type> & src) const{
-      
-      // create temporal vectors of type TrilinosScalar
-      parallel::distributed::Vector<TrilinosWrappers::SparseMatrix::value_type> dst_; 
-      dst_.reinit(dst, true);
-      parallel::distributed::Vector<TrilinosWrappers::SparseMatrix::value_type> src_; 
-      src_.reinit(src, true);
-      
-      // convert Operator::value_type to TrilinosScalar
-      src_.copy_locally_owned_data_from(src);
-      
-      // use Trilinos for SpMV
-      system_matrix.vmult(dst_,src_);
-      
-      // convert TrilinosScalar to Operator::value_type
-      dst.copy_locally_owned_data_from(dst_);
-      
-  }
-
-private:
-    // reference to operator
-    const Operator &coarse_matrix;
-    // distributed sparse system matrix
-    MatrixType system_matrix;
-    // AMG preconditioner
-    TrilinosWrappers::PreconditionAMG pamg;
-};
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MGCOARSEGRIDSOLVERS_H_ */

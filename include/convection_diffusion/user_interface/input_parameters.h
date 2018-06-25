@@ -11,7 +11,7 @@
 #include "../include/functionalities/print_functions.h"
 #include "postprocessor/error_calculation_data.h"
 #include "postprocessor/output_data.h"
-#include "solvers_and_preconditioners/multigrid_input_parameters.h"
+#include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
 
 namespace ConvDiff
 {

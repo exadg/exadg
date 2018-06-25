@@ -21,7 +21,8 @@ template<int dim, typename value_type, typename Operator, typename UnderlyingOpe
 class MultigridPreconditioner : public MyMultigridPreconditionerDG<dim,value_type,Operator,UnderlyingOperator>
 {
 public:
-  MultigridPreconditioner(){}
+  MultigridPreconditioner(Operator& o) : 
+    MultigridPreconditionerDG<dim,value_type,Operator,UnderlyingOperator>(o){}
 
   virtual ~MultigridPreconditioner(){};
 
@@ -66,7 +67,7 @@ private:
   {
     for (int level = this->n_global_levels-1; level>=0; --level)
     {
-      this->mg_matrices[level].set_evaluation_time(evaluation_time);
+      this->mg_matrices[level]->set_evaluation_time(evaluation_time);
     }
   }
 
@@ -80,7 +81,7 @@ private:
   {
     for (int level = this->n_global_levels-1; level>=0; --level)
     {
-      this->mg_matrices[level].set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
+      this->mg_matrices[level]->set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
     }
   }
 

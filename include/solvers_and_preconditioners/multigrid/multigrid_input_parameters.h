@@ -8,10 +8,15 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRIDINPUTPARAMETERS_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRIDINPUTPARAMETERS_H_
 
-#include "../functionalities/print_functions.h"
+#include "../../functionalities/print_functions.h"
 
- enum class MultigridSmoother
- {
+enum class MultigridType
+{
+    HGMG, PGMG
+};
+
+enum class MultigridSmoother
+{
    Chebyshev,
    ChebyshevNonsymmetricOperator,
    GMRES,
@@ -170,7 +175,9 @@ struct MultigridData
   MultigridData()
     :
     smoother(MultigridSmoother::Chebyshev),
-    coarse_solver(MultigridCoarseGridSolver::Chebyshev)
+    coarse_solver(MultigridCoarseGridSolver::Chebyshev),
+    type(MultigridType::HGMG),
+    two_levels(false)
   {}
 
   void print(ConditionalOStream &pcout)
@@ -208,10 +215,13 @@ struct MultigridData
                                         "GMRES - No preconditioner",
                                         "GMRES - Point-Jacobi preconditioner",
                                         "GMRES - Block-Jacobi preconditioner",
-                                        "AMG - MueLu"};
+                                        "AMG - ML"};
 
     print_parameter(pcout,"Multigrid coarse grid solver",str_coarse_solver[(int)coarse_solver]);
 
+    std::string str_type[] = { "h-GMG", "p-GMG", "h-GMG + p-GMG", "p-GMG + h-GMG"};
+    print_parameter(pcout,"Multigrid type", str_type[((int)type)+(two_levels?2:0)]);
+    
   }
 
   // Type of smoother
@@ -231,6 +241,12 @@ struct MultigridData
 
   // Sets the coarse grid solver
   MultigridCoarseGridSolver coarse_solver;
+  
+  // Multigrid type: p-GMG vs. h-GMG
+  MultigridType type;
+  
+  // 
+  bool two_levels;
 };
 
 

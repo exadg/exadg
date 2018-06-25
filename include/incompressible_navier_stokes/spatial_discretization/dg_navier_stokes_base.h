@@ -29,8 +29,8 @@
 #include "operators/inverse_mass_matrix.h"
 #include "turbulence_model.h"
 
-#include "solvers_and_preconditioners/iterative_solvers.h"
-#include "solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
+#include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
+#include "../../solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
 
 
 using namespace dealii;
@@ -816,7 +816,10 @@ compute_streamfunction (parallel::distributed::Vector<Number>       &dst,
       LaplaceOperator<dim, fe_degree, MultigridNumber>,
       LaplaceOperatorData<dim> > MULTIGRID;
 
-  preconditioner.reset(new MULTIGRID());
+  // Issue#1: shared_ptr?
+  LaplaceOperator<dim, fe_degree, MultigridNumber> lap;
+  
+  preconditioner.reset(new MULTIGRID(lap));
 
   std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner);

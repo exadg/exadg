@@ -521,7 +521,7 @@ setup_divergence_and_continuity_penalty_operators_and_solvers()
       // the penalty parameter of the projection operator has not been calculated and the time step size has
       // not been set. Hence, update_preconditioner = true should be used for the Jacobi preconditioner in order
       // to use to correct diagonal for preconditioning.
-      preconditioner_projection.reset(new JacobiPreconditioner<Number,PROJ_OPERATOR>
+      preconditioner_projection.reset(new JacobiPreconditioner<PROJ_OPERATOR>
           (*std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
     }
     else if(this->param.preconditioner_projection == PreconditionerProjection::BlockJacobi)
@@ -530,7 +530,7 @@ setup_divergence_and_continuity_penalty_operators_and_solvers()
       // the penalty parameter of the projection operator has not been calculated and the time step size has
       // not been set. Hence, update_preconditioner = true should be used for the Jacobi preconditioner in order
       // to use to correct diagonal blocks for preconditioning.
-      preconditioner_projection.reset(new BlockJacobiPreconditioner<Number,PROJ_OPERATOR>
+      preconditioner_projection.reset(new BlockJacobiPreconditioner<PROJ_OPERATOR>
           (*std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
     }
     else

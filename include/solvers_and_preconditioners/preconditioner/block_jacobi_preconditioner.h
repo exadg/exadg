@@ -12,13 +12,16 @@
 
 #include "./preconditioner_base.h"
 
-#include "../operators/matrix_operator_base.h"
+#include "../../operators/matrix_operator_base.h"
 
-template<typename value_type, typename UnderlyingOperator>
-class BlockJacobiPreconditioner : public PreconditionerBase<value_type>
+template<typename Operator>
+class BlockJacobiPreconditioner : public PreconditionerBase<typename Operator::value_type>
 {
 public:
-  BlockJacobiPreconditioner(UnderlyingOperator const &underlying_operator_in)
+    
+    typedef typename Operator::value_type value_type;
+    
+  BlockJacobiPreconditioner(Operator const &underlying_operator_in)
     : underlying_operator(underlying_operator_in)
   {
     // initialize block Jacobi
@@ -47,7 +50,7 @@ public:
   }
 
 private:
-  UnderlyingOperator const &underlying_operator;
+  Operator const &underlying_operator;
 };
 
 

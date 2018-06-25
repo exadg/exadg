@@ -11,7 +11,7 @@
 #include "../spatial_discretization/navier_stokes_operators.h"
 #include "operators/matrix_operator_base.h"
 #include "solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
-#include "solvers_and_preconditioners/invert_diagonal.h"
+#include "../../solvers_and_preconditioners/invert_diagonal.h"
 
 namespace IncNS
 {
@@ -33,7 +33,9 @@ template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwal
 class CompatibleLaplaceOperator : public MatrixOperatorBase
 {
 public:
+  // Issue#2: extend MatrixOperatorBaseNew
   typedef Number value_type;
+  static const int DIM = dim;
 
   CompatibleLaplaceOperator()
     :

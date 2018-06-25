@@ -18,9 +18,9 @@
 #include "../../incompressible_navier_stokes/spatial_discretization/velocity_convection_diffusion_operator.h"
 #include "../../poisson/laplace_operator.h"
 #include "../../poisson/multigrid_preconditioner_laplace.h"
-#include "solvers_and_preconditioners/check_multigrid.h"
-#include "solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
-#include "solvers_and_preconditioners/iterative_solvers.h"
+#include "../../solvers_and_preconditioners/check_multigrid.h"
+#include "../../solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
+#include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
 
 
 // forward declaration
@@ -203,7 +203,7 @@ public:
     {
       // Point Jacobi preconditioner
       // TODO
-      preconditioner_momentum.reset(new JacobiPreconditioner<value_type,
+      preconditioner_momentum.reset(new JacobiPreconditioner<
           VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> >
         (underlying_operator->velocity_conv_diff_operator));
     }
@@ -211,7 +211,7 @@ public:
     {
       // Block Jacobi preconditioner
       // TODO
-      preconditioner_momentum.reset(new BlockJacobiPreconditioner<value_type,
+      preconditioner_momentum.reset(new BlockJacobiPreconditioner<
           VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> >
         (underlying_operator->velocity_conv_diff_operator));
     }
@@ -491,7 +491,9 @@ private:
           HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
           VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
 
-      preconditioner_momentum.reset(new MULTIGRID());
+      // Issue#1: shared_ptr?
+      HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> temp; // TODO
+      preconditioner_momentum.reset(new MULTIGRID(temp));
 
       std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
 
@@ -508,7 +510,9 @@ private:
           VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
           VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> > MULTIGRID;
 
-      preconditioner_momentum.reset(new MULTIGRID());
+      // Issue#1: shared_ptr?
+      VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> temp; // TODO
+      preconditioner_momentum.reset(new MULTIGRID(temp));
 
       std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
 
@@ -570,7 +574,9 @@ private:
                 CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>,
                 DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule,value_type> > MULTIGRID;
 
-      multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
+      // Issue#1: shared_ptr?
+      CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> temp;
+      multigrid_preconditioner_schur_complement.reset(new MULTIGRID(temp));
 
       std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
 
@@ -596,9 +602,10 @@ private:
 
       MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
 
+      // Issue#1: shared_ptr?
       typedef MyMultigridPreconditionerLaplace<dim,value_type,LaplaceOperator<dim,fe_degree_p, Number>,LaplaceOperatorData<dim> > MULTIGRID;
-
-      multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
+      LaplaceOperator<dim,fe_degree_p, Number> lap;
+      multigrid_preconditioner_schur_complement.reset(new MULTIGRID(lap));
 
       std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
 

@@ -8,8 +8,10 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_CHEBYSHEVSMOOTHER_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_CHEBYSHEVSMOOTHER_H_
 
+// deal.II
 #include <deal.II/lac/precondition.h>
 
+// parent class
 #include "smoother_base.h"
 
 using namespace dealii;

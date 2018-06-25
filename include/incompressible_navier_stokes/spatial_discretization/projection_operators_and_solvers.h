@@ -19,12 +19,12 @@
 #include "../../incompressible_navier_stokes/spatial_discretization/divergence_and_continuity_penalty_operators.h"
 #include "operators/base_operator.h"
 
-#include "../include/solvers_and_preconditioners/iterative_solvers.h"
-#include "solvers_and_preconditioners/internal_solvers.h"
-#include "solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
-#include "solvers_and_preconditioners/invert_diagonal.h"
-#include "solvers_and_preconditioners/verify_calculation_of_diagonal.h"
-#include "solvers_and_preconditioners/block_jacobi_matrices.h"
+#include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
+#include "../../solvers_and_preconditioners/solvers/internal_solvers.h"
+#include "../../solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
+#include "../../solvers_and_preconditioners/invert_diagonal.h"
+#include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
+#include "../../solvers_and_preconditioners/block_jacobi_matrices.h"
 
 namespace IncNS
 {
@@ -241,10 +241,14 @@ private:
  *  of these penalty terms.
  *
  */
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename vt>
 class ProjectionOperatorDivergenceAndContinuityPenalty : public ProjectionOperatorBase<dim>
 {
 public:
+    // Issue#2:
+    static const int DIM = dim;
+    typedef vt value_type;
+    
   typedef ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree,
       fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> This;
 
@@ -754,7 +758,7 @@ struct OptimizedProjectionOperatorData
   std::shared_ptr<BoundaryDescriptorU<dim> > bc;
 };
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename vt>
 class ProjectionOperatorOptimized : public ProjectionOperatorBase<dim>
 {
 public:
@@ -763,6 +767,9 @@ public:
     dirichlet,
     neumann
   };
+  
+  static const int DIM = dim;
+  typedef vt value_type;
 
   static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;

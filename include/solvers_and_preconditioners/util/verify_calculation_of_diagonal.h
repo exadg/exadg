@@ -9,6 +9,7 @@
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_VERIFY_CALCULATION_OF_DIAGONAL_H_
 
 #include <deal.II/lac/parallel_vector.h>
+#include <deal.II/base/conditional_ostream.h>
 
 /*
  *  To check the correctness of the efficient computation of the diagonal

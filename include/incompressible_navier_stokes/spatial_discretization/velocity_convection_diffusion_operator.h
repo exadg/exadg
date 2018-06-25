@@ -14,8 +14,8 @@
 #include "../../incompressible_navier_stokes/spatial_discretization/helmholtz_operator.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/navier_stokes_operators.h"
 #include "operators/matrix_operator_base.h"
-#include "solvers_and_preconditioners/invert_diagonal.h"
-#include "solvers_and_preconditioners/verify_calculation_of_diagonal.h"
+#include "../../solvers_and_preconditioners/invert_diagonal.h"
+#include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
 
 namespace IncNS
 {
@@ -58,7 +58,9 @@ template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule,typen
 class VelocityConvDiffOperator : public MatrixOperatorBase
 {
 public:
+  // Issue#1: shared_ptr?
   typedef Number value_type;
+  static const int DIM = dim;
 
   static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;

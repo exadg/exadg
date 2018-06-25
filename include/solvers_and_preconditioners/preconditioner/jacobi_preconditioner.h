@@ -12,13 +12,17 @@
 
 #include "./preconditioner_base.h"
 
-#include "../operators/matrix_operator_base.h"
+#include "../../operators/matrix_operator_base.h"
+#include "../../operators/matrix_operator_base_new.h"
 
-template<typename value_type, typename UnderlyingOperator>
-class JacobiPreconditioner : public PreconditionerBase<value_type>
+template<typename Operator>
+class JacobiPreconditioner : public PreconditionerBase<typename Operator::value_type>
 {
 public:
-  JacobiPreconditioner(UnderlyingOperator const &underlying_operator)
+    
+    typedef typename Operator::value_type value_type;
+    
+  JacobiPreconditioner(Operator const &underlying_operator)
   {
     underlying_operator.initialize_dof_vector(inverse_diagonal);
 
@@ -35,11 +39,11 @@ public:
 
   void update(MatrixOperatorBase const * matrix_operator)
   {
-    UnderlyingOperator const *underlying_operator = dynamic_cast<UnderlyingOperator const *>(matrix_operator);
+    Operator const *underlying_operator = dynamic_cast<Operator const *>(matrix_operator);
     if(underlying_operator)
       underlying_operator->calculate_inverse_diagonal(inverse_diagonal);
     else
-      AssertThrow(false,ExcMessage("Jacobi preconditioner: UnderlyingOperator and MatrixOperator are not compatible!"));
+      AssertThrow(false,ExcMessage("Jacobi preconditioner: MatrixOperatorBaseNew<dim, value_type> and MatrixOperator are not compatible!"));
   }
 
   unsigned int get_size_of_diagonal()

@@ -8,13 +8,17 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_JACOBISMOOTHER_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_JACOBISMOOTHER_H_
 
-
-#include "block_jacobi_preconditioner.h"
+// parent class
 #include "smoother_base.h"
-#include "multigrid_input_parameters.h"
-#include "jacobi_preconditioner.h"
 
-template<int dim, typename Operator, typename VectorType>
+// preconditioner
+#include "../preconditioner/block_jacobi_preconditioner.h"
+#include "../preconditioner/jacobi_preconditioner.h"
+
+// parameters
+#include "../multigrid/multigrid_input_parameters.h"
+
+template<typename Operator, typename VectorType>
 class JacobiSmoother : public SmootherBase<VectorType>
 {
 public:
@@ -62,11 +66,11 @@ public:
 
     if(data.preconditioner == PreconditionerJacobiSmoother::PointJacobi)
     {
-      preconditioner = new JacobiPreconditioner<typename Operator::value_type,Operator>(*underlying_operator);
+      preconditioner = new JacobiPreconditioner<Operator>(*underlying_operator);
     }
     else if(data.preconditioner == PreconditionerJacobiSmoother::BlockJacobi)
     {
-      preconditioner = new BlockJacobiPreconditioner<typename Operator::value_type,Operator>(*underlying_operator);
+      preconditioner = new JacobiPreconditioner<Operator>(*underlying_operator);
     }
     else
     {
