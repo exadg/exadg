@@ -81,8 +81,8 @@ operator()(const unsigned int /*level*/,
         TrilinosWrappers::SparseMatrix::value_type>>
         solver(solver_control);
     solver.solve(system_matrix, dst_, src_, pamg);
-    std::cout << "   " << solver_control.last_step() << "   "
-              << solver_control.last_value() << "   " << std::endl;
+    //std::cout << "   " << solver_control.last_step() << "   "
+    //          << solver_control.last_value() << "   " << std::endl;
   } else {
     // use Trilinos to perform AMG
     pamg.vmult(dst_, src_);
