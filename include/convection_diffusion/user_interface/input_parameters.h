@@ -141,8 +141,14 @@ enum class Preconditioner
   InverseMassMatrix,
   PointJacobi,
   BlockJacobi,
-  MultigridDiffusion,
-  MultigridConvectionDiffusion,
+  Multigrid
+};
+
+enum class MultigridOperatorType
+{
+  Undefined,
+  ReactionDiffusion,
+  ReactionConvectionDiffusion
 };
 
 
@@ -193,6 +199,7 @@ public:
     rel_tol(1.e-12),
     max_iter(std::numeric_limits<unsigned int>::max()),
     preconditioner(Preconditioner::Undefined),
+    mg_operator_type(MultigridOperatorType::Undefined),
     multigrid_data(MultigridData()),
     update_preconditioner(false),
 
@@ -303,20 +310,12 @@ public:
       AssertThrow(preconditioner != Preconditioner::Undefined,
                   ExcMessage("parameter must be defined"));
 
-//      if(preconditioner == Preconditioner::MultigridDiffusion ||
-//         preconditioner == Preconditioner::MultigridConvectionDiffusion)
-//        AssertThrow(equation_type == EquationType::Diffusion ||
-//                    equation_type == EquationType::ConvectionDiffusion,
-//                    ExcMessage("Multigrid preconditioner is not available for the specified equation type"));
-//
-//      if(preconditioner == Preconditioner::PointJacobi)
-//        AssertThrow(equation_type == EquationType::Diffusion ||
-//                    equation_type == EquationType::ConvectionDiffusion,
-//                    ExcMessage("Point Jacobi preconditioner is not available for the specified equation type"));
-//
-//      if(preconditioner == Preconditioner::BlockJacobi)
-//        AssertThrow(equation_type == EquationType::ConvectionDiffusion,
-//                    ExcMessage("Block Jacobi preconditioner is not available for the specified equation type"));
+      if(preconditioner == Preconditioner::Multigrid)
+      {
+        AssertThrow(mg_operator_type != MultigridOperatorType::Undefined,
+                    ExcMessage("parameter must be defined"));
+      }
+
     }
 
 
@@ -517,9 +516,13 @@ public:
 
     print_parameter(pcout,"Preconditioner",str_precon[(int)preconditioner]);
 
-    if(preconditioner == Preconditioner::MultigridDiffusion ||
-       preconditioner == Preconditioner::MultigridConvectionDiffusion)
+    if(preconditioner == Preconditioner::Multigrid)
     {
+      std::string str_mg[] = { "Undefined",
+                               "Reaction-Diffusion",
+                               "Reaction-Convection-Diffusion" };
+
+      print_parameter(pcout,"MG Operator type",str_mg[(int)mg_operator_type]);
       multigrid_data.print(pcout);
     }
 
@@ -662,6 +665,9 @@ public:
 
   // description: see enum declaration
   Preconditioner preconditioner;
+
+  // description: see enum declaration
+  MultigridOperatorType mg_operator_type;
 
   // description: see declaration of MultigridData
   MultigridData multigrid_data;
