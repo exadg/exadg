@@ -24,8 +24,8 @@ const unsigned int DIMENSION = 2;
 const unsigned int FE_DEGREE = 5;
 
 // set the number of refine levels for spatial convergence tests
-const unsigned int REFINE_STEPS_SPACE_MIN = 3;
-const unsigned int REFINE_STEPS_SPACE_MAX = 3;
+const unsigned int REFINE_STEPS_SPACE_MIN = 4;
+const unsigned int REFINE_STEPS_SPACE_MAX = 4;
 
 // set the number of refine levels for temporal convergence tests
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
@@ -57,11 +57,11 @@ void ConvDiff::InputParameters::set_input_parameters()
   diffusivity = DIFFUSIVITY;
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDF;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  temporal_discretization = TemporalDiscretization::BDF; //ExplRK; //BDF;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   order_time_integrator = 2;
   start_with_low_order = false;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepDiffusion; //ConstTimeStepUserSpecified;
   time_step_size = 1.0e-2;
   cfl_number = 0.1;
   diffusion_number = 0.01;
@@ -78,8 +78,9 @@ void ConvDiff::InputParameters::set_input_parameters()
   abs_tol = 1.e-20;
   rel_tol = 1.e-6;
   max_iter = 1e4;
-  preconditioner = Preconditioner::MultigridConvectionDiffusion;
-  multigrid_data.smoother = MultigridSmoother::GMRES;
+  preconditioner = Preconditioner::Multigrid; //BlockJacobi;
+  mg_operator_type = MultigridOperatorType::ReactionDiffusion;
+  multigrid_data.smoother = MultigridSmoother::Chebyshev; //GMRES;
 
   update_preconditioner = false;
 

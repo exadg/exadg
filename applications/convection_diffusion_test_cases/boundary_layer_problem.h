@@ -73,7 +73,8 @@ void ConvDiff::InputParameters::set_input_parameters()
   abs_tol = 1.e-20;
   rel_tol = 1.e-8;
   max_iter = 1e4;
-  preconditioner = Preconditioner::MultigridConvectionDiffusion;
+  preconditioner = Preconditioner::Multigrid;
+  mg_operator_type = MultigridOperatorType::ReactionConvectionDiffusion;
   // MG smoother
   multigrid_data.smoother = MultigridSmoother::GMRES;
   // MG smoother data
