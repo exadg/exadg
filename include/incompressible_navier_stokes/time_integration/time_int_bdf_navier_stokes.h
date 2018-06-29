@@ -876,7 +876,7 @@ recalculate_adaptive_time_step()
   bool use_limiter = true;
   if(use_limiter == true)
   {
-    double factor = 1.2;
+    double factor = param.adaptive_time_stepping_limiting_factor;
     limit_time_step_change(time_steps[0],last_time_step,factor);
   }
 }
@@ -923,8 +923,10 @@ advance_one_timestep(bool write_final_output)
   // a small number which is much smaller than the time step size
   const value_type EPSILON = 1.0e-10;
 
-  bool started = time>param.start_time-EPSILON;
+  bool started = time > (param.start_time-EPSILON);
 
+  // If the time integrator has not yet started, simply increment physical
+  // time without solving the current time step.
   if(!started)
   {
     time += time_steps[0];

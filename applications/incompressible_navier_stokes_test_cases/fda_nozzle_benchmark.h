@@ -47,8 +47,18 @@ unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // prescribe velocity inflow profile for nozzle domain via precursor simulation?
-bool const USE_PRECURSOR_SIMULATION = false; //true;
+// USE_PRECURSOR_SIMULATION == true:  use solver unsteady_navier_stokes_two_domains.cc
+// USE_PRECURSOR_SIMULATION == false: use solver unsteady_navier_stokes.cc
+bool const USE_PRECURSOR_SIMULATION = true;
+
+// use prescribed velocity profile at inflow superimposed by random perturbations (white noise)?
+// This option is only relevant if USE_PRECURSOR_SIMULATION == false
+bool const USE_RANDOM_PERTURBATION = false;
+// amplitude of perturbations relative to maximum velocity on centerline
 double const FACTOR_RANDOM_PERTURBATIONS = 0.05;
+
+// set the throat Reynolds number Re_throat = U_{mean,throat} * (2 R_throat) / nu
+double const RE = 500; //500; //2000; //3500; //5000; //6500;
 
 // output folders
 std::string OUTPUT_FOLDER = "output/fda/Re500/l0_k32/";
@@ -105,9 +115,6 @@ double const AREA_THROAT = R_INNER*R_INNER*numbers::PI;
 // kinematic viscosity (same viscosity for all Reynolds numbers)
 double const VISCOSITY = 3.31e-6;
 
-// set the throat Reynolds number Re_throat = U_{mean,throat} * (2 R_throat) / nu
-double const RE = 500; //500; //2000; //3500; //5000; //6500;
-
 double const MEAN_VELOCITY_THROAT = RE * VISCOSITY / (2.0*R_INNER);
 double const TARGET_FLOW_RATE = MEAN_VELOCITY_THROAT*AREA_THROAT;
 
@@ -127,7 +134,7 @@ double const END_TIME = 150.0*T_0;
 bool const WRITE_OUTPUT = true;
 double const OUTPUT_START_TIME_PRECURSOR = START_TIME_PRECURSOR;
 double const OUTPUT_START_TIME_NOZZLE = START_TIME_NOZZLE;
-double const OUTPUT_INTERVAL_TIME = 10.0*T_0;
+double const OUTPUT_INTERVAL_TIME = 5.0*T_0;  //10.0*T_0;
 
 // sampling
 
@@ -145,22 +152,54 @@ unsigned int N_POINTS_LINE_CIRCUMFERENTIAL = 32;
 QuantityStatistics<DIMENSION> QUANTITY_VELOCITY;
 QuantityStatistics<DIMENSION> QUANTITY_VELOCITY_CIRCUMFERENTIAL;
 
-// data structures that we need to control the mass flow rate:
+// data structures that we need to apply the velocity inflow profile:
 
+// - we currently use global variables for this purpose
+// - choose a large number of points to ensure a smooth inflow profile
+unsigned int N_POINTS_R = 10 * (FE_DEGREE_VELOCITY+1) * std::pow(2.0, REFINE_STEPS_SPACE_DOMAIN1); //100;
+unsigned int N_POINTS_PHI = N_POINTS_R;
+std::vector<double> R_VALUES(N_POINTS_R);
+std::vector<double> PHI_VALUES(N_POINTS_PHI);
+std::vector<Tensor<1,DIMENSION,double> > VELOCITY_VALUES(N_POINTS_R*N_POINTS_PHI);
+
+// data structures that we need to control the mass flow rate:
 // NOTA BENE: these variables will be modified by the postprocessor!
 double FLOW_RATE = 0.0;
 // the flow rate controller also needs the time step size as parameter
 double TIME_STEP_FLOW_RATE_CONTROLLER = 1.0;
 
-// data structures that we need to apply the velocity inflow profile:
+class FlowRateController
+{
+public:
+  FlowRateController()
+    :
+    // initialize the body force such that the desired flow rate is obtained
+    // under the assumption of a parabolic velocity profile in radial direction
+    f(4.0*VISCOSITY*MAX_VELOCITY/std::pow(R_OUTER,2.0)) // f(t=t_0) = f_0
+  {}
 
-// - we currently use global variables for this purpose
-// - choose a large number of points to ensure a smooth inflow profile
-unsigned int N_POINTS_R = 10 * (FE_DEGREE_VELOCITY+1) * std::pow(2.0, REFINE_STEPS_SPACE_DOMAIN1);
-unsigned int N_POINTS_PHI = N_POINTS_R;
-std::vector<double> R_VALUES(N_POINTS_R);
-std::vector<double> PHI_VALUES(N_POINTS_PHI);
-std::vector<Tensor<1,DIMENSION,double> > VELOCITY_VALUES(N_POINTS_R*N_POINTS_PHI);
+  double get_body_force()
+  {
+    return f;
+  }
+
+  void update_body_force()
+  {
+    // use an I-controller to asymptotically reach the desired target flow rate
+
+    // dimensional analysis: [k] = 1/(m^2 s^2) -> k = const * nu^2 / A_inflow^3
+    // TODO determination of constant
+    double const k = 1.0e3*std::pow(VISCOSITY,2.0)/std::pow(AREA_INFLOW,3.0);
+    f += k*(TARGET_FLOW_RATE - FLOW_RATE)*TIME_STEP_FLOW_RATE_CONTROLLER;
+  }
+
+private:
+  double f;
+};
+
+// use a global variable which will be called by the postprocessor
+// in order to update the body force.
+FlowRateController FLOW_RATE_CONTROLLER;
 
 // initialize vectors
 void initialize_r_and_phi_values()
@@ -187,10 +226,13 @@ void initialize_velocity_values()
       Tensor<1,DIMENSION,double> velocity;
       // flow in z-direction
       velocity[2] = MAX_VELOCITY*(1.0-std::pow(R_VALUES[iy]/R_OUTER,2.0));
-
-      // Add random perturbation
-      double perturbation = FACTOR_RANDOM_PERTURBATIONS * velocity[2] * ((double)rand()/RAND_MAX-0.5)/0.5;
-      velocity[2] += perturbation;
+      
+      if(USE_RANDOM_PERTURBATION==true)
+      {
+        // Add random perturbation
+        double perturbation = FACTOR_RANDOM_PERTURBATIONS * velocity[2] * ((double)rand()/RAND_MAX-0.5)/0.5;
+        velocity[2] += perturbation;
+      }
 
       VELOCITY_VALUES[iy*N_POINTS_R + iz] = velocity;
     }
@@ -229,7 +271,7 @@ double radius_function(double const z)
  *  DOMAIN 2: nozzle (the actual domain of interest)
  */
 template<int dim>
-void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const domain_id)
+void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
 {
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
@@ -261,14 +303,14 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
 //  calculation_of_time_step_size = TimeStepCalculation::AdaptiveTimeStepCFL;
   temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
-
+  calculation_of_time_step_size = TimeStepCalculation::AdaptiveTimeStepCFL; //TODO //ConstTimeStepCFL;
+  adaptive_time_stepping_limiting_factor = 10.0;
   max_velocity = MAX_VELOCITY_CFL;
   // ConstTimeStepCFL: CFL_critical = 0.3 - 0.5 for k=3
   // AdaptiveTimeStepCFL: CFL_critical = 0.125 - 0.15 for k=3
   // Best pratice: use CFL = 4.0 for implicit treatment (e.g., pressure-correction scheme)
   // and CFL = 0.13 with adaptive time stepping for an explicit treatment (e.g., dual splitting)
-  cfl = 0.13;
+  cfl = 4.0;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
@@ -605,7 +647,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
 
 // solve problem for DOMAIN 2 only (nozzle domain)
 template<int dim>
-void InputParametersNavierStokes<dim>::set_input_parameters()
+void InputParameters<dim>::set_input_parameters()
 {
   // call set_input_parameters() function for DOMAIN 2
   this->set_input_parameters(2);
@@ -730,10 +772,7 @@ public:
  public:
    RightHandSide (const double time = 0.)
      :
-     Function<dim>(dim, time),
-     // initialize the body force such that the desired flow rate is obtained
-     // under the assumption of a parabolic velocity profile in radial direction
-     f(4.0*VISCOSITY*MAX_VELOCITY/std::pow(R_OUTER,2.0)) // f(t=t_0) = f_0
+     Function<dim>(dim, time)
    {}
 
    virtual ~RightHandSide(){};
@@ -747,21 +786,11 @@ public:
      // The flow is driven by body force in z-direction
      if(component==2)
      {
-       // use an I-controller to asymptotically reach the desired target flow rate
-
-       // dimensional analysis: [k] = 1/(m^2 s^2) -> k = const * nu^2 / A_inflow^3
-       double const k = 1.0*std::pow(VISCOSITY,2.0)/std::pow(AREA_INFLOW,3.0);
-
-       f += k*(TARGET_FLOW_RATE - FLOW_RATE)*TIME_STEP_FLOW_RATE_CONTROLLER;
-
-       result = f;
+       result = FLOW_RATE_CONTROLLER.get_body_force();
      }
 
      return result;
    }
-
-private:
-   mutable double f;
  };
 
 
@@ -778,12 +807,12 @@ private:
  */
 template<int dim>
 void create_grid_and_set_boundary_conditions_1(
-    parallel::distributed::Triangulation<dim>              &triangulation,
-    unsigned int const                                     n_refine_space,
-    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
+    parallel::distributed::Triangulation<dim>         &triangulation,
+    unsigned int const                                n_refine_space,
+    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                 &periodic_faces)
+      Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
   /*
    *   PRECURSOR
@@ -892,12 +921,12 @@ void create_grid_and_set_boundary_conditions_1(
  */
 template<int dim>
 void create_grid_and_set_boundary_conditions_2(
-    parallel::distributed::Triangulation<dim>              &triangulation,
-    unsigned int const                                     n_refine_space,
-    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
+    parallel::distributed::Triangulation<dim>         &triangulation,
+    unsigned int const                                n_refine_space,
+    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                 &/*periodic_faces*/)
+      Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
   /*
    *   Inflow
@@ -1232,12 +1261,12 @@ void create_grid_and_set_boundary_conditions_2(
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>              &triangulation,
-    unsigned int const                                     n_refine_space,
-    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
+    parallel::distributed::Triangulation<dim>         &triangulation,
+    unsigned int const                                n_refine_space,
+    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                 &periodic_faces)
+      Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
   // call respective function for DOMAIN 2
   create_grid_and_set_boundary_conditions_2(triangulation,
@@ -1248,7 +1277,7 @@ void create_grid_and_set_boundary_conditions(
 }
 
 template<int dim>
-void set_field_functions_1(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+void set_field_functions_1(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > initial_solution_velocity;
@@ -1269,7 +1298,7 @@ void set_field_functions_1(std::shared_ptr<FieldFunctionsNavierStokes<dim> > fie
 }
 
 template<int dim>
-void set_field_functions_2(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+void set_field_functions_2(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > initial_solution_velocity;
@@ -1289,7 +1318,7 @@ void set_field_functions_2(std::shared_ptr<FieldFunctionsNavierStokes<dim> > fie
 }
 
 template<int dim>
-void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
   // call respective function for DOMAIN 2
   set_field_functions_2(field_functions);
@@ -1297,7 +1326,7 @@ void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field
 
 
 template<int dim>
-void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
+void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
 {
   analytical_solution->velocity.reset(new ZeroFunction<dim>(dim));
   analytical_solution->pressure.reset(new ZeroFunction<dim>(1));
@@ -1331,12 +1360,12 @@ public:
     inflow_data_calculator.reset(new InflowDataCalculator<dim,Number>(pp_data_in.inflow_data));
   }
 
-  void setup(DoFHandler<dim> const                                  &dof_handler_velocity_in,
-             DoFHandler<dim> const                                  &dof_handler_pressure_in,
-             Mapping<dim> const                                     &mapping_in,
-             MatrixFree<dim,Number> const                           &matrix_free_data_in,
-             DofQuadIndexData const                                 &dof_quad_index_data_in,
-             std::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution_in)
+  void setup(DoFHandler<dim> const                     &dof_handler_velocity_in,
+             DoFHandler<dim> const                     &dof_handler_pressure_in,
+             Mapping<dim> const                        &mapping_in,
+             MatrixFree<dim,Number> const              &matrix_free_data_in,
+             DofQuadIndexData const                    &dof_quad_index_data_in,
+             std::shared_ptr<AnalyticalSolution<dim> > analytical_solution_in)
   {
     // call setup function of base class
     PostProcessor<dim,fe_degree_u,fe_degree_p,Number>::setup(
@@ -1384,7 +1413,8 @@ public:
     }
     else
     {
-      initialize_velocity_values();
+      if(USE_RANDOM_PERTURBATION==true)
+        initialize_velocity_values();
     }
 
     if(pp_data_fda.mean_velocity_data.calculate == true)
@@ -1395,6 +1425,9 @@ public:
       // set time step size for flow rate controller
       TIME_STEP_FLOW_RATE_CONTROLLER = time-time_old;
       time_old = time;
+
+      // update body force
+      FLOW_RATE_CONTROLLER.update_body_force();
     }
 
     // evaluation of results along lines
@@ -1417,7 +1450,7 @@ private:
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim,Number> >
-construct_postprocessor(InputParametersNavierStokes<dim> const &param)
+construct_postprocessor(InputParameters<dim> const &param)
 {
   // basic modules
   PostProcessorData<dim> pp_data;
