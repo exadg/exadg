@@ -11,6 +11,9 @@
 #include "../incompressible_navier_stokes/infrastructure/fe_parameters.h"
 #include "operators/matrix_operator_base.h"
 
+namespace IncNS
+{
+
 template <int dim>
 class BaseOperator: public MatrixOperatorBase
 {
@@ -28,5 +31,7 @@ protected:
   FEParameters<dim> * fe_param;
 };
 
+
+}
 
 #endif /* INCLUDE_OPERATORS_BASEOPERATOR_H_ */

@@ -1,5 +1,5 @@
 /*
- * orr_sommerfeld.h
+ * kelvin_helmholtz.h
  *
  *  Created on: Aug 31, 2017
  *      Author: fehn
@@ -26,7 +26,7 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 5;
+unsigned int const FE_DEGREE_VELOCITY = 11;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
 // set xwall specific parameters
@@ -34,7 +34,7 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 5;
+unsigned int const REFINE_STEPS_SPACE_MIN = 1;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
@@ -55,10 +55,10 @@ const double T = DELTA_0/U_INF;
 // set output folders & names
 std::string OUTPUT_FOLDER = "output/kelvin_helmholtz/test/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "Re1e4_l5_k5_tend_400";
+std::string OUTPUT_NAME = "Re1e4_l1_k1110";
 
 template<int dim>
-void InputParametersNavierStokes<dim>::set_input_parameters()
+void InputParameters<dim>::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
@@ -244,7 +244,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // write output for visualization of results
   print_input_parameters = true;
-  output_data.write_output = true;
+  output_data.write_output = false;
   output_data.output_folder = OUTPUT_FOLDER_VTU;
   output_data.output_name = OUTPUT_NAME;
   output_data.output_start_time = start_time;
@@ -260,7 +260,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
   // output of solver information
-  output_solver_info_every_timesteps = 1e2;
+  output_solver_info_every_timesteps = 1; //1e2;
 
   // kinetic energy
   kinetic_energy_data.calculate = true;
@@ -400,12 +400,12 @@ public:
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>              &triangulation,
-    unsigned int const                                     n_refine_space,
-    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
+    parallel::distributed::Triangulation<dim>         &triangulation,
+    unsigned int const                                n_refine_space,
+    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                 &periodic_faces)
+      Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
   std::vector<unsigned int> repetitions({1,1});
   Point<dim> point1(0.0,0.0), point2(L,L);
@@ -461,7 +461,7 @@ void create_grid_and_set_boundary_conditions(
 
 
 template<int dim>
-void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > initial_solution_velocity;
@@ -483,7 +483,7 @@ void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field
 }
 
 template<int dim>
-void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
+void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
 {
   analytical_solution->velocity.reset(new AnalyticalSolutionVelocity<dim>());
   analytical_solution->pressure.reset(new AnalyticalSolutionPressure<dim>());
@@ -493,7 +493,7 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim>
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim,Number> >
-construct_postprocessor(InputParametersNavierStokes<dim> const &param)
+construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
 

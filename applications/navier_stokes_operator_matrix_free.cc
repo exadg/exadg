@@ -30,7 +30,7 @@
 #include "../include/postprocessor/output_data.h"
 
 using namespace dealii;
-
+using namespace IncNS;
 
 // specify the flow problem that has to be solved
 
@@ -119,13 +119,13 @@ private:
 
   unsigned int const n_refine_space;
 
-  std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions;
-  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure;
+  std::shared_ptr<FieldFunctions<dim> > field_functions;
+  std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure;
 
-  std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution;
+  std::shared_ptr<AnalyticalSolution<dim> > analytical_solution;
 
-  InputParametersNavierStokes<dim> param;
+  InputParameters<dim> param;
 
   std::shared_ptr<DGNavierStokesBase<dim, fe_degree_u, fe_degree_p,
     fe_degree_xwall, xwall_quad_rule, Number> > navier_stokes_operation;
@@ -164,14 +164,14 @@ NavierStokesProblem(unsigned int const refine_steps_space)
   if(param.print_input_parameters == true)
     param.print(pcout);
 
-  field_functions.reset(new FieldFunctionsNavierStokes<dim>());
+  field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
 
-  analytical_solution.reset(new AnalyticalSolutionNavierStokes<dim>());
+  analytical_solution.reset(new AnalyticalSolution<dim>());
   set_analytical_solution(analytical_solution);
 
-  boundary_descriptor_velocity.reset(new BoundaryDescriptorNavierStokesU<dim>());
-  boundary_descriptor_pressure.reset(new BoundaryDescriptorNavierStokesP<dim>());
+  boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
+  boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
 
   AssertThrow(param.solver_type == SolverType::Unsteady,
       ExcMessage("This is an unsteady solver. Check input parameters."));

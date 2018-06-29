@@ -11,6 +11,9 @@
 #include "../infrastructure/fe_evaluation_wrapper.h"
 #include "operators/base_operator.h"
 
+namespace IncNS
+{
+
 template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class VorticityCalculator: public BaseOperator<dim>
 {
@@ -418,5 +421,7 @@ private:
   unsigned int dof_index_u;
   unsigned int dof_index_u_scalar;
 };
+
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_NAVIER_STOKES_CALCULATORS_H_ */

@@ -27,7 +27,7 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 7;
+unsigned int const FE_DEGREE_VELOCITY = 5;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;  // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -35,8 +35,8 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 2;
-unsigned int const REFINE_STEPS_SPACE_MAX = 2; //REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 5;
+unsigned int const REFINE_STEPS_SPACE_MAX = 5; //REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -64,13 +64,13 @@ FE_DGQ<1> FE(DEGREE_OS_SOLVER);
 std::complex<double> OMEGA;
 std::vector<std::complex<double> > EIG_VEC(DEGREE_OS_SOLVER+1);
 
-std::string OUTPUT_FOLDER = "output/orr_sommerfeld_test/";
+std::string OUTPUT_FOLDER = "output/orr_sommerfeld/test/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "Re7500_l1_76_div_conti";
-std::string FILENAME_ENERGY = "perturbation_energy_ku7_kp6";
+std::string OUTPUT_NAME = "Re7500_l5_21_div_conti";
+std::string FILENAME_ENERGY = "perturbation_energy_ku2_kp1";
 
 template<int dim>
-void InputParametersNavierStokes<dim>::set_input_parameters()
+void InputParameters<dim>::set_input_parameters()
 {
   // solve Orr-Sommerfeld equation
   compute_eigenvector(EIG_VEC,OMEGA,Re,ALPHA,FE);
@@ -131,7 +131,12 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // divergence and continuity penalty terms
   use_divergence_penalty = true;
+  divergence_penalty_factor = 1.0e0;
   use_continuity_penalty = true;
+  continuity_penalty_use_boundary_data = false;
+  continuity_penalty_components = ContinuityPenaltyComponents::Normal;
+  type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
+  continuity_penalty_factor = divergence_penalty_factor;
 
   // PROJECTION METHODS
 
@@ -215,9 +220,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   newton_solver_data_coupled.max_iter = 1e2;
 
   // linear solver
-  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::FGMRES; //GMRES;
+  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;
   abs_tol_linear = 1.e-12;
-  rel_tol_linear = 1.e-2;
+  rel_tol_linear = 1.e-6;
   max_iter_linear = 1e4;
   max_n_tmp_vectors = 200;
 
@@ -258,7 +263,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // write output for visualization of results
   print_input_parameters = true;
-  output_data.write_output = false; //true;
+  output_data.write_output = true;
   output_data.output_folder = OUTPUT_FOLDER_VTU;
   output_data.output_name = OUTPUT_NAME;
   output_data.output_start_time = start_time;
@@ -451,12 +456,12 @@ public:
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>              &triangulation,
-    unsigned int const                                     n_refine_space,
-    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
+    parallel::distributed::Triangulation<dim>         &triangulation,
+    unsigned int const                                n_refine_space,
+    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                 &periodic_faces)
+      Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
   std::vector<unsigned int> repetitions({1,1});
   Point<dim> point1(0.0,-H), point2(L,H);
@@ -497,7 +502,7 @@ void create_grid_and_set_boundary_conditions(
 
 
 template<int dim>
-void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > initial_solution_velocity;
@@ -519,7 +524,7 @@ void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field
 }
 
 template<int dim>
-void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
+void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
 {
   analytical_solution->velocity.reset(new AnalyticalSolutionVelocity<dim>());
   analytical_solution->pressure.reset(new AnalyticalSolutionPressure<dim>());
@@ -545,12 +550,12 @@ public:
     energy_data(pp_data_os.energy_data)
   {}
 
-  void setup(DoFHandler<dim> const                                  &dof_handler_velocity_in,
-             DoFHandler<dim> const                                  &dof_handler_pressure_in,
-             Mapping<dim> const                                     &mapping_in,
-             MatrixFree<dim,Number> const                           &matrix_free_data_in,
-             DofQuadIndexData const                                 &dof_quad_index_data_in,
-             std::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution_in)
+  void setup(DoFHandler<dim> const                      &dof_handler_velocity_in,
+             DoFHandler<dim> const                      &dof_handler_pressure_in,
+             Mapping<dim> const                         &mapping_in,
+             MatrixFree<dim,Number> const               &matrix_free_data_in,
+             DofQuadIndexData const                     &dof_quad_index_data_in,
+             std::shared_ptr<AnalyticalSolution<dim> >  analytical_solution_in)
   {
     // call setup function of base class
     PostProcessor<dim,fe_degree_u,fe_degree_p,Number>::setup(
@@ -592,7 +597,7 @@ public:
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim,Number> >
-construct_postprocessor(InputParametersNavierStokes<dim> const &param)
+construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
   pp_data.output_data = param.output_data;

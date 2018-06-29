@@ -32,6 +32,7 @@
 #include "../include/functionalities/print_general_infos.h"
 
 using namespace dealii;
+using namespace IncNS;
 
 // specify the flow problem that has to be solved
 
@@ -67,13 +68,13 @@ private:
 
   const unsigned int n_refine_space_domain1, n_refine_space_domain2;
 
-  std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions_1, field_functions_2;
-  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity_1, boundary_descriptor_velocity_2;
-  std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure_1, boundary_descriptor_pressure_2;
+  std::shared_ptr<FieldFunctions<dim> > field_functions_1, field_functions_2;
+  std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity_1, boundary_descriptor_velocity_2;
+  std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure_1, boundary_descriptor_pressure_2;
 
-  std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution_1, analytical_solution_2;
+  std::shared_ptr<AnalyticalSolution<dim> > analytical_solution_1, analytical_solution_2;
 
-  InputParametersNavierStokes<dim> param_1, param_2;
+  InputParameters<dim> param_1, param_2;
 
   std::shared_ptr<DGNavierStokesBase<dim, fe_degree_u, fe_degree_p,
     fe_degree_xwall, xwall_quad_rule, Number> > navier_stokes_operation_1, navier_stokes_operation_2;
@@ -87,7 +88,7 @@ private:
   std::shared_ptr<DGNavierStokesPressureCorrection<dim, fe_degree_u, fe_degree_p,
     fe_degree_xwall, xwall_quad_rule, Number> > navier_stokes_operation_pressure_correction_1, navier_stokes_operation_pressure_correction_2;
 
-  std::shared_ptr<PostProcessorBase<dim,Number> > postprocessor_1, postprocessor_2;
+  std::shared_ptr<IncNS::PostProcessorBase<dim,Number> > postprocessor_1, postprocessor_2;
 
   std::shared_ptr<TimeIntBDFCoupled<dim, fe_degree_u, Number,
                   DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p,
@@ -140,27 +141,27 @@ NavierStokesProblem(unsigned int const refine_steps_space1,
     param_2.print(pcout);
   }
 
-  field_functions_1.reset(new FieldFunctionsNavierStokes<dim>());
-  field_functions_2.reset(new FieldFunctionsNavierStokes<dim>());
+  field_functions_1.reset(new FieldFunctions<dim>());
+  field_functions_2.reset(new FieldFunctions<dim>());
   // this function has to be defined in the header file
   // that implements all problem specific things like
   // parameters, geometry, boundary conditions, etc.
   set_field_functions_1(field_functions_1);
   set_field_functions_2(field_functions_2);
 
-  analytical_solution_1.reset(new AnalyticalSolutionNavierStokes<dim>());
-  analytical_solution_2.reset(new AnalyticalSolutionNavierStokes<dim>());
+  analytical_solution_1.reset(new AnalyticalSolution<dim>());
+  analytical_solution_2.reset(new AnalyticalSolution<dim>());
   // this function has to be defined in the header file
   // that implements all problem specific things like
   // parameters, geometry, boundary conditions, etc.
   set_analytical_solution(analytical_solution_1);
   set_analytical_solution(analytical_solution_2);
 
-  boundary_descriptor_velocity_1.reset(new BoundaryDescriptorNavierStokesU<dim>());
-  boundary_descriptor_pressure_1.reset(new BoundaryDescriptorNavierStokesP<dim>());
+  boundary_descriptor_velocity_1.reset(new BoundaryDescriptorU<dim>());
+  boundary_descriptor_pressure_1.reset(new BoundaryDescriptorP<dim>());
 
-  boundary_descriptor_velocity_2.reset(new BoundaryDescriptorNavierStokesU<dim>());
-  boundary_descriptor_pressure_2.reset(new BoundaryDescriptorNavierStokesP<dim>());
+  boundary_descriptor_velocity_2.reset(new BoundaryDescriptorU<dim>());
+  boundary_descriptor_pressure_2.reset(new BoundaryDescriptorP<dim>());
 
   // constant vs. adaptive time stepping
   AssertThrow(param_1.calculation_of_time_step_size == param_2.calculation_of_time_step_size,

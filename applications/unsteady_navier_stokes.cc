@@ -32,6 +32,7 @@
 #include "../include/functionalities/print_general_infos.h"
 
 using namespace dealii;
+using namespace IncNS;
 
 // specify the flow problem that has to be solved
 
@@ -49,9 +50,10 @@ using namespace dealii;
 //#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
 //#include "incompressible_navier_stokes_test_cases/orr_sommerfeld.h"
 //#include "incompressible_navier_stokes_test_cases/kelvin_helmholtz.h"
-#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
+//#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
 //#include "incompressible_navier_stokes_test_cases/cavity_3D.h"
 //#include "incompressible_navier_stokes_test_cases/backward_facing_step_tim.h"
+#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number=double>
 class NavierStokesProblem
@@ -78,12 +80,12 @@ private:
 
   const unsigned int n_refine_space;
 
-  std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions;
-  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure;
-  std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution;
+  std::shared_ptr<FieldFunctions<dim> > field_functions;
+  std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure;
+  std::shared_ptr<AnalyticalSolution<dim> > analytical_solution;
 
-  InputParametersNavierStokes<dim> param;
+  InputParameters<dim> param;
 
   std::shared_ptr<DGNavierStokesBase<dim, fe_degree_u, fe_degree_p,
     fe_degree_xwall, xwall_quad_rule, Number> > navier_stokes_operation;
@@ -97,7 +99,7 @@ private:
   std::shared_ptr<DGNavierStokesPressureCorrection<dim, fe_degree_u, fe_degree_p,
     fe_degree_xwall, xwall_quad_rule, Number> > navier_stokes_operation_pressure_correction;
 
-  std::shared_ptr<PostProcessorBase<dim,Number> > postprocessor;
+  std::shared_ptr<IncNS::PostProcessorBase<dim,Number> > postprocessor;
 
   std::shared_ptr<TimeIntBDFCoupled<dim, fe_degree_u, Number,
                   DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p,
@@ -132,20 +134,20 @@ NavierStokesProblem(unsigned int const refine_steps_space,
   if(param.print_input_parameters == true)
     param.print(pcout);
 
-  field_functions.reset(new FieldFunctionsNavierStokes<dim>());
+  field_functions.reset(new FieldFunctions<dim>());
   // this function has to be defined in the header file
   // that implements all problem specific things like
   // parameters, geometry, boundary conditions, etc.
   set_field_functions(field_functions);
 
-  analytical_solution.reset(new AnalyticalSolutionNavierStokes<dim>());
+  analytical_solution.reset(new AnalyticalSolution<dim>());
   // this function has to be defined in the header file
   // that implements all problem specific things like
   // parameters, geometry, boundary conditions, etc.
   set_analytical_solution(analytical_solution);
 
-  boundary_descriptor_velocity.reset(new BoundaryDescriptorNavierStokesU<dim>());
-  boundary_descriptor_pressure.reset(new BoundaryDescriptorNavierStokesP<dim>());
+  boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
+  boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
 
   bool use_adaptive_time_stepping = false;
   if(param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)

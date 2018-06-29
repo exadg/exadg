@@ -26,7 +26,7 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 8;
+unsigned int const FE_DEGREE_VELOCITY = 4;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -39,18 +39,18 @@ unsigned int const REFINE_STEPS_SPACE_MAX = 2; //REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
-unsigned int const REFINE_STEPS_TIME_MAX = 6; //REFINE_STEPS_TIME_MIN;
+unsigned int const REFINE_STEPS_TIME_MAX = 0; //REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
 const double U_X_MAX = 1.0;
-const double VISCOSITY = 2.5e-2; //1.e-2; //2.5e-2;
+const double VISCOSITY = 1.e-2; //2.5e-2;
 const FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::LaplaceFormulation; //LaplaceFormulation; //DivergenceFormulation;
 
 enum class MeshType{ UniformCartesian, ComplexSurfaceManifold, ComplexVolumeManifold };
 const MeshType MESH_TYPE = MeshType::UniformCartesian;  //UniformCartesian; //ComplexVolumeManifold; //ComplexSurfaceManifold;
 
 template<int dim>
-void InputParametersNavierStokes<dim>::set_input_parameters()
+void InputParameters<dim>::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
@@ -61,23 +61,23 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // PHYSICAL QUANTITIES
   start_time = 0.0;
-  end_time = 1.0; 
+  end_time = 1.0;
   viscosity = VISCOSITY;
 
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepCFL; //ConstTimeStepMaxEfficiency; //ConstTimeStepUserSpecified; //ConstTimeStepCFL; //ConstTimeStepUserSpecified;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepMaxEfficiency; //ConstTimeStepUserSpecified; //ConstTimeStepCFL; //ConstTimeStepUserSpecified;
   max_velocity = 1.4 * U_X_MAX;
-  cfl = 0.1; // 0.006;
+  cfl = 0.0625;
   cfl_oif = cfl/8.0;
-  cfl_exponent_fe_degree_velocity = 1.0; // 0.0;
+  cfl_exponent_fe_degree_velocity = 1.5;
   c_eff = 8.0;
-  time_step_size = 0.1; //5.e-5; //1.e-1; //1.e-4;
+  time_step_size = 1.e-2; //5.e-5; //1.e-1; //1.e-4;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 2;
+  order_time_integrator = 3;
   start_with_low_order = false; // true; // false;
 
 
@@ -94,12 +94,12 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   penalty_term_div_formulation = PenaltyTermDivergenceFormulation::Symmetrized;
 
   // gradient term
-  gradp_integrated_by_parts = true; //false;//true;
-  gradp_use_boundary_data = true; //false;//true;
+  gradp_integrated_by_parts = true;
+  gradp_use_boundary_data = true;
 
   // divergence term
-  divu_integrated_by_parts = true; //false;// true;
-  divu_use_boundary_data = true; //false;
+  divu_integrated_by_parts = true;
+  divu_use_boundary_data = true;
 
   // special case: pure DBC's
   pure_dirichlet_bc = false;
@@ -108,9 +108,10 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   use_divergence_penalty = true;
   divergence_penalty_factor = 1.0e0;
   use_continuity_penalty = true;
-  continuity_penalty_components = ContinuityPenaltyComponents::All; //Normal;
+  continuity_penalty_components = ContinuityPenaltyComponents::Normal;
   continuity_penalty_use_boundary_data = false;
   continuity_penalty_factor = divergence_penalty_factor;
+  type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
 
   // TURBULENCE
   use_turbulence_model = false;
@@ -129,7 +130,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
   multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_pressure = 1.e-12;
-  rel_tol_pressure = 1.e-6;
+  rel_tol_pressure = 1.e-12;
 
   // stability in the limit of small time steps
   use_approach_of_ferrer = false;
@@ -139,7 +140,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   solver_projection = SolverProjection::PCG;
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix; //None; //Jacobi; //InverseMassMatrix;
   abs_tol_projection = 1.e-12;
-  rel_tol_projection = 1.e-6;
+  rel_tol_projection = 1.e-12;
 
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -168,7 +169,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; // GeometricMultigrid;
   multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_viscous = 1.e-12;
-  rel_tol_viscous = 1.e-6;
+  rel_tol_viscous = 1.e-12;
   update_preconditioner_viscous = false;
 
 
@@ -259,12 +260,13 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   print_input_parameters = true; //false; //true;
 
   // write output for visualization of results
-  output_data.write_output = false;
-  output_data.output_folder = "output/";
-  output_data.output_name = "vortex_new";
+  output_data.write_output = true; //false;
+  output_data.output_folder = "output/vortex/vtu/";
+  output_data.output_name = "vortex";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
   output_data.write_divergence = true;
+  output_data.write_processor_id = false;
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error
@@ -537,12 +539,12 @@ template<int dim>
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>              &triangulation,
-    unsigned int const                                     n_refine_space,
-    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
+    parallel::distributed::Triangulation<dim>         &triangulation,
+    unsigned int const                                n_refine_space,
+    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                 &/*periodic_faces*/)
+      Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
 {
   const double left = -0.5, right = 0.5;
 
@@ -689,7 +691,7 @@ void create_grid_and_set_boundary_conditions(
 
 
 template<int dim>
-void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > analytical_solution_velocity;
@@ -707,7 +709,7 @@ void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field
 }
 
 template<int dim>
-void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
+void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
 {
   analytical_solution->velocity.reset(new AnalyticalSolutionVelocity<dim>());
   analytical_solution->pressure.reset(new AnalyticalSolutionPressure<dim>());
@@ -717,7 +719,7 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim>
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim,Number> >
-construct_postprocessor(InputParametersNavierStokes<dim> const &param)
+construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
 

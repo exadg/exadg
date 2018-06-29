@@ -10,6 +10,9 @@
 
 //#include "solvers_and_preconditioners/iterative_solvers.h"
 
+namespace IncNS
+{
+
 /*
  *  Turbulence model data.
  */
@@ -675,6 +678,6 @@ private:
 };
 
 
-
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_TURBULENCE_MODEL_H_ */

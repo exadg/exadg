@@ -13,6 +13,9 @@
 #include "solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
 #include "solvers_and_preconditioners/invert_diagonal.h"
 
+namespace IncNS
+{
+
 template<int dim>
 struct CompatibleLaplaceOperatorData
 {
@@ -353,5 +356,7 @@ private:
   mutable parallel::distributed::Vector<Number> tmp_projection_vector;
 };
 
+
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_COMPATIBLE_LAPLACE_OPERATOR_H_ */

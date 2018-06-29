@@ -48,7 +48,7 @@ const double VISCOSITY = 1.0e0;
 bool stability_analysis = true;
 
 template<int dim>
-void InputParametersNavierStokes<dim>::set_input_parameters()
+void InputParameters<dim>::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
@@ -465,12 +465,12 @@ template<int dim>
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>              &triangulation,
-    unsigned int const                                     n_refine_space,
-    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
+    parallel::distributed::Triangulation<dim>         &triangulation,
+    unsigned int const                                n_refine_space,
+    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                 &periodic_faces)
+      Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
   const double left = -1.0, right = 1.0;
   GridGenerator::hyper_cube(triangulation,left,right);
@@ -496,7 +496,7 @@ void create_grid_and_set_boundary_conditions(
 
 
 template<int dim>
-void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > analytical_solution_velocity;
@@ -514,7 +514,7 @@ void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field
 }
 
 template<int dim>
-void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
+void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
 {
   analytical_solution->velocity.reset(new AnalyticalSolutionVelocity<dim>());
   analytical_solution->pressure.reset(new AnalyticalSolutionPressure<dim>());
@@ -524,7 +524,7 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim>
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim,Number> >
-construct_postprocessor(InputParametersNavierStokes<dim> const &param)
+construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
 

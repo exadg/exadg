@@ -26,6 +26,8 @@
 #include "solvers_and_preconditioners/verify_calculation_of_diagonal.h"
 #include "solvers_and_preconditioners/block_jacobi_matrices.h"
 
+namespace IncNS
+{
 
 /*
  *  Base class for different projection operators.
@@ -749,7 +751,7 @@ struct OptimizedProjectionOperatorData
   // the continuity penalty term can be applied
   // on boundary faces.
   bool use_boundary_data;
-  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorU<dim> > bc;
 };
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
@@ -1036,5 +1038,7 @@ private:
   // TODO
   mutable double wall_time;
 };
+
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_PROJECTION_OPERATORS_AND_SOLVERS_H_ */

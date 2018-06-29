@@ -11,6 +11,9 @@
 #include "../../convection_diffusion/spatial_discretization/convection_diffusion_operators.h"
 #include "../../incompressible_navier_stokes/user_interface/input_parameters.h"
 
+namespace IncNS
+{
+
 template<int dim>
 struct PressureConvectionDiffusionOperatorData
 {
@@ -101,5 +104,7 @@ private:
   ConvDiff::ConvectiveOperatorDiscontinuousVelocity<dim, fe_degree, fe_degree_velocity, value_type> convective_operator;
 };
 
+
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_PRESSURE_CONVECTION_DIFFUSION_OPERATOR_H_ */

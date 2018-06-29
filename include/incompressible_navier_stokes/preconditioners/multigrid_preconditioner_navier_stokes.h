@@ -11,6 +11,8 @@
 
 #include "solvers_and_preconditioners/multigrid_preconditioner_dg.h"
 
+namespace IncNS
+{
 
 /*
  *  Multigrid preconditioner for velocity (reaction-)diffusion operator
@@ -248,5 +250,6 @@ private:
 };
 
 
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_NAVIER_STOKES_H_ */

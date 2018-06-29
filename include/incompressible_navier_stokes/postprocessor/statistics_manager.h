@@ -6,6 +6,8 @@
 #include <fluid_base_algorithm.h>
 #include "../../incompressible_navier_stokes/infrastructure/fe_parameters.h"
 
+using namespace IncNS;
+
 template <int dim>
 class StatisticsManager
 {
@@ -70,5 +72,6 @@ private:
   bool write_final_output;
   TurbulentChannelData turb_channel_data;
 };
+
 
 #endif

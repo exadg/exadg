@@ -16,6 +16,9 @@
 
 #include "solvers_and_preconditioners/verify_calculation_of_diagonal.h"
 
+namespace IncNS
+{
+
 template<int dim>
 struct HelmholtzOperatorData
 {
@@ -537,5 +540,8 @@ private:
   // TODO
   bool use_optimized_implementation;
 };
+
+
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_HELMHOLTZ_OPERATOR_H_ */

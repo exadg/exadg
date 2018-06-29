@@ -8,9 +8,11 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_FIELD_FUNCTIONS_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_FIELD_FUNCTIONS_H_
 
+namespace IncNS
+{
 
 template<int dim>
-struct FieldFunctionsNavierStokes
+struct FieldFunctions
 {
   /*
    *  The function initial_solution_velocity is used to initialize
@@ -41,5 +43,7 @@ struct FieldFunctionsNavierStokes
   std::shared_ptr<Function<dim> > right_hand_side;
 };
 
+
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_FIELD_FUNCTIONS_H_ */

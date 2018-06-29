@@ -10,6 +10,9 @@
 
 #include <deal.II/base/timer.h>
 
+namespace IncNS
+{
+
 template<int dim,typename Number> class PostProcessorBase;
 
 template<int dim, typename value_type, typename NavierStokesOperation>
@@ -18,7 +21,7 @@ class DriverSteadyProblems
 public:
   DriverSteadyProblems(std::shared_ptr<NavierStokesOperation>              navier_stokes_operation_in,
                        std::shared_ptr<PostProcessorBase<dim,value_type> > postprocessor_in,
-                       InputParametersNavierStokes<dim> const              &param_in)
+                       InputParameters<dim> const                          &param_in)
     :
     navier_stokes_operation(navier_stokes_operation_in),
     postprocessor(postprocessor_in),
@@ -42,7 +45,7 @@ private:
   std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
   std::shared_ptr<PostProcessorBase<dim,value_type> > postprocessor;
-  InputParametersNavierStokes<dim> const &param;
+  InputParameters<dim> const &param;
 
   Timer global_timer;
   value_type total_time;
@@ -293,6 +296,8 @@ analyze_computing_times() const
         << std::setw(6) << std::left << data.min_index << " "
         << std::setw(6) << std::left << data.max_index << std::endl
         << "_________________________________________________________________________________" << std::endl << std::endl;
+}
+
 }
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_DRIVER_STEADY_PROBLEMS_H_ */

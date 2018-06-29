@@ -25,6 +25,9 @@
 #include "../../incompressible_navier_stokes/user_interface/input_parameters.h"
 #include "line_plot_calculation.h"
 
+namespace IncNS
+{
+
 template<int dim>
 struct PostProcessorData
 {
@@ -52,12 +55,12 @@ public:
 
   virtual ~PostProcessor(){}
 
-  virtual void setup(DoFHandler<dim> const                                 &dof_handler_velocity_in,
-                     DoFHandler<dim> const                                 &dof_handler_pressure_in,
-                     Mapping<dim> const                                    &mapping_in,
-                     MatrixFree<dim,Number> const                          &matrix_free_data_in,
-                     DofQuadIndexData const                                &dof_quad_index_data_in,
-                     std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution_in)
+  virtual void setup(DoFHandler<dim> const                     &dof_handler_velocity_in,
+                     DoFHandler<dim> const                     &dof_handler_pressure_in,
+                     Mapping<dim> const                        &mapping_in,
+                     MatrixFree<dim,Number> const              &matrix_free_data_in,
+                     DofQuadIndexData const                    &dof_quad_index_data_in,
+                     std::shared_ptr<AnalyticalSolution<dim> > analytical_solution_in)
   {
     output_generator.setup(dof_handler_velocity_in,
                            dof_handler_pressure_in,
@@ -161,6 +164,6 @@ private:
 };
 
 
-
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_ */

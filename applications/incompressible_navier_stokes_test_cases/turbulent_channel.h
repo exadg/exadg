@@ -76,7 +76,7 @@ enum class GridStretchType{ TransformGridCells, VolumeManifold };
 GridStretchType GRID_STRETCH_TYPE = GridStretchType::TransformGridCells; //VolumeManifold;
 
 template<int dim>
-void InputParametersNavierStokes<dim>::set_input_parameters()
+void InputParameters<dim>::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
@@ -585,12 +585,12 @@ template<int dim>
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>              &triangulation,
-    unsigned int const                                     n_refine_space,
-    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
+    parallel::distributed::Triangulation<dim>         &triangulation,
+    unsigned int const                                n_refine_space,
+    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                 &periodic_faces)
+      Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
   /* --------------- Generate grid ------------------- */
   if(GRID_STRETCH_TYPE == GridStretchType::TransformGridCells)
@@ -693,7 +693,7 @@ void create_grid_and_set_boundary_conditions(
 
 
 template<int dim>
-void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > initial_solution_velocity;
@@ -712,7 +712,7 @@ void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field
 }
 
 template<int dim>
-void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
+void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
 {
   analytical_solution->velocity.reset(new ZeroFunction<dim>(dim));
   analytical_solution->pressure.reset(new ZeroFunction<dim>(1));
@@ -740,12 +740,12 @@ public:
     turb_ch_data(pp_data_turb_channel.turb_ch_data)
   {}
 
-  void setup(DoFHandler<dim> const                                  &dof_handler_velocity_in,
-             DoFHandler<dim> const                                  &dof_handler_pressure_in,
-             Mapping<dim> const                                     &mapping_in,
-             MatrixFree<dim,Number> const                           &matrix_free_data_in,
-             DofQuadIndexData const                                 &dof_quad_index_data_in,
-             std::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution_in)
+  void setup(DoFHandler<dim> const                      &dof_handler_velocity_in,
+             DoFHandler<dim> const                      &dof_handler_pressure_in,
+             Mapping<dim> const                         &mapping_in,
+             MatrixFree<dim,Number> const               &matrix_free_data_in,
+             DofQuadIndexData const                     &dof_quad_index_data_in,
+             std::shared_ptr<AnalyticalSolution<dim> >  analytical_solution_in)
   {
     // call setup function of base class
     PostProcessor<dim,fe_degree_u,fe_degree_p,Number>::setup(
@@ -787,7 +787,7 @@ public:
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim,Number> >
-construct_postprocessor(InputParametersNavierStokes<dim> const &param)
+construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
   pp_data.output_data = param.output_data;

@@ -16,6 +16,8 @@
 #include "../../incompressible_navier_stokes/infrastructure/fe_parameters.h"
 #include "../../incompressible_navier_stokes/xwall/SpaldingsLaw.h"
 
+namespace IncNS
+{
 
 /*
 template <int dim, int fe_degree, int fe_degree_xwall = 1, int n_q_points_1d = fe_degree+1,
@@ -1759,5 +1761,7 @@ public:
   }
 };
 
+
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_INFRASTRUCTURE_FE_EVALUATION_WRAPPER_H_ */

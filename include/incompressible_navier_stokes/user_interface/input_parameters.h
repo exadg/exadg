@@ -24,6 +24,8 @@
 #include "solvers_and_preconditioners/multigrid_input_parameters.h"
 #include "solvers_and_preconditioners/newton_solver_data.h"
 
+namespace IncNS
+{
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -587,12 +589,12 @@ struct PerturbationEnergyData
 
 
 template<int dim>
-class InputParametersNavierStokes
+class InputParameters
 {
 public:
 
   // standard constructor that initializes parameters
-  InputParametersNavierStokes()
+  InputParameters()
   :
     // MATHEMATICAL MODEL
     problem_type(ProblemType::Undefined),
@@ -2219,5 +2221,7 @@ public:
   // mean flow
   MeanVelocityCalculatorData<dim> mean_velocity_data;
 };
+
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_ */

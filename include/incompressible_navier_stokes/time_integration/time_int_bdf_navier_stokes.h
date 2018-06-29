@@ -154,6 +154,9 @@ private:
   Vector solution_interpolated;
 };
 
+namespace IncNS
+{
+
 template<int dim,typename Number> class PostProcessorBase;
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -162,7 +165,7 @@ class TimeIntBDFNavierStokes
 public:
   TimeIntBDFNavierStokes(std::shared_ptr<NavierStokesOperation>              navier_stokes_operation_in,
                          std::shared_ptr<PostProcessorBase<dim,value_type> > postprocessor_in,
-                         InputParametersNavierStokes<dim> const              &param_in,
+                         InputParameters<dim> const                          &param_in,
                          unsigned int const                                  n_refine_time_in,
                          bool const                                          use_adaptive_time_stepping)
     :
@@ -284,7 +287,7 @@ protected:
   virtual void resume_from_restart();
   void write_restart() const;
 
-  InputParametersNavierStokes<dim> const & param;
+  InputParameters<dim> const & param;
 
   // computation time
   Timer global_timer;
@@ -1049,6 +1052,8 @@ output_remaining_time() const
                   << std::endl;
     }
   }
+}
+
 }
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_NAVIER_STOKES_H_ */

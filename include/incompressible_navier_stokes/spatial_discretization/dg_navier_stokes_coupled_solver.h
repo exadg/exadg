@@ -13,6 +13,8 @@
 #include "../../incompressible_navier_stokes/spatial_discretization/projection_operators_and_solvers.h"
 #include "solvers_and_preconditioners/newton_solver.h"
 
+namespace IncNS
+{
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 class DGNavierStokesCoupled : public DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
@@ -23,7 +25,7 @@ public:
   typedef DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> THIS;
 
   DGNavierStokesCoupled(parallel::distributed::Triangulation<dim> const &triangulation,
-                        InputParametersNavierStokes<dim> const          &parameter)
+                        InputParameters<dim> const                      &parameter)
     :
     BASE(triangulation,parameter),
     sum_alphai_ui(nullptr),
@@ -38,10 +40,10 @@ public:
   virtual ~DGNavierStokesCoupled(){};
 
   virtual void setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
-                                                                             periodic_face_pairs,
-                      std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
-                      std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
-                      std::shared_ptr<FieldFunctionsNavierStokes<dim> >      field_functions);
+                                                                 periodic_face_pairs,
+                      std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
+                      std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure,
+                      std::shared_ptr<FieldFunctions<dim> >      field_functions);
 
   void setup_solvers(double const &scaling_factor_time_derivative_term = 1.0);
 
@@ -245,10 +247,10 @@ private:
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void DGNavierStokesCoupled<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
-                                                              periodic_face_pairs,
-       std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity_in,
-       std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure_in,
-       std::shared_ptr<FieldFunctionsNavierStokes<dim> >      field_functions_in)
+                                                  periodic_face_pairs,
+       std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity_in,
+       std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure_in,
+       std::shared_ptr<FieldFunctions<dim> >      field_functions_in)
 {
   BASE::setup(periodic_face_pairs,
               boundary_descriptor_velocity_in,
@@ -870,6 +872,9 @@ rhs_projection_add (parallel::distributed::Vector<Number> &dst,
       = std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator);
     proj_operator_div_and_conti_penalty->rhs_add(dst,eval_time);
   }
+}
+
+
 }
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_COUPLED_SOLVER_H_ */

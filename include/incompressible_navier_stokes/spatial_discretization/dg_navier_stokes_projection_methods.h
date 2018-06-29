@@ -14,7 +14,8 @@
 #include "../../poisson/multigrid_preconditioner_laplace.h"
 #include "solvers_and_preconditioners/iterative_solvers.h"
 
-
+namespace IncNS
+{
 
 /*
  *  Base class for projection type splitting methods such as
@@ -28,7 +29,7 @@ public:
   typedef DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> BASE;
 
   DGNavierStokesProjectionMethods(parallel::distributed::Triangulation<dim> const &triangulation,
-                                  InputParametersNavierStokes<dim> const          &parameter)
+                                  InputParameters<dim> const                      &parameter)
     :
     BASE(triangulation,parameter),
     use_optimized_projection_operator(false) // TODO
@@ -693,6 +694,9 @@ evaluate_nonlinear_residual_steady (parallel::distributed::Vector<Number>       
   // multiply by -1.0 since we use a formulation with symmetric saddle point matrix
   // with respect to pressure gradient term and velocity divergence term
   dst_p *= - 1.0;
+}
+
+
 }
 
 

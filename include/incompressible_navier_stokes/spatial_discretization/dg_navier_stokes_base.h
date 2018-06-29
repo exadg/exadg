@@ -33,8 +33,10 @@
 #include "solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
 
 
-
 using namespace dealii;
+
+namespace IncNS
+{
 
 //forward declarations
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
@@ -91,7 +93,7 @@ public:
 
   // Constructor
   DGNavierStokesBase(parallel::distributed::Triangulation<dim> const &triangulation,
-                     InputParametersNavierStokes<dim> const          &parameter)
+                     InputParameters<dim> const                      &parameter)
     :
     fe_u(new FESystem<dim>(FE_DGQ<dim>(fe_degree),dim)),
     fe_p(fe_degree_p),
@@ -114,10 +116,10 @@ public:
   void initialize_boundary_descriptor_laplace();
 
   virtual void setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
-                                                                             periodic_face_pairs,
-                      std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
-                      std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
-                      std::shared_ptr<FieldFunctionsNavierStokes<dim> >      field_functions);
+                                                                 periodic_face_pairs,
+                      std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
+                      std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure,
+                      std::shared_ptr<FieldFunctions<dim> >      field_functions);
 
   void apply_mass_matrix(parallel::distributed::Vector<Number>       &dst,
                          parallel::distributed::Vector<Number> const &src) const;
@@ -220,7 +222,7 @@ public:
     return divergence_operator_data;
   }
 
-  std::shared_ptr<FieldFunctionsNavierStokes<dim> > const get_field_functions() const
+  std::shared_ptr<FieldFunctions<dim> > const get_field_functions() const
   {
     return field_functions;
   }
@@ -337,9 +339,9 @@ protected:
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs;
 
-  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure;
-  std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions;
+  std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure;
+  std::shared_ptr<FieldFunctions<dim> > field_functions;
 
   // In case of projection type Navier-Stokes solvers this variable
   // is needed to solve the pressure Poisson equation.
@@ -350,7 +352,7 @@ protected:
   // In that case, the functions specified in BoundaryDescriptorLaplace are irrelevant.
   std::shared_ptr<BoundaryDescriptorLaplace<dim> > boundary_descriptor_laplace;
 
-  InputParametersNavierStokes<dim> const &param;
+  InputParameters<dim> const &param;
 
   MassMatrixOperatorData mass_matrix_operator_data;
   ViscousOperatorData<dim> viscous_operator_data;
@@ -407,10 +409,10 @@ initialize_boundary_descriptor_laplace()
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 setup (const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >
-                                                              periodic_face_pairs,
-       std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity_in,
-       std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure_in,
-       std::shared_ptr<FieldFunctionsNavierStokes<dim> >      field_functions_in)
+                                                  periodic_face_pairs,
+       std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity_in,
+       std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure_in,
+       std::shared_ptr<FieldFunctions<dim> >      field_functions_in)
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Setup Navier-Stokes operation ..." << std::endl << std::flush;
@@ -945,5 +947,6 @@ private:
   std::shared_ptr<Operator> underlying_operator;
 };
 
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_BASE_H_ */

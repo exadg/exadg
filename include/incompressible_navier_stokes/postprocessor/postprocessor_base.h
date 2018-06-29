@@ -17,6 +17,7 @@
 #include "../../postprocessor/output_data.h"
 #include "postprocessor/solution_field.h"
 
+
 /*
  *  This struct contains information about
  *  indices of dof_handlers and quadrature formulas
@@ -36,6 +37,8 @@ struct DofQuadIndexData
   unsigned int quad_index_velocity;
 };
 
+namespace IncNS
+{
 
 /*
  *  Interface class for postprocessor of the
@@ -53,12 +56,12 @@ public:
   /*
    * Setup function.
    */
-  virtual void setup(DoFHandler<dim> const                                 &dof_handler_velocity,
-                     DoFHandler<dim> const                                 &dof_handler_pressure,
-                     Mapping<dim> const                                    &mapping,
-                     MatrixFree<dim,Number> const                          &matrix_free_data,
-                     DofQuadIndexData const                                &dof_quad_index_data,
-                     std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution) = 0;
+  virtual void setup(DoFHandler<dim> const                     &dof_handler_velocity,
+                     DoFHandler<dim> const                     &dof_handler_pressure,
+                     Mapping<dim> const                        &mapping,
+                     MatrixFree<dim,Number> const              &matrix_free_data,
+                     DofQuadIndexData const                    &dof_quad_index_data,
+                     std::shared_ptr<AnalyticalSolution<dim> > analytical_solution) = 0;
 
 
   /*
@@ -76,5 +79,7 @@ public:
                                  int const                                     time_step_number = -1) = 0;
 };
 
+
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_BASE_H_ */

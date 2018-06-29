@@ -6,6 +6,8 @@
 
 #include "../include/incompressible_navier_stokes/xwall/SpaldingsLaw.h"
 
+using namespace IncNS;
+
 template <int dim>
 StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> &dof_handler_velocity,
                                           const Mapping<dim>    &mapping_in)

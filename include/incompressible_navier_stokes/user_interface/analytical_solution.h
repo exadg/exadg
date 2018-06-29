@@ -12,8 +12,11 @@
 
 using namespace dealii;
 
+namespace IncNS
+{
+
 template<int dim>
-struct AnalyticalSolutionNavierStokes
+struct AnalyticalSolution
 {
   /*
    *  velocity
@@ -26,5 +29,6 @@ struct AnalyticalSolutionNavierStokes
   std::shared_ptr<Function<dim> > pressure;
 };
 
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_ANALYTICAL_SOLUTION_H_ */
