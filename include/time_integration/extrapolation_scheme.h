@@ -136,7 +136,7 @@ set_adaptive_time_step (unsigned int const        current_order,
   AssertThrow(current_order <= order,
     ExcMessage("There is a logical error when updating the constants of the extrapolation scheme."));
 
-  AssertThrow(time_steps.size() == order,
+  AssertThrow(order <= time_steps.size(),
     ExcMessage("Length of vector containing time step sizes has to be equal to order of extrapolation scheme."));
 
   if(current_order == 1)   // EX 1

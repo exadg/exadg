@@ -158,7 +158,7 @@ update_time_integrator_constants()
 
   // if start_with_low_order == true (no analytical solution available) the pressure is unknown at t = t_0:
   // -> use no extrapolation (order=0, non-incremental) in first time step (the pressure solution is calculated in the second sub step)
-  // -> use first order extrapolation in second time steps, second order extrapolation in third time step, etc.
+  // -> use first order extrapolation in second time step, second order extrapolation in third time step, etc.
   if(this->adaptive_time_stepping == false)
   {
     extra_pressure_gradient.update(this->time_step_number-1);

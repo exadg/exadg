@@ -613,6 +613,7 @@ public:
     temporal_discretization(TemporalDiscretization::Undefined),
     treatment_of_convective_term(TreatmentOfConvectiveTerm::Undefined),
     calculation_of_time_step_size(TimeStepCalculation::Undefined),
+    adaptive_time_stepping_limiting_factor(1.2),
     max_velocity(-1.),
     cfl(-1.),
     cfl_oif(-1.),
@@ -1131,6 +1132,13 @@ public:
     print_parameter(pcout,
                     "Calculation of time step size",
                     str_calc_time_step[(int)calculation_of_time_step_size]);
+
+    if(calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
+    {
+      print_parameter(pcout,
+                      "Adaptive time stepping limiting factor",
+                      adaptive_time_stepping_limiting_factor);
+    }
 
 
     // here we do not print quantities such as max_velocity, cfl, time_step_size
@@ -1785,6 +1793,13 @@ public:
 
   // description: see enum declaration
   TimeStepCalculation  calculation_of_time_step_size;
+
+  // This parameter defines by which factor the time step size is allowed to increase
+  // or to decrease in case of adaptive time step, e.g., if one wants to avoid large
+  // jumps in the time step size. A factor of 1 implies that the time step size can not
+  // change at all, while a factor towards infinity implies that arbitrary changes in
+  // the time step size are allowed from one time step to the next.
+  double adaptive_time_stepping_limiting_factor;
 
   // maximum velocity needed when calculating the time step according to cfl-condition
   double max_velocity;

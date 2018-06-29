@@ -172,19 +172,6 @@ NavierStokesProblem(unsigned int const refine_steps_space1,
     use_adaptive_time_stepping = true;
   }
 
-  // TODO
-//  bool use_adaptive_time_stepping = false;
-//
-//  if(param_1.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
-//  {
-//    use_adaptive_time_stepping = true;
-//  }
-//
-//  AssertThrow(use_adaptive_time_stepping_1 == false && use_adaptive_time_stepping_2 == false,
-//      ExcMessage("Adaptive time stepping is not implemented for coupled two-domain solver. "
-//                 "When using adaptive time stepping for this solver, one has to make sure "
-//                 "that the same time step size is used for both domains."));
-
   AssertThrow(param_1.solver_type == SolverType::Unsteady && param_2.solver_type == SolverType::Unsteady,
       ExcMessage("This is an unsteady solver. Check input parameters."));
 
@@ -474,19 +461,23 @@ set_combined_time_step_size()
 {
   // Setup time integrator and get time step size
   double time_step_size_1 = 1.0, time_step_size_2 = 1.0;
+  double const EPSILON = 1.e-10;
 
   // DOMAIN 1
   if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    time_step_size_1 = time_integrator_coupled_1->get_time_step_size();
+    if(time_integrator_coupled_1->get_time() > param_1.start_time - EPSILON)
+      time_step_size_1 = time_integrator_coupled_1->get_time_step_size();
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    time_step_size_1 = time_integrator_dual_splitting_1->get_time_step_size();
+    if(time_integrator_dual_splitting_1->get_time() > param_1.start_time - EPSILON)
+      time_step_size_1 = time_integrator_dual_splitting_1->get_time_step_size();
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    time_step_size_1 = time_integrator_pressure_correction_1->get_time_step_size();
+    if(time_integrator_pressure_correction_1->get_time() > param_1.start_time - EPSILON)
+      time_step_size_1 = time_integrator_pressure_correction_1->get_time_step_size();
   }
   else
   {
@@ -495,15 +486,18 @@ set_combined_time_step_size()
   // DOMAIN 2
   if(this->param_2.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    time_step_size_2 = time_integrator_coupled_2->get_time_step_size();
+    if(time_integrator_coupled_2->get_time() > param_2.start_time - EPSILON)
+      time_step_size_2 = time_integrator_coupled_2->get_time_step_size();
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    time_step_size_2 = time_integrator_dual_splitting_2->get_time_step_size();
+    if(time_integrator_dual_splitting_2->get_time() > param_2.start_time - EPSILON)
+      time_step_size_2 = time_integrator_dual_splitting_2->get_time_step_size();
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    time_step_size_2 = time_integrator_pressure_correction_2->get_time_step_size();
+    if(time_integrator_pressure_correction_2->get_time() > param_2.start_time - EPSILON)
+      time_step_size_2 = time_integrator_pressure_correction_2->get_time_step_size();
   }
   else
   {
@@ -511,6 +505,8 @@ set_combined_time_step_size()
   }
 
   double time_step_size = std::min(time_step_size_1,time_step_size_2);
+
+  std::cout << "time step size = " << time_step_size << std::endl;
 
   // decrease time_step in order to exactly hit end_time
   if(use_adaptive_time_stepping == false)
@@ -656,6 +652,9 @@ run_timeloop()
 
     if(use_adaptive_time_stepping == true)
     {
+      // Both domains have already calculated the new, adaptive time step size individually in
+      // function advance_one_timestep(). Here, we only have to synchronize the time step size for
+      // both domains.
       set_combined_time_step_size();
     }
   }
