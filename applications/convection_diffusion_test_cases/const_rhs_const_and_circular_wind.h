@@ -29,8 +29,8 @@ const unsigned int DIMENSION = 2;
 const unsigned int FE_DEGREE = 4;
 
 // set the number of refine levels for spatial convergence tests
-const unsigned int REFINE_STEPS_SPACE_MIN = 1;
-const unsigned int REFINE_STEPS_SPACE_MAX = 4;
+const unsigned int REFINE_STEPS_SPACE_MIN = 3;
+const unsigned int REFINE_STEPS_SPACE_MAX = 3;
 
 // set the number of refine levels for temporal convergence tests
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
@@ -47,7 +47,7 @@ void ConvDiff::InputParameters::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Steady;
-  equation_type = EquationType::Diffusion; //ConvectionDiffusion;
+  equation_type = EquationType::ConvectionDiffusion;
   right_hand_side = true;
 
   // PHYSICAL QUANTITIES
@@ -78,7 +78,8 @@ void ConvDiff::InputParameters::set_input_parameters()
   rel_tol = 1.e-8;
   max_iter = 1e3;
   max_n_tmp_vectors = 100;
-  preconditioner = Preconditioner::PointJacobi; //MultigridConvectionDiffusion; //PointJacobi; //BlockJacobi; //MultigridDiffusion; //MultigridConvectionDiffusion;
+  preconditioner = Preconditioner::Multigrid; //PointJacobi; //BlockJacobi; //MultigridDiffusion; //MultigridConvectionDiffusion;
+  mg_operator_type = MultigridOperatorType::ReactionDiffusion;
   // MG smoother
   multigrid_data.smoother = MultigridSmoother::Chebyshev; //Jacobi; //GMRES; //Chebyshev; //ChebyshevNonsymmetricOperator;
 
@@ -112,7 +113,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   output_data.output_folder = "output_conv_diff/";
   output_data.output_name = "const_wind_const_rhs";
   output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time);// /20;
+  output_data.output_interval_time = (end_time-start_time);
   output_data.number_of_patches = FE_DEGREE;
 
   error_data.analytical_solution_available = false;

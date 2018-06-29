@@ -65,7 +65,8 @@ void ConvDiff::InputParameters::set_input_parameters()
   abs_tol = 1.e-20;
   rel_tol = 1.e-6;
   max_iter = 1e4;
-  preconditioner = Preconditioner::MultigridDiffusion;
+  preconditioner = Preconditioner::Multigrid;
+  mg_operator_type = MultigridOperatorType::ReactionDiffusion;
   // use default parameters of multigrid preconditioner
 
   // NUMERICAL PARAMETERS

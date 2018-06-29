@@ -87,29 +87,14 @@ public:
       preconditioner.reset(new BlockJacobiPreconditioner<value_type,
           ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,value_type> >(conv_diff_operator));
     }
-    else if(param.preconditioner == ConvDiff::Preconditioner::MultigridDiffusion)
-    {
-      MultigridData mg_data;
-      mg_data = param.multigrid_data;
-
-      typedef float Number;
-
-      typedef MyMultigridPreconditionerScalarDiff<dim,value_type,
-          ConvDiff::HelmholtzOperator<dim,fe_degree,Number>,
-          ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,value_type> > MULTIGRID;
-
-      preconditioner.reset(new MULTIGRID());
-      std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
-      mg_preconditioner->initialize(mg_data,dof_handler,mapping,conv_diff_operator,this->periodic_face_pairs);
-    }
-    else if(param.preconditioner == ConvDiff::Preconditioner::MultigridConvectionDiffusion)
+    else if(param.preconditioner == ConvDiff::Preconditioner::Multigrid)
     {
        MultigridData mg_data;
        mg_data = param.multigrid_data;
 
        typedef float Number;
 
-       typedef MyMultigridPreconditionerScalarConvDiff<dim,value_type,
+       typedef ConvDiff::MultigridPreconditioner<dim,value_type,
            ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,Number>,
            ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,value_type> > MULTIGRID;
 
@@ -123,8 +108,7 @@ public:
                   param.preconditioner == ConvDiff::Preconditioner::InverseMassMatrix ||
                   param.preconditioner == ConvDiff::Preconditioner::PointJacobi ||
                   param.preconditioner == ConvDiff::Preconditioner::BlockJacobi ||
-                  param.preconditioner == ConvDiff::Preconditioner::MultigridDiffusion ||
-                  param.preconditioner == ConvDiff::Preconditioner::MultigridConvectionDiffusion,
+                  param.preconditioner == ConvDiff::Preconditioner::Multigrid,
                   ExcMessage("Specified preconditioner is not implemented!"));
     }
 
@@ -453,6 +437,8 @@ private:
     }
 
     conv_diff_operator_data.dof_index = 0;
+
+    conv_diff_operator_data.mg_operator_type = param.mg_operator_type;
 
     conv_diff_operator.initialize(data,
                                   conv_diff_operator_data,

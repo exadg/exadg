@@ -22,7 +22,7 @@
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 2;
+const unsigned int FE_DEGREE = 4;
 
 // set the number of refine levels for spatial convergence tests
 const unsigned int REFINE_STEPS_SPACE_MIN = 3;
@@ -46,13 +46,13 @@ void ConvDiff::InputParameters::set_input_parameters()
   diffusivity = 0.0;
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDF; //ExplRK;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::ExplicitOIF;
+  temporal_discretization = TemporalDiscretization::BDF; //BDF; //ExplRK;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; //Explicit; //ExplicitOIF;
   order_time_integrator = 2; // instabilities for BDF 3 and 4
   start_with_low_order = false;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepMaxEfficiency; //ConstTimeStepUserSpecified; //ConstTimeStepCFL;
   time_step_size = 1.e-2;
-  cfl_number =1.25;
+  cfl_number = 0.2; //1.25;
   cfl_oif = cfl_number/3.0;
   diffusion_number = 0.01;
   c_eff = 1.0e0;
@@ -70,7 +70,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   rel_tol = 1.e-8;
   max_iter = 1e3;
   max_n_tmp_vectors = 100;
-  preconditioner = Preconditioner::MultigridConvectionDiffusion; //MultigridDiffusion; //None; //PointJacobi; //BlockJacobi; //InverseMassMatrix; //MultigridDiffusion; //MultigridConvectionDiffusion;
+  preconditioner = Preconditioner::BlockJacobi; //MultigridConvectionDiffusion; //MultigridDiffusion; //None; //PointJacobi; //BlockJacobi; //InverseMassMatrix; //MultigridDiffusion; //MultigridConvectionDiffusion;
   // MG smoother
   multigrid_data.smoother = MultigridSmoother::Jacobi; //GMRES; //Chebyshev; //ChebyshevNonsymmetricOperator;
 
