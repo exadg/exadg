@@ -27,7 +27,7 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 7;
+unsigned int const FE_DEGREE_VELOCITY = 6;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -35,8 +35,8 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 3;
-unsigned int const REFINE_STEPS_SPACE_MAX = 3;
+unsigned int const REFINE_STEPS_SPACE_MIN = 0;
+unsigned int const REFINE_STEPS_SPACE_MAX = 5;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -46,7 +46,7 @@ unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 const double VISCOSITY = 1.e-2;
 
 template<int dim>
-void InputParametersNavierStokes<dim>::set_input_parameters()
+void InputParameters<dim>::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
@@ -56,17 +56,18 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // PHYSICAL QUANTITIES
   start_time = 0.0;
-  end_time = 10.0;
-  viscosity = VISCOSITY; // VISCOSITY is also needed somewhere else
+  end_time = 5.0;
+  viscosity = VISCOSITY;
 
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
   temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
   max_velocity = 1.0;
-  cfl = 5.0e-1;
+  cfl = 0.025;
+  cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-4;
   max_number_of_time_steps = 1e8;
   order_time_integrator = 3; // 1; // 2; // 3;
@@ -94,6 +95,16 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // special case: pure DBC's
   pure_dirichlet_bc = true;
+  adjust_pressure_level = AdjustPressureLevel::ApplyAnalyticalMeanValue;
+
+  // div-div and continuity penalty
+  use_divergence_penalty = true;
+  divergence_penalty_factor = 1.0e0;
+  use_continuity_penalty = true;
+  continuity_penalty_use_boundary_data = false;
+  continuity_penalty_components = ContinuityPenaltyComponents::Normal;
+  type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
+  continuity_penalty_factor = divergence_penalty_factor;
 
   // PROJECTION METHODS
 
@@ -102,7 +113,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
   multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_pressure = 1.e-12;
-  rel_tol_pressure = 1.e-12;
+  rel_tol_pressure = 1.e-6;
 
   // stability in the limit of small time steps
   use_approach_of_ferrer = false;
@@ -111,8 +122,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // projection step
   solver_projection = SolverProjection::PCG;
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
-  abs_tol_projection = 1.e-20;
-  rel_tol_projection = 1.e-12;
+  abs_tol_projection = 1.e-12;
+  rel_tol_projection = 1.e-6;
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
 
@@ -137,10 +148,10 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // viscous step
   solver_viscous = SolverViscous::PCG;
-  preconditioner_viscous = PreconditionerViscous::GeometricMultigrid;
+  preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
   multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_viscous = 1.e-12;
-  rel_tol_viscous = 1.e-12;
+  rel_tol_viscous = 1.e-6;
 
 
   // PRESSURE-CORRECTION SCHEME
@@ -213,7 +224,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // write output for visualization of results
-  output_data.write_output = false; //true;
+  output_data.write_output = false;
   output_data.output_folder = "output/taylor_vortex/";
   output_data.output_name = "taylor_vortex";
   output_data.output_start_time = start_time;
@@ -224,7 +235,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // calculation of error
   error_data.analytical_solution_available = true;
   error_data.error_calc_start_time = start_time;
-  error_data.error_calc_interval_time = output_data.output_interval_time;
+  error_data.error_calc_interval_time = end_time - start_time;
 
   // output of solver information
   output_solver_info_every_timesteps = 1e5;
@@ -438,37 +449,50 @@ template<int dim>
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>              &triangulation,
-    unsigned int const                                     n_refine_space,
-    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
+    parallel::distributed::Triangulation<dim>         &triangulation,
+    unsigned int const                                n_refine_space,
+    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                 &periodic_faces)
+      Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
   const double left = -1.0, right = 1.0;
   GridGenerator::hyper_cube(triangulation,left,right);
+
+  // use Dirichlet boundary conditions
+//  // all boundaries have ID = 0 by default -> Dirichlet boundaries
+//  // fill boundary descriptor velocity
+//  std::shared_ptr<Function<dim> > analytical_solution_velocity;
+//  analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
+//  // Dirichlet boundaries: ID = 0
+//  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
+//                                                    (0,analytical_solution_velocity));
+//
+//  // fill boundary descriptor pressure
+//  std::shared_ptr<Function<dim> > pressure_bc_dudt;
+//  pressure_bc_dudt.reset(new PressureBC_dudt<dim>());
+//  // Neumann boundaries: ID = 0
+//  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
+//                                                    (0,pressure_bc_dudt));
+
+  // use periodic boundary conditions
+  // x-direction
+  triangulation.begin()->face(0)->set_all_boundary_ids(0+10);
+  triangulation.begin()->face(1)->set_all_boundary_ids(1+10);
+  // y-direction
+  triangulation.begin()->face(2)->set_all_boundary_ids(2+10);
+  triangulation.begin()->face(3)->set_all_boundary_ids(3+10);
+
+  GridTools::collect_periodic_faces(triangulation, 0+10, 1+10, 0, periodic_faces);
+  GridTools::collect_periodic_faces(triangulation, 2+10, 3+10, 1, periodic_faces);
+  triangulation.add_periodicity(periodic_faces);
+
   triangulation.refine_global(n_refine_space);
-
-  // all boundaries have ID = 0 by default -> Dirichlet boundaries
-
-  // fill boundary descriptor velocity
-  std::shared_ptr<Function<dim> > analytical_solution_velocity;
-  analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
-  // Dirichlet boundaries: ID = 0
-  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                    (0,analytical_solution_velocity));
-
-  // fill boundary descriptor pressure
-  std::shared_ptr<Function<dim> > pressure_bc_dudt;
-  pressure_bc_dudt.reset(new PressureBC_dudt<dim>());
-  // Neumann boundaries: ID = 0
-  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                    (0,pressure_bc_dudt));
 }
 
 
 template<int dim>
-void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > analytical_solution_velocity;
@@ -486,7 +510,7 @@ void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field
 }
 
 template<int dim>
-void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
+void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
 {
   analytical_solution->velocity.reset(new AnalyticalSolutionVelocity<dim>());
   analytical_solution->pressure.reset(new AnalyticalSolutionPressure<dim>());
@@ -496,7 +520,7 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim>
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim,Number> >
-construct_postprocessor(InputParametersNavierStokes<dim> const &param)
+construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
 

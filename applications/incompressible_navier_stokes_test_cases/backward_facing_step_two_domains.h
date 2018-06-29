@@ -91,11 +91,11 @@ double const END_TIME = 6.0;
 unsigned int const SAMPLE_EVERY_TIMESTEPS = 10;
 
 // postprocessing and output
-QuantityStatistics QUANTITY_VELOCITY;
+QuantityStatistics<DIMENSION> QUANTITY_VELOCITY;
 QuantityStatisticsSkinFriction<3> QUANTITY_SKIN_FRICTION;
-QuantityStatistics QUANTITY_REYNOLDS;
-QuantityStatistics QUANTITY_PRESSURE;
-QuantityStatisticsPressureCoefficient<3> QUANTITY_PRESSURE_COEFF;
+QuantityStatistics<DIMENSION> QUANTITY_REYNOLDS;
+QuantityStatistics<DIMENSION> QUANTITY_PRESSURE;
+QuantityStatisticsPressureCoefficient<DIMENSION> QUANTITY_PRESSURE_COEFF;
 const unsigned int N_POINTS_LINE = 101;
 
 // output folders and names
@@ -144,7 +144,7 @@ void initialize_velocity_values()
 
 // we do not need this function here (but have to implement it)
 template<int dim>
-void InputParametersNavierStokes<dim>::set_input_parameters()
+void InputParameters<dim>::set_input_parameters()
 {
 
 }
@@ -158,7 +158,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
  *  Most of the input parameters are the same for both domains!
  */
 template<int dim>
-void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const domain_id)
+void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
 {
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
@@ -197,7 +197,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
 
   // variant Direct allows to use larger time step
   // sizes due to CFL condition at inflow boundary
-  imposition_of_dirichlet_bc_convective = TypeDirichletBCs::Direct; //Mirror;
+  imposition_of_dirichlet_bc_convective = TypeDirichletBCs::Mirror;
 
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
@@ -366,6 +366,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
 
     // turbulent channel statistics
     turb_ch_data.calculate_statistics = true;
+    turb_ch_data.cells_are_stretched = use_grid_stretching_in_y_direction;
     turb_ch_data.sample_start_time = SAMPLE_START_TIME;
     turb_ch_data.sample_end_time = END_TIME;
     turb_ch_data.sample_every_timesteps = SAMPLE_EVERY_TIMESTEPS;
@@ -374,7 +375,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
 
     // use turbulent channel data to prescribe inflow velocity for BFS
     inflow_data.write_inflow_data = true;
-    inflow_data.x_coordinate = X1_COORDINATE_OUTFLOW_CHANNEL;
+    inflow_data.normal_direction = 0; /* x-direction */
+    inflow_data.normal_coordinate = X1_COORDINATE_OUTFLOW_CHANNEL;
     inflow_data.n_points_y = N_POINTS_Y;
     inflow_data.n_points_z = N_POINTS_Z;
     inflow_data.y_values = &Y_VALUES;
@@ -396,15 +398,14 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
     // output of solver information
     output_solver_info_every_timesteps = OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS;
 
-    // line plot data
+    // line plot data: calculate statistics along lines
     line_plot_data.write_output = true;
-
-    // statistics computations for BFS
-    bfs_statistics.calculate_statistics = true;
-    bfs_statistics.sample_start_time = SAMPLE_START_TIME;
-    bfs_statistics.sample_end_time = END_TIME;
-    bfs_statistics.sample_every_timesteps = SAMPLE_EVERY_TIMESTEPS;
-    bfs_statistics.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME_2;
+    line_plot_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME_2;
+    line_plot_data.statistics_data.calculate_statistics = true;
+    line_plot_data.statistics_data.sample_start_time = SAMPLE_START_TIME;
+    line_plot_data.statistics_data.sample_end_time = END_TIME;
+    line_plot_data.statistics_data.sample_every_timesteps = SAMPLE_EVERY_TIMESTEPS;
+    line_plot_data.statistics_data.write_output_every_timesteps = SAMPLE_EVERY_TIMESTEPS*10;
 
     // mean velocity
     QUANTITY_VELOCITY.type = QuantityType::Velocity;
@@ -548,19 +549,6 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
     line_plot_data.lines.push_back(Cp_1);
     line_plot_data.lines.push_back(Cp_2);
     line_plot_data.lines.push_back(Cf);
-
-    // computation of mean centerline velocity
-    /*
-    mean_velocity_data.calculate_statistics = true;
-    mean_velocity_data.sample_start_time = SAMPLE_START_TIME;
-    mean_velocity_data.sample_end_time = END_TIME;
-    mean_velocity_data.sample_every_timesteps = SAMPLE_EVERY_TIMESTEPS;
-    mean_velocity_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME_2;
-    Tensor<1,dim> normal_vector; normal_vector[0] = 1;
-    mean_velocity_data.normal_vector = normal_vector;
-    mean_velocity_data.boundary_IDs.insert(2);
-    mean_velocity_data.area = HEIGHT_CHANNEL * WIDTH_CHANNEL;
-    */
   }
 }
 
@@ -865,12 +853,12 @@ private:
 
 template<int dim>
 void create_grid_and_set_boundary_conditions_1(
-    parallel::distributed::Triangulation<dim>              &triangulation,
-    unsigned int const                                     n_refine_space,
-    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
+    parallel::distributed::Triangulation<dim>         &triangulation,
+    unsigned int const                                n_refine_space,
+    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                 &periodic_faces)
+      Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
   /* --------------- Generate grid ------------------- */
   AssertThrow(dim==3, ExcMessage("NotImplemented"));
@@ -949,12 +937,12 @@ void create_grid_and_set_boundary_conditions_1(
 
 template<int dim>
 void create_grid_and_set_boundary_conditions_2(
-    parallel::distributed::Triangulation<dim>              &triangulation,
-    unsigned int const                                     n_refine_space,
-    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
+    parallel::distributed::Triangulation<dim>         &triangulation,
+    unsigned int const                                n_refine_space,
+    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                 &periodic_faces)
+      Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
   /* --------------- Generate grid ------------------- */
   if(dim==2)
@@ -1071,7 +1059,7 @@ void create_grid_and_set_boundary_conditions_2(
 
 
 template<int dim>
-void set_field_functions_1(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+void set_field_functions_1(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > initial_solution_velocity;
@@ -1091,7 +1079,7 @@ void set_field_functions_1(std::shared_ptr<FieldFunctionsNavierStokes<dim> > fie
 }
 
 template<int dim>
-void set_field_functions_2(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+void set_field_functions_2(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > initial_solution_velocity;
@@ -1112,7 +1100,7 @@ void set_field_functions_2(std::shared_ptr<FieldFunctionsNavierStokes<dim> > fie
 }
 
 template<int dim>
-void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
+void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
 {
   analytical_solution->velocity.reset(new ZeroFunction<dim>(dim));
   analytical_solution->pressure.reset(new ZeroFunction<dim>(1));
@@ -1122,7 +1110,6 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim>
 
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 #include "../../include/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.h"
-#include "../../include/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h"
 #include "../../include/incompressible_navier_stokes/postprocessor/statistics_manager.h"
 #include "../../include/incompressible_navier_stokes/postprocessor/inflow_data_calculator.h"
 
@@ -1132,9 +1119,7 @@ struct PostProcessorDataBFS
   PostProcessorData<dim> pp_data;
   TurbulentChannelData turb_ch_data;
   InflowData<dim> inflow_data;
-  BFSStatisticsData bfs_data;
   LinePlotData<dim> line_plot_data;
-  MeanVelocityCalculatorData<dim> mean_velocity_data;
 };
 
 template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
@@ -1146,18 +1131,15 @@ public:
     PostProcessor<dim,fe_degree_u,fe_degree_p, Number>(pp_data_bfs_in.pp_data),
     write_final_output(true),
     write_final_output_lines(true),
-    write_final_output_mean_velocity(true),
     pp_data_bfs(pp_data_bfs_in)
-  {
-    inflow_data_calculator.reset(new InflowDataCalculator<dim,Number>(pp_data_bfs_in.inflow_data));
-  }
+  {}
 
-  void setup(DoFHandler<dim> const                                  &dof_handler_velocity_in,
-             DoFHandler<dim> const                                  &dof_handler_pressure_in,
-             Mapping<dim> const                                     &mapping_in,
-             MatrixFree<dim,Number> const                           &matrix_free_data_in,
-             DofQuadIndexData const                                 &dof_quad_index_data_in,
-             std::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution_in)
+  void setup(DoFHandler<dim> const                      &dof_handler_velocity_in,
+             DoFHandler<dim> const                      &dof_handler_pressure_in,
+             Mapping<dim> const                         &mapping_in,
+             MatrixFree<dim,Number> const               &matrix_free_data_in,
+             DofQuadIndexData const                     &dof_quad_index_data_in,
+             std::shared_ptr<AnalyticalSolution<dim> >  analytical_solution_in)
   {
     // call setup function of base class
     PostProcessor<dim,fe_degree_u,fe_degree_p,Number>::setup(
@@ -1169,33 +1151,20 @@ public:
         analytical_solution_in);
 
     // turbulent channel statistics for precursor simulation
-    if(pp_data_bfs.turb_ch_data.calculate_statistics == true)
-    {
-      // perform setup of turbulent channel related things
-      statistics_turb_ch.reset(new StatisticsManager<dim>(dof_handler_velocity_in,mapping_in));
-      bool volume_manifold_is_used = use_grid_stretching_in_y_direction;
-      statistics_turb_ch->setup(&grid_transform_turb_channel, volume_manifold_is_used);
-    }
+    statistics_turb_ch.reset(new StatisticsManager<dim>(dof_handler_velocity_in,mapping_in));
+    statistics_turb_ch->setup(&grid_transform_turb_channel,pp_data_bfs.turb_ch_data);
 
     // inflow data
     if(pp_data_bfs.inflow_data.write_inflow_data == true)
     {
+      inflow_data_calculator.reset(new InflowDataCalculator<dim,Number>(pp_data_bfs.inflow_data));
       inflow_data_calculator->setup(dof_handler_velocity_in,mapping_in);
     }
 
-    // statistics calculation for backward facing step
-    if(pp_data_bfs.bfs_data.calculate_statistics == true)
-    {
-      statistics_bfs.reset(new LineStatisticsCalculator<dim>(dof_handler_velocity_in, dof_handler_pressure_in, mapping_in));
-      statistics_bfs->setup(pp_data_bfs.line_plot_data);
-    }
-
-    // computation of mean velocity
-    if(pp_data_bfs.mean_velocity_data.calculate_statistics == true)
-    {
-      centerline_velocity.reset(new MeanVelocityCalculator<dim,fe_degree_u,Number>(
-          matrix_free_data_in, dof_quad_index_data_in,pp_data_bfs.mean_velocity_data));
-    }
+    // evaluation of characteristic quantities along lines
+    line_plot_calculator_statistics.reset(new LinePlotCalculatorStatisticsHomogeneousDirection<dim>(
+        dof_handler_velocity_in, dof_handler_pressure_in, mapping_in));
+    line_plot_calculator_statistics->setup(pp_data_bfs.line_plot_data);
   }
 
   void do_postprocessing(parallel::distributed::Vector<Number> const &velocity,
@@ -1215,32 +1184,9 @@ public:
         time,
         time_step_number);
 
-    // EPSILON: small number which is much smaller than the time step size
-    const double EPSILON = 1.0e-10;
-    if(pp_data_bfs.turb_ch_data.calculate_statistics == true)
-    {
-      if((time > pp_data_bfs.turb_ch_data.sample_start_time-EPSILON) &&
-         (time < pp_data_bfs.turb_ch_data.sample_end_time+EPSILON) &&
-         (time_step_number % pp_data_bfs.turb_ch_data.sample_every_timesteps == 0))
-      {
-        // evaluate statistics
-        statistics_turb_ch->evaluate(velocity);
 
-        // write intermediate output
-        if(time_step_number % (pp_data_bfs.turb_ch_data.sample_every_timesteps * 100) == 0)
-        {
-          statistics_turb_ch->write_output(pp_data_bfs.turb_ch_data.filename_prefix,
-                                           pp_data_bfs.turb_ch_data.viscosity);
-        }
-      }
-      // write final output
-      if((time > pp_data_bfs.turb_ch_data.sample_end_time-EPSILON) && write_final_output)
-      {
-        statistics_turb_ch->write_output(pp_data_bfs.turb_ch_data.filename_prefix,
-                                         pp_data_bfs.turb_ch_data.viscosity);
-        write_final_output = false;
-      }
-    }
+    // turbulent channel statistics
+    statistics_turb_ch->evaluate(velocity,time,time_step_number);
 
     // inflow data
     if(pp_data_bfs.inflow_data.write_inflow_data == true)
@@ -1248,70 +1194,20 @@ public:
       inflow_data_calculator->calculate(velocity);
     }
 
-   // calculate statistics for a set of lines
-   if(pp_data_bfs.bfs_data.calculate_statistics == true)
-   {
-     if((time > pp_data_bfs.bfs_data.sample_start_time-EPSILON) &&
-        (time < pp_data_bfs.bfs_data.sample_end_time+EPSILON) &&
-        (time_step_number % pp_data_bfs.bfs_data.sample_every_timesteps == 0))
-     {
-       // evaluate statistics
-       statistics_bfs->evaluate(velocity, pressure);
-
-       // write intermediate output
-       if(time_step_number % (pp_data_bfs.bfs_data.sample_every_timesteps) == 0)
-       {
-         statistics_bfs->write_output(pp_data_bfs.bfs_data.filename_prefix);
-       }
-     }
-     // write final output
-     if((time > pp_data_bfs.bfs_data.sample_end_time-EPSILON) && write_final_output_lines)
-     {
-       statistics_bfs->write_output(pp_data_bfs.bfs_data.filename_prefix);
-       write_final_output_lines = false;
-     }
-   }
-
-   // calculate mean centerline velocity
-   if(pp_data_bfs.mean_velocity_data.calculate_statistics == true)
-   {
-     if((time > pp_data_bfs.mean_velocity_data.sample_start_time-EPSILON) &&
-        (time < pp_data_bfs.mean_velocity_data.sample_end_time+EPSILON) &&
-        (time_step_number % pp_data_bfs.mean_velocity_data.sample_every_timesteps == 0))
-     {
-       // evaluate statistics
-       centerline_velocity->evaluate(velocity);
-
-       // write intermediate output
-       if(time_step_number % (pp_data_bfs.mean_velocity_data.sample_every_timesteps) == 0)
-       {
-       centerline_velocity->write_output(pp_data_bfs.mean_velocity_data.filename_prefix);
-       }
-     }
-     // write final output
-     if((time > pp_data_bfs.mean_velocity_data.sample_end_time-EPSILON) && write_final_output_mean_velocity)
-     {
-       centerline_velocity->write_output(pp_data_bfs.mean_velocity_data.filename_prefix);
-       write_final_output_mean_velocity = false;
-     }
-   }
+    line_plot_calculator_statistics->evaluate(velocity,pressure,time,time_step_number);
   }
 
   bool write_final_output;
   bool write_final_output_lines;
-  bool write_final_output_mean_velocity;
   PostProcessorDataBFS<dim> pp_data_bfs;
   std::shared_ptr<StatisticsManager<dim> > statistics_turb_ch;
   std::shared_ptr<InflowDataCalculator<dim, Number> > inflow_data_calculator;
-  std::shared_ptr<LineStatisticsCalculator<dim> > statistics_bfs;
-  std::shared_ptr<MeanVelocityCalculator<dim,fe_degree_u,Number> > centerline_velocity;
+  std::shared_ptr<LinePlotCalculatorStatisticsHomogeneousDirection<dim> > line_plot_calculator_statistics;
 };
-
-#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim,Number> >
-construct_postprocessor(InputParametersNavierStokes<dim> const &param)
+construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
   pp_data.output_data = param.output_data;
@@ -1324,9 +1220,7 @@ construct_postprocessor(InputParametersNavierStokes<dim> const &param)
   pp_data_bfs.pp_data = pp_data;
   pp_data_bfs.turb_ch_data = param.turb_ch_data;
   pp_data_bfs.inflow_data = param.inflow_data;
-  pp_data_bfs.bfs_data = param.bfs_statistics;
   pp_data_bfs.line_plot_data = param.line_plot_data;
-  pp_data_bfs.mean_velocity_data = param.mean_velocity_data;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
   pp.reset(new PostProcessorBFS<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,Number>(pp_data_bfs));

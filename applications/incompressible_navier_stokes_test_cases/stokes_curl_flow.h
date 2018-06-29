@@ -25,8 +25,8 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 5;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
+unsigned int const FE_DEGREE_VELOCITY = 4;
+unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
 // set xwall specific parameters
 unsigned int const FE_DEGREE_XWALL = 1;
@@ -41,14 +41,10 @@ unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = 0; //REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
-const double VISCOSITY = 1.0e-6;
-
-// perform stability analysis and compute eigenvalue spectrum
-// For this analysis one has to use the BDF1 scheme and homogeneous boundary conditions!!!
-bool stability_analysis = true;
+const double VISCOSITY = 1.0e-5;
 
 template<int dim>
-void InputParametersNavierStokes<dim>::set_input_parameters()
+void InputParameters<dim>::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Steady;
@@ -64,21 +60,21 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  solver_type = SolverType::Steady;
-  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFPressureCorrection; //BDFCoupledSolution; //BDFDualSplittingScheme;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+  solver_type = SolverType::Unsteady;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution; //BDFDualSplittingScheme;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
   max_velocity = 1.0;
   cfl = 2.0e-1;
-  time_step_size = 1.e0;
+  time_step_size = 0.1;
   max_number_of_time_steps = 1e8;
   order_time_integrator = 1; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
 
   //pseudo-timestepping
   convergence_criterion_steady_problem = ConvergenceCriterionSteadyProblem::SolutionIncrement; //ResidualSteadyNavierStokes;
-  abs_tol_steady = 1e-8; //1.e-10;
-  rel_tol_steady = 1e-8; //1.e-8;
+  abs_tol_steady = 1e-8;
+  rel_tol_steady = 1e-8;
  
   // SPATIAL DISCRETIZATION
 
@@ -93,16 +89,26 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   penalty_term_div_formulation = PenaltyTermDivergenceFormulation::NotSymmetrized;
 
   // gradient term
-  gradp_integrated_by_parts = true; //false; //true;
-  gradp_use_boundary_data = true; //false; //true;
+  gradp_integrated_by_parts = true;
+  gradp_use_boundary_data = true;
 
   // divergence term
-  divu_integrated_by_parts = true; //false; //true;
-  divu_use_boundary_data = true; //false; //true;
+  divu_integrated_by_parts = true;
+  divu_use_boundary_data = true;
 
   // special case: pure DBC's
   pure_dirichlet_bc = true;
   adjust_pressure_level = AdjustPressureLevel::ApplyZeroMeanValue; // ApplyZeroMeanValue; //ApplyAnalyticalSolutionInPoint;
+
+  // div-div and continuity penalty
+  use_divergence_penalty = true;
+  divergence_penalty_factor = 1.0e1;
+  use_continuity_penalty = true;
+  continuity_penalty_factor = divergence_penalty_factor;
+  continuity_penalty_components = ContinuityPenaltyComponents::Normal;
+  continuity_penalty_use_boundary_data = true;
+  type_penalty_parameter = TypePenaltyParameter::ViscousAndConvectiveTerms;
+  add_penalty_terms_to_monolithic_system = true;
 
   // PROJECTION METHODS
 
@@ -174,7 +180,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
 
   // formulation
   order_pressure_extrapolation = order_time_integrator-1;
-  rotational_formulation = false; //TODO //true;
+  rotational_formulation = true;
 
 
   // COUPLED NAVIER-STOKES SOLVER
@@ -209,12 +215,12 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
 
   // write output for visualization of results
-  output_data.write_output = false; //true;
-  output_data.output_folder = "output/stokes_shahbazi/";
-  output_data.output_name = "shahbazi";
+  output_data.write_output = true;
+  output_data.output_folder = "output/stokes_curl_flow/vtu/";
+  output_data.output_name = "stokes_curl_flow";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time); // /10;
-  output_data.write_divergence = false;
+  output_data.write_divergence = true;
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error
@@ -268,15 +274,14 @@ template<int dim>
 double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
                                               const unsigned int component) const
 {
-  double t = this->get_time();
   double result = 0.0;
 
   double x = p[0];
   double y = p[1];
   if (component == 0)
-    result = x*x*(1-x)*(1-x) *(2*y*(1-y)*(1-y) - 2* y*y*(1-y));
+    result = x*x*(1-x)*(1-x)*(2*y*(1-y)*(1-y) - 2*y*y*(1-y));
   else if (component == 1)
-    result = -1*y*y*(1-y)*(1-y) *(2*x*(1-x)*(1-x) - 2*x*x*(1-x));
+    result = -1*y*y*(1-y)*(1-y)*(2*x*(1-x)*(1-x) - 2*x*x*(1-x));
   
   return result;
 }
@@ -313,7 +318,6 @@ template<int dim>
 double AnalyticalSolutionPressure<dim>::value(const Point<dim>    &p,
                                               const unsigned int  /* component */) const
 {
-  double t = this->get_time();
   double result = 0.0;
 
   result = std::pow(p[0],5.0) + std::pow(p[1],5.0) - 1.0/3.0;
@@ -384,29 +388,9 @@ public:
 
 template<int dim>
 double PressureBC_dudt<dim>::value(const Point<dim>   &p,
-                                   const unsigned int component) const
+                                   const unsigned int /*component*/) const
 {
-  double t = this->get_time();
   double result = 0.0;
-
-  const double a = 2.883356;
-  const double lambda = VISCOSITY*(1.+a*a);
-
-  double exp_t = std::exp(-lambda*t);
-  double sin_x = std::sin(p[0]);
-  double cos_x = std::cos(p[0]);
-  double cos_a = std::cos(a);
-  double sin_ay = std::sin(a*p[1]);
-  double cos_ay = std::cos(a*p[1]);
-  double sinh_y = std::sinh(p[1]);
-  double cosh_y = std::cosh(p[1]);
-  if (component == 0)
-    result = -lambda*exp_t*sin_x*(a*sin_ay-cos_a*sinh_y);
-  else if (component == 1)
-    result = -lambda*exp_t*cos_x*(cos_ay+cos_a*cosh_y);
-
-  if(stability_analysis == true)
-    result = 0;
 
   return result;
 }
@@ -440,9 +424,30 @@ template<int dim>
    double result = 0.0;
    
    if(component == 0)
-     result = -nu * (4 * (1 - x) * (1-x) * y * (1 - y) * (1-y) - 16 * x * (1 - x) * y * (1 - y) * (1-y) + 4 * x * x * y * (1 - y) * (1-y) - 4 * (1 - x) * (1-x) * y * y  * (1 - y) + 16 * x * (1 - x) * y * y  * (1 - y) - 4 * x * x * y * y * (1 - y) - 12 * x * x * (1 - x) * (1 - x) * (1 - y) + 12 * x * x  * (1 - x) * (1-x) * y) + 5 * x * x * x * x;
+   {
+     result = -nu * (+ 4 * (1 - x) * (1-x) * y * (1 - y) * (1-y)
+                     - 16 * x * (1 - x) * y * (1 - y) * (1-y)
+                     + 4 * x * x * y * (1 - y) * (1-y)
+                     - 4 * (1 - x) * (1-x) * y * y  * (1 - y)
+                     + 16 * x * (1 - x) * y * y  * (1 - y)
+                     - 4 * x * x * y * y * (1 - y)
+                     - 12 * x * x * (1 - x) * (1 - x) * (1 - y)
+                     + 12 * x * x  * (1 - x) * (1-x) * y)
+               + 5 * x * x * x * x;
+   }
+
    if(component == 1)
-     result = -nu * (12 * (1 - x) * y * y * (1 - y) * (1-y) - 12 * x * y * y * (1 - y) * (1-y) - 4 * x * (1 - x) * (1-x) * (1 - y) * (1-y) + 16 * x * (1 - x) * (1-x) * y * (1 - y) - 4 * x * (1 - x) * (1-x) * y * y  + 4 * x * x * (1 - x) * (1 - y) * (1-y) - 16 * x * x * (1 - x) * y * (1 - y) + 4 * x * x  * (1 - x) * y * y) + 5 * y *y*y*y;
+   {
+     result = -nu * (12 * (1 - x) * y * y * (1 - y) * (1-y)
+                     - 12 * x * y * y * (1 - y) * (1-y)
+                     - 4 * x * (1 - x) * (1-x) * (1 - y) * (1-y)
+                     + 16 * x * (1 - x) * (1-x) * y * (1 - y)
+                     - 4 * x * (1 - x) * (1-x) * y * y
+                     + 4 * x * x * (1 - x) * (1 - y) * (1-y)
+                     - 16 * x * x * (1 - x) * y * (1 - y)
+                     + 4 * x * x  * (1 - x) * y * y)
+               + 5 * y * y * y * y;
+   }
    
    return result;
  }
@@ -456,12 +461,12 @@ template<int dim>
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>              &triangulation,
-    unsigned int const                                     n_refine_space,
-    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
+    parallel::distributed::Triangulation<dim>         &triangulation,
+    unsigned int const                                n_refine_space,
+    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                 &periodic_faces)
+      Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
   const double left = 0.0, right = 1.0;
   GridGenerator::hyper_cube(triangulation,left,right);
@@ -487,7 +492,7 @@ void create_grid_and_set_boundary_conditions(
 
 
 template<int dim>
-void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > analytical_solution_velocity;
@@ -505,7 +510,7 @@ void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field
 }
 
 template<int dim>
-void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
+void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
 {
   analytical_solution->velocity.reset(new AnalyticalSolutionVelocity<dim>());
   analytical_solution->pressure.reset(new AnalyticalSolutionPressure<dim>());
@@ -515,7 +520,7 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim>
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim,Number> >
-construct_postprocessor(InputParametersNavierStokes<dim> const &param)
+construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
 

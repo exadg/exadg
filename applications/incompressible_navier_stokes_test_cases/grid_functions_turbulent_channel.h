@@ -17,7 +17,7 @@ double grid_transform_y(const double &eta)
 
  if(GRID_STRETCH_FAC >= 0)
    y = DIMENSIONS_X2/2.0*std::tanh(GRID_STRETCH_FAC*(2.*eta-1.))/std::tanh(GRID_STRETCH_FAC);
- else // use a negative GRID_STRETCH_FACto deactivate grid stretching
+ else // use a negative GRID_STRETCH_FACTOR deactivate grid stretching
    y = DIMENSIONS_X2/2.0*(2.*eta-1.);
 
  return y;
@@ -34,7 +34,7 @@ double inverse_grid_transform_y(const double &y)
 
  if(GRID_STRETCH_FAC >= 0)
    eta = (std::atanh(y*std::tanh(GRID_STRETCH_FAC)*2.0/DIMENSIONS_X2)/GRID_STRETCH_FAC+1.0)/2.0;
- else // use a negative GRID_STRETCH_FACto deactivate grid stretching
+ else // use a negative GRID_STRETCH_FACTOR deactivate grid stretching
    eta = (2.*y/DIMENSIONS_X2+1.)/2.0;
 
  return eta;

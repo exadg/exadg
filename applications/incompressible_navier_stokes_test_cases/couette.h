@@ -47,7 +47,7 @@ const double L = 4.0;
 const double MAX_VELOCITY = 1.0;
 
 template<int dim>
-void InputParametersNavierStokes<dim>::set_input_parameters()
+void InputParameters<dim>::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = PROBLEM_TYPE; // PROBLEM_TYPE is also needed somewhere else
@@ -65,8 +65,8 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
   temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified;
   max_velocity = MAX_VELOCITY; // MAX_VELOCITY is also needed somewhere else
   cfl = 1.0e-1;
   time_step_size = 1.0e-1;
@@ -171,27 +171,27 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
   // COUPLED NAVIER-STOKES SOLVER
 
   // nonlinear solver (Newton solver)
-  newton_solver_data_coupled.abs_tol = 1.e-20;
+  newton_solver_data_coupled.abs_tol = 1.e-12;
   newton_solver_data_coupled.rel_tol = 1.e-6;
   newton_solver_data_coupled.max_iter = 1e2;
 
   // linear solver
   solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;
-  abs_tol_linear = 1.e-20;
-  rel_tol_linear = 1.e-4;
+  abs_tol_linear = 1.e-14;
+  rel_tol_linear = 1.e-6;
   max_iter_linear = 1e4;
 
   // preconditioning linear solver
   preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityConvectionDiffusion;
+  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion;
   exact_inversion_of_momentum_block = false;
   rel_tol_solver_momentum_preconditioner = 1.e-6;
   max_n_tmp_vectors_solver_momentum_preconditioner = 100;
 
   // preconditioner Schur-complement block
-  schur_complement_preconditioner = SchurComplementPreconditioner::InverseMassMatrix;
+  schur_complement_preconditioner = SchurComplementPreconditioner::CahouetChabard;
   discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
   exact_inversion_of_laplace_operator = false;
   rel_tol_solver_schur_complement_preconditioner = 1.e-6;
@@ -424,12 +424,12 @@ template<int dim>
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>              &triangulation,
-    unsigned int const                                     n_refine_space,
-    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
+    parallel::distributed::Triangulation<dim>         &triangulation,
+    unsigned int const                                n_refine_space,
+    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                 &periodic_faces)
+      Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
   std::vector<unsigned int> repetitions({2,1});
   Point<dim> point1(0.0,-H/2.), point2(L,H/2.);
@@ -476,11 +476,12 @@ void create_grid_and_set_boundary_conditions(
 
 
 template<int dim>
-void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > initial_solution_velocity;
-  initial_solution_velocity.reset(new ZeroFunction<dim>(dim));
+//  initial_solution_velocity.reset(new ZeroFunction<dim>(dim));
+  initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
   std::shared_ptr<Function<dim> > initial_solution_pressure;
   initial_solution_pressure.reset(new ZeroFunction<dim>(1));
   std::shared_ptr<Function<dim> > analytical_solution_pressure;
@@ -496,7 +497,7 @@ void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field
 }
 
 template<int dim>
-void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
+void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
 {
   analytical_solution->velocity.reset(new AnalyticalSolutionVelocity<dim>());
   analytical_solution->pressure.reset(new AnalyticalSolutionPressure<dim>());
@@ -506,7 +507,7 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim>
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim,Number> >
-construct_postprocessor(InputParametersNavierStokes<dim> const &param)
+construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
 

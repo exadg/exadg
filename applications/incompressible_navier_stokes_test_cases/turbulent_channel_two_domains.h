@@ -32,9 +32,11 @@ unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOC
 unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
-// set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 2;
-unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
+// set the number of refine levels for DOMAIN 1
+unsigned int const REFINE_STEPS_SPACE_DOMAIN1 = 2;
+
+// set the number of refine levels for DOMAIN 2
+unsigned int const REFINE_STEPS_SPACE_DOMAIN2 = 2;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -104,7 +106,7 @@ void initialize_velocity_values()
 
 // we do not need this function here (but have to implement it)
 template<int dim>
-void InputParametersNavierStokes<dim>::set_input_parameters()
+void InputParameters<dim>::set_input_parameters()
 {
 
 }
@@ -118,7 +120,7 @@ void InputParametersNavierStokes<dim>::set_input_parameters()
  *  Most of the input parameters are the same for both domains!
  */
 template<int dim>
-void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const domain_id)
+void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
 {
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
@@ -320,6 +322,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
 
     // turbulent channel statistics
     turb_ch_data.calculate_statistics = true;
+    turb_ch_data.cells_are_stretched = false;
+    if(GRID_STRETCH_TYPE == GridStretchType::VolumeManifold)
+      turb_ch_data.cells_are_stretched = true;
     turb_ch_data.sample_start_time = SAMPLE_START_TIME;
     turb_ch_data.sample_end_time = END_TIME;
     turb_ch_data.sample_every_timesteps = 10;
@@ -352,6 +357,9 @@ void InputParametersNavierStokes<dim>::set_input_parameters(unsigned int const d
 
     // turbulent channel statistics
     turb_ch_data.calculate_statistics = true;
+    turb_ch_data.cells_are_stretched = false;
+    if(GRID_STRETCH_TYPE == GridStretchType::VolumeManifold)
+      turb_ch_data.cells_are_stretched = true;
     turb_ch_data.sample_start_time = SAMPLE_START_TIME;
     turb_ch_data.sample_end_time = END_TIME;
     turb_ch_data.sample_every_timesteps = 10;
@@ -435,79 +443,6 @@ double InflowProfile<dim>::value(const Point<dim>   &p,
 {
   double result = linear_interpolation_2d_cartesian(p,Y_VALUES,Z_VALUES,VELOCITY_VALUES,component);
 
-  return result;
-}
-
-
-/*
- *  Analytical solution pressure
- *
- *  - It is used to calculate the L2 error
- *
- *  - It is used to adjust the pressure level in case of pure Dirichlet BC's
- *    (where the pressure is only defined up to an additive constant)
- *
- *  - This function can be used to prescribe initial conditions for the pressure field
- *
- *  - Moreover, this function can be used (if possible for simple geometries)
- *    to prescribe Dirichlet BC's for the pressure field on Neumann boundaries
- */
-
-
-//template<int dim>
-//class AnalyticalSolutionPressure : public Function<dim>
-//{
-//public:
-//  AnalyticalSolutionPressure (const double time = 0.)
-//    :
-//    Function<dim>(1 /*n_components*/, time)
-//  {}
-//
-//  virtual ~AnalyticalSolutionPressure(){};
-//
-//  virtual double value (const Point<dim>   &p,
-//                        const unsigned int component = 0) const;
-//};
-//
-//template<int dim>
-//double AnalyticalSolutionPressure<dim>::value(const Point<dim>    &/* p */,
-//                                              const unsigned int  /* component */) const
-//{
-//  double result = 0.0;
-//
-//  // For this flow problem no analytical solution is available.
-//
-//  return result;
-//}
-
-
-/*
- *  Neumann boundary conditions for velocity
- *
- *  - Laplace formulation of viscous term
- *    -> prescribe velocity gradient (grad U)*n on Gamma_N
- *
- *  - Divergence formulation of viscous term
- *    -> prescribe (grad U + (grad U)^T)*n on Gamma_N
- */
-template<int dim>
-class NeumannBoundaryVelocity : public Function<dim>
-{
-public:
-  NeumannBoundaryVelocity (const double time = 0.)
-    :
-    Function<dim>(dim, time)
-  {}
-
-  virtual ~NeumannBoundaryVelocity(){};
-
-  virtual double value (const Point<dim> &p,const unsigned int component = 0) const;
-};
-
-template<int dim>
-double NeumannBoundaryVelocity<dim>::value(const Point<dim> &/* p */,const unsigned int /* component */) const
-{
-  double result = 0.0;
   return result;
 }
 
@@ -688,12 +623,12 @@ private:
 
 template<int dim>
 void create_grid_and_set_boundary_conditions_1(
-    parallel::distributed::Triangulation<dim>              &triangulation,
-    unsigned int const                                     n_refine_space,
-    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
+    parallel::distributed::Triangulation<dim>         &triangulation,
+    unsigned int const                                n_refine_space,
+    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                 &periodic_faces)
+      Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
   /* --------------- Generate grid ------------------- */
   if(GRID_STRETCH_TYPE == GridStretchType::TransformGridCells)
@@ -774,12 +709,12 @@ void create_grid_and_set_boundary_conditions_1(
 
 template<int dim>
 void create_grid_and_set_boundary_conditions_2(
-    parallel::distributed::Triangulation<dim>              &triangulation,
-    unsigned int const                                     n_refine_space,
-    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
+    parallel::distributed::Triangulation<dim>         &triangulation,
+    unsigned int const                                n_refine_space,
+    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                 &periodic_faces)
+      Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
   /* --------------- Generate grid ------------------- */
   if(GRID_STRETCH_TYPE == GridStretchType::TransformGridCells)
@@ -895,7 +830,7 @@ void create_grid_and_set_boundary_conditions_2(
 
 
 template<int dim>
-void set_field_functions_1(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+void set_field_functions_1(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > initial_solution_velocity;
@@ -915,7 +850,7 @@ void set_field_functions_1(std::shared_ptr<FieldFunctionsNavierStokes<dim> > fie
 }
 
 template<int dim>
-void set_field_functions_2(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+void set_field_functions_2(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > initial_solution_velocity;
@@ -936,7 +871,7 @@ void set_field_functions_2(std::shared_ptr<FieldFunctionsNavierStokes<dim> > fie
 }
 
 template<int dim>
-void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
+void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
 {
   analytical_solution->velocity.reset(new ZeroFunction<dim>(dim));
   analytical_solution->pressure.reset(new ZeroFunction<dim>(1));
@@ -968,12 +903,12 @@ public:
     inflow_data_calculator.reset(new InflowDataCalculator<dim,Number>(pp_data_turb_channel.inflow_data));
   }
 
-  void setup(DoFHandler<dim> const                                  &dof_handler_velocity_in,
-             DoFHandler<dim> const                                  &dof_handler_pressure_in,
-             Mapping<dim> const                                     &mapping_in,
-             MatrixFree<dim,Number> const                           &matrix_free_data_in,
-             DofQuadIndexData const                                 &dof_quad_index_data_in,
-             std::shared_ptr<AnalyticalSolutionNavierStokes<dim> >  analytical_solution_in)
+  void setup(DoFHandler<dim> const                      &dof_handler_velocity_in,
+             DoFHandler<dim> const                      &dof_handler_pressure_in,
+             Mapping<dim> const                         &mapping_in,
+             MatrixFree<dim,Number> const               &matrix_free_data_in,
+             DofQuadIndexData const                     &dof_quad_index_data_in,
+             std::shared_ptr<AnalyticalSolution<dim> >  analytical_solution_in)
   {
     // call setup function of base class
     PostProcessor<dim,fe_degree_u,fe_degree_p,Number>::setup(
@@ -987,24 +922,19 @@ public:
     // perform setup of turbulent channel related things
     statistics_turb_ch.reset(new StatisticsManager<dim>(dof_handler_velocity_in,mapping_in));
 
-    bool individual_cells_are_stretched = false;
-
-    if(GRID_STRETCH_TYPE == GridStretchType::VolumeManifold)
-      individual_cells_are_stretched = true;
-
-    statistics_turb_ch->setup(&grid_transform_y,individual_cells_are_stretched);
+    statistics_turb_ch->setup(&grid_transform_y,turb_ch_data);
 
     // inflow data
     inflow_data_calculator->setup(dof_handler_velocity_in,mapping_in);
   }
 
-  void do_postprocessing(parallel::distributed::Vector<Number> const &velocity,
-                         parallel::distributed::Vector<Number> const &intermediate_velocity,
-                         parallel::distributed::Vector<Number> const &pressure,
-                         parallel::distributed::Vector<Number> const &vorticity,
+  void do_postprocessing(parallel::distributed::Vector<Number> const   &velocity,
+                         parallel::distributed::Vector<Number> const   &intermediate_velocity,
+                         parallel::distributed::Vector<Number> const   &pressure,
+                         parallel::distributed::Vector<Number> const   &vorticity,
                          std::vector<SolutionField<dim,Number> > const &additional_fields,
-                         double const                                time,
-                         int const                                   time_step_number)
+                         double const                                  time,
+                         int const                                     time_step_number)
   {
     PostProcessor<dim,fe_degree_u,fe_degree_p,Number>::do_postprocessing(
 	      velocity,
@@ -1014,30 +944,9 @@ public:
         additional_fields,
         time,
         time_step_number);
-   
-    // EPSILON: small number which is much smaller than the time step size
-    const double EPSILON = 1.0e-10;
-    if((time > turb_ch_data.sample_start_time-EPSILON) &&
-       (time < turb_ch_data.sample_end_time+EPSILON) && 
-       (time_step_number % turb_ch_data.sample_every_timesteps == 0))
-    {
-      // evaluate statistics
-      statistics_turb_ch->evaluate(velocity);
-     
-      // write intermediate output
-      if(time_step_number % (turb_ch_data.sample_every_timesteps * 100) == 0)
-      {
-        statistics_turb_ch->write_output(turb_ch_data.filename_prefix,
-                                         turb_ch_data.viscosity);
-      }
-    }
-    // write final output
-    if((time > turb_ch_data.sample_end_time-EPSILON) && write_final_output)
-    {
-      statistics_turb_ch->write_output(turb_ch_data.filename_prefix,
-                                       turb_ch_data.viscosity);
-      write_final_output = false;
-    }
+
+    // turbulent channel statistics
+    statistics_turb_ch->evaluate(velocity,time,time_step_number);
 
     // inflow data
     inflow_data_calculator->calculate(velocity);
@@ -1053,7 +962,7 @@ public:
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim,Number> >
-construct_postprocessor(InputParametersNavierStokes<dim> const &param)
+construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
   pp_data.output_data = param.output_data;
