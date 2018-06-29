@@ -22,6 +22,9 @@
 
 using namespace dealii;
 
+namespace IncNS
+{
+
 template<int dim, int fe_degree, typename Number>
 class DivergenceAndMassErrorCalculator
 {
@@ -304,5 +307,6 @@ private:
 };
 
 
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_DIVERGENCE_AND_MASS_ERROR_H_ */

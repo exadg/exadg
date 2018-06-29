@@ -15,8 +15,11 @@
 #include <fstream>
 #include <sstream>
 
+namespace IncNS
+{
+
 template<int dim>
-std::string const restart_filename(InputParametersNavierStokes<dim> const &param)
+std::string const restart_filename(InputParameters<dim> const &param)
 {
   std::string const filename = param.output_data.output_name + "." +
     Utilities::int_to_string(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)) +
@@ -39,7 +42,7 @@ void check_file(std::ifstream const &in,
 
 template<int dim,typename value_type>
 void resume_restart(boost::archive::binary_iarchive &ia,
-                    InputParametersNavierStokes<dim> const &param,
+                    InputParameters<dim> const &param,
                     double &time,
                     std::vector<double> &time_steps,
                     unsigned int const order)
@@ -93,7 +96,7 @@ void resume_restart(boost::archive::binary_iarchive &ia,
 
 template<int dim, typename value_type>
 void write_restart_preamble(boost::archive::binary_oarchive &oa,
-                            InputParametersNavierStokes<dim> const &param,
+                            InputParameters<dim> const &param,
                             std::vector<double> const &time_steps,
                             double const time,
                             unsigned int const order)
@@ -138,7 +141,7 @@ void write_restart_preamble(boost::archive::binary_oarchive &oa,
 
 template<int dim>
 void write_restart_file(std::ostringstream &oss,
-                        InputParametersNavierStokes<dim> const &param)
+                        InputParameters<dim> const &param)
 {
   const std::string filename = restart_filename(param);
   std::ofstream stream(filename.c_str());
@@ -157,6 +160,9 @@ void finished_reading_restart_output()
     std::cout << " Done reading vectors " << std::endl;
     std::cout << std::endl << "______________________________________________________________________" << std::endl << std::endl;
   }
+}
+
+
 }
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_RESTART_H_ */

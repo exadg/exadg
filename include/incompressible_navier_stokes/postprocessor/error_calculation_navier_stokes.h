@@ -13,6 +13,9 @@
 
 #include "incompressible_navier_stokes/user_interface/analytical_solution.h"
 
+namespace IncNS
+{
+
 template<int dim, typename Number>
 class ErrorCalculator
 {
@@ -22,11 +25,11 @@ public:
     error_counter(0)
   {}
 
-  void setup(DoFHandler<dim> const                                 &dof_handler_velocity_in,
-             DoFHandler<dim> const                                 &dof_handler_pressure_in,
-             Mapping<dim> const                                    &mapping_in,
-             std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution_in,
-             ErrorCalculationData const                            &error_data_in)
+  void setup(DoFHandler<dim> const                     &dof_handler_velocity_in,
+             DoFHandler<dim> const                     &dof_handler_pressure_in,
+             Mapping<dim> const                        &mapping_in,
+             std::shared_ptr<AnalyticalSolution<dim> > analytical_solution_in,
+             ErrorCalculationData const                &error_data_in)
   {
     dof_handler_velocity = &dof_handler_velocity_in;
     dof_handler_pressure = &dof_handler_pressure_in;
@@ -77,7 +80,7 @@ private:
   SmartPointer< DoFHandler<dim> const > dof_handler_pressure;
   SmartPointer< Mapping<dim> const > mapping;
 
-  std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution;
+  std::shared_ptr<AnalyticalSolution<dim> > analytical_solution;
 
   ErrorCalculationData error_data;
 
@@ -120,6 +123,6 @@ private:
   }
 };
 
-
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_ERROR_CALCULATION_NAVIER_STOKES_H_ */

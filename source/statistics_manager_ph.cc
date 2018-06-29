@@ -7,12 +7,13 @@
 #include "../include/incompressible_navier_stokes/xwall/SpaldingsLaw.h"
 
 
-
 //#define DEBUG_Y
 //#define DEBUG_WRITE_OUTPUT
 //#define DEBUG_TAU_W
 #define DOUBLE_REFINEMENT_X
 //#define ADDITIONAL_ADJUSTMENT
+
+using namespace IncNS;
 
 namespace patch
 {

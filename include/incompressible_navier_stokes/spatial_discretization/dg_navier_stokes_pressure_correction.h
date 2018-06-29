@@ -17,6 +17,9 @@
 #include "solvers_and_preconditioners/iterative_solvers.h"
 #include "solvers_and_preconditioners/newton_solver.h"
 
+namespace IncNS
+{
+
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 class DGNavierStokesPressureCorrection : public DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
 {
@@ -31,7 +34,7 @@ public:
                                           Number,BASE::is_xwall> FEFaceEval_Pressure_Velocity_linear;
 
   DGNavierStokesPressureCorrection(parallel::distributed::Triangulation<dim> const &triangulation,
-                                   InputParametersNavierStokes<dim> const          &parameter)
+                                   InputParameters<dim> const                      &parameter)
     :
     PROJECTION_METHODS_BASE(triangulation,parameter),
     rhs_vector(nullptr),
@@ -452,5 +455,8 @@ apply_inverse_pressure_mass_matrix(parallel::distributed::Vector<Number>       &
   inverse_mass_matrix_operator_pressure.apply(dst,src);
 }
 
+
+
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_PRESSURE_CORRECTION_H_ */

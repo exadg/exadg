@@ -27,15 +27,16 @@
 #include "../include/functionalities/print_general_infos.h"
 
 using namespace dealii;
+using namespace IncNS;
 
 // specify the flow problem that has to be solved
 
-#include "incompressible_navier_stokes_test_cases/stokes_curl_flow.h"
+//#include "incompressible_navier_stokes_test_cases/stokes_curl_flow.h"
 //#include "incompressible_navier_stokes_test_cases/couette.h"
 //#include "incompressible_navier_stokes_test_cases/poiseuille.h"
 //#include "incompressible_navier_stokes_test_cases/cavity.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
-//#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
+#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
 
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number=double>
@@ -56,13 +57,13 @@ private:
 
   const unsigned int n_refine_space;
 
-  std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions;
-  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure;
+  std::shared_ptr<FieldFunctions<dim> > field_functions;
+  std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure;
 
-  std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution;
+  std::shared_ptr<AnalyticalSolution<dim> > analytical_solution;
 
-  InputParametersNavierStokes<dim> param;
+  InputParameters<dim> param;
 
   std::shared_ptr<DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> > navier_stokes_operation;
 
@@ -89,21 +90,21 @@ NavierStokesProblem(unsigned int const refine_steps_space,
   if(param.print_input_parameters == true)
     param.print(pcout);
 
-  field_functions.reset(new FieldFunctionsNavierStokes<dim>());
+  field_functions.reset(new FieldFunctions<dim>());
 
   // this function has to be defined in the header file
   // that implements all problem specific things like
   // parameters, geometry, boundary conditions, etc.
   set_field_functions(field_functions);
 
-  analytical_solution.reset(new AnalyticalSolutionNavierStokes<dim>());
+  analytical_solution.reset(new AnalyticalSolution<dim>());
   // this function has to be defined in the header file
   // that implements all problem specific things like
   // parameters, geometry, boundary conditions, etc.
   set_analytical_solution(analytical_solution);
 
-  boundary_descriptor_velocity.reset(new BoundaryDescriptorNavierStokesU<dim>());
-  boundary_descriptor_pressure.reset(new BoundaryDescriptorNavierStokesP<dim>());
+  boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
+  boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
 
   AssertThrow(param.solver_type == SolverType::Steady,
       ExcMessage("This is a steady solver. Check input parameters."));

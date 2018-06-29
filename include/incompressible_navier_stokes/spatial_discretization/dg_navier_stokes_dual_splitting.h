@@ -19,6 +19,9 @@
 #include "solvers_and_preconditioners/iterative_solvers.h"
 #include "solvers_and_preconditioners/newton_solver.h"
 
+namespace IncNS
+{
+
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 class DGNavierStokesDualSplitting : public DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
 {
@@ -28,7 +31,7 @@ public:
   typedef DGNavierStokesDualSplitting<dim,fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> THIS;
 
   DGNavierStokesDualSplitting(parallel::distributed::Triangulation<dim> const &triangulation,
-                              InputParametersNavierStokes<dim> const          &parameter)
+                              InputParameters<dim> const                      &parameter)
     :
     PROJECTION_METHODS_BASE(triangulation,parameter),
     fe_param(parameter),
@@ -854,6 +857,10 @@ apply_helmholtz_operator (parallel::distributed::Vector<Number>       &dst,
 {
   // Update Helmholtz operator
   helmholtz_operator.vmult(dst,src);
+}
+
+
+
 }
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_DUAL_SPLITTING_H_ */

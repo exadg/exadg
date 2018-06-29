@@ -15,6 +15,9 @@
 
 using namespace dealii;
 
+namespace IncNS
+{
+
 template<int dim>
 class FEParameters
 {
@@ -32,7 +35,7 @@ public:
   {
   }
 
-  FEParameters(InputParametersNavierStokes<dim> const & param)
+  FEParameters(IncNS::InputParameters<dim> const & param)
     :
     viscosity(param.viscosity),
     variabletauw(param.variabletauw),
@@ -73,5 +76,8 @@ public:
   AlignedVector<AlignedVector<Tensor<1,dim,VectorizedArray<double> > > > * enrichment_gradient;
   std::shared_ptr<Function<dim,double> > enrichment_is_within;
 };
+
+
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_INFRASTRUCTURE_FE_PARAMETERS_H_ */

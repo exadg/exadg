@@ -24,12 +24,15 @@
 
 
 // forward declaration
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-class DGNavierStokesCoupled;
-
 template<int dim> struct HelmholtzOperatorData;
 template<int dim> struct LaplaceOperatorData;
 
+namespace IncNS
+{
+
+// forward declaration
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+class DGNavierStokesCoupled;
 
 /*
  * Consider the following saddle point matrix :
@@ -997,5 +1000,7 @@ private:
   parallel::distributed::Vector<value_type> mutable tmp_projection_vector;
 };
 
+
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_PRECONDITIONER_NAVIER_STOKES_H_ */

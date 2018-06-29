@@ -17,6 +17,8 @@
 #include "solvers_and_preconditioners/invert_diagonal.h"
 #include "solvers_and_preconditioners/verify_calculation_of_diagonal.h"
 
+namespace IncNS
+{
 
 template<typename UnderlyingOperator, typename Number>
 class VelocityConvectionDiffusionBlockJacobiOperator
@@ -684,5 +686,8 @@ private:
   ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> own_viscous_operator_storage;
   ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> own_convective_operator_storage;
 };
+
+
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_VELOCITY_CONVECTION_DIFFUSION_OPERATOR_H_ */

@@ -10,6 +10,8 @@
 
 #include "../../incompressible_navier_stokes/infrastructure/fe_parameters.h"
 
+using namespace IncNS;
+
 template <int dim>
 class StatisticsManagerPH //: public StatisticsManager<dim>
 {
@@ -103,5 +105,6 @@ private:
   std::vector<double> p_top_glob;
 
 };
+
 
 #endif

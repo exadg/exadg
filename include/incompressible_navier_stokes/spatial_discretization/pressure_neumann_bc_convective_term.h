@@ -12,6 +12,8 @@
 #include "../infrastructure/fe_evaluation_wrapper.h"
 #include "operators/base_operator.h"
 
+namespace IncNS
+{
 
 template<int dim>
 class PressureNeumannBCConvectiveTermData
@@ -25,7 +27,7 @@ public:
 
   unsigned int dof_index_velocity;
   unsigned int dof_index_pressure;
-  std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorP<dim> > bc;
 };
 
 template <int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
@@ -146,5 +148,7 @@ private:
   PressureNeumannBCConvectiveTermData<dim> my_data;
 };
 
+
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_PRESSURE_NEUMANN_BC_CONVECTIVE_TERM_H_ */

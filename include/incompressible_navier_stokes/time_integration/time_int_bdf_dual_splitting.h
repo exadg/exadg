@@ -11,6 +11,8 @@
 #include "../../incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.h"
 #include "../../time_integration/push_back_vectors.h"
 
+namespace IncNS
+{
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 class TimeIntBDFDualSplitting : public TimeIntBDFNavierStokes<dim,fe_degree_u,value_type,NavierStokesOperation>
@@ -18,7 +20,7 @@ class TimeIntBDFDualSplitting : public TimeIntBDFNavierStokes<dim,fe_degree_u,va
 public:
   TimeIntBDFDualSplitting(std::shared_ptr<NavierStokesOperation>              navier_stokes_operation_in,
                           std::shared_ptr<PostProcessorBase<dim,value_type> > postprocessor_in,
-                          InputParametersNavierStokes<dim> const              &param_in,
+                          InputParameters<dim> const                          &param_in,
                           unsigned int const                                  n_refine_time_in,
                           bool const                                          use_adaptive_time_stepping)
     :
@@ -1104,6 +1106,10 @@ analyze_computing_times() const
               << "Computational costs in [CPUh] =   " << data.avg * (double)N_mpi_processes / 3600.0 << std::endl
               << "_________________________________________________________________________________"
               << std::endl << std::endl;
+}
+
+
+
 }
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_ */

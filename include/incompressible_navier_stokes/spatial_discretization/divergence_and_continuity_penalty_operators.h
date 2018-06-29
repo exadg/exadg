@@ -8,6 +8,9 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DIVERGENCE_AND_CONTINUITY_PENALTY_OPERATORS_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DIVERGENCE_AND_CONTINUITY_PENALTY_OPERATORS_H_
 
+namespace IncNS
+{
+
 /*
  *  Operator data
  */
@@ -318,7 +321,7 @@ struct ContinuityPenaltyOperatorData
   // the continuity penalty term can be applied
   // on boundary faces.
   bool use_boundary_data;
-  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorU<dim> > bc;
 };
 
 
@@ -1317,6 +1320,6 @@ private:
 };
 
 
-
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DIVERGENCE_AND_CONTINUITY_PENALTY_OPERATORS_H_ */

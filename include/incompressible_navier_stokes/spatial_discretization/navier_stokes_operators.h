@@ -16,6 +16,10 @@
 #include "../include/functionalities/evaluate_functions.h"
 #include "operators/interior_penalty_parameter.h"
 
+
+namespace IncNS
+{
+
 // forward declarations
 template <int dim, int fe_degree, int fe_degree_xwall, int n_q_points_1d,
       int n_components_, typename Number, bool is_enriched> class FEEvaluationWrapper;
@@ -345,7 +349,7 @@ struct ViscousOperatorData
   double IP_factor_viscous;
   unsigned int dof_index;
 
-  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorU<dim> > bc;
 
   /*
    * This variable 'viscosity' is only used when initializing the ViscousOperator.
@@ -2149,7 +2153,7 @@ struct GradientOperatorData
   bool integration_by_parts_of_gradP;
   bool use_boundary_data;
 
-  std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorP<dim> > bc;
 };
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
@@ -2677,7 +2681,7 @@ struct DivergenceOperatorData
   bool integration_by_parts_of_divU;
   bool use_boundary_data;
 
-  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorU<dim> > bc;
 };
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
@@ -3198,7 +3202,7 @@ struct ConvectiveOperatorData
   unsigned int dof_index;
   bool use_outflow_bc;
   TypeDirichletBCs type_imposition_of_dirichlet_values;
-  std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > bc;
+  std::shared_ptr<BoundaryDescriptorU<dim> > bc;
 };
 
 
@@ -4570,5 +4574,9 @@ private:
   mutable double eval_time;
   mutable parallel::distributed::Vector<value_type> const * velocity_linearization;
 };
+
+
+}
+
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_NAVIER_STOKES_OPERATORS_H_ */

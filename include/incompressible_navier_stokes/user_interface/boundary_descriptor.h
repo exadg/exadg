@@ -13,6 +13,9 @@ using namespace dealii;
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
 
+namespace IncNS
+{
+
 /*
  *
  *   Boundary conditions:
@@ -46,7 +49,7 @@ enum class BoundaryTypeP{
 };
 
 template<int dim>
-struct BoundaryDescriptorNavierStokesU
+struct BoundaryDescriptorU
 {
   // Dirichlet: prescribe all components of the velocity
   std::map<types::boundary_id,std::shared_ptr<Function<dim> > > dirichlet_bc;
@@ -62,7 +65,7 @@ struct BoundaryDescriptorNavierStokesU
 };
 
 template<int dim>
-struct BoundaryDescriptorNavierStokesP
+struct BoundaryDescriptorP
 {
   // Dirichlet: prescribe pressure value
   std::map<types::boundary_id,std::shared_ptr<Function<dim> > > dirichlet_bc;
@@ -80,5 +83,6 @@ struct BoundaryDescriptorNavierStokesP
 };
 
 
+}
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_ */
