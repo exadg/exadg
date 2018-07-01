@@ -12,13 +12,13 @@ INCLUDE_DIRECTORIES(
 SET( SOURCE_FILES
      #compressible_navier_stokes_operator_matrix_free.cc 
      #steady_navier_stokes.cc
-     unsteady_navier_stokes.cc
+     #unsteady_navier_stokes.cc
      #unsteady_navier_stokes_two_domains.cc
      #multigrid_solver.cc
      #fe_flow_past_cylinder.cc
      #fe_turbulent_channel.cc
      #fe_poiseuille.cc
-     #steady_convection_diffusion.cc
+     steady_convection_diffusion.cc
      #unsteady_convection_diffusion.cc
      #step-7.cc
      #laplace_operator_matrix_free.cc
