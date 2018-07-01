@@ -18,7 +18,6 @@ public:
   MyMultigridPreconditionerLaplace()
       : BASE(std::shared_ptr<MatrixOperatorBaseNew<dim, typename Operator::value_type>>(new Operator())) {}
 
-  const DoFHandler<dim> *dof_handler;
   const Mapping<dim> *mapping;
   const OperatorData *operator_data_in;
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const
@@ -37,7 +36,6 @@ public:
              std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const
                  &dirichlet_bc) {
     // save mg-setup
-    this->dof_handler = &dof_handler;
     this->mapping = &mapping;
     this->operator_data_in = &operator_data_in;
     this->dirichlet_bc = &dirichlet_bc;
