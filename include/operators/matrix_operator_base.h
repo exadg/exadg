@@ -9,6 +9,9 @@
 #define INCLUDE_MATRIXOPERATORBASE_H_
 
 #include <deal.II/base/subscriptor.h>
+#include <deal.II/base/exceptions.h>
+
+using namespace dealii;
 
 /*
  *  Interface class needed for update of preconditioners
@@ -36,6 +39,11 @@ public:
               U &/*dinfo2*/,
               V &/* info1*/,
               V &/* info2*/) const{ }
+  
+  virtual MatrixOperatorBase* get_new(unsigned int /*deg*/) const{
+      AssertThrow(false, ExcMessage("MatrixOperatorBase::get_new should be overwritten!"));
+      return nullptr;
+  }
   
 private:
 };
