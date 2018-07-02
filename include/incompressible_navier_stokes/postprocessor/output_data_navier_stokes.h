@@ -26,7 +26,7 @@ struct OutputDataMeanVelocity
     sample_every_timesteps(1)
   {}
 
-  void print(ConditionalOStream &pcout, bool unsteady)
+  void print(ConditionalOStream &pcout, bool /*unsteady*/)
   {
     print_parameter(pcout,"Calculate mean velocity", calculate);
     print_parameter(pcout,"  Sample start time", sample_start_time);
