@@ -2499,7 +2499,7 @@ struct ConvectionDiffusionOperatorData
 };
 
 template <int dim, int fe_degree, typename Number = double>
-class ConvectionDiffusionOperator : public MatrixOperatorBase
+class ConvectionDiffusionOperator : public MatrixOperatorBaseNew<dim, Number>
 {
 public:
   // TODO: Issue#2

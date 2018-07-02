@@ -22,7 +22,7 @@ class MultigridPreconditioner : public MyMultigridPreconditionerDG<dim,value_typ
 {
 public:
   MultigridPreconditioner() {}
-
+  
   virtual ~MultigridPreconditioner(){};
 
   /*
@@ -66,7 +66,8 @@ private:
   {
     for (int level = this->n_global_levels-1; level>=0; --level)
     {
-      this->mg_matrices[level]->set_evaluation_time(evaluation_time);
+      dynamic_cast<Operator *>(&*this->mg_matrices[level])
+              ->set_evaluation_time(evaluation_time);
     }
   }
 
@@ -80,7 +81,8 @@ private:
   {
     for (int level = this->n_global_levels-1; level>=0; --level)
     {
-      this->mg_matrices[level]->set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
+      dynamic_cast<Operator *>(&*this->mg_matrices[level])
+              ->set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
     }
   }
 

@@ -12,16 +12,17 @@
 #include "multigrid/multigrid_preconditioner_adapter_base.h"
 
 template<int dim, typename value_type, typename Operator, typename UnderlyingOperator>
-class MyMultigridPreconditionerDG : public MyMultigridPreconditionerBase<dim,value_type,Operator>
+class MyMultigridPreconditionerDG : public MyMultigridPreconditionerBase<dim,value_type,MatrixOperatorBaseNew<dim, typename Operator::value_type>>
 {
 public:
   MyMultigridPreconditionerDG() : 
-    MyMultigridPreconditionerBase<dim,value_type,Operator>(std::shared_ptr<Operator>(new Operator())){}
+    MyMultigridPreconditionerBase<dim,value_type,OPERATOR_BASE>(std::shared_ptr<OPERATOR_BASE>(new Operator())){}
 
   const Mapping<dim> *mapping;
   const UnderlyingOperator* underlying_operator;
   
-  typedef MyMultigridPreconditionerBase<dim, value_type, Operator> BASE;
+  typedef MatrixOperatorBaseNew<dim, typename Operator::value_type> OPERATOR_BASE;
+  typedef MyMultigridPreconditionerBase<dim, value_type, OPERATOR_BASE> BASE;
   typedef std::vector<GridTools::PeriodicFacePair<typename
                     Triangulation<dim>::cell_iterator> > VectorPeriodicFacePair;
   
@@ -76,10 +77,10 @@ private:
    *  This function initializes mg_matrices on all levels with level >= 0.
    */
   virtual void initialize_mg_matrix(const DoFHandler<dim> &dof_handler,
-        Operator * matrix, int /*level*/, int tria_level)
+        OPERATOR_BASE * matrix, int /*level*/, int tria_level)
   {
       
-      matrix->initialize_mg_matrix(tria_level, dof_handler, 
+      dynamic_cast<Operator *>(matrix)->initialize_mg_matrix(tria_level, dof_handler, 
               *this->mapping, *this->underlying_operator, *this->periodic_face_pairs_level0);
 
   }
