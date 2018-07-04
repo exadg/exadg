@@ -12,10 +12,12 @@ OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
       block_jacobi_matrices_have_been_initialized(false) {}
 
 template <int dim, int degree, typename Number, typename AdditionalData>
-void OperatorBase<dim, degree, Number, AdditionalData>::reinit(MF &mf,
-                                                               CM &cm) const {
+void OperatorBase<dim, degree, Number, AdditionalData>::reinit(MF const &mf,
+                                                               CM &cm,
+        AdditionalData const & ad) const {
   this->data = &mf;
   this->constraint = &cm;
+  this->ad = ad;
 
   // check if dg or cg
   is_dg = data->get_dof_handler(ad.dof_index).get_fe().dofs_per_vertex == 0;
@@ -514,7 +516,7 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
       // perform local vmult
       phi_n.evaluate(this->ad.internal_evaluate.value,
                      this->ad.internal_evaluate.gradient);
-      this->do_face_int_integral(phi_n);
+      this->do_face_int_integral(phi_n, phi_p);
       phi_n.integrate(this->ad.internal_integrate.value,
                       this->ad.internal_integrate.gradient);
 
@@ -534,7 +536,7 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
       // perform local vmult
       phi_p.evaluate(this->ad.internal_evaluate.value,
                      this->ad.internal_evaluate.gradient);
-      this->do_face_ext_integral(phi_p);
+      this->do_face_ext_integral(phi_n, phi_p);
       phi_p.integrate(this->ad.internal_integrate.value,
                       this->ad.internal_integrate.gradient);
       // extract single value from result vector and temporally store it
@@ -697,7 +699,7 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
       // perform local vmult
       phi_n.evaluate(this->ad.internal_evaluate.value,
                      this->ad.internal_evaluate.gradient);
-      this->do_face_int_integral(phi_n);
+      this->do_face_int_integral(phi_n, phi_p);
       phi_n.integrate(this->ad.internal_integrate.value,
                       this->ad.internal_integrate.gradient);
       for (unsigned int v = 0; v < n_filled_lanes; ++v) {
@@ -714,7 +716,7 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
       // perform local vmult
       phi_p.evaluate(this->ad.internal_evaluate.value,
                      this->ad.internal_evaluate.gradient);
-      this->do_face_ext_integral(phi_p);
+      this->do_face_ext_integral(phi_n, phi_p);
       phi_p.integrate(this->ad.internal_integrate.value,
                       this->ad.internal_integrate.gradient);
       for (unsigned int v = 0; v < n_filled_lanes; ++v) {

@@ -138,7 +138,7 @@ public:
   static const unsigned int v_len = VectorizedArray<Number>::n_array_elements;
   static const unsigned int dofs_per_cell = FEEvalCell::static_dofs_per_cell;
 
-  void reinit(MF &mf, CM &cm) const;
+  void reinit(MF const &mf, CM &cm, AdditionalData const & ad) const;
 
   /*
    * matrix vector multiplication
@@ -217,8 +217,8 @@ protected:
    */
   virtual void do_cell_integral(FEEvalCell &phi) const = 0;
   virtual void do_face_integral(FEEvalFace &p_n, FEEvalFace &p_p) const = 0;
-  virtual void do_face_int_integral(FEEvalFace &p_n) const = 0;
-  virtual void do_face_ext_integral(FEEvalFace &p_p) const = 0;
+  virtual void do_face_int_integral(FEEvalFace &p_n, FEEvalFace &p_p) const = 0;
+  virtual void do_face_ext_integral(FEEvalFace &p_n, FEEvalFace &p_p) const = 0;
   virtual void
   do_boundary_integral(FEEvalFace &fe_eval, OperatorType const &operator_type,
                        types::boundary_id const &boundary_id) const = 0;
@@ -319,13 +319,17 @@ protected:
 private:
   const bool do_eval_faces;
 
-  mutable MF *data;
+protected:
+  mutable MF const * data;
+  
+private: 
   mutable ConstraintMatrix *constraint;
   mutable bool is_dg;
 
   mutable std::vector<LAPACKFullMatrix<Number>> matrices;
   mutable bool block_jacobi_matrices_have_been_initialized;
 
+protected:
   mutable double eval_time;
 };
 
