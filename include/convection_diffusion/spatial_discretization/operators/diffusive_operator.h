@@ -6,18 +6,17 @@
 namespace ConvDiff
 {
 template<int dim>
-struct DiffusiveOperatorData
+struct DiffusiveOperatorData : public OperatorBaseData<dim, BoundaryType, OperatorType, ConvDiff::BoundaryDescriptor<dim>> 
 {
   DiffusiveOperatorData ()
-    :
-    dof_index(0),
-    quad_index(0),
+    : OperatorBaseData<dim, BoundaryType, OperatorType, ConvDiff::BoundaryDescriptor<dim>>(
+        0, 0, false, true, false, false, true, false,
+                              true, true, true, true, // face
+                              true, true, true, true  // boundary
+                              ),
     IP_factor(1.0),
     diffusivity(1.0)
   {}
-
-  unsigned int dof_index;
-  unsigned int quad_index;
 
   double IP_factor;
 
