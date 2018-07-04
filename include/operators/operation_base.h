@@ -52,7 +52,11 @@ using namespace dealii;
 //  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
 //};
 
-template <int dim> struct OperatorBaseData {
+template <int dim, typename BT, typename OT, typename BoundaryDescriptor> 
+struct OperatorBaseData {
+    
+  typedef BT BoundaryType;
+  typedef OT OperatorType;
 
   OperatorBaseData(const unsigned int dof_index, const unsigned int quad_index,
                    const bool c_e_v = false, const bool c_e_g = false,
@@ -109,7 +113,7 @@ template <int dim> struct OperatorBaseData {
   const Face internal_integrate;
   const Face boundary_evaluate;
   const Face boundary_integrate;
-  BoundaryDescriptor<dim> bc;
+  BoundaryDescriptor bc;
 };
 
 template <int dim, int degree, typename Number, typename AdditionalData>
@@ -126,6 +130,8 @@ public:
   typedef std::pair<unsigned int, unsigned int> Range;
   typedef FEEvaluation<dim, degree, degree + 1, 1, Number> FEEvalCell;
   typedef FEFaceEvaluation<dim, degree, degree + 1, 1, Number> FEEvalFace;
+  typedef typename AdditionalData::BoundaryType BoundaryType;
+  typedef typename AdditionalData::OperatorType OperatorType;
 
   OperatorBase();
 
