@@ -13,15 +13,9 @@ struct DiffusiveOperatorData : public OperatorBaseData<dim, BoundaryType, Operat
         0, 0, false, true, false, false, true, false,
                               true, true, true, true, // face
                               true, true, true, true  // boundary
-                              ),
-    IP_factor(1.0),
-    diffusivity(1.0)
-  {}
+                              ), IP_factor(1.0), diffusivity(1.0) {}
 
   double IP_factor;
-
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > bc;
-
   double diffusivity;
 };
 

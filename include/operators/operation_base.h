@@ -92,9 +92,9 @@ struct OperatorBaseData {
   inline DEAL_II_ALWAYS_INLINE BoundaryType
   get_boundary_type(types::boundary_id const &boundary_id) const {
 
-    if (bc.dirichlet_bc.find(boundary_id) != bc.dirichlet_bc.end())
+    if (bc->dirichlet_bc.find(boundary_id) != bc->dirichlet_bc.end())
       return BoundaryType::dirichlet;
-    else if (bc.neumann_bc.find(boundary_id) != bc.neumann_bc.end())
+    else if (bc->neumann_bc.find(boundary_id) != bc->neumann_bc.end())
       return BoundaryType::neumann;
 
     AssertThrow(
@@ -113,7 +113,7 @@ struct OperatorBaseData {
   /*const*/ Face internal_integrate;
   /*const*/ Face boundary_evaluate;
   /*const*/ Face boundary_integrate;
-  BoundaryDescriptor bc;
+  std::shared_ptr<BoundaryDescriptor> bc;
 };
 
 template <int dim, int degree, typename Number, typename AdditionalData>
