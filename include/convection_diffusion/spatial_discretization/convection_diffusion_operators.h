@@ -297,8 +297,10 @@ private:
   value_type mutable eval_time;
 };
 
+}
 #include "operators/diffusive_operator.h"
-
+namespace ConvDiff
+{
 template<int dim>
 struct ConvectiveOperatorData
 {

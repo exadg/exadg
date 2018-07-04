@@ -1,6 +1,10 @@
 #ifndef CONV_DIFF_DIFFUSIVE_OPERATOR
 #define CONV_DIFF_DIFFUSIVE_OPERATOR
 
+#include "../../../operators/operation_base.h"
+
+namespace ConvDiff
+{
 template<int dim>
 struct DiffusiveOperatorData
 {
@@ -1052,5 +1056,7 @@ private:
   double diffusivity;
   mutable value_type eval_time;
 };
+    
+}
 
 #endif
