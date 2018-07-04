@@ -30,6 +30,7 @@ public:
   typedef OperatorBase<dim, fe_degree, value_type, DiffusiveOperatorData<dim>> Parent;
   typedef typename Parent::FEEvalCell FEEvalCell;
   typedef typename Parent::FEEvalFace FEEvalFace;
+  typedef typename Parent::VNumber VNumber;
 
   DiffusiveOperator() : /*data(nullptr),*/ diffusivity(-1.0) {}
 
@@ -48,6 +49,11 @@ public:
     diffusivity = this->ad.diffusivity;
   }
 
+  void apply_add(VNumber &dst, VNumber const &src) const{
+      AssertThrow(diffusivity > 0.0, ExcMessage("Diffusivity is not set!"));
+      Parent::apply_add(dst, src);
+  }
+  
   /*
    *  Calculation of "value_flux".
    */

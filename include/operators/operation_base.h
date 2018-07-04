@@ -144,7 +144,7 @@ public:
    * matrix vector multiplication
    */
   void apply(VNumber &dst, VNumber const &src) const;
-  void apply_add(VNumber &dst, VNumber const &src) const;
+  virtual void apply_add(VNumber &dst, VNumber const &src) const;
 
   void vmult(VNumber &dst, VNumber const &src) const;
   void vmult_add(VNumber &dst, VNumber const &src) const;
