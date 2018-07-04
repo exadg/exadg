@@ -5,17 +5,14 @@
 
 namespace ConvDiff {
     
-    
+template <int dim>
 struct MassMatrixOperatorData
-{
-  MassMatrixOperatorData ()
-    :
-    dof_index(0),
-    quad_index(0)
-  {}
-
-  unsigned int dof_index;
-  unsigned int quad_index;
+    : public OperatorBaseData<dim, BoundaryType, OperatorType,
+                              ConvDiff::BoundaryDescriptor<dim>> {
+  MassMatrixOperatorData()
+      : OperatorBaseData<dim, BoundaryType, OperatorType,
+                         ConvDiff::BoundaryDescriptor<dim>>(
+            0, 0, true, false, false, true, false, false){}
 };
 
 template <int dim, int fe_degree, typename value_type>
@@ -30,7 +27,7 @@ public:
   {}
 
   void initialize(MatrixFree<dim,value_type> const &mf_data,
-                  MassMatrixOperatorData const     &mass_matrix_operator_data_in)
+                  MassMatrixOperatorData<dim> const     &mass_matrix_operator_data_in)
   {
     this->data = &mf_data;
     this->mass_matrix_operator_data = mass_matrix_operator_data_in;
@@ -71,7 +68,7 @@ public:
     data->cell_loop(&This::cell_loop_calculate_block_jacobi_matrices, this, matrices, src);
   }
 
-  MassMatrixOperatorData const & get_operator_data() const
+  MassMatrixOperatorData<dim> const & get_operator_data() const
   {
     return mass_matrix_operator_data;
   }
@@ -170,7 +167,7 @@ private:
   }
 
   MatrixFree<dim,value_type> const * data;
-  MassMatrixOperatorData mass_matrix_operator_data;
+  MassMatrixOperatorData<dim> mass_matrix_operator_data;
 };
     
 }

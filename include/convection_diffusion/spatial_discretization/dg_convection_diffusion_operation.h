@@ -471,7 +471,7 @@ private:
   std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor;
   std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functions;
 
-  ConvDiff::MassMatrixOperatorData mass_matrix_operator_data;
+  ConvDiff::MassMatrixOperatorData<dim> mass_matrix_operator_data;
   ConvDiff::MassMatrixOperator<dim, fe_degree, value_type> mass_matrix_operator;
   InverseMassMatrixOperator<dim,fe_degree,value_type,1> inverse_mass_matrix_operator;
 

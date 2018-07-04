@@ -1362,7 +1362,7 @@ public:
     own_matrix_free_storage.reinit(mapping, dof_handler, constraints, quad, addit_data);
 
     // setup own mass matrix operator
-    MassMatrixOperatorData mass_matrix_operator_data = underlying_operator.get_mass_matrix_operator_data();
+    MassMatrixOperatorData<dim> mass_matrix_operator_data = underlying_operator.get_mass_matrix_operator_data();
     mass_matrix_operator_data.dof_index = 0;
     mass_matrix_operator_data.quad_index = 0;
     own_mass_matrix_operator_storage.initialize(own_matrix_free_storage,mass_matrix_operator_data);
@@ -1469,7 +1469,7 @@ public:
   /*
    *  Operator data of basic operators: mass matrix, convective operator, diffusive operator
    */
-  MassMatrixOperatorData const & get_mass_matrix_operator_data() const
+  MassMatrixOperatorData<dim> const & get_mass_matrix_operator_data() const
   {
     return mass_matrix_operator->get_operator_data();
   }
