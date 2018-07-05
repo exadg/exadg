@@ -119,7 +119,7 @@ public:
     own_diffusive_operator_storage.initialize(mapping,own_matrix_free_storage,diffusive_operator_data);
 
     // setup convection-diffusion operator
-    ConvectionDiffusionOperatorData<dim> my_operator_data = underlying_operator.get_convection_diffusion_operator_data();
+    ConvectionDiffusionOperatorData<dim> my_operator_data = underlying_operator.get_operator_data();
 
     // When solving the reaction-convection-diffusion equations, it might be possible
     // that one wants to apply the multigrid preconditioner only to the reaction-diffusion
@@ -200,7 +200,7 @@ public:
   /*
    *  Operator data
    */
-  ConvectionDiffusionOperatorData<dim> const & get_convection_diffusion_operator_data() const
+  ConvectionDiffusionOperatorData<dim> const & get_operator_data() const
   {
     return this->operator_data;
   }
