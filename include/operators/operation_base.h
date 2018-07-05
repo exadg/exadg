@@ -117,7 +117,7 @@ struct OperatorBaseData {
 };
 
 template <int dim, int degree, typename Number, typename AdditionalData>
-class OperatorBase {
+class OperatorBase : MatrixOperatorBaseNew<dim, Number> {
 
 public:
   typedef OperatorBase<dim, degree, Number, AdditionalData> This;
@@ -139,6 +139,13 @@ public:
   static const unsigned int dofs_per_cell = FEEvalCell::static_dofs_per_cell;
 
   void reinit(MF const &mf, CM &cm, AdditionalData const & ad) const;
+  
+  // TODO: remove
+    virtual void reinit (const DoFHandler<dim>&, const Mapping<dim>&,
+               void *, const MGConstrainedDoFs &/*mg_constrained_dofs*/,
+               const unsigned int = numbers::invalid_unsigned_int){
+      AssertThrow(false, ExcMessage("OperatorBase::reinit to be removed!"));
+  }
 
   /*
    * matrix vector multiplication
@@ -155,7 +162,15 @@ public:
   /*
    *
    */
+  // TODO: remove
+  void rhs(VNumber &/*dst*/) const{
+      AssertThrow(false, ExcMessage("OperatorBase::rhs to be removed!"));
+  }
   void rhs(VNumber &dst, Number const time) const;
+  // TODO: remove
+  void rhs_add(VNumber &/*dst*/) const{
+      AssertThrow(false, ExcMessage("OperatorBase::rhs_add to be removed!"));
+  }
   void rhs_add(VNumber &dst, Number const time) const;
 
   void evaluate(VNumber &dst, VNumber const &src, Number const time) const;
