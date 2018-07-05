@@ -249,10 +249,6 @@ void DiffusiveOperator<dim, fe_degree, value_type>::do_face_ext_integral(
                                             q); // minus sign since n⁺ = -n⁻
     fe_eval_neighbor.submit_value(-gradient_flux, q);
   }
-<<<<<<< HEAD
-
-=======
->>>>>>> Move more implementation to diffusive_operator.cpp and format code
 }
 
 template <int dim, int fe_degree, typename value_type>
@@ -285,9 +281,5 @@ void DiffusiveOperator<dim, fe_degree, value_type>::do_boundary_integral(
     fe_eval.submit_normal_gradient(value_flux, q);
     fe_eval.submit_value(-gradient_flux, q);
   }
-<<<<<<< HEAD
-
-=======
->>>>>>> Move more implementation to diffusive_operator.cpp and format code
 }
 }
