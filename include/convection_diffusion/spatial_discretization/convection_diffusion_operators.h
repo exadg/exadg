@@ -652,7 +652,7 @@ public:
 
     if(operator_data.convective_problem == true)
     {
-      convective_operator->apply_add(dst,src,evaluation_time);
+      convective_operator->apply_add(dst,src/*TODO: ,evaluation_time*/);
     }
   }
 
@@ -676,7 +676,7 @@ public:
 
     if(operator_data.convective_problem == true)
     {
-      convective_operator->apply_add(dst,src,evaluation_time);
+      convective_operator->apply_add(dst,src/*TODO: ,evaluation_time*/);
     }
   }
 
@@ -844,7 +844,7 @@ private:
 
     if(operator_data.convective_problem == true)
     {
-      convective_operator->add_diagonal(diagonal,evaluation_time);
+      convective_operator->add_diagonal(diagonal/*TODO: ,evaluation_time*/);
     }
   }
 
@@ -879,7 +879,7 @@ private:
 
     if(operator_data.convective_problem == true)
     {
-      convective_operator->add_block_jacobi_matrices(matrices,evaluation_time);
+      convective_operator->add_block_jacobi_matrices(matrices/*TODO: ,evaluation_time*/);
     }
 
     // test correctness of block Jacobi matrices
