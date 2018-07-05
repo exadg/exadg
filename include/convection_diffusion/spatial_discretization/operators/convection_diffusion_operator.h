@@ -8,20 +8,20 @@ namespace ConvDiff {
     
 template<int dim>
 struct ConvectionDiffusionOperatorData
-{
+    : public OperatorBaseData<dim, BoundaryType, OperatorType,
+                              ConvDiff::BoundaryDescriptor<dim>> {
   ConvectionDiffusionOperatorData()
-    :
+      : OperatorBaseData<dim, BoundaryType, OperatorType,
+                         ConvDiff::BoundaryDescriptor<dim>>(
+            0, 0),
     unsteady_problem(true),
     convective_problem(true),
     diffusive_problem(true),
-    dof_index(0),
-    mg_operator_type(MultigridOperatorType::Undefined)
-  {}
+    mg_operator_type(MultigridOperatorType::Undefined) {}
 
   bool unsteady_problem;
   bool convective_problem;
   bool diffusive_problem;
-  unsigned int dof_index;
   MultigridOperatorType mg_operator_type;
 };
 
