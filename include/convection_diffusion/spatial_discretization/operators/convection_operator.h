@@ -7,19 +7,19 @@ namespace ConvDiff {
 
 template<int dim>
 struct ConvectiveOperatorData
-{
-  ConvectiveOperatorData ()
-    :
-    dof_index(0),
-    quad_index(0),
-    numerical_flux_formulation(NumericalFluxConvectiveOperator::Undefined)
-  {}
+    : public OperatorBaseData<dim, BoundaryType, OperatorType,
+                              ConvDiff::BoundaryDescriptor<dim>> {
+    
+  ConvectiveOperatorData()
+      : OperatorBaseData<dim, BoundaryType, OperatorType,
+                         ConvDiff::BoundaryDescriptor<dim>>(
+            0, 0, true, false, false, false, true, false, // cell
+            true, false, true, false, // face
+            true, false, true, false  // boundary
+          ),
+    numerical_flux_formulation(NumericalFluxConvectiveOperator::Undefined){}
 
-  unsigned int dof_index;
-  unsigned int quad_index;
   NumericalFluxConvectiveOperator numerical_flux_formulation;
-
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > bc;
   std::shared_ptr<Function<dim> > velocity;
 };
 
