@@ -406,7 +406,8 @@ public:
     this->eval_time = evaluation_time;
 
     parallel::distributed::Vector<value_type> src;
-    parallel::distributed::Vector<value_type> tmp(dst);
+    parallel::distributed::Vector<value_type> tmp;
+    tmp.reinit(dst,false); // make sure to initialize with zero
 
     data->loop(&This::cell_loop_inhom_operator,
                &This::face_loop_inhom_operator,
@@ -794,7 +795,8 @@ private:
     VectorizedArray<value_type> tau_IP = fe_eval.read_cell_data(array_penalty_parameter)
                                           * IP::get_penalty_factor<value_type>(fe_degree, operator_data.IP_factor);
 
-    fe_eval.evaluate(true,true);
+    if(operator_type == OperatorType::homogeneous || operator_type == OperatorType::full)
+      fe_eval.evaluate(true,true);
 
     for(unsigned int q=0;q<fe_eval.n_q_points;++q)
     {
@@ -1491,7 +1493,8 @@ public:
     this->eval_time = evaluation_time;
 
     parallel::distributed::Vector<value_type> src;
-    parallel::distributed::Vector<value_type> tmp(dst);
+    parallel::distributed::Vector<value_type> tmp;
+    tmp.reinit(dst,false); // make sure to initialize with zero
 
     data->loop(&This::cell_loop_inhom_operator,
                &This::face_loop_inhom_operator,
@@ -1761,7 +1764,8 @@ private:
   {
     BoundaryType boundary_type = get_boundary_type(boundary_id);
 
-    fe_eval.evaluate(true,false);
+    if(operator_type == OperatorType::homogeneous || operator_type == OperatorType::full)
+      fe_eval.evaluate(true,false);
 
     for(unsigned int q=0;q<fe_eval.n_q_points;++q)
     {
@@ -3097,7 +3101,7 @@ private:
   /*
    * The following variables are necessary when applying the multigrid
    * preconditioner to the convection-diffusion operator. In that case, the
-   * Helmholtz has to be generated for each level of the multigrid algorithm.
+   * ConvectionDiffusionOperator has to be generated for each level of the multigrid algorithm.
    * Accordingly, in a first step one has to setup own objects of
    * MatrixFree, MassMatrixOperator, DiffusiveOperator,
    *   e.g., own_matrix_free_storage.reinit(...);
