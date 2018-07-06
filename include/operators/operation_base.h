@@ -117,7 +117,7 @@ struct OperatorBaseData {
 };
 
 template <int dim, int degree, typename Number, typename AdditionalData>
-class OperatorBase : MatrixOperatorBaseNew<dim, Number> {
+class OperatorBase : public MatrixOperatorBaseNew<dim, Number> {
 
 public:
   typedef OperatorBase<dim, degree, Number, AdditionalData> This;
@@ -162,15 +162,10 @@ public:
   /*
    *
    */
-  // TODO: remove
-  void rhs(VNumber &/*dst*/) const{
-      AssertThrow(false, ExcMessage("OperatorBase::rhs to be removed!"));
-  }
+  void rhs(VNumber &dst) const{ rhs(dst, 0.0); }
   void rhs(VNumber &dst, Number const time) const;
   // TODO: remove
-  void rhs_add(VNumber &/*dst*/) const{
-      AssertThrow(false, ExcMessage("OperatorBase::rhs_add to be removed!"));
-  }
+  void rhs_add(VNumber &dst) const{ rhs_add(dst, 0.0);}
   void rhs_add(VNumber &dst, Number const time) const;
 
   void evaluate(VNumber &dst, VNumber const &src, Number const time) const;
@@ -192,7 +187,7 @@ public:
   // TODO: add matrix-free and block matrix version
   void apply_block_diagonal(VNumber &dst, VNumber const &src) const;
   void update_block_jacobi() const;
-  void add_block_jacobi_matrices(BMatrix &matrices) const;
+  virtual void add_block_jacobi_matrices(BMatrix &matrices) const;
 
   /*
    * sparse matrix (Trilinos) methods

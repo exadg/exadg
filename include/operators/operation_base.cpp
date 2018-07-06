@@ -185,7 +185,7 @@ void OperatorBase<dim, degree, Number, AdditionalData>::update_block_jacobi()
   add_block_jacobi_matrices(matrices);
 
   // perform lu factorization for block matrices
-  // calculate_lu_factorization_block_jacobi(matrices); // TODO
+   calculate_lu_factorization_block_jacobi(matrices); // TODO
 }
 
 template <int dim, int degree, typename Number, typename AdditionalData>
