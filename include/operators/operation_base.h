@@ -205,7 +205,7 @@ public:
   /*
    * sparse matrix (Trilinos) methods
    */
-  void init_system_matrix(SMatrix &system_matrix, MPI_Comm comm) const;
+  void init_system_matrix(SMatrix &system_matrix) const;
 
   void calculate_system_matrix(SMatrix &system_matrix) const;
 

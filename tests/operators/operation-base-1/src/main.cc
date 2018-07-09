@@ -163,7 +163,7 @@ private:
 
     // System matrix
     TrilinosWrappers::SparseMatrix system_matrix;
-    laplace.init_system_matrix(system_matrix, comm);
+    laplace.init_system_matrix(system_matrix);
     laplace.calculate_system_matrix(system_matrix);
 
 #ifdef DETAIL_OUTPUT

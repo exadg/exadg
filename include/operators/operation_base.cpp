@@ -261,9 +261,21 @@ void OperatorBase<dim, degree, Number,
 
 template <int dim, int degree, typename Number, typename AdditionalData>
 void OperatorBase<dim, degree, Number, AdditionalData>::init_system_matrix(
-    SMatrix &system_matrix, MPI_Comm comm) const {
+    SMatrix &system_matrix) const {
 
   const DoFHandler<dim> &dof_handler = this->data->get_dof_handler();
+  MPI_Comm comm;
+  
+  // extract communicator
+  {
+    auto tria = dynamic_cast<const parallel::Triangulation<dim> *>(
+            &dof_handler.get_triangulation());
+    
+    if (tria != NULL)
+        comm = tria->get_communicator();
+    else // not distributed triangulation
+        comm = MPI_COMM_SELF;
+  }
 
   if (is_dg && is_mg) {
     // dg and with mg

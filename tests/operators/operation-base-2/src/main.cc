@@ -201,7 +201,7 @@ public:
     if (best_of == 1) {
         time.restart();
         TrilinosWrappers::SparseMatrix system_matrix;
-        laplace.init_system_matrix(system_matrix,comm);
+        laplace.init_system_matrix(system_matrix);
         convergence_table.add_value("m-init", time.wall_time());
         convergence_table.set_scientific("m-init", true);
 
