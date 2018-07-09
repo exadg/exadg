@@ -50,7 +50,7 @@
 //#define DETAIL_OUTPUT
 const int PATCHES = 10;
 
-const int global_refinements = 3;
+const unsigned int global_refinements = 3;
 const int dim = 2;
 const int fe_degree = 2;
 typedef double value_type;
@@ -153,7 +153,11 @@ private:
     data.reinit(dof_handler_dg, dummy, quadrature, additional_data);
   }
 
-  void run(int ii, LaplaceOperator<dim, fe_degree, value_type> &laplace) {
+  void run(LaplaceOperator<dim, fe_degree, value_type> &laplace,
+           unsigned int mg_level = numbers::invalid_unsigned_int) {
+
+    // determine level: -1 and globarl_refinements map to the same level
+    unsigned int level = std::min(global_refinements, mg_level);
 
     // System matrix
     TrilinosWrappers::SparseMatrix system_matrix;
@@ -226,8 +230,7 @@ private:
     vec_src = 1.0;
 
     // ... zero out constrained entries in source vector
-    auto bs = mg_constrained_dofs.get_boundary_indices(
-        ii == -1 ? global_refinements : ii);
+    auto bs = mg_constrained_dofs.get_boundary_indices(level);
     auto ls = vec_src.locally_owned_elements();
     auto gs = bs;
     gs.subtract_set(ls);
@@ -257,7 +260,7 @@ private:
       vec_dst_mf -= vec_dst_sm;
       convergence_table.add_value("dim", dim);
       convergence_table.add_value("deg", fe_degree);
-      convergence_table.add_value("lev", ii);
+      convergence_table.add_value("lev", level);
       double n = vec_dst_mf.l2_norm();
       convergence_table.add_value("diff", n);
       convergence_table.set_scientific("diff", true);
@@ -282,7 +285,7 @@ private:
     }
 
     // ... output result to paraview
-    if (ii == -1) {
+    if (mg_level == numbers::invalid_unsigned_int) {
       DataOut<dim> data_out;
       data_out.attach_dof_handler(dof_handler_dg);
 
@@ -313,16 +316,16 @@ public:
     laplace_additional_data.bc = this->bc;
 
     // run through all multigrid level
-    for (int ii = 0; ii <= global_refinements; ii++) {
+    for (unsigned int level = 0; level <= global_refinements; level++) {
       laplace.reinit_mf(dof_handler_dg, mapping, mg_constrained_dofs,
-                        laplace_additional_data, ii);
-      run(ii, laplace);
+                        laplace_additional_data, level);
+      run(laplace, level);
     }
 
     // run on fine grid without multigrid
     {
       laplace.reinit(data, dummy, laplace_additional_data);
-      run(-1, laplace);
+      run(laplace);
     }
 
     // output convergence table
@@ -334,8 +337,8 @@ public:
 int main(int argc, char **argv) {
   Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
 
-  Runner<dim, FE_Q<dim>> r1;
-  r1.run();
-  Runner<dim, FE_DGQ<dim>> r2;
-  r2.run();
+  Runner<dim, FE_Q<dim>> run_cg;
+  run_cg.run();
+  Runner<dim, FE_DGQ<dim>> run_dg;
+  run_dg.run();
 }
