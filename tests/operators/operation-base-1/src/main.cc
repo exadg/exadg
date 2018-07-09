@@ -69,13 +69,21 @@ public:
         triangulation(comm, dealii::Triangulation<dim>::none,
                       parallel::distributed::Triangulation<
                           dim>::construct_multigrid_hierarchy),
-        fe_dgq(fe_degree), dof_handler_dg(triangulation) {}
+        fe_dgq(fe_degree), dof_handler_dg(triangulation), mapping(fe_degree),
+        quadrature(fe_degree + 1) {}
 
   MPI_Comm comm;
   int rank;
   parallel::distributed::Triangulation<dim> triangulation;
   FE_TYPE fe_dgq;
   DoFHandler<dim> dof_handler_dg;
+  ConvergenceTable convergence_table;
+  MappingQGeneric<dim> mapping;
+  QGauss<1> quadrature;
+  MatrixFree<dim, value_type> data;
+  std::shared_ptr<BoundaryDescriptor<dim>> bc;
+  MGConstrainedDoFs mg_constrained_dofs;
+  ConstraintMatrix dummy;
 
   static int get_rank(MPI_Comm comm) {
     int rank;
@@ -83,9 +91,7 @@ public:
     return rank;
   }
 
-  void run() {
-
-    ConvergenceTable convergence_table;
+  void init_triangulation_and_dof_handler() {
 
     GridGenerator::hyper_cube(triangulation, -1.0, +1.0);
     triangulation.refine_global(global_refinements);
@@ -99,11 +105,17 @@ public:
 
     dof_handler_dg.distribute_dofs(fe_dgq);
     dof_handler_dg.distribute_mg_dofs();
+  }
 
-    MatrixFree<dim, value_type> data;
+  void init_boundary_conditions() {
+    bc.reset(new BoundaryDescriptor<dim>());
+    bc->dirichlet_bc[0] =
+        std::shared_ptr<Function<dim>>(new Functions::ZeroFunction<dim>());
+    bc->neumann_bc[1] =
+        std::shared_ptr<Function<dim>>(new Functions::ZeroFunction<dim>());
+  }
 
-    MappingQGeneric<dim> mapping(fe_degree);
-    QGauss<1> quadrature(fe_degree + 1);
+  void init_matrixfree_and_constraint_matrix() {
     typename MatrixFree<dim, value_type>::AdditionalData additional_data;
 
     if (fe_dgq.dofs_per_vertex == 0)
@@ -121,196 +133,197 @@ public:
     // ...: Periodic BC
 
     // Setup constraints: for MG
-    MGConstrainedDoFs mg_constrained_dofs;
     mg_constrained_dofs.clear();
     std::set<types::boundary_id> dirichlet_boundary;
-    for (auto it : dirichlet_bc)
+    for (auto it : this->bc->dirichlet_bc)
       dirichlet_boundary.insert(it.first);
     mg_constrained_dofs.initialize(dof_handler_dg);
     mg_constrained_dofs.make_zero_boundary_constraints(dof_handler_dg,
                                                        dirichlet_boundary);
 
-    LaplaceOperator<dim, fe_degree, value_type> laplace;
-    ConstraintMatrix dummy;
+    if (fe_dgq.dofs_per_vertex > 0)
+      dummy.add_lines(
+          mg_constrained_dofs.get_boundary_indices(global_refinements));
 
-    std::vector<int> levels;
-    for (int ii = 0; ii <= global_refinements; ii++) {
-      levels.push_back(ii);
-    }
-    levels.push_back(-1);
-
-    LaplaceOperatorData<dim> laplace_additional_data;
-    laplace_additional_data.bc.reset(new BoundaryDescriptor<dim>());
-    laplace_additional_data.bc->dirichlet_bc[0] =
-        std::shared_ptr<Function<dim>>(new Functions::ZeroFunction<dim>());
-    laplace_additional_data.bc->neumann_bc[1] =
-        std::shared_ptr<Function<dim>>(new Functions::ZeroFunction<dim>());
-
-    for (auto ii : levels) {
-      if (ii == -1) {
-        if (fe_dgq.dofs_per_vertex > 0)
-          dummy.add_lines(
-              mg_constrained_dofs.get_boundary_indices(global_refinements));
-
-        dummy.close();
+    dummy.close();
 #ifdef DETAIL_OUTPUT
-        dummy.print(std::cout);
+    dummy.print(std::cout);
 #endif
-        data.reinit(dof_handler_dg, dummy, quadrature, additional_data);
-        laplace.reinit(data, dummy, laplace_additional_data);
-      } else {
-        laplace.reinit_mf(dof_handler_dg, mapping, mg_constrained_dofs,
-                          laplace_additional_data, ii);
-      }
+    data.reinit(dof_handler_dg, dummy, quadrature, additional_data);
+  }
 
-      // System matrix
-      TrilinosWrappers::SparseMatrix system_matrix;
-      laplace.init_system_matrix(system_matrix, comm);
-      laplace.calculate_system_matrix(system_matrix);
+  void run(int ii, LaplaceOperator<dim, fe_degree, value_type> &laplace) {
+
+    // System matrix
+    TrilinosWrappers::SparseMatrix system_matrix;
+    laplace.init_system_matrix(system_matrix, comm);
+    laplace.calculate_system_matrix(system_matrix);
 
 #ifdef DETAIL_OUTPUT
-      print_ascii(system_matrix);
-      print_matlab(system_matrix);
+    print_ascii(system_matrix);
+    print_matlab(system_matrix);
 #endif
 
-      // Right hand side
-      LinearAlgebra::distributed::Vector<value_type> vec_src;
-      laplace.initialize_dof_vector(vec_src);
-      RHSOperator<dim, fe_degree, value_type> rhs(laplace.get_data());
-      rhs.evaluate(vec_src);
+    // Right hand side
+    LinearAlgebra::distributed::Vector<value_type> vec_src;
+    laplace.initialize_dof_vector(vec_src);
+    RHSOperator<dim, fe_degree, value_type> rhs(laplace.get_data());
+    rhs.evaluate(vec_src);
 //      vec_src.update_ghost_values();
 #ifdef DETAIL_OUTPUT
-      std::cout << "RHS: ";
-      vec_src.print(std::cout);
+    std::cout << "RHS: ";
+    vec_src.print(std::cout);
 #endif
 
-      // Solve with matrix
-      LinearAlgebra::distributed::Vector<value_type> vec_dst;
-      laplace.initialize_dof_vector(vec_dst);
-      LinearAlgebra::distributed::Vector<value_type> vec_dst_;
-      laplace.initialize_dof_vector(vec_dst_);
-      SolverControl solver_control(1000, 1e-12);
-      SolverCG<LinearAlgebra::distributed::Vector<value_type>> solver(
-          solver_control);
-      try {
-        vec_dst.update_ghost_values();
-        solver.solve(system_matrix, vec_dst, vec_src, PreconditionIdentity());
-      } catch (SolverControl::NoConvergence &) {
-        std::cout << "MB: not converved!" << std::endl;
-      }
-      try {
-        vec_dst_.update_ghost_values();
-        solver.solve(laplace, vec_dst_, vec_src, PreconditionIdentity());
-      } catch (SolverControl::NoConvergence &) {
-        std::cout << "MF: not converved!" << std::endl;
-      }
+    // Solve with matrix
+    LinearAlgebra::distributed::Vector<value_type> vec_dst;
+    laplace.initialize_dof_vector(vec_dst);
+    LinearAlgebra::distributed::Vector<value_type> vec_dst_;
+    laplace.initialize_dof_vector(vec_dst_);
+    SolverControl solver_control(1000, 1e-12);
+    SolverCG<LinearAlgebra::distributed::Vector<value_type>> solver(
+        solver_control);
+    try {
+      vec_dst.update_ghost_values();
+      solver.solve(system_matrix, vec_dst, vec_src, PreconditionIdentity());
+    } catch (SolverControl::NoConvergence &) {
+      std::cout << "MB: not converved!" << std::endl;
+    }
+    try {
+      vec_dst_.update_ghost_values();
+      solver.solve(laplace, vec_dst_, vec_src, PreconditionIdentity());
+    } catch (SolverControl::NoConvergence &) {
+      std::cout << "MF: not converved!" << std::endl;
+    }
 #ifdef DETAIL_OUTPUT
-      std::cout << "SOL-MB: ";
-      vec_dst.print(std::cout);
-      std::cout << "SOL-MF: ";
-      vec_dst_.print(std::cout);
+    std::cout << "SOL-MB: ";
+    vec_dst.print(std::cout);
+    std::cout << "SOL-MF: ";
+    vec_dst_.print(std::cout);
 #endif
 
-      //
-      LinearAlgebra::distributed::Vector<value_type> vec_dst2;
-      laplace.initialize_dof_vector(vec_dst2);
-      LinearAlgebra::distributed::Vector<value_type> vec_dst3;
-      laplace.initialize_dof_vector(vec_dst3);
-      LinearAlgebra::distributed::Vector<value_type> vec_src1;
-      laplace.initialize_dof_vector(vec_src1);
-      vec_src1 = 1.0;
+    //
+    LinearAlgebra::distributed::Vector<value_type> vec_dst2;
+    laplace.initialize_dof_vector(vec_dst2);
+    LinearAlgebra::distributed::Vector<value_type> vec_dst3;
+    laplace.initialize_dof_vector(vec_dst3);
+    LinearAlgebra::distributed::Vector<value_type> vec_src1;
+    laplace.initialize_dof_vector(vec_src1);
+    vec_src1 = 1.0;
 
-      auto bs = mg_constrained_dofs.get_boundary_indices(
-          ii == -1 ? global_refinements : ii);
-      auto ls = vec_src1.locally_owned_elements();
-      auto gs = bs;
-      gs.subtract_set(ls);
-      bs.subtract_set(gs);
-      for (auto i : bs)
-        vec_src1(i) = 0.0;
+    auto bs = mg_constrained_dofs.get_boundary_indices(
+        ii == -1 ? global_refinements : ii);
+    auto ls = vec_src1.locally_owned_elements();
+    auto gs = bs;
+    gs.subtract_set(ls);
+    bs.subtract_set(gs);
+    for (auto i : bs)
+      vec_src1(i) = 0.0;
 #ifdef DETAIL_OUTPUT
-      std::cout << "X: ";
-      vec_src1.print(std::cout);
+    std::cout << "X: ";
+    vec_src1.print(std::cout);
 #endif
-      system_matrix.vmult(vec_dst2, vec_src1);
-      laplace.vmult(vec_dst3, vec_src1);
+    system_matrix.vmult(vec_dst2, vec_src1);
+    laplace.vmult(vec_dst3, vec_src1);
 #ifdef DETAIL_OUTPUT
-      std::cout << "Y-MB: ";
-      vec_dst2.print(std::cout);
-      std::cout << "X-MF: ";
-      vec_dst3.print(std::cout);
+    std::cout << "Y-MB: ";
+    vec_dst2.print(std::cout);
+    std::cout << "X-MF: ";
+    vec_dst3.print(std::cout);
 #endif
-      vec_dst3 -= vec_dst2;
-      {
-        convergence_table.add_value("dim", dim);
-        convergence_table.add_value("deg", fe_degree);
-        convergence_table.add_value("lev", ii);
-        double n = vec_dst3.l2_norm();
-        convergence_table.add_value("diff", n);
-        convergence_table.set_scientific("diff", true);
-      }
-
-      vec_dst3 = 0;
-
-      // if(ii==-1){
-      //    Vector<double> norm_per_cell(triangulation.n_active_cells());
-      //    VectorTools::integrate_difference(
-      //            dof_handler_dg,
-      //            vec_dst,
-      //            Functions::ZeroFunction<dim>(),
-      //            norm_per_cell,
-      //            QGauss<dim>(fe_degree + 1),
-      //            VectorTools::L2_norm);
-      //
-      //    double error = VectorTools::compute_global_error(
-      //            triangulation,
-      //            norm_per_cell,
-      //            VectorTools::L2_norm);
-      //    std::cout << error << std::endl;
-      //}
-
-      {
-        L2Norm<dim, fe_degree, value_type> integrator(laplace.get_data());
-        // std::cout << integrator.run(vec_dst) << std::endl;
-        auto t = vec_dst;
-        t.update_ghost_values();
-        double n = integrator.run(t);
-        convergence_table.add_value("int", n);
-        convergence_table.set_scientific("int", true);
-      }
-      {
-        L2Norm<dim, fe_degree, value_type> integrator(laplace.get_data());
-        // std::cout << integrator.run(vec_dst) << std::endl;
-        double n = integrator.run(vec_dst_);
-        convergence_table.add_value("int-mf", n);
-        convergence_table.set_scientific("int-mf", true);
-      }
-      if (ii == -1) {
-        //  vec_dst.zero_out_ghosts();
-        DataOut<dim> data_out;
-        data_out.attach_dof_handler(dof_handler_dg);
-        data_out.add_data_vector(vec_dst, "solution");
-        auto vec_rank = vec_dst;
-        vec_rank = rank;
-        data_out.add_data_vector(vec_rank, "rank");
-        data_out.build_patches(PATCHES);
-
-        int i = 0;
-        const std::string filename = "solution";
-        data_out.write_vtu_in_parallel(
-            std::string("output/" + filename + "-" + std::to_string(i) + ".vtu")
-                .c_str(),
-            comm);
-      }
+    vec_dst3 -= vec_dst2;
+    {
+      convergence_table.add_value("dim", dim);
+      convergence_table.add_value("deg", fe_degree);
+      convergence_table.add_value("lev", ii);
+      double n = vec_dst3.l2_norm();
+      convergence_table.add_value("diff", n);
+      convergence_table.set_scientific("diff", true);
     }
 
-    if (!rank) {
+    vec_dst3 = 0;
+
+    // if(ii==-1){
+    //    Vector<double> norm_per_cell(triangulation.n_active_cells());
+    //    VectorTools::integrate_difference(
+    //            dof_handler_dg,
+    //            vec_dst,
+    //            Functions::ZeroFunction<dim>(),
+    //            norm_per_cell,
+    //            QGauss<dim>(fe_degree + 1),
+    //            VectorTools::L2_norm);
+    //
+    //    double error = VectorTools::compute_global_error(
+    //            triangulation,
+    //            norm_per_cell,
+    //            VectorTools::L2_norm);
+    //    std::cout << error << std::endl;
+    //}
+
+    {
+      L2Norm<dim, fe_degree, value_type> integrator(laplace.get_data());
+      // std::cout << integrator.run(vec_dst) << std::endl;
+      auto t = vec_dst;
+      t.update_ghost_values();
+      double n = integrator.run(t);
+      convergence_table.add_value("int", n);
+      convergence_table.set_scientific("int", true);
+    }
+    {
+      L2Norm<dim, fe_degree, value_type> integrator(laplace.get_data());
+      // std::cout << integrator.run(vec_dst) << std::endl;
+      double n = integrator.run(vec_dst_);
+      convergence_table.add_value("int-mf", n);
+      convergence_table.set_scientific("int-mf", true);
+    }
+    if (ii == -1) {
+      //  vec_dst.zero_out_ghosts();
+      DataOut<dim> data_out;
+      data_out.attach_dof_handler(dof_handler_dg);
+      data_out.add_data_vector(vec_dst, "solution");
+      auto vec_rank = vec_dst;
+      vec_rank = rank;
+      data_out.add_data_vector(vec_rank, "rank");
+      data_out.build_patches(PATCHES);
+
+      int i = 0;
+      const std::string filename = "solution";
+      data_out.write_vtu_in_parallel(
+          std::string("output/" + filename + "-" + std::to_string(i) + ".vtu")
+              .c_str(),
+          comm);
+    }
+  }
+
+  void run() {
+
+    // initialize the system
+    init_triangulation_and_dof_handler();
+    init_boundary_conditions();
+    init_matrixfree_and_constraint_matrix();
+
+    // initialize the operator and ...
+    LaplaceOperator<dim, fe_degree, value_type> laplace;
+    // ... its additional data
+    LaplaceOperatorData<dim> laplace_additional_data;
+    laplace_additional_data.bc = this->bc;
+
+    // run through all multigrid level
+    for (int ii = 0; ii <= global_refinements; ii++) {
+      laplace.reinit_mf(dof_handler_dg, mapping, mg_constrained_dofs,
+                        laplace_additional_data, ii);
+      run(ii, laplace);
+    }
+
+    // run on fine grid without multigrid
+    {
+      laplace.reinit(data, dummy, laplace_additional_data);
+      run(-1, laplace);
+    }
+
+    // output convergence table
+    if (!rank)
       convergence_table.write_text(std::cout);
-      // std::ofstream outfile;
-      // outfile.open("ctable.csv");
-      // convergence_table.write_text(outfile);
-      // outfile.close();
-    }
   }
 };
 
