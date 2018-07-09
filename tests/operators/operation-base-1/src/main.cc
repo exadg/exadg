@@ -51,8 +51,8 @@
 const int PATCHES = 10;
 
 const unsigned int global_refinements = 3;
-const int dim = 2;
-const int fe_degree = 2;
+//const int dim = 2;
+//const int fe_degree = 2;
 typedef double value_type;
 
 using namespace dealii;
@@ -61,7 +61,7 @@ using namespace dealii;
 #include "include/rhs_operator.h"
 #include "include/sparse_matrix_util.h"
 
-template <int dim, typename FE_TYPE> class Runner {
+template <int dim, int fe_degree, typename FE_TYPE> class Runner {
 
 public:
   Runner()
@@ -204,6 +204,7 @@ private:
     } catch (SolverControl::NoConvergence &) {
       std::cout << "MB: not converved!" << std::endl;
     }
+    const int last_step_sm = solver_control.last_step();
 
     // ... solve matrix-free
     try {
@@ -211,6 +212,7 @@ private:
     } catch (SolverControl::NoConvergence &) {
       std::cout << "MF: not converved!" << std::endl;
     }
+    const int last_step_mf = solver_control.last_step();
 
 #ifdef DETAIL_OUTPUT
     std::cout << "SOL-MB: ";
@@ -262,6 +264,8 @@ private:
       convergence_table.add_value("dim", dim);
       convergence_table.add_value("deg", fe_degree);
       convergence_table.add_value("lev", level);
+      convergence_table.add_value("dofs", vec_rhs.size());
+      convergence_table.add_value("vers", fe_dgq.dofs_per_vertex > 0);
       double n = vec_dst_mf.l2_norm();
       convergence_table.add_value("diff", n);
       convergence_table.set_scientific("diff", true);
@@ -273,14 +277,16 @@ private:
       auto t = vec_sol_sm;
       t.update_ghost_values();
       double n = integrator.run(t);
-      convergence_table.add_value("int", n);
-      convergence_table.set_scientific("int", true);
+      convergence_table.add_value("steps-sm", last_step_sm);
+      convergence_table.add_value("int-sm", n);
+      convergence_table.set_scientific("int-sm", true);
     }
 
     // ... CG-solution: matrix-free, and
     {
       L2Norm<dim, fe_degree, value_type> integrator(laplace.get_data());
       double n = integrator.run(vec_sol_mf);
+      convergence_table.add_value("steps-mf", last_step_mf);
       convergence_table.add_value("int-mf", n);
       convergence_table.set_scientific("int-mf", true);
     }
@@ -337,9 +343,28 @@ public:
 
 int main(int argc, char **argv) {
   Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
+  ConditionalOStream pcout (std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0);
+  {
+    Runner<2, 1, FE_Q<2>  > run_cg; run_cg.run();
+    Runner<2, 1, FE_DGQ<2>> run_dg; run_dg.run();
+    pcout << std::endl;
+  }
 
-  Runner<dim, FE_Q<dim>> run_cg;
-  run_cg.run();
-  Runner<dim, FE_DGQ<dim>> run_dg;
-  run_dg.run();
+  {
+    Runner<2, 2, FE_Q<2>  > run_cg; run_cg.run();
+    Runner<2, 2, FE_DGQ<2>> run_dg; run_dg.run();
+    pcout << std::endl;
+  }
+
+  {
+    Runner<3, 1, FE_Q<3>  > run_cg; run_cg.run();
+    Runner<3, 1, FE_DGQ<3>> run_dg; run_dg.run();
+    pcout << std::endl;
+  }
+
+  {
+    Runner<3, 2, FE_Q<3>  > run_cg; run_cg.run();
+    Runner<3, 2, FE_DGQ<3>> run_dg; run_dg.run();
+    pcout << std::endl;
+  }
 }
