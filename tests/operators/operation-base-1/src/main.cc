@@ -64,18 +64,28 @@ using namespace dealii;
 template <int dim, typename FE_TYPE> class Runner {
 
 public:
-  Runner() {}
+  Runner()
+      : comm(MPI_COMM_WORLD), rank(get_rank(comm)),
+        triangulation(comm, dealii::Triangulation<dim>::none,
+                      parallel::distributed::Triangulation<
+                          dim>::construct_multigrid_hierarchy),
+        fe_dgq(fe_degree), dof_handler_dg(triangulation) {}
+
+  MPI_Comm comm;
+  int rank;
+  parallel::distributed::Triangulation<dim> triangulation;
+  FE_TYPE fe_dgq;
+  DoFHandler<dim> dof_handler_dg;
+
+  static int get_rank(MPI_Comm comm) {
+    int rank;
+    MPI_Comm_rank(comm, &rank);
+    return rank;
+  }
 
   void run() {
 
     ConvergenceTable convergence_table;
-
-    MPI_Comm comm = MPI_COMM_WORLD;
-    int rank;
-    MPI_Comm_rank(comm, &rank);
-    parallel::distributed::Triangulation<dim> triangulation(comm, 
-            dealii::Triangulation<dim>::none,
-            parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy);
 
     GridGenerator::hyper_cube(triangulation, -1.0, +1.0);
     triangulation.refine_global(global_refinements);
@@ -87,13 +97,8 @@ public:
           if (std::abs(cell.face(face)->center()(0) - 1.0) < 1e-12)
             cell.face(face)->set_boundary_id(1);
 
-    FE_TYPE fe_dgq(fe_degree);
-
-    DoFHandler<dim> dof_handler_dg(triangulation);
     dof_handler_dg.distribute_dofs(fe_dgq);
     dof_handler_dg.distribute_mg_dofs();
-
-    int level = global_refinements;
 
     MatrixFree<dim, value_type> data;
 
@@ -104,7 +109,7 @@ public:
     if (fe_dgq.dofs_per_vertex == 0)
       additional_data.build_face_info = true;
 
-    additional_data.level_mg_handler = level;
+    additional_data.level_mg_handler = global_refinements;
 
     // set boundary conditions: Dirichlet BC
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
@@ -124,7 +129,7 @@ public:
     mg_constrained_dofs.initialize(dof_handler_dg);
     mg_constrained_dofs.make_zero_boundary_constraints(dof_handler_dg,
                                                        dirichlet_boundary);
-    
+
     LaplaceOperator<dim, fe_degree, value_type> laplace;
     ConstraintMatrix dummy;
 
@@ -133,7 +138,7 @@ public:
       levels.push_back(ii);
     }
     levels.push_back(-1);
-    
+
     LaplaceOperatorData<dim> laplace_additional_data;
     laplace_additional_data.bc.reset(new BoundaryDescriptor<dim>());
     laplace_additional_data.bc->dirichlet_bc[0] =
@@ -144,7 +149,8 @@ public:
     for (auto ii : levels) {
       if (ii == -1) {
         if (fe_dgq.dofs_per_vertex > 0)
-          dummy.add_lines(mg_constrained_dofs.get_boundary_indices(level));
+          dummy.add_lines(
+              mg_constrained_dofs.get_boundary_indices(global_refinements));
 
         dummy.close();
 #ifdef DETAIL_OUTPUT
@@ -166,7 +172,7 @@ public:
       print_ascii(system_matrix);
       print_matlab(system_matrix);
 #endif
-      
+
       // Right hand side
       LinearAlgebra::distributed::Vector<value_type> vec_src;
       laplace.initialize_dof_vector(vec_src);
@@ -213,15 +219,15 @@ public:
       LinearAlgebra::distributed::Vector<value_type> vec_src1;
       laplace.initialize_dof_vector(vec_src1);
       vec_src1 = 1.0;
-      
+
       auto bs = mg_constrained_dofs.get_boundary_indices(
-               ii == -1 ? global_refinements : ii);
+          ii == -1 ? global_refinements : ii);
       auto ls = vec_src1.locally_owned_elements();
       auto gs = bs;
       gs.subtract_set(ls);
       bs.subtract_set(gs);
       for (auto i : bs)
-            vec_src1(i) = 0.0;
+        vec_src1(i) = 0.0;
 #ifdef DETAIL_OUTPUT
       std::cout << "X: ";
       vec_src1.print(std::cout);
@@ -266,7 +272,8 @@ public:
       {
         L2Norm<dim, fe_degree, value_type> integrator(laplace.get_data());
         // std::cout << integrator.run(vec_dst) << std::endl;
-        auto t = vec_dst; t.update_ghost_values();
+        auto t = vec_dst;
+        t.update_ghost_values();
         double n = integrator.run(t);
         convergence_table.add_value("int", n);
         convergence_table.set_scientific("int", true);
@@ -290,8 +297,10 @@ public:
 
         int i = 0;
         const std::string filename = "solution";
-        data_out.write_vtu_in_parallel(std::string("output/" + filename  +
-                                      "-" + std::to_string(i) + ".vtu").c_str(),comm);
+        data_out.write_vtu_in_parallel(
+            std::string("output/" + filename + "-" + std::to_string(i) + ".vtu")
+                .c_str(),
+            comm);
       }
     }
 
