@@ -72,6 +72,7 @@ public:
         fe_dgq(fe_degree), dof_handler_dg(triangulation), mapping(fe_degree),
         quadrature(fe_degree + 1) {}
 
+private:
   MPI_Comm comm;
   int rank;
   parallel::distributed::Triangulation<dim> triangulation;
@@ -169,7 +170,7 @@ public:
     laplace.initialize_dof_vector(vec_rhs);
     RHSOperator<dim, fe_degree, value_type> rhs(laplace.get_data());
     rhs.evaluate(vec_rhs);
-    
+
 #ifdef DETAIL_OUTPUT
     std::cout << "RHS: ";
     vec_rhs.print(std::cout);
@@ -178,34 +179,34 @@ public:
     // Solve linear equation system: setup solution vectors
     LinearAlgebra::distributed::Vector<value_type> vec_sol_sm;
     LinearAlgebra::distributed::Vector<value_type> vec_sol_mf;
-    
+
     // ... fill with zeroes
     laplace.initialize_dof_vector(vec_sol_sm);
     laplace.initialize_dof_vector(vec_sol_mf);
-    
+
     // ... fill ghost values with zeroes
     vec_sol_sm.update_ghost_values();
     vec_sol_mf.update_ghost_values();
-    
+
     // .. setup conjugate-gradient-solver
     SolverControl solver_control(1000, 1e-12);
     SolverCG<LinearAlgebra::distributed::Vector<value_type>> solver(
         solver_control);
-    
+
     // ... solve with sparse matrix
-    try{ 
+    try {
       solver.solve(system_matrix, vec_sol_sm, vec_rhs, PreconditionIdentity());
-    }catch (SolverControl::NoConvergence &){
+    } catch (SolverControl::NoConvergence &) {
       std::cout << "MB: not converved!" << std::endl;
     }
-    
+
     // ... solve matrix-free
-    try{
+    try {
       solver.solve(laplace, vec_sol_mf, vec_rhs, PreconditionIdentity());
-    }catch (SolverControl::NoConvergence &){
+    } catch (SolverControl::NoConvergence &) {
       std::cout << "MF: not converved!" << std::endl;
     }
-    
+
 #ifdef DETAIL_OUTPUT
     std::cout << "SOL-MB: ";
     vec_sol_sm.print(std::cout);
@@ -213,82 +214,91 @@ public:
     vec_sol_mf.print(std::cout);
 #endif
 
-    //
-    LinearAlgebra::distributed::Vector<value_type> vec_dst2;
-    laplace.initialize_dof_vector(vec_dst2);
-    LinearAlgebra::distributed::Vector<value_type> vec_dst3;
-    laplace.initialize_dof_vector(vec_dst3);
-    LinearAlgebra::distributed::Vector<value_type> vec_src1;
-    laplace.initialize_dof_vector(vec_src1);
-    vec_src1 = 1.0;
+    // Perform vmult: setup vectors...
+    LinearAlgebra::distributed::Vector<value_type> vec_dst_sm;
+    LinearAlgebra::distributed::Vector<value_type> vec_dst_mf;
+    LinearAlgebra::distributed::Vector<value_type> vec_src;
+    laplace.initialize_dof_vector(vec_dst_sm);
+    laplace.initialize_dof_vector(vec_dst_mf);
+    laplace.initialize_dof_vector(vec_src);
 
+    // ... make source vector unique vector
+    vec_src = 1.0;
+
+    // ... zero out constrained entries in source vector
     auto bs = mg_constrained_dofs.get_boundary_indices(
         ii == -1 ? global_refinements : ii);
-    auto ls = vec_src1.locally_owned_elements();
+    auto ls = vec_src.locally_owned_elements();
     auto gs = bs;
     gs.subtract_set(ls);
     bs.subtract_set(gs);
     for (auto i : bs)
-      vec_src1(i) = 0.0;
+      vec_src(i) = 0.0;
+
 #ifdef DETAIL_OUTPUT
     std::cout << "X: ";
-    vec_src1.print(std::cout);
+    vec_src.print(std::cout);
 #endif
-    system_matrix.vmult(vec_dst2, vec_src1);
-    laplace.vmult(vec_dst3, vec_src1);
+
+    // ... vmult with sparse matrix
+    system_matrix.vmult(vec_dst_sm, vec_src);
+    // ... vmult matrix free
+    laplace.vmult(vec_dst_mf, vec_src);
+
 #ifdef DETAIL_OUTPUT
     std::cout << "Y-MB: ";
-    vec_dst2.print(std::cout);
+    vec_dst_sm.print(std::cout);
     std::cout << "X-MF: ";
-    vec_dst3.print(std::cout);
+    vec_dst_mf.print(std::cout);
 #endif
-    vec_dst3 -= vec_dst2;
+
+    // Postprocessing: compare vmults, ...
     {
+      vec_dst_mf -= vec_dst_sm;
       convergence_table.add_value("dim", dim);
       convergence_table.add_value("deg", fe_degree);
       convergence_table.add_value("lev", ii);
-      double n = vec_dst3.l2_norm();
+      double n = vec_dst_mf.l2_norm();
       convergence_table.add_value("diff", n);
       convergence_table.set_scientific("diff", true);
     }
 
-    vec_dst3 = 0;
-
+    // ... CG-solution: sparse matrix
     {
       L2Norm<dim, fe_degree, value_type> integrator(laplace.get_data());
-      // std::cout << integrator.run(vec_dst) << std::endl;
       auto t = vec_sol_sm;
       t.update_ghost_values();
       double n = integrator.run(t);
       convergence_table.add_value("int", n);
       convergence_table.set_scientific("int", true);
     }
+
+    // ... CG-solution: matrix-free, and
     {
       L2Norm<dim, fe_degree, value_type> integrator(laplace.get_data());
-      // std::cout << integrator.run(vec_dst) << std::endl;
       double n = integrator.run(vec_sol_mf);
       convergence_table.add_value("int-mf", n);
       convergence_table.set_scientific("int-mf", true);
     }
+
+    // ... output result to paraview
     if (ii == -1) {
-      //  vec_dst.zero_out_ghosts();
       DataOut<dim> data_out;
       data_out.attach_dof_handler(dof_handler_dg);
+
       data_out.add_data_vector(vec_sol_sm, "solution");
+
       auto vec_rank = vec_sol_sm;
       vec_rank = rank;
       data_out.add_data_vector(vec_rank, "rank");
       data_out.build_patches(PATCHES);
 
-      int i = 0;
-      const std::string filename = "solution";
-      data_out.write_vtu_in_parallel(
-          std::string("output/" + filename + "-" + std::to_string(i) + ".vtu")
-              .c_str(),
-          comm);
+      const std::string filename = "output/solution.vtu";
+      data_out.write_vtu_in_parallel(filename.c_str(), comm);
     }
   }
 
+public:
   void run() {
 
     // initialize the system
