@@ -34,7 +34,7 @@ template <int dim, int degree, typename Number, typename AdditionalData>
 void OperatorBase<dim, degree, Number, AdditionalData>::reinit_mf(
     const DoFHandler<dim> &dof_handler, const Mapping<dim> &mapping,
     MGConstrainedDoFs &mg_constrained_dofs, AdditionalData &ad,
-    const unsigned int level) {
+    const unsigned int level) const {
 
   // check it dg or cg
   is_dg = dof_handler.get_fe().dofs_per_vertex == 0;

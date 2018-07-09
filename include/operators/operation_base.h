@@ -40,6 +40,8 @@
 #include <deal.II/base/convergence_table.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
 
+#include "matrix_operator_base_new.h"
+
 using namespace dealii;
 
 template <int dim, typename BT, typename OT, typename BoundaryDescriptor>
@@ -109,13 +111,13 @@ struct OperatorBaseData {
 template <typename T> class LazyWrapper {
 
 public:
-  void reinit(T &t) { this->tp = &t; }
+  void reinit(T const &t) { this->tp = &t; }
   T &own() { return t; }
-  T *operator->() { return tp; }
-  T &operator*() { return *tp; }
+  T const *operator->() { return tp; }
+  T const &operator*() { return *tp; }
 
 private:
-  T *tp;
+  T const *tp;
   T t;
 };
 
@@ -155,7 +157,7 @@ public:
   void reinit_mf(const DoFHandler<dim> &dof_handler,
                  const Mapping<dim> &mapping,
                  MGConstrainedDoFs &mg_constrained_dofs, AdditionalData &ad,
-                 const unsigned int level);
+                 const unsigned int level) const;
 
   /*
    * matrix vector multiplication
@@ -339,7 +341,7 @@ protected:
 private:
   const bool do_eval_faces;
 protected:
-  mutable LazyWrapper<MF const> data;
+  mutable LazyWrapper<MF> data;
 private:
   mutable LazyWrapper<ConstraintMatrix> constraint;
   mutable bool is_dg;
