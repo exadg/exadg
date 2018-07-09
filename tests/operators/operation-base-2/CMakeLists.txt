@@ -7,7 +7,7 @@ SET(TARGET "main")
 
 # Declare all source files the target consists of:
 SET(TARGET_SRC
-  src/include/laplace_operator.cpp
+  ../operation-base-util/laplace_operator.cpp
   src/main.cc
   # You can specify additional files here!
   )

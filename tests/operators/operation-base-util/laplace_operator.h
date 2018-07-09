@@ -45,7 +45,7 @@
 #include <iostream>
 #include <memory>
 
-#include "../../../../../include/operators/operation_base.h"
+#include "../../../include/operators/operation_base.h"
 
 enum class OperatorType {
   full,

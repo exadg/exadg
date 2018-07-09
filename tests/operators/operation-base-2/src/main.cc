@@ -45,7 +45,8 @@
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
 
-#include "include/laplace_operator.h"
+#include "../../operation-base-util/laplace_operator.h"
+#include "include/tests.h"
 
 #ifdef LIKWID_PERFMON
     #include <likwid.h>
@@ -61,10 +62,6 @@ typedef double value_type;
 
 using namespace dealii;
 
-#include "include/l2_norm.h"
-#include "include/rhs_operator.h"
-#include "include/sparse_matrix_util.h"
-#include "include/tests.h"
 
 const int dofs = 0.01e6;
 const int dim = 2;

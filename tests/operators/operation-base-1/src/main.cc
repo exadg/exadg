@@ -45,7 +45,10 @@
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
 
-#include "include/laplace_operator.h"
+#include "../../operation-base-util/laplace_operator.h"
+#include "../../operation-base-util/l2_norm.h"
+#include "../../operation-base-util/sparse_matrix_util.h"
+#include "include/rhs_operator.h"
 
 //#define DETAIL_OUTPUT
 const int PATCHES = 10;
@@ -57,9 +60,6 @@ typedef double value_type;
 
 using namespace dealii;
 
-#include "include/l2_norm.h"
-#include "include/rhs_operator.h"
-#include "include/sparse_matrix_util.h"
 
 template <int dim, int fe_degree, typename FE_TYPE> class Runner {
 
