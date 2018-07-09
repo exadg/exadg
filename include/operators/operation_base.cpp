@@ -213,6 +213,10 @@ void OperatorBase<dim, degree, Number, AdditionalData>::apply_block_diagonal(
 
 template <int dim, int degree, typename Number, typename AdditionalData>
 void OperatorBase<dim, degree, Number, AdditionalData>::update_block_jacobi()
+    const {this->update_block_jacobi(true);}
+
+template <int dim, int degree, typename Number, typename AdditionalData>
+void OperatorBase<dim, degree, Number, AdditionalData>::update_block_jacobi(bool do_lu_factorization)
     const {
 
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
@@ -232,7 +236,8 @@ void OperatorBase<dim, degree, Number, AdditionalData>::update_block_jacobi()
   add_block_jacobi_matrices(matrices);
 
   // perform lu factorization for block matrices
-  calculate_lu_factorization_block_jacobi(matrices); // TODO
+  if(do_lu_factorization)
+      calculate_lu_factorization_block_jacobi(matrices); // TODO
 }
 
 template <int dim, int degree, typename Number, typename AdditionalData>

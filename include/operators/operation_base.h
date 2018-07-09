@@ -199,6 +199,7 @@ public:
   // TODO: add matrix-free and block matrix version
   void apply_block_diagonal(VNumber &dst, VNumber const &src) const;
   void update_block_jacobi() const;
+  void update_block_jacobi(bool do_lu_factorization) const;
   virtual void add_block_jacobi_matrices(BMatrix &matrices) const;
 
   /*

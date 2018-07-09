@@ -193,7 +193,7 @@ public:
 
     if(comm_size==1){
       repeat<dim,fe_degree>(convergence_table, "bd-init",
-             [&]() mutable { laplace.update_block_jacobi(); });
+             [&]() mutable { laplace.update_block_jacobi(false /*TODO*/); });
       repeat<dim,fe_degree>(convergence_table, "bd-vmult",
              [&]() mutable { laplace.apply_block_diagonal(vec_dst_3, vec_src); });
     }
