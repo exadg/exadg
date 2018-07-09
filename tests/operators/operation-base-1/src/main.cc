@@ -72,6 +72,8 @@ public:
         fe_dgq(fe_degree), dof_handler_dg(triangulation), mapping(fe_degree),
         quadrature(fe_degree + 1) {}
 
+  typedef LinearAlgebra::distributed::Vector<value_type> VNumber;
+
 private:
   MPI_Comm comm;
   int rank;
@@ -129,9 +131,9 @@ private:
     dirichlet_bc[0] =
         std::shared_ptr<Function<dim>>(new Functions::ZeroFunction<dim>());
 
-    // ...: Neumann BC
+    // ...: Neumann BC: nothing to do
 
-    // ...: Periodic BC
+    // ...: Periodic BC: TODO
 
     // Setup constraints: for MG
     mg_constrained_dofs.clear();
@@ -170,7 +172,7 @@ private:
 #endif
 
     // Right hand side
-    LinearAlgebra::distributed::Vector<value_type> vec_rhs;
+    VNumber vec_rhs;
     laplace.initialize_dof_vector(vec_rhs);
     RHSOperator<dim, fe_degree, value_type> rhs(laplace.get_data());
     rhs.evaluate(vec_rhs);
@@ -181,8 +183,8 @@ private:
 #endif
 
     // Solve linear equation system: setup solution vectors
-    LinearAlgebra::distributed::Vector<value_type> vec_sol_sm;
-    LinearAlgebra::distributed::Vector<value_type> vec_sol_mf;
+    VNumber vec_sol_sm;
+    VNumber vec_sol_mf;
 
     // ... fill with zeroes
     laplace.initialize_dof_vector(vec_sol_sm);
@@ -194,8 +196,7 @@ private:
 
     // .. setup conjugate-gradient-solver
     SolverControl solver_control(1000, 1e-12);
-    SolverCG<LinearAlgebra::distributed::Vector<value_type>> solver(
-        solver_control);
+    SolverCG<VNumber> solver(solver_control);
 
     // ... solve with sparse matrix
     try {
@@ -219,9 +220,9 @@ private:
 #endif
 
     // Perform vmult: setup vectors...
-    LinearAlgebra::distributed::Vector<value_type> vec_dst_sm;
-    LinearAlgebra::distributed::Vector<value_type> vec_dst_mf;
-    LinearAlgebra::distributed::Vector<value_type> vec_src;
+    VNumber vec_dst_sm;
+    VNumber vec_dst_mf;
+    VNumber vec_src;
     laplace.initialize_dof_vector(vec_dst_sm);
     laplace.initialize_dof_vector(vec_dst_mf);
     laplace.initialize_dof_vector(vec_src);
