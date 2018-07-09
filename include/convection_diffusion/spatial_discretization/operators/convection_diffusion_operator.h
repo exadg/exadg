@@ -54,8 +54,10 @@ public:
                   DiffusiveOperator<dim, fe_degree, Number> const  &diffusive_operator_in)
   {
     // copy parameters into element variables
-    this->data = &mf_data_in;
-    this->ad = operator_data_in;
+//    this->data = &mf_data_in;
+//    this->ad = operator_data_in;
+      ConstraintMatrix cm;
+      Parent::reinit(mf_data_in, cm, operator_data_in);
     this->mass_matrix_operator = &mass_matrix_operator_in;
     this->convective_operator = &convective_operator_in;
     this->diffusive_operator = &diffusive_operator_in;

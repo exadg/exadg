@@ -9,18 +9,64 @@ OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
                                           ad.internal_integrate.do_eval() ||
                                           ad.boundary_evaluate.do_eval() ||
                                           ad.boundary_integrate.do_eval()),
+      level_mg_handler(numbers::invalid_unsigned_int),
       block_jacobi_matrices_have_been_initialized(false),eval_time(0.0) {}
 
 template <int dim, int degree, typename Number, typename AdditionalData>
-void OperatorBase<dim, degree, Number, AdditionalData>::reinit(MF const &mf,
-                                                               CM &cm,
-        AdditionalData const & ad) const {
-  this->data = &mf;
-  this->constraint = &cm;
+void OperatorBase<dim, degree, Number, AdditionalData>::reinit(
+    MF const &mf, CM &cm, AdditionalData const &ad, unsigned int level_mg_handler) const {
+  // reinit data structures
+  this->data.reinit(mf);
+  this->constraint.reinit(cm);
   this->ad = ad;
 
   // check if dg or cg
   is_dg = data->get_dof_handler(ad.dof_index).get_fe().dofs_per_vertex == 0;
+
+  // set mg level
+  this->level_mg_handler = level_mg_handler;
+
+  // is mg?
+  this->is_mg = !(level_mg_handler == numbers::invalid_unsigned_int);
+}
+
+template <int dim, int degree, typename Number, typename AdditionalData>
+void OperatorBase<dim, degree, Number, AdditionalData>::reinit_mf(
+    const DoFHandler<dim> &dof_handler, const Mapping<dim> &mapping,
+    MGConstrainedDoFs &mg_constrained_dofs, AdditionalData &ad,
+    const unsigned int level) {
+
+  // check it dg or cg
+  is_dg = dof_handler.get_fe().dofs_per_vertex == 0;
+
+  // setup mf::AdditionalData
+  typename MatrixFree<dim, Number>::AdditionalData additional_data;
+
+  // ... shall the faces be evaluated?
+  if (is_dg)
+    additional_data.build_face_info = true;
+
+  // ... level of this mg level
+  additional_data.level_mg_handler = level;
+
+  // ... on each level
+  auto &constraint_own = constraint.own();
+  auto &data_own = data.own();
+
+  // setup constraint matrix: clear old content (to be on the safe side)
+  constraint_own.clear();
+
+  // ...fill constraints
+  if (!is_dg) {
+    constraint_own.add_lines(mg_constrained_dofs.get_boundary_indices(level));
+  } // else: no constraints needed for DG
+
+  // ...finalize constraint matrix
+  constraint_own.close();
+
+  const QGauss<1> quad(dof_handler.get_fe().degree + 1);
+  data_own.reinit(mapping, dof_handler, constraint_own, quad, additional_data);
+  reinit(data_own, constraint_own, ad, level);
 }
 
 template <int dim, int degree, typename Number, typename AdditionalData>
@@ -125,10 +171,11 @@ void OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(
 }
 
 template <int dim, int degree, typename Number, typename AdditionalData>
-void OperatorBase<dim, degree, Number, AdditionalData>::calculate_inverse_diagonal(
-    VNumber &diagonal) const {
-    calculate_diagonal(diagonal);
-    invert_diagonal(diagonal);
+void OperatorBase<dim, degree, Number,
+                  AdditionalData>::calculate_inverse_diagonal(VNumber &diagonal)
+    const {
+  calculate_diagonal(diagonal);
+  invert_diagonal(diagonal);
 }
 
 template <int dim, int degree, typename Number, typename AdditionalData>
@@ -185,7 +232,7 @@ void OperatorBase<dim, degree, Number, AdditionalData>::update_block_jacobi()
   add_block_jacobi_matrices(matrices);
 
   // perform lu factorization for block matrices
-   calculate_lu_factorization_block_jacobi(matrices); // TODO
+  calculate_lu_factorization_block_jacobi(matrices); // TODO
 }
 
 template <int dim, int degree, typename Number, typename AdditionalData>
@@ -212,10 +259,37 @@ void OperatorBase<dim, degree, Number, AdditionalData>::init_system_matrix(
     SMatrix &system_matrix, MPI_Comm comm) const {
 
   const DoFHandler<dim> &dof_handler = this->data->get_dof_handler();
-  TrilinosWrappers::SparsityPattern dsp(dof_handler.locally_owned_dofs(), comm);
-  DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
-  dsp.compress();
-  system_matrix.reinit(dsp);
+
+  if (is_dg && is_mg) {
+    // dg and with mg
+    TrilinosWrappers::SparsityPattern dsp(
+        dof_handler.locally_owned_mg_dofs(this->level_mg_handler), comm);
+    MGTools::make_flux_sparsity_pattern(dof_handler, dsp,
+                                        this->level_mg_handler);
+    dsp.compress();
+    system_matrix.reinit(dsp);
+  } else if (is_dg && !is_mg) {
+    // dg and without mg
+    TrilinosWrappers::SparsityPattern dsp(dof_handler.locally_owned_dofs(),
+                                          comm);
+    DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
+    dsp.compress();
+    system_matrix.reinit(dsp);
+  } else if (/*!is_dg &&*/ is_mg) {
+    // cg and with mg
+    TrilinosWrappers::SparsityPattern dsp(
+        dof_handler.locally_owned_mg_dofs(this->level_mg_handler), comm);
+    MGTools::make_sparsity_pattern(dof_handler, dsp, this->level_mg_handler);
+    dsp.compress();
+    system_matrix.reinit(dsp);
+  } else /* if (!is_dg && !is_mg)*/ {
+    // cg and without mg
+    TrilinosWrappers::SparsityPattern dsp(dof_handler.locally_owned_dofs(),
+                                          comm);
+    DoFTools::make_sparsity_pattern(dof_handler, dsp);
+    dsp.compress();
+    system_matrix.reinit(dsp);
+  }
 }
 
 template <int dim, int degree, typename Number, typename AdditionalData>
@@ -234,6 +308,15 @@ void OperatorBase<dim, degree, Number, AdditionalData>::calculate_system_matrix(
 
   // communicate overlapping matrix parts
   system_matrix.compress(VectorOperation::add);
+
+  // in the case of dg: finished
+  if (is_dg)
+    return;
+
+  // make zero entries on diagonal (due to constrained dofs) to one:
+  for (auto &entry : system_matrix)
+    if (entry.row() == entry.column() && entry.value() == 0.0)
+      entry.value() = 1.0;
 }
 
 template <int dim, int degree, typename Number, typename AdditionalData>
@@ -390,7 +473,7 @@ template <int dim, int degree, typename Number, typename AdditionalData>
 void OperatorBase<dim, degree, Number, AdditionalData>::local_apply_boundary(
     const MF &data, VNumber &dst, const VNumber &src,
     const Range &range) const {
-    
+
   FEEvalFace phi(data, true, ad.dof_index, ad.quad_index);
 
   for (unsigned int face = range.first; face < range.second; face++) {
@@ -422,13 +505,13 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
     local_apply_inhom_boundary(const MF &data, VNumber &dst,
                                const VNumber & /*src*/,
                                const Range &range) const {
-    
+
   FEEvalFace phi(data, true, ad.dof_index, ad.quad_index);
 
   for (unsigned int face = range.first; face < range.second; face++) {
     auto bid = data.get_boundary_id(face);
     phi.reinit(face);
-    // note: no gathering/evaluation is necessary in the case of 
+    // note: no gathering/evaluation is necessary in the case of
     //       inhomogeneous boundary
     do_boundary_integral(phi, OperatorType::inhomogeneous, bid);
     phi.integrate_scatter(this->ad.boundary_integrate.value,
@@ -443,7 +526,7 @@ void OperatorBase<dim, degree, Number,
                                                              const VNumber &src,
                                                              const Range &range)
     const {
-    
+
   FEEvalFace phi(data, true, ad.dof_index, ad.quad_index);
 
   for (unsigned int face = range.first; face < range.second; face++) {
@@ -552,9 +635,9 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
 
 template <int dim, int degree, typename Number, typename AdditionalData>
 void OperatorBase<dim, degree, Number, AdditionalData>::
-    local_apply_boundary_diagonal(const MF & data, VNumber & dst,
+    local_apply_boundary_diagonal(const MF &data, VNumber &dst,
                                   const VNumber & /*src*/,
-                                  const Range & range) const {
+                                  const Range &range) const {
 
   FEEvalFace phi(data, true, ad.dof_index, ad.quad_index);
 
@@ -730,9 +813,9 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
 
 template <int dim, int degree, typename Number, typename AdditionalData>
 void OperatorBase<dim, degree, Number, AdditionalData>::
-    local_apply_boundary_block_diagonal(const MF & data, BMatrix & dst,
+    local_apply_boundary_block_diagonal(const MF &data, BMatrix &dst,
                                         const BMatrix & /*src*/,
-                                        const Range & range) const {
+                                        const Range &range) const {
   FEEvalFace phi(data, true, ad.dof_index, ad.quad_index);
 
   // loop over the range of macro cells
@@ -748,10 +831,10 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
       this->create_standard_basis(j, phi);
       // perform local vmult
       phi.evaluate(this->ad.boundary_evaluate.value,
-                     this->ad.boundary_evaluate.gradient);
+                   this->ad.boundary_evaluate.gradient);
       this->do_boundary_integral(phi, OperatorType::homogeneous, bid);
       phi.integrate(this->ad.boundary_integrate.value,
-                      this->ad.boundary_integrate.gradient);
+                    this->ad.boundary_integrate.gradient);
       for (unsigned int v = 0; v < n_filled_lanes; ++v) {
         const unsigned int cell = data.get_face_info(face).cells_interior[v];
         for (unsigned int i = 0; i < dofs_per_cell; ++i)
@@ -803,7 +886,25 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
     // finally assemble local matrix into global matrix
     for (unsigned int i = 0; i < n_filled_lanes; i++) {
       auto cell_i = data.get_cell_iterator(cell, i);
-      cell_i->distribute_local_to_global(matrices[i], dst);
+      //      cell_i->distribute_local_to_global(matrices[i], dst);
+      std::vector<types::global_dof_index> dof_indices(dofs_per_cell);
+      if (is_mg)
+        cell_i->get_mg_dof_indices(dof_indices);
+      else
+        cell_i->get_dof_indices(dof_indices);
+
+      if (!is_dg) {
+        // in the case of CG: shape functions are not ordered lexicographically
+        // see (https://www.dealii.org/8.5.1/doxygen/deal.II/classFE__Q.html)
+        // so we have to fix the order
+        auto temp = dof_indices;
+        for (unsigned int j = 0; j < dof_indices.size(); j++)
+          dof_indices[j] =
+              temp[data.get_shape_info().lexicographic_numbering[j]];
+      }
+
+      constraint->distribute_local_to_global(matrices[i], dof_indices,
+                                             dof_indices, dst);
     }
   }
 }
@@ -879,9 +980,14 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
 
       // get position in global matrix
       std::vector<types::global_dof_index> dof_indices_m(dofs_per_cell);
-      cell_m->get_dof_indices(dof_indices_m);
       std::vector<types::global_dof_index> dof_indices_p(dofs_per_cell);
-      cell_p->get_dof_indices(dof_indices_p);
+      if (is_mg) {
+        cell_m->get_mg_dof_indices(dof_indices_m);
+        cell_p->get_mg_dof_indices(dof_indices_p);
+      } else {
+        cell_m->get_dof_indices(dof_indices_m);
+        cell_p->get_dof_indices(dof_indices_p);
+      }
 
       // save u1_v1
       constraint->distribute_local_to_global(matrices_1[i], dof_indices_m,
@@ -937,9 +1043,14 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
 
       // get position in global matrix
       std::vector<types::global_dof_index> dof_indices_m(dofs_per_cell);
-      cell_m->get_dof_indices(dof_indices_m);
       std::vector<types::global_dof_index> dof_indices_p(dofs_per_cell);
-      cell_p->get_dof_indices(dof_indices_p);
+      if (is_mg) {
+        cell_m->get_mg_dof_indices(dof_indices_m);
+        cell_p->get_mg_dof_indices(dof_indices_p);
+      } else {
+        cell_m->get_dof_indices(dof_indices_m);
+        cell_p->get_dof_indices(dof_indices_p);
+      }
 
       // save u2_v1
       constraint->distribute_local_to_global(matrices_1[i], dof_indices_m,
@@ -953,9 +1064,9 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
 
 template <int dim, int degree, typename Number, typename AdditionalData>
 void OperatorBase<dim, degree, Number, AdditionalData>::
-    local_apply_boundary_system_matrix(const MF & data, SMatrix & dst,
+    local_apply_boundary_system_matrix(const MF &data, SMatrix &dst,
                                        const SMatrix & /*src*/,
-                                       const Range & range) const {
+                                       const Range &range) const {
 
   FEEvalFace phi(data, true, ad.dof_index, ad.quad_index);
 
@@ -964,7 +1075,7 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
     // determine number of filled vector lanes
     const unsigned int n_filled_lanes =
         data.n_active_entries_per_face_batch(face);
-    
+
     FMatrix matrices[v_len];
     std::fill_n(matrices, v_len, FMatrix(dofs_per_cell, dofs_per_cell));
 
@@ -979,11 +1090,11 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
       this->create_standard_basis(j, phi);
 
       phi.evaluate(this->ad.boundary_evaluate.value,
-                     this->ad.boundary_evaluate.gradient);
+                   this->ad.boundary_evaluate.gradient);
       // do loacal vmult
       this->do_boundary_integral(phi, OperatorType::homogeneous, bid);
       phi.integrate(this->ad.boundary_integrate.value,
-                      this->ad.boundary_integrate.gradient);
+                    this->ad.boundary_integrate.gradient);
 
       // insert result vector into local matrix u1_v1
       for (unsigned int i = 0; i < dofs_per_cell; ++i)
@@ -994,12 +1105,17 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
     // save local matrices into global matrix
     for (unsigned int i = 0; i < n_filled_lanes; i++) {
       // cell number of minus
-      const unsigned int cell_num =
-          data.get_face_info(face).cells_interior[i];
+      const unsigned int cell_num = data.get_face_info(face).cells_interior[i];
 
-      // cell reference to cell minus
-      data.get_cell_iterator(cell_num / v_len, cell_num % v_len)
-              ->distribute_local_to_global(matrices[i], dst);
+      auto cell_i = data.get_cell_iterator(cell_num / v_len, cell_num % v_len);
+      std::vector<types::global_dof_index> dof_indices(dofs_per_cell);
+      if (is_mg)
+        cell_i->get_mg_dof_indices(dof_indices);
+      else
+        cell_i->get_dof_indices(dof_indices);
+
+      constraint->distribute_local_to_global(matrices[i], dof_indices,
+                                             dof_indices, dst);
     }
   }
 }

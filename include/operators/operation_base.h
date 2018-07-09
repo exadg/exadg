@@ -1,7 +1,6 @@
 #ifndef OPERATION_BASE_H
 #define OPERATION_BASE_H
 
-
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/function.h>
 #include <deal.II/base/logstream.h>
@@ -43,18 +42,9 @@
 
 using namespace dealii;
 
-//enum class OperatorType { full, homogeneous, inhomogeneous };
-//
-//enum class BoundaryType { undefined, dirichlet, neumann };
-//
-//template <int dim> struct BoundaryDescriptor {
-//  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
-//  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
-//};
-
-template <int dim, typename BT, typename OT, typename BoundaryDescriptor> 
+template <int dim, typename BT, typename OT, typename BoundaryDescriptor>
 struct OperatorBaseData {
-    
+
   typedef BT BoundaryType;
   typedef OT OperatorType;
 
@@ -116,6 +106,19 @@ struct OperatorBaseData {
   std::shared_ptr<BoundaryDescriptor> bc;
 };
 
+template <typename T> class LazyWrapper {
+
+public:
+  void reinit(T &t) { this->tp = &t; }
+  T &own() { return t; }
+  T *operator->() { return tp; }
+  T &operator*() { return *tp; }
+
+private:
+  T *tp;
+  T t;
+};
+
 template <int dim, int degree, typename Number, typename AdditionalData>
 class OperatorBase : public MatrixOperatorBaseNew<dim, Number> {
 
@@ -138,14 +141,21 @@ public:
   static const unsigned int v_len = VectorizedArray<Number>::n_array_elements;
   static const unsigned int dofs_per_cell = FEEvalCell::static_dofs_per_cell;
 
-  void reinit(MF const &mf, CM &cm, AdditionalData const & ad) const;
-  
+  void
+  reinit(MF const &mf, CM &cm, AdditionalData const &ad,
+         unsigned int level_mg_handler = numbers::invalid_unsigned_int) const;
+
   // TODO: remove
-    virtual void reinit (const DoFHandler<dim>&, const Mapping<dim>&,
-               void *, const MGConstrainedDoFs &/*mg_constrained_dofs*/,
-               const unsigned int = numbers::invalid_unsigned_int){
-      AssertThrow(false, ExcMessage("OperatorBase::reinit to be removed!"));
+  virtual void reinit(const DoFHandler<dim> &, const Mapping<dim> &, void *,
+                      const MGConstrainedDoFs & /*mg_constrained_dofs*/,
+                      const unsigned int = numbers::invalid_unsigned_int) {
+    AssertThrow(false, ExcMessage("OperatorBase::reinit to be removed!"));
   }
+
+  void reinit_mf(const DoFHandler<dim> &dof_handler,
+                 const Mapping<dim> &mapping,
+                 MGConstrainedDoFs &mg_constrained_dofs, AdditionalData &ad,
+                 const unsigned int level);
 
   /*
    * matrix vector multiplication
@@ -162,10 +172,10 @@ public:
   /*
    *
    */
-  void rhs(VNumber &dst) const{ rhs(dst, 0.0); }
+  void rhs(VNumber &dst) const { rhs(dst, 0.0); }
   void rhs(VNumber &dst, Number const time) const;
   // TODO: remove
-  void rhs_add(VNumber &dst) const{ rhs_add(dst, 0.0);}
+  void rhs_add(VNumber &dst) const { rhs_add(dst, 0.0); }
   void rhs_add(VNumber &dst, Number const time) const;
 
   void evaluate(VNumber &dst, VNumber const &src, Number const time) const;
@@ -328,13 +338,13 @@ protected:
   mutable AdditionalData ad;
 private:
   const bool do_eval_faces;
-
 protected:
-  mutable MF const * data;
-  
-private: 
-  mutable ConstraintMatrix *constraint;
+  mutable LazyWrapper<MF const> data;
+private:
+  mutable LazyWrapper<ConstraintMatrix> constraint;
   mutable bool is_dg;
+  mutable bool is_mg;
+  mutable unsigned int level_mg_handler;
 
   mutable std::vector<LAPACKFullMatrix<Number>> matrices;
   mutable bool block_jacobi_matrices_have_been_initialized;
