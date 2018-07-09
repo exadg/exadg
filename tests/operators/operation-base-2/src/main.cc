@@ -47,6 +47,7 @@
 
 #include "../../operation-base-util/laplace_operator.h"
 #include "include/tests.h"
+#include "include/operator_base_test.h"
 
 #ifdef LIKWID_PERFMON
     #include <likwid.h>
@@ -227,6 +228,8 @@ public:
         tests.test_block_diag(vec_src, vec_dst_3, laplace, dim, fe_degree);
         
     }
+           
+    OperatorBaseTest::test(laplace);
 
     Runner<fe_degree + 1>::run(convergence_table);
   }
