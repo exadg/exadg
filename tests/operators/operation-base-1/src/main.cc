@@ -165,41 +165,52 @@ public:
 #endif
 
     // Right hand side
-    LinearAlgebra::distributed::Vector<value_type> vec_src;
-    laplace.initialize_dof_vector(vec_src);
+    LinearAlgebra::distributed::Vector<value_type> vec_rhs;
+    laplace.initialize_dof_vector(vec_rhs);
     RHSOperator<dim, fe_degree, value_type> rhs(laplace.get_data());
-    rhs.evaluate(vec_src);
-//      vec_src.update_ghost_values();
+    rhs.evaluate(vec_rhs);
+    
 #ifdef DETAIL_OUTPUT
     std::cout << "RHS: ";
-    vec_src.print(std::cout);
+    vec_rhs.print(std::cout);
 #endif
 
-    // Solve with matrix
-    LinearAlgebra::distributed::Vector<value_type> vec_dst;
-    laplace.initialize_dof_vector(vec_dst);
-    LinearAlgebra::distributed::Vector<value_type> vec_dst_;
-    laplace.initialize_dof_vector(vec_dst_);
+    // Solve linear equation system: setup solution vectors
+    LinearAlgebra::distributed::Vector<value_type> vec_sol_sm;
+    LinearAlgebra::distributed::Vector<value_type> vec_sol_mf;
+    
+    // ... fill with zeroes
+    laplace.initialize_dof_vector(vec_sol_sm);
+    laplace.initialize_dof_vector(vec_sol_mf);
+    
+    // ... fill ghost values with zeroes
+    vec_sol_sm.update_ghost_values();
+    vec_sol_mf.update_ghost_values();
+    
+    // .. setup conjugate-gradient-solver
     SolverControl solver_control(1000, 1e-12);
     SolverCG<LinearAlgebra::distributed::Vector<value_type>> solver(
         solver_control);
-    try {
-      vec_dst.update_ghost_values();
-      solver.solve(system_matrix, vec_dst, vec_src, PreconditionIdentity());
-    } catch (SolverControl::NoConvergence &) {
+    
+    // ... solve with sparse matrix
+    try{ 
+      solver.solve(system_matrix, vec_sol_sm, vec_rhs, PreconditionIdentity());
+    }catch (SolverControl::NoConvergence &){
       std::cout << "MB: not converved!" << std::endl;
     }
-    try {
-      vec_dst_.update_ghost_values();
-      solver.solve(laplace, vec_dst_, vec_src, PreconditionIdentity());
-    } catch (SolverControl::NoConvergence &) {
+    
+    // ... solve matrix-free
+    try{
+      solver.solve(laplace, vec_sol_mf, vec_rhs, PreconditionIdentity());
+    }catch (SolverControl::NoConvergence &){
       std::cout << "MF: not converved!" << std::endl;
     }
+    
 #ifdef DETAIL_OUTPUT
     std::cout << "SOL-MB: ";
-    vec_dst.print(std::cout);
+    vec_sol_sm.print(std::cout);
     std::cout << "SOL-MF: ";
-    vec_dst_.print(std::cout);
+    vec_sol_mf.print(std::cout);
 #endif
 
     //
@@ -243,27 +254,10 @@ public:
 
     vec_dst3 = 0;
 
-    // if(ii==-1){
-    //    Vector<double> norm_per_cell(triangulation.n_active_cells());
-    //    VectorTools::integrate_difference(
-    //            dof_handler_dg,
-    //            vec_dst,
-    //            Functions::ZeroFunction<dim>(),
-    //            norm_per_cell,
-    //            QGauss<dim>(fe_degree + 1),
-    //            VectorTools::L2_norm);
-    //
-    //    double error = VectorTools::compute_global_error(
-    //            triangulation,
-    //            norm_per_cell,
-    //            VectorTools::L2_norm);
-    //    std::cout << error << std::endl;
-    //}
-
     {
       L2Norm<dim, fe_degree, value_type> integrator(laplace.get_data());
       // std::cout << integrator.run(vec_dst) << std::endl;
-      auto t = vec_dst;
+      auto t = vec_sol_sm;
       t.update_ghost_values();
       double n = integrator.run(t);
       convergence_table.add_value("int", n);
@@ -272,7 +266,7 @@ public:
     {
       L2Norm<dim, fe_degree, value_type> integrator(laplace.get_data());
       // std::cout << integrator.run(vec_dst) << std::endl;
-      double n = integrator.run(vec_dst_);
+      double n = integrator.run(vec_sol_mf);
       convergence_table.add_value("int-mf", n);
       convergence_table.set_scientific("int-mf", true);
     }
@@ -280,8 +274,8 @@ public:
       //  vec_dst.zero_out_ghosts();
       DataOut<dim> data_out;
       data_out.attach_dof_handler(dof_handler_dg);
-      data_out.add_data_vector(vec_dst, "solution");
-      auto vec_rank = vec_dst;
+      data_out.add_data_vector(vec_sol_sm, "solution");
+      auto vec_rank = vec_sol_sm;
       vec_rank = rank;
       data_out.add_data_vector(vec_rank, "rank");
       data_out.build_patches(PATCHES);
