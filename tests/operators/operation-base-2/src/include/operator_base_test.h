@@ -55,7 +55,9 @@ private:
      * @param convergence_table
      */
   template <typename Operator>
-  static void test(Operator &op, ConvergenceTable & convergence_table) {
+  static void test(Operator &op, ConvergenceTable & convergence_table, 
+          bool do_sm_vs_d=true, bool do_sm_vs_mf=true, 
+          bool /*do_mf_vs_d*/=true, bool /*do_mf_vs_b*/=true) {
     typedef typename Operator::VNumber VNumber;
     const int dim = Operator::DIM;
     
@@ -71,7 +73,7 @@ private:
     VNumber vec_diag;
     op.calculate_diagonal(vec_diag);
     
-    if(true){
+    if(do_sm_vs_d){
         // create temporal vector for diagonal of sparse matrix
         VNumber vec_diag_sm;
         op.initialize_dof_vector(vec_diag_sm);
@@ -88,7 +90,7 @@ private:
         convergence_table.set_scientific("(D-V)_L2", true);
     }
     
-    if(true){
+    if(do_sm_vs_mf){
         // initialize vectors 
         VNumber vec_src, vec_dst_sm, vec_dst_mf;
         op.initialize_dof_vector(vec_src);
