@@ -275,8 +275,8 @@ private:
       convergence_table.add_value("dofs", vec_rhs.size());
       convergence_table.add_value("vers", fe_dgq.dofs_per_vertex > 0);
       double n = vec_dst_mf.l2_norm();
-      convergence_table.add_value("diff", n);
-      convergence_table.set_scientific("diff", true);
+      convergence_table.add_value("vmult-diff", n);
+      convergence_table.set_scientific("vmult-diff", true);
     }
 
     // ... CG-solution: sparse matrix
@@ -353,24 +353,28 @@ int main(int argc, char **argv) {
   Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
   ConditionalOStream pcout (std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0);
   {
+    pcout << "2D 1st-order:" << std::endl;
     Runner<2, 1, FE_Q<2>  > run_cg; run_cg.run();
     Runner<2, 1, FE_DGQ<2>> run_dg; run_dg.run();
     pcout << std::endl;
   }
 
   {
+    pcout << "2D 2nd-order:" << std::endl;
     Runner<2, 2, FE_Q<2>  > run_cg; run_cg.run();
     Runner<2, 2, FE_DGQ<2>> run_dg; run_dg.run();
     pcout << std::endl;
   }
 
   {
+    pcout << "3D 1st-order:" << std::endl;
     Runner<3, 1, FE_Q<3>  > run_cg; run_cg.run();
     Runner<3, 1, FE_DGQ<3>> run_dg; run_dg.run();
     pcout << std::endl;
   }
 
   {
+    pcout << "3D 2nd-order:" << std::endl;
     Runner<3, 2, FE_Q<3>  > run_cg; run_cg.run();
     Runner<3, 2, FE_DGQ<3>> run_dg; run_dg.run();
     pcout << std::endl;
