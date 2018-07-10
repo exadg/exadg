@@ -129,7 +129,7 @@ private:
         print_l2(convergence_table, vec_diag, vec_diag_mf, 
                 "", "(D-D(MF))_L2");
     }
-    
+    return; // TODO: Block-Jacobi currently not working
     if(do_mf_vs_b){
         // initialize vectors 
         VNumber vec_src, vec_dst_mf, vec_dst_op;
