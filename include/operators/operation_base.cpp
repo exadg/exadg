@@ -228,12 +228,14 @@ void OperatorBase<dim, degree, Number, AdditionalData>::update_block_jacobi(bool
                     LAPACKFullMatrix<Number>(dofs, dofs));
     block_jacobi_matrices_have_been_initialized = true;
   } // else: reuse old memory
-
+  std::cout <<"1" << std::endl;
   // clear matrices
   initialize_block_jacobi_matrices_with_zero(matrices);
+  std::cout <<"2" << std::endl;
 
   // compute block matrices
   add_block_jacobi_matrices(matrices);
+  std::cout <<"3" << std::endl;
 
   // perform lu factorization for block matrices
   if(do_lu_factorization)
@@ -246,8 +248,6 @@ void OperatorBase<dim, degree, Number,
     const {
 
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
-  AssertThrow(matrices.size() != 0,
-              ExcMessage("Block Jacobi matrices have not been initialized!"));
 
   if (do_eval_faces)
     data->loop(&This::local_apply_cell_block_diagonal,
