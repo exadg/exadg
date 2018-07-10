@@ -49,6 +49,8 @@
 #include "include/tests.h"
 #include "include/operator_base_test.h"
 
+#include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
+
 #ifdef LIKWID_PERFMON
     #include <likwid.h>
 #endif
@@ -120,15 +122,20 @@ template <int fe_degree> class Runner {
 public:
   static void run(ConvergenceTable &convergence_table) {
     Timer time;
-    MPI_Comm comm = MPI_COMM_SELF;
+    MPI_Comm comm = MPI_COMM_WORLD;
 
     parallel::distributed::Triangulation<dim> triangulation(comm);
-
-    const int cells_x =
-        (dim == 2 ? std::sqrt(dofs) : std::cbrt(dofs)) / (fe_degree + 1);
-    GridGenerator::subdivided_hyper_cube(
-        triangulation, cells_x, -0.5 * numbers::PI, +0.5 * numbers::PI);
-    GridTools::distort_random(0.4,triangulation);
+      
+    const double left = -1.0;
+    const double right = +1.0;
+    const double deformation = +0.1;
+    const double frequnency = +2.0;
+    
+    GridGenerator::hyper_cube(triangulation, left, right);
+    static DeformedCubeManifold<dim> manifold(left, right, deformation, frequnency);
+    triangulation.set_all_manifold_ids(1);
+    triangulation.set_manifold(1, manifold);
+    triangulation.refine_global(2);
     FE_DGQ<dim> fe_dgq(fe_degree);
 
     DoFHandler<dim> dof_handler_dg(triangulation);
