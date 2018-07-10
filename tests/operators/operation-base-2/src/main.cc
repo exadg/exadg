@@ -52,8 +52,6 @@
 #include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
 #include "../../operation-base-util/categorization.h"
 
-#define CATEGORIZE
-
 using namespace dealii;
 
 const unsigned int global_refinements = 3;
@@ -65,9 +63,12 @@ typedef double value_type;
 
 using namespace dealii;
 
-template <int dim, int fe_degree> class Runner {
+template <int dim, int fe_degree, bool CATEGORIZE> class Runner {
 public:
   static void run(ConvergenceTable &convergence_table) {
+      
+    int size;
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
       
     // setup triangulation
     parallel::distributed::Triangulation<dim> triangulation(MPI_COMM_WORLD);
@@ -104,10 +105,10 @@ public:
     ConstraintMatrix dummy;
     dummy.close();
     
-#ifdef CATEGORIZE
+if(CATEGORIZE){
     additional_data.build_face_info = true;
     Categorization::do_cell_based_loops(triangulation, additional_data);
-#endif
+}
     
     data.reinit(dof_handler_dg, dummy, quadrature, additional_data);
 
@@ -118,34 +119,29 @@ public:
     bc->dirichlet_bc[0] =
         std::shared_ptr<Function<dim>>(new Functions::ZeroFunction<dim>());
     
-#ifdef CATEGORIZE
+if(CATEGORIZE){
     laplace_additional_data.use_cell_based_loops = true;
-#endif
+}
+    
     laplace_additional_data.bc = bc;
     laplace.reinit(data, dummy, laplace_additional_data);
 
     // run tests
-#ifdef CATEGORIZE
-    typedef typename LaplaceOperator<dim, fe_degree, value_type>::VNumber VNumber;
-    VNumber vec_diag;
-    laplace.calculate_diagonal(vec_diag);
-    
-    // add to convergence table
-    convergence_table.add_value("dim", dim);
-    convergence_table.add_value("degree", fe_degree);
-    convergence_table.add_value("dofs", vec_diag.size());
-    convergence_table.add_value("(D)_L2", vec_diag.l2_norm());
-    convergence_table.set_scientific("(D)_L2", true);
-#else
-    OperatorBaseTest::test(laplace, convergence_table);
-#endif
+    convergence_table.add_value("procs", size);
+    convergence_table.add_value("cell", CATEGORIZE);
+    OperatorBaseTest::test(laplace, convergence_table,true,true,true, 
+            CATEGORIZE || size==1);
+    if(!CATEGORIZE && size!=1){
+        convergence_table.add_value("(B*v)_L2", 0);
+        convergence_table.add_value("(B*v-B(S)*v)_L2", 0);
+    }
 
     // go to next parameter
-    Runner<dim, fe_degree + 1>::run(convergence_table);
+    Runner<dim, fe_degree + 1,CATEGORIZE>::run(convergence_table);
   }
 };
 
-template <int dim> class Runner<dim, fe_degree_max+1> {
+template <int dim, bool categorize> class Runner<dim, fe_degree_max+1,categorize> {
 public:
   static void run(ConvergenceTable & /*convergence_table*/) {}
 };
@@ -157,9 +153,11 @@ int main(int argc, char **argv) {
 
   ConvergenceTable convergence_table;
   // run for 2-d
-  Runner<2, fe_degree_min>::run(convergence_table);
+  Runner<2, fe_degree_min,true>::run(convergence_table);
+  Runner<2, fe_degree_min,false>::run(convergence_table);
   // run for 3-d
-  Runner<3, fe_degree_min>::run(convergence_table);
+  Runner<3, fe_degree_min,true>::run(convergence_table);
+  Runner<3, fe_degree_min,false>::run(convergence_table);
   if(!rank)
       convergence_table.write_text(std::cout);
   

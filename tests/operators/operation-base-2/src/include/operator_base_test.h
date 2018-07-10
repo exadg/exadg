@@ -56,7 +56,7 @@ public:
   template <typename Operator>
   static void test(Operator &op, ConvergenceTable & convergence_table, 
           bool do_sm_vs_d=true, bool do_sm_vs_mf=true, 
-          bool do_mf_vs_d=true, bool do_mf_vs_b=false) {
+          bool do_mf_vs_d=true, bool do_mf_vs_b=true) {
     typedef typename Operator::VNumber VNumber;
     const int dim = Operator::DIM;
     
@@ -106,7 +106,7 @@ public:
         
         // print l2-norms
         print_l2(convergence_table, vec_diag, vec_diag_mf, 
-                "", "(D-D(MF))_L2");
+                "", "(D-D(F))_L2");
     }
     
     if(do_sm_vs_mf){
@@ -126,7 +126,7 @@ public:
         
         // print l2-norms
         print_l2(convergence_table, vec_dst_sm, vec_dst_mf, 
-                "(S*v)_L2", "(S*v-MF*v)_L2");
+                "(S*v)_L2", "(S*v-F*v)_L2");
     }
     
     // TODO: Block-Jacobi currently not working
@@ -158,12 +158,12 @@ private:
   template <typename Operator, typename VNumber>
   static void apply_block(Operator &op, const unsigned int dofs_per_block,
     VNumber& vec_dst, VNumber& vec_src){
-    
+      
     // initialize temporal vectors 
     VNumber vec_src_temp, vec_dst_temp;
     vec_src_temp.reinit(vec_src);
     vec_dst_temp.reinit(vec_src);
-      
+    
     const unsigned int n_blocks = vec_src.size()/dofs_per_block;
     // local range
     auto local_range = vec_src.local_range();

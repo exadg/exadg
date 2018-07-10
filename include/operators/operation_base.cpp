@@ -231,14 +231,12 @@ void OperatorBase<dim, degree, Number, AdditionalData>::update_block_jacobi(bool
                     LAPACKFullMatrix<Number>(dofs, dofs));
     block_jacobi_matrices_have_been_initialized = true;
   } // else: reuse old memory
-  std::cout <<"1" << std::endl;
+  
   // clear matrices
   initialize_block_jacobi_matrices_with_zero(matrices);
-  std::cout <<"2" << std::endl;
 
   // compute block matrices
   add_block_jacobi_matrices(matrices);
-  std::cout <<"3" << std::endl;
 
   // perform lu factorization for block matrices
   if(do_lu_factorization)
@@ -253,10 +251,14 @@ void OperatorBase<dim, degree, Number,
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
 
   if (do_eval_faces)
-    data->loop(&This::local_apply_cell_block_diagonal,
-               &This::local_apply_face_block_diagonal,
-               &This::local_apply_boundary_block_diagonal, this, matrices,
-               matrices);
+    if(ad.use_cell_based_loops)
+      data->cell_loop(&This::local_apply_cell_block_diagonal_cell_based, this, 
+                      matrices, matrices);
+    else
+      data->loop(&This::local_apply_cell_block_diagonal,
+                 &This::local_apply_face_block_diagonal,
+                 &This::local_apply_boundary_block_diagonal, this, matrices,
+                 matrices);
   else
     data->cell_loop(&This::local_apply_cell_block_diagonal, this, matrices,
                     matrices);
@@ -940,6 +942,85 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
         const unsigned int cell = data.get_face_info(face).cells_interior[v];
         for (unsigned int i = 0; i < dofs_per_cell; ++i)
           dst[cell](i, j) += phi.begin_dof_values()[i][v];
+      }
+    }
+  }
+}
+
+
+template <int dim, int degree, typename Number, typename AdditionalData>
+void OperatorBase<dim, degree, Number, AdditionalData>::
+    local_apply_cell_block_diagonal_cell_based(const MF &data, BMatrix &dst,
+                              const BMatrix & /*src*/,
+                              const Range &range) const {
+  FEEvalCell phi(data, ad.dof_index, ad.quad_index);
+  FEEvalFace phi_n(data, true, ad.dof_index, ad.quad_index);
+  FEEvalFace phi_p(data, false, ad.dof_index, ad.quad_index); 
+  // loop over the range of macro cells
+  for (auto cell = range.first; cell < range.second; ++cell) {
+    const unsigned int n_filled_lanes =
+        data.n_active_entries_per_cell_batch(cell);
+    // reinit cell
+    phi.reinit(cell);
+    // loop over all standard basis
+    for (unsigned int j = 0; j < dofs_per_cell; ++j) {
+      // write standard basis into dof values of FEEvaluation
+      this->create_standard_basis(j, phi);
+      phi.evaluate(this->ad.cell_evaluate.value,
+                   this->ad.cell_evaluate.gradient,
+                   this->ad.cell_evaluate.hessians);
+      // perform local vmult
+      this->do_cell_integral(phi);
+
+      phi.integrate(this->ad.cell_integrate.value,
+                    this->ad.cell_integrate.gradient);
+      for (unsigned int i = 0; i < dofs_per_cell; ++i)
+        for (unsigned int v = 0; v < n_filled_lanes; ++v)
+          dst[cell * v_len + v](i, j) = phi.begin_dof_values()[i][v];
+    }
+    
+    // loop over all faces
+    const unsigned int nr_faces = GeometryInfo<dim>::faces_per_cell;
+    for (unsigned int face = 0; face < nr_faces; ++face) {
+      phi_n.reinit(cell, face);
+      phi_p.reinit(cell, face);
+      auto bids = data.get_faces_by_cells_boundary_id(cell, face);
+      // TODO: check if all same
+      auto bid = bids[0];
+      
+      // check if internal or boundary face
+      if(bid==numbers::internal_face_boundary_id){
+        // internal face
+        for (unsigned int j = 0; j < dofs_per_cell; ++j) {
+          // write standard basis into dof values of FEEvaluation
+          this->create_standard_basis(j, phi_n);
+          // perform local vmult
+          phi_n.evaluate(this->ad.internal_evaluate.value,
+                        this->ad.internal_evaluate.gradient);
+          this->do_face_int_integral(phi_n, phi_p);
+          phi_n.integrate(this->ad.internal_integrate.value,
+                         this->ad.internal_integrate.gradient);
+      for (unsigned int v = 0; v < n_filled_lanes; ++v) 
+        for (unsigned int i = 0; i < dofs_per_cell; ++i)
+          dst[cell * v_len + v](i, j) += phi_n.begin_dof_values()[i][v];
+        } 
+      } else {
+        // boundary face
+        for (unsigned int j = 0; j < dofs_per_cell; ++j) {
+          // write standard basis into dof values of FEEvaluation
+          this->create_standard_basis(j, phi_n);
+          phi_n.evaluate(this->ad.boundary_evaluate.value,
+                       this->ad.boundary_evaluate.gradient);
+          // perform local vmult
+          this->do_boundary_integral(phi_n, OperatorType::homogeneous, bid);
+
+          phi_n.integrate(this->ad.boundary_integrate.value,
+                        this->ad.boundary_integrate.gradient);
+      for (unsigned int v = 0; v < n_filled_lanes; ++v) 
+        for (unsigned int i = 0; i < dofs_per_cell; ++i)
+          dst[cell * v_len + v](i, j) += phi_n.begin_dof_values()[i][v];
+      
+        }
       }
     }
   }

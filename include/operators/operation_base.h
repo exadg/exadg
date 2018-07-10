@@ -330,6 +330,10 @@ protected:
                                            const BMatrix & /*src*/,
                                            const Range &range) const;
 
+  void local_apply_cell_block_diagonal_cell_based(const MF & /*data*/, BMatrix &dst,
+                                 const BMatrix & /*src*/,
+                                 const Range &range) const;
+
   /*
    * ... sparse matrix
    */
