@@ -83,11 +83,9 @@ private:
             if(i.row() == i.column())
                 vec_diag_sm[i.row()] = i.value();
         
-        convergence_table.add_value("D_L2", vec_diag.l2_norm());
-        convergence_table.set_scientific("D_L2", true);
-        vec_diag_sm -= vec_diag;
-        convergence_table.add_value("(D-V)_L2", vec_diag_sm.l2_norm());
-        convergence_table.set_scientific("(D-V)_L2", true);
+        // print l2-norms
+        print_l2(convergence_table, vec_diag, vec_diag_sm, 
+                "(D)_L2", "(D-D(S))_L2");
     }
     
     if(do_sm_vs_mf){
@@ -105,16 +103,31 @@ private:
         // perform matirx-free vmult
         op.vmult(vec_dst_mf, vec_src);
         
+        // print l2-norms
+        print_l2(convergence_table, vec_dst_sm, vec_dst_mf, 
+                "(S*v)_L2", "(S*v-MF*v)_L2");
+    }
+  }
+  
+  
+  template<typename vector_type>
+  static void print_l2(ConvergenceTable & convergence_table, 
+    vector_type& vec_1, vector_type& vec_2,
+    std::string label_1, std::string label_2) {
+        auto vec_temp = vec_1;
         // compute L2-norm of vector
-        convergence_table.add_value("(S*v)_L2", vec_dst_sm.l2_norm());
-        convergence_table.set_scientific("(S*v)_L2", true);
+        if(label_1!=""){
+          convergence_table.add_value(label_1, vec_temp.l2_norm());
+          convergence_table.set_scientific(label_1, true);
+        }
         
         // compute error and ...
-        vec_dst_sm -= vec_dst_mf;
+        vec_temp -= vec_2;
         // ... its norm
-        convergence_table.add_value("(S*v-MF*v)_L2", vec_dst_sm.l2_norm());
-        convergence_table.set_scientific("(S*v-MF*v)_L2", true);
-    }
+        if(label_2!=""){
+          convergence_table.add_value(label_2, vec_temp.l2_norm());
+          convergence_table.set_scientific(label_2, true);
+        }
   }
   
 };
