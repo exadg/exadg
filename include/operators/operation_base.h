@@ -61,7 +61,8 @@ struct OperatorBaseData {
       : dof_index(dof_index), quad_index(quad_index),
         cell_evaluate(c_e_v, c_e_g, c_e_h), cell_integrate(c_i_v, c_i_g, c_i_h),
         internal_evaluate(f_e_v, f_e_g), internal_integrate(f_i_v, f_i_g),
-        boundary_evaluate(b_e_v, b_e_g), boundary_integrate(b_i_v, b_i_g) {}
+        boundary_evaluate(b_e_v, b_e_g), boundary_integrate(b_i_v, b_i_g),
+        use_cell_based_loops(false){}
 
   struct Cell {
     Cell(const bool value = false, const bool gradient = false,
@@ -105,6 +106,9 @@ struct OperatorBaseData {
   /*const*/ Face internal_integrate;
   /*const*/ Face boundary_evaluate;
   /*const*/ Face boundary_integrate;
+  
+  bool use_cell_based_loops;
+  
   std::shared_ptr<BoundaryDescriptor> bc;
 };
 
@@ -300,6 +304,10 @@ protected:
                                      const VNumber & /*src*/,
                                      const Range &range) const;
 
+  void local_apply_cell_diagonal_cell_based(const MF & /*data*/, VNumber &dst,
+                                 const VNumber & /*src*/,
+                                 const Range &range) const;
+  
   /*
    * ... block diagonal
    */

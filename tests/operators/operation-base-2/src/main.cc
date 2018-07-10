@@ -50,6 +50,9 @@
 #include "include/operator_base_test.h"
 
 #include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
+#include "../../operation-base-util/categorization.h"
+
+#define CATEGORIZE
 
 using namespace dealii;
 
@@ -97,9 +100,15 @@ public:
     additional_data.mapping_update_flags_boundary_faces =
         (update_JxW_values | update_normal_vectors | update_quadrature_points |
          update_values);
-
+    
     ConstraintMatrix dummy;
     dummy.close();
+    
+#ifdef CATEGORIZE
+    additional_data.build_face_info = true;
+    Categorization::do_cell_based_loops(triangulation, additional_data);
+#endif
+    
     data.reinit(dof_handler_dg, dummy, quadrature, additional_data);
 
     // setup operator
@@ -109,11 +118,27 @@ public:
     bc->dirichlet_bc[0] =
         std::shared_ptr<Function<dim>>(new Functions::ZeroFunction<dim>());
     
+#ifdef CATEGORIZE
+    laplace_additional_data.use_cell_based_loops = true;
+#endif
     laplace_additional_data.bc = bc;
     laplace.reinit(data, dummy, laplace_additional_data);
 
     // run tests
+#ifdef CATEGORIZE
+    typedef typename LaplaceOperator<dim, fe_degree, value_type>::VNumber VNumber;
+    VNumber vec_diag;
+    laplace.calculate_diagonal(vec_diag);
+    
+    // add to convergence table
+    convergence_table.add_value("dim", dim);
+    convergence_table.add_value("degree", fe_degree);
+    convergence_table.add_value("dofs", vec_diag.size());
+    convergence_table.add_value("(D)_L2", vec_diag.l2_norm());
+    convergence_table.set_scientific("(D)_L2", true);
+#else
     OperatorBaseTest::test(laplace, convergence_table);
+#endif
 
     // go to next parameter
     Runner<dim, fe_degree + 1>::run(convergence_table);
