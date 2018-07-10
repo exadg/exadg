@@ -55,9 +55,6 @@
 //#define DETAIL_OUTPUT
 const int PATCHES = 10;
 
-const unsigned int global_refinements = 3;
-//const int dim = 2;
-//const int fe_degree = 2;
 typedef double value_type;
 
 using namespace dealii;
@@ -72,7 +69,7 @@ public:
                       parallel::distributed::Triangulation<
                           dim>::construct_multigrid_hierarchy),
         fe_dgq(fe_degree), dof_handler_dg(triangulation), mapping(fe_degree),
-        quadrature(fe_degree + 1) {}
+        quadrature(fe_degree + 1),global_refinements(dim==2?5:3) {}
 
   typedef LinearAlgebra::distributed::Vector<value_type> VNumber;
 
@@ -85,6 +82,7 @@ private:
   ConvergenceTable convergence_table;
   MappingQGeneric<dim> mapping;
   QGauss<1> quadrature;
+  const unsigned int global_refinements;
   MatrixFree<dim, value_type> data;
   std::shared_ptr<BoundaryDescriptor<dim>> bc;
   MGConstrainedDoFs mg_constrained_dofs;
