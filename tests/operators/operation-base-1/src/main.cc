@@ -162,7 +162,7 @@ private:
 #ifdef DETAIL_OUTPUT
     dummy.print(std::cout);
 #endif
-    data.reinit(dof_handler_dg, dummy, quadrature, additional_data);
+    data.reinit(mapping, dof_handler_dg, dummy, quadrature, additional_data);
   }
 
   void run(LaplaceOperator<dim, fe_degree, value_type> &laplace,
