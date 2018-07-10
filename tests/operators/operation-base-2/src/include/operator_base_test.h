@@ -57,12 +57,13 @@ private:
   template <typename Operator>
   static void test(Operator &op, ConvergenceTable & convergence_table, 
           bool do_sm_vs_d=true, bool do_sm_vs_mf=true, 
-          bool /*do_mf_vs_d*/=true, bool /*do_mf_vs_b*/=true) {
+          bool do_mf_vs_d=true, bool /*do_mf_vs_b*/=true) {
     typedef typename Operator::VNumber VNumber;
     const int dim = Operator::DIM;
     
     const auto& data = op.get_data();
     auto& dof_handler = data.get_dof_handler(/*TODO*/);
+    const int fe_degree = dof_handler.get_fe(/*TODO*/).degree;
     
     // compute system matrix
     TrilinosWrappers::SparseMatrix system_matrix;
@@ -107,8 +108,89 @@ private:
         print_l2(convergence_table, vec_dst_sm, vec_dst_mf, 
                 "(S*v)_L2", "(S*v-MF*v)_L2");
     }
+    
+    if(do_mf_vs_d){
+        // initialize vectors 
+        VNumber vec_src, vec_diag_mf;
+        op.initialize_dof_vector(vec_src);
+        op.initialize_dof_vector(vec_diag_mf);
+        
+        // fill source vector
+        vec_src = 1;
+        
+        // apply block-diagonal matrix of size: 1 x 1
+        apply_block(op, 1, vec_diag_mf, vec_src);
+        
+        // print l2-norms
+        print_l2(convergence_table, vec_diag, vec_diag_mf, 
+                "", "(D-D(MF))_L2");
+    }
+    
+    if(do_mf_vs_d){
+        // initialize vectors 
+        VNumber vec_src, vec_dst_mf, vec_dst_op;
+        op.initialize_dof_vector(vec_src);
+        op.initialize_dof_vector(vec_dst_mf);
+        op.initialize_dof_vector(vec_dst_op);
+        
+        // fill source vector
+        VectorTools::interpolate(dof_handler, TestSolution<dim>(0), vec_src);
+        
+        // perform block-jacobi with operator 
+        op.update_block_jacobi(false);
+        op.apply_block_diagonal(vec_dst_op, vec_src);
+        
+        // apply block-diagonal matrix of size: dofs_per_cell x dofs_per_cell
+        const unsigned int dofs_per_cell = std::pow(fe_degree+1,dim);
+        apply_block(op, dofs_per_cell, vec_dst_mf, vec_src);
+        
+        // print l2-norms
+        print_l2(convergence_table, vec_dst_op, vec_dst_mf, 
+                "(B*v)_L2", "(B*v-B(S)*v)_L2");
+    }
   }
   
+  template <typename Operator, typename VNumber>
+  static void apply_block(Operator &op, const unsigned int dofs_per_block,
+    VNumber& vec_dst, VNumber& vec_src){
+    
+    // initialize temporal vectors 
+    VNumber vec_src_temp, vec_dst_temp;
+    vec_src_temp.reinit(vec_src);
+    vec_dst_temp.reinit(vec_src);
+      
+    const unsigned int n_blocks = vec_src.size()/dofs_per_block;
+    // local range
+    auto local_range = vec_src.local_range();
+    const unsigned int loc_start=local_range.first;
+    const unsigned int loc_end=local_range.second;
+    // iterate over all block diagonals
+    for(unsigned int block = 0; block < n_blocks; block++){
+        // compute intersection of ranges:
+        //    b_s                   b_e
+        //     +---------------------+                  -> block    
+        //           +---------------------------+      -> local range
+        //          l_s                         l_e
+        //
+        //           +---------------+                  -> intersection
+        //      max(l_s,b_l)    min(l_e,b_e)
+        const unsigned int block_start = block*dofs_per_block;
+        const unsigned int block_end = (block+1)*dofs_per_block;
+        const unsigned int start = std::max(loc_start, block_start);
+        const unsigned int end = std::min(loc_end, block_end);
+
+        // clear entries in source vector and ...
+        vec_src_temp = 0;
+        // only set the entries corresponding to the current block
+        for(unsigned int i = start; i < end; i++)
+            vec_src_temp[i] = vec_src[i];
+        // perform vmult
+        op.vmult(vec_dst_temp, vec_src_temp);
+        // extract result
+        for(unsigned int i = start; i < end; i++)
+            vec_dst[i] = vec_dst_temp[i];
+    } 
+  }
   
   template<typename vector_type>
   static void print_l2(ConvergenceTable & convergence_table, 
