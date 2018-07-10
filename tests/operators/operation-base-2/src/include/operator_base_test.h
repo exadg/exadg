@@ -37,7 +37,6 @@ public:
         convergence_table.write_text(std::cout);
   }
 
-private:
     /**
      * Following comparisons are performed:
      * 
@@ -57,7 +56,7 @@ private:
   template <typename Operator>
   static void test(Operator &op, ConvergenceTable & convergence_table, 
           bool do_sm_vs_d=true, bool do_sm_vs_mf=true, 
-          bool do_mf_vs_d=true, bool do_mf_vs_b=true) {
+          bool do_mf_vs_d=true, bool do_mf_vs_b=false) {
     typedef typename Operator::VNumber VNumber;
     const int dim = Operator::DIM;
     
@@ -93,6 +92,23 @@ private:
                 "(D)_L2", "(D-D(S))_L2");
     }
     
+    if(do_mf_vs_d){
+        // initialize vectors 
+        VNumber vec_src, vec_diag_mf;
+        op.initialize_dof_vector(vec_src);
+        op.initialize_dof_vector(vec_diag_mf);
+        
+        // fill source vector
+        vec_src = 1;
+        
+        // apply block-diagonal matrix of size: 1 x 1
+        apply_block(op, 1, vec_diag_mf, vec_src);
+        
+        // print l2-norms
+        print_l2(convergence_table, vec_diag, vec_diag_mf, 
+                "", "(D-D(MF))_L2");
+    }
+    
     if(do_sm_vs_mf){
         // initialize vectors 
         VNumber vec_src, vec_dst_sm, vec_dst_mf;
@@ -113,23 +129,7 @@ private:
                 "(S*v)_L2", "(S*v-MF*v)_L2");
     }
     
-    if(do_mf_vs_d){
-        // initialize vectors 
-        VNumber vec_src, vec_diag_mf;
-        op.initialize_dof_vector(vec_src);
-        op.initialize_dof_vector(vec_diag_mf);
-        
-        // fill source vector
-        vec_src = 1;
-        
-        // apply block-diagonal matrix of size: 1 x 1
-        apply_block(op, 1, vec_diag_mf, vec_src);
-        
-        // print l2-norms
-        print_l2(convergence_table, vec_diag, vec_diag_mf, 
-                "", "(D-D(MF))_L2");
-    }
-    return; // TODO: Block-Jacobi currently not working
+    // TODO: Block-Jacobi currently not working
     if(do_mf_vs_b){
         // initialize vectors 
         VNumber vec_src, vec_dst_mf, vec_dst_op;
@@ -154,6 +154,7 @@ private:
     }
   }
   
+private:
   template <typename Operator, typename VNumber>
   static void apply_block(Operator &op, const unsigned int dofs_per_block,
     VNumber& vec_dst, VNumber& vec_src){
