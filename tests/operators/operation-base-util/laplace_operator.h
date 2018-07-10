@@ -83,11 +83,15 @@ class LaplaceOperator
 public:
   LaplaceOperator();
 
+  // typedefs
   typedef LaplaceOperator<dim, degree, Number> This;
   typedef OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>> Parent;
   typedef typename Parent::FEEvalCell FEEvalCell;
   typedef typename Parent::FEEvalFace FEEvalFace;
   typedef typename Parent::VNumber VNumber;
+  
+  // static constants
+  static const int DIM = Parent::DIM;
 
   void do_cell_integral(FEEvalCell &phi) const;
   void do_face_integral(FEEvalFace &p_n, FEEvalFace &p_p) const;

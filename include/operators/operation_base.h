@@ -125,6 +125,7 @@ template <int dim, int degree, typename Number, typename AdditionalData>
 class OperatorBase : public MatrixOperatorBaseNew<dim, Number> {
 
 public:
+  static const int DIM = dim;
   typedef OperatorBase<dim, degree, Number, AdditionalData> This;
   typedef parallel::distributed::Vector<Number> VNumber;
   typedef FullMatrix<Number> FMatrix;
@@ -220,7 +221,7 @@ public:
 
   bool is_empty_locally() const;
 
-  const MF &get_data() const;
+  const MatrixFree<dim, Number> &get_data() const;
 
   unsigned int get_dof_index() const;
 
