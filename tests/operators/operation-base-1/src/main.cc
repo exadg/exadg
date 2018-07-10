@@ -50,6 +50,8 @@
 #include "../../operation-base-util/sparse_matrix_util.h"
 #include "include/rhs_operator.h"
 
+#include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
+
 //#define DETAIL_OUTPUT
 const int PATCHES = 10;
 
@@ -95,8 +97,16 @@ private:
   }
 
   void init_triangulation_and_dof_handler() {
+      
+    const double left = -1.0;
+    const double right = +1.0;
+    const double deformation = +0.1;
+    const double frequnency = +2.0;
 
-    GridGenerator::hyper_cube(triangulation, -1.0, +1.0);
+    GridGenerator::hyper_cube(triangulation, left, right);
+    static DeformedCubeManifold<dim> manifold(left, right, deformation, frequnency);
+    triangulation.set_all_manifold_ids(1);
+    triangulation.set_manifold(1, manifold);
     triangulation.refine_global(global_refinements);
 
     for (auto cell : triangulation)
