@@ -332,8 +332,8 @@ public:
 
     // run through all multigrid level
     for (unsigned int level = 0; level <= global_refinements; level++) {
-      laplace.reinit_mf(dof_handler_dg, mapping, mg_constrained_dofs,
-                        laplace_additional_data, level);
+      laplace.reinit(dof_handler_dg, mapping, (void *)&laplace_additional_data, 
+                     mg_constrained_dofs, level);
       run(laplace, level);
     }
 

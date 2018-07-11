@@ -31,10 +31,13 @@ void OperatorBase<dim, degree, Number, AdditionalData>::reinit(
 }
 
 template <int dim, int degree, typename Number, typename AdditionalData>
-void OperatorBase<dim, degree, Number, AdditionalData>::reinit_mf(
+void OperatorBase<dim, degree, Number, AdditionalData>::reinit(
     const DoFHandler<dim> &dof_handler, const Mapping<dim> &mapping,
-    MGConstrainedDoFs &mg_constrained_dofs, AdditionalData &ad,
-    const unsigned int level) const {
+    void* od, const MGConstrainedDoFs &mg_constrained_dofs, 
+    const unsigned int level) {
+    
+  // cast additional data to actual format
+  auto &ad = *static_cast<AdditionalData *>(od);
 
   // check it dg or cg
   is_dg = dof_handler.get_fe().dofs_per_vertex == 0;

@@ -152,17 +152,11 @@ public:
   reinit(MF const &mf, CM &cm, AdditionalData const &ad,
          unsigned int level_mg_handler = numbers::invalid_unsigned_int) const;
 
-  // TODO: remove
-  virtual void reinit(const DoFHandler<dim> &, const Mapping<dim> &, void *,
-                      const MGConstrainedDoFs & /*mg_constrained_dofs*/,
-                      const unsigned int = numbers::invalid_unsigned_int) {
-    AssertThrow(false, ExcMessage("OperatorBase::reinit to be removed!"));
-  }
-
-  void reinit_mf(const DoFHandler<dim> &dof_handler,
-                 const Mapping<dim> &mapping,
-                 MGConstrainedDoFs &mg_constrained_dofs, AdditionalData &ad,
-                 const unsigned int level) const;
+  virtual void reinit(const DoFHandler<dim> &dof_handler,
+                      const Mapping<dim> &mapping, 
+                      void* ad,
+                      const MGConstrainedDoFs &mg_constrained_dofs,
+                      const unsigned int level);
 
   /*
    * matrix vector multiplication
