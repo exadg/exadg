@@ -18,7 +18,6 @@ public:
   MyMultigridPreconditionerDG() : 
     MyMultigridPreconditionerBase<dim,value_type,OPERATOR_BASE>(std::shared_ptr<OPERATOR_BASE>(new Operator())){}
 
-  const Mapping<dim> *mapping;
   const UnderlyingOperator* underlying_operator;
   
   typedef MatrixOperatorBaseNew<dim, typename Operator::value_type> OPERATOR_BASE;
@@ -39,29 +38,11 @@ public:
                   const VectorPeriodicFacePair &periodic_face_pairs_level0)
   {
     // save mg-setup
-    this->mapping = &mapping;
     this->underlying_operator = &  underlying_operator;
     this->periodic_face_pairs_level0 = &periodic_face_pairs_level0;
-      
-//    this->mg_data = mg_data_in;
-//
-//    const parallel::Triangulation<dim> *tria =
-//      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
-//
-//    this->n_global_levels = tria->n_global_levels();
-//
-//    initialize_mg_constrained_dofs(dof_handler);
-//
-//    initialize_mg_matrices(dof_handler, mapping, underlying_operator, periodic_face_pairs_level0);
-//
-//    this->initialize_smoothers();
-//
-//    this->initialize_coarse_solver();
-//
-//    this->initialize_mg_transfer(dof_handler, periodic_face_pairs_level0);
-//
-//    this->initialize_multigrid_preconditioner(dof_handler);
-      BASE::initialize(mg_data_in, dof_handler);
+    
+    BASE::initialize(mg_data_in, dof_handler, mapping, 
+            (void *)&underlying_operator.get_operator_data());
   }
 
 private:
@@ -72,19 +53,7 @@ private:
     constrained_dofs.clear();
     constrained_dofs.initialize(dof_handler);
   }
-
-  /*
-   *  This function initializes mg_matrices on all levels with level >= 0.
-   */
-  virtual void initialize_mg_matrix(const DoFHandler<dim> &dof_handler,
-        OPERATOR_BASE * matrix, int level, int tria_level) {
-      
-      matrix->reinit(dof_handler, *mapping, (void *)&this->underlying_operator->get_operator_data(),
-                   level == -1 ? *this->cg_constrained_dofs_local
-                               : *this->mg_constrained_dofs_local[level],
-                   tria_level);
-
-  }
+  
 };
 
 

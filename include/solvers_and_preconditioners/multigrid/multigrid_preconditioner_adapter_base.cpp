@@ -11,7 +11,8 @@ MyMultigridPreconditionerBase<dim, value_type,
 
 template <int dim, typename value_type, typename Operator>
 void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
-    const MultigridData &mg_data_in, const DoFHandler<dim> &dof_handler) {
+    const MultigridData &mg_data_in, const DoFHandler<dim> &dof_handler,
+    const Mapping<dim> &mapping, void* operator_data_in) {
 
   // save mg-setup
   this->mg_data = mg_data_in;
@@ -93,7 +94,7 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
     // TODO: remove static cast
     auto matrix =
         static_cast<Operator *>(underlying_operator->get_new(seq[i].second));
-    this->initialize_mg_matrix(*mg_dofhandler[i], matrix, i, seq[i].first);
+    this->initialize_mg_matrix(*mg_dofhandler[i], matrix, i, seq[i].first, mapping, operator_data_in);
     mg_matrices[i].reset(matrix);
 
     if (i == min_level) {
@@ -111,7 +112,7 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
       // TODO: remove static cast
       auto matrix_q =
           static_cast<Operator *>(underlying_operator->get_new(seq[i].second));
-      this->initialize_mg_matrix(*dof_handler_q, matrix_q, -1, seq[i].first);
+      this->initialize_mg_matrix(*dof_handler_q, matrix_q, -1, seq[i].first, mapping, operator_data_in);
       this->cg_matrices.reset(matrix_q);
 
       // create coarse solver with coarse matrix fe_q and fe_dgq
@@ -189,9 +190,17 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::
                                    MGConstrainedDoFs &) {}
 
 template <int dim, typename value_type, typename Operator>
-void MyMultigridPreconditionerBase<
-    dim, value_type, Operator>::initialize_mg_matrix(const DoFHandler<dim> &,
-                                                     Operator *, int, int) {}
+void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_matrix(
+        const DoFHandler<dim> &dof_handler,
+        Operator * matrix, int level, int tria_level, 
+        const Mapping<dim> &mapping, void* operator_data_in) {
+      
+      matrix->reinit(dof_handler, mapping, operator_data_in,
+                   level == -1 ? *this->cg_constrained_dofs_local
+                               : *this->mg_constrained_dofs_local[level],
+                   tria_level);
+
+  }
 
 template <int dim, typename value_type, typename Operator>
 void MyMultigridPreconditionerBase<dim, value_type, Operator>::update(

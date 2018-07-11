@@ -18,8 +18,6 @@ public:
   MyMultigridPreconditionerLaplace()
       : BASE(std::shared_ptr<MatrixOperatorBaseNew<dim, typename Operator::value_type>>(new Operator())) {}
 
-  const Mapping<dim> *mapping;
-  const OperatorData *operator_data_in;
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const
       *dirichlet_bc;
 
@@ -36,11 +34,9 @@ public:
              std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const
                  &dirichlet_bc) {
     // save mg-setup
-    this->mapping = &mapping;
-    this->operator_data_in = &operator_data_in;
     this->dirichlet_bc = &dirichlet_bc;
 
-    BASE::initialize(mg_data_in, dof_handler);
+    BASE::initialize(mg_data_in, dof_handler, mapping, (void *)operator_data_in);
   }
 
 public:
@@ -53,17 +49,7 @@ public:
     constrained_dofs.make_zero_boundary_constraints(dof_handler,
                                                     dirichlet_boundary);
   }
-
-  void initialize_mg_matrix(
-      const DoFHandler<dim> &dof_handler,
-      MatrixOperatorBaseNew<dim, typename Operator::value_type> *matrix,
-      int level, int tria_level) {
-
-    matrix->reinit(dof_handler, *mapping, (void *)operator_data_in,
-                   level == -1 ? *this->cg_constrained_dofs_local
-                               : *this->mg_constrained_dofs_local[level],
-                   tria_level);
-  }
+  
 };
 
 #endif /* INCLUDE_POISSON_MULTIGRID_PRECONDITIONER_LAPLACE_H_ */

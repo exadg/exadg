@@ -149,13 +149,16 @@ public:
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> mg_constrained_dofs_local;
 
   void initialize(const MultigridData &mg_data_in,
-                  const DoFHandler<dim> &dof_handler);
+                  const DoFHandler<dim> &dof_handler,
+                  const Mapping<dim> &mapping, 
+                  void* operator_data_in);
 
   virtual void initialize_mg_constrained_dofs(const DoFHandler<dim> &,
                                               MGConstrainedDoFs &);
 
-  virtual void initialize_mg_matrix(const DoFHandler<dim> &, Operator *, int,
-                                    int);
+  virtual void initialize_mg_matrix(const DoFHandler<dim> &dof_handler,
+        Operator * matrix, int level, int tria_level, 
+        const Mapping<dim> &mapping, void* operator_data_in);
 
   virtual void update(MatrixOperatorBase const * /*matrix_operator*/);
 
