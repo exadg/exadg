@@ -371,7 +371,11 @@ private:
 
   void setup_operators()
   {
+    // convection-diffusion operator
+    ConvDiff::ConvectionDiffusionOperatorData<dim> conv_diff_operator_data;
+    
     // mass matrix operator
+    auto & mass_matrix_operator_data = conv_diff_operator_data.mass_matrix_operator_data;
     mass_matrix_operator_data.dof_index = 0;
     mass_matrix_operator_data.quad_index = 0;
     mass_matrix_operator.initialize(data,mass_matrix_operator_data);
@@ -381,6 +385,7 @@ private:
     inverse_mass_matrix_operator.initialize(data,0,0);
 
     // convective operator
+    auto & convective_operator_data = conv_diff_operator_data.convective_operator_data;
     convective_operator_data.dof_index = 0;
     convective_operator_data.quad_index = 0;
     convective_operator_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
@@ -389,6 +394,7 @@ private:
     convective_operator.initialize(data,convective_operator_data);
 
     // diffusive operator
+    auto & diffusive_operator_data = conv_diff_operator_data.diffusive_operator_data;
     diffusive_operator_data.dof_index = 0;
     diffusive_operator_data.quad_index = 0;
     diffusive_operator_data.IP_factor = param.IP_factor;
@@ -403,8 +409,6 @@ private:
     rhs_operator_data.rhs = field_functions->right_hand_side;
     rhs_operator.initialize(data,rhs_operator_data);
 
-    // convection-diffusion operator
-    ConvDiff::ConvectionDiffusionOperatorData<dim> conv_diff_operator_data;
     if(this->param.problem_type == ConvDiff::ProblemType::Unsteady)
     {
       conv_diff_operator_data.unsteady_problem = true;
@@ -471,14 +475,14 @@ private:
   std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor;
   std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functions;
 
-  ConvDiff::MassMatrixOperatorData<dim> mass_matrix_operator_data;
+  //ConvDiff::MassMatrixOperatorData<dim> mass_matrix_operator_data;
   ConvDiff::MassMatrixOperator<dim, fe_degree, value_type> mass_matrix_operator;
   InverseMassMatrixOperator<dim,fe_degree,value_type,1> inverse_mass_matrix_operator;
 
-  ConvDiff::ConvectiveOperatorData<dim> convective_operator_data;
+  //ConvDiff::ConvectiveOperatorData<dim> convective_operator_data;
   ConvDiff::ConvectiveOperator<dim, fe_degree, value_type> convective_operator;
 
-  ConvDiff::DiffusiveOperatorData<dim> diffusive_operator_data;
+  //ConvDiff::DiffusiveOperatorData<dim> diffusive_operator_data;
   ConvDiff::DiffusiveOperator<dim, fe_degree, value_type> diffusive_operator;
   ConvDiff::RHSOperator<dim, fe_degree, value_type> rhs_operator;
 

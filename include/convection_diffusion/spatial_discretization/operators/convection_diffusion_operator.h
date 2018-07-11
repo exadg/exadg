@@ -23,6 +23,10 @@ struct ConvectionDiffusionOperatorData
   bool convective_problem;
   bool diffusive_problem;
   MultigridOperatorType mg_operator_type;
+  
+  MassMatrixOperatorData<dim> mass_matrix_operator_data;
+  ConvectiveOperatorData<dim> convective_operator_data;
+  DiffusiveOperatorData<dim> diffusive_operator_data;
 };
 
 template <int dim, int fe_degree, typename Number = double>
@@ -104,26 +108,26 @@ public:
     // reinit
     own_matrix_free_storage.reinit(mapping, dof_handler, constraints, quad, addit_data);
 
+    // setup convection-diffusion operator
+    ConvectionDiffusionOperatorData<dim> my_operator_data = underlying_operator.get_operator_data();
+
     // setup own mass matrix operator
-    MassMatrixOperatorData<dim> mass_matrix_operator_data = underlying_operator.get_mass_matrix_operator_data();
+    auto & mass_matrix_operator_data = my_operator_data.mass_matrix_operator_data;
     mass_matrix_operator_data.dof_index = 0;
     mass_matrix_operator_data.quad_index = 0;
     own_mass_matrix_operator_storage.initialize(own_matrix_free_storage,mass_matrix_operator_data);
 
     // setup own convective operator
-    ConvectiveOperatorData<dim> convective_operator_data = underlying_operator.get_convective_operator_data();
+    auto & convective_operator_data = my_operator_data.convective_operator_data;
     convective_operator_data.dof_index = 0;
     convective_operator_data.quad_index = 0;
     own_convective_operator_storage.initialize(own_matrix_free_storage,convective_operator_data);
 
     // setup own viscous operator
-    DiffusiveOperatorData<dim> diffusive_operator_data = underlying_operator.get_diffusive_operator_data();
+    auto & diffusive_operator_data = my_operator_data.diffusive_operator_data;
     diffusive_operator_data.dof_index = 0;
     diffusive_operator_data.quad_index = 0;
     own_diffusive_operator_storage.initialize(mapping,own_matrix_free_storage,diffusive_operator_data);
-
-    // setup convection-diffusion operator
-    ConvectionDiffusionOperatorData<dim> my_operator_data = underlying_operator.get_operator_data();
 
     // When solving the reaction-convection-diffusion equations, it might be possible
     // that one wants to apply the multigrid preconditioner only to the reaction-diffusion
@@ -193,17 +197,17 @@ public:
    */
   MassMatrixOperatorData<dim> const & get_mass_matrix_operator_data() const
   {
-    return mass_matrix_operator->get_operator_data();
+    return mass_matrix_operator->get_operator_data(); // TODO: get it from data
   }
 
   ConvectiveOperatorData<dim> const & get_convective_operator_data() const
   {
-    return convective_operator->get_operator_data();
+    return convective_operator->get_operator_data(); // TODO: get it from data
   }
 
   DiffusiveOperatorData<dim> const & get_diffusive_operator_data() const
   {
-    return diffusive_operator->get_operator_data();
+    return diffusive_operator->get_operator_data(); // TODO: get it from data
   }
 
   /*
