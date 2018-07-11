@@ -51,6 +51,20 @@ void OperatorBase<dim, degree, Number, AdditionalData>::reinit(
 
   // ... level of this mg level
   additional_data.level_mg_handler = level;
+  
+  // TODO: move to additional data
+  additional_data.mapping_update_flags = (update_gradients | update_JxW_values |
+     update_quadrature_points | update_normal_vectors | update_values);
+
+  if(is_dg){
+    additional_data.mapping_update_flags_inner_faces = (update_gradients | 
+       update_JxW_values | update_quadrature_points | update_normal_vectors |
+       update_values);
+  
+    additional_data.mapping_update_flags_boundary_faces = (update_gradients | 
+       update_JxW_values | update_quadrature_points | update_normal_vectors |
+       update_values);
+  }
 
   // ... on each level
   auto &constraint_own = constraint.own();
