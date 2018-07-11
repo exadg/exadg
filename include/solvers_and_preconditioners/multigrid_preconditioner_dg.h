@@ -77,11 +77,12 @@ private:
    *  This function initializes mg_matrices on all levels with level >= 0.
    */
   virtual void initialize_mg_matrix(const DoFHandler<dim> &dof_handler,
-        OPERATOR_BASE * matrix, int /*level*/, int tria_level)
-  {
+        OPERATOR_BASE * matrix, int level, int tria_level) {
       
-      dynamic_cast<Operator *>(matrix)->initialize_mg_matrix(tria_level, dof_handler, 
-              *this->mapping, *this->underlying_operator, *this->periodic_face_pairs_level0);
+      matrix->reinit(dof_handler, *mapping, (void *)&this->underlying_operator->get_operator_data(),
+                   level == -1 ? *this->cg_constrained_dofs_local
+                               : *this->mg_constrained_dofs_local[level],
+                   tria_level);
 
   }
 };

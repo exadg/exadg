@@ -77,14 +77,15 @@ public:
    *  the setup, i.e., the information that is needed to call the
    *  member function initialize(...).
    */
-  template<typename UnderlyingOperator>
-  void initialize_mg_matrix (unsigned int const                               level,
-                             DoFHandler<dim> const                            &dof_handler,
-                             Mapping<dim> const                               &mapping,
-                             UnderlyingOperator const                         &underlying_operator,
-                             std::vector<GridTools::PeriodicFacePair<typename
-                             Triangulation<dim>::cell_iterator> > const       &/*periodic_face_pairs_level0*/)
-  {
+  void reinit (
+          const DoFHandler<dim> &dof_handler, 
+          const Mapping<dim> &mapping,
+          void* od, 
+          const MGConstrainedDoFs &/*mg_constrained_dofs*/, 
+          const unsigned int level) {
+      
+    // TODO: call parent function
+      
     // setup own matrix free object
     QGauss<1> const quad(dof_handler.get_fe().degree+1);
     typename MatrixFree<dim,Number>::AdditionalData addit_data;
@@ -111,7 +112,8 @@ public:
     own_matrix_free_storage.reinit(mapping, dof_handler, constraints, quad, addit_data);
 
     // setup convection-diffusion operator
-    ConvectionDiffusionOperatorData<dim> my_operator_data = underlying_operator.get_operator_data();
+    ConvectionDiffusionOperatorData<dim> my_operator_data = 
+            *static_cast<ConvectionDiffusionOperatorData<dim> *>(od);
 
     // setup own mass matrix operator
     auto & mass_matrix_operator_data = my_operator_data.mass_matrix_operator_data;
