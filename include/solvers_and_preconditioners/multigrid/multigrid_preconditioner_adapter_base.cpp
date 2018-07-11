@@ -12,7 +12,8 @@ MyMultigridPreconditionerBase<dim, value_type,
 template <int dim, typename value_type, typename Operator>
 void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
     const MultigridData &mg_data_in, const DoFHandler<dim> &dof_handler,
-    const Mapping<dim> &mapping, void* operator_data_in) {
+    const Mapping<dim> &mapping, void* operator_data_in,
+          std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const &dirichlet_bc) {
 
   // save mg-setup
   this->mg_data = mg_data_in;
@@ -77,7 +78,7 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
     // setup constrained dofs:
     auto constrained_dofs = new MGConstrainedDoFs();
     constrained_dofs->clear();
-    this->initialize_mg_constrained_dofs(*dof_handler, *constrained_dofs);
+    this->initialize_mg_constrained_dofs(*dof_handler, *constrained_dofs, dirichlet_bc);
 
     // populate dofhandler and constrained dofs all levels with the same degree
     std::shared_ptr<const DoFHandler<dim>> temp_dofh(dof_handler);
@@ -106,7 +107,7 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
 
       auto constrained_dofs_q = new MGConstrainedDoFs();
       constrained_dofs_q->clear();
-      this->initialize_mg_constrained_dofs(*dof_handler_q, *constrained_dofs_q);
+      this->initialize_mg_constrained_dofs(*dof_handler_q, *constrained_dofs_q, dirichlet_bc);
       this->cg_constrained_dofs_local.reset(constrained_dofs_q);
 
       // TODO: remove static cast
@@ -187,8 +188,17 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
 
 template <int dim, typename value_type, typename Operator>
 void MyMultigridPreconditionerBase<dim, value_type, Operator>::
-    initialize_mg_constrained_dofs(const DoFHandler<dim> &,
-                                   MGConstrainedDoFs &) {}
+    initialize_mg_constrained_dofs(const DoFHandler<dim> &dof_handler,
+                                   MGConstrainedDoFs &constrained_dofs,
+          std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const &dirichlet_bc) {
+    std::set<types::boundary_id> dirichlet_boundary;
+    for (auto& it : dirichlet_bc)
+      dirichlet_boundary.insert(it.first);
+    constrained_dofs.initialize(dof_handler);
+    constrained_dofs.make_zero_boundary_constraints(dof_handler,
+                                                    dirichlet_boundary);
+
+}
 
 template <int dim, typename value_type, typename Operator>
 void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_matrix(
