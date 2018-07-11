@@ -112,7 +112,8 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
       // TODO: remove static cast
       auto matrix_q =
           static_cast<Operator *>(underlying_operator->get_new(seq[i].second));
-      this->initialize_mg_matrix(*dof_handler_q, matrix_q, -1, seq[i].first, mapping, operator_data_in);
+      // TODO: revert 
+      //this->initialize_mg_matrix(*dof_handler_q, matrix_q, -1, seq[i].first, mapping, operator_data_in);
       this->cg_matrices.reset(matrix_q);
 
       // create coarse solver with coarse matrix fe_q and fe_dgq
