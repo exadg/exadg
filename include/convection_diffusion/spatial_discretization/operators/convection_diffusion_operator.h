@@ -46,6 +46,10 @@ public:
   typedef typename Parent::FEEvalFace FEEvalFace;
   typedef typename Parent::BMatrix BMatrix;
 
+  typedef MassMatrixOperator<dim, fe_degree, Number> MassMatrixOp;
+  typedef ConvectiveOperator<dim, fe_degree, Number> ConvectiveOp;
+  typedef DiffusiveOperator<dim, fe_degree, Number> DiffusiveOp;
+  
   ConvectionDiffusionOperator();
 
   void initialize(MatrixFree<dim,Number> const                     &mf_data_in,
@@ -125,14 +129,10 @@ private:
   void do_boundary_integral(FEEvalFace &, OperatorType const &,
                             types::boundary_id const &) const {}
 
-  MassMatrixOperator<dim, fe_degree, Number>  const *mass_matrix_operator;
-  ConvectiveOperator<dim, fe_degree, Number> const *convective_operator;
-  DiffusiveOperator<dim, fe_degree, Number>  const *diffusive_operator;
+  mutable LazyWrapper<MassMatrixOp> mass_matrix_operator;
+  mutable LazyWrapper<ConvectiveOp> convective_operator;
+  mutable LazyWrapper<DiffusiveOp> diffusive_operator;
   parallel::distributed::Vector<Number> mutable temp;
-
-  MassMatrixOperator<dim, fe_degree, Number> own_mass_matrix_operator_storage;
-  ConvectiveOperator<dim, fe_degree, Number> own_convective_operator_storage;
-  DiffusiveOperator<dim, fe_degree, Number> own_diffusive_operator_storage;
 };
     
 }

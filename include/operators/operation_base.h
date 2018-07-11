@@ -115,6 +115,9 @@ struct OperatorBaseData {
 template <typename T> class LazyWrapper {
 
 public:
+  LazyWrapper():tp(nullptr){}
+    
+  void use_own() { this->tp = &this->t; }
   void reinit(T const &t) { this->tp = &t; }
   T &own() { return t; }
   T const *operator->() { return tp; }

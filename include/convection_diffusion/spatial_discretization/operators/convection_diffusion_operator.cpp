@@ -3,23 +3,20 @@
 namespace ConvDiff {
 
 template <int dim, int fe_degree, typename Number>
-  ConvectionDiffusionOperator<dim, fe_degree, Number>::ConvectionDiffusionOperator() : 
-          mass_matrix_operator(nullptr), 
-          convective_operator(nullptr),
-          diffusive_operator(nullptr) {}
+  ConvectionDiffusionOperator<dim, fe_degree, Number>::ConvectionDiffusionOperator() {}
 
 template <int dim, int fe_degree, typename Number>
   void   ConvectionDiffusionOperator<dim, fe_degree, Number>::initialize(MatrixFree<dim,Number> const                     &mf_data_in,
                   ConvectionDiffusionOperatorData<dim> const       &operator_data_in,
-                  MassMatrixOperator<dim, fe_degree, Number> const &mass_matrix_operator_in,
-                  ConvectiveOperator<dim, fe_degree, Number> const &convective_operator_in,
-                  DiffusiveOperator<dim, fe_degree, Number> const  &diffusive_operator_in)
+                  MassMatrixOp const &mass_matrix_operator_in,
+                  ConvectiveOp const &convective_operator_in,
+                  DiffusiveOp  const &diffusive_operator_in)
   {
     ConstraintMatrix cm;
     Parent::reinit(mf_data_in, cm, operator_data_in);
-    this->mass_matrix_operator = &mass_matrix_operator_in;
-    this->convective_operator = &convective_operator_in;
-    this->diffusive_operator = &diffusive_operator_in;
+    this->mass_matrix_operator.reinit(mass_matrix_operator_in);
+    this->convective_operator.reinit(convective_operator_in);
+    this->diffusive_operator.reinit(diffusive_operator_in);
   }
 
 template <int dim, int fe_degree, typename Number>
@@ -32,26 +29,33 @@ template <int dim, int fe_degree, typename Number>
       
     Parent::reinit(dof_handler, mapping, od, mg_constrained_dofs, level);
       
+    mass_matrix_operator.use_own();
+    convective_operator.use_own();
+    diffusive_operator.use_own();
+    
     // setup own mass matrix operator
-    auto & mass_matrix_operator_data = this->ad.mass_matrix_operator_data;
-    mass_matrix_operator_data.dof_index = 0;
-    mass_matrix_operator_data.quad_index = 0;
-    own_mass_matrix_operator_storage.initialize(
-        this->get_data(), mass_matrix_operator_data);
+    {
+      auto & op_data = this->ad.mass_matrix_operator_data;
+      op_data.dof_index = 0;
+      op_data.quad_index = 0;
+      mass_matrix_operator.own().initialize(this->get_data(), op_data);
+    }
 
     // setup own convective operator
-    auto & convective_operator_data = this->ad.convective_operator_data;
-    convective_operator_data.dof_index = 0;
-    convective_operator_data.quad_index = 0;
-    own_convective_operator_storage.initialize(
-        this->get_data(), convective_operator_data);
+    {
+      auto & op_data = this->ad.convective_operator_data;
+      op_data.dof_index = 0;
+      op_data.quad_index = 0;
+      convective_operator.own().initialize(this->get_data(), op_data);
+    }
 
     // setup own viscous operator
-    auto & diffusive_operator_data = this->ad.diffusive_operator_data;
-    diffusive_operator_data.dof_index = 0;
-    diffusive_operator_data.quad_index = 0;
-    own_diffusive_operator_storage.initialize(mapping,
-            this->get_data() ,diffusive_operator_data);
+    {
+      auto & op_data = this->ad.diffusive_operator_data;
+      op_data.dof_index = 0;
+      op_data.quad_index = 0;
+      diffusive_operator.own().initialize(mapping, this->get_data(), op_data);
+    }
 
     // When solving the reaction-convection-diffusion equations, it might be possible
     // that one wants to apply the multigrid preconditioner only to the reaction-diffusion
@@ -76,10 +80,6 @@ template <int dim, int fe_degree, typename Number>
     {
       AssertThrow(false, ExcMessage("Not implemented."));
     }
-    
-    this->mass_matrix_operator = &own_mass_matrix_operator_storage;
-    this->convective_operator = &own_convective_operator_storage;
-    this->diffusive_operator = &own_diffusive_operator_storage;
 
     // Initialize other variables:
 
