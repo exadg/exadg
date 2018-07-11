@@ -59,11 +59,8 @@ public:
                   ConvectiveOperator<dim, fe_degree, Number> const &convective_operator_in,
                   DiffusiveOperator<dim, fe_degree, Number> const  &diffusive_operator_in)
   {
-    // copy parameters into element variables
-//    this->data = &mf_data_in;
-//    this->ad = operator_data_in;
-      ConstraintMatrix cm;
-      Parent::reinit(mf_data_in, cm, operator_data_in);
+    ConstraintMatrix cm;
+    Parent::reinit(mf_data_in, cm, operator_data_in);
     this->mass_matrix_operator = &mass_matrix_operator_in;
     this->convective_operator = &convective_operator_in;
     this->diffusive_operator = &diffusive_operator_in;
@@ -81,57 +78,31 @@ public:
           const DoFHandler<dim> &dof_handler, 
           const Mapping<dim> &mapping,
           void* od, 
-          const MGConstrainedDoFs &/*mg_constrained_dofs*/, 
+          const MGConstrainedDoFs &mg_constrained_dofs, 
           const unsigned int level) {
       
-    // TODO: call parent function
+    Parent::reinit(dof_handler, mapping, od, mg_constrained_dofs, level);
       
-    // setup own matrix free object
-    QGauss<1> const quad(dof_handler.get_fe().degree+1);
-    typename MatrixFree<dim,Number>::AdditionalData addit_data;
-    addit_data.tasks_parallel_scheme = MatrixFree<dim,Number>::AdditionalData::none;
-    if (dof_handler.get_fe().dofs_per_vertex == 0)
-      addit_data.build_face_info = true;
-
-    addit_data.mapping_update_flags = (update_gradients | update_JxW_values |
-                                       update_quadrature_points | update_normal_vectors |
-                                       update_values);
-
-    addit_data.mapping_update_flags_inner_faces = (update_gradients | update_JxW_values |
-                                                   update_quadrature_points | update_normal_vectors |
-                                                   update_values);
-
-    addit_data.mapping_update_flags_boundary_faces = (update_gradients | update_JxW_values |
-                                                      update_quadrature_points | update_normal_vectors |
-                                                      update_values);
-
-    addit_data.level_mg_handler = level;
-
-    ConstraintMatrix constraints;
-    // reinit
-    own_matrix_free_storage.reinit(mapping, dof_handler, constraints, quad, addit_data);
-
-    // setup convection-diffusion operator
-    ConvectionDiffusionOperatorData<dim> my_operator_data = 
-            *static_cast<ConvectionDiffusionOperatorData<dim> *>(od);
-
     // setup own mass matrix operator
-    auto & mass_matrix_operator_data = my_operator_data.mass_matrix_operator_data;
+    auto & mass_matrix_operator_data = this->ad.mass_matrix_operator_data;
     mass_matrix_operator_data.dof_index = 0;
     mass_matrix_operator_data.quad_index = 0;
-    own_mass_matrix_operator_storage.initialize(own_matrix_free_storage,mass_matrix_operator_data);
+    own_mass_matrix_operator_storage.initialize(
+        this->get_data(), mass_matrix_operator_data);
 
     // setup own convective operator
-    auto & convective_operator_data = my_operator_data.convective_operator_data;
+    auto & convective_operator_data = this->ad.convective_operator_data;
     convective_operator_data.dof_index = 0;
     convective_operator_data.quad_index = 0;
-    own_convective_operator_storage.initialize(own_matrix_free_storage,convective_operator_data);
+    own_convective_operator_storage.initialize(
+        this->get_data(), convective_operator_data);
 
     // setup own viscous operator
-    auto & diffusive_operator_data = my_operator_data.diffusive_operator_data;
+    auto & diffusive_operator_data = this->ad.diffusive_operator_data;
     diffusive_operator_data.dof_index = 0;
     diffusive_operator_data.quad_index = 0;
-    own_diffusive_operator_storage.initialize(mapping,own_matrix_free_storage,diffusive_operator_data);
+    own_diffusive_operator_storage.initialize(mapping,
+            this->get_data() ,diffusive_operator_data);
 
     // When solving the reaction-convection-diffusion equations, it might be possible
     // that one wants to apply the multigrid preconditioner only to the reaction-diffusion
@@ -139,29 +110,27 @@ public:
     // reaction-convection-diffusion operator. Accordingly, we have to reset which
     // operators should be "active" for the multigrid preconditioner, independently of
     // the actual equation type that is solved.
-    AssertThrow(my_operator_data.mg_operator_type != MultigridOperatorType::Undefined,
+    AssertThrow(this->ad.mg_operator_type != MultigridOperatorType::Undefined,
         ExcMessage("Invalid parameter mg_operator_type."));
 
-    if(my_operator_data.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
+    if(this->ad.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
     {
-      my_operator_data.convective_problem = false; // deactivate convective term for multigrid preconditioner
-      my_operator_data.diffusive_problem = true;
+      this->ad.convective_problem = false; // deactivate convective term for multigrid preconditioner
+      this->ad.diffusive_problem = true;
     }
-    else if(my_operator_data.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
+    else if(this->ad.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
     {
-      my_operator_data.convective_problem = true;
-      my_operator_data.diffusive_problem = true;
+      this->ad.convective_problem = true;
+      this->ad.diffusive_problem = true;
     }
     else
     {
       AssertThrow(false, ExcMessage("Not implemented."));
     }
-
-    initialize(own_matrix_free_storage,
-               my_operator_data,
-               own_mass_matrix_operator_storage,
-               own_convective_operator_storage,
-               own_diffusive_operator_storage);
+    
+    this->mass_matrix_operator = &own_mass_matrix_operator_storage;
+    this->convective_operator = &own_convective_operator_storage;
+    this->diffusive_operator = &own_diffusive_operator_storage;
 
     // Initialize other variables:
 
@@ -376,7 +345,6 @@ private:
   DiffusiveOperator<dim, fe_degree, Number>  const *diffusive_operator;
   parallel::distributed::Vector<Number> mutable temp;
 
-  MatrixFree<dim,Number> own_matrix_free_storage;
   MassMatrixOperator<dim, fe_degree, Number> own_mass_matrix_operator_storage;
   ConvectiveOperator<dim, fe_degree, Number> own_convective_operator_storage;
   DiffusiveOperator<dim, fe_degree, Number> own_diffusive_operator_storage;
