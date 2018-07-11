@@ -17,12 +17,15 @@ struct ConvectionDiffusionOperatorData
     unsteady_problem(true),
     convective_problem(true),
     diffusive_problem(true),
-    mg_operator_type(MultigridOperatorType::Undefined) {}
+    mg_operator_type(MultigridOperatorType::Undefined),
+    scaling_factor_time_derivative_term(-1.0) {}
 
   bool unsteady_problem;
   bool convective_problem;
   bool diffusive_problem;
   MultigridOperatorType mg_operator_type;
+  
+  double scaling_factor_time_derivative_term;
   
   MassMatrixOperatorData<dim> mass_matrix_operator_data;
   ConvectiveOperatorData<dim> convective_operator_data;
@@ -47,8 +50,7 @@ public:
     :
     mass_matrix_operator(nullptr),
     convective_operator(nullptr),
-    diffusive_operator(nullptr),
-    scaling_factor_time_derivative_term(-1.0)
+    diffusive_operator(nullptr)
   {}
 
   void initialize(MatrixFree<dim,Number> const                     &mf_data_in,
@@ -162,7 +164,7 @@ public:
     // Initialize other variables:
 
     // mass matrix term: set scaling factor time derivative term
-    set_scaling_factor_time_derivative_term(underlying_operator.get_scaling_factor_time_derivative_term());
+    //set_scaling_factor_time_derivative_term(underlying_operator.get_scaling_factor_time_derivative_term());
 
     // convective term: evaluation_time
     // This variables is not set here. If the convective term
@@ -184,12 +186,12 @@ public:
    */
   void set_scaling_factor_time_derivative_term(double const &factor)
   {
-    scaling_factor_time_derivative_term = factor;
+    this->ad.scaling_factor_time_derivative_term = factor;
   }
 
   double get_scaling_factor_time_derivative_term() const
   {
-    return scaling_factor_time_derivative_term;
+    return this->ad.scaling_factor_time_derivative_term;
   }
 
   /*
@@ -223,11 +225,11 @@ public:
   {
     if(this->ad.unsteady_problem == true)
     {
-      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+      AssertThrow(this->ad.scaling_factor_time_derivative_term > 0.0,
         ExcMessage("Scaling factor of time derivative term has not been initialized!"));
 
       mass_matrix_operator->apply(dst,src);
-      dst *= scaling_factor_time_derivative_term;
+      dst *= this->ad.scaling_factor_time_derivative_term;
     }
     else
     {
@@ -250,11 +252,11 @@ public:
   {
     if(this->ad.unsteady_problem == true)
     {
-      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+      AssertThrow(this->ad.scaling_factor_time_derivative_term > 0.0,
         ExcMessage("Scaling factor of time derivative term has not been initialized for convection-diffusion operator!"));
 
       mass_matrix_operator->apply(temp,src);
-      temp *= scaling_factor_time_derivative_term;
+      temp *= this->ad.scaling_factor_time_derivative_term;
       dst += temp;
     }
 
@@ -277,11 +279,11 @@ private:
   {
     if(this->ad.unsteady_problem == true)
     {
-      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+      AssertThrow(this->ad.scaling_factor_time_derivative_term > 0.0,
         ExcMessage("Scaling factor of time derivative term has not been initialized for convection-diffusion operator!"));
 
       mass_matrix_operator->calculate_diagonal(diagonal);
-      diagonal *= scaling_factor_time_derivative_term;
+      diagonal *= this->ad.scaling_factor_time_derivative_term;
     }
     else
     {
@@ -308,7 +310,7 @@ private:
     // calculate block Jacobi matrices
     if(this->ad.unsteady_problem == true)
     {
-      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+      AssertThrow(this->ad.scaling_factor_time_derivative_term > 0.0,
         ExcMessage("Scaling factor of time derivative term has not been initialized!"));
 
       mass_matrix_operator->add_block_jacobi_matrices(matrices);
@@ -316,7 +318,7 @@ private:
       for(typename std::vector<LAPACKFullMatrix<Number> >::iterator
           it = matrices.begin(); it != matrices.end(); ++it)
       {
-        (*it) *= scaling_factor_time_derivative_term;
+        (*it) *= this->ad.scaling_factor_time_derivative_term;
       }
     }
 
@@ -335,18 +337,18 @@ private:
     switch (deg) {
     case 1:
       return new ConvectionDiffusionOperator<dim, 1, Number>();
-    case 2:
-      return new ConvectionDiffusionOperator<dim, 2, Number>();
+//    case 2:
+//      return new ConvectionDiffusionOperator<dim, 2, Number>();
     case 3:
       return new ConvectionDiffusionOperator<dim, 3, Number>();
-    case 4:
-      return new ConvectionDiffusionOperator<dim, 4, Number>();
-    case 5:
-      return new ConvectionDiffusionOperator<dim, 5, Number>();
-    case 6:
-      return new ConvectionDiffusionOperator<dim, 6, Number>();
-    case 7:
-      return new ConvectionDiffusionOperator<dim, 7, Number>();
+//    case 4:
+//      return new ConvectionDiffusionOperator<dim, 4, Number>();
+//    case 5:
+//      return new ConvectionDiffusionOperator<dim, 5, Number>();
+//    case 6:
+//      return new ConvectionDiffusionOperator<dim, 6, Number>();
+//    case 7:
+//      return new ConvectionDiffusionOperator<dim, 7, Number>();
     default:
       AssertThrow(false,
                   ExcMessage("LaplaceOperator not implemented for this degree!"));
@@ -371,7 +373,6 @@ private:
   ConvectiveOperator<dim, fe_degree, Number> const *convective_operator;
   DiffusiveOperator<dim, fe_degree, Number>  const *diffusive_operator;
   parallel::distributed::Vector<Number> mutable temp;
-  double scaling_factor_time_derivative_term;
 
   MatrixFree<dim,Number> own_matrix_free_storage;
   MassMatrixOperator<dim, fe_degree, Number> own_mass_matrix_operator_storage;
