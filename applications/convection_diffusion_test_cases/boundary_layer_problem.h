@@ -82,7 +82,8 @@ void ConvDiff::InputParameters::set_input_parameters()
   multigrid_data.gmres_smoother_data.number_of_iterations = 5;
   // MG coarse grid solver
   multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_PointJacobi;
-
+  //multigrid_data.coarse_solver = MultigridCoarseGridSolver::AMG_ML;
+  //multigrid_data.two_levels = true;
   multigrid_data.type = MultigridType::HGMG;
   
   update_preconditioner = false;

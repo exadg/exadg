@@ -10,6 +10,14 @@
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
 
+#include "laplace/user_interface/analytical_solution.h"
+#include "laplace/user_interface/boundary_descriptor.h"
+#include "laplace/user_interface/field_functions.h"
+#include "laplace/user_interface/input_parameters.h"
+
+#include "functionalities/print_functions.h"
+#include "functionalities/print_general_infos.h"
+
 // SPECIFY THE TEST CASE THAT HAS TO BE SOLVED
 
 // laplace problems
@@ -36,6 +44,7 @@ private:
   ConditionalOStream pcout;
   parallel::distributed::Triangulation<dim> triangulation;
   const unsigned int n_refine_space;
+  Laplace::InputParameters param;
   
 };
 
@@ -48,6 +57,13 @@ LaplaceProblem<dim, fe_degree, Number>::LaplaceProblem(
                         dim>::construct_multigrid_hierarchy),
       n_refine_space(n_refine_space_in) {
   print_header();
+  param.set_input_parameters();
+  param.check_input_parameters();
+  
+  print_MPI_info(pcout);
+  if(param.print_input_parameters == true)
+    param.print(pcout);
+
 }
 
 template <int dim, int fe_degree, typename Number>
