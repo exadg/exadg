@@ -150,9 +150,9 @@ public:
 
   void initialize(const MultigridData &mg_data_in,
                   const DoFHandler<dim> &dof_handler,
-                  const Mapping<dim> &mapping, 
-                  void* operator_data_in,
-          std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const &dirichlet_bc);
+                  const Mapping<dim> &mapping,
+          std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const &dirichlet_bc, 
+                  void* operator_data_in);
 
   virtual void initialize_mg_constrained_dofs(const DoFHandler<dim> &,
                                               MGConstrainedDoFs &,

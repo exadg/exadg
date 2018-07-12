@@ -35,8 +35,8 @@ public:
     auto & dirichlet_bc = 
         underlying_operator.get_operator_data().bc->dirichlet_bc;
       
-    BASE::initialize(mg_data_in, dof_handler, mapping, 
-            (void *)&underlying_operator.get_operator_data(), dirichlet_bc);
+    BASE::initialize(mg_data_in, dof_handler, mapping, dirichlet_bc, 
+            (void *)&underlying_operator.get_operator_data());
   }
   
 };
