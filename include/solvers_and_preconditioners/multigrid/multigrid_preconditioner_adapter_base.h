@@ -194,7 +194,6 @@ protected:
   initialize_multigrid_preconditioner(DoFHandler<dim> const & /*dof_handler*/);
 
   MultigridData mg_data;
-  MGConstrainedDoFs mg_constrained_dofs;
   unsigned int n_global_levels; // TODO
 
   MGLevelObject<std::shared_ptr<Operator>> mg_matrices;
