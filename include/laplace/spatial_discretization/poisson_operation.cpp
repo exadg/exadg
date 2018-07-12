@@ -18,7 +18,7 @@ void DGOperation<dim, fe_degree, value_type>::setup(
     std::shared_ptr<Laplace::FieldFunctions<dim>> field_functions_in) {
   ConditionalOStream pcout(
       std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-  pcout << std::endl << "Setup convection-diffusion operation ..." << std::endl;
+  pcout << std::endl << "Setup poisson operation ..." << std::endl;
 
   this->periodic_face_pairs = periodic_face_pairs;
   boundary_descriptor = boundary_descriptor_in;
@@ -213,6 +213,21 @@ void DGOperation<dim, fe_degree, value_type>::initialize_matrix_free() {
 
 template <int dim, int fe_degree, typename value_type>
 void DGOperation<dim, fe_degree, value_type>::setup_operators() {
-  // TODO
+  
+    // laplace operator
+    Laplace::LaplaceOperatorData<dim> laplace_operator_data;
+    laplace_operator_data.dof_index = 0;
+    laplace_operator_data.quad_index = 0;
+    laplace_operator_data.IP_factor = param.IP_factor;
+    laplace_operator_data.bc = boundary_descriptor;
+    laplace_operator.initialize(mapping,data,laplace_operator_data);
+    
+    // rhs operator
+    Laplace::RHSOperatorData<dim> rhs_operator_data;
+    rhs_operator_data.dof_index = 0;
+    rhs_operator_data.quad_index = 0;
+    rhs_operator_data.rhs = field_functions->right_hand_side;
+    rhs_operator.initialize(data,rhs_operator_data);
+    
 }
 }

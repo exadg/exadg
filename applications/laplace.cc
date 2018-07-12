@@ -83,6 +83,7 @@ LaplaceProblem<dim, fe_degree, Number>::LaplaceProblem(
 
   boundary_descriptor.reset(new Laplace::BoundaryDescriptor<dim>());
 
+  poisson_operation.reset(new Laplace::DGOperation<dim, fe_degree, Number>(triangulation,param));
 }
 
 template <int dim, int fe_degree, typename Number>
