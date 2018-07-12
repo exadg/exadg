@@ -133,7 +133,7 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
       auto curr = seq[i];
       if (prev.first != curr.first && deg == prev.second &&
           deg == curr.second) {
-        printf("h-gmg (%d,%d) -> (%d,%d)\n", prev.first, prev.second,
+        printf("  h-gmg (%d,%d) -> (%d,%d)\n", prev.first, prev.second,
                curr.first, curr.second);
         m[i] = curr.first;
       }
@@ -148,11 +148,8 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
         *mg_constrained_dofs[m.begin()->first]);
     transfer->build(*mg_dofhandler[m.begin()->first]);
 
-    for (auto i : m) {
-      printf("%d\n", i.first);
+    for (auto i : m) 
       mg_transfer[i.first] = transfer;
-    }
-    printf("\n");
   }
 
   // setup transfer for p-gmg
@@ -160,7 +157,7 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
     auto prev = seq[i - 1];
     auto curr = seq[i];
     if (prev.second != curr.second) {
-      printf("p-gmg (%d,%d) -> (%d,%d)\n", prev.first, prev.second, curr.first,
+      printf("  p-gmg (%d,%d) -> (%d,%d)\n", prev.first, prev.second, curr.first,
              curr.second);
       MGTransferBase<VECTOR_TYPE> *temp;
 
