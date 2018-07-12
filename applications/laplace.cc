@@ -46,6 +46,10 @@ private:
   const unsigned int n_refine_space;
   Laplace::InputParameters param;
   
+  std::shared_ptr<Laplace::FieldFunctions<dim> > field_functions;
+  std::shared_ptr<Laplace::BoundaryDescriptor<dim> > boundary_descriptor;
+  std::shared_ptr<Laplace::AnalyticalSolution<dim> > analytical_solution;
+  
 };
 
 template <int dim, int fe_degree, typename Number>
@@ -63,6 +67,14 @@ LaplaceProblem<dim, fe_degree, Number>::LaplaceProblem(
   print_MPI_info(pcout);
   if(param.print_input_parameters == true)
     param.print(pcout);
+  
+  field_functions.reset(new Laplace::FieldFunctions<dim>());
+  set_field_functions(field_functions);
+
+  analytical_solution.reset(new Laplace::AnalyticalSolution<dim>());
+  set_analytical_solution(analytical_solution);
+
+  boundary_descriptor.reset(new Laplace::BoundaryDescriptor<dim>());
 
 }
 
@@ -78,13 +90,33 @@ void LaplaceProblem<dim, fe_degree, Number>::print_header() {
 }
 
 template <int dim, int fe_degree, typename Number>
-void LaplaceProblem<dim, fe_degree, Number>::print_grid_data() {}
+void LaplaceProblem<dim, fe_degree, Number>::print_grid_data() {
+  pcout << std::endl
+        << "Generating grid for " << dim << "-dimensional problem:" << std::endl
+        << std::endl;
+
+  print_parameter(pcout,"Number of refinements",n_refine_space);
+  print_parameter(pcout,"Number of cells",triangulation.n_global_active_cells());
+  print_parameter(pcout,"Number of faces",triangulation.n_active_faces());
+  print_parameter(pcout,"Number of vertices",triangulation.n_vertices());
+}
 
 template <int dim, int fe_degree, typename Number>
 void LaplaceProblem<dim, fe_degree, Number>::setup_postprocessor() {}
 
 template <int dim, int fe_degree, typename Number>
-void LaplaceProblem<dim, fe_degree, Number>::solve_problem() {}
+void LaplaceProblem<dim, fe_degree, Number>::solve_problem() {
+  create_grid_and_set_boundary_conditions(triangulation, n_refine_space, boundary_descriptor);
+  print_grid_data();
+
+  //poisson_operation->setup(periodic_faces, boundary_descriptor, field_functions);
+  //
+  //poisson_operation->setup_solver();
+
+  setup_postprocessor();
+
+  //poisson_operation->solve_problem();
+}
 
 int main(int argc, char **argv) {
   try {
