@@ -208,19 +208,6 @@ public:
 
   unsigned int get_dof_index() const;
 
-  void cell(MeshWorker::DoFInfo<dim, dim> &dinfo,
-            typename MeshWorker::IntegrationInfo<dim> &info) const;
-
-  void boundary(MeshWorker::DoFInfo<dim, dim> &dinfo,
-                typename MeshWorker::IntegrationInfo<dim> &info) const;
-
-  void face(MeshWorker::DoFInfo<dim, dim> &dinfo1,
-            MeshWorker::DoFInfo<dim, dim> &dinfo2,
-            typename MeshWorker::IntegrationInfo<dim> &info1,
-            typename MeshWorker::IntegrationInfo<dim> &info2) const;
-
-  const ConstraintMatrix &get_constraint_matrix() const;
-
 private:
   // Computes the array penalty parameter for later use of the symmetric
   // interior penalty method. Called in reinit().

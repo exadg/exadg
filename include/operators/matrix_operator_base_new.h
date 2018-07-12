@@ -173,34 +173,19 @@ public:
       AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
       return 0;
   }
-
-  virtual void cell(MeshWorker::DoFInfo<dim, dim> &/*dinfo*/,
-                    typename MeshWorker::IntegrationInfo<dim> &/*info*/) const{
-      AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
-  }
-
-  virtual void boundary(MeshWorker::DoFInfo<dim, dim> &/*dinfo*/,
-                        typename MeshWorker::IntegrationInfo<dim> &/*info*/) const{
-      AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
-  }
-
-  virtual void face(MeshWorker::DoFInfo<dim, dim> &/*dinfo1*/,
-                    MeshWorker::DoFInfo<dim, dim> &/*dinfo2*/,
-                    typename MeshWorker::IntegrationInfo<dim> &/*info1*/,
-                    typename MeshWorker::IntegrationInfo<dim> &/*info2*/) const{
-      AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
-  }
-
-  virtual const ConstraintMatrix &get_constraint_matrix() const{
-      AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
-      return *(new ConstraintMatrix);
-  }
   
   virtual MatrixOperatorBaseNew<dim, Number>* get_new(unsigned int /*deg*/) const{
       AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
       return nullptr;
   }
   
+  virtual void init_system_matrix(TrilinosWrappers::SparseMatrix &/*system_matrix*/) const{
+      AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::init_system_matrix should be overwritten!"));
+  }
+
+  virtual void calculate_system_matrix(TrilinosWrappers::SparseMatrix &/*system_matrix*/) const{
+      AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::calculate_system_matrix should be overwritten!"));
+  }  
   
   virtual void reinit (const DoFHandler<dim>          &/*dof_handler*/,
                const Mapping<dim>             &/*mapping*/,

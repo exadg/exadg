@@ -15,8 +15,6 @@ public:
 
   const MatrixOperatorBaseNew<DIM, Number> &coarse_matrix_dg;
 
-  virtual void init_system();
-
   virtual void vmult_pre(LinearAlgebra::distributed::Vector<Number> &dst,
                          const LinearAlgebra::distributed::Vector<Number> &src);
 

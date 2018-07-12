@@ -18,7 +18,10 @@ public:
         level(level),
         degree(coarse_matrix.get_data().get_dof_handler().get_fe().degree) {}
 
-  virtual void init_system() = 0;
+  virtual void init_system(){
+      coarse_matrix.init_system_matrix(system_matrix);
+      coarse_matrix.calculate_system_matrix(system_matrix);
+  }
 
   virtual void
   vmult_pre(LinearAlgebra::distributed::Vector<Number> &dst,

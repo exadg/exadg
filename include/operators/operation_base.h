@@ -41,6 +41,9 @@
 #include <deal.II/lac/trilinos_sparse_matrix.h>
 
 #include "matrix_operator_base_new.h"
+#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/constraint_matrix.templates.h>
+
 
 using namespace dealii;
 
@@ -135,7 +138,7 @@ public:
   static const int DIM = dim;
   typedef OperatorBase<dim, degree, Number, AdditionalData> This;
   typedef parallel::distributed::Vector<Number> VNumber;
-  typedef FullMatrix<Number> FMatrix;
+  typedef FullMatrix<TrilinosScalar> FMatrix;
   typedef std::vector<LAPACKFullMatrix<Number>> BMatrix;
   typedef TrilinosWrappers::SparseMatrix SMatrix;
   typedef MatrixFree<dim, Number> MF;

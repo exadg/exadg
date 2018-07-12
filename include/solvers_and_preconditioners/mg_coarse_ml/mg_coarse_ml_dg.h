@@ -11,8 +11,6 @@ public:
                const MatrixOperatorBase & /*coarse_matrix*/,
                TrilinosWrappers::SparseMatrix &system_matrix);
 
-  virtual void init_system();
-
   virtual void vmult_pre(LinearAlgebra::distributed::Vector<Number> &dst,
                          const LinearAlgebra::distributed::Vector<Number> &src);
 
