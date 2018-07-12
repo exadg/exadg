@@ -9,6 +9,7 @@
 #include <deal.II/base/revision.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
+#include <deal.II/lac/la_parallel_vector.h>
 
 #include "../include/laplace/spatial_discretization/laplace_operator.h"
 #include "../include/laplace/spatial_discretization/poisson_operation.h"
@@ -29,13 +30,30 @@
 using namespace dealii;
 using namespace Laplace;
 
+const int best_of = 10;
+
+template <int dim, int fe_degree, typename Function>
+void repeat(ConvergenceTable &table, std::string label, Function f) {
+  Timer time;
+  double min_time = std::numeric_limits<double>::max();
+  for (int i = 0; i < best_of; i++) {
+    MPI_Barrier(MPI_COMM_WORLD);
+    time.restart();
+    f();
+    double temp = time.wall_time();
+    min_time = std::min(min_time, temp);
+  }
+  table.add_value(label, min_time);
+  table.set_scientific(label, true);
+}
+
 template <int dim, int fe_degree, typename Number = double>
 class LaplaceProblem {
 public:
   typedef double value_type;
   LaplaceProblem(const unsigned int n_refine_space);
 
-  void solve_problem();
+  void solve_problem(ConvergenceTable& convergence_table);
 
 private:
   void print_header();
@@ -113,14 +131,17 @@ template <int dim, int fe_degree, typename Number>
 void LaplaceProblem<dim, fe_degree, Number>::setup_postprocessor() {}
 
 template <int dim, int fe_degree, typename Number>
-void LaplaceProblem<dim, fe_degree, Number>::solve_problem() {
+void LaplaceProblem<dim, fe_degree, Number>::solve_problem(ConvergenceTable& convergence_table) {
   // create grid and set bc
   create_grid_and_set_boundary_conditions(triangulation, n_refine_space, boundary_descriptor);
   print_grid_data();
 
   // setup poisson operation
   poisson_operation->setup(periodic_faces, boundary_descriptor, field_functions);
+  
+  Timer time;
   poisson_operation->setup_solver();
+  double time_setup = time.wall_time();
   
   // setup postprocessor
   setup_postprocessor();
@@ -131,11 +152,38 @@ void LaplaceProblem<dim, fe_degree, Number>::solve_problem() {
   poisson_operation->initialize_dof_vector(rhs);
   poisson_operation->initialize_dof_vector(solution);
   
-  // compute right hand side
-  poisson_operation->rhs(rhs);
   
   // solve problem
-  poisson_operation->solve(solution, rhs);
+  if(best_of>1){
+    convergence_table.add_value("dim", dim);
+    convergence_table.add_value("degree", fe_degree);
+    convergence_table.add_value("dofs", solution.size());
+    convergence_table.add_value("setup", time_setup);
+    convergence_table.set_scientific("setup", true);
+    
+    repeat<dim,fe_degree>(convergence_table, "rhs",
+       [&]() mutable { poisson_operation->rhs(rhs); });
+    int cycles;
+    repeat<dim,fe_degree>(convergence_table, "solve",
+       [&]() mutable { cycles = poisson_operation->solve(solution, rhs); });
+       
+    convergence_table.add_value("cycles", cycles);
+       
+  } else {
+    // compute right hand side
+    poisson_operation->rhs(rhs);
+    int n = poisson_operation->solve(solution, rhs);
+    printf("%d\n",n);
+    DataOut<dim> data_out;
+    data_out.attach_dof_handler(poisson_operation->get_dof_handler());
+  
+    data_out.add_data_vector(solution, "solution");
+    data_out.build_patches(10);
+  
+    const std::string filename = "output/laplace.vtu";
+    data_out.write_vtu_in_parallel(filename.c_str(), MPI_COMM_WORLD);
+  }
+  
 }
 
 int main(int argc, char **argv) {
@@ -151,13 +199,15 @@ int main(int argc, char **argv) {
 
     deallog.depth_console(0);
 
+    ConvergenceTable convergence_table;
     // mesh refinements in order to perform spatial convergence tests
     for (unsigned int refine_steps_space = REFINE_STEPS_SPACE_MIN;
          refine_steps_space <= REFINE_STEPS_SPACE_MAX; ++refine_steps_space) {
       LaplaceProblem<DIMENSION, FE_DEGREE> conv_diff_problem(
           refine_steps_space);
-      conv_diff_problem.solve_problem();
+      conv_diff_problem.solve_problem(convergence_table);
     }
+    convergence_table.write_text(std::cout);
   } catch (std::exception &exc) {
     std::cerr << std::endl
               << std::endl
