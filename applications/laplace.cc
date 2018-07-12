@@ -10,10 +10,13 @@
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
 
-#include "laplace/user_interface/analytical_solution.h"
-#include "laplace/user_interface/boundary_descriptor.h"
-#include "laplace/user_interface/field_functions.h"
-#include "laplace/user_interface/input_parameters.h"
+#include "../include/laplace/spatial_discretization/laplace_operator.h"
+#include "../include/laplace/spatial_discretization/poisson_operation.h"
+
+#include "../include/laplace/user_interface/analytical_solution.h"
+#include "../include/laplace/user_interface/boundary_descriptor.h"
+#include "../include/laplace/user_interface/field_functions.h"
+#include "../include/laplace/user_interface/input_parameters.h"
 
 #include "functionalities/print_functions.h"
 #include "functionalities/print_general_infos.h"
@@ -21,10 +24,10 @@
 // SPECIFY THE TEST CASE THAT HAS TO BE SOLVED
 
 // laplace problems
-
 #include "laplace_cases/cosinus.h"
 
 using namespace dealii;
+using namespace Laplace;
 
 template <int dim, int fe_degree, typename Number = double>
 class LaplaceProblem {
@@ -46,9 +49,13 @@ private:
   const unsigned int n_refine_space;
   Laplace::InputParameters param;
   
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_faces;
+  
   std::shared_ptr<Laplace::FieldFunctions<dim> > field_functions;
   std::shared_ptr<Laplace::BoundaryDescriptor<dim> > boundary_descriptor;
   std::shared_ptr<Laplace::AnalyticalSolution<dim> > analytical_solution;
+  
+  std::shared_ptr<Laplace::DGOperation<dim,fe_degree, value_type> > poisson_operation;
   
 };
 
@@ -106,15 +113,20 @@ void LaplaceProblem<dim, fe_degree, Number>::setup_postprocessor() {}
 
 template <int dim, int fe_degree, typename Number>
 void LaplaceProblem<dim, fe_degree, Number>::solve_problem() {
+  // create grid and set bc
   create_grid_and_set_boundary_conditions(triangulation, n_refine_space, boundary_descriptor);
   print_grid_data();
 
-  //poisson_operation->setup(periodic_faces, boundary_descriptor, field_functions);
-  //
-  //poisson_operation->setup_solver();
-
+  // setup poisson operation
+  poisson_operation->setup(periodic_faces, boundary_descriptor, field_functions);
+  poisson_operation->setup_solver();
+  
+  // setup postprocessor
   setup_postprocessor();
+  
+  // compute right hand side
 
+  // solve problem
   //poisson_operation->solve_problem();
 }
 
