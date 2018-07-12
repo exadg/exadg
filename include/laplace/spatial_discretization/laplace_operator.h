@@ -64,13 +64,6 @@ enum class BoundaryType {
   neumann
 };
 
-//template<int dim>
-//struct BoundaryDescriptor
-//{
-//  std::map<types::boundary_id,std::shared_ptr<Function<dim> > > dirichlet_bc;
-//  std::map<types::boundary_id,std::shared_ptr<Function<dim> > > neumann_bc;
-//};
-
 template <int dim> struct LaplaceOperatorData : public OperatorBaseData<dim, BoundaryType, OperatorType,
                               BoundaryDescriptor<dim>> {
 public:
@@ -97,6 +90,18 @@ public:
   ConstraintMatrix cm;
   Parent::reinit(mf_data, cm, operator_data_in);
 
+  // calculate penalty parameters
+  IP::calculate_penalty_parameter<dim, degree, Number>(
+      array_penalty_parameter, *this->data, mapping, this->ad.dof_index);
+}
+  
+void reinit(
+    const DoFHandler<dim> &dof_handler, const Mapping<dim> &mapping,
+    void* od, const MGConstrainedDoFs &mg_constrained_dofs, 
+    const unsigned int level){
+  Parent::reinit(dof_handler, mapping, od, mg_constrained_dofs, level);
+
+  // calculate penalty parameters
   IP::calculate_penalty_parameter<dim, degree, Number>(
       array_penalty_parameter, *this->data, mapping, this->ad.dof_index);
 }

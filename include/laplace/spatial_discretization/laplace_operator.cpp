@@ -17,8 +17,10 @@ void LaplaceOperator<dim, degree, Number>::do_cell_integral(
 template <int dim, int degree, typename Number>
 void LaplaceOperator<dim, degree, Number>::do_face_integral(
     FEEvalFace &p_n, FEEvalFace &p_p) const {
-  VectorizedArray<Number> sigmaF;
-  sigmaF = 100.0; // dummy value :)
+  VectorizedArray<Number> sigmaF =
+        std::max(p_n.read_cell_data(array_penalty_parameter),
+                 p_p.read_cell_data(array_penalty_parameter)) *
+        IP::get_penalty_factor<Number>(degree, this->ad.IP_factor);
 
   for (unsigned int q = 0; q < p_n.n_q_points; ++q) {
     VectorizedArray<Number> valueM = p_n.get_value(q);
@@ -38,9 +40,11 @@ void LaplaceOperator<dim, degree, Number>::do_face_integral(
 
 template <int dim, int degree, typename Number>
 void LaplaceOperator<dim, degree, Number>::do_face_int_integral(
-    FEEvalFace &p_n, FEEvalFace &/*p_p*/) const {
-  VectorizedArray<Number> sigmaF;
-  sigmaF = 100.0; // dummy value :)
+    FEEvalFace &p_n, FEEvalFace &p_p) const {
+  VectorizedArray<Number> sigmaF =
+        std::max(p_n.read_cell_data(array_penalty_parameter),
+                 p_p.read_cell_data(array_penalty_parameter)) *
+        IP::get_penalty_factor<Number>(degree, this->ad.IP_factor);
 
   for (unsigned int q = 0; q < p_n.n_q_points; ++q) {
     VectorizedArray<Number> valueM = p_n.get_value(q);
@@ -57,9 +61,11 @@ void LaplaceOperator<dim, degree, Number>::do_face_int_integral(
 
 template <int dim, int degree, typename Number>
 void LaplaceOperator<dim, degree, Number>::do_face_ext_integral(
-    FEEvalFace &/*p_n*/, FEEvalFace &p_p) const {
-  VectorizedArray<Number> sigmaF;
-  sigmaF = 100.0; // dummy value :)
+    FEEvalFace &p_n, FEEvalFace &p_p) const {
+  VectorizedArray<Number> sigmaF =
+        std::max(p_n.read_cell_data(array_penalty_parameter),
+                 p_p.read_cell_data(array_penalty_parameter)) *
+        IP::get_penalty_factor<Number>(degree, this->ad.IP_factor);
 
   for (unsigned int q = 0; q < p_p.n_q_points; ++q) {
     VectorizedArray<Number> valueP = p_p.get_value(q);
@@ -78,8 +84,9 @@ template <int dim, int degree, typename Number>
 void LaplaceOperator<dim, degree, Number>::do_boundary_integral(
     FEEvalFace & phi, OperatorType const & /**/,
     types::boundary_id const & bid) const { 
-  VectorizedArray<Number> sigmaF;
-  sigmaF = 100.0; // dummy value :)
+  VectorizedArray<Number> sigmaF =
+        phi.read_cell_data(array_penalty_parameter) *
+        IP::get_penalty_factor<Number>(degree, this->ad.IP_factor);
   const auto bt = this->ad.get_boundary_type(bid);
     for (unsigned int q = 0; q < phi.n_q_points; ++q) {
       if (bt == BoundaryType::dirichlet) {
