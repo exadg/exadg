@@ -443,6 +443,7 @@ private:
     conv_diff_operator_data.dof_index = 0;
 
     conv_diff_operator_data.mg_operator_type = param.mg_operator_type;
+    conv_diff_operator_data.bc = boundary_descriptor;
 
     conv_diff_operator.initialize(data,
                                   conv_diff_operator_data,

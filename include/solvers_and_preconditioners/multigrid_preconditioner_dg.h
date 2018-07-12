@@ -32,7 +32,8 @@ public:
                   const VectorPeriodicFacePair &/*periodic_face_pairs_level0*/){
       
     // empty map for DG
-    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
+    auto & dirichlet_bc = 
+        underlying_operator.get_operator_data().bc->dirichlet_bc;
       
     BASE::initialize(mg_data_in, dof_handler, mapping, 
             (void *)&underlying_operator.get_operator_data(), dirichlet_bc);
