@@ -8,7 +8,7 @@
 /******************************************************************************/
 
 const unsigned int DIMENSION = 2;
-const unsigned int FE_DEGREE = 3;
+const unsigned int FE_DEGREE = 7;
 const unsigned int REFINE_STEPS_SPACE_MIN = 5;
 const unsigned int REFINE_STEPS_SPACE_MAX = 5;
 
@@ -40,7 +40,7 @@ void Laplace::InputParameters::set_input_parameters()
   
   multigrid_data.coarse_solver = MultigridCoarseGridSolver::AMG_ML;
   //multigrid_data.two_levels = true;
-  multigrid_data.type = MultigridType::HGMG;
+  multigrid_data.type = MultigridType::PGMG;
   
 }
 
@@ -81,10 +81,13 @@ public:
 
   virtual ~RightHandSide(){};
 
-  virtual double value(const Point<dim> & /* p */,
+  virtual double value(const Point<dim> & p,
                        const unsigned int /* component */) const {
-    double result = 0.0;
-    return result;
+    const double coef = 1.0;
+    double temp=1;
+    for(int i = 0; i < dim; i++) 
+        temp *=std::cos(p[i]);
+    return temp * dim * coef;
   }
 };
 
@@ -118,7 +121,7 @@ void create_grid_and_set_boundary_conditions(
     unsigned int const n_refine_space,
     std::shared_ptr<Laplace::BoundaryDescriptor<dim>> boundary_descriptor) {
   // hypercube: [left,right]^dim
-  const double left = -1.0, right = 1.0;
+  const double left = -0.5*numbers::PI, right = +0.5*numbers::PI;
   GridGenerator::hyper_cube(triangulation, left, right);
 
   triangulation.refine_global(n_refine_space);
