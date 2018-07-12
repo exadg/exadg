@@ -182,9 +182,7 @@ public:
   }
 
   unsigned int solve(parallel::distributed::Vector<value_type>       &sol,
-                     parallel::distributed::Vector<value_type> const &rhs,
-                     double const                                    scaling_factor_time_derivative_term_in = -1.0,
-                     double const                                    evaluation_time_in = -1.0)
+                     parallel::distributed::Vector<value_type> const &rhs)
   {
     unsigned int iterations = iterative_solver->solve(sol,rhs);
 

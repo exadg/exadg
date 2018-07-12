@@ -124,10 +124,17 @@ void LaplaceProblem<dim, fe_degree, Number>::solve_problem() {
   // setup postprocessor
   setup_postprocessor();
   
+  // allocate vecotors
+  parallel::distributed::Vector<Number> rhs;
+  parallel::distributed::Vector<Number> solution;
+  poisson_operation->initialize_dof_vector(rhs);
+  poisson_operation->initialize_dof_vector(solution);
+  
   // compute right hand side
-
+  poisson_operation->rhs(rhs);
+  
   // solve problem
-  //poisson_operation->solve_problem();
+  poisson_operation->solve(solution, rhs);
 }
 
 int main(int argc, char **argv) {
