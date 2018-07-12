@@ -62,7 +62,7 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
   int min_level = 0;
   int max_level = seq.size() - 1;
 
-  this->mg_constrained_dofs_local.resize(min_level, max_level);
+  this->mg_constrained_dofs.resize(min_level, max_level);
   this->mg_matrices.resize(min_level, max_level);
   this->mg_smoother.resize(min_level, max_level);
   this->mg_dofhandler.resize(min_level, max_level);
@@ -86,7 +86,7 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
     for (unsigned int i = 0; i < seq.size(); i++)
       if (seq[i].second == deg) {
         mg_dofhandler[i] = temp_dofh;
-        mg_constrained_dofs_local[i] = temp_constraint;
+        mg_constrained_dofs[i] = temp_constraint;
       }
   }
 
@@ -96,7 +96,7 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
     auto matrix =
         static_cast<Operator *>(underlying_operator->get_new(seq[i].second));
     matrix->reinit(*mg_dofhandler[i], mapping, operator_data_in, 
-                   *this->mg_constrained_dofs_local[i], seq[i].first);
+                   *this->mg_constrained_dofs[i], seq[i].first);
     mg_matrices[i].reset(matrix);
 
     if (i == min_level) {
@@ -109,13 +109,13 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
       auto constrained_dofs_q = new MGConstrainedDoFs();
       constrained_dofs_q->clear();
       this->initialize_mg_constrained_dofs(*dof_handler_q, *constrained_dofs_q, dirichlet_bc);
-      this->cg_constrained_dofs_local.reset(constrained_dofs_q);
+      this->cg_constrained_dofs.reset(constrained_dofs_q);
 
       // TODO: remove static cast
       auto matrix_q =
           static_cast<Operator *>(underlying_operator->get_new(seq[i].second));
       matrix_q->reinit(*dof_handler_q, mapping, operator_data_in, 
-                       *this->cg_constrained_dofs_local, seq[i].first);
+                       *this->cg_constrained_dofs, seq[i].first);
       this->cg_matrices.reset(matrix_q);
 
       // create coarse solver with coarse matrix fe_q and fe_dgq
@@ -145,7 +145,7 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
     std::shared_ptr<MGTransferMF<dim, value_type_operator>> transfer(
         new MGTransferMF<dim, value_type_operator>(m));
     transfer->initialize_constraints(
-        *mg_constrained_dofs_local[m.begin()->first]);
+        *mg_constrained_dofs[m.begin()->first]);
     transfer->build(*mg_dofhandler[m.begin()->first]);
 
     for (auto i : m) {
@@ -200,19 +200,6 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::
                                                     dirichlet_boundary);
 
 }
-
-template <int dim, typename value_type, typename Operator>
-void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_matrix(
-        const DoFHandler<dim> &dof_handler,
-        Operator * matrix, int level, int tria_level, 
-        const Mapping<dim> &mapping, void* operator_data_in) {
-      
-      matrix->reinit(dof_handler, mapping, operator_data_in,
-                   level == -1 ? *this->cg_constrained_dofs_local
-                               : *this->mg_constrained_dofs_local[level],
-                   tria_level);
-
-  }
 
 template <int dim, typename value_type, typename Operator>
 void MyMultigridPreconditionerBase<dim, value_type, Operator>::update(

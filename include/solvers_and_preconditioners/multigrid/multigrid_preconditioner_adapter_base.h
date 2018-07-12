@@ -146,7 +146,7 @@ public:
   virtual ~MyMultigridPreconditionerBase();
 
   MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> mg_dofhandler;
-  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> mg_constrained_dofs_local;
+  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> mg_constrained_dofs;
 
   void initialize(const MultigridData &mg_data_in,
                   const DoFHandler<dim> &dof_handler,
@@ -157,10 +157,6 @@ public:
   virtual void initialize_mg_constrained_dofs(const DoFHandler<dim> &,
                                               MGConstrainedDoFs &,
           std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const &dirichlet_bc);
-
-  virtual void initialize_mg_matrix(const DoFHandler<dim> &dof_handler,
-        Operator * matrix, int level, int tria_level, 
-        const Mapping<dim> &mapping, void* operator_data_in);
 
   virtual void update(MatrixOperatorBase const * /*matrix_operator*/);
 
@@ -213,7 +209,7 @@ protected:
   // for CG
 public:
   std::shared_ptr<const DoFHandler<dim>> cg_dofhandler;
-  std::shared_ptr<MGConstrainedDoFs> cg_constrained_dofs_local;
+  std::shared_ptr<MGConstrainedDoFs> cg_constrained_dofs;
   std::shared_ptr<Operator> cg_matrices;
 
 private:
