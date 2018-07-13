@@ -133,6 +133,7 @@ void DGOperation<dim, fe_degree, value_type>::rhs(
     VNumber &dst,
     double const evaluation_time) const {
   dst = 0;
+  laplace_operator.rhs_add(dst,evaluation_time);
   if (param.right_hand_side == true)
     rhs_operator.evaluate_add(dst, evaluation_time);
 }

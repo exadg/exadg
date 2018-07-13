@@ -82,6 +82,13 @@ template <int dim, int degree, typename Number>
 class LaplaceOperator
     : public OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>> {
 public:
+  typedef LaplaceOperator<dim, degree, Number> This;
+  typedef OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>>
+      Parent;
+  typedef typename Parent::FEEvalCell FEEvalCell;
+  typedef typename Parent::FEEvalFace FEEvalFace;
+  typedef typename Parent::VNumber VNumber;    
+    
   LaplaceOperator();
   
   void initialize(Mapping<dim> const &mapping,
@@ -106,13 +113,39 @@ void reinit(
       array_penalty_parameter, *this->data, mapping, this->ad.dof_index);
 }
 
-  // typedefs
-  typedef LaplaceOperator<dim, degree, Number> This;
-  typedef OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>> Parent;
-  typedef typename Parent::FEEvalCell FEEvalCell;
-  typedef typename Parent::FEEvalFace FEEvalFace;
-  typedef typename Parent::VNumber VNumber;
-  
+  inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
+  calculate_value_flux(VectorizedArray<Number> const &jump_value) const;
+
+  inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
+  calculate_interior_value(unsigned int const q, FEEvalFace const &fe_eval,
+                           OperatorType const &operator_type) const;
+
+  inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
+  calculate_exterior_value(VectorizedArray<Number> const &value_m,
+                           unsigned int const q, FEEvalFace const &fe_eval,
+                           OperatorType const &operator_type,
+                           BoundaryType const &boundary_type,
+                           types::boundary_id const boundary_id) const;
+
+  inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
+  calculate_gradient_flux(
+      VectorizedArray<Number> const &normal_gradient_m,
+      VectorizedArray<Number> const &normal_gradient_p,
+      VectorizedArray<Number> const &jump_value,
+      VectorizedArray<Number> const &penalty_parameter) const;
+
+  inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
+  calculate_interior_normal_gradient(unsigned int const q,
+                                     FEEvalFace const &fe_eval,
+                                     OperatorType const &operator_type) const;
+
+  inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
+  calculate_exterior_normal_gradient(
+      VectorizedArray<Number> const &normal_gradient_m,
+      unsigned int const q, FEEvalFace const &fe_eval,
+      OperatorType const &operator_type, BoundaryType const &boundary_type,
+      types::boundary_id const boundary_id) const;
+
   // static constants
   static const int DIM = Parent::DIM;
 
