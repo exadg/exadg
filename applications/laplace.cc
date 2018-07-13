@@ -30,7 +30,7 @@
 using namespace dealii;
 using namespace Laplace;
 
-const int best_of = 10;
+const int best_of = 1;
 
 template <int dim, int fe_degree, typename Function>
 void repeat(ConvergenceTable &table, std::string label, Function f) {
@@ -133,7 +133,8 @@ void LaplaceProblem<dim, fe_degree, Number>::setup_postprocessor() {}
 template <int dim, int fe_degree, typename Number>
 void LaplaceProblem<dim, fe_degree, Number>::solve_problem(ConvergenceTable& convergence_table) {
   // create grid and set bc
-  create_grid_and_set_boundary_conditions(triangulation, n_refine_space, boundary_descriptor);
+  create_grid_and_set_boundary_conditions(
+          triangulation, n_refine_space, boundary_descriptor,periodic_faces);
   print_grid_data();
 
   // setup poisson operation

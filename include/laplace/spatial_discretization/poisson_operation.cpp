@@ -221,6 +221,7 @@ void DGOperation<dim, fe_degree, value_type>::setup_operators() {
     laplace_operator_data.quad_index = 0;
     laplace_operator_data.IP_factor = param.IP_factor;
     laplace_operator_data.bc = boundary_descriptor;
+    laplace_operator_data.periodic_face_pairs_level0 = periodic_face_pairs;
     laplace_operator.initialize(mapping,data,laplace_operator_data);
     
     // rhs operator
