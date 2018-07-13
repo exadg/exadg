@@ -63,9 +63,9 @@ public:
 
   virtual ~AnalyticalSolution(){};
 
-  virtual double value(const Point<dim> & /*p*/,
+  virtual double value(const Point<dim> & p,
                        const unsigned int /*component*/ = 0) const {
-    double result = 0.0;
+    double result = 0.1*p[0];
     return result;
   }
 };
@@ -127,6 +127,20 @@ void create_grid_and_set_boundary_conditions(
   GridGenerator::hyper_cube(triangulation, left, right);
 
   triangulation.refine_global(n_refine_space);
+  
+  for (auto cell : triangulation)
+    for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell;++face)
+      if (cell.face(face)->at_boundary()){
+             if(std::abs(cell.face(face)->center()(0) - 0.5*numbers::PI) < 1e-12)
+            cell.face(face)->set_all_boundary_ids(1);
+        else if(std::abs(cell.face(face)->center()(1) - 0.5*numbers::PI) < 1e-12)
+            cell.face(face)->set_all_boundary_ids(2);
+        else if(std::abs(cell.face(face)->center()(1) + 0.5*numbers::PI) < 1e-12)
+            cell.face(face)->set_all_boundary_ids(3);
+      }
+      
+  GridTools::collect_periodic_faces(triangulation, 2, 3, 1 /*y-direction*/, periodic_faces);
+  triangulation.add_periodicity(periodic_faces);
 
   // dirichlet bc:
   std::shared_ptr<Function<dim>> analytical_solution;
