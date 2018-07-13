@@ -63,7 +63,7 @@ typedef double value_type;
 
 using namespace dealii;
 
-template <int dim, int fe_degree, bool CATEGORIZE> class Runner {
+template <int dim, int fe_degree, bool CATEGORIZE, typename FE_TYPE> class Runner {
 public:
   static void run(ConvergenceTable &convergence_table) {
       
@@ -85,9 +85,10 @@ public:
     triangulation.refine_global(global_refinements);
     
     // setup dofhandler
-    FE_DGQ<dim> fe_dgq(fe_degree);
+    FE_TYPE fe_dgq(fe_degree);
     DoFHandler<dim> dof_handler_dg(triangulation);
     dof_handler_dg.distribute_dofs(fe_dgq);
+    bool is_dg = (fe_dgq.dofs_per_vertex == 0);
     
     // setup matrixfree
     MatrixFree<dim, value_type> data;
@@ -129,19 +130,21 @@ if(CATEGORIZE){
     // run tests
     convergence_table.add_value("procs", size);
     convergence_table.add_value("cell", CATEGORIZE);
+    convergence_table.add_value("vers", is_dg);
     OperatorBaseTest::test(laplace, convergence_table,true,true,true, 
-            CATEGORIZE || size==1);
-    if(!CATEGORIZE && size!=1){
+            (CATEGORIZE || size==1)&&is_dg);
+    if(!CATEGORIZE && size!=1 && !is_dg){
         convergence_table.add_value("(B*v)_L2", 0);
         convergence_table.add_value("(B*v-B(S)*v)_L2", 0);
     }
 
     // go to next parameter
-    Runner<dim, fe_degree + 1,CATEGORIZE>::run(convergence_table);
+    Runner<dim, fe_degree + 1,CATEGORIZE, FE_TYPE>::run(convergence_table);
   }
 };
 
-template <int dim, bool categorize> class Runner<dim, fe_degree_max+1,categorize> {
+template <int dim, bool categorize, typename FE_TYPE> 
+class Runner<dim, fe_degree_max+1,categorize, FE_TYPE> {
 public:
   static void run(ConvergenceTable & /*convergence_table*/) {}
 };
@@ -151,14 +154,28 @@ int main(int argc, char **argv) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  ConvergenceTable convergence_table;
-  // run for 2-d
-  Runner<2, fe_degree_min,true>::run(convergence_table);
-  Runner<2, fe_degree_min,false>::run(convergence_table);
-  // run for 3-d
-  Runner<3, fe_degree_min,true>::run(convergence_table);
-  Runner<3, fe_degree_min,false>::run(convergence_table);
-  if(!rank)
+  {
+    ConvergenceTable convergence_table;
+    // run for 2-d
+    Runner<2, fe_degree_min,true, FE_DGQ<2>>::run(convergence_table);
+    Runner<2, fe_degree_min,false, FE_DGQ<2>>::run(convergence_table);
+    // run for 3-d
+    Runner<3, fe_degree_min,true, FE_DGQ<3>>::run(convergence_table);
+    Runner<3, fe_degree_min,false, FE_DGQ<3>>::run(convergence_table);
+    if(!rank)
       convergence_table.write_text(std::cout);
+  }
+
+  {
+    ConvergenceTable convergence_table;
+    // run for 2-d
+    Runner<2, fe_degree_min,true, FE_Q<2>>::run(convergence_table);
+    Runner<2, fe_degree_min,false, FE_Q<2>>::run(convergence_table);
+    // run for 3-d
+    Runner<3, fe_degree_min,true, FE_Q<3>>::run(convergence_table);
+    Runner<3, fe_degree_min,false, FE_Q<3>>::run(convergence_table);
+    if(!rank)
+      convergence_table.write_text(std::cout);
+  }
   
 }
