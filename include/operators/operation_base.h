@@ -42,7 +42,6 @@
 
 #include "matrix_operator_base_new.h"
 #include <deal.II/lac/constraint_matrix.h>
-#include <deal.II/lac/constraint_matrix.templates.h>
 
 
 using namespace dealii;
