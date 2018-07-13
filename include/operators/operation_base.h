@@ -114,6 +114,11 @@ struct OperatorBaseData {
   bool needs_mean_value_constraint;
   
   std::shared_ptr<BoundaryDescriptor> bc;
+  
+  std::vector<
+      GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+      periodic_face_pairs_level0;
+
 };
 
 template <typename T> class LazyWrapper {
@@ -358,6 +363,15 @@ protected:
   void apply_mean_value_constraint_diagonal(VNumber& diagonal) const;
 
   void set_constraint_diagonal(VNumber & diagonal) const;
+  
+  void add_periodicity_constraints(
+    const unsigned int level, const unsigned int target_level,
+    const typename DoFHandler<dim>::face_iterator face1,
+    const typename DoFHandler<dim>::face_iterator face2,
+    ConstraintMatrix &constraints);
+  
+  bool verify_boundary_conditions(
+    DoFHandler<dim> const &dof_handler, AdditionalData const &operator_data);
 
 protected:
   mutable AdditionalData ad;

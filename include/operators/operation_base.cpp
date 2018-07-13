@@ -83,7 +83,48 @@ void OperatorBase<dim, degree, Number, AdditionalData>::reinit(
 
   // ...fill constraints
   if (!is_dg) {
+    // 1) add periodic bc
+    for (auto& it : ad.periodic_face_pairs_level0) {
+      typename DoFHandler<dim>::cell_iterator 
+          cell1(&dof_handler.get_triangulation(), 0, it.cell[1]->index(), &dof_handler);
+      typename DoFHandler<dim>::cell_iterator 
+          cell0(&dof_handler.get_triangulation(), 0, it.cell[0]->index(), &dof_handler);
+      add_periodicity_constraints(
+          level, level, cell1->face(it.face_idx[1]), cell0->face(it.face_idx[0]), constraint_own);
+    }
+      
+    // 2) add dirichlet bc
     constraint_own.add_lines(mg_constrained_dofs.get_boundary_indices(level));
+    
+    // constraint zeroth DoF in continuous case (the mean value constraint will
+    // be applied in the DG case). In case we have interface matrices, there are
+    // Dirichlet constraints on parts of the boundary and no such transformation
+    // is required.
+    if (verify_boundary_conditions(dof_handler, ad) && 
+                                  constraint_own.can_store_line(0)) {
+      // if dof 0 is constrained, it must be a periodic dof, so we take the
+      // value on the other side
+      types::global_dof_index line_index = 0;
+      while (true) {
+        const std::vector<std::pair<types::global_dof_index, double>> *lines =
+            constraint_own.get_constraint_entries(line_index);
+        if (lines == 0) {
+          constraint_own.add_line(line_index);
+          // add the constraint back to the MGConstrainedDoFs field. This
+          // is potentially dangerous but we know what we are doing... ;-)
+          if (level != numbers::invalid_unsigned_int)
+            const_cast<IndexSet &>(
+                mg_constrained_dofs.get_boundary_indices(level))
+                .add_index(line_index);
+          break;
+        } else {
+          Assert(lines->size() == 1 && std::abs((*lines)[0].second - 1.) < 1e-15,
+                 ExcMessage("Periodic index expected, bailing out"));
+          line_index = (*lines)[0].first;
+        }
+      }
+    }
+    
   } // else: no constraints needed for DG
 
   // ...finalize constraint matrix
@@ -1383,4 +1424,109 @@ void OperatorBase<dim, degree, Number, AdditionalData>::set_constraint_diagonal(
   // set (diagonal) entries to 1.0
   for (auto i : data->get_constrained_dofs())
     diagonal.local_element(i) = 1.0;
+}
+
+template <int dim, int degree, typename Number, typename AdditionalData>
+  void OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(
+    const unsigned int level, const unsigned int target_level,
+    const typename DoFHandler<dim>::face_iterator face1,
+    const typename DoFHandler<dim>::face_iterator face2,
+    ConstraintMatrix &constraints) {
+  if (level == 0) {
+    const unsigned int dofs_per_face = face1->get_fe(0).dofs_per_face;
+    std::vector<types::global_dof_index> dofs_1(dofs_per_face);
+    std::vector<types::global_dof_index> dofs_2(dofs_per_face);
+
+    face1->get_mg_dof_indices(target_level, dofs_1, 0);
+    face2->get_mg_dof_indices(target_level, dofs_2, 0);
+
+    for (unsigned int i = 0; i < dofs_per_face; ++i)
+      if (constraints.can_store_line(dofs_2[i]) &&
+          constraints.can_store_line(dofs_1[i]) &&
+          !constraints.is_constrained(dofs_2[i])) {
+        constraints.add_line(dofs_2[i]);
+        constraints.add_entry(dofs_2[i], dofs_1[i], 1.);
+      }
+  } else if (face1->has_children() && face2->has_children()) {
+    for (unsigned int c = 0; c < face1->n_children(); ++c)
+      add_periodicity_constraints(level - 1, target_level, face1->child(c),
+                                       face2->child(c), constraints);
+  }
+}
+  
+template <int dim, int degree, typename Number, typename AdditionalData>
+  bool OperatorBase<dim, degree, Number, AdditionalData>::verify_boundary_conditions(
+    DoFHandler<dim> const &dof_handler, AdditionalData const &operator_data) {
+  // Check that the Dirichlet and Neumann boundary conditions do not overlap
+  std::set<types::boundary_id> periodic_boundary_ids;
+  for (unsigned int i = 0; i < operator_data.periodic_face_pairs_level0.size();
+       ++i) {
+    AssertThrow(operator_data.periodic_face_pairs_level0[i].cell[0]->level() ==
+                    0,
+                ExcMessage("Received periodic cell pairs on non-zero level"));
+    periodic_boundary_ids.insert(
+        operator_data.periodic_face_pairs_level0[i]
+            .cell[0]
+            ->face(operator_data.periodic_face_pairs_level0[i].face_idx[0])
+            ->boundary_id());
+    periodic_boundary_ids.insert(
+        operator_data.periodic_face_pairs_level0[i]
+            .cell[1]
+            ->face(operator_data.periodic_face_pairs_level0[i].face_idx[1])
+            ->boundary_id());
+  }
+
+  bool pure_neumann_problem = true;
+  const Triangulation<dim> &tria = dof_handler.get_triangulation();
+  for (typename Triangulation<dim>::cell_iterator cell = tria.begin();
+       cell != tria.end(); ++cell)
+    for (unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      if (cell->at_boundary(f)) {
+        types::boundary_id bid = cell->face(f)->boundary_id();
+        if (operator_data.bc->dirichlet_bc.find(bid) !=
+            operator_data.bc->dirichlet_bc.end()) {
+          AssertThrow(operator_data.bc->neumann_bc.find(bid) ==
+                          operator_data.bc->neumann_bc.end(),
+                      ExcMessage("Boundary id " +
+                                 Utilities::to_string((int)bid) +
+                                 " wants to set both Dirichlet and Neumann " +
+                                 "boundary conditions, which is impossible!"));
+          AssertThrow(
+              periodic_boundary_ids.find(bid) == periodic_boundary_ids.end(),
+              ExcMessage("Boundary id " + Utilities::to_string((int)bid) +
+                         " wants to set both Dirichlet and periodic " +
+                         "boundary conditions, which is impossible!"));
+          pure_neumann_problem = false;
+          continue;
+        }
+        if (operator_data.bc->neumann_bc.find(bid) !=
+            operator_data.bc->neumann_bc.end()) {
+          AssertThrow(
+              periodic_boundary_ids.find(bid) == periodic_boundary_ids.end(),
+              ExcMessage("Boundary id " + Utilities::to_string((int)bid) +
+                         " wants to set both Neumann and periodic " +
+                         "boundary conditions, which is impossible!"));
+          continue;
+        }
+        AssertThrow(
+            periodic_boundary_ids.find(bid) != periodic_boundary_ids.end(),
+            ExcMessage("Boundary id " + Utilities::to_string((int)bid) +
+                       " does neither set Dirichlet, Neumann, nor periodic " +
+                       "boundary conditions! Bailing out."));
+      }
+
+  // Check for consistency of 'pure_neumann_problem' over all participating
+  // processors
+  int my_neumann = pure_neumann_problem;
+  MPI_Comm mpi_communicator =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&tria)
+          ? (dynamic_cast<const parallel::Triangulation<dim> *>(&tria))
+                ->get_communicator()
+          : MPI_COMM_SELF;
+  const int max_pure_neumann = Utilities::MPI::max(my_neumann, mpi_communicator);
+  int min_pure_neumann = Utilities::MPI::min(my_neumann, mpi_communicator);
+  AssertThrow( max_pure_neumann == min_pure_neumann,
+      ExcMessage( "Neumann/Dirichlet assignment over processors does not match."));
+
+  return pure_neumann_problem;
 }
