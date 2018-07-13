@@ -64,7 +64,7 @@ struct OperatorBaseData {
         cell_evaluate(c_e_v, c_e_g, c_e_h), cell_integrate(c_i_v, c_i_g, c_i_h),
         internal_evaluate(f_e_v, f_e_g), internal_integrate(f_i_v, f_i_g),
         boundary_evaluate(b_e_v, b_e_g), boundary_integrate(b_i_v, b_i_g),
-        use_cell_based_loops(false){}
+        use_cell_based_loops(false), needs_mean_value_constraint(false){}
 
   struct Cell {
     Cell(const bool value = false, const bool gradient = false,
@@ -110,6 +110,8 @@ struct OperatorBaseData {
   /*const*/ Face boundary_integrate;
   
   bool use_cell_based_loops;
+  
+  bool needs_mean_value_constraint;
   
   std::shared_ptr<BoundaryDescriptor> bc;
 };
@@ -348,6 +350,14 @@ protected:
                                           SMatrix & /*dst*/,
                                           const SMatrix & /*src*/,
                                           const Range & /*range*/) const;
+  
+  void apply_nullspace_projection(VNumber &vec) const;
+  
+  void disable_mean_value_constraint() /*const*/;
+
+  void apply_mean_value_constraint_diagonal(VNumber& diagonal) const;
+
+  void set_constraint_diagonal(VNumber & diagonal) const;
 
 protected:
   mutable AdditionalData ad;
@@ -363,6 +373,8 @@ private:
 
   mutable std::vector<LAPACKFullMatrix<Number>> matrices;
   mutable bool block_jacobi_matrices_have_been_initialized;
+  mutable bool needs_mean_value_constraint;
+  mutable bool apply_mean_value_constraint_in_matvec;
 
 protected:
   mutable double eval_time;

@@ -10,7 +10,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
                                           ad.boundary_evaluate.do_eval() ||
                                           ad.boundary_integrate.do_eval()),
       level_mg_handler(numbers::invalid_unsigned_int),
-      block_jacobi_matrices_have_been_initialized(false),eval_time(0.0) {}
+      block_jacobi_matrices_have_been_initialized(false),
+      needs_mean_value_constraint(false),
+      apply_mean_value_constraint_in_matvec(false), 
+      eval_time(0.0)
+    {}
 
 template <int dim, int degree, typename Number, typename AdditionalData>
 void OperatorBase<dim, degree, Number, AdditionalData>::reinit(
@@ -28,6 +32,10 @@ void OperatorBase<dim, degree, Number, AdditionalData>::reinit(
 
   // is mg?
   this->is_mg = !(level_mg_handler == numbers::invalid_unsigned_int);
+
+  // mean value constraint?
+  needs_mean_value_constraint = this->ad.needs_mean_value_constraint;
+  apply_mean_value_constraint_in_matvec = needs_mean_value_constraint;
 }
 
 template <int dim, int degree, typename Number, typename AdditionalData>
@@ -84,6 +92,10 @@ void OperatorBase<dim, degree, Number, AdditionalData>::reinit(
   const QGauss<1> quad(dof_handler.get_fe().degree + 1);
   data_own.reinit(mapping, dof_handler, constraint_own, quad, additional_data);
   reinit(data_own, constraint_own, ad, level);
+  
+  // we do not need the mean value constraint for smoothers on the
+  // multigrid levels, so we can disable it
+  disable_mean_value_constraint();
 }
 
 template <int dim, int degree, typename Number, typename AdditionalData>
@@ -102,11 +114,22 @@ void OperatorBase<dim, degree, Number, AdditionalData>::apply(
 template <int dim, int degree, typename Number, typename AdditionalData>
 void OperatorBase<dim, degree, Number, AdditionalData>::vmult_add(
     VNumber &dst, VNumber const &src) const {
+  const VNumber *actual_src = &src;
+  VNumber tmp_projection_vector;
+  if (apply_mean_value_constraint_in_matvec) {
+    tmp_projection_vector = src;
+    apply_nullspace_projection(tmp_projection_vector);
+    actual_src = &tmp_projection_vector;
+  }
+    
   if (do_eval_faces && is_dg)
     data->loop(&This::local_apply_cell, &This::local_apply_face,
-               &This::local_apply_boundary, this, dst, src);
+               &This::local_apply_boundary, this, dst, *actual_src);
   else
-    data->cell_loop(&This::local_apply_cell, this, dst, src);
+    data->cell_loop(&This::local_apply_cell, this, dst, *actual_src);
+  
+  if (apply_mean_value_constraint_in_matvec)
+    apply_nullspace_projection(dst);
 }
 
 template <int dim, int degree, typename Number, typename AdditionalData>
@@ -179,6 +202,7 @@ template <int dim, int degree, typename Number, typename AdditionalData>
 void OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(
     VNumber &diagonal) const {
 
+  // compute diagonal (not regarding: mean value constraint and constraints)
   if (do_eval_faces && is_dg)
     if(ad.use_cell_based_loops)
       data->cell_loop(&This::local_apply_cell_diagonal_cell_based, this, diagonal, diagonal);
@@ -188,6 +212,13 @@ void OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(
                &This::local_apply_boundary_diagonal, this, diagonal, diagonal);
   else
     data->cell_loop(&This::local_apply_cell_diagonal, this, diagonal, diagonal);
+  
+  // apply mean value constrained
+  apply_mean_value_constraint_diagonal(diagonal);
+  
+  // apply constraint
+  set_constraint_diagonal(diagonal);
+  
 }
 
 template <int dim, int degree, typename Number, typename AdditionalData>
@@ -1317,4 +1348,39 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
                                              dof_indices, dst);
     }
   }
+}
+
+template <int dim, int degree, typename Number, typename AdditionalData>
+  void OperatorBase<dim, degree, Number, AdditionalData>::apply_nullspace_projection(VNumber &vec) const {
+    if (!needs_mean_value_constraint) 
+      return;
+    const Number mean_val = vec.mean_value();
+    vec.add(-mean_val);
+  }
+
+template <int dim, int degree, typename Number, typename AdditionalData>
+void OperatorBase<dim, degree, Number, AdditionalData>::disable_mean_value_constraint() /*const*/{
+  this->apply_mean_value_constraint_in_matvec = false;
+}
+
+template <int dim, int degree, typename Number, typename AdditionalData>
+void OperatorBase<dim, degree, Number, AdditionalData>::apply_mean_value_constraint_diagonal(VNumber& diagonal) const{
+  if (apply_mean_value_constraint_in_matvec) {
+    VNumber vec1, d;
+    vec1.reinit(diagonal, true);
+    d.reinit(diagonal, true);
+    for (unsigned int i = 0; i < vec1.local_size(); ++i)
+      vec1.local_element(i) = 1.;
+    vmult(d, vec1);
+    double length = vec1 * vec1;
+    double factor = vec1 * d;
+    diagonal.add(-2. / length, d, factor / pow(length, 2.), vec1);
+  }
+}
+
+template <int dim, int degree, typename Number, typename AdditionalData>
+void OperatorBase<dim, degree, Number, AdditionalData>::set_constraint_diagonal(VNumber & diagonal) const{
+  // set (diagonal) entries to 1.0
+  for (auto i : data->get_constrained_dofs())
+    diagonal.local_element(i) = 1.0;
 }
