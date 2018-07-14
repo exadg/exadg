@@ -73,7 +73,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   abs_tol = 1.e-20;
   rel_tol = 1.e-8;
   max_iter = 1e4;
-  preconditioner = Preconditioner::Multigrid;
+  preconditioner = Preconditioner::Multigrid;//Preconditioner::PointJacobi;
   mg_operator_type = MultigridOperatorType::ReactionConvectionDiffusion;
   // MG smoother
   multigrid_data.smoother = MultigridSmoother::GMRES;
@@ -83,6 +83,8 @@ void ConvDiff::InputParameters::set_input_parameters()
   // MG coarse grid solver
   multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_PointJacobi;
 
+  multigrid_data.type = MultigridType::HGMG;
+  
   update_preconditioner = false;
 
   // NUMERICAL PARAMETERS

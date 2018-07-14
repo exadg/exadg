@@ -441,7 +441,8 @@ public:
     this->eval_time = evaluation_time;
 
     parallel::distributed::Vector<value_type> src;
-    parallel::distributed::Vector<value_type> tmp(dst);
+    parallel::distributed::Vector<value_type> tmp;
+    tmp.reinit(dst,false); // make sure to initialize with zero
 
     data->loop(&This::cell_loop_inhom_operator,
                &This::face_loop_inhom_operator,
