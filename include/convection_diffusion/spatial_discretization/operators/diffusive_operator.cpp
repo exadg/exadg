@@ -5,14 +5,10 @@ namespace ConvDiff {
 template <int dim, int fe_degree, typename value_type>
 void DiffusiveOperator<dim, fe_degree, value_type>::do_cell_integral(
     FEEvalCell &fe_eval) const {
-  fe_eval.evaluate(false, true, false);
 
-  for (unsigned int q = 0; q < fe_eval.n_q_points; ++q) {
-    fe_eval.submit_gradient(make_vectorized_array<value_type>(diffusivity) *
-                                fe_eval.get_gradient(q),
-                            q);
-  }
-  fe_eval.integrate(false, true);
+  for (unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+    fe_eval.submit_gradient(fe_eval.get_gradient(q)*diffusivity,q);
+  
 }
 
 template <int dim, int fe_degree, typename value_type>
@@ -22,9 +18,6 @@ void DiffusiveOperator<dim, fe_degree, value_type>::do_face_integral(
       std::max(fe_eval.read_cell_data(array_penalty_parameter),
                fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
       IP::get_penalty_factor<value_type>(fe_degree, this->ad.IP_factor);
-
-  fe_eval.evaluate(true, true);
-  fe_eval_neighbor.evaluate(true, true);
 
   for (unsigned int q = 0; q < fe_eval.n_q_points; ++q) {
     VectorizedArray<value_type> jump_value =
@@ -45,8 +38,6 @@ void DiffusiveOperator<dim, fe_degree, value_type>::do_face_integral(
     fe_eval_neighbor.submit_value(gradient_flux, q); // + sign since n⁺ = -n⁻
   }
 
-  fe_eval.integrate(true, true);
-  fe_eval_neighbor.integrate(true, true);
 }
 
 template <int dim, int fe_degree, typename value_type>
@@ -56,8 +47,6 @@ void DiffusiveOperator<dim, fe_degree, value_type>::do_face_int_integral(
       std::max(fe_eval.read_cell_data(array_penalty_parameter),
                fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
       IP::get_penalty_factor<value_type>(fe_degree, this->ad.IP_factor);
-
-  fe_eval.evaluate(true, true);
 
   for (unsigned int q = 0; q < fe_eval.n_q_points; ++q) {
     // set exterior value to zero
@@ -76,7 +65,6 @@ void DiffusiveOperator<dim, fe_degree, value_type>::do_face_int_integral(
     fe_eval.submit_value(-gradient_flux, q);
   }
 
-  fe_eval.integrate(true, true);
 }
 
 template <int dim, int fe_degree, typename value_type>
@@ -86,8 +74,6 @@ void DiffusiveOperator<dim, fe_degree, value_type>::do_face_ext_integral(
       std::max(fe_eval.read_cell_data(array_penalty_parameter),
                fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
       IP::get_penalty_factor<value_type>(fe_degree, this->ad.IP_factor);
-
-  fe_eval_neighbor.evaluate(true, true);
 
   for (unsigned int q = 0; q < fe_eval.n_q_points; ++q) {
     // set value_m to zero
@@ -108,7 +94,6 @@ void DiffusiveOperator<dim, fe_degree, value_type>::do_face_ext_integral(
     fe_eval_neighbor.submit_value(-gradient_flux, q);
   }
 
-  fe_eval_neighbor.integrate(true, true);
 }
 
 template <int dim, int fe_degree, typename value_type>
@@ -120,8 +105,6 @@ void DiffusiveOperator<dim, fe_degree, value_type>::do_boundary_integral(
   VectorizedArray<value_type> tau_IP =
       fe_eval.read_cell_data(array_penalty_parameter) *
       IP::get_penalty_factor<value_type>(fe_degree, this->ad.IP_factor);
-
-  fe_eval.evaluate(true, true);
 
   for (unsigned int q = 0; q < fe_eval.n_q_points; ++q) {
     VectorizedArray<value_type> value_m =
@@ -144,6 +127,5 @@ void DiffusiveOperator<dim, fe_degree, value_type>::do_boundary_integral(
     fe_eval.submit_value(-gradient_flux, q);
   }
 
-  fe_eval.integrate(true, true);
 }
 }

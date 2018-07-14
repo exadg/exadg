@@ -9,7 +9,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
                                           ad.internal_integrate.do_eval() ||
                                           ad.boundary_evaluate.do_eval() ||
                                           ad.boundary_integrate.do_eval()),
-      block_jacobi_matrices_have_been_initialized(false) {}
+      block_jacobi_matrices_have_been_initialized(false),eval_time(0.0) {}
 
 template <int dim, int degree, typename Number, typename AdditionalData>
 void OperatorBase<dim, degree, Number, AdditionalData>::reinit(MF const &mf,
@@ -77,7 +77,7 @@ void OperatorBase<dim, degree, Number, AdditionalData>::rhs_add(
 
   this->eval_time = time;
 
-  VNumber tmp(dst);
+  VNumber tmp; tmp.reinit(dst,false);
 
   data->loop(&This::local_apply_inhom_cell, &This::local_apply_inhom_face,
              &This::local_apply_inhom_boundary, this, tmp, tmp);
@@ -420,7 +420,7 @@ void OperatorBase<dim, degree, Number, AdditionalData>::local_apply_inhom_face(
 template <int dim, int degree, typename Number, typename AdditionalData>
 void OperatorBase<dim, degree, Number, AdditionalData>::
     local_apply_inhom_boundary(const MF &data, VNumber &dst,
-                               const VNumber & src,
+                               const VNumber & /*src*/,
                                const Range &range) const {
     
   FEEvalFace phi(data, true, ad.dof_index, ad.quad_index);
@@ -428,8 +428,8 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
   for (unsigned int face = range.first; face < range.second; face++) {
     auto bid = data.get_boundary_id(face);
     phi.reinit(face);
-    phi.gather_evaluate(src, this->ad.boundary_evaluate.value,
-                        this->ad.boundary_evaluate.gradient);
+    // note: no gathering/evaluation is necessary in the case of 
+    //       inhomogeneous boundary
     do_boundary_integral(phi, OperatorType::inhomogeneous, bid);
     phi.integrate_scatter(this->ad.boundary_integrate.value,
                           this->ad.boundary_integrate.gradient, dst);
