@@ -138,12 +138,8 @@ public:
 #if ENABLE_TIMING
       time[maxlevel].restart();
 #endif
-      for(unsigned int i = minlevel; i <= maxlevel; i++){
-        defect[i] = 0.0;
-        defect2[i] = 0.0;
-        solution[i] = 0.0;
-        t[i] =0.0;
-      }
+    for(unsigned int i = minlevel; i <= maxlevel; i++)
+      defect[i] = 0.0;
     defect[maxlevel].copy_locally_owned_data_from(src);
 #if ENABLE_TIMING
     ctime[maxlevel] += time[maxlevel].wall_time();
