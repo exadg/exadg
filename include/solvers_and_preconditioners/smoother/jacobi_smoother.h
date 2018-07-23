@@ -70,7 +70,7 @@ public:
     }
     else if(data.preconditioner == PreconditionerJacobiSmoother::BlockJacobi)
     {
-      preconditioner = new JacobiPreconditioner<Operator>(*underlying_operator);
+      preconditioner = new BlockJacobiPreconditioner<Operator>(*underlying_operator);
     }
     else
     {
