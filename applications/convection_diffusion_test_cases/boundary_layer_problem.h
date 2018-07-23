@@ -76,7 +76,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   preconditioner = Preconditioner::Multigrid;//Preconditioner::PointJacobi;
   mg_operator_type = MultigridOperatorType::ReactionConvectionDiffusion;
   // MG smoother
-  multigrid_data.smoother = MultigridSmoother::GMRES;
+  multigrid_data.smoother = MultigridSmoother::Chebyshev;
   // MG smoother data
   multigrid_data.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::None;
   multigrid_data.gmres_smoother_data.number_of_iterations = 5;
