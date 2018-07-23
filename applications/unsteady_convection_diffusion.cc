@@ -39,12 +39,12 @@
 
 // diffusion problems
 
-#include "convection_diffusion_test_cases/diffusive_problem.h"
+//#include "convection_diffusion_test_cases/diffusive_problem.h"
 
 // convection-diffusion problems
 
 //#include "convection_diffusion_test_cases/constant_rhs.h"
-//#include "convection_diffusion_test_cases/boundary_layer_problem.h"
+#include "convection_diffusion_test_cases/boundary_layer_problem.h"
 //#include "convection_diffusion_test_cases/const_rhs_const_and_circular_wind.h"
 
 using namespace dealii;
@@ -110,7 +110,8 @@ ConvDiffProblem(const unsigned int n_refine_space_in,
 
   param.set_input_parameters();
   param.check_input_parameters();
-
+  AssertThrow(param.problem_type == ProblemType::Unsteady,
+                ExcMessage("ProblemType must be unsteady!"));
   print_MPI_info(pcout);
   if(param.print_input_parameters)
     param.print(pcout);
