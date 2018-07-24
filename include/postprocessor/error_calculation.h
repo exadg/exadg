@@ -79,15 +79,16 @@ private:
                    double const                                time) const
   {
     bool relative = true;
-    double const error = calculate_L2_error<dim>(relative,
-                                                 *dof_handler,
-                                                 *mapping,
-                                                 solution_vector,
-                                                 analytical_solution,
-                                                 time);
+    double const error = calculate_error<dim>(relative,
+                                              *dof_handler,
+                                              *mapping,
+                                              solution_vector,
+                                              analytical_solution,
+                                              time,
+                                              VectorTools::L2_norm);
 
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-    pcout << ((relative == true) ? "  Relative " : "  ABSOLUTE ") << "error (L2-norm): "
+    pcout << ((relative == true) ? "  Relative " : "  Absolute ") << "error (L2-norm): "
           << std::scientific << std::setprecision(5) << error << std::endl;
   }
 };
