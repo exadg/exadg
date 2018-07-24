@@ -13,6 +13,7 @@
 #include "../../poisson/laplace_operator.h"
 #include "../../poisson/multigrid_preconditioner_laplace.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
+#include "../../laplace/spatial_discretization/laplace_operator.h"
 
 namespace IncNS
 {
@@ -94,7 +95,7 @@ protected:
   void setup_projection_solver();
 
   // Pressure Poisson equation
-  LaplaceOperator<dim,fe_degree_p, Number> laplace_operator;
+  Laplace::LaplaceOperator<dim,fe_degree_p, Number> laplace_operator;
   std::shared_ptr<PreconditionerBase<Number> > preconditioner_pressure_poisson;
   std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<Number> > > pressure_poisson_solver;
 
@@ -120,10 +121,10 @@ void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwal
 setup_pressure_poisson_solver (double const time_step_size)
 {
   // setup Laplace operator
-  LaplaceOperatorData<dim> laplace_operator_data;
-  laplace_operator_data.laplace_dof_index = this->get_dof_index_pressure();
-  laplace_operator_data.laplace_quad_index = this->get_quad_index_pressure();
-  laplace_operator_data.penalty_factor = this->param.IP_factor_pressure;
+  Laplace::LaplaceOperatorData<dim> laplace_operator_data;
+  laplace_operator_data.dof_index = this->get_dof_index_pressure();
+  laplace_operator_data.quad_index = this->get_quad_index_pressure();
+  laplace_operator_data.IP_factor = this->param.IP_factor_pressure;
 
   // TODO: do this in derived classes
   if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
@@ -151,18 +152,24 @@ setup_pressure_poisson_solver (double const time_step_size)
           << std::endl;
 
     // only makes sense in case of constant time step sizes
-    laplace_operator_data.penalty_factor = this->param.IP_factor_pressure/time_step_size*this->param.deltat_ref;
+    laplace_operator_data.IP_factor = this->param.IP_factor_pressure/time_step_size*this->param.deltat_ref;
   }
-
-  laplace_operator_data.bc = this->boundary_descriptor_laplace;
+  
+  auto boundary_descriptor = std::shared_ptr<Laplace::BoundaryDescriptor<dim>>(new Laplace::BoundaryDescriptor<dim>());
+  boundary_descriptor->dirichlet_bc = this->boundary_descriptor_laplace->dirichlet;
+  boundary_descriptor->neumann_bc = this->boundary_descriptor_laplace->neumann;
+  
+  laplace_operator_data.bc = boundary_descriptor;
 
   laplace_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
-  laplace_operator.reinit(this->data,this->mapping,laplace_operator_data);
+  laplace_operator.initialize(this->mapping,
+                              this->data,
+                              laplace_operator_data);
 
   // setup preconditioner
   if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Jacobi)
   {
-    preconditioner_pressure_poisson.reset(new JacobiPreconditioner<LaplaceOperator<dim, fe_degree_p, Number> >(laplace_operator));
+    preconditioner_pressure_poisson.reset(new JacobiPreconditioner<Laplace::LaplaceOperator<dim, fe_degree_p, Number> >(laplace_operator));
   }
   else if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::GeometricMultigrid)
   {
@@ -172,17 +179,23 @@ setup_pressure_poisson_solver (double const time_step_size)
     // use single precision for multigrid
     typedef float MultigridNumber;
 
-    typedef MyMultigridPreconditionerLaplace<dim, Number, LaplaceOperator<dim, fe_degree_p, MultigridNumber>, LaplaceOperatorData<dim> > MULTIGRID;
+    typedef MyMultigridPreconditionerDG<dim, Number, 
+            Laplace::LaplaceOperator<dim, fe_degree_p, MultigridNumber>,
+            Laplace::LaplaceOperator<dim, fe_degree_p, Number>> MULTIGRID;
 
     preconditioner_pressure_poisson.reset(new MULTIGRID());
 
     std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
 
+    // TODO: not necessary
+    typedef typename Triangulation<dim>::cell_iterator TriIterator;
+    std::vector<GridTools::PeriodicFacePair<TriIterator>> periodic_face_pairs;
+    
     mg_preconditioner->initialize(mg_data,
                                   this->dof_handler_p,
                                   this->mapping,
-                                  laplace_operator_data,
-                                  laplace_operator_data.bc->dirichlet);
+                                  laplace_operator,
+                                  periodic_face_pairs);
   }
   else
   {
@@ -207,7 +220,7 @@ setup_pressure_poisson_solver (double const time_step_size)
     }
 
     // setup solver
-    pressure_poisson_solver.reset(new CGSolver<LaplaceOperator<dim, fe_degree_p, Number>,
+    pressure_poisson_solver.reset(new CGSolver<Laplace::LaplaceOperator<dim, fe_degree_p, Number>,
                                                PreconditionerBase<Number>,
                                                parallel::distributed::Vector<Number> >
        (laplace_operator,
@@ -229,7 +242,7 @@ setup_pressure_poisson_solver (double const time_step_size)
       solver_data.use_preconditioner = true;
     }
 
-    pressure_poisson_solver.reset(new FGMRESSolver<LaplaceOperator<dim, fe_degree_p, Number>,
+    pressure_poisson_solver.reset(new FGMRESSolver<Laplace::LaplaceOperator<dim, fe_degree_p, Number>,
                                                    PreconditionerBase<Number>,
                                                    parallel::distributed::Vector<Number> >
         (laplace_operator,
@@ -544,14 +557,13 @@ void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwal
 rhs_ppe_laplace_add(parallel::distributed::Vector<Number> &dst,
                     double const                          &evaluation_time) const
 {
-  const LaplaceOperatorData<dim> &data = this->laplace_operator.get_operator_data();
+  const Laplace::LaplaceOperatorData<dim> &data = this->laplace_operator.get_operator_data();
 
   // Set correct time for evaluation of functions on pressure Dirichlet boundaries
   // (not needed for pressure Neumann boundaries because all functions are ZeroFunction in Neumann BC map!)
-  for(typename std::map<types::boundary_id, std::shared_ptr<Function<dim> > >::const_iterator
-        it = data.bc->dirichlet.begin(); it != data.bc->dirichlet.end(); ++it)
+  for(auto& it : data.bc->dirichlet_bc)
   {
-    it->second->set_time(evaluation_time);
+    it.second->set_time(evaluation_time);
   }
 
   this->laplace_operator.rhs_add(dst);
