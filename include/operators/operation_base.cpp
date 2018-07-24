@@ -45,7 +45,12 @@ void OperatorBase<dim, degree, Number, AdditionalData>::reinit(
     const unsigned int level) {
     
   // cast additional data to actual format
-  auto &ad = *static_cast<AdditionalData *>(od);
+  auto &add = *static_cast<AdditionalData *>(od);
+  // create copy of data and ...
+  auto ad = add;
+  // set dof_index and quad_index to 0 since we only consider a subset
+  ad.dof_index = 0;
+  ad.quad_index = 0;
 
   // check it dg or cg
   is_dg = dof_handler.get_fe().dofs_per_vertex == 0;
