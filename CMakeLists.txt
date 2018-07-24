@@ -39,6 +39,7 @@ SET( TARGET_SRC
      source/SpaldingsLaw.cc
      source/statistics_manager.cc
      source/statistics_manager_ph.cc
+     include/laplace/spatial_discretization/laplace_operator.cpp
      include/poisson/laplace_operator.cpp
      #include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_adapter_base.cpp
      include/solvers_and_preconditioners/transfer/mg_transfer_mf_p.cpp

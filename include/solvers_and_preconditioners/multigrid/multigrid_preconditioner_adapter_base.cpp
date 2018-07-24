@@ -1,5 +1,7 @@
 #include "multigrid_preconditioner_adapter_base.h"
 
+#include "../../../applications/macros/constants.h"
+
 template <int dim, typename value_type, typename Operator>
 MyMultigridPreconditionerBase<dim, value_type, Operator>::
     MyMultigridPreconditionerBase(std::shared_ptr<Operator> underlying_operator)
@@ -162,16 +164,48 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
       MGTransferBase<VECTOR_TYPE> *temp;
 
       const unsigned int from = curr.second, to = prev.second;
-
+      
+#if DEGREE_9 && DEGREE_4
+      if (from == 9 && to == 4) {
+        temp = new MGTransferMatrixFreeP<dim, 9, 4, value_type_operator, VECTOR_TYPE>( *mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+      } else 
+#endif
+#if DEGREE_8 && DEGREE_4
+      if (from == 8 && to == 4) {
+        temp = new MGTransferMatrixFreeP<dim, 8, 4, value_type_operator, VECTOR_TYPE>( *mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+      } else 
+#endif
+#if DEGREE_7 && DEGREE_3
       if (from == 7 && to == 3) {
-        temp = new MGTransferMatrixFreeP<dim, 7, 3, value_type_operator,
-                                         VECTOR_TYPE>(
-            *mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
-      } else if (from == 3 && to == 1) {
-        temp = new MGTransferMatrixFreeP<dim, 3, 1, value_type_operator,
-                                         VECTOR_TYPE>(
-            *mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
-      } else {
+        temp = new MGTransferMatrixFreeP<dim, 7, 3, value_type_operator, VECTOR_TYPE>( *mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+      } else 
+#endif
+#if DEGREE_6 && DEGREE_3
+      if (from == 7 && to == 3) {
+        temp = new MGTransferMatrixFreeP<dim, 6, 3, value_type_operator, VECTOR_TYPE>( *mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+      } else 
+#endif
+#if DEGREE_5 && DEGREE_2
+      if (from == 5 && to == 2) {
+        temp = new MGTransferMatrixFreeP<dim, 5, 2, value_type_operator, VECTOR_TYPE>( *mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+      } else 
+#endif
+#if DEGREE_4 && DEGREE_2
+      if (from == 4 && to == 2) {
+        temp = new MGTransferMatrixFreeP<dim, 4, 2, value_type_operator, VECTOR_TYPE>( *mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+      } else 
+#endif
+#if DEGREE_3 && DEGREE_1
+      if (from == 3 && to == 1) {
+        temp = new MGTransferMatrixFreeP<dim, 3, 1, value_type_operator, VECTOR_TYPE>( *mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+      } else 
+#endif
+#if DEGREE_2 && DEGREE_1
+      if (from == 2 && to == 1) {
+        temp = new MGTransferMatrixFreeP<dim, 2, 1, value_type_operator, VECTOR_TYPE>( *mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+      } else 
+#endif
+      {
         AssertThrow(false,
                     ExcMessage("This type of p-transfer is not implemented"));
       }

@@ -157,29 +157,7 @@ void reinit(
                             OperatorType const &operator_type,
                             types::boundary_id const &boundary_id) const;
   
-  MatrixOperatorBaseNew<dim, Number>* get_new(unsigned int deg) const{
-      switch (deg) {
-      case 1:
-        return new LaplaceOperator<dim, 1, Number>();
-//      case 2:
-//        return new LaplaceOperator<dim, 2, Number>();
-      case 3:
-        return new LaplaceOperator<dim, 3, Number>();
-//      case 4:
-//        return new LaplaceOperator<dim, 4, Number>();
-//      case 5:
-//        return new LaplaceOperator<dim, 5, Number>();
-//      case 6:
-//        return new LaplaceOperator<dim, 6, Number>();
-      case 7:
-        return new LaplaceOperator<dim, 7, Number>();
-      default:
-        AssertThrow(false,
-                    ExcMessage("LaplaceOperator not implemented for this degree!"));
-        return new LaplaceOperator<dim, 1, Number>(); // dummy return (statement not
-                                                      // reached)
-      }
-  }
+  MatrixOperatorBaseNew<dim, Number>* get_new(unsigned int deg) const;
   
 private:
   AlignedVector<VectorizedArray<Number>> array_penalty_parameter;
@@ -187,7 +165,5 @@ private:
 };
 
 }
-
-#include "laplace_operator.cpp"
 
 #endif

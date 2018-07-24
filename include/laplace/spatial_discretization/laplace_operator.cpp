@@ -1,6 +1,7 @@
 #include "laplace_operator.h"
 
 #include "../../functionalities/evaluate_functions.h"
+#include "../../../applications/macros/constants.h"
 
 namespace Laplace
 {
@@ -268,4 +269,44 @@ void LaplaceOperator<dim, fe_degree, value_type>::do_boundary_integral(
   }
 }
 
+template <int dim, int fe_degree, typename Number>
+  MatrixOperatorBaseNew<dim, Number>* LaplaceOperator<dim, fe_degree, Number>::get_new(unsigned int deg) const{
+      switch (deg) {
+#if DEGREE_1
+      case 1: return new LaplaceOperator<dim, 1, Number>();
+#endif
+#if DEGREE_2
+      case 2: return new LaplaceOperator<dim, 2, Number>();
+#endif
+#if DEGREE_3
+      case 3: return new LaplaceOperator<dim, 3, Number>();
+#endif
+#if DEGREE_4
+      case 4: return new LaplaceOperator<dim, 4, Number>();
+#endif
+#if DEGREE_5
+      case 5: return new LaplaceOperator<dim, 5, Number>();
+#endif
+#if DEGREE_6
+      case 6: return new LaplaceOperator<dim, 6, Number>();
+#endif
+#if DEGREE_7
+      case 7: return new LaplaceOperator<dim, 7, Number>();
+#endif
+#if DEGREE_8
+      case 8: return new LaplaceOperator<dim, 8, Number>();
+#endif
+#if DEGREE_9
+      case 9: return new LaplaceOperator<dim, 9, Number>();
+#endif
+      default:
+        AssertThrow(false,
+                    ExcMessage("LaplaceOperator not implemented for this degree!"));
+        return new LaplaceOperator<dim, 1, Number>(); // dummy return (statement not
+                                                      // reached)
+      }
+  }
+
 }
+
+#include "laplace_operator.hpp"
