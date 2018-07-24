@@ -541,7 +541,7 @@ template <int dim, int degree, typename Number, typename AdditionalData>
 void OperatorBase<dim, degree, Number, AdditionalData>::local_apply_cell(
     const MF &data, VNumber &dst, const VNumber &src,
     const Range &range) const {
-  FEEvalCell phi(data);
+  FEEvalCell phi(data, ad.dof_index, ad.quad_index);
   // loop over the range of macro cells
   for (auto cell = range.first; cell < range.second; ++cell) {
     // reinit cell
