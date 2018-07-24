@@ -452,7 +452,7 @@ void create_grid_and_set_boundary_conditions(
   // x-direction
   triangulation.begin()->face(0)->set_all_boundary_ids(0);
   triangulation.begin()->face(1)->set_all_boundary_ids(1);
-  // x-direction
+  // y-direction
   triangulation.begin()->face(2)->set_all_boundary_ids(2);
   triangulation.begin()->face(3)->set_all_boundary_ids(3);
   // z-direction
