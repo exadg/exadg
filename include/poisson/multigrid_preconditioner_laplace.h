@@ -36,7 +36,7 @@ public:
       
       
     BASE::initialize(mg_data_in, dof_handler, mapping, dirichlet_bc, 
-            (void *)operator_data_in);
+            (void *)&operator_data_in);
   }
   
 };

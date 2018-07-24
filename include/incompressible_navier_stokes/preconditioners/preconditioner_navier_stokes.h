@@ -671,7 +671,7 @@ private:
   {
     // pressure convection-diffusion operator
     // a) mass matrix operator
-    ConvDiff::MassMatrixOperatorData mass_matrix_operator_data;
+    ConvDiff::MassMatrixOperatorData<dim> mass_matrix_operator_data;
     mass_matrix_operator_data.dof_index = underlying_operator->get_dof_index_pressure();
     mass_matrix_operator_data.quad_index = underlying_operator->get_quad_index_pressure();
 

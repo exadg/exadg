@@ -9,8 +9,8 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_COMPATIBLE_LAPLACE_OPERATOR_H_
 
 #include "../spatial_discretization/navier_stokes_operators.h"
-#include "operators/matrix_operator_base.h"
-#include "solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
+#include "../../operators/matrix_operator_base_new.h"
+#include "../../solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/invert_diagonal.h"
 
 namespace IncNS
@@ -30,7 +30,7 @@ struct CompatibleLaplaceOperatorData
 };
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule,typename Number = double>
-class CompatibleLaplaceOperator : public MatrixOperatorBase
+class CompatibleLaplaceOperator : public MatrixOperatorBaseNew<dim, Number>
 {
 public:
   // Issue#2: extend MatrixOperatorBaseNew

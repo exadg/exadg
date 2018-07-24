@@ -15,6 +15,16 @@
 
 namespace IncNS
 {
+    
+template<int dim>
+struct DGNavierStokesCoupledOperatorData
+{
+  DGNavierStokesCoupledOperatorData () {}
+  
+  // TODO
+  std::shared_ptr<BoundaryDescriptorP<dim>> bc;
+  
+};
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 class DGNavierStokesCoupled : public DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
@@ -45,6 +55,12 @@ public:
                       std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure,
                       std::shared_ptr<FieldFunctions<dim> >      field_functions);
 
+  // TODO: remove
+  DGNavierStokesCoupledOperatorData<dim>& get_operator_data() const{
+      auto data = new DGNavierStokesCoupledOperatorData<dim>();
+      return *data;
+  }
+  
   void setup_solvers(double const &scaling_factor_time_derivative_term = 1.0);
 
   void setup_velocity_conv_diff_operator(double const &scaling_factor_time_derivative_term = 1.0);

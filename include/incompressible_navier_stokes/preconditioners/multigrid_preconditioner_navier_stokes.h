@@ -54,7 +54,7 @@ private:
   {
     for (int level = this->n_global_levels-1; level>=0; --level)
     {
-      this->mg_matrices[level]->set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
+      dynamic_cast<Operator *>(&*this->mg_matrices[level])->set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
     }
   }
 
@@ -147,16 +147,20 @@ private:
     {
       if(level == (int)this->n_global_levels-1) // finest level
       {
-        this->mg_matrices[level]->set_solution_linearization(vector_linearization);
+        dynamic_cast<Operator *>(&*this->mg_matrices[level])->set_solution_linearization(vector_linearization);
       }
       else // all coarser levels
       {
         // restrict vector_linearization from fine to coarse level
-        parallel::distributed::Vector<typename Operator::value_type> & vector_fine_level = this->mg_matrices[level+1]->get_solution_linearization();
-        parallel::distributed::Vector<typename Operator::value_type> & vector_coarse_level = this->mg_matrices[level]->get_solution_linearization();
+        parallel::distributed::Vector<typename Operator::value_type> & vector_fine_level = 
+            dynamic_cast<Operator *>(&*this->mg_matrices[level+1])->get_solution_linearization();
+        parallel::distributed::Vector<typename Operator::value_type> & vector_coarse_level = 
+            dynamic_cast<Operator *>(&*this->mg_matrices[level])->get_solution_linearization();
 
-        unsigned int dof_index_velocity = this->mg_matrices[level]->get_velocity_conv_diff_operator_data().dof_index;
-        DoFHandler<dim> const & dof_handler_velocity = this->mg_matrices[level]->get_data().get_dof_handler(dof_index_velocity);
+        unsigned int dof_index_velocity = 
+            dynamic_cast<Operator *>(&*this->mg_matrices[level])->get_operator_data().dof_index;
+        DoFHandler<dim> const & dof_handler_velocity = 
+            dynamic_cast<Operator *>(&*this->mg_matrices[level])->get_data().get_dof_handler(dof_index_velocity);
         unsigned int dofs_per_cell = dof_handler_velocity.get_fe().dofs_per_cell;
 
         IndexSet relevant_dofs;
@@ -217,7 +221,7 @@ private:
   {
     for (int level = this->n_global_levels-1; level>=0; --level)
     {
-      this->mg_matrices[level]->set_evaluation_time(evaluation_time);
+      dynamic_cast<Operator *>(&*this->mg_matrices[level])->set_evaluation_time(evaluation_time);
     }
   }
 
@@ -231,7 +235,7 @@ private:
   {
     for (int level = this->n_global_levels-1; level>=0; --level)
     {
-      this->mg_matrices[level]->set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
+      dynamic_cast<Operator *>(&*this->mg_matrices[level])->set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
     }
   }
 

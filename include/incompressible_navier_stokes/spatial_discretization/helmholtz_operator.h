@@ -30,10 +30,13 @@ struct HelmholtzOperatorData
   bool unsteady_problem;
 
   unsigned int dof_index;
+  
+  // TODO
+  std::shared_ptr<BoundaryDescriptorP<dim>> bc;
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number = double>
-class HelmholtzOperator : public MatrixOperatorBase
+class HelmholtzOperator : public MatrixOperatorBaseNew<dim, Number>
 {
 public:
     // Issue#2:
@@ -146,7 +149,7 @@ public:
   /*
    *  Operator data
    */
-  HelmholtzOperatorData<dim> const & get_helmholtz_operator_data() const
+  HelmholtzOperatorData<dim> const & get_operator_data() const
   {
     return this->operator_data;
   }

@@ -52,10 +52,13 @@ struct VelocityConvDiffOperatorData
   bool unsteady_problem;
   bool convective_problem;
   unsigned int dof_index;
+  
+  // TODO
+  std::shared_ptr<BoundaryDescriptorP<dim>> bc;
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule,typename Number = double>
-class VelocityConvDiffOperator : public MatrixOperatorBase
+class VelocityConvDiffOperator : public MatrixOperatorBaseNew<dim, Number>
 {
 public:
   // Issue#0: extend from Matrix-OperatorBase
@@ -180,7 +183,7 @@ public:
     own_convective_operator_storage.initialize(own_matrix_free_storage, convective_operator_data);
 
     // setup velocity convection diffusion operator
-    VelocityConvDiffOperatorData<dim> operator_data = underlying_operator.get_velocity_conv_diff_operator_data();
+    VelocityConvDiffOperatorData<dim> operator_data = underlying_operator.get_operator_data();
     initialize(own_matrix_free_storage,
                operator_data,
                own_mass_matrix_operator_storage,
@@ -252,7 +255,7 @@ public:
   /*
    *  Operator data
    */
-  VelocityConvDiffOperatorData<dim> const & get_velocity_conv_diff_operator_data() const
+  VelocityConvDiffOperatorData<dim> const & get_operator_data() const
   {
     return this->operator_data;
   }
