@@ -5,10 +5,10 @@
 #include <deal.II/matrix_free/fe_evaluation.h>
 
 template <int dim, typename Number>
-CGToDGTransfer<dim, Number>::CGToDGTransfer(const MF &data_1, const MF &data_2,
+CGToDGTransfer<dim, Number>::CGToDGTransfer(const MF &data_dg, const MF &data_cg,
                                             const unsigned int level,
                                             const unsigned int fe_degree)
-    : data_1(data_1), data_2(data_2), level(level),
+    : data_dg(data_dg), data_cg(data_cg), level(level),
       temp_src(std::pow(fe_degree + 1, dim)),
       temp_dst(std::pow(fe_degree + 1, dim)) {}
 
@@ -18,7 +18,7 @@ CGToDGTransfer<dim, Number>::~CGToDGTransfer() {}
 template <int dim, typename Number>
 void CGToDGTransfer<dim, Number>::toCG(VNumber &dst, const VNumber &src) const {
 
-  transfer(dst, src, data_2, data_1);
+  transfer(dst, src, data_cg, data_dg);
   dst.compress(VectorOperation::add);
 }
 
@@ -26,7 +26,7 @@ template <int dim, typename Number>
 void CGToDGTransfer<dim, Number>::toDG(VNumber &dst, const VNumber &src) const {
 
   src.update_ghost_values();
-  transfer(dst, src, data_1, data_2);
+  transfer(dst, src, data_dg, data_cg);
 }
 
 template <int dim, typename Number>

@@ -10,7 +10,7 @@ public:
   typedef LinearAlgebra::distributed::Vector<Number> VNumber;
   typedef MatrixFree<dim, Number> MF;
 
-  CGToDGTransfer(const MF &data_1, const MF &data_2, const unsigned int level,
+  CGToDGTransfer(const MF &data_dg, const MF &data_cg, const unsigned int level,
                  const unsigned int fe_degree);
 
   virtual ~CGToDGTransfer();
@@ -23,8 +23,8 @@ private:
   void transfer(VNumber &dst, const VNumber &src, const MF &data_dst,
                 const MF &data_src) const;
 
-  const MF &data_1;
-  const MF &data_2;
+  const MF &data_dg;
+  const MF &data_cg;
   const unsigned int level;
   mutable Vector<Number> temp_src;
   mutable Vector<Number> temp_dst;
