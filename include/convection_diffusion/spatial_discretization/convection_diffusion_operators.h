@@ -25,22 +25,8 @@
 #include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
 #include "../../solvers_and_preconditioners/block_jacobi_matrices.h"
 
-namespace ConvDiff
-{
+#include "types.h"
 
-enum class OperatorType {
-  full,
-  homogeneous,
-  inhomogeneous
-};
-
-enum class BoundaryType {
-  undefined,
-  dirichlet,
-  neumann
-};
-
-}
 #include "operators/mass_operator.h"
 namespace ConvDiff
 {

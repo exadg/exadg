@@ -3,6 +3,14 @@
 
 #include "../../../operators/operation_base.h"
 
+#include "../../user_interface/boundary_descriptor.h"
+#include "../../user_interface/input_parameters.h"
+#include "../types.h"
+#include "convection_operator.h"
+#include "diffusive_operator.h"
+#include "mass_operator.h"
+
+
 namespace ConvDiff {
     
     
@@ -136,7 +144,5 @@ private:
 };
     
 }
-
-#include "convection_diffusion_operator.cpp"
 
 #endif

@@ -1,4 +1,7 @@
 #include "convection_operator.h"
+
+#include "../../../functionalities/evaluate_functions.h"
+
 namespace ConvDiff {
 
 template <int dim, int fe_degree, typename value_type>

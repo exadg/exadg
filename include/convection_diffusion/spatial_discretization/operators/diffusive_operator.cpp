@@ -1,5 +1,7 @@
 #include "diffusive_operator.h"
 
+#include "../../../operators/interior_penalty_parameter.h"
+
 namespace ConvDiff {
 
 template <int dim, int fe_degree, typename value_type>

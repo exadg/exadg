@@ -246,26 +246,41 @@ template <int dim, int fe_degree, typename Number>
 template <int dim, int fe_degree, typename Number>
   MatrixOperatorBaseNew<dim, Number>* ConvectionDiffusionOperator<dim, fe_degree, Number>::get_new(unsigned int deg) const {
     switch (deg) {
-    case 1:
-      return new ConvectionDiffusionOperator<dim, 1, Number>();
-//    case 2:
-//      return new ConvectionDiffusionOperator<dim, 2, Number>();
-    case 3:
-      return new ConvectionDiffusionOperator<dim, 3, Number>();
-//    case 4:
-//      return new ConvectionDiffusionOperator<dim, 4, Number>();
-//    case 5:
-//      return new ConvectionDiffusionOperator<dim, 5, Number>();
-//    case 6:
-//      return new ConvectionDiffusionOperator<dim, 6, Number>();
-//    case 7:
-//      return new ConvectionDiffusionOperator<dim, 7, Number>();
+#if DEGREE_1
+    case 1: return new ConvectionDiffusionOperator<dim, 1, Number>();
+#endif
+#if DEGREE_2
+    case 2: return new ConvectionDiffusionOperator<dim, 2, Number>();
+#endif
+#if DEGREE_3
+    case 3: return new ConvectionDiffusionOperator<dim, 3, Number>();
+#endif
+#if DEGREE_4
+    case 4: return new ConvectionDiffusionOperator<dim, 4, Number>();
+#endif
+#if DEGREE_5
+    case 5: return new ConvectionDiffusionOperator<dim, 5, Number>();
+#endif
+#if DEGREE_6
+    case 6: return new ConvectionDiffusionOperator<dim, 6, Number>();
+#endif
+#if DEGREE_7
+    case 7: return new ConvectionDiffusionOperator<dim, 7, Number>();
+#endif
+#if DEGREE_8
+    case 8: return new ConvectionDiffusionOperator<dim, 8, Number>();
+#endif
+#if DEGREE_9
+    case 9: return new ConvectionDiffusionOperator<dim, 9, Number>();
+#endif
     default:
       AssertThrow(false,
-                  ExcMessage("LaplaceOperator not implemented for this degree!"));
+                  ExcMessage("ConvectionDiffusionOperator not implemented for this degree!"));
       return new ConvectionDiffusionOperator<dim, 1, Number>(); 
           // dummy return (statement not reached)
     }
   }
     
 }
+
+#include "convection_diffusion_operator.hpp"
