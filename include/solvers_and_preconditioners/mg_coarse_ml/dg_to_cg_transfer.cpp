@@ -9,7 +9,7 @@ CGToDGTransfer<dim, Number>::CGToDGTransfer(const MF &data_1, const MF &data_2,
                                             const int level,
                                             const int fe_degree)
     : data_1(data_1), data_2(data_2), level(level),
-      temp(std::pow(fe_degree + 1, dim)) {}
+      temp_src(std::pow(fe_degree + 1, dim)), temp_dst(std::pow(fe_degree + 1, dim)) {}
 
 template <int dim, typename Number>
 CGToDGTransfer<dim, Number>::~CGToDGTransfer() {}
@@ -33,13 +33,32 @@ void CGToDGTransfer<dim, Number>::transfer(VNumber &dst, const VNumber &src,
                                            const MF &data_dst,
                                            const MF &data_src) const {
 
+  // get reference to dof_handlers
   const DoFHandler<dim> &dh1 = data_src.get_dof_handler();
   const DoFHandler<dim> &dh2 = data_dst.get_dof_handler();
-  for (auto cell1 = dh1.begin_mg(level), cell2 = dh2.begin_mg(level);
-       cell1 < dh1.end_mg(level); cell1++, cell2++)
+
+  // get numbering of shape functions
+  auto& num_src = data_src.get_shape_info().lexicographic_numbering;
+  auto& num_dst = data_dst.get_shape_info().lexicographic_numbering;
+  
+  // get iterator
+  auto start1 = dh1.begin_mg(level);
+  auto start2 = dh2.begin_mg(level);
+  auto end = dh1.end_mg(level);
+  
+  // loop over all local cells
+  for (auto cell1 = start1, cell2 = start2; cell1 < end; cell1++, cell2++)
     if (cell1->is_locally_owned()) {
-      cell1->get_dof_values(src, temp);
-      cell2->distribute_local_to_global(temp, dst);
+      // gather values
+      cell1->get_dof_values(src, temp_src);
+      
+      // bring dof_values into the right order 
+      // (needed: numbering of shape functions of fe_q and fe_dgq different)
+      for (unsigned int j = 0; j < temp_src.size(); j++)
+          temp_dst[j] = temp_src[num_dst[num_src[j]]];
+      
+      // scatter values
+      cell2->distribute_local_to_global(temp_dst, dst);
     }
 }
 

@@ -26,7 +26,8 @@ private:
   const MF &data_1;
   const MF &data_2;
   const int level;
-  mutable Vector<Number> temp;
+  mutable Vector<Number> temp_src;
+  mutable Vector<Number> temp_dst;
 };
 
 #endif
