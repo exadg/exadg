@@ -1,6 +1,9 @@
 #ifndef CONV_DIFF_DIFFUSIVE_OPERATOR
 #define CONV_DIFF_DIFFUSIVE_OPERATOR
 
+#include "../types.h"
+#include "../../user_interface/input_parameters.h"
+#include "../../user_interface/boundary_descriptor.h"
 #include "../../../operators/operation_base.h"
 
 namespace ConvDiff {
@@ -144,7 +147,5 @@ public:
   double diffusivity;
 };
 }
-
-#include "diffusive_operator.cpp"
 
 #endif

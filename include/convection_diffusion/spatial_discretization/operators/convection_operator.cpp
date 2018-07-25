@@ -221,3 +221,5 @@ void ConvectiveOperator<dim, fe_degree, value_type>::do_boundary_integral(
   }
 }
 }
+
+#include "convection_operator.hpp"

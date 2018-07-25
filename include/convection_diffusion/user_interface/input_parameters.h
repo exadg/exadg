@@ -12,6 +12,7 @@
 #include "postprocessor/error_calculation_data.h"
 #include "postprocessor/output_data.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
+#include <deal.II/base/exceptions.h>
 
 namespace ConvDiff
 {

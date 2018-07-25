@@ -1,6 +1,9 @@
 #ifndef CONV_DIFF_CONVECTION_OPERATOR
 #define CONV_DIFF_CONVECTION_OPERATOR
 
+#include "../types.h"
+#include "../../user_interface/input_parameters.h"
+#include "../../user_interface/boundary_descriptor.h"
 #include "../../../operators/operation_base.h"
 
 namespace ConvDiff {
@@ -105,7 +108,5 @@ public:
                             types::boundary_id const &boundary_id) const;
 };
 }
-
-#include "convection_operator.cpp"
 
 #endif

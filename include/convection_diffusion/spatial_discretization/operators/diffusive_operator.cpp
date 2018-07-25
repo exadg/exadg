@@ -1,6 +1,7 @@
 #include "diffusive_operator.h"
 
 #include "../../../operators/interior_penalty_parameter.h"
+#include "../../../functionalities/evaluate_functions.h"
 
 namespace ConvDiff {
 
@@ -285,3 +286,5 @@ void DiffusiveOperator<dim, fe_degree, value_type>::do_boundary_integral(
   }
 }
 }
+
+#include "diffusive_operator.hpp"

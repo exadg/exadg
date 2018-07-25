@@ -1,7 +1,10 @@
 #ifndef CONV_DIFF_MASS_OPERATOR
 #define CONV_DIFF_MASS_OPERATOR
 
+#include "../types.h"
+#include "../../user_interface/boundary_descriptor.h"
 #include "../../../operators/operation_base.h"
+
 
 namespace ConvDiff {
 
@@ -44,7 +47,5 @@ private:
                             types::boundary_id const &) const {}
 };
 }
-
-#include "mass_operator.cpp"
 
 #endif

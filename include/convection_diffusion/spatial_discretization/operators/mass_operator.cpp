@@ -17,3 +17,5 @@ void MassMatrixOperator<dim, fe_degree, value_type>::do_cell_integral(
     fe_eval.submit_value(fe_eval.get_value(q), q);
 }
 }
+
+#include "mass_operator.hpp"
