@@ -71,7 +71,7 @@ public:
                           dim>::construct_multigrid_hierarchy),
         fe_dgq(fe_degree), fe_q(fe_degree), dof_handler_dg(triangulation), 
         dof_handler_cg(triangulation), mapping(fe_degree),
-        quadrature(fe_degree + 1),global_refinements(/*dim==2?5:3*/2) {}
+        quadrature(fe_degree + 1),global_refinements(dim==2?4:3) {}
 
   typedef LinearAlgebra::distributed::Vector<value_type> VNumber;
 
@@ -181,6 +181,10 @@ private:
     // determine level: -1 and globarl_refinements map to the same level
     unsigned int level = std::min(global_refinements, mg_level);
     
+    int procs;
+    MPI_Comm_size(MPI_COMM_WORLD, &procs);
+    
+    convergence_table.add_value("procs", procs);
     convergence_table.add_value("dim", dim);
     convergence_table.add_value("deg", fe_degree);
     convergence_table.add_value("lev", level);
@@ -282,7 +286,7 @@ private:
     }
     
     {
-        L2Norm<dim, fe_degree, value_type> l2norm(data_dg);
+        L2Norm<dim, fe_degree, value_type> l2norm(laplace_dg.get_data());
         
         // l2-norm of dg result
         auto temp1 = vec_sol_dg;
@@ -290,7 +294,7 @@ private:
         convergence_table.set_scientific("sol_dg_l2", true);
         
         // l2-norm of cg result
-        L2Norm<dim, fe_degree, value_type> l2norm_cg(data_cg);
+        L2Norm<dim, fe_degree, value_type> l2norm_cg(laplace_cg.get_data());
         auto temp2 = vec_sol_cg;
         convergence_table.add_value("sol_cg_l2", l2norm_cg.run(temp2));
         convergence_table.set_scientific("sol_cg_l2", true);
@@ -326,10 +330,21 @@ public:
     LaplaceOperatorData<dim> laplace_additional_data;
     laplace_additional_data.bc = this->bc;
 
+    // run through all multigrid level
+    for (unsigned int level = 0; level <= global_refinements; level++) {
+      laplace_dg.reinit(dof_handler_dg, mapping, (void *)&laplace_additional_data, 
+                     mg_constrained_dofs_cg /*TODO*/, level);
+      laplace_cg.reinit(dof_handler_cg, mapping, (void *)&laplace_additional_data, 
+                     mg_constrained_dofs_cg, level);
+      run(laplace_dg, laplace_cg, level);
+    }
+    
     // run on fine grid without multigrid
-    laplace_dg.reinit(data_dg, dummy_dg, laplace_additional_data);
-    laplace_cg.reinit(data_cg, dummy_cg, laplace_additional_data);
-    run(laplace_dg,laplace_cg);
+    {
+      laplace_dg.reinit(data_dg, dummy_dg, laplace_additional_data);
+      laplace_cg.reinit(data_cg, dummy_cg, laplace_additional_data);
+      run(laplace_dg, laplace_cg);
+    }
 
     // output convergence table
     if (!rank)
