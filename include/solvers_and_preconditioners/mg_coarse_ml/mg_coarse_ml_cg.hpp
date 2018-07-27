@@ -1,6 +1,6 @@
 #include "mg_coarse_ml_cg.h"
 
-#include "../../../applications/macros/constants.h"
+#include <navier-constants.h>
 
 #ifdef DIM_2
 template class MGCoarseMLCG<2, float>;

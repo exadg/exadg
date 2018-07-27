@@ -5,6 +5,8 @@
 # Set the name of the project and target:
 SET(TARGET "main")
 
+include_directories(include)
+
 # Declare all source files the target consists of:
 SET(TARGET_SRC
   ../../operators/operation-base-util/laplace_operator.cpp

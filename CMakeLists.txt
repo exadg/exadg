@@ -31,6 +31,8 @@ ENDIF()
 
 DEAL_II_INITIALIZE_CACHED_VARIABLES()
 
+include_directories(applications/macros)
+
 # Set the source files to be compiled
 SET( TARGET_SRC
      #source/fe_navierstokes_evaluator.cc

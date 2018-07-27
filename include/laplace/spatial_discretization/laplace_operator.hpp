@@ -1,6 +1,6 @@
 #include "laplace_operator.h"
 
-#include "../../../applications/macros/constants.h"
+#include <navier-constants.h>
 
 namespace Laplace
 {

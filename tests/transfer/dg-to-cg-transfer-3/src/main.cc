@@ -268,6 +268,14 @@ public:
   }
 };
 
+template <int dim, int fe_degree_1>
+class Run{
+public:
+    static void run(ConvergenceTable& convergence_table){
+        Runner<dim, fe_degree_1> run_cg(convergence_table); run_cg.run();
+    }    
+};
+
 int main(int argc, char **argv) {
   Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
   ConditionalOStream pcout (std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0);
@@ -275,21 +283,16 @@ int main(int argc, char **argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   ConvergenceTable convergence_table;
   
-  {
-    pcout << "2D 1st-order:" << std::endl;
-    Runner<2, 1> run_cg(convergence_table); run_cg.run();
-    pcout << std::endl;
-  }
-  {
-    pcout << "2D 2nd-order:" << std::endl;
-    Runner<2, 2> run_cg(convergence_table); run_cg.run();
-    pcout << std::endl;
-  }
-  {
-    pcout << "2D 3rd-order:" << std::endl;
-    Runner<2, 3> run_cg(convergence_table); run_cg.run();
-    pcout << std::endl;
-  }
+  Run<2, 1>::run(convergence_table);
+  Run<2, 2>::run(convergence_table);
+  Run<2, 3>::run(convergence_table);
+  Run<2, 4>::run(convergence_table);
+  Run<2, 5>::run(convergence_table);
+  Run<2, 6>::run(convergence_table);
+  Run<2, 7>::run(convergence_table);
+  Run<2, 8>::run(convergence_table);
+  Run<2, 9>::run(convergence_table);
+  
     if (!rank)
       convergence_table.write_text(std::cout);
     pcout << std::endl;

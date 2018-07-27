@@ -1,13 +1,19 @@
 #include "dg_to_cg_transfer.h"
 
-#include "../../../applications/macros/constants.h"
+#include <navier-constants.h>
 
-#ifdef DIM_2
+#if DIM_2 && MG_FLOAT
 template class CGToDGTransfer<2, float>;
+#endif
+
+#if DIM_2 && MG_DOUBLE
 template class CGToDGTransfer<2, double>;
 #endif
 
-#ifdef DIM_3
+#if DIM_3 && MG_FLOAT
 template class CGToDGTransfer<3, float>;
+#endif
+
+#if DIM_3 && MG_DOUBLE
 template class CGToDGTransfer<3, double>;
 #endif

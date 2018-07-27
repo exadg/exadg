@@ -1,6 +1,6 @@
 #include "multigrid_preconditioner_adapter_base.h"
 
-#include "../../../applications/macros/constants.h"
+#include <navier-constants.h>
 
 template <int dim, typename value_type, typename Operator>
 MyMultigridPreconditionerBase<dim, value_type, Operator>::
