@@ -70,14 +70,12 @@ void CGToDGTransfer<dim, Number>::transfer(VNumber &dst, const VNumber &src,
         // bring dof_values into the right order
         // (needed: numbering of shape functions of fe_q and fe_dgq different)
         for (unsigned int j = 0; j < temp_src.size(); j++)
-          temp_dst[j] = temp_src[num_src[j]];
-        for (unsigned int j = 0; j < temp_src.size(); j++)
-          temp_src[num_dst[j]] = temp_dst[j];
+          temp_dst[num_dst[j]] = temp_src[num_src[j]];
 
         // scatter values (TODO: any alternatives?)
         cell2->get_mg_dof_indices(dof_indices2);
         for (unsigned int i = 0; i < dof_indices2.size(); i++)
-          dst[dof_indices2[i]] += temp_src[i];
+          dst[dof_indices2[i]] += temp_dst[i];
       }
   } else {
     // get iterator
@@ -94,12 +92,10 @@ void CGToDGTransfer<dim, Number>::transfer(VNumber &dst, const VNumber &src,
         // bring dof_values into the right order
         // (needed: numbering of shape functions of fe_q and fe_dgq different)
         for (unsigned int j = 0; j < temp_src.size(); j++)
-          temp_dst[j] = temp_src[num_src[j]];
-        for (unsigned int j = 0; j < temp_src.size(); j++)
-          temp_src[num_dst[j]] = temp_dst[j];
+          temp_dst[num_dst[j]] = temp_src[num_src[j]];
         
         // scatter values
-        cell2->distribute_local_to_global(temp_src, dst);
+        cell2->distribute_local_to_global(temp_dst, dst);
       }
   }
 }
