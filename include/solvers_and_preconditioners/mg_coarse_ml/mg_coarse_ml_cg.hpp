@@ -2,12 +2,12 @@
 
 #include <navier-constants.h>
 
-#ifdef DIM_2
+#if DIM_2
 template class MGCoarseMLCG<2, float>;
 template class MGCoarseMLCG<2, double>;
 #endif
 
-#ifdef DIM_3
+#if DIM_3
 template class MGCoarseMLCG<3, float>;
 template class MGCoarseMLCG<3, double>;
 #endif
