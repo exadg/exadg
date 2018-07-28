@@ -24,7 +24,9 @@ struct HelmholtzOperatorData
   HelmholtzOperatorData ()
     :
     unsteady_problem(true),
-    dof_index(0)
+    dof_index(0),
+    bc(new BoundaryDescriptorP<dim>()),
+    scaling_factor_time_derivative_term(-1.0)
   {}
 
   bool unsteady_problem;
@@ -33,6 +35,9 @@ struct HelmholtzOperatorData
   
   // TODO
   std::shared_ptr<BoundaryDescriptorP<dim>> bc;
+  double scaling_factor_time_derivative_term;
+  MassMatrixOperatorData mass_matrix_operator_data;
+  ViscousOperatorData<dim> viscous_operator_data;
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number = double>
@@ -56,7 +61,6 @@ public:
     data(nullptr),
     mass_matrix_operator(nullptr),
     viscous_operator(nullptr),
-    scaling_factor_time_derivative_term(-1.0),
     wall_time(0.0),
     use_optimized_implementation(false) //TODO: use optimized implementation for performance measurements only
   {}
@@ -87,16 +91,17 @@ public:
    *  the setup, i.e., the information that is needed to call the
    *  member function initialize(...).
    */
-  template<typename UnderlyingOperator>
-  void initialize_mg_matrix (unsigned int const                              level,
-                             DoFHandler<dim> const                           &dof_handler,
-                             Mapping<dim> const                              &mapping,
-                             UnderlyingOperator const                        &underlying_operator,
-                             const std::vector<GridTools::PeriodicFacePair<
-                               typename Triangulation<dim>::cell_iterator> > &/*periodic_face_pairs_level0*/)
+  void reinit (const DoFHandler<dim>                            &dof_handler,
+               const Mapping<dim>                                &mapping,
+               void * operator_data_in,
+               const MGConstrainedDoFs &/*mg_constrained_dofs*/,
+               const unsigned int level)
   {
+    auto &add = *static_cast<HelmholtzOperatorData<dim> *>(operator_data_in);
+    // create copy of data and ...
+    auto operator_data = add;
+      
     // setup own matrix free object
-
     const QGauss<1> quad(dof_handler.get_fe().degree+1);
     typename MatrixFree<dim,Number>::AdditionalData addit_data;
     addit_data.tasks_parallel_scheme = MatrixFree<dim,Number>::AdditionalData::none;
@@ -110,24 +115,23 @@ public:
     own_matrix_free_storage.reinit(mapping, dof_handler, constraints, quad, addit_data);
 
     // setup own mass matrix operator
-    MassMatrixOperatorData mass_matrix_operator_data = underlying_operator.get_mass_matrix_operator_data();
+    MassMatrixOperatorData& mass_matrix_operator_data = operator_data.mass_matrix_operator_data;
     mass_matrix_operator_data.dof_index = 0;
     own_mass_matrix_operator_storage.initialize(own_matrix_free_storage,mass_matrix_operator_data);
 
     // setup own viscous operator
-    ViscousOperatorData<dim> viscous_operator_data = underlying_operator.get_viscous_operator_data();
+    ViscousOperatorData<dim>& viscous_operator_data = operator_data.viscous_operator_data;
     // set dof index to zero since matrix free object only contains one dof-handler
     viscous_operator_data.dof_index = 0;
     own_viscous_operator_storage.initialize(mapping,own_matrix_free_storage, viscous_operator_data);
 
     // setup Helmholtz operator
-    HelmholtzOperatorData<dim> operator_data = underlying_operator.get_helmholtz_operator_data();
     initialize(own_matrix_free_storage, operator_data, own_mass_matrix_operator_storage, own_viscous_operator_storage);
 
     // Initialize other variables:
 
     // mass matrix term: set scaling factor time derivative term
-    set_scaling_factor_time_derivative_term(underlying_operator.get_scaling_factor_time_derivative_term());
+    // set_scaling_factor_time_derivative_term(underlying_operator.get_scaling_factor_time_derivative_term());
 
     // viscous term:
 
@@ -138,12 +142,12 @@ public:
    */
   void set_scaling_factor_time_derivative_term(double const &factor)
   {
-    scaling_factor_time_derivative_term = factor;
+    this->operator_data.scaling_factor_time_derivative_term = factor;
   }
 
   double get_scaling_factor_time_derivative_term() const
   {
-    return scaling_factor_time_derivative_term;
+    return this->operator_data.scaling_factor_time_derivative_term;
   }
 
   /*
@@ -217,17 +221,17 @@ public:
 
     if(use_optimized_implementation == true) // optimized version (use only for performance measurements)
     {
-      viscous_operator->apply_helmholtz_operator(dst,scaling_factor_time_derivative_term,src);
+      viscous_operator->apply_helmholtz_operator(dst,this->get_scaling_factor_time_derivative_term(),src);
     }
     else // standard implementation with modular implementation (operator by operator)
     {
       // helmholtz operator = mass_matrix_operator + viscous_operator
       if(operator_data.unsteady_problem == true)
       {
-        AssertThrow(scaling_factor_time_derivative_term > 0.0,
+        AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
           ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
 
-        mass_matrix_operator->apply_scale(dst,scaling_factor_time_derivative_term,src);
+        mass_matrix_operator->apply_scale(dst,this->get_scaling_factor_time_derivative_term(),src);
       }
       else
       {
@@ -255,10 +259,10 @@ public:
     // helmholtz operator = mass_matrix_operator + viscous_operator
     if(operator_data.unsteady_problem == true)
     {
-      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+      AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
         ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
 
-      mass_matrix_operator->apply_scale_add(dst,scaling_factor_time_derivative_term,src);
+      mass_matrix_operator->apply_scale_add(dst,this->get_scaling_factor_time_derivative_term(),src);
     }
 
     viscous_operator->apply_add(dst,src);
@@ -335,11 +339,11 @@ private:
   {
     if(operator_data.unsteady_problem == true)
     {
-      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+      AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
         ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
 
       mass_matrix_operator->calculate_diagonal(diagonal);
-      diagonal *= scaling_factor_time_derivative_term;
+      diagonal *= this->get_scaling_factor_time_derivative_term();
     }
     else
     {
@@ -361,7 +365,7 @@ private:
     // calculate block Jacobi matrices
     if(operator_data.unsteady_problem == true)
     {
-      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+      AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
         ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
 
       mass_matrix_operator->add_block_jacobi_matrices(matrices);
@@ -369,7 +373,7 @@ private:
       for(typename std::vector<LAPACKFullMatrix<Number> >::iterator
           it = matrices.begin(); it != matrices.end(); ++it)
       {
-        (*it) *= scaling_factor_time_derivative_term;
+        (*it) *= this->get_scaling_factor_time_derivative_term();
       }
     }
 
@@ -452,11 +456,11 @@ private:
    {
      if(operator_data.unsteady_problem == true)
      {
-       AssertThrow(scaling_factor_time_derivative_term > 0.0,
+       AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
            ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
 
        // mass matrix operator has already "block Jacobi form" in DG
-       mass_matrix_operator->apply_scale(dst,scaling_factor_time_derivative_term,src);
+       mass_matrix_operator->apply_scale(dst,this->get_scaling_factor_time_derivative_term(),src);
      }
      else
      {
@@ -513,6 +517,43 @@ private:
        fe_eval.set_dof_values (dst);
      }
    }
+   
+  virtual MatrixOperatorBaseNew<dim, Number>* get_new(unsigned int deg) const {
+    switch (deg) {
+#if DEGREE_1
+    case 1: return new HelmholtzOperator<dim, 1, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_2
+    case 2: return new HelmholtzOperator<dim, 2, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_3
+    case 3: return new HelmholtzOperator<dim, 3, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_4
+    case 4: return new HelmholtzOperator<dim, 4, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_5
+    case 5: return new HelmholtzOperator<dim, 5, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_6
+    case 6: return new HelmholtzOperator<dim, 6, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_7
+    case 7: return new HelmholtzOperator<dim, 7, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_8
+    case 8: return new HelmholtzOperator<dim, 8, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_9
+    case 9: return new HelmholtzOperator<dim, 9, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+    default:
+      AssertThrow(false,
+                  ExcMessage("HelmholtzOperator not implemented for this degree!"));
+      return nullptr; 
+          // dummy return (statement not reached)
+    }
+  }
 
   mutable std::vector<LAPACKFullMatrix<Number> > matrices;
   mutable bool block_jacobi_matrices_have_been_initialized;
@@ -521,7 +562,6 @@ private:
   MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const *mass_matrix_operator;
   ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const *viscous_operator;
   HelmholtzOperatorData<dim> operator_data;
-  double scaling_factor_time_derivative_term;
 
   /*
    * The following variables are necessary when applying the multigrid

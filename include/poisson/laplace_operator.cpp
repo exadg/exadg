@@ -1475,6 +1475,7 @@ template class LaplaceOperator<2, 4, double>;
 template class LaplaceOperator<2, 5, double>;
 template class LaplaceOperator<2, 6, double>;
 template class LaplaceOperator<2, 7, double>;
+template class LaplaceOperator<2, 8, double>;
 
 template class LaplaceOperator<2, 1, float>;
 template class LaplaceOperator<2, 2, float>;
@@ -1483,3 +1484,4 @@ template class LaplaceOperator<2, 4, float>;
 template class LaplaceOperator<2, 5, float>;
 template class LaplaceOperator<2, 6, float>;
 template class LaplaceOperator<2, 7, float>;
+template class LaplaceOperator<2, 8, float>;

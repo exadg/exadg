@@ -30,6 +30,9 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
   const bool both = this->mg_data.two_levels;
   unsigned int global = tria->n_global_levels();
   unsigned int degree = dof_handler.get_fe().degree;
+  
+  // determine number of components
+  const unsigned int n_components =  dof_handler.n_dofs() / tria->n_active_cells() / std::pow(1+degree,dim);
 
   std::vector<unsigned int> seq_geo, seq_deg;
 
@@ -63,6 +66,7 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
 
   int min_level = 0;
   int max_level = seq.size() - 1;
+  this->n_global_levels = seq.size();
 
   this->mg_constrained_dofs.resize(min_level, max_level);
   this->mg_matrices.resize(min_level, max_level);
@@ -75,7 +79,7 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
     // setup dof_handler: create dof_handler...
     auto dof_handler = new DoFHandler<dim>(*tria);
     // ... create FE and distribute on all mg-levels
-    dof_handler->distribute_dofs(FE_DGQ<dim>(deg));
+    dof_handler->distribute_dofs(FESystem<dim>(FE_DGQ<dim>(deg),n_components));
     dof_handler->distribute_mg_dofs();
     // setup constrained dofs:
     auto constrained_dofs = new MGConstrainedDoFs();
@@ -102,28 +106,31 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
     mg_matrices[i].reset(matrix);
 
     if (i == min_level) {
-      // create coarse matrix with fe_q
-      auto dof_handler_q = new DoFHandler<dim>(*tria);
-      dof_handler_q->distribute_dofs(FE_Q<dim>(seq[i].second));
-      dof_handler_q->distribute_mg_dofs();
-      this->cg_dofhandler.reset(dof_handler_q);
-
-      auto constrained_dofs_q = new MGConstrainedDoFs();
-      constrained_dofs_q->clear();
-      this->initialize_mg_constrained_dofs(*dof_handler_q, *constrained_dofs_q, dirichlet_bc);
-      this->cg_constrained_dofs.reset(constrained_dofs_q);
-
-      // TODO: remove static cast
-      auto matrix_q =
-          static_cast<Operator *>(underlying_operator->get_new(seq[i].second));
-      matrix_q->reinit(*dof_handler_q, mapping, operator_data_in, 
-                       *this->cg_constrained_dofs, seq[i].first);
-      this->cg_matrices.reset(matrix_q);
+      if(mg_data_in.coarse_solver == MultigridCoarseGridSolver::AMG_ML){
+        // create coarse matrix with fe_q
+        auto dof_handler_q = new DoFHandler<dim>(*tria);
+        dof_handler_q->distribute_dofs(FE_Q<dim>(seq[i].second));
+        dof_handler_q->distribute_mg_dofs();
+        this->cg_dofhandler.reset(dof_handler_q);
+  
+        auto constrained_dofs_q = new MGConstrainedDoFs();
+        constrained_dofs_q->clear();
+        this->initialize_mg_constrained_dofs(*dof_handler_q, *constrained_dofs_q, dirichlet_bc);
+        this->cg_constrained_dofs.reset(constrained_dofs_q);
+  
+        // TODO: remove static cast
+        auto matrix_q =
+            static_cast<Operator *>(underlying_operator->get_new(seq[i].second));
+        matrix_q->reinit(*dof_handler_q, mapping, operator_data_in, 
+                         *this->cg_constrained_dofs, seq[i].first);
+        this->cg_matrices.reset(matrix_q);
+      }
 
       // create coarse solver with coarse matrix fe_q and fe_dgq
-      this->initialize_coarse_solver(*matrix, *matrix_q, seq[i].first);
-    } else
+      this->initialize_coarse_solver(*matrix, *this->cg_matrices, seq[i].first);
+    } else{
       this->initialize_smoother(*matrix, i);
+    }
   }
 
   // setup transfer for h-gmg
@@ -258,6 +265,114 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::
         const parallel::distributed::Vector<value_type_operator> &src) const {
   this->mg_smoother[this->mg_smoother.max_level()]->vmult(dst, src);
 }
+
+
+template <int dim, typename value_type, typename Operator>
+void MyMultigridPreconditionerBase<dim, value_type, Operator>::update_smoother(unsigned int level){
+
+    AssertThrow(level > 0, ExcMessage("Multigrid level is invalid when initializing multigrid smoother!"));
+
+    switch (mg_data.smoother)
+    {
+      case MultigridSmoother::Chebyshev:
+      {
+        initialize_chebyshev_smoother(*mg_matrices[level], level);
+        break;
+      }
+      case MultigridSmoother::ChebyshevNonsymmetricOperator:
+      {
+        initialize_chebyshev_smoother_nonsymmetric_operator(*mg_matrices[level], level);
+        break;
+      }
+      case MultigridSmoother::GMRES:
+      {
+        typedef GMRESSmoother<Operator,VECTOR_TYPE> GMRES_SMOOTHER;
+        std::shared_ptr<GMRES_SMOOTHER> smoother = std::dynamic_pointer_cast<GMRES_SMOOTHER>(mg_smoother[level]);
+        smoother->update();
+        break;
+      }
+      case MultigridSmoother::CG:
+      {
+        typedef CGSmoother<Operator,VECTOR_TYPE> CG_SMOOTHER;
+        std::shared_ptr<CG_SMOOTHER> smoother = std::dynamic_pointer_cast<CG_SMOOTHER>(mg_smoother[level]);
+        smoother->update();
+        break;
+      }
+      case MultigridSmoother::Jacobi:
+      {
+        typedef JacobiSmoother<Operator,VECTOR_TYPE> JACOBI_SMOOTHER;
+        std::shared_ptr<JACOBI_SMOOTHER> smoother = std::dynamic_pointer_cast<JACOBI_SMOOTHER>(mg_smoother[level]);
+        smoother->update();
+        break;
+      }
+      default:
+      {
+        AssertThrow(false, ExcMessage("Specified MultigridSmoother not implemented!"));
+      }
+    }
+  }
+
+template <int dim, typename value_type, typename Operator>
+void MyMultigridPreconditionerBase<dim, value_type, Operator>::update_coarse_solver(){
+      
+    switch (mg_data.coarse_solver)
+    {
+      case MultigridCoarseGridSolver::Chebyshev:
+      {
+        initialize_chebyshev_smoother_coarse_grid(*mg_matrices[0]);
+        break;
+      }
+      case MultigridCoarseGridSolver::ChebyshevNonsymmetricOperator:
+      {
+        initialize_chebyshev_smoother_nonsymmetric_operator_coarse_grid(*mg_matrices[0]);
+        break;
+      }
+      case MultigridCoarseGridSolver::PCG_NoPreconditioner:
+      {
+        // do nothing
+        break;
+      }
+      case MultigridCoarseGridSolver::PCG_PointJacobi:
+      {
+        std::shared_ptr<MGCoarsePCG<Operator> >
+          coarse_solver = std::dynamic_pointer_cast<MGCoarsePCG<Operator> >(mg_coarse);
+        coarse_solver->update_preconditioner(*this->mg_matrices[0]);
+
+        break;
+      }
+      case MultigridCoarseGridSolver::PCG_BlockJacobi:
+      {
+        std::shared_ptr<MGCoarsePCG<Operator> >
+          coarse_solver = std::dynamic_pointer_cast<MGCoarsePCG<Operator> >(mg_coarse);
+        coarse_solver->update_preconditioner(*this->mg_matrices[0]);
+
+        break;
+      }
+      case MultigridCoarseGridSolver::GMRES_NoPreconditioner:
+      {
+        // do nothing
+        break;
+      }
+      case MultigridCoarseGridSolver::GMRES_PointJacobi:
+      {
+        std::shared_ptr<MGCoarseGMRES<Operator> >
+          coarse_solver = std::dynamic_pointer_cast<MGCoarseGMRES<Operator> >(mg_coarse);
+        coarse_solver->update_preconditioner(*this->mg_matrices[0]);
+        break;
+      }
+      case MultigridCoarseGridSolver::GMRES_BlockJacobi:
+      {
+        std::shared_ptr<MGCoarseGMRES<Operator> >
+          coarse_solver = std::dynamic_pointer_cast<MGCoarseGMRES<Operator> >(mg_coarse);
+        coarse_solver->update_preconditioner(*this->mg_matrices[0]);
+        break;
+      }
+      default:
+      {
+        AssertThrow(false, ExcMessage("Unknown coarse-grid solver given"));
+      }
+    }
+  }
 
 template <int dim, typename value_type, typename Operator>
 void MyMultigridPreconditionerBase<

@@ -164,6 +164,10 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
 
   vel_conv_diff_operator_data.dof_index = this->get_dof_index_velocity();
 
+  vel_conv_diff_operator_data.mass_matrix_operator_data = this->mass_matrix_operator_data;
+  vel_conv_diff_operator_data.viscous_operator_data = this->viscous_operator_data;
+  vel_conv_diff_operator_data.convective_operator_data = this->convective_operator_data;
+  
   velocity_conv_diff_operator.initialize(
       this->get_data(),
       vel_conv_diff_operator_data,

@@ -172,13 +172,9 @@ public:
       parallel::distributed::Vector<value_type_operator> &dst,
       const parallel::distributed::Vector<value_type_operator> &src) const;
   
-  virtual void update_smoother(unsigned int /*level*/){
-      
-  }
+  virtual void update_smoother(unsigned int level);
   
-  virtual void update_coarse_solver(){
-      
-  }
+  virtual void update_coarse_solver();
 
 protected:
   void initialize_smoother(Operator &matrix, unsigned int level);

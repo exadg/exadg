@@ -92,6 +92,7 @@ public:
    */
   virtual void update(MatrixOperatorBase const * matrix_operator)
   {
+      std::cout << "A" << std::endl;
     UnderlyingOperator const *underlying_operator =
         dynamic_cast<UnderlyingOperator const *>(matrix_operator);
 
@@ -132,6 +133,7 @@ private:
                           double const                                                       &evaluation_time,
                           double const                                                       &scaling_factor_time_derivative_term)
   {
+      std::cout << "B" << std::endl;
     set_vector_linearization(vector_linearization);
     set_evaluation_time(evaluation_time);
     set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
@@ -143,6 +145,7 @@ private:
    */
   void set_vector_linearization(parallel::distributed::Vector<typename Operator::value_type> const &vector_linearization)
   {
+      std::cout << "C" << std::endl;
     for (int level = this->n_global_levels-1; level>=0; --level)
     {
       if(level == (int)this->n_global_levels-1) // finest level
@@ -219,6 +222,7 @@ private:
    */
   void set_evaluation_time(double const &evaluation_time)
   {
+      std::cout << "D" << std::endl;
     for (int level = this->n_global_levels-1; level>=0; --level)
     {
       dynamic_cast<Operator *>(&*this->mg_matrices[level])->set_evaluation_time(evaluation_time);
@@ -233,6 +237,7 @@ private:
    */
   void set_scaling_factor_time_derivative_term(double const &scaling_factor_time_derivative_term)
   {
+      std::cout << "E" << std::endl;
     for (int level = this->n_global_levels-1; level>=0; --level)
     {
       dynamic_cast<Operator *>(&*this->mg_matrices[level])->set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
@@ -247,6 +252,7 @@ private:
    */
   void update_smoothers()
   {
+      std::cout << "F" << std::endl;
     // Start with level = 1!
     for (unsigned int level = 1; level<this->n_global_levels; ++level)
     {

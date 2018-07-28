@@ -17,6 +17,8 @@
 #include "../../solvers_and_preconditioners/invert_diagonal.h"
 #include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
 
+#include <navier-constants.h>
+
 namespace IncNS
 {
 
@@ -46,7 +48,9 @@ struct VelocityConvDiffOperatorData
     :
     unsteady_problem(true),
     convective_problem(true),
-    dof_index(0)
+    dof_index(0),
+    bc(new BoundaryDescriptorP<dim>()),
+    scaling_factor_time_derivative_term(-1.0)
   {}
 
   bool unsteady_problem;
@@ -55,6 +59,10 @@ struct VelocityConvDiffOperatorData
   
   // TODO
   std::shared_ptr<BoundaryDescriptorP<dim>> bc;
+  double scaling_factor_time_derivative_term;
+  MassMatrixOperatorData mass_matrix_operator_data;
+  ViscousOperatorData<dim> viscous_operator_data;
+  ConvectiveOperatorData<dim> convective_operator_data;
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule,typename Number = double>
@@ -79,7 +87,6 @@ public:
     mass_matrix_operator(nullptr),
     viscous_operator(nullptr),
     convective_operator(nullptr),
-    scaling_factor_time_derivative_term(-1.0),
     evaluation_time(0.0)
   {}
 
@@ -109,14 +116,17 @@ public:
    *  the setup, i.e., the information that is needed to call the
    *  member function initialize(...).
    */
-  template<typename UnderlyingOperator>
-  void initialize_mg_matrix (unsigned int const                               level,
-                             DoFHandler<dim> const                            &dof_handler,
-                             Mapping<dim> const                               &mapping,
-                             UnderlyingOperator const                         &underlying_operator,
-                             std::vector<GridTools::PeriodicFacePair<typename
-                               Triangulation<dim>::cell_iterator> > const     &/*periodic_face_pairs_level0*/)
+  void reinit (const DoFHandler<dim>                            &dof_handler,
+               const Mapping<dim>                                &mapping,
+               void * operator_data_in,
+               const MGConstrainedDoFs &/*mg_constrained_dofs*/,
+               const unsigned int level)
   {
+      
+    auto &add = *static_cast<VelocityConvDiffOperatorData<dim> *>(operator_data_in);
+    // create copy of data and ...
+    auto operator_data = add;
+      
     // setup own matrix free object
 
     // dof_handler
@@ -163,27 +173,26 @@ public:
 
 
     // setup own mass matrix operator
-    MassMatrixOperatorData mass_matrix_operator_data = underlying_operator.get_mass_matrix_operator_data();
+    MassMatrixOperatorData& mass_matrix_operator_data = operator_data.mass_matrix_operator_data;
     // set dof index to zero since matrix free object only contains one dof-handler
     mass_matrix_operator_data.dof_index = 0;
     own_mass_matrix_operator_storage.initialize(own_matrix_free_storage, mass_matrix_operator_data);
 
 
     // setup own viscous operator
-    ViscousOperatorData<dim> viscous_operator_data = underlying_operator.get_viscous_operator_data();
+    ViscousOperatorData<dim>& viscous_operator_data = operator_data.viscous_operator_data;
     // set dof index to zero since matrix free object only contains one dof-handler
     viscous_operator_data.dof_index = 0;
     own_viscous_operator_storage.initialize(mapping,own_matrix_free_storage, viscous_operator_data);
 
 
     // setup own convective operator
-    ConvectiveOperatorData<dim> convective_operator_data = underlying_operator.get_convective_operator_data();
+    ConvectiveOperatorData<dim>& convective_operator_data = operator_data.convective_operator_data;
     // set dof index to zero since matrix free object only contains one dof-handler
     convective_operator_data.dof_index = 0;
     own_convective_operator_storage.initialize(own_matrix_free_storage, convective_operator_data);
 
     // setup velocity convection diffusion operator
-    VelocityConvDiffOperatorData<dim> operator_data = underlying_operator.get_operator_data();
     initialize(own_matrix_free_storage,
                operator_data,
                own_mass_matrix_operator_storage,
@@ -193,7 +202,7 @@ public:
     // Initialize other variables:
 
     // mass matrix term: set scaling factor time derivative term
-    set_scaling_factor_time_derivative_term(underlying_operator.get_scaling_factor_time_derivative_term());
+    // set_scaling_factor_time_derivative_term(operator_data.scaling_factor_time_derivative_term);
 
     // convective term: evaluation_time and velocity_linearization
     // Note that velocity_linearization has already
@@ -215,12 +224,12 @@ public:
    */
   void set_scaling_factor_time_derivative_term(double const &factor)
   {
-    scaling_factor_time_derivative_term = factor;
+    this->operator_data.scaling_factor_time_derivative_term = factor;
   }
 
   double get_scaling_factor_time_derivative_term() const
   {
-    return scaling_factor_time_derivative_term;
+    return this->operator_data.scaling_factor_time_derivative_term;
   }
 
   /*
@@ -338,11 +347,11 @@ public:
   {
     if(operator_data.unsteady_problem == true)
     {
-      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+      AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
         ExcMessage("Scaling factor of time derivative term has not been set for velocity convection-diffusion operator!"));
 
       mass_matrix_operator->apply(dst,src);
-      dst *= scaling_factor_time_derivative_term;
+      dst *= this->get_scaling_factor_time_derivative_term();
     }
     else
     {
@@ -355,6 +364,7 @@ public:
     {
       convective_operator->apply_linearized_add(dst,src,&velocity_linearization,evaluation_time);
     }
+    //printf("vmult %20.15f %20.15f\n", dst.l2_norm(), src.l2_norm());
   }
 
   /*
@@ -366,11 +376,11 @@ public:
   {
     if(operator_data.unsteady_problem == true)
     {
-      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+      AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
         ExcMessage("Scaling factor of time derivative term has not been set for velocity convection-diffusion operator!"));
 
       mass_matrix_operator->apply(temp_vector,src);
-      temp_vector *= scaling_factor_time_derivative_term;
+      temp_vector *= this->get_scaling_factor_time_derivative_term();
       dst += temp_vector;
     }
 
@@ -380,6 +390,7 @@ public:
     {
       convective_operator->apply_linearized_add(dst,src,&velocity_linearization,evaluation_time);
     }
+    //printf("vmult_add %20.15f %20.15f\n", dst.l2_norm(), src.l2_norm());
   }
 
 
@@ -391,11 +402,11 @@ public:
   {
     if(operator_data.unsteady_problem == true)
     {
-      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+      AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
         ExcMessage("Scaling factor of time derivative term has not been set for velocity convection-diffusion operator!"));
 
       mass_matrix_operator->apply(dst,src);
-      dst *= scaling_factor_time_derivative_term;
+      dst *= this->get_scaling_factor_time_derivative_term();
     }
     else
     {
@@ -498,11 +509,11 @@ private:
 
     if(operator_data.unsteady_problem == true)
     {
-      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+      AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
         ExcMessage("Scaling factor of time derivative term has not been set for velocity convection-diffusion operator!"));
 
       mass_matrix_operator->calculate_diagonal(diagonal);
-      diagonal *= scaling_factor_time_derivative_term;
+      diagonal *= this->get_scaling_factor_time_derivative_term();
     }
     else
     {
@@ -515,6 +526,7 @@ private:
     {
       convective_operator->add_diagonal(diagonal,&velocity_linearization,evaluation_time);
     }
+      printf("diag: %20.15f\n",diagonal.l2_norm());
   }
 
   /*
@@ -529,7 +541,7 @@ private:
     // calculate block Jacobi matrices
     if(operator_data.unsteady_problem == true)
     {
-      AssertThrow(scaling_factor_time_derivative_term > 0.0,
+      AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
         ExcMessage("Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
 
       mass_matrix_operator->add_block_jacobi_matrices(matrices);
@@ -537,7 +549,7 @@ private:
       for(typename std::vector<LAPACKFullMatrix<Number> >::iterator
           it = matrices.begin(); it != matrices.end(); ++it)
       {
-        (*it) *= scaling_factor_time_derivative_term;
+        (*it) *= this->get_scaling_factor_time_derivative_term();
       }
     }
 
@@ -661,6 +673,43 @@ private:
     }
   }
 
+  virtual MatrixOperatorBaseNew<dim, Number>* get_new(unsigned int deg) const {
+    switch (deg) {
+#if DEGREE_1
+    case 1: return new VelocityConvDiffOperator<dim, 1, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_2
+    case 2: return new VelocityConvDiffOperator<dim, 2, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_3
+    case 3: return new VelocityConvDiffOperator<dim, 3, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_4
+    case 4: return new VelocityConvDiffOperator<dim, 4, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_5
+    case 5: return new VelocityConvDiffOperator<dim, 5, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_6
+    case 6: return new VelocityConvDiffOperator<dim, 6, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_7
+    case 7: return new VelocityConvDiffOperator<dim, 7, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_8
+    case 8: return new VelocityConvDiffOperator<dim, 8, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_9
+    case 9: return new VelocityConvDiffOperator<dim, 9, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+    default:
+      AssertThrow(false,
+                  ExcMessage("ConvectionDiffusionOperator not implemented for this degree!"));
+      return nullptr; 
+          // dummy return (statement not reached)
+    }
+  }
+  
   mutable std::vector<LAPACKFullMatrix<Number> > matrices;
   mutable bool block_jacobi_matrices_have_been_initialized;
 
@@ -670,7 +719,6 @@ private:
   ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const * convective_operator;
   VelocityConvDiffOperatorData<dim> operator_data;
   parallel::distributed::Vector<Number> mutable temp_vector;
-  double scaling_factor_time_derivative_term;
   parallel::distributed::Vector<Number> mutable velocity_linearization;
   double evaluation_time;
 
