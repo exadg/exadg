@@ -11,7 +11,6 @@
 #include "../../incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/projection_operators_and_solvers.h"
 #include "../../poisson/laplace_operator.h"
-#include "../../poisson/multigrid_preconditioner_laplace.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
 #include "../../laplace/spatial_discretization/laplace_operator.h"
 

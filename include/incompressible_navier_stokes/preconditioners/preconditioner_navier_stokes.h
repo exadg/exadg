@@ -17,7 +17,6 @@
 #include "../../incompressible_navier_stokes/spatial_discretization/helmholtz_operator.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/velocity_convection_diffusion_operator.h"
 #include "../../poisson/laplace_operator.h"
-#include "../../poisson/multigrid_preconditioner_laplace.h"
 #include "../../solvers_and_preconditioners/check_multigrid.h"
 #include "../../solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
