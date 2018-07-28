@@ -22,6 +22,8 @@
 #include "../../solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
 
+#include "../../laplace/spatial_discretization/laplace_operator.h"
+
 
 // forward declaration
 template<int dim> struct HelmholtzOperatorData;
@@ -583,20 +585,26 @@ private:
     else if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Classical)
     {
       // Geometric multigrid V-cycle performed on negative Laplace operator
-      LaplaceOperatorData<dim> laplace_operator_data;
-      laplace_operator_data.laplace_dof_index = underlying_operator->get_dof_index_pressure();
-      laplace_operator_data.laplace_quad_index = underlying_operator->get_quad_index_pressure();
-      laplace_operator_data.penalty_factor = 1.0;
+      Laplace::LaplaceOperatorData<dim> laplace_operator_data;
+      laplace_operator_data.dof_index = underlying_operator->get_dof_index_pressure();
+      laplace_operator_data.quad_index = underlying_operator->get_quad_index_pressure();
+      laplace_operator_data.IP_factor = 1.0;
       // TODO this is not needed if Laplace operator detects automatically whether the system of equations
       // is singular or not
       laplace_operator_data.needs_mean_value_constraint = underlying_operator->param.pure_dirichlet_bc;
 
-      laplace_operator_data.bc = underlying_operator->boundary_descriptor_laplace;
+      // TODO: replace LaplaceBoundaryDescriptor by Laplace::BoundaryDescriptor<dim>
+      auto boundary_descriptor = std::shared_ptr<Laplace::BoundaryDescriptor<dim>>(new Laplace::BoundaryDescriptor<dim>());
+      boundary_descriptor->dirichlet_bc = underlying_operator->boundary_descriptor_laplace->dirichlet;
+      boundary_descriptor->neumann_bc   = underlying_operator->boundary_descriptor_laplace->neumann;
+      laplace_operator_data.bc = boundary_descriptor;
       laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
 
       MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
 
-      typedef MyMultigridPreconditionerLaplace<dim,value_type,LaplaceOperator<dim,fe_degree_p, Number>,LaplaceOperatorData<dim> > MULTIGRID;
+      typedef MyMultigridPreconditionerDG<dim,value_type, 
+            Laplace::LaplaceOperator<dim, fe_degree, Number>,
+            Laplace::LaplaceOperator<dim, fe_degree, value_type>> MULTIGRID;
       multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
 
       std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
@@ -604,8 +612,8 @@ private:
       mg_preconditioner->initialize(mg_data,
                                     underlying_operator->get_dof_handler_p(),
                                     underlying_operator->get_mapping(),
-                                    laplace_operator_data,
-                                    laplace_operator_data.bc->dirichlet);
+              boundary_descriptor->dirichlet_bc,
+                                    (void *)&laplace_operator_data);
     }
     else
     {

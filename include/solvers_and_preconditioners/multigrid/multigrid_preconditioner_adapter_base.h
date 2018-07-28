@@ -220,7 +220,5 @@ private:
       Operator &matrix);
 };
 
-#include "multigrid_preconditioner_adapter_base.cpp"
-
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_ADAPTER_BASE_H_ \
           */

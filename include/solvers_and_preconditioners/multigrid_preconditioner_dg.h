@@ -23,8 +23,6 @@ public:
   
   virtual ~MyMultigridPreconditionerDG(){};
 
-  virtual void update(MatrixOperatorBase const * /*matrix_operator*/){}
-
   void initialize(const MultigridData          &mg_data_in,
                   const DoFHandler<dim>        &dof_handler,
                   const Mapping<dim>           &mapping,
@@ -37,6 +35,15 @@ public:
       
     BASE::initialize(mg_data_in, dof_handler, mapping, dirichlet_bc, 
             (void *)&underlying_operator.get_operator_data());
+  }
+
+  void initialize(const MultigridData &mg_data_in,
+                  const DoFHandler<dim> &dof_handler,
+                  const Mapping<dim> &mapping,
+                  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const &dirichlet_bc, 
+                  void* operator_data_in){
+    BASE::initialize(mg_data_in, dof_handler, mapping, dirichlet_bc, 
+            operator_data_in);
   }
   
 };

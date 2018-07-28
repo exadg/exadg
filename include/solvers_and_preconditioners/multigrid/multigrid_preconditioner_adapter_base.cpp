@@ -685,6 +685,8 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::
   smoother->initialize(matrix, smoother_data);
 }
 
+#include "multigrid_preconditioner_adapter_base.hpp"
+
 //template class MyMultigridPreconditionerBase<2, float,
 //                                             MatrixOperatorBaseNew<2, float>>;
 //template class MyMultigridPreconditionerBase<2, double,

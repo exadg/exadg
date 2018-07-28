@@ -41,6 +41,7 @@ SET( TARGET_SRC
      source/SpaldingsLaw.cc
      source/statistics_manager.cc
      source/statistics_manager_ph.cc
+     include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_adapter_base.cpp
      include/convection_diffusion/spatial_discretization/operators/convection_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/diffusive_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/mass_operator.cpp
