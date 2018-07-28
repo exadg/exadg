@@ -32,6 +32,7 @@
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
 #include "../../solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
 
+#include "../../laplace/spatial_discretization/laplace_operator.h"
 
 using namespace dealii;
 
@@ -782,9 +783,9 @@ compute_streamfunction (parallel::distributed::Vector<Number>       &dst,
   rhs_operator.apply(rhs,src);
 
   // setup Laplace operator for scalar velocity vector
-  LaplaceOperatorData<dim> laplace_operator_data;
-  laplace_operator_data.laplace_dof_index = this->get_dof_index_velocity_scalar();
-  laplace_operator_data.laplace_quad_index = this->get_quad_index_velocity_linear();
+  Laplace::LaplaceOperatorData<dim> laplace_operator_data;
+  laplace_operator_data.dof_index = this->get_dof_index_velocity_scalar();
+  laplace_operator_data.quad_index = this->get_quad_index_velocity_linear();
   std::shared_ptr<BoundaryDescriptorLaplace<dim> > boundary_descriptor_streamfunction;
   boundary_descriptor_streamfunction.reset(new BoundaryDescriptorLaplace<dim>());
 
@@ -798,11 +799,15 @@ compute_streamfunction (parallel::distributed::Vector<Number>       &dst,
       ExcMessage("Assumption is not fulfilled. Streamfunction calculator is "
                  "not implemented for this type of boundary conditions."));
 
-  laplace_operator_data.bc = boundary_descriptor_streamfunction;
+  auto boundary_descriptor = std::shared_ptr<Laplace::BoundaryDescriptor<dim>>(new Laplace::BoundaryDescriptor<dim>());
+  boundary_descriptor->dirichlet_bc = boundary_descriptor_streamfunction->dirichlet;
+  boundary_descriptor->neumann_bc   = boundary_descriptor_streamfunction->neumann;
+  laplace_operator_data.bc = boundary_descriptor;
+  
   laplace_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
 
-  LaplaceOperator<dim,fe_degree, Number> laplace_operator;
-  laplace_operator.reinit(this->data,this->mapping,laplace_operator_data);
+  Laplace::LaplaceOperator<dim,fe_degree, Number> laplace_operator;
+  laplace_operator.initialize(this->mapping,this->data,laplace_operator_data);
 
   // setup preconditioner
   std::shared_ptr<PreconditionerBase<Number> > preconditioner;
@@ -812,27 +817,27 @@ compute_streamfunction (parallel::distributed::Vector<Number>       &dst,
 
   // use single precision for multigrid
   typedef float MultigridNumber;
-  typedef MyMultigridPreconditionerLaplace<dim, Number,
-      LaplaceOperator<dim, fe_degree, MultigridNumber>,
-      LaplaceOperatorData<dim> > MULTIGRID;
+  typedef MyMultigridPreconditionerDG<dim, Number, 
+            Laplace::LaplaceOperator<dim, fe_degree, MultigridNumber>,
+            Laplace::LaplaceOperator<dim, fe_degree, Number>> MULTIGRID;
 
   preconditioner.reset(new MULTIGRID());
 
   std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
-
+  
   mg_preconditioner->initialize(mg_data,
                                 this->dof_handler_u_scalar,
                                 this->mapping,
-                                laplace_operator_data,
-                                laplace_operator_data.bc->dirichlet);
+                                laplace_operator,
+                                periodic_face_pairs);
 
   // setup solver
   CGSolverData solver_data;
   solver_data.solver_tolerance_rel = 1.e-10;
   solver_data.use_preconditioner = true;
 
-  CGSolver<LaplaceOperator<dim, fe_degree, Number>,
+  CGSolver<Laplace::LaplaceOperator<dim, fe_degree, Number>,
            PreconditionerBase<Number>,
            parallel::distributed::Vector<Number> >
     poisson_solver(laplace_operator,*preconditioner,solver_data);
