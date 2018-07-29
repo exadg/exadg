@@ -382,6 +382,10 @@ setup_velocity_conv_diff_operator(double const &scaling_factor_time_derivative_t
 {
   VelocityConvDiffOperatorData<dim> vel_conv_diff_operator_data;
 
+  vel_conv_diff_operator_data.mass_matrix_operator_data = this->mass_matrix_operator_data;
+  vel_conv_diff_operator_data.viscous_operator_data = this->viscous_operator_data;
+  vel_conv_diff_operator_data.convective_operator_data = this->convective_operator_data;
+
   // unsteady problem
   if(unsteady_problem_has_to_be_solved())
     vel_conv_diff_operator_data.unsteady_problem = true;
