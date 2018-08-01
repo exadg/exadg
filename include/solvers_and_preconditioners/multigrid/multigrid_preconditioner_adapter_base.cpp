@@ -32,8 +32,9 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
   unsigned int degree = dof_handler.get_fe().degree;
   
   // determine number of components
-  const unsigned int n_components =  dof_handler.n_dofs() / tria->n_active_cells() / std::pow(1+degree,dim);
-
+  const unsigned int n_components = 
+      dof_handler.n_dofs() / tria->n_global_active_cells() / std::pow(1+degree,dim);
+  
   std::vector<unsigned int> seq_geo, seq_deg;
 
   for (unsigned int i = 0; i < global; i++)
