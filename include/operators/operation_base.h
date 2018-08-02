@@ -38,8 +38,9 @@
 #include <deal.II/grid/grid_out.h>
 
 #include <deal.II/base/convergence_table.h>
+#ifdef DEAL_II_WITH_TRILINOS
 #include <deal.II/lac/trilinos_sparse_matrix.h>
-
+#endif
 #include "matrix_operator_base_new.h"
 #include <deal.II/lac/constraint_matrix.h>
 
@@ -144,9 +145,11 @@ public:
   static const int DIM = dim;
   typedef OperatorBase<dim, degree, Number, AdditionalData> This;
   typedef parallel::distributed::Vector<Number> VNumber;
+#ifdef DEAL_II_WITH_TRILINOS
   typedef FullMatrix<TrilinosScalar> FMatrix;
-  typedef std::vector<LAPACKFullMatrix<Number>> BMatrix;
   typedef TrilinosWrappers::SparseMatrix SMatrix;
+#endif
+  typedef std::vector<LAPACKFullMatrix<Number>> BMatrix;
   typedef MatrixFree<dim, Number> MF;
   typedef ConstraintMatrix CM;
   typedef std::pair<unsigned int, unsigned int> Range;
@@ -216,9 +219,10 @@ public:
   /*
    * sparse matrix (Trilinos) methods
    */
+#ifdef DEAL_II_WITH_TRILINOS
   void init_system_matrix(SMatrix &system_matrix) const;
-
   void calculate_system_matrix(SMatrix &system_matrix) const;
+#endif
 
   /*
    * utility functions
@@ -343,6 +347,7 @@ protected:
   /*
    * ... sparse matrix
    */
+#ifdef DEAL_II_WITH_TRILINOS
   void local_apply_cell_system_matrix(const MF & /*data*/, SMatrix &dst,
                                       const SMatrix & /*src*/,
                                       const Range &range) const;
@@ -355,6 +360,7 @@ protected:
                                           SMatrix & /*dst*/,
                                           const SMatrix & /*src*/,
                                           const Range & /*range*/) const;
+#endif
   
   void apply_nullspace_projection(VNumber &vec) const;
   

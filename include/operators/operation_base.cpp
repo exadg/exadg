@@ -358,6 +358,7 @@ void OperatorBase<dim, degree, Number,
                     matrices);
 }
 
+#ifdef DEAL_II_WITH_TRILINOS
 template <int dim, int degree, typename Number, typename AdditionalData>
 void OperatorBase<dim, degree, Number, AdditionalData>::init_system_matrix(
     SMatrix &system_matrix) const {
@@ -434,6 +435,7 @@ void OperatorBase<dim, degree, Number, AdditionalData>::calculate_system_matrix(
     if (entry.row() == entry.column() && entry.value() == 0.0)
       entry.value() = 1.0;
 }
+#endif
 
 template <int dim, int degree, typename Number, typename AdditionalData>
 types::global_dof_index
@@ -1120,6 +1122,7 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
   }
 }
 
+#ifdef DEAL_II_WITH_TRILINOS
 template <int dim, int degree, typename Number, typename AdditionalData>
 void OperatorBase<dim, degree, Number, AdditionalData>::
     local_apply_cell_system_matrix(const MF &data, SMatrix &dst,
@@ -1395,6 +1398,7 @@ void OperatorBase<dim, degree, Number, AdditionalData>::
     }
   }
 }
+#endif
 
 template <int dim, int degree, typename Number, typename AdditionalData>
   void OperatorBase<dim, degree, Number, AdditionalData>::apply_nullspace_projection(VNumber &vec) const {

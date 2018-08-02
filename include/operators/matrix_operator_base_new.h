@@ -179,6 +179,7 @@ public:
       return nullptr;
   }
   
+#ifdef DEAL_II_WITH_TRILINOS
   virtual void init_system_matrix(TrilinosWrappers::SparseMatrix &/*system_matrix*/) const{
       AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::init_system_matrix should be overwritten!"));
   }
@@ -186,6 +187,7 @@ public:
   virtual void calculate_system_matrix(TrilinosWrappers::SparseMatrix &/*system_matrix*/) const{
       AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::calculate_system_matrix should be overwritten!"));
   }  
+#endif
   
   virtual void reinit (const DoFHandler<dim>          &/*dof_handler*/,
                const Mapping<dim>             &/*mapping*/,

@@ -3,6 +3,8 @@
 
 #include "mg_coarse_ml_wrapper.h"
 
+#ifdef DEAL_II_WITH_TRILINOS
+
 #include "dg_to_cg_transfer.h"
 
 template <int DIM, typename Number>
@@ -25,5 +27,7 @@ public:
 private:
   CGToDGTransfer<DIM, Number> transfer;
 };
+
+#endif
 
 #endif

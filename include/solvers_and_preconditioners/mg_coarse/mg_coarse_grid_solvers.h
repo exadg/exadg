@@ -27,7 +27,6 @@
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/fe/fe_dgq.h>
 
-#include <deal.II/lac/trilinos_solver.h>
 #include <deal.II/lac/solver_control.h>
 
 #include "../mg_coarse_ml/mg_coarse_ml_cg.h"

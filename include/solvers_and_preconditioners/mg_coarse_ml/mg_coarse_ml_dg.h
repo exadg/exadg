@@ -3,6 +3,8 @@
 
 #include "mg_coarse_ml_wrapper.h"
 
+#ifdef DEAL_II_WITH_TRILINOS
+
 template <int DIM, typename Number>
 class MGCoarseMLDG : public MGCoarseMLWrapper<DIM, Number> {
 public:
@@ -18,5 +20,7 @@ public:
   vmult_post(LinearAlgebra::distributed::Vector<Number> &dst,
              const LinearAlgebra::distributed::Vector<Number> &src);
 };
+
+#endif
 
 #endif

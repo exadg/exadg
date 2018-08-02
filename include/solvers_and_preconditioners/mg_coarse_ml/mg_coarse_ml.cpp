@@ -1,5 +1,7 @@
 #include "mg_coarse_ml.h"
 
+#ifdef DEAL_II_WITH_TRILINOS
+
 template <typename Operator, typename Number>
 MGCoarseML<Operator, Number>::MGCoarseML(Operator const &matrix,
                                          Operator const &matrix_q, 
@@ -134,5 +136,48 @@ void MGCoarseML<Operator, Number>::vmult(
   wrapper->vmult_post(dst_0, dst__);
   dst.copy_locally_owned_data_from(dst_0);
 }
+
+#else
+
+
+template <typename Operator, typename Number>
+MGCoarseML<Operator, Number>::MGCoarseML(Operator const &,
+                                         Operator const &, 
+                                         bool ,
+                                         int ,
+                                         MGCoarseMLData ){
+}
+
+template <typename Operator, typename Number>
+MGCoarseML<Operator, Number>::~MGCoarseML() {
+}
+
+template <typename Operator, typename Number>
+void MGCoarseML<Operator, Number>::reinit(int , MGCoarseMLData ) {
+    AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
+}
+
+template <typename Operator, typename Number>
+void MGCoarseML<Operator, Number>::update(
+    MatrixOperatorBase const * ) {
+    AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
+}
+
+template <typename Operator, typename Number>
+void MGCoarseML<Operator, Number>::
+operator()(const unsigned int ,
+           parallel::distributed::Vector<MultigridNumber> &,
+           const parallel::distributed::Vector<MultigridNumber> &) const {
+    AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
+}
+
+template <typename Operator, typename Number>
+void MGCoarseML<Operator, Number>::vmult(
+    parallel::distributed::Vector<Number> &,
+    const parallel::distributed::Vector<Number> &) const {
+    AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
+}
+
+#endif
 
 #include "mg_coarse_ml.hpp"

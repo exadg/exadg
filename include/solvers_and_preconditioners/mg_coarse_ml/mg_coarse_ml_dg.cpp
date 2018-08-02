@@ -1,5 +1,7 @@
 #include "mg_coarse_ml_dg.h"
 
+#ifdef DEAL_II_WITH_TRILINOS
+
 using namespace dealii;
 
 template <int DIM, typename Number>
@@ -24,3 +26,5 @@ void MGCoarseMLDG<DIM, Number>::vmult_post(
 }
 
 #include "mg_coarse_ml_dg.hpp"
+
+#endif

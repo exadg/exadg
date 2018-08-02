@@ -8,6 +8,8 @@
 
 using namespace dealii;
 
+#ifdef DEAL_II_WITH_TRILINOS
+
 template <int DIM, typename Number> class MGCoarseMLWrapper {
 
 public:
@@ -44,5 +46,7 @@ protected:
   const int level;
   const int degree;
 };
+
+#endif
 
 #endif
