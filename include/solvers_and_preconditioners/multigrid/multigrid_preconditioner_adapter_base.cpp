@@ -189,7 +189,7 @@ void MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
       } else 
 #endif
 #if DEGREE_6 && DEGREE_3
-      if (from == 7 && to == 3) {
+      if (from == 6 && to == 3) {
         temp = new MGTransferMatrixFreeP<dim, 6, 3, value_type_operator, VECTOR_TYPE>( *mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
       } else 
 #endif
