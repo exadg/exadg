@@ -2,42 +2,41 @@
 
 template <typename Operator, typename Number>
 MGCoarseML<Operator, Number>::MGCoarseML(Operator const &matrix,
-                                         Operator const &matrix_q, bool setup,
-                                         int level)
+                                         Operator const &matrix_q, 
+                                         bool setup,
+                                         int level,
+                                         MGCoarseMLData data)
     : coarse_matrix(matrix), coarse_matrix_q(matrix_q) {
   if (setup)
-    this->reinit(level);
+    this->reinit(level,data);
 }
 
 template <typename Operator, typename Number>
 MGCoarseML<Operator, Number>::~MGCoarseML() {}
 
 template <typename Operator, typename Number>
-void MGCoarseML<Operator, Number>::reinit(int level) {
+void MGCoarseML<Operator, Number>::reinit(int level, MGCoarseMLData data_in) {
+    
+  AssertThrow(level >= 0 , ExcMessage("Invalid level specified!"));
 
-  bool type = false;
+  // save additional_data locally: we need it later
+  this->additional_data = data_in;
 
   // create wrapper
-  if (type)
-    // ... DG:
-    wrapper.reset(new MGCoarseMLDG<DIM, MultigridNumber>(
-        level, coarse_matrix, coarse_matrix_q, system_matrix));
-  else
+  if (this->additional_data.use_cg)
     // ... CG:
     wrapper.reset(new MGCoarseMLCG<DIM, MultigridNumber>(
+        level, coarse_matrix, coarse_matrix_q, system_matrix));
+  else
+    // ... DG:
+    wrapper.reset(new MGCoarseMLDG<DIM, MultigridNumber>(
         level, coarse_matrix, coarse_matrix_q, system_matrix));
 
   // initialize system matrix
   wrapper->init_system();
 
-  // configure Trilinos' AMG
-  auto data = TrilinosWrappers::PreconditionAMG::AdditionalData();
-  data.smoother_sweeps = 1;
-  data.n_cycles = 1;
-  data.smoother_type = "ILU";
-
   // intialize Trilinos' AMG
-  pamg.initialize(system_matrix, data);
+  pamg.initialize(system_matrix, this->additional_data.amg_data);
 }
 
 template <typename Operator, typename Number>
@@ -73,10 +72,12 @@ operator()(const unsigned int /*level*/,
   // [float -> double] convert Operator::value_type to TrilinosScalar
   src_.copy_locally_owned_data_from(src__);
 
-  if (true) {
+  if (additional_data.use_pcg) {
     // use PCG with Trilinos to perform AMG
-    ReductionControl solver_control(10000, 1e-20, 1e-2);
-    solver_control.set_failure_criterion(100.0);
+    ReductionControl solver_control(additional_data.pcg_max_iterations, 
+                                    additional_data.pcg_abs_residuum, 
+                                    additional_data.pcg_rel_residuum);
+    solver_control.set_failure_criterion(additional_data.pcg_failure_criterion);
     SolverCG<parallel::distributed::Vector<
         TrilinosWrappers::SparseMatrix::value_type>>
         solver(solver_control);

@@ -15,6 +15,31 @@
 #include "mg_coarse_ml_cg.h"
 #include "mg_coarse_ml_dg.h"
 
+struct MGCoarseMLData
+{
+    MGCoarseMLData() : 
+        use_pcg(true), 
+        pcg_max_iterations(10000),
+        pcg_abs_residuum(1e-20),
+        pcg_rel_residuum(1e-2),
+        pcg_failure_criterion(100.0),
+        use_cg(true)
+    {
+       amg_data.smoother_sweeps = 1;
+       amg_data.n_cycles        = 1;
+       amg_data.smoother_type   = "ILU";
+    };
+    bool   use_pcg;
+    int    pcg_max_iterations;
+    double pcg_abs_residuum;
+    double pcg_rel_residuum;
+    double pcg_failure_criterion;
+    bool   use_cg;
+    
+    TrilinosWrappers::PreconditionAMG::AdditionalData amg_data;
+};
+
+
 template <typename Operator, typename Number = typename Operator::value_type>
 class MGCoarseML
     : public MGCoarseGridBase<
@@ -29,8 +54,11 @@ public:
   /**
    * Constructor
    */
-  MGCoarseML(Operator const &matrix, Operator const &matrix_q, bool setup,
-             int level);
+  MGCoarseML(Operator const &matrix, 
+             Operator const &matrix_q, 
+             bool setup = false,
+             int level = -1,
+             MGCoarseMLData data = MGCoarseMLData());
 
   /**
    * Deconstructor
@@ -40,7 +68,7 @@ public:
   /**
    * Setup system matrix and AMG
    */
-  void reinit(int level = 0);
+  void reinit(int level = 0, MGCoarseMLData data = MGCoarseMLData());
 
   virtual void update(MatrixOperatorBase const * /*matrix_operator*/);
 
@@ -69,6 +97,8 @@ private:
   TrilinosWrappers::PreconditionAMG pamg;
 
   std::shared_ptr<MGCoarseMLWrapper<DIM, MultigridNumber>> wrapper;
+  
+  MGCoarseMLData additional_data;
 };
 
 #endif
