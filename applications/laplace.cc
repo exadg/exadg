@@ -10,6 +10,7 @@
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/lac/la_parallel_vector.h>
+#include <vector>
 
 #include "../include/laplace/spatial_discretization/laplace_operator.h"
 #include "../include/laplace/spatial_discretization/poisson_operation.h"
@@ -25,7 +26,8 @@
 // SPECIFY THE TEST CASE THAT HAS TO BE SOLVED
 
 // laplace problems
-#include "laplace_cases/cosinus.h"
+//#include "laplace_cases/cosinus.h"
+#include "laplace_cases/torus.h"
 
 using namespace dealii;
 using namespace Laplace;
@@ -61,6 +63,23 @@ private:
   void print_grid_data();
 
   void setup_postprocessor();
+  
+  template<typename VEC>
+  void output_data(std::string filename, VEC & solution){
+    DataOut<dim> data_out;
+    data_out.attach_dof_handler(poisson_operation->get_dof_handler());
+    data_out.add_data_vector(solution, "solution");
+    
+    auto ranks = solution;
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    ranks = rank;
+    data_out.add_data_vector(ranks, "ranks");
+    
+    data_out.build_patches(fe_degree+1);
+  
+    data_out.write_vtu_in_parallel(filename.c_str(), MPI_COMM_WORLD);
+  }
 
   ConditionalOStream pcout;
   parallel::distributed::Triangulation<dim> triangulation;
@@ -158,6 +177,7 @@ void LaplaceProblem<dim, fe_degree, Number>::solve_problem(ConvergenceTable& con
   if(best_of>1){
     convergence_table.add_value("dim", dim);
     convergence_table.add_value("degree", fe_degree);
+    convergence_table.add_value("refs", n_refine_space);
     convergence_table.add_value("dofs", solution.size());
     convergence_table.add_value("setup", time_setup);
     convergence_table.set_scientific("setup", true);
@@ -171,26 +191,42 @@ void LaplaceProblem<dim, fe_degree, Number>::solve_problem(ConvergenceTable& con
     convergence_table.add_value("cycles", cycles);
        
   } else {
+    this->output_data("output/laplace_0.vtu", solution);
     // compute right hand side
     poisson_operation->rhs(rhs);
     int n = poisson_operation->solve(solution, rhs);
     printf("%d\n",n);
-    DataOut<dim> data_out;
-    data_out.attach_dof_handler(poisson_operation->get_dof_handler());
-  
-    data_out.add_data_vector(solution, "solution");
-    data_out.build_patches(10);
-  
-    const std::string filename = "output/laplace.vtu";
-    data_out.write_vtu_in_parallel(filename.c_str(), MPI_COMM_WORLD);
+    this->output_data("output/laplace_1.vtu", solution);
+    exit(0);
   }
   
 }
+
+template <int dim, int fe_degree_1>
+class Run{
+public:
+    static void run(ConvergenceTable& convergence_table){
+        
+     std::vector<int> sizes = {/*32,*/64/*,128,256,512,1024,2048,4096,8192*/};
+        
+    for (auto size : sizes) {
+      if (size > 5000 && fe_degree_1<=5)
+        continue;
+      int refinement = std::log(size/fe_degree_1)/std::log(2.0);
+      LaplaceProblem<dim, fe_degree_1> conv_diff_problem(refinement);
+      conv_diff_problem.solve_problem(convergence_table);
+    }
+        
+    }    
+};
 
 int main(int argc, char **argv) {
   try {
     // using namespace ConvectionDiffusionProblem;
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
+    
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0) {
       std::cout << "deal.II git version " << DEAL_II_GIT_SHORTREV
@@ -202,13 +238,23 @@ int main(int argc, char **argv) {
 
     ConvergenceTable convergence_table;
     // mesh refinements in order to perform spatial convergence tests
-    for (unsigned int refine_steps_space = REFINE_STEPS_SPACE_MIN;
-         refine_steps_space <= REFINE_STEPS_SPACE_MAX; ++refine_steps_space) {
-      LaplaceProblem<DIMENSION, FE_DEGREE> conv_diff_problem(
-          refine_steps_space);
-      conv_diff_problem.solve_problem(convergence_table);
+
+    Run<DIMENSION,3>::run(convergence_table);
+//    Run<DIMENSION,4>::run(convergence_table);
+//    Run<DIMENSION,5>::run(convergence_table);
+//    Run<DIMENSION,6>::run(convergence_table);
+//    Run<DIMENSION,7>::run(convergence_table);
+//    Run<DIMENSION,8>::run(convergence_table);
+//    Run<DIMENSION,9>::run(convergence_table);
+    
+    if(!rank){
+      std::ofstream outfile;
+      outfile.open("ctable.csv");
+      convergence_table.write_text(std::cout);
+      convergence_table.write_text(outfile);
+      outfile.close();
     }
-    convergence_table.write_text(std::cout);
+    
   } catch (std::exception &exc) {
     std::cerr << std::endl
               << std::endl
