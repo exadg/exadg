@@ -116,7 +116,7 @@ void create_grid_and_set_boundary_conditions(
     parallel::distributed::Triangulation<dim> &triangulation,
     unsigned int const n_refine_space,
     std::shared_ptr<Laplace::BoundaryDescriptor<dim>> boundary_descriptor,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >& periodic_faces
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >& /*periodic_faces*/
 ) {
   // hypercube: [left,right]^dim
   const double R = 1.5;
