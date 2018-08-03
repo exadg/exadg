@@ -68,3 +68,67 @@ template class MGTransferMatrixFreeP<2, 2, 1, float, vfloat>;
 #if DIM_2 && DEGREE_2 && DEGREE_1 && MG_DOUBLE
 template class MGTransferMatrixFreeP<2, 2, 1, double, vdouble>;
 #endif
+
+#if DIM_3 && DEGREE_9 && DEGREE_4 && MG_FLOAT
+template class MGTransferMatrixFreeP<3, 9, 4, float, vfloat>;
+#endif
+
+#if DIM_3 && DEGREE_9 && DEGREE_4 && MG_DOUBLE
+template class MGTransferMatrixFreeP<3, 9, 4, double, vdouble>;
+#endif
+
+#if DIM_3 && DEGREE_8 && DEGREE_4 && MG_FLOAT
+template class MGTransferMatrixFreeP<3, 8, 4, float, vfloat>;
+#endif
+
+#if DIM_3 && DEGREE_8 && DEGREE_4 && MG_DOUBLE
+template class MGTransferMatrixFreeP<3, 8, 4, double, vdouble>;
+#endif
+
+#if DIM_3 && DEGREE_7 && DEGREE_3 && MG_FLOAT
+template class MGTransferMatrixFreeP<3, 7, 3, float, vfloat>;
+#endif
+
+#if DIM_3 && DEGREE_7 && DEGREE_3 && MG_DOUBLE
+template class MGTransferMatrixFreeP<3, 7, 3, double, vdouble>;
+#endif
+
+#if DIM_3 && DEGREE_6 && DEGREE_3 && MG_FLOAT
+template class MGTransferMatrixFreeP<3, 6, 3, float, vfloat>;
+#endif
+
+#if DIM_3 && DEGREE_6 && DEGREE_3 && MG_DOUBLE
+template class MGTransferMatrixFreeP<3, 6, 3, double, vdouble>;
+#endif
+
+#if DIM_3 && DEGREE_5 && DEGREE_2 && MG_FLOAT
+template class MGTransferMatrixFreeP<3, 5, 2, float, vfloat>;
+#endif
+
+#if DIM_3 && DEGREE_5 && DEGREE_2 && MG_DOUBLE
+template class MGTransferMatrixFreeP<3, 5, 2, double, vdouble>;
+#endif
+
+#if DIM_3 && DEGREE_4 && DEGREE_2 && MG_FLOAT
+template class MGTransferMatrixFreeP<3, 4, 2, float, vfloat>;
+#endif
+
+#if DIM_3 && DEGREE_4 && DEGREE_2 && MG_DOUBLE
+template class MGTransferMatrixFreeP<3, 4, 2, double, vdouble>;
+#endif
+
+#if DIM_3 && DEGREE_3 && DEGREE_1 && MG_FLOAT
+template class MGTransferMatrixFreeP<3, 3, 1, float, vfloat>;
+#endif
+
+#if DIM_3 && DEGREE_3 && DEGREE_1 && MG_DOUBLE
+template class MGTransferMatrixFreeP<3, 3, 1, double, vdouble>;
+#endif
+
+#if DIM_3 && DEGREE_2 && DEGREE_1 && MG_FLOAT
+template class MGTransferMatrixFreeP<3, 2, 1, float, vfloat>;
+#endif
+
+#if DIM_3 && DEGREE_2 && DEGREE_1 && MG_DOUBLE
+template class MGTransferMatrixFreeP<3, 2, 1, double, vdouble>;
+#endif
