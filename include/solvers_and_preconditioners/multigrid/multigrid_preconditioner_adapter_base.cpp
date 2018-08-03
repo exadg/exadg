@@ -2,6 +2,8 @@
 
 #include <navier-constants.h>
 
+#include "../mg_coarse/mg_coarse_ml.h"
+
 template <int dim, typename value_type, typename Operator>
 MyMultigridPreconditionerBase<dim, value_type, Operator>::
     MyMultigridPreconditionerBase(std::shared_ptr<Operator> underlying_operator)

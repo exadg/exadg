@@ -52,8 +52,8 @@ SET( TARGET_SRC
      include/poisson/laplace_operator.cpp
      #include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_adapter_base.cpp
      include/solvers_and_preconditioners/transfer/mg_transfer_mf_p.cpp
-     include/solvers_and_preconditioners/mg_coarse_ml/mg_coarse_ml.cpp
-     include/solvers_and_preconditioners/mg_coarse_ml/dg_to_cg_transfer.cpp
+     include/solvers_and_preconditioners/mg_coarse/mg_coarse_ml.cpp
+     include/solvers_and_preconditioners/transfer/dg_to_cg_transfer.cpp
    )
 
 # Set the include directory and the name of the project

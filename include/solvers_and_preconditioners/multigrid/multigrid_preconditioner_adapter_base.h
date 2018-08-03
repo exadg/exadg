@@ -16,8 +16,6 @@
 #include <deal.II/lac/solver_gmres.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
 
-#include "../mg_coarse_ml/mg_coarse_ml.h"
-
 // smoothers
 #include "../smoother/cg_smoother.h"
 #include "../smoother/chebyshev_smoother.h"

@@ -11,7 +11,7 @@
 #include <deal.II/lac/trilinos_sparsity_pattern.h>
 
 #include "../preconditioner/preconditioner_base.h"
-#include "dg_to_cg_transfer.h"
+#include "../transfer/dg_to_cg_transfer.h"
 
 #ifndef DEAL_II_WITH_TRILINOS
 namespace dealii{
