@@ -21,9 +21,9 @@
 
 #include "functionalities/evaluate_functions.h"
 
-#include "../../solvers_and_preconditioners/invert_diagonal.h"
+#include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 #include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
-#include "../../solvers_and_preconditioners/block_jacobi_matrices.h"
+#include "../../solvers_and_preconditioners/util/block_jacobi_matrices.h"
 
 #include "types.h"
 

@@ -14,7 +14,7 @@
 #include "../../incompressible_navier_stokes/spatial_discretization/helmholtz_operator.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/navier_stokes_operators.h"
 #include "operators/matrix_operator_base.h"
-#include "../../solvers_and_preconditioners/invert_diagonal.h"
+#include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 #include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
 
 

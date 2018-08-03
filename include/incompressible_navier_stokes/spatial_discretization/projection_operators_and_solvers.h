@@ -21,10 +21,10 @@
 
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
 #include "../../solvers_and_preconditioners/solvers/internal_solvers.h"
-#include "../../solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
-#include "../../solvers_and_preconditioners/invert_diagonal.h"
+#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
+#include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 #include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
-#include "../../solvers_and_preconditioners/block_jacobi_matrices.h"
+#include "../../solvers_and_preconditioners/util/block_jacobi_matrices.h"
 
 namespace IncNS
 {

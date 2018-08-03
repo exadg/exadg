@@ -1,7 +1,7 @@
 #include "operation_base.h"
 
-#include "../solvers_and_preconditioners/block_jacobi_matrices.h"
-#include "../solvers_and_preconditioners/invert_diagonal.h"
+#include "../solvers_and_preconditioners/util/block_jacobi_matrices.h"
+#include "../solvers_and_preconditioners/util/invert_diagonal.h"
 
 template <int dim, int degree, typename Number, typename AdditionalData>
 OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()

@@ -12,7 +12,7 @@
 
 #include "operators/inverse_mass_matrix.h"
 #include "operators/matrix_operator_base.h"
-#include "preconditioner/preconditioner_base.h"
+#include "../preconditioner/preconditioner_base.h"
 
 template<int dim, int fe_degree, typename value_type,  int n_components=dim>
 class InverseMassMatrixPreconditioner : public PreconditionerBase<value_type>

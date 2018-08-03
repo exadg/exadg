@@ -8,7 +8,7 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_DG_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_DG_H_
 
-#include "multigrid/multigrid_preconditioner_adapter_base.h"
+#include "multigrid_preconditioner_adapter_base.h"
 
 template<int dim, typename value_type, typename Operator, typename UnderlyingOperator>
 class MyMultigridPreconditionerDG 

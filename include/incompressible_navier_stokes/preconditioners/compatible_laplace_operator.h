@@ -10,8 +10,8 @@
 
 #include "../spatial_discretization/navier_stokes_operators.h"
 #include "../../operators/matrix_operator_base_new.h"
-#include "../../solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
-#include "../../solvers_and_preconditioners/invert_diagonal.h"
+#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
+#include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 
 namespace IncNS
 {

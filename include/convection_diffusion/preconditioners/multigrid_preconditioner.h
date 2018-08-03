@@ -8,7 +8,7 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_MULTIGRID_PRECONDITIONER_H_
 #define INCLUDE_CONVECTION_DIFFUSION_MULTIGRID_PRECONDITIONER_H_
 
-#include "solvers_and_preconditioners/multigrid_preconditioner_dg.h"
+#include "solvers_and_preconditioners/multigrid/multigrid_preconditioner_dg.h"
 
 namespace ConvDiff
 {

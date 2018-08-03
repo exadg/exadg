@@ -11,7 +11,7 @@
 #include "../../incompressible_navier_stokes/preconditioners/preconditioner_navier_stokes.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/projection_operators_and_solvers.h"
-#include "solvers_and_preconditioners/newton_solver.h"
+#include "solvers_and_preconditioners/newton/newton_solver.h"
 
 namespace IncNS
 {

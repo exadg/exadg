@@ -22,7 +22,7 @@
 #include "../postprocessor/mean_velocity_calculator.h"
 #include "../../postprocessor/error_calculation_data.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
-#include "../../solvers_and_preconditioners/newton_solver_data.h"
+#include "../../solvers_and_preconditioners/newton/newton_solver_data.h"
 
 namespace IncNS
 {

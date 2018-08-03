@@ -15,9 +15,9 @@
 #include "../../incompressible_navier_stokes/spatial_discretization/pressure_neumann_bc_viscous_term.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/velocity_divergence_convective_term.h"
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
-#include "../../solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
+#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
-#include "../../solvers_and_preconditioners/newton_solver.h"
+#include "../../solvers_and_preconditioners/newton/newton_solver.h"
 
 namespace IncNS
 {
