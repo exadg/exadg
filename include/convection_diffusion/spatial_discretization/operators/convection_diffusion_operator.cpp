@@ -1,5 +1,7 @@
 #include "convection_diffusion_operator.h"
 
+#include <navier-constants.h>
+
 namespace ConvDiff {
 
 template <int dim, int fe_degree, typename Number>
