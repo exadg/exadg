@@ -25,17 +25,19 @@ void MGCoarseML<Operator, Number>::reinit(int level, MGCoarseMLData data_in) {
   this->additional_data = data_in;
 
   // create wrapper
-  if (this->additional_data.use_cg)
-    // ... CG:
-    wrapper.reset(new MGCoarseMLCG<DIM, MultigridNumber>(
-        level, coarse_matrix, coarse_matrix_q, system_matrix));
-  else
-    // ... DG:
-    wrapper.reset(new MGCoarseMLDG<DIM, MultigridNumber>(
-        level, coarse_matrix, coarse_matrix_q, system_matrix));
+  if (this->additional_data.use_cg){
+    const unsigned int degree = coarse_matrix.get_data().get_dof_handler().get_fe().degree;
+    this->transfer.reset(new CGToDGTransfer<Operator::DIM, MultigridNumber>(
+              coarse_matrix.get_data(),
+              coarse_matrix_q.get_data(), 
+              level, 
+              degree));
+  }
 
   // initialize system matrix
-  wrapper->init_system();
+  auto & matrix_temp = this->additional_data.use_cg ? coarse_matrix_q : coarse_matrix;
+  matrix_temp.init_system_matrix(system_matrix);
+  matrix_temp.calculate_system_matrix(system_matrix);
 
   // intialize Trilinos' AMG
   pamg.initialize(system_matrix, this->additional_data.amg_data);
@@ -57,22 +59,29 @@ operator()(const unsigned int /*level*/,
   src_0.copy_locally_owned_data_from(src);
   dst_0.reinit(dst, false);
 
-  parallel::distributed::Vector<MultigridNumber> src__, dst__;
-  wrapper->init_vectors(src__, dst__);
-
-  // [float] DG -> CG
-  wrapper->vmult_pre(src__, src_0);
+  parallel::distributed::Vector<MultigridNumber>  cg_src__, cg_dst__;
+  parallel::distributed::Vector<MultigridNumber> *src__, *dst__;
+  if(this->additional_data.use_cg){
+      this->coarse_matrix_q.initialize_dof_vector(cg_src__);
+      this->coarse_matrix_q.initialize_dof_vector(cg_dst__);
+      src__ = &cg_src__;
+      dst__ = &cg_dst__;
+      transfer->toCG(*src__, src_0);
+  } else {
+      src__ = &src_0;
+      dst__ = &dst_0;
+  }
 
   // create temporal vectors of type TrilinosScalar
   parallel::distributed::Vector<TrilinosWrappers::SparseMatrix::value_type>
       dst_;
-  dst_.reinit(dst__, false);
+  dst_.reinit(*dst__, false);
   parallel::distributed::Vector<TrilinosWrappers::SparseMatrix::value_type>
       src_;
-  src_.reinit(src__, false);
+  src_.reinit(*src__, false);
 
   // [float -> double] convert Operator::value_type to TrilinosScalar
-  src_.copy_locally_owned_data_from(src__);
+  src_.copy_locally_owned_data_from(*src__);
 
   if (additional_data.use_pcg) {
     // use PCG with Trilinos to perform AMG
@@ -92,49 +101,19 @@ operator()(const unsigned int /*level*/,
   }
 
   // [double -> float]convert TrilinosScalar to Operator::value_type
-  dst__.copy_locally_owned_data_from(dst_);
-  dst__.update_ghost_values();
+  dst__->copy_locally_owned_data_from(dst_);
+  dst__->update_ghost_values();
   // [float] CG -> DG
-  wrapper->vmult_post(dst_0, dst__);
+  if(this->additional_data.use_cg)
+     transfer->toDG(dst_0, *dst__);
   dst.copy_locally_owned_data_from(dst_0);
 }
 
 template <typename Operator, typename Number>
 void MGCoarseML<Operator, Number>::vmult(
-    parallel::distributed::Vector<Number> &dst,
-    const parallel::distributed::Vector<Number> &src) const {
-
-  parallel::distributed::Vector<MultigridNumber> src_0, dst_0;
-  src_0.reinit(src, true);
-  src_0.copy_locally_owned_data_from(src);
-  dst_0.reinit(dst, true);
-
-  parallel::distributed::Vector<MultigridNumber> src__, dst__;
-  wrapper->init_vectors(src__, dst__);
-
-  // [float] DG -> CG
-  wrapper->vmult_pre(src__, src_0);
-
-  // create temporal vectors of type TrilinosScalar
-  parallel::distributed::Vector<TrilinosWrappers::SparseMatrix::value_type>
-      dst_;
-  dst_.reinit(dst__, true);
-  parallel::distributed::Vector<TrilinosWrappers::SparseMatrix::value_type>
-      src_;
-  src_.reinit(src__, true);
-
-  // [float -> double] convert Operator::value_type to TrilinosScalar
-  src_.copy_locally_owned_data_from(src__);
-
-  // [double] use Trilinos to perform AMG
-  pamg.vmult(dst_, src_);
-
-  // [double -> float]convert TrilinosScalar to Operator::value_type
-  dst__.copy_locally_owned_data_from(dst_);
-
-  // [float] CG -> DG
-  wrapper->vmult_post(dst_0, dst__);
-  dst.copy_locally_owned_data_from(dst_0);
+    parallel::distributed::Vector<Number> &,
+    const parallel::distributed::Vector<Number> &) const {
+  AssertThrow(false, ExcMessage("not implemented yet!"));
 }
 
 #else

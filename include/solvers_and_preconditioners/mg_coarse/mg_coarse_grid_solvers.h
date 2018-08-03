@@ -29,11 +29,6 @@
 
 #include <deal.II/lac/solver_control.h>
 
-#include "../mg_coarse_ml/mg_coarse_ml_cg.h"
-#include "../mg_coarse_ml/mg_coarse_ml_dg.h"
-
-//#define AMG_TEST
-
 enum class PreconditionerCoarseGridSolver
 {
   None,

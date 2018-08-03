@@ -11,9 +11,7 @@
 #include <deal.II/lac/trilinos_sparsity_pattern.h>
 
 #include "../preconditioner/preconditioner_base.h"
-
-#include "mg_coarse_ml_cg.h"
-#include "mg_coarse_ml_dg.h"
+#include "dg_to_cg_transfer.h"
 
 #ifndef DEAL_II_WITH_TRILINOS
 namespace dealii{
@@ -130,12 +128,11 @@ private:
   // reference to operator
   const Operator &coarse_matrix;
   const Operator &coarse_matrix_q;
+  std::shared_ptr<CGToDGTransfer<Operator::DIM, MultigridNumber>> transfer;
   // distributed sparse system matrix
   MatrixType system_matrix;
   // AMG preconditioner
   TrilinosWrappers::PreconditionAMG pamg;
-
-  std::shared_ptr<MGCoarseMLWrapper<DIM, MultigridNumber>> wrapper;
   
   MGCoarseMLData additional_data;
 };
