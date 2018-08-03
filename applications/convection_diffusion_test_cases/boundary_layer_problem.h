@@ -269,8 +269,8 @@ void create_grid_and_set_boundary_conditions(
     {
       if ((std::fabs(cell->face(face_number)->center()(1) - left) < 1e-12)||
          (std::fabs(cell->face(face_number)->center()(1) - right) < 1e-12)
-//         || (std::fabs(cell->face(face_number)->center()(0) - right) < 1e-12) // Neumann BC at right boundary
-         )
+         || ((dim==3) && ((std::fabs(cell->face(face_number)->center()(2) - left ) < 1e-12) || 
+                          (std::fabs(cell->face(face_number)->center()(2) - right) < 1e-12))))
         cell->face(face_number)->set_boundary_id (1);
     }
   }
