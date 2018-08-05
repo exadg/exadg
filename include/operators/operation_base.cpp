@@ -259,6 +259,9 @@ void OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(
   else
     data->cell_loop(&This::local_apply_cell_diagonal, this, diagonal, diagonal);
   
+  if(!is_dg)
+    diagonal.compress(VectorOperation::add);
+  
   // apply mean value constrained
   apply_mean_value_constraint_diagonal(diagonal);
   
