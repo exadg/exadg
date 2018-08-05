@@ -162,7 +162,9 @@ void LaplaceOperator<dim, fe_degree, value_type>::do_face_integral(
       std::max(fe_eval.read_cell_data(array_penalty_parameter),
                fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
       IP::get_penalty_factor<value_type>(fe_degree, this->ad.IP_factor);
-
+#ifdef LAPALCE_CELL_TEST 
+  tau_IP= 100.0;
+#endif
   for (unsigned int q = 0; q < fe_eval.n_q_points; ++q) {
     VectorizedArray<value_type> jump_value =
         fe_eval.get_value(q) - fe_eval_neighbor.get_value(q);
@@ -190,6 +192,9 @@ void LaplaceOperator<dim, fe_degree, value_type>::do_face_int_integral(
       std::max(fe_eval.read_cell_data(array_penalty_parameter),
                fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
       IP::get_penalty_factor<value_type>(fe_degree, this->ad.IP_factor);
+#ifdef LAPALCE_CELL_TEST
+  tau_IP= 100.0;
+#endif
 
   for (unsigned int q = 0; q < fe_eval.n_q_points; ++q) {
     // set exterior value to zero
@@ -216,7 +221,9 @@ void LaplaceOperator<dim, fe_degree, value_type>::do_face_ext_integral(
       std::max(fe_eval.read_cell_data(array_penalty_parameter),
                fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
       IP::get_penalty_factor<value_type>(fe_degree, this->ad.IP_factor);
-
+#ifdef LAPALCE_CELL_TEST
+  tau_IP= 100.0;
+#endif
   for (unsigned int q = 0; q < fe_eval.n_q_points; ++q) {
     // set value_m to zero
     VectorizedArray<value_type> jump_value = fe_eval_neighbor.get_value(q);
@@ -246,7 +253,9 @@ void LaplaceOperator<dim, fe_degree, value_type>::do_boundary_integral(
   VectorizedArray<value_type> tau_IP =
       fe_eval.read_cell_data(array_penalty_parameter) *
       IP::get_penalty_factor<value_type>(fe_degree, this->ad.IP_factor);
-
+#ifdef LAPALCE_CELL_TEST
+  tau_IP= 100.0;
+#endif
   for (unsigned int q = 0; q < fe_eval.n_q_points; ++q) {
     VectorizedArray<value_type> value_m =
         calculate_interior_value(q, fe_eval, operator_type);
