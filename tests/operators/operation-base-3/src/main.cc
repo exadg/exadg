@@ -45,31 +45,65 @@
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
 
-#include "../../operation-base-util/laplace_operator.h"
+#include "../../../../include/laplace/spatial_discretization/laplace_operator.h"
 #include "../../operation-base-util/l2_norm.h"
 #include "../../operation-base-util/sparse_matrix_util.h"
-#include "include/rhs_operator.h"
 
 #include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
 
+#ifdef LIKWID_PERFMON
+    #include <likwid.h>
+#endif
+
 //#define DETAIL_OUTPUT
 const int PATCHES = 10;
+const int best_of = 3;
 
 typedef double value_type;
 
 using namespace dealii;
+using namespace Laplace;
+
+template <int dim, int fe_degree, typename Function>
+void repeat(ConvergenceTable &convergence_table, std::string label,
+            Function f) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  Timer time;
+  double min_time = std::numeric_limits<double>::max();
+  for (int i = 0; i < best_of; i++) {
+  MPI_Barrier(MPI_COMM_WORLD);
+    if(!rank) printf("  %10s#%d#%d#%d: ", label.c_str(), dim, fe_degree, i);  
+#ifdef LIKWID_PERFMON
+  std::string likwid_label = label + "#" + std::to_string(dim) + "#" + std::to_string(fe_degree);
+  LIKWID_MARKER_START(likwid_label.c_str());
+#endif
+    time.restart();
+    f();
+    double temp = time.wall_time();
+#ifdef LIKWID_PERFMON
+      LIKWID_MARKER_STOP(likwid_label.c_str());
+#endif
+    if(!rank) printf("%10.6f\n", temp);  
+    min_time = std::min(min_time, temp);
+  }
+  convergence_table.add_value(label, min_time);
+  convergence_table.set_scientific(label, true);
+}
 
 
 template <int dim, int fe_degree, typename FE_TYPE> class Runner {
 
 public:
-  Runner()
+  Runner(ConvergenceTable& convergence_table, const int approx_system_size)
       : comm(MPI_COMM_WORLD), rank(get_rank(comm)),
         triangulation(comm, dealii::Triangulation<dim>::none,
                       parallel::distributed::Triangulation<
                           dim>::construct_multigrid_hierarchy),
-        fe_dgq(fe_degree), dof_handler_dg(triangulation), mapping(fe_degree),
-        quadrature(fe_degree + 1),global_refinements(dim==2?5:3) {}
+        fe_dgq(fe_degree), dof_handler_dg(triangulation), 
+        convergence_table(convergence_table), mapping(fe_degree),
+        quadrature(fe_degree + 1),
+        global_refinements(log(std::pow(approx_system_size,1.0/dim)/(fe_degree+1))/log(2)) {}
 
   typedef LinearAlgebra::distributed::Vector<value_type> VNumber;
 
@@ -79,7 +113,7 @@ private:
   parallel::distributed::Triangulation<dim> triangulation;
   FE_TYPE fe_dgq;
   DoFHandler<dim> dof_handler_dg;
-  ConvergenceTable convergence_table;
+  ConvergenceTable& convergence_table;
   MappingQGeneric<dim> mapping;
   QGauss<1> quadrature;
   const unsigned int global_refinements;
@@ -165,155 +199,77 @@ private:
 
   void run(LaplaceOperator<dim, fe_degree, value_type> &laplace,
            unsigned int mg_level = numbers::invalid_unsigned_int) {
+    Timer time;
 
     // determine level: -1 and globarl_refinements map to the same level
-    unsigned int level = std::min(global_refinements, mg_level);
+    int level = mg_level == numbers::invalid_unsigned_int ? 
+        -1 : mg_level;
 
-    // System matrix
-    TrilinosWrappers::SparseMatrix system_matrix;
-    laplace.init_system_matrix(system_matrix);
-    laplace.calculate_system_matrix(system_matrix);
-
-#ifdef DETAIL_OUTPUT
-    print_ascii(system_matrix);
-    print_matlab(system_matrix);
-#endif
-
-    // Right hand side
-    VNumber vec_rhs;
-    laplace.initialize_dof_vector(vec_rhs);
-    RHSOperator<dim, fe_degree, value_type> rhs(laplace.get_data());
-    rhs.evaluate(vec_rhs);
-
-#ifdef DETAIL_OUTPUT
-    std::cout << "RHS: ";
-    vec_rhs.print(std::cout);
-#endif
-
-    // Solve linear equation system: setup solution vectors
-    VNumber vec_sol_sm;
-    VNumber vec_sol_mf;
-
-    // ... fill with zeroes
-    laplace.initialize_dof_vector(vec_sol_sm);
-    laplace.initialize_dof_vector(vec_sol_mf);
-
-    // ... fill ghost values with zeroes
-    vec_sol_sm.update_ghost_values();
-    vec_sol_mf.update_ghost_values();
-
-    // .. setup conjugate-gradient-solver
-    SolverControl solver_control(1000, 1e-12);
-    SolverCG<VNumber> solver(solver_control);
-
-    // ... solve with sparse matrix
-    try {
-      solver.solve(system_matrix, vec_sol_sm, vec_rhs, PreconditionIdentity());
-    } catch (SolverControl::NoConvergence &) {
-      std::cout << "MB: not converved!" << std::endl;
-    }
-    const int last_step_sm = solver_control.last_step();
-
-    // ... solve matrix-free
-    try {
-      solver.solve(laplace, vec_sol_mf, vec_rhs, PreconditionIdentity());
-    } catch (SolverControl::NoConvergence &) {
-      std::cout << "MF: not converved!" << std::endl;
-    }
-    const int last_step_mf = solver_control.last_step();
-
-#ifdef DETAIL_OUTPUT
-    std::cout << "SOL-MB: ";
-    vec_sol_sm.print(std::cout);
-    std::cout << "SOL-MF: ";
-    vec_sol_mf.print(std::cout);
-#endif
-
-    // Perform vmult: setup vectors...
-    VNumber vec_dst_sm;
-    VNumber vec_dst_mf;
-    VNumber vec_src;
-    laplace.initialize_dof_vector(vec_dst_sm);
-    laplace.initialize_dof_vector(vec_dst_mf);
-    laplace.initialize_dof_vector(vec_src);
-
-    // ... make source vector unique vector
-    vec_src = 1.0;
-
-    // ... zero out constrained entries in source vector
-    auto bs = mg_constrained_dofs.get_boundary_indices(level);
-    auto ls = vec_src.locally_owned_elements();
-    auto gs = bs;
-    gs.subtract_set(ls);
-    bs.subtract_set(gs);
-    for (auto i : bs)
-      vec_src(i) = 0.0;
-
-#ifdef DETAIL_OUTPUT
-    std::cout << "X: ";
-    vec_src.print(std::cout);
-#endif
-
-    // ... vmult with sparse matrix
-    system_matrix.vmult(vec_dst_sm, vec_src);
-    // ... vmult matrix free
-    laplace.vmult(vec_dst_mf, vec_src);
-
-#ifdef DETAIL_OUTPUT
-    std::cout << "Y-MB: ";
-    vec_dst_sm.print(std::cout);
-    std::cout << "X-MF: ";
-    vec_dst_mf.print(std::cout);
-#endif
-
-    // Postprocessing: compare vmults, ...
+    LinearAlgebra::distributed::Vector<value_type> vec_src;
+    LinearAlgebra::distributed::Vector<value_type> vec_dst_1;
+    LinearAlgebra::distributed::Vector<value_type> vec_dst_2;
+    LinearAlgebra::distributed::Vector<value_type> vec_diag;
+    LinearAlgebra::distributed::Vector<value_type> vec_dst_4;
+    
+    auto & data = laplace.get_data();
+    data.initialize_dof_vector(vec_src);
+    data.initialize_dof_vector(vec_dst_1);
+    data.initialize_dof_vector(vec_dst_2);
+    data.initialize_dof_vector(vec_dst_4);
+    
+    int procs;
+    MPI_Comm_size(MPI_COMM_WORLD, &procs);
+    
     {
-      vec_dst_mf -= vec_dst_sm;
+      convergence_table.add_value("procs", procs);
       convergence_table.add_value("dim", dim);
       convergence_table.add_value("deg", fe_degree);
       convergence_table.add_value("lev", level);
-      convergence_table.add_value("dofs", vec_rhs.size());
-      convergence_table.add_value("vers", fe_dgq.dofs_per_vertex > 0);
-      double n = vec_dst_mf.l2_norm();
-      convergence_table.add_value("vmult-diff", n);
-      convergence_table.set_scientific("vmult-diff", true);
+      convergence_table.add_value("dofs", vec_src.size());
     }
+    
+    // ... matrix-free VMult:
+    repeat<dim,fe_degree>(convergence_table, "vmult",
+           [&]() mutable { laplace.vmult(vec_dst_1, vec_src); });
 
-    // ... CG-solution: sparse matrix
-    {
-      L2Norm<dim, fe_degree, value_type> integrator(laplace.get_data());
-      auto t = vec_sol_sm;
-      t.update_ghost_values();
-      double n = integrator.run(t);
-      convergence_table.add_value("steps-sm", last_step_sm);
-      convergence_table.add_value("int-sm", n);
-      convergence_table.set_scientific("int-sm", true);
+    repeat<dim,fe_degree>(convergence_table, "d-init",
+           [&]() mutable { laplace.calculate_diagonal(vec_diag); });
+
+    repeat<dim,fe_degree>(convergence_table, "d-scale",
+           [&]() mutable { vec_dst_4.scale(vec_diag); });
+    
+    const double entries_per_block = std::pow(fe_degree+1,dim*2);
+    const double n_cells_glob = vec_src.size()/ std::pow(fe_degree+1,dim);
+    
+    convergence_table.add_value("m-nnz-est", (entries_per_block*(dim*2+1)*n_cells_glob));
+    const double max_entries = 3.0e9;
+    if(entries_per_block*(dim*2+1)*n_cells_glob < max_entries){
+        std::cout << "  -- " << entries_per_block*(dim*2+1)*n_cells_glob << std::endl;
+        time.restart();
+        TrilinosWrappers::SparseMatrix system_matrix;
+        laplace.init_system_matrix(system_matrix);
+        convergence_table.add_value("m-init", time.wall_time());
+        convergence_table.set_scientific("m-init", true);
+
+        convergence_table.add_value("m-nnz", system_matrix.n_nonzero_elements());
+
+        time.restart();
+        laplace.calculate_system_matrix(system_matrix);
+        convergence_table.add_value("m-assembly", time.wall_time());
+        convergence_table.set_scientific("m-assembly", true);
+
+        repeat<dim,fe_degree>(convergence_table, "m-vmult",
+               [&]() mutable { system_matrix.vmult(vec_dst_2, vec_src); });
+    } else {
+        convergence_table.add_value("m-init", 0.0);
+        convergence_table.set_scientific("m-init", true);
+        convergence_table.add_value("m-nnz", 0);
+        convergence_table.add_value("m-assembly", 0.0);
+        convergence_table.set_scientific("m-assembly", true);
+        convergence_table.add_value("m-vmult", 0.0);
+        convergence_table.set_scientific("m-vmult", true);
     }
-
-    // ... CG-solution: matrix-free, and
-    {
-      L2Norm<dim, fe_degree, value_type> integrator(laplace.get_data());
-      double n = integrator.run(vec_sol_mf);
-      convergence_table.add_value("steps-mf", last_step_mf);
-      convergence_table.add_value("int-mf", n);
-      convergence_table.set_scientific("int-mf", true);
-    }
-
-    // ... output result to paraview
-    if (mg_level == numbers::invalid_unsigned_int) {
-      DataOut<dim> data_out;
-      data_out.attach_dof_handler(dof_handler_dg);
-
-      data_out.add_data_vector(vec_sol_sm, "solution");
-
-      auto vec_rank = vec_sol_sm;
-      vec_rank = rank;
-      data_out.add_data_vector(vec_rank, "rank");
-      data_out.build_patches(PATCHES);
-
-      const std::string filename = "output/solution.vtu";
-      data_out.write_vtu_in_parallel(filename.c_str(), comm);
-    }
+           
   }
 
 public:
@@ -339,44 +295,71 @@ public:
 
     // run on fine grid without multigrid
     {
-      laplace.reinit(data, dummy, laplace_additional_data);
+      laplace.initialize(mapping, data, dummy, laplace_additional_data);
       run(laplace);
     }
-
-    // output convergence table
-    if (!rank)
-      convergence_table.write_text(std::cout);
   }
+};
+
+template <int dim, int fe_degree>
+class Run{
+public:
+    static void run(ConvergenceTable& convergence_table, const int approx_system_size){
+        Runner<dim, fe_degree, FE_DGQ<dim>> run_cg(convergence_table, approx_system_size); 
+        run_cg.run();
+    }    
 };
 
 int main(int argc, char **argv) {
   Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
   ConditionalOStream pcout (std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0);
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_INIT;
+#pragma omp parallel
   {
-    pcout << "2D 1st-order:" << std::endl;
-    Runner<2, 1, FE_Q<2>  > run_cg; run_cg.run();
-    Runner<2, 1, FE_DGQ<2>> run_dg; run_dg.run();
-    pcout << std::endl;
+    LIKWID_MARKER_THREADINIT;
+  }
+#endif
+  if(false)
+  {
+    const int approx_system_size = 1e8;  
+    ConvergenceTable convergence_table;
+    Run<2, 1>::run(convergence_table, approx_system_size);
+    Run<2, 2>::run(convergence_table, approx_system_size);
+    Run<2, 3>::run(convergence_table, approx_system_size);
+    Run<2, 4>::run(convergence_table, approx_system_size);
+    Run<2, 5>::run(convergence_table, approx_system_size);
+    Run<2, 6>::run(convergence_table, approx_system_size);
+    Run<2, 7>::run(convergence_table, approx_system_size);
+    Run<2, 8>::run(convergence_table, approx_system_size);
+    Run<2, 9>::run(convergence_table, approx_system_size);
+    if(!rank){
+      convergence_table.write_text(std::cout);
+    }
+  }
+  
+  if(true)
+  {
+    const int approx_system_size = 1.0e7;  
+    ConvergenceTable convergence_table;
+    Run<2, 1>::run(convergence_table, approx_system_size);
+    Run<2, 2>::run(convergence_table, approx_system_size);
+    Run<2, 3>::run(convergence_table, approx_system_size);
+    Run<2, 4>::run(convergence_table, approx_system_size);
+    Run<2, 5>::run(convergence_table, approx_system_size);
+    Run<2, 6>::run(convergence_table, approx_system_size);
+    Run<2, 7>::run(convergence_table, approx_system_size);
+    Run<2, 8>::run(convergence_table, approx_system_size);
+    Run<2, 9>::run(convergence_table, approx_system_size);
+    if(!rank){
+      convergence_table.write_text(std::cout);
+    }
   }
 
-  {
-    pcout << "2D 2nd-order:" << std::endl;
-    Runner<2, 2, FE_Q<2>  > run_cg; run_cg.run();
-    Runner<2, 2, FE_DGQ<2>> run_dg; run_dg.run();
-    pcout << std::endl;
-  }
-
-  {
-    pcout << "3D 1st-order:" << std::endl;
-    Runner<3, 1, FE_Q<3>  > run_cg; run_cg.run();
-    Runner<3, 1, FE_DGQ<3>> run_dg; run_dg.run();
-    pcout << std::endl;
-  }
-
-  {
-    pcout << "3D 2nd-order:" << std::endl;
-    Runner<3, 2, FE_Q<3>  > run_cg; run_cg.run();
-    Runner<3, 2, FE_DGQ<3>> run_dg; run_dg.run();
-    pcout << std::endl;
-  }
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_CLOSE;
+#endif
 }

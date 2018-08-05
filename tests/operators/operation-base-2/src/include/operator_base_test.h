@@ -14,7 +14,7 @@ class TestSolution : public Function<dim>{
   virtual double value(const Point<dim> &p, const unsigned int = 0) const {
     double result = std::sin(wave_number * p[0] * numbers::PI);
     for (unsigned int d = 1; d < dim; ++d)
-      result *= std::sin((d + 1) * wave_number * p[d] * numbers::PI);
+      result *= std::sin(wave_number * p[d] * numbers::PI);
     return result;
   }
 
@@ -103,6 +103,11 @@ public:
         
         // apply block-diagonal matrix of size: 1 x 1
         apply_block(op, 1, vec_diag_mf, vec_src);
+        
+        // set diagonal to 1.0 if necessary
+        for(auto & i : vec_diag_mf)
+            if(i==0)
+                i=1.0;
         
         // print l2-norms
         print_l2(convergence_table, vec_diag, vec_diag_mf, 
@@ -210,6 +215,7 @@ private:
         
         // compute error and ...
         vec_temp -= vec_2;
+        //vec_temp.print(std::cout);exit(0);
         // ... its norm
         if(label_2!=""){
           convergence_table.add_value(label_2, vec_temp.l2_norm());

@@ -45,7 +45,7 @@
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
 
-#include "../../operation-base-util/laplace_operator.h"
+#include "../../../../include/laplace/spatial_discretization/laplace_operator.h"
 #include "../../operation-base-util/l2_norm.h"
 #include "../../operation-base-util/sparse_matrix_util.h"
 #include "include/rhs_operator.h"
@@ -58,6 +58,7 @@ const int PATCHES = 10;
 typedef double value_type;
 
 using namespace dealii;
+using namespace Laplace;
 
 
 template <int dim, int fe_degree, typename FE_TYPE> class Runner {
@@ -339,7 +340,7 @@ public:
 
     // run on fine grid without multigrid
     {
-      laplace.reinit(data, dummy, laplace_additional_data);
+      laplace.initialize(mapping, data, dummy, laplace_additional_data);
       run(laplace);
     }
 

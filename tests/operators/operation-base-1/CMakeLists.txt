@@ -5,9 +5,11 @@
 # Set the name of the project and target:
 SET(TARGET "main")
 
+include_directories(include)
+
 # Declare all source files the target consists of:
 SET(TARGET_SRC
-  ../operation-base-util/laplace_operator.cpp
+  ../../../include/laplace/spatial_discretization/laplace_operator.cpp
   src/main.cc
   # You can specify additional files here!
   )

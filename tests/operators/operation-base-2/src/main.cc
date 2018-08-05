@@ -45,7 +45,7 @@
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
 
-#include "../../operation-base-util/laplace_operator.h"
+#include "../../../../include/laplace/spatial_discretization/laplace_operator.h"
 #include "include/tests.h"
 #include "include/operator_base_test.h"
 
@@ -53,11 +53,12 @@
 #include "../../operation-base-util/categorization.h"
 
 using namespace dealii;
+using namespace Laplace;
 
 const unsigned int global_refinements = 3;
 typedef double value_type;
 const int fe_degree_min = 1;
-const int fe_degree_max = 2;
+const int fe_degree_max = 3;
 
 typedef double value_type;
 
@@ -71,7 +72,9 @@ public:
     MPI_Comm_size(MPI_COMM_WORLD, &size);
       
     // setup triangulation
-    parallel::distributed::Triangulation<dim> triangulation(MPI_COMM_WORLD);
+    parallel::distributed::Triangulation<dim> triangulation(MPI_COMM_WORLD, dealii::Triangulation<dim>::none,
+                      parallel::distributed::Triangulation<
+                          dim>::construct_multigrid_hierarchy);
       
     const double left = -1.0;
     const double right = +1.0;
@@ -88,22 +91,49 @@ public:
     FE_TYPE fe_dgq(fe_degree);
     DoFHandler<dim> dof_handler_dg(triangulation);
     dof_handler_dg.distribute_dofs(fe_dgq);
+    dof_handler_dg.distribute_mg_dofs();
     bool is_dg = (fe_dgq.dofs_per_vertex == 0);
+    
+    MappingQGeneric<dim> mapping(fe_degree);
     
     // setup matrixfree
     MatrixFree<dim, value_type> data;
     
     QGauss<1> quadrature(fe_degree + 1);
     typename MatrixFree<dim, value_type>::AdditionalData additional_data;
-    additional_data.mapping_update_flags =
-        (update_gradients | update_JxW_values | update_values);
-    additional_data.mapping_update_flags_inner_faces =
-        (update_JxW_values | update_normal_vectors | update_values);
-    additional_data.mapping_update_flags_boundary_faces =
-        (update_JxW_values | update_normal_vectors | update_quadrature_points |
-         update_values);
+//    additional_data.mapping_update_flags =
+//        (update_gradients | update_JxW_values | update_values);
+//    additional_data.mapping_update_flags_inner_faces =
+//        (update_JxW_values | update_normal_vectors | update_values);
+//    additional_data.mapping_update_flags_boundary_faces =
+//        (update_JxW_values | update_normal_vectors | update_quadrature_points |
+//         update_values);
+    
+    if (fe_dgq.dofs_per_vertex == 0)
+      additional_data.build_face_info = true;
     
     ConstraintMatrix dummy;
+    
+    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
+    dirichlet_bc[0] =
+        std::shared_ptr<Function<dim>>(new Functions::ZeroFunction<dim>());
+
+    // ...: Neumann BC: nothing to do
+
+    // ...: Periodic BC: TODO
+
+    // Setup constraints: for MG
+    MGConstrainedDoFs mg_constrained_dofs;
+    mg_constrained_dofs.clear();
+    std::set<types::boundary_id> dirichlet_boundary;
+    for (auto it : dirichlet_bc)
+      dirichlet_boundary.insert(it.first);
+    mg_constrained_dofs.initialize(dof_handler_dg);
+    mg_constrained_dofs.make_zero_boundary_constraints(dof_handler_dg,
+                                                       dirichlet_boundary);
+    if (fe_dgq.dofs_per_vertex > 0)
+      dummy.add_lines(
+          mg_constrained_dofs.get_boundary_indices(global_refinements));
     dummy.close();
     
 if(CATEGORIZE){
@@ -111,7 +141,7 @@ if(CATEGORIZE){
     Categorization::do_cell_based_loops(triangulation, additional_data);
 }
     
-    data.reinit(dof_handler_dg, dummy, quadrature, additional_data);
+    data.reinit(mapping, dof_handler_dg, dummy, quadrature, additional_data);
 
     // setup operator
     LaplaceOperator<dim, fe_degree, value_type> laplace;
@@ -125,7 +155,7 @@ if(CATEGORIZE){
 }
     
     laplace_additional_data.bc = bc;
-    laplace.reinit(data, dummy, laplace_additional_data);
+    laplace.initialize(mapping, data, dummy, laplace_additional_data);
 
     // run tests
     convergence_table.add_value("procs", size);
@@ -133,7 +163,7 @@ if(CATEGORIZE){
     convergence_table.add_value("vers", is_dg);
     OperatorBaseTest::test(laplace, convergence_table,true,true,true, 
             (CATEGORIZE || size==1)&&is_dg);
-    if(!CATEGORIZE && size!=1 && !is_dg){
+    if((!CATEGORIZE && size!=1) || !is_dg){
         convergence_table.add_value("(B*v)_L2", 0);
         convergence_table.add_value("(B*v-B(S)*v)_L2", 0);
     }
@@ -154,6 +184,7 @@ int main(int argc, char **argv) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  if (true)
   {
     ConvergenceTable convergence_table;
     // run for 2-d
@@ -166,13 +197,14 @@ int main(int argc, char **argv) {
       convergence_table.write_text(std::cout);
   }
 
+  if(true)
   {
     ConvergenceTable convergence_table;
     // run for 2-d
-    Runner<2, fe_degree_min,true, FE_Q<2>>::run(convergence_table);
+    //Runner<2, fe_degree_min,true, FE_Q<2>>::run(convergence_table);
     Runner<2, fe_degree_min,false, FE_Q<2>>::run(convergence_table);
     // run for 3-d
-    Runner<3, fe_degree_min,true, FE_Q<3>>::run(convergence_table);
+    //Runner<3, fe_degree_min,true, FE_Q<3>>::run(convergence_table);
     Runner<3, fe_degree_min,false, FE_Q<3>>::run(convergence_table);
     if(!rank)
       convergence_table.write_text(std::cout);
