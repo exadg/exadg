@@ -28,6 +28,10 @@ private:
   const unsigned int level;
   mutable Vector<Number> temp_src;
   mutable Vector<Number> temp_dst;
+  
+  
+  mutable std::vector<types::global_dof_index> dof_indices1_collected;
+  mutable std::vector<types::global_dof_index> dof_indices2_collected;
 };
 
 #endif

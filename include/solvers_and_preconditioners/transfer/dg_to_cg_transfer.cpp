@@ -10,7 +10,45 @@ CGToDGTransfer<dim, Number>::CGToDGTransfer(const MF &data_dg, const MF &data_cg
                                             const unsigned int fe_degree)
     : data_dg(data_dg), data_cg(data_cg), level(level),
       temp_src(std::pow(fe_degree + 1, dim)),
-      temp_dst(std::pow(fe_degree + 1, dim)) {}
+      temp_dst(std::pow(fe_degree + 1, dim)) {
+  
+  const bool is_mg = !(level == numbers::invalid_unsigned_int);
+
+  if (is_mg) {}
+  else{
+      
+  // get reference to dof_handlers
+  const DoFHandler<dim> &dh1 = data_cg.get_dof_handler();
+  const DoFHandler<dim> &dh2 = data_dg.get_dof_handler();
+
+    // get global index (TODO)
+    std::vector<types::global_dof_index> dof_indices1(dh1.get_fe().dofs_per_cell);
+    std::vector<types::global_dof_index> dof_indices2(dh2.get_fe().dofs_per_cell);
+
+    // get iterator
+    auto start1 = dh1.begin();
+    auto start2 = dh2.begin();
+    auto end = dh1.end();
+
+    // loop over all local cells
+    for (auto cell1 = start1, cell2 = start2; cell1 < end; cell1++, cell2++)
+      if (cell1->is_locally_owned()) {
+        cell1->get_dof_indices(dof_indices1);
+        cell2->get_dof_indices(dof_indices2);
+        for(auto i : dof_indices1)
+            dof_indices1_collected.push_back(i);
+        for(auto i : dof_indices2){
+            dof_indices2_collected.push_back(i);
+            break;
+        }
+      }
+    std::cout << dof_indices1_collected.size() << " " << dof_indices2_collected.size() << std::endl;
+    
+    //for(auto i :dof_indices1_collected)    
+    //    std::cout << i << std::endl;
+  }
+    
+}
 
 template <int dim, typename Number>
 CGToDGTransfer<dim, Number>::~CGToDGTransfer() {}
@@ -78,25 +116,17 @@ void CGToDGTransfer<dim, Number>::transfer(VNumber &dst, const VNumber &src,
           dst[dof_indices2[i]] += temp_dst[i];
       }
   } else {
-    // get iterator
-    auto start1 = dh1.begin();
-    auto start2 = dh2.begin();
-    auto end = dh1.end();
-
-    // loop over all local cells
-    for (auto cell1 = start1, cell2 = start2; cell1 < end; cell1++, cell2++)
-      if (cell1->is_locally_owned()) {
-        // gather values
-        cell1->get_dof_values(src, temp_src);
-
-        // bring dof_values into the right order
-        // (needed: numbering of shape functions of fe_q and fe_dgq different)
-        for (unsigned int j = 0; j < temp_src.size(); j++)
-          temp_dst[num_dst[j]] = temp_src[num_src[j]];
-        
-        // scatter values
-        cell2->distribute_local_to_global(temp_dst, dst);
-      }
+    const unsigned int delta = dh1.get_fe().dofs_per_cell;
+    if(dh1.get_fe().dofs_per_vertex == 0)
+      // DG -> CG
+      for (unsigned int i = 0, k = 0; i < dof_indices1_collected.size(); i+=delta,k++)
+        for (unsigned int j = 0; j < delta; j++)
+          dst[dof_indices1_collected[i+num_dst[j]]] += src[dof_indices2_collected[k]+num_src[j]];
+    else
+      // CG -> DG
+      for (unsigned int i = 0, k = 0; i < dof_indices1_collected.size(); i+=delta,k++)
+        for (unsigned int j = 0; j < delta; j++)
+          dst[dof_indices2_collected[k]+num_dst[j]] += src[dof_indices1_collected[i+num_src[j]]];
   }
 }
 
