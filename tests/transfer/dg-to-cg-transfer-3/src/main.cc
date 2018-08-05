@@ -127,6 +127,7 @@ private:
   MatrixFree<dim, value_type> data_cg;
   std::shared_ptr<BoundaryDescriptor<dim>> bc;
   MGConstrainedDoFs mg_constrained_dofs_cg;
+  MGConstrainedDoFs mg_constrained_dofs_dg;
   ConstraintMatrix dummy_dg;
   ConstraintMatrix dummy_cg;
 
@@ -204,6 +205,7 @@ private:
 #ifdef DETAIL_OUTPUT
     dummy_cg.print(std::cout);
 #endif
+    mg_constrained_dofs_dg.clear();
     dummy_dg.clear();
     
     data_dg.reinit(mapping, dof_handler_dg, dummy_dg, quadrature, additional_data_dg);
@@ -261,6 +263,15 @@ public:
     LaplaceOperatorData<dim> laplace_additional_data;
     laplace_additional_data.bc = this->bc;
 
+    // run through all multigrid level
+    for (unsigned int level = 0; level <= global_refinements; level++) {
+      laplace_dg.reinit(dof_handler_dg, mapping, (void *)&laplace_additional_data, 
+                     mg_constrained_dofs_dg, level);
+      laplace_cg.reinit(dof_handler_cg, mapping, (void *)&laplace_additional_data, 
+                     mg_constrained_dofs_cg, level);
+      run(laplace_dg, laplace_cg, level);
+    }
+
     // run on fine grid without multigrid
     {
       laplace_dg.initialize(mapping, data_dg, dummy_dg, laplace_additional_data);
@@ -303,8 +314,13 @@ int main(int argc, char **argv) {
   Run<2, 8>::run(convergence_table);
   Run<2, 9>::run(convergence_table);
   
-    if (!rank)
+    if (!rank){
+      std::ofstream outfile;
+      outfile.open("dg-to-cg-transfer.csv");
       convergence_table.write_text(std::cout);
+      convergence_table.write_text(outfile);
+      outfile.close();
+    }
     pcout << std::endl;
 
 #ifdef LIKWID_PERFMON
