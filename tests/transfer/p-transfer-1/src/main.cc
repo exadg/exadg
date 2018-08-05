@@ -44,7 +44,7 @@
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
 
-#include "../../../operators/operation-base-util/laplace_operator.h"
+#include "../../../../include/laplace/spatial_discretization/laplace_operator.h"
 #include "../../../operators/operation-base-util/l2_norm.h"
 
 #include "../../../operators/operation-base-1/src/include/rhs_operator.h"
@@ -60,6 +60,7 @@ const int PATCHES = 10;
 typedef double value_type;
 
 using namespace dealii;
+using namespace Laplace;
 
 
 template <int dim> class ExactSolution : public Function<dim> {
@@ -299,8 +300,8 @@ public:
     LaplaceOperatorData<dim> laplace_additional_data;
     laplace_additional_data.bc = this->bc;
 
-    laplace_1.reinit(data_1, dummy_1, laplace_additional_data);
-    laplace_2.reinit(data_2, dummy_2, laplace_additional_data);
+    laplace_1.initialize(mapping_1, data_1, dummy_1, laplace_additional_data);
+    laplace_2.initialize(mapping_2, data_2, dummy_2, laplace_additional_data);
     run(laplace_1, laplace_2);
 
   }

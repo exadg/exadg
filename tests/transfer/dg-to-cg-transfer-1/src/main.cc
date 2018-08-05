@@ -46,7 +46,7 @@
 #include <deal.II/lac/solver_cg.h>
 #include <vector>
 
-#include "../../../../include/solvers_and_preconditioners/mg_coarse_ml/dg_to_cg_transfer.h"
+#include "../../../../include/solvers_and_preconditioners/transfer/dg_to_cg_transfer.h"
 #include "../../../operators/operation-base-util/l2_norm.h"
 
 #include "../../../operators/operation-base-util/interpolate.h"

@@ -45,13 +45,13 @@
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
 
-#include "../../../operators/operation-base-util/laplace_operator.h"
+#include "../../../../include/laplace/spatial_discretization/laplace_operator.h"
 #include "../../../operators/operation-base-util/l2_norm.h"
 
 #include "../../../operators/operation-base-1/src/include/rhs_operator.h"
 
 #include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
-#include "../../../../include/solvers_and_preconditioners/mg_coarse_ml/dg_to_cg_transfer.h"
+#include "../../../../include/solvers_and_preconditioners/transfer/dg_to_cg_transfer.h"
 
 #ifdef LIKWID_PERFMON
     #include <likwid.h>
@@ -63,6 +63,8 @@ const int PATCHES = 10;
 typedef double value_type;
 
 using namespace dealii;
+using namespace Laplace;
+
 const int best_of = 10;
 
 
@@ -261,8 +263,8 @@ public:
 
     // run on fine grid without multigrid
     {
-      laplace_dg.reinit(data_dg, dummy_dg, laplace_additional_data);
-      laplace_cg.reinit(data_cg, dummy_cg, laplace_additional_data);
+      laplace_dg.initialize(mapping, data_dg, dummy_dg, laplace_additional_data);
+      laplace_cg.initialize(mapping, data_cg, dummy_cg, laplace_additional_data);
       run(laplace_dg, laplace_cg);
     }
   }

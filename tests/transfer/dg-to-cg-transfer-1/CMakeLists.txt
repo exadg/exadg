@@ -9,7 +9,7 @@ include_directories(include)
 
 # Declare all source files the target consists of:
 SET(TARGET_SRC
-  ../../../include/solvers_and_preconditioners/mg_coarse_ml/dg_to_cg_transfer.cpp
+  ../../../include/solvers_and_preconditioners/transfer/dg_to_cg_transfer.cpp
   src/main.cc
   # You can specify additional files here!
   )

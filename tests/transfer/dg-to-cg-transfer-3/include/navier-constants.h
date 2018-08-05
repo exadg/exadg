@@ -4,6 +4,9 @@
 #define DIM_2       1
 #define DIM_3       0
 
+#define OP_FLOAT    0
+#define OP_DOUBLE   0
+
 #define MG_FLOAT    0
 #define MG_DOUBLE   1
 
