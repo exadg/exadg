@@ -12,20 +12,35 @@ CGToDGTransfer<dim, Number>::CGToDGTransfer(const MF &data_dg, const MF &data_cg
       temp_src(std::pow(fe_degree + 1, dim)),
       temp_dst(std::pow(fe_degree + 1, dim)) {
   
-  const bool is_mg = !(level == numbers::invalid_unsigned_int);
 
-  if (is_mg) {}
-  else{
-      
   // get reference to dof_handlers
   const DoFHandler<dim> &dh1 = data_cg.get_dof_handler();
   const DoFHandler<dim> &dh2 = data_dg.get_dof_handler();
 
-    // get global index (TODO)
-    std::vector<types::global_dof_index> dof_indices1(dh1.get_fe().dofs_per_cell);
-    std::vector<types::global_dof_index> dof_indices2(dh2.get_fe().dofs_per_cell);
+  // get global index (TODO)
+  std::vector<types::global_dof_index> dof_indices1(dh1.get_fe().dofs_per_cell);
+  std::vector<types::global_dof_index> dof_indices2(dh2.get_fe().dofs_per_cell);
 
-    // get iterator
+  // check if multigrid
+  const bool is_mg = !(level == numbers::invalid_unsigned_int);
+  
+  // fill in the indices
+  if (is_mg) {
+    // description: as in the non-mg-case  
+    auto start1 = dh1.begin_mg(level);
+    auto start2 = dh2.begin_mg(level);
+    auto end = dh1.end_mg(level);
+
+    for (auto cell1 = start1, cell2 = start2; cell1 < end; cell1++, cell2++)
+      if (cell1->is_locally_owned_on_level()) {
+        cell1->get_mg_dof_indices(dof_indices1);
+        for(auto i : dof_indices1)
+          dof_indices1_collected.push_back(i);
+        cell2->get_mg_dof_indices(dof_indices2);
+        dof_indices2_collected.push_back(dof_indices2[0]);
+      }
+  }else{
+    // get iterators
     auto start1 = dh1.begin();
     auto start2 = dh2.begin();
     auto end = dh1.end();
@@ -33,19 +48,16 @@ CGToDGTransfer<dim, Number>::CGToDGTransfer(const MF &data_dg, const MF &data_cg
     // loop over all local cells
     for (auto cell1 = start1, cell2 = start2; cell1 < end; cell1++, cell2++)
       if (cell1->is_locally_owned()) {
+        // get indices for CG and ...
         cell1->get_dof_indices(dof_indices1);
-        cell2->get_dof_indices(dof_indices2);
+        // ... save them
         for(auto i : dof_indices1)
-            dof_indices1_collected.push_back(i);
-        for(auto i : dof_indices2){
-            dof_indices2_collected.push_back(i);
-            break;
-        }
+          dof_indices1_collected.push_back(i);
+        // get indices for DG and ...
+        cell2->get_dof_indices(dof_indices2);
+        // ... save the first entry (rest not needed: consecutive elements)
+        dof_indices2_collected.push_back(dof_indices2[0]);
       }
-    std::cout << dof_indices1_collected.size() << " " << dof_indices2_collected.size() << std::endl;
-    
-    //for(auto i :dof_indices1_collected)    
-    //    std::cout << i << std::endl;
   }
     
 }
@@ -74,60 +86,25 @@ void CGToDGTransfer<dim, Number>::transfer(VNumber &dst, const VNumber &src,
 
   // get reference to dof_handlers
   const DoFHandler<dim> &dh1 = data_src.get_dof_handler();
-  const DoFHandler<dim> &dh2 = data_dst.get_dof_handler();
 
   // get numbering of shape functions
   auto &num_src = data_src.get_shape_info().lexicographic_numbering;
   auto &num_dst = data_dst.get_shape_info().lexicographic_numbering;
 
-  // check if multi grid
-  const bool is_mg = !(level == numbers::invalid_unsigned_int);
-
-  if (is_mg) {
-
-    // get global index (TODO)
-    std::vector<types::global_dof_index> dof_indices1(
-        dh1.get_fe().dofs_per_cell);
-    std::vector<types::global_dof_index> dof_indices2(
-        dh2.get_fe().dofs_per_cell);
-
-    // get iterator
-    auto start1 = dh1.begin_mg(level);
-    auto start2 = dh2.begin_mg(level);
-    auto end = dh1.end_mg(level);
-
-    // loop over all local cells
-    for (auto cell1 = start1, cell2 = start2; cell1 < end; cell1++, cell2++)
-      if (cell1->is_locally_owned_on_level()) {
-
-        // gather values (TODO: any alternatives?)
-        cell1->get_mg_dof_indices(dof_indices1);
-        for (unsigned int i = 0; i < dof_indices1.size(); i++)
-          temp_src[i] = src[dof_indices1[i]];
-
-        // bring dof_values into the right order
-        // (needed: numbering of shape functions of fe_q and fe_dgq different)
-        for (unsigned int j = 0; j < temp_src.size(); j++)
-          temp_dst[num_dst[j]] = temp_src[num_src[j]];
-
-        // scatter values (TODO: any alternatives?)
-        cell2->get_mg_dof_indices(dof_indices2);
-        for (unsigned int i = 0; i < dof_indices2.size(); i++)
-          dst[dof_indices2[i]] += temp_dst[i];
-      }
-  } else {
-    const unsigned int delta = dh1.get_fe().dofs_per_cell;
-    if(dh1.get_fe().dofs_per_vertex == 0)
-      // DG -> CG
-      for (unsigned int i = 0, k = 0; i < dof_indices1_collected.size(); i+=delta,k++)
-        for (unsigned int j = 0; j < delta; j++)
-          dst[dof_indices1_collected[i+num_dst[j]]] += src[dof_indices2_collected[k]+num_src[j]];
-    else
-      // CG -> DG
-      for (unsigned int i = 0, k = 0; i < dof_indices1_collected.size(); i+=delta,k++)
-        for (unsigned int j = 0; j < delta; j++)
-          dst[dof_indices2_collected[k]+num_dst[j]] += src[dof_indices1_collected[i+num_src[j]]];
-  }
+  // compute dofs per cell
+  const unsigned int delta = dh1.get_fe().dofs_per_cell;
+  
+  // do transfer:
+  if(dh1.get_fe().dofs_per_vertex == 0)
+    // DG -> CG
+    for (unsigned int i = 0, k = 0; i < dof_indices1_collected.size(); i += delta,k++)
+      for (unsigned int j = 0; j < delta; j++)
+        dst[dof_indices1_collected[i+num_dst[j]]] += src[dof_indices2_collected[k]+num_src[j]];
+  else
+    // CG -> DG
+    for (unsigned int i = 0, k = 0; i < dof_indices1_collected.size(); i += delta,k++)
+      for (unsigned int j = 0; j < delta; j++)
+        dst[dof_indices2_collected[k]+num_dst[j]] += src[dof_indices1_collected[i+num_src[j]]];
 }
 
 #include "dg_to_cg_transfer.hpp"
