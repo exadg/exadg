@@ -285,6 +285,14 @@ int main(int argc, char **argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   ConvergenceTable convergence_table;
   
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_INIT;
+#pragma omp parallel
+  {
+    LIKWID_MARKER_THREADINIT;
+  }
+#endif
+  
   Run<2, 1>::run(convergence_table);
   Run<2, 2>::run(convergence_table);
   Run<2, 3>::run(convergence_table);
@@ -298,4 +306,8 @@ int main(int argc, char **argv) {
     if (!rank)
       convergence_table.write_text(std::cout);
     pcout << std::endl;
+
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_CLOSE;
+#endif
 }
