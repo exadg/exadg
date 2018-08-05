@@ -101,6 +101,17 @@ public:
       array_penalty_parameter, *this->data, mapping, this->ad.dof_index);
 }
   
+void initialize(Mapping<dim> const &mapping,
+            MatrixFree<dim, Number> &mf, 
+            ConstraintMatrix &cm, 
+            LaplaceOperatorData<dim> const &ad) {
+  Parent::reinit(mf, cm, ad);
+
+  // calculate penalty parameters
+  IP::calculate_penalty_parameter<dim, degree, Number>(
+      array_penalty_parameter, *this->data, mapping, this->ad.dof_index);
+}
+  
 void reinit(
     const DoFHandler<dim> &dof_handler, const Mapping<dim> &mapping,
     void* od, const MGConstrainedDoFs &mg_constrained_dofs, 
