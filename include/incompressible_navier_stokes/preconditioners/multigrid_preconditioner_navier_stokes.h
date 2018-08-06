@@ -22,8 +22,7 @@ template<int dim, typename value_type, typename Operator, typename UnderlyingOpe
 class MyMultigridPreconditionerVelocityDiffusion : public MyMultigridPreconditionerDG<dim,value_type,Operator,UnderlyingOperator>
 {
 public:
-  MyMultigridPreconditionerVelocityDiffusion() : 
-    MyMultigridPreconditionerDG<dim,value_type,Operator,UnderlyingOperator>(){}
+  MyMultigridPreconditionerVelocityDiffusion(){}
 
   virtual ~MyMultigridPreconditionerVelocityDiffusion(){};
 
@@ -82,8 +81,7 @@ template<int dim, typename value_type, typename Operator, typename UnderlyingOpe
 class MyMultigridPreconditionerVelocityConvectionDiffusion : public MyMultigridPreconditionerDG<dim,value_type,Operator,UnderlyingOperator>
 {
 public:
-  MyMultigridPreconditionerVelocityConvectionDiffusion() : 
-    MyMultigridPreconditionerDG<dim,value_type,Operator,UnderlyingOperator>(){}
+  MyMultigridPreconditionerVelocityConvectionDiffusion(){}
 
   virtual ~MyMultigridPreconditionerVelocityConvectionDiffusion(){};
 

@@ -9,9 +9,6 @@
 #define INCLUDE_MATRIXOPERATORBASE_H_
 
 #include <deal.II/base/subscriptor.h>
-#include <deal.II/base/exceptions.h>
-
-using namespace dealii;
 
 /*
  *  Interface class needed for update of preconditioners

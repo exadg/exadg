@@ -331,7 +331,6 @@ private:
 
   mutable std::vector<LAPACKFullMatrix<Number>> matrices;
   mutable bool block_jacobi_matrices_have_been_initialized;
-  ConstraintMatrix constraints;
 };
 
 #endif // ifndef __indexa_poisson_solver_h
