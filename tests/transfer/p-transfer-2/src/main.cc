@@ -240,10 +240,25 @@ public:
     // ... its additional data
     LaplaceOperatorData<dim> laplace_additional_data;
     laplace_additional_data.bc = this->bc;
+    
+    MGConstrainedDoFs mg_constrained_dofs;
+    mg_constrained_dofs.clear();
 
-    laplace_1.initialize(mapping_1, data_1, dummy_1, laplace_additional_data);
-    laplace_2.initialize(mapping_2, data_2, dummy_2, laplace_additional_data);
-    run(laplace_1, laplace_2);
+    // run through all multigrid level
+    for (unsigned int level = 0; level <= global_refinements; level++) {
+      laplace_1.reinit(dof_handler_1, mapping_1, (void *)&laplace_additional_data, 
+                     mg_constrained_dofs, level);
+      laplace_2.reinit(dof_handler_2, mapping_2, (void *)&laplace_additional_data, 
+                     mg_constrained_dofs, level);
+      run(laplace_1, laplace_2, level);
+    }
+
+    // run on fine grid without multigrid
+    {
+      laplace_1.initialize(mapping_1, data_1, dummy_1, laplace_additional_data);
+      laplace_2.initialize(mapping_2, data_2, dummy_2, laplace_additional_data);
+      run(laplace_1, laplace_2);
+    }
 
   }
 };
@@ -263,6 +278,14 @@ int main(int argc, char **argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   
   ConvergenceTable convergence_table;
+  
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_INIT;
+#pragma omp parallel
+  {
+    LIKWID_MARKER_THREADINIT;
+  }
+#endif
 
   Run<2, 2 /*to: 1*/>::run(convergence_table);
   Run<2, 3 /*to: 1*/>::run(convergence_table);
@@ -273,7 +296,16 @@ int main(int argc, char **argv) {
   Run<2, 8 /*to: 4*/>::run(convergence_table);
   Run<2, 9 /*to: 4*/>::run(convergence_table);
 
-  if (!rank)
-    convergence_table.write_text(std::cout);
+    if (!rank){
+      std::ofstream outfile;
+      outfile.open("p-transfer.csv");
+      convergence_table.write_text(std::cout);
+      convergence_table.write_text(outfile);
+      outfile.close();
+    }
   pcout << std::endl;
+
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_CLOSE;
+#endif
 }
