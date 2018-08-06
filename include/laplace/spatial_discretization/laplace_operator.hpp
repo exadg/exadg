@@ -4,7 +4,6 @@
 
 namespace Laplace
 {
-
 #if DIM_2 && DEGREE_1 && (OP_FLOAT || MG_FLOAT)
 template class LaplaceOperator<2, 1, float>;
 #endif
@@ -131,4 +130,4 @@ template class LaplaceOperator<3, 9, float>;
 template class LaplaceOperator<3, 9, double>;
 #endif
 
-}
+} // namespace Laplace

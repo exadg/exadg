@@ -47,13 +47,15 @@
 
 #include "../../../include/operators/operation_base.h"
 
-enum class OperatorType {
+enum class OperatorType
+{
   full,
   homogeneous,
   inhomogeneous
 };
 
-enum class BoundaryType {
+enum class BoundaryType
+{
   undefined,
   dirichlet,
   neumann
@@ -62,44 +64,64 @@ enum class BoundaryType {
 template<int dim>
 struct BoundaryDescriptor
 {
-  std::map<types::boundary_id,std::shared_ptr<Function<dim> > > dirichlet_bc;
-  std::map<types::boundary_id,std::shared_ptr<Function<dim> > > neumann_bc;
+  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
+  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
 };
 
-template <int dim> struct LaplaceOperatorData : public OperatorBaseData<dim, BoundaryType, OperatorType,
-                              BoundaryDescriptor<dim>> {
+template<int dim>
+struct LaplaceOperatorData : public OperatorBaseData<dim, BoundaryType, OperatorType, BoundaryDescriptor<dim>>
+{
 public:
   LaplaceOperatorData()
-      : OperatorBaseData<dim, BoundaryType, OperatorType, BoundaryDescriptor<dim>>(
-              0, 0, false, true, false, false, true, false,
-                              true, true, true, true, // face
-                              true, true, true, true  // boundary
-                              ) {}
+    : OperatorBaseData<dim, BoundaryType, OperatorType, BoundaryDescriptor<dim>>(0,
+                                                                                 0,
+                                                                                 false,
+                                                                                 true,
+                                                                                 false,
+                                                                                 false,
+                                                                                 true,
+                                                                                 false,
+                                                                                 true,
+                                                                                 true,
+                                                                                 true,
+                                                                                 true, // face
+                                                                                 true,
+                                                                                 true,
+                                                                                 true,
+                                                                                 true // boundary
+      )
+  {
+  }
 };
 
-template <int dim, int degree, typename Number>
-class LaplaceOperator
-    : public OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>> {
+template<int dim, int degree, typename Number>
+class LaplaceOperator : public OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>>
+{
 public:
   LaplaceOperator();
 
   // typedefs
-  typedef LaplaceOperator<dim, degree, Number> This;
+  typedef LaplaceOperator<dim, degree, Number>                        This;
   typedef OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>> Parent;
-  typedef typename Parent::FEEvalCell FEEvalCell;
-  typedef typename Parent::FEEvalFace FEEvalFace;
-  typedef typename Parent::VNumber VNumber;
-  
+  typedef typename Parent::FEEvalCell                                 FEEvalCell;
+  typedef typename Parent::FEEvalFace                                 FEEvalFace;
+  typedef typename Parent::VNumber                                    VNumber;
+
   // static constants
   static const int DIM = Parent::DIM;
 
-  void do_cell_integral(FEEvalCell &phi) const;
-  void do_face_integral(FEEvalFace &p_n, FEEvalFace &p_p) const;
-  void do_face_int_integral(FEEvalFace &p_n, FEEvalFace &p_p) const;
-  void do_face_ext_integral(FEEvalFace &p_n, FEEvalFace &p_p) const;
-  void do_boundary_integral(FEEvalFace &fe_eval,
-                            OperatorType const &operator_type,
-                            types::boundary_id const &boundary_id) const;
+  void
+  do_cell_integral(FEEvalCell & phi) const;
+  void
+  do_face_integral(FEEvalFace & p_n, FEEvalFace & p_p) const;
+  void
+  do_face_int_integral(FEEvalFace & p_n, FEEvalFace & p_p) const;
+  void
+  do_face_ext_integral(FEEvalFace & p_n, FEEvalFace & p_p) const;
+  void
+  do_boundary_integral(FEEvalFace &               fe_eval,
+                       OperatorType const &       operator_type,
+                       types::boundary_id const & boundary_id) const;
 };
 
 #endif

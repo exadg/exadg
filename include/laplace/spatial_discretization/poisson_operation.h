@@ -28,67 +28,75 @@
 #include "laplace_operator.h"
 #include "rhs_operator.h"
 
-namespace Laplace {
-
-template <int dim, int fe_degree, typename value_type>
-class DGOperation : public MatrixOperatorBase {
+namespace Laplace
+{
+template<int dim, int fe_degree, typename value_type>
+class DGOperation : public MatrixOperatorBase
+{
 public:
   typedef parallel::distributed::Vector<value_type> VNumber;
 
-  DGOperation(parallel::distributed::Triangulation<dim> const &triangulation,
-              Laplace::InputParameters const &param_in);
+  DGOperation(parallel::distributed::Triangulation<dim> const & triangulation,
+              Laplace::InputParameters const &                  param_in);
 
-  void setup(
-      const std::vector<GridTools::PeriodicFacePair<
-          typename Triangulation<dim>::cell_iterator>>
-          periodic_face_pairs,
-      std::shared_ptr<Laplace::BoundaryDescriptor<dim>> boundary_descriptor_in,
-      std::shared_ptr<Laplace::FieldFunctions<dim>> field_functions_in);
+  void
+  setup(const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+                                                          periodic_face_pairs,
+        std::shared_ptr<Laplace::BoundaryDescriptor<dim>> boundary_descriptor_in,
+        std::shared_ptr<Laplace::FieldFunctions<dim>>     field_functions_in);
 
-  void setup_solver();
+  void
+  setup_solver();
 
-  void initialize_dof_vector(VNumber &src) const;
+  void
+  initialize_dof_vector(VNumber & src) const;
 
-  void rhs(VNumber &dst, double const evaluation_time = 0.0) const;
+  void
+  rhs(VNumber & dst, double const evaluation_time = 0.0) const;
 
-  unsigned int solve(VNumber &sol, VNumber const &rhs);
+  unsigned int
+  solve(VNumber & sol, VNumber const & rhs);
 
-  MatrixFree<dim, value_type> const &get_data() const;
+  MatrixFree<dim, value_type> const &
+  get_data() const;
 
-  Mapping<dim> const &get_mapping() const;
+  Mapping<dim> const &
+  get_mapping() const;
 
-  DoFHandler<dim> const &get_dof_handler() const;
+  DoFHandler<dim> const &
+  get_dof_handler() const;
 
 private:
-  void create_dofs();
+  void
+  create_dofs();
 
-  void initialize_matrix_free();
+  void
+  initialize_matrix_free();
 
-  void setup_operators();
+  void
+  setup_operators();
 
-  FE_DGQ<dim> fe;
+  FE_DGQ<dim>          fe;
   MappingQGeneric<dim> mapping;
-  DoFHandler<dim> dof_handler;
+  DoFHandler<dim>      dof_handler;
 
   MatrixFree<dim, value_type> data;
 
-  Laplace::InputParameters const &param;
+  Laplace::InputParameters const & param;
 
-  std::vector<
-      GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-      periodic_face_pairs;
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> periodic_face_pairs;
 
   std::shared_ptr<Laplace::BoundaryDescriptor<dim>> boundary_descriptor;
-  std::shared_ptr<Laplace::FieldFunctions<dim>> field_functions;
+  std::shared_ptr<Laplace::FieldFunctions<dim>>     field_functions;
 
   Laplace::RHSOperator<dim, fe_degree, value_type> rhs_operator;
 
   Laplace::LaplaceOperator<dim, fe_degree, value_type> laplace_operator;
 
   std::shared_ptr<PreconditionerBase<value_type>> preconditioner;
-  std::shared_ptr<IterativeSolverBase<VNumber>> iterative_solver;
+  std::shared_ptr<IterativeSolverBase<VNumber>>   iterative_solver;
 };
-}
+} // namespace Laplace
 
 #include "poisson_operation.cpp"
 

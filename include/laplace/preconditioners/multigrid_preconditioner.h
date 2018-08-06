@@ -2,7 +2,7 @@
  * MultigridPreconditionerScalarConvDiff.h
  *
  *  Created on:
- *      Author: 
+ *      Author:
  */
 
 #ifndef INCLUDE_CONVECTION_DIFFUSION_MULTIGRID_PRECONDITIONER_H_
@@ -12,23 +12,23 @@
 
 namespace Laplace
 {
-
 /*
  *  Multigrid preconditioner for (reaction-)convection-diffusion
  *  operator of the scalar (reaction-)convection-diffusion equation.
  */
-template<int dim, typename value_type, typename Operator, typename UnderlyingOperator=Operator>
-class MultigridPreconditioner : public MyMultigridPreconditionerDG<dim,value_type,Operator,UnderlyingOperator>
+template<int dim, typename value_type, typename Operator, typename UnderlyingOperator = Operator>
+class MultigridPreconditioner
+  : public MyMultigridPreconditionerDG<dim, value_type, Operator, UnderlyingOperator>
 {
 public:
-  MultigridPreconditioner() {}
-  
+  MultigridPreconditioner()
+  {
+  }
+
   virtual ~MultigridPreconditioner(){};
-  
 };
 
-}
+} // namespace Laplace
 
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_MULTIGRID_PRECONDITIONER_H_ */
-
