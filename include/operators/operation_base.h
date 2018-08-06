@@ -39,63 +39,80 @@
 
 #include <deal.II/base/convergence_table.h>
 #ifdef DEAL_II_WITH_TRILINOS
-#include <deal.II/lac/trilinos_sparse_matrix.h>
+#  include <deal.II/lac/trilinos_sparse_matrix.h>
 #endif
-#include "matrix_operator_base_new.h"
 #include <deal.II/lac/constraint_matrix.h>
+#include "matrix_operator_base_new.h"
 
 
 using namespace dealii;
 
-template <int dim, typename BT, typename OT, typename BoundaryDescriptor>
-struct OperatorBaseData {
-
+template<int dim, typename BT, typename OT, typename BoundaryDescriptor>
+struct OperatorBaseData
+{
   typedef BT BoundaryType;
   typedef OT OperatorType;
 
-  OperatorBaseData(const unsigned int dof_index, const unsigned int quad_index,
-                   const bool c_e_v = false, const bool c_e_g = false,
-                   const bool c_e_h = false, const bool c_i_v = false,
-                   const bool c_i_g = false, const bool c_i_h = false,
-                   const bool f_e_v = false, const bool f_e_g = false,
-                   const bool f_i_v = false, const bool f_i_g = false,
-                   const bool b_e_v = false, const bool b_e_g = false,
-                   const bool b_i_v = false, const bool b_i_g = false)
-      : dof_index(dof_index), quad_index(quad_index),
-        cell_evaluate(c_e_v, c_e_g, c_e_h), cell_integrate(c_i_v, c_i_g, c_i_h),
-        internal_evaluate(f_e_v, f_e_g), internal_integrate(f_i_v, f_i_g),
-        boundary_evaluate(b_e_v, b_e_g), boundary_integrate(b_i_v, b_i_g),
-        use_cell_based_loops(false), needs_mean_value_constraint(false){}
+  OperatorBaseData(const unsigned int dof_index,
+                   const unsigned int quad_index,
+                   const bool         c_e_v = false,
+                   const bool         c_e_g = false,
+                   const bool         c_e_h = false,
+                   const bool         c_i_v = false,
+                   const bool         c_i_g = false,
+                   const bool         c_i_h = false,
+                   const bool         f_e_v = false,
+                   const bool         f_e_g = false,
+                   const bool         f_i_v = false,
+                   const bool         f_i_g = false,
+                   const bool         b_e_v = false,
+                   const bool         b_e_g = false,
+                   const bool         b_i_v = false,
+                   const bool         b_i_g = false)
+    : dof_index(dof_index),
+      quad_index(quad_index),
+      cell_evaluate(c_e_v, c_e_g, c_e_h),
+      cell_integrate(c_i_v, c_i_g, c_i_h),
+      internal_evaluate(f_e_v, f_e_g),
+      internal_integrate(f_i_v, f_i_g),
+      boundary_evaluate(b_e_v, b_e_g),
+      boundary_integrate(b_i_v, b_i_g),
+      use_cell_based_loops(false),
+      needs_mean_value_constraint(false)
+  {
+  }
 
-  struct Cell {
-    Cell(const bool value = false, const bool gradient = false,
-         const bool hessians = false)
-        : value(value), gradient(gradient), hessians(hessians){};
+  struct Cell
+  {
+    Cell(const bool value = false, const bool gradient = false, const bool hessians = false)
+      : value(value), gradient(gradient), hessians(hessians){};
     /*const*/ bool value;
     /*const*/ bool gradient;
     /*const*/ bool hessians;
   };
 
-  struct Face {
-    Face(const bool value = false, const bool gradient = false)
-        : value(value), gradient(gradient){};
+  struct Face
+  {
+    Face(const bool value = false, const bool gradient = false) : value(value), gradient(gradient){};
     /*const*/ bool value;
     /*const*/ bool gradient;
 
-    bool do_eval() const { return value || gradient; }
+    bool
+    do_eval() const
+    {
+      return value || gradient;
+    }
   };
 
   inline DEAL_II_ALWAYS_INLINE BoundaryType
-  get_boundary_type(types::boundary_id const &boundary_id) const {
-
-    if (bc->dirichlet_bc.find(boundary_id) != bc->dirichlet_bc.end())
+                               get_boundary_type(types::boundary_id const & boundary_id) const
+  {
+    if(bc->dirichlet_bc.find(boundary_id) != bc->dirichlet_bc.end())
       return BoundaryType::dirichlet;
-    else if (bc->neumann_bc.find(boundary_id) != bc->neumann_bc.end())
+    else if(bc->neumann_bc.find(boundary_id) != bc->neumann_bc.end())
       return BoundaryType::neumann;
 
-    AssertThrow(
-        false,
-        ExcMessage("Boundary type of face is invalid or not implemented."));
+    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
 
     return BoundaryType::undefined;
   }
@@ -109,292 +126,400 @@ struct OperatorBaseData {
   /*const*/ Face internal_integrate;
   /*const*/ Face boundary_evaluate;
   /*const*/ Face boundary_integrate;
-  
-  bool use_cell_based_loops;
-  
-  bool needs_mean_value_constraint;
-  
-  std::shared_ptr<BoundaryDescriptor> bc;
-  
-  std::vector<
-      GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-      periodic_face_pairs_level0;
 
+  bool use_cell_based_loops;
+
+  bool needs_mean_value_constraint;
+
+  std::shared_ptr<BoundaryDescriptor> bc;
+
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+    periodic_face_pairs_level0;
 };
 
-template <typename T> class LazyWrapper {
-
+template<typename T>
+class LazyWrapper
+{
 public:
-  LazyWrapper():tp(nullptr){}
-    
-  void use_own() { this->tp = &this->t; }
-  void reinit(T const &t) { this->tp = &t; }
-  T &own() { return t; }
-  T const *operator->() { return tp; }
-  T const &operator*() { return *tp; }
+  LazyWrapper() : tp(nullptr)
+  {
+  }
+
+  void
+  use_own()
+  {
+    this->tp = &this->t;
+  }
+  void
+  reinit(T const & t)
+  {
+    this->tp = &t;
+  }
+  T &
+  own()
+  {
+    return t;
+  }
+  T const * operator->()
+  {
+    return tp;
+  }
+  T const & operator*()
+  {
+    return *tp;
+  }
 
 private:
-  T const *tp;
-  T t;
+  T const * tp;
+  T         t;
 };
 
-template <int dim, int degree, typename Number, typename AdditionalData>
-class OperatorBase : public MatrixOperatorBaseNew<dim, Number> {
-
+template<int dim, int degree, typename Number, typename AdditionalData>
+class OperatorBase : public MatrixOperatorBaseNew<dim, Number>
+{
 public:
-  static const int DIM = dim;
+  static const int                                          DIM = dim;
   typedef OperatorBase<dim, degree, Number, AdditionalData> This;
-  typedef parallel::distributed::Vector<Number> VNumber;
+  typedef parallel::distributed::Vector<Number>             VNumber;
 #ifdef DEAL_II_WITH_TRILINOS
-  typedef FullMatrix<TrilinosScalar> FMatrix;
+  typedef FullMatrix<TrilinosScalar>     FMatrix;
   typedef TrilinosWrappers::SparseMatrix SMatrix;
 #endif
-  typedef std::vector<LAPACKFullMatrix<Number>> BMatrix;
-  typedef MatrixFree<dim, Number> MF;
-  typedef ConstraintMatrix CM;
-  typedef std::pair<unsigned int, unsigned int> Range;
-  typedef FEEvaluation<dim, degree, degree + 1, 1, Number> FEEvalCell;
+  typedef std::vector<LAPACKFullMatrix<Number>>                BMatrix;
+  typedef MatrixFree<dim, Number>                              MF;
+  typedef ConstraintMatrix                                     CM;
+  typedef std::pair<unsigned int, unsigned int>                Range;
+  typedef FEEvaluation<dim, degree, degree + 1, 1, Number>     FEEvalCell;
   typedef FEFaceEvaluation<dim, degree, degree + 1, 1, Number> FEEvalFace;
-  typedef typename AdditionalData::BoundaryType BoundaryType;
-  typedef typename AdditionalData::OperatorType OperatorType;
+  typedef typename AdditionalData::BoundaryType                BoundaryType;
+  typedef typename AdditionalData::OperatorType                OperatorType;
 
   OperatorBase();
 
-  static const unsigned int v_len = VectorizedArray<Number>::n_array_elements;
+  static const unsigned int v_len         = VectorizedArray<Number>::n_array_elements;
   static const unsigned int dofs_per_cell = FEEvalCell::static_dofs_per_cell;
 
   void
-  reinit(MF const &mf, CM &cm, AdditionalData const &ad,
-         unsigned int level_mg_handler = numbers::invalid_unsigned_int) const;
+  reinit(MF const &             mf,
+         CM &                   cm,
+         AdditionalData const & ad,
+         unsigned int           level_mg_handler = numbers::invalid_unsigned_int) const;
 
-  virtual void reinit(const DoFHandler<dim> &dof_handler,
-                      const Mapping<dim> &mapping, 
-                      void* ad,
-                      const MGConstrainedDoFs &mg_constrained_dofs,
-                      const unsigned int level);
+  virtual void
+  reinit(const DoFHandler<dim> &   dof_handler,
+         const Mapping<dim> &      mapping,
+         void *                    ad,
+         const MGConstrainedDoFs & mg_constrained_dofs,
+         const unsigned int        level);
 
   /*
    * matrix vector multiplication
    */
-  void apply(VNumber &dst, VNumber const &src) const;
-  virtual void apply_add(VNumber &dst, VNumber const &src) const;
+  void
+  apply(VNumber & dst, VNumber const & src) const;
+  virtual void
+  apply_add(VNumber & dst, VNumber const & src) const;
 
-  void vmult(VNumber &dst, VNumber const &src) const;
-  void vmult_add(VNumber &dst, VNumber const &src) const;
+  void
+  vmult(VNumber & dst, VNumber const & src) const;
+  void
+  vmult_add(VNumber & dst, VNumber const & src) const;
 
-  void vmult_interface_down(VNumber &dst, VNumber const &src) const;
-  void vmult_add_interface_up(VNumber &dst, VNumber const &src) const;
+  void
+  vmult_interface_down(VNumber & dst, VNumber const & src) const;
+  void
+  vmult_add_interface_up(VNumber & dst, VNumber const & src) const;
 
   /*
    *
    */
-  void rhs(VNumber &dst) const { rhs(dst, 0.0); }
-  void rhs(VNumber &dst, Number const time) const;
+  void
+  rhs(VNumber & dst) const
+  {
+    rhs(dst, 0.0);
+  }
+  void
+  rhs(VNumber & dst, Number const time) const;
   // TODO: remove
-  void rhs_add(VNumber &dst) const { rhs_add(dst, 0.0); }
-  void rhs_add(VNumber &dst, Number const time) const;
+  void
+  rhs_add(VNumber & dst) const
+  {
+    rhs_add(dst, 0.0);
+  }
+  void
+  rhs_add(VNumber & dst, Number const time) const;
 
-  void evaluate(VNumber &dst, VNumber const &src, Number const time) const;
-  void evaluate_add(VNumber &dst, VNumber const &src, Number const time) const;
+  void
+  evaluate(VNumber & dst, VNumber const & src, Number const time) const;
+  void
+  evaluate_add(VNumber & dst, VNumber const & src, Number const time) const;
 
   /*
    * point Jacobi method
    */
-  void calculate_diagonal(VNumber &diagonal) const;
-  void add_diagonal(VNumber &diagonal) const;
-  void calculate_inverse_diagonal(VNumber &diagonal) const;
+  void
+  calculate_diagonal(VNumber & diagonal) const;
+  void
+  add_diagonal(VNumber & diagonal) const;
+  void
+  calculate_inverse_diagonal(VNumber & diagonal) const;
 
   /*
    * block Jacobi methods
    */
-  void apply_block_jacobi(VNumber &dst, VNumber const &src) const;
-  void apply_block_jacobi_add(VNumber &dst, VNumber const &src) const;
+  void
+  apply_block_jacobi(VNumber & dst, VNumber const & src) const;
+  void
+  apply_block_jacobi_add(VNumber & dst, VNumber const & src) const;
 
   // TODO: add matrix-free and block matrix version
-  void apply_block_diagonal(VNumber &dst, VNumber const &src) const;
-  void update_block_jacobi() const;
-  void update_block_jacobi(bool do_lu_factorization) const;
-  virtual void add_block_jacobi_matrices(BMatrix &matrices) const;
+  void
+  apply_block_diagonal(VNumber & dst, VNumber const & src) const;
+  void
+  update_block_jacobi() const;
+  void
+  update_block_jacobi(bool do_lu_factorization) const;
+  virtual void
+  add_block_jacobi_matrices(BMatrix & matrices) const;
 
   /*
    * sparse matrix (Trilinos) methods
    */
 #ifdef DEAL_II_WITH_TRILINOS
-  void init_system_matrix(SMatrix &system_matrix) const;
-  void calculate_system_matrix(SMatrix &system_matrix) const;
+  void
+  init_system_matrix(SMatrix & system_matrix) const;
+  void
+  calculate_system_matrix(SMatrix & system_matrix) const;
 #endif
 
   /*
    * utility functions
    */
-  types::global_dof_index m() const;
+  types::global_dof_index
+  m() const;
 
-  types::global_dof_index n() const;
+  types::global_dof_index
+  n() const;
 
-  Number el(const unsigned int, const unsigned int) const;
+  Number
+  el(const unsigned int, const unsigned int) const;
 
-  bool is_empty_locally() const;
+  bool
+  is_empty_locally() const;
 
-  const MatrixFree<dim, Number> &get_data() const;
+  const MatrixFree<dim, Number> &
+  get_data() const;
 
-  unsigned int get_dof_index() const;
+  unsigned int
+  get_dof_index() const;
 
-  unsigned int get_quad_index() const;
+  unsigned int
+  get_quad_index() const;
 
-  AdditionalData const &get_operator_data() const;
+  AdditionalData const &
+  get_operator_data() const;
 
-  void initialize_dof_vector(VNumber &vector) const;
+  void
+  initialize_dof_vector(VNumber & vector) const;
 
-  void set_evaluation_time(double const evaluation_time_in);
+  void
+  set_evaluation_time(double const evaluation_time_in);
 
-  double get_evaluation_time() const;
+  double
+  get_evaluation_time() const;
 
 protected:
   /*
    * methods to be overwritten
    */
-  virtual void do_cell_integral(FEEvalCell &phi) const = 0;
-  virtual void do_face_integral(FEEvalFace &p_n, FEEvalFace &p_p) const = 0;
-  virtual void do_face_int_integral(FEEvalFace &p_n, FEEvalFace &p_p) const = 0;
-  virtual void do_face_ext_integral(FEEvalFace &p_n, FEEvalFace &p_p) const = 0;
   virtual void
-  do_boundary_integral(FEEvalFace &fe_eval, OperatorType const &operator_type,
-                       types::boundary_id const &boundary_id) const = 0;
+  do_cell_integral(FEEvalCell & phi) const = 0;
+  virtual void
+  do_face_integral(FEEvalFace & p_n, FEEvalFace & p_p) const = 0;
+  virtual void
+  do_face_int_integral(FEEvalFace & p_n, FEEvalFace & p_p) const = 0;
+  virtual void
+  do_face_ext_integral(FEEvalFace & p_n, FEEvalFace & p_p) const = 0;
+  virtual void
+  do_boundary_integral(FEEvalFace &               fe_eval,
+                       OperatorType const &       operator_type,
+                       types::boundary_id const & boundary_id) const = 0;
 
   /*
    * helper functions
    */
-  void create_standard_basis(unsigned int j, FEEvalCell &phi) const;
+  void
+  create_standard_basis(unsigned int j, FEEvalCell & phi) const;
 
-  void create_standard_basis(unsigned int j, FEEvalFace &phi) const;
+  void
+  create_standard_basis(unsigned int j, FEEvalFace & phi) const;
 
-  void create_standard_basis(unsigned int j, FEEvalFace &phi1,
-                             FEEvalFace &phi2) const;
+  void
+  create_standard_basis(unsigned int j, FEEvalFace & phi1, FEEvalFace & phi2) const;
 
   /*
    * functions to be called from matrix-free loops and cell_loops: vmult
    */
-  void local_apply_cell(const MF & /*data*/, VNumber &dst, const VNumber &src,
-                        const Range &range) const;
+  void
+  local_apply_cell(const MF & /*data*/, VNumber & dst, const VNumber & src, const Range & range) const;
 
-  void local_apply_face(const MF & /*data*/, VNumber &dst, const VNumber &src,
-                        const Range &range) const;
+  void
+  local_apply_face(const MF & /*data*/, VNumber & dst, const VNumber & src, const Range & range) const;
 
   // homogenous
-  void local_apply_boundary(const MF & /*data*/, VNumber & /*dst*/,
+  void
+  local_apply_boundary(const MF & /*data*/,
+                       VNumber & /*dst*/,
+                       const VNumber & /*src*/,
+                       const Range & /*range*/) const;
+
+  void
+  local_apply_inhom_cell(const MF & /*data*/, VNumber & dst, const VNumber & src, const Range & range) const;
+
+  void
+  local_apply_inhom_face(const MF & /*data*/, VNumber & dst, const VNumber & src, const Range & range) const;
+
+  void
+  local_apply_inhom_boundary(const MF & /*data*/,
+                             VNumber & /*dst*/,
+                             const VNumber & /*src*/,
+                             const Range & /*range*/) const;
+
+  void
+  local_apply_full_boundary(const MF & /*data*/,
+                            VNumber & /*dst*/,
                             const VNumber & /*src*/,
                             const Range & /*range*/) const;
-
-  void local_apply_inhom_cell(const MF & /*data*/, VNumber &dst,
-                              const VNumber &src, const Range &range) const;
-
-  void local_apply_inhom_face(const MF & /*data*/, VNumber &dst,
-                              const VNumber &src, const Range &range) const;
-
-  void local_apply_inhom_boundary(const MF & /*data*/, VNumber & /*dst*/,
-                                  const VNumber & /*src*/,
-                                  const Range & /*range*/) const;
-
-  void local_apply_full_boundary(const MF & /*data*/, VNumber & /*dst*/,
-                                 const VNumber & /*src*/,
-                                 const Range & /*range*/) const;
 
   /*
    * ... diagonal
    */
-  void local_apply_cell_diagonal(const MF & /*data*/, VNumber &dst,
-                                 const VNumber & /*src*/,
-                                 const Range &range) const;
+  void
+  local_apply_cell_diagonal(const MF & /*data*/,
+                            VNumber & dst,
+                            const VNumber & /*src*/,
+                            const Range & range) const;
 
-  void local_apply_face_diagonal(const MF & /*data*/, VNumber &dst,
-                                 const VNumber & /*src*/,
-                                 const Range &range) const;
+  void
+  local_apply_face_diagonal(const MF & /*data*/,
+                            VNumber & dst,
+                            const VNumber & /*src*/,
+                            const Range & range) const;
 
-  void local_apply_boundary_diagonal(const MF & /*data*/, VNumber &dst,
-                                     const VNumber & /*src*/,
-                                     const Range &range) const;
+  void
+  local_apply_boundary_diagonal(const MF & /*data*/,
+                                VNumber & dst,
+                                const VNumber & /*src*/,
+                                const Range & range) const;
 
-  void local_apply_cell_diagonal_cell_based(const MF & /*data*/, VNumber &dst,
-                                 const VNumber & /*src*/,
-                                 const Range &range) const;
-  
+  void
+  local_apply_cell_diagonal_cell_based(const MF & /*data*/,
+                                       VNumber & dst,
+                                       const VNumber & /*src*/,
+                                       const Range & range) const;
+
   /*
    * ... block diagonal
    */
-  void local_apply_block_diagonal(const MF & /*data*/, VNumber &dst,
-                                  const VNumber &src, const Range &range) const;
+  void
+  local_apply_block_diagonal(const MF & /*data*/,
+                             VNumber &       dst,
+                             const VNumber & src,
+                             const Range &   range) const;
 
   void
-  cell_loop_apply_inverse_block_jacobi_matrices(const MF &data, VNumber &dst,
-                                                const VNumber &src,
-                                                const Range &cell_range) const;
-  void local_apply_cell_block_diagonal(const MF & /*data*/, BMatrix &dst,
-                                       const BMatrix & /*src*/,
-                                       const Range &range) const;
+  cell_loop_apply_inverse_block_jacobi_matrices(const MF &      data,
+                                                VNumber &       dst,
+                                                const VNumber & src,
+                                                const Range &   cell_range) const;
+  void
+  local_apply_cell_block_diagonal(const MF & /*data*/,
+                                  BMatrix & dst,
+                                  const BMatrix & /*src*/,
+                                  const Range & range) const;
 
-  void local_apply_face_block_diagonal(const MF & /*data*/, BMatrix &dst,
-                                       const BMatrix & /*src*/,
-                                       const Range &range) const;
+  void
+  local_apply_face_block_diagonal(const MF & /*data*/,
+                                  BMatrix & dst,
+                                  const BMatrix & /*src*/,
+                                  const Range & range) const;
 
-  void local_apply_boundary_block_diagonal(const MF & /*data*/, BMatrix &dst,
-                                           const BMatrix & /*src*/,
-                                           const Range &range) const;
+  void
+  local_apply_boundary_block_diagonal(const MF & /*data*/,
+                                      BMatrix & dst,
+                                      const BMatrix & /*src*/,
+                                      const Range & range) const;
 
-  void local_apply_cell_block_diagonal_cell_based(const MF & /*data*/, BMatrix &dst,
-                                 const BMatrix & /*src*/,
-                                 const Range &range) const;
+  void
+  local_apply_cell_block_diagonal_cell_based(const MF & /*data*/,
+                                             BMatrix & dst,
+                                             const BMatrix & /*src*/,
+                                             const Range & range) const;
 
   /*
    * ... sparse matrix
    */
 #ifdef DEAL_II_WITH_TRILINOS
-  void local_apply_cell_system_matrix(const MF & /*data*/, SMatrix &dst,
-                                      const SMatrix & /*src*/,
-                                      const Range &range) const;
+  void
+  local_apply_cell_system_matrix(const MF & /*data*/,
+                                 SMatrix & dst,
+                                 const SMatrix & /*src*/,
+                                 const Range & range) const;
 
-  void local_apply_face_system_matrix(const MF & /*data*/, SMatrix &dst,
-                                      const SMatrix & /*src*/,
-                                      const Range &range) const;
+  void
+  local_apply_face_system_matrix(const MF & /*data*/,
+                                 SMatrix & dst,
+                                 const SMatrix & /*src*/,
+                                 const Range & range) const;
 
-  void local_apply_boundary_system_matrix(const MF & /*data*/,
-                                          SMatrix & /*dst*/,
-                                          const SMatrix & /*src*/,
-                                          const Range & /*range*/) const;
+  void
+  local_apply_boundary_system_matrix(const MF & /*data*/,
+                                     SMatrix & /*dst*/,
+                                     const SMatrix & /*src*/,
+                                     const Range & /*range*/) const;
 #endif
-  
-  void apply_nullspace_projection(VNumber &vec) const;
-  
-  void disable_mean_value_constraint() /*const*/;
 
-  void apply_mean_value_constraint_diagonal(VNumber& diagonal) const;
+  void
+  apply_nullspace_projection(VNumber & vec) const;
 
-  void set_constraint_diagonal(VNumber & diagonal) const;
-  
-  void add_periodicity_constraints(
-    const unsigned int level, const unsigned int target_level,
-    const typename DoFHandler<dim>::face_iterator face1,
-    const typename DoFHandler<dim>::face_iterator face2,
-    ConstraintMatrix &constraints);
-  
-  bool verify_boundary_conditions(
-    DoFHandler<dim> const &dof_handler, AdditionalData const &operator_data);
+  void
+  disable_mean_value_constraint() /*const*/;
+
+  void
+  apply_mean_value_constraint_diagonal(VNumber & diagonal) const;
+
+  void
+  set_constraint_diagonal(VNumber & diagonal) const;
+
+  void
+  add_periodicity_constraints(const unsigned int                            level,
+                              const unsigned int                            target_level,
+                              const typename DoFHandler<dim>::face_iterator face1,
+                              const typename DoFHandler<dim>::face_iterator face2,
+                              ConstraintMatrix &                            constraints);
+
+  bool
+  verify_boundary_conditions(DoFHandler<dim> const & dof_handler, AdditionalData const & operator_data);
 
 protected:
   mutable AdditionalData ad;
+
 private:
   const bool do_eval_faces;
+
 protected:
   mutable LazyWrapper<MF> data;
+
 private:
   mutable LazyWrapper<ConstraintMatrix> constraint;
-  mutable bool is_dg;
-  mutable bool is_mg;
-  mutable unsigned int level_mg_handler;
+  mutable bool                          is_dg;
+  mutable bool                          is_mg;
+  mutable unsigned int                  level_mg_handler;
 
   mutable std::vector<LAPACKFullMatrix<Number>> matrices;
-  mutable bool block_jacobi_matrices_have_been_initialized;
-  mutable bool needs_mean_value_constraint;
-  mutable bool apply_mean_value_constraint_in_matvec;
+  mutable bool                                  block_jacobi_matrices_have_been_initialized;
+  mutable bool                                  needs_mean_value_constraint;
+  mutable bool                                  apply_mean_value_constraint_in_matvec;
 
 protected:
   mutable double eval_time;

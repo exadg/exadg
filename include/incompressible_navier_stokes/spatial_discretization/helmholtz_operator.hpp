@@ -4,7 +4,6 @@
 
 namespace IncNS
 {
-
 #if DIM_2 && DEGREE_1
 template class HelmholtzOperator<2, 1, 1, 1, float>;
 #endif
@@ -131,5 +130,4 @@ template class HelmholtzOperator<3, 9, 1, 1, float>;
 template class HelmholtzOperator<3, 9, 1, 1, double>;
 #endif
 
-}
-
+} // namespace IncNS

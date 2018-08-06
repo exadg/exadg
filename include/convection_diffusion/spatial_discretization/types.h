@@ -3,19 +3,20 @@
 
 namespace ConvDiff
 {
-
-enum class OperatorType {
+enum class OperatorType
+{
   full,
   homogeneous,
   inhomogeneous
 };
 
-enum class BoundaryType {
+enum class BoundaryType
+{
   undefined,
   dirichlet,
   neumann
 };
 
-}
+} // namespace ConvDiff
 
 #endif

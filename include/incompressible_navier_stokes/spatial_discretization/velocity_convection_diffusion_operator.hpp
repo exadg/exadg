@@ -4,7 +4,6 @@
 
 namespace IncNS
 {
-
 #if DIM_2 && DEGREE_1 && (OP_FLOAT || MG_FLOAT)
 template class VelocityConvDiffOperator<2, 1, 1, 1, float>;
 #endif
@@ -131,5 +130,4 @@ template class VelocityConvDiffOperator<3, 9, 1, 1, float>;
 template class VelocityConvDiffOperator<3, 9, 1, 1, double>;
 #endif
 
-}
-
+} // namespace IncNS

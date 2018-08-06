@@ -1,14 +1,20 @@
 #ifndef SOLVER_CG_WRAPPER
 #define SOLVER_CG_WRAPPER
 
-template <int dim, typename VectorType = Vector<double>>
-class SolverCGWrapper : public SolverCG<VectorType> {
+template<int dim, typename VectorType = Vector<double>>
+class SolverCGWrapper : public SolverCG<VectorType>
+{
 public:
-  SolverCGWrapper(SolverControl &cn) : SolverCG<VectorType>(cn) {}
+  SolverCGWrapper(SolverControl & cn) : SolverCG<VectorType>(cn)
+  {
+  }
 
-  void print_vectors(const unsigned int, const VectorType &/*solution*/,
-                     const VectorType &, const VectorType &) const {
-
+  void
+  print_vectors(const unsigned int,
+                const VectorType & /*solution*/,
+                const VectorType &,
+                const VectorType &) const
+  {
     double error = 0.0;
 
     //        auto & triangulation = dof_handler.get_triangulation();
@@ -47,7 +53,11 @@ public:
     this->history.push_back(error);
   }
 
-  std::vector<double> &get_history_data() const { return history; }
+  std::vector<double> &
+  get_history_data() const
+  {
+    return history;
+  }
 
 private:
   mutable std::vector<double> history;

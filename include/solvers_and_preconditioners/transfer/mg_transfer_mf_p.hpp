@@ -2,7 +2,7 @@
 
 #include <navier_constants.h>
 
-typedef dealii::LinearAlgebra::distributed::Vector<float> vfloat;
+typedef dealii::LinearAlgebra::distributed::Vector<float>  vfloat;
 typedef dealii::LinearAlgebra::distributed::Vector<double> vdouble;
 
 #if DIM_2 && DEGREE_9 && DEGREE_4 && MG_FLOAT
