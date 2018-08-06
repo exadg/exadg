@@ -72,9 +72,8 @@ template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule,typen
 class VelocityConvDiffOperator : public MatrixOperatorBaseNew<dim, Number>
 {
 public:
-  // Issue#0: extend from Matrix-OperatorBase
-  typedef Number value_type;
   static const int DIM = dim;
+  typedef Number value_type;
 
   static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;

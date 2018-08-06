@@ -41,7 +41,7 @@ void LaplaceOperator<dim, degree, Number>::reinit(
   //  compute_array_penalty_parameter(mapping);
 
   IP::calculate_penalty_parameter<dim, degree, Number>(
-      array_penalty_parameter, array_penalty_parameter_nv, *this->data, mapping,
+      array_penalty_parameter, *this->data, mapping,
       operator_data.laplace_dof_index);
 
   // TODO

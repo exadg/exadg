@@ -324,7 +324,6 @@ private:
   bool needs_mean_value_constraint;
   bool apply_mean_value_constraint_in_matvec;
   AlignedVector<VectorizedArray<Number>> array_penalty_parameter;
-  AlignedVector<Number> array_penalty_parameter_nv;
   mutable parallel::distributed::Vector<Number> tmp_projection_vector;
 
   std::vector<unsigned int> edge_constrained_indices;

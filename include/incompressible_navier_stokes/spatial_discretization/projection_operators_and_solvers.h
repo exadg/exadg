@@ -241,13 +241,12 @@ private:
  *  of these penalty terms.
  *
  */
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename vt>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 class ProjectionOperatorDivergenceAndContinuityPenalty : public ProjectionOperatorBase<dim>
 {
 public:
-    // Issue#2:
-    static const int DIM = dim;
-    typedef vt value_type;
+  static const int DIM = dim;
+  typedef Number value_type;
     
   typedef ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree,
       fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> This;

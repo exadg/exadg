@@ -33,9 +33,8 @@ template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwal
 class CompatibleLaplaceOperator : public MatrixOperatorBaseNew<dim, Number>
 {
 public:
-  // Issue#2: extend MatrixOperatorBaseNew
-  typedef Number value_type;
   static const int DIM = dim;
+  typedef Number value_type;
 
   CompatibleLaplaceOperator()
     :

@@ -25,25 +25,6 @@ public:
   {}
 
   virtual ~MatrixOperatorBase(){}
-
-  template<class U, class V>
-    void cell(U &/*dinfo*/,
-              V &/* info*/) const { }
-
-  template<class U, class V>
-    void boundary(U &/*dinfo*/,
-                  V &/* info*/) const{ }
-
-  template<class U, class V>
-    void face(U &/*dinfo1*/,
-              U &/*dinfo2*/,
-              V &/* info1*/,
-              V &/* info2*/) const{ }
-  
-  virtual MatrixOperatorBase* get_new(unsigned int /*deg*/) const{
-      AssertThrow(false, ExcMessage("MatrixOperatorBase::get_new should be overwritten!"));
-      return nullptr;
-  }
   
 private:
 };

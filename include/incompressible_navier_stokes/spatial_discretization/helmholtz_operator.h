@@ -46,10 +46,9 @@ template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, type
 class HelmholtzOperator : public MatrixOperatorBaseNew<dim, Number>
 {
 public:
-    // Issue#2:
-  typedef Number value_type;
   static const int DIM = dim;
-
+  typedef Number value_type;
+    
   static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
   typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,
