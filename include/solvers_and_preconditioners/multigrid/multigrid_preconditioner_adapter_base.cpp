@@ -1,6 +1,6 @@
 #include "multigrid_preconditioner_adapter_base.h"
 
-#include <navier-constants.h>
+#include <navier_constants.h>
 
 #include "../mg_coarse/mg_coarse_ml.h"
 

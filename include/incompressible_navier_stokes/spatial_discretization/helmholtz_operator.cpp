@@ -1,6 +1,6 @@
 #include "helmholtz_operator.h"
 
-#include <navier-constants.h>
+#include <navier_constants.h>
 
 #include "../infrastructure/fe_evaluation_wrapper.h"
 #include "../infrastructure/fe_parameters.h"

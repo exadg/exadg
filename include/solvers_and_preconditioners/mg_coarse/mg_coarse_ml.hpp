@@ -1,6 +1,6 @@
 #include "mg_coarse_ml.h"
 
-#include <navier-constants.h>
+#include <navier_constants.h>
 
 #include "../../operators/matrix_operator_base_new.h"
 

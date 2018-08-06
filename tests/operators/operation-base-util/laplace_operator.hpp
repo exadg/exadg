@@ -1,6 +1,6 @@
 #include "laplace_operator.h"
 
-#include <navier-constants.h>
+#include <navier_constants.h>
 
 #if DIM_2 && DEGREE_1
 template class LaplaceOperator<2, 1, double>;

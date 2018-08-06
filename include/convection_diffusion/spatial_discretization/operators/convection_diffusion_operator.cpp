@@ -1,6 +1,6 @@
 #include "convection_diffusion_operator.h"
 
-#include <navier-constants.h>
+#include <navier_constants.h>
 
 namespace ConvDiff {
 
