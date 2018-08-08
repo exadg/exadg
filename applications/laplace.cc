@@ -215,7 +215,7 @@ LaplaceProblem<dim, fe_degree, Number>::solve_problem(ConvergenceTable & converg
     this->output_data(param.output_data.output_folder + param.output_data.output_name + "1.vtu", solution);
 }
 
-template<int dim, int fe_degree_1>
+template<int dim, int fe_degree>
 class Run
 {
 public:
@@ -226,10 +226,10 @@ public:
 
     for(auto size : sizes)
     {
-      if(size > 5000 && fe_degree_1 <= 5)
+      if(size > 5000 && fe_degree <= 5)
         continue;
-      int                              refinement = std::log(size / fe_degree_1) / std::log(2.0);
-      LaplaceProblem<dim, fe_degree_1> conv_diff_problem(refinement);
+      int                            refinement = std::log(size / fe_degree) / std::log(2.0);
+      LaplaceProblem<dim, fe_degree> conv_diff_problem(refinement);
       conv_diff_problem.solve_problem(convergence_table);
     }
   }
