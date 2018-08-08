@@ -138,11 +138,11 @@ public:
   void
   reinit(const DoFHandler<dim> &   dof_handler,
          const Mapping<dim> &      mapping,
-         void *                    od,
+         void *                    operator_data_in,
          const MGConstrainedDoFs & mg_constrained_dofs,
          const unsigned int        level)
   {
-    Parent::reinit(dof_handler, mapping, od, mg_constrained_dofs, level);
+    Parent::reinit(dof_handler, mapping, operator_data_in, mg_constrained_dofs, level);
 
     // calculate penalty parameters
     IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,

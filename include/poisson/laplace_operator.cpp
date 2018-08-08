@@ -129,13 +129,13 @@ void
 LaplaceOperator<dim, degree, Number>::reinit(const DoFHandler<dim> & dof_handler,
                                              const Mapping<dim> &    mapping,
                                              // const LaplaceOperatorData<dim>  &operator_data,
-                                             void *                    od,
+                                             void *                    operator_data_in,
                                              const MGConstrainedDoFs & mg_constrained_dofs,
                                              const unsigned int        level)
 {
   clear();
 
-  auto & operator_data = *static_cast<LaplaceOperatorData<dim> *>(od);
+  auto & operator_data = *static_cast<LaplaceOperatorData<dim> *>(operator_data_in);
 
   this->operator_data = operator_data;
 

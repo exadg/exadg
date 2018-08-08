@@ -77,7 +77,7 @@ public:
   void
   reinit(const DoFHandler<dim> &   dof_handler,
          const Mapping<dim> &      mapping,
-         void *                    od,
+         void *                    operator_data_in,
          const MGConstrainedDoFs & mg_constrained_dofs,
          const unsigned int        level);
 

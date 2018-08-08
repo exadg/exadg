@@ -46,12 +46,12 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> &   dof_handler,
                                                           const Mapping<dim> &      mapping,
-                                                          void *                    od,
+                                                          void *                    operator_data_in,
                                                           const MGConstrainedDoFs & mg_constrained_dofs,
                                                           const unsigned int        level)
 {
   // cast additional data to actual format
-  auto & add = *static_cast<AdditionalData *>(od);
+  auto & add = *static_cast<AdditionalData *>(operator_data_in);
   // create copy of data and ...
   auto ad = add;
   // set dof_index and quad_index to 0 since we only consider a subset
