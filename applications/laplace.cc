@@ -228,7 +228,8 @@ public:
     {
       if(size > 5000 && fe_degree <= 5)
         continue;
-      int                            refinement = std::log(size / fe_degree) / std::log(2.0);
+      int refinement = std::log(size / fe_degree) / std::log(2.0);
+
       LaplaceProblem<dim, fe_degree> conv_diff_problem(refinement);
       conv_diff_problem.solve_problem(convergence_table);
     }
