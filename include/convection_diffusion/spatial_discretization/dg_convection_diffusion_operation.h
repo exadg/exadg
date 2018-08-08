@@ -371,11 +371,9 @@ private:
 
   void setup_operators()
   {
-    // convection-diffusion operator
-    ConvDiff::ConvectionDiffusionOperatorData<dim> conv_diff_operator_data;
     
     // mass matrix operator
-    auto & mass_matrix_operator_data = conv_diff_operator_data.mass_matrix_operator_data;
+    MassMatrixOperatorData<dim> mass_matrix_operator_data;
     mass_matrix_operator_data.dof_index = 0;
     mass_matrix_operator_data.quad_index = 0;
     mass_matrix_operator.initialize(data,mass_matrix_operator_data);
@@ -385,7 +383,7 @@ private:
     inverse_mass_matrix_operator.initialize(data,0,0);
 
     // convective operator
-    auto & convective_operator_data = conv_diff_operator_data.convective_operator_data;
+    ConvectiveOperatorData<dim> convective_operator_data;
     convective_operator_data.dof_index = 0;
     convective_operator_data.quad_index = 0;
     convective_operator_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
@@ -394,13 +392,19 @@ private:
     convective_operator.initialize(data,convective_operator_data);
 
     // diffusive operator
-    auto & diffusive_operator_data = conv_diff_operator_data.diffusive_operator_data;
+    DiffusiveOperatorData<dim> diffusive_operator_data;
     diffusive_operator_data.dof_index = 0;
     diffusive_operator_data.quad_index = 0;
     diffusive_operator_data.IP_factor = param.IP_factor;
     diffusive_operator_data.diffusivity = param.diffusivity;
     diffusive_operator_data.bc = boundary_descriptor;
     diffusive_operator.initialize(mapping,data,diffusive_operator_data);
+    
+    // convection-diffusion operator
+    ConvDiff::ConvectionDiffusionOperatorData<dim> conv_diff_operator_data;
+    conv_diff_operator_data.mass_matrix_operator_data = mass_matrix_operator_data;
+    conv_diff_operator_data.convective_operator_data  = convective_operator_data;
+    conv_diff_operator_data.diffusive_operator_data   = diffusive_operator_data;
 
     // rhs operator
     ConvDiff::RHSOperatorData<dim> rhs_operator_data;
