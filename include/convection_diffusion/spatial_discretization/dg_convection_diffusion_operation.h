@@ -480,14 +480,9 @@ private:
   std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor;
   std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functions;
 
-  //ConvDiff::MassMatrixOperatorData<dim> mass_matrix_operator_data;
   ConvDiff::MassMatrixOperator<dim, fe_degree, value_type> mass_matrix_operator;
   InverseMassMatrixOperator<dim,fe_degree,value_type,1> inverse_mass_matrix_operator;
-
-  //ConvDiff::ConvectiveOperatorData<dim> convective_operator_data;
   ConvDiff::ConvectiveOperator<dim, fe_degree, value_type> convective_operator;
-
-  //ConvDiff::DiffusiveOperatorData<dim> diffusive_operator_data;
   ConvDiff::DiffusiveOperator<dim, fe_degree, value_type> diffusive_operator;
   ConvDiff::RHSOperator<dim, fe_degree, value_type> rhs_operator;
 
