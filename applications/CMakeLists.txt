@@ -18,7 +18,7 @@ SET( SOURCE_FILES
      #fe_flow_past_cylinder.cc
      #fe_turbulent_channel.cc
      #fe_poiseuille.cc
-     #laplace.cc
+     #poisson.cc
      #steady_convection_diffusion.cc
      #unsteady_convection_diffusion.cc
      #step-7.cc

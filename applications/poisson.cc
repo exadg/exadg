@@ -1,5 +1,5 @@
 /*
- * laplace.cc
+ * poisson.cc
  *
  *  Created on:
  *      Author:
@@ -26,8 +26,8 @@
 // SPECIFY THE TEST CASE THAT HAS TO BE SOLVED
 
 // laplace problems
-//#include "laplace_cases/cosinus.h"
-#include "laplace_cases/torus.h"
+//#include "poisson_test_cases/cosinus.h"
+#include "poisson_test_cases/torus.h"
 
 using namespace dealii;
 using namespace Laplace;
