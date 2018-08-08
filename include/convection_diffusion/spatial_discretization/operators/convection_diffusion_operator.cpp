@@ -41,7 +41,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(const DoFHandler<dim
 
   // setup own mass matrix operator
   {
-    auto & op_data     = this->ad.mass_matrix_operator_data;
+    auto & op_data     = this->operator_settings.mass_matrix_operator_data;
     op_data.dof_index  = 0;
     op_data.quad_index = 0;
     mass_matrix_operator.own().initialize(this->get_data(), op_data);
@@ -49,7 +49,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(const DoFHandler<dim
 
   // setup own convective operator
   {
-    auto & op_data     = this->ad.convective_operator_data;
+    auto & op_data     = this->operator_settings.convective_operator_data;
     op_data.dof_index  = 0;
     op_data.quad_index = 0;
     convective_operator.own().initialize(this->get_data(), op_data);
@@ -57,7 +57,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(const DoFHandler<dim
 
   // setup own viscous operator
   {
-    auto & op_data     = this->ad.diffusive_operator_data;
+    auto & op_data     = this->operator_settings.diffusive_operator_data;
     op_data.dof_index  = 0;
     op_data.quad_index = 0;
     diffusive_operator.own().initialize(mapping, this->get_data(), op_data);
@@ -69,18 +69,18 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(const DoFHandler<dim
   // reaction-convection-diffusion operator. Accordingly, we have to reset which
   // operators should be "active" for the multigrid preconditioner, independently of
   // the actual equation type that is solved.
-  AssertThrow(this->ad.mg_operator_type != MultigridOperatorType::Undefined,
+  AssertThrow(this->operator_settings.mg_operator_type != MultigridOperatorType::Undefined,
               ExcMessage("Invalid parameter mg_operator_type."));
 
-  if(this->ad.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
+  if(this->operator_settings.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
   {
-    this->ad.convective_problem = false; // deactivate convective term for multigrid preconditioner
-    this->ad.diffusive_problem  = true;
+    this->operator_settings.convective_problem = false; // deactivate convective term for multigrid preconditioner
+    this->operator_settings.diffusive_problem  = true;
   }
-  else if(this->ad.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
+  else if(this->operator_settings.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
   {
-    this->ad.convective_problem = true;
-    this->ad.diffusive_problem  = true;
+    this->operator_settings.convective_problem = true;
+    this->operator_settings.diffusive_problem  = true;
   }
   else
   {
@@ -112,14 +112,14 @@ void
 ConvectionDiffusionOperator<dim, fe_degree, Number>::set_scaling_factor_time_derivative_term(
   double const & factor)
 {
-  this->ad.scaling_factor_time_derivative_term = factor;
+  this->operator_settings.scaling_factor_time_derivative_term = factor;
 }
 
 template<int dim, int fe_degree, typename Number>
 double
 ConvectionDiffusionOperator<dim, fe_degree, Number>::get_scaling_factor_time_derivative_term() const
 {
-  return this->ad.scaling_factor_time_derivative_term;
+  return this->operator_settings.scaling_factor_time_derivative_term;
 }
 
 template<int dim, int fe_degree, typename Number>
@@ -156,25 +156,25 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::vmult(
   parallel::distributed::Vector<Number> &       dst,
   parallel::distributed::Vector<Number> const & src) const
 {
-  if(this->ad.unsteady_problem == true)
+  if(this->operator_settings.unsteady_problem == true)
   {
-    AssertThrow(this->ad.scaling_factor_time_derivative_term > 0.0,
+    AssertThrow(this->operator_settings.scaling_factor_time_derivative_term > 0.0,
                 ExcMessage("Scaling factor of time derivative term has not been initialized!"));
 
     mass_matrix_operator->apply(dst, src);
-    dst *= this->ad.scaling_factor_time_derivative_term;
+    dst *= this->operator_settings.scaling_factor_time_derivative_term;
   }
   else
   {
     dst = 0.0;
   }
 
-  if(this->ad.diffusive_problem == true)
+  if(this->operator_settings.diffusive_problem == true)
   {
     diffusive_operator->apply_add(dst, src);
   }
 
-  if(this->ad.convective_problem == true)
+  if(this->operator_settings.convective_problem == true)
   {
     convective_operator->apply_add(dst, src /*TODO: ,evaluation_time*/);
   }
@@ -186,24 +186,24 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::vmult_add(
   parallel::distributed::Vector<Number> &       dst,
   parallel::distributed::Vector<Number> const & src) const
 {
-  if(this->ad.unsteady_problem == true)
+  if(this->operator_settings.unsteady_problem == true)
   {
     AssertThrow(
-      this->ad.scaling_factor_time_derivative_term > 0.0,
+      this->operator_settings.scaling_factor_time_derivative_term > 0.0,
       ExcMessage(
         "Scaling factor of time derivative term has not been initialized for convection-diffusion operator!"));
 
     mass_matrix_operator->apply(temp, src);
-    temp *= this->ad.scaling_factor_time_derivative_term;
+    temp *= this->operator_settings.scaling_factor_time_derivative_term;
     dst += temp;
   }
 
-  if(this->ad.diffusive_problem == true)
+  if(this->operator_settings.diffusive_problem == true)
   {
     diffusive_operator->apply_add(dst, src);
   }
 
-  if(this->ad.convective_problem == true)
+  if(this->operator_settings.convective_problem == true)
   {
     convective_operator->apply_add(dst, src /*TODO: ,evaluation_time*/);
   }
@@ -214,27 +214,27 @@ void
 ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_diagonal(
   parallel::distributed::Vector<Number> & diagonal) const
 {
-  if(this->ad.unsteady_problem == true)
+  if(this->operator_settings.unsteady_problem == true)
   {
     AssertThrow(
-      this->ad.scaling_factor_time_derivative_term > 0.0,
+      this->operator_settings.scaling_factor_time_derivative_term > 0.0,
       ExcMessage(
         "Scaling factor of time derivative term has not been initialized for convection-diffusion operator!"));
 
     mass_matrix_operator->calculate_diagonal(diagonal);
-    diagonal *= this->ad.scaling_factor_time_derivative_term;
+    diagonal *= this->operator_settings.scaling_factor_time_derivative_term;
   }
   else
   {
     diagonal = 0.0;
   }
 
-  if(this->ad.diffusive_problem == true)
+  if(this->operator_settings.diffusive_problem == true)
   {
     diffusive_operator->add_diagonal(diagonal);
   }
 
-  if(this->ad.convective_problem == true)
+  if(this->operator_settings.convective_problem == true)
   {
     convective_operator->add_diagonal(diagonal /*TODO: ,evaluation_time*/);
   }
@@ -245,9 +245,9 @@ void
 ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_jacobi_matrices(BMatrix & matrices) const
 {
   // calculate block Jacobi matrices
-  if(this->ad.unsteady_problem == true)
+  if(this->operator_settings.unsteady_problem == true)
   {
-    AssertThrow(this->ad.scaling_factor_time_derivative_term > 0.0,
+    AssertThrow(this->operator_settings.scaling_factor_time_derivative_term > 0.0,
                 ExcMessage("Scaling factor of time derivative term has not been initialized!"));
 
     mass_matrix_operator->add_block_jacobi_matrices(matrices);
@@ -255,16 +255,16 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_jacobi_matrices(B
     for(typename std::vector<LAPACKFullMatrix<Number>>::iterator it = matrices.begin(); it != matrices.end();
         ++it)
     {
-      (*it) *= this->ad.scaling_factor_time_derivative_term;
+      (*it) *= this->operator_settings.scaling_factor_time_derivative_term;
     }
   }
 
-  if(this->ad.diffusive_problem == true)
+  if(this->operator_settings.diffusive_problem == true)
   {
     diffusive_operator->add_block_jacobi_matrices(matrices);
   }
 
-  if(this->ad.convective_problem == true)
+  if(this->operator_settings.convective_problem == true)
   {
     convective_operator->add_block_jacobi_matrices(matrices /*TODO: ,evaluation_time*/);
   }

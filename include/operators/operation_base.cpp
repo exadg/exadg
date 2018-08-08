@@ -5,9 +5,9 @@
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
-  : ad(AdditionalData()),
-    do_eval_faces(ad.internal_evaluate.do_eval() || ad.internal_integrate.do_eval() ||
-                  ad.boundary_evaluate.do_eval() || ad.boundary_integrate.do_eval()),
+  : operator_settings(AdditionalData()),
+    do_eval_faces(operator_settings.internal_evaluate.do_eval() || operator_settings.internal_integrate.do_eval() ||
+                  operator_settings.boundary_evaluate.do_eval() || operator_settings.boundary_integrate.do_eval()),
     level_mg_handler(numbers::invalid_unsigned_int),
     block_jacobi_matrices_have_been_initialized(false),
     needs_mean_value_constraint(false),
@@ -20,16 +20,16 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::reinit(MF const &             mf,
                                                           CM &                   cm,
-                                                          AdditionalData const & ad,
+                                                          AdditionalData const & operator_settings,
                                                           unsigned int           level_mg_handler) const
 {
   // reinit data structures
   this->data.reinit(mf);
   this->constraint.reinit(cm);
-  this->ad = ad;
+  this->operator_settings = operator_settings;
 
   // check if dg or cg
-  is_dg = data->get_dof_handler(ad.dof_index).get_fe().dofs_per_vertex == 0;
+  is_dg = data->get_dof_handler(operator_settings.dof_index).get_fe().dofs_per_vertex == 0;
 
   // set mg level
   this->level_mg_handler = level_mg_handler;
@@ -38,7 +38,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(MF const &            
   this->is_mg = !(level_mg_handler == numbers::invalid_unsigned_int);
 
   // mean value constraint?
-  needs_mean_value_constraint           = this->ad.needs_mean_value_constraint;
+  needs_mean_value_constraint           = this->operator_settings.needs_mean_value_constraint;
   apply_mean_value_constraint_in_matvec = needs_mean_value_constraint;
 }
 
@@ -53,10 +53,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
   // cast additional data to actual format
   auto & add = *static_cast<AdditionalData *>(operator_data_in);
   // create copy of data and ...
-  auto ad = add;
+  auto operator_settings = add;
   // set dof_index and quad_index to 0 since we only consider a subset
-  ad.dof_index  = 0;
-  ad.quad_index = 0;
+  operator_settings.dof_index  = 0;
+  operator_settings.quad_index = 0;
 
   // check it dg or cg
   is_dg = dof_handler.get_fe().dofs_per_vertex == 0;
@@ -97,7 +97,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
   if(!is_dg)
   {
     // 1) add periodic bc
-    for(auto & it : ad.periodic_face_pairs_level0)
+    for(auto & it : operator_settings.periodic_face_pairs_level0)
     {
       typename DoFHandler<dim>::cell_iterator cell1(&dof_handler.get_triangulation(),
                                                     0,
@@ -118,7 +118,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
     // be applied in the DG case). In case we have interface matrices, there are
     // Dirichlet constraints on parts of the boundary and no such transformation
     // is required.
-    if(verify_boundary_conditions(dof_handler, ad) && constraint_own.can_store_line(0))
+    if(verify_boundary_conditions(dof_handler, operator_settings) && constraint_own.can_store_line(0))
     {
       // if dof 0 is constrained, it must be a periodic dof, so we take the
       // value on the other side
@@ -152,7 +152,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
 
   const QGauss<1> quad(dof_handler.get_fe().degree + 1);
   data_own.reinit(mapping, dof_handler, constraint_own, quad, additional_data);
-  reinit(data_own, constraint_own, ad, level);
+  reinit(data_own, constraint_own, operator_settings, level);
 
   // we do not need the mean value constraint for smoothers on the
   // multigrid levels, so we can disable it
@@ -287,7 +287,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VNumber & diagon
 {
   // compute diagonal (not regarding: mean value constraint and constraints)
   if(do_eval_faces && is_dg)
-    if(ad.use_cell_based_loops)
+    if(operator_settings.use_cell_based_loops)
       data->cell_loop(&This::local_apply_cell_diagonal_cell_based, this, diagonal, diagonal);
     else
       data->loop(&This::local_apply_cell_diagonal,
@@ -391,7 +391,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_block_jacobi_matrices(BMa
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
 
   if(do_eval_faces)
-    if(ad.use_cell_based_loops)
+    if(operator_settings.use_cell_based_loops)
       data->cell_loop(&This::local_apply_cell_block_diagonal_cell_based, this, matrices, matrices);
     else
       data->loop(&This::local_apply_cell_block_diagonal,
@@ -489,14 +489,14 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 types::global_dof_index
 OperatorBase<dim, degree, Number, AdditionalData>::m() const
 {
-  return data->get_vector_partitioner(ad.dof_index)->size();
+  return data->get_vector_partitioner(operator_settings.dof_index)->size();
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 types::global_dof_index
 OperatorBase<dim, degree, Number, AdditionalData>::n() const
 {
-  return data->get_vector_partitioner(ad.dof_index)->size();
+  return data->get_vector_partitioner(operator_settings.dof_index)->size();
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
@@ -525,28 +525,28 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 unsigned int
 OperatorBase<dim, degree, Number, AdditionalData>::get_dof_index() const
 {
-  return ad.dof_index;
+  return operator_settings.dof_index;
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 unsigned int
 OperatorBase<dim, degree, Number, AdditionalData>::get_quad_index() const
 {
-  return ad.quad_index;
+  return operator_settings.quad_index;
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 AdditionalData const &
 OperatorBase<dim, degree, Number, AdditionalData>::get_operator_data() const
 {
-  return ad;
+  return operator_settings;
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::initialize_dof_vector(VNumber & vector) const
 {
-  data->initialize_dof_vector(vector, ad.dof_index);
+  data->initialize_dof_vector(vector, operator_settings.dof_index);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
@@ -612,21 +612,21 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_cell(const MF &  
                                                                     const VNumber & src,
                                                                     const Range &   range) const
 {
-  FEEvalCell phi(data, ad.dof_index, ad.quad_index);
+  FEEvalCell phi(data, operator_settings.dof_index, operator_settings.quad_index);
   // loop over the range of macro cells
   for(auto cell = range.first; cell < range.second; ++cell)
   {
     // reinit cell
     phi.reinit(cell);
-    // read dof values from global vector src and evaluate
+    // reoperator_settings dof values from global vector src and evaluate
     phi.gather_evaluate(src,
-                        this->ad.cell_evaluate.value,
-                        this->ad.cell_evaluate.gradient,
-                        this->ad.cell_evaluate.hessians);
+                        this->operator_settings.cell_evaluate.value,
+                        this->operator_settings.cell_evaluate.gradient,
+                        this->operator_settings.cell_evaluate.hessians);
     // perform local vmult
     this->do_cell_integral(phi);
     // integrate and write result back to the global vector dst
-    phi.integrate_scatter(this->ad.cell_integrate.value, this->ad.cell_integrate.gradient, dst);
+    phi.integrate_scatter(this->operator_settings.cell_integrate.value, this->operator_settings.cell_integrate.gradient, dst);
   }
 }
 
@@ -637,8 +637,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_face(const MF &  
                                                                     const VNumber & src,
                                                                     const Range &   range) const
 {
-  FEEvalFace phi_n(data, true, ad.dof_index, ad.quad_index);
-  FEEvalFace phi_p(data, false, ad.dof_index, ad.quad_index);
+  FEEvalFace phi_n(data, true, operator_settings.dof_index, operator_settings.quad_index);
+  FEEvalFace phi_p(data, false, operator_settings.dof_index, operator_settings.quad_index);
   // loop over the range of macro cells
   for(auto face = range.first; face < range.second; ++face)
   {
@@ -646,13 +646,13 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_face(const MF &  
     phi_n.reinit(face);
     phi_p.reinit(face);
     // read dof values from global vector src
-    phi_n.gather_evaluate(src, this->ad.internal_evaluate.value, this->ad.internal_evaluate.gradient);
-    phi_p.gather_evaluate(src, this->ad.internal_evaluate.value, this->ad.internal_evaluate.gradient);
+    phi_n.gather_evaluate(src, this->operator_settings.internal_evaluate.value, this->operator_settings.internal_evaluate.gradient);
+    phi_p.gather_evaluate(src, this->operator_settings.internal_evaluate.value, this->operator_settings.internal_evaluate.gradient);
     // perform local vmult
     this->do_face_integral(phi_n, phi_p);
     // write result back to the global vector dst
-    phi_n.integrate_scatter(this->ad.internal_integrate.value, this->ad.internal_integrate.gradient, dst);
-    phi_p.integrate_scatter(this->ad.internal_integrate.value, this->ad.internal_integrate.gradient, dst);
+    phi_n.integrate_scatter(this->operator_settings.internal_integrate.value, this->operator_settings.internal_integrate.gradient, dst);
+    phi_p.integrate_scatter(this->operator_settings.internal_integrate.value, this->operator_settings.internal_integrate.gradient, dst);
   }
 }
 
@@ -663,16 +663,16 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_boundary(const MF
                                                                         const VNumber & src,
                                                                         const Range &   range) const
 {
-  FEEvalFace phi(data, true, ad.dof_index, ad.quad_index);
+  FEEvalFace phi(data, true, operator_settings.dof_index, operator_settings.quad_index);
 
   for(unsigned int face = range.first; face < range.second; face++)
   {
     auto bid = data.get_boundary_id(face);
 
     phi.reinit(face);
-    phi.gather_evaluate(src, this->ad.boundary_evaluate.value, this->ad.boundary_evaluate.gradient);
+    phi.gather_evaluate(src, this->operator_settings.boundary_evaluate.value, this->operator_settings.boundary_evaluate.gradient);
     do_boundary_integral(phi, OperatorType::homogeneous, bid);
-    phi.integrate_scatter(this->ad.boundary_integrate.value, this->ad.boundary_integrate.gradient, dst);
+    phi.integrate_scatter(this->operator_settings.boundary_integrate.value, this->operator_settings.boundary_integrate.gradient, dst);
   }
 }
 
@@ -703,7 +703,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_inhom_boundary(co
                                                                               const VNumber & /*src*/,
                                                                               const Range & range) const
 {
-  FEEvalFace phi(data, true, ad.dof_index, ad.quad_index);
+  FEEvalFace phi(data, true, operator_settings.dof_index, operator_settings.quad_index);
 
   for(unsigned int face = range.first; face < range.second; face++)
   {
@@ -712,7 +712,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_inhom_boundary(co
     // note: no gathering/evaluation is necessary in the case of
     //       inhomogeneous boundary
     do_boundary_integral(phi, OperatorType::inhomogeneous, bid);
-    phi.integrate_scatter(this->ad.boundary_integrate.value, this->ad.boundary_integrate.gradient, dst);
+    phi.integrate_scatter(this->operator_settings.boundary_integrate.value, this->operator_settings.boundary_integrate.gradient, dst);
   }
 }
 
@@ -723,15 +723,15 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_full_boundary(con
                                                                              const VNumber & src,
                                                                              const Range &   range) const
 {
-  FEEvalFace phi(data, true, ad.dof_index, ad.quad_index);
+  FEEvalFace phi(data, true, operator_settings.dof_index, operator_settings.quad_index);
 
   for(unsigned int face = range.first; face < range.second; face++)
   {
     auto bid = data.get_boundary_id(face);
     phi.reinit(face);
-    phi.gather_evaluate(src, this->ad.boundary_evaluate.value, this->ad.boundary_evaluate.gradient);
+    phi.gather_evaluate(src, this->operator_settings.boundary_evaluate.value, this->operator_settings.boundary_evaluate.gradient);
     do_boundary_integral(phi, OperatorType::full, bid);
-    phi.integrate_scatter(this->ad.boundary_integrate.value, this->ad.boundary_integrate.gradient, dst);
+    phi.integrate_scatter(this->operator_settings.boundary_integrate.value, this->operator_settings.boundary_integrate.gradient, dst);
   }
 }
 
@@ -742,7 +742,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_cell_diagonal(con
                                                                              const VNumber & /*src*/,
                                                                              const Range & range) const
 {
-  FEEvalCell phi(data, ad.dof_index, ad.quad_index);
+  FEEvalCell phi(data, operator_settings.dof_index, operator_settings.quad_index);
   // loop over the range of macro cells
   for(auto cell = range.first; cell < range.second; ++cell)
   {
@@ -755,13 +755,13 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_cell_diagonal(con
     {
       // write standard basis into dof values of FEEvaluation
       this->create_standard_basis(j, phi);
-      phi.evaluate(this->ad.cell_evaluate.value,
-                   this->ad.cell_evaluate.gradient,
-                   this->ad.cell_evaluate.hessians);
+      phi.evaluate(this->operator_settings.cell_evaluate.value,
+                   this->operator_settings.cell_evaluate.gradient,
+                   this->operator_settings.cell_evaluate.hessians);
       // perform local vmult
       this->do_cell_integral(phi);
 
-      phi.integrate(this->ad.cell_integrate.value, this->ad.cell_integrate.gradient);
+      phi.integrate(this->operator_settings.cell_integrate.value, this->operator_settings.cell_integrate.gradient);
       // extract single value from result vector and temporally store it
       local_diag[j] = phi.begin_dof_values()[j];
     }
@@ -780,8 +780,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_face_diagonal(con
                                                                              const VNumber & /*src*/,
                                                                              const Range & range) const
 {
-  FEEvalFace phi_n(data, true, ad.dof_index, ad.quad_index);
-  FEEvalFace phi_p(data, false, ad.dof_index, ad.quad_index);
+  FEEvalFace phi_n(data, true, operator_settings.dof_index, operator_settings.quad_index);
+  FEEvalFace phi_p(data, false, operator_settings.dof_index, operator_settings.quad_index);
 
   // loop over the range of macro cells
   for(auto cell = range.first; cell < range.second; ++cell)
@@ -798,9 +798,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_face_diagonal(con
       // write standard basis into dof values of FEEvaluation
       this->create_standard_basis(j, phi_n);
       // perform local vmult
-      phi_n.evaluate(this->ad.internal_evaluate.value, this->ad.internal_evaluate.gradient);
+      phi_n.evaluate(this->operator_settings.internal_evaluate.value, this->operator_settings.internal_evaluate.gradient);
       this->do_face_int_integral(phi_n, phi_p);
-      phi_n.integrate(this->ad.internal_integrate.value, this->ad.internal_integrate.gradient);
+      phi_n.integrate(this->operator_settings.internal_integrate.value, this->operator_settings.internal_integrate.gradient);
 
       // extract single value from result vector and temporally store it
       local_diag[j] = phi_n.begin_dof_values()[j];
@@ -817,9 +817,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_face_diagonal(con
       // write standard basis into dof values of FEEvaluation
       this->create_standard_basis(j, phi_p);
       // perform local vmult
-      phi_p.evaluate(this->ad.internal_evaluate.value, this->ad.internal_evaluate.gradient);
+      phi_p.evaluate(this->operator_settings.internal_evaluate.value, this->operator_settings.internal_evaluate.gradient);
       this->do_face_ext_integral(phi_n, phi_p);
-      phi_p.integrate(this->ad.internal_integrate.value, this->ad.internal_integrate.gradient);
+      phi_p.integrate(this->operator_settings.internal_integrate.value, this->operator_settings.internal_integrate.gradient);
       // extract single value from result vector and temporally store it
       local_diag[j] = phi_p.begin_dof_values()[j];
     }
@@ -838,7 +838,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_boundary_diagonal
                                                                                  const VNumber & /*src*/,
                                                                                  const Range & range) const
 {
-  FEEvalFace phi(data, true, ad.dof_index, ad.quad_index);
+  FEEvalFace phi(data, true, operator_settings.dof_index, operator_settings.quad_index);
 
   for(unsigned int face = range.first; face < range.second; face++)
   {
@@ -853,11 +853,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_boundary_diagonal
     {
       // write standard basis into dof values of FEEvaluation
       this->create_standard_basis(j, phi);
-      phi.evaluate(this->ad.boundary_evaluate.value, this->ad.boundary_evaluate.gradient);
+      phi.evaluate(this->operator_settings.boundary_evaluate.value, this->operator_settings.boundary_evaluate.gradient);
       // perform local vmult
       this->do_boundary_integral(phi, OperatorType::homogeneous, bid);
 
-      phi.integrate(this->ad.boundary_integrate.value, this->ad.boundary_integrate.gradient);
+      phi.integrate(this->operator_settings.boundary_integrate.value, this->operator_settings.boundary_integrate.gradient);
       // extract single value from result vector and temporally store it
       local_diag[j] = phi.begin_dof_values()[j];
     }
@@ -878,9 +878,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_cell_diagonal_cel
   const VNumber & /*src*/,
   const Range & range) const
 {
-  FEEvalCell phi(data, ad.dof_index, ad.quad_index);
-  FEEvalFace phi_n(data, true, ad.dof_index, ad.quad_index);
-  FEEvalFace phi_p(data, false, ad.dof_index, ad.quad_index);
+  FEEvalCell phi(data, operator_settings.dof_index, operator_settings.quad_index);
+  FEEvalFace phi_n(data, true, operator_settings.dof_index, operator_settings.quad_index);
+  FEEvalFace phi_p(data, false, operator_settings.dof_index, operator_settings.quad_index);
   // loop over the range of macro cells
   for(auto cell = range.first; cell < range.second; ++cell)
   {
@@ -893,13 +893,13 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_cell_diagonal_cel
     {
       // write standard basis into dof values of FEEvaluation
       this->create_standard_basis(j, phi);
-      phi.evaluate(this->ad.cell_evaluate.value,
-                   this->ad.cell_evaluate.gradient,
-                   this->ad.cell_evaluate.hessians);
+      phi.evaluate(this->operator_settings.cell_evaluate.value,
+                   this->operator_settings.cell_evaluate.gradient,
+                   this->operator_settings.cell_evaluate.hessians);
       // perform local vmult
       this->do_cell_integral(phi);
 
-      phi.integrate(this->ad.cell_integrate.value, this->ad.cell_integrate.gradient);
+      phi.integrate(this->operator_settings.cell_integrate.value, this->operator_settings.cell_integrate.gradient);
       // extract single value from result vector and temporally store it
       local_diag[j] = phi.begin_dof_values()[j];
     }
@@ -923,9 +923,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_cell_diagonal_cel
           // write standard basis into dof values of FEEvaluation
           this->create_standard_basis(j, phi_n);
           // perform local vmult
-          phi_n.evaluate(this->ad.internal_evaluate.value, this->ad.internal_evaluate.gradient);
+          phi_n.evaluate(this->operator_settings.internal_evaluate.value, this->operator_settings.internal_evaluate.gradient);
           this->do_face_int_integral(phi_n, phi_p);
-          phi_n.integrate(this->ad.internal_integrate.value, this->ad.internal_integrate.gradient);
+          phi_n.integrate(this->operator_settings.internal_integrate.value, this->operator_settings.internal_integrate.gradient);
 
           // extract single value from result vector and temporally store it
           local_diag[j] += phi_n.begin_dof_values()[j];
@@ -938,11 +938,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_cell_diagonal_cel
         {
           // write standard basis into dof values of FEEvaluation
           this->create_standard_basis(j, phi_n);
-          phi_n.evaluate(this->ad.boundary_evaluate.value, this->ad.boundary_evaluate.gradient);
+          phi_n.evaluate(this->operator_settings.boundary_evaluate.value, this->operator_settings.boundary_evaluate.gradient);
           // perform local vmult
           this->do_boundary_integral(phi_n, OperatorType::homogeneous, bid);
 
-          phi_n.integrate(this->ad.boundary_integrate.value, this->ad.boundary_integrate.gradient);
+          phi_n.integrate(this->operator_settings.boundary_integrate.value, this->operator_settings.boundary_integrate.gradient);
           // extract single value from result vector and temporally store it
           local_diag[j] += phi_n.begin_dof_values()[j];
         }
@@ -965,7 +965,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_loop_apply_inverse_block
   const Range &   cell_range) const
 {
   // apply inverse block matrices
-  FEEvalCell fe_eval(data, ad.dof_index, ad.quad_index);
+  FEEvalCell fe_eval(data, operator_settings.dof_index, operator_settings.quad_index);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
@@ -998,7 +998,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_block_diagonal(co
                                                                               const VNumber & src,
                                                                               const Range &   range) const
 {
-  FEEvalCell phi(data, ad.dof_index, ad.quad_index);
+  FEEvalCell phi(data, operator_settings.dof_index, operator_settings.quad_index);
   for(unsigned int cell = range.first; cell < range.second; ++cell)
   {
     phi.reinit(cell);
@@ -1031,7 +1031,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_cell_block_diagon
                                                                                    const BMatrix & /*src*/,
                                                                                    const Range & range) const
 {
-  FEEvalCell phi(data, ad.dof_index, ad.quad_index);
+  FEEvalCell phi(data, operator_settings.dof_index, operator_settings.quad_index);
   // loop over the range of macro cells
   for(auto cell = range.first; cell < range.second; ++cell)
   {
@@ -1043,12 +1043,12 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_cell_block_diagon
     {
       // write standard basis into dof values of FEEvaluation
       this->create_standard_basis(j, phi);
-      phi.evaluate(this->ad.cell_evaluate.value,
-                   this->ad.cell_evaluate.gradient,
-                   this->ad.cell_evaluate.hessians);
+      phi.evaluate(this->operator_settings.cell_evaluate.value,
+                   this->operator_settings.cell_evaluate.gradient,
+                   this->operator_settings.cell_evaluate.hessians);
       // perform local vmult
       this->do_cell_integral(phi);
-      phi.integrate(this->ad.cell_integrate.value, this->ad.cell_integrate.gradient);
+      phi.integrate(this->operator_settings.cell_integrate.value, this->operator_settings.cell_integrate.gradient);
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
           dst[cell * v_len + v](i, j) += phi.begin_dof_values()[i][v];
@@ -1063,8 +1063,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_face_block_diagon
                                                                                    const BMatrix & /*src*/,
                                                                                    const Range & range) const
 {
-  FEEvalFace phi_n(data, true, ad.dof_index, ad.quad_index);
-  FEEvalFace phi_p(data, false, ad.dof_index, ad.quad_index);
+  FEEvalFace phi_n(data, true, operator_settings.dof_index, operator_settings.quad_index);
+  FEEvalFace phi_p(data, false, operator_settings.dof_index, operator_settings.quad_index);
 
   // loop over the range of macro cells
   for(auto face = range.first; face < range.second; ++face)
@@ -1080,9 +1080,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_face_block_diagon
       // write standard basis into dof values of FEEvaluation
       this->create_standard_basis(j, phi_n);
       // perform local vmult
-      phi_n.evaluate(this->ad.internal_evaluate.value, this->ad.internal_evaluate.gradient);
+      phi_n.evaluate(this->operator_settings.internal_evaluate.value, this->operator_settings.internal_evaluate.gradient);
       this->do_face_int_integral(phi_n, phi_p);
-      phi_n.integrate(this->ad.internal_integrate.value, this->ad.internal_integrate.gradient);
+      phi_n.integrate(this->operator_settings.internal_integrate.value, this->operator_settings.internal_integrate.gradient);
       for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
         const unsigned int cell = data.get_face_info(face).cells_interior[v];
@@ -1097,9 +1097,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_face_block_diagon
       // write standard basis into dof values of FEEvaluation
       this->create_standard_basis(j, phi_p);
       // perform local vmult
-      phi_p.evaluate(this->ad.internal_evaluate.value, this->ad.internal_evaluate.gradient);
+      phi_p.evaluate(this->operator_settings.internal_evaluate.value, this->operator_settings.internal_evaluate.gradient);
       this->do_face_ext_integral(phi_n, phi_p);
-      phi_p.integrate(this->ad.internal_integrate.value, this->ad.internal_integrate.gradient);
+      phi_p.integrate(this->operator_settings.internal_integrate.value, this->operator_settings.internal_integrate.gradient);
       for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
         const unsigned int cell = data.get_face_info(face).cells_exterior[v];
@@ -1118,7 +1118,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_boundary_block_di
   const BMatrix & /*src*/,
   const Range & range) const
 {
-  FEEvalFace phi(data, true, ad.dof_index, ad.quad_index);
+  FEEvalFace phi(data, true, operator_settings.dof_index, operator_settings.quad_index);
 
   // loop over the range of macro cells
   for(auto face = range.first; face < range.second; ++face)
@@ -1133,9 +1133,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_boundary_block_di
       // write standard basis into dof values of FEEvaluation
       this->create_standard_basis(j, phi);
       // perform local vmult
-      phi.evaluate(this->ad.boundary_evaluate.value, this->ad.boundary_evaluate.gradient);
+      phi.evaluate(this->operator_settings.boundary_evaluate.value, this->operator_settings.boundary_evaluate.gradient);
       this->do_boundary_integral(phi, OperatorType::homogeneous, bid);
-      phi.integrate(this->ad.boundary_integrate.value, this->ad.boundary_integrate.gradient);
+      phi.integrate(this->operator_settings.boundary_integrate.value, this->operator_settings.boundary_integrate.gradient);
       for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
         const unsigned int cell = data.get_face_info(face).cells_interior[v];
@@ -1155,9 +1155,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_cell_block_diagon
   const BMatrix & /*src*/,
   const Range & range) const
 {
-  FEEvalCell phi(data, ad.dof_index, ad.quad_index);
-  FEEvalFace phi_n(data, true, ad.dof_index, ad.quad_index);
-  FEEvalFace phi_p(data, false, ad.dof_index, ad.quad_index);
+  FEEvalCell phi(data, operator_settings.dof_index, operator_settings.quad_index);
+  FEEvalFace phi_n(data, true, operator_settings.dof_index, operator_settings.quad_index);
+  FEEvalFace phi_p(data, false, operator_settings.dof_index, operator_settings.quad_index);
   // loop over the range of macro cells
   for(auto cell = range.first; cell < range.second; ++cell)
   {
@@ -1169,13 +1169,13 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_cell_block_diagon
     {
       // write standard basis into dof values of FEEvaluation
       this->create_standard_basis(j, phi);
-      phi.evaluate(this->ad.cell_evaluate.value,
-                   this->ad.cell_evaluate.gradient,
-                   this->ad.cell_evaluate.hessians);
+      phi.evaluate(this->operator_settings.cell_evaluate.value,
+                   this->operator_settings.cell_evaluate.gradient,
+                   this->operator_settings.cell_evaluate.hessians);
       // perform local vmult
       this->do_cell_integral(phi);
 
-      phi.integrate(this->ad.cell_integrate.value, this->ad.cell_integrate.gradient);
+      phi.integrate(this->operator_settings.cell_integrate.value, this->operator_settings.cell_integrate.gradient);
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
           dst[cell * v_len + v](i, j) = phi.begin_dof_values()[i][v];
@@ -1200,9 +1200,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_cell_block_diagon
           // write standard basis into dof values of FEEvaluation
           this->create_standard_basis(j, phi_n);
           // perform local vmult
-          phi_n.evaluate(this->ad.internal_evaluate.value, this->ad.internal_evaluate.gradient);
+          phi_n.evaluate(this->operator_settings.internal_evaluate.value, this->operator_settings.internal_evaluate.gradient);
           this->do_face_int_integral(phi_n, phi_p);
-          phi_n.integrate(this->ad.internal_integrate.value, this->ad.internal_integrate.gradient);
+          phi_n.integrate(this->operator_settings.internal_integrate.value, this->operator_settings.internal_integrate.gradient);
           for(unsigned int v = 0; v < n_filled_lanes; ++v)
             for(unsigned int i = 0; i < dofs_per_cell; ++i)
               dst[cell * v_len + v](i, j) += phi_n.begin_dof_values()[i][v];
@@ -1215,11 +1215,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_cell_block_diagon
         {
           // write standard basis into dof values of FEEvaluation
           this->create_standard_basis(j, phi_n);
-          phi_n.evaluate(this->ad.boundary_evaluate.value, this->ad.boundary_evaluate.gradient);
+          phi_n.evaluate(this->operator_settings.boundary_evaluate.value, this->operator_settings.boundary_evaluate.gradient);
           // perform local vmult
           this->do_boundary_integral(phi_n, OperatorType::homogeneous, bid);
 
-          phi_n.integrate(this->ad.boundary_integrate.value, this->ad.boundary_integrate.gradient);
+          phi_n.integrate(this->operator_settings.boundary_integrate.value, this->operator_settings.boundary_integrate.gradient);
           for(unsigned int v = 0; v < n_filled_lanes; ++v)
             for(unsigned int i = 0; i < dofs_per_cell; ++i)
               dst[cell * v_len + v](i, j) += phi_n.begin_dof_values()[i][v];
@@ -1237,7 +1237,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_cell_system_matri
                                                                                   const SMatrix & /*src*/,
                                                                                   const Range & range) const
 {
-  FEEvalCell phi(data, ad.dof_index, ad.quad_index);
+  FEEvalCell phi(data, operator_settings.dof_index, operator_settings.quad_index);
   // loop over the range of macro cells
   for(auto cell = range.first; cell < range.second; ++cell)
   {
@@ -1258,13 +1258,13 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_cell_system_matri
     {
       // write standard basis into dof values of FEEvaluation
       this->create_standard_basis(j, phi);
-      phi.evaluate(this->ad.cell_evaluate.value,
-                   this->ad.cell_evaluate.gradient,
-                   this->ad.cell_evaluate.hessians);
+      phi.evaluate(this->operator_settings.cell_evaluate.value,
+                   this->operator_settings.cell_evaluate.gradient,
+                   this->operator_settings.cell_evaluate.hessians);
       // perform local vmult
       this->do_cell_integral(phi);
 
-      phi.integrate(this->ad.cell_integrate.value, this->ad.cell_integrate.gradient);
+      phi.integrate(this->operator_settings.cell_integrate.value, this->operator_settings.cell_integrate.gradient);
 
       // insert result vector into local matrix
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
@@ -1305,8 +1305,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_face_system_matri
                                                                                   const SMatrix & /*src*/,
                                                                                   const Range & range) const
 {
-  FEEvalFace phi_n(data, true, ad.dof_index, ad.quad_index);
-  FEEvalFace phi_p(data, false, ad.dof_index, ad.quad_index);
+  FEEvalFace phi_n(data, true, operator_settings.dof_index, operator_settings.quad_index);
+  FEEvalFace phi_p(data, false, operator_settings.dof_index, operator_settings.quad_index);
 
   // loop over the range of macro faces
   for(auto face = range.first; face < range.second; ++face)
@@ -1332,11 +1332,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_face_system_matri
       this->create_standard_basis(j, phi_n, phi_p);
       // do loacal vmult
 
-      phi_n.evaluate(this->ad.internal_evaluate.value, this->ad.internal_evaluate.gradient);
-      phi_p.evaluate(this->ad.internal_evaluate.value, this->ad.internal_evaluate.gradient);
+      phi_n.evaluate(this->operator_settings.internal_evaluate.value, this->operator_settings.internal_evaluate.gradient);
+      phi_p.evaluate(this->operator_settings.internal_evaluate.value, this->operator_settings.internal_evaluate.gradient);
       this->do_face_integral(phi_n, phi_p);
-      phi_n.integrate(this->ad.internal_integrate.value, this->ad.internal_integrate.gradient);
-      phi_p.integrate(this->ad.internal_integrate.value, this->ad.internal_integrate.gradient);
+      phi_n.integrate(this->operator_settings.internal_integrate.value, this->operator_settings.internal_integrate.gradient);
+      phi_p.integrate(this->operator_settings.internal_integrate.value, this->operator_settings.internal_integrate.gradient);
 
       // insert result vector into local matrix u1_v1
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
@@ -1390,11 +1390,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_face_system_matri
       this->create_standard_basis(j, phi_p, phi_n);
       // do loacal vmult
 
-      phi_n.evaluate(this->ad.internal_evaluate.value, this->ad.internal_evaluate.gradient);
-      phi_p.evaluate(this->ad.internal_evaluate.value, this->ad.internal_evaluate.gradient);
+      phi_n.evaluate(this->operator_settings.internal_evaluate.value, this->operator_settings.internal_evaluate.gradient);
+      phi_p.evaluate(this->operator_settings.internal_evaluate.value, this->operator_settings.internal_evaluate.gradient);
       this->do_face_integral(phi_n, phi_p);
-      phi_n.integrate(this->ad.internal_integrate.value, this->ad.internal_integrate.gradient);
-      phi_p.integrate(this->ad.internal_integrate.value, this->ad.internal_integrate.gradient);
+      phi_n.integrate(this->operator_settings.internal_integrate.value, this->operator_settings.internal_integrate.gradient);
+      phi_p.integrate(this->operator_settings.internal_integrate.value, this->operator_settings.internal_integrate.gradient);
 
       // insert result vector into local matrix u1_v1
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
@@ -1450,7 +1450,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_boundary_system_m
   const SMatrix & /*src*/,
   const Range & range) const
 {
-  FEEvalFace phi(data, true, ad.dof_index, ad.quad_index);
+  FEEvalFace phi(data, true, operator_settings.dof_index, operator_settings.quad_index);
 
   // loop over the range of macro faces
   for(auto face = range.first; face < range.second; ++face)
@@ -1472,10 +1472,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_boundary_system_m
       // clear dof values of second FEFaceEvaluation
       this->create_standard_basis(j, phi);
 
-      phi.evaluate(this->ad.boundary_evaluate.value, this->ad.boundary_evaluate.gradient);
+      phi.evaluate(this->operator_settings.boundary_evaluate.value, this->operator_settings.boundary_evaluate.gradient);
       // do loacal vmult
       this->do_boundary_integral(phi, OperatorType::homogeneous, bid);
-      phi.integrate(this->ad.boundary_integrate.value, this->ad.boundary_integrate.gradient);
+      phi.integrate(this->operator_settings.boundary_integrate.value, this->operator_settings.boundary_integrate.gradient);
 
       // insert result vector into local matrix u1_v1
       for(unsigned int i = 0; i < dofs_per_cell; ++i)

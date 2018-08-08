@@ -502,7 +502,7 @@ protected:
   verify_boundary_conditions(DoFHandler<dim> const & dof_handler, AdditionalData const & operator_data);
 
 protected:
-  mutable AdditionalData ad;
+  mutable AdditionalData operator_settings;
 
 private:
   const bool do_eval_faces;

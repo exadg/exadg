@@ -60,7 +60,7 @@ inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
     {
       VectorizedArray<Number> g = make_vectorized_array<Number>(0.0);
       typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-      it                                           = this->ad.bc->dirichlet_bc.find(boundary_id);
+      it                                           = this->operator_settings.bc->dirichlet_bc.find(boundary_id);
       Point<dim, VectorizedArray<Number>> q_points = fe_eval.quadrature_point(q);
       evaluate_scalar_function(g, it->second, q_points, this->eval_time);
 
@@ -146,7 +146,7 @@ inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
     {
       VectorizedArray<Number> h = make_vectorized_array<Number>(0.0);
       typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-      it                                           = this->ad.bc->neumann_bc.find(boundary_id);
+      it                                           = this->operator_settings.bc->neumann_bc.find(boundary_id);
       Point<dim, VectorizedArray<Number>> q_points = fe_eval.quadrature_point(q);
       evaluate_scalar_function(h, it->second, q_points, this->eval_time);
 
@@ -184,7 +184,7 @@ LaplaceOperator<dim, fe_degree, value_type>::do_face_integral(FEEvalFace & fe_ev
 {
   VectorizedArray<value_type> tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
                                                 fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-                                       IP::get_penalty_factor<value_type>(fe_degree, this->ad.IP_factor);
+                                       IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
 #ifdef LAPALCE_CELL_TEST
   tau_IP = 100.0;
 #endif
@@ -213,7 +213,7 @@ LaplaceOperator<dim, fe_degree, value_type>::do_face_int_integral(FEEvalFace & f
 {
   VectorizedArray<value_type> tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
                                                 fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-                                       IP::get_penalty_factor<value_type>(fe_degree, this->ad.IP_factor);
+                                       IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
 #ifdef LAPALCE_CELL_TEST
   tau_IP = 100.0;
 #endif
@@ -242,7 +242,7 @@ LaplaceOperator<dim, fe_degree, value_type>::do_face_ext_integral(FEEvalFace & f
 {
   VectorizedArray<value_type> tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
                                                 fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-                                       IP::get_penalty_factor<value_type>(fe_degree, this->ad.IP_factor);
+                                       IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
 #ifdef LAPALCE_CELL_TEST
   tau_IP = 100.0;
 #endif
@@ -272,10 +272,10 @@ LaplaceOperator<dim, fe_degree, value_type>::do_boundary_integral(
   OperatorType const &       operator_type,
   types::boundary_id const & boundary_id) const
 {
-  BoundaryType boundary_type = this->ad.get_boundary_type(boundary_id);
+  BoundaryType boundary_type = this->operator_settings.get_boundary_type(boundary_id);
 
   VectorizedArray<value_type> tau_IP = fe_eval.read_cell_data(array_penalty_parameter) *
-                                       IP::get_penalty_factor<value_type>(fe_degree, this->ad.IP_factor);
+                                       IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
 #ifdef LAPALCE_CELL_TEST
   tau_IP = 100.0;
 #endif

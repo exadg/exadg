@@ -117,22 +117,22 @@ public:
     IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
                                                          *this->data,
                                                          mapping,
-                                                         this->ad.dof_index);
+                                                         this->operator_settings.dof_index);
   }
 
   void
   initialize(Mapping<dim> const &             mapping,
              MatrixFree<dim, Number> &        mf,
              ConstraintMatrix &               cm,
-             LaplaceOperatorData<dim> const & ad)
+             LaplaceOperatorData<dim> const & operator_settings)
   {
-    Parent::reinit(mf, cm, ad);
+    Parent::reinit(mf, cm, operator_settings);
 
     // calculate penalty parameters
     IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
                                                          *this->data,
                                                          mapping,
-                                                         this->ad.dof_index);
+                                                         this->operator_settings.dof_index);
   }
 
   void
@@ -148,7 +148,7 @@ public:
     IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
                                                          *this->data,
                                                          mapping,
-                                                         this->ad.dof_index);
+                                                         this->operator_settings.dof_index);
   }
 
   inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
