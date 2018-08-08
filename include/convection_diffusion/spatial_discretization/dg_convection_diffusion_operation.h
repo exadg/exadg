@@ -330,7 +330,7 @@ private:
     dof_handler.distribute_dofs(fe);
     dof_handler.distribute_mg_dofs();
 
-    unsigned int ndofs_per_cell = Utilities::pow(fe_degree+1,dim);
+    constexpr int ndofs_per_cell = Utilities::pow(fe_degree+1,dim);
 
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
