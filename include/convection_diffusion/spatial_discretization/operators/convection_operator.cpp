@@ -10,8 +10,8 @@ ConvectiveOperator<dim, fe_degree, value_type>::initialize(
   MatrixFree<dim, value_type> const & mf_data,
   ConvectiveOperatorData<dim> const & operator_data_in)
 {
-  ConstraintMatrix cm;
-  Parent::reinit(mf_data, cm, operator_data_in);
+  ConstraintMatrix constraint_matrix;
+  Parent::reinit(mf_data, constraint_matrix, operator_data_in);
 }
 
 /*

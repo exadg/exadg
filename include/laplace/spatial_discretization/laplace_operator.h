@@ -110,8 +110,8 @@ public:
              MatrixFree<dim, Number> const &  mf_data,
              LaplaceOperatorData<dim> const & operator_data_in)
   {
-    ConstraintMatrix cm;
-    Parent::reinit(mf_data, cm, operator_data_in);
+    ConstraintMatrix constraint_matrix;
+    Parent::reinit(mf_data, constraint_matrix, operator_data_in);
 
     // calculate penalty parameters
     IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,

@@ -8,8 +8,8 @@ MassMatrixOperator<dim, fe_degree, value_type>::initialize(
   MatrixFree<dim, value_type> const & mf_data,
   MassMatrixOperatorData<dim> const & mass_matrix_operator_data_in)
 {
-  ConstraintMatrix cm;
-  Parent::reinit(mf_data, cm, mass_matrix_operator_data_in);
+  ConstraintMatrix constraint_matrix;
+  Parent::reinit(mf_data, constraint_matrix, mass_matrix_operator_data_in);
 }
 
 template<int dim, int fe_degree, typename value_type>

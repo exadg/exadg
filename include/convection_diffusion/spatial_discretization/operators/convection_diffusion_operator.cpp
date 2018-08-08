@@ -18,8 +18,8 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::initialize(
   ConvectiveOp const &                         convective_operator_in,
   DiffusiveOp const &                          diffusive_operator_in)
 {
-  ConstraintMatrix cm;
-  Parent::reinit(mf_data_in, cm, operator_data_in);
+  ConstraintMatrix constraint_matrix;
+  Parent::reinit(mf_data_in, constraint_matrix, operator_data_in);
   this->mass_matrix_operator.reinit(mass_matrix_operator_in);
   this->convective_operator.reinit(convective_operator_in);
   this->diffusive_operator.reinit(diffusive_operator_in);
