@@ -242,10 +242,9 @@ main(int argc, char ** argv)
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    int rank = Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
 
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    if(!rank)
     {
       std::cout << "deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch " << DEAL_II_GIT_BRANCH
                 << std::endl
