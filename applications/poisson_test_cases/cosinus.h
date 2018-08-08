@@ -161,11 +161,11 @@ create_grid_and_set_boundary_conditions(
   //  for (auto cell : triangulation)
   //    for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell;++face)
   //      if (cell.face(face)->at_boundary()){
-  //             if(std::abs(cell.face(face)->center()(0) - 0.5*numbers::PI) < 1e-12)
+  //             if(std::abs(cell.face(face)->center()(0) - right) < 1e-12)
   //            cell.face(face)->set_all_boundary_ids(1);
-  //        else if(std::abs(cell.face(face)->center()(1) - 0.5*numbers::PI) < 1e-12)
+  //        else if(std::abs(cell.face(face)->center()(1) - left) < 1e-12)
   //            cell.face(face)->set_all_boundary_ids(2);
-  //        else if(std::abs(cell.face(face)->center()(1) + 0.5*numbers::PI) < 1e-12)
+  //        else if(std::abs(cell.face(face)->center()(1) + right) < 1e-12)
   //            cell.face(face)->set_all_boundary_ids(3);
   //      }
   //
