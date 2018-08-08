@@ -69,9 +69,6 @@ private:
   void
   print_grid_data();
 
-  void
-  setup_postprocessor();
-
   template<typename Vec>
   void
   output_data(std::string filename, Vec & solution)
@@ -161,12 +158,6 @@ PoissonProblem<dim, fe_degree, Number>::print_grid_data()
 
 template<int dim, int fe_degree, typename Number>
 void
-PoissonProblem<dim, fe_degree, Number>::setup_postprocessor()
-{
-}
-
-template<int dim, int fe_degree, typename Number>
-void
 PoissonProblem<dim, fe_degree, Number>::solve_problem(ConvergenceTable & convergence_table)
 {
   // create grid and set bc
@@ -179,9 +170,6 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(ConvergenceTable & converg
   Timer timer;
   poisson_operation->setup_solver();
   double time_setup = timer.wall_time();
-
-  // setup postprocessor
-  setup_postprocessor();
 
   // allocate vectors
   parallel::distributed::Vector<Number> rhs;
