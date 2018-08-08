@@ -176,7 +176,8 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::vmult(
 
   if(this->operator_settings.convective_problem == true)
   {
-    convective_operator->apply_add(dst, src /*TODO: ,evaluation_time*/);
+    convective_operator->set_evaluation_time(this->get_evaluation_time());
+    convective_operator->apply_add(dst, src);
   }
 }
 
@@ -205,7 +206,8 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::vmult_add(
 
   if(this->operator_settings.convective_problem == true)
   {
-    convective_operator->apply_add(dst, src /*TODO: ,evaluation_time*/);
+    convective_operator->set_evaluation_time(this->get_evaluation_time());
+    convective_operator->apply_add(dst, src);
   }
 }
 
@@ -236,7 +238,8 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_diagonal(
 
   if(this->operator_settings.convective_problem == true)
   {
-    convective_operator->add_diagonal(diagonal /*TODO: ,evaluation_time*/);
+    convective_operator->set_evaluation_time(this->get_evaluation_time());
+    convective_operator->add_diagonal(diagonal);
   }
 }
 
@@ -266,7 +269,8 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_jacobi_matrices(B
 
   if(this->operator_settings.convective_problem == true)
   {
-    convective_operator->add_block_jacobi_matrices(matrices /*TODO: ,evaluation_time*/);
+    convective_operator->set_evaluation_time(this->get_evaluation_time());
+    convective_operator->add_block_jacobi_matrices(matrices);
   }
 }
 

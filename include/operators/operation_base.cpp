@@ -551,7 +551,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::initialize_dof_vector(VNumber
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::set_evaluation_time(double const evaluation_time_in)
+OperatorBase<dim, degree, Number, AdditionalData>::set_evaluation_time(double const evaluation_time_in) const
 {
   eval_time = evaluation_time_in;
 }

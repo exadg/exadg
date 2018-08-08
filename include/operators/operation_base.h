@@ -323,7 +323,7 @@ public:
   initialize_dof_vector(VNumber & vector) const;
 
   void
-  set_evaluation_time(double const evaluation_time_in);
+  set_evaluation_time(double const evaluation_time_in) const;
 
   double
   get_evaluation_time() const;
