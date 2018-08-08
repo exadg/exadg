@@ -316,10 +316,33 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::get_new(unsigned int deg) c
     case 9:
       return new ConvectionDiffusionOperator<dim, 9, Number>();
 #endif
+#if DEGREE_10
+    case 10:
+      return new ConvectionDiffusionOperator<dim, 10, Number>();
+#endif
+#if DEGREE_11
+    case 11:
+      return new ConvectionDiffusionOperator<dim, 11, Number>();
+#endif
+#if DEGREE_12
+    case 12:
+      return new ConvectionDiffusionOperator<dim, 12, Number>();
+#endif
+#if DEGREE_13
+    case 13:
+      return new ConvectionDiffusionOperator<dim, 13, Number>();
+#endif
+#if DEGREE_14
+    case 14:
+      return new ConvectionDiffusionOperator<dim, 14, Number>();
+#endif
+#if DEGREE_15
+    case 15:
+      return new ConvectionDiffusionOperator<dim, 15, Number>();
+#endif
     default:
       AssertThrow(false, ExcMessage("ConvectionDiffusionOperator not implemented for this degree!"));
-      return new ConvectionDiffusionOperator<dim, 1, Number>();
-      // dummy return (statement not reached)
+      return nullptr;
   }
 }
 

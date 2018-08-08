@@ -188,6 +188,60 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
 
       const unsigned int from = curr.second, to = prev.second;
 
+#if DEGREE_15 && DEGREE_7
+      if(from == 15 && to == 7)
+      {
+        temp = new MGTransferMatrixFreeP<dim, 15, 7, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i],
+                                                                                      *mg_dofhandler[i - 1],
+                                                                                      curr.first);
+      }
+      else
+#endif
+#if DEGREE_14 && DEGREE_7
+      if(from == 14 && to == 7)
+      {
+        temp = new MGTransferMatrixFreeP<dim, 14, 7, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i],
+                                                                                      *mg_dofhandler[i - 1],
+                                                                                      curr.first);
+      }
+      else
+#endif
+#if DEGREE_13 && DEGREE_6
+      if(from == 13 && to == 6)
+      {
+        temp = new MGTransferMatrixFreeP<dim, 13, 6, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i],
+                                                                                      *mg_dofhandler[i - 1],
+                                                                                      curr.first);
+      }
+      else
+#endif
+#if DEGREE_12 && DEGREE_6
+      if(from == 12 && to == 6)
+      {
+        temp = new MGTransferMatrixFreeP<dim, 12, 6, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i],
+                                                                                      *mg_dofhandler[i - 1],
+                                                                                      curr.first);
+      }
+      else
+#endif
+#if DEGREE_11 && DEGREE_5
+      if(from == 11 && to == 5)
+      {
+        temp = new MGTransferMatrixFreeP<dim, 11, 5, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i],
+                                                                                      *mg_dofhandler[i - 1],
+                                                                                      curr.first);
+      }
+      else
+#endif
+#if DEGREE_10 && DEGREE_5
+      if(from == 10 && to == 5)
+      {
+        temp = new MGTransferMatrixFreeP<dim, 9, 4, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i],
+                                                                                      *mg_dofhandler[i - 1],
+                                                                                      curr.first);
+      }
+      else
+#endif
 #if DEGREE_9 && DEGREE_4
       if(from == 9 && to == 4)
       {

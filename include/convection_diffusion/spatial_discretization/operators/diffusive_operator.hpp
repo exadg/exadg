@@ -67,6 +67,48 @@ template class DiffusiveOperator<2, 9, float>;
 template class DiffusiveOperator<2, 9, double>;
 #endif
 
+#if DIM_2 && DEGREE_10 && (OP_FLOAT || MG_FLOAT)
+template class DiffusiveOperator<2, 10, float>;
+#endif
+#if DIM_2 && DEGREE_10 && (OP_DOUBLE || MG_DOUBLE)
+template class DiffusiveOperator<2, 10, double>;
+#endif
+
+#if DIM_2 && DEGREE_11 && (OP_FLOAT || MG_FLOAT)
+template class DiffusiveOperator<2, 11, float>;
+#endif
+#if DIM_2 && DEGREE_11 && (OP_DOUBLE || MG_DOUBLE)
+template class DiffusiveOperator<2, 11, double>;
+#endif
+
+#if DIM_2 && DEGREE_12 && (OP_FLOAT || MG_FLOAT)
+template class DiffusiveOperator<2, 12, float>;
+#endif
+#if DIM_2 && DEGREE_12 && (OP_DOUBLE || MG_DOUBLE)
+template class DiffusiveOperator<2, 12, double>;
+#endif
+
+#if DIM_2 && DEGREE_13 && (OP_FLOAT || MG_FLOAT)
+template class DiffusiveOperator<2, 13, float>;
+#endif
+#if DIM_2 && DEGREE_13 && (OP_DOUBLE || MG_DOUBLE)
+template class DiffusiveOperator<2, 13, double>;
+#endif
+
+#if DIM_2 && DEGREE_14 && (OP_FLOAT || MG_FLOAT)
+template class DiffusiveOperator<2, 14, float>;
+#endif
+#if DIM_2 && DEGREE_14 && (OP_DOUBLE || MG_DOUBLE)
+template class DiffusiveOperator<2, 14, double>;
+#endif
+
+#if DIM_2 && DEGREE_15 && (OP_FLOAT || MG_FLOAT)
+template class DiffusiveOperator<2, 15, float>;
+#endif
+#if DIM_2 && DEGREE_15 && (OP_DOUBLE || MG_DOUBLE)
+template class DiffusiveOperator<2, 15, double>;
+#endif
+
 #if DIM_3 && DEGREE_1 && (OP_FLOAT || MG_FLOAT)
 template class DiffusiveOperator<3, 1, float>;
 #endif
@@ -128,6 +170,48 @@ template class DiffusiveOperator<3, 9, float>;
 #endif
 #if DIM_3 && DEGREE_9 && (OP_DOUBLE || MG_DOUBLE)
 template class DiffusiveOperator<3, 9, double>;
+#endif
+
+#if DIM_3 && DEGREE_10 && (OP_FLOAT || MG_FLOAT)
+template class DiffusiveOperator<3, 10, float>;
+#endif
+#if DIM_3 && DEGREE_10 && (OP_DOUBLE || MG_DOUBLE)
+template class DiffusiveOperator<3, 10, double>;
+#endif
+
+#if DIM_3 && DEGREE_11 && (OP_FLOAT || MG_FLOAT)
+template class DiffusiveOperator<3, 11, float>;
+#endif
+#if DIM_3 && DEGREE_11 && (OP_DOUBLE || MG_DOUBLE)
+template class DiffusiveOperator<3, 11, double>;
+#endif
+
+#if DIM_3 && DEGREE_12 && (OP_FLOAT || MG_FLOAT)
+template class DiffusiveOperator<3, 12, float>;
+#endif
+#if DIM_3 && DEGREE_12 && (OP_DOUBLE || MG_DOUBLE)
+template class DiffusiveOperator<3, 12, double>;
+#endif
+
+#if DIM_3 && DEGREE_13 && (OP_FLOAT || MG_FLOAT)
+template class DiffusiveOperator<3, 13, float>;
+#endif
+#if DIM_3 && DEGREE_13 && (OP_DOUBLE || MG_DOUBLE)
+template class DiffusiveOperator<3, 13, double>;
+#endif
+
+#if DIM_3 && DEGREE_14 && (OP_FLOAT || MG_FLOAT)
+template class DiffusiveOperator<3, 14, float>;
+#endif
+#if DIM_3 && DEGREE_14 && (OP_DOUBLE || MG_DOUBLE)
+template class DiffusiveOperator<3, 14, double>;
+#endif
+
+#if DIM_3 && DEGREE_15 && (OP_FLOAT || MG_FLOAT)
+template class DiffusiveOperator<3, 15, float>;
+#endif
+#if DIM_3 && DEGREE_15 && (OP_DOUBLE || MG_DOUBLE)
+template class DiffusiveOperator<3, 15, double>;
 #endif
 
 } // namespace ConvDiff
