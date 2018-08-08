@@ -72,9 +72,9 @@ private:
   void
   setup_postprocessor();
 
-  template<typename VEC>
+  template<typename Vec>
   void
-  output_data(std::string filename, VEC & solution)
+  output_data(std::string filename, Vec & solution)
   {
     DataOut<dim> data_out;
     data_out.attach_dof_handler(poisson_operation->get_dof_handler());
