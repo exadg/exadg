@@ -36,11 +36,11 @@ const int best_of = 1;
 
 template<int dim, int fe_degree, typename Function>
 void
-repeat(ConvergenceTable & table, std::string label, Function f)
+measure_minimum_time(const unsigned int best_of, ConvergenceTable & table, std::string label, Function f)
 {
   Timer  timer;
   double min_time = std::numeric_limits<double>::max();
-  for(int i = 0; i < best_of; i++)
+  for(unsigned int i = 0; i < best_of; i++)
   {
     MPI_Barrier(MPI_COMM_WORLD);
     timer.restart();
@@ -189,7 +189,6 @@ LaplaceProblem<dim, fe_degree, Number>::solve_problem(ConvergenceTable & converg
   poisson_operation->initialize_dof_vector(rhs);
   poisson_operation->initialize_dof_vector(solution);
 
-
   // solve problem
   convergence_table.add_value("dim", dim);
   convergence_table.add_value("degree", fe_degree);
@@ -197,22 +196,23 @@ LaplaceProblem<dim, fe_degree, Number>::solve_problem(ConvergenceTable & converg
   convergence_table.add_value("dofs", solution.size());
   convergence_table.add_value("setup", time_setup);
   convergence_table.set_scientific("setup", true);
-  
+
   if(param.output_data.write_output)
     this->output_data(param.output_data.output_folder + param.output_data.output_name + "0.vtu", solution);
-  
 
-  repeat<dim, fe_degree>(convergence_table, "rhs", [&]() mutable { poisson_operation->rhs(rhs); });
+  measure_minimum_time<dim, fe_degree>(best_of, convergence_table, "rhs", [&]() mutable {
+    poisson_operation->rhs(rhs);
+  });
+
   int cycles;
-  repeat<dim, fe_degree>(convergence_table, "solve", [&]() mutable {
+  measure_minimum_time<dim, fe_degree>(best_of, convergence_table, "solve", [&]() mutable {
     cycles = poisson_operation->solve(solution, rhs);
   });
 
   convergence_table.add_value("cycles", cycles);
-  
+
   if(param.output_data.write_output)
     this->output_data(param.output_data.output_folder + param.output_data.output_name + "1.vtu", solution);
-  
 }
 
 template<int dim, int fe_degree_1>
