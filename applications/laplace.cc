@@ -191,33 +191,28 @@ LaplaceProblem<dim, fe_degree, Number>::solve_problem(ConvergenceTable & converg
 
 
   // solve problem
-  if(best_of > 1)
-  {
-    convergence_table.add_value("dim", dim);
-    convergence_table.add_value("degree", fe_degree);
-    convergence_table.add_value("refs", n_refine_space);
-    convergence_table.add_value("dofs", solution.size());
-    convergence_table.add_value("setup", time_setup);
-    convergence_table.set_scientific("setup", true);
+  convergence_table.add_value("dim", dim);
+  convergence_table.add_value("degree", fe_degree);
+  convergence_table.add_value("refs", n_refine_space);
+  convergence_table.add_value("dofs", solution.size());
+  convergence_table.add_value("setup", time_setup);
+  convergence_table.set_scientific("setup", true);
+  
+  if(param.output_data.write_output)
+    this->output_data(param.output_data.output_folder + param.output_data.output_name + "0.vtu", solution);
+  
 
-    repeat<dim, fe_degree>(convergence_table, "rhs", [&]() mutable { poisson_operation->rhs(rhs); });
-    int cycles;
-    repeat<dim, fe_degree>(convergence_table, "solve", [&]() mutable {
-      cycles = poisson_operation->solve(solution, rhs);
-    });
+  repeat<dim, fe_degree>(convergence_table, "rhs", [&]() mutable { poisson_operation->rhs(rhs); });
+  int cycles;
+  repeat<dim, fe_degree>(convergence_table, "solve", [&]() mutable {
+    cycles = poisson_operation->solve(solution, rhs);
+  });
 
-    convergence_table.add_value("cycles", cycles);
-  }
-  else
-  {
-    this->output_data("output/laplace_0.vtu", solution);
-    // compute right hand side
-    poisson_operation->rhs(rhs);
-    int n = poisson_operation->solve(solution, rhs);
-    printf("%d\n", n);
-    this->output_data("output/laplace_1.vtu", solution);
-    exit(0);
-  }
+  convergence_table.add_value("cycles", cycles);
+  
+  if(param.output_data.write_output)
+    this->output_data(param.output_data.output_folder + param.output_data.output_name + "1.vtu", solution);
+  
 }
 
 template<int dim, int fe_degree_1>

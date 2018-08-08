@@ -189,6 +189,9 @@ public:
   print_parameters_output_and_postprocessing(ConditionalOStream & pcout)
   {
     pcout << std::endl << "Output and postprocessing:" << std::endl;
+   
+    output_data.print(pcout,true /*problem_type == ProblemType::Unsteady*/);
+    
   }
 
 
@@ -247,6 +250,9 @@ public:
 
   // print a list of all input parameters at the beginning of the simulation
   bool print_input_parameters;
+
+  // writing output
+  OutputData output_data;
 };
 
 } // namespace Laplace
