@@ -38,14 +38,14 @@ template<int dim, int fe_degree, typename Function>
 void
 repeat(ConvergenceTable & table, std::string label, Function f)
 {
-  Timer  time;
+  Timer  timer;
   double min_time = std::numeric_limits<double>::max();
   for(int i = 0; i < best_of; i++)
   {
     MPI_Barrier(MPI_COMM_WORLD);
-    time.restart();
+    timer.restart();
     f();
-    double temp = time.wall_time();
+    double temp = timer.wall_time();
     min_time    = std::min(min_time, temp);
   }
   table.add_value(label, min_time);
@@ -176,9 +176,9 @@ LaplaceProblem<dim, fe_degree, Number>::solve_problem(ConvergenceTable & converg
   // setup poisson operation
   poisson_operation->setup(periodic_faces, boundary_descriptor, field_functions);
 
-  Timer time;
+  Timer timer;
   poisson_operation->setup_solver();
-  double time_setup = time.wall_time();
+  double time_setup = timer.wall_time();
 
   // setup postprocessor
   setup_postprocessor();
