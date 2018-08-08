@@ -240,7 +240,6 @@ main(int argc, char ** argv)
 {
   try
   {
-    // using namespace ConvectionDiffusionProblem;
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
     int rank;
