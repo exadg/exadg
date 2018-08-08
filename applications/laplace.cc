@@ -183,7 +183,7 @@ LaplaceProblem<dim, fe_degree, Number>::solve_problem(ConvergenceTable & converg
   // setup postprocessor
   setup_postprocessor();
 
-  // allocate vecotors
+  // allocate vectors
   parallel::distributed::Vector<Number> rhs;
   parallel::distributed::Vector<Number> solution;
   poisson_operation->initialize_dof_vector(rhs);
