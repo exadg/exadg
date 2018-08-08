@@ -81,10 +81,9 @@ ConvDiffProblem(const unsigned int n_refine_space_in)
   print_header();
 
   param.set_input_parameters();
+  param.check_input_parameters();
   AssertThrow(param.problem_type == ProblemType::Steady,
                 ExcMessage("ProblemType must be steady!"));
-  param.check_input_parameters();
-
   print_MPI_info(pcout);
   if(param.print_input_parameters == true)
     param.print(pcout);
