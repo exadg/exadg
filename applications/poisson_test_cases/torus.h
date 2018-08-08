@@ -13,9 +13,9 @@ const unsigned int FE_DEGREE              = 7;
 const unsigned int REFINE_STEPS_SPACE_MIN = 5;
 const unsigned int REFINE_STEPS_SPACE_MAX = 5;
 
-std::string OUTPUT_FOLDER = "output/poisson_torus/";
+std::string OUTPUT_FOLDER     = "output/poisson_torus/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "torus";
+std::string OUTPUT_NAME       = "torus";
 
 
 void
@@ -43,16 +43,14 @@ Laplace::InputParameters::set_input_parameters()
   multigrid_data.gmres_smoother_data.preconditioner       = PreconditionerGMRESSmoother::None;
   multigrid_data.gmres_smoother_data.number_of_iterations = 5;
   // MG coarse grid solver
-  multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_PointJacobi;
-
-  multigrid_data.coarse_solver = MultigridCoarseGridSolver::AMG_ML;
+  multigrid_data.coarse_solver = MultigridCoarseGridSolver::AMG_ML; // GMRES_PointJacobi;
   // multigrid_data.two_levels = true;
   multigrid_data.type = MultigridType::PGMG;
-  
+
   // write output for visualization of results
-  output_data.write_output = true;
+  output_data.write_output  = true;
   output_data.output_folder = OUTPUT_FOLDER_VTU;
-  output_data.output_name = OUTPUT_NAME;
+  output_data.output_name   = OUTPUT_NAME;
 }
 
 /******************************************************************************/
