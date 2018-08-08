@@ -255,7 +255,6 @@ main(int argc, char ** argv)
     deallog.depth_console(0);
 
     ConvergenceTable convergence_table;
-    // mesh refinements in order to perform spatial convergence tests
 
     Run<DIMENSION, 3>::run(convergence_table);
     //    Run<DIMENSION,4>::run(convergence_table);
