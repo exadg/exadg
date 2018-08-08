@@ -53,11 +53,11 @@ measure_minimum_time(const unsigned int best_of, ConvergenceTable & table, std::
 }
 
 template<int dim, int fe_degree, typename Number = double>
-class LaplaceProblem
+class PoissonProblem
 {
 public:
   typedef double value_type;
-  LaplaceProblem(const unsigned int n_refine_space);
+  PoissonProblem(const unsigned int n_refine_space);
 
   void
   solve_problem(ConvergenceTable & convergence_table);
@@ -106,7 +106,7 @@ private:
 };
 
 template<int dim, int fe_degree, typename Number>
-LaplaceProblem<dim, fe_degree, Number>::LaplaceProblem(const unsigned int n_refine_space_in)
+PoissonProblem<dim, fe_degree, Number>::PoissonProblem(const unsigned int n_refine_space_in)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     triangulation(MPI_COMM_WORLD,
                   dealii::Triangulation<dim>::none,
@@ -134,7 +134,7 @@ LaplaceProblem<dim, fe_degree, Number>::LaplaceProblem(const unsigned int n_refi
 
 template<int dim, int fe_degree, typename Number>
 void
-LaplaceProblem<dim, fe_degree, Number>::print_header()
+PoissonProblem<dim, fe_degree, Number>::print_header()
 {
   pcout << std::endl
         << std::endl
@@ -149,7 +149,7 @@ LaplaceProblem<dim, fe_degree, Number>::print_header()
 
 template<int dim, int fe_degree, typename Number>
 void
-LaplaceProblem<dim, fe_degree, Number>::print_grid_data()
+PoissonProblem<dim, fe_degree, Number>::print_grid_data()
 {
   pcout << std::endl << "Generating grid for " << dim << "-dimensional problem:" << std::endl << std::endl;
 
@@ -161,13 +161,13 @@ LaplaceProblem<dim, fe_degree, Number>::print_grid_data()
 
 template<int dim, int fe_degree, typename Number>
 void
-LaplaceProblem<dim, fe_degree, Number>::setup_postprocessor()
+PoissonProblem<dim, fe_degree, Number>::setup_postprocessor()
 {
 }
 
 template<int dim, int fe_degree, typename Number>
 void
-LaplaceProblem<dim, fe_degree, Number>::solve_problem(ConvergenceTable & convergence_table)
+PoissonProblem<dim, fe_degree, Number>::solve_problem(ConvergenceTable & convergence_table)
 {
   // create grid and set bc
   create_grid_and_set_boundary_conditions(triangulation, n_refine_space, boundary_descriptor, periodic_faces);
@@ -230,7 +230,7 @@ public:
         continue;
       int refinement = std::log(size / fe_degree) / std::log(2.0);
 
-      LaplaceProblem<dim, fe_degree> conv_diff_problem(refinement);
+      PoissonProblem<dim, fe_degree> conv_diff_problem(refinement);
       conv_diff_problem.solve_problem(convergence_table);
     }
   }
