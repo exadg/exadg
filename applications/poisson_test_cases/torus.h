@@ -142,7 +142,6 @@ create_grid_and_set_boundary_conditions(
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> & /*periodic_faces*/
 )
 {
-  // hypercube: [left,right]^dim
   const double              R = 1.5;
   const double              r = 0.5;
   static TorusManifold<dim> manifold(R, r);
