@@ -48,14 +48,6 @@ inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
 }
 
 template<int dim, int fe_degree, typename value_type>
-void
-DiffusiveOperator<dim, fe_degree, value_type>::do_cell_integral(FEEvalCell & fe_eval) const
-{
-  for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
-    fe_eval.submit_gradient(fe_eval.get_gradient(q) * diffusivity, q);
-}
-
-template<int dim, int fe_degree, typename value_type>
 inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
                              DiffusiveOperator<dim, fe_degree, value_type>::calculate_interior_value(
   unsigned int const   q,
@@ -205,6 +197,14 @@ inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
   }
 
   return normal_gradient_p;
+}
+
+template<int dim, int fe_degree, typename value_type>
+void
+DiffusiveOperator<dim, fe_degree, value_type>::do_cell_integral(FEEvalCell & fe_eval) const
+{
+  for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+    fe_eval.submit_gradient(fe_eval.get_gradient(q) * diffusivity, q);
 }
 
 template<int dim, int fe_degree, typename value_type>
