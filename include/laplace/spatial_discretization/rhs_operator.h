@@ -25,7 +25,7 @@ class RHSOperator
 public:
   typedef RHSOperator<dim, fe_degree, value_type>                    This;
   typedef FEEvaluation<dim, fe_degree, fe_degree + 1, 1, value_type> FECellEval;
-  typedef parallel::distributed::Vector<value_type>                  VNumber;
+  typedef parallel::distributed::Vector<value_type>                  VectorType;
   typedef std::pair<unsigned int, unsigned int>                      Range;
   typedef MatrixFree<dim, value_type>                                MF;
   typedef RHSOperatorData<dim>                                       AdditionalData;
@@ -36,14 +36,14 @@ public:
   initialize(MF const & mf_data, AdditionalData const & operator_data_in);
 
   void
-  evaluate(VNumber & dst, value_type const evaluation_time) const;
+  evaluate(VectorType & dst, value_type const evaluation_time) const;
 
   void
-  evaluate_add(VNumber & dst, value_type const evaluation_time) const;
+  evaluate_add(VectorType & dst, value_type const evaluation_time) const;
 
 private:
   void
-  cell_loop(MF const & data, VNumber & dst, VNumber const &, Range const & cell_range) const;
+  cell_loop(MF const & data, VectorType & dst, VectorType const &, Range const & cell_range) const;
 
   MF const *           data;
   RHSOperatorData<dim> operator_data;

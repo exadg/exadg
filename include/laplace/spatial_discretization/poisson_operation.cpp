@@ -97,7 +97,7 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
     // initialize solver
     iterative_solver.reset(new CGSolver<Laplace::LaplaceOperator<dim, fe_degree, value_type>,
                                         PreconditionerBase<value_type>,
-                                        VNumber>(laplace_operator, *preconditioner, solver_data));
+                                        VectorType>(laplace_operator, *preconditioner, solver_data));
   }
   else if(param.solver == Laplace::Solver::GMRES)
   {
@@ -115,7 +115,7 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
     // initialize solver
     iterative_solver.reset(new GMRESSolver<Laplace::LaplaceOperator<dim, fe_degree, value_type>,
                                            PreconditionerBase<value_type>,
-                                           VNumber>(laplace_operator, *preconditioner, solver_data));
+                                           VectorType>(laplace_operator, *preconditioner, solver_data));
   }
   else
   {
@@ -128,14 +128,14 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
 
 template<int dim, int fe_degree, typename value_type>
 void
-DGOperation<dim, fe_degree, value_type>::initialize_dof_vector(VNumber & src) const
+DGOperation<dim, fe_degree, value_type>::initialize_dof_vector(VectorType & src) const
 {
   data.initialize_dof_vector(src);
 }
 
 template<int dim, int fe_degree, typename value_type>
 void
-DGOperation<dim, fe_degree, value_type>::rhs(VNumber & dst, double const evaluation_time) const
+DGOperation<dim, fe_degree, value_type>::rhs(VectorType & dst, double const evaluation_time) const
 {
   dst = 0;
   laplace_operator.rhs_add(dst, evaluation_time);
@@ -145,7 +145,7 @@ DGOperation<dim, fe_degree, value_type>::rhs(VNumber & dst, double const evaluat
 
 template<int dim, int fe_degree, typename value_type>
 unsigned int
-DGOperation<dim, fe_degree, value_type>::solve(VNumber & sol, VNumber const & rhs)
+DGOperation<dim, fe_degree, value_type>::solve(VectorType & sol, VectorType const & rhs)
 {
   unsigned int iterations = iterative_solver->solve(sol, rhs);
 

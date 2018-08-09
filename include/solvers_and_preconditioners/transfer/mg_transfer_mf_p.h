@@ -10,8 +10,8 @@
 
 using namespace dealii;
 
-template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VNumber>
-class MGTransferMatrixFreeP : virtual public MGTransferBase<VNumber>
+template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VectorType>
+class MGTransferMatrixFreeP : virtual public MGTransferBase<VectorType>
 {
 public:
   typedef Number value_type;
@@ -28,15 +28,15 @@ public:
          const unsigned int      level);
 
   void
-  initialize_dof_vector(VNumber & vec_1, VNumber & vec_2);
+  initialize_dof_vector(VectorType & vec_1, VectorType & vec_2);
 
   ~MGTransferMatrixFreeP();
 
   virtual void
-  restrict_and_add(const unsigned int /*level*/, VNumber & dst, const VNumber & src) const;
+  restrict_and_add(const unsigned int /*level*/, VectorType & dst, const VectorType & src) const;
 
   virtual void
-  prolongate(const unsigned int /*level*/, VNumber & dst, const VNumber & src) const;
+  prolongate(const unsigned int /*level*/, VectorType & dst, const VectorType & src) const;
 
 private:
   MatrixFree<dim, value_type>            data_1;
@@ -46,14 +46,14 @@ private:
 
   void
   restrict_and_add_local(const MatrixFree<dim, value_type> & /*data*/,
-                         VNumber &                                     dst,
-                         const VNumber &                               src,
+                         VectorType &                                  dst,
+                         const VectorType &                            src,
                          const std::pair<unsigned int, unsigned int> & cell_range) const;
 
   void
   prolongate_local(const MatrixFree<dim, value_type> & /*data*/,
-                   VNumber &                                     dst,
-                   const VNumber &                               src,
+                   VectorType &                                  dst,
+                   const VectorType &                            src,
                    const std::pair<unsigned int, unsigned int> & cell_range) const;
 
   void

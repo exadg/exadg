@@ -180,7 +180,7 @@ class OperatorBase : public MatrixOperatorBaseNew<dim, Number>
 public:
   static const int                                          DIM = dim;
   typedef OperatorBase<dim, degree, Number, AdditionalData> This;
-  typedef parallel::distributed::Vector<Number>             VNumber;
+  typedef parallel::distributed::Vector<Number>             VectorType;
 #ifdef DEAL_II_WITH_TRILINOS
   typedef FullMatrix<TrilinosScalar>     FMatrix;
   typedef TrilinosWrappers::SparseMatrix SMatrix;
@@ -216,71 +216,71 @@ public:
    * matrix vector multiplication
    */
   virtual void
-  apply(VNumber & dst, VNumber const & src) const;
+  apply(VectorType & dst, VectorType const & src) const;
 
   virtual void
-  apply_add(VNumber & dst, VNumber const & src, Number const time) const;
+  apply_add(VectorType & dst, VectorType const & src, Number const time) const;
 
   virtual void
-  apply_add(VNumber & dst, VNumber const & src) const;
+  apply_add(VectorType & dst, VectorType const & src) const;
 
   void
-  vmult(VNumber & dst, VNumber const & src) const;
+  vmult(VectorType & dst, VectorType const & src) const;
   void
-  vmult_add(VNumber & dst, VNumber const & src) const;
+  vmult_add(VectorType & dst, VectorType const & src) const;
 
   void
-  vmult_interface_down(VNumber & dst, VNumber const & src) const;
+  vmult_interface_down(VectorType & dst, VectorType const & src) const;
   void
-  vmult_add_interface_up(VNumber & dst, VNumber const & src) const;
+  vmult_add_interface_up(VectorType & dst, VectorType const & src) const;
 
   /*
    *
    */
   void
-  rhs(VNumber & dst) const
+  rhs(VectorType & dst) const
   {
     rhs(dst, 0.0);
   }
   void
-  rhs(VNumber & dst, Number const time) const;
+  rhs(VectorType & dst, Number const time) const;
   // TODO: remove
   void
-  rhs_add(VNumber & dst) const
+  rhs_add(VectorType & dst) const
   {
     rhs_add(dst, 0.0);
   }
   void
-  rhs_add(VNumber & dst, Number const time) const;
+  rhs_add(VectorType & dst, Number const time) const;
 
   void
-  evaluate(VNumber & dst, VNumber const & src, Number const time) const;
+  evaluate(VectorType & dst, VectorType const & src, Number const time) const;
   void
-  evaluate_add(VNumber & dst, VNumber const & src, Number const time) const;
+  evaluate_add(VectorType & dst, VectorType const & src, Number const time) const;
 
   /*
    * point Jacobi method
    */
   void
-  calculate_diagonal(VNumber & diagonal) const;
+  calculate_diagonal(VectorType & diagonal) const;
   virtual void
-  add_diagonal(VNumber & diagonal) const;
+  add_diagonal(VectorType & diagonal) const;
   virtual void
-  add_diagonal(VNumber & diagonal, Number const time) const;
+  add_diagonal(VectorType & diagonal, Number const time) const;
   void
-  calculate_inverse_diagonal(VNumber & diagonal) const;
+  calculate_inverse_diagonal(VectorType & diagonal) const;
 
   /*
    * block Jacobi methods
    */
   void
-  apply_block_jacobi(VNumber & dst, VNumber const & src) const;
+  apply_block_jacobi(VectorType & dst, VectorType const & src) const;
   void
-  apply_block_jacobi_add(VNumber & dst, VNumber const & src) const;
+  apply_block_jacobi_add(VectorType & dst, VectorType const & src) const;
 
   // TODO: add matrix-free and block matrix version
   void
-  apply_block_diagonal(VNumber & dst, VNumber const & src) const;
+  apply_block_diagonal(VectorType & dst, VectorType const & src) const;
   void
   update_block_jacobi() const;
   void
@@ -328,7 +328,7 @@ public:
   get_operator_data() const;
 
   void
-  initialize_dof_vector(VNumber & vector) const;
+  initialize_dof_vector(VectorType & vector) const;
 
   void
   set_evaluation_time(double const evaluation_time_in) const;
@@ -384,34 +384,34 @@ protected:
    * functions to be called from matrix-free loops and cell_loops: vmult
    */
   void
-  local_cell_hom(const MF & /*data*/, VNumber & dst, const VNumber & src, const Range & range) const;
+  local_cell_hom(const MF & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
 
   void
-  local_face_hom(const MF & /*data*/, VNumber & dst, const VNumber & src, const Range & range) const;
+  local_face_hom(const MF & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
 
   // homogenous
   void
   local_boundary_hom(const MF & /*data*/,
-                     VNumber & /*dst*/,
-                     const VNumber & /*src*/,
+                     VectorType & /*dst*/,
+                     const VectorType & /*src*/,
                      const Range & /*range*/) const;
 
   void
-  local_cell_inhom(const MF & /*data*/, VNumber & dst, const VNumber & src, const Range & range) const;
+  local_cell_inhom(const MF & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
 
   void
-  local_face_inhom(const MF & /*data*/, VNumber & dst, const VNumber & src, const Range & range) const;
+  local_face_inhom(const MF & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
 
   void
   local_boundary_inhom(const MF & /*data*/,
-                       VNumber & /*dst*/,
-                       const VNumber & /*src*/,
+                       VectorType & /*dst*/,
+                       const VectorType & /*src*/,
                        const Range & /*range*/) const;
 
   void
   local_boundary_full(const MF & /*data*/,
-                      VNumber & /*dst*/,
-                      const VNumber & /*src*/,
+                      VectorType & /*dst*/,
+                      const VectorType & /*src*/,
                       const Range & /*range*/) const;
 
   /*
@@ -419,26 +419,26 @@ protected:
    */
   void
   local_add_diagonal_cell(const MF & /*data*/,
-                          VNumber & dst,
-                          const VNumber & /*src*/,
+                          VectorType & dst,
+                          const VectorType & /*src*/,
                           const Range & range) const;
 
   void
   local_add_diagonal_face(const MF & /*data*/,
-                          VNumber & dst,
-                          const VNumber & /*src*/,
+                          VectorType & dst,
+                          const VectorType & /*src*/,
                           const Range & range) const;
 
   void
   local_add_diagonal_boundary(const MF & /*data*/,
-                              VNumber & dst,
-                              const VNumber & /*src*/,
+                              VectorType & dst,
+                              const VectorType & /*src*/,
                               const Range & range) const;
 
   void
   local_add_diagonal_cell_based(const MF & /*data*/,
-                                VNumber & dst,
-                                const VNumber & /*src*/,
+                                VectorType & dst,
+                                const VectorType & /*src*/,
                                 const Range & range) const;
 
   /*
@@ -446,15 +446,15 @@ protected:
    */
   void
   local_apply_block_diagonal(const MF & /*data*/,
-                             VNumber &       dst,
-                             const VNumber & src,
-                             const Range &   range) const;
+                             VectorType &       dst,
+                             const VectorType & src,
+                             const Range &      range) const;
 
   void
-  local_apply_block_jacobi_add(const MF &      data,
-                               VNumber &       dst,
-                               const VNumber & src,
-                               const Range &   cell_range) const;
+  local_apply_block_jacobi_add(const MF &         data,
+                               VectorType &       dst,
+                               const VectorType & src,
+                               const Range &      cell_range) const;
   void
   local_add_block_diagonal_cell(const MF & /*data*/,
                                 BMatrix & dst,
@@ -503,13 +503,13 @@ protected:
 #endif
 
   void
-  set_zero_mean_value(VNumber & vec) const;
+  set_zero_mean_value(VectorType & vec) const;
 
   void
-  set_zero_mean_value_diagonal(VNumber & diagonal) const;
+  set_zero_mean_value_diagonal(VectorType & diagonal) const;
 
   void
-  set_constraint_diagonal(VNumber & diagonal) const;
+  set_constraint_diagonal(VectorType & diagonal) const;
 
   void
   add_periodicity_constraints(const unsigned int                            level,

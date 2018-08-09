@@ -1,12 +1,12 @@
 #include "mg_transfer_mf_p.h"
 
-template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VNumber>
-MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VNumber>::MGTransferMatrixFreeP()
+template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VectorType>
+MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::MGTransferMatrixFreeP()
 {
 }
 
-template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VNumber>
-MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VNumber>::MGTransferMatrixFreeP(
+template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VectorType>
+MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::MGTransferMatrixFreeP(
   const DoFHandler<dim> & dof_handler_1,
   const DoFHandler<dim> & dof_handler_2,
   const unsigned int      level)
@@ -14,9 +14,9 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VNumber>::MGTransfe
   reinit(dof_handler_1, dof_handler_2, level);
 }
 
-template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VNumber>
+template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VectorType>
 void
-MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VNumber>::reinit(
+MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::reinit(
   const DoFHandler<dim> & dof_handler_1,
   const DoFHandler<dim> & dof_handler_2,
   const unsigned int      level)
@@ -43,53 +43,55 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VNumber>::reinit(
   fill_shape_values(shape_values_prol, fe_degree_2, fe_degree_1);
 }
 
-template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VNumber>
+template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VectorType>
 void
-MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VNumber>::initialize_dof_vector(VNumber & vec_1,
-                                                                                             VNumber & vec_2)
+MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::initialize_dof_vector(
+  VectorType & vec_1,
+  VectorType & vec_2)
 {
   data_2.initialize_dof_vector(vec_1);
   data_1.initialize_dof_vector(vec_2);
 }
 
-template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VNumber>
-MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VNumber>::~MGTransferMatrixFreeP()
+template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VectorType>
+MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::~MGTransferMatrixFreeP()
 {
 }
 
-template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VNumber>
+template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VectorType>
 void
-MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VNumber>::restrict_and_add(
+MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::restrict_and_add(
   const unsigned int /*level*/,
-  VNumber &       dst,
-  const VNumber & src) const
+  VectorType &       dst,
+  const VectorType & src) const
 {
   data_1.cell_loop(
-    &MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VNumber>::restrict_and_add_local,
+    &MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::restrict_and_add_local,
     this,
     dst,
     src);
 }
 
-template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VNumber>
+template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VectorType>
 void
-MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VNumber>::prolongate(
+MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::prolongate(
   const unsigned int /*level*/,
-  VNumber &       dst,
-  const VNumber & src) const
+  VectorType &       dst,
+  const VectorType & src) const
 {
-  data_1.cell_loop(&MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VNumber>::prolongate_local,
-                   this,
-                   dst,
-                   src);
+  data_1.cell_loop(
+    &MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::prolongate_local,
+    this,
+    dst,
+    src);
 }
 
-template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VNumber>
+template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VectorType>
 void
-MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VNumber>::restrict_and_add_local(
+MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::restrict_and_add_local(
   const MatrixFree<dim, value_type> & /*data*/,
-  VNumber &                                     dst,
-  const VNumber &                               src,
+  VectorType &                                  dst,
+  const VectorType &                            src,
   const std::pair<unsigned int, unsigned int> & cell_range) const
 {
   FEEvaluation<dim, fe_degree_1, fe_degree_2 + 1, 1, value_type> phi1(data_1);
@@ -145,12 +147,12 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VNumber>::restrict_
   }
 }
 
-template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VNumber>
+template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VectorType>
 void
-MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VNumber>::prolongate_local(
+MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::prolongate_local(
   const MatrixFree<dim, value_type> & /*data*/,
-  VNumber &                                     dst,
-  const VNumber &                               src,
+  VectorType &                                  dst,
+  const VectorType &                            src,
   const std::pair<unsigned int, unsigned int> & cell_range) const
 {
   FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, 1, value_type> phi1(data_1);
@@ -205,9 +207,9 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VNumber>::prolongat
   }
 }
 
-template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VNumber>
+template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VectorType>
 void
-MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VNumber>::convert_to_eo(
+MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::convert_to_eo(
   AlignedVector<VectorizedArray<Number>> & shape_values,
   AlignedVector<VectorizedArray<Number>> & shape_values_eo,
   unsigned int                             fe_degree,
@@ -230,9 +232,9 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VNumber>::convert_t
     }
 }
 
-template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VNumber>
+template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VectorType>
 void
-MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VNumber>::fill_shape_values(
+MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::fill_shape_values(
   AlignedVector<VectorizedArray<Number>> & shape_values,
   unsigned int                             fe_degree_src,
   unsigned int                             fe_degree_dst)

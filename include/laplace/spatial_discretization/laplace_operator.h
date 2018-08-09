@@ -101,7 +101,7 @@ public:
   typedef OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>> Parent;
   typedef typename Parent::FEEvalCell                                 FEEvalCell;
   typedef typename Parent::FEEvalFace                                 FEEvalFace;
-  typedef typename Parent::VNumber                                    VNumber;
+  typedef typename Parent::VectorType                                 VectorType;
 
   LaplaceOperator();
 

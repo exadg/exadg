@@ -156,7 +156,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::vmult(VNumber & dst, VNumber const & src) const
+OperatorBase<dim, degree, Number, AdditionalData>::vmult(VectorType & dst, VectorType const & src) const
 {
   dst = 0;
   vmult_add(dst, src);
@@ -164,17 +164,17 @@ OperatorBase<dim, degree, Number, AdditionalData>::vmult(VNumber & dst, VNumber 
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply(VNumber & dst, VNumber const & src) const
+OperatorBase<dim, degree, Number, AdditionalData>::apply(VectorType & dst, VectorType const & src) const
 {
   vmult(dst, src);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::vmult_add(VNumber & dst, VNumber const & src) const
+OperatorBase<dim, degree, Number, AdditionalData>::vmult_add(VectorType & dst, VectorType const & src) const
 {
-  const VNumber * actual_src = &src;
-  VNumber         tmp_projection_vector;
+  const VectorType * actual_src = &src;
+  VectorType         tmp_projection_vector;
   if(operator_is_singular && !is_mg)
   {
     tmp_projection_vector = src;
@@ -194,16 +194,16 @@ OperatorBase<dim, degree, Number, AdditionalData>::vmult_add(VNumber & dst, VNum
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply_add(VNumber & dst, VNumber const & src) const
+OperatorBase<dim, degree, Number, AdditionalData>::apply_add(VectorType & dst, VectorType const & src) const
 {
   this->apply_add(dst, src, this->get_evaluation_time());
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply_add(VNumber &       dst,
-                                                             VNumber const & src,
-                                                             Number const    time) const
+OperatorBase<dim, degree, Number, AdditionalData>::apply_add(VectorType &       dst,
+                                                             VectorType const & src,
+                                                             Number const       time) const
 {
   this->set_evaluation_time(time);
   vmult_add(dst, src);
@@ -211,23 +211,23 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_add(VNumber &       dst
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::vmult_interface_down(VNumber &       dst,
-                                                                        VNumber const & src) const
+OperatorBase<dim, degree, Number, AdditionalData>::vmult_interface_down(VectorType &       dst,
+                                                                        VectorType const & src) const
 {
   vmult(dst, src);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::vmult_add_interface_up(VNumber &       dst,
-                                                                          VNumber const & src) const
+OperatorBase<dim, degree, Number, AdditionalData>::vmult_add_interface_up(VectorType &       dst,
+                                                                          VectorType const & src) const
 {
   vmult_add(dst, src);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::rhs(VNumber & dst, Number const time) const
+OperatorBase<dim, degree, Number, AdditionalData>::rhs(VectorType & dst, Number const time) const
 {
   dst = 0;
   rhs_add(dst, time);
@@ -235,11 +235,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::rhs(VNumber & dst, Number con
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::rhs_add(VNumber & dst, Number const time) const
+OperatorBase<dim, degree, Number, AdditionalData>::rhs_add(VectorType & dst, Number const time) const
 {
   this->eval_time = time;
 
-  VNumber tmp;
+  VectorType tmp;
   tmp.reinit(dst, false);
 
   data->loop(&This::local_cell_inhom, &This::local_face_inhom, &This::local_boundary_inhom, this, tmp, tmp);
@@ -251,9 +251,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::rhs_add(VNumber & dst, Number
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::evaluate(VNumber &       dst,
-                                                            VNumber const & src,
-                                                            Number const    time) const
+OperatorBase<dim, degree, Number, AdditionalData>::evaluate(VectorType &       dst,
+                                                            VectorType const & src,
+                                                            Number const       time) const
 {
   dst = 0;
   evaluate_add(dst, src, time);
@@ -261,9 +261,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::evaluate(VNumber &       dst,
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::evaluate_add(VNumber &       dst,
-                                                                VNumber const & src,
-                                                                Number const    time) const
+OperatorBase<dim, degree, Number, AdditionalData>::evaluate_add(VectorType &       dst,
+                                                                VectorType const & src,
+                                                                Number const       time) const
 {
   this->eval_time = time;
 
@@ -272,7 +272,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::evaluate_add(VNumber &       
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::calculate_diagonal(VNumber & diagonal) const
+OperatorBase<dim, degree, Number, AdditionalData>::calculate_diagonal(VectorType & diagonal) const
 {
   if(diagonal.size() == 0)
     data->initialize_dof_vector(diagonal);
@@ -282,14 +282,15 @@ OperatorBase<dim, degree, Number, AdditionalData>::calculate_diagonal(VNumber & 
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VNumber & diagonal) const
+OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VectorType & diagonal) const
 {
   this->add_diagonal(diagonal, this->get_evaluation_time());
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VNumber & diagonal, Number const time) const
+OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VectorType & diagonal,
+                                                                Number const time) const
 {
   this->set_evaluation_time(time);
 
@@ -320,7 +321,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VNumber & diagon
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::calculate_inverse_diagonal(VNumber & diagonal) const
+OperatorBase<dim, degree, Number, AdditionalData>::calculate_inverse_diagonal(VectorType & diagonal) const
 {
   calculate_diagonal(diagonal);
   invert_diagonal(diagonal);
@@ -328,8 +329,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::calculate_inverse_diagonal(VN
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply_block_jacobi(VNumber &       dst,
-                                                                      VNumber const & src) const
+OperatorBase<dim, degree, Number, AdditionalData>::apply_block_jacobi(VectorType &       dst,
+                                                                      VectorType const & src) const
 {
   dst = 0;
   apply_block_jacobi_add(dst, src);
@@ -337,8 +338,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_block_jacobi(VNumber & 
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply_block_jacobi_add(VNumber &       dst,
-                                                                          VNumber const & src) const
+OperatorBase<dim, degree, Number, AdditionalData>::apply_block_jacobi_add(VectorType &       dst,
+                                                                          VectorType const & src) const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
   AssertThrow(block_jacobi_matrices_have_been_initialized,
@@ -349,8 +350,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_block_jacobi_add(VNumbe
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply_block_diagonal(VNumber &       dst,
-                                                                        VNumber const & src) const
+OperatorBase<dim, degree, Number, AdditionalData>::apply_block_diagonal(VectorType &       dst,
+                                                                        VectorType const & src) const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
   AssertThrow(block_jacobi_matrices_have_been_initialized,
@@ -563,7 +564,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::get_operator_data() const
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::initialize_dof_vector(VNumber & vector) const
+OperatorBase<dim, degree, Number, AdditionalData>::initialize_dof_vector(VectorType & vector) const
 {
   data->initialize_dof_vector(vector, operator_settings.dof_index);
 }
@@ -626,10 +627,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::create_standard_basis(unsigne
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_cell_hom(const MF &      data,
-                                                                  VNumber &       dst,
-                                                                  const VNumber & src,
-                                                                  const Range &   range) const
+OperatorBase<dim, degree, Number, AdditionalData>::local_cell_hom(const MF &         data,
+                                                                  VectorType &       dst,
+                                                                  const VectorType & src,
+                                                                  const Range &      range) const
 {
   FEEvalCell phi(data, operator_settings.dof_index, operator_settings.quad_index);
   // loop over the range of macro cells
@@ -653,10 +654,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_cell_hom(const MF &    
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_face_hom(const MF &      data,
-                                                                  VNumber &       dst,
-                                                                  const VNumber & src,
-                                                                  const Range &   range) const
+OperatorBase<dim, degree, Number, AdditionalData>::local_face_hom(const MF &         data,
+                                                                  VectorType &       dst,
+                                                                  const VectorType & src,
+                                                                  const Range &      range) const
 {
   FEEvalFace phi_n(data, true, operator_settings.dof_index, operator_settings.quad_index);
   FEEvalFace phi_p(data, false, operator_settings.dof_index, operator_settings.quad_index);
@@ -687,10 +688,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_face_hom(const MF &    
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_hom(const MF &      data,
-                                                                      VNumber &       dst,
-                                                                      const VNumber & src,
-                                                                      const Range &   range) const
+OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_hom(const MF &         data,
+                                                                      VectorType &       dst,
+                                                                      const VectorType & src,
+                                                                      const Range &      range) const
 {
   FEEvalFace phi(data, true, operator_settings.dof_index, operator_settings.quad_index);
 
@@ -712,8 +713,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_hom(const MF &
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::local_cell_inhom(const MF &,
-                                                                    VNumber &,
-                                                                    const VNumber &,
+                                                                    VectorType &,
+                                                                    const VectorType &,
                                                                     const Range &) const
 {
   /*nothing to do*/
@@ -722,8 +723,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_cell_inhom(const MF &,
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::local_face_inhom(const MF &,
-                                                                    VNumber &,
-                                                                    const VNumber &,
+                                                                    VectorType &,
+                                                                    const VectorType &,
                                                                     const Range &) const
 {
   /*nothing to do*/
@@ -731,9 +732,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_face_inhom(const MF &,
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_inhom(const MF & data,
-                                                                        VNumber &  dst,
-                                                                        const VNumber & /*src*/,
+OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_inhom(const MF &   data,
+                                                                        VectorType & dst,
+                                                                        const VectorType & /*src*/,
                                                                         const Range & range) const
 {
   FEEvalFace phi(data, true, operator_settings.dof_index, operator_settings.quad_index);
@@ -753,10 +754,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_inhom(const MF
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_full(const MF &      data,
-                                                                       VNumber &       dst,
-                                                                       const VNumber & src,
-                                                                       const Range &   range) const
+OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_full(const MF &         data,
+                                                                       VectorType &       dst,
+                                                                       const VectorType & src,
+                                                                       const Range &      range) const
 {
   FEEvalFace phi(data, true, operator_settings.dof_index, operator_settings.quad_index);
 
@@ -776,9 +777,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_full(const MF 
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell(const MF & data,
-                                                                           VNumber &  dst,
-                                                                           const VNumber & /*src*/,
+OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell(const MF &   data,
+                                                                           VectorType & dst,
+                                                                           const VectorType & /*src*/,
                                                                            const Range & range) const
 {
   FEEvalCell phi(data, operator_settings.dof_index, operator_settings.quad_index);
@@ -815,9 +816,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell(const
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_face(const MF & data,
-                                                                           VNumber &  dst,
-                                                                           const VNumber & /*src*/,
+OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_face(const MF &   data,
+                                                                           VectorType & dst,
+                                                                           const VectorType & /*src*/,
                                                                            const Range & range) const
 {
   FEEvalFace phi_n(data, true, operator_settings.dof_index, operator_settings.quad_index);
@@ -877,9 +878,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_face(const
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_boundary(const MF & data,
-                                                                               VNumber &  dst,
-                                                                               const VNumber & /*src*/,
+OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_boundary(const MF &   data,
+                                                                               VectorType & dst,
+                                                                               const VectorType & /*src*/,
                                                                                const Range & range) const
 {
   FEEvalFace phi(data, true, operator_settings.dof_index, operator_settings.quad_index);
@@ -918,9 +919,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_boundary(c
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell_based(const MF & data,
-                                                                                 VNumber &  dst,
-                                                                                 const VNumber & /*src*/,
+OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell_based(const MF &   data,
+                                                                                 VectorType & dst,
+                                                                                 const VectorType & /*src*/,
                                                                                  const Range & range) const
 {
   FEEvalCell phi(data, operator_settings.dof_index, operator_settings.quad_index);
@@ -1009,10 +1010,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell_based
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::local_apply_block_jacobi_add(
-  const MF &      data,
-  VNumber &       dst,
-  const VNumber & src,
-  const Range &   cell_range) const
+  const MF &         data,
+  VectorType &       dst,
+  const VectorType & src,
+  const Range &      cell_range) const
 {
   // apply inverse block matrices
   FEEvalCell fe_eval(data, operator_settings.dof_index, operator_settings.quad_index);
@@ -1043,10 +1044,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_block_jacobi_add(
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_apply_block_diagonal(const MF &      data,
-                                                                              VNumber &       dst,
-                                                                              const VNumber & src,
-                                                                              const Range &   range) const
+OperatorBase<dim, degree, Number, AdditionalData>::local_apply_block_diagonal(const MF &         data,
+                                                                              VectorType &       dst,
+                                                                              const VectorType & src,
+                                                                              const Range &      range) const
 {
   FEEvalCell phi(data, operator_settings.dof_index, operator_settings.quad_index);
   for(unsigned int cell = range.first; cell < range.second; ++cell)
@@ -1577,7 +1578,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::set_zero_mean_value(VNumber & vec) const
+OperatorBase<dim, degree, Number, AdditionalData>::set_zero_mean_value(VectorType & vec) const
 {
   if(!operator_is_singular)
     return;
@@ -1587,11 +1588,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::set_zero_mean_value(VNumber &
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::set_zero_mean_value_diagonal(VNumber & diagonal) const
+OperatorBase<dim, degree, Number, AdditionalData>::set_zero_mean_value_diagonal(VectorType & diagonal) const
 {
   if(operator_is_singular && !is_mg)
   {
-    VNumber vec1, d;
+    VectorType vec1, d;
     vec1.reinit(diagonal, true);
     d.reinit(diagonal, true);
     for(unsigned int i = 0; i < vec1.local_size(); ++i)
@@ -1605,7 +1606,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::set_zero_mean_value_diagonal(
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::set_constraint_diagonal(VNumber & diagonal) const
+OperatorBase<dim, degree, Number, AdditionalData>::set_constraint_diagonal(VectorType & diagonal) const
 {
   // set (diagonal) entries to 1.0
   for(auto i : data->get_constrained_dofs())

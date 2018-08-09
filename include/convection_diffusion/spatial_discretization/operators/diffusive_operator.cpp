@@ -24,16 +24,16 @@ DiffusiveOperator<dim, fe_degree, value_type>::initialize(Mapping<dim> const &  
 
 template<int dim, int fe_degree, typename value_type>
 void
-DiffusiveOperator<dim, fe_degree, value_type>::apply_add(VNumber & dst, VNumber const & src) const
+DiffusiveOperator<dim, fe_degree, value_type>::apply_add(VectorType & dst, VectorType const & src) const
 {
   Parent::apply_add(dst, src);
 }
 
 template<int dim, int fe_degree, typename value_type>
 void
-DiffusiveOperator<dim, fe_degree, value_type>::apply_add(VNumber &        dst,
-                                                         VNumber const &  src,
-                                                         value_type const time) const
+DiffusiveOperator<dim, fe_degree, value_type>::apply_add(VectorType &       dst,
+                                                         VectorType const & src,
+                                                         value_type const   time) const
 {
   AssertThrow(diffusivity > 0.0, ExcMessage("Diffusivity is not set!"));
   Parent::apply_add(dst, src, time);

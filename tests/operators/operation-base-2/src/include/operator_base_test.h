@@ -69,8 +69,8 @@ public:
        bool               do_mf_vs_d  = true,
        bool               do_mf_vs_b  = true)
   {
-    typedef typename Operator::VNumber VNumber;
-    const int                          dim = Operator::DIM;
+    typedef typename Operator::VectorType VectorType;
+    const int                             dim = Operator::DIM;
 
     const auto & data        = op.get_data();
     auto &       dof_handler = data.get_dof_handler(/*TODO*/);
@@ -82,7 +82,7 @@ public:
     op.calculate_system_matrix(system_matrix);
 
     // compute diagonal
-    VNumber vec_diag;
+    VectorType vec_diag;
     op.calculate_diagonal(vec_diag);
 
     convergence_table.add_value("dim", dim);
@@ -92,7 +92,7 @@ public:
     if(do_sm_vs_d)
     {
       // create temporal vector for diagonal of sparse matrix
-      VNumber vec_diag_sm;
+      VectorType vec_diag_sm;
       op.initialize_dof_vector(vec_diag_sm);
 
       // extract diagonal from sparse matrix
@@ -107,7 +107,7 @@ public:
     if(do_mf_vs_d)
     {
       // initialize vectors
-      VNumber vec_src, vec_diag_mf;
+      VectorType vec_src, vec_diag_mf;
       op.initialize_dof_vector(vec_src);
       op.initialize_dof_vector(vec_diag_mf);
 
@@ -129,7 +129,7 @@ public:
     if(do_sm_vs_mf)
     {
       // initialize vectors
-      VNumber vec_src, vec_dst_sm, vec_dst_mf;
+      VectorType vec_src, vec_dst_sm, vec_dst_mf;
       op.initialize_dof_vector(vec_src);
       op.initialize_dof_vector(vec_dst_sm);
       op.initialize_dof_vector(vec_dst_mf);
@@ -150,7 +150,7 @@ public:
     if(do_mf_vs_b)
     {
       // initialize vectors
-      VNumber vec_src, vec_dst_mf, vec_dst_op;
+      VectorType vec_src, vec_dst_mf, vec_dst_op;
       op.initialize_dof_vector(vec_src);
       op.initialize_dof_vector(vec_dst_mf);
       op.initialize_dof_vector(vec_dst_op);
@@ -172,12 +172,12 @@ public:
   }
 
 private:
-  template<typename Operator, typename VNumber>
+  template<typename Operator, typename VectorType>
   static void
-  apply_block(Operator & op, const unsigned int dofs_per_block, VNumber & vec_dst, VNumber & vec_src)
+  apply_block(Operator & op, const unsigned int dofs_per_block, VectorType & vec_dst, VectorType & vec_src)
   {
     // initialize temporal vectors
-    VNumber vec_src_temp, vec_dst_temp;
+    VectorType vec_src_temp, vec_dst_temp;
     vec_src_temp.reinit(vec_src);
     vec_dst_temp.reinit(vec_src);
 

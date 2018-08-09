@@ -46,7 +46,7 @@ public:
   typedef OperatorBase<dim, fe_degree, value_type, ConvectiveOperatorData<dim>> Parent;
   typedef typename Parent::FEEvalCell                                           FEEvalCell;
   typedef typename Parent::FEEvalFace                                           FEEvalFace;
-  typedef typename Parent::VNumber                                              VNumber;
+  typedef typename Parent::VectorType                                           VectorType;
 
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,

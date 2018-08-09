@@ -34,7 +34,7 @@ template<int dim, int fe_degree, typename value_type>
 class DGOperation : public MatrixOperatorBase
 {
 public:
-  typedef parallel::distributed::Vector<value_type> VNumber;
+  typedef parallel::distributed::Vector<value_type> VectorType;
 
   DGOperation(parallel::distributed::Triangulation<dim> const & triangulation,
               Laplace::InputParameters const &                  param_in);
@@ -49,13 +49,13 @@ public:
   setup_solver();
 
   void
-  initialize_dof_vector(VNumber & src) const;
+  initialize_dof_vector(VectorType & src) const;
 
   void
-  rhs(VNumber & dst, double const evaluation_time = 0.0) const;
+  rhs(VectorType & dst, double const evaluation_time = 0.0) const;
 
   unsigned int
-  solve(VNumber & sol, VNumber const & rhs);
+  solve(VectorType & sol, VectorType const & rhs);
 
   MatrixFree<dim, value_type> const &
   get_data() const;
@@ -93,8 +93,8 @@ private:
 
   Laplace::LaplaceOperator<dim, fe_degree, value_type> laplace_operator;
 
-  std::shared_ptr<PreconditionerBase<value_type>> preconditioner;
-  std::shared_ptr<IterativeSolverBase<VNumber>>   iterative_solver;
+  std::shared_ptr<PreconditionerBase<value_type>>  preconditioner;
+  std::shared_ptr<IterativeSolverBase<VectorType>> iterative_solver;
 };
 } // namespace Laplace
 

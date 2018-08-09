@@ -16,7 +16,7 @@ RHSOperator<dim, fe_degree, value_type>::initialize(MF const &             mf_da
 
 template<int dim, int fe_degree, typename value_type>
 void
-RHSOperator<dim, fe_degree, value_type>::evaluate(VNumber & dst, value_type const evaluation_time) const
+RHSOperator<dim, fe_degree, value_type>::evaluate(VectorType & dst, value_type const evaluation_time) const
 {
   dst = 0;
   evaluate_add(dst, evaluation_time);
@@ -24,7 +24,8 @@ RHSOperator<dim, fe_degree, value_type>::evaluate(VNumber & dst, value_type cons
 
 template<int dim, int fe_degree, typename value_type>
 void
-RHSOperator<dim, fe_degree, value_type>::evaluate_add(VNumber & dst, value_type const evaluation_time) const
+RHSOperator<dim, fe_degree, value_type>::evaluate_add(VectorType &     dst,
+                                                      value_type const evaluation_time) const
 {
   this->eval_time = evaluation_time;
   data->cell_loop(&This::cell_loop, this, dst, dst);
@@ -32,9 +33,9 @@ RHSOperator<dim, fe_degree, value_type>::evaluate_add(VNumber & dst, value_type 
 
 template<int dim, int fe_degree, typename value_type>
 void
-RHSOperator<dim, fe_degree, value_type>::cell_loop(MF const & data,
-                                                   VNumber &  dst,
-                                                   VNumber const &,
+RHSOperator<dim, fe_degree, value_type>::cell_loop(MF const &   data,
+                                                   VectorType & dst,
+                                                   VectorType const &,
                                                    Range const & cell_range) const
 {
   FECellEval fe_eval(data, operator_data.dof_index, operator_data.quad_index);

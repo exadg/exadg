@@ -61,46 +61,56 @@ using namespace dealii;
 using namespace Laplace;
 
 
-template <int dim, int fe_degree, typename FE_TYPE> class Runner {
-
+template<int dim, int fe_degree, typename FE_TYPE>
+class Runner
+{
 public:
   Runner()
-      : comm(MPI_COMM_WORLD), rank(get_rank(comm)),
-        triangulation(comm, dealii::Triangulation<dim>::none,
-                      parallel::distributed::Triangulation<
-                          dim>::construct_multigrid_hierarchy),
-        fe_dgq(fe_degree), dof_handler_dg(triangulation), mapping(fe_degree),
-        quadrature(fe_degree + 1),global_refinements(dim==2?5:3) {}
+    : comm(MPI_COMM_WORLD),
+      rank(get_rank(comm)),
+      triangulation(comm,
+                    dealii::Triangulation<dim>::none,
+                    parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
+      fe_dgq(fe_degree),
+      dof_handler_dg(triangulation),
+      mapping(fe_degree),
+      quadrature(fe_degree + 1),
+      global_refinements(dim == 2 ? 5 : 3)
+  {
+  }
 
-  typedef LinearAlgebra::distributed::Vector<value_type> VNumber;
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
 
 private:
-  MPI_Comm comm;
-  int rank;
+  MPI_Comm                                  comm;
+  int                                       rank;
   parallel::distributed::Triangulation<dim> triangulation;
-  FE_TYPE fe_dgq;
-  DoFHandler<dim> dof_handler_dg;
-  ConvergenceTable convergence_table;
-  MappingQGeneric<dim> mapping;
-  QGauss<1> quadrature;
-  const unsigned int global_refinements;
-  MatrixFree<dim, value_type> data;
-  std::shared_ptr<BoundaryDescriptor<dim>> bc;
-  MGConstrainedDoFs mg_constrained_dofs;
-  ConstraintMatrix dummy;
+  FE_TYPE                                   fe_dgq;
+  DoFHandler<dim>                           dof_handler_dg;
+  ConvergenceTable                          convergence_table;
+  MappingQGeneric<dim>                      mapping;
+  QGauss<1>                                 quadrature;
+  const unsigned int                        global_refinements;
+  MatrixFree<dim, value_type>               data;
+  std::shared_ptr<BoundaryDescriptor<dim>>  bc;
+  MGConstrainedDoFs                         mg_constrained_dofs;
+  ConstraintMatrix                          dummy;
 
-  static int get_rank(MPI_Comm comm) {
+  static int
+  get_rank(MPI_Comm comm)
+  {
     int rank;
     MPI_Comm_rank(comm, &rank);
     return rank;
   }
 
-  void init_triangulation_and_dof_handler() {
-      
-    const double left = -1.0;
-    const double right = +1.0;
+  void
+  init_triangulation_and_dof_handler()
+  {
+    const double left        = -1.0;
+    const double right       = +1.0;
     const double deformation = +0.1;
-    const double frequnency = +2.0;
+    const double frequnency  = +2.0;
 
     GridGenerator::hyper_cube(triangulation, left, right);
     static DeformedCubeManifold<dim> manifold(left, right, deformation, frequnency);
@@ -108,37 +118,37 @@ private:
     triangulation.set_manifold(1, manifold);
     triangulation.refine_global(global_refinements);
 
-    for (auto cell : triangulation)
-      for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell;
-           ++face)
-        if (cell.face(face)->at_boundary())
-          if (std::abs(cell.face(face)->center()(0) - 1.0) < 1e-12)
+    for(auto cell : triangulation)
+      for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
+        if(cell.face(face)->at_boundary())
+          if(std::abs(cell.face(face)->center()(0) - 1.0) < 1e-12)
             cell.face(face)->set_boundary_id(1);
 
     dof_handler_dg.distribute_dofs(fe_dgq);
     dof_handler_dg.distribute_mg_dofs();
   }
 
-  void init_boundary_conditions() {
+  void
+  init_boundary_conditions()
+  {
     bc.reset(new BoundaryDescriptor<dim>());
-    bc->dirichlet_bc[0] =
-        std::shared_ptr<Function<dim>>(new Functions::ZeroFunction<dim>());
-    bc->neumann_bc[1] =
-        std::shared_ptr<Function<dim>>(new Functions::ZeroFunction<dim>());
+    bc->dirichlet_bc[0] = std::shared_ptr<Function<dim>>(new Functions::ZeroFunction<dim>());
+    bc->neumann_bc[1]   = std::shared_ptr<Function<dim>>(new Functions::ZeroFunction<dim>());
   }
 
-  void init_matrixfree_and_constraint_matrix() {
+  void
+  init_matrixfree_and_constraint_matrix()
+  {
     typename MatrixFree<dim, value_type>::AdditionalData additional_data;
 
-    if (fe_dgq.dofs_per_vertex == 0)
+    if(fe_dgq.dofs_per_vertex == 0)
       additional_data.build_face_info = true;
 
     additional_data.level_mg_handler = global_refinements;
 
     // set boundary conditions: Dirichlet BC
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
-    dirichlet_bc[0] =
-        std::shared_ptr<Function<dim>>(new Functions::ZeroFunction<dim>());
+    dirichlet_bc[0] = std::shared_ptr<Function<dim>>(new Functions::ZeroFunction<dim>());
 
     // ...: Neumann BC: nothing to do
 
@@ -147,15 +157,13 @@ private:
     // Setup constraints: for MG
     mg_constrained_dofs.clear();
     std::set<types::boundary_id> dirichlet_boundary;
-    for (auto it : this->bc->dirichlet_bc)
+    for(auto it : this->bc->dirichlet_bc)
       dirichlet_boundary.insert(it.first);
     mg_constrained_dofs.initialize(dof_handler_dg);
-    mg_constrained_dofs.make_zero_boundary_constraints(dof_handler_dg,
-                                                       dirichlet_boundary);
+    mg_constrained_dofs.make_zero_boundary_constraints(dof_handler_dg, dirichlet_boundary);
 
-    if (fe_dgq.dofs_per_vertex > 0)
-      dummy.add_lines(
-          mg_constrained_dofs.get_boundary_indices(global_refinements));
+    if(fe_dgq.dofs_per_vertex > 0)
+      dummy.add_lines(mg_constrained_dofs.get_boundary_indices(global_refinements));
 
     dummy.close();
 #ifdef DETAIL_OUTPUT
@@ -164,9 +172,10 @@ private:
     data.reinit(mapping, dof_handler_dg, dummy, quadrature, additional_data);
   }
 
-  void run(LaplaceOperator<dim, fe_degree, value_type> &laplace,
-           unsigned int mg_level = numbers::invalid_unsigned_int) {
-
+  void
+  run(LaplaceOperator<dim, fe_degree, value_type> & laplace,
+      unsigned int                                  mg_level = numbers::invalid_unsigned_int)
+  {
     // determine level: -1 and globarl_refinements map to the same level
     unsigned int level = std::min(global_refinements, mg_level);
 
@@ -181,7 +190,7 @@ private:
 #endif
 
     // Right hand side
-    VNumber vec_rhs;
+    VectorType vec_rhs;
     laplace.initialize_dof_vector(vec_rhs);
     RHSOperator<dim, fe_degree, value_type> rhs(laplace.get_data());
     rhs.evaluate(vec_rhs);
@@ -192,8 +201,8 @@ private:
 #endif
 
     // Solve linear equation system: setup solution vectors
-    VNumber vec_sol_sm;
-    VNumber vec_sol_mf;
+    VectorType vec_sol_sm;
+    VectorType vec_sol_mf;
 
     // ... fill with zeroes
     laplace.initialize_dof_vector(vec_sol_sm);
@@ -204,21 +213,27 @@ private:
     vec_sol_mf.update_ghost_values();
 
     // .. setup conjugate-gradient-solver
-    SolverControl solver_control(1000, 1e-12);
-    SolverCG<VNumber> solver(solver_control);
+    SolverControl        solver_control(1000, 1e-12);
+    SolverCG<VectorType> solver(solver_control);
 
     // ... solve with sparse matrix
-    try {
+    try
+    {
       solver.solve(system_matrix, vec_sol_sm, vec_rhs, PreconditionIdentity());
-    } catch (SolverControl::NoConvergence &) {
+    }
+    catch(SolverControl::NoConvergence &)
+    {
       std::cout << "MB: not converved!" << std::endl;
     }
     const int last_step_sm = solver_control.last_step();
 
     // ... solve matrix-free
-    try {
+    try
+    {
       solver.solve(laplace, vec_sol_mf, vec_rhs, PreconditionIdentity());
-    } catch (SolverControl::NoConvergence &) {
+    }
+    catch(SolverControl::NoConvergence &)
+    {
       std::cout << "MF: not converved!" << std::endl;
     }
     const int last_step_mf = solver_control.last_step();
@@ -231,9 +246,9 @@ private:
 #endif
 
     // Perform vmult: setup vectors...
-    VNumber vec_dst_sm;
-    VNumber vec_dst_mf;
-    VNumber vec_src;
+    VectorType vec_dst_sm;
+    VectorType vec_dst_mf;
+    VectorType vec_src;
     laplace.initialize_dof_vector(vec_dst_sm);
     laplace.initialize_dof_vector(vec_dst_mf);
     laplace.initialize_dof_vector(vec_src);
@@ -247,7 +262,7 @@ private:
     auto gs = bs;
     gs.subtract_set(ls);
     bs.subtract_set(gs);
-    for (auto i : bs)
+    for(auto i : bs)
       vec_src(i) = 0.0;
 
 #ifdef DETAIL_OUTPUT
@@ -283,7 +298,7 @@ private:
     // ... CG-solution: sparse matrix
     {
       L2Norm<dim, fe_degree, value_type> integrator(laplace.get_data());
-      auto t = vec_sol_sm;
+      auto                               t = vec_sol_sm;
       t.update_ghost_values();
       double n = integrator.run(t);
       convergence_table.add_value("steps-sm", last_step_sm);
@@ -294,21 +309,22 @@ private:
     // ... CG-solution: matrix-free, and
     {
       L2Norm<dim, fe_degree, value_type> integrator(laplace.get_data());
-      double n = integrator.run(vec_sol_mf);
+      double                             n = integrator.run(vec_sol_mf);
       convergence_table.add_value("steps-mf", last_step_mf);
       convergence_table.add_value("int-mf", n);
       convergence_table.set_scientific("int-mf", true);
     }
 
     // ... output result to paraview
-    if (mg_level == numbers::invalid_unsigned_int) {
+    if(mg_level == numbers::invalid_unsigned_int)
+    {
       DataOut<dim> data_out;
       data_out.attach_dof_handler(dof_handler_dg);
 
       data_out.add_data_vector(vec_sol_sm, "solution");
 
       auto vec_rank = vec_sol_sm;
-      vec_rank = rank;
+      vec_rank      = rank;
       data_out.add_data_vector(vec_rank, "rank");
       data_out.build_patches(PATCHES);
 
@@ -318,8 +334,9 @@ private:
   }
 
 public:
-  void run() {
-
+  void
+  run()
+  {
     // initialize the system
     init_triangulation_and_dof_handler();
     init_boundary_conditions();
@@ -332,9 +349,9 @@ public:
     laplace_additional_data.bc = this->bc;
 
     // run through all multigrid level
-    for (unsigned int level = 0; level <= global_refinements; level++) {
-      laplace.reinit(dof_handler_dg, mapping, (void *)&laplace_additional_data, 
-                     mg_constrained_dofs, level);
+    for(unsigned int level = 0; level <= global_refinements; level++)
+    {
+      laplace.reinit(dof_handler_dg, mapping, (void *)&laplace_additional_data, mg_constrained_dofs, level);
       run(laplace, level);
     }
 
@@ -345,39 +362,49 @@ public:
     }
 
     // output convergence table
-    if (!rank)
+    if(!rank)
       convergence_table.write_text(std::cout);
   }
 };
 
-int main(int argc, char **argv) {
+int
+main(int argc, char ** argv)
+{
   Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
-  ConditionalOStream pcout (std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0);
+  ConditionalOStream               pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   {
     pcout << "2D 1st-order:" << std::endl;
-    Runner<2, 1, FE_Q<2>  > run_cg; run_cg.run();
-    Runner<2, 1, FE_DGQ<2>> run_dg; run_dg.run();
+    Runner<2, 1, FE_Q<2>> run_cg;
+    run_cg.run();
+    Runner<2, 1, FE_DGQ<2>> run_dg;
+    run_dg.run();
     pcout << std::endl;
   }
 
   {
     pcout << "2D 2nd-order:" << std::endl;
-    Runner<2, 2, FE_Q<2>  > run_cg; run_cg.run();
-    Runner<2, 2, FE_DGQ<2>> run_dg; run_dg.run();
+    Runner<2, 2, FE_Q<2>> run_cg;
+    run_cg.run();
+    Runner<2, 2, FE_DGQ<2>> run_dg;
+    run_dg.run();
     pcout << std::endl;
   }
 
   {
     pcout << "3D 1st-order:" << std::endl;
-    Runner<3, 1, FE_Q<3>  > run_cg; run_cg.run();
-    Runner<3, 1, FE_DGQ<3>> run_dg; run_dg.run();
+    Runner<3, 1, FE_Q<3>> run_cg;
+    run_cg.run();
+    Runner<3, 1, FE_DGQ<3>> run_dg;
+    run_dg.run();
     pcout << std::endl;
   }
 
   {
     pcout << "3D 2nd-order:" << std::endl;
-    Runner<3, 2, FE_Q<3>  > run_cg; run_cg.run();
-    Runner<3, 2, FE_DGQ<3>> run_dg; run_dg.run();
+    Runner<3, 2, FE_Q<3>> run_cg;
+    run_cg.run();
+    Runner<3, 2, FE_DGQ<3>> run_dg;
+    run_dg.run();
     pcout << std::endl;
   }
 }

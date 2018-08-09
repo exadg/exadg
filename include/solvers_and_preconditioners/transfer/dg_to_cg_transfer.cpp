@@ -71,7 +71,7 @@ CGToDGTransfer<dim, Number>::~CGToDGTransfer()
 
 template<int dim, typename Number>
 void
-CGToDGTransfer<dim, Number>::toCG(VNumber & dst, const VNumber & src) const
+CGToDGTransfer<dim, Number>::toCG(VectorType & dst, const VectorType & src) const
 {
   transfer(dst, src, data_cg, data_dg);
   dst.compress(VectorOperation::add);
@@ -79,7 +79,7 @@ CGToDGTransfer<dim, Number>::toCG(VNumber & dst, const VNumber & src) const
 
 template<int dim, typename Number>
 void
-CGToDGTransfer<dim, Number>::toDG(VNumber & dst, const VNumber & src) const
+CGToDGTransfer<dim, Number>::toDG(VectorType & dst, const VectorType & src) const
 {
   src.update_ghost_values();
   transfer(dst, src, data_dg, data_cg);
@@ -87,10 +87,10 @@ CGToDGTransfer<dim, Number>::toDG(VNumber & dst, const VNumber & src) const
 
 template<int dim, typename Number>
 void
-CGToDGTransfer<dim, Number>::transfer(VNumber &       dst,
-                                      const VNumber & src,
-                                      const MF &      data_dst,
-                                      const MF &      data_src) const
+CGToDGTransfer<dim, Number>::transfer(VectorType &       dst,
+                                      const VectorType & src,
+                                      const MF &         data_dst,
+                                      const MF &         data_src) const
 {
   // get reference to dof_handlers
   const DoFHandler<dim> & dh1 = data_src.get_dof_handler();

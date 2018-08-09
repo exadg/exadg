@@ -47,7 +47,7 @@ public:
   typedef OperatorBase<dim, fe_degree, value_type, DiffusiveOperatorData<dim>> Parent;
   typedef typename Parent::FEEvalCell                                          FEEvalCell;
   typedef typename Parent::FEEvalFace                                          FEEvalFace;
-  typedef typename Parent::VNumber                                             VNumber;
+  typedef typename Parent::VectorType                                          VectorType;
 
   DiffusiveOperator() : diffusivity(-1.0)
   {
@@ -59,10 +59,10 @@ public:
              DiffusiveOperatorData<dim> const &  operator_data_in);
 
   virtual void
-  apply_add(VNumber & dst, VNumber const & src, value_type const time) const;
+  apply_add(VectorType & dst, VectorType const & src, value_type const time) const;
 
   virtual void
-  apply_add(VNumber & dst, VNumber const & src) const;
+  apply_add(VectorType & dst, VectorType const & src) const;
 
   /*
    *  Calculation of "value_flux".
