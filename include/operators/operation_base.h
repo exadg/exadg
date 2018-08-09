@@ -138,15 +138,15 @@ struct OperatorBaseData
 };
 
 template<typename T>
-class LazyWrapper
+class lazy_ptr
 {
 public:
-  LazyWrapper() : tp(nullptr)
+  lazy_ptr() : tp(&t)
   {
   }
 
   void
-  use_own()
+  reset()
   {
     this->tp = &this->t;
   }
@@ -170,8 +170,8 @@ public:
   }
 
 private:
-  T const * tp;
   T         t;
+  T const * tp;
 };
 
 template<int dim, int degree, typename Number, typename AdditionalData>
@@ -508,10 +508,10 @@ private:
   const bool do_eval_faces;
 
 protected:
-  mutable LazyWrapper<MF> data;
+  mutable lazy_ptr<MF> data;
 
 private:
-  mutable LazyWrapper<ConstraintMatrix> constraint;
+  mutable lazy_ptr<ConstraintMatrix> constraint;
   mutable bool                          is_dg;
   mutable bool                          is_mg;
   mutable unsigned int                  level_mg_handler;

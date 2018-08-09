@@ -161,9 +161,9 @@ private:
   {
   }
 
-  mutable LazyWrapper<MassMatrixOp> mass_matrix_operator;
-  mutable LazyWrapper<ConvectiveOp> convective_operator;
-  mutable LazyWrapper<DiffusiveOp>  diffusive_operator;
+  mutable lazy_ptr<MassMatrixOp> mass_matrix_operator;
+  mutable lazy_ptr<ConvectiveOp> convective_operator;
+  mutable lazy_ptr<DiffusiveOp>  diffusive_operator;
   parallel::distributed::Vector<Number> mutable temp;
 };
 
