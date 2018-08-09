@@ -69,10 +69,8 @@ public:
 
   /*
    *  This function is called by the multigrid algorithm to initialize the
-   *  matrices on all levels. To construct the matrices, and object of
-   *  type UnderlyingOperator is used that provides all the information for
-   *  the setup, i.e., the information that is needed to call the
-   *  member function initialize(...).
+   *  matrices on all levels. Own operators (mass, convection, diffusion) are
+   *  created.
    */
   void
   reinit(const DoFHandler<dim> &   dof_handler,

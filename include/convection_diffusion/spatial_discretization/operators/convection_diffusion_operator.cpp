@@ -35,6 +35,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(const DoFHandler<dim
 {
   Parent::reinit(dof_handler, mapping, operator_data_in, mg_constrained_dofs, level);
 
+  // use own operators
   mass_matrix_operator.reset();
   convective_operator.reset();
   diffusive_operator.reset();
