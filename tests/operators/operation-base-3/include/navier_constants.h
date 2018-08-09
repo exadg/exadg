@@ -20,6 +20,6 @@
 #define DEGREE_8 1
 #define DEGREE_9 1
 
-#define LAPALCE_CELL_TEST
+#define LAPLACE_CELL_TEST
 
 #endif
