@@ -131,6 +131,8 @@ private:
    */
   void
   add_block_jacobi_matrices(BMatrix & matrices) const;
+  void
+  add_block_jacobi_matrices(BMatrix & matrices, Number const time) const;
 
   MatrixOperatorBaseNew<dim, Number> *
   get_new(unsigned int deg) const;

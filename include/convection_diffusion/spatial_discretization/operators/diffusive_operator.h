@@ -58,7 +58,10 @@ public:
              MatrixFree<dim, value_type> const & mf_data,
              DiffusiveOperatorData<dim> const &  operator_data_in);
 
-  void
+  virtual void
+  apply_add(VNumber & dst, VNumber const & src, value_type const time) const;
+
+  virtual void
   apply_add(VNumber & dst, VNumber const & src) const;
 
   /*

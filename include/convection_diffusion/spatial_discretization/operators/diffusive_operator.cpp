@@ -26,8 +26,17 @@ template<int dim, int fe_degree, typename value_type>
 void
 DiffusiveOperator<dim, fe_degree, value_type>::apply_add(VNumber & dst, VNumber const & src) const
 {
-  AssertThrow(diffusivity > 0.0, ExcMessage("Diffusivity is not set!"));
   Parent::apply_add(dst, src);
+}
+
+template<int dim, int fe_degree, typename value_type>
+void
+DiffusiveOperator<dim, fe_degree, value_type>::apply_add(VNumber &        dst,
+                                                         VNumber const &  src,
+                                                         value_type const time) const
+{
+  AssertThrow(diffusivity > 0.0, ExcMessage("Diffusivity is not set!"));
+  Parent::apply_add(dst, src, time);
 }
 
 template<int dim, int fe_degree, typename value_type>
@@ -89,7 +98,7 @@ inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
     {
       VectorizedArray<value_type> g = make_vectorized_array<value_type>(0.0);
       typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-      it                                               = this->operator_settings.bc->dirichlet_bc.find(boundary_id);
+      it = this->operator_settings.bc->dirichlet_bc.find(boundary_id);
       Point<dim, VectorizedArray<value_type>> q_points = fe_eval.quadrature_point(q);
       evaluate_scalar_function(g, it->second, q_points, this->eval_time);
 
@@ -175,7 +184,7 @@ inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
     {
       VectorizedArray<value_type> h = make_vectorized_array<value_type>(0.0);
       typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-      it                                               = this->operator_settings.bc->neumann_bc.find(boundary_id);
+      it = this->operator_settings.bc->neumann_bc.find(boundary_id);
       Point<dim, VectorizedArray<value_type>> q_points = fe_eval.quadrature_point(q);
       evaluate_scalar_function(h, it->second, q_points, this->eval_time);
 
@@ -203,9 +212,10 @@ void
 DiffusiveOperator<dim, fe_degree, value_type>::do_face_integral(FEEvalFace & fe_eval,
                                                                 FEEvalFace & fe_eval_neighbor) const
 {
-  VectorizedArray<value_type> tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
-                                                fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-                                       IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
+  VectorizedArray<value_type> tau_IP =
+    std::max(fe_eval.read_cell_data(array_penalty_parameter),
+             fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
+    IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
 
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
@@ -230,9 +240,10 @@ void
 DiffusiveOperator<dim, fe_degree, value_type>::do_face_int_integral(FEEvalFace & fe_eval,
                                                                     FEEvalFace & fe_eval_neighbor) const
 {
-  VectorizedArray<value_type> tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
-                                                fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-                                       IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
+  VectorizedArray<value_type> tau_IP =
+    std::max(fe_eval.read_cell_data(array_penalty_parameter),
+             fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
+    IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
 
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
@@ -256,9 +267,10 @@ void
 DiffusiveOperator<dim, fe_degree, value_type>::do_face_ext_integral(FEEvalFace & fe_eval,
                                                                     FEEvalFace & fe_eval_neighbor) const
 {
-  VectorizedArray<value_type> tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
-                                                fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-                                       IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
+  VectorizedArray<value_type> tau_IP =
+    std::max(fe_eval.read_cell_data(array_penalty_parameter),
+             fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
+    IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
 
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
@@ -288,8 +300,9 @@ DiffusiveOperator<dim, fe_degree, value_type>::do_boundary_integral(
 {
   BoundaryType boundary_type = this->operator_settings.get_boundary_type(boundary_id);
 
-  VectorizedArray<value_type> tau_IP = fe_eval.read_cell_data(array_penalty_parameter) *
-                                       IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
+  VectorizedArray<value_type> tau_IP =
+    fe_eval.read_cell_data(array_penalty_parameter) *
+    IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
 
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {

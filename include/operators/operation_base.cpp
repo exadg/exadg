@@ -196,6 +196,16 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::apply_add(VNumber & dst, VNumber const & src) const
 {
+  this->apply_add(dst, src, this->get_evaluation_time());
+}
+
+template<int dim, int degree, typename Number, typename AdditionalData>
+void
+OperatorBase<dim, degree, Number, AdditionalData>::apply_add(VNumber &       dst,
+                                                             VNumber const & src,
+                                                             Number const    time) const
+{
+  this->set_evaluation_time(time);
   vmult_add(dst, src);
 }
 
@@ -274,6 +284,15 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VNumber & diagonal) const
 {
+  this->add_diagonal(diagonal, this->get_evaluation_time());
+}
+
+template<int dim, int degree, typename Number, typename AdditionalData>
+void
+OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VNumber & diagonal, Number const time) const
+{
+  this->set_evaluation_time(time);
+
   // compute diagonal (not regarding: mean value constraint and constraints)
   if(is_dg && do_eval_faces)
     if(operator_settings.use_cell_based_loops)
@@ -378,7 +397,17 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::add_block_jacobi_matrices(BMatrix & matrices) const
 {
+  this->add_block_jacobi_matrices(matrices, get_evaluation_time());
+}
+
+template<int dim, int degree, typename Number, typename AdditionalData>
+void
+OperatorBase<dim, degree, Number, AdditionalData>::add_block_jacobi_matrices(BMatrix &    matrices,
+                                                                             Number const time) const
+{
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
+
+  this->set_evaluation_time(time);
 
   if(do_eval_faces)
     if(operator_settings.use_cell_based_loops)

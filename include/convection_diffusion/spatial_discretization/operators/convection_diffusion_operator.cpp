@@ -38,7 +38,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(const DoFHandler<dim
   mass_matrix_operator.reset();
   convective_operator.reset();
   diffusive_operator.reset();
-  
+
   // setup own mass matrix operator
   {
     auto & op_data     = this->operator_settings.mass_matrix_operator_data;
@@ -74,8 +74,9 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(const DoFHandler<dim
 
   if(this->operator_settings.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
   {
-    this->operator_settings.convective_problem = false; // deactivate convective term for multigrid preconditioner
-    this->operator_settings.diffusive_problem  = true;
+    this->operator_settings.convective_problem =
+      false; // deactivate convective term for multigrid preconditioner
+    this->operator_settings.diffusive_problem = true;
   }
   else if(this->operator_settings.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
   {
@@ -176,8 +177,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::vmult(
 
   if(this->operator_settings.convective_problem == true)
   {
-    convective_operator->set_evaluation_time(this->get_evaluation_time());
-    convective_operator->apply_add(dst, src);
+    convective_operator->apply_add(dst, src, this->get_evaluation_time());
   }
 }
 
@@ -206,8 +206,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::vmult_add(
 
   if(this->operator_settings.convective_problem == true)
   {
-    convective_operator->set_evaluation_time(this->get_evaluation_time());
-    convective_operator->apply_add(dst, src);
+    convective_operator->apply_add(dst, src, this->get_evaluation_time());
   }
 }
 
@@ -238,14 +237,21 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_diagonal(
 
   if(this->operator_settings.convective_problem == true)
   {
-    convective_operator->set_evaluation_time(this->get_evaluation_time());
-    convective_operator->add_diagonal(diagonal);
+    convective_operator->add_diagonal(diagonal, this->get_evaluation_time());
   }
 }
 
 template<int dim, int fe_degree, typename Number>
 void
 ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_jacobi_matrices(BMatrix & matrices) const
+{
+  Parent::add_block_jacobi_matrices(matrices);
+}
+
+template<int dim, int fe_degree, typename Number>
+void
+ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_jacobi_matrices(BMatrix &    matrices,
+                                                                               Number const time) const
 {
   // calculate block Jacobi matrices
   if(this->operator_settings.unsteady_problem == true)
@@ -269,8 +275,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_jacobi_matrices(B
 
   if(this->operator_settings.convective_problem == true)
   {
-    convective_operator->set_evaluation_time(this->get_evaluation_time());
-    convective_operator->add_block_jacobi_matrices(matrices);
+    convective_operator->add_block_jacobi_matrices(matrices, time);
   }
 }
 

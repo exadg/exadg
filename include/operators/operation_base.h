@@ -215,8 +215,12 @@ public:
   /*
    * matrix vector multiplication
    */
-  void
+  virtual void
   apply(VNumber & dst, VNumber const & src) const;
+
+  virtual void
+  apply_add(VNumber & dst, VNumber const & src, Number const time) const;
+
   virtual void
   apply_add(VNumber & dst, VNumber const & src) const;
 
@@ -259,8 +263,10 @@ public:
    */
   void
   calculate_diagonal(VNumber & diagonal) const;
-  void
+  virtual void
   add_diagonal(VNumber & diagonal) const;
+  virtual void
+  add_diagonal(VNumber & diagonal, Number const time) const;
   void
   calculate_inverse_diagonal(VNumber & diagonal) const;
 
@@ -281,6 +287,8 @@ public:
   update_block_jacobi(bool do_lu_factorization) const;
   virtual void
   add_block_jacobi_matrices(BMatrix & matrices) const;
+  virtual void
+  add_block_jacobi_matrices(BMatrix & matrices, Number const time) const;
 
   /*
    * sparse matrix (Trilinos) methods
