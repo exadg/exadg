@@ -86,13 +86,6 @@ public:
                              BoundaryType const &                boundary_type,
                              types::boundary_id const            boundary_id) const;
 
-  /*
-   *  Calculation of gradient flux. Strictly speaking, this value is not a
-   * numerical flux since
-   *  the flux is multiplied by the normal vector, i.e., "gradient_flux" =
-   * numerical_flux * normal,
-   *  where normal denotes the normal vector of element e⁻.
-   */
   inline DEAL_II_ALWAYS_INLINE //
     VectorizedArray<value_type>
     calculate_gradient_flux(VectorizedArray<value_type> const & normal_gradient_m,

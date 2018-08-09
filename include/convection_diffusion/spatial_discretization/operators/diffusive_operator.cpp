@@ -135,6 +135,25 @@ inline DEAL_II_ALWAYS_INLINE //
   return value_p;
 }
 
+/*
+ *  Calculation of gradient flux. Strictly speaking, this value is not a
+ * numerical flux since
+ *  the flux is multiplied by the normal vector, i.e., "gradient_flux" =
+ * numerical_flux * normal,
+ *  where normal denotes the normal vector of element e⁻.
+ */
+template<int dim, int fe_degree, typename value_type>
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<value_type>
+  DiffusiveOperator<dim, fe_degree, value_type>::calculate_gradient_flux(
+    VectorizedArray<value_type> const & normal_gradient_m,
+    VectorizedArray<value_type> const & normal_gradient_p,
+    VectorizedArray<value_type> const & jump_value,
+    VectorizedArray<value_type> const & penalty_parameter) const
+{
+  return diffusivity * 0.5 * (normal_gradient_m + normal_gradient_p) -
+         diffusivity * penalty_parameter * jump_value;
+}
 
 // clang-format off
   /*
@@ -163,19 +182,6 @@ inline DEAL_II_ALWAYS_INLINE //
    *  +-------------------------+-------------------------------------+---------------------------------------+
    */
 // clang-format on
-template<int dim, int fe_degree, typename value_type>
-inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<value_type>
-  DiffusiveOperator<dim, fe_degree, value_type>::calculate_gradient_flux(
-    VectorizedArray<value_type> const & normal_gradient_m,
-    VectorizedArray<value_type> const & normal_gradient_p,
-    VectorizedArray<value_type> const & jump_value,
-    VectorizedArray<value_type> const & penalty_parameter) const
-{
-  return diffusivity * 0.5 * (normal_gradient_m + normal_gradient_p) -
-         diffusivity * penalty_parameter * jump_value;
-}
-
 template<int dim, int fe_degree, typename value_type>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<value_type>
