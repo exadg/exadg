@@ -83,21 +83,6 @@ public:
                    VectorizedArray<value_type> & value_m,
                    VectorizedArray<value_type> & value_p) const;
 
-  /*
-   *  The following two functions calculate the interior_value/exterior_value
-   *  depending on the operator type, the type of the boundary face
-   *  and the given boundary conditions.
-   *
-   *                            +----------------------+--------------------+
-   *                            | Dirichlet boundaries | Neumann boundaries |
-   *  +-------------------------+----------------------+--------------------+
-   *  | full operator           | phi⁺ = -phi⁻ + 2g    | phi⁺ = phi⁻        |
-   *  +-------------------------+----------------------+--------------------+
-   *  | homogeneous operator    | phi⁺ = -phi⁻         | phi⁺ = phi⁻        |
-   *  +-------------------------+----------------------+--------------------+
-   *  | inhomogeneous operator  | phi⁻ = 0, phi⁺ = 2g  | phi⁻ = 0, phi⁺ = 0 |
-   *  +-------------------------+----------------------+--------------------+
-   */
   inline DEAL_II_ALWAYS_INLINE //
     VectorizedArray<value_type>
     calculate_interior_value(unsigned int const   q,

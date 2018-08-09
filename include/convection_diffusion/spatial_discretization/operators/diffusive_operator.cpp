@@ -48,6 +48,21 @@ inline DEAL_II_ALWAYS_INLINE //
   return -0.5 * diffusivity * jump_value;
 }
 
+/*
+ *  The following two functions calculate the interior_value/exterior_value
+ *  depending on the operator type, the type of the boundary face
+ *  and the given boundary conditions.
+ *
+ *                            +----------------------+--------------------+
+ *                            | Dirichlet boundaries | Neumann boundaries |
+ *  +-------------------------+----------------------+--------------------+
+ *  | full operator           | phi⁺ = -phi⁻ + 2g    | phi⁺ = phi⁻        |
+ *  +-------------------------+----------------------+--------------------+
+ *  | homogeneous operator    | phi⁺ = -phi⁻         | phi⁺ = phi⁻        |
+ *  +-------------------------+----------------------+--------------------+
+ *  | inhomogeneous operator  | phi⁻ = 0, phi⁺ = 2g  | phi⁻ = 0, phi⁺ = 0 |
+ *  +-------------------------+----------------------+--------------------+
+ */
 template<int dim, int fe_degree, typename value_type>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<value_type>
@@ -120,6 +135,34 @@ inline DEAL_II_ALWAYS_INLINE //
   return value_p;
 }
 
+
+// clang-format off
+  /*
+   *  The following two functions calculate the interior/exterior velocity gradient
+   *  in normal direction depending on the operator type, the type of the boundary face
+   *  and the given boundary conditions.
+   *
+   *                            +-------------------------------------+---------------------------------------+
+   *                            | Dirichlet boundaries                | Neumann boundaries                    |
+   *  +-------------------------+-------------------------------------+---------------------------------------+
+   *  | full operator           | grad(phi⁺)*n = grad(phi⁻)*n         | grad(phi⁺)*n = -grad(phi⁻)*n + 2h     |
+   *  +-------------------------+-------------------------------------+---------------------------------------+
+   *  | homogeneous operator    | grad(phi⁺)*n = grad(phi⁻)*n         | grad(phi⁺)*n = -grad(phi⁻)*n          |
+   *  +-------------------------+-------------------------------------+---------------------------------------+
+   *  | inhomogeneous operator  | grad(phi⁻)*n  = 0, grad(phi⁺)*n = 0 | grad(phi⁻)*n  = 0, grad(phi⁺)*n  = 2h |
+   *  +-------------------------+-------------------------------------+---------------------------------------+
+   *
+   *                            +-------------------------------------+---------------------------------------+
+   *                            | Dirichlet boundaries                | Neumann boundaries                    |
+   *  +-------------------------+-------------------------------------+---------------------------------------+
+   *  | full operator           | {{grad(phi)}}*n = grad(phi⁻)*n      | {{grad(phi)}}*n = h                   |
+   *  +-------------------------+-------------------------------------+---------------------------------------+
+   *  | homogeneous operator    | {{grad(phi)}}*n = grad(phi⁻)*n      | {{grad(phi)}}*n = 0                   |
+   *  +-------------------------+-------------------------------------+---------------------------------------+
+   *  | inhomogeneous operator  | {{grad(phi)}}*n = 0                 | {{grad(phi)}}*n = h                   |
+   *  +-------------------------+-------------------------------------+---------------------------------------+
+   */
+// clang-format on
 template<int dim, int fe_degree, typename value_type>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<value_type>
