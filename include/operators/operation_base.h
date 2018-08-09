@@ -361,62 +361,62 @@ protected:
    * functions to be called from matrix-free loops and cell_loops: vmult
    */
   void
-  local_apply_cell(const MF & /*data*/, VNumber & dst, const VNumber & src, const Range & range) const;
+  local_cell_hom(const MF & /*data*/, VNumber & dst, const VNumber & src, const Range & range) const;
 
   void
-  local_apply_face(const MF & /*data*/, VNumber & dst, const VNumber & src, const Range & range) const;
+  local_face_hom(const MF & /*data*/, VNumber & dst, const VNumber & src, const Range & range) const;
 
   // homogenous
   void
-  local_apply_boundary(const MF & /*data*/,
+  local_boundary_hom(const MF & /*data*/,
+                     VNumber & /*dst*/,
+                     const VNumber & /*src*/,
+                     const Range & /*range*/) const;
+
+  void
+  local_cell_inhom(const MF & /*data*/, VNumber & dst, const VNumber & src, const Range & range) const;
+
+  void
+  local_face_inhom(const MF & /*data*/, VNumber & dst, const VNumber & src, const Range & range) const;
+
+  void
+  local_boundary_inhom(const MF & /*data*/,
                        VNumber & /*dst*/,
                        const VNumber & /*src*/,
                        const Range & /*range*/) const;
 
   void
-  local_apply_inhom_cell(const MF & /*data*/, VNumber & dst, const VNumber & src, const Range & range) const;
-
-  void
-  local_apply_inhom_face(const MF & /*data*/, VNumber & dst, const VNumber & src, const Range & range) const;
-
-  void
-  local_apply_inhom_boundary(const MF & /*data*/,
-                             VNumber & /*dst*/,
-                             const VNumber & /*src*/,
-                             const Range & /*range*/) const;
-
-  void
-  local_apply_full_boundary(const MF & /*data*/,
-                            VNumber & /*dst*/,
-                            const VNumber & /*src*/,
-                            const Range & /*range*/) const;
+  local_boundary_full(const MF & /*data*/,
+                      VNumber & /*dst*/,
+                      const VNumber & /*src*/,
+                      const Range & /*range*/) const;
 
   /*
    * ... diagonal
    */
   void
-  local_apply_cell_diagonal(const MF & /*data*/,
-                            VNumber & dst,
-                            const VNumber & /*src*/,
-                            const Range & range) const;
+  local_add_diagonal_cell(const MF & /*data*/,
+                          VNumber & dst,
+                          const VNumber & /*src*/,
+                          const Range & range) const;
 
   void
-  local_apply_face_diagonal(const MF & /*data*/,
-                            VNumber & dst,
-                            const VNumber & /*src*/,
-                            const Range & range) const;
+  local_add_diagonal_face(const MF & /*data*/,
+                          VNumber & dst,
+                          const VNumber & /*src*/,
+                          const Range & range) const;
 
   void
-  local_apply_boundary_diagonal(const MF & /*data*/,
+  local_add_diagonal_boundary(const MF & /*data*/,
+                              VNumber & dst,
+                              const VNumber & /*src*/,
+                              const Range & range) const;
+
+  void
+  local_add_diagonal_cell_based(const MF & /*data*/,
                                 VNumber & dst,
                                 const VNumber & /*src*/,
                                 const Range & range) const;
-
-  void
-  local_apply_cell_diagonal_cell_based(const MF & /*data*/,
-                                       VNumber & dst,
-                                       const VNumber & /*src*/,
-                                       const Range & range) const;
 
   /*
    * ... block diagonal
@@ -428,55 +428,55 @@ protected:
                              const Range &   range) const;
 
   void
-  cell_loop_apply_inverse_block_jacobi_matrices(const MF &      data,
-                                                VNumber &       dst,
-                                                const VNumber & src,
-                                                const Range &   cell_range) const;
+  local_apply_block_jacobi_add(const MF &      data,
+                               VNumber &       dst,
+                               const VNumber & src,
+                               const Range &   cell_range) const;
   void
-  local_apply_cell_block_diagonal(const MF & /*data*/,
-                                  BMatrix & dst,
-                                  const BMatrix & /*src*/,
-                                  const Range & range) const;
+  local_add_block_diagonal_cell(const MF & /*data*/,
+                                BMatrix & dst,
+                                const BMatrix & /*src*/,
+                                const Range & range) const;
 
   void
-  local_apply_face_block_diagonal(const MF & /*data*/,
-                                  BMatrix & dst,
-                                  const BMatrix & /*src*/,
-                                  const Range & range) const;
+  local_add_block_diagonal_face(const MF & /*data*/,
+                                BMatrix & dst,
+                                const BMatrix & /*src*/,
+                                const Range & range) const;
 
   void
-  local_apply_boundary_block_diagonal(const MF & /*data*/,
+  local_add_block_diagonal_boundary(const MF & /*data*/,
+                                    BMatrix & dst,
+                                    const BMatrix & /*src*/,
+                                    const Range & range) const;
+
+  void
+  local_add_block_diagonal_cell_based(const MF & /*data*/,
                                       BMatrix & dst,
                                       const BMatrix & /*src*/,
                                       const Range & range) const;
-
-  void
-  local_apply_cell_block_diagonal_cell_based(const MF & /*data*/,
-                                             BMatrix & dst,
-                                             const BMatrix & /*src*/,
-                                             const Range & range) const;
 
   /*
    * ... sparse matrix
    */
 #ifdef DEAL_II_WITH_TRILINOS
   void
-  local_apply_cell_system_matrix(const MF & /*data*/,
-                                 SMatrix & dst,
-                                 const SMatrix & /*src*/,
-                                 const Range & range) const;
-
-  void
-  local_apply_face_system_matrix(const MF & /*data*/,
-                                 SMatrix & dst,
-                                 const SMatrix & /*src*/,
-                                 const Range & range) const;
-
-  void
-  local_apply_boundary_system_matrix(const MF & /*data*/,
-                                     SMatrix & /*dst*/,
+  local_calculate_system_matrix_cell(const MF & /*data*/,
+                                     SMatrix & dst,
                                      const SMatrix & /*src*/,
-                                     const Range & /*range*/) const;
+                                     const Range & range) const;
+
+  void
+  local_calculate_system_matrix_face(const MF & /*data*/,
+                                     SMatrix & dst,
+                                     const SMatrix & /*src*/,
+                                     const Range & range) const;
+
+  void
+  local_calculate_system_matrix_boundary(const MF & /*data*/,
+                                         SMatrix & /*dst*/,
+                                         const SMatrix & /*src*/,
+                                         const Range & /*range*/) const;
 #endif
 
   void
@@ -509,12 +509,12 @@ protected:
 
 private:
   mutable lazy_ptr<ConstraintMatrix> constraint;
-  mutable bool                          is_dg;
-  mutable bool                          is_mg;
-  mutable unsigned int                  level_mg_handler;
+  mutable bool                       is_dg;
+  mutable bool                       is_mg;
+  mutable unsigned int               level_mg_handler;
 
   mutable std::vector<LAPACKFullMatrix<Number>> matrices;
-  
+
   mutable bool block_jacobi_matrices_have_been_initialized;
   mutable bool operator_is_singular;
 
