@@ -590,7 +590,7 @@ private:
       laplace_operator_data.IP_factor = 1.0;
       // TODO this is not needed if Laplace operator detects automatically whether the system of equations
       // is singular or not
-      laplace_operator_data.needs_mean_value_constraint = underlying_operator->param.pure_dirichlet_bc;
+      laplace_operator_data.operator_is_singular = underlying_operator->param.pure_dirichlet_bc;
 
       // TODO: replace LaplaceBoundaryDescriptor by Laplace::BoundaryDescriptor<dim>
       auto boundary_descriptor = std::shared_ptr<Laplace::BoundaryDescriptor<dim>>(new Laplace::BoundaryDescriptor<dim>());

@@ -78,7 +78,7 @@ struct OperatorBaseData
       boundary_evaluate(b_e_v, b_e_g),
       boundary_integrate(b_i_v, b_i_g),
       use_cell_based_loops(false),
-      needs_mean_value_constraint(false)
+      operator_is_singular(false)
   {
   }
 
@@ -129,7 +129,7 @@ struct OperatorBaseData
 
   bool use_cell_based_loops;
 
-  bool needs_mean_value_constraint;
+  bool operator_is_singular;
 
   std::shared_ptr<BoundaryDescriptor> bc;
 
@@ -480,13 +480,10 @@ protected:
 #endif
 
   void
-  apply_nullspace_projection(VNumber & vec) const;
+  set_zero_mean_value(VNumber & vec) const;
 
   void
-  disable_mean_value_constraint() /*const*/;
-
-  void
-  apply_mean_value_constraint_diagonal(VNumber & diagonal) const;
+  set_zero_mean_value_diagonal(VNumber & diagonal) const;
 
   void
   set_constraint_diagonal(VNumber & diagonal) const;
@@ -517,9 +514,9 @@ private:
   mutable unsigned int                  level_mg_handler;
 
   mutable std::vector<LAPACKFullMatrix<Number>> matrices;
-  mutable bool                                  block_jacobi_matrices_have_been_initialized;
-  mutable bool                                  needs_mean_value_constraint;
-  mutable bool                                  apply_mean_value_constraint_in_matvec;
+  
+  mutable bool block_jacobi_matrices_have_been_initialized;
+  mutable bool operator_is_singular;
 
 protected:
   mutable double eval_time;

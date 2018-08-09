@@ -10,8 +10,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
                   operator_settings.boundary_evaluate.do_eval() || operator_settings.boundary_integrate.do_eval()),
     level_mg_handler(numbers::invalid_unsigned_int),
     block_jacobi_matrices_have_been_initialized(false),
-    needs_mean_value_constraint(false),
-    apply_mean_value_constraint_in_matvec(false),
+    operator_is_singular(false),
     eval_time(0.0)
 {
 }
@@ -38,8 +37,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(MF const &            
   this->is_mg = !(level_mg_handler == numbers::invalid_unsigned_int);
 
   // mean value constraint?
-  needs_mean_value_constraint           = this->operator_settings.needs_mean_value_constraint;
-  apply_mean_value_constraint_in_matvec = needs_mean_value_constraint;
+  operator_is_singular = this->operator_settings.operator_is_singular;
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
@@ -153,10 +151,6 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
   const QGauss<1> quad(dof_handler.get_fe().degree + 1);
   data_own.reinit(mapping, dof_handler, constraint_own, quad, additional_data);
   reinit(data_own, constraint_own, operator_settings, level);
-
-  // we do not need the mean value constraint for smoothers on the
-  // multigrid levels, so we can disable it
-  disable_mean_value_constraint();
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
@@ -180,10 +174,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::vmult_add(VNumber & dst, VNum
 {
   const VNumber * actual_src = &src;
   VNumber         tmp_projection_vector;
-  if(apply_mean_value_constraint_in_matvec)
+  if(operator_is_singular && !is_mg)
   {
     tmp_projection_vector = src;
-    apply_nullspace_projection(tmp_projection_vector);
+    set_zero_mean_value(tmp_projection_vector);
     actual_src = &tmp_projection_vector;
   }
 
@@ -193,8 +187,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::vmult_add(VNumber & dst, VNum
   else
     data->cell_loop(&This::local_apply_cell, this, dst, *actual_src);
 
-  if(apply_mean_value_constraint_in_matvec)
-    apply_nullspace_projection(dst);
+  if(operator_is_singular && !is_mg)
+    set_zero_mean_value(dst);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
@@ -303,7 +297,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VNumber & diagon
     diagonal.compress(VectorOperation::add);
 
   // apply mean value constrained
-  apply_mean_value_constraint_diagonal(diagonal);
+  if (operator_is_singular && !is_mg)
+    set_zero_mean_value_diagonal(diagonal);
 
   // apply constraint
   set_constraint_diagonal(diagonal);
@@ -1504,9 +1499,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_boundary_system_m
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply_nullspace_projection(VNumber & vec) const
+OperatorBase<dim, degree, Number, AdditionalData>::set_zero_mean_value(VNumber & vec) const
 {
-  if(!needs_mean_value_constraint)
+  if(!operator_is_singular)
     return;
   const Number mean_val = vec.mean_value();
   vec.add(-mean_val);
@@ -1514,17 +1509,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_nullspace_projection(VN
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::disable_mean_value_constraint() /*const*/
-{
-  this->apply_mean_value_constraint_in_matvec = false;
-}
-
-template<int dim, int degree, typename Number, typename AdditionalData>
-void
-OperatorBase<dim, degree, Number, AdditionalData>::apply_mean_value_constraint_diagonal(
+OperatorBase<dim, degree, Number, AdditionalData>::set_zero_mean_value_diagonal(
   VNumber & diagonal) const
 {
-  if(apply_mean_value_constraint_in_matvec)
+  if(operator_is_singular && !is_mg)
   {
     VNumber vec1, d;
     vec1.reinit(diagonal, true);

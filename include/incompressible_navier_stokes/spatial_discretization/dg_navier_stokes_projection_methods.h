@@ -128,20 +128,20 @@ setup_pressure_poisson_solver (double const time_step_size)
   // TODO: do this in derived classes
   if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    laplace_operator_data.needs_mean_value_constraint = this->param.pure_dirichlet_bc;
+    laplace_operator_data.operator_is_singular = this->param.pure_dirichlet_bc;
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
     // One can show that the linear system of equations of the PPE is consistent
     // in case of the pressure-correction scheme if the velocity Dirichlet BC is consistent.
     // So there should be no need to solve a tranformed linear system of equations.
-//    laplace_operator_data.needs_mean_value_constraint = false;
+//    laplace_operator_data.operator_is_singular = false;
 
     // In principle, it works (since the linear system of equations is consistent)
     // but we detected no convergence for some test cases and specific parameters.
     // Hence, for reasons of robustness we also solve a transformed linear system of equations
     // in case of the pressure-correction scheme.
-    laplace_operator_data.needs_mean_value_constraint = this->param.pure_dirichlet_bc;
+    laplace_operator_data.operator_is_singular = this->param.pure_dirichlet_bc;
   }
 
   if(this->param.use_approach_of_ferrer == true)
