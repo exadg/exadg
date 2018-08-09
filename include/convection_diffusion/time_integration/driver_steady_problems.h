@@ -121,7 +121,7 @@ private:
 
   void postprocessing()
   {
-    this->postprocessor->do_postprocessing(solution,1.0 /*TODO*/);
+    this->postprocessor->do_postprocessing(solution);
   }
 
   std::shared_ptr<ConvDiffOperation> conv_diff_operation;
