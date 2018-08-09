@@ -341,17 +341,32 @@ protected:
    * methods to be overwritten
    */
   virtual void
-  do_cell_integral(FEEvalCell & phi) const = 0;
+  do_cell_integral(FEEvalCell & /*phi*/) const
+  {
+    AssertThrow(false, ExcMessage("OperatorBase::do_cell_integral has not been implemented!"));
+  }
   virtual void
-  do_face_integral(FEEvalFace & p_n, FEEvalFace & p_p) const = 0;
+  do_face_integral(FEEvalFace & /*p_n*/, FEEvalFace & /*p_p*/) const
+  {
+    AssertThrow(false, ExcMessage("OperatorBase::do_face_integral has not been implemented!"));
+  }
   virtual void
-  do_face_int_integral(FEEvalFace & p_n, FEEvalFace & p_p) const = 0;
+  do_face_int_integral(FEEvalFace & /*p_n*/, FEEvalFace & /*p_p*/) const
+  {
+    AssertThrow(false, ExcMessage("OperatorBase::do_face_int_integral has not been implemented!"));
+  }
   virtual void
-  do_face_ext_integral(FEEvalFace & p_n, FEEvalFace & p_p) const = 0;
+  do_face_ext_integral(FEEvalFace & /*p_n*/, FEEvalFace & /*p_p*/) const
+  {
+    AssertThrow(false, ExcMessage("OperatorBase::do_face_ext_integral has not been implemented!"));
+  }
   virtual void
-  do_boundary_integral(FEEvalFace &               fe_eval,
-                       OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id) const = 0;
+  do_boundary_integral(FEEvalFace & /*fe_eval*/,
+                       OperatorType const & /*operator_type*/,
+                       types::boundary_id const & /*boundary_id*/) const
+  {
+    AssertThrow(false, ExcMessage("OperatorBase::do_boundary_integral has not been implemented!"));
+  }
 
   /*
    * helper functions

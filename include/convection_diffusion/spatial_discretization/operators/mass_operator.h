@@ -45,26 +45,6 @@ public:
 private:
   void
   do_cell_integral(FEEvalCell & fe_eval) const;
-
-  void
-  do_face_integral(FEEvalFace &, FEEvalFace &) const
-  {
-  }
-
-  void
-  do_face_int_integral(FEEvalFace &, FEEvalFace &) const
-  {
-  }
-
-  void
-  do_face_ext_integral(FEEvalFace &, FEEvalFace &) const
-  {
-  }
-
-  void
-  do_boundary_integral(FEEvalFace &, OperatorType const &, types::boundary_id const &) const
-  {
-  }
 };
 } // namespace ConvDiff
 

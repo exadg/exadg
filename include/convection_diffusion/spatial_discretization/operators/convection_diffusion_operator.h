@@ -138,31 +138,6 @@ private:
   get_new(unsigned int deg) const;
 
 private:
-  void
-  do_cell_integral(FEEvalCell &) const
-  {
-  }
-
-  void
-  do_face_integral(FEEvalFace &, FEEvalFace &) const
-  {
-  }
-
-  void
-  do_face_int_integral(FEEvalFace &, FEEvalFace &) const
-  {
-  }
-
-  void
-  do_face_ext_integral(FEEvalFace &, FEEvalFace &) const
-  {
-  }
-
-  void
-  do_boundary_integral(FEEvalFace &, OperatorType const &, types::boundary_id const &) const
-  {
-  }
-
   mutable lazy_ptr<MassMatrixOp> mass_matrix_operator;
   mutable lazy_ptr<ConvectiveOp> convective_operator;
   mutable lazy_ptr<DiffusiveOp>  diffusive_operator;
