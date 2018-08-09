@@ -28,13 +28,12 @@ struct OutputDataMeanVelocity
 
   void print(ConditionalOStream &pcout, bool unsteady)
   {
-    if(!unsteady)
-      return; // only print if unstready
-    
-    print_parameter(pcout,"Calculate mean velocity", calculate);
-    print_parameter(pcout,"  Sample start time", sample_start_time);
-    print_parameter(pcout,"  Sample end time", sample_end_time);
-    print_parameter(pcout,"  Sample every timesteps", sample_every_timesteps);
+    if(unsteady){
+      print_parameter(pcout,"Calculate mean velocity", calculate);
+      print_parameter(pcout,"  Sample start time", sample_start_time);
+      print_parameter(pcout,"  Sample end time", sample_end_time);
+      print_parameter(pcout,"  Sample every timesteps", sample_every_timesteps);
+    }
   }
 
   // calculate mean velocity field (for statistically steady, turbulent flows)
