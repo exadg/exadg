@@ -104,8 +104,9 @@ struct OperatorBaseData
     }
   };
 
-  inline DEAL_II_ALWAYS_INLINE BoundaryType
-                               get_boundary_type(types::boundary_id const & boundary_id) const
+  inline DEAL_II_ALWAYS_INLINE //
+    BoundaryType
+    get_boundary_type(types::boundary_id const & boundary_id) const
   {
     if(bc->dirichlet_bc.find(boundary_id) != bc->dirichlet_bc.end())
       return BoundaryType::dirichlet;

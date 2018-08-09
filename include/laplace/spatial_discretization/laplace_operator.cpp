@@ -12,18 +12,20 @@ LaplaceOperator<dim, degree, Number>::LaplaceOperator()
 }
 
 template<int dim, int fe_degree, typename Number>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
-                             LaplaceOperator<dim, fe_degree, Number>::calculate_value_flux(
-  VectorizedArray<Number> const & jump_value) const
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<Number>
+  LaplaceOperator<dim, fe_degree, Number>::calculate_value_flux(
+    VectorizedArray<Number> const & jump_value) const
 {
   return -0.5 * /*diffusivity * */ jump_value;
 }
 
 template<int dim, int fe_degree, typename Number>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
-                             LaplaceOperator<dim, fe_degree, Number>::calculate_interior_value(unsigned int const   q,
-                                                                  FEEvalFace const &   fe_eval,
-                                                                  OperatorType const & operator_type) const
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<Number>
+  LaplaceOperator<dim, fe_degree, Number>::calculate_interior_value(unsigned int const   q,
+                                                                    FEEvalFace const &   fe_eval,
+                                                                    OperatorType const & operator_type) const
 {
   VectorizedArray<Number> value_m = make_vectorized_array<Number>(0.0);
 
@@ -44,13 +46,15 @@ inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
 }
 
 template<int dim, int fe_degree, typename Number>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
-                             LaplaceOperator<dim, fe_degree, Number>::calculate_exterior_value(VectorizedArray<Number> const & value_m,
-                                                                  unsigned int const              q,
-                                                                  FEEvalFace const &              fe_eval,
-                                                                  OperatorType const &     operator_type,
-                                                                  BoundaryType const &     boundary_type,
-                                                                  types::boundary_id const boundary_id) const
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<Number>
+  LaplaceOperator<dim, fe_degree, Number>::calculate_exterior_value(
+    VectorizedArray<Number> const & value_m,
+    unsigned int const              q,
+    FEEvalFace const &              fe_eval,
+    OperatorType const &            operator_type,
+    BoundaryType const &            boundary_type,
+    types::boundary_id const        boundary_id) const
 {
   VectorizedArray<Number> value_p = make_vectorized_array<Number>(0.0);
 
@@ -60,7 +64,7 @@ inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
     {
       VectorizedArray<Number> g = make_vectorized_array<Number>(0.0);
       typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-      it                                           = this->operator_settings.bc->dirichlet_bc.find(boundary_id);
+      it = this->operator_settings.bc->dirichlet_bc.find(boundary_id);
       Point<dim, VectorizedArray<Number>> q_points = fe_eval.quadrature_point(q);
       evaluate_scalar_function(g, it->second, q_points, this->eval_time);
 
@@ -88,23 +92,25 @@ inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
 }
 
 template<int dim, int fe_degree, typename Number>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
-                             LaplaceOperator<dim, fe_degree, Number>::calculate_gradient_flux(
-  VectorizedArray<Number> const & normal_gradient_m,
-  VectorizedArray<Number> const & normal_gradient_p,
-  VectorizedArray<Number> const & jump_value,
-  VectorizedArray<Number> const & penalty_parameter) const
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<Number>
+  LaplaceOperator<dim, fe_degree, Number>::calculate_gradient_flux(
+    VectorizedArray<Number> const & normal_gradient_m,
+    VectorizedArray<Number> const & normal_gradient_p,
+    VectorizedArray<Number> const & jump_value,
+    VectorizedArray<Number> const & penalty_parameter) const
 {
   return /*diffusivity * */ 0.5 * (normal_gradient_m + normal_gradient_p) -
          /*diffusivity * */ penalty_parameter * jump_value;
 }
 
 template<int dim, int fe_degree, typename Number>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
-                             LaplaceOperator<dim, fe_degree, Number>::calculate_interior_normal_gradient(
-  unsigned int const   q,
-  FEEvalFace const &   fe_eval,
-  OperatorType const & operator_type) const
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<Number>
+  LaplaceOperator<dim, fe_degree, Number>::calculate_interior_normal_gradient(
+    unsigned int const   q,
+    FEEvalFace const &   fe_eval,
+    OperatorType const & operator_type) const
 {
   VectorizedArray<Number> normal_gradient_m = make_vectorized_array<Number>(0.0);
 
@@ -125,14 +131,15 @@ inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
 }
 
 template<int dim, int fe_degree, typename Number>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
-                             LaplaceOperator<dim, fe_degree, Number>::calculate_exterior_normal_gradient(
-  VectorizedArray<Number> const & normal_gradient_m,
-  unsigned int const              q,
-  FEEvalFace const &              fe_eval,
-  OperatorType const &            operator_type,
-  BoundaryType const &            boundary_type,
-  types::boundary_id const        boundary_id) const
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<Number>
+  LaplaceOperator<dim, fe_degree, Number>::calculate_exterior_normal_gradient(
+    VectorizedArray<Number> const & normal_gradient_m,
+    unsigned int const              q,
+    FEEvalFace const &              fe_eval,
+    OperatorType const &            operator_type,
+    BoundaryType const &            boundary_type,
+    types::boundary_id const        boundary_id) const
 {
   VectorizedArray<Number> normal_gradient_p = make_vectorized_array<Number>(0.0);
 
@@ -182,9 +189,10 @@ void
 LaplaceOperator<dim, fe_degree, value_type>::do_face_integral(FEEvalFace & fe_eval,
                                                               FEEvalFace & fe_eval_neighbor) const
 {
-  VectorizedArray<value_type> tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
-                                                fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-                                       IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
+  VectorizedArray<value_type> tau_IP =
+    std::max(fe_eval.read_cell_data(array_penalty_parameter),
+             fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
+    IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
 #ifdef LAPALCE_CELL_TEST
   tau_IP = 100.0;
 #endif
@@ -211,9 +219,10 @@ void
 LaplaceOperator<dim, fe_degree, value_type>::do_face_int_integral(FEEvalFace & fe_eval,
                                                                   FEEvalFace & fe_eval_neighbor) const
 {
-  VectorizedArray<value_type> tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
-                                                fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-                                       IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
+  VectorizedArray<value_type> tau_IP =
+    std::max(fe_eval.read_cell_data(array_penalty_parameter),
+             fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
+    IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
 #ifdef LAPALCE_CELL_TEST
   tau_IP = 100.0;
 #endif
@@ -240,9 +249,10 @@ void
 LaplaceOperator<dim, fe_degree, value_type>::do_face_ext_integral(FEEvalFace & fe_eval,
                                                                   FEEvalFace & fe_eval_neighbor) const
 {
-  VectorizedArray<value_type> tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
-                                                fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-                                       IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
+  VectorizedArray<value_type> tau_IP =
+    std::max(fe_eval.read_cell_data(array_penalty_parameter),
+             fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
+    IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
 #ifdef LAPALCE_CELL_TEST
   tau_IP = 100.0;
 #endif
@@ -274,8 +284,9 @@ LaplaceOperator<dim, fe_degree, value_type>::do_boundary_integral(
 {
   BoundaryType boundary_type = this->operator_settings.get_boundary_type(boundary_id);
 
-  VectorizedArray<value_type> tau_IP = fe_eval.read_cell_data(array_penalty_parameter) *
-                                       IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
+  VectorizedArray<value_type> tau_IP =
+    fe_eval.read_cell_data(array_penalty_parameter) *
+    IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
 #ifdef LAPALCE_CELL_TEST
   tau_IP = 100.0;
 #endif

@@ -40,19 +40,21 @@ DiffusiveOperator<dim, fe_degree, value_type>::apply_add(VectorType &       dst,
 }
 
 template<int dim, int fe_degree, typename value_type>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                             DiffusiveOperator<dim, fe_degree, value_type>::calculate_value_flux(
-  VectorizedArray<value_type> const & jump_value) const
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<value_type>
+  DiffusiveOperator<dim, fe_degree, value_type>::calculate_value_flux(
+    VectorizedArray<value_type> const & jump_value) const
 {
   return -0.5 * diffusivity * jump_value;
 }
 
 template<int dim, int fe_degree, typename value_type>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                             DiffusiveOperator<dim, fe_degree, value_type>::calculate_interior_value(
-  unsigned int const   q,
-  FEEvalFace const &   fe_eval,
-  OperatorType const & operator_type) const
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<value_type>
+  DiffusiveOperator<dim, fe_degree, value_type>::calculate_interior_value(
+    unsigned int const   q,
+    FEEvalFace const &   fe_eval,
+    OperatorType const & operator_type) const
 {
   VectorizedArray<value_type> value_m = make_vectorized_array<value_type>(0.0);
 
@@ -73,14 +75,15 @@ inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
 }
 
 template<int dim, int fe_degree, typename value_type>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                             DiffusiveOperator<dim, fe_degree, value_type>::calculate_exterior_value(
-  VectorizedArray<value_type> const & value_m,
-  unsigned int const                  q,
-  FEEvalFace const &                  fe_eval,
-  OperatorType const &                operator_type,
-  BoundaryType const &                boundary_type,
-  types::boundary_id const            boundary_id) const
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<value_type>
+  DiffusiveOperator<dim, fe_degree, value_type>::calculate_exterior_value(
+    VectorizedArray<value_type> const & value_m,
+    unsigned int const                  q,
+    FEEvalFace const &                  fe_eval,
+    OperatorType const &                operator_type,
+    BoundaryType const &                boundary_type,
+    types::boundary_id const            boundary_id) const
 {
   VectorizedArray<value_type> value_p = make_vectorized_array<value_type>(0.0);
 
@@ -118,23 +121,25 @@ inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
 }
 
 template<int dim, int fe_degree, typename value_type>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                             DiffusiveOperator<dim, fe_degree, value_type>::calculate_gradient_flux(
-  VectorizedArray<value_type> const & normal_gradient_m,
-  VectorizedArray<value_type> const & normal_gradient_p,
-  VectorizedArray<value_type> const & jump_value,
-  VectorizedArray<value_type> const & penalty_parameter) const
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<value_type>
+  DiffusiveOperator<dim, fe_degree, value_type>::calculate_gradient_flux(
+    VectorizedArray<value_type> const & normal_gradient_m,
+    VectorizedArray<value_type> const & normal_gradient_p,
+    VectorizedArray<value_type> const & jump_value,
+    VectorizedArray<value_type> const & penalty_parameter) const
 {
   return diffusivity * 0.5 * (normal_gradient_m + normal_gradient_p) -
          diffusivity * penalty_parameter * jump_value;
 }
 
 template<int dim, int fe_degree, typename value_type>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                             DiffusiveOperator<dim, fe_degree, value_type>::calculate_interior_normal_gradient(
-  unsigned int const   q,
-  FEEvalFace const &   fe_eval,
-  OperatorType const & operator_type) const
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<value_type>
+  DiffusiveOperator<dim, fe_degree, value_type>::calculate_interior_normal_gradient(
+    unsigned int const   q,
+    FEEvalFace const &   fe_eval,
+    OperatorType const & operator_type) const
 {
   VectorizedArray<value_type> normal_gradient_m = make_vectorized_array<value_type>(0.0);
 
@@ -155,14 +160,15 @@ inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
 }
 
 template<int dim, int fe_degree, typename value_type>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                             DiffusiveOperator<dim, fe_degree, value_type>::calculate_exterior_normal_gradient(
-  VectorizedArray<value_type> const & normal_gradient_m,
-  unsigned int const                  q,
-  FEEvalFace const &                  fe_eval,
-  OperatorType const &                operator_type,
-  BoundaryType const &                boundary_type,
-  types::boundary_id const            boundary_id) const
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<value_type>
+  DiffusiveOperator<dim, fe_degree, value_type>::calculate_exterior_normal_gradient(
+    VectorizedArray<value_type> const & normal_gradient_m,
+    unsigned int const                  q,
+    FEEvalFace const &                  fe_eval,
+    OperatorType const &                operator_type,
+    BoundaryType const &                boundary_type,
+    types::boundary_id const            boundary_id) const
 {
   VectorizedArray<value_type> normal_gradient_p = make_vectorized_array<value_type>(0.0);
 

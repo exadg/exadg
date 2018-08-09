@@ -151,40 +151,46 @@ public:
                                                          this->operator_settings.dof_index);
   }
 
-  inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
-                               calculate_value_flux(VectorizedArray<Number> const & jump_value) const;
+  inline DEAL_II_ALWAYS_INLINE //
+    VectorizedArray<Number>
+    calculate_value_flux(VectorizedArray<Number> const & jump_value) const;
 
-  inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
-                               calculate_interior_value(unsigned int const   q,
-                                                        FEEvalFace const &   fe_eval,
-                                                        OperatorType const & operator_type) const;
+  inline DEAL_II_ALWAYS_INLINE //
+    VectorizedArray<Number>
+    calculate_interior_value(unsigned int const   q,
+                             FEEvalFace const &   fe_eval,
+                             OperatorType const & operator_type) const;
 
-  inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
-                               calculate_exterior_value(VectorizedArray<Number> const & value_m,
-                                                        unsigned int const              q,
-                                                        FEEvalFace const &              fe_eval,
-                                                        OperatorType const &            operator_type,
-                                                        BoundaryType const &            boundary_type,
-                                                        types::boundary_id const        boundary_id) const;
+  inline DEAL_II_ALWAYS_INLINE //
+    VectorizedArray<Number>
+    calculate_exterior_value(VectorizedArray<Number> const & value_m,
+                             unsigned int const              q,
+                             FEEvalFace const &              fe_eval,
+                             OperatorType const &            operator_type,
+                             BoundaryType const &            boundary_type,
+                             types::boundary_id const        boundary_id) const;
 
-  inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
-                               calculate_gradient_flux(VectorizedArray<Number> const & normal_gradient_m,
-                                                       VectorizedArray<Number> const & normal_gradient_p,
-                                                       VectorizedArray<Number> const & jump_value,
-                                                       VectorizedArray<Number> const & penalty_parameter) const;
+  inline DEAL_II_ALWAYS_INLINE //
+    VectorizedArray<Number>
+    calculate_gradient_flux(VectorizedArray<Number> const & normal_gradient_m,
+                            VectorizedArray<Number> const & normal_gradient_p,
+                            VectorizedArray<Number> const & jump_value,
+                            VectorizedArray<Number> const & penalty_parameter) const;
 
-  inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
-                               calculate_interior_normal_gradient(unsigned int const   q,
-                                                                  FEEvalFace const &   fe_eval,
-                                                                  OperatorType const & operator_type) const;
+  inline DEAL_II_ALWAYS_INLINE //
+    VectorizedArray<Number>
+    calculate_interior_normal_gradient(unsigned int const   q,
+                                       FEEvalFace const &   fe_eval,
+                                       OperatorType const & operator_type) const;
 
-  inline DEAL_II_ALWAYS_INLINE VectorizedArray<Number>
-                               calculate_exterior_normal_gradient(VectorizedArray<Number> const & normal_gradient_m,
-                                                                  unsigned int const              q,
-                                                                  FEEvalFace const &              fe_eval,
-                                                                  OperatorType const &            operator_type,
-                                                                  BoundaryType const &            boundary_type,
-                                                                  types::boundary_id const        boundary_id) const;
+  inline DEAL_II_ALWAYS_INLINE //
+    VectorizedArray<Number>
+    calculate_exterior_normal_gradient(VectorizedArray<Number> const & normal_gradient_m,
+                                       unsigned int const              q,
+                                       FEEvalFace const &              fe_eval,
+                                       OperatorType const &            operator_type,
+                                       BoundaryType const &            boundary_type,
+                                       types::boundary_id const        boundary_id) const;
 
   // static constants
   static const int DIM = Parent::DIM;

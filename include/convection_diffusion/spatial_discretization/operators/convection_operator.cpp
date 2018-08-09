@@ -19,11 +19,12 @@ ConvectiveOperator<dim, fe_degree, value_type>::initialize(
  *  using the central flux.
  */
 template<int dim, int fe_degree, typename value_type>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                             ConvectiveOperator<dim, fe_degree, value_type>::calculate_central_flux(
-  VectorizedArray<value_type> & value_m,
-  VectorizedArray<value_type> & value_p,
-  VectorizedArray<value_type> & normal_velocity) const
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<value_type>
+  ConvectiveOperator<dim, fe_degree, value_type>::calculate_central_flux(
+    VectorizedArray<value_type> & value_m,
+    VectorizedArray<value_type> & value_p,
+    VectorizedArray<value_type> & normal_velocity) const
 {
   VectorizedArray<value_type> average_value = 0.5 * (value_m + value_p);
   return normal_velocity * average_value;
@@ -34,11 +35,12 @@ inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
  *  using the Lax-Friedrichs flux.
  */
 template<int dim, int fe_degree, typename value_type>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                             ConvectiveOperator<dim, fe_degree, value_type>::calculate_lax_friedrichs_flux(
-  VectorizedArray<value_type> & value_m,
-  VectorizedArray<value_type> & value_p,
-  VectorizedArray<value_type> & normal_velocity) const
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<value_type>
+  ConvectiveOperator<dim, fe_degree, value_type>::calculate_lax_friedrichs_flux(
+    VectorizedArray<value_type> & value_m,
+    VectorizedArray<value_type> & value_p,
+    VectorizedArray<value_type> & normal_velocity) const
 {
   VectorizedArray<value_type> average_value = 0.5 * (value_m + value_p);
   VectorizedArray<value_type> jump_value    = value_m - value_p;
@@ -51,11 +53,12 @@ inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
  *  the type of the numerical flux depends on the specified input parameter.
  */
 template<int dim, int fe_degree, typename value_type>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                             ConvectiveOperator<dim, fe_degree, value_type>::calculate_flux(unsigned int const            q,
-                                                               FEEvalFace &                  fe_eval,
-                                                               VectorizedArray<value_type> & value_m,
-                                                               VectorizedArray<value_type> & value_p) const
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<value_type>
+  ConvectiveOperator<dim, fe_degree, value_type>::calculate_flux(unsigned int const            q,
+                                                                 FEEvalFace &                  fe_eval,
+                                                                 VectorizedArray<value_type> & value_m,
+                                                                 VectorizedArray<value_type> & value_p) const
 {
   VectorizedArray<value_type> flux = make_vectorized_array<value_type>(0.0);
 
@@ -71,7 +74,8 @@ inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
   {
     flux = calculate_central_flux(value_m, value_p, normal_velocity);
   }
-  else if(this->operator_settings.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+  else if(this->operator_settings.numerical_flux_formulation ==
+          NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
   {
     flux = calculate_lax_friedrichs_flux(value_m, value_p, normal_velocity);
   }
@@ -95,10 +99,11 @@ inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
  *  +-------------------------+----------------------+--------------------+
  */
 template<int dim, int fe_degree, typename value_type>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                             ConvectiveOperator<dim, fe_degree, value_type>::calculate_interior_value(unsigned int const   q,
-                                                                         FEEvalFace const &   fe_eval,
-                                                                         OperatorType const & op_type) const
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<value_type>
+  ConvectiveOperator<dim, fe_degree, value_type>::calculate_interior_value(unsigned int const   q,
+                                                                           FEEvalFace const &   fe_eval,
+                                                                           OperatorType const & op_type) const
 {
   if(op_type == OperatorType::full || op_type == OperatorType::homogeneous)
     return fe_eval.get_value(q);
@@ -111,14 +116,15 @@ inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
 }
 
 template<int dim, int fe_degree, typename value_type>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                             ConvectiveOperator<dim, fe_degree, value_type>::calculate_exterior_value(
-  VectorizedArray<value_type> const & value_m,
-  unsigned int const                  q,
-  FEEvalFace const &                  fe_eval,
-  OperatorType const &                operator_type,
-  BoundaryType const &                boundary_type,
-  types::boundary_id const            boundary_id) const
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<value_type>
+  ConvectiveOperator<dim, fe_degree, value_type>::calculate_exterior_value(
+    VectorizedArray<value_type> const & value_m,
+    unsigned int const                  q,
+    FEEvalFace const &                  fe_eval,
+    OperatorType const &                operator_type,
+    BoundaryType const &                boundary_type,
+    types::boundary_id const            boundary_id) const
 {
   VectorizedArray<value_type> value_p = make_vectorized_array<value_type>(0.0);
 
@@ -128,7 +134,7 @@ inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
     {
       VectorizedArray<value_type> g = make_vectorized_array<value_type>(0.0);
       typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-      it                                               = this->operator_settings.bc->dirichlet_bc.find(boundary_id);
+      it = this->operator_settings.bc->dirichlet_bc.find(boundary_id);
       Point<dim, VectorizedArray<value_type>> q_points = fe_eval.quadrature_point(q);
       evaluate_scalar_function(g, it->second, q_points, this->eval_time);
 

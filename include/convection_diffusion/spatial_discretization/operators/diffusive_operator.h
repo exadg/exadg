@@ -67,8 +67,9 @@ public:
   /*
    *  Calculation of "value_flux".
    */
-  inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                               calculate_value_flux(VectorizedArray<value_type> const & jump_value) const;
+  inline DEAL_II_ALWAYS_INLINE //
+    VectorizedArray<value_type>
+    calculate_value_flux(VectorizedArray<value_type> const & jump_value) const;
 
   /*
    *  The following two functions calculate the interior_value/exterior_value
@@ -85,18 +86,20 @@ public:
    *  | inhomogeneous operator  | phi⁻ = 0, phi⁺ = 2g  | phi⁻ = 0, phi⁺ = 0 |
    *  +-------------------------+----------------------+--------------------+
    */
-  inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                               calculate_interior_value(unsigned int const   q,
-                                                        FEEvalFace const &   fe_eval,
-                                                        OperatorType const & operator_type) const;
+  inline DEAL_II_ALWAYS_INLINE //
+    VectorizedArray<value_type>
+    calculate_interior_value(unsigned int const   q,
+                             FEEvalFace const &   fe_eval,
+                             OperatorType const & operator_type) const;
 
-  inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                               calculate_exterior_value(VectorizedArray<value_type> const & value_m,
-                                                        unsigned int const                  q,
-                                                        FEEvalFace const &                  fe_eval,
-                                                        OperatorType const &                operator_type,
-                                                        BoundaryType const &                boundary_type,
-                                                        types::boundary_id const            boundary_id) const;
+  inline DEAL_II_ALWAYS_INLINE //
+    VectorizedArray<value_type>
+    calculate_exterior_value(VectorizedArray<value_type> const & value_m,
+                             unsigned int const                  q,
+                             FEEvalFace const &                  fe_eval,
+                             OperatorType const &                operator_type,
+                             BoundaryType const &                boundary_type,
+                             types::boundary_id const            boundary_id) const;
 
   /*
    *  Calculation of gradient flux. Strictly speaking, this value is not a
@@ -105,11 +108,12 @@ public:
    * numerical_flux * normal,
    *  where normal denotes the normal vector of element e⁻.
    */
-  inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                               calculate_gradient_flux(VectorizedArray<value_type> const & normal_gradient_m,
-                                                       VectorizedArray<value_type> const & normal_gradient_p,
-                                                       VectorizedArray<value_type> const & jump_value,
-                                                       VectorizedArray<value_type> const & penalty_parameter) const;
+  inline DEAL_II_ALWAYS_INLINE //
+    VectorizedArray<value_type>
+    calculate_gradient_flux(VectorizedArray<value_type> const & normal_gradient_m,
+                            VectorizedArray<value_type> const & normal_gradient_p,
+                            VectorizedArray<value_type> const & jump_value,
+                            VectorizedArray<value_type> const & penalty_parameter) const;
 
   // clang-format off
   /*
@@ -138,18 +142,20 @@ public:
    *  +-------------------------+-------------------------------------+---------------------------------------+
    */
   // clang-format on
-  inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                               calculate_interior_normal_gradient(unsigned int const   q,
-                                                                  FEEvalFace const &   fe_eval,
-                                                                  OperatorType const & operator_type) const;
+  inline DEAL_II_ALWAYS_INLINE //
+    VectorizedArray<value_type>
+    calculate_interior_normal_gradient(unsigned int const   q,
+                                       FEEvalFace const &   fe_eval,
+                                       OperatorType const & operator_type) const;
 
-  inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                               calculate_exterior_normal_gradient(VectorizedArray<value_type> const & normal_gradient_m,
-                                                                  unsigned int const                  q,
-                                                                  FEEvalFace const &                  fe_eval,
-                                                                  OperatorType const &                operator_type,
-                                                                  BoundaryType const &                boundary_type,
-                                                                  types::boundary_id const            boundary_id) const;
+  inline DEAL_II_ALWAYS_INLINE //
+    VectorizedArray<value_type>
+    calculate_exterior_normal_gradient(VectorizedArray<value_type> const & normal_gradient_m,
+                                       unsigned int const                  q,
+                                       FEEvalFace const &                  fe_eval,
+                                       OperatorType const &                operator_type,
+                                       BoundaryType const &                boundary_type,
+                                       types::boundary_id const            boundary_id) const;
 
   void
   do_cell_integral(FEEvalCell & fe_eval) const;

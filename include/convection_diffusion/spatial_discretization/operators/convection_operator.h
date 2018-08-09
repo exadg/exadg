@@ -56,29 +56,32 @@ public:
    *  This function calculates the numerical flux for interior faces
    *  using the central flux.
    */
-  inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                               calculate_central_flux(VectorizedArray<value_type> & value_m,
-                                                      VectorizedArray<value_type> & value_p,
-                                                      VectorizedArray<value_type> & normal_velocity) const;
+  inline DEAL_II_ALWAYS_INLINE //
+    VectorizedArray<value_type>
+    calculate_central_flux(VectorizedArray<value_type> & value_m,
+                           VectorizedArray<value_type> & value_p,
+                           VectorizedArray<value_type> & normal_velocity) const;
 
   /*
    *  This function calculates the numerical flux for interior faces
    *  using the Lax-Friedrichs flux.
    */
-  inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                               calculate_lax_friedrichs_flux(VectorizedArray<value_type> & value_m,
-                                                             VectorizedArray<value_type> & value_p,
-                                                             VectorizedArray<value_type> & normal_velocity) const;
+  inline DEAL_II_ALWAYS_INLINE //
+    VectorizedArray<value_type>
+    calculate_lax_friedrichs_flux(VectorizedArray<value_type> & value_m,
+                                  VectorizedArray<value_type> & value_p,
+                                  VectorizedArray<value_type> & normal_velocity) const;
 
   /*
    *  This function calculates the numerical flux for interior faces where
    *  the type of the numerical flux depends on the specified input parameter.
    */
-  inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                               calculate_flux(unsigned int const            q,
-                                              FEEvalFace &                  phi_n,
-                                              VectorizedArray<value_type> & value_m,
-                                              VectorizedArray<value_type> & value_p) const;
+  inline DEAL_II_ALWAYS_INLINE //
+    VectorizedArray<value_type>
+    calculate_flux(unsigned int const            q,
+                   FEEvalFace &                  phi_n,
+                   VectorizedArray<value_type> & value_m,
+                   VectorizedArray<value_type> & value_p) const;
 
   /*
    *  The following two functions calculate the interior_value/exterior_value
@@ -95,18 +98,20 @@ public:
    *  | inhomogeneous operator  | phi⁻ = 0, phi⁺ = 2g  | phi⁻ = 0, phi⁺ = 0 |
    *  +-------------------------+----------------------+--------------------+
    */
-  inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                               calculate_interior_value(unsigned int const   q,
-                                                        FEEvalFace const &   phi_n,
-                                                        OperatorType const & op_type) const;
+  inline DEAL_II_ALWAYS_INLINE //
+    VectorizedArray<value_type>
+    calculate_interior_value(unsigned int const   q,
+                             FEEvalFace const &   phi_n,
+                             OperatorType const & op_type) const;
 
-  inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
-                               calculate_exterior_value(VectorizedArray<value_type> const & value_m,
-                                                        unsigned int const                  q,
-                                                        FEEvalFace const &                  phi_n,
-                                                        OperatorType const &                operator_type,
-                                                        BoundaryType const &                boundary_type,
-                                                        types::boundary_id const            boundary_id = types::boundary_id()) const;
+  inline DEAL_II_ALWAYS_INLINE //
+    VectorizedArray<value_type>
+    calculate_exterior_value(VectorizedArray<value_type> const & value_m,
+                             unsigned int const                  q,
+                             FEEvalFace const &                  phi_n,
+                             OperatorType const &                operator_type,
+                             BoundaryType const &                boundary_type,
+                             types::boundary_id const            boundary_id = types::boundary_id()) const;
 
   void
   do_cell_integral(FEEvalCell & phi) const;
