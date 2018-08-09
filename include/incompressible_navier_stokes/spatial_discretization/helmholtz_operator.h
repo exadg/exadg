@@ -77,7 +77,7 @@ public:
   void reinit (const DoFHandler<dim>                            &dof_handler,
                const Mapping<dim>                                &mapping,
                void * operator_data_in,
-               const MGConstrainedDoFs &/*mg_constrained_dofs*/,
+               const MGConstrainedDoFs & mg_constrained_dofs ,
                const unsigned int level);
 
   /*
@@ -104,7 +104,7 @@ public:
    *  IT is only necessary due to the interface of the multigrid preconditioner
    *  and especially the coarse grid solver that calls this function.
    */
-  void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const;
+  void apply_nullspace_projection(parallel::distributed::Vector<Number> & vec) const;
 
   /*
    *  Other function needed in order to apply geometric multigrid to this operator
