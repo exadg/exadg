@@ -79,39 +79,39 @@ public:
   inline DEAL_II_ALWAYS_INLINE //
     VectorizedArray<value_type>
     calculate_flux(unsigned int const            q,
-                   FEEvalFace &                  phi_n,
+                   FEEvalFace &                  fe_eval_m,
                    VectorizedArray<value_type> & value_m,
                    VectorizedArray<value_type> & value_p) const;
 
   inline DEAL_II_ALWAYS_INLINE //
     VectorizedArray<value_type>
     calculate_interior_value(unsigned int const   q,
-                             FEEvalFace const &   phi_n,
+                             FEEvalFace const &   fe_eval_m,
                              OperatorType const & operator_type) const;
 
   inline DEAL_II_ALWAYS_INLINE //
     VectorizedArray<value_type>
     calculate_exterior_value(VectorizedArray<value_type> const & value_m,
                              unsigned int const                  q,
-                             FEEvalFace const &                  phi_n,
+                             FEEvalFace const &                  fe_eval_m,
                              OperatorType const &                operator_type,
                              BoundaryType const &                boundary_type,
                              types::boundary_id const            boundary_id = types::boundary_id()) const;
 
   void
-  do_cell_integral(FEEvalCell & phi) const;
+  do_cell_integral(FEEvalCell & fe_eval) const;
 
   void
-  do_face_integral(FEEvalFace & phi_n, FEEvalFace & phi_p) const;
+  do_face_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
 
   void
-  do_face_int_integral(FEEvalFace & phi_n, FEEvalFace & /*phi_p*/) const;
+  do_face_int_integral(FEEvalFace & fe_eval_m, FEEvalFace & /*fe_eval_p*/) const;
 
   void
-  do_face_ext_integral(FEEvalFace & /*phi_n*/, FEEvalFace & phi_p) const;
+  do_face_ext_integral(FEEvalFace & /*fe_eval_m*/, FEEvalFace & fe_eval_p) const;
 
   void
-  do_boundary_integral(FEEvalFace &               phi_n,
+  do_boundary_integral(FEEvalFace &               fe_eval_m,
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
 };

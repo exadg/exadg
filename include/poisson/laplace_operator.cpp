@@ -763,18 +763,18 @@ LaplaceOperator<dim, degree, Number>::local_apply(
   const parallel::distributed::Vector<Number> & src,
   const std::pair<unsigned int, unsigned int> & cell_range) const
 {
-  FEEvaluation<dim, degree, degree + 1, 1, Number> phi(data,
+  FEEvaluation<dim, degree, degree + 1, 1, Number> fe_eval(data,
                                                        operator_data.laplace_dof_index,
                                                        operator_data.laplace_quad_index);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
-    phi.reinit(cell);
-    phi.read_dof_values(src);
+    fe_eval.reinit(cell);
+    fe_eval.read_dof_values(src);
 
-    do_cell_integral(phi);
+    do_cell_integral(fe_eval);
 
-    phi.distribute_local_to_global(dst);
+    fe_eval.distribute_local_to_global(dst);
   }
 }
 
@@ -1012,28 +1012,28 @@ LaplaceOperator<dim, degree, Number>::local_diagonal_cell(
   const unsigned int &,
   const std::pair<unsigned int, unsigned int> & cell_range) const
 {
-  FEEvaluation<dim, degree, degree + 1, 1, Number> phi(data,
+  FEEvaluation<dim, degree, degree + 1, 1, Number> fe_eval(data,
                                                        operator_data.laplace_dof_index,
                                                        operator_data.laplace_quad_index);
 
-  VectorizedArray<Number> local_diagonal_vector[phi.tensor_dofs_per_cell];
+  VectorizedArray<Number> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
-    phi.reinit(cell);
+    fe_eval.reinit(cell);
 
-    for(unsigned int i = 0; i < phi.dofs_per_cell; ++i)
+    for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
     {
-      for(unsigned int j = 0; j < phi.dofs_per_cell; ++j)
-        phi.begin_dof_values()[j] = VectorizedArray<Number>();
-      phi.begin_dof_values()[i] = 1.;
+      for(unsigned int j = 0; j < fe_eval.dofs_per_cell; ++j)
+        fe_eval.begin_dof_values()[j] = VectorizedArray<Number>();
+      fe_eval.begin_dof_values()[i] = 1.;
 
-      do_cell_integral(phi);
+      do_cell_integral(fe_eval);
 
-      local_diagonal_vector[i] = phi.begin_dof_values()[i];
+      local_diagonal_vector[i] = fe_eval.begin_dof_values()[i];
     }
-    for(unsigned int i = 0; i < phi.tensor_dofs_per_cell; ++i)
-      phi.begin_dof_values()[i] = local_diagonal_vector[i];
-    phi.distribute_local_to_global(dst);
+    for(unsigned int i = 0; i < fe_eval.tensor_dofs_per_cell; ++i)
+      fe_eval.begin_dof_values()[i] = local_diagonal_vector[i];
+    fe_eval.distribute_local_to_global(dst);
   }
 }
 
@@ -1046,37 +1046,37 @@ LaplaceOperator<dim, degree, Number>::local_diagonal_cell(
 //                     const std::pair<unsigned int,unsigned int>  &cell_range)
 //                     const
 //{
-//  FEEvaluation<dim,degree,degree+1,1,Number> phi (data,
+//  FEEvaluation<dim,degree,degree+1,1,Number> fe_eval (data,
 //                                                  operator_data.laplace_dof_index,
 //                                                  operator_data.laplace_quad_index);
 //
 //  std::vector<FullMatrix<Number>>
 //  matrices(data.n_macro_cells()*VectorizedArray<Number>::n_array_elements,
-//      FullMatrix<Number>(phi.dofs_per_cell, phi.dofs_per_cell));
-//  VectorizedArray<Number> local_diagonal_vector[phi.tensor_dofs_per_cell];
+//      FullMatrix<Number>(fe_eval.dofs_per_cell, fe_eval.dofs_per_cell));
+//  VectorizedArray<Number> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
 //  for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
 //    {
-//      phi.reinit (cell);
+//      fe_eval.reinit (cell);
 //
-//      for (unsigned int i=0; i<phi.dofs_per_cell; ++i)
+//      for (unsigned int i=0; i<fe_eval.dofs_per_cell; ++i)
 //        {
-//          for (unsigned int j=0; j<phi.dofs_per_cell; ++j)
-//            phi.begin_dof_values()[j] = VectorizedArray<Number>();
-//          phi.begin_dof_values()[i] = 1.;
-//          phi.evaluate (false,true,false);
-//          for (unsigned int q=0; q<phi.n_q_points; ++q)
-//            phi.submit_gradient (phi.get_gradient(q), q);
-//          phi.integrate (false,true);
-//          for (unsigned int j=0; j<phi.dofs_per_cell; ++j)
+//          for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
+//            fe_eval.begin_dof_values()[j] = VectorizedArray<Number>();
+//          fe_eval.begin_dof_values()[i] = 1.;
+//          fe_eval.evaluate (false,true,false);
+//          for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+//            fe_eval.submit_gradient (fe_eval.get_gradient(q), q);
+//          fe_eval.integrate (false,true);
+//          for (unsigned int j=0; j<fe_eval.dofs_per_cell; ++j)
 //            for (unsigned int v=0;
 //            v<VectorizedArray<Number>::n_array_elements; ++v)
 //              matrices[cell*VectorizedArray<Number>::n_array_elements+v](j,i)
-//              = phi.begin_dof_values()[j][v];
-//          local_diagonal_vector[i] = phi.begin_dof_values()[i];
+//              = fe_eval.begin_dof_values()[j][v];
+//          local_diagonal_vector[i] = fe_eval.begin_dof_values()[i];
 //        }
-//      for (unsigned int i=0; i<phi.tensor_dofs_per_cell; ++i)
-//        phi.begin_dof_values()[i] = local_diagonal_vector[i];
-//      phi.distribute_local_to_global (dst);
+//      for (unsigned int i=0; i<fe_eval.tensor_dofs_per_cell; ++i)
+//        fe_eval.begin_dof_values()[i] = local_diagonal_vector[i];
+//      fe_eval.distribute_local_to_global (dst);
 //    }
 //}
 
@@ -1092,86 +1092,86 @@ LaplaceOperator<dim, degree, Number>::local_diagonal_face(
   if(data.get_dof_handler(operator_data.laplace_dof_index).get_fe().dofs_per_vertex > 0)
     return;
 
-  FEFaceEvaluation<dim, degree, degree + 1, 1, Number> phi(data,
+  FEFaceEvaluation<dim, degree, degree + 1, 1, Number> fe_eval(data,
                                                            true,
                                                            operator_data.laplace_dof_index,
                                                            operator_data.laplace_quad_index);
-  FEFaceEvaluation<dim, degree, degree + 1, 1, Number> phi_outer(data,
+  FEFaceEvaluation<dim, degree, degree + 1, 1, Number> fe_eval_outer(data,
                                                                  false,
                                                                  operator_data.laplace_dof_index,
                                                                  operator_data.laplace_quad_index);
 
-  VectorizedArray<Number> local_diagonal_vector[phi.tensor_dofs_per_cell];
+  VectorizedArray<Number> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    phi.reinit(face);
-    phi_outer.reinit(face);
+    fe_eval.reinit(face);
+    fe_eval_outer.reinit(face);
 
-    VectorizedArray<Number> sigmaF = std::max(phi.read_cell_data(array_penalty_parameter),
-                                              phi_outer.read_cell_data(array_penalty_parameter)) *
+    VectorizedArray<Number> sigmaF = std::max(fe_eval.read_cell_data(array_penalty_parameter),
+                                              fe_eval_outer.read_cell_data(array_penalty_parameter)) *
                                      IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
 
     // element-
-    for(unsigned int j = 0; j < phi.dofs_per_cell; ++j)
-      phi_outer.begin_dof_values()[j] = VectorizedArray<Number>();
-    phi_outer.evaluate(true, true);
-    for(unsigned int i = 0; i < phi.dofs_per_cell; ++i)
+    for(unsigned int j = 0; j < fe_eval.dofs_per_cell; ++j)
+      fe_eval_outer.begin_dof_values()[j] = VectorizedArray<Number>();
+    fe_eval_outer.evaluate(true, true);
+    for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
     {
-      for(unsigned int j = 0; j < phi.dofs_per_cell; ++j)
-        phi.begin_dof_values()[j] = VectorizedArray<Number>();
-      phi.begin_dof_values()[i] = 1.;
-      phi.evaluate(true, true);
+      for(unsigned int j = 0; j < fe_eval.dofs_per_cell; ++j)
+        fe_eval.begin_dof_values()[j] = VectorizedArray<Number>();
+      fe_eval.begin_dof_values()[i] = 1.;
+      fe_eval.evaluate(true, true);
 
-      for(unsigned int q = 0; q < phi.n_q_points; ++q)
+      for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
       {
-        VectorizedArray<Number> valueM = phi.get_value(q);
-        VectorizedArray<Number> valueP = phi_outer.get_value(q);
+        VectorizedArray<Number> valueM = fe_eval.get_value(q);
+        VectorizedArray<Number> valueP = fe_eval_outer.get_value(q);
 
         VectorizedArray<Number> jump_value = valueM - valueP;
         VectorizedArray<Number> average_gradient =
-          (phi.get_normal_gradient(q) + phi_outer.get_normal_gradient(q)) * 0.5;
+          (fe_eval.get_normal_gradient(q) + fe_eval_outer.get_normal_gradient(q)) * 0.5;
         average_gradient = average_gradient - jump_value * sigmaF;
 
-        phi.submit_normal_gradient(-0.5 * jump_value, q);
-        phi.submit_value(-average_gradient, q);
+        fe_eval.submit_normal_gradient(-0.5 * jump_value, q);
+        fe_eval.submit_value(-average_gradient, q);
       }
-      phi.integrate(true, true);
-      local_diagonal_vector[i] = phi.begin_dof_values()[i];
+      fe_eval.integrate(true, true);
+      local_diagonal_vector[i] = fe_eval.begin_dof_values()[i];
     }
-    for(unsigned int i = 0; i < phi.dofs_per_cell; ++i)
-      phi.begin_dof_values()[i] = local_diagonal_vector[i];
-    phi.distribute_local_to_global(dst);
+    for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
+      fe_eval.begin_dof_values()[i] = local_diagonal_vector[i];
+    fe_eval.distribute_local_to_global(dst);
 
     // neighbor (element+)
-    for(unsigned int j = 0; j < phi.dofs_per_cell; ++j)
-      phi.begin_dof_values()[j] = VectorizedArray<Number>();
-    phi.evaluate(true, true);
-    for(unsigned int i = 0; i < phi.dofs_per_cell; ++i)
+    for(unsigned int j = 0; j < fe_eval.dofs_per_cell; ++j)
+      fe_eval.begin_dof_values()[j] = VectorizedArray<Number>();
+    fe_eval.evaluate(true, true);
+    for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
     {
-      for(unsigned int j = 0; j < phi.dofs_per_cell; ++j)
-        phi_outer.begin_dof_values()[j] = VectorizedArray<Number>();
-      phi_outer.begin_dof_values()[i] = 1.;
-      phi_outer.evaluate(true, true);
+      for(unsigned int j = 0; j < fe_eval.dofs_per_cell; ++j)
+        fe_eval_outer.begin_dof_values()[j] = VectorizedArray<Number>();
+      fe_eval_outer.begin_dof_values()[i] = 1.;
+      fe_eval_outer.evaluate(true, true);
 
-      for(unsigned int q = 0; q < phi.n_q_points; ++q)
+      for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
       {
-        VectorizedArray<Number> valueM = phi.get_value(q);
-        VectorizedArray<Number> valueP = phi_outer.get_value(q);
+        VectorizedArray<Number> valueM = fe_eval.get_value(q);
+        VectorizedArray<Number> valueP = fe_eval_outer.get_value(q);
 
         VectorizedArray<Number> jump_value = valueM - valueP;
         VectorizedArray<Number> average_gradient =
-          (phi.get_normal_gradient(q) + phi_outer.get_normal_gradient(q)) * 0.5;
+          (fe_eval.get_normal_gradient(q) + fe_eval_outer.get_normal_gradient(q)) * 0.5;
         average_gradient = average_gradient - jump_value * sigmaF;
 
-        phi_outer.submit_normal_gradient(-0.5 * jump_value, q);
-        phi_outer.submit_value(average_gradient, q);
+        fe_eval_outer.submit_normal_gradient(-0.5 * jump_value, q);
+        fe_eval_outer.submit_value(average_gradient, q);
       }
-      phi_outer.integrate(true, true);
-      local_diagonal_vector[i] = phi_outer.begin_dof_values()[i];
+      fe_eval_outer.integrate(true, true);
+      local_diagonal_vector[i] = fe_eval_outer.begin_dof_values()[i];
     }
-    for(unsigned int i = 0; i < phi.dofs_per_cell; ++i)
-      phi_outer.begin_dof_values()[i] = local_diagonal_vector[i];
-    phi_outer.distribute_local_to_global(dst);
+    for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
+      fe_eval_outer.begin_dof_values()[i] = local_diagonal_vector[i];
+    fe_eval_outer.distribute_local_to_global(dst);
   }
 }
 
@@ -1187,43 +1187,43 @@ LaplaceOperator<dim, degree, Number>::local_diagonal_boundary(
   if(data.get_dof_handler(operator_data.laplace_dof_index).get_fe().dofs_per_vertex > 0)
     return;
 
-  FEFaceEvaluation<dim, degree, degree + 1, 1, Number> phi(data,
+  FEFaceEvaluation<dim, degree, degree + 1, 1, Number> fe_eval(data,
                                                            true,
                                                            operator_data.laplace_dof_index,
                                                            operator_data.laplace_quad_index);
 
-  VectorizedArray<Number> local_diagonal_vector[phi.tensor_dofs_per_cell];
+  VectorizedArray<Number> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    phi.reinit(face);
+    fe_eval.reinit(face);
 
-    VectorizedArray<Number> sigmaF = phi.read_cell_data(array_penalty_parameter) *
+    VectorizedArray<Number> sigmaF = fe_eval.read_cell_data(array_penalty_parameter) *
                                      IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
 
     typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
     types::boundary_id boundary_id = data.get_boundary_id(face);
 
-    for(unsigned int i = 0; i < phi.dofs_per_cell; ++i)
+    for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
     {
-      for(unsigned int j = 0; j < phi.dofs_per_cell; ++j)
-        phi.begin_dof_values()[j] = VectorizedArray<Number>();
-      phi.begin_dof_values()[i] = 1.;
-      phi.evaluate(true, true);
+      for(unsigned int j = 0; j < fe_eval.dofs_per_cell; ++j)
+        fe_eval.begin_dof_values()[j] = VectorizedArray<Number>();
+      fe_eval.begin_dof_values()[i] = 1.;
+      fe_eval.evaluate(true, true);
 
-      for(unsigned int q = 0; q < phi.n_q_points; ++q)
+      for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
       {
         it = operator_data.bc->dirichlet.find(boundary_id);
         if(it != operator_data.bc->dirichlet.end())
         {
           // set value to zero, i.e. u+ = - u- , grad+ = grad-
-          VectorizedArray<Number> valueM = phi.get_value(q);
+          VectorizedArray<Number> valueM = fe_eval.get_value(q);
 
           VectorizedArray<Number> jump_value       = 2.0 * valueM;
-          VectorizedArray<Number> average_gradient = phi.get_normal_gradient(q);
+          VectorizedArray<Number> average_gradient = fe_eval.get_normal_gradient(q);
           average_gradient                         = average_gradient - jump_value * sigmaF;
 
-          phi.submit_normal_gradient(-0.5 * jump_value, q);
-          phi.submit_value(-average_gradient, q);
+          fe_eval.submit_normal_gradient(-0.5 * jump_value, q);
+          fe_eval.submit_value(-average_gradient, q);
         }
 
         it = operator_data.bc->neumann.find(boundary_id);
@@ -1235,17 +1235,17 @@ LaplaceOperator<dim, degree, Number>::local_diagonal_boundary(
           VectorizedArray<Number> average_gradient = make_vectorized_array<Number>(0.0);
           average_gradient                         = average_gradient - jump_value * sigmaF;
 
-          phi.submit_normal_gradient(-0.5 * jump_value, q);
-          phi.submit_value(-average_gradient, q);
+          fe_eval.submit_normal_gradient(-0.5 * jump_value, q);
+          fe_eval.submit_value(-average_gradient, q);
         }
       }
 
-      phi.integrate(true, true);
-      local_diagonal_vector[i] = phi.begin_dof_values()[i];
+      fe_eval.integrate(true, true);
+      local_diagonal_vector[i] = fe_eval.begin_dof_values()[i];
     }
-    for(unsigned int i = 0; i < phi.dofs_per_cell; ++i)
-      phi.begin_dof_values()[i] = local_diagonal_vector[i];
-    phi.distribute_local_to_global(dst);
+    for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
+      fe_eval.begin_dof_values()[i] = local_diagonal_vector[i];
+    fe_eval.distribute_local_to_global(dst);
   }
 }
 
@@ -1272,26 +1272,26 @@ LaplaceOperator<dim, degree, Number>::cell_loop_calculate_block_jacobi_matrices(
   const parallel::distributed::Vector<Number> &,
   const std::pair<unsigned int, unsigned int> & cell_range) const
 {
-  FEEvaluation<dim, degree, degree + 1, 1, Number> phi(data,
+  FEEvaluation<dim, degree, degree + 1, 1, Number> fe_eval(data,
                                                        operator_data.laplace_dof_index,
                                                        operator_data.laplace_quad_index);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
-    phi.reinit(cell);
+    fe_eval.reinit(cell);
 
-    for(unsigned int j = 0; j < phi.dofs_per_cell; ++j)
+    for(unsigned int j = 0; j < fe_eval.dofs_per_cell; ++j)
     {
-      for(unsigned int i = 0; i < phi.dofs_per_cell; ++i)
-        phi.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-      phi.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+      for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
+        fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+      fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
-      do_cell_integral(phi);
+      do_cell_integral(fe_eval);
 
-      for(unsigned int i = 0; i < phi.dofs_per_cell; ++i)
+      for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
         for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
           matrices[cell * VectorizedArray<Number>::n_array_elements + v](i, j) +=
-            phi.begin_dof_values()[i][v];
+            fe_eval.begin_dof_values()[i][v];
     }
   }
 }
@@ -1304,11 +1304,11 @@ LaplaceOperator<dim, degree, Number>::face_loop_calculate_block_jacobi_matrices(
   const parallel::distributed::Vector<Number> &,
   const std::pair<unsigned int, unsigned int> & face_range) const
 {
-  FEFaceEvaluation<dim, degree, degree + 1, 1, Number> phi(data,
+  FEFaceEvaluation<dim, degree, degree + 1, 1, Number> fe_eval(data,
                                                            true,
                                                            operator_data.laplace_dof_index,
                                                            operator_data.laplace_quad_index);
-  FEFaceEvaluation<dim, degree, degree + 1, 1, Number> phi_outer(data,
+  FEFaceEvaluation<dim, degree, degree + 1, 1, Number> fe_eval_outer(data,
                                                                  false,
                                                                  operator_data.laplace_dof_index,
                                                                  operator_data.laplace_quad_index);
@@ -1316,41 +1316,41 @@ LaplaceOperator<dim, degree, Number>::face_loop_calculate_block_jacobi_matrices(
   // Perform face intergrals for element e⁻.
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    phi.reinit(face);
-    phi_outer.reinit(face);
+    fe_eval.reinit(face);
+    fe_eval_outer.reinit(face);
 
-    VectorizedArray<Number> sigmaF = std::max(phi.read_cell_data(array_penalty_parameter),
-                                              phi_outer.read_cell_data(array_penalty_parameter)) *
+    VectorizedArray<Number> sigmaF = std::max(fe_eval.read_cell_data(array_penalty_parameter),
+                                              fe_eval_outer.read_cell_data(array_penalty_parameter)) *
                                      IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
 
-    for(unsigned int j = 0; j < phi.dofs_per_cell; ++j)
+    for(unsigned int j = 0; j < fe_eval.dofs_per_cell; ++j)
     {
       // set dof value j of element- to 1 and all other dof values of element-
       // to zero
-      for(unsigned int i = 0; i < phi.dofs_per_cell; ++i)
-        phi.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-      phi.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+      for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
+        fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+      fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
-      phi.evaluate(true, true);
+      fe_eval.evaluate(true, true);
 
-      for(unsigned int q = 0; q < phi.n_q_points; ++q)
+      for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
       {
-        VectorizedArray<Number> jump_value       = phi.get_value(q);
-        VectorizedArray<Number> average_gradient = 0.5 * phi.get_normal_gradient(q);
+        VectorizedArray<Number> jump_value       = fe_eval.get_value(q);
+        VectorizedArray<Number> average_gradient = 0.5 * fe_eval.get_normal_gradient(q);
         average_gradient                         = average_gradient - jump_value * sigmaF;
 
-        phi.submit_normal_gradient(-0.5 * jump_value, q);
-        phi.submit_value(-average_gradient, q);
+        fe_eval.submit_normal_gradient(-0.5 * jump_value, q);
+        fe_eval.submit_value(-average_gradient, q);
       }
 
-      phi.integrate(true, true);
+      fe_eval.integrate(true, true);
 
       for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
       {
         const unsigned int cell_number = data.get_face_info(face).cells_interior[v];
         if(cell_number != numbers::invalid_unsigned_int)
-          for(unsigned int i = 0; i < phi.dofs_per_cell; ++i)
-            matrices[cell_number](i, j) += phi.begin_dof_values()[i][v];
+          for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
+            matrices[cell_number](i, j) += fe_eval.begin_dof_values()[i][v];
       }
     }
   }
@@ -1360,42 +1360,42 @@ LaplaceOperator<dim, degree, Number>::face_loop_calculate_block_jacobi_matrices(
   // Perform face intergrals for element e⁺.
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    phi.reinit(face);
-    phi_outer.reinit(face);
+    fe_eval.reinit(face);
+    fe_eval_outer.reinit(face);
 
-    VectorizedArray<Number> sigmaF = std::max(phi.read_cell_data(array_penalty_parameter),
-                                              phi_outer.read_cell_data(array_penalty_parameter)) *
+    VectorizedArray<Number> sigmaF = std::max(fe_eval.read_cell_data(array_penalty_parameter),
+                                              fe_eval_outer.read_cell_data(array_penalty_parameter)) *
                                      IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
 
-    for(unsigned int j = 0; j < phi_outer.dofs_per_cell; ++j)
+    for(unsigned int j = 0; j < fe_eval_outer.dofs_per_cell; ++j)
     {
       // set dof value j of element+ to 1 and all other dof values of element+
       // to zero
-      for(unsigned int i = 0; i < phi_outer.dofs_per_cell; ++i)
-        phi_outer.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-      phi_outer.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+      for(unsigned int i = 0; i < fe_eval_outer.dofs_per_cell; ++i)
+        fe_eval_outer.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+      fe_eval_outer.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
-      phi_outer.evaluate(true, true);
+      fe_eval_outer.evaluate(true, true);
 
-      for(unsigned int q = 0; q < phi.n_q_points; ++q)
+      for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
       {
-        VectorizedArray<Number> jump_value = phi_outer.get_value(q);
+        VectorizedArray<Number> jump_value = fe_eval_outer.get_value(q);
         // minus sign to get the correct normal vector n⁺ = -n⁻
-        VectorizedArray<Number> average_gradient = -0.5 * phi_outer.get_normal_gradient(q);
+        VectorizedArray<Number> average_gradient = -0.5 * fe_eval_outer.get_normal_gradient(q);
         average_gradient                         = average_gradient - jump_value * sigmaF;
 
         // plus sign since n⁺ = -n⁻
-        phi_outer.submit_normal_gradient(0.5 * jump_value, q);
-        phi_outer.submit_value(-average_gradient, q);
+        fe_eval_outer.submit_normal_gradient(0.5 * jump_value, q);
+        fe_eval_outer.submit_value(-average_gradient, q);
       }
-      phi_outer.integrate(true, true);
+      fe_eval_outer.integrate(true, true);
 
       for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
       {
         const unsigned int cell_number = data.get_face_info(face).cells_exterior[v];
         if(cell_number != numbers::invalid_unsigned_int)
-          for(unsigned int i = 0; i < phi_outer.dofs_per_cell; ++i)
-            matrices[cell_number](i, j) += phi_outer.begin_dof_values()[i][v];
+          for(unsigned int i = 0; i < fe_eval_outer.dofs_per_cell; ++i)
+            matrices[cell_number](i, j) += fe_eval_outer.begin_dof_values()[i][v];
       }
     }
   }
@@ -1412,45 +1412,45 @@ LaplaceOperator<dim, degree, Number>::boundary_face_loop_calculate_block_jacobi_
   const parallel::distributed::Vector<Number> &,
   const std::pair<unsigned int, unsigned int> & face_range) const
 {
-  FEFaceEvaluation<dim, degree, degree + 1, 1, Number> phi(data,
+  FEFaceEvaluation<dim, degree, degree + 1, 1, Number> fe_eval(data,
                                                            true,
                                                            operator_data.laplace_dof_index,
                                                            operator_data.laplace_quad_index);
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    phi.reinit(face);
+    fe_eval.reinit(face);
 
-    VectorizedArray<Number> sigmaF = phi.read_cell_data(array_penalty_parameter) *
+    VectorizedArray<Number> sigmaF = fe_eval.read_cell_data(array_penalty_parameter) *
                                      IP::get_penalty_factor<Number>(degree, operator_data.penalty_factor);
 
     typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
     types::boundary_id boundary_id = data.get_boundary_id(face);
 
-    for(unsigned int j = 0; j < phi.dofs_per_cell; ++j)
+    for(unsigned int j = 0; j < fe_eval.dofs_per_cell; ++j)
     {
       // set dof value j of element- to 1 and all other dof values of element-
       // to zero
-      for(unsigned int i = 0; i < phi.dofs_per_cell; ++i)
-        phi.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-      phi.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+      for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
+        fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+      fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
-      phi.evaluate(true, true);
+      fe_eval.evaluate(true, true);
 
-      for(unsigned int q = 0; q < phi.n_q_points; ++q)
+      for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
       {
         it = operator_data.bc->dirichlet.find(boundary_id);
         if(it != operator_data.bc->dirichlet.end())
         {
           // set value to zero, i.e. u+ = - u- , grad+ = grad-
-          VectorizedArray<Number> valueM = phi.get_value(q);
+          VectorizedArray<Number> valueM = fe_eval.get_value(q);
 
           VectorizedArray<Number> jump_value       = 2.0 * valueM;
-          VectorizedArray<Number> average_gradient = phi.get_normal_gradient(q);
+          VectorizedArray<Number> average_gradient = fe_eval.get_normal_gradient(q);
           average_gradient                         = average_gradient - jump_value * sigmaF;
 
-          phi.submit_normal_gradient(-0.5 * jump_value, q);
-          phi.submit_value(-average_gradient, q);
+          fe_eval.submit_normal_gradient(-0.5 * jump_value, q);
+          fe_eval.submit_value(-average_gradient, q);
         }
 
         it = operator_data.bc->neumann.find(boundary_id);
@@ -1462,19 +1462,19 @@ LaplaceOperator<dim, degree, Number>::boundary_face_loop_calculate_block_jacobi_
           VectorizedArray<Number> average_gradient = make_vectorized_array<Number>(0.0);
           average_gradient                         = average_gradient - jump_value * sigmaF;
 
-          phi.submit_normal_gradient(-0.5 * jump_value, q);
-          phi.submit_value(-average_gradient, q);
+          fe_eval.submit_normal_gradient(-0.5 * jump_value, q);
+          fe_eval.submit_value(-average_gradient, q);
         }
       }
 
-      phi.integrate(true, true);
+      fe_eval.integrate(true, true);
 
       for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
       {
         const unsigned int cell_number = data.get_face_info(face).cells_interior[v];
         if(cell_number != numbers::invalid_unsigned_int)
-          for(unsigned int i = 0; i < phi.dofs_per_cell; ++i)
-            matrices[cell_number](i, j) += phi.begin_dof_values()[i][v];
+          for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
+            matrices[cell_number](i, j) += fe_eval.begin_dof_values()[i][v];
       }
     }
   }

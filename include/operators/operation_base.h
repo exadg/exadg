@@ -342,22 +342,22 @@ protected:
    * methods to be overwritten
    */
   virtual void
-  do_cell_integral(FEEvalCell & /*phi*/) const
+  do_cell_integral(FEEvalCell & /*fe_eval*/) const
   {
     AssertThrow(false, ExcMessage("OperatorBase::do_cell_integral has not been implemented!"));
   }
   virtual void
-  do_face_integral(FEEvalFace & /*p_n*/, FEEvalFace & /*p_p*/) const
+  do_face_integral(FEEvalFace & /*fe_eval_m*/, FEEvalFace & /*fe_eval_p*/) const
   {
     AssertThrow(false, ExcMessage("OperatorBase::do_face_integral has not been implemented!"));
   }
   virtual void
-  do_face_int_integral(FEEvalFace & /*p_n*/, FEEvalFace & /*p_p*/) const
+  do_face_int_integral(FEEvalFace & /*fe_eval_m*/, FEEvalFace & /*fe_eval_p*/) const
   {
     AssertThrow(false, ExcMessage("OperatorBase::do_face_int_integral has not been implemented!"));
   }
   virtual void
-  do_face_ext_integral(FEEvalFace & /*p_n*/, FEEvalFace & /*p_p*/) const
+  do_face_ext_integral(FEEvalFace & /*fe_eval_m*/, FEEvalFace & /*fe_eval_p*/) const
   {
     AssertThrow(false, ExcMessage("OperatorBase::do_face_ext_integral has not been implemented!"));
   }
@@ -373,13 +373,13 @@ protected:
    * helper functions
    */
   void
-  create_standard_basis(unsigned int j, FEEvalCell & phi) const;
+  create_standard_basis(unsigned int j, FEEvalCell & fe_eval) const;
 
   void
-  create_standard_basis(unsigned int j, FEEvalFace & phi) const;
+  create_standard_basis(unsigned int j, FEEvalFace & fe_eval) const;
 
   void
-  create_standard_basis(unsigned int j, FEEvalFace & phi1, FEEvalFace & phi2) const;
+  create_standard_basis(unsigned int j, FEEvalFace & fe_eval1, FEEvalFace & fe_eval2) const;
 
   /*
    * functions to be called from matrix-free loops and cell_loops: vmult

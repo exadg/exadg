@@ -94,22 +94,22 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::restri
   const VectorType &                            src,
   const std::pair<unsigned int, unsigned int> & cell_range) const
 {
-  FEEvaluation<dim, fe_degree_1, fe_degree_2 + 1, 1, value_type> phi1(data_1);
-  FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, 1, value_type> phi2(data_2);
+  FEEvaluation<dim, fe_degree_1, fe_degree_2 + 1, 1, value_type> fe_eval1(data_1);
+  FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, 1, value_type> fe_eval2(data_2);
 
-  AlignedVector<VectorizedArray<Number>> temp1(std::max(phi1.n_q_points, phi2.n_q_points));
-  AlignedVector<VectorizedArray<Number>> temp2(std::max(phi1.n_q_points, phi2.n_q_points));
+  AlignedVector<VectorizedArray<Number>> temp1(std::max(fe_eval1.n_q_points, fe_eval2.n_q_points));
+  AlignedVector<VectorizedArray<Number>> temp2(std::max(fe_eval1.n_q_points, fe_eval2.n_q_points));
 
   // iterate over all macro cells ...
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     // ... set macro cell
-    phi1.reinit(cell);
-    phi2.reinit(cell);
+    fe_eval1.reinit(cell);
+    fe_eval2.reinit(cell);
 
     // ... gather dofs
-    phi1.read_dof_values(src);
-    phi2.read_dof_values(dst);
+    fe_eval1.read_dof_values(src);
+    fe_eval2.read_dof_values(dst);
 
     // ... interpolate
     if(dim == 2)
@@ -121,7 +121,7 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::restri
                                                fe_degree_1 + 1,
                                                VectorizedArray<Number>>
         eval_val(shape_values_prol, shape_values_prol, shape_values_prol);
-      eval_val.template values<1, false, false>(phi1.begin_dof_values(), temp2.begin());
+      eval_val.template values<1, false, false>(fe_eval1.begin_dof_values(), temp2.begin());
       eval_val.template values<0, false, false>(temp2.begin(), temp1.begin());
     }
     else
@@ -133,17 +133,17 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::restri
                                                fe_degree_1 + 1,
                                                VectorizedArray<Number>>
         eval_val(shape_values_prol, shape_values_prol, shape_values_prol);
-      eval_val.template values<2, false, false>(phi1.begin_dof_values(), temp1.begin());
+      eval_val.template values<2, false, false>(fe_eval1.begin_dof_values(), temp1.begin());
       eval_val.template values<1, false, false>(temp1.begin(), temp2.begin());
       eval_val.template values<0, false, false>(temp2.begin(), temp1.begin());
     }
 
-    // ... copy to phi2
-    for(unsigned int q = 0; q < phi2.dofs_per_cell; ++q)
-      phi2.begin_dof_values()[q] += temp1[q];
+    // ... copy to fe_eval2
+    for(unsigned int q = 0; q < fe_eval2.dofs_per_cell; ++q)
+      fe_eval2.begin_dof_values()[q] += temp1[q];
 
     // ... scatter dofs
-    phi2.set_dof_values(dst);
+    fe_eval2.set_dof_values(dst);
   }
 }
 
@@ -155,21 +155,21 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::prolon
   const VectorType &                            src,
   const std::pair<unsigned int, unsigned int> & cell_range) const
 {
-  FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, 1, value_type> phi1(data_1);
-  FEEvaluation<dim, fe_degree_2, fe_degree_1 + 1, 1, value_type> phi2(data_2);
+  FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, 1, value_type> fe_eval1(data_1);
+  FEEvaluation<dim, fe_degree_2, fe_degree_1 + 1, 1, value_type> fe_eval2(data_2);
 
-  AlignedVector<VectorizedArray<Number>> temp1(std::max(phi1.n_q_points, phi2.n_q_points));
-  AlignedVector<VectorizedArray<Number>> temp2(std::max(phi1.n_q_points, phi2.n_q_points));
+  AlignedVector<VectorizedArray<Number>> temp1(std::max(fe_eval1.n_q_points, fe_eval2.n_q_points));
+  AlignedVector<VectorizedArray<Number>> temp2(std::max(fe_eval1.n_q_points, fe_eval2.n_q_points));
 
   // iterate over all macro cells ...
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     // ... set macro cell
-    phi1.reinit(cell);
-    phi2.reinit(cell);
+    fe_eval1.reinit(cell);
+    fe_eval2.reinit(cell);
 
     // ... gather dofs
-    phi2.read_dof_values(src);
+    fe_eval2.read_dof_values(src);
 
     // ... interpolate
     if(dim == 2)
@@ -181,7 +181,7 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::prolon
                                                fe_degree_1 + 1,
                                                VectorizedArray<Number>>
         eval_val(shape_values_prol, shape_values_prol, shape_values_prol);
-      eval_val.template values<0, true, false>(phi2.begin_dof_values(), temp2.begin());
+      eval_val.template values<0, true, false>(fe_eval2.begin_dof_values(), temp2.begin());
       eval_val.template values<1, true, false>(temp2.begin(), temp1.begin());
     }
     else
@@ -193,17 +193,17 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::prolon
                                                fe_degree_1 + 1,
                                                VectorizedArray<Number>>
         eval_val(shape_values_prol, shape_values_prol, shape_values_prol);
-      eval_val.template values<0, true, false>(phi2.begin_dof_values(), temp1.begin());
+      eval_val.template values<0, true, false>(fe_eval2.begin_dof_values(), temp1.begin());
       eval_val.template values<1, true, false>(temp1.begin(), temp2.begin());
       eval_val.template values<2, true, false>(temp2.begin(), temp1.begin());
     }
 
-    // ... copy to phi2
-    for(unsigned int q = 0; q < phi2.n_q_points; ++q)
-      phi1.begin_dof_values()[q] = temp1[q];
+    // ... copy to fe_eval2
+    for(unsigned int q = 0; q < fe_eval2.n_q_points; ++q)
+      fe_eval1.begin_dof_values()[q] = temp1[q];
 
     // ... scatter dofs
-    phi1.set_dof_values(dst);
+    fe_eval1.set_dof_values(dst);
   }
 }
 
