@@ -87,7 +87,7 @@ public:
     VectorizedArray<value_type>
     calculate_interior_value(unsigned int const   q,
                              FEEvalFace const &   phi_n,
-                             OperatorType const & op_type) const;
+                             OperatorType const & operator_type) const;
 
   inline DEAL_II_ALWAYS_INLINE //
     VectorizedArray<value_type>

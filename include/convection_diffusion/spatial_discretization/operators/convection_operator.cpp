@@ -103,11 +103,11 @@ inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<value_type>
   ConvectiveOperator<dim, fe_degree, value_type>::calculate_interior_value(unsigned int const   q,
                                                                            FEEvalFace const &   fe_eval,
-                                                                           OperatorType const & op_type) const
+                                                                           OperatorType const & operator_type) const
 {
-  if(op_type == OperatorType::full || op_type == OperatorType::homogeneous)
+  if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
     return fe_eval.get_value(q);
-  else if(op_type == OperatorType::inhomogeneous)
+  else if(operator_type == OperatorType::inhomogeneous)
     return make_vectorized_array<value_type>(0.0);
   else
     AssertThrow(false, ExcMessage("Specified OpType is not implemented!"));
