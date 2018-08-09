@@ -153,7 +153,8 @@ inline DEAL_II_ALWAYS_INLINE //
     {
       VectorizedArray<Number> h = make_vectorized_array<Number>(0.0);
       typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-      it                                           = this->operator_settings.bc->neumann_bc.find(boundary_id);
+      it = this->operator_settings.bc->neumann_bc.find(boundary_id);
+
       Point<dim, VectorizedArray<Number>> q_points = fe_eval.quadrature_point(q);
       evaluate_scalar_function(h, it->second, q_points, this->eval_time);
 
