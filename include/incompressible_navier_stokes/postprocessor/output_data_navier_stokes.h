@@ -26,8 +26,11 @@ struct OutputDataMeanVelocity
     sample_every_timesteps(1)
   {}
 
-  void print(ConditionalOStream &pcout, bool /*unsteady*/)
+  void print(ConditionalOStream &pcout, bool unsteady)
   {
+    if(!unsteady)
+      return; // only print if unstready
+    
     print_parameter(pcout,"Calculate mean velocity", calculate);
     print_parameter(pcout,"  Sample start time", sample_start_time);
     print_parameter(pcout,"  Sample end time", sample_end_time);
@@ -66,6 +69,8 @@ struct OutputDataNavierStokes : public OutputData
     print_parameter(pcout,"Write streamfunction", write_streamfunction);
     print_parameter(pcout,"Write Q criterion", write_q_criterion);
     print_parameter(pcout,"Write processor ID", write_processor_id);
+    
+    mean_velocity.print(pcout, unsteady);
   }
 
   // write divergence of velocity field
