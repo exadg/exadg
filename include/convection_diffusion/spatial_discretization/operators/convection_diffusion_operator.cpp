@@ -178,7 +178,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::vmult(
 
   if(this->operator_settings.convective_problem == true)
   {
-    convective_operator->apply_add(dst, src, this->get_evaluation_time());
+    convective_operator->apply_add(dst, src, this->eval_time);
   }
 }
 
@@ -207,7 +207,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::vmult_add(
 
   if(this->operator_settings.convective_problem == true)
   {
-    convective_operator->apply_add(dst, src, this->get_evaluation_time());
+    convective_operator->apply_add(dst, src, this->eval_time);
   }
 }
 
@@ -238,7 +238,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_diagonal(
 
   if(this->operator_settings.convective_problem == true)
   {
-    convective_operator->add_diagonal(diagonal, this->get_evaluation_time());
+    convective_operator->add_diagonal(diagonal, this->eval_time);
   }
 }
 
