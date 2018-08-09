@@ -181,7 +181,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::vmult_add(VNumber & dst, VNum
     actual_src = &tmp_projection_vector;
   }
 
-  if(do_eval_faces && is_dg)
+  if(is_dg && do_eval_faces)
     data->loop(
       &This::local_apply_cell, &This::local_apply_face, &This::local_apply_boundary, this, dst, *actual_src);
   else
@@ -280,7 +280,7 @@ void
 OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VNumber & diagonal) const
 {
   // compute diagonal (not regarding: mean value constraint and constraints)
-  if(do_eval_faces && is_dg)
+  if(is_dg && do_eval_faces)
     if(operator_settings.use_cell_based_loops)
       data->cell_loop(&This::local_apply_cell_diagonal_cell_based, this, diagonal, diagonal);
     else
@@ -546,9 +546,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::initialize_dof_vector(VNumber
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::set_evaluation_time(double const evaluation_time_in) const
+OperatorBase<dim, degree, Number, AdditionalData>::set_evaluation_time(double const time) const
 {
-  eval_time = evaluation_time_in;
+  eval_time = time;
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
@@ -1187,9 +1187,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_cell_block_diagon
       auto bid = bids[0];
 
       // check if internal or boundary face
-      if(bid == numbers::internal_face_boundary_id)
+      if(bid == numbers::internal_face_boundary_id) // internal face
       {
-        // internal face
         for(unsigned int j = 0; j < dofs_per_cell; ++j)
         {
           // write standard basis into dof values of FEEvaluation
@@ -1203,9 +1202,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_cell_block_diagon
               dst[cell * v_len + v](i, j) += phi_n.begin_dof_values()[i][v];
         }
       }
-      else
+      else // boundary face
       {
-        // boundary face
         for(unsigned int j = 0; j < dofs_per_cell; ++j)
         {
           // write standard basis into dof values of FEEvaluation
