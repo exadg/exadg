@@ -592,7 +592,6 @@ private:
       // is singular or not
       laplace_operator_data.operator_is_singular = underlying_operator->param.pure_dirichlet_bc;
 
-      // TODO: replace LaplaceBoundaryDescriptor by Laplace::BoundaryDescriptor<dim>
       auto boundary_descriptor = std::shared_ptr<Laplace::BoundaryDescriptor<dim>>(new Laplace::BoundaryDescriptor<dim>());
       boundary_descriptor->dirichlet_bc = underlying_operator->boundary_descriptor_laplace->dirichlet;
       boundary_descriptor->neumann_bc   = underlying_operator->boundary_descriptor_laplace->neumann;
