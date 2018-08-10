@@ -68,9 +68,55 @@ public:
   {
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
     pcout << std::endl << "Setup solver ..." << std::endl;
+    
+    // convection-diffusion operator
+    ConvDiff::ConvectionDiffusionOperatorData<dim> conv_diff_operator_data;
+    conv_diff_operator_data.mass_matrix_operator_data           = mass_matrix_operator.get_operator_data();
+    conv_diff_operator_data.convective_operator_data            = convective_operator.get_operator_data();
+    conv_diff_operator_data.diffusive_operator_data             = diffusive_operator.get_operator_data();
+    conv_diff_operator_data.scaling_factor_time_derivative_term = scaling_factor_time_derivative_term_in;
 
-    // scaling factor of time derivative term has to be set before initializing preconditioners
-    conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term_in);
+    if(this->param.problem_type == ConvDiff::ProblemType::Unsteady)
+    {
+      conv_diff_operator_data.unsteady_problem = true;
+    }
+    else
+    {
+      conv_diff_operator_data.unsteady_problem = false;
+    }
+
+    if(this->param.equation_type == ConvDiff::EquationType::Diffusion ||
+       this->param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
+    {
+      conv_diff_operator_data.diffusive_problem = true;
+    }
+    else
+    {
+      conv_diff_operator_data.diffusive_problem = false;
+    }
+
+    if((this->param.equation_type == ConvDiff::EquationType::Convection ||
+        this->param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
+        &&
+       this->param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::Implicit)
+    {
+      conv_diff_operator_data.convective_problem = true;
+    }
+    else
+    {
+      conv_diff_operator_data.convective_problem = false;
+    }
+
+    conv_diff_operator_data.dof_index = 0;
+
+    conv_diff_operator_data.mg_operator_type = param.mg_operator_type;
+    conv_diff_operator_data.bc = boundary_descriptor;
+
+    conv_diff_operator.initialize(data,
+                                  conv_diff_operator_data,
+                                  mass_matrix_operator,
+                                  convective_operator,
+                                  diffusive_operator);
 
     // initialize preconditioner
     if(param.preconditioner == ConvDiff::Preconditioner::InverseMassMatrix)
@@ -403,12 +449,6 @@ private:
     diffusive_operator_data.diffusivity = param.diffusivity;
     diffusive_operator_data.bc = boundary_descriptor;
     diffusive_operator.initialize(mapping,data,diffusive_operator_data);
-    
-    // convection-diffusion operator
-    ConvDiff::ConvectionDiffusionOperatorData<dim> conv_diff_operator_data;
-    conv_diff_operator_data.mass_matrix_operator_data = mass_matrix_operator_data;
-    conv_diff_operator_data.convective_operator_data  = convective_operator_data;
-    conv_diff_operator_data.diffusive_operator_data   = diffusive_operator_data;
 
     // rhs operator
     ConvDiff::RHSOperatorData<dim> rhs_operator_data;
@@ -416,51 +456,7 @@ private:
     rhs_operator_data.quad_index = 0;
     rhs_operator_data.rhs = field_functions->right_hand_side;
     rhs_operator.initialize(data,rhs_operator_data);
-
-    if(this->param.problem_type == ConvDiff::ProblemType::Unsteady)
-    {
-      conv_diff_operator_data.unsteady_problem = true;
-    }
-    else
-    {
-      conv_diff_operator_data.unsteady_problem = false;
-    }
-
-    if(this->param.equation_type == ConvDiff::EquationType::Diffusion ||
-       this->param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
-    {
-      conv_diff_operator_data.diffusive_problem = true;
-    }
-    else
-    {
-      conv_diff_operator_data.diffusive_problem = false;
-    }
-
-    if((this->param.equation_type == ConvDiff::EquationType::Convection ||
-        this->param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
-        &&
-       this->param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::Implicit)
-    {
-      conv_diff_operator_data.convective_problem = true;
-    }
-    else
-    {
-      conv_diff_operator_data.convective_problem = false;
-    }
-
-    conv_diff_operator_data.dof_index = 0;
-
-    conv_diff_operator_data.mg_operator_type = param.mg_operator_type;
-    conv_diff_operator_data.bc = boundary_descriptor;
-
-    conv_diff_operator.initialize(data,
-                                  conv_diff_operator_data,
-                                  mass_matrix_operator,
-                                  convective_operator,
-                                  diffusive_operator);
-
-
-
+    
     // convection-diffusion operator (efficient implementation, only for explicit time integration, includes also rhs operator)
     ConvDiff::ConvectionDiffusionOperatorDataEfficiency<dim,value_type> conv_diff_operator_data_eff;
     conv_diff_operator_data_eff.conv_data = convective_operator_data;

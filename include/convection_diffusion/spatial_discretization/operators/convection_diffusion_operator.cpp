@@ -23,6 +23,9 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::initialize(
   this->mass_matrix_operator.reinit(mass_matrix_operator_in);
   this->convective_operator.reinit(convective_operator_in);
   this->diffusive_operator.reinit(diffusive_operator_in);
+  
+  // mass matrix term: set scaling factor time derivative term
+  this->scaling_factor_time_derivative_term = this->operator_settings.scaling_factor_time_derivative_term;
 }
 
 template<int dim, int fe_degree, typename Number>
@@ -92,7 +95,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(const DoFHandler<dim
   // Initialize other variables:
 
   // mass matrix term: set scaling factor time derivative term
-  // set_scaling_factor_time_derivative_term(underlying_operator.get_scaling_factor_time_derivative_term());
+  this->scaling_factor_time_derivative_term = this->operator_settings.scaling_factor_time_derivative_term;
 
   // convective term: evaluation_time
   // This variables is not set here. If the convective term
@@ -114,14 +117,14 @@ void
 ConvectionDiffusionOperator<dim, fe_degree, Number>::set_scaling_factor_time_derivative_term(
   double const & factor)
 {
-  this->operator_settings.scaling_factor_time_derivative_term = factor;
+  this->scaling_factor_time_derivative_term = factor;
 }
 
 template<int dim, int fe_degree, typename Number>
 double
 ConvectionDiffusionOperator<dim, fe_degree, Number>::get_scaling_factor_time_derivative_term() const
 {
-  return this->operator_settings.scaling_factor_time_derivative_term;
+  return this->scaling_factor_time_derivative_term;
 }
 
 template<int dim, int fe_degree, typename Number>

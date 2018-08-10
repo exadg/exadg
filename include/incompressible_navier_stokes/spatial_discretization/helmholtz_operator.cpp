@@ -43,6 +43,9 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::ini
   this->operator_data        = operator_data_in;
   this->mass_matrix_operator = &mass_matrix_operator_in;
   this->viscous_operator     = &viscous_operator_in;
+  
+  // mass matrix term: set scaling factor time derivative term
+  set_scaling_factor_time_derivative_term(this->operator_data.scaling_factor_time_derivative_term);
 }
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
@@ -90,7 +93,7 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::rei
   // Initialize other variables:
 
   // mass matrix term: set scaling factor time derivative term
-  // set_scaling_factor_time_derivative_term(underlying_operator.get_scaling_factor_time_derivative_term());
+  set_scaling_factor_time_derivative_term(this->operator_data.scaling_factor_time_derivative_term);
 
   // viscous term:
 }
@@ -100,7 +103,7 @@ void
 HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
   set_scaling_factor_time_derivative_term(double const & factor)
 {
-  this->operator_data.scaling_factor_time_derivative_term = factor;
+  this->scaling_factor_time_derivative_term = factor;
 }
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
@@ -108,7 +111,7 @@ double
 HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
   get_scaling_factor_time_derivative_term() const
 {
-  return this->operator_data.scaling_factor_time_derivative_term;
+  return this->scaling_factor_time_derivative_term;
 }
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>

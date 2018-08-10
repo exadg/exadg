@@ -140,6 +140,7 @@ private:
   mutable lazy_ptr<ConvectiveOp> convective_operator;
   mutable lazy_ptr<DiffusiveOp>  diffusive_operator;
   parallel::distributed::Vector<Number> mutable temp;
+  double scaling_factor_time_derivative_term;
 };
 
 } // namespace ConvDiff

@@ -266,6 +266,7 @@ private:
   parallel::distributed::Vector<Number> mutable temp_vector;
   parallel::distributed::Vector<Number> mutable velocity_linearization;
   double evaluation_time;
+  double scaling_factor_time_derivative_term;
 
   /*
    * The following variables are necessary when applying the multigrid

@@ -355,10 +355,10 @@ setup_helmholtz_solver (double const &scaling_factor_time_derivative_term)
   // always unsteady problem
   helmholtz_operator_data.unsteady_problem = true;
 
-  helmholtz_operator.initialize(this->data,helmholtz_operator_data,this->mass_matrix_operator,this->viscous_operator);
-
   // set scaling factor time derivative term!
-  helmholtz_operator.set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
+  helmholtz_operator_data.scaling_factor_time_derivative_term = scaling_factor_time_derivative_term;
+
+  helmholtz_operator.initialize(this->data,helmholtz_operator_data,this->mass_matrix_operator,this->viscous_operator);
 
   // 2. Setup Helmholtz preconditioner
   setup_helmholtz_preconditioner();

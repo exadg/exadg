@@ -218,6 +218,7 @@ private:
   MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const *mass_matrix_operator;
   ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const *viscous_operator;
   HelmholtzOperatorData<dim> operator_data;
+  double scaling_factor_time_derivative_term;
 
   /*
    * The following variables are necessary when applying the multigrid
