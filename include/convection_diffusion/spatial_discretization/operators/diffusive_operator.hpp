@@ -1,6 +1,6 @@
 #include "diffusive_operator.h"
 
-#include <navier_constants.h>
+#include <navierstokes/config.h>
 
 namespace ConvDiff
 {

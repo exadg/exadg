@@ -1,6 +1,6 @@
 #include "velocity_convection_diffusion_operator.h"
 
-#include <navier_constants.h>
+#include <navierstokes/config.h>
 
 namespace IncNS
 {

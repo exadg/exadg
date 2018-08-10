@@ -1,6 +1,6 @@
 #include "helmholtz_operator.h"
 
-#include <navier_constants.h>
+#include <navierstokes/config.h>
 
 namespace IncNS
 {

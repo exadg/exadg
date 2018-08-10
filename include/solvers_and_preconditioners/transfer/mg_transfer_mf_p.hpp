@@ -1,6 +1,6 @@
 #include "mg_transfer_mf_p.h"
 
-#include <navier_constants.h>
+#include <navierstokes/config.h>
 
 typedef dealii::LinearAlgebra::distributed::Vector<float>  vfloat;
 typedef dealii::LinearAlgebra::distributed::Vector<double> vdouble;

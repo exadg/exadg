@@ -1,6 +1,6 @@
 #include "multigrid_preconditioner_adapter_base.h"
 
-#include <navier_constants.h>
+#include <navierstokes/config.h>
 
 #if DIM_2 && OP_FLOAT && MG_FLOAT
 template class MyMultigridPreconditionerBase<2, float, MatrixOperatorBaseNew<2, float>>;

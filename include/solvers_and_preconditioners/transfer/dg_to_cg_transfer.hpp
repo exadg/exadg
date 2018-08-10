@@ -1,6 +1,6 @@
 #include "dg_to_cg_transfer.h"
 
-#include <navier_constants.h>
+#include <navierstokes/config.h>
 
 #if DIM_2 && MG_FLOAT
 template class CGToDGTransfer<2, float>;

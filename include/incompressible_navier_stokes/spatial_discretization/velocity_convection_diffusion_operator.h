@@ -20,7 +20,7 @@
 
 #include "../../operators/matrix_operator_base_new.h"
 
-#include <navier_constants.h>
+#include <navierstokes/config.h>
 
 namespace IncNS
 {
