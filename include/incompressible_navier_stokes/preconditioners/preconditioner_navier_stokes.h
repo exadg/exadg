@@ -575,11 +575,12 @@ private:
 
       std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
 
+      auto compatible_laplace_operator_data = underlying_operator->get_compatible_laplace_operator_data();
       mg_preconditioner->initialize(mg_data,
                                     underlying_operator->get_dof_handler_p(),
                                     underlying_operator->get_mapping(),
                                     /*underlying_operator->get_operator_data().bc->dirichlet_bc,*/
-                                    (void *)&underlying_operator->get_operator_data());
+                                    (void *)&compatible_laplace_operator_data);
     }
     else if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Classical)
     {
