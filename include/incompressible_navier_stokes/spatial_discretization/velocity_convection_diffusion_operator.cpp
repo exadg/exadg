@@ -630,42 +630,53 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
 {
   switch(deg)
   {
+// clang-format off      
 #if DEGREE_1
-    case 1:
-      return new VelocityConvDiffOperator<dim, 1, fe_degree_xwall, xwall_quad_rule, Number>();
+    case 1: return new VelocityConvDiffOperator<dim, 1, fe_degree_xwall, xwall_quad_rule, Number>();
 #endif
 #if DEGREE_2
-    case 2:
-      return new VelocityConvDiffOperator<dim, 2, fe_degree_xwall, xwall_quad_rule, Number>();
+    case 2: return new VelocityConvDiffOperator<dim, 2, fe_degree_xwall, xwall_quad_rule, Number>();
 #endif
 #if DEGREE_3
-    case 3:
-      return new VelocityConvDiffOperator<dim, 3, fe_degree_xwall, xwall_quad_rule, Number>();
+    case 3: return new VelocityConvDiffOperator<dim, 3, fe_degree_xwall, xwall_quad_rule, Number>();
 #endif
 #if DEGREE_4
-    case 4:
-      return new VelocityConvDiffOperator<dim, 4, fe_degree_xwall, xwall_quad_rule, Number>();
+    case 4: return new VelocityConvDiffOperator<dim, 4, fe_degree_xwall, xwall_quad_rule, Number>();
 #endif
 #if DEGREE_5
-    case 5:
-      return new VelocityConvDiffOperator<dim, 5, fe_degree_xwall, xwall_quad_rule, Number>();
+    case 5: return new VelocityConvDiffOperator<dim, 5, fe_degree_xwall, xwall_quad_rule, Number>();
 #endif
 #if DEGREE_6
-    case 6:
-      return new VelocityConvDiffOperator<dim, 6, fe_degree_xwall, xwall_quad_rule, Number>();
+    case 6: return new VelocityConvDiffOperator<dim, 6, fe_degree_xwall, xwall_quad_rule, Number>();
 #endif
 #if DEGREE_7
-    case 7:
-      return new VelocityConvDiffOperator<dim, 7, fe_degree_xwall, xwall_quad_rule, Number>();
+    case 7: return new VelocityConvDiffOperator<dim, 7, fe_degree_xwall, xwall_quad_rule, Number>();
 #endif
 #if DEGREE_8
-    case 8:
-      return new VelocityConvDiffOperator<dim, 8, fe_degree_xwall, xwall_quad_rule, Number>();
+    case 8: return new VelocityConvDiffOperator<dim, 8, fe_degree_xwall, xwall_quad_rule, Number>();
 #endif
 #if DEGREE_9
-    case 9:
-      return new VelocityConvDiffOperator<dim, 9, fe_degree_xwall, xwall_quad_rule, Number>();
+    case 9: return new VelocityConvDiffOperator<dim, 9, fe_degree_xwall, xwall_quad_rule, Number>();
 #endif
+#if DEGREE_10
+    case 10: return new VelocityConvDiffOperator<dim, 10, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_11
+    case 11: return new VelocityConvDiffOperator<dim, 11, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_12
+    case 12: return new VelocityConvDiffOperator<dim, 12, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_13
+    case 13: return new VelocityConvDiffOperator<dim, 13, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_14
+    case 14: return new VelocityConvDiffOperator<dim, 14, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+#if DEGREE_15
+    case 15: return new VelocityConvDiffOperator<dim, 15, fe_degree_xwall, xwall_quad_rule, Number>();
+#endif
+// clang-format on
     default:
       AssertThrow(false, ExcMessage("ConvectionDiffusionOperator not implemented for this degree!"));
       return nullptr;
