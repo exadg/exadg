@@ -42,7 +42,7 @@
 #  include <deal.II/lac/trilinos_sparse_matrix.h>
 #endif
 #include <deal.II/lac/constraint_matrix.h>
-#include "matrix_operator_base_new.h"
+#include "multigrid_operator_base.h"
 
 
 using namespace dealii;

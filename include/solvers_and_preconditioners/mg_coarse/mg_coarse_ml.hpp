@@ -2,7 +2,7 @@
 
 #include <navierstokes/config.h>
 
-#include "../../operators/matrix_operator_base_new.h"
+#include "../../operators/multigrid_operator_base.h"
 
 #if DIM_2 && OP_FLOAT && MG_FLOAT
 template class MGCoarseML<MultigridOperatorBase<2, float>, float>;

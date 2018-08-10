@@ -18,7 +18,7 @@
 #include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
 
 
-#include "../../operators/matrix_operator_base_new.h"
+#include "../../operators/multigrid_operator_base.h"
 
 #include <navierstokes/config.h>
 
