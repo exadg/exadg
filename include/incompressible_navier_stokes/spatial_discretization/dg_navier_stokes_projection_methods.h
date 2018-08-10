@@ -10,7 +10,6 @@
 
 #include "../../incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/projection_operators_and_solvers.h"
-#include "../../poisson/laplace_operator.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
 #include "../../laplace/spatial_discretization/laplace_operator.h"
 
@@ -154,11 +153,7 @@ setup_pressure_poisson_solver (double const time_step_size)
     laplace_operator_data.IP_factor = this->param.IP_factor_pressure/time_step_size*this->param.deltat_ref;
   }
   
-  auto boundary_descriptor = std::shared_ptr<Laplace::BoundaryDescriptor<dim>>(new Laplace::BoundaryDescriptor<dim>());
-  boundary_descriptor->dirichlet_bc = this->boundary_descriptor_laplace->dirichlet;
-  boundary_descriptor->neumann_bc = this->boundary_descriptor_laplace->neumann;
-  
-  laplace_operator_data.bc = boundary_descriptor;
+  laplace_operator_data.bc = this->boundary_descriptor_laplace;
 
   laplace_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
   laplace_operator.initialize(this->mapping,

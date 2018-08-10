@@ -16,7 +16,6 @@
 #include "../../incompressible_navier_stokes/preconditioners/pressure_convection_diffusion_operator.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/helmholtz_operator.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/velocity_convection_diffusion_operator.h"
-#include "../../poisson/laplace_operator.h"
 #include "../../solvers_and_preconditioners/util/check_multigrid.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
@@ -593,10 +592,7 @@ private:
       // is singular or not
       laplace_operator_data.operator_is_singular = underlying_operator->param.pure_dirichlet_bc;
 
-      auto boundary_descriptor = std::shared_ptr<Laplace::BoundaryDescriptor<dim>>(new Laplace::BoundaryDescriptor<dim>());
-      boundary_descriptor->dirichlet_bc = underlying_operator->boundary_descriptor_laplace->dirichlet;
-      boundary_descriptor->neumann_bc   = underlying_operator->boundary_descriptor_laplace->neumann;
-      laplace_operator_data.bc = boundary_descriptor;
+      laplace_operator_data.bc = underlying_operator->boundary_descriptor_laplace;
       laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
 
       MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
@@ -611,7 +607,7 @@ private:
       mg_preconditioner->initialize(mg_data,
                                     underlying_operator->get_dof_handler_p(),
                                     underlying_operator->get_mapping(),
-                                    boundary_descriptor->dirichlet_bc,
+                                    laplace_operator_data.bc->dirichlet_bc,
                                     (void *)&laplace_operator_data);
     }
     else
@@ -633,19 +629,19 @@ private:
 
     if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Classical)
     {
-      LaplaceOperatorData<dim> laplace_operator_data;
-      laplace_operator_data.laplace_dof_index = underlying_operator->get_dof_index_pressure();
-      laplace_operator_data.laplace_quad_index = underlying_operator->get_quad_index_pressure();
-      laplace_operator_data.penalty_factor = 1.0;
+      Laplace::LaplaceOperatorData<dim> laplace_operator_data;
+      laplace_operator_data.dof_index = underlying_operator->get_dof_index_pressure();
+      laplace_operator_data.quad_index = underlying_operator->get_quad_index_pressure();
+      laplace_operator_data.IP_factor = 1.0;
       laplace_operator_data.bc = underlying_operator->boundary_descriptor_laplace;
       laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
-      laplace_operator_classical.reset(new LaplaceOperator<dim, fe_degree_p, value_type>());
-      laplace_operator_classical->reinit(
-          underlying_operator->get_data(),
+      laplace_operator_classical.reset(new Laplace::LaplaceOperator<dim, fe_degree_p, value_type>());
+      laplace_operator_classical->initialize(
           underlying_operator->get_mapping(),
+          underlying_operator->get_data(),
           laplace_operator_data);
 
-      solver_pressure_block.reset(new CGSolver<LaplaceOperator<dim, fe_degree_p, value_type>,
+      solver_pressure_block.reset(new CGSolver<Laplace::LaplaceOperator<dim, fe_degree_p, value_type>,
                                                PreconditionerBase<value_type>,
                                                parallel::distributed::Vector<value_type> >(
           *laplace_operator_classical,
@@ -988,7 +984,7 @@ private:
   std::shared_ptr<PreconditionerBase<value_type> > inv_mass_matrix_preconditioner_schur_complement;
 
   std::shared_ptr<PressureConvectionDiffusionOperator<dim, fe_degree_p, fe_degree, value_type> > pressure_convection_diffusion_operator;
-  std::shared_ptr<LaplaceOperator<dim, fe_degree_p, value_type> > laplace_operator_classical;
+  std::shared_ptr<Laplace::LaplaceOperator<dim, fe_degree_p, value_type> > laplace_operator_classical;
   std::shared_ptr<CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > laplace_operator_compatible;
   std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > solver_pressure_block;
 

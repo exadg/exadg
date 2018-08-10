@@ -49,8 +49,6 @@ SET( TARGET_SRC
      include/convection_diffusion/spatial_discretization/operators/mass_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/convection_diffusion_operator.cpp
      include/laplace/spatial_discretization/laplace_operator.cpp
-     include/poisson/laplace_operator.cpp
-     #include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_adapter_base.cpp
      include/solvers_and_preconditioners/transfer/mg_transfer_mf_p.cpp
      include/solvers_and_preconditioners/mg_coarse/mg_coarse_ml.cpp
      include/solvers_and_preconditioners/transfer/dg_to_cg_transfer.cpp
