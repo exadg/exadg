@@ -213,8 +213,8 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
     mg_preconditioner->initialize(this->param.multigrid_data_momentum,
                                   this->dof_handler_u,
                                   this->mapping,
-                                  velocity_conv_diff_operator,
-                                  this->periodic_face_pairs);
+                                  velocity_conv_diff_operator.get_operator_data().bc->dirichlet_bc,
+                                  (void *)&velocity_conv_diff_operator.get_operator_data());
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::VelocityConvectionDiffusion)
   {
@@ -231,8 +231,8 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
     mg_preconditioner->initialize(this->param.multigrid_data_momentum,
                                   this->get_dof_handler_u(),
                                   this->get_mapping(),
-                                  velocity_conv_diff_operator,
-                                  this->periodic_face_pairs);
+                                  velocity_conv_diff_operator.get_operator_data().bc->dirichlet_bc,
+                                  (void *)&velocity_conv_diff_operator.get_operator_data());
   }
 
   // setup linear solver for momentum equation

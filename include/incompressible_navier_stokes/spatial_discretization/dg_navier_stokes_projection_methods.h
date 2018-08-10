@@ -193,8 +193,8 @@ setup_pressure_poisson_solver (double const time_step_size)
     mg_preconditioner->initialize(mg_data,
                                   this->dof_handler_p,
                                   this->mapping,
-                                  laplace_operator,
-                                  periodic_face_pairs);
+                                  laplace_operator.get_operator_data().bc->dirichlet_bc,
+                                  (void *)&laplace_operator.get_operator_data());
   }
   else
   {

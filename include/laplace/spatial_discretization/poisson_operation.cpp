@@ -71,7 +71,11 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
 
     preconditioner.reset(new MULTIGRID());
     std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
-    mg_preconditioner->initialize(mg_data, dof_handler, mapping, laplace_operator, this->periodic_face_pairs);
+    mg_preconditioner->initialize(mg_data,
+                                  dof_handler,
+                                  mapping,
+                                  laplace_operator.get_operator_data().bc->dirichlet_bc,
+                                  (void *)&laplace_operator.get_operator_data());
   }
   else
   {

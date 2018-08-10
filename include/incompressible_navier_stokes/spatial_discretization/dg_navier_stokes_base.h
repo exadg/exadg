@@ -829,8 +829,8 @@ compute_streamfunction (parallel::distributed::Vector<Number>       &dst,
   mg_preconditioner->initialize(mg_data,
                                 this->dof_handler_u_scalar,
                                 this->mapping,
-                                laplace_operator,
-                                periodic_face_pairs);
+                                laplace_operator.get_operator_data().bc->dirichlet_bc,
+                                (void *)&laplace_operator.get_operator_data());
 
   // setup solver
   CGSolverData solver_data;
