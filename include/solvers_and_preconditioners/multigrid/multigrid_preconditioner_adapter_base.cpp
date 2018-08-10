@@ -22,6 +22,18 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
   const MultigridData &                                                mg_data_in,
   const DoFHandler<dim> &                                              dof_handler,
   const Mapping<dim> &                                                 mapping,
+  void *                                                               operator_data_in)
+{
+  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
+  this->initialize(mg_data_in, dof_handler, mapping, dirichlet_bc, operator_data_in);
+}
+
+template<int dim, typename value_type, typename Operator>
+void
+MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
+  const MultigridData &                                                mg_data_in,
+  const DoFHandler<dim> &                                              dof_handler,
+  const Mapping<dim> &                                                 mapping,
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
   void *                                                               operator_data_in)
 {

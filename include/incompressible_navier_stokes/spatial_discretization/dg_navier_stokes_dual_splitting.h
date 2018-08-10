@@ -491,7 +491,7 @@ setup_helmholtz_preconditioner ()
     mg_preconditioner->initialize(mg_data,
                                   this->dof_handler_u,
                                   this->mapping,
-                                  helmholtz_operator.get_operator_data().bc->dirichlet_bc,
+                                  /*helmholtz_operator.get_operator_data().bc->dirichlet_bc,*/
                                   (void *)&helmholtz_operator.get_operator_data());
   }
 }

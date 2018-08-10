@@ -499,7 +499,7 @@ private:
       mg_preconditioner->initialize(mg_data,
                                     underlying_operator->get_dof_handler_u(),
                                     underlying_operator->get_mapping(),
-                                    underlying_operator->velocity_conv_diff_operator.get_operator_data().bc->dirichlet_bc,
+                                    /*underlying_operator->velocity_conv_diff_operator.get_operator_data().bc->dirichlet_bc,*/
                                     (void *)&underlying_operator->velocity_conv_diff_operator.get_operator_data());
 
     }
@@ -516,7 +516,7 @@ private:
       mg_preconditioner->initialize(mg_data,
                                     underlying_operator->get_dof_handler_u(),
                                     underlying_operator->get_mapping(),
-                                    underlying_operator->velocity_conv_diff_operator.get_operator_data().bc->dirichlet_bc,
+                                    /*underlying_operator->velocity_conv_diff_operator.get_operator_data().bc->dirichlet_bc,*/
                                     (void *)&underlying_operator->velocity_conv_diff_operator.get_operator_data());
     }
   }
@@ -578,7 +578,7 @@ private:
       mg_preconditioner->initialize(mg_data,
                                     underlying_operator->get_dof_handler_p(),
                                     underlying_operator->get_mapping(),
-                                    underlying_operator->get_operator_data().bc->dirichlet_bc,
+                                    /*underlying_operator->get_operator_data().bc->dirichlet_bc,*/
                                     (void *)&underlying_operator->get_operator_data());
     }
     else if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Classical)
@@ -610,7 +610,7 @@ private:
       mg_preconditioner->initialize(mg_data,
                                     underlying_operator->get_dof_handler_p(),
                                     underlying_operator->get_mapping(),
-              boundary_descriptor->dirichlet_bc,
+                                    boundary_descriptor->dirichlet_bc,
                                     (void *)&laplace_operator_data);
     }
     else
