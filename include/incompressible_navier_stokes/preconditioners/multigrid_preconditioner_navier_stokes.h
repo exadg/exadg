@@ -19,7 +19,7 @@ namespace IncNS
  *  (Helmholtz operator) of the incompressible Navier-Stokes equations.
  */
 template<int dim, typename value_type, typename Operator, typename UnderlyingOperator>
-class MyMultigridPreconditionerVelocityDiffusion : public MyMultigridPreconditionerDG<dim,value_type,Operator,UnderlyingOperator>
+class MyMultigridPreconditionerVelocityDiffusion : public MyMultigridPreconditionerDG<dim,value_type,Operator>
 {
 public:
   MyMultigridPreconditionerVelocityDiffusion(){}
@@ -81,7 +81,7 @@ private:
  *  operator of the incompressible Navier-Stokes equations.
  */
 template<int dim, typename value_type, typename Operator, typename UnderlyingOperator>
-class MyMultigridPreconditionerVelocityConvectionDiffusion : public MyMultigridPreconditionerDG<dim,value_type,Operator,UnderlyingOperator>
+class MyMultigridPreconditionerVelocityConvectionDiffusion : public MyMultigridPreconditionerDG<dim,value_type,Operator>
 {
 public:
   MyMultigridPreconditionerVelocityConvectionDiffusion(){}

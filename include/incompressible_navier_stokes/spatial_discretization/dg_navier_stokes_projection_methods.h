@@ -174,8 +174,7 @@ setup_pressure_poisson_solver (double const time_step_size)
     typedef float MultigridNumber;
 
     typedef MyMultigridPreconditionerDG<dim, Number, 
-            Laplace::LaplaceOperator<dim, fe_degree_p, MultigridNumber>,
-            Laplace::LaplaceOperator<dim, fe_degree_p, Number>> MULTIGRID;
+            Laplace::LaplaceOperator<dim, fe_degree_p, MultigridNumber>> MULTIGRID;
 
     preconditioner_pressure_poisson.reset(new MULTIGRID());
 

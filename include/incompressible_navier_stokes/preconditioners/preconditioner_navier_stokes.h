@@ -567,8 +567,7 @@ private:
       MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
       // use DGNavierStokesCoupled as underlying operator for multigrid applied to compatible Laplace operator
       typedef MyMultigridPreconditionerDG<dim,value_type,
-                CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>,
-                DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule,value_type> > MULTIGRID;
+                CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>> MULTIGRID;
 
       multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
 
@@ -598,8 +597,7 @@ private:
       MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
 
       typedef MyMultigridPreconditionerDG<dim,value_type, 
-            Laplace::LaplaceOperator<dim, fe_degree, Number>,
-            Laplace::LaplaceOperator<dim, fe_degree, value_type>> MULTIGRID;
+            Laplace::LaplaceOperator<dim, fe_degree, Number>> MULTIGRID;
       multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
 
       std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);

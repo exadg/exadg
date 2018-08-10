@@ -814,8 +814,7 @@ compute_streamfunction (parallel::distributed::Vector<Number>       &dst,
   // use single precision for multigrid
   typedef float MultigridNumber;
   typedef MyMultigridPreconditionerDG<dim, Number, 
-            Laplace::LaplaceOperator<dim, fe_degree, MultigridNumber>,
-            Laplace::LaplaceOperator<dim, fe_degree, Number>> MULTIGRID;
+            Laplace::LaplaceOperator<dim, fe_degree, MultigridNumber>> MULTIGRID;
 
   preconditioner.reset(new MULTIGRID());
 

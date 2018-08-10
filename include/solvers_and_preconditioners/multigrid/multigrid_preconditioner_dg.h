@@ -10,7 +10,7 @@
 
 #include "multigrid_preconditioner_adapter_base.h"
 
-template<int dim, typename value_type, typename Operator, typename UnderlyingOperator>
+template<int dim, typename value_type, typename Operator>
 class MyMultigridPreconditionerDG
   : public MyMultigridPreconditionerBase<dim,
                                          value_type,

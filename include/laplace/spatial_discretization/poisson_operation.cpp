@@ -68,8 +68,7 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
 
     typedef MyMultigridPreconditionerDG<dim,
                                         value_type,
-                                        Laplace::LaplaceOperator<dim, fe_degree, Number>,
-                                        Laplace::LaplaceOperator<dim, fe_degree, value_type>>
+                                        Laplace::LaplaceOperator<dim, fe_degree, Number>>
       MULTIGRID;
 
     preconditioner.reset(new MULTIGRID());

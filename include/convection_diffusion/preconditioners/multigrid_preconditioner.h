@@ -18,7 +18,7 @@ namespace ConvDiff
  *  operator of the scalar (reaction-)convection-diffusion equation.
  */
 template<int dim, typename value_type, typename Operator, typename UnderlyingOperator>
-class MultigridPreconditioner : public MyMultigridPreconditionerDG<dim,value_type,Operator,UnderlyingOperator>
+class MultigridPreconditioner : public MyMultigridPreconditionerDG<dim,value_type,Operator>
 {
 public:
   MultigridPreconditioner() {}
