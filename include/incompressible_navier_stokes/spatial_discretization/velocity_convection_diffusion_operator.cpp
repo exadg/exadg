@@ -480,7 +480,6 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
   {
     convective_operator->add_diagonal(diagonal, &velocity_linearization, evaluation_time);
   }
-  printf("diag: %20.15f\n", diagonal.l2_norm());
 }
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
