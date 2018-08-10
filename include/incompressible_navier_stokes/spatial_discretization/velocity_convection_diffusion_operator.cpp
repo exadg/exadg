@@ -340,7 +340,6 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
   {
     convective_operator->apply_linearized_add(dst, src, &velocity_linearization, evaluation_time);
   }
-  // printf("vmult_add %20.15f %20.15f\n", dst.l2_norm(), src.l2_norm());
 }
 
 
