@@ -24,6 +24,9 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
   const Mapping<dim> &                                                 mapping,
   void *                                                               operator_data_in)
 {
+  AssertThrow(mg_data_in.coarse_solver != MultigridCoarseGridSolver::AMG_ML, 
+              ExcMessage("You have to provide Dirichlet BCs if you want to use AMG!"));
+    
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
   this->initialize(mg_data_in, dof_handler, mapping, dirichlet_bc, operator_data_in);
 }
