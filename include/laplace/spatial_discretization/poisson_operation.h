@@ -20,7 +20,6 @@
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
 
-#include "../preconditioners/multigrid_preconditioner.h"
 #include "../user_interface/boundary_descriptor.h"
 #include "../user_interface/field_functions.h"
 #include "../user_interface/input_parameters.h"

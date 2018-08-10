@@ -1,5 +1,8 @@
 #include "poisson_operation.h"
 
+
+#include "../../solvers_and_preconditioners/multigrid/multigrid_preconditioner_dg.h"
+
 namespace Laplace
 {
 template<int dim, int fe_degree, typename value_type>
@@ -63,10 +66,10 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
 
     typedef float Number;
 
-    typedef Laplace::MultigridPreconditioner<dim,
-                                             value_type,
-                                             Laplace::LaplaceOperator<dim, fe_degree, Number>,
-                                             Laplace::LaplaceOperator<dim, fe_degree, value_type>>
+    typedef MyMultigridPreconditionerDG<dim,
+                                        value_type,
+                                        Laplace::LaplaceOperator<dim, fe_degree, Number>,
+                                        Laplace::LaplaceOperator<dim, fe_degree, value_type>>
       MULTIGRID;
 
     preconditioner.reset(new MULTIGRID());
