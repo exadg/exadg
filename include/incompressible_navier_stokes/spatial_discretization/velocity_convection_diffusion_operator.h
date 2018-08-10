@@ -52,7 +52,6 @@ struct VelocityConvDiffOperatorData
     unsteady_problem(true),
     convective_problem(true),
     dof_index(0),
-    bc(new BoundaryDescriptorP<dim>()),
     scaling_factor_time_derivative_term(-1.0)
   {}
 
@@ -60,8 +59,6 @@ struct VelocityConvDiffOperatorData
   bool convective_problem;
   unsigned int dof_index;
   
-  // TODO
-  std::shared_ptr<BoundaryDescriptorP<dim>> bc;
   double scaling_factor_time_derivative_term;
   MassMatrixOperatorData mass_matrix_operator_data;
   ViscousOperatorData<dim> viscous_operator_data;
