@@ -176,7 +176,7 @@ private:
 };
 
 template<int dim, int degree, typename Number, typename AdditionalData>
-class OperatorBase : public MatrixOperatorBaseNew<dim, Number>
+class OperatorBase : public MultigridOperatorBase<dim, Number>
 {
 public:
   static const int                                          DIM = dim;

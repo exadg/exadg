@@ -66,7 +66,7 @@ struct VelocityConvDiffOperatorData
 };
 
 template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule,typename Number = double>
-class VelocityConvDiffOperator : public MatrixOperatorBaseNew<dim, Number>
+class VelocityConvDiffOperator : public MultigridOperatorBase<dim, Number>
 {
 public:
   static const int DIM = dim;
@@ -253,7 +253,7 @@ private:
                                                    parallel::distributed::Vector<Number> const &src,
                                                    std::pair<unsigned int,unsigned int> const  &cell_range) const;
 
-  virtual MatrixOperatorBaseNew<dim, Number>* get_new(unsigned int deg) const;
+  virtual MultigridOperatorBase<dim, Number>* get_new(unsigned int deg) const;
   
   mutable std::vector<LAPACKFullMatrix<Number> > matrices;
   mutable bool block_jacobi_matrices_have_been_initialized;

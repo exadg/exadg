@@ -30,7 +30,7 @@ struct CompatibleLaplaceOperatorData
 };
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule,typename Number = double>
-class CompatibleLaplaceOperator : public MatrixOperatorBaseNew<dim, Number>
+class CompatibleLaplaceOperator : public MultigridOperatorBase<dim, Number>
 {
 public:
   static const int DIM = dim;

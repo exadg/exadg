@@ -52,7 +52,7 @@
 using namespace dealii;
 
 template<int dim, typename Number = double>
-class MatrixOperatorBaseNew : public MatrixOperatorBase
+class MultigridOperatorBase : public MatrixOperatorBase
 {
 public:
   typedef Number   value_type;
@@ -61,160 +61,160 @@ public:
   virtual void
   clear()
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
   }
 
   virtual void
   vmult(parallel::distributed::Vector<Number> & /*dst*/,
         const parallel::distributed::Vector<Number> & /*src*/) const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
   }
 
   virtual void
   Tvmult(parallel::distributed::Vector<Number> & /*dst*/,
          const parallel::distributed::Vector<Number> & /*src*/) const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
   }
 
   virtual void
   Tvmult_add(parallel::distributed::Vector<Number> & /*dst*/,
              const parallel::distributed::Vector<Number> & /*src*/) const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
   }
 
   virtual void
   vmult_add(parallel::distributed::Vector<Number> & /*dst*/,
             const parallel::distributed::Vector<Number> & /*src*/) const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
   }
 
   virtual void
   vmult_interface_down(parallel::distributed::Vector<Number> & /*dst*/,
                        const parallel::distributed::Vector<Number> & /*src*/) const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
   }
 
   virtual void
   vmult_add_interface_up(parallel::distributed::Vector<Number> & /*dst*/,
                          const parallel::distributed::Vector<Number> & /*src*/) const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
   }
 
   virtual void
   rhs(parallel::distributed::Vector<Number> & /*dst*/) const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
   }
 
   virtual void
   rhs_add(parallel::distributed::Vector<Number> & /*dst*/) const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
   }
 
   virtual void
   apply_nullspace_projection(parallel::distributed::Vector<Number> & /*vec*/) const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
   }
 
   virtual void
   disable_mean_value_constraint()
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
   }
 
   virtual types::global_dof_index
   m() const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
     return 0;
   }
 
   virtual types::global_dof_index
   n() const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
     return 0;
   }
 
   virtual Number
   el(const unsigned int, const unsigned int) const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
     return 0;
   }
 
   virtual void
   initialize_dof_vector(parallel::distributed::Vector<Number> & /*vector*/) const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
   }
 
   virtual void
   calculate_inverse_diagonal(parallel::distributed::Vector<Number> & /*inverse_diagonal_entries*/) const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
   }
 
   virtual void
   apply_block_jacobi(parallel::distributed::Vector<Number> & /*dst*/,
                      parallel::distributed::Vector<Number> const & /*src*/) const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
   }
 
   virtual void
   update_block_jacobi() const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
   }
 
   virtual const AlignedVector<VectorizedArray<Number>> &
   get_array_penalty_parameter() const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
     return *(new AlignedVector<VectorizedArray<Number>>);
   }
 
   virtual double
   get_penalty_factor() const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
     return 0;
   }
 
   virtual bool
   is_empty_locally() const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
     return 0;
   }
 
   virtual const MatrixFree<dim, Number> &
   get_data() const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
     return *(new MatrixFree<dim, Number>);
   }
 
   virtual unsigned int
   get_dof_index() const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
     return 0;
   }
 
-  virtual MatrixOperatorBaseNew<dim, Number> *
+  virtual MultigridOperatorBase<dim, Number> *
   get_new(unsigned int /*deg*/) const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
     return nullptr;
   }
 
@@ -222,13 +222,13 @@ public:
   virtual void
   init_system_matrix(TrilinosWrappers::SparseMatrix & /*system_matrix*/) const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::init_system_matrix should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::init_system_matrix should be overwritten!"));
   }
 
   virtual void
   calculate_system_matrix(TrilinosWrappers::SparseMatrix & /*system_matrix*/) const
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::calculate_system_matrix should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::calculate_system_matrix should be overwritten!"));
   }
 #endif
 
@@ -240,7 +240,7 @@ public:
          const MGConstrainedDoFs & /*mg_constrained_dofs*/,
          const unsigned int /*level*/ = numbers::invalid_unsigned_int)
   {
-    AssertThrow(false, ExcMessage("MatrixOperatorBaseNew::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
   }
 };
 

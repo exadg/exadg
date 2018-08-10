@@ -14,7 +14,7 @@ template<int dim, typename value_type, typename Operator, typename UnderlyingOpe
 class MyMultigridPreconditionerDG
   : public MyMultigridPreconditionerBase<dim,
                                          value_type,
-                                         MatrixOperatorBaseNew<dim, typename Operator::value_type>>
+                                         MultigridOperatorBase<dim, typename Operator::value_type>>
 {
 public:
   MyMultigridPreconditionerDG()
@@ -23,7 +23,7 @@ public:
   {
   }
 
-  typedef MatrixOperatorBaseNew<dim, typename Operator::value_type>     OPERATOR_BASE;
+  typedef MultigridOperatorBase<dim, typename Operator::value_type>     OPERATOR_BASE;
   typedef MyMultigridPreconditionerBase<dim, value_type, OPERATOR_BASE> BASE;
 };
 

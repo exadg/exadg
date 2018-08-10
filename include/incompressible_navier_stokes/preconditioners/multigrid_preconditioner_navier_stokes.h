@@ -53,7 +53,7 @@ private:
   {
     for (int level = this->n_global_levels-1; level>=0; --level)
     {
-      // this->mg_matrices[level] is a std::shared_ptr<MatrixOperatorBaseNew>:
+      // this->mg_matrices[level] is a std::shared_ptr<MultigridOperatorBase>:
       // so we have to dereference the shared_ptr, get the reference to it and
       // finally we can cast it to pointer of type Operator
       dynamic_cast<Operator *>(&*this->mg_matrices[level])->set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
@@ -148,7 +148,7 @@ private:
     {
       if(level == (int)this->n_global_levels-1) // finest level
       {
-      // this->mg_matrices[level] is a std::shared_ptr<MatrixOperatorBaseNew>:
+      // this->mg_matrices[level] is a std::shared_ptr<MultigridOperatorBase>:
       // so we have to dereference the shared_ptr, get the reference to it and
       // finally we can cast it to pointer of type Operator
         dynamic_cast<Operator *>(&*this->mg_matrices[level])->set_solution_linearization(vector_linearization);
@@ -225,7 +225,7 @@ private:
   {
     for (int level = this->n_global_levels-1; level>=0; --level)
     {
-      // this->mg_matrices[level] is a std::shared_ptr<MatrixOperatorBaseNew>:
+      // this->mg_matrices[level] is a std::shared_ptr<MultigridOperatorBase>:
       // so we have to dereference the shared_ptr, get the reference to it and
       // finally we can cast it to pointer of type Operator
       dynamic_cast<Operator *>(&*this->mg_matrices[level])->set_evaluation_time(evaluation_time);
@@ -242,7 +242,7 @@ private:
   {
     for (int level = this->n_global_levels-1; level>=0; --level)
     {
-      // this->mg_matrices[level] is a std::shared_ptr<MatrixOperatorBaseNew>:
+      // this->mg_matrices[level] is a std::shared_ptr<MultigridOperatorBase>:
       // so we have to dereference the shared_ptr, get the reference to it and
       // finally we can cast it to pointer of type Operator
       dynamic_cast<Operator *>(&*this->mg_matrices[level])->set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);

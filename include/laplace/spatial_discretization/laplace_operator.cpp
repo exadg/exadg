@@ -312,7 +312,7 @@ LaplaceOperator<dim, fe_degree, value_type>::do_boundary_integral(
 }
 
 template<int dim, int fe_degree, typename Number>
-MatrixOperatorBaseNew<dim, Number> *
+MultigridOperatorBase<dim, Number> *
 LaplaceOperator<dim, fe_degree, Number>::get_new(unsigned int deg) const
 {
   switch(deg)

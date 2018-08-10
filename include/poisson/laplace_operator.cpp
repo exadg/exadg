@@ -1479,7 +1479,7 @@ LaplaceOperator<dim, degree, Number>::boundary_face_loop_calculate_block_jacobi_
 }
 
 template<int dim, int degree, typename Number>
-MatrixOperatorBaseNew<dim, Number> *
+MultigridOperatorBase<dim, Number> *
 LaplaceOperator<dim, degree, Number>::get_new(unsigned int deg) const
 {
   switch(deg)

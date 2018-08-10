@@ -43,7 +43,7 @@ public:
     if(underlying_operator)
       underlying_operator->calculate_inverse_diagonal(inverse_diagonal);
     else
-      AssertThrow(false,ExcMessage("Jacobi preconditioner: MatrixOperatorBaseNew<dim, value_type> and MatrixOperator are not compatible!"));
+      AssertThrow(false,ExcMessage("Jacobi preconditioner: MultigridOperatorBase<dim, value_type> and MatrixOperator are not compatible!"));
   }
 
   unsigned int get_size_of_diagonal()

@@ -208,7 +208,7 @@ public:
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
 
-  MatrixOperatorBaseNew<dim, Number> *
+  MultigridOperatorBase<dim, Number> *
   get_new(unsigned int deg) const;
 
 private:

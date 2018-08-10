@@ -281,7 +281,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_jacobi_matrices(B
 }
 
 template<int dim, int fe_degree, typename Number>
-MatrixOperatorBaseNew<dim, Number> *
+MultigridOperatorBase<dim, Number> *
 ConvectionDiffusionOperator<dim, fe_degree, Number>::get_new(unsigned int deg) const
 {
   switch(deg)

@@ -766,6 +766,6 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::
 #include "multigrid_preconditioner_adapter_base.hpp"
 
 // template class MyMultigridPreconditionerBase<2, float,
-//                                             MatrixOperatorBaseNew<2, float>>;
+//                                             MultigridOperatorBase<2, float>>;
 // template class MyMultigridPreconditionerBase<2, double,
-//                                             MatrixOperatorBaseNew<2, float>>;
+//                                             MultigridOperatorBase<2, float>>;

@@ -625,7 +625,7 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
 }
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-MatrixOperatorBaseNew<dim, Number> *
+MultigridOperatorBase<dim, Number> *
 VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::get_new(
   unsigned int deg) const
 {

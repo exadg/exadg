@@ -37,7 +37,7 @@ public:
     underlying_operator (0),m(m)
   {}
 
-  void set_operator(const MGLevelObject<std::shared_ptr<MatrixOperatorBaseNew<dim, Type>>> &operator_in)
+  void set_operator(const MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Type>>> &operator_in)
   {
     underlying_operator = &operator_in;
   }
@@ -74,7 +74,7 @@ public:
   }
 
 private:
-  const MGLevelObject<std::shared_ptr<MatrixOperatorBaseNew<dim, Type>>> *underlying_operator;
+  const MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Type>>> *underlying_operator;
   mutable std::map<unsigned int, unsigned int> m;
 };
 

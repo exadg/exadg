@@ -66,14 +66,14 @@ struct LaplaceOperatorData
 // Generic implementation of Laplace operator for both continuous elements
 // (FE_Q) and discontinuous elements (FE_DGQ).
 template<int dim, int degree, typename Number = double>
-class LaplaceOperator : public MatrixOperatorBaseNew<dim, Number>
+class LaplaceOperator : public MultigridOperatorBase<dim, Number>
 {
 public:
   typedef Number   value_type;
   static const int DEGREE = degree;
   static const int DIM    = dim;
 
-  MatrixOperatorBaseNew<dim, Number> *
+  MultigridOperatorBase<dim, Number> *
   get_new(unsigned int deg) const;
 
   /*
