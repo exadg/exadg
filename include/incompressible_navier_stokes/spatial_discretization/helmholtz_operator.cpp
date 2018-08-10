@@ -54,9 +54,8 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::rei
   const MGConstrainedDoFs & /*mg_constrained_dofs*/,
   const unsigned int level)
 {
-  auto & add = *static_cast<HelmholtzOperatorData<dim> *>(operator_data_in);
   // create copy of data and ...
-  auto operator_data = add;
+  auto operator_data = *static_cast<HelmholtzOperatorData<dim> *>(operator_data_in);
 
   // setup own matrix free object
   const QGauss<1>                                  quad(dof_handler.get_fe().degree + 1);

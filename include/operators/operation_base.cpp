@@ -49,10 +49,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
                                                           const MGConstrainedDoFs & mg_constrained_dofs,
                                                           const unsigned int        level)
 {
-  // cast additional data to actual format
-  auto & add = *static_cast<AdditionalData *>(operator_data_in);
   // create copy of data and ...
-  auto operator_settings = add;
+  auto operator_settings = *static_cast<AdditionalData *>(operator_data_in);
   // set dof_index and quad_index to 0 since we only consider a subset
   operator_settings.dof_index  = 0;
   operator_settings.quad_index = 0;

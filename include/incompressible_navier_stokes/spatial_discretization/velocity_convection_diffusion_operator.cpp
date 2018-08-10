@@ -52,9 +52,8 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
   const MGConstrainedDoFs & /*mg_constrained_dofs*/,
   const unsigned int level)
 {
-  auto & add = *static_cast<VelocityConvDiffOperatorData<dim> *>(operator_data_in);
   // create copy of data and ...
-  auto operator_data = add;
+  auto operator_data = *static_cast<VelocityConvDiffOperatorData<dim> *>(operator_data_in);
 
   // setup own matrix free object
 

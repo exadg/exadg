@@ -135,9 +135,7 @@ LaplaceOperator<dim, degree, Number>::reinit(const DoFHandler<dim> & dof_handler
 {
   clear();
 
-  auto & operator_data = *static_cast<LaplaceOperatorData<dim> *>(operator_data_in);
-
-  this->operator_data = operator_data;
+  this->operator_data = *static_cast<LaplaceOperatorData<dim> *>(operator_data_in);
 
   const QGauss<1>                                  quad(dof_handler.get_fe().degree + 1);
   typename MatrixFree<dim, Number>::AdditionalData addit_data;
