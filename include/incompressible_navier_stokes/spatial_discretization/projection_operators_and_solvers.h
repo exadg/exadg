@@ -757,7 +757,7 @@ struct OptimizedProjectionOperatorData
   std::shared_ptr<BoundaryDescriptorU<dim> > bc;
 };
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename vt>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 class ProjectionOperatorOptimized : public ProjectionOperatorBase<dim>
 {
 public:
@@ -768,7 +768,7 @@ public:
   };
   
   static const int DIM = dim;
-  typedef vt value_type;
+  typedef Number value_type;
 
   static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
