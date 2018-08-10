@@ -194,7 +194,7 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::apply_add(VectorType & dst, VectorType const & src) const
 {
-  this->apply_add(dst, src, this->get_evaluation_time());
+  vmult_add(dst, src);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
@@ -204,7 +204,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_add(VectorType &       
                                                              Number const       time) const
 {
   this->set_evaluation_time(time);
-  vmult_add(dst, src);
+  this->apply_add(dst, src);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>

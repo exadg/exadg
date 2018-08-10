@@ -26,17 +26,19 @@ template<int dim, int fe_degree, typename value_type>
 void
 DiffusiveOperator<dim, fe_degree, value_type>::apply_add(VectorType & dst, VectorType const & src) const
 {
+  AssertThrow(diffusivity > 0.0, ExcMessage("Diffusivity is not set!"));
   Parent::apply_add(dst, src);
 }
 
 template<int dim, int fe_degree, typename value_type>
 void
-DiffusiveOperator<dim, fe_degree, value_type>::apply_add(VectorType &       dst,
-                                                         VectorType const & src,
-                                                         value_type const   time) const
+DiffusiveOperator<dim, fe_degree, value_type>::apply_add(VectorType &       /*dst*/,
+                                                         VectorType const & /*src*/,
+                                                         value_type const   /*time*/) const
 {
-  AssertThrow(diffusivity > 0.0, ExcMessage("Diffusivity is not set!"));
-  Parent::apply_add(dst, src, time);
+  // This function has to be overwritten explicitly else the compiler 
+  // complains that this function of the base class is hidden by the other apply_add
+  AssertThrow(false, ExcMessage("DiffusiveOperator cannot be called with time!"));
 }
 
 template<int dim, int fe_degree, typename value_type>
