@@ -45,11 +45,7 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
   pcout << std::endl << "Setup solver ..." << std::endl;
 
   // initialize preconditioner
-  if(param.preconditioner == Laplace::Preconditioner::InverseMassMatrix)
-  {
-    preconditioner.reset(new InverseMassMatrixPreconditioner<dim, fe_degree, value_type, 1>(data, 0, 0));
-  }
-  else if(param.preconditioner == Laplace::Preconditioner::PointJacobi)
+  if(param.preconditioner == Laplace::Preconditioner::PointJacobi)
   {
     preconditioner.reset(
       new JacobiPreconditioner<Laplace::LaplaceOperator<dim, fe_degree, value_type>>(laplace_operator));
@@ -82,7 +78,6 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
   else
   {
     AssertThrow(param.preconditioner == Laplace::Preconditioner::None ||
-                  param.preconditioner == Laplace::Preconditioner::InverseMassMatrix ||
                   param.preconditioner == Laplace::Preconditioner::PointJacobi ||
                   param.preconditioner == Laplace::Preconditioner::BlockJacobi ||
                   param.preconditioner == Laplace::Preconditioner::Multigrid,

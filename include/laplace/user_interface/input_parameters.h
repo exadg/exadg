@@ -38,7 +38,6 @@ enum class Preconditioner
 {
   Undefined,
   None,
-  InverseMassMatrix,
   PointJacobi,
   BlockJacobi,
   Multigrid
@@ -169,7 +168,7 @@ public:
     print_parameter(pcout, "Maximum number of iterations", max_iter);
 
     std::string str_precon[] = {
-      "Undefined", "None", "InverseMassMatrix", "PointJacobi", "BlockJacobi", "GMG"};
+      "Undefined", "None", "PointJacobi", "BlockJacobi", "GMG"};
 
     print_parameter(pcout, "Preconditioner", str_precon[(int)preconditioner]);
 
