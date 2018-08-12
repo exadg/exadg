@@ -225,9 +225,9 @@ public:
   virtual void
   apply_add(VectorType & dst, VectorType const & src) const;
 
-  void
+  virtual void
   vmult(VectorType & dst, VectorType const & src) const;
-  void
+  virtual void
   vmult_add(VectorType & dst, VectorType const & src) const;
 
   void
@@ -262,7 +262,7 @@ public:
   /*
    * point Jacobi method
    */
-  void
+  virtual void
   calculate_diagonal(VectorType & diagonal) const;
   virtual void
   add_diagonal(VectorType & diagonal) const;
