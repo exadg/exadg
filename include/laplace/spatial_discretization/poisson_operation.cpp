@@ -22,7 +22,7 @@ DGOperation<dim, fe_degree, value_type>::setup(
   std::shared_ptr<Laplace::FieldFunctions<dim>>     field_functions_in)
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-  pcout << std::endl << "Setup poisson operation ..." << std::endl;
+  pcout << std::endl << "Setup Poisson operation ..." << std::endl;
 
   this->periodic_face_pairs = periodic_face_pairs;
   boundary_descriptor       = boundary_descriptor_in;
