@@ -122,11 +122,11 @@ public:
 
   void
   initialize(Mapping<dim> const &             mapping,
-             MatrixFree<dim, Number> &        mf,
-             ConstraintMatrix &               cm,
+             MatrixFree<dim, Number> &        mf_data,
+             ConstraintMatrix &               constraint_matrix,
              LaplaceOperatorData<dim> const & operator_settings)
   {
-    Parent::reinit(mf, cm, operator_settings);
+    Parent::reinit(mf_data, constraint_matrix, operator_settings);
 
     // calculate penalty parameters
     IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
