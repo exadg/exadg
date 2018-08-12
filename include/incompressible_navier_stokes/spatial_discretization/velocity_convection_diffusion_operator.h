@@ -147,7 +147,7 @@ public:
    *  It is only necessary due to the interface of the multigrid preconditioner
    *  and especially the coarse grid solver that calls this function.
    */
-  void apply_nullspace_projection(parallel::distributed::Vector<Number> &/*vec*/) const;
+  void set_zero_mean_value(parallel::distributed::Vector<Number> &/*vec*/) const;
 
   /*
    *  Other function needed in order to apply geometric multigrid to this operator

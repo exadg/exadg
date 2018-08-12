@@ -119,7 +119,7 @@ public:
   }
 
   virtual void
-  apply_nullspace_projection(parallel::distributed::Vector<Number> & /*vec*/) const
+  set_zero_mean_value(parallel::distributed::Vector<Number> & /*vec*/) const
   {
     AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
   }

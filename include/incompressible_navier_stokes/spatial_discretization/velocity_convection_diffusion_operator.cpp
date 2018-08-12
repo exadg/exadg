@@ -244,7 +244,7 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
 VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
-  apply_nullspace_projection(parallel::distributed::Vector<Number> & /*vec*/) const
+  set_zero_mean_value(parallel::distributed::Vector<Number> & /*vec*/) const
 {
 }
 

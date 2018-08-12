@@ -107,7 +107,7 @@ public:
     typename VectorMemory<parallel::distributed::Vector<typename Operator::value_type>>::Pointer r(
       solver_memory);
     *r = src;
-    coarse_matrix.apply_nullspace_projection(*r);
+    coarse_matrix.set_zero_mean_value(*r);
 
     if(use_preconditioner)
       solver_coarse.solve(coarse_matrix, dst, *r, *preconditioner);
@@ -203,7 +203,7 @@ public:
     typename VectorMemory<parallel::distributed::Vector<typename Operator::value_type>>::Pointer r(
       solver_memory);
     *r = src;
-    coarse_matrix.apply_nullspace_projection(*r);
+    coarse_matrix.set_zero_mean_value(*r);
 
     if(use_preconditioner)
       solver_coarse.solve(coarse_matrix, dst, *r, *preconditioner);

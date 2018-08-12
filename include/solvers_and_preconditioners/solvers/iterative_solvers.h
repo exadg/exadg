@@ -405,7 +405,7 @@ public:
 //            //srand(1);
 //            //for (unsigned int i=0; i<right.local_size(); ++i)
 //            //    right.local_element(i) = (double)rand()/RAND_MAX;
-//            //underlying_operator.apply_nullspace_projection(right);
+//            //underlying_operator.set_zero_mean_value(right);
 //
 //            
 //            dst = 0;

@@ -150,7 +150,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::get_diffusive_operator_data
 
 template<int dim, int fe_degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, fe_degree, Number>::apply_nullspace_projection(
+ConvectionDiffusionOperator<dim, fe_degree, Number>::set_zero_mean_value(
   parallel::distributed::Vector<Number> & /*vec*/) const
 {
 }

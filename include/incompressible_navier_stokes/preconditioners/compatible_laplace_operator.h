@@ -175,7 +175,7 @@ public:
     disable_mean_value_constraint();
   }
 
-  void apply_nullspace_projection(parallel::distributed::Vector<Number> &vec) const
+  void set_zero_mean_value(parallel::distributed::Vector<Number> &vec) const
   {
     if (needs_mean_value_constraint)
     {
@@ -216,7 +216,7 @@ public:
     if(apply_mean_value_constraint_in_matvec)
     {
       tmp_projection_vector = src;
-      apply_nullspace_projection(tmp_projection_vector);
+      set_zero_mean_value(tmp_projection_vector);
       actual_src = &tmp_projection_vector;
     }
 
@@ -228,7 +228,7 @@ public:
     divergence_operator->apply_add(dst,tmp);
 
     if(apply_mean_value_constraint_in_matvec)
-      apply_nullspace_projection(dst);
+      set_zero_mean_value(dst);
   }
 
   void vmult_interface_down(parallel::distributed::Vector<Number>       &dst,

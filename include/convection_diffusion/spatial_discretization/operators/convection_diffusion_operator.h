@@ -106,7 +106,7 @@ public:
    *  and especially the coarse grid solver that calls this function.
    */
   void
-  apply_nullspace_projection(parallel::distributed::Vector<Number> & /*vec*/) const;
+  set_zero_mean_value(parallel::distributed::Vector<Number> & /*vec*/) const;
 
   // Apply matrix-vector multiplication.
   void

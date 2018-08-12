@@ -45,7 +45,7 @@ compute_eigenvalues(const Operator &                                            
   srand(1);
   for(unsigned int i = 0; i < right.local_size(); ++i)
     right.local_element(i) = (double)rand() / RAND_MAX;
-  op.apply_nullspace_projection(right);
+  op.set_zero_mean_value(right);
 
   SolverControl control(eig_n_iter, right.l2_norm() * 1e-5);
   internal::PreconditionChebyshevImplementation::EigenvalueTracker eigenvalue_tracker;
@@ -108,7 +108,7 @@ compute_eigenvalues_gmres(
   srand(1);
   for(unsigned int i = 0; i < right.local_size(); ++i)
     right.local_element(i) = (double)rand() / RAND_MAX;
-  op.apply_nullspace_projection(right);
+  op.set_zero_mean_value(right);
 
   ReductionControl control(eig_n_iter, right.l2_norm() * 1.0e-5, 1.0e-5);
 
