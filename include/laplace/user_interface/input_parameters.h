@@ -59,8 +59,6 @@ public:
 
       // PHYSICAL QUANTITIES
 
-      // TEMPORAL DISCRETIZATION
-
       // SPATIAL DISCRETIZATION
       IP_factor(1.0),
 
@@ -100,9 +98,6 @@ public:
     // PHYSICAL QUANTITIES
     print_parameters_physical_quantities(pcout);
 
-    // TEMPORAL DISCRETIZATION
-    print_parameters_temporal_discretization(pcout);
-
     // SPATIAL DISCRETIZATION
     print_parameters_spatial_discretization(pcout);
 
@@ -129,12 +124,6 @@ public:
   print_parameters_physical_quantities(ConditionalOStream & pcout)
   {
     pcout << std::endl << "Physical quantities:" << std::endl;
-  }
-
-  void
-  print_parameters_temporal_discretization(ConditionalOStream & pcout)
-  {
-    pcout << std::endl << "Temporal discretization:" << std::endl;
   }
 
   void
