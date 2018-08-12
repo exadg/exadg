@@ -96,6 +96,9 @@ public:
 template<int dim, int degree, typename Number>
 class LaplaceOperator : public OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>>
 {
+  // static constants
+  static const int DIM = Parent::DIM;
+    
 public:
   typedef LaplaceOperator<dim, degree, Number>                        This;
   typedef OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>> Parent;
@@ -191,9 +194,6 @@ public:
                                        OperatorType const &            operator_type,
                                        BoundaryType const &            boundary_type,
                                        types::boundary_id const        boundary_id) const;
-
-  // static constants
-  static const int DIM = Parent::DIM;
 
   void
   do_cell_integral(FEEvalCell & phi) const;
