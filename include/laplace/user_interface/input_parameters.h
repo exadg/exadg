@@ -27,8 +27,7 @@ namespace Laplace
 enum class Solver
 {
   Undefined,
-  PCG,
-  GMRES
+  PCG
 };
 
 /*
@@ -67,8 +66,6 @@ public:
 
       // SOLVER
       solver(Solver::Undefined),
-      use_right_preconditioner(true),
-      max_n_tmp_vectors(30),
       abs_tol(1.e-20),
       rel_tol(1.e-12),
       max_iter(std::numeric_limits<unsigned int>::max()),
@@ -153,15 +150,9 @@ public:
   {
     pcout << std::endl << "Solver:" << std::endl;
 
-    std::string str_solver[] = {"Undefined", "PCG", "GMRES"};
+    std::string str_solver[] = {"Undefined", "PCG"};
 
     print_parameter(pcout, "Solver", str_solver[(int)solver]);
-
-    if(solver == Solver::GMRES)
-    {
-      print_parameter(pcout, "Use right preconditioner", use_right_preconditioner);
-      print_parameter(pcout, "max_n_tmp_vectors", max_n_tmp_vectors);
-    }
 
     print_parameter(pcout, "Absolute solver tolerance", abs_tol);
     print_parameter(pcout, "Relative solver tolerance", rel_tol);
@@ -223,12 +214,6 @@ public:
 
   // description: see enum declaration
   Solver solver;
-
-  // use right-preconditioner in case of GMRES solver
-  bool use_right_preconditioner;
-
-  // max_n_temp_vectors for GMRES solver
-  unsigned int max_n_tmp_vectors;
 
   // solver tolerances
   double       abs_tol;

@@ -100,27 +100,9 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
                                         PreconditionerBase<value_type>,
                                         VectorType>(laplace_operator, *preconditioner, solver_data));
   }
-  else if(param.solver == Laplace::Solver::GMRES)
-  {
-    // initialize solver_data
-    GMRESSolverData solver_data;
-    solver_data.solver_tolerance_abs  = param.abs_tol;
-    solver_data.solver_tolerance_rel  = param.rel_tol;
-    solver_data.max_iter              = param.max_iter;
-    solver_data.right_preconditioning = param.use_right_preconditioner;
-    solver_data.max_n_tmp_vectors     = param.max_n_tmp_vectors;
-
-    if(param.preconditioner != Laplace::Preconditioner::None)
-      solver_data.use_preconditioner = true;
-
-    // initialize solver
-    iterative_solver.reset(new GMRESSolver<Laplace::LaplaceOperator<dim, fe_degree, value_type>,
-                                           PreconditionerBase<value_type>,
-                                           VectorType>(laplace_operator, *preconditioner, solver_data));
-  }
   else
   {
-    AssertThrow(param.solver == Laplace::Solver::PCG || param.solver == Laplace::Solver::GMRES,
+    AssertThrow(param.solver == Laplace::Solver::PCG,
                 ExcMessage("Specified solver is not implemented!"));
   }
 
