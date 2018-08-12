@@ -96,15 +96,15 @@ public:
 template<int dim, int degree, typename Number>
 class LaplaceOperator : public OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>>
 {
-  // static constants
-  static const int DIM = Parent::DIM;
-    
 public:
   typedef LaplaceOperator<dim, degree, Number>                        This;
   typedef OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>> Parent;
   typedef typename Parent::FEEvalCell                                 FEEvalCell;
   typedef typename Parent::FEEvalFace                                 FEEvalFace;
   typedef typename Parent::VectorType                                 VectorType;
+
+  // static constants
+  static const int DIM = Parent::DIM;
 
   LaplaceOperator();
 
@@ -196,13 +196,17 @@ public:
                                        types::boundary_id const        boundary_id) const;
 
   void
-  do_cell_integral(FEEvalCell & phi) const;
+  do_cell_integral(FEEvalCell & fe_eval) const;
+
   void
-  do_face_integral(FEEvalFace & p_n, FEEvalFace & p_p) const;
+  do_face_integral(FEEvalFace & fe_eval, FEEvalFace & fe_eval_neighbor) const;
+
   void
-  do_face_int_integral(FEEvalFace & p_n, FEEvalFace & p_p) const;
+  do_face_int_integral(FEEvalFace & fe_eval, FEEvalFace & fe_eval_neighbor) const;
+
   void
-  do_face_ext_integral(FEEvalFace & p_n, FEEvalFace & p_p) const;
+  do_face_ext_integral(FEEvalFace & fe_eval, FEEvalFace & fe_eval_neighbor) const;
+
   void
   do_boundary_integral(FEEvalFace &               fe_eval,
                        OperatorType const &       operator_type,
