@@ -17,7 +17,7 @@ inline DEAL_II_ALWAYS_INLINE //
   LaplaceOperator<dim, fe_degree, Number>::calculate_value_flux(
     VectorizedArray<Number> const & jump_value) const
 {
-  return -0.5 * /*diffusivity * */ jump_value;
+  return -0.5 * jump_value;
 }
 
 template<int dim, int fe_degree, typename Number>
@@ -100,8 +100,7 @@ inline DEAL_II_ALWAYS_INLINE //
     VectorizedArray<Number> const & jump_value,
     VectorizedArray<Number> const & penalty_parameter) const
 {
-  return /*diffusivity * */ 0.5 * (normal_gradient_m + normal_gradient_p) -
-         /*diffusivity * */ penalty_parameter * jump_value;
+  return 0.5 * (normal_gradient_m + normal_gradient_p) - penalty_parameter * jump_value;
 }
 
 template<int dim, int fe_degree, typename Number>
