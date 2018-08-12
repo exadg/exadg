@@ -503,9 +503,11 @@ protected:
                                          const Range & /*range*/) const;
 #endif
 
+public:
   void
   set_zero_mean_value(VectorType & vec) const;
 
+protected:
   void
   set_zero_mean_value_diagonal(VectorType & diagonal) const;
 
