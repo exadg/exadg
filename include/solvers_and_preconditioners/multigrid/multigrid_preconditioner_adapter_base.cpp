@@ -53,6 +53,8 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
   unsigned int global = tria->n_global_levels();
   unsigned int degree = dof_handler.get_fe().degree;
 
+  unsigned int rank = Utilities::MPI::this_mpi_process(tria->get_communicator());
+  
   // determine number of components
   const unsigned int n_components =
     dof_handler.n_dofs() / tria->n_global_active_cells() / std::pow(1 + degree, dim);
@@ -174,7 +176,8 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
       auto curr = seq[i];
       if(prev.first != curr.first && deg == prev.second && deg == curr.second)
       {
-        printf("  h-gmg (%d,%d) -> (%d,%d)\n", prev.first, prev.second, curr.first, curr.second);
+        if(!rank)
+          printf("  h-gmg (%d,%d) -> (%d,%d)\n", prev.first, prev.second, curr.first, curr.second);
         m[i] = curr.first;
       }
     }
@@ -198,7 +201,8 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
     auto curr = seq[i];
     if(prev.second != curr.second)
     {
-      printf("  p-gmg (%d,%d) -> (%d,%d)\n", prev.first, prev.second, curr.first, curr.second);
+      if(!rank)
+        printf("  p-gmg (%d,%d) -> (%d,%d)\n", prev.first, prev.second, curr.first, curr.second);
       MGTransferBase<VECTOR_TYPE> * temp;
 
       const unsigned int from = curr.second, to = prev.second;
