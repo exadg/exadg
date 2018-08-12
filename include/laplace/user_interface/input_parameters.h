@@ -1,12 +1,12 @@
 /*
- * InputParametersConvDiff.h
+ * input_parameters.h
  *
  *  Created on:
  *      Author:
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_INPUT_PARAMETERS_H_
-#define INCLUDE_CONVECTION_DIFFUSION_INPUT_PARAMETERS_H_
+#ifndef INCLUDE_LAPLACE_INPUT_PARAMETERS_H_
+#define INCLUDE_LAPLACE_INPUT_PARAMETERS_H_
 
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
 #include "../include/functionalities/print_functions.h"
@@ -240,4 +240,4 @@ public:
 };
 
 } // namespace Laplace
-#endif /* INCLUDE_CONVECTION_DIFFUSION_INPUT_PARAMETERS_H_ */
+#endif /* INCLUDE_LAPLACE_INPUT_PARAMETERS_H_ */

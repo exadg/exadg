@@ -1,12 +1,12 @@
 /*
- * FieldFunctionsConvDiff.h
+ * field_functions.h
  *
- *  Created on: Aug 3, 2016
- *      Author: fehn
+ *  Created on: 
+ *      Author: 
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_FIELD_FUNCTIONS_H_
-#define INCLUDE_CONVECTION_DIFFUSION_FIELD_FUNCTIONS_H_
+#ifndef INCLUDE_LAPLACE_FIELD_FUNCTIONS_H_
+#define INCLUDE_LAPLACE_FIELD_FUNCTIONS_H_
 
 namespace Laplace
 {
@@ -19,4 +19,4 @@ struct FieldFunctions
 
 } // namespace Laplace
 
-#endif /* INCLUDE_CONVECTION_DIFFUSION_FIELD_FUNCTIONS_H_ */
+#endif /* INCLUDE_LAPLACE_FIELD_FUNCTIONS_H_ */

@@ -1,8 +1,8 @@
 /*
- * BoundaryDescriptorConvDiff.h
+ * boundary_descriptor.h
  *
- *  Created on: Aug 3, 2016
- *      Author: fehn
+ *  Created on: 
+ *      Author: 
  */
 
 #ifndef INCLUDE_LAPLACE_BOUNDARY_DESCRIPTOR_H_

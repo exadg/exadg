@@ -1,12 +1,12 @@
 /*
- * AnalyticalSolutionConvDiff.h
+ * analytical_solution.h
  *
- *  Created on: Oct 12, 2016
- *      Author: fehn
+ *  Created on: 
+ *      Author: 
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_ANALYTICAL_SOLUTION_H_
-#define INCLUDE_CONVECTION_DIFFUSION_ANALYTICAL_SOLUTION_H_
+#ifndef INCLUDE_LAPLACE_ANALYTICAL_SOLUTION_H_
+#define INCLUDE_LAPLACE_ANALYTICAL_SOLUTION_H_
 
 #include <deal.II/base/function.h>
 
@@ -22,4 +22,4 @@ struct AnalyticalSolution
 
 } // namespace Laplace
 
-#endif /* INCLUDE_CONVECTION_DIFFUSION_ANALYTICAL_SOLUTION_H_ */
+#endif /* INCLUDE_LAPLACE_ANALYTICAL_SOLUTION_H_ */
