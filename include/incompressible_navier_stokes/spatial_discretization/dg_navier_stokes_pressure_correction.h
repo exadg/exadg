@@ -150,6 +150,8 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
 
   // unsteady problem
   vel_conv_diff_operator_data.unsteady_problem = true;
+  
+  vel_conv_diff_operator_data.scaling_factor_time_derivative_term = scaling_factor_time_derivative_term;
 
   // convective problem
   if(this->param.equation_type == EquationType::NavierStokes &&
@@ -174,8 +176,6 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
       this->mass_matrix_operator,
       this->viscous_operator,
       this->convective_operator);
-
-  velocity_conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
 
 
   // setup preconditioner for momentum equation

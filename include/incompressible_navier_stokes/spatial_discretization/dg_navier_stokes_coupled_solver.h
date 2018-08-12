@@ -376,6 +376,8 @@ setup_velocity_conv_diff_operator(double const &scaling_factor_time_derivative_t
   else
     vel_conv_diff_operator_data.unsteady_problem = false;
 
+  vel_conv_diff_operator_data.scaling_factor_time_derivative_term = scaling_factor_time_derivative_term;
+
   // convective problem
   if(nonlinear_problem_has_to_be_solved())
     vel_conv_diff_operator_data.convective_problem = true;
@@ -390,8 +392,6 @@ setup_velocity_conv_diff_operator(double const &scaling_factor_time_derivative_t
       this->mass_matrix_operator,
       this->viscous_operator,
       this->convective_operator);
-
-  velocity_conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
