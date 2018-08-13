@@ -1,6 +1,11 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_RHS
 #define INCLUDE_CONVECTION_DIFFUSION_RHS
 
+
+#include <deal.II/matrix_free/fe_evaluation.h>
+
+#include "../../../../include/functionalities/evaluate_functions.h"
+
 namespace ConvDiff
 {
 

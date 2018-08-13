@@ -214,7 +214,7 @@ DGOperation<dim, fe_degree, value_type>::setup_operators()
   laplace_operator.initialize(mapping, data, laplace_operator_data);
 
   // rhs operator
-  Laplace::RHSOperatorData<dim> rhs_operator_data;
+  ConvDiff::RHSOperatorData<dim> rhs_operator_data;
   rhs_operator_data.dof_index  = 0;
   rhs_operator_data.quad_index = 0;
   rhs_operator_data.rhs        = field_functions->right_hand_side;

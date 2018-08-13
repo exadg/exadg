@@ -25,7 +25,7 @@
 #include "../user_interface/input_parameters.h"
 
 #include "laplace_operator.h"
-#include "rhs_operator.h"
+#include "../../convection_diffusion/spatial_discretization/operators/rhs_operator.h"
 
 namespace Laplace
 {
@@ -88,7 +88,7 @@ private:
   std::shared_ptr<Laplace::BoundaryDescriptor<dim>> boundary_descriptor;
   std::shared_ptr<Laplace::FieldFunctions<dim>>     field_functions;
 
-  Laplace::RHSOperator<dim, fe_degree, value_type> rhs_operator;
+  ConvDiff::RHSOperator<dim, fe_degree, value_type> rhs_operator;
 
   Laplace::LaplaceOperator<dim, fe_degree, value_type> laplace_operator;
 
