@@ -135,7 +135,6 @@ public:
   void vmult (OtherVectorType       &dst,
               const OtherVectorType &src) const
   {
-      //std::cout << "MultigridPreconditioner:v:mult::1" << std::endl;
 #if ENABLE_TIMING
       time[maxlevel].restart();
 #endif
@@ -145,9 +144,7 @@ public:
 #if ENABLE_TIMING
     ctime[maxlevel] += time[maxlevel].wall_time();
 #endif
-      //std::cout << "MultigridPreconditioner:v:mult::2" << std::endl;
     v_cycle(maxlevel);
-      //std::cout << "MultigridPreconditioner:v:mult::3" << std::endl;
 #if ENABLE_TIMING
     time[maxlevel].restart();
 #endif
@@ -155,7 +152,6 @@ public:
 #if ENABLE_TIMING
     ctime[maxlevel] += time[maxlevel].wall_time();
 #endif
-      //std::cout << "MultigridPreconditioner:v:mult::4" << std::endl;
       
   }
 
@@ -229,44 +225,29 @@ private:
 #endif
     if (level==minlevel)
     {
-      //std::cout << "MultigridPreconditioner::v_cycle::1" << std::endl;
       (*coarse)(level, solution[level], defect[level]);
-      //std::cout << "MultigridPreconditioner::v_cycle::2" << std::endl;
 #if ENABLE_TIMING
       ctime[level] += time[level].wall_time();
 #endif
       return;
     }
 
-      //std::cout << "MultigridPreconditioner::v_cycle::3" << std::endl;
     (*smooth)[level]->vmult(solution[level], defect[level]);
-      //std::cout << "MultigridPreconditioner::v_cycle::4" << std::endl;
     (*matrix)[level]->vmult_interface_down(t[level], solution[level]);
-      //std::cout << "MultigridPreconditioner::v_cycle::5" << std::endl;
-      //std::cout << "MultigridPreconditioner::v_cycle::5" << std::endl;
     t[level].sadd(-1.0, 1.0, defect[level]);
-      //std::cout << "MultigridPreconditioner::v_cycle::6" << std::endl;
 
     // transfer to next level
     (*transfer)[level]->restrict_and_add(level, defect[level-1], t[level]);
-      //std::cout << "MultigridPreconditioner::v_cycle::7" << std::endl;
 
     v_cycle(level-1);
-      //std::cout << "MultigridPreconditioner::v_cycle::8" << std::endl;
 
     (*transfer)[level]->prolongate(level, t[level], solution[level-1]);
-      //std::cout << "MultigridPreconditioner::v_cycle::9" << std::endl;
     solution[level] += t[level];
-      //std::cout << "MultigridPreconditioner::v_cycle::10" << std::endl;
     // smooth on the negative part of the residual
     defect[level] *= -1.0;
-      //std::cout << "MultigridPreconditioner::v_cycle::11" << std::endl;
     (*matrix)[level]->vmult_add_interface_up(defect[level], solution[level]);
-      //std::cout << "MultigridPreconditioner::v_cycle::12" << std::endl;
     (*smooth)[level]->vmult(t[level], defect [level]);
-      //std::cout << "MultigridPreconditioner::v_cycle::13" << std::endl;
     solution[level] -= t[level];
-      //std::cout << "MultigridPreconditioner::v_cycle::14" << std::endl;
 #if ENABLE_TIMING
     ctime[level] += time[level].wall_time();
 #endif
