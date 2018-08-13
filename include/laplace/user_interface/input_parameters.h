@@ -169,7 +169,7 @@ public:
   {
     pcout << std::endl << "Output and postprocessing:" << std::endl;
    
-    output_data.print(pcout,true /*problem_type == ProblemType::Unsteady*/);
+    output_data.print(pcout,false /*steady*/);
     
   }
 
