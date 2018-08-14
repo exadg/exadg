@@ -601,8 +601,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_coarse_solv
     }
     case MultigridCoarseGridSolver::AMG_ML:
     {
-      // TODO modify template arguments
-      mg_coarse.reset(new MGCoarseML<Operator>(matrix, matrix_q, true, coarse_level));
+      mg_coarse.reset(new MGCoarseML<Operator>(matrix, matrix_q, true, coarse_level, this->mg_data.coarse_ml_data));
       return;
     }
     default:
