@@ -10,6 +10,7 @@
 
 #include <deal.II/lac/parallel_vector.h>
 #include <deal.II/lac/solver_cg.h>
+#include <deal.II/lac/solver_control.h>
 #include <deal.II/lac/solver_gmres.h>
 #include <deal.II/multigrid/mg_base.h>
 
@@ -17,17 +18,6 @@
 
 #include "../preconditioner/block_jacobi_preconditioner.h"
 #include "../preconditioner/jacobi_preconditioner.h"
-
-
-#include <deal.II/fe/fe_dgq.h>
-#include <deal.II/lac/dynamic_sparsity_pattern.h>
-#include <deal.II/lac/sparse_matrix.h>
-#include <deal.II/meshworker/dof_info.h>
-#include <deal.II/meshworker/integration_info.h>
-#include <deal.II/meshworker/loop.h>
-#include <deal.II/meshworker/simple.h>
-
-#include <deal.II/lac/solver_control.h>
 
 enum class PreconditionerCoarseGridSolver
 {
