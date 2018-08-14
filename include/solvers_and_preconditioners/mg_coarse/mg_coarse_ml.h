@@ -9,9 +9,12 @@
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
 #include <deal.II/lac/trilinos_sparsity_pattern.h>
+#include <deal.II/base/conditional_ostream.h>
 
 #include "../preconditioner/preconditioner_base.h"
 #include "../transfer/dg_to_cg_transfer.h"
+
+#include "../../functionalities/print_functions.h"
 
 #ifndef DEAL_II_WITH_TRILINOS
 namespace dealii
@@ -69,6 +72,19 @@ struct MGCoarseMLData
     amg_data.n_cycles        = 1;
     amg_data.smoother_type   = "ILU";
   };
+  
+  void print(ConditionalOStream &pcout)
+  {
+    print_parameter(pcout,"  Accelerate with CG (PCG)",use_pcg);
+    if(use_pcg){
+      print_parameter(pcout,"    PCG max, iterations",pcg_max_iterations);
+      print_parameter(pcout,"    PCG abs. residuum",pcg_abs_residuum);
+      print_parameter(pcout,"    PCG rel. residuum",pcg_rel_residuum);
+      print_parameter(pcout,"    PCG failure criterion",pcg_failure_criterion);
+    }
+    print_parameter(pcout,"  Perform transfer to CG",use_cg);
+  }
+  
   bool   use_pcg;
   int    pcg_max_iterations;
   double pcg_abs_residuum;

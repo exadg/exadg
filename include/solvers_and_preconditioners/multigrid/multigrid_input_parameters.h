@@ -9,6 +9,7 @@
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRIDINPUTPARAMETERS_H_
 
 #include "../../functionalities/print_functions.h"
+#include "../mg_coarse/mg_coarse_ml.h"
 
 enum class MultigridType
 {
@@ -218,6 +219,9 @@ struct MultigridData
                                         "AMG - ML"};
 
     print_parameter(pcout,"Multigrid coarse grid solver",str_coarse_solver[(int)coarse_solver]);
+    
+    if(coarse_solver==MultigridCoarseGridSolver::AMG_ML)
+        coarse_ml_data.print(pcout);
 
     std::string str_type[] = { "h-GMG", "p-GMG", "h-GMG + p-GMG", "p-GMG + h-GMG"};
     print_parameter(pcout,"Multigrid type", str_type[((int)type)+(two_levels?2:0)]);
@@ -241,6 +245,9 @@ struct MultigridData
 
   // Sets the coarse grid solver
   MultigridCoarseGridSolver coarse_solver;
+  
+  // Configuration of AMG settings
+  MGCoarseMLData coarse_ml_data;
   
   // Multigrid type: p-GMG vs. h-GMG
   MultigridType type;
