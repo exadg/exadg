@@ -189,7 +189,6 @@ public:
   virtual void
   reinit(const DoFHandler<dim> & /*dof_handler*/,
          const Mapping<dim> & /*mapping*/,
-         // const LaplaceOperatorData<dim> &/*operator_data*/,
          void * /*operator_data*/,
          const MGConstrainedDoFs & /*mg_constrained_dofs*/,
          const unsigned int /*level*/ = numbers::invalid_unsigned_int)
