@@ -121,7 +121,7 @@ void
 MGCoarseML<Operator, Number>::vmult(parallel::distributed::Vector<Number> &,
                                     const parallel::distributed::Vector<Number> &) const
 {
-  AssertThrow(false, ExcMessage("not implemented yet!"));
+  AssertThrow(false, ExcMessage("MGCoarseML::vmult not implemented yet!"));
 }
 
 #else

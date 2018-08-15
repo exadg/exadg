@@ -110,7 +110,7 @@ inline DEAL_II_ALWAYS_INLINE //
   else if(operator_type == OperatorType::inhomogeneous)
     return make_vectorized_array<value_type>(0.0);
   else
-    AssertThrow(false, ExcMessage("Specified OpType is not implemented!"));
+    AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
 
   return make_vectorized_array<value_type>(0.0);
 }

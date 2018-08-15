@@ -681,7 +681,7 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
 #endif
 // clang-format on
     default:
-      AssertThrow(false, ExcMessage("ConvectionDiffusionOperator not implemented for this degree!"));
+      AssertThrow(false, ExcMessage("VelocityConvDiffOperator not implemented for this degree!"));
       return nullptr;
       // dummy return (statement not reached)
   }
