@@ -499,14 +499,11 @@ protected:
 
 protected:
   mutable AdditionalData operator_settings;
-
-private:
-  const bool do_eval_faces;
-
-protected:
   mutable lazy_ptr<MatrixFree_> data;
+  mutable double eval_time;
 
 private:
+  const bool                         do_eval_faces;
   mutable lazy_ptr<ConstraintMatrix> constraint;
   mutable bool                       is_dg;
   mutable bool                       is_mg;
@@ -517,8 +514,6 @@ private:
   mutable bool block_jacobi_matrices_have_been_initialized;
   mutable bool operator_is_singular;
 
-protected:
-  mutable double eval_time;
 };
 
 #include "operation_base.cpp"

@@ -9,13 +9,14 @@
 template<int dim, int degree, typename Number, typename AdditionalData>
 OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
   : operator_settings(AdditionalData()),
+    data(),
+    eval_time(0.0),
     do_eval_faces(
       operator_settings.internal_evaluate.do_eval() || operator_settings.internal_integrate.do_eval() ||
       operator_settings.boundary_evaluate.do_eval() || operator_settings.boundary_integrate.do_eval()),
     level_mg_handler(numbers::invalid_unsigned_int),
     block_jacobi_matrices_have_been_initialized(false),
-    operator_is_singular(false),
-    eval_time(0.0)
+    operator_is_singular(false)
 {
 }
 
