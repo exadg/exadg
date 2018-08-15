@@ -6,19 +6,22 @@
  */
 
 #include <deal.II/base/conditional_ostream.h>
+#include <deal.II/base/convergence_table.h>
 #include <deal.II/base/revision.h>
+#include <deal.II/base/timer.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/lac/la_parallel_vector.h>
+#include <deal.II/numerics/data_out.h>
 #include <vector>
 
-#include "../include/laplace/spatial_discretization/laplace_operator.h"
-#include "../include/laplace/spatial_discretization/poisson_operation.h"
+#include "../include/poisson/spatial_discretization/laplace_operator.h"
+#include "../include/poisson/spatial_discretization/poisson_operation.h"
 
-#include "../include/laplace/user_interface/analytical_solution.h"
-#include "../include/laplace/user_interface/boundary_descriptor.h"
-#include "../include/laplace/user_interface/field_functions.h"
-#include "../include/laplace/user_interface/input_parameters.h"
+#include "../include/poisson/user_interface/analytical_solution.h"
+#include "../include/poisson/user_interface/boundary_descriptor.h"
+#include "../include/poisson/user_interface/field_functions.h"
+#include "../include/poisson/user_interface/input_parameters.h"
 
 #include "functionalities/print_functions.h"
 #include "functionalities/print_general_infos.h"

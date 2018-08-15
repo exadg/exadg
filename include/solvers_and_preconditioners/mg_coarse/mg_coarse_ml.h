@@ -2,14 +2,10 @@
 #define MG_COARSE_ML
 
 #include <deal.II/lac/parallel_vector.h>
-#include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/solver_control.h>
-#include <deal.II/multigrid/mg_base.h>
-
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
-#include <deal.II/lac/trilinos_sparsity_pattern.h>
-#include <deal.II/base/conditional_ostream.h>
+#include <deal.II/multigrid/mg_base.h>
+
 
 #include "../preconditioner/preconditioner_base.h"
 #include "../transfer/dg_to_cg_transfer.h"

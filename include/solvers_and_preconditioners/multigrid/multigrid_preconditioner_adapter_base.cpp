@@ -2,6 +2,10 @@
 
 #include <navierstokes/config.h>
 
+#include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/fe_q.h>
+#include <deal.II/fe/fe_system.h>
+
 #include "../mg_coarse/mg_coarse_ml.h"
 
 template<int dim, typename value_type, typename Operator>

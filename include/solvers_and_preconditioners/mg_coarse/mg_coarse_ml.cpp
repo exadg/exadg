@@ -1,5 +1,8 @@
 #include "mg_coarse_ml.h"
 
+#include <deal.II/lac/solver_cg.h>
+#include <deal.II/lac/solver_control.h>
+
 #ifdef DEAL_II_WITH_TRILINOS
 
 template<typename Operator, typename Number>

@@ -1,5 +1,8 @@
 #include "operation_base.h"
 
+#include <deal.II/dofs/dof_tools.h>
+#include <deal.II/distributed/tria.h>
+
 #include "../solvers_and_preconditioners/util/block_jacobi_matrices.h"
 #include "../solvers_and_preconditioners/util/invert_diagonal.h"
 

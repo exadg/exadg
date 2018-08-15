@@ -1,49 +1,17 @@
 #ifndef OPERATION_BASE_H
 #define OPERATION_BASE_H
 
-#include <deal.II/base/conditional_ostream.h>
-#include <deal.II/base/function.h>
-#include <deal.II/base/logstream.h>
-#include <deal.II/base/polynomial.h>
-#include <deal.II/base/timer.h>
-#include <deal.II/base/utilities.h>
-#include <deal.II/distributed/tria.h>
 #include <deal.II/dofs/dof_handler.h>
-#include <deal.II/dofs/dof_tools.h>
-#include <deal.II/fe/fe_q.h>
-#include <deal.II/fe/fe_values.h>
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/tria.h>
 #include <deal.II/lac/constraint_matrix.h>
 #include <deal.II/lac/lapack_full_matrix.h>
-#include <deal.II/numerics/data_out.h>
-#include <deal.II/numerics/point_value_history.h>
-#include <deal.II/numerics/solution_transfer.h>
-#include <deal.II/numerics/vector_tools.h>
-
-#include <deal.II/base/mg_level_object.h>
-
-#include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/matrix_free/fe_evaluation.h>
-#include <deal.II/matrix_free/matrix_free.h>
-#include <deal.II/matrix_free/operators.h>
-
-#include <deal.II/grid/tria_accessor.h>
-#include <deal.II/grid/tria_iterator.h>
-
-#include <deal.II/fe/fe_dgq.h>
-#include <deal.II/fe/fe_q.h>
-#include <deal.II/fe/fe_system.h>
-#include <deal.II/grid/grid_in.h>
-#include <deal.II/grid/grid_out.h>
-
-#include <deal.II/base/convergence_table.h>
+#include <deal.II/lac/parallel_vector.h>
 #ifdef DEAL_II_WITH_TRILINOS
 #  include <deal.II/lac/trilinos_sparse_matrix.h>
 #endif
-#include <deal.II/lac/constraint_matrix.h>
-#include "multigrid_operator_base.h"
+#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/matrix_free.h>
 
+#include "multigrid_operator_base.h"
 
 using namespace dealii;
 
