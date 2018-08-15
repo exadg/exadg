@@ -372,7 +372,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::update_block_jacobi() const
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::update_block_jacobi(bool do_lu_factorization) const
+OperatorBase<dim, degree, Number, AdditionalData>::update_block_jacobi(bool const do_lu_factorization) const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
 

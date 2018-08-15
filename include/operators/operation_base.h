@@ -256,7 +256,7 @@ public:
   void
   update_block_jacobi() const;
   void
-  update_block_jacobi(bool do_lu_factorization) const;
+  update_block_jacobi(bool const do_lu_factorization) const;
   virtual void
   add_block_jacobi_matrices(BlockMatrix & matrices) const;
   virtual void
