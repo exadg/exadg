@@ -719,7 +719,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_cell_inhom(const Matrix
                                                                     const VectorType &,
                                                                     const Range &) const
 {
-  /*nothing to do*/
+  /*nothing to do (see note in header file)*/
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
@@ -729,7 +729,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_face_inhom(const Matrix
                                                                     const VectorType &,
                                                                     const Range &) const
 {
-  /*nothing to do*/
+  /*nothing to do (see note in header file)*/
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>

@@ -367,21 +367,27 @@ protected:
                      const VectorType & /*src*/,
                      const Range & /*range*/) const;
 
+  /*
+   * ... rhs (inhomogenous)
+   * note:  in the inhomogeneous case we only have to loop over the boundary 
+   * faces. This is, however, not possible with Matrixfree::loop(): that is 
+   * why two empty function have to be provided for cell and face.
+   */
   void
   local_cell_inhom(const MatrixFree_ & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
 
   void
   local_face_inhom(const MatrixFree_ & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
-
-  /*
-   * ... rhs (inhomogenous)
-   */
+  
   void
   local_boundary_inhom(const MatrixFree_ & /*data*/,
                        VectorType & /*dst*/,
                        const VectorType & /*src*/,
                        const Range & /*range*/) const;
-
+  
+  /*
+   * ... evaluate
+   */
   void
   local_boundary_full(const MatrixFree_ & /*data*/,
                       VectorType & /*dst*/,
