@@ -155,12 +155,11 @@ public:
   typedef OperatorBase<dim, degree, Number, AdditionalData> This;
   typedef parallel::distributed::Vector<Number>             VectorType;
 #ifdef DEAL_II_WITH_TRILINOS
-  typedef FullMatrix<TrilinosScalar>     FMatrix;
-  typedef TrilinosWrappers::SparseMatrix SMatrix;
+  typedef FullMatrix<TrilinosScalar>     FullMatrix_;
+  typedef TrilinosWrappers::SparseMatrix SparseMatrix;
 #endif
-  typedef std::vector<LAPACKFullMatrix<Number>>                BMatrix;
-  typedef MatrixFree<dim, Number>                              MF;
-  typedef ConstraintMatrix                                     CM;
+  typedef std::vector<LAPACKFullMatrix<Number>>                BlockMatrix;
+  typedef MatrixFree<dim, Number>                              MatrixFree_;
   typedef std::pair<unsigned int, unsigned int>                Range;
   typedef FEEvaluation<dim, degree, degree + 1, 1, Number>     FEEvalCell;
   typedef FEFaceEvaluation<dim, degree, degree + 1, 1, Number> FEEvalFace;
@@ -173,8 +172,8 @@ public:
   static const unsigned int dofs_per_cell = FEEvalCell::static_dofs_per_cell;
 
   void
-  reinit(MF const &             mf,
-         CM &                   cm,
+  reinit(MatrixFree_ const &    mf,
+         ConstraintMatrix &     cm,
          AdditionalData const & ad,
          unsigned int           level_mg_handler = numbers::invalid_unsigned_int) const;
 
@@ -259,18 +258,18 @@ public:
   void
   update_block_jacobi(bool do_lu_factorization) const;
   virtual void
-  add_block_jacobi_matrices(BMatrix & matrices) const;
+  add_block_jacobi_matrices(BlockMatrix & matrices) const;
   virtual void
-  add_block_jacobi_matrices(BMatrix & matrices, Number const time) const;
+  add_block_jacobi_matrices(BlockMatrix & matrices, Number const time) const;
 
   /*
    * sparse matrix (Trilinos) methods
    */
 #ifdef DEAL_II_WITH_TRILINOS
   void
-  init_system_matrix(SMatrix & system_matrix) const;
+  init_system_matrix(SparseMatrix & system_matrix) const;
   void
-  calculate_system_matrix(SMatrix & system_matrix) const;
+  calculate_system_matrix(SparseMatrix & system_matrix) const;
 #endif
 
   /*
@@ -357,32 +356,32 @@ protected:
    * functions to be called from matrix-free loops and cell_loops: vmult
    */
   void
-  local_cell_hom(const MF & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
+  local_cell_hom(const MatrixFree_ & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
 
   void
-  local_face_hom(const MF & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
+  local_face_hom(const MatrixFree_ & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
 
   // homogenous
   void
-  local_boundary_hom(const MF & /*data*/,
+  local_boundary_hom(const MatrixFree_ & /*data*/,
                      VectorType & /*dst*/,
                      const VectorType & /*src*/,
                      const Range & /*range*/) const;
 
   void
-  local_cell_inhom(const MF & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
+  local_cell_inhom(const MatrixFree_ & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
 
   void
-  local_face_inhom(const MF & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
+  local_face_inhom(const MatrixFree_ & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
 
   void
-  local_boundary_inhom(const MF & /*data*/,
+  local_boundary_inhom(const MatrixFree_ & /*data*/,
                        VectorType & /*dst*/,
                        const VectorType & /*src*/,
                        const Range & /*range*/) const;
 
   void
-  local_boundary_full(const MF & /*data*/,
+  local_boundary_full(const MatrixFree_ & /*data*/,
                       VectorType & /*dst*/,
                       const VectorType & /*src*/,
                       const Range & /*range*/) const;
@@ -391,25 +390,25 @@ protected:
    * ... diagonal
    */
   void
-  local_add_diagonal_cell(const MF & /*data*/,
+  local_add_diagonal_cell(const MatrixFree_ & /*data*/,
                           VectorType & dst,
                           const VectorType & /*src*/,
                           const Range & range) const;
 
   void
-  local_add_diagonal_face(const MF & /*data*/,
+  local_add_diagonal_face(const MatrixFree_ & /*data*/,
                           VectorType & dst,
                           const VectorType & /*src*/,
                           const Range & range) const;
 
   void
-  local_add_diagonal_boundary(const MF & /*data*/,
+  local_add_diagonal_boundary(const MatrixFree_ & /*data*/,
                               VectorType & dst,
                               const VectorType & /*src*/,
                               const Range & range) const;
 
   void
-  local_add_diagonal_cell_based(const MF & /*data*/,
+  local_add_diagonal_cell_based(const MatrixFree_ & /*data*/,
                                 VectorType & dst,
                                 const VectorType & /*src*/,
                                 const Range & range) const;
@@ -418,38 +417,38 @@ protected:
    * ... block diagonal
    */
   void
-  local_apply_block_diagonal(const MF & /*data*/,
+  local_apply_block_diagonal(const MatrixFree_ & /*data*/,
                              VectorType &       dst,
                              const VectorType & src,
                              const Range &      range) const;
 
   void
-  local_apply_block_jacobi_add(const MF &         data,
+  local_apply_block_jacobi_add(const MatrixFree_ &         data,
                                VectorType &       dst,
                                const VectorType & src,
                                const Range &      cell_range) const;
   void
-  local_add_block_diagonal_cell(const MF & /*data*/,
-                                BMatrix & dst,
-                                const BMatrix & /*src*/,
+  local_add_block_diagonal_cell(const MatrixFree_ & /*data*/,
+                                BlockMatrix & dst,
+                                const BlockMatrix & /*src*/,
                                 const Range & range) const;
 
   void
-  local_add_block_diagonal_face(const MF & /*data*/,
-                                BMatrix & dst,
-                                const BMatrix & /*src*/,
+  local_add_block_diagonal_face(const MatrixFree_ & /*data*/,
+                                BlockMatrix & dst,
+                                const BlockMatrix & /*src*/,
                                 const Range & range) const;
 
   void
-  local_add_block_diagonal_boundary(const MF & /*data*/,
-                                    BMatrix & dst,
-                                    const BMatrix & /*src*/,
+  local_add_block_diagonal_boundary(const MatrixFree_ & /*data*/,
+                                    BlockMatrix & dst,
+                                    const BlockMatrix & /*src*/,
                                     const Range & range) const;
 
   void
-  local_add_block_diagonal_cell_based(const MF & /*data*/,
-                                      BMatrix & dst,
-                                      const BMatrix & /*src*/,
+  local_add_block_diagonal_cell_based(const MatrixFree_ & /*data*/,
+                                      BlockMatrix & dst,
+                                      const BlockMatrix & /*src*/,
                                       const Range & range) const;
 
   /*
@@ -457,21 +456,21 @@ protected:
    */
 #ifdef DEAL_II_WITH_TRILINOS
   void
-  local_calculate_system_matrix_cell(const MF & /*data*/,
-                                     SMatrix & dst,
-                                     const SMatrix & /*src*/,
+  local_calculate_system_matrix_cell(const MatrixFree_ & /*data*/,
+                                     SparseMatrix & dst,
+                                     const SparseMatrix & /*src*/,
                                      const Range & range) const;
 
   void
-  local_calculate_system_matrix_face(const MF & /*data*/,
-                                     SMatrix & dst,
-                                     const SMatrix & /*src*/,
+  local_calculate_system_matrix_face(const MatrixFree_ & /*data*/,
+                                     SparseMatrix & dst,
+                                     const SparseMatrix & /*src*/,
                                      const Range & range) const;
 
   void
-  local_calculate_system_matrix_boundary(const MF & /*data*/,
-                                         SMatrix & /*dst*/,
-                                         const SMatrix & /*src*/,
+  local_calculate_system_matrix_boundary(const MatrixFree_ & /*data*/,
+                                         SparseMatrix & /*dst*/,
+                                         const SparseMatrix & /*src*/,
                                          const Range & /*range*/) const;
 #endif
 
@@ -503,7 +502,7 @@ private:
   const bool do_eval_faces;
 
 protected:
-  mutable lazy_ptr<MF> data;
+  mutable lazy_ptr<MatrixFree_> data;
 
 private:
   mutable lazy_ptr<ConstraintMatrix> constraint;

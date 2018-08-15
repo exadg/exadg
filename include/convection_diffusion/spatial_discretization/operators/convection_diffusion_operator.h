@@ -51,7 +51,7 @@ public:
   typedef OperatorBase<dim, fe_degree, value_type, ConvectionDiffusionOperatorData<dim>> Parent;
   typedef typename Parent::FEEvalCell                                                    FEEvalCell;
   typedef typename Parent::FEEvalFace                                                    FEEvalFace;
-  typedef typename Parent::BMatrix                                                       BMatrix;
+  typedef typename Parent::BlockMatrix                                                       BlockMatrix;
 
   typedef MassMatrixOperator<dim, fe_degree, Number> MassMatrixOp;
   typedef ConvectiveOperator<dim, fe_degree, Number> ConvectiveOp;
@@ -128,9 +128,9 @@ private:
    * This is done sequentially for the different operators.
    */
   void
-  add_block_jacobi_matrices(BMatrix & matrices) const;
+  add_block_jacobi_matrices(BlockMatrix & matrices) const;
   void
-  add_block_jacobi_matrices(BMatrix & matrices, Number const time) const;
+  add_block_jacobi_matrices(BlockMatrix & matrices, Number const time) const;
 
   MultigridOperatorBase<dim, Number> *
   get_new(unsigned int deg) const;

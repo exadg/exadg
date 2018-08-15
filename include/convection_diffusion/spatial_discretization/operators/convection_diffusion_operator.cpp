@@ -247,14 +247,14 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_diagonal(
 
 template<int dim, int fe_degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_jacobi_matrices(BMatrix & matrices) const
+ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_jacobi_matrices(BlockMatrix & matrices) const
 {
   Parent::add_block_jacobi_matrices(matrices);
 }
 
 template<int dim, int fe_degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_jacobi_matrices(BMatrix &    matrices,
+ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_jacobi_matrices(BlockMatrix &    matrices,
                                                                                Number const time) const
 {
   // calculate block Jacobi matrices
