@@ -168,8 +168,8 @@ public:
 
   OperatorBase();
 
-  static const unsigned int v_len         = VectorizedArray<Number>::n_array_elements;
-  static const unsigned int dofs_per_cell = FEEvalCell::static_dofs_per_cell;
+  static const unsigned int vectorization_length = VectorizedArray<Number>::n_array_elements;
+  static const unsigned int dofs_per_cell        = FEEvalCell::static_dofs_per_cell;
 
   void
   reinit(MatrixFree_ const &    matrix_free,

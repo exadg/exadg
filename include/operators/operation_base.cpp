@@ -381,7 +381,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::update_block_jacobi(bool cons
   if(block_jacobi_matrices_have_been_initialized == false)
   {
     auto dofs = data->get_shape_info().dofs_per_component_on_cell;
-    matrices.resize(data->n_macro_cells() * v_len, LAPACKFullMatrix<Number>(dofs, dofs));
+    matrices.resize(data->n_macro_cells() * vectorization_length, LAPACKFullMatrix<Number>(dofs, dofs));
     block_jacobi_matrices_have_been_initialized = true;
   } // else: reuse old memory
 
@@ -1025,7 +1025,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_block_jacobi_add(
     fe_eval.reinit(cell);
     fe_eval.read_dof_values(src);
 
-    for(unsigned int v = 0; v < v_len; ++v)
+    for(unsigned int v = 0; v < vectorization_length; ++v)
     {
       // fill source vector
       Vector<Number> src_vector(fe_eval.dofs_per_cell);
@@ -1033,7 +1033,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_block_jacobi_add(
         src_vector(j) = fe_eval.begin_dof_values()[j][v];
 
       // apply inverse matrix
-      matrices[cell * v_len + v].solve(src_vector, false);
+      matrices[cell * vectorization_length + v].solve(src_vector, false);
 
       // write solution to dst-vector
       for(unsigned int j = 0; j < fe_eval.dofs_per_cell; ++j)
@@ -1057,7 +1057,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_block_diagonal(co
     fe_eval.reinit(cell);
     fe_eval.read_dof_values(src);
 
-    for(unsigned int v = 0; v < v_len; ++v)
+    for(unsigned int v = 0; v < vectorization_length; ++v)
     {
       // fill source vector
       Vector<Number> src_vector(fe_eval.dofs_per_cell);
@@ -1066,7 +1066,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_block_diagonal(co
         src_vector(j) = fe_eval.begin_dof_values()[j][v];
 
       // apply inverse matrix
-      matrices[cell * v_len + v].vmult(dst_vector, src_vector, false);
+      matrices[cell * vectorization_length + v].vmult(dst_vector, src_vector, false);
 
       // write solution to dst-vector
       for(unsigned int j = 0; j < fe_eval.dofs_per_cell; ++j)
@@ -1105,7 +1105,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_cell
                         this->operator_settings.cell_integrate.gradient);
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          dst[cell * v_len + v](i, j) += fe_eval.begin_dof_values()[i][v];
+          dst[cell * vectorization_length + v](i, j) += fe_eval.begin_dof_values()[i][v];
     }
   }
 }
@@ -1239,7 +1239,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_cell
                         this->operator_settings.cell_integrate.gradient);
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          dst[cell * v_len + v](i, j) = fe_eval.begin_dof_values()[i][v];
+          dst[cell * vectorization_length + v](i, j) = fe_eval.begin_dof_values()[i][v];
     }
 
     // loop over all faces
@@ -1267,7 +1267,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_cell
                               this->operator_settings.internal_integrate.gradient);
           for(unsigned int v = 0; v < n_filled_lanes; ++v)
             for(unsigned int i = 0; i < dofs_per_cell; ++i)
-              dst[cell * v_len + v](i, j) += fe_eval_m.begin_dof_values()[i][v];
+              dst[cell * vectorization_length + v](i, j) += fe_eval_m.begin_dof_values()[i][v];
         }
       }
       else // boundary face
@@ -1285,7 +1285,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_cell
                               this->operator_settings.boundary_integrate.gradient);
           for(unsigned int v = 0; v < n_filled_lanes; ++v)
             for(unsigned int i = 0; i < dofs_per_cell; ++i)
-              dst[cell * v_len + v](i, j) += fe_eval_m.begin_dof_values()[i][v];
+              dst[cell * vectorization_length + v](i, j) += fe_eval_m.begin_dof_values()[i][v];
         }
       }
     }
@@ -1310,9 +1310,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
 
     // create a temporal full matrix for the local element matrix of each ...
     // cell of each macro cell and ...
-    FullMatrix_ matrices[v_len];
+    FullMatrix_ matrices[vectorization_length];
     // set their size
-    std::fill_n(matrices, v_len, FullMatrix_(dofs_per_cell, dofs_per_cell));
+    std::fill_n(matrices, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
 
     // reinit cell
     fe_eval.reinit(cell);
@@ -1380,11 +1380,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
     // determine number of filled vector lanes
     const unsigned int n_filled_lanes = data.n_active_entries_per_face_batch(face);
     // create two local matrix: first one tested by v1 and ...
-    FullMatrix_ matrices_1[v_len];
-    std::fill_n(matrices_1, v_len, FullMatrix_(dofs_per_cell, dofs_per_cell));
+    FullMatrix_ matrices_1[vectorization_length];
+    std::fill_n(matrices_1, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
     // ... the other tested by v2
-    FullMatrix_ matrices_2[v_len];
-    std::fill_n(matrices_2, v_len, FullMatrix_(dofs_per_cell, dofs_per_cell));
+    FullMatrix_ matrices_2[vectorization_length];
+    std::fill_n(matrices_2, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
 
     // reinit face
     fe_eval_m.reinit(face);
@@ -1428,9 +1428,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
       const unsigned int cell_number_2 = data.get_face_info(face).cells_exterior[i];
 
       // cell reference to cell minus
-      auto cell_m = data.get_cell_iterator(cell_number_1 / v_len, cell_number_1 % v_len);
+      auto cell_m = data.get_cell_iterator(cell_number_1 / vectorization_length, cell_number_1 % vectorization_length);
       // cell reference to cell plus
-      auto cell_p = data.get_cell_iterator(cell_number_2 / v_len, cell_number_2 % v_len);
+      auto cell_p = data.get_cell_iterator(cell_number_2 / vectorization_length, cell_number_2 % vectorization_length);
 
       // get position in global matrix
       std::vector<types::global_dof_index> dof_indices_m(dofs_per_cell);
@@ -1490,9 +1490,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
       const unsigned int cell_number_2 = data.get_face_info(face).cells_exterior[i];
 
       // cell reference to cell minus
-      auto cell_m = data.get_cell_iterator(cell_number_1 / v_len, cell_number_1 % v_len);
+      auto cell_m = data.get_cell_iterator(cell_number_1 / vectorization_length, cell_number_1 % vectorization_length);
       // cell reference to cell plus
-      auto cell_p = data.get_cell_iterator(cell_number_2 / v_len, cell_number_2 % v_len);
+      auto cell_p = data.get_cell_iterator(cell_number_2 / vectorization_length, cell_number_2 % vectorization_length);
 
       // get position in global matrix
       std::vector<types::global_dof_index> dof_indices_m(dofs_per_cell);
@@ -1532,8 +1532,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
     // determine number of filled vector lanes
     const unsigned int n_filled_lanes = data.n_active_entries_per_face_batch(face);
 
-    FullMatrix_ matrices[v_len];
-    std::fill_n(matrices, v_len, FullMatrix_(dofs_per_cell, dofs_per_cell));
+    FullMatrix_ matrices[vectorization_length];
+    std::fill_n(matrices, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
 
     // reinit face
     fe_eval.reinit(face);
@@ -1565,7 +1565,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
       // cell number of minus
       const unsigned int cell_num = data.get_face_info(face).cells_interior[i];
 
-      auto cell_i = data.get_cell_iterator(cell_num / v_len, cell_num % v_len);
+      auto cell_i = data.get_cell_iterator(cell_num / vectorization_length, cell_num % vectorization_length);
       std::vector<types::global_dof_index> dof_indices(dofs_per_cell);
       if(is_mg)
         cell_i->get_mg_dof_indices(dof_indices);
