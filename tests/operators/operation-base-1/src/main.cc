@@ -45,7 +45,7 @@
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
 
-#include "../../../../include/laplace/spatial_discretization/laplace_operator.h"
+#include "../../../../include/poisson/spatial_discretization/laplace_operator.h"
 #include "../../operation-base-util/l2_norm.h"
 #include "../../operation-base-util/sparse_matrix_util.h"
 #include "include/rhs_operator.h"
