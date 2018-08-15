@@ -350,7 +350,7 @@ protected:
   // (or more precisely for the Schur-complement preconditioner and the GMG method
   // used to approximately invert the Laplace operator).
   // In that case, the functions specified in BoundaryDescriptorLaplace are irrelevant.
-  std::shared_ptr<Laplace::BoundaryDescriptor<dim> > boundary_descriptor_laplace;
+  std::shared_ptr<Poisson::BoundaryDescriptor<dim> > boundary_descriptor_laplace;
 
   InputParameters<dim> const &param;
 
@@ -383,7 +383,7 @@ template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall
 void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
 initialize_boundary_descriptor_laplace()
 {
-  boundary_descriptor_laplace.reset(new Laplace::BoundaryDescriptor<dim>());
+  boundary_descriptor_laplace.reset(new Poisson::BoundaryDescriptor<dim>());
 
   // Dirichlet BCs for pressure
   this->boundary_descriptor_laplace->dirichlet_bc = boundary_descriptor_pressure->dirichlet_bc;
@@ -782,11 +782,11 @@ compute_streamfunction (parallel::distributed::Vector<Number>       &dst,
   rhs_operator.apply(rhs,src);
 
   // setup Laplace operator for scalar velocity vector
-  Laplace::LaplaceOperatorData<dim> laplace_operator_data;
+  Poisson::LaplaceOperatorData<dim> laplace_operator_data;
   laplace_operator_data.dof_index = this->get_dof_index_velocity_scalar();
   laplace_operator_data.quad_index = this->get_quad_index_velocity_linear();
-  std::shared_ptr<Laplace::BoundaryDescriptor<dim> > boundary_descriptor_streamfunction;
-  boundary_descriptor_streamfunction.reset(new Laplace::BoundaryDescriptor<dim>());
+  std::shared_ptr<Poisson::BoundaryDescriptor<dim> > boundary_descriptor_streamfunction;
+  boundary_descriptor_streamfunction.reset(new Poisson::BoundaryDescriptor<dim>());
 
   // fill boundary descriptor: Assumption: only Dirichlet BC's
   boundary_descriptor_streamfunction->dirichlet_bc = boundary_descriptor_velocity->dirichlet_bc;
@@ -802,7 +802,7 @@ compute_streamfunction (parallel::distributed::Vector<Number>       &dst,
   
   laplace_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
 
-  Laplace::LaplaceOperator<dim,fe_degree, Number> laplace_operator;
+  Poisson::LaplaceOperator<dim,fe_degree, Number> laplace_operator;
   laplace_operator.initialize(this->mapping,this->data,laplace_operator_data);
 
   // setup preconditioner
@@ -814,7 +814,7 @@ compute_streamfunction (parallel::distributed::Vector<Number>       &dst,
   // use single precision for multigrid
   typedef float MultigridNumber;
   typedef MyMultigridPreconditionerDG<dim, Number, 
-            Laplace::LaplaceOperator<dim, fe_degree, MultigridNumber>> MULTIGRID;
+            Poisson::LaplaceOperator<dim, fe_degree, MultigridNumber>> MULTIGRID;
 
   preconditioner.reset(new MULTIGRID());
 
@@ -832,7 +832,7 @@ compute_streamfunction (parallel::distributed::Vector<Number>       &dst,
   solver_data.solver_tolerance_rel = 1.e-10;
   solver_data.use_preconditioner = true;
 
-  CGSolver<Laplace::LaplaceOperator<dim, fe_degree, Number>,
+  CGSolver<Poisson::LaplaceOperator<dim, fe_degree, Number>,
            PreconditionerBase<Number>,
            parallel::distributed::Vector<Number> >
     poisson_solver(laplace_operator,*preconditioner,solver_data);

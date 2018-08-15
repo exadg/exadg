@@ -59,7 +59,7 @@ const int PATCHES = 10;
 typedef double value_type;
 
 using namespace dealii;
-using namespace Laplace;
+using namespace Poisson;
 
 
 template<int dim, int fe_degree>

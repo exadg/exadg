@@ -12,7 +12,7 @@
 
 using namespace dealii;
 
-namespace Laplace
+namespace Poisson
 {
 template<int dim>
 struct AnalyticalSolution
@@ -20,6 +20,6 @@ struct AnalyticalSolution
   std::shared_ptr<Function<dim>> solution;
 };
 
-} // namespace Laplace
+} // namespace Poisson
 
 #endif /* INCLUDE_LAPLACE_ANALYTICAL_SOLUTION_H_ */

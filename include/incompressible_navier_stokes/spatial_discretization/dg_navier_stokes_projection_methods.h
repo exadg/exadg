@@ -93,7 +93,7 @@ protected:
   void setup_projection_solver();
 
   // Pressure Poisson equation
-  Laplace::LaplaceOperator<dim,fe_degree_p, Number> laplace_operator;
+  Poisson::LaplaceOperator<dim,fe_degree_p, Number> laplace_operator;
   std::shared_ptr<PreconditionerBase<Number> > preconditioner_pressure_poisson;
   std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<Number> > > pressure_poisson_solver;
 
@@ -119,7 +119,7 @@ void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwal
 setup_pressure_poisson_solver (double const time_step_size)
 {
   // setup Laplace operator
-  Laplace::LaplaceOperatorData<dim> laplace_operator_data;
+  Poisson::LaplaceOperatorData<dim> laplace_operator_data;
   laplace_operator_data.dof_index = this->get_dof_index_pressure();
   laplace_operator_data.quad_index = this->get_quad_index_pressure();
   laplace_operator_data.IP_factor = this->param.IP_factor_pressure;
@@ -163,7 +163,7 @@ setup_pressure_poisson_solver (double const time_step_size)
   // setup preconditioner
   if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Jacobi)
   {
-    preconditioner_pressure_poisson.reset(new JacobiPreconditioner<Laplace::LaplaceOperator<dim, fe_degree_p, Number> >(laplace_operator));
+    preconditioner_pressure_poisson.reset(new JacobiPreconditioner<Poisson::LaplaceOperator<dim, fe_degree_p, Number> >(laplace_operator));
   }
   else if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::GeometricMultigrid)
   {
@@ -174,7 +174,7 @@ setup_pressure_poisson_solver (double const time_step_size)
     typedef float MultigridNumber;
 
     typedef MyMultigridPreconditionerDG<dim, Number, 
-            Laplace::LaplaceOperator<dim, fe_degree_p, MultigridNumber>> MULTIGRID;
+            Poisson::LaplaceOperator<dim, fe_degree_p, MultigridNumber>> MULTIGRID;
 
     preconditioner_pressure_poisson.reset(new MULTIGRID());
 
@@ -213,7 +213,7 @@ setup_pressure_poisson_solver (double const time_step_size)
     }
 
     // setup solver
-    pressure_poisson_solver.reset(new CGSolver<Laplace::LaplaceOperator<dim, fe_degree_p, Number>,
+    pressure_poisson_solver.reset(new CGSolver<Poisson::LaplaceOperator<dim, fe_degree_p, Number>,
                                                PreconditionerBase<Number>,
                                                parallel::distributed::Vector<Number> >
        (laplace_operator,
@@ -235,7 +235,7 @@ setup_pressure_poisson_solver (double const time_step_size)
       solver_data.use_preconditioner = true;
     }
 
-    pressure_poisson_solver.reset(new FGMRESSolver<Laplace::LaplaceOperator<dim, fe_degree_p, Number>,
+    pressure_poisson_solver.reset(new FGMRESSolver<Poisson::LaplaceOperator<dim, fe_degree_p, Number>,
                                                    PreconditionerBase<Number>,
                                                    parallel::distributed::Vector<Number> >
         (laplace_operator,
@@ -550,7 +550,7 @@ void DGNavierStokesProjectionMethods<dim, fe_degree, fe_degree_p, fe_degree_xwal
 rhs_ppe_laplace_add(parallel::distributed::Vector<Number> &dst,
                     double const                          &evaluation_time) const
 {
-  const Laplace::LaplaceOperatorData<dim> &data = this->laplace_operator.get_operator_data();
+  const Poisson::LaplaceOperatorData<dim> &data = this->laplace_operator.get_operator_data();
 
   // Set correct time for evaluation of functions on pressure Dirichlet boundaries
   // (not needed for pressure Neumann boundaries because all functions are ZeroFunction in Neumann BC map!)

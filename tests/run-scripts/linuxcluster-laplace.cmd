@@ -28,4 +28,4 @@ module list
 
 mkdir -p results
 
-mpirun -np 28 ../../../nav-ref-build/applications/laplace | tee results/out-laplace.txt
+mpirun -np 28 ../../../nav-merge-build/applications/poisson | tee results/out-laplace.txt

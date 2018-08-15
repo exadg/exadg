@@ -2,7 +2,7 @@
 
 #include <navierstokes/config.h>
 
-namespace Laplace
+namespace Poisson
 {
 #if DIM_2 && DEGREE_1 && (OP_FLOAT || MG_FLOAT)
 template class LaplaceOperator<2, 1, float>;
@@ -214,4 +214,4 @@ template class LaplaceOperator<3, 15, float>;
 template class LaplaceOperator<3, 15, double>;
 #endif
 
-} // namespace Laplace
+} // namespace Poisson

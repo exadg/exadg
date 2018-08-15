@@ -3,12 +3,12 @@
 
 #include "../../solvers_and_preconditioners/multigrid/multigrid_preconditioner_dg.h"
 
-namespace Laplace
+namespace Poisson
 {
 template<int dim, int fe_degree, typename value_type>
 DGOperation<dim, fe_degree, value_type>::DGOperation(
   parallel::distributed::Triangulation<dim> const & triangulation,
-  Laplace::InputParameters const &                  param_in)
+  Poisson::InputParameters const &                  param_in)
   : fe(fe_degree), mapping(fe_degree), dof_handler(triangulation), param(param_in)
 {
 }
@@ -18,8 +18,8 @@ void
 DGOperation<dim, fe_degree, value_type>::setup(
   const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
                                                     periodic_face_pairs,
-  std::shared_ptr<Laplace::BoundaryDescriptor<dim>> boundary_descriptor_in,
-  std::shared_ptr<Laplace::FieldFunctions<dim>>     field_functions_in)
+  std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor_in,
+  std::shared_ptr<Poisson::FieldFunctions<dim>>     field_functions_in)
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Setup Poisson operation ..." << std::endl;
@@ -45,17 +45,17 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
   pcout << std::endl << "Setup solver ..." << std::endl;
 
   // initialize preconditioner
-  if(param.preconditioner == Laplace::Preconditioner::PointJacobi)
+  if(param.preconditioner == Poisson::Preconditioner::PointJacobi)
   {
     preconditioner.reset(
-      new JacobiPreconditioner<Laplace::LaplaceOperator<dim, fe_degree, value_type>>(laplace_operator));
+      new JacobiPreconditioner<Poisson::LaplaceOperator<dim, fe_degree, value_type>>(laplace_operator));
   }
-  else if(param.preconditioner == Laplace::Preconditioner::BlockJacobi)
+  else if(param.preconditioner == Poisson::Preconditioner::BlockJacobi)
   {
     preconditioner.reset(
-      new BlockJacobiPreconditioner<Laplace::LaplaceOperator<dim, fe_degree, value_type>>(laplace_operator));
+      new BlockJacobiPreconditioner<Poisson::LaplaceOperator<dim, fe_degree, value_type>>(laplace_operator));
   }
-  else if(param.preconditioner == Laplace::Preconditioner::Multigrid)
+  else if(param.preconditioner == Poisson::Preconditioner::Multigrid)
   {
     MultigridData mg_data;
     mg_data = param.multigrid_data;
@@ -64,7 +64,7 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
 
     typedef MyMultigridPreconditionerDG<dim,
                                         value_type,
-                                        Laplace::LaplaceOperator<dim, fe_degree, Number>>
+                                        Poisson::LaplaceOperator<dim, fe_degree, Number>>
       MULTIGRID;
 
     preconditioner.reset(new MULTIGRID());
@@ -77,14 +77,14 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
   }
   else
   {
-    AssertThrow(param.preconditioner == Laplace::Preconditioner::None ||
-                  param.preconditioner == Laplace::Preconditioner::PointJacobi ||
-                  param.preconditioner == Laplace::Preconditioner::BlockJacobi ||
-                  param.preconditioner == Laplace::Preconditioner::Multigrid,
+    AssertThrow(param.preconditioner == Poisson::Preconditioner::None ||
+                  param.preconditioner == Poisson::Preconditioner::PointJacobi ||
+                  param.preconditioner == Poisson::Preconditioner::BlockJacobi ||
+                  param.preconditioner == Poisson::Preconditioner::Multigrid,
                 ExcMessage("Specified preconditioner is not implemented!"));
   }
 
-  if(param.solver == Laplace::Solver::PCG)
+  if(param.solver == Poisson::Solver::PCG)
   {
     // initialize solver_data
     CGSolverData solver_data;
@@ -92,17 +92,17 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
     solver_data.solver_tolerance_rel = param.rel_tol;
     solver_data.max_iter             = param.max_iter;
 
-    if(param.preconditioner != Laplace::Preconditioner::None)
+    if(param.preconditioner != Poisson::Preconditioner::None)
       solver_data.use_preconditioner = true;
 
     // initialize solver
-    iterative_solver.reset(new CGSolver<Laplace::LaplaceOperator<dim, fe_degree, value_type>,
+    iterative_solver.reset(new CGSolver<Poisson::LaplaceOperator<dim, fe_degree, value_type>,
                                         PreconditionerBase<value_type>,
                                         VectorType>(laplace_operator, *preconditioner, solver_data));
   }
   else
   {
-    AssertThrow(param.solver == Laplace::Solver::PCG,
+    AssertThrow(param.solver == Poisson::Solver::PCG,
                 ExcMessage("Specified solver is not implemented!"));
   }
 
@@ -205,7 +205,7 @@ void
 DGOperation<dim, fe_degree, value_type>::setup_operators()
 {
   // laplace operator
-  Laplace::LaplaceOperatorData<dim> laplace_operator_data;
+  Poisson::LaplaceOperatorData<dim> laplace_operator_data;
   laplace_operator_data.dof_index                  = 0;
   laplace_operator_data.quad_index                 = 0;
   laplace_operator_data.IP_factor                  = param.IP_factor;
@@ -220,4 +220,4 @@ DGOperation<dim, fe_degree, value_type>::setup_operators()
   rhs_operator_data.rhs        = field_functions->right_hand_side;
   rhs_operator.initialize(data, rhs_operator_data);
 }
-} // namespace Laplace
+} // namespace Poisson

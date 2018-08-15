@@ -18,7 +18,7 @@ std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string OUTPUT_NAME       = "cosinus";
 
 void
-Laplace::InputParameters::set_input_parameters()
+Poisson::InputParameters::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   right_hand_side = true;
@@ -142,7 +142,7 @@ void
 create_grid_and_set_boundary_conditions(
   parallel::distributed::Triangulation<dim> &                                            triangulation,
   unsigned int const                                                                     n_refine_space,
-  std::shared_ptr<Laplace::BoundaryDescriptor<dim>>                                      boundary_descriptor,
+  std::shared_ptr<Poisson::BoundaryDescriptor<dim>>                                      boundary_descriptor,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> & periodic_faces)
 {
   // hypercube: [left,right]^dim
@@ -183,7 +183,7 @@ create_grid_and_set_boundary_conditions(
 
 template<int dim>
 void
-set_field_functions(std::shared_ptr<Laplace::FieldFunctions<dim>> field_functions)
+set_field_functions(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim>> analytical_solution;
@@ -198,7 +198,7 @@ set_field_functions(std::shared_ptr<Laplace::FieldFunctions<dim>> field_function
 
 template<int dim>
 void
-set_analytical_solution(std::shared_ptr<Laplace::AnalyticalSolution<dim>> analytical_solution)
+set_analytical_solution(std::shared_ptr<Poisson::AnalyticalSolution<dim>> analytical_solution)
 {
   analytical_solution->solution.reset(new AnalyticalSolution<dim>(1));
 }

@@ -13,7 +13,7 @@ using namespace dealii;
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
 
-namespace Laplace
+namespace Poisson
 {
 template<int dim>
 struct BoundaryDescriptor
@@ -22,6 +22,6 @@ struct BoundaryDescriptor
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
 };
 
-} // namespace Laplace
+} // namespace Poisson
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_BOUNDARY_DESCRIPTOR_H_ */

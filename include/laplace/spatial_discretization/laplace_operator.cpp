@@ -3,7 +3,7 @@
 #include <navierstokes/config.h>
 #include "../../functionalities/evaluate_functions.h"
 
-namespace Laplace
+namespace Poisson
 {
 template<int dim, int degree, typename Number>
 LaplaceOperator<dim, degree, Number>::LaplaceOperator()
@@ -383,6 +383,6 @@ LaplaceOperator<dim, fe_degree, Number>::get_new(unsigned int deg) const
   }
 }
 
-} // namespace Laplace
+} // namespace Poisson
 
 #include "laplace_operator.hpp"

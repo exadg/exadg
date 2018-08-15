@@ -13,7 +13,7 @@
 #include "postprocessor/error_calculation_data.h"
 #include "postprocessor/output_data.h"
 
-namespace Laplace
+namespace Poisson
 {
 /**************************************************************************************/
 /*                                                                                    */
@@ -228,5 +228,5 @@ public:
   OutputData output_data;
 };
 
-} // namespace Laplace
+} // namespace Poisson
 #endif /* INCLUDE_LAPLACE_INPUT_PARAMETERS_H_ */

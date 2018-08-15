@@ -27,7 +27,7 @@
 #include "laplace_operator.h"
 #include "../../convection_diffusion/spatial_discretization/operators/rhs_operator.h"
 
-namespace Laplace
+namespace Poisson
 {
 template<int dim, int fe_degree, typename value_type>
 class DGOperation : public MatrixOperatorBase
@@ -36,13 +36,13 @@ public:
   typedef parallel::distributed::Vector<value_type> VectorType;
 
   DGOperation(parallel::distributed::Triangulation<dim> const & triangulation,
-              Laplace::InputParameters const &                  param_in);
+              Poisson::InputParameters const &                  param_in);
 
   void
   setup(const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
                                                           periodic_face_pairs,
-        std::shared_ptr<Laplace::BoundaryDescriptor<dim>> boundary_descriptor_in,
-        std::shared_ptr<Laplace::FieldFunctions<dim>>     field_functions_in);
+        std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor_in,
+        std::shared_ptr<Poisson::FieldFunctions<dim>>     field_functions_in);
 
   void
   setup_solver();
@@ -81,21 +81,21 @@ private:
 
   MatrixFree<dim, value_type> data;
 
-  Laplace::InputParameters const & param;
+  Poisson::InputParameters const & param;
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> periodic_face_pairs;
 
-  std::shared_ptr<Laplace::BoundaryDescriptor<dim>> boundary_descriptor;
-  std::shared_ptr<Laplace::FieldFunctions<dim>>     field_functions;
+  std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor;
+  std::shared_ptr<Poisson::FieldFunctions<dim>>     field_functions;
 
   ConvDiff::RHSOperator<dim, fe_degree, value_type> rhs_operator;
 
-  Laplace::LaplaceOperator<dim, fe_degree, value_type> laplace_operator;
+  Poisson::LaplaceOperator<dim, fe_degree, value_type> laplace_operator;
 
   std::shared_ptr<PreconditionerBase<value_type>>  preconditioner;
   std::shared_ptr<IterativeSolverBase<VectorType>> iterative_solver;
 };
-} // namespace Laplace
+} // namespace Poisson
 
 #include "poisson_operation.cpp"
 

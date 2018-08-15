@@ -5,7 +5,7 @@
 #include "../../operators/interior_penalty_parameter.h"
 #include "../user_interface/boundary_descriptor.h"
 
-namespace Laplace
+namespace Poisson
 {
 enum class OperatorType
 {
@@ -176,6 +176,6 @@ private:
   AlignedVector<VectorizedArray<Number>> array_penalty_parameter;
 };
 
-} // namespace Laplace
+} // namespace Poisson
 
 #endif

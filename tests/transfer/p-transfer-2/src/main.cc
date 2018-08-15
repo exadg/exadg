@@ -64,7 +64,7 @@ const int PATCHES = 10;
 typedef double value_type;
 
 using namespace dealii;
-using namespace Laplace;
+using namespace Poisson;
 
 const int best_of = 10;
 

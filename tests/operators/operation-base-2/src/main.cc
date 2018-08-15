@@ -53,7 +53,7 @@
 #include "../../operation-base-util/categorization.h"
 
 using namespace dealii;
-using namespace Laplace;
+using namespace Poisson;
 
 const unsigned int global_refinements = 3;
 typedef double value_type;

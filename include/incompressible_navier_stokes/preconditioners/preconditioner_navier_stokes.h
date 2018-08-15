@@ -583,7 +583,7 @@ private:
     else if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Classical)
     {
       // Geometric multigrid V-cycle performed on negative Laplace operator
-      Laplace::LaplaceOperatorData<dim> laplace_operator_data;
+      Poisson::LaplaceOperatorData<dim> laplace_operator_data;
       laplace_operator_data.dof_index = underlying_operator->get_dof_index_pressure();
       laplace_operator_data.quad_index = underlying_operator->get_quad_index_pressure();
       laplace_operator_data.IP_factor = 1.0;
@@ -597,7 +597,7 @@ private:
       MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
 
       typedef MyMultigridPreconditionerDG<dim,value_type, 
-            Laplace::LaplaceOperator<dim, fe_degree, Number>> MULTIGRID;
+            Poisson::LaplaceOperator<dim, fe_degree, Number>> MULTIGRID;
       multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
 
       std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
@@ -627,19 +627,19 @@ private:
 
     if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Classical)
     {
-      Laplace::LaplaceOperatorData<dim> laplace_operator_data;
+      Poisson::LaplaceOperatorData<dim> laplace_operator_data;
       laplace_operator_data.dof_index = underlying_operator->get_dof_index_pressure();
       laplace_operator_data.quad_index = underlying_operator->get_quad_index_pressure();
       laplace_operator_data.IP_factor = 1.0;
       laplace_operator_data.bc = underlying_operator->boundary_descriptor_laplace;
       laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
-      laplace_operator_classical.reset(new Laplace::LaplaceOperator<dim, fe_degree_p, value_type>());
+      laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, fe_degree_p, value_type>());
       laplace_operator_classical->initialize(
           underlying_operator->get_mapping(),
           underlying_operator->get_data(),
           laplace_operator_data);
 
-      solver_pressure_block.reset(new CGSolver<Laplace::LaplaceOperator<dim, fe_degree_p, value_type>,
+      solver_pressure_block.reset(new CGSolver<Poisson::LaplaceOperator<dim, fe_degree_p, value_type>,
                                                PreconditionerBase<value_type>,
                                                parallel::distributed::Vector<value_type> >(
           *laplace_operator_classical,
@@ -982,7 +982,7 @@ private:
   std::shared_ptr<PreconditionerBase<value_type> > inv_mass_matrix_preconditioner_schur_complement;
 
   std::shared_ptr<PressureConvectionDiffusionOperator<dim, fe_degree_p, fe_degree, value_type> > pressure_convection_diffusion_operator;
-  std::shared_ptr<Laplace::LaplaceOperator<dim, fe_degree_p, value_type> > laplace_operator_classical;
+  std::shared_ptr<Poisson::LaplaceOperator<dim, fe_degree_p, value_type> > laplace_operator_classical;
   std::shared_ptr<CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> > laplace_operator_compatible;
   std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type> > > solver_pressure_block;
 

@@ -30,7 +30,7 @@
 #include "poisson_test_cases/torus.h"
 
 using namespace dealii;
-using namespace Laplace;
+using namespace Poisson;
 
 const int best_of = 1;
 
@@ -91,15 +91,15 @@ private:
   ConditionalOStream                        pcout;
   parallel::distributed::Triangulation<dim> triangulation;
   const unsigned int                        n_refine_space;
-  Laplace::InputParameters                  param;
+  Poisson::InputParameters                  param;
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> periodic_faces;
 
-  std::shared_ptr<Laplace::FieldFunctions<dim>>     field_functions;
-  std::shared_ptr<Laplace::BoundaryDescriptor<dim>> boundary_descriptor;
-  std::shared_ptr<Laplace::AnalyticalSolution<dim>> analytical_solution;
+  std::shared_ptr<Poisson::FieldFunctions<dim>>     field_functions;
+  std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor;
+  std::shared_ptr<Poisson::AnalyticalSolution<dim>> analytical_solution;
 
-  std::shared_ptr<Laplace::DGOperation<dim, fe_degree, value_type>> poisson_operation;
+  std::shared_ptr<Poisson::DGOperation<dim, fe_degree, value_type>> poisson_operation;
 };
 
 template<int dim, int fe_degree, typename Number>
@@ -118,15 +118,15 @@ PoissonProblem<dim, fe_degree, Number>::PoissonProblem(const unsigned int n_refi
   if(param.print_input_parameters == true)
     param.print(pcout);
 
-  field_functions.reset(new Laplace::FieldFunctions<dim>());
+  field_functions.reset(new Poisson::FieldFunctions<dim>());
   set_field_functions(field_functions);
 
-  analytical_solution.reset(new Laplace::AnalyticalSolution<dim>());
+  analytical_solution.reset(new Poisson::AnalyticalSolution<dim>());
   set_analytical_solution(analytical_solution);
 
-  boundary_descriptor.reset(new Laplace::BoundaryDescriptor<dim>());
+  boundary_descriptor.reset(new Poisson::BoundaryDescriptor<dim>());
 
-  poisson_operation.reset(new Laplace::DGOperation<dim, fe_degree, Number>(triangulation, param));
+  poisson_operation.reset(new Poisson::DGOperation<dim, fe_degree, Number>(triangulation, param));
 }
 
 template<int dim, int fe_degree, typename Number>

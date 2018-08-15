@@ -62,7 +62,7 @@ const int best_of = 3;
 typedef double value_type;
 
 using namespace dealii;
-using namespace Laplace;
+using namespace Poisson;
 
 template<int dim, int fe_degree, typename Function>
 void
