@@ -440,12 +440,6 @@ protected:
                              VectorType &       dst,
                              const VectorType & src,
                              const Range &      range) const;
-
-  void
-  local_apply_block_jacobi_add(const MatrixFree_ &         data,
-                               VectorType &       dst,
-                               const VectorType & src,
-                               const Range &      cell_range) const;
   void
   local_add_block_diagonal_cell(const MatrixFree_ & /*data*/,
                                 BlockMatrix & dst,
@@ -469,6 +463,18 @@ protected:
                                       BlockMatrix & dst,
                                       const BlockMatrix & /*src*/,
                                       const Range & range) const;
+
+  /*
+   * ... block Jacobi (inverse of block diagonal)
+   * same as local_apply_block_diagonal, but instead of applying the block matrix B
+   * we solve the linear system B*dst=src (LU factorization should have already
+   * been performed with the method update_block_jacobi(true))
+   */
+  void
+  local_apply_block_jacobi_add(const MatrixFree_ &         data,
+                               VectorType &       dst,
+                               const VectorType & src,
+                               const Range &      cell_range) const;
 
   /*
    * ... sparse matrix
