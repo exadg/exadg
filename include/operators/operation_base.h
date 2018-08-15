@@ -172,15 +172,15 @@ public:
   static const unsigned int dofs_per_cell = FEEvalCell::static_dofs_per_cell;
 
   void
-  reinit(MatrixFree_ const &    mf,
-         ConstraintMatrix &     cm,
-         AdditionalData const & ad,
+  reinit(MatrixFree_ const &    matrix_free,
+         ConstraintMatrix &     constraint_matrix,
+         AdditionalData const & operator_settings,
          unsigned int           level_mg_handler = numbers::invalid_unsigned_int) const;
 
   virtual void
   reinit(const DoFHandler<dim> &   dof_handler,
          const Mapping<dim> &      mapping,
-         void *                    ad,
+         void *                    operator_settings,
          const MGConstrainedDoFs & mg_constrained_dofs,
          const unsigned int        level);
 

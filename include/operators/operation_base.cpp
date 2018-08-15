@@ -22,14 +22,14 @@ OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::reinit(MatrixFree_ const &             mf,
-                                                          ConstraintMatrix &                   cm,
+OperatorBase<dim, degree, Number, AdditionalData>::reinit(MatrixFree_ const &             matrix_free,
+                                                          ConstraintMatrix &              constraint_matrix,
                                                           AdditionalData const & operator_settings,
                                                           unsigned int           level_mg_handler) const
 {
   // reinit data structures
-  this->data.reinit(mf);
-  this->constraint.reinit(cm);
+  this->data.reinit(matrix_free);
+  this->constraint.reinit(constraint_matrix);
   this->operator_settings = operator_settings;
 
   // check if dg or cg
@@ -62,7 +62,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
   // check it dg or cg
   is_dg = dof_handler.get_fe().dofs_per_vertex == 0;
 
-  // setup mf::AdditionalData
+  // setup MatrixFree::AdditionalData
   typename MatrixFree<dim, Number>::AdditionalData additional_data;
 
   // ... shall the faces be evaluated?
