@@ -229,10 +229,24 @@ OperatorBase<dim, degree, Number, AdditionalData>::vmult_add_interface_up(Vector
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
+OperatorBase<dim, degree, Number, AdditionalData>::rhs(VectorType & dst) const
+{
+  rhs(dst, 0.0);
+}
+
+template<int dim, int degree, typename Number, typename AdditionalData>
+void
 OperatorBase<dim, degree, Number, AdditionalData>::rhs(VectorType & dst, Number const time) const
 {
   dst = 0;
   rhs_add(dst, time);
+}
+
+template<int dim, int degree, typename Number, typename AdditionalData>
+void
+OperatorBase<dim, degree, Number, AdditionalData>::rhs_add(VectorType & dst) const
+{
+  rhs_add(dst,0.0);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>

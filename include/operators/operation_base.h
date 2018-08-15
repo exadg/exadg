@@ -198,11 +198,13 @@ public:
 
   virtual void
   vmult(VectorType & dst, VectorType const & src) const;
+  
   virtual void
   vmult_add(VectorType & dst, VectorType const & src) const;
 
   void
   vmult_interface_down(VectorType & dst, VectorType const & src) const;
+  
   void
   vmult_add_interface_up(VectorType & dst, VectorType const & src) const;
 
@@ -210,23 +212,20 @@ public:
    *
    */
   void
-  rhs(VectorType & dst) const
-  {
-    rhs(dst, 0.0);
-  }
+  rhs(VectorType & dst) const;
+  
   void
   rhs(VectorType & dst, Number const time) const;
-  // TODO: remove
+  
   void
-  rhs_add(VectorType & dst) const
-  {
-    rhs_add(dst, 0.0);
-  }
+  rhs_add(VectorType & dst) const;
+  
   void
   rhs_add(VectorType & dst, Number const time) const;
 
   void
   evaluate(VectorType & dst, VectorType const & src, Number const time) const;
+  
   void
   evaluate_add(VectorType & dst, VectorType const & src, Number const time) const;
 
@@ -235,10 +234,13 @@ public:
    */
   virtual void
   calculate_diagonal(VectorType & diagonal) const;
+  
   virtual void
   add_diagonal(VectorType & diagonal) const;
+  
   virtual void
   add_diagonal(VectorType & diagonal, Number const time) const;
+  
   void
   calculate_inverse_diagonal(VectorType & diagonal) const;
 
@@ -247,18 +249,23 @@ public:
    */
   void
   apply_block_jacobi(VectorType & dst, VectorType const & src) const;
+  
   void
   apply_block_jacobi_add(VectorType & dst, VectorType const & src) const;
 
   // TODO: add matrix-free and block matrix version
   void
   apply_block_diagonal(VectorType & dst, VectorType const & src) const;
+  
   void
   update_block_jacobi() const;
+  
   void
   update_block_jacobi(bool const do_lu_factorization) const;
+  
   virtual void
   add_block_jacobi_matrices(BlockMatrix & matrices) const;
+  
   virtual void
   add_block_jacobi_matrices(BlockMatrix & matrices, Number const time) const;
 
@@ -317,21 +324,25 @@ protected:
   {
     AssertThrow(false, ExcMessage("OperatorBase::do_cell_integral has not been implemented!"));
   }
+  
   virtual void
   do_face_integral(FEEvalFace & /*fe_eval_m*/, FEEvalFace & /*fe_eval_p*/) const
   {
     AssertThrow(false, ExcMessage("OperatorBase::do_face_integral has not been implemented!"));
   }
+  
   virtual void
   do_face_int_integral(FEEvalFace & /*fe_eval_m*/, FEEvalFace & /*fe_eval_p*/) const
   {
     AssertThrow(false, ExcMessage("OperatorBase::do_face_int_integral has not been implemented!"));
   }
+  
   virtual void
   do_face_ext_integral(FEEvalFace & /*fe_eval_m*/, FEEvalFace & /*fe_eval_p*/) const
   {
     AssertThrow(false, ExcMessage("OperatorBase::do_face_ext_integral has not been implemented!"));
   }
+  
   virtual void
   do_boundary_integral(FEEvalFace & /*fe_eval*/,
                        OperatorType const & /*operator_type*/,
