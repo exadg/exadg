@@ -72,20 +72,6 @@ public:
   }
 
   virtual void
-  Tvmult(parallel::distributed::Vector<Number> & /*dst*/,
-         const parallel::distributed::Vector<Number> & /*src*/) const
-  {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
-  }
-
-  virtual void
-  Tvmult_add(parallel::distributed::Vector<Number> & /*dst*/,
-             const parallel::distributed::Vector<Number> & /*src*/) const
-  {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
-  }
-
-  virtual void
   vmult_add(parallel::distributed::Vector<Number> & /*dst*/,
             const parallel::distributed::Vector<Number> & /*src*/) const
   {
@@ -107,29 +93,11 @@ public:
   }
 
   virtual void
-  rhs(parallel::distributed::Vector<Number> & /*dst*/) const
-  {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
-  }
-
-  virtual void
-  rhs_add(parallel::distributed::Vector<Number> & /*dst*/) const
-  {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
-  }
-
-  virtual void
   set_zero_mean_value(parallel::distributed::Vector<Number> & /*vec*/) const
   {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::set_zero_mean_value should be overwritten!"));
   }
-
-  virtual void
-  disable_mean_value_constraint()
-  {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
-  }
-
+  
   virtual types::global_dof_index
   m() const
   {
@@ -174,20 +142,6 @@ public:
   update_block_jacobi() const
   {
     AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
-  }
-
-  virtual const AlignedVector<VectorizedArray<Number>> &
-  get_array_penalty_parameter() const
-  {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
-    return *(new AlignedVector<VectorizedArray<Number>>);
-  }
-
-  virtual double
-  get_penalty_factor() const
-  {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
-    return 0;
   }
 
   virtual bool
