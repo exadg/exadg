@@ -119,20 +119,24 @@ public:
   {
     this->tp = &this->t;
   }
+  
   void
   reinit(T const & t)
   {
     this->tp = &t;
   }
+  
   T &
   own()
   {
     return t;
   }
+  
   T const * operator->()
   {
     return tp;
   }
+  
   T const & operator*()
   {
     return *tp;
