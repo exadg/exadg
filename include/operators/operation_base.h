@@ -353,7 +353,7 @@ protected:
   create_standard_basis(unsigned int j, FEEvalFace & fe_eval1, FEEvalFace & fe_eval2) const;
 
   /*
-   * functions to be called from matrix-free loops and cell_loops: vmult
+   * functions to be called from matrix-free loops and cell_loops: vmult (homogenous)
    */
   void
   local_cell_hom(const MatrixFree_ & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
@@ -361,7 +361,6 @@ protected:
   void
   local_face_hom(const MatrixFree_ & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
 
-  // homogenous
   void
   local_boundary_hom(const MatrixFree_ & /*data*/,
                      VectorType & /*dst*/,
@@ -374,6 +373,9 @@ protected:
   void
   local_face_inhom(const MatrixFree_ & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
 
+  /*
+   * ... rhs (inhomogenous)
+   */
   void
   local_boundary_inhom(const MatrixFree_ & /*data*/,
                        VectorType & /*dst*/,
