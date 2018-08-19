@@ -45,6 +45,7 @@ public:
     }
 
     // ... finalize setup of matrix_free
+    data.hold_all_faces_to_owned_cells = true;
     data.cell_vectorization_categories_strict = true;
     data.mapping_update_flags_faces_by_cells =
       (update_JxW_values | update_normal_vectors | update_quadrature_points | update_values);
