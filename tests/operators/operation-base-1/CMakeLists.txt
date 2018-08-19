@@ -9,7 +9,7 @@ include_directories(include)
 
 # Declare all source files the target consists of:
 SET(TARGET_SRC
-  ../../../include/laplace/spatial_discretization/laplace_operator.cpp
+  ../../../include/poisson/spatial_discretization/laplace_operator.cpp
   src/main.cc
   # You can specify additional files here!
   )
