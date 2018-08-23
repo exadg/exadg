@@ -1069,7 +1069,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_block_diagonal(co
       for(unsigned int j = 0; j < fe_eval.dofs_per_cell; ++j)
         src_vector(j) = fe_eval.begin_dof_values()[j][v];
 
-      // apply inverse matrix
+      // apply matrix
       matrices[cell * vectorization_length + v].vmult(dst_vector, src_vector, false);
 
       // write solution to dst-vector
