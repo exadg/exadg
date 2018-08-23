@@ -314,6 +314,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VectorType & dia
   else
     data->cell_loop(&This::local_add_diagonal_cell, this, diagonal, diagonal);
 
+  // multiple processes might have contributions to the same diagonal entry in
+  // the cg case, so we have to sum them up
   if(!is_dg)
     diagonal.compress(VectorOperation::add);
 
