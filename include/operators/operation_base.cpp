@@ -231,30 +231,22 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::rhs(VectorType & dst) const
 {
-  rhs(dst, 0.0);
+  dst = 0;
+  this->rhs_add(dst);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::rhs(VectorType & dst, Number const time) const
 {
-  dst = 0;
-  rhs_add(dst, time);
+  this->set_evaluation_time(time);
+  this->rhs(dst);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::rhs_add(VectorType & dst) const
 {
-  rhs_add(dst,0.0);
-}
-
-template<int dim, int degree, typename Number, typename AdditionalData>
-void
-OperatorBase<dim, degree, Number, AdditionalData>::rhs_add(VectorType & dst, Number const time) const
-{
-  this->eval_time = time;
-
   VectorType tmp;
   tmp.reinit(dst, false);
 
@@ -263,6 +255,14 @@ OperatorBase<dim, degree, Number, AdditionalData>::rhs_add(VectorType & dst, Num
   // multiply by -1.0 since the boundary face integrals have to be shifted
   // to the right hand side
   dst.add(-1.0, tmp);
+}
+
+template<int dim, int degree, typename Number, typename AdditionalData>
+void
+OperatorBase<dim, degree, Number, AdditionalData>::rhs_add(VectorType & dst, Number const time) const
+{
+  this->set_evaluation_time(time);
+  this->rhs_add(dst);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
