@@ -34,6 +34,20 @@ struct DiffusiveOperatorData
       diffusivity(1.0)
   {
   }
+  
+  inline DEAL_II_ALWAYS_INLINE //
+    BoundaryType
+    get_boundary_type(types::boundary_id const & boundary_id) const
+  {
+    if(this->bc->dirichlet_bc.find(boundary_id) != this->bc->dirichlet_bc.end())
+      return BoundaryType::dirichlet;
+    else if(this->bc->neumann_bc.find(boundary_id) != this->bc->neumann_bc.end())
+      return BoundaryType::neumann;
+
+    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+
+    return BoundaryType::undefined;
+  }
 
   double IP_factor;
   double diffusivity;

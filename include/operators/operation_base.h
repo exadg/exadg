@@ -74,20 +74,6 @@ struct OperatorBaseData
     bool gradient;
   };
 
-  inline DEAL_II_ALWAYS_INLINE //
-    BoundaryType
-    get_boundary_type(types::boundary_id const & boundary_id) const
-  {
-    if(bc->dirichlet_bc.find(boundary_id) != bc->dirichlet_bc.end())
-      return BoundaryType::dirichlet;
-    else if(bc->neumann_bc.find(boundary_id) != bc->neumann_bc.end())
-      return BoundaryType::neumann;
-
-    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
-
-    return BoundaryType::undefined;
-  }
-
   unsigned int dof_index;
   unsigned int quad_index;
 
