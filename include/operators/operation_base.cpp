@@ -395,38 +395,19 @@ OperatorBase<dim, degree, Number, AdditionalData>::init_system_matrix(SparseMatr
       comm = MPI_COMM_SELF;
   }
 
+  TrilinosWrappers::SparsityPattern dsp( is_mg ? dof_handler.locally_owned_mg_dofs(this->level_mg_handler) : dof_handler.locally_owned_dofs(), comm);
+  
   if(is_dg && is_mg)
-  {
-    // dg and with mg
-    TrilinosWrappers::SparsityPattern dsp(dof_handler.locally_owned_mg_dofs(this->level_mg_handler), comm);
     MGTools::make_flux_sparsity_pattern(dof_handler, dsp, this->level_mg_handler);
-    dsp.compress();
-    system_matrix.reinit(dsp);
-  }
   else if(is_dg && !is_mg)
-  {
-    // dg and without mg
-    TrilinosWrappers::SparsityPattern dsp(dof_handler.locally_owned_dofs(), comm);
     DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
-    dsp.compress();
-    system_matrix.reinit(dsp);
-  }
   else if(/*!is_dg &&*/ is_mg)
-  {
-    // cg and with mg
-    TrilinosWrappers::SparsityPattern dsp(dof_handler.locally_owned_mg_dofs(this->level_mg_handler), comm);
     MGTools::make_sparsity_pattern(dof_handler, dsp, this->level_mg_handler);
-    dsp.compress();
-    system_matrix.reinit(dsp);
-  }
   else /* if (!is_dg && !is_mg)*/
-  {
-    // cg and without mg
-    TrilinosWrappers::SparsityPattern dsp(dof_handler.locally_owned_dofs(), comm);
     DoFTools::make_sparsity_pattern(dof_handler, dsp);
-    dsp.compress();
-    system_matrix.reinit(dsp);
-  }
+  
+  dsp.compress();
+  system_matrix.reinit(dsp);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
