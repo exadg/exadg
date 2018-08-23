@@ -125,8 +125,10 @@ public:
   }
   
   virtual bool
-  is_singular() const{
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::is_singular should be overwritten!"));
+  is_singular() const
+  {
+    // per default the operator is not singular
+    // if an operator can be singular, you have to overwrite this method
     return false;
   }
 
