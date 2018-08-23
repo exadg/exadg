@@ -54,22 +54,24 @@ struct OperatorBaseData
   {
     Cell(const bool value = false, const bool gradient = false, const bool hessians = false)
       : value(value), gradient(gradient), hessians(hessians){};
-    /*const*/ bool value;
-    /*const*/ bool gradient;
-    /*const*/ bool hessians;
+      
+    bool value;
+    bool gradient;
+    bool hessians;
   };
 
   struct Face
   {
     Face(const bool value = false, const bool gradient = false) : value(value), gradient(gradient){};
-    /*const*/ bool value;
-    /*const*/ bool gradient;
 
     bool
     do_eval() const
     {
       return value || gradient;
     }
+    
+    bool value;
+    bool gradient;
   };
 
   inline DEAL_II_ALWAYS_INLINE //
@@ -86,15 +88,15 @@ struct OperatorBaseData
     return BoundaryType::undefined;
   }
 
-  /*const*/ unsigned int dof_index;
-  /*const*/ unsigned int quad_index;
+  unsigned int dof_index;
+  unsigned int quad_index;
 
-  /*const*/ Cell cell_evaluate;
-  /*const*/ Cell cell_integrate;
-  /*const*/ Face internal_evaluate;
-  /*const*/ Face internal_integrate;
-  /*const*/ Face boundary_evaluate;
-  /*const*/ Face boundary_integrate;
+  Cell cell_evaluate;
+  Cell cell_integrate;
+  Face internal_evaluate;
+  Face internal_integrate;
+  Face boundary_evaluate;
+  Face boundary_integrate;
 
   bool use_cell_based_loops;
 
