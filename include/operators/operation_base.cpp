@@ -325,8 +325,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VectorType & dia
   if(operator_is_singular && !is_mg)
     adjust_diagonal_for_singular_operator(diagonal);
 
-  // apply constraint
-  set_constraint_diagonal(diagonal);
+  // apply constraints in the case of cg
+  if(!is_dg)
+    set_constraint_diagonal(diagonal);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
