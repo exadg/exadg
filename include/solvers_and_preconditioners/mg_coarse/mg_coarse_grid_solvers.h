@@ -18,6 +18,7 @@
 
 #include "../preconditioner/block_jacobi_preconditioner.h"
 #include "../preconditioner/jacobi_preconditioner.h"
+#include "../../functionalities/set_zero_mean_value.h"
 
 enum class PreconditionerCoarseGridSolver
 {
@@ -97,7 +98,8 @@ public:
     typename VectorMemory<parallel::distributed::Vector<typename Operator::value_type>>::Pointer r(
       solver_memory);
     *r = src;
-    coarse_matrix.set_zero_mean_value(*r);
+    if(coarse_matrix.is_singular())
+      set_zero_mean_value(*r);
 
     if(use_preconditioner)
       solver_coarse.solve(coarse_matrix, dst, *r, *preconditioner);
@@ -193,7 +195,8 @@ public:
     typename VectorMemory<parallel::distributed::Vector<typename Operator::value_type>>::Pointer r(
       solver_memory);
     *r = src;
-    coarse_matrix.set_zero_mean_value(*r);
+    if(coarse_matrix.is_singular())
+      set_zero_mean_value(*r);
 
     if(use_preconditioner)
       solver_coarse.solve(coarse_matrix, dst, *r, *preconditioner);

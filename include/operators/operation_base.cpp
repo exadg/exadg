@@ -6,6 +6,8 @@
 #include "../solvers_and_preconditioners/util/block_jacobi_matrices.h"
 #include "../solvers_and_preconditioners/util/invert_diagonal.h"
 
+#include "../functionalities/set_zero_mean_value.h"
+
 template<int dim, int degree, typename Number, typename AdditionalData>
 OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
   : operator_settings(AdditionalData()),
@@ -598,6 +600,13 @@ double
 OperatorBase<dim, degree, Number, AdditionalData>::get_evaluation_time() const
 {
   return eval_time;
+}
+
+template<int dim, int degree, typename Number, typename AdditionalData>
+bool
+OperatorBase<dim, degree, Number, AdditionalData>::is_singular() const
+{
+  return this->operator_is_singular;
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
@@ -1592,16 +1601,6 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
   }
 }
 #endif
-
-template<int dim, int degree, typename Number, typename AdditionalData>
-void
-OperatorBase<dim, degree, Number, AdditionalData>::set_zero_mean_value(VectorType & vec) const
-{
-  if(!operator_is_singular)
-    return;
-  const Number mean_val = vec.mean_value();
-  vec.add(-mean_val);
-}
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void

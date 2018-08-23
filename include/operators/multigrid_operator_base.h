@@ -49,12 +49,6 @@ public:
   {
     AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult_add_interface_up should be overwritten!"));
   }
-
-  virtual void
-  set_zero_mean_value(parallel::distributed::Vector<Number> & /*vec*/) const
-  {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::set_zero_mean_value should be overwritten!"));
-  }
   
   virtual types::global_dof_index
   m() const
@@ -128,6 +122,12 @@ public:
   {
     AssertThrow(false, ExcMessage("MultigridOperatorBase::get_new should be overwritten!"));
     return nullptr;
+  }
+  
+  virtual bool
+  is_singular() const{
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::is_singular should be overwritten!"));
+    return false;
   }
 
 #ifdef DEAL_II_WITH_TRILINOS

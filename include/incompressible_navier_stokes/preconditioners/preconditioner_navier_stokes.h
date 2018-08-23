@@ -20,6 +20,8 @@
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
 
+#include "../../functionalities/set_zero_mean_value.h"
+
 #include "../../poisson/spatial_discretization/laplace_operator.h"
 
 
@@ -958,9 +960,15 @@ private:
       {
         tmp_projection_vector = src;
         if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Classical)
-          laplace_operator_classical->set_zero_mean_value(tmp_projection_vector);
+        {
+          if(laplace_operator_classical->is_singular())
+            set_zero_mean_value(tmp_projection_vector);
+        }
         else if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Compatible)
-          laplace_operator_compatible->set_zero_mean_value(tmp_projection_vector);
+        {
+          if(laplace_operator_compatible->is_singular())
+            set_zero_mean_value(tmp_projection_vector);
+        }
         pointer_to_src = &tmp_projection_vector;
       }
       dst = 0.0;

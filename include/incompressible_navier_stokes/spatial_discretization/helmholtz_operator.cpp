@@ -138,13 +138,6 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::get
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
-HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::set_zero_mean_value(
-  parallel::distributed::Vector<Number> & /*vec*/) const
-{
-}
-
-template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-void
 HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmult_interface_down(
   parallel::distributed::Vector<Number> &       dst,
   const parallel::distributed::Vector<Number> & src) const

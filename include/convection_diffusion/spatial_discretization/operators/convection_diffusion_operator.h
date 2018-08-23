@@ -100,14 +100,6 @@ public:
   DiffusiveOperatorData<dim> const &
   get_diffusive_operator_data() const;
 
-  /*
-   *  This function does nothing in case of the ConvectionDiffusionOperator.
-   *  It is only necessary due to the interface of the multigrid preconditioner
-   *  and especially the coarse grid solver that calls this function.
-   */
-  void
-  set_zero_mean_value(parallel::distributed::Vector<Number> & /*vec*/) const;
-
   // Apply matrix-vector multiplication.
   void
   vmult(parallel::distributed::Vector<Number> & dst, parallel::distributed::Vector<Number> const & src) const;

@@ -150,13 +150,6 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::get_diffusive_operator_data
 
 template<int dim, int fe_degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, fe_degree, Number>::set_zero_mean_value(
-  parallel::distributed::Vector<Number> & /*vec*/) const
-{
-}
-
-template<int dim, int fe_degree, typename Number>
-void
 ConvectionDiffusionOperator<dim, fe_degree, Number>::vmult(
   parallel::distributed::Vector<Number> &       dst,
   parallel::distributed::Vector<Number> const & src) const

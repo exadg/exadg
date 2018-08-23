@@ -97,13 +97,6 @@ public:
   ViscousOperatorData<dim> const & get_viscous_operator_data() const;
 
   /*
-   *  This function does nothing in case of the velocity conv diff operator.
-   *  IT is only necessary due to the interface of the multigrid preconditioner
-   *  and especially the coarse grid solver that calls this function.
-   */
-  void set_zero_mean_value(parallel::distributed::Vector<Number> & vec) const;
-
-  /*
    *  Other function needed in order to apply geometric multigrid to this operator
    */
   void vmult_interface_down(parallel::distributed::Vector<Number>       &dst,

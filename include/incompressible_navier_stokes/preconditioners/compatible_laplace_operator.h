@@ -12,6 +12,7 @@
 #include "../../operators/multigrid_operator_base.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
+#include "../../functionalities/set_zero_mean_value.h"
 
 namespace IncNS
 {
@@ -174,14 +175,10 @@ public:
     // multigrid levels, so we can disable it
     disable_mean_value_constraint();
   }
-
-  void set_zero_mean_value(parallel::distributed::Vector<Number> &vec) const
+  
+  bool is_singular() const
   {
-    if (needs_mean_value_constraint)
-    {
-      const Number mean_val = vec.mean_value();
-      vec.add(-mean_val);
-    }
+    return needs_mean_value_constraint;
   }
 
   void disable_mean_value_constraint()

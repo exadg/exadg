@@ -22,6 +22,7 @@
 #include "../smoother/gmres_smoother.h"
 #include "../smoother/jacobi_smoother.h"
 #include "../smoother/smoother_base.h"
+#include "../../functionalities/set_zero_mean_value.h"
 
 #include "../mg_coarse/mg_coarse_grid_solvers.h"
 #include "multigrid_input_parameters.h"
@@ -45,7 +46,8 @@ compute_eigenvalues(const Operator &                                            
   srand(1);
   for(unsigned int i = 0; i < right.local_size(); ++i)
     right.local_element(i) = (double)rand() / RAND_MAX;
-  op.set_zero_mean_value(right);
+  if(op.is_singular())
+    set_zero_mean_value(right);
 
   SolverControl control(eig_n_iter, right.l2_norm() * 1e-5);
   internal::PreconditionChebyshevImplementation::EigenvalueTracker eigenvalue_tracker;
@@ -108,7 +110,8 @@ compute_eigenvalues_gmres(
   srand(1);
   for(unsigned int i = 0; i < right.local_size(); ++i)
     right.local_element(i) = (double)rand() / RAND_MAX;
-  op.set_zero_mean_value(right);
+  if(op.is_singular())
+    set_zero_mean_value(right);
 
   ReductionControl control(eig_n_iter, right.l2_norm() * 1.0e-5, 1.0e-5);
 

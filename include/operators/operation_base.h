@@ -314,6 +314,9 @@ public:
 
   double
   get_evaluation_time() const;
+  
+  bool
+  is_singular() const;
 
 protected:
   /*
@@ -498,10 +501,6 @@ protected:
                                          const SparseMatrix & /*src*/,
                                          const Range & /*range*/) const;
 #endif
-
-public:
-  void
-  set_zero_mean_value(VectorType & vec) const;
 
 protected:
   void
