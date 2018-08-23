@@ -13,23 +13,13 @@ struct ConvectiveOperatorData
   : public OperatorBaseData<dim, OperatorType, ConvDiff::BoundaryDescriptor<dim>>
 {
   ConvectiveOperatorData()
-    : OperatorBaseData<dim, OperatorType, ConvDiff::BoundaryDescriptor<dim>>(0,
-                                                                                           0,
-                                                                                           true,
-                                                                                           false,
-                                                                                           false,
-                                                                                           false,
-                                                                                           true,
-                                                                                           false, // cell
-                                                                                           true,
-                                                                                           false,
-                                                                                           true,
-                                                                                           false, // face
-                                                                                           true,
-                                                                                           false,
-                                                                                           true,
-                                                                                           false // boundary
-                                                                                           ),
+// clang-format off
+    : OperatorBaseData<dim, OperatorType, ConvDiff::BoundaryDescriptor<dim>>(0, 0,
+          true, false, false, false, true,  false, // cell
+          true, false,        true,  false,        // face
+          true, false,        true,  false         // boundary 
+      ),
+// clang-format on
       numerical_flux_formulation(NumericalFluxConvectiveOperator::Undefined)
   {
   }

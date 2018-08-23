@@ -26,23 +26,13 @@ struct LaplaceOperatorData : public OperatorBaseData<dim, OperatorType, Boundary
 {
 public:
   LaplaceOperatorData()
-    : OperatorBaseData<dim, OperatorType, BoundaryDescriptor<dim>>(0,
-                                                                                 0,
-                                                                                 false,
-                                                                                 true,
-                                                                                 false,
-                                                                                 false,
-                                                                                 true,
-                                                                                 false,
-                                                                                 true,
-                                                                                 true,
-                                                                                 true,
-                                                                                 true, // face
-                                                                                 true,
-                                                                                 true,
-                                                                                 true,
-                                                                                 true // boundary
-                                                                                 ),
+// clang-format off
+    : OperatorBaseData<dim, OperatorType, BoundaryDescriptor<dim>>(0, 0,
+          false, true, false, false, true, false, // cell
+          true,  true,        true,  true,        // face
+          true,  true,        true,  true         // boundary
+      ),
+// clang-format on
       IP_factor(1.0)
   {
   }

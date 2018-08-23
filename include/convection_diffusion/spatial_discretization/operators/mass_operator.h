@@ -13,14 +13,11 @@ struct MassMatrixOperatorData
   : public OperatorBaseData<dim, OperatorType, ConvDiff::BoundaryDescriptor<dim>>
 {
   MassMatrixOperatorData()
-    : OperatorBaseData<dim, OperatorType, ConvDiff::BoundaryDescriptor<dim>>(0,
-                                                                                           0,
-                                                                                           true,
-                                                                                           false,
-                                                                                           false,
-                                                                                           true,
-                                                                                           false,
-                                                                                           false)
+// clang-format off
+    : OperatorBaseData<dim, OperatorType, ConvDiff::BoundaryDescriptor<dim>>(0, 0,
+          true, false, false, true, false, false
+      )
+// clang-format on
   {
   }
 };

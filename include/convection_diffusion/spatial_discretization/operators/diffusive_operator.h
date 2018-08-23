@@ -13,23 +13,13 @@ struct DiffusiveOperatorData
   : public OperatorBaseData<dim, OperatorType, ConvDiff::BoundaryDescriptor<dim>>
 {
   DiffusiveOperatorData()
-    : OperatorBaseData<dim, OperatorType, ConvDiff::BoundaryDescriptor<dim>>(0,
-                                                                                           0,
-                                                                                           false,
-                                                                                           true,
-                                                                                           false,
-                                                                                           false,
-                                                                                           true,
-                                                                                           false, // cell
-                                                                                           true,
-                                                                                           true,
-                                                                                           true,
-                                                                                           true, // face
-                                                                                           true,
-                                                                                           true,
-                                                                                           true,
-                                                                                           true // boundary
-                                                                                           ),
+// clang-format off
+    : OperatorBaseData<dim, OperatorType, ConvDiff::BoundaryDescriptor<dim>>(0, 0,
+          false, true, false, false, true, false, // cell
+          true,  true,        true,  true,        // face
+          true,  true,        true,  true         // boundary
+      ),
+// clang-format on
       IP_factor(1.0),
       diffusivity(1.0)
   {
