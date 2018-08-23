@@ -1562,7 +1562,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_constraints(const DoFHand
   // be applied in the DG case). In case we have interface matrices, there are
   // Dirichlet constraints on parts of the boundary and no such transformation
   // is required.
-  if(verify_boundary_conditions(dof_handler, operator_settings) && constraint_own.can_store_line(0))
+  if(verify_boundary_conditions_and_check_if_pure_neumann_problem(dof_handler, operator_settings) && constraint_own.can_store_line(0))
   {
     // if dof 0 is constrained, it must be a periodic dof, so we take the
     // value on the other side

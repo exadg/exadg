@@ -544,7 +544,7 @@ protected:
                               ConstraintMatrix &                            constraints);
 
   bool
-  verify_boundary_conditions(DoFHandler<dim> const & dof_handler, AdditionalData const & operator_data);
+  verify_boundary_conditions_and_check_if_pure_neumann_problem(DoFHandler<dim> const & dof_handler, AdditionalData const & operator_data);
 
 protected:
   mutable AdditionalData operator_settings;
