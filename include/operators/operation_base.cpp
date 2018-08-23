@@ -738,26 +738,6 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_hom(const Matr
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_cell_inhom(const MatrixFree_ &,
-                                                                    VectorType &,
-                                                                    const VectorType &,
-                                                                    const Range &) const
-{
-  /*nothing to do (see note in header file)*/
-}
-
-template<int dim, int degree, typename Number, typename AdditionalData>
-void
-OperatorBase<dim, degree, Number, AdditionalData>::local_face_inhom(const MatrixFree_ &,
-                                                                    VectorType &,
-                                                                    const VectorType &,
-                                                                    const Range &) const
-{
-  /*nothing to do (see note in header file)*/
-}
-
-template<int dim, int degree, typename Number, typename AdditionalData>
-void
 OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_inhom(const MatrixFree_ &   data,
                                                                         VectorType & dst,
                                                                         const VectorType & /*src*/,

@@ -388,10 +388,16 @@ protected:
    * why two empty function have to be provided for cell and face.
    */
   void
-  local_cell_inhom(const MatrixFree_ & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
+  local_cell_inhom(const MatrixFree_ & /*data*/, VectorType & /*dst*/, const VectorType & /*src*/, const Range & /*range*/) const
+  {
+    // nothing to do
+  }
 
   void
-  local_face_inhom(const MatrixFree_ & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
+  local_face_inhom(const MatrixFree_ & /*data*/, VectorType & /*dst*/, const VectorType & /*src*/, const Range & /*range*/) const
+  {
+    // nothing to do
+  }
   
   void
   local_boundary_inhom(const MatrixFree_ & /*data*/,
