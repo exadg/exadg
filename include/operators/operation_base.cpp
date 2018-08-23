@@ -50,7 +50,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
                                                           const Mapping<dim> &      mapping,
                                                           void *                    operator_data_in,
                                                           const MGConstrainedDoFs & mg_constrained_dofs,
-                                                          const unsigned int        level)
+                                                          const unsigned int        level_mg_handler)
 {
   // create copy of data and ...
   auto operator_settings = *static_cast<AdditionalData *>(operator_data_in);
@@ -69,7 +69,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
     additional_data.build_face_info = true;
 
   // ... level of this mg level
-  additional_data.level_mg_handler = level;
+  additional_data.level_mg_handler = level_mg_handler;
 
   // TODO: move to additional data
   additional_data.mapping_update_flags =
@@ -92,14 +92,14 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
 
   // setup constraint matrix for CG
   if(!is_dg)
-    this->add_constraints(dof_handler, constraint_own, mg_constrained_dofs, operator_settings, level);
+    this->add_constraints(dof_handler, constraint_own, mg_constrained_dofs, operator_settings, level_mg_handler);
 
   // ...finalize constraint matrix
   constraint_own.close();
 
   const QGauss<1> quad(dof_handler.get_fe().degree + 1);
   data_own.reinit(mapping, dof_handler, constraint_own, quad, additional_data);
-  reinit(data_own, constraint_own, operator_settings, level);
+  reinit(data_own, constraint_own, operator_settings, level_mg_handler);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>

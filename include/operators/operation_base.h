@@ -169,7 +169,7 @@ public:
          const Mapping<dim> &      mapping,
          void *                    operator_settings,
          const MGConstrainedDoFs & mg_constrained_dofs,
-         const unsigned int        level);
+         const unsigned int        level_mg_handler);
 
   /*
    * matrix vector multiplication
