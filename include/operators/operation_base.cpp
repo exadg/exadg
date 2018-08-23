@@ -418,18 +418,8 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::add_block_jacobi_matrices(BlockMatrix & matrices) const
 {
-  this->add_block_jacobi_matrices(matrices, get_evaluation_time());
-}
-
-template<int dim, int degree, typename Number, typename AdditionalData>
-void
-OperatorBase<dim, degree, Number, AdditionalData>::add_block_jacobi_matrices(BlockMatrix &    matrices,
-                                                                             Number const time) const
-{
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
-
-  this->set_evaluation_time(time);
-
+    
   if(do_eval_faces)
     if(operator_settings.use_cell_based_loops)
       data->cell_loop(&This::local_add_block_diagonal_cell_based, this, matrices, matrices);
@@ -442,6 +432,15 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_block_jacobi_matrices(Blo
                  matrices);
   else
     data->cell_loop(&This::local_add_block_diagonal_cell, this, matrices, matrices);
+}
+
+template<int dim, int degree, typename Number, typename AdditionalData>
+void
+OperatorBase<dim, degree, Number, AdditionalData>::add_block_jacobi_matrices(BlockMatrix &    matrices,
+                                                                             Number const time) const
+{
+  this->set_evaluation_time(time);
+  this->add_block_jacobi_matrices(matrices);
 }
 
 #ifdef DEAL_II_WITH_TRILINOS
