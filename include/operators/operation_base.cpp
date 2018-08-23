@@ -1607,18 +1607,15 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::adjust_diagonal_for_singular_operator(VectorType & diagonal) const
 {
-  if(operator_is_singular && !is_mg)
-  {
-    VectorType vec1, d;
-    vec1.reinit(diagonal, true);
-    d.reinit(diagonal, true);
-    for(unsigned int i = 0; i < vec1.local_size(); ++i)
-      vec1.local_element(i) = 1.;
-    vmult(d, vec1);
-    double length = vec1 * vec1;
-    double factor = vec1 * d;
-    diagonal.add(-2. / length, d, factor / pow(length, 2.), vec1);
-  }
+  VectorType vec1, d;
+  vec1.reinit(diagonal, true);
+  d.reinit(diagonal, true);
+  for(unsigned int i = 0; i < vec1.local_size(); ++i)
+    vec1.local_element(i) = 1.;
+  vmult(d, vec1);
+  double length = vec1 * vec1;
+  double factor = vec1 * d;
+  diagonal.add(-2. / length, d, factor / pow(length, 2.), vec1);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
