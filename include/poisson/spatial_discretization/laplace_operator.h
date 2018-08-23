@@ -22,11 +22,11 @@ enum class BoundaryType
 };
 
 template<int dim>
-struct LaplaceOperatorData : public OperatorBaseData<dim, BoundaryType, OperatorType, BoundaryDescriptor<dim>>
+struct LaplaceOperatorData : public OperatorBaseData<dim, OperatorType, BoundaryDescriptor<dim>>
 {
 public:
   LaplaceOperatorData()
-    : OperatorBaseData<dim, BoundaryType, OperatorType, BoundaryDescriptor<dim>>(0,
+    : OperatorBaseData<dim, OperatorType, BoundaryDescriptor<dim>>(0,
                                                                                  0,
                                                                                  false,
                                                                                  true,

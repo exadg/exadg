@@ -15,10 +15,9 @@
 
 using namespace dealii;
 
-template<int dim, typename BT, typename OT, typename BoundaryDescriptor>
+template<int dim, typename OT, typename BoundaryDescriptor>
 struct OperatorBaseData
 {
-  typedef BT BoundaryType;
   typedef OT OperatorType;
 
   OperatorBaseData(const unsigned int dof_index,
@@ -151,7 +150,6 @@ public:
   typedef std::pair<unsigned int, unsigned int>                Range;
   typedef FEEvaluation<dim, degree, degree + 1, 1, Number>     FEEvalCell;
   typedef FEFaceEvaluation<dim, degree, degree + 1, 1, Number> FEEvalFace;
-  typedef typename AdditionalData::BoundaryType                BoundaryType;
   typedef typename AdditionalData::OperatorType                OperatorType;
   typedef typename GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> PeriodicFacePairIterator;
 

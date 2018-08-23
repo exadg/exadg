@@ -15,10 +15,10 @@ namespace ConvDiff
 {
 template<int dim>
 struct ConvectionDiffusionOperatorData
-  : public OperatorBaseData<dim, BoundaryType, OperatorType, ConvDiff::BoundaryDescriptor<dim>>
+  : public OperatorBaseData<dim, OperatorType, ConvDiff::BoundaryDescriptor<dim>>
 {
   ConvectionDiffusionOperatorData()
-    : OperatorBaseData<dim, BoundaryType, OperatorType, ConvDiff::BoundaryDescriptor<dim>>(0, 0),
+    : OperatorBaseData<dim, OperatorType, ConvDiff::BoundaryDescriptor<dim>>(0, 0),
       unsteady_problem(true),
       convective_problem(true),
       diffusive_problem(true),

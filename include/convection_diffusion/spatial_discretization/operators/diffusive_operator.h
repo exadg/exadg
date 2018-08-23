@@ -10,10 +10,10 @@ namespace ConvDiff
 {
 template<int dim>
 struct DiffusiveOperatorData
-  : public OperatorBaseData<dim, BoundaryType, OperatorType, ConvDiff::BoundaryDescriptor<dim>>
+  : public OperatorBaseData<dim, OperatorType, ConvDiff::BoundaryDescriptor<dim>>
 {
   DiffusiveOperatorData()
-    : OperatorBaseData<dim, BoundaryType, OperatorType, ConvDiff::BoundaryDescriptor<dim>>(0,
+    : OperatorBaseData<dim, OperatorType, ConvDiff::BoundaryDescriptor<dim>>(0,
                                                                                            0,
                                                                                            false,
                                                                                            true,

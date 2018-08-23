@@ -10,10 +10,10 @@ namespace ConvDiff
 {
 template<int dim>
 struct MassMatrixOperatorData
-  : public OperatorBaseData<dim, BoundaryType, OperatorType, ConvDiff::BoundaryDescriptor<dim>>
+  : public OperatorBaseData<dim, OperatorType, ConvDiff::BoundaryDescriptor<dim>>
 {
   MassMatrixOperatorData()
-    : OperatorBaseData<dim, BoundaryType, OperatorType, ConvDiff::BoundaryDescriptor<dim>>(0,
+    : OperatorBaseData<dim, OperatorType, ConvDiff::BoundaryDescriptor<dim>>(0,
                                                                                            0,
                                                                                            true,
                                                                                            false,
