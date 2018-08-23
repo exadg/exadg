@@ -319,7 +319,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VectorType & dia
   if(!is_dg)
     diagonal.compress(VectorOperation::add);
 
-  // apply mean value constrained
+  // in case that the operator is singular, the diagonal has to be adjusted
   if(operator_is_singular && !is_mg)
     set_zero_mean_value_diagonal(diagonal);
 
