@@ -1,5 +1,5 @@
-#ifndef MATRIX_OPERATOR_BASE_NEW
-#define MATRIX_OPERATOR_BASE_NEW
+#ifndef MULTIGRID_OPERATOR_BASE
+#define MULTIGRID_OPERATOR_BASE
 
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/exceptions.h>
