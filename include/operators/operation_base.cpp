@@ -315,8 +315,6 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_block_diagonal(VectorTy
   AssertThrow(block_jacobi_matrices_have_been_initialized,
               ExcMessage("Block Jacobi matrices have not been initialized!"));
 
-  dst = 0;
-
   data->cell_loop(&This::local_apply_block_diagonal, this, dst, src);
 }
 
