@@ -165,6 +165,7 @@ public:
   typedef FEFaceEvaluation<dim, degree, degree + 1, 1, Number> FEEvalFace;
   typedef typename AdditionalData::BoundaryType                BoundaryType;
   typedef typename AdditionalData::OperatorType                OperatorType;
+  typedef typename GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> PeriodicFacePairIterator;
 
   OperatorBase();
 
@@ -511,7 +512,20 @@ protected:
 
   void
   set_constraint_diagonal(VectorType & diagonal) const;
+  
+  /*
+   * Add periodic constraints: loop over all periodic face pairs on level 0
+   */
+  void
+  add_periodicity_constraints(const DoFHandler<dim> & dof_handler, 
+                              const unsigned int level,
+                              std::vector<PeriodicFacePairIterator>& periodic_face_pairs_level0,
+                              ConstraintMatrix& constraint_own);
 
+  /*
+   * Add periodic constraints: for a given face pair on level 0 add recursively  
+   * all subfaces on the given level
+   */
   void
   add_periodicity_constraints(const unsigned int                            level,
                               const unsigned int                            target_level,

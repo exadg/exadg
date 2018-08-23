@@ -90,28 +90,16 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
   auto & constraint_own = constraint.own();
   auto & data_own       = data.own();
 
-  // setup constraint matrix: clear old content (to be on the safe side)
-  constraint_own.clear();
-
-  // ...fill constraints
+  // setup constraint matrix for CG
   if(!is_dg)
   {
-    // 1) add periodic bc
-    for(auto & it : operator_settings.periodic_face_pairs_level0)
-    {
-      typename DoFHandler<dim>::cell_iterator cell1(&dof_handler.get_triangulation(),
-                                                    0,
-                                                    it.cell[1]->index(),
-                                                    &dof_handler);
-      typename DoFHandler<dim>::cell_iterator cell0(&dof_handler.get_triangulation(),
-                                                    0,
-                                                    it.cell[0]->index(),
-                                                    &dof_handler);
-      add_periodicity_constraints(
-        level, level, cell1->face(it.face_idx[1]), cell0->face(it.face_idx[0]), constraint_own);
-    }
+    // 0) clear old content (to be on the safe side)
+    constraint_own.clear();
+    
+    // 1) add periodic bcs
+    this->add_periodicity_constraints(dof_handler, level, operator_settings.periodic_face_pairs_level0, constraint_own);
 
-    // 2) add dirichlet bc
+    // 2) add dirichlet bcs
     constraint_own.add_lines(mg_constrained_dofs.get_boundary_indices(level));
 
     // constraint zeroth DoF in continuous case (the mean value constraint will
@@ -1596,6 +1584,33 @@ OperatorBase<dim, degree, Number, AdditionalData>::set_constraint_diagonal(Vecto
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
+OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(const DoFHandler<dim> & dof_handler, 
+                              const unsigned int level,
+                              std::vector<PeriodicFacePairIterator>& periodic_face_pairs_level0,
+                              ConstraintMatrix& constraint_own)
+{
+  // loop over all periodic face pairs of level 0
+  for(auto & it : periodic_face_pairs_level0)
+  {
+    // get reference to the cells on level 0 sharing the periodic face
+    typename DoFHandler<dim>::cell_iterator cell1(&dof_handler.get_triangulation(),
+                                                  0,
+                                                  it.cell[1]->index(),
+                                                  &dof_handler);
+    typename DoFHandler<dim>::cell_iterator cell0(&dof_handler.get_triangulation(),
+                                                  0,
+                                                  it.cell[0]->index(),
+                                                  &dof_handler);
+    
+    // get reference to periodic faces on level and add recursively their 
+    // subfaces on the given level
+    add_periodicity_constraints(
+      level, level, cell1->face(it.face_idx[1]), cell0->face(it.face_idx[0]), constraint_own);
+  }
+}
+
+template<int dim, int degree, typename Number, typename AdditionalData>
+void
 OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(
   const unsigned int                            level,
   const unsigned int                            target_level,
@@ -1605,7 +1620,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(
 {
   if(level == 0)
   {
-    const unsigned int                   dofs_per_face = face1->get_fe(0).dofs_per_face;
+    // level of interest has been reached
+    const unsigned int dofs_per_face = face1->get_fe(0).dofs_per_face;
+    
     std::vector<types::global_dof_index> dofs_1(dofs_per_face);
     std::vector<types::global_dof_index> dofs_2(dofs_per_face);
 
@@ -1616,12 +1633,15 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(
       if(constraints.can_store_line(dofs_2[i]) && constraints.can_store_line(dofs_1[i]) &&
          !constraints.is_constrained(dofs_2[i]))
       {
+        // constraint dof and ...
         constraints.add_line(dofs_2[i]);
+        // specify type of constraint: equality (dof_2[i]=dof_1[j]*1.0)
         constraints.add_entry(dofs_2[i], dofs_1[i], 1.);
       }
   }
   else if(face1->has_children() && face2->has_children())
   {
+    // recursively visit all subfaces
     for(unsigned int c = 0; c < face1->n_children(); ++c)
       add_periodicity_constraints(level - 1, target_level, face1->child(c), face2->child(c), constraints);
   }
