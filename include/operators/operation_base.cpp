@@ -428,14 +428,14 @@ OperatorBase<dim, degree, Number, AdditionalData>::calculate_system_matrix(Spars
   // communicate overlapping matrix parts
   system_matrix.compress(VectorOperation::add);
 
-  // in the case of dg: finished
-  if(is_dg)
-    return;
+  if(!is_dg)
+  {
+    // make zero entries on diagonal (due to constrained dofs) to one:
+    for(auto & entry : system_matrix)
+      if(entry.row() == entry.column() && entry.value() == 0.0)
+        entry.value() = 1.0;
+  } // nothing to do for dg
 
-  // make zero entries on diagonal (due to constrained dofs) to one:
-  for(auto & entry : system_matrix)
-    if(entry.row() == entry.column() && entry.value() == 0.0)
-      entry.value() = 1.0;
 }
 #endif
 
