@@ -349,20 +349,11 @@ void
 OperatorBase<dim, degree, Number, AdditionalData>::apply_block_jacobi(VectorType &       dst,
                                                                       VectorType const & src) const
 {
-  dst = 0;
-  apply_block_jacobi_add(dst, src);
-}
-
-template<int dim, int degree, typename Number, typename AdditionalData>
-void
-OperatorBase<dim, degree, Number, AdditionalData>::apply_block_jacobi_add(VectorType &       dst,
-                                                                          VectorType const & src) const
-{
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
   AssertThrow(block_jacobi_matrices_have_been_initialized,
               ExcMessage("Block Jacobi matrices have not been initialized!"));
 
-  data->cell_loop(&This::local_apply_block_jacobi_add, this, dst, src);
+  data->cell_loop(&This::local_apply_block_jacobi, this, dst, src);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
@@ -1012,7 +1003,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell_based
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_apply_block_jacobi_add(
+OperatorBase<dim, degree, Number, AdditionalData>::local_apply_block_jacobi(
   const MatrixFree_ &         data,
   VectorType &       dst,
   const VectorType & src,

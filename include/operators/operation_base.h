@@ -249,9 +249,6 @@ public:
    */
   void
   apply_block_jacobi(VectorType & dst, VectorType const & src) const;
-  
-  void
-  apply_block_jacobi_add(VectorType & dst, VectorType const & src) const;
 
   // TODO: add matrix-free and block matrix version
   void
@@ -480,7 +477,7 @@ protected:
    * been performed with the method update_block_jacobi(true))
    */
   void
-  local_apply_block_jacobi_add(const MatrixFree_ &         data,
+  local_apply_block_jacobi(const MatrixFree_ &    data,
                                VectorType &       dst,
                                const VectorType & src,
                                const Range &      cell_range) const;
