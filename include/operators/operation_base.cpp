@@ -92,48 +92,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
 
   // setup constraint matrix for CG
   if(!is_dg)
-  {
-    // 0) clear old content (to be on the safe side)
-    constraint_own.clear();
-    
-    // 1) add periodic bcs
-    this->add_periodicity_constraints(dof_handler, level, operator_settings.periodic_face_pairs_level0, constraint_own);
-
-    // 2) add dirichlet bcs
-    constraint_own.add_lines(mg_constrained_dofs.get_boundary_indices(level));
-
-    // constraint zeroth DoF in continuous case (the mean value constraint will
-    // be applied in the DG case). In case we have interface matrices, there are
-    // Dirichlet constraints on parts of the boundary and no such transformation
-    // is required.
-    if(verify_boundary_conditions(dof_handler, operator_settings) && constraint_own.can_store_line(0))
-    {
-      // if dof 0 is constrained, it must be a periodic dof, so we take the
-      // value on the other side
-      types::global_dof_index line_index = 0;
-      while(true)
-      {
-        const std::vector<std::pair<types::global_dof_index, double>> * lines =
-          constraint_own.get_constraint_entries(line_index);
-        if(lines == 0)
-        {
-          constraint_own.add_line(line_index);
-          // add the constraint back to the MGConstrainedDoFs field. This
-          // is potentially dangerous but we know what we are doing... ;-)
-          if(level != numbers::invalid_unsigned_int)
-            const_cast<IndexSet &>(mg_constrained_dofs.get_boundary_indices(level)).add_index(line_index);
-          break;
-        }
-        else
-        {
-          Assert(lines->size() == 1 && std::abs((*lines)[0].second - 1.) < 1e-15,
-                 ExcMessage("Periodic index expected, bailing out"));
-          line_index = (*lines)[0].first;
-        }
-      }
-    }
-
-  } // else: no constraints needed for DG
+    this->add_constraints(dof_handler, constraint_own, mg_constrained_dofs, operator_settings, level);
 
   // ...finalize constraint matrix
   constraint_own.close();
@@ -1580,6 +1539,55 @@ OperatorBase<dim, degree, Number, AdditionalData>::set_constraint_diagonal(Vecto
   // set (diagonal) entries to 1.0
   for(auto i : data->get_constrained_dofs())
     diagonal.local_element(i) = 1.0;
+}
+
+template<int dim, int degree, typename Number, typename AdditionalData>
+void
+OperatorBase<dim, degree, Number, AdditionalData>::add_constraints(const DoFHandler<dim> & dof_handler,
+                  ConstraintMatrix& constraint_own, 
+                  const MGConstrainedDoFs & mg_constrained_dofs,
+                  AdditionalData & operator_settings,
+                  const unsigned int        level)
+{
+  // 0) clear old content (to be on the safe side)
+  constraint_own.clear();
+  
+  // 1) add periodic bcs
+  this->add_periodicity_constraints(dof_handler, level, operator_settings.periodic_face_pairs_level0, constraint_own);
+
+  // 2) add dirichlet bcs
+  constraint_own.add_lines(mg_constrained_dofs.get_boundary_indices(level));
+
+  // constraint zeroth DoF in continuous case (the mean value constraint will
+  // be applied in the DG case). In case we have interface matrices, there are
+  // Dirichlet constraints on parts of the boundary and no such transformation
+  // is required.
+  if(verify_boundary_conditions(dof_handler, operator_settings) && constraint_own.can_store_line(0))
+  {
+    // if dof 0 is constrained, it must be a periodic dof, so we take the
+    // value on the other side
+    types::global_dof_index line_index = 0;
+    while(true)
+    {
+      const std::vector<std::pair<types::global_dof_index, double>> * lines =
+        constraint_own.get_constraint_entries(line_index);
+      if(lines == 0)
+      {
+        constraint_own.add_line(line_index);
+        // add the constraint back to the MGConstrainedDoFs field. This
+        // is potentially dangerous but we know what we are doing... ;-)
+        if(level != numbers::invalid_unsigned_int)
+          const_cast<IndexSet &>(mg_constrained_dofs.get_boundary_indices(level)).add_index(line_index);
+        break;
+      }
+      else
+      {
+        Assert(lines->size() == 1 && std::abs((*lines)[0].second - 1.) < 1e-15,
+               ExcMessage("Periodic index expected, bailing out"));
+        line_index = (*lines)[0].first;
+      }
+    }
+  }
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>

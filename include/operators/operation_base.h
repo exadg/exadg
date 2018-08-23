@@ -513,6 +513,13 @@ protected:
   void
   set_constraint_diagonal(VectorType & diagonal) const;
   
+  void 
+  add_constraints(const DoFHandler<dim> & dof_handler,
+                  ConstraintMatrix& constraint_own, 
+                  const MGConstrainedDoFs & mg_constrained_dofs,
+                  AdditionalData & operator_settings,
+                  const unsigned int        level);  
+  
   /*
    * Add periodic constraints: loop over all periodic face pairs on level 0
    */
