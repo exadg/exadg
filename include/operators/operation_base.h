@@ -510,6 +510,9 @@ protected:
   void
   adjust_diagonal_for_singular_operator(VectorType & diagonal) const;
 
+  /*
+   * set entries in the diagonal corresponding to a constraint dof to one
+   */
   void
   set_constraint_diagonal(VectorType & diagonal) const;
   

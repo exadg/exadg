@@ -1536,7 +1536,7 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::set_constraint_diagonal(VectorType & diagonal) const
 {
-  // set (diagonal) entries to 1.0
+  // set (diagonal) entries to 1.0 for constrained dofs
   for(auto i : data->get_constrained_dofs())
     diagonal.local_element(i) = 1.0;
 }
