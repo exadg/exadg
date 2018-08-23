@@ -159,7 +159,7 @@ public:
       VectorTools::interpolate(dof_handler, TestSolution<dim>(0), vec_src);
 
       // perform block-jacobi with operator
-      op.update_block_jacobi(false);
+      op.calculate_block_diagonal_matrices();
       op.apply_block_diagonal(vec_dst_op, vec_src);
 
       // apply block-diagonal matrix of size: dofs_per_cell x dofs_per_cell

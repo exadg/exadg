@@ -247,7 +247,7 @@ public:
   update_block_jacobi() const;
   
   void
-  update_block_jacobi(bool const do_lu_factorization) const;
+  calculate_block_diagonal_matrices() const;
   
   virtual void
   add_block_jacobi_matrices(BlockMatrix & matrices) const;
