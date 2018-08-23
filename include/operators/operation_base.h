@@ -159,7 +159,7 @@ public:
   static const unsigned int dofs_per_cell        = FEEvalCell::static_dofs_per_cell;
 
   // if this method is called without the forth argument `level_mg_handler`,
-  // this operator is initialized for the finest grid, i.e. not a multigrid level
+  // this operator is initialized for level -1, i.e. the finest grid
   void
   reinit(MatrixFree_ const &    matrix_free,
          ConstraintMatrix &     constraint_matrix,
