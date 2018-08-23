@@ -158,6 +158,8 @@ public:
   static const unsigned int vectorization_length = VectorizedArray<Number>::n_array_elements;
   static const unsigned int dofs_per_cell        = FEEvalCell::static_dofs_per_cell;
 
+  // if this method is called without the forth argument `level_mg_handler`,
+  // this operator is initialized for the finest grid, i.e. not a multigrid level
   void
   reinit(MatrixFree_ const &    matrix_free,
          ConstraintMatrix &     constraint_matrix,
