@@ -1657,7 +1657,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 bool
-OperatorBase<dim, degree, Number, AdditionalData>::verify_boundary_conditions(
+OperatorBase<dim, degree, Number, AdditionalData>::verify_boundary_conditions_and_check_if_pure_neumann_problem(
   DoFHandler<dim> const & dof_handler,
   AdditionalData const &  operator_data)
 {
