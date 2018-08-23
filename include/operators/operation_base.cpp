@@ -39,8 +39,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(MatrixFree_ const &   
   // set mg level
   this->level_mg_handler = level_mg_handler;
 
-  // is mg?
-  this->is_mg = !(level_mg_handler == numbers::invalid_unsigned_int);
+  // The default value is is_mg = false and this variable is set to true in case 
+  // the operator is applied in multigrid algorithm. By convention, the default 
+  // argument numbers::invalid_unsigned_int corresponds to the default 
+  // value is_mg = false
+  this->is_mg = level_mg_handler != numbers::invalid_unsigned_int;
 
 }
 
