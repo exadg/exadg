@@ -300,16 +300,6 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VectorType & diagonal) const
 {
-  this->add_diagonal(diagonal, this->get_evaluation_time());
-}
-
-template<int dim, int degree, typename Number, typename AdditionalData>
-void
-OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VectorType & diagonal,
-                                                                Number const time) const
-{
-  this->set_evaluation_time(time);
-
   // compute diagonal (not regarding: mean value constraint and constraints)
   if(is_dg && do_eval_faces)
     if(operator_settings.use_cell_based_loops)
@@ -333,6 +323,15 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VectorType & dia
 
   // apply constraint
   set_constraint_diagonal(diagonal);
+}
+
+template<int dim, int degree, typename Number, typename AdditionalData>
+void
+OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VectorType & diagonal,
+                                                                Number const time) const
+{
+  this->set_evaluation_time(time);
+  this->add_diagonal(diagonal);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
