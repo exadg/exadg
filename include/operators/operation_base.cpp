@@ -17,8 +17,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
       operator_settings.internal_evaluate.do_eval() || operator_settings.internal_integrate.do_eval() ||
       operator_settings.boundary_evaluate.do_eval() || operator_settings.boundary_integrate.do_eval()),
     level_mg_handler(numbers::invalid_unsigned_int),
-    block_jacobi_matrices_have_been_initialized(false),
-    operator_is_singular(false)
+    block_jacobi_matrices_have_been_initialized(false)
 {
 }
 
@@ -43,8 +42,6 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(MatrixFree_ const &   
   // is mg?
   this->is_mg = !(level_mg_handler == numbers::invalid_unsigned_int);
 
-  // mean value constraint?
-  operator_is_singular = this->operator_settings.operator_is_singular;
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
@@ -179,7 +176,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::vmult_add(VectorType & dst, V
 {
   const VectorType * actual_src = &src;
   VectorType         tmp_projection_vector;
-  if(operator_is_singular && !is_mg)
+  if(this->is_singular() && !is_mg)
   {
     tmp_projection_vector = src;
     set_zero_mean_value(tmp_projection_vector);
@@ -192,7 +189,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::vmult_add(VectorType & dst, V
   else
     data->cell_loop(&This::local_cell_hom, this, dst, *actual_src);
 
-  if(operator_is_singular && !is_mg)
+  if(this->is_singular() && !is_mg)
     set_zero_mean_value(dst);
 }
 
@@ -322,7 +319,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VectorType & dia
     diagonal.compress(VectorOperation::add);
 
   // in case that the operator is singular, the diagonal has to be adjusted
-  if(operator_is_singular && !is_mg)
+  if(this->is_singular() && !is_mg)
     adjust_diagonal_for_singular_operator(diagonal);
 
   // apply constraints in the case of cg
@@ -606,7 +603,7 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 bool
 OperatorBase<dim, degree, Number, AdditionalData>::is_singular() const
 {
-  return this->operator_is_singular;
+  return this->operator_settings.operator_is_singular;
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>

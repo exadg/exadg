@@ -540,7 +540,6 @@ private:
   mutable std::vector<LAPACKFullMatrix<Number>> matrices;
 
   mutable bool block_jacobi_matrices_have_been_initialized;
-  mutable bool operator_is_singular;
 
 };
 
