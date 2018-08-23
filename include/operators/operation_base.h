@@ -505,7 +505,7 @@ public:
 
 protected:
   void
-  set_zero_mean_value_diagonal(VectorType & diagonal) const;
+  adjust_diagonal_for_singular_operator(VectorType & diagonal) const;
 
   void
   set_constraint_diagonal(VectorType & diagonal) const;

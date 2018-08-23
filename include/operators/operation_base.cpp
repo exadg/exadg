@@ -321,7 +321,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VectorType & dia
 
   // in case that the operator is singular, the diagonal has to be adjusted
   if(operator_is_singular && !is_mg)
-    set_zero_mean_value_diagonal(diagonal);
+    adjust_diagonal_for_singular_operator(diagonal);
 
   // apply constraint
   set_constraint_diagonal(diagonal);
@@ -1605,7 +1605,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::set_zero_mean_value(VectorTyp
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::set_zero_mean_value_diagonal(VectorType & diagonal) const
+OperatorBase<dim, degree, Number, AdditionalData>::adjust_diagonal_for_singular_operator(VectorType & diagonal) const
 {
   if(operator_is_singular && !is_mg)
   {
