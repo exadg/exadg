@@ -1240,7 +1240,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
     for(unsigned int i = 0; i < n_filled_lanes; i++)
     {
       auto cell_i = data.get_cell_iterator(cell, i);
-      //      cell_i->distribute_local_to_global(matrices[i], dst);
+      
       std::vector<types::global_dof_index> dof_indices(dofs_per_cell);
       if(is_mg)
         cell_i->get_mg_dof_indices(dof_indices);
