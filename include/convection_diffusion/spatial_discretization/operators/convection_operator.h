@@ -56,6 +56,11 @@ public:
   initialize(MatrixFree<dim, value_type> const & mf_data,
              ConvectiveOperatorData<dim> const & operator_data_in);
 
+  void
+  initialize(MatrixFree<dim, value_type> const & mf_data,
+             ConstraintMatrix &                  constraint_matrx,
+             ConvectiveOperatorData<dim> const & operator_data_in);
+
   /*
    *  This function calculates the numerical flux for interior faces
    *  using the central flux.

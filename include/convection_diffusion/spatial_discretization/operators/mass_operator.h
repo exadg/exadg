@@ -39,6 +39,11 @@ public:
   initialize(MatrixFree<dim, value_type> const & mf_data,
              MassMatrixOperatorData<dim> const & mass_matrix_operator_data_in);
 
+  void
+  initialize(MatrixFree<dim, value_type> const & mf_data,
+             ConstraintMatrix& constraint_matrix,
+             MassMatrixOperatorData<dim> const & mass_matrix_operator_data_in);
+
 private:
   void
   do_cell_integral(FEEvalCell & fe_eval) const;

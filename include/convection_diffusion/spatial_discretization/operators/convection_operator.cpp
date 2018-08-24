@@ -14,6 +14,16 @@ ConvectiveOperator<dim, fe_degree, value_type>::initialize(
   Parent::reinit(mf_data, constraint_matrix, operator_data_in);
 }
 
+template<int dim, int fe_degree, typename value_type>
+void
+ConvectiveOperator<dim, fe_degree, value_type>::initialize(
+  MatrixFree<dim, value_type> const & mf_data,
+  ConstraintMatrix &                  constraint_matrix,
+  ConvectiveOperatorData<dim> const & operator_data_in)
+{
+  Parent::reinit(mf_data, constraint_matrix, operator_data_in);
+}
+
 /*
  *  This function calculates the numerical flux for interior faces
  *  using the central flux.

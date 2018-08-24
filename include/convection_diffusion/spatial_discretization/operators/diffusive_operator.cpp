@@ -21,6 +21,22 @@ DiffusiveOperator<dim, fe_degree, value_type>::initialize(Mapping<dim> const &  
 
   diffusivity = this->operator_settings.diffusivity;
 }
+template<int dim, int fe_degree, typename value_type>
+void
+DiffusiveOperator<dim, fe_degree, value_type>::initialize(Mapping<dim> const &                mapping,
+                                                          MatrixFree<dim, value_type> const & mf_data,
+                                                          ConstraintMatrix& constraint_matrix,
+                                                          DiffusiveOperatorData<dim> const & operator_data_in)
+{
+  Parent::reinit(mf_data, constraint_matrix, operator_data_in);
+
+  IP::calculate_penalty_parameter<dim, fe_degree, value_type>(array_penalty_parameter,
+                                                              *this->data,
+                                                              mapping,
+                                                              this->operator_settings.dof_index);
+
+  diffusivity = this->operator_settings.diffusivity;
+}
 
 template<int dim, int fe_degree, typename value_type>
 void
@@ -273,6 +289,9 @@ DiffusiveOperator<dim, fe_degree, value_type>::do_face_integral(FEEvalFace & fe_
     std::max(fe_eval.read_cell_data(array_penalty_parameter),
              fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
     IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
+#ifdef LAPLACE_CELL_TEST
+  tau_IP = 100.0;
+#endif
 
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
@@ -301,6 +320,9 @@ DiffusiveOperator<dim, fe_degree, value_type>::do_face_int_integral(FEEvalFace &
     std::max(fe_eval.read_cell_data(array_penalty_parameter),
              fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
     IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
+#ifdef LAPLACE_CELL_TEST
+  tau_IP = 100.0;
+#endif
 
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
@@ -328,6 +350,9 @@ DiffusiveOperator<dim, fe_degree, value_type>::do_face_ext_integral(FEEvalFace &
     std::max(fe_eval.read_cell_data(array_penalty_parameter),
              fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
     IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
+#ifdef LAPLACE_CELL_TEST
+  tau_IP = 100.0;
+#endif
 
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
@@ -360,6 +385,9 @@ DiffusiveOperator<dim, fe_degree, value_type>::do_boundary_integral(
   VectorizedArray<value_type> tau_IP =
     fe_eval.read_cell_data(array_penalty_parameter) *
     IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
+#ifdef LAPLACE_CELL_TEST
+  tau_IP = 100.0;
+#endif
 
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {

@@ -62,6 +62,12 @@ public:
              MatrixFree<dim, value_type> const & mf_data,
              DiffusiveOperatorData<dim> const &  operator_data_in);
 
+  void
+  initialize(Mapping<dim> const &                mapping,
+             MatrixFree<dim, value_type> const & mf_data,
+             ConstraintMatrix &                  constraint_matrx,
+             DiffusiveOperatorData<dim> const &  operator_data_in);
+
   virtual void
   apply_add(VectorType & dst, VectorType const & src, value_type const time) const;
 
