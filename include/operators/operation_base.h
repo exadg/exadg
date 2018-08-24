@@ -11,15 +11,15 @@
 #include <deal.II/matrix_free/fe_evaluation.h>
 #include <deal.II/matrix_free/matrix_free.h>
 
+#include "operator_type.h"
+
 #include "multigrid_operator_base.h"
 
 using namespace dealii;
 
-template<int dim, typename OT, typename BoundaryDescriptor>
+template<int dim, typename BoundaryDescriptor>
 struct OperatorBaseData
 {
-  typedef OT OperatorType;
-
   OperatorBaseData(const unsigned int dof_index,
                    const unsigned int quad_index,
                    const bool         cell_evaluate_values = false,
@@ -150,7 +150,6 @@ public:
   typedef std::pair<unsigned int, unsigned int>                Range;
   typedef FEEvaluation<dim, degree, degree + 1, 1, Number>     FEEvalCell;
   typedef FEFaceEvaluation<dim, degree, degree + 1, 1, Number> FEEvalFace;
-  typedef typename AdditionalData::OperatorType                OperatorType;
   typedef typename GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> PeriodicFacePairIterator;
 
   OperatorBase();

@@ -5,14 +5,10 @@
 #include "../../operators/interior_penalty_parameter.h"
 #include "../user_interface/boundary_descriptor.h"
 
+#include "../../operators/operator_type.h"
+
 namespace Poisson
 {
-enum class OperatorType
-{
-  full,
-  homogeneous,
-  inhomogeneous
-};
 
 enum class BoundaryType
 {
@@ -22,12 +18,12 @@ enum class BoundaryType
 };
 
 template<int dim>
-struct LaplaceOperatorData : public OperatorBaseData<dim, OperatorType, BoundaryDescriptor<dim>>
+struct LaplaceOperatorData : public OperatorBaseData<dim, BoundaryDescriptor<dim>>
 {
 public:
   LaplaceOperatorData()
 // clang-format off
-    : OperatorBaseData<dim, OperatorType, BoundaryDescriptor<dim>>(0, 0,
+    : OperatorBaseData<dim, BoundaryDescriptor<dim>>(0, 0,
           false, true, false, false, true, false, // cell
           true,  true,        true,  true,        // face
           true,  true,        true,  true         // boundary

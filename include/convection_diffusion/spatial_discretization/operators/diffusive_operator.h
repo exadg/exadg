@@ -10,11 +10,11 @@ namespace ConvDiff
 {
 template<int dim>
 struct DiffusiveOperatorData
-  : public OperatorBaseData<dim, OperatorType, ConvDiff::BoundaryDescriptor<dim>>
+  : public OperatorBaseData<dim, ConvDiff::BoundaryDescriptor<dim>>
 {
   DiffusiveOperatorData()
 // clang-format off
-    : OperatorBaseData<dim, OperatorType, ConvDiff::BoundaryDescriptor<dim>>(0, 0,
+    : OperatorBaseData<dim, ConvDiff::BoundaryDescriptor<dim>>(0, 0,
           false, true, false, false, true, false, // cell
           true,  true,        true,  true,        // face
           true,  true,        true,  true         // boundary

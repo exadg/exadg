@@ -10,11 +10,11 @@ namespace ConvDiff
 {
 template<int dim>
 struct MassMatrixOperatorData
-  : public OperatorBaseData<dim, OperatorType, ConvDiff::BoundaryDescriptor<dim>>
+  : public OperatorBaseData<dim, ConvDiff::BoundaryDescriptor<dim>>
 {
   MassMatrixOperatorData()
 // clang-format off
-    : OperatorBaseData<dim, OperatorType, ConvDiff::BoundaryDescriptor<dim>>(0, 0,
+    : OperatorBaseData<dim, ConvDiff::BoundaryDescriptor<dim>>(0, 0,
           true, false, false, true, false, false
       )
 // clang-format on

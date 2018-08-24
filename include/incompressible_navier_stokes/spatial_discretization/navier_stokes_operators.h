@@ -15,6 +15,7 @@
 #include "operators/base_operator.h"
 #include "../include/functionalities/evaluate_functions.h"
 #include "operators/interior_penalty_parameter.h"
+#include "../../operators/operator_type.h"
 
 
 namespace IncNS
@@ -365,12 +366,6 @@ class ViscousOperator : public BaseOperator<dim>
 {
 public:
   typedef Number value_type;
-
-  enum class OperatorType {
-    full,
-    homogeneous,
-    inhomogeneous
-  };
 
   ViscousOperator()
     :
