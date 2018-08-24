@@ -8,9 +8,9 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_INPUT_PARAMETERS_H_
 #define INCLUDE_CONVECTION_DIFFUSION_INPUT_PARAMETERS_H_
 
-#include "../include/functionalities/print_functions.h"
-#include "postprocessor/error_calculation_data.h"
-#include "postprocessor/output_data.h"
+#include "../../functionalities/print_functions.h"
+#include "../../postprocessor/error_calculation_data.h"
+#include "../../postprocessor/output_data.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
 #include <deal.II/base/exceptions.h>
 
