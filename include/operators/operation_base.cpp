@@ -612,13 +612,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_hom(const Matr
 
   for(unsigned int face = range.first; face < range.second; face++)
   {
-    auto bid = data.get_boundary_id(face);
-
     fe_eval.reinit(face);
     fe_eval.gather_evaluate(src,
                             this->operator_settings.boundary_evaluate.value,
                             this->operator_settings.boundary_evaluate.gradient);
-    do_boundary_integral(fe_eval, OperatorType::homogeneous, bid);
+    do_boundary_integral(fe_eval, OperatorType::homogeneous, data.get_boundary_id(face));
     fe_eval.integrate_scatter(this->operator_settings.boundary_integrate.value,
                               this->operator_settings.boundary_integrate.gradient,
                               dst);
@@ -636,11 +634,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_inhom(const Ma
 
   for(unsigned int face = range.first; face < range.second; face++)
   {
-    auto bid = data.get_boundary_id(face);
     fe_eval.reinit(face);
     // note: no gathering/evaluation is necessary in the case of
     //       inhomogeneous boundary
-    do_boundary_integral(fe_eval, OperatorType::inhomogeneous, bid);
+    do_boundary_integral(fe_eval, OperatorType::inhomogeneous, data.get_boundary_id(face));
     fe_eval.integrate_scatter(this->operator_settings.boundary_integrate.value,
                               this->operator_settings.boundary_integrate.gradient,
                               dst);
@@ -658,12 +655,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_full(const Mat
 
   for(unsigned int face = range.first; face < range.second; face++)
   {
-    auto bid = data.get_boundary_id(face);
     fe_eval.reinit(face);
     fe_eval.gather_evaluate(src,
                             this->operator_settings.boundary_evaluate.value,
                             this->operator_settings.boundary_evaluate.gradient);
-    do_boundary_integral(fe_eval, OperatorType::full, bid);
+    do_boundary_integral(fe_eval, OperatorType::full, data.get_boundary_id(face));
     fe_eval.integrate_scatter(this->operator_settings.boundary_integrate.value,
                               this->operator_settings.boundary_integrate.gradient,
                               dst);
@@ -784,7 +780,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_boundary(c
   {
     // create temporal array for local diagonal
     VectorizedArray<Number> local_diag[dofs_per_cell];
-    auto                    bid = data.get_boundary_id(face);
+    
+    auto bid = data.get_boundary_id(face);
 
     // reinit cell
     fe_eval.reinit(face);
