@@ -46,6 +46,11 @@
 #include <deal.II/lac/solver_cg.h>
 
 #include "../../../../include/poisson/spatial_discretization/laplace_operator.h"
+#include "../../../../include/convection_diffusion/spatial_discretization/operators/mass_operator.h"
+#include "../../../../include/convection_diffusion/spatial_discretization/operators/diffusive_operator.h"
+#include "../../../../include/convection_diffusion/spatial_discretization/operators/convection_operator.h"
+#include "../../../../include/convection_diffusion/spatial_discretization/operators/convection_diffusion_operator.h"
+
 #include "include/tests.h"
 #include "include/operator_base_test.h"
 
@@ -55,7 +60,7 @@
 using namespace dealii;
 using namespace Poisson;
 
-const unsigned int global_refinements = 3;
+const unsigned int global_refinements = 2;
 typedef double value_type;
 const int fe_degree_min = 1;
 const int fe_degree_max = 3;
@@ -63,6 +68,36 @@ const int fe_degree_max = 3;
 typedef double value_type;
 
 using namespace dealii;
+
+
+template<int dim>
+class VelocityField : public Function<dim>
+{
+public:
+  VelocityField (const unsigned int n_components = dim,
+                 const double       time = 0.)
+    :
+    Function<dim>(n_components, time)
+  {}
+
+  virtual ~VelocityField(){};
+
+  virtual double value(const Point<dim>   & point ,
+                                 const unsigned int component) const
+  {
+    double value = 0.0;
+  
+    if((std::abs(std::abs(point[0])-1.0)<1e-11) || 
+            (std::abs(std::abs(point[1])-1.0)<1e-11) || 
+            ((dim==3 && std::abs(std::abs(point[2])-1.0)<1e-11)))
+      return 0.0;
+    
+    if(component == 0)
+      value = 1.0;
+  
+    return value;
+  }
+};
 
 template <int dim, int fe_degree, bool CATEGORIZE, typename FE_TYPE> class Runner {
 public:
@@ -101,16 +136,21 @@ public:
     
     QGauss<1> quadrature(fe_degree + 1);
     typename MatrixFree<dim, value_type>::AdditionalData additional_data;
-//    additional_data.mapping_update_flags =
-//        (update_gradients | update_JxW_values | update_values);
-//    additional_data.mapping_update_flags_inner_faces =
-//        (update_JxW_values | update_normal_vectors | update_values);
-//    additional_data.mapping_update_flags_boundary_faces =
-//        (update_JxW_values | update_normal_vectors | update_quadrature_points |
-//         update_values);
+    additional_data.mapping_update_flags =
+        (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values);
     
     if (fe_dgq.dofs_per_vertex == 0)
+    {
       additional_data.build_face_info = true;
+      additional_data.mapping_update_flags_inner_faces =
+        (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+         update_values);
+  
+      additional_data.mapping_update_flags_boundary_faces =
+        (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+         update_values);
+        
+    }
     
     ConstraintMatrix dummy;
     
@@ -143,24 +183,93 @@ if(CATEGORIZE){
     
     data.reinit(mapping, dof_handler_dg, dummy, quadrature, additional_data);
 
-    // setup operator
-    LaplaceOperator<dim, fe_degree, value_type> laplace;
-    LaplaceOperatorData<dim> laplace_additional_data;
-    std::shared_ptr<BoundaryDescriptor<dim>> bc(new BoundaryDescriptor<dim>());
-    bc->dirichlet_bc[0] =
-        std::shared_ptr<Function<dim>>(new Functions::ZeroFunction<dim>());
+
     
-if(CATEGORIZE){
-    laplace_additional_data.use_cell_based_loops = true;
-}
-    
-    laplace_additional_data.bc = bc;
-    laplace.initialize(mapping, data, dummy, laplace_additional_data);
+    {
+      // Test operators on Poisson namespace
+      std::shared_ptr<Poisson::BoundaryDescriptor<dim>> bc_poisson(new Poisson::BoundaryDescriptor<dim>());
+      bc_poisson->dirichlet_bc[0] =
+          std::shared_ptr<Function<dim>>(new Functions::ZeroFunction<dim>());
+      // Laplace operator
+      Poisson::LaplaceOperator<dim, fe_degree, value_type> laplace;
+      Poisson::LaplaceOperatorData<dim> laplace_additional_data;
+      laplace_additional_data.bc = bc_poisson;
+      if(CATEGORIZE)
+        laplace_additional_data.use_cell_based_loops = true;
+      laplace.initialize(mapping, data, dummy, laplace_additional_data);
+      process(laplace, laplace_additional_data, size, is_dg, 0, convergence_table);
+    }
+    {
+      // Test operators on ConvDiff namespace
+      std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc_convdiff(new ConvDiff::BoundaryDescriptor<dim>());
+      bc_convdiff->dirichlet_bc[0] =
+          std::shared_ptr<Function<dim>>(new Functions::ZeroFunction<dim>());
+      // Mass matrix operator
+      ConvDiff::MassMatrixOperator<dim, fe_degree, value_type> mass_matrix_operator;
+      ConvDiff::MassMatrixOperatorData<dim> mass_data;
+      if(CATEGORIZE)
+        mass_data.use_cell_based_loops = true;
+      mass_matrix_operator.initialize(data, dummy, mass_data);
+      process(mass_matrix_operator, mass_data, size, is_dg, 1, convergence_table);
+      
+      ConvDiff::DiffusiveOperator<dim, fe_degree, value_type> diffusive_operator;
+      ConvDiff::DiffusiveOperatorData<dim> diffusive_data;
+      diffusive_data.bc = bc_convdiff;
+      if(CATEGORIZE)
+        diffusive_data.use_cell_based_loops = true;
+      diffusive_operator.initialize(mapping, data, dummy, diffusive_data);
+      process(diffusive_operator, diffusive_data, size, is_dg, 2, convergence_table);
+      
+      // Convective operator
+      ConvDiff::ConvectiveOperator<dim, fe_degree, value_type> convective_operator;
+      ConvDiff::ConvectiveOperatorData<dim> convective_data;
+      convective_data.bc = bc_convdiff;
+      if(CATEGORIZE)
+        convective_data.use_cell_based_loops = true;
+      convective_data.numerical_flux_formulation = ConvDiff::NumericalFluxConvectiveOperator::LaxFriedrichsFlux; // LaxFriedrichsFlux, CentralFlux
+      convective_data.velocity = std::shared_ptr<Function<dim>>(new VelocityField<dim>());
+      convective_operator.initialize(data, dummy, convective_data);
+      process(convective_operator, convective_data, size, is_dg, 3, convergence_table);
+      
+      // Convection diffusion operator
+      ConvDiff::ConvectionDiffusionOperatorData<dim> conv_diff_operator_data;
+      conv_diff_operator_data.mass_matrix_operator_data           = mass_matrix_operator.get_operator_data();
+      conv_diff_operator_data.convective_operator_data            = convective_operator.get_operator_data();
+      conv_diff_operator_data.diffusive_operator_data             = diffusive_operator.get_operator_data();
+      conv_diff_operator_data.scaling_factor_time_derivative_term = 1.0;
+      conv_diff_operator_data.bc                                  = bc_convdiff;
+      conv_diff_operator_data.unsteady_problem                    = true;
+      conv_diff_operator_data.diffusive_problem                   = true;
+      conv_diff_operator_data.convective_problem                  = true;
+      
+      ConvDiff::ConvectionDiffusionOperator<dim, fe_degree, value_type> conv_diff_operator;
+      conv_diff_operator.initialize(data,
+                                    conv_diff_operator_data,
+                                    mass_matrix_operator,
+                                    convective_operator,
+                                    diffusive_operator);
+      process(conv_diff_operator, conv_diff_operator, size, is_dg, 4, convergence_table);
+      
+    }
+    // go to next parameter
+    Runner<dim, fe_degree + 1,CATEGORIZE, FE_TYPE>::run(convergence_table);
+  }
+  
+  template<typename OP, typename OPData>
+  static void process(OP& laplace, 
+               OPData& ,
+               int size,
+               bool is_dg,
+               int op,
+               ConvergenceTable &convergence_table
+          )
+  {
 
     // run tests
     convergence_table.add_value("procs", size);
     convergence_table.add_value("cell", CATEGORIZE);
     convergence_table.add_value("vers", is_dg);
+    convergence_table.add_value("op", op);
     OperatorBaseTest::test(laplace, convergence_table,true,true,true, 
             (CATEGORIZE || size==1)&&is_dg);
     if((!CATEGORIZE && size!=1) || !is_dg){
@@ -168,9 +277,8 @@ if(CATEGORIZE){
         convergence_table.add_value("(B*v-B(S)*v)_L2", 0);
     }
 
-    // go to next parameter
-    Runner<dim, fe_degree + 1,CATEGORIZE, FE_TYPE>::run(convergence_table);
   }
+  
 };
 
 template <int dim, bool categorize, typename FE_TYPE> 
