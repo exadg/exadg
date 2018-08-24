@@ -527,28 +527,6 @@ OperatorBase<dim, degree, Number, AdditionalData>::is_singular() const
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::create_standard_basis(unsigned int j,
-                                                                         FEEvalCell & fe_eval) const
-{
-  // create a standard basis in the dof values of FEEvalution
-  for(unsigned int i = 0; i < dofs_per_cell; ++i)
-    fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-  fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
-}
-
-template<int dim, int degree, typename Number, typename AdditionalData>
-void
-OperatorBase<dim, degree, Number, AdditionalData>::create_standard_basis(unsigned int j,
-                                                                         FEEvalFace & fe_eval) const
-{
-  // create a standard basis in the dof values of FEEvalution
-  for(unsigned int i = 0; i < dofs_per_cell; ++i)
-    fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-  fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
-}
-
-template<int dim, int degree, typename Number, typename AdditionalData>
-void
-OperatorBase<dim, degree, Number, AdditionalData>::create_standard_basis(unsigned int j,
                                                                          FEEvalFace & fe_eval_1,
                                                                          FEEvalFace & fe_eval_2) const
 {
@@ -556,14 +534,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::create_standard_basis(unsigne
   for(unsigned int i = 0; i < dofs_per_cell; ++i)
     fe_eval_1.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
   fe_eval_1.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
-  for(unsigned int i = 0; i < dim * this->dofs_per_cell; i++)
-    fe_eval_1.begin_gradients()[i] = 0.0;
 
   // clear dof values of the second FEFaceEvalution
   for(unsigned int i = 0; i < dofs_per_cell; ++i)
     fe_eval_2.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-  for(unsigned int i = 0; i < dim * this->dofs_per_cell; i++)
-    fe_eval_2.begin_gradients()[i] = 0.0;
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>

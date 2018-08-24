@@ -343,11 +343,15 @@ protected:
   /*
    * helper functions
    */
+  template<typename FEEval>
   void
-  create_standard_basis(unsigned int j, FEEvalCell & fe_eval) const;
-
-  void
-  create_standard_basis(unsigned int j, FEEvalFace & fe_eval) const;
+  create_standard_basis(unsigned int j, FEEval& fe_eval) const
+  {
+  // create a standard basis in the dof values of FEEvalution
+  for(unsigned int i = 0; i < dofs_per_cell; ++i)
+    fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+  fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+  }
 
   void
   create_standard_basis(unsigned int j, FEEvalFace & fe_eval1, FEEvalFace & fe_eval2) const;
