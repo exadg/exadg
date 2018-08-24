@@ -1138,7 +1138,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_cell
                         this->operator_settings.cell_integrate.gradient);
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          dst[cell * vectorization_length + v](i, j) = fe_eval.begin_dof_values()[i][v];
+          dst[cell * vectorization_length + v](i, j) += fe_eval.begin_dof_values()[i][v];
     }
 
     // loop over all faces
