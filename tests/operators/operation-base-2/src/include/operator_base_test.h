@@ -94,11 +94,11 @@ public:
       // create temporal vector for diagonal of sparse matrix
       VectorType vec_diag_sm;
       op.initialize_dof_vector(vec_diag_sm);
-
+      
       // extract diagonal from sparse matrix
-      for(auto i : system_matrix)
-        if(i.row() == i.column())
-          vec_diag_sm[i.row()] = i.value();
+      auto p = system_matrix.local_range();
+      for(unsigned int i = p.first; i < p.second; i++)
+        vec_diag_sm[i] = system_matrix(i, i);
 
       // print l2-norms
       print_l2(convergence_table, vec_diag, vec_diag_sm, "(D)_L2", "(D-D(S))_L2");
