@@ -261,8 +261,10 @@ public:
 #ifdef DEAL_II_WITH_TRILINOS
   void
   init_system_matrix(SparseMatrix & system_matrix) const;
-  void
+  virtual void
   calculate_system_matrix(SparseMatrix & system_matrix) const;
+  virtual void
+  calculate_system_matrix(SparseMatrix & system_matrix, Number const time) const;
 #endif
 
   /*

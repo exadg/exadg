@@ -431,11 +431,20 @@ OperatorBase<dim, degree, Number, AdditionalData>::calculate_system_matrix(Spars
   if(!is_dg)
   {
     // make zero entries on diagonal (due to constrained dofs) to one:
-    for(auto & entry : system_matrix)
-      if(entry.row() == entry.column() && entry.value() == 0.0)
-        entry.value() = 1.0;
+    auto p = system_matrix.local_range();
+    for(auto i = p.first; i < p.second; i++)
+      if(system_matrix(i,i) == 0.0)
+        system_matrix.add(i,i,1);
   } // nothing to do for dg
 
+}
+
+template<int dim, int degree, typename Number, typename AdditionalData>
+void
+OperatorBase<dim, degree, Number, AdditionalData>::calculate_system_matrix(SparseMatrix & system_matrix, Number const time) const
+{
+  this->eval_time = time;
+  calculate_system_matrix(system_matrix);
 }
 #endif
 
