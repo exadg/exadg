@@ -51,7 +51,8 @@ public:
   typedef OperatorBase<dim, fe_degree, value_type, ConvectionDiffusionOperatorData<dim>> Parent;
   typedef typename Parent::FEEvalCell                                                    FEEvalCell;
   typedef typename Parent::FEEvalFace                                                    FEEvalFace;
-  typedef typename Parent::BlockMatrix                                                       BlockMatrix;
+  typedef typename Parent::BlockMatrix                                                   BlockMatrix;
+  typedef typename Parent::SparseMatrix                                                  SparseMatrix;
 
   typedef MassMatrixOperator<dim, fe_degree, Number> MassMatrixOp;
   typedef ConvectiveOperator<dim, fe_degree, Number> ConvectiveOp;
@@ -107,14 +108,17 @@ public:
   void
   vmult_add(parallel::distributed::Vector<Number> &       dst,
             parallel::distributed::Vector<Number> const & src) const;
+  
+  virtual void
+  calculate_system_matrix(SparseMatrix & system_matrix) const;
 
-private:
   /*
    *  This function calculates the diagonal of the scalar reaction-convection-diffusion operator.
    */
   void
   calculate_diagonal(parallel::distributed::Vector<Number> & diagonal) const;
 
+private:
   /*
    * This function calculates the block Jacobi matrices.
    * This is done sequentially for the different operators.

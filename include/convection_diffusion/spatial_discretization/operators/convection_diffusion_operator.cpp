@@ -209,6 +209,42 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::vmult_add(
 
 template<int dim, int fe_degree, typename Number>
 void
+ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_system_matrix(
+  SparseMatrix & system_matrix) const
+{
+  
+  // clear content of matrix since the next calculate_system_matrix-commands add their result
+  system_matrix*=0.0;
+    
+  if(this->operator_settings.unsteady_problem == true)
+  {
+    AssertThrow(
+      this->operator_settings.scaling_factor_time_derivative_term > 0.0,
+      ExcMessage(
+        "Scaling factor of time derivative term has not been initialized for convection-diffusion operator!"));
+
+    mass_matrix_operator->calculate_system_matrix(system_matrix);
+    system_matrix *= this->operator_settings.scaling_factor_time_derivative_term;
+  }
+  else
+  {
+    // nothing to do since matrix is already explicitly set to zero
+  }
+
+  if(this->operator_settings.diffusive_problem == true)
+  {
+    diffusive_operator->calculate_system_matrix(system_matrix);
+  }
+
+  if(this->operator_settings.convective_problem == true)
+  {
+    convective_operator->calculate_system_matrix(system_matrix, this->eval_time);
+  }
+}
+
+
+template<int dim, int fe_degree, typename Number>
+void
 ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_diagonal(
   parallel::distributed::Vector<Number> & diagonal) const
 {
@@ -240,16 +276,19 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_diagonal(
 
 template<int dim, int fe_degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_jacobi_matrices(BlockMatrix & matrices) const
+ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_jacobi_matrices(BlockMatrix & matrices,
+                                                                               Number const time) const
 {
-  Parent::add_block_jacobi_matrices(matrices);
+  Parent::add_block_jacobi_matrices(matrices, time);
 }
 
 template<int dim, int fe_degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_jacobi_matrices(BlockMatrix &    matrices,
-                                                                               Number const time) const
+ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_jacobi_matrices(BlockMatrix & matrices) const
 {
+   
+  Number const time = this->get_evaluation_time();
+    
   // calculate block Jacobi matrices
   if(this->operator_settings.unsteady_problem == true)
   {
