@@ -4,6 +4,7 @@
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/function.h>
 
+#include "../../../operation-base-util/interpolate.h"
 
 template<int dim>
 class TestSolution : public Function<dim>
@@ -135,7 +136,7 @@ public:
       op.initialize_dof_vector(vec_dst_mf);
 
       // fill source vector
-      VectorTools::interpolate(dof_handler, TestSolution<dim>(0), vec_src);
+      MGTools::interpolate(dof_handler, TestSolution<dim>(0), vec_src, op.get_level());
 
       // perform vmult with system matrix
       system_matrix.vmult(vec_dst_sm, vec_src);
@@ -156,7 +157,7 @@ public:
       op.initialize_dof_vector(vec_dst_op);
 
       // fill source vector
-      VectorTools::interpolate(dof_handler, TestSolution<dim>(0), vec_src);
+      MGTools::interpolate(dof_handler, TestSolution<dim>(0), vec_src, op.get_level());
 
       // perform block-jacobi with operator
       op.calculate_block_diagonal_matrices();
