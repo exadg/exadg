@@ -45,7 +45,10 @@ struct OperatorBaseData
       boundary_evaluate(boundary_evaluate_values, boundary_evaluate_gradients),
       boundary_integrate(boundary_integrate_values, boundary_integrate_gradients),
       use_cell_based_loops(false),
-      operator_is_singular(false)
+      operator_is_singular(false), 
+      mapping_update_flags(update_default),
+      mapping_update_flags_inner_faces(update_default),
+      mapping_update_flags_boundary_faces(update_default)
   {
   }
 
@@ -72,6 +75,15 @@ struct OperatorBaseData
     bool value;
     bool gradient;
   };
+  
+  template<typename Data>
+  void
+  append_mapping_update_flags(Data & other)
+  {
+    this->mapping_update_flags                |= other.mapping_update_flags; 
+    this->mapping_update_flags_inner_faces    |= other.mapping_update_flags_inner_faces; 
+    this->mapping_update_flags_boundary_faces |= other.mapping_update_flags_boundary_faces; 
+  }
 
   unsigned int dof_index;
   unsigned int quad_index;
@@ -86,6 +98,10 @@ struct OperatorBaseData
   bool use_cell_based_loops;
 
   bool operator_is_singular;
+  
+  UpdateFlags mapping_update_flags;
+  UpdateFlags mapping_update_flags_inner_faces;
+  UpdateFlags mapping_update_flags_boundary_faces;
 
   std::shared_ptr<BoundaryDescriptor> bc;
 
@@ -161,7 +177,7 @@ public:
   // this operator is initialized for level -1, i.e. the finest grid
   void
   reinit(MatrixFree_ const &    matrix_free,
-         ConstraintMatrix &     constraint_matrix,
+         ConstraintMatrix const &     constraint_matrix,
          AdditionalData const & operator_settings,
          unsigned int           level_mg_handler = numbers::invalid_unsigned_int) const;
 
@@ -304,6 +320,18 @@ public:
   
   bool
   is_singular() const;
+  
+  unsigned int
+  get_level() const 
+  {
+    return level_mg_handler;    
+  }
+  
+  const ConstraintMatrix&
+  get_constraint_matrix() const
+  {
+    return *constraint;
+  }
 
 protected:
   /*

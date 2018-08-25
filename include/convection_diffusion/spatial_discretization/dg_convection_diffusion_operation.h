@@ -106,6 +106,8 @@ public:
     {
       conv_diff_operator_data.convective_problem = false;
     }
+    
+    conv_diff_operator_data.update_mapping_update_flags();
 
     conv_diff_operator_data.dof_index = 0;
 

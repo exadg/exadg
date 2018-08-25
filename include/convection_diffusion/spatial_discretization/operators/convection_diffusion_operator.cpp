@@ -48,7 +48,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(const DoFHandler<dim
     auto & op_data     = this->operator_settings.mass_matrix_operator_data;
     op_data.dof_index  = 0;
     op_data.quad_index = 0;
-    mass_matrix_operator.own().initialize(this->get_data(), op_data);
+    mass_matrix_operator.own().initialize(this->get_data(), this->get_constraint_matrix(), op_data, level);
   }
 
   // setup own convective operator
@@ -56,7 +56,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(const DoFHandler<dim
     auto & op_data     = this->operator_settings.convective_operator_data;
     op_data.dof_index  = 0;
     op_data.quad_index = 0;
-    convective_operator.own().initialize(this->get_data(), op_data);
+    convective_operator.own().initialize(this->get_data(), this->get_constraint_matrix(), op_data, level);
   }
 
   // setup own viscous operator
@@ -64,7 +64,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(const DoFHandler<dim
     auto & op_data     = this->operator_settings.diffusive_operator_data;
     op_data.dof_index  = 0;
     op_data.quad_index = 0;
-    diffusive_operator.own().initialize(mapping, this->get_data(), op_data);
+    diffusive_operator.own().initialize(mapping, this->get_data(), this->get_constraint_matrix(), op_data, level);
   }
 
   // When solving the reaction-convection-diffusion equations, it might be possible

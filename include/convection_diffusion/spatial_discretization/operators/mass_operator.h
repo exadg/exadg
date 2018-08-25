@@ -19,6 +19,7 @@ struct MassMatrixOperatorData
       )
 // clang-format on
   {
+    this->mapping_update_flags = update_values | update_quadrature_points;
   }
 };
 
@@ -37,12 +38,14 @@ public:
 
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,
-             MassMatrixOperatorData<dim> const & mass_matrix_operator_data_in);
+             MassMatrixOperatorData<dim> const & mass_matrix_operator_data_in,
+             unsigned int           level_mg_handler = numbers::invalid_unsigned_int);
 
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,
-             ConstraintMatrix& constraint_matrix,
-             MassMatrixOperatorData<dim> const & mass_matrix_operator_data_in);
+             ConstraintMatrix const& constraint_matrix,
+             MassMatrixOperatorData<dim> const & mass_matrix_operator_data_in,
+             unsigned int           level_mg_handler = numbers::invalid_unsigned_int);
 
 private:
   void

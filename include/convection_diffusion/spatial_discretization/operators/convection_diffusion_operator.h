@@ -26,6 +26,16 @@ struct ConvectionDiffusionOperatorData
       scaling_factor_time_derivative_term(-1.0)
   {
   }
+  
+  void
+  update_mapping_update_flags(){
+    if(unsteady_problem)
+      this->append_mapping_update_flags(mass_matrix_operator_data);
+    if(convective_problem)
+      this->append_mapping_update_flags(convective_operator_data);
+    if(diffusive_problem)
+      this->append_mapping_update_flags(diffusive_operator_data);
+  }
 
   bool                  unsteady_problem;
   bool                  convective_problem;

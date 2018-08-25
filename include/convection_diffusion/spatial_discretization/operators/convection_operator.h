@@ -22,6 +22,10 @@ struct ConvectiveOperatorData
 // clang-format on
       numerical_flux_formulation(NumericalFluxConvectiveOperator::Undefined)
   {
+    this->mapping_update_flags = update_gradients | update_JxW_values  | update_quadrature_points;
+    this->mapping_update_flags_inner_faces = 
+      this->mapping_update_flags | update_values | update_normal_vectors;
+    this->mapping_update_flags_boundary_faces = this->mapping_update_flags_inner_faces;
   }
   
   inline DEAL_II_ALWAYS_INLINE //
@@ -54,12 +58,14 @@ public:
 
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,
-             ConvectiveOperatorData<dim> const & operator_data_in);
+             ConvectiveOperatorData<dim> const & operator_data_in,
+             unsigned int           level_mg_handler = numbers::invalid_unsigned_int);
 
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,
-             ConstraintMatrix &                  constraint_matrx,
-             ConvectiveOperatorData<dim> const & operator_data_in);
+             ConstraintMatrix const&                  constraint_matrx,
+             ConvectiveOperatorData<dim> const & operator_data_in,
+             unsigned int           level_mg_handler = numbers::invalid_unsigned_int);
 
   /*
    *  This function calculates the numerical flux for interior faces

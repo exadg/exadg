@@ -9,10 +9,11 @@ template<int dim, int fe_degree, typename value_type>
 void
 DiffusiveOperator<dim, fe_degree, value_type>::initialize(Mapping<dim> const &                mapping,
                                                           MatrixFree<dim, value_type> const & mf_data,
-                                                          DiffusiveOperatorData<dim> const & operator_data_in)
+                                                          DiffusiveOperatorData<dim> const & operator_data_in,
+                                                          unsigned int level_mg_handler)
 {
   ConstraintMatrix constraint_matrix;
-  Parent::reinit(mf_data, constraint_matrix, operator_data_in);
+  Parent::reinit(mf_data, constraint_matrix, operator_data_in, level_mg_handler);
 
   IP::calculate_penalty_parameter<dim, fe_degree, value_type>(array_penalty_parameter,
                                                               *this->data,
@@ -25,10 +26,11 @@ template<int dim, int fe_degree, typename value_type>
 void
 DiffusiveOperator<dim, fe_degree, value_type>::initialize(Mapping<dim> const &                mapping,
                                                           MatrixFree<dim, value_type> const & mf_data,
-                                                          ConstraintMatrix& constraint_matrix,
-                                                          DiffusiveOperatorData<dim> const & operator_data_in)
+                                                          ConstraintMatrix const& constraint_matrix,
+                                                          DiffusiveOperatorData<dim> const & operator_data_in,
+                                                          unsigned int level_mg_handler)
 {
-  Parent::reinit(mf_data, constraint_matrix, operator_data_in);
+  Parent::reinit(mf_data, constraint_matrix, operator_data_in, level_mg_handler);
 
   IP::calculate_penalty_parameter<dim, fe_degree, value_type>(array_penalty_parameter,
                                                               *this->data,

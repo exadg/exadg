@@ -23,6 +23,10 @@ struct DiffusiveOperatorData
       IP_factor(1.0),
       diffusivity(1.0)
   {
+    this->mapping_update_flags = update_gradients | update_JxW_values | update_quadrature_points;
+    this->mapping_update_flags_inner_faces = 
+      this->mapping_update_flags | update_values | update_normal_vectors;
+    this->mapping_update_flags_boundary_faces = this->mapping_update_flags_inner_faces;
   }
   
   inline DEAL_II_ALWAYS_INLINE //
@@ -60,13 +64,15 @@ public:
   void
   initialize(Mapping<dim> const &                mapping,
              MatrixFree<dim, value_type> const & mf_data,
-             DiffusiveOperatorData<dim> const &  operator_data_in);
+             DiffusiveOperatorData<dim> const &  operator_data_in,
+             unsigned int           level_mg_handler = numbers::invalid_unsigned_int);
 
   void
   initialize(Mapping<dim> const &                mapping,
              MatrixFree<dim, value_type> const & mf_data,
-             ConstraintMatrix &                  constraint_matrx,
-             DiffusiveOperatorData<dim> const &  operator_data_in);
+             ConstraintMatrix const&                  constraint_matrx,
+             DiffusiveOperatorData<dim> const &  operator_data_in,
+             unsigned int           level_mg_handler = numbers::invalid_unsigned_int);
 
   virtual void
   apply_add(VectorType & dst, VectorType const & src, value_type const time) const;

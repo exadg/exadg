@@ -24,7 +24,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::reinit(MatrixFree_ const &             matrix_free,
-                                                          ConstraintMatrix &              constraint_matrix,
+                                                          ConstraintMatrix const&              constraint_matrix,
                                                           AdditionalData const & operator_settings,
                                                           unsigned int           level_mg_handler) const
 {
@@ -67,26 +67,17 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
   // setup MatrixFree::AdditionalData
   typename MatrixFree<dim, Number>::AdditionalData additional_data;
 
-  // ... shall the faces be evaluated?
-  if(is_dg)
-    additional_data.build_face_info = true;
-
   // ... level of this mg level
   additional_data.level_mg_handler = level_mg_handler;
 
-  // TODO: move to additional data
-  additional_data.mapping_update_flags =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values);
+  // ... update flags  
+  additional_data.mapping_update_flags = operator_settings.mapping_update_flags;
 
   if(is_dg)
   {
-    additional_data.mapping_update_flags_inner_faces =
-      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-       update_values);
-
-    additional_data.mapping_update_flags_boundary_faces =
-      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-       update_values);
+    additional_data.build_face_info = true;
+    additional_data.mapping_update_flags_inner_faces    = operator_settings.mapping_update_flags_inner_faces;
+    additional_data.mapping_update_flags_boundary_faces = operator_settings.mapping_update_flags_boundary_faces;
   }
 
   // ... on each level
