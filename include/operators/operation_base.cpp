@@ -839,7 +839,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell_based
           this->do_face_int_integral(fe_eval_m, fe_eval_p);
           fe_eval_m.integrate(this->operator_settings.internal_integrate.value,
                               this->operator_settings.internal_integrate.gradient);
-          local_diag[j] += fe_eval_m.begin_dof_values()[j];
+          local_diag[j] += fe_eval_m.begin_dof_values()[j]; // note: += for accumulation
         }
       }
       else
@@ -854,7 +854,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell_based
 
           fe_eval_m.integrate(this->operator_settings.boundary_integrate.value,
                               this->operator_settings.boundary_integrate.gradient);
-          local_diag[j] += fe_eval_m.begin_dof_values()[j];
+          local_diag[j] += fe_eval_m.begin_dof_values()[j]; // note: += for accumulation
         }
       }
     }
