@@ -63,22 +63,6 @@ public:
         ++error_counter;
       }
     } 
-    else // no analytical solution available: simply print L2-norm
-    {
-      auto analytical_solution = std::shared_ptr<Function<dim> >(new Functions::ZeroFunction<dim>(1));
-        
-      bool relative = false;
-      double const error = calculate_L2_error<dim>(relative,
-                                                   *dof_handler,
-                                                   *mapping,
-                                                   solution,
-                                                   analytical_solution,
-                                                   0.0);
-  
-      ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-      pcout << "  L2-norm: "
-            << std::scientific << std::setprecision(15) << error << std::endl;
-    }
   }
 
 private:
