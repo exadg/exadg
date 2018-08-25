@@ -184,7 +184,7 @@ if(CATEGORIZE){
     data.reinit(mapping, dof_handler_dg, dummy, quadrature, additional_data);
 
 
-    
+    if(true)
     {
       // Test operators on Poisson namespace
       std::shared_ptr<Poisson::BoundaryDescriptor<dim>> bc_poisson(new Poisson::BoundaryDescriptor<dim>());
@@ -196,9 +196,22 @@ if(CATEGORIZE){
       laplace_additional_data.bc = bc_poisson;
       if(CATEGORIZE)
         laplace_additional_data.use_cell_based_loops = true;
-      laplace.initialize(mapping, data, dummy, laplace_additional_data);
-      process(laplace, laplace_additional_data, size, is_dg, 0, convergence_table);
+      
+      // run through all multigrid level
+      if(!CATEGORIZE)
+        for(unsigned int level = 0; level <= global_refinements; level++)
+        {
+          laplace.reinit(dof_handler_dg, mapping, (void *)&laplace_additional_data, mg_constrained_dofs, level);
+          process(laplace, laplace_additional_data, size, is_dg, 0, convergence_table, level);
+        }  
+      
+      // run on fine grid without multigrid
+      {
+        laplace.initialize(mapping, data, dummy, laplace_additional_data);
+        process(laplace, laplace_additional_data, size, is_dg, 0, convergence_table);
+      }
     }
+    if(true)
     {
       // Test operators on ConvDiff namespace
       std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc_convdiff(new ConvDiff::BoundaryDescriptor<dim>());
@@ -210,7 +223,6 @@ if(CATEGORIZE){
       if(CATEGORIZE)
         mass_data.use_cell_based_loops = true;
       mass_matrix_operator.initialize(data, dummy, mass_data);
-      process(mass_matrix_operator, mass_data, size, is_dg, 1, convergence_table);
       
       ConvDiff::DiffusiveOperator<dim, fe_degree, value_type> diffusive_operator;
       ConvDiff::DiffusiveOperatorData<dim> diffusive_data;
@@ -218,7 +230,6 @@ if(CATEGORIZE){
       if(CATEGORIZE)
         diffusive_data.use_cell_based_loops = true;
       diffusive_operator.initialize(mapping, data, dummy, diffusive_data);
-      process(diffusive_operator, diffusive_data, size, is_dg, 2, convergence_table);
       
       // Convective operator
       ConvDiff::ConvectiveOperator<dim, fe_degree, value_type> convective_operator;
@@ -229,26 +240,44 @@ if(CATEGORIZE){
       convective_data.numerical_flux_formulation = ConvDiff::NumericalFluxConvectiveOperator::LaxFriedrichsFlux; // LaxFriedrichsFlux, CentralFlux
       convective_data.velocity = std::shared_ptr<Function<dim>>(new VelocityField<dim>());
       convective_operator.initialize(data, dummy, convective_data);
-      process(convective_operator, convective_data, size, is_dg, 3, convergence_table);
       
       // Convection diffusion operator
       ConvDiff::ConvectionDiffusionOperatorData<dim> conv_diff_operator_data;
       conv_diff_operator_data.mass_matrix_operator_data           = mass_matrix_operator.get_operator_data();
       conv_diff_operator_data.convective_operator_data            = convective_operator.get_operator_data();
       conv_diff_operator_data.diffusive_operator_data             = diffusive_operator.get_operator_data();
+      conv_diff_operator_data.update_mapping_update_flags();
       conv_diff_operator_data.scaling_factor_time_derivative_term = 1.0;
       conv_diff_operator_data.bc                                  = bc_convdiff;
       conv_diff_operator_data.unsteady_problem                    = true;
       conv_diff_operator_data.diffusive_problem                   = true;
       conv_diff_operator_data.convective_problem                  = true;
+      conv_diff_operator_data.mg_operator_type                    = ConvDiff::MultigridOperatorType::ReactionConvectionDiffusion;
+      
+      process(mass_matrix_operator, mass_data,          size, is_dg, 1, convergence_table);
+      process(diffusive_operator,   diffusive_data,     size, is_dg, 2, convergence_table);
+      process(convective_operator,  convective_data,    size, is_dg, 3, convergence_table);
       
       ConvDiff::ConvectionDiffusionOperator<dim, fe_degree, value_type> conv_diff_operator;
-      conv_diff_operator.initialize(data,
-                                    conv_diff_operator_data,
-                                    mass_matrix_operator,
-                                    convective_operator,
-                                    diffusive_operator);
-      process(conv_diff_operator, conv_diff_operator, size, is_dg, 4, convergence_table);
+      
+     // run through all multigrid level
+      if(!CATEGORIZE)
+        for(unsigned int level = 0; level <= global_refinements; level++)
+        {
+          conv_diff_operator.reinit(dof_handler_dg, mapping, (void *)&conv_diff_operator_data, mg_constrained_dofs, level);
+          process(conv_diff_operator, conv_diff_operator_data, size, is_dg, 4, convergence_table, level);
+        }  
+      
+      // run on fine grid without multigrid
+      
+      {
+        conv_diff_operator.initialize(data,
+                                      conv_diff_operator_data,
+                                      mass_matrix_operator,
+                                      convective_operator,
+                                      diffusive_operator);
+        process(conv_diff_operator,   conv_diff_operator_data, size, is_dg, 4, convergence_table);
+      }
       
     }
     // go to next parameter
@@ -261,12 +290,14 @@ if(CATEGORIZE){
                int size,
                bool is_dg,
                int op,
-               ConvergenceTable &convergence_table
+               ConvergenceTable &convergence_table,
+               unsigned int mg_level = numbers::invalid_unsigned_int 
           )
   {
-
+    int level = std::min(global_refinements, mg_level);
     // run tests
     convergence_table.add_value("procs", size);
+    convergence_table.add_value("level", level);
     convergence_table.add_value("cell", CATEGORIZE);
     convergence_table.add_value("vers", is_dg);
     convergence_table.add_value("op", op);
