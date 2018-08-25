@@ -240,7 +240,7 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VectorType & diagonal) const
 {
-  // compute diagonal (not regarding: mean value constraint and constraints)
+  // compute diagonal
   if(is_dg && do_eval_faces)
     if(operator_settings.use_cell_based_loops)
       data->cell_loop(&This::local_add_diagonal_cell_based, this, diagonal, diagonal);
