@@ -424,7 +424,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::calculate_system_matrix(Spars
     // make zero entries on diagonal (due to constrained dofs) to one:
     auto p = system_matrix.local_range();
     for(auto i = p.first; i < p.second; i++)
-      if(system_matrix(i,i) == 0.0)
+      if(system_matrix(i,i) == 0.0 && constraint->is_constrained(i))
         system_matrix.add(i,i,1);
   } // nothing to do for dg
 

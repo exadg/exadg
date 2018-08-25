@@ -118,10 +118,14 @@ public:
       // apply block-diagonal matrix of size: 1 x 1
       apply_block(op, 1, vec_diag_mf, vec_src);
 
-      // set diagonal to 1.0 if necessary
-      for(auto & i : vec_diag_mf)
-        if(i == 0)
-          i = 1.0;
+      //auto local_range = vec_diag_mf.local_range();
+      //auto & conatraint_matrix = op.get_constraint_matrix();
+      //// set diagonal to 1.0 if necessary
+      //for(int i = local_range.first; i < local_range.second; i++)
+      //  if(vec_diag_mf[i] == 0.0/* || conatraint_matrix.is_constrained(i)*/)
+      //    vec_diag_mf[i] == 1.0;
+      for(auto i : op.get_data().get_constrained_dofs())
+        vec_diag_mf.local_element(i) = 1.0;
 
       // print l2-norms
       print_l2(convergence_table, vec_diag, vec_diag_mf, "", "(D-D(F))_L2");
