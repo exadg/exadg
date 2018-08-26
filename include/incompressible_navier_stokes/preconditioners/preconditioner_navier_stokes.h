@@ -651,8 +651,12 @@ private:
     else if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Compatible)
     {
       CompatibleLaplaceOperatorData<dim> compatible_laplace_operator_data;
-      compatible_laplace_operator_data.dof_index_velocity = underlying_operator->get_dof_index_velocity();
-      compatible_laplace_operator_data.dof_index_pressure = underlying_operator->get_dof_index_pressure();
+      compatible_laplace_operator_data.dof_index_velocity                     = underlying_operator->get_dof_index_velocity();
+      compatible_laplace_operator_data.dof_index_pressure                     = underlying_operator->get_dof_index_pressure();
+      compatible_laplace_operator_data.dof_handler_u                          =&underlying_operator->get_dof_handler_u();
+      compatible_laplace_operator_data.gradient_operator_data                 = underlying_operator->get_gradient_operator_data();
+      compatible_laplace_operator_data.divergence_operator_data               = underlying_operator->get_divergence_operator_data();
+      compatible_laplace_operator_data.underlying_operator_dof_index_velocity = underlying_operator->get_dof_index_velocity();
 
       laplace_operator_compatible.reset(new CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type>());
       laplace_operator_compatible->initialize(underlying_operator->get_data(),

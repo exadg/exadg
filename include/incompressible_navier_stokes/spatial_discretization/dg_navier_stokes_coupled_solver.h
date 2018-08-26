@@ -192,8 +192,13 @@ public:
   CompatibleLaplaceOperatorData<dim> const get_compatible_laplace_operator_data() const
   {
     CompatibleLaplaceOperatorData<dim> comp_laplace_operator_data;
-    comp_laplace_operator_data.dof_index_velocity = this->get_dof_index_velocity();
-    comp_laplace_operator_data.dof_index_pressure = this->get_dof_index_pressure();
+    comp_laplace_operator_data.dof_index_velocity                     = this->get_dof_index_velocity();
+    comp_laplace_operator_data.dof_index_pressure                     = this->get_dof_index_pressure();
+    comp_laplace_operator_data.dof_handler_u                          =&this->get_dof_handler_u();
+    comp_laplace_operator_data.gradient_operator_data                 = this->get_gradient_operator_data();
+    comp_laplace_operator_data.divergence_operator_data               = this->get_divergence_operator_data();
+    comp_laplace_operator_data.underlying_operator_dof_index_velocity = this->get_dof_index_velocity();
+      
     return comp_laplace_operator_data;
   }
 
