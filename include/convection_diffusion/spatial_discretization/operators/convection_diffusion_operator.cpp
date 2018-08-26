@@ -210,6 +210,14 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::vmult_add(
 template<int dim, int fe_degree, typename Number>
 void
 ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_system_matrix(
+  SparseMatrix & system_matrix, Number const time) const
+{
+  Parent::calculate_system_matrix(system_matrix, time);
+}
+
+template<int dim, int fe_degree, typename Number>
+void
+ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_system_matrix(
   SparseMatrix & system_matrix) const
 {
   

@@ -120,6 +120,9 @@ public:
             parallel::distributed::Vector<Number> const & src) const;
   
   virtual void
+  calculate_system_matrix(SparseMatrix & system_matrix, Number const time) const;
+  
+  virtual void
   calculate_system_matrix(SparseMatrix & system_matrix) const;
 
   /*
