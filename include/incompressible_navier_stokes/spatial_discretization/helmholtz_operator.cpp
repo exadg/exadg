@@ -486,62 +486,8 @@ template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typen
 MultigridOperatorBase<dim, Number> *
 HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::get_new(unsigned int deg) const
 {
-  switch(deg)
-  {
-// clang-format off
-#if DEGREE_1
-    case 1: return new HelmholtzOperator<dim, 1, fe_degree_xwall, xwall_quad_rule, Number>();
-#endif
-#if DEGREE_2
-    case 2: return new HelmholtzOperator<dim, 2, fe_degree_xwall, xwall_quad_rule, Number>();
-#endif
-#if DEGREE_3
-    case 3: return new HelmholtzOperator<dim, 3, fe_degree_xwall, xwall_quad_rule, Number>();
-#endif
-#if DEGREE_4
-    case 4: return new HelmholtzOperator<dim, 4, fe_degree_xwall, xwall_quad_rule, Number>();
-#endif
-#if DEGREE_5
-    case 5: return new HelmholtzOperator<dim, 5, fe_degree_xwall, xwall_quad_rule, Number>();
-#endif
-#if DEGREE_6
-    case 6: return new HelmholtzOperator<dim, 6, fe_degree_xwall, xwall_quad_rule, Number>();
-#endif
-#if DEGREE_7
-    case 7: return new HelmholtzOperator<dim, 7, fe_degree_xwall, xwall_quad_rule, Number>();
-#endif
-#if DEGREE_8
-    case 8: return new HelmholtzOperator<dim, 8, fe_degree_xwall, xwall_quad_rule, Number>();
-#endif
-#if DEGREE_9
-    case 9: return new HelmholtzOperator<dim, 9, fe_degree_xwall, xwall_quad_rule, Number>();
-#endif
-#if DEGREE_10
-    case 10: return new HelmholtzOperator<dim, 10, fe_degree_xwall, xwall_quad_rule, Number>();
-#endif
-#if DEGREE_11
-    case 11: return new HelmholtzOperator<dim, 11, fe_degree_xwall, xwall_quad_rule, Number>();
-#endif
-#if DEGREE_12
-    case 12: return new HelmholtzOperator<dim, 12, fe_degree_xwall, xwall_quad_rule, Number>();
-#endif
-#if DEGREE_13
-    case 13: return new HelmholtzOperator<dim, 13, fe_degree_xwall, xwall_quad_rule, Number>();
-#endif
-#if DEGREE_14
-    case 14: return new HelmholtzOperator<dim, 14, fe_degree_xwall, xwall_quad_rule, Number>();
-#endif
-#if DEGREE_15
-    case 15: return new HelmholtzOperator<dim, 15, fe_degree_xwall, xwall_quad_rule, Number>();
-#endif
-// clang-format on
-    default:
-      AssertThrow(false, ExcMessage("HelmholtzOperator not implemented for this degree!"));
-      return nullptr;
-      // dummy return (statement not reached)
-  }
+  AssertThrow(deg==fe_degree, ExcMessage("Not compatible for p-GMG!"));
+  return new HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>();
 }
 
 } // namespace IncNS
-
-#include "helmholtz_operator.hpp"

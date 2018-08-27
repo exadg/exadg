@@ -282,4 +282,6 @@ private:
 
 }
 
+#include "velocity_convection_diffusion_operator.cpp"
+
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_VELOCITY_CONVECTION_DIFFUSION_OPERATOR_H_ */

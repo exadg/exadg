@@ -238,4 +238,6 @@ private:
 
 }
 
+#include "helmholtz_operator.cpp"
+
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_HELMHOLTZ_OPERATOR_H_ */
