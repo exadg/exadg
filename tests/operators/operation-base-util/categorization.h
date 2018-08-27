@@ -45,44 +45,26 @@ public:
       for(unsigned int i = 0; i < dim * 2; i++, offset = offset * bids)
         factors[i] = offset;
     }
+      
+    auto to_category = [&](auto & cell){
+      unsigned int c_num = 0;
+      for(unsigned int i = 0; i < dim * 2; i++)
+      {
+        auto & face = *cell->face(i);
+        if(face.at_boundary())
+          c_num += factors[i] * bid_map[face.boundary_id()];
+      }
+      return c_num;
+    };
 
     if(!is_mg)
       for(auto cell = tria.begin_active(); cell != tria.end(); ++cell)
-      {
-        // accumulator for category of this cell: start with 0
-        unsigned int c_num = 0;
         if(cell->is_locally_owned())
-          // loop over all faces
-          for(unsigned int i = 0; i < dim * 2; i++)
-          {
-            auto & face = *cell->face(i);
-            if(face.at_boundary())
-              // and update accumulator if on boundary
-              c_num += factors[i] * bid_map[face.boundary_id()];
-          }
-        // save the category of this cell
-        data.cell_vectorization_category[cell->active_cell_index()] = c_num;
-      }
+          data.cell_vectorization_category[cell->active_cell_index()] = to_category(cell);
     else
       for(auto cell = tria.begin(level); cell != tria.end(level); ++cell)
-      {
-        // accumulator for category of this cell: start with 0
         if(cell->is_locally_owned_on_level())
-        {
-        unsigned int c_num = 0;
-            
-          // loop over all faces
-          for(unsigned int i = 0; i < dim * 2; i++)
-          {
-            auto & face = *cell->face(i);
-            if(face.at_boundary())
-              // and update accumulator if on boundary
-              c_num += factors[i] * bid_map[face.boundary_id()];
-          }
-        // save the category of this cell
-        data.cell_vectorization_category[cell->index() - cell_first] = c_num;
-        }
-      }
+          data.cell_vectorization_category[cell->index() - cell_first] = to_category(cell);
 
     // ... finalize setup of matrix_free
     data.hold_all_faces_to_owned_cells = true;
