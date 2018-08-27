@@ -7,6 +7,7 @@
 #include "../solvers_and_preconditioners/util/invert_diagonal.h"
 
 #include "../functionalities/set_zero_mean_value.h"
+#include "../../tests/operators/operation-base-util/categorization.h"
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
@@ -78,6 +79,12 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
     additional_data.build_face_info = true;
     additional_data.mapping_update_flags_inner_faces    = operator_settings.mapping_update_flags_inner_faces;
     additional_data.mapping_update_flags_boundary_faces = operator_settings.mapping_update_flags_boundary_faces;
+  }
+  
+  if(operator_settings.use_cell_based_loops)
+  {
+    auto tria = dynamic_cast<const parallel::distributed::Triangulation<dim>*>(&dof_handler.get_triangulation());
+    Categorization::do_cell_based_loops(*tria, additional_data, level_mg_handler);
   }
 
   // ... on each level
@@ -325,7 +332,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::calculate_block_diagonal_matr
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
 
   // allocate memory only the first time
-  if(block_jacobi_matrices_have_been_initialized == false)
+  if(block_jacobi_matrices_have_been_initialized == false || data->n_macro_cells() * vectorization_length != matrices.size())
   {
     auto dofs = data->get_shape_info().dofs_per_component_on_cell;
     matrices.resize(data->n_macro_cells() * vectorization_length, LAPACKFullMatrix<Number>(dofs, dofs));
