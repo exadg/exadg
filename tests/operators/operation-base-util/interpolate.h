@@ -41,15 +41,10 @@ interpolate(const DoFHandlerType<dim, spacedim> &                       dof,
 
         std::vector<types::global_dof_index> dof_indices_dg(fe.dofs_per_cell);
         cell1->get_mg_dof_indices(dof_indices_dg);
-        cell1->set_dof_indices(dof_indices_dg);
-        //                        for(int o : dof_indices_dg)
-        //                            std::cout << o << std::endl;
-
+        
         for(unsigned int i = 0; i < dof_indices_dg.size(); i++)
           vec[dof_indices_dg[i]] = coefficient_list[i];
 
-        //                        cell1->distribute_local_to_global(coefficient_list,
-        //                        vec);
       }
   }
 }
