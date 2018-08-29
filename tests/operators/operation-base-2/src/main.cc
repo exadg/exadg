@@ -198,7 +198,7 @@ if(CATEGORIZE){
         laplace_additional_data.use_cell_based_loops = true;
       
       // run through all multigrid level
-      if(!CATEGORIZE)
+      if(!CATEGORIZE || true)
         for(unsigned int level = 0; level <= global_refinements; level++)
         {
           laplace.reinit(dof_handler_dg, mapping, (void *)&laplace_additional_data, mg_constrained_dofs, level);
@@ -253,6 +253,8 @@ if(CATEGORIZE){
       conv_diff_operator_data.diffusive_problem                   = true;
       conv_diff_operator_data.convective_problem                  = true;
       conv_diff_operator_data.mg_operator_type                    = ConvDiff::MultigridOperatorType::ReactionConvectionDiffusion;
+      if(CATEGORIZE)
+        conv_diff_operator_data.use_cell_based_loops = true;
       
       process(mass_matrix_operator, mass_data,          size, is_dg, 1, convergence_table);
       process(diffusive_operator,   diffusive_data,     size, is_dg, 2, convergence_table);
@@ -261,7 +263,7 @@ if(CATEGORIZE){
       ConvDiff::ConvectionDiffusionOperator<dim, fe_degree, value_type> conv_diff_operator;
       
      // run through all multigrid level
-      if(!CATEGORIZE)
+      if(!CATEGORIZE || true)
         for(unsigned int level = 0; level <= global_refinements; level++)
         {
           conv_diff_operator.reinit(dof_handler_dg, mapping, (void *)&conv_diff_operator_data, mg_constrained_dofs, level);
