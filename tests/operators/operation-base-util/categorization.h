@@ -13,21 +13,9 @@ public:
       
     bool is_mg = level != numbers::invalid_unsigned_int;
 
-    int cell_first = -1;
-    int cell_local = +0;
-      
     // ... create list for the category of each cell
     if (is_mg) 
-    {
-      for (auto cell = tria.begin(level); cell != tria.end(level); ++cell) 
-        if (cell->is_locally_owned_on_level()) 
-        {
-          if(cell_first == -1)
-            cell_first = cell->index(); // index of first local cell
-          cell_local++; // count number of local cells
-        }
-      data.cell_vectorization_category.resize(cell_local);
-    }
+      data.cell_vectorization_category.resize(std::distance(tria.begin(level), tria.end(level)));
     else 
       data.cell_vectorization_category.resize(tria.n_active_cells());
 
@@ -58,13 +46,17 @@ public:
     };
 
     if(!is_mg)
+    {
       for(auto cell = tria.begin_active(); cell != tria.end(); ++cell)
         if(cell->is_locally_owned())
           data.cell_vectorization_category[cell->active_cell_index()] = to_category(cell);
+    }
     else
+    {
       for(auto cell = tria.begin(level); cell != tria.end(level); ++cell)
         if(cell->is_locally_owned_on_level())
-          data.cell_vectorization_category[cell->index() - cell_first] = to_category(cell);
+          data.cell_vectorization_category[cell->index()] = to_category(cell);
+    }
 
     // ... finalize setup of matrix_free
     data.hold_all_faces_to_owned_cells = true;
