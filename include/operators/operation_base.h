@@ -14,6 +14,7 @@
 #include "operator_type.h"
 
 #include "multigrid_operator_base.h"
+#include "../functionalities/lazy_ptr.h"
 
 using namespace dealii;
 
@@ -99,47 +100,6 @@ struct OperatorBaseData
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_face_pairs_level0;
-};
-
-template<typename T>
-class lazy_ptr
-{
-public:
-  lazy_ptr() : tp(&t)
-  {
-  }
-
-  void
-  reset()
-  {
-    this->tp = &this->t;
-  }
-  
-  void
-  reinit(T const & t)
-  {
-    this->tp = &t;
-  }
-  
-  T &
-  own()
-  {
-    return t;
-  }
-  
-  T const * operator->()
-  {
-    return tp;
-  }
-  
-  T const & operator*()
-  {
-    return *tp;
-  }
-
-private:
-  T         t;
-  T const * tp;
 };
 
 template<int dim, int degree, typename Number, typename AdditionalData>
