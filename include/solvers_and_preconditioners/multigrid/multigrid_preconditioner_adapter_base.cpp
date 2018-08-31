@@ -181,7 +181,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
       if(prev.first != curr.first && deg == prev.second && deg == curr.second)
       {
         if(!rank)
-          printf("  h-gmg (%d,%d) -> (%d,%d)\n", prev.first, prev.second, curr.first, curr.second);
+          printf("  h-gmg (l=%2d,%2d) -> (k=%2d,%2d)\n", prev.first, prev.second, curr.first, curr.second);
         m[i] = curr.first;
       }
     }
@@ -206,7 +206,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
     if(prev.second != curr.second)
     {
       if(!rank)
-        printf("  p-gmg (%d,%d) -> (%d,%d)\n", prev.first, prev.second, curr.first, curr.second);
+        printf("  p-gmg (l=%2d,k=%2d) -> (l=%2d,k=%2d)\n", prev.first, prev.second, curr.first, curr.second);
       MGTransferBase<VECTOR_TYPE> * temp;
 
       const unsigned int from = curr.second, to = prev.second;
