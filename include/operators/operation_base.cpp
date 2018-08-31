@@ -1188,11 +1188,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
     // determine number of filled vector lanes
     const unsigned int n_filled_lanes = data.n_active_entries_per_face_batch(face);
     // create two local matrix: first one tested by v1 and ...
-    FullMatrix_ matrices_1[vectorization_length];
-    std::fill_n(matrices_1, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
+    FullMatrix_ matrices_m[vectorization_length];
+    std::fill_n(matrices_m, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
     // ... the other tested by v2
-    FullMatrix_ matrices_2[vectorization_length];
-    std::fill_n(matrices_2, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
+    FullMatrix_ matrices_p[vectorization_length];
+    std::fill_n(matrices_p, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
 
     fe_eval_m.reinit(face);
     fe_eval_p.reinit(face);
@@ -1217,22 +1217,22 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
       // insert result vector into local matrix u1_v1
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          matrices_1[v](i, j) = fe_eval_m.begin_dof_values()[i][v];
+          matrices_m[v](i, j) = fe_eval_m.begin_dof_values()[i][v];
 
       // insert result vector into local matrix  u1_v2
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          matrices_2[v](i, j) = fe_eval_p.begin_dof_values()[i][v];
+          matrices_p[v](i, j) = fe_eval_p.begin_dof_values()[i][v];
     }
 
     // save local matrices into global matrix
     for(unsigned int i = 0; i < n_filled_lanes; i++)
     {
-      const unsigned int cell_number_1 = data.get_face_info(face).cells_interior[i];
-      const unsigned int cell_number_2 = data.get_face_info(face).cells_exterior[i];
+      const auto cell_number_m = data.get_face_info(face).cells_interior[i];
+      const auto cell_number_p = data.get_face_info(face).cells_exterior[i];
 
-      auto cell_m = data.get_cell_iterator(cell_number_1 / vectorization_length, cell_number_1 % vectorization_length);
-      auto cell_p = data.get_cell_iterator(cell_number_2 / vectorization_length, cell_number_2 % vectorization_length);
+      auto cell_m = data.get_cell_iterator(cell_number_m / vectorization_length, cell_number_m % vectorization_length);
+      auto cell_p = data.get_cell_iterator(cell_number_p / vectorization_length, cell_number_p % vectorization_length);
 
       // get position in global matrix
       std::vector<types::global_dof_index> dof_indices_m(dofs_per_cell);
@@ -1249,9 +1249,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
       }
 
       // save u1_v1
-      constraint->distribute_local_to_global(matrices_1[i], dof_indices_m, dof_indices_m, dst);
+      constraint->distribute_local_to_global(matrices_m[i], dof_indices_m, dof_indices_m, dst);
       // save u1_v2
-      constraint->distribute_local_to_global(matrices_2[i], dof_indices_p, dof_indices_m, dst);
+      constraint->distribute_local_to_global(matrices_p[i], dof_indices_p, dof_indices_m, dst);
     }
 
     // process trial function u2
@@ -1274,22 +1274,22 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
       // insert result vector into local matrix u2_v1
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          matrices_1[v](i, j) = fe_eval_m.begin_dof_values()[i][v];
+          matrices_m[v](i, j) = fe_eval_m.begin_dof_values()[i][v];
 
       // insert result vector into local matrix  u2_v2
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          matrices_2[v](i, j) = fe_eval_p.begin_dof_values()[i][v];
+          matrices_p[v](i, j) = fe_eval_p.begin_dof_values()[i][v];
     }
 
     // save local matrices into global matrix
     for(unsigned int i = 0; i < n_filled_lanes; i++)
     {
-      const unsigned int cell_number_1 = data.get_face_info(face).cells_interior[i];
-      const unsigned int cell_number_2 = data.get_face_info(face).cells_exterior[i];
+      const auto cell_number_m = data.get_face_info(face).cells_interior[i];
+      const auto cell_number_p = data.get_face_info(face).cells_exterior[i];
 
-      auto cell_m = data.get_cell_iterator(cell_number_1 / vectorization_length, cell_number_1 % vectorization_length);
-      auto cell_p = data.get_cell_iterator(cell_number_2 / vectorization_length, cell_number_2 % vectorization_length);
+      auto cell_m = data.get_cell_iterator(cell_number_m / vectorization_length, cell_number_m % vectorization_length);
+      auto cell_p = data.get_cell_iterator(cell_number_p / vectorization_length, cell_number_p % vectorization_length);
 
       // get position in global matrix
       std::vector<types::global_dof_index> dof_indices_m(dofs_per_cell);
@@ -1306,9 +1306,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
       }
 
       // save u2_v1
-      constraint->distribute_local_to_global(matrices_1[i], dof_indices_m, dof_indices_p, dst);
+      constraint->distribute_local_to_global(matrices_m[i], dof_indices_m, dof_indices_p, dst);
       // save u2_v2
-      constraint->distribute_local_to_global(matrices_2[i], dof_indices_p, dof_indices_p, dst);
+      constraint->distribute_local_to_global(matrices_p[i], dof_indices_p, dof_indices_p, dst);
     }
   }
 }
