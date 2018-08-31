@@ -1182,17 +1182,27 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
 {
   FEEvalFace fe_eval_m(data, true, operator_settings.dof_index, operator_settings.quad_index);
   FEEvalFace fe_eval_p(data, false, operator_settings.dof_index, operator_settings.quad_index);
+  
+  // There are four matrices: M_mm, M_mp, M_pm, M_pp with M_mm, M_pp denoting
+  // the block diagonal matrices for elements m,p and M_mp, M_pm the matrices 
+  // related to the coupling of neighboring elements. In the following, both
+  // M_mm and M_mp are called matrices_m and both M_pm and M_pp are called
+  // matrices_p so that we only have to store two matrices (matrices_m,
+  // matrices_p) instead of four. This is possible since we compute M_mm, M_pm
+  // in a first step (by varying solution functions on element m), and M_mp,
+  // M_pp in a second step (by varying solution functions on element p).
+  
+  // create two local matrix: first one tested by minus test function and ...
+  FullMatrix_ matrices_m[vectorization_length];
+  std::fill_n(matrices_m, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
+  // ... the other tested by positive test function
+  FullMatrix_ matrices_p[vectorization_length];
+  std::fill_n(matrices_p, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
 
   for(auto face = range.first; face < range.second; ++face)
   {
     // determine number of filled vector lanes
     const unsigned int n_filled_lanes = data.n_active_entries_per_face_batch(face);
-    // create two local matrix: first one tested by minus test function and ...
-    FullMatrix_ matrices_m[vectorization_length];
-    std::fill_n(matrices_m, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
-    // ... the other tested by positive test function
-    FullMatrix_ matrices_p[vectorization_length];
-    std::fill_n(matrices_p, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
 
     fe_eval_m.reinit(face);
     fe_eval_p.reinit(face);
