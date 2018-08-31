@@ -7,7 +7,7 @@
 #include "../solvers_and_preconditioners/util/invert_diagonal.h"
 
 #include "../functionalities/set_zero_mean_value.h"
-#include "../../tests/operators/operation-base-util/categorization.h"
+#include "../functionalities/categorization.h"
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
@@ -832,35 +832,20 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell_based
       // TODO: check if all same
       auto bid = bids[0];
 
-      // check if internal or boundary face
-      if(bid == numbers::internal_face_boundary_id)
+      for(unsigned int j = 0; j < dofs_per_cell; ++j)
       {
-        // internal face
-        for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        {
-          this->create_standard_basis(j, fe_eval_m);
-          fe_eval_m.evaluate(this->operator_settings.face_evaluate.value,
-                             this->operator_settings.face_evaluate.gradient);
+        this->create_standard_basis(j, fe_eval_m);
+        fe_eval_m.evaluate(this->operator_settings.face_evaluate.value,
+                           this->operator_settings.face_evaluate.gradient);
+        
+        if(bid == numbers::internal_face_boundary_id) // internal face
           this->do_face_int_integral(fe_eval_m, fe_eval_p);
-          fe_eval_m.integrate(this->operator_settings.face_integrate.value,
-                              this->operator_settings.face_integrate.gradient);
-          local_diag[j] += fe_eval_m.begin_dof_values()[j]; // note: += for accumulation
-        }
-      }
-      else
-      {
-        // boundary face
-        for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        {
-          this->create_standard_basis(j, fe_eval_m);
-          fe_eval_m.evaluate(this->operator_settings.face_evaluate.value,
-                             this->operator_settings.face_evaluate.gradient);
+        else // boundary face
           this->do_boundary_integral(fe_eval_m, OperatorType::homogeneous, bid);
-
-          fe_eval_m.integrate(this->operator_settings.face_integrate.value,
-                              this->operator_settings.face_integrate.gradient);
-          local_diag[j] += fe_eval_m.begin_dof_values()[j]; // note: += for accumulation
-        }
+            
+        fe_eval_m.integrate(this->operator_settings.face_integrate.value,
+                            this->operator_settings.face_integrate.gradient);
+        local_diag[j] += fe_eval_m.begin_dof_values()[j]; // note: += for accumulation
       }
     }
     
@@ -1094,37 +1079,22 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_cell
       // TODO: check if all same
       auto bid = bids[0];
 
-      // check if internal or boundary face
-      if(bid == numbers::internal_face_boundary_id) // internal face
+      for(unsigned int j = 0; j < dofs_per_cell; ++j)
       {
-        for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        {
-          this->create_standard_basis(j, fe_eval_m);
-          fe_eval_m.evaluate(this->operator_settings.face_evaluate.value,
-                             this->operator_settings.face_evaluate.gradient);
+        this->create_standard_basis(j, fe_eval_m);
+        fe_eval_m.evaluate(this->operator_settings.face_evaluate.value,
+                           this->operator_settings.face_evaluate.gradient);
+        
+        if(bid == numbers::internal_face_boundary_id) // internal face
           this->do_face_int_integral(fe_eval_m, fe_eval_p);
-          fe_eval_m.integrate(this->operator_settings.face_integrate.value,
-                              this->operator_settings.face_integrate.gradient);
-          for(unsigned int v = 0; v < n_filled_lanes; ++v)
-            for(unsigned int i = 0; i < dofs_per_cell; ++i)
-              dst[cell * vectorization_length + v](i, j) += fe_eval_m.begin_dof_values()[i][v];
-        }
-      }
-      else // boundary face
-      {
-        for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        {
-          this->create_standard_basis(j, fe_eval_m);
-          fe_eval_m.evaluate(this->operator_settings.face_evaluate.value,
-                             this->operator_settings.face_evaluate.gradient);
+        else // boundary face
           this->do_boundary_integral(fe_eval_m, OperatorType::homogeneous, bid);
-
-          fe_eval_m.integrate(this->operator_settings.face_integrate.value,
-                              this->operator_settings.face_integrate.gradient);
-          for(unsigned int v = 0; v < n_filled_lanes; ++v)
-            for(unsigned int i = 0; i < dofs_per_cell; ++i)
-              dst[cell * vectorization_length + v](i, j) += fe_eval_m.begin_dof_values()[i][v];
-        }
+        
+        fe_eval_m.integrate(this->operator_settings.face_integrate.value,
+                            this->operator_settings.face_integrate.gradient);
+        for(unsigned int v = 0; v < n_filled_lanes; ++v)
+          for(unsigned int i = 0; i < dofs_per_cell; ++i)
+            dst[cell * vectorization_length + v](i, j) += fe_eval_m.begin_dof_values()[i][v];
       }
     }
   }
