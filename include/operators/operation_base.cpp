@@ -1362,9 +1362,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
     // save local matrices into global matrix
     for(unsigned int v = 0; v < n_filled_lanes; v++)
     {
-      const unsigned int cell_num = data.get_face_info(face).cells_interior[v];
+      const unsigned int cell_number = data.get_face_info(face).cells_interior[v];
 
-      auto cell_v = data.get_cell_iterator(cell_num / vectorization_length, cell_num % vectorization_length);
+      auto cell_v = data.get_cell_iterator(cell_number / vectorization_length, cell_number % vectorization_length);
       std::vector<types::global_dof_index> dof_indices(dofs_per_cell);
       if(is_mg)
         cell_v->get_mg_dof_indices(dof_indices);
