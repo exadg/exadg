@@ -212,7 +212,7 @@ public:
     data->cell_loop(&This::cell_loop_diagonal, this, diagonal, src, false /*zero_dst_vector = false*/);
   }
 
-  void add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
+  void add_block_diagonal_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
   {
     AssertThrow(std::abs(scaling_factor-1.0)<1.e-12,
         ExcMessage("Invalid parameter scaling_factor."));
@@ -601,7 +601,7 @@ public:
                this, diagonal, src, false /*zero_dst_vector = false*/);
   }
 
-  void add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
+  void add_block_diagonal_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
   {
     parallel::distributed::Vector<value_type>  src;
 
@@ -3387,7 +3387,7 @@ public:
     velocity_linearization = nullptr;
   }
 
-  void add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<value_type> >      &matrices,
+  void add_block_diagonal_matrices(std::vector<LAPACKFullMatrix<value_type> >      &matrices,
                                  parallel::distributed::Vector<value_type> const *vector_linearization,
                                  double const                                    evaluation_time) const
   {

@@ -137,9 +137,9 @@ private:
    * This is done sequentially for the different operators.
    */
   void
-  add_block_jacobi_matrices(BlockMatrix & matrices) const;
+  add_block_diagonal_matrices(BlockMatrix & matrices) const;
   void
-  add_block_jacobi_matrices(BlockMatrix & matrices, Number const time) const;
+  add_block_diagonal_matrices(BlockMatrix & matrices, Number const time) const;
 
   MultigridOperatorBase<dim, Number> *
   get_new(unsigned int deg) const;

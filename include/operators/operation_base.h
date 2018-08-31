@@ -257,10 +257,10 @@ public:
   calculate_block_diagonal_matrices() const;
   
   virtual void
-  add_block_jacobi_matrices(BlockMatrix & matrices) const;
+  add_block_diagonal_matrices(BlockMatrix & matrices) const;
   
   virtual void
-  add_block_jacobi_matrices(BlockMatrix & matrices, Number const time) const;
+  add_block_diagonal_matrices(BlockMatrix & matrices, Number const time) const;
 
   /*
    * sparse matrix (Trilinos) methods

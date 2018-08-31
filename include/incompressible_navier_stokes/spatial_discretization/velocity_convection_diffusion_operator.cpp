@@ -490,7 +490,7 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
                 ExcMessage(
                   "Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
 
-    mass_matrix_operator->add_block_jacobi_matrices(matrices);
+    mass_matrix_operator->add_block_diagonal_matrices(matrices);
 
     for(typename std::vector<LAPACKFullMatrix<Number>>::iterator it = matrices.begin(); it != matrices.end();
         ++it)
@@ -499,11 +499,11 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
     }
   }
 
-  viscous_operator->add_block_jacobi_matrices(matrices);
+  viscous_operator->add_block_diagonal_matrices(matrices);
 
   if(operator_data.convective_problem == true)
   {
-    convective_operator->add_block_jacobi_matrices(matrices, &velocity_linearization, evaluation_time);
+    convective_operator->add_block_diagonal_matrices(matrices, &velocity_linearization, evaluation_time);
   }
 }
 

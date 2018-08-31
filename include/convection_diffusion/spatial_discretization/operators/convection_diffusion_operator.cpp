@@ -284,15 +284,15 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_diagonal(
 
 template<int dim, int fe_degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_jacobi_matrices(BlockMatrix & matrices,
+ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_diagonal_matrices(BlockMatrix & matrices,
                                                                                Number const time) const
 {
-  Parent::add_block_jacobi_matrices(matrices, time);
+  Parent::add_block_diagonal_matrices(matrices, time);
 }
 
 template<int dim, int fe_degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_jacobi_matrices(BlockMatrix & matrices) const
+ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_diagonal_matrices(BlockMatrix & matrices) const
 {
    
   Number const time = this->get_evaluation_time();
@@ -303,7 +303,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_jacobi_matrices(B
     AssertThrow(this->operator_settings.scaling_factor_time_derivative_term > 0.0,
                 ExcMessage("Scaling factor of time derivative term has not been initialized!"));
 
-    mass_matrix_operator->add_block_jacobi_matrices(matrices);
+    mass_matrix_operator->add_block_diagonal_matrices(matrices);
 
     for(typename std::vector<LAPACKFullMatrix<Number>>::iterator it = matrices.begin(); it != matrices.end();
         ++it)
@@ -314,12 +314,12 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_jacobi_matrices(B
 
   if(this->operator_settings.diffusive_problem == true)
   {
-    diffusive_operator->add_block_jacobi_matrices(matrices);
+    diffusive_operator->add_block_diagonal_matrices(matrices);
   }
 
   if(this->operator_settings.convective_problem == true)
   {
-    convective_operator->add_block_jacobi_matrices(matrices, time);
+    convective_operator->add_block_diagonal_matrices(matrices, time);
   }
 }
 

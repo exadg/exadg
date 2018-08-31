@@ -411,8 +411,8 @@ private:
     // initialize block Jacobi matrices with zeros
     initialize_block_jacobi_matrices_with_zero(matrices);
 
-    divergence_penalty_operator->add_block_jacobi_matrices(matrices);
-    continuity_penalty_operator->add_block_jacobi_matrices(matrices);
+    divergence_penalty_operator->add_block_diagonal_matrices(matrices);
+    continuity_penalty_operator->add_block_diagonal_matrices(matrices);
 
     for(typename std::vector<LAPACKFullMatrix<value_type> >::iterator
         it = matrices.begin(); it != matrices.end(); ++it)
@@ -420,7 +420,7 @@ private:
       (*it) *= this->get_time_step_size();
     }
 
-    mass_matrix_operator->add_block_jacobi_matrices(matrices);
+    mass_matrix_operator->add_block_diagonal_matrices(matrices);
   }
 
   /*
