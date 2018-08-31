@@ -1187,17 +1187,17 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
   {
     // determine number of filled vector lanes
     const unsigned int n_filled_lanes = data.n_active_entries_per_face_batch(face);
-    // create two local matrix: first one tested by v1 and ...
+    // create two local matrix: first one tested by minus test function and ...
     FullMatrix_ matrices_m[vectorization_length];
     std::fill_n(matrices_m, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
-    // ... the other tested by v2
+    // ... the other tested by positive test function
     FullMatrix_ matrices_p[vectorization_length];
     std::fill_n(matrices_p, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
 
     fe_eval_m.reinit(face);
     fe_eval_p.reinit(face);
 
-    // process trial function u1
+    // process minus trial function
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       // write standard basis into dof values of first FEFaceEvaluation and
@@ -1248,13 +1248,13 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
         cell_p->get_dof_indices(dof_indices_p);
       }
 
-      // save u1_v1
+      // save M_mm
       constraint->distribute_local_to_global(matrices_m[i], dof_indices_m, dof_indices_m, dst);
-      // save u1_v2
+      // save M_pm
       constraint->distribute_local_to_global(matrices_p[i], dof_indices_p, dof_indices_m, dst);
     }
 
-    // process trial function u2
+    // process positive trial function
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       // write standard basis into dof values of first FEFaceEvaluation and
@@ -1271,12 +1271,12 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
       fe_eval_p.integrate(this->operator_settings.face_integrate.value,
                           this->operator_settings.face_integrate.gradient);
 
-      // insert result vector into local matrix u2_v1
+      // insert result vector into local matrix M_mp
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
           matrices_m[v](i, j) = fe_eval_m.begin_dof_values()[i][v];
 
-      // insert result vector into local matrix  u2_v2
+      // insert result vector into local matrix  M_pp
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
           matrices_p[v](i, j) = fe_eval_p.begin_dof_values()[i][v];
@@ -1305,9 +1305,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
         cell_p->get_dof_indices(dof_indices_p);
       }
 
-      // save u2_v1
+      // save M_mp
       constraint->distribute_local_to_global(matrices_m[i], dof_indices_m, dof_indices_p, dst);
-      // save u2_v2
+      // save M_pp
       constraint->distribute_local_to_global(matrices_p[i], dof_indices_p, dof_indices_p, dst);
     }
   }
