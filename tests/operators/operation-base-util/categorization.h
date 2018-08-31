@@ -4,6 +4,13 @@
 class Categorization
 {
 public:
+  /**
+   * Adjust MatrixFree::AdditionalData such that 
+   *   1) cells which have the same boundary IDs for all faces are put into the
+   *      same category
+   *   2) cell based loops are enabled (incl. FEEvaluationBase::read_cell_data()
+   *      for all neighboring cell)
+   */
   template<int dim, typename AdditionalData>
   static void
   do_cell_based_loops(const parallel::distributed::Triangulation<dim> & tria,
@@ -21,7 +28,6 @@ public:
 
     // ... setup scaling factor
     std::vector<unsigned int> factors(dim * 2);
-
 
     std::map<unsigned int, unsigned int> bid_map;
     for(unsigned int i = 0; i < tria.get_boundary_ids().size(); i++)
