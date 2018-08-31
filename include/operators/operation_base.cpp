@@ -829,8 +829,12 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell_based
       fe_eval_m.reinit(cell, face);
       fe_eval_p.reinit(cell, face);
       auto bids = data.get_faces_by_cells_boundary_id(cell, face);
-      // TODO: check if all same
       auto bid = bids[0];
+#ifdef DEBUG
+      const unsigned int n_filled_lanes = data.n_active_entries_per_cell_batch(cell);
+      for(unsigned int v = 0; v < n_filled_lanes; v++)
+        Assert(bid == bids[v], ExcMessage("Cell-based face loop encountered face batch with different bids."));
+#endif
 
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
       {
@@ -1076,8 +1080,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_cell
       fe_eval_m.reinit(cell, face);
       fe_eval_p.reinit(cell, face);
       auto bids = data.get_faces_by_cells_boundary_id(cell, face);
-      // TODO: check if all same
       auto bid = bids[0];
+#ifdef DEBUG
+      for(unsigned int v = 0; v < n_filled_lanes; v++)
+        Assert(bid == bids[v], ExcMessage("Cell-based face loop encountered face batch with different bids."));
+#endif
 
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
       {
