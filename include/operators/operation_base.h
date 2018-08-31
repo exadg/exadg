@@ -31,19 +31,13 @@ struct OperatorBaseData
                    const bool         face_evaluate_values = false,
                    const bool         face_evaluate_gradients = false,
                    const bool         face_integrate_values = false,
-                   const bool         face_integrate_gradients = false,
-                   const bool         boundary_evaluate_values = false,
-                   const bool         boundary_evaluate_gradients = false,
-                   const bool         boundary_integrate_values = false,
-                   const bool         boundary_integrate_gradients = false)
+                   const bool         face_integrate_gradients = false)
     : dof_index(dof_index),
       quad_index(quad_index),
       cell_evaluate(cell_evaluate_values, cell_evaluate_gradients, cell_evaluate_hessians),
       cell_integrate(cell_integrate_values, cell_integrate_gradients, cell_integrate_hessians),
-      internal_evaluate(face_evaluate_values, face_evaluate_gradients),
-      internal_integrate(face_integrate_values, face_integrate_gradients),
-      boundary_evaluate(boundary_evaluate_values, boundary_evaluate_gradients),
-      boundary_integrate(boundary_integrate_values, boundary_integrate_gradients),
+      face_evaluate(face_evaluate_values, face_evaluate_gradients),
+      face_integrate(face_integrate_values, face_integrate_gradients),
       use_cell_based_loops(false),
       operator_is_singular(false), 
       mapping_update_flags(update_default),
@@ -90,10 +84,8 @@ struct OperatorBaseData
 
   Cell cell_evaluate;
   Cell cell_integrate;
-  Face internal_evaluate;
-  Face internal_integrate;
-  Face boundary_evaluate;
-  Face boundary_integrate;
+  Face face_evaluate;
+  Face face_integrate;
 
   bool use_cell_based_loops;
 

@@ -15,9 +15,8 @@ struct ConvectiveOperatorData
   ConvectiveOperatorData()
 // clang-format off
     : OperatorBaseData<dim, ConvDiff::BoundaryDescriptor<dim>>(0, 0,
-          true, false, false, false, true,  false, // cell
-          true, false,        true,  false,        // face
-          true, false,        true,  false         // boundary 
+          true, false, false, false, true, false, // cell
+          true, false,        true,  false        // face
       ),
 // clang-format on
       numerical_flux_formulation(NumericalFluxConvectiveOperator::Undefined)

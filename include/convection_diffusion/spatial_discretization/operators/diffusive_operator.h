@@ -16,8 +16,7 @@ struct DiffusiveOperatorData
 // clang-format off
     : OperatorBaseData<dim, ConvDiff::BoundaryDescriptor<dim>>(0, 0,
           false, true, false, false, true, false, // cell
-          true,  true,        true,  true,        // face
-          true,  true,        true,  true         // boundary
+          true,  true,        true,  true         // face
       ),
 // clang-format on
       IP_factor(1.0),

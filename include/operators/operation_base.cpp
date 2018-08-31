@@ -14,9 +14,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
   : operator_settings(AdditionalData()),
     data(),
     eval_time(0.0),
-    do_eval_faces(
-      operator_settings.internal_evaluate.do_eval() || operator_settings.internal_integrate.do_eval() ||
-      operator_settings.boundary_evaluate.do_eval() || operator_settings.boundary_integrate.do_eval()),
+    do_eval_faces(operator_settings.face_evaluate.do_eval() || operator_settings.face_integrate.do_eval()),
     level_mg_handler(numbers::invalid_unsigned_int),
     block_jacobi_matrices_have_been_initialized(false)
 {
@@ -587,19 +585,19 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_face_hom(const MatrixFr
     fe_eval_p.reinit(face);
     
     fe_eval_m.gather_evaluate(src,
-                              this->operator_settings.internal_evaluate.value,
-                              this->operator_settings.internal_evaluate.gradient);
+                              this->operator_settings.face_evaluate.value,
+                              this->operator_settings.face_evaluate.gradient);
     fe_eval_p.gather_evaluate(src,
-                              this->operator_settings.internal_evaluate.value,
-                              this->operator_settings.internal_evaluate.gradient);
+                              this->operator_settings.face_evaluate.value,
+                              this->operator_settings.face_evaluate.gradient);
     
     this->do_face_integral(fe_eval_m, fe_eval_p);
     
-    fe_eval_m.integrate_scatter(this->operator_settings.internal_integrate.value,
-                                this->operator_settings.internal_integrate.gradient,
+    fe_eval_m.integrate_scatter(this->operator_settings.face_integrate.value,
+                                this->operator_settings.face_integrate.gradient,
                                 dst);
-    fe_eval_p.integrate_scatter(this->operator_settings.internal_integrate.value,
-                                this->operator_settings.internal_integrate.gradient,
+    fe_eval_p.integrate_scatter(this->operator_settings.face_integrate.value,
+                                this->operator_settings.face_integrate.gradient,
                                 dst);
   }
 }
@@ -617,11 +615,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_hom(const Matr
   {
     fe_eval.reinit(face);
     fe_eval.gather_evaluate(src,
-                            this->operator_settings.boundary_evaluate.value,
-                            this->operator_settings.boundary_evaluate.gradient);
+                            this->operator_settings.face_evaluate.value,
+                            this->operator_settings.face_evaluate.gradient);
     do_boundary_integral(fe_eval, OperatorType::homogeneous, data.get_boundary_id(face));
-    fe_eval.integrate_scatter(this->operator_settings.boundary_integrate.value,
-                              this->operator_settings.boundary_integrate.gradient,
+    fe_eval.integrate_scatter(this->operator_settings.face_integrate.value,
+                              this->operator_settings.face_integrate.gradient,
                               dst);
   }
 }
@@ -641,8 +639,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_inhom(const Ma
     // note: no gathering/evaluation is necessary when calculating the 
     //       inhomogeneous part of boundary face integrals
     do_boundary_integral(fe_eval, OperatorType::inhomogeneous, data.get_boundary_id(face));
-    fe_eval.integrate_scatter(this->operator_settings.boundary_integrate.value,
-                              this->operator_settings.boundary_integrate.gradient,
+    fe_eval.integrate_scatter(this->operator_settings.face_integrate.value,
+                              this->operator_settings.face_integrate.gradient,
                               dst);
   }
 }
@@ -660,11 +658,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_full(const Mat
   {
     fe_eval.reinit(face);
     fe_eval.gather_evaluate(src,
-                            this->operator_settings.boundary_evaluate.value,
-                            this->operator_settings.boundary_evaluate.gradient);
+                            this->operator_settings.face_evaluate.value,
+                            this->operator_settings.face_evaluate.gradient);
     do_boundary_integral(fe_eval, OperatorType::full, data.get_boundary_id(face));
-    fe_eval.integrate_scatter(this->operator_settings.boundary_integrate.value,
-                              this->operator_settings.boundary_integrate.gradient,
+    fe_eval.integrate_scatter(this->operator_settings.face_integrate.value,
+                              this->operator_settings.face_integrate.gradient,
                               dst);
   }
 }
@@ -729,11 +727,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_face(const
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval_m);
-      fe_eval_m.evaluate(this->operator_settings.internal_evaluate.value,
-                         this->operator_settings.internal_evaluate.gradient);
+      fe_eval_m.evaluate(this->operator_settings.face_evaluate.value,
+                         this->operator_settings.face_evaluate.gradient);
       this->do_face_int_integral(fe_eval_m, fe_eval_p);
-      fe_eval_m.integrate(this->operator_settings.internal_integrate.value,
-                          this->operator_settings.internal_integrate.gradient);
+      fe_eval_m.integrate(this->operator_settings.face_integrate.value,
+                          this->operator_settings.face_integrate.gradient);
 
       local_diag[j] = fe_eval_m.begin_dof_values()[j];
     }
@@ -745,11 +743,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_face(const
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval_p);
-      fe_eval_p.evaluate(this->operator_settings.internal_evaluate.value,
-                         this->operator_settings.internal_evaluate.gradient);
+      fe_eval_p.evaluate(this->operator_settings.face_evaluate.value,
+                         this->operator_settings.face_evaluate.gradient);
       this->do_face_ext_integral(fe_eval_m, fe_eval_p);
-      fe_eval_p.integrate(this->operator_settings.internal_integrate.value,
-                          this->operator_settings.internal_integrate.gradient);
+      fe_eval_p.integrate(this->operator_settings.face_integrate.value,
+                          this->operator_settings.face_integrate.gradient);
       local_diag[j] = fe_eval_p.begin_dof_values()[j];
     }
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
@@ -778,13 +776,13 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_boundary(c
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval);
-      fe_eval.evaluate(this->operator_settings.boundary_evaluate.value,
-                       this->operator_settings.boundary_evaluate.gradient);
+      fe_eval.evaluate(this->operator_settings.face_evaluate.value,
+                       this->operator_settings.face_evaluate.gradient);
       
       this->do_boundary_integral(fe_eval, OperatorType::homogeneous, bid);
 
-      fe_eval.integrate(this->operator_settings.boundary_integrate.value,
-                        this->operator_settings.boundary_integrate.gradient);
+      fe_eval.integrate(this->operator_settings.face_integrate.value,
+                        this->operator_settings.face_integrate.gradient);
       local_diag[j] = fe_eval.begin_dof_values()[j];
     }
     
@@ -841,11 +839,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell_based
         for(unsigned int j = 0; j < dofs_per_cell; ++j)
         {
           this->create_standard_basis(j, fe_eval_m);
-          fe_eval_m.evaluate(this->operator_settings.internal_evaluate.value,
-                             this->operator_settings.internal_evaluate.gradient);
+          fe_eval_m.evaluate(this->operator_settings.face_evaluate.value,
+                             this->operator_settings.face_evaluate.gradient);
           this->do_face_int_integral(fe_eval_m, fe_eval_p);
-          fe_eval_m.integrate(this->operator_settings.internal_integrate.value,
-                              this->operator_settings.internal_integrate.gradient);
+          fe_eval_m.integrate(this->operator_settings.face_integrate.value,
+                              this->operator_settings.face_integrate.gradient);
           local_diag[j] += fe_eval_m.begin_dof_values()[j]; // note: += for accumulation
         }
       }
@@ -855,12 +853,12 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell_based
         for(unsigned int j = 0; j < dofs_per_cell; ++j)
         {
           this->create_standard_basis(j, fe_eval_m);
-          fe_eval_m.evaluate(this->operator_settings.boundary_evaluate.value,
-                             this->operator_settings.boundary_evaluate.gradient);
+          fe_eval_m.evaluate(this->operator_settings.face_evaluate.value,
+                             this->operator_settings.face_evaluate.gradient);
           this->do_boundary_integral(fe_eval_m, OperatorType::homogeneous, bid);
 
-          fe_eval_m.integrate(this->operator_settings.boundary_integrate.value,
-                              this->operator_settings.boundary_integrate.gradient);
+          fe_eval_m.integrate(this->operator_settings.face_integrate.value,
+                              this->operator_settings.face_integrate.gradient);
           local_diag[j] += fe_eval_m.begin_dof_values()[j]; // note: += for accumulation
         }
       }
@@ -985,11 +983,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_face
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval_m);
-      fe_eval_m.evaluate(this->operator_settings.internal_evaluate.value,
-                         this->operator_settings.internal_evaluate.gradient);
+      fe_eval_m.evaluate(this->operator_settings.face_evaluate.value,
+                         this->operator_settings.face_evaluate.gradient);
       this->do_face_int_integral(fe_eval_m, fe_eval_p);
-      fe_eval_m.integrate(this->operator_settings.internal_integrate.value,
-                          this->operator_settings.internal_integrate.gradient);
+      fe_eval_m.integrate(this->operator_settings.face_integrate.value,
+                          this->operator_settings.face_integrate.gradient);
       for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
         const unsigned int cell = data.get_face_info(face).cells_interior[v];
@@ -1002,11 +1000,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_face
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval_p);
-      fe_eval_p.evaluate(this->operator_settings.internal_evaluate.value,
-                         this->operator_settings.internal_evaluate.gradient);
+      fe_eval_p.evaluate(this->operator_settings.face_evaluate.value,
+                         this->operator_settings.face_evaluate.gradient);
       this->do_face_ext_integral(fe_eval_m, fe_eval_p);
-      fe_eval_p.integrate(this->operator_settings.internal_integrate.value,
-                          this->operator_settings.internal_integrate.gradient);
+      fe_eval_p.integrate(this->operator_settings.face_integrate.value,
+                          this->operator_settings.face_integrate.gradient);
       for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
         const unsigned int cell = data.get_face_info(face).cells_exterior[v];
@@ -1036,11 +1034,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_boun
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval);
-      fe_eval.evaluate(this->operator_settings.boundary_evaluate.value,
-                       this->operator_settings.boundary_evaluate.gradient);
+      fe_eval.evaluate(this->operator_settings.face_evaluate.value,
+                       this->operator_settings.face_evaluate.gradient);
       this->do_boundary_integral(fe_eval, OperatorType::homogeneous, bid);
-      fe_eval.integrate(this->operator_settings.boundary_integrate.value,
-                        this->operator_settings.boundary_integrate.gradient);
+      fe_eval.integrate(this->operator_settings.face_integrate.value,
+                        this->operator_settings.face_integrate.gradient);
       for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
         const unsigned int cell = data.get_face_info(face).cells_interior[v];
@@ -1102,11 +1100,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_cell
         for(unsigned int j = 0; j < dofs_per_cell; ++j)
         {
           this->create_standard_basis(j, fe_eval_m);
-          fe_eval_m.evaluate(this->operator_settings.internal_evaluate.value,
-                             this->operator_settings.internal_evaluate.gradient);
+          fe_eval_m.evaluate(this->operator_settings.face_evaluate.value,
+                             this->operator_settings.face_evaluate.gradient);
           this->do_face_int_integral(fe_eval_m, fe_eval_p);
-          fe_eval_m.integrate(this->operator_settings.internal_integrate.value,
-                              this->operator_settings.internal_integrate.gradient);
+          fe_eval_m.integrate(this->operator_settings.face_integrate.value,
+                              this->operator_settings.face_integrate.gradient);
           for(unsigned int v = 0; v < n_filled_lanes; ++v)
             for(unsigned int i = 0; i < dofs_per_cell; ++i)
               dst[cell * vectorization_length + v](i, j) += fe_eval_m.begin_dof_values()[i][v];
@@ -1117,12 +1115,12 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_cell
         for(unsigned int j = 0; j < dofs_per_cell; ++j)
         {
           this->create_standard_basis(j, fe_eval_m);
-          fe_eval_m.evaluate(this->operator_settings.boundary_evaluate.value,
-                             this->operator_settings.boundary_evaluate.gradient);
+          fe_eval_m.evaluate(this->operator_settings.face_evaluate.value,
+                             this->operator_settings.face_evaluate.gradient);
           this->do_boundary_integral(fe_eval_m, OperatorType::homogeneous, bid);
 
-          fe_eval_m.integrate(this->operator_settings.boundary_integrate.value,
-                              this->operator_settings.boundary_integrate.gradient);
+          fe_eval_m.integrate(this->operator_settings.face_integrate.value,
+                              this->operator_settings.face_integrate.gradient);
           for(unsigned int v = 0; v < n_filled_lanes; ++v)
             for(unsigned int i = 0; i < dofs_per_cell; ++i)
               dst[cell * vectorization_length + v](i, j) += fe_eval_m.begin_dof_values()[i][v];
@@ -1229,15 +1227,15 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
       // clear dof values of second FEFaceEvaluation
       this->create_standard_basis(j, fe_eval_m, fe_eval_p);
 
-      fe_eval_m.evaluate(this->operator_settings.internal_evaluate.value,
-                         this->operator_settings.internal_evaluate.gradient);
-      fe_eval_p.evaluate(this->operator_settings.internal_evaluate.value,
-                         this->operator_settings.internal_evaluate.gradient);
+      fe_eval_m.evaluate(this->operator_settings.face_evaluate.value,
+                         this->operator_settings.face_evaluate.gradient);
+      fe_eval_p.evaluate(this->operator_settings.face_evaluate.value,
+                         this->operator_settings.face_evaluate.gradient);
       this->do_face_integral(fe_eval_m, fe_eval_p);
-      fe_eval_m.integrate(this->operator_settings.internal_integrate.value,
-                          this->operator_settings.internal_integrate.gradient);
-      fe_eval_p.integrate(this->operator_settings.internal_integrate.value,
-                          this->operator_settings.internal_integrate.gradient);
+      fe_eval_m.integrate(this->operator_settings.face_integrate.value,
+                          this->operator_settings.face_integrate.gradient);
+      fe_eval_p.integrate(this->operator_settings.face_integrate.value,
+                          this->operator_settings.face_integrate.gradient);
 
       // insert result vector into local matrix u1_v1
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
@@ -1286,15 +1284,15 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
       // clear dof values of second FEFaceEvaluation
       this->create_standard_basis(j, fe_eval_p, fe_eval_m);
 
-      fe_eval_m.evaluate(this->operator_settings.internal_evaluate.value,
-                         this->operator_settings.internal_evaluate.gradient);
-      fe_eval_p.evaluate(this->operator_settings.internal_evaluate.value,
-                         this->operator_settings.internal_evaluate.gradient);
+      fe_eval_m.evaluate(this->operator_settings.face_evaluate.value,
+                         this->operator_settings.face_evaluate.gradient);
+      fe_eval_p.evaluate(this->operator_settings.face_evaluate.value,
+                         this->operator_settings.face_evaluate.gradient);
       this->do_face_integral(fe_eval_m, fe_eval_p);
-      fe_eval_m.integrate(this->operator_settings.internal_integrate.value,
-                          this->operator_settings.internal_integrate.gradient);
-      fe_eval_p.integrate(this->operator_settings.internal_integrate.value,
-                          this->operator_settings.internal_integrate.gradient);
+      fe_eval_m.integrate(this->operator_settings.face_integrate.value,
+                          this->operator_settings.face_integrate.gradient);
+      fe_eval_p.integrate(this->operator_settings.face_integrate.value,
+                          this->operator_settings.face_integrate.gradient);
 
       // insert result vector into local matrix u2_v1
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
@@ -1363,11 +1361,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
     {
       this->create_standard_basis(j, fe_eval);
 
-      fe_eval.evaluate(this->operator_settings.boundary_evaluate.value,
-                       this->operator_settings.boundary_evaluate.gradient);
+      fe_eval.evaluate(this->operator_settings.face_evaluate.value,
+                       this->operator_settings.face_evaluate.gradient);
       this->do_boundary_integral(fe_eval, OperatorType::homogeneous, bid);
-      fe_eval.integrate(this->operator_settings.boundary_integrate.value,
-                        this->operator_settings.boundary_integrate.gradient);
+      fe_eval.integrate(this->operator_settings.face_integrate.value,
+                        this->operator_settings.face_integrate.gradient);
 
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
