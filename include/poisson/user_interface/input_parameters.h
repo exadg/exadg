@@ -71,7 +71,9 @@ public:
       multigrid_data(MultigridData()),
 
       // OUTPUT AND POSTPROCESSING
-      print_input_parameters(true)
+      print_input_parameters(true),
+              
+      enable_cell_based_for_loops(false)
   {
   }
 
@@ -109,6 +111,10 @@ public:
 
     // OUTPUT AND POSTPROCESSING
     print_parameters_output_and_postprocessing(pcout);
+    
+    pcout << std::endl
+          << "Rest:" << std::endl;
+    print_parameter(pcout,"Enable cell-based face loops",enable_cell_based_for_loops);
   }
 
   void
@@ -226,6 +232,8 @@ public:
 
   // writing output
   OutputData output_data;
+  
+  bool enable_cell_based_for_loops;
 };
 
 } // namespace Poisson

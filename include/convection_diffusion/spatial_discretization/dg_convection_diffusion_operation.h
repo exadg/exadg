@@ -75,7 +75,8 @@ public:
     conv_diff_operator_data.convective_operator_data            = convective_operator.get_operator_data();
     conv_diff_operator_data.diffusive_operator_data             = diffusive_operator.get_operator_data();
     conv_diff_operator_data.scaling_factor_time_derivative_term = scaling_factor_time_derivative_term_in;
-
+    conv_diff_operator_data.use_cell_based_loops                = param.enable_cell_based_for_loops;
+    
     if(this->param.problem_type == ConvDiff::ProblemType::Unsteady)
     {
       conv_diff_operator_data.unsteady_problem = true;
@@ -416,6 +417,12 @@ private:
                                                            update_quadrature_points | update_normal_vectors |
                                                            update_values);
 
+    if(param.enable_cell_based_for_loops)
+    {
+      auto tria = dynamic_cast<const parallel::distributed::Triangulation<dim>*>(&dof_handler.get_triangulation());
+      Categorization::do_cell_based_loops(*tria, additional_data);
+    }
+    
     ConstraintMatrix dummy;
     dummy.close();
     data.reinit (mapping, dof_handler, dummy, quadrature, additional_data);
@@ -428,6 +435,7 @@ private:
     MassMatrixOperatorData<dim> mass_matrix_operator_data;
     mass_matrix_operator_data.dof_index = 0;
     mass_matrix_operator_data.quad_index = 0;
+    mass_matrix_operator_data.use_cell_based_loops = param.enable_cell_based_for_loops;
     mass_matrix_operator.initialize(data,mass_matrix_operator_data);
 
     // inverse mass matrix operator
@@ -441,6 +449,7 @@ private:
     convective_operator_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
     convective_operator_data.bc = boundary_descriptor;
     convective_operator_data.velocity = field_functions->velocity;
+    convective_operator_data.use_cell_based_loops = param.enable_cell_based_for_loops;
     convective_operator.initialize(data,convective_operator_data);
 
     // diffusive operator
@@ -450,6 +459,7 @@ private:
     diffusive_operator_data.IP_factor = param.IP_factor;
     diffusive_operator_data.diffusivity = param.diffusivity;
     diffusive_operator_data.bc = boundary_descriptor;
+    diffusive_operator_data.use_cell_based_loops = param.enable_cell_based_for_loops;
     diffusive_operator.initialize(mapping,data,diffusive_operator_data);
 
     // rhs operator

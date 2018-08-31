@@ -195,6 +195,12 @@ DGOperation<dim, fe_degree, value_type>::initialize_matrix_free()
   additional_data.mapping_update_flags_boundary_faces =
     (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values);
 
+  if(param.enable_cell_based_for_loops)
+  {
+    auto tria = dynamic_cast<const parallel::distributed::Triangulation<dim>*>(&dof_handler.get_triangulation());
+    Categorization::do_cell_based_loops(*tria, additional_data);
+  }
+  
   ConstraintMatrix dummy;
   dummy.close();
   data.reinit(mapping, dof_handler, dummy, quadrature, additional_data);
@@ -211,6 +217,7 @@ DGOperation<dim, fe_degree, value_type>::setup_operators()
   laplace_operator_data.IP_factor                  = param.IP_factor;
   laplace_operator_data.bc                         = boundary_descriptor;
   laplace_operator_data.periodic_face_pairs_level0 = periodic_face_pairs;
+  laplace_operator_data.use_cell_based_loops       = param.enable_cell_based_for_loops;
   laplace_operator.initialize(mapping, data, laplace_operator_data);
 
   // rhs operator
