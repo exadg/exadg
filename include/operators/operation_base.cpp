@@ -1146,16 +1146,16 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
           matrices[v](i, j) = fe_eval.begin_dof_values()[i][v];
     }
 
-    // finally assemble local matrix into global matrix
-    for(unsigned int i = 0; i < n_filled_lanes; i++)
+    // finally assemble local matrices into global matrix
+    for(unsigned int v = 0; v < n_filled_lanes; v++)
     {
-      auto cell_i = data.get_cell_iterator(cell, i);
+      auto cell_v = data.get_cell_iterator(cell, v);
       
       std::vector<types::global_dof_index> dof_indices(dofs_per_cell);
       if(is_mg)
-        cell_i->get_mg_dof_indices(dof_indices);
+        cell_v->get_mg_dof_indices(dof_indices);
       else
-        cell_i->get_dof_indices(dof_indices);
+        cell_v->get_dof_indices(dof_indices);
 
       if(!is_dg)
       {
@@ -1167,7 +1167,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
           dof_indices[j] = temp[data.get_shape_info().lexicographic_numbering[j]];
       }
 
-      constraint->distribute_local_to_global(matrices[i], dof_indices, dof_indices, dst);
+      constraint->distribute_local_to_global(matrices[v], dof_indices, dof_indices, dst);
     }
   }
 }
@@ -1236,10 +1236,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
     }
 
     // save local matrices into global matrix
-    for(unsigned int i = 0; i < n_filled_lanes; i++)
+    for(unsigned int v = 0; v < n_filled_lanes; v++)
     {
-      const auto cell_number_m = data.get_face_info(face).cells_interior[i];
-      const auto cell_number_p = data.get_face_info(face).cells_exterior[i];
+      const auto cell_number_m = data.get_face_info(face).cells_interior[v];
+      const auto cell_number_p = data.get_face_info(face).cells_exterior[v];
 
       auto cell_m = data.get_cell_iterator(cell_number_m / vectorization_length, cell_number_m % vectorization_length);
       auto cell_p = data.get_cell_iterator(cell_number_p / vectorization_length, cell_number_p % vectorization_length);
@@ -1259,9 +1259,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
       }
 
       // save M_mm
-      constraint->distribute_local_to_global(matrices_m[i], dof_indices_m, dof_indices_m, dst);
+      constraint->distribute_local_to_global(matrices_m[v], dof_indices_m, dof_indices_m, dst);
       // save M_pm
-      constraint->distribute_local_to_global(matrices_p[i], dof_indices_p, dof_indices_m, dst);
+      constraint->distribute_local_to_global(matrices_p[v], dof_indices_p, dof_indices_m, dst);
     }
 
     // process positive trial function
@@ -1293,10 +1293,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
     }
 
     // save local matrices into global matrix
-    for(unsigned int i = 0; i < n_filled_lanes; i++)
+    for(unsigned int v = 0; v < n_filled_lanes; v++)
     {
-      const auto cell_number_m = data.get_face_info(face).cells_interior[i];
-      const auto cell_number_p = data.get_face_info(face).cells_exterior[i];
+      const auto cell_number_m = data.get_face_info(face).cells_interior[v];
+      const auto cell_number_p = data.get_face_info(face).cells_exterior[v];
 
       auto cell_m = data.get_cell_iterator(cell_number_m / vectorization_length, cell_number_m % vectorization_length);
       auto cell_p = data.get_cell_iterator(cell_number_p / vectorization_length, cell_number_p % vectorization_length);
@@ -1316,9 +1316,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
       }
 
       // save M_mp
-      constraint->distribute_local_to_global(matrices_m[i], dof_indices_m, dof_indices_p, dst);
+      constraint->distribute_local_to_global(matrices_m[v], dof_indices_m, dof_indices_p, dst);
       // save M_pp
-      constraint->distribute_local_to_global(matrices_p[i], dof_indices_p, dof_indices_p, dst);
+      constraint->distribute_local_to_global(matrices_p[v], dof_indices_p, dof_indices_p, dst);
     }
   }
 }
@@ -1360,18 +1360,18 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
     }
 
     // save local matrices into global matrix
-    for(unsigned int i = 0; i < n_filled_lanes; i++)
+    for(unsigned int v = 0; v < n_filled_lanes; v++)
     {
-      const unsigned int cell_num = data.get_face_info(face).cells_interior[i];
+      const unsigned int cell_num = data.get_face_info(face).cells_interior[v];
 
-      auto cell_i = data.get_cell_iterator(cell_num / vectorization_length, cell_num % vectorization_length);
+      auto cell_v = data.get_cell_iterator(cell_num / vectorization_length, cell_num % vectorization_length);
       std::vector<types::global_dof_index> dof_indices(dofs_per_cell);
       if(is_mg)
-        cell_i->get_mg_dof_indices(dof_indices);
+        cell_v->get_mg_dof_indices(dof_indices);
       else
-        cell_i->get_dof_indices(dof_indices);
+        cell_v->get_dof_indices(dof_indices);
 
-      constraint->distribute_local_to_global(matrices[i], dof_indices, dof_indices, dst);
+      constraint->distribute_local_to_global(matrices[v], dof_indices, dof_indices, dst);
     }
   }
 }
