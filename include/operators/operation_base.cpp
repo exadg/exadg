@@ -79,7 +79,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
     additional_data.mapping_update_flags_boundary_faces = operator_settings.mapping_update_flags_boundary_faces;
   }
   
-  if(operator_settings.use_cell_based_loops)
+  if(operator_settings.use_cell_based_loops && is_dg)
   {
     auto tria = dynamic_cast<const parallel::distributed::Triangulation<dim>*>(&dof_handler.get_triangulation());
     Categorization::do_cell_based_loops(*tria, additional_data, level_mg_handler);
