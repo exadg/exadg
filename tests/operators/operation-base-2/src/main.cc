@@ -55,7 +55,6 @@
 #include "include/operator_base_test.h"
 
 #include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
-#include "../../operation-base-util/categorization.h"
 
 using namespace dealii;
 using namespace Poisson;
