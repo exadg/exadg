@@ -28,8 +28,8 @@
 // products.
 using namespace dealii;
 
-template <int dim, typename Type>
-class MGTransferMF : public MGTransferMatrixFree<dim, Type>
+template <int dim, typename Number>
+class MGTransferMF : public MGTransferMatrixFree<dim, Number>
 {
 public:
   MGTransferMF(std::map<unsigned int, unsigned int> level_to_triangulation_level)
@@ -37,21 +37,21 @@ public:
     underlying_operator (0),level_to_triangulation_level(level_to_triangulation_level)
   {}
 
-  void set_operator(const MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Type>>> &operator_in)
+  void set_operator(const MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> &operator_in)
   {
     underlying_operator = &operator_in;
   }
   
   virtual void prolongate (const unsigned int                           to_level,
-                           LinearAlgebra::distributed::Vector<Type>       &dst,
-                           const LinearAlgebra::distributed::Vector<Type> &src) const{
-      MGTransferMatrixFree<dim, Type>::prolongate(level_to_triangulation_level[to_level], dst, src);
+                           LinearAlgebra::distributed::Vector<Number>       &dst,
+                           const LinearAlgebra::distributed::Vector<Number> &src) const{
+      MGTransferMatrixFree<dim, Number>::prolongate(level_to_triangulation_level[to_level], dst, src);
   }
   
   virtual void restrict_and_add (const unsigned int from_level,
-                                 LinearAlgebra::distributed::Vector<Type>       &dst,
-                                 const LinearAlgebra::distributed::Vector<Type> &src) const{
-      MGTransferMatrixFree<dim, Type>::restrict_and_add(level_to_triangulation_level[from_level], dst, src);
+                                 LinearAlgebra::distributed::Vector<Number>       &dst,
+                                 const LinearAlgebra::distributed::Vector<Number> &src) const{
+      MGTransferMatrixFree<dim, Number>::restrict_and_add(level_to_triangulation_level[from_level], dst, src);
   }
 
   /**
@@ -60,7 +60,7 @@ public:
   template <class InVector, int spacedim>
   void
   copy_to_mg (const DoFHandler<dim,spacedim>                                               &mg_dof,
-              MGLevelObject<parallel::distributed::Vector<Type> > &dst,
+              MGLevelObject<parallel::distributed::Vector<Number> > &dst,
               const InVector                                                               &src) const
   {
     AssertThrow(underlying_operator != 0, ExcNotInitialized());
@@ -68,11 +68,11 @@ public:
     for (unsigned int level=dst.min_level();level<=dst.max_level(); ++level)
       (*underlying_operator)[level]->initialize_dof_vector(dst[level]);
 
-    MGLevelGlobalTransfer<parallel::distributed::Vector<Type> >::copy_to_mg(mg_dof, dst, src);
+    MGLevelGlobalTransfer<parallel::distributed::Vector<Number> >::copy_to_mg(mg_dof, dst, src);
   }
 
 private:
-  const MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Type>>> *underlying_operator;
+  const MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> *underlying_operator;
   mutable std::map<unsigned int, unsigned int> level_to_triangulation_level;
 };
 
