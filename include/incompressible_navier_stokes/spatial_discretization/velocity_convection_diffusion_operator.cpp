@@ -579,13 +579,13 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
   parallel::distributed::Vector<Number> &       dst,
   parallel::distributed::Vector<Number> const & src) const
 {
-  data->cell_loop(&This::cell_loop_apply_inverse_block_diagonal_matrices_test, this, dst, src);
+  data->cell_loop(&This::cell_loop_apply_block_diagonal_matrices_test, this, dst, src);
 }
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
 VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
-  cell_loop_apply_inverse_block_diagonal_matrices_test(MatrixFree<dim, Number> const &               data,
+  cell_loop_apply_block_diagonal_matrices_test(MatrixFree<dim, Number> const &               data,
                                              parallel::distributed::Vector<Number> &       dst,
                                              parallel::distributed::Vector<Number> const & src,
                                              std::pair<unsigned int, unsigned int> const & cell_range) const

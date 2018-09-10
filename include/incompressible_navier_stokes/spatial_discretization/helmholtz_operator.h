@@ -197,7 +197,7 @@ private:
    /*
     *  This function is only needed for testing.
     */
-   void cell_loop_apply_inverse_block_diagonal_matrices_test (MatrixFree<dim,Number> const                &data,
+   void cell_loop_apply_block_diagonal_matrices_test (MatrixFree<dim,Number> const                &data,
                                                     parallel::distributed::Vector<Number>       &dst,
                                                     parallel::distributed::Vector<Number> const &src,
                                                     std::pair<unsigned int,unsigned int> const  &cell_range) const;
