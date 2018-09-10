@@ -100,8 +100,8 @@ public:
     smooth(&smooth, typeid(*this).name()),
     n_cycles (n_cycles)
 #if ENABLE_TIMING
-  , time (minlevel, maxlevel)
-  , ctime(minlevel, maxlevel)
+  , timer (minlevel, maxlevel)
+  , wall_time(minlevel, maxlevel)
 #endif
   {
     AssertThrow(n_cycles == 1, ExcNotImplemented());
@@ -115,7 +115,7 @@ public:
     }
 #if ENABLE_TIMING
     for (unsigned int level = minlevel; level <= maxlevel; ++level)
-        ctime[level] = 0.0;
+        wall_time[level] = 0.0;
 #endif
   }
     
@@ -123,7 +123,7 @@ public:
         
 #if ENABLE_TIMING
     for (unsigned int level = minlevel; level <= maxlevel; ++level)
-        printf(" >>> %d %12.9f\n", level, ctime[level]); 
+        printf(" >>> %d %12.9f\n", level, wall_time[level]); 
 #endif
     
     }
@@ -134,21 +134,21 @@ public:
               const OtherVectorType &src) const
   {
 #if ENABLE_TIMING
-      time[maxlevel].restart();
+      timer[maxlevel].restart();
 #endif
     for(unsigned int i = minlevel; i <= maxlevel; i++)
       defect[i] = 0.0;
     defect[maxlevel].copy_locally_owned_data_from(src);
 #if ENABLE_TIMING
-    ctime[maxlevel] += time[maxlevel].wall_time();
+    wall_time[maxlevel] += timer[maxlevel].wall_time();
 #endif
     v_cycle(maxlevel);
 #if ENABLE_TIMING
-    time[maxlevel].restart();
+    timer[maxlevel].restart();
 #endif
     dst.copy_locally_owned_data_from(solution[maxlevel]);
 #if ENABLE_TIMING
-    ctime[maxlevel] += time[maxlevel].wall_time();
+    wall_time[maxlevel] += timer[maxlevel].wall_time();
 #endif
       
   }
@@ -209,8 +209,8 @@ private:
   const unsigned int n_cycles;
   
 #if ENABLE_TIMING
-  mutable MGLevelObject<Timer> time;
-  mutable MGLevelObject<double> ctime;
+  mutable MGLevelObject<Timer> timer;
+  mutable MGLevelObject<double> wall_time; // measures time on the level (including the coarser levels)
 #endif
 
   /**
@@ -219,13 +219,13 @@ private:
   void v_cycle(const unsigned int level) const
   {
 #if ENABLE_TIMING
-    time[level].restart();
+    timer[level].restart();
 #endif
     if (level==minlevel)
     {
       (*coarse)(level, solution[level], defect[level]);
 #if ENABLE_TIMING
-      ctime[level] += time[level].wall_time();
+      wall_time[level] += timer[level].wall_time();
 #endif
       return;
     }
@@ -247,7 +247,7 @@ private:
     (*smooth)[level]->vmult(t[level], defect [level]);
     solution[level] -= t[level];
 #if ENABLE_TIMING
-    ctime[level] += time[level].wall_time();
+    wall_time[level] += timer[level].wall_time();
 #endif
   }
 };
