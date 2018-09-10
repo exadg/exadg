@@ -66,30 +66,30 @@ MGCoarseML<Operator, Number>::operator()(const unsigned int /*level*/,
   src_0.copy_locally_owned_data_from(src);
   dst_0.reinit(dst, false);
 
-  parallel::distributed::Vector<MultigridNumber>  cg_src__, cg_dst__;
-  parallel::distributed::Vector<MultigridNumber> *src__, *dst__;
+  parallel::distributed::Vector<MultigridNumber>  src_cg, dst_cg;
+  parallel::distributed::Vector<MultigridNumber> *ptr_src, *ptr_dst;
   if(this->additional_data.transfer_to_continuous_galerkin)
   {
-    this->operator_cg.initialize_dof_vector(cg_src__);
-    this->operator_cg.initialize_dof_vector(cg_dst__);
-    src__ = &cg_src__;
-    dst__ = &cg_dst__;
-    transfer->toCG(*src__, src_0);
+    this->operator_cg.initialize_dof_vector(src_cg);
+    this->operator_cg.initialize_dof_vector(dst_cg);
+    ptr_src = &src_cg;
+    ptr_dst = &dst_cg;
+    transfer->toCG(*ptr_src, src_0);
   }
   else
   {
-    src__ = &src_0;
-    dst__ = &dst_0;
+    ptr_src = &src_0;
+    ptr_dst = &dst_0;
   }
 
   // create temporal vectors of type TrilinosScalar
-  parallel::distributed::Vector<TrilinosWrappers::SparseMatrix::value_type> dst_;
-  dst_.reinit(*dst__, false);
-  parallel::distributed::Vector<TrilinosWrappers::SparseMatrix::value_type> src_;
-  src_.reinit(*src__, false);
+  parallel::distributed::Vector<TrilinosWrappers::SparseMatrix::value_type> dst_trilinos;
+  dst_trilinos.reinit(*ptr_dst, false);
+  parallel::distributed::Vector<TrilinosWrappers::SparseMatrix::value_type> src_trilinos;
+  src_trilinos.reinit(*ptr_src, false);
 
   // [float -> double] convert Operator::value_type to TrilinosScalar
-  src_.copy_locally_owned_data_from(*src__);
+  src_trilinos.copy_locally_owned_data_from(*ptr_src);
 
   if(additional_data.use_conjugate_gradient_solver)
   {
@@ -100,22 +100,22 @@ MGCoarseML<Operator, Number>::operator()(const unsigned int /*level*/,
     solver_control.set_failure_criterion(additional_data.pcg_failure_criterion);
     SolverCG<parallel::distributed::Vector<TrilinosWrappers::SparseMatrix::value_type>> solver(
       solver_control);
-    solver.solve(system_matrix, dst_, src_, pamg);
+    solver.solve(system_matrix, dst_trilinos, src_trilinos, pamg);
     // std::cout << "   " << solver_control.last_step() << "   "
     //          << solver_control.last_value() << "   " << std::endl;
   }
   else
   {
     // use Trilinos to perform AMG
-    pamg.vmult(dst_, src_);
+    pamg.vmult(dst_trilinos, src_trilinos);
   }
 
   // [double -> float]convert TrilinosScalar to Operator::value_type
-  dst__->copy_locally_owned_data_from(dst_);
-  dst__->update_ghost_values();
+  ptr_dst->copy_locally_owned_data_from(dst_trilinos);
+  ptr_dst->update_ghost_values();
   // [float] CG -> DG
   if(this->additional_data.transfer_to_continuous_galerkin)
-    transfer->toDG(dst_0, *dst__);
+    transfer->toDG(dst_0, *ptr_dst);
   dst.copy_locally_owned_data_from(dst_0);
 }
 
