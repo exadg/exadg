@@ -13,7 +13,7 @@
 
 enum class MultigridType
 {
-    HGMG, PGMG
+    hMG, pMG, hpMG, phMG
 };
 
 enum class MultigridSmoother
@@ -177,8 +177,7 @@ struct MultigridData
     :
     smoother(MultigridSmoother::Chebyshev),
     coarse_solver(MultigridCoarseGridSolver::Chebyshev),
-    type(MultigridType::HGMG),
-    two_levels(false)
+    type(MultigridType::hMG)
   {}
 
   void print(ConditionalOStream &pcout)
@@ -223,8 +222,8 @@ struct MultigridData
     if(coarse_solver==MultigridCoarseGridSolver::AMG_ML)
         coarse_ml_data.print(pcout);
 
-    std::string str_type[] = { "h-GMG", "p-GMG", "h-GMG + p-GMG", "p-GMG + h-GMG"};
-    print_parameter(pcout,"Multigrid type", str_type[((int)type)+(two_levels?2:0)]);
+    std::string str_type[] = { "h-MG", "p-MG", "hp-MG", "ph-MG"};
+    print_parameter(pcout,"Multigrid type", str_type[(int)type]);
     
   }
 
@@ -252,8 +251,6 @@ struct MultigridData
   // Multigrid type: p-GMG vs. h-GMG
   MultigridType type;
   
-  // 
-  bool two_levels;
 };
 
 

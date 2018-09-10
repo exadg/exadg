@@ -52,8 +52,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
     dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
 
   // which mg-level should be processed
-  const bool   pgmg   = this->mg_data.type == MultigridType::PGMG;
-  const bool   both   = this->mg_data.two_levels;
+  const auto   mg_type= this->mg_data.type;
   unsigned int global = tria->n_global_levels();
   unsigned int degree = dof_handler.get_fe().degree;
 
@@ -78,24 +77,27 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
 
   std::vector<std::pair<unsigned int, unsigned int>> seq;
 
-  if(pgmg)
+  if(mg_type == MultigridType::pMG || mg_type == MultigridType::phMG)
   {
     // top level: p-gmg
-    if(both) // low level: h-gmg
+    if(mg_type == MultigridType::phMG) // low level: h-gmg
       for(unsigned int i = 0; i < seq_geo.size() - 1; i++)
         seq.push_back(std::pair<int, int>(seq_geo[i], seq_deg.front()));
     for(auto deg : seq_deg)
       seq.push_back(std::pair<int, int>(seq_geo.back(), deg));
   }
-  else
+  else if(mg_type == MultigridType::hMG || mg_type == MultigridType::hpMG)
   {
     // top level: h-gmg
-    if(both) // low level: p-gmg
+    if(mg_type == MultigridType::hpMG) // low level: p-gmg
       for(unsigned int i = 0; i < seq_deg.size() - 1; i++)
         seq.push_back(std::pair<int, int>(seq_geo.front(), seq_deg[i]));
     for(auto geo : seq_geo)
       seq.push_back(std::pair<int, int>(geo, seq_deg.back()));
   }
+  else
+    AssertThrow(false, ExcMessage("This multigrid type does not exist!"));
+      
 
   int min_level         = 0;
   int max_level         = seq.size() - 1;
