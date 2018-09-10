@@ -299,7 +299,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_inverse_block_diagonal(
   AssertThrow(block_jacobi_matrices_have_been_initialized,
               ExcMessage("Block Jacobi matrices have not been initialized!"));
 
-  data->cell_loop(&This::local_apply_block_diagonal_inverse, this, dst, src);
+  data->cell_loop(&This::local_apply_inverse_block_diagonal, this, dst, src);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
@@ -861,7 +861,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell_based
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_apply_block_diagonal_inverse(
+OperatorBase<dim, degree, Number, AdditionalData>::local_apply_inverse_block_diagonal(
   const MatrixFree_ &         data,
   VectorType &       dst,
   const VectorType & src,

@@ -451,7 +451,7 @@ protected:
    * been performed with the method update_inverse_block_diagonal())
    */
   void
-  local_apply_block_diagonal_inverse(const MatrixFree_ &    data,
+  local_apply_inverse_block_diagonal(const MatrixFree_ &    data,
                                      VectorType &       dst,
                                      const VectorType & src,
                                      const Range &      cell_range) const;
