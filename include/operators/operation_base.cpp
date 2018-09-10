@@ -1201,10 +1201,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
   // in a first step (by varying solution functions on element m), and M_mp,
   // M_pp in a second step (by varying solution functions on element p).
   
-  // create two local matrix: first one tested by minus test function and ...
+  // create two local matrix: first one tested by test functions on element m and ...
   FullMatrix_ matrices_m[vectorization_length];
   std::fill_n(matrices_m, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
-  // ... the other tested by positive test function
+  // ... the other tested by test functions on element p
   FullMatrix_ matrices_p[vectorization_length];
   std::fill_n(matrices_p, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
 
