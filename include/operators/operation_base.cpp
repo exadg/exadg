@@ -856,7 +856,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell_based
             
         fe_eval_m.integrate(this->operator_settings.face_integrate.value,
                             this->operator_settings.face_integrate.gradient);
-        local_diag[j] += fe_eval_m.begin_dof_values()[j]; // note: += for accumulation
+        // note: += for accumulation of all contributions of this (macro) cell 
+        //          including: cell-, face-, boundary-stiffness matrix 
+        local_diag[j] += fe_eval_m.begin_dof_values()[j];
       }
     }
     
