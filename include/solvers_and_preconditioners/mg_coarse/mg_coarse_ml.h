@@ -106,8 +106,8 @@ public:
   /**
    * Constructor
    */
-  MGCoarseML(Operator const & matrix,
-             Operator const & matrix_q,
+  MGCoarseML(Operator const & operator_dg,
+             Operator const & operator_cg,
              bool             setup = false,
              int              level = -1,
              MGCoarseMLData   data  = MGCoarseMLData());

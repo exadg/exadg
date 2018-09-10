@@ -6,12 +6,12 @@
 #ifdef DEAL_II_WITH_TRILINOS
 
 template<typename Operator, typename Number>
-MGCoarseML<Operator, Number>::MGCoarseML(Operator const & matrix,
-                                         Operator const & matrix_q,
+MGCoarseML<Operator, Number>::MGCoarseML(Operator const & operator_dg,
+                                         Operator const & operator_cg,
                                          bool             setup,
                                          int              level,
                                          MGCoarseMLData   data)
-  : operator_dg(matrix), operator_cg(matrix_q)
+  : operator_dg(operator_dg), operator_cg(operator_cg)
 {
   if(setup)
     this->reinit(level, data);
