@@ -68,6 +68,8 @@ MGCoarseML<Operator, Number>::operator()(const unsigned int /*level*/,
 
   parallel::distributed::Vector<MultigridNumber>  src_cg, dst_cg;
   parallel::distributed::Vector<MultigridNumber> *ptr_src, *ptr_dst;
+  
+  // DG (MultigridNumber) -> CG (MultigridNumber)
   if(this->additional_data.transfer_to_continuous_galerkin)
   {
     this->operator_cg.initialize_dof_vector(src_cg);
@@ -88,7 +90,8 @@ MGCoarseML<Operator, Number>::operator()(const unsigned int /*level*/,
   parallel::distributed::Vector<TrilinosWrappers::SparseMatrix::value_type> src_trilinos;
   src_trilinos.reinit(*ptr_src, false);
 
-  // [float -> double] convert Operator::value_type to TrilinosScalar
+  // convert MultigridNumber to TrilinosScalar 
+  // (TrilinosScalar is double, we generally use float as MultigridNumber, so an explicit conversion is needed)
   src_trilinos.copy_locally_owned_data_from(*ptr_src);
 
   if(additional_data.use_conjugate_gradient_solver)
@@ -110,10 +113,10 @@ MGCoarseML<Operator, Number>::operator()(const unsigned int /*level*/,
     pamg.vmult(dst_trilinos, src_trilinos);
   }
 
-  // [double -> float]convert TrilinosScalar to Operator::value_type
+  // convert TrilinosScalar to MultigridNumber
   ptr_dst->copy_locally_owned_data_from(dst_trilinos);
   ptr_dst->update_ghost_values();
-  // [float] CG -> DG
+  // CG (MultigridNumber) -> DG (MultigridNumber)
   if(this->additional_data.transfer_to_continuous_galerkin)
     transfer->toDG(dst_0, *ptr_dst);
   dst.copy_locally_owned_data_from(dst_0);
