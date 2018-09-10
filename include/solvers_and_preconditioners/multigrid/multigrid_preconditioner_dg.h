@@ -24,7 +24,6 @@ public:
   }
 
   typedef MultigridOperatorBase<dim, typename Operator::value_type>     OPERATOR_BASE;
-  typedef MyMultigridPreconditionerBase<dim, value_type, OPERATOR_BASE> BASE;
 };
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_DG_H_ */
