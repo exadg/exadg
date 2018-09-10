@@ -292,7 +292,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::calculate_inverse_diagonal(Ve
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply_block_jacobi(VectorType &       dst,
+OperatorBase<dim, degree, Number, AdditionalData>::apply_inverse_block_diagonal(VectorType &       dst,
                                                                       VectorType const & src) const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
@@ -316,7 +316,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_block_diagonal(VectorTy
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::update_block_jacobi() const
+OperatorBase<dim, degree, Number, AdditionalData>::update_inverse_block_diagonal() const
 {
   this->calculate_block_diagonal_matrices();
   // perform lu factorization for block matrices

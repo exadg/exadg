@@ -297,16 +297,16 @@ template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwal
   }
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule,typename Number>
-  void CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::apply_block_jacobi (parallel::distributed::Vector<Number>       &/*dst*/,
+  void CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::apply_inverse_block_diagonal (parallel::distributed::Vector<Number>       &/*dst*/,
                            parallel::distributed::Vector<Number> const &/*src*/) const
   {
     AssertThrow(false,ExcMessage("Block Jacobi preconditioner not implemented for compatible Laplace operator."));
   }
 
 template <int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule,typename Number>
-  void CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::update_block_jacobi () const
+  void CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::update_inverse_block_diagonal () const
   {
-    AssertThrow(false,ExcMessage("Function update_block_jacobi() has not been implemented."));
+    AssertThrow(false,ExcMessage("Function update_inverse_block_diagonal() has not been implemented."));
   }
 
 

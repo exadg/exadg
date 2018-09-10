@@ -347,7 +347,7 @@ public:
   /*
    *  Apply block Jacobi preconditioner.
    */
-  void apply_block_jacobi (parallel::distributed::Vector<value_type>       &dst,
+  void apply_inverse_block_diagonal (parallel::distributed::Vector<value_type>       &dst,
                            parallel::distributed::Vector<value_type> const &src) const
   {
     this->mass_matrix_operator->get_data().cell_loop(&This::cell_loop_apply_inverse_block_jacobi_matrices, this, dst, src);
@@ -360,7 +360,7 @@ public:
    *  make sure that the block Jacobi matrices are allocated before calculating
    *  the matrices and the LU factorization.
    */
-  void update_block_jacobi () const
+  void update_inverse_block_diagonal () const
   {
     if(block_jacobi_matrices_have_been_initialized == false)
     {

@@ -181,13 +181,13 @@ public:
   /*
    *  Apply block Jacobi preconditioner
    */
-  void apply_block_jacobi (parallel::distributed::Vector<Number>       &/*dst*/,
+  void apply_inverse_block_diagonal (parallel::distributed::Vector<Number>       &/*dst*/,
                            parallel::distributed::Vector<Number> const &/*src*/) const;
 
   /*
    *  Update block Jacobi preconditioner
    */
-  void update_block_jacobi () const;
+  void update_inverse_block_diagonal () const;
   
   MultigridOperatorBase<dim, Number> * get_new(unsigned int deg) const
   {

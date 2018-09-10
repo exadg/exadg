@@ -84,16 +84,16 @@ public:
   }
 
   virtual void
-  apply_block_jacobi(parallel::distributed::Vector<Number> & /*dst*/,
+  apply_inverse_block_diagonal(parallel::distributed::Vector<Number> & /*dst*/,
                      parallel::distributed::Vector<Number> const & /*src*/) const
   {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::apply_block_jacobi should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::apply_inverse_block_diagonal should be overwritten!"));
   }
 
   virtual void
-  update_block_jacobi() const
+  update_inverse_block_diagonal() const
   {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::update_block_jacobi should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::update_inverse_block_diagonal should be overwritten!"));
   }
 
   virtual bool

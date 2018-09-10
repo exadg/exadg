@@ -25,7 +25,7 @@ public:
     : underlying_operator(underlying_operator_in)
   {
     // initialize block Jacobi
-    underlying_operator.update_block_jacobi();
+    underlying_operator.update_inverse_block_diagonal();
   }
 
   /*
@@ -35,7 +35,7 @@ public:
    */
   void update(MatrixOperatorBase const * /*matrix_operator*/)
   {
-    underlying_operator.update_block_jacobi();
+    underlying_operator.update_inverse_block_diagonal();
   }
 
   /*
@@ -46,7 +46,7 @@ public:
   void vmult (parallel::distributed::Vector<value_type>       &dst,
               const parallel::distributed::Vector<value_type> &src) const
   {
-    underlying_operator.apply_block_jacobi(dst,src);
+    underlying_operator.apply_inverse_block_diagonal(dst,src);
   }
 
 private:

@@ -139,7 +139,7 @@ public:
   /*
    *  Apply block Jacobi preconditioner.
    */
-  void apply_block_jacobi (parallel::distributed::Vector<Number>       &dst,
+  void apply_inverse_block_diagonal (parallel::distributed::Vector<Number>       &dst,
                            parallel::distributed::Vector<Number> const &src) const;
 
   /*
@@ -148,7 +148,7 @@ public:
    *  make sure that the block Jacobi matrices are allocated before calculating
    *  the matrices and the LU factorization.
    */
-  void update_block_jacobi () const;
+  void update_inverse_block_diagonal () const;
 
 private:
   /*
@@ -197,7 +197,7 @@ private:
    /*
     *  This function is only needed for testing.
     */
-   void cell_loop_apply_block_jacobi_matrices_test (MatrixFree<dim,Number> const                &data,
+   void cell_loop_apply_inverse_block_diagonal_matrices_test (MatrixFree<dim,Number> const                &data,
                                                     parallel::distributed::Vector<Number>       &dst,
                                                     parallel::distributed::Vector<Number> const &src,
                                                     std::pair<unsigned int,unsigned int> const  &cell_range) const;
