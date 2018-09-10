@@ -23,11 +23,11 @@
     #define ENABLE_TIMING false
 #endif
 
+using namespace dealii;
+
 // Specialized matrix-free implementation that overloads the copy_to_mg
 // function for proper initialization of the vectors in matrix-vector
 // products.
-using namespace dealii;
-
 template <int dim, typename Number>
 class MGTransferMF : public MGTransferMatrixFree<dim, Number>
 {
