@@ -151,8 +151,6 @@ class MyMultigridPreconditionerBase
 {
   typedef typename Operator::value_type value_type_operator;
 
-  std::shared_ptr<Operator> underlying_operator;
-
 public:
   MyMultigridPreconditionerBase(std::shared_ptr<Operator> underlying_operator);
 
@@ -235,8 +233,9 @@ protected:
   std::shared_ptr<MultigridPreconditioner<VECTOR_TYPE, Operator, MG_TRANSFER, SMOOTHER>>
     multigrid_preconditioner;
 
+  std::shared_ptr<Operator> underlying_operator;
+
   // for CG
-public:
   std::shared_ptr<const DoFHandler<dim>> cg_dofhandler;
   std::shared_ptr<MGConstrainedDoFs>     cg_constrained_dofs;
   std::shared_ptr<Operator>              cg_matrices;
