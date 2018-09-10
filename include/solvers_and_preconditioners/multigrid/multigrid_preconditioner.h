@@ -32,9 +32,9 @@ template <int dim, typename Number>
 class MGTransferMF : public MGTransferMatrixFree<dim, Number>
 {
 public:
-  MGTransferMF(std::map<unsigned int, unsigned int> level_to_triangulation_level)
+  MGTransferMF(std::map<unsigned int, unsigned int> level_to_triangulation_level_map)
     :
-    underlying_operator (0),level_to_triangulation_level(level_to_triangulation_level)
+    underlying_operator (0),level_to_triangulation_level_map(level_to_triangulation_level_map)
   {}
 
   void set_operator(const MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> &operator_in)
@@ -45,13 +45,13 @@ public:
   virtual void prolongate (const unsigned int                           to_level,
                            LinearAlgebra::distributed::Vector<Number>       &dst,
                            const LinearAlgebra::distributed::Vector<Number> &src) const{
-      MGTransferMatrixFree<dim, Number>::prolongate(level_to_triangulation_level[to_level], dst, src);
+      MGTransferMatrixFree<dim, Number>::prolongate(level_to_triangulation_level_map[to_level], dst, src);
   }
   
   virtual void restrict_and_add (const unsigned int from_level,
                                  LinearAlgebra::distributed::Vector<Number>       &dst,
                                  const LinearAlgebra::distributed::Vector<Number> &src) const{
-      MGTransferMatrixFree<dim, Number>::restrict_and_add(level_to_triangulation_level[from_level], dst, src);
+      MGTransferMatrixFree<dim, Number>::restrict_and_add(level_to_triangulation_level_map[from_level], dst, src);
   }
 
   /**
@@ -73,7 +73,12 @@ public:
 
 private:
   const MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> *underlying_operator;
-  mutable std::map<unsigned int, unsigned int> level_to_triangulation_level;
+  
+  // this map converts the multigrid level as used in the V-cycle to an actual
+  // level in the triangulation (this is necessary since both numbers might not 
+  // equal e.g. in the case of hp-MG equal: multiple (p-)levels 
+  // are on the zeroth triangulation level)
+  mutable std::map<unsigned int, unsigned int> level_to_triangulation_level_map;
 };
 
 // re-implement the multigrid preconditioner in order to have more direct
