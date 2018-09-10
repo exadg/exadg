@@ -13,7 +13,6 @@
 #include "./preconditioner_base.h"
 
 #include "../../operators/matrix_operator_base.h"
-#include "../../operators/multigrid_operator_base.h"
 
 template<typename Operator>
 class JacobiPreconditioner : public PreconditionerBase<typename Operator::value_type>

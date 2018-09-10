@@ -17,6 +17,8 @@
 #include <deal.II/multigrid/mg_matrix.h>
 #include <deal.II/base/function_lib.h>
 
+#include "../../operators/multigrid_operator_base.h"
+
 //#define ENABLE_TIMING true
 
 #ifndef ENABLE_TIMING
