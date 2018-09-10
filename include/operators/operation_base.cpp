@@ -33,6 +33,13 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(MatrixFree_ const &   
   this->operator_settings = operator_settings;
 
   // check if dg or cg
+  // An approximation can have degrees of freedom on vertices, edges, quads and 
+  // hexes. A vertex degree of freedom means that the degree of freedom is
+  // the same on all cells that are adjacent to this vertex. A face degree of
+  // freedom means that the two cells adjacent to that face see the same degree
+  // of freedom. A DG element does not share any degrees of freedom over a
+  // vertex but has all of them in the last item, i.e., quads in 2D and hexes
+  // in 3D, and thus necessarily has dofs_per_vertex=0
   is_dg = data->get_dof_handler(operator_settings.dof_index).get_fe().dofs_per_vertex == 0;
 
   // set mg level
@@ -60,7 +67,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
   operator_settings.dof_index  = 0;
   operator_settings.quad_index = 0;
 
-  // check it dg or cg
+  // check it dg or cg (for explanation: see above)
   is_dg = dof_handler.get_fe().dofs_per_vertex == 0;
 
   // setup MatrixFree::AdditionalData
