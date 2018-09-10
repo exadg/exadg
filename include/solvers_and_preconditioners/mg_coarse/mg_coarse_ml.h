@@ -78,7 +78,7 @@ struct MGCoarseMLData
       print_parameter(pcout,"    PCG rel. tolerance",solver_tolerance_rel);
       print_parameter(pcout,"    PCG failure criterion",pcg_failure_criterion);
     }
-    print_parameter(pcout,"  Perform transfer to continuous galerkin",transfer_to_continuous_galerkin);
+    print_parameter(pcout,"  Perform transfer to continuous Galerkin",transfer_to_continuous_galerkin);
   }
   
   bool   use_conjugate_gradient_solver;
