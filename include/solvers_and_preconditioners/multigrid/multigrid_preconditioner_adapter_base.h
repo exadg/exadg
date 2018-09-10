@@ -166,9 +166,6 @@ public:
 
   virtual ~MyMultigridPreconditionerBase();
 
-  MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> mg_dofhandler;
-  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>     mg_constrained_dofs;
-
   void
   initialize(const MultigridData &                                                mg_data_in,
              const DoFHandler<dim> &                                              dof_handler,
@@ -222,7 +219,9 @@ protected:
 
   MultigridData mg_data;
   unsigned int  n_global_levels; // TODO
-
+  
+  MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>      mg_dofhandler;
+  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>          mg_constrained_dofs;
   MGLevelObject<std::shared_ptr<Operator>>                   mg_matrices;
   typedef parallel::distributed::Vector<value_type_operator> VECTOR_TYPE;
   typedef MGTransferBase<VECTOR_TYPE>                        MG_TRANSFER;
