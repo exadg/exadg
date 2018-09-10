@@ -189,8 +189,8 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
     if(m.empty())
       continue;
 
-    std::shared_ptr<MGTransferMF<dim, value_type_operator>> transfer(
-      new MGTransferMF<dim, value_type_operator>(m));
+    std::shared_ptr<MGTransferMF<dim, typename Operator::value_type>> transfer(
+      new MGTransferMF<dim, typename Operator::value_type>(m));
     transfer->initialize_constraints(*mg_constrained_dofs[m.begin()->first]);
     transfer->build(*mg_dofhandler[m.begin()->first]);
 
@@ -214,72 +214,72 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
 // clang-format off      
 #if DEGREE_15 && DEGREE_7
       if(from == 15 && to == 7)
-        temp = new MGTransferMatrixFreeP<dim, 15, 7, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+        temp = new MGTransferMatrixFreeP<dim, 15, 7, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
       else
 #endif
 #if DEGREE_14 && DEGREE_7
       if(from == 14 && to == 7)
-        temp = new MGTransferMatrixFreeP<dim, 14, 7, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+        temp = new MGTransferMatrixFreeP<dim, 14, 7, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
       else
 #endif
 #if DEGREE_13 && DEGREE_6
       if(from == 13 && to == 6)
-        temp = new MGTransferMatrixFreeP<dim, 13, 6, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+        temp = new MGTransferMatrixFreeP<dim, 13, 6, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
       else
 #endif
 #if DEGREE_12 && DEGREE_6
       if(from == 12 && to == 6)
-        temp = new MGTransferMatrixFreeP<dim, 12, 6, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+        temp = new MGTransferMatrixFreeP<dim, 12, 6, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
       else
 #endif
 #if DEGREE_11 && DEGREE_5
       if(from == 11 && to == 5)
-        temp = new MGTransferMatrixFreeP<dim, 11, 5, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+        temp = new MGTransferMatrixFreeP<dim, 11, 5, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
       else
 #endif
 #if DEGREE_10 && DEGREE_5
       if(from == 10 && to == 5)
-        temp = new MGTransferMatrixFreeP<dim, 9, 4, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+        temp = new MGTransferMatrixFreeP<dim, 9, 4, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
       else
 #endif
 #if DEGREE_9 && DEGREE_4
       if(from == 9 && to == 4)
-        temp = new MGTransferMatrixFreeP<dim, 9, 4, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+        temp = new MGTransferMatrixFreeP<dim, 9, 4, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
       else
 #endif
 #if DEGREE_8 && DEGREE_4
       if(from == 8 && to == 4)
-        temp = new MGTransferMatrixFreeP<dim, 8, 4, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+        temp = new MGTransferMatrixFreeP<dim, 8, 4, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
       else
 #endif
 #if DEGREE_7 && DEGREE_3
       if(from == 7 && to == 3)
-        temp = new MGTransferMatrixFreeP<dim, 7, 3, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+        temp = new MGTransferMatrixFreeP<dim, 7, 3, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
       else
 #endif
 #if DEGREE_6 && DEGREE_3
       if(from == 6 && to == 3)
-        temp = new MGTransferMatrixFreeP<dim, 6, 3, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+        temp = new MGTransferMatrixFreeP<dim, 6, 3, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
       else
 #endif
 #if DEGREE_5 && DEGREE_2
       if(from == 5 && to == 2)
-        temp = new MGTransferMatrixFreeP<dim, 5, 2, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+        temp = new MGTransferMatrixFreeP<dim, 5, 2, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
       else
 #endif
 #if DEGREE_4 && DEGREE_2
       if(from == 4 && to == 2)
-        temp = new MGTransferMatrixFreeP<dim, 4, 2, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+        temp = new MGTransferMatrixFreeP<dim, 4, 2, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
       else
 #endif
 #if DEGREE_3 && DEGREE_1
       if(from == 3 && to == 1)
-        temp = new MGTransferMatrixFreeP<dim, 3, 1, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+        temp = new MGTransferMatrixFreeP<dim, 3, 1, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
       else
 #endif
 #if DEGREE_2 && DEGREE_1
       if(from == 2 && to == 1)
-        temp = new MGTransferMatrixFreeP<dim, 2, 1, value_type_operator, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
+        temp = new MGTransferMatrixFreeP<dim, 2, 1, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], curr.first);
       else
 #endif
 // clang-format on
@@ -329,8 +329,8 @@ template<int dim, typename value_type, typename Operator>
 void
 MyMultigridPreconditionerBase<dim, value_type, Operator>::
 operator()(const unsigned int /*level*/,
-           parallel::distributed::Vector<value_type_operator> &       dst,
-           const parallel::distributed::Vector<value_type_operator> & src) const
+           parallel::distributed::Vector<typename Operator::value_type> &       dst,
+           const parallel::distributed::Vector<typename Operator::value_type> & src) const
 {
   multigrid_preconditioner->vmult(dst, src);
 }
@@ -338,8 +338,8 @@ operator()(const unsigned int /*level*/,
 template<int dim, typename value_type, typename Operator>
 void
 MyMultigridPreconditionerBase<dim, value_type, Operator>::apply_smoother_on_fine_level(
-  parallel::distributed::Vector<value_type_operator> &       dst,
-  const parallel::distributed::Vector<value_type_operator> & src) const
+  parallel::distributed::Vector<typename Operator::value_type> &       dst,
+  const parallel::distributed::Vector<typename Operator::value_type> & src) const
 {
   this->mg_smoother[this->mg_smoother.max_level()]->vmult(dst, src);
 }
@@ -541,7 +541,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_coarse_solv
       initialize_chebyshev_smoother_coarse_grid(matrix);
 
       mg_coarse.reset(
-        new MGCoarseInverseOperator<parallel::distributed::Vector<value_type_operator>, SMOOTHER>(
+        new MGCoarseInverseOperator<parallel::distributed::Vector<typename Operator::value_type>, SMOOTHER>(
           mg_smoother[0]));
       break;
     }
@@ -551,7 +551,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_coarse_solv
       initialize_chebyshev_smoother_nonsymmetric_operator_coarse_grid(matrix);
 
       mg_coarse.reset(
-        new MGCoarseInverseOperator<parallel::distributed::Vector<value_type_operator>, SMOOTHER>(
+        new MGCoarseInverseOperator<parallel::distributed::Vector<typename Operator::value_type>, SMOOTHER>(
           mg_smoother[0]));
       break;
     }

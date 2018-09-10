@@ -149,8 +149,6 @@ class MyMultigridPreconditionerBase
   : public PreconditionerBase<value_type>,
     public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type>>
 {
-  typedef typename Operator::value_type value_type_operator;
-
 public:
   MyMultigridPreconditionerBase(std::shared_ptr<Operator> underlying_operator);
 
@@ -192,12 +190,12 @@ public:
 
   virtual void
   operator()(const unsigned int /*level*/,
-             parallel::distributed::Vector<value_type_operator> &       dst,
-             const parallel::distributed::Vector<value_type_operator> & src) const;
+             parallel::distributed::Vector<typename Operator::value_type> &       dst,
+             const parallel::distributed::Vector<typename Operator::value_type> & src) const;
 
   virtual void
-  apply_smoother_on_fine_level(parallel::distributed::Vector<value_type_operator> &       dst,
-                               const parallel::distributed::Vector<value_type_operator> & src) const;
+  apply_smoother_on_fine_level(parallel::distributed::Vector<typename Operator::value_type> &       dst,
+                               const parallel::distributed::Vector<typename Operator::value_type> & src) const;
 
   virtual void
   update_smoother(unsigned int level);
@@ -221,7 +219,7 @@ protected:
   MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>      mg_dofhandler;
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>          mg_constrained_dofs;
   MGLevelObject<std::shared_ptr<Operator>>                   mg_matrices;
-  typedef parallel::distributed::Vector<value_type_operator> VECTOR_TYPE;
+  typedef parallel::distributed::Vector<typename Operator::value_type> VECTOR_TYPE;
   typedef MGTransferBase<VECTOR_TYPE>                        MG_TRANSFER;
   MGLevelObject<std::shared_ptr<MG_TRANSFER>>                mg_transfer;
 
