@@ -32,9 +32,9 @@ template <int dim, typename Type>
 class MGTransferMF : public MGTransferMatrixFree<dim, Type>
 {
 public:
-  MGTransferMF(std::map<unsigned int, unsigned int> m)
+  MGTransferMF(std::map<unsigned int, unsigned int> level_to_triangulation_level)
     :
-    underlying_operator (0),m(m)
+    underlying_operator (0),level_to_triangulation_level(level_to_triangulation_level)
   {}
 
   void set_operator(const MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Type>>> &operator_in)
@@ -45,15 +45,13 @@ public:
   virtual void prolongate (const unsigned int                           to_level,
                            LinearAlgebra::distributed::Vector<Type>       &dst,
                            const LinearAlgebra::distributed::Vector<Type> &src) const{
-      unsigned int temp = to_level;
-      MGTransferMatrixFree<dim, Type>::prolongate(m[temp], dst, src);
+      MGTransferMatrixFree<dim, Type>::prolongate(level_to_triangulation_level[to_level], dst, src);
   }
   
   virtual void restrict_and_add (const unsigned int from_level,
                                  LinearAlgebra::distributed::Vector<Type>       &dst,
                                  const LinearAlgebra::distributed::Vector<Type> &src) const{
-      unsigned int temp = from_level;
-      MGTransferMatrixFree<dim, Type>::restrict_and_add(m[temp], dst, src);
+      MGTransferMatrixFree<dim, Type>::restrict_and_add(level_to_triangulation_level[from_level], dst, src);
   }
 
   /**
@@ -75,7 +73,7 @@ public:
 
 private:
   const MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Type>>> *underlying_operator;
-  mutable std::map<unsigned int, unsigned int> m;
+  mutable std::map<unsigned int, unsigned int> level_to_triangulation_level;
 };
 
 // re-implement the multigrid preconditioner in order to have more direct
