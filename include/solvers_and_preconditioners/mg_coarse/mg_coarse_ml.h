@@ -58,9 +58,9 @@ struct MGCoarseMLData
 {
   MGCoarseMLData()
     : use_conjugate_gradient_solver(true),
-      pcg_max_iterations(10000),
-      pcg_abs_residuum(1e-20),
-      pcg_rel_residuum(1e-2),
+      max_iter(10000),
+      solver_tolerance_abs(1e-20),
+      solver_tolerance_rel(1e-2),
       pcg_failure_criterion(100.0),
       transfer_to_continuous_galerkin(true)
   {
@@ -73,18 +73,18 @@ struct MGCoarseMLData
   {
     print_parameter(pcout,"  Accelerate with conjugate gradient solver (PCG)",use_conjugate_gradient_solver);
     if(use_conjugate_gradient_solver){
-      print_parameter(pcout,"    PCG max, iterations",pcg_max_iterations);
-      print_parameter(pcout,"    PCG abs. residuum",pcg_abs_residuum);
-      print_parameter(pcout,"    PCG rel. residuum",pcg_rel_residuum);
+      print_parameter(pcout,"    PCG max, iterations",max_iter);
+      print_parameter(pcout,"    PCG abs. residuum",solver_tolerance_abs);
+      print_parameter(pcout,"    PCG rel. residuum",solver_tolerance_rel);
       print_parameter(pcout,"    PCG failure criterion",pcg_failure_criterion);
     }
     print_parameter(pcout,"  Perform transfer to continuous galerkin",transfer_to_continuous_galerkin);
   }
   
   bool   use_conjugate_gradient_solver;
-  int    pcg_max_iterations;
-  double pcg_abs_residuum;
-  double pcg_rel_residuum;
+  int    max_iter;
+  double solver_tolerance_abs;
+  double solver_tolerance_rel;
   double pcg_failure_criterion;
   bool   transfer_to_continuous_galerkin;
 

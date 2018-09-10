@@ -94,9 +94,9 @@ MGCoarseML<Operator, Number>::operator()(const unsigned int /*level*/,
   if(additional_data.use_conjugate_gradient_solver)
   {
     // use PCG with Trilinos to perform AMG
-    ReductionControl solver_control(additional_data.pcg_max_iterations,
-                                    additional_data.pcg_abs_residuum,
-                                    additional_data.pcg_rel_residuum);
+    ReductionControl solver_control(additional_data.max_iter,
+                                    additional_data.solver_tolerance_abs,
+                                    additional_data.solver_tolerance_rel);
     solver_control.set_failure_criterion(additional_data.pcg_failure_criterion);
     SolverCG<parallel::distributed::Vector<TrilinosWrappers::SparseMatrix::value_type>> solver(
       solver_control);
