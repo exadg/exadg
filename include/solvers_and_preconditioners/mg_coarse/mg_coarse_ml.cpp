@@ -11,7 +11,7 @@ MGCoarseML<Operator, Number>::MGCoarseML(Operator const & matrix,
                                          bool             setup,
                                          int              level,
                                          MGCoarseMLData   data)
-  : coarse_matrix(matrix), coarse_matrix_q(matrix_q)
+  : operator_dg(matrix), operator_cg(matrix_q)
 {
   if(setup)
     this->reinit(level, data);
@@ -32,15 +32,15 @@ MGCoarseML<Operator, Number>::reinit(int level, MGCoarseMLData data_in)
   this->additional_data = data_in;
 
   // create wrapper
-  if(this->additional_data.use_cg)
+  if(this->additional_data.transfer_to_continuous_galerkin)
   {
-    const unsigned int degree = coarse_matrix.get_data().get_dof_handler().get_fe().degree;
+    const unsigned int degree = operator_dg.get_data().get_dof_handler().get_fe().degree;
     this->transfer.reset(new CGToDGTransfer<Operator::DIM, MultigridNumber>(
-      coarse_matrix.get_data(), coarse_matrix_q.get_data(), level, degree));
+      operator_dg.get_data(), operator_cg.get_data(), level, degree));
   }
 
   // initialize system matrix
-  auto & matrix_temp = this->additional_data.use_cg ? coarse_matrix_q : coarse_matrix;
+  auto & matrix_temp = this->additional_data.transfer_to_continuous_galerkin ? operator_cg : operator_dg;
   matrix_temp.init_system_matrix(system_matrix);
   matrix_temp.calculate_system_matrix(system_matrix);
 
@@ -68,10 +68,10 @@ MGCoarseML<Operator, Number>::operator()(const unsigned int /*level*/,
 
   parallel::distributed::Vector<MultigridNumber>  cg_src__, cg_dst__;
   parallel::distributed::Vector<MultigridNumber> *src__, *dst__;
-  if(this->additional_data.use_cg)
+  if(this->additional_data.transfer_to_continuous_galerkin)
   {
-    this->coarse_matrix_q.initialize_dof_vector(cg_src__);
-    this->coarse_matrix_q.initialize_dof_vector(cg_dst__);
+    this->operator_cg.initialize_dof_vector(cg_src__);
+    this->operator_cg.initialize_dof_vector(cg_dst__);
     src__ = &cg_src__;
     dst__ = &cg_dst__;
     transfer->toCG(*src__, src_0);
@@ -91,7 +91,7 @@ MGCoarseML<Operator, Number>::operator()(const unsigned int /*level*/,
   // [float -> double] convert Operator::value_type to TrilinosScalar
   src_.copy_locally_owned_data_from(*src__);
 
-  if(additional_data.use_pcg)
+  if(additional_data.use_conjugate_gradient_solver)
   {
     // use PCG with Trilinos to perform AMG
     ReductionControl solver_control(additional_data.pcg_max_iterations,
@@ -114,7 +114,7 @@ MGCoarseML<Operator, Number>::operator()(const unsigned int /*level*/,
   dst__->copy_locally_owned_data_from(dst_);
   dst__->update_ghost_values();
   // [float] CG -> DG
-  if(this->additional_data.use_cg)
+  if(this->additional_data.transfer_to_continuous_galerkin)
     transfer->toDG(dst_0, *dst__);
   dst.copy_locally_owned_data_from(dst_0);
 }

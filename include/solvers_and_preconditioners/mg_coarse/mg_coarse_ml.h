@@ -57,12 +57,12 @@ struct AdditionalData
 struct MGCoarseMLData
 {
   MGCoarseMLData()
-    : use_pcg(true),
+    : use_conjugate_gradient_solver(true),
       pcg_max_iterations(10000),
       pcg_abs_residuum(1e-20),
       pcg_rel_residuum(1e-2),
       pcg_failure_criterion(100.0),
-      use_cg(true)
+      transfer_to_continuous_galerkin(true)
   {
     amg_data.smoother_sweeps = 1;
     amg_data.n_cycles        = 1;
@@ -71,22 +71,22 @@ struct MGCoarseMLData
   
   void print(ConditionalOStream &pcout)
   {
-    print_parameter(pcout,"  Accelerate with CG (PCG)",use_pcg);
-    if(use_pcg){
+    print_parameter(pcout,"  Accelerate with conjugate gradient solver (PCG)",use_conjugate_gradient_solver);
+    if(use_conjugate_gradient_solver){
       print_parameter(pcout,"    PCG max, iterations",pcg_max_iterations);
       print_parameter(pcout,"    PCG abs. residuum",pcg_abs_residuum);
       print_parameter(pcout,"    PCG rel. residuum",pcg_rel_residuum);
       print_parameter(pcout,"    PCG failure criterion",pcg_failure_criterion);
     }
-    print_parameter(pcout,"  Perform transfer to CG",use_cg);
+    print_parameter(pcout,"  Perform transfer to continuous galerkin",transfer_to_continuous_galerkin);
   }
   
-  bool   use_pcg;
+  bool   use_conjugate_gradient_solver;
   int    pcg_max_iterations;
   double pcg_abs_residuum;
   double pcg_rel_residuum;
   double pcg_failure_criterion;
-  bool   use_cg;
+  bool   transfer_to_continuous_galerkin;
 
   TrilinosWrappers::PreconditionAMG::AdditionalData amg_data;
 };
@@ -142,9 +142,10 @@ public:
   vmult(parallel::distributed::Vector<Number> & dst, const parallel::distributed::Vector<Number> & src) const;
 
 private:
-  // reference to operator
-  const Operator &                                                coarse_matrix;
-  const Operator &                                                coarse_matrix_q;
+  // reference to matrix-free operators
+  const Operator & operator_dg;
+  const Operator & operator_cg;
+  
   std::shared_ptr<CGToDGTransfer<Operator::DIM, MultigridNumber>> transfer;
   // distributed sparse system matrix
   MatrixType system_matrix;
