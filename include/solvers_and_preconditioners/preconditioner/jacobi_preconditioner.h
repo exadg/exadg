@@ -21,7 +21,8 @@ public:
     
     typedef typename Operator::value_type value_type;
     
-  JacobiPreconditioner(Operator const &underlying_operator)
+  JacobiPreconditioner(Operator const &underlying_operator_in)
+    : underlying_operator(underlying_operator_in)
   {
     underlying_operator.initialize_dof_vector(inverse_diagonal);
 
@@ -36,13 +37,9 @@ public:
     dst.scale(inverse_diagonal);
   }
 
-  void update(MatrixOperatorBase const * matrix_operator)
+  void update(MatrixOperatorBase const * /*matrix_operator*/)
   {
-    Operator const *underlying_operator = dynamic_cast<Operator const *>(matrix_operator);
-    if(underlying_operator)
-      underlying_operator->calculate_inverse_diagonal(inverse_diagonal);
-    else
-      AssertThrow(false,ExcMessage("Jacobi preconditioner: MultigridOperatorBase<dim, value_type> and MatrixOperator are not compatible!"));
+    underlying_operator.calculate_inverse_diagonal(inverse_diagonal);
   }
 
   unsigned int get_size_of_diagonal()
@@ -51,6 +48,7 @@ public:
   }
 
 private:
+  Operator const &underlying_operator;
   parallel::distributed::Vector<value_type> inverse_diagonal;
 };
 
