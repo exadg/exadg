@@ -433,7 +433,7 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmu
     dst = 0.0;
   }
 
-  viscous_operator->apply_inverse_block_diagonal_add(dst, src);
+  viscous_operator->apply_block_diagonal_add(dst, src);
 }
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>

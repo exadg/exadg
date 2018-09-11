@@ -360,7 +360,7 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
     dst = 0.0;
   }
 
-  viscous_operator->apply_inverse_block_diagonal_add(dst, src);
+  viscous_operator->apply_block_diagonal_add(dst, src);
 
   if(operator_data.convective_problem == true)
   {

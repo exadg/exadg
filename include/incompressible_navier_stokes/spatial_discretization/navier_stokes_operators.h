@@ -515,7 +515,7 @@ public:
   }
 
   // apply matrix vector multiplication for block Jacobi operator
-  void apply_inverse_block_diagonal (parallel::distributed::Vector<Number>       &dst,
+  void apply_block_diagonal (parallel::distributed::Vector<Number>       &dst,
                            const parallel::distributed::Vector<Number> &src) const
   {
     data->loop(&This::cell_loop,
@@ -524,7 +524,7 @@ public:
                this, dst, src, true /*zero_dst_vector = true*/);
   }
 
-  void apply_inverse_block_diagonal_add (parallel::distributed::Vector<Number>       &dst,
+  void apply_block_diagonal_add (parallel::distributed::Vector<Number>       &dst,
                                const parallel::distributed::Vector<Number> &src) const
   {
     data->loop(&This::cell_loop,
