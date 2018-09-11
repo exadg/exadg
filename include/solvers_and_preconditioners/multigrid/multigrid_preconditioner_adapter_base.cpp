@@ -201,28 +201,34 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_dof_hand
   const unsigned int n_components =
     dof_handler.n_dofs() / tria->n_global_active_cells() / std::pow(1 + degree, dim);
     
-  // setup dof-handler and constrained dofs for each level
-  for(unsigned int deg : p_levels)
+  // temporal storage for new dofhandlers and constraints on each p-level
+  std::map<unsigned int, std::shared_ptr<const DoFHandler<dim>>> map_dofhandlers;
+  std::map<unsigned int, std::shared_ptr<MGConstrainedDoFs>> map_constraints;
+  
+  // setup dof-handler and constrained dofs for each p-level
+  for(unsigned int degree : p_levels)
   {
     // setup dof_handler: create dof_handler...
     auto dof_handler = new DoFHandler<dim>(*tria);
-    // ... create FE and distribute on all mg-levels
-    dof_handler->distribute_dofs(FESystem<dim>(FE_DGQ<dim>(deg), n_components));
+    // ... create FE and distrubute it
+    dof_handler->distribute_dofs(FESystem<dim>(FE_DGQ<dim>(degree), n_components));
     dof_handler->distribute_mg_dofs();
     // setup constrained dofs:
     auto constrained_dofs = new MGConstrainedDoFs();
     constrained_dofs->clear();
     this->initialize_mg_constrained_dofs(*dof_handler, *constrained_dofs, dirichlet_bc);
 
-    // populate dofhandler and constrained dofs all levels with the same degree
-    std::shared_ptr<const DoFHandler<dim>> temp_dofh(dof_handler);
-    std::shared_ptr<MGConstrainedDoFs>     temp_constraint(constrained_dofs);
-    for(unsigned int i = 0; i < global_levels.size(); i++)
-      if(global_levels[i].second == deg)
-      {
-        mg_dofhandler[i]       = temp_dofh;
-        mg_constrained_dofs[i] = temp_constraint;
-      }
+    // put in temporal storage
+    map_dofhandlers[degree] = std::shared_ptr<const DoFHandler<dim>>(dof_handler);
+    map_constraints[degree] = std::shared_ptr<MGConstrainedDoFs>(constrained_dofs);
+  }
+  
+  // populate dofhandler and constrained dofs to all hp-levels with the same degree
+  for(unsigned int i = 0; i < global_levels.size(); i++)
+  {
+    int degree = global_levels[i].second;
+    mg_dofhandler[i]       = map_dofhandlers[degree];
+    mg_constrained_dofs[i] = map_constraints[degree];
   }
     
 }
