@@ -57,7 +57,7 @@ struct CGSolverData
     solver_tolerance_rel(1.e-6),
     use_preconditioner(false),
     update_preconditioner(false),
-    compute_performance_metrics(true)
+    compute_performance_metrics(false)
   {}
 
   unsigned int max_iter;
@@ -148,7 +148,7 @@ struct GMRESSolverData
     right_preconditioning(true),
     max_n_tmp_vectors(30),
     compute_eigenvalues(false),
-    compute_performance_metrics(true)
+    compute_performance_metrics(false)
   {}
 
   unsigned int max_iter;
@@ -234,7 +234,7 @@ struct FGMRESSolverData
     use_preconditioner(false),
     update_preconditioner(false),
     max_n_tmp_vectors(30),
-    compute_performance_metrics(true)
+    compute_performance_metrics(false)
   {}
 
   unsigned int max_iter;
