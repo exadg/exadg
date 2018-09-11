@@ -60,7 +60,12 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
 
   unsigned int rank = Utilities::MPI::this_mpi_process(tria->get_communicator());
   
+
   // determine number of components
+  // n_components is needed so that also vector quantities can be handled
+  // (note: since at the moment continuous space is only selectable as an auxiliary 
+  // coarse space and vector quantities are not supported there, it is 
+  // enough to determine this number for DG)
   const unsigned int n_components =
     dof_handler.n_dofs() / tria->n_global_active_cells() / std::pow(1 + degree, dim);
 
