@@ -32,7 +32,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
               ExcMessage("You have to provide Dirichlet BCs if you want to use AMG!"));
     
   // create emty vector for Dirichlet BC so that we can use the more general
-  //  method which is writen continuous and discontinuous Galerkin methods
+  //  method which is written for continuous and discontinuous Galerkin methods
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
   this->initialize(mg_data_in, dof_handler, mapping, dirichlet_bc, operator_data_in);
 }
