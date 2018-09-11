@@ -279,11 +279,13 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
   (void)tria;
 #endif
     
-  // setup transfer for h-MG
+  // setup transfer for h-MG: one h-transfer-operator is shared per p-level 
   for(unsigned int deg : p_levels)
   {
+    // map: global level -> h level (is needed by the h-transfer operator, since it accesses the triangulation directly)
     std::map<unsigned int, unsigned int> map_global_level_to_h_level;
 
+    // fill the map
     for(unsigned int i = 1; i < global_levels.size(); i++)
     {
       auto coarse_level = global_levels[i - 1];
@@ -298,14 +300,17 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
       }
     }
 
+    // there has been only one global level with this degree -> no h-transfer operator has to be created
     if(map_global_level_to_h_level.empty())
       continue;
 
+    // create actual h-transfer-operator 
     std::shared_ptr<MGTransferMF<dim, typename Operator::value_type>> transfer(
       new MGTransferMF<dim, typename Operator::value_type>(map_global_level_to_h_level));
     transfer->initialize_constraints(*mg_constrained_dofs[map_global_level_to_h_level.begin()->first]);
     transfer->build(*mg_dofhandler[map_global_level_to_h_level.begin()->first]);
 
+    // populate new h-transfer to levels sharing it
     for(auto i : map_global_level_to_h_level)
       mg_transfer[i.first] = transfer;
   }
