@@ -218,7 +218,7 @@ public:
     return solver_control.last_step();
   }
 
-protected:
+private:
   Operator const & underlying_operator;
   Preconditioner & preconditioner;
   GMRESSolverData const solver_data;
@@ -295,7 +295,7 @@ public:
     return solver_control.last_step();
   }
 
-protected:
+private:
   Operator const & underlying_operator;
   Preconditioner & preconditioner;
   FGMRESSolverData const solver_data;
