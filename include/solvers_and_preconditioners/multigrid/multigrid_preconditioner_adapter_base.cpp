@@ -163,20 +163,20 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_auxiliary_s
     void * operator_data_in)
 {
     // create coarse matrix with fe_q
-    auto dof_handler_q = new DoFHandler<dim>(*tria);
-    dof_handler_q->distribute_dofs(FE_Q<dim>(global_levels[0].second));
-    dof_handler_q->distribute_mg_dofs();
-    this->cg_dofhandler.reset(dof_handler_q);
+    auto dof_handler_cg = new DoFHandler<dim>(*tria);
+    dof_handler_cg->distribute_dofs(FE_Q<dim>(global_levels[0].second));
+    dof_handler_cg->distribute_mg_dofs();
+    this->cg_dofhandler.reset(dof_handler_cg);
 
-    auto constrained_dofs_q = new MGConstrainedDoFs();
-    constrained_dofs_q->clear();
-    this->initialize_mg_constrained_dofs(*dof_handler_q, *constrained_dofs_q, dirichlet_bc);
-    this->cg_constrained_dofs.reset(constrained_dofs_q);
+    auto constrained_dofs_cg = new MGConstrainedDoFs();
+    constrained_dofs_cg->clear();
+    this->initialize_mg_constrained_dofs(*dof_handler_cg, *constrained_dofs_cg, dirichlet_bc);
+    this->cg_constrained_dofs.reset(constrained_dofs_cg);
 
     // TODO: remove static cast
-    auto matrix_q = static_cast<Operator *>(underlying_operator->get_new(global_levels[0].second));
-    matrix_q->reinit(*dof_handler_q, mapping, operator_data_in, *this->cg_constrained_dofs, global_levels[0].first);
-    this->cg_matrices.reset(matrix_q);    
+    auto matrix_cg = static_cast<Operator *>(underlying_operator->get_new(global_levels[0].second));
+    matrix_cg->reinit(*dof_handler_cg, mapping, operator_data_in, *this->cg_constrained_dofs, global_levels[0].first);
+    this->cg_matrices.reset(matrix_cg);    
 }
 
 template<int dim, typename value_type, typename Operator>
