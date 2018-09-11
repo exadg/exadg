@@ -56,7 +56,8 @@ struct CGSolverData
     solver_tolerance_abs(1.e-20),
     solver_tolerance_rel(1.e-6),
     use_preconditioner(false),
-    update_preconditioner(false)
+    update_preconditioner(false),
+    compute_performance_meterics(true)
   {}
 
   unsigned int max_iter;
@@ -64,6 +65,7 @@ struct CGSolverData
   double solver_tolerance_rel;
   bool use_preconditioner;
   bool update_preconditioner;
+  bool compute_performance_meterics;
 };
 
 template<typename Operator, typename Preconditioner, typename VectorType>
@@ -101,7 +103,8 @@ public:
     AssertThrow(std::isfinite(solver_control.last_value()),
                 ExcMessage("Solver contained NaN of Inf values"));
     
-    this->compute_performance_meterics(solver_control);
+    if(solver_data.compute_performance_meterics)
+      this->compute_performance_meterics(solver_control);
       
     return solver_control.last_step();
   }
@@ -144,7 +147,8 @@ struct GMRESSolverData
     update_preconditioner(false),
     right_preconditioning(true),
     max_n_tmp_vectors(30),
-    compute_eigenvalues(false)
+    compute_eigenvalues(false),
+    compute_performance_meterics(true)
   {}
 
   unsigned int max_iter;
@@ -155,6 +159,7 @@ struct GMRESSolverData
   bool right_preconditioning;
   unsigned int max_n_tmp_vectors;
   bool compute_eigenvalues;
+  bool compute_performance_meterics;
 };
 
 template<typename Operator, typename Preconditioner, typename VectorType>
@@ -206,6 +211,9 @@ public:
 
     AssertThrow(std::isfinite(solver_control.last_value()),
                 ExcMessage("Solver contained NaN of Inf values"));
+    
+    if(solver_data.compute_performance_meterics)
+      this->compute_performance_meterics(solver_control);
 
     return solver_control.last_step();
   }
@@ -225,7 +233,8 @@ struct FGMRESSolverData
     solver_tolerance_rel(1.e-6),
     use_preconditioner(false),
     update_preconditioner(false),
-    max_n_tmp_vectors(30)
+    max_n_tmp_vectors(30),
+    compute_performance_meterics(true)
   {}
 
   unsigned int max_iter;
@@ -234,6 +243,7 @@ struct FGMRESSolverData
   bool use_preconditioner;
   bool update_preconditioner;
   unsigned int max_n_tmp_vectors;
+  bool compute_performance_meterics;
 };
 
 template<typename Operator, typename Preconditioner, typename VectorType>
@@ -278,6 +288,9 @@ public:
 
     AssertThrow(std::isfinite(solver_control.last_value()),
                 ExcMessage("Solver contained NaN of Inf values"));
+    
+    if(solver_data.compute_performance_meterics)
+      this->compute_performance_meterics(solver_control);
 
     return solver_control.last_step();
   }
