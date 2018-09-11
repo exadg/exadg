@@ -279,7 +279,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
   (void)tria;
 #endif
     
-  // setup transfer for h-gmg
+  // setup transfer for h-MG
   for(unsigned int deg : p_levels)
   {
     std::map<unsigned int, unsigned int> map_global_level_to_h_level;
@@ -292,7 +292,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
       {
 #ifdef DEBUG
         if(!rank)
-          printf("  h-gmg (l=%2d,%2d) -> (k=%2d,%2d)\n", coarse_level.first, coarse_level.second, fine_level.first, fine_level.second);
+          printf("  h-MG (l=%2d,%2d) -> (k=%2d,%2d)\n", coarse_level.first, coarse_level.second, fine_level.first, fine_level.second);
 #endif
         map_global_level_to_h_level[i] = fine_level.first;
       }
@@ -310,7 +310,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
       mg_transfer[i.first] = transfer;
   }
 
-  // setup transfer for p-gmg
+  // setup transfer for p-MG
   for(unsigned int i = 1; i < global_levels.size(); i++)
   {
     auto coarse_level = global_levels[i - 1];
@@ -322,7 +322,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
       AssertThrow(h_level == coarse_level.first, ExcMessage("The mesh level has to be the same for p-transfer."))
 #ifdef DEBUG
       if(!rank)
-        printf("  p-gmg (l=%2d,k=%2d) -> (l=%2d,k=%2d)\n", coarse_level.first, coarse_level.second, h_level, fine_level.second);
+        printf("  p-MG (l=%2d,k=%2d) -> (l=%2d,k=%2d)\n", coarse_level.first, coarse_level.second, h_level, fine_level.second);
 #endif
       MGTransferBase<VECTOR_TYPE> * temp;
 
