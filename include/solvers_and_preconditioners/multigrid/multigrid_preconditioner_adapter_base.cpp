@@ -315,11 +315,14 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
   {
     auto coarse_level = global_levels[i - 1];
     auto fine_level  = global_levels[i];
+    
     if(coarse_level.second != fine_level.second)
     {
+      auto h_level = fine_level.first;
+      AssertThrow(h_level == coarse_level.first, ExcMessage("The mesh level has to be the same for p-transfer."))
 #ifdef DEBUG
       if(!rank)
-        printf("  p-gmg (l=%2d,k=%2d) -> (l=%2d,k=%2d)\n", coarse_level.first, coarse_level.second, fine_level.first, fine_level.second);
+        printf("  p-gmg (l=%2d,k=%2d) -> (l=%2d,k=%2d)\n", coarse_level.first, coarse_level.second, h_level, fine_level.second);
 #endif
       MGTransferBase<VECTOR_TYPE> * temp;
 
@@ -328,72 +331,72 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
 // clang-format off      
 #if DEGREE_15 && DEGREE_7
       if(from == 15 && to == 7)
-        temp = new MGTransferMatrixFreeP<dim, 15, 7, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], fine_level.first);
+        temp = new MGTransferMatrixFreeP<dim, 15, 7, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
       else
 #endif
 #if DEGREE_14 && DEGREE_7
       if(from == 14 && to == 7)
-        temp = new MGTransferMatrixFreeP<dim, 14, 7, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], fine_level.first);
+        temp = new MGTransferMatrixFreeP<dim, 14, 7, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
       else
 #endif
 #if DEGREE_13 && DEGREE_6
       if(from == 13 && to == 6)
-        temp = new MGTransferMatrixFreeP<dim, 13, 6, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], fine_level.first);
+        temp = new MGTransferMatrixFreeP<dim, 13, 6, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
       else
 #endif
 #if DEGREE_12 && DEGREE_6
       if(from == 12 && to == 6)
-        temp = new MGTransferMatrixFreeP<dim, 12, 6, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], fine_level.first);
+        temp = new MGTransferMatrixFreeP<dim, 12, 6, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
       else
 #endif
 #if DEGREE_11 && DEGREE_5
       if(from == 11 && to == 5)
-        temp = new MGTransferMatrixFreeP<dim, 11, 5, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], fine_level.first);
+        temp = new MGTransferMatrixFreeP<dim, 11, 5, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
       else
 #endif
 #if DEGREE_10 && DEGREE_5
       if(from == 10 && to == 5)
-        temp = new MGTransferMatrixFreeP<dim, 9, 4, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], fine_level.first);
+        temp = new MGTransferMatrixFreeP<dim, 9, 4, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
       else
 #endif
 #if DEGREE_9 && DEGREE_4
       if(from == 9 && to == 4)
-        temp = new MGTransferMatrixFreeP<dim, 9, 4, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], fine_level.first);
+        temp = new MGTransferMatrixFreeP<dim, 9, 4, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
       else
 #endif
 #if DEGREE_8 && DEGREE_4
       if(from == 8 && to == 4)
-        temp = new MGTransferMatrixFreeP<dim, 8, 4, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], fine_level.first);
+        temp = new MGTransferMatrixFreeP<dim, 8, 4, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
       else
 #endif
 #if DEGREE_7 && DEGREE_3
       if(from == 7 && to == 3)
-        temp = new MGTransferMatrixFreeP<dim, 7, 3, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], fine_level.first);
+        temp = new MGTransferMatrixFreeP<dim, 7, 3, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
       else
 #endif
 #if DEGREE_6 && DEGREE_3
       if(from == 6 && to == 3)
-        temp = new MGTransferMatrixFreeP<dim, 6, 3, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], fine_level.first);
+        temp = new MGTransferMatrixFreeP<dim, 6, 3, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
       else
 #endif
 #if DEGREE_5 && DEGREE_2
       if(from == 5 && to == 2)
-        temp = new MGTransferMatrixFreeP<dim, 5, 2, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], fine_level.first);
+        temp = new MGTransferMatrixFreeP<dim, 5, 2, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
       else
 #endif
 #if DEGREE_4 && DEGREE_2
       if(from == 4 && to == 2)
-        temp = new MGTransferMatrixFreeP<dim, 4, 2, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], fine_level.first);
+        temp = new MGTransferMatrixFreeP<dim, 4, 2, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
       else
 #endif
 #if DEGREE_3 && DEGREE_1
       if(from == 3 && to == 1)
-        temp = new MGTransferMatrixFreeP<dim, 3, 1, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], fine_level.first);
+        temp = new MGTransferMatrixFreeP<dim, 3, 1, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
       else
 #endif
 #if DEGREE_2 && DEGREE_1
       if(from == 2 && to == 1)
-        temp = new MGTransferMatrixFreeP<dim, 2, 1, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], fine_level.first);
+        temp = new MGTransferMatrixFreeP<dim, 2, 1, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
       else
 #endif
 // clang-format on
