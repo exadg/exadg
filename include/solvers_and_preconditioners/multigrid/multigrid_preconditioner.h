@@ -78,7 +78,7 @@ private:
   
   // this map converts the multigrid level as used in the V-cycle to an actual
   // level in the triangulation (this is necessary since both numbers might not 
-  // equal e.g. in the case of hp-MG equal: multiple (p-)levels 
+  // equal e.g. in the case of hp-MG multiple (p-)levels 
   // are on the zeroth triangulation level)
   mutable std::map<unsigned int, unsigned int> level_to_triangulation_level_map;
 };
