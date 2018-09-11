@@ -294,7 +294,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
       {
 #ifdef DEBUG
         if(!rank)
-          printf("  h-MG (l=%2d,%2d) -> (k=%2d,%2d)\n", coarse_level.first, coarse_level.second, fine_level.first, fine_level.second);
+          printf("  h-MG (l=%2d,k=%2d) -> (l=%2d,k=%2d)\n", coarse_level.first, coarse_level.second, fine_level.first, fine_level.second);
 #endif
         map_global_level_to_h_level[i] = fine_level.first;
       }
