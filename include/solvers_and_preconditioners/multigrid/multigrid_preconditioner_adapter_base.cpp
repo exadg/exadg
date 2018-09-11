@@ -294,7 +294,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
   }
 
   // finalize setup of preconditioner
-  this->initialize_multigrid_preconditioner(dof_handler);
+  this->initialize_multigrid_preconditioner();
 }
 
 template<int dim, typename value_type, typename Operator>
@@ -619,8 +619,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_coarse_solv
 
 template<int dim, typename value_type, typename Operator>
 void
-MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_multigrid_preconditioner(
-  DoFHandler<dim> const & /*dof_handler*/)
+MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_multigrid_preconditioner()
 {
   this->multigrid_preconditioner.reset(
     new MultigridPreconditioner<VECTOR_TYPE, Operator, MG_TRANSFER, SMOOTHER>(

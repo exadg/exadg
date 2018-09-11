@@ -211,7 +211,7 @@ protected:
   initialize_coarse_solver(Operator & matrix, Operator & matrix_q, const unsigned int coarse_level);
 
   virtual void
-  initialize_multigrid_preconditioner(DoFHandler<dim> const & /*dof_handler*/);
+  initialize_multigrid_preconditioner();
 
   MultigridData mg_data;
   unsigned int  n_global_levels; // TODO
