@@ -55,7 +55,6 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
 
   // which mg-level should be processed
   const auto   mg_type= this->mg_data.type;
-  unsigned int global = tria->n_global_levels();
   unsigned int degree = dof_handler.get_fe().degree;
 
   unsigned int rank = Utilities::MPI::this_mpi_process(tria->get_communicator());
@@ -71,7 +70,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
 
   std::vector<unsigned int> seq_geo, seq_deg;
 
-  for(unsigned int i = 0; i < global; i++)
+  for(unsigned int i = 0; i < tria->n_global_levels(); i++)
     seq_geo.push_back(i);
 
   unsigned int temp = degree;
