@@ -152,6 +152,7 @@ class MyMultigridPreconditionerBase
 public:
   MyMultigridPreconditionerBase(std::shared_ptr<Operator> underlying_operator);
 
+private:
   static unsigned int
   get_next(unsigned int degree)
   {
@@ -160,6 +161,7 @@ public:
     return (degree + 2) / 2 - 1;
   }
 
+public:
   virtual ~MyMultigridPreconditionerBase();
 
   void
@@ -175,12 +177,14 @@ public:
              std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
              void *                                                               operator_data_in);
 
+private:
   virtual void
   initialize_mg_constrained_dofs(
     const DoFHandler<dim> &,
     MGConstrainedDoFs &,
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc);
 
+public:
   virtual void
   update(MatrixOperatorBase const * /*matrix_operator*/);
 
@@ -203,7 +207,7 @@ public:
   virtual void
   update_coarse_solver();
 
-protected:
+private:
   void
   initialize_smoother(Operator & matrix, unsigned int level);
 
@@ -214,11 +218,15 @@ protected:
   initialize_multigrid_preconditioner();
 
   MultigridData mg_data;
-  unsigned int  n_global_levels; // TODO
+public:
+  unsigned int  n_global_levels;
+private:
   
   MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>      mg_dofhandler;
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>          mg_constrained_dofs;
+public:
   MGLevelObject<std::shared_ptr<Operator>>                   mg_matrices;
+private:
   typedef parallel::distributed::Vector<typename Operator::value_type> VECTOR_TYPE;
   typedef MGTransferBase<VECTOR_TYPE>                        MG_TRANSFER;
   MGLevelObject<std::shared_ptr<MG_TRANSFER>>                mg_transfer;
@@ -237,8 +245,6 @@ protected:
   std::shared_ptr<const DoFHandler<dim>> cg_dofhandler;
   std::shared_ptr<MGConstrainedDoFs>     cg_constrained_dofs;
   std::shared_ptr<Operator>              cg_matrices;
-
-private:
   void
   initialize_chebyshev_smoother(Operator & matrix, unsigned int level);
 
