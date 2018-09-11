@@ -516,8 +516,8 @@ protected:
                               const typename DoFHandler<dim>::face_iterator face2,
                               ConstraintMatrix &                            constraints);
 
-  bool
-  verify_boundary_conditions_and_check_if_pure_neumann_problem(DoFHandler<dim> const & dof_handler, AdditionalData const & operator_data);
+  void
+  verify_boundary_conditions(DoFHandler<dim> const & dof_handler, AdditionalData const & operator_data);
 
 protected:
   mutable AdditionalData operator_settings;

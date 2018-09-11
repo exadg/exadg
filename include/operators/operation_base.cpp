@@ -1427,11 +1427,13 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_constraints(const DoFHand
   // 2) add dirichlet bcs
   constraint_own.add_lines(mg_constrained_dofs.get_boundary_indices(level));
 
+  verify_boundary_conditions(dof_handler, operator_settings);
+  
   // constraint zeroth DoF in continuous case (the mean value constraint will
   // be applied in the DG case). In case we have interface matrices, there are
   // Dirichlet constraints on parts of the boundary and no such transformation
   // is required.
-  if(verify_boundary_conditions_and_check_if_pure_neumann_problem(dof_handler, operator_settings) && constraint_own.can_store_line(0))
+  if( this->is_singular() && constraint_own.can_store_line(0))
   {
     // if dof 0 is constrained, it must be a periodic dof, so we take the
     // value on the other side
@@ -1525,8 +1527,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
-bool
-OperatorBase<dim, degree, Number, AdditionalData>::verify_boundary_conditions_and_check_if_pure_neumann_problem(
+void
+OperatorBase<dim, degree, Number, AdditionalData>::verify_boundary_conditions(
   DoFHandler<dim> const & dof_handler,
   AdditionalData const &  operator_data)
 {
@@ -1546,7 +1548,6 @@ OperatorBase<dim, degree, Number, AdditionalData>::verify_boundary_conditions_an
                                    ->boundary_id());
   }
 
-  bool                       pure_neumann_problem = true;
   const Triangulation<dim> & tria                 = dof_handler.get_triangulation();
   for(typename Triangulation<dim>::cell_iterator cell = tria.begin(); cell != tria.end(); ++cell)
     for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
@@ -1563,7 +1564,6 @@ OperatorBase<dim, degree, Number, AdditionalData>::verify_boundary_conditions_an
                       ExcMessage("Boundary id " + Utilities::to_string((int)bid) +
                                  " wants to set both Dirichlet and periodic " +
                                  "boundary conditions, which is impossible!"));
-          pure_neumann_problem = false;
           continue;
         }
         if(operator_data.bc->neumann_bc.find(bid) != operator_data.bc->neumann_bc.end())
@@ -1579,18 +1579,4 @@ OperatorBase<dim, degree, Number, AdditionalData>::verify_boundary_conditions_an
                                " does neither set Dirichlet, Neumann, nor periodic " +
                                "boundary conditions! Bailing out."));
       }
-
-  // Check for consistency of 'pure_neumann_problem' over all participating
-  // processors
-  int      my_neumann = pure_neumann_problem;
-  MPI_Comm mpi_communicator =
-    dynamic_cast<const parallel::Triangulation<dim> *>(&tria) ?
-      (dynamic_cast<const parallel::Triangulation<dim> *>(&tria))->get_communicator() :
-      MPI_COMM_SELF;
-  const int max_pure_neumann = Utilities::MPI::max(my_neumann, mpi_communicator);
-  int       min_pure_neumann = Utilities::MPI::min(my_neumann, mpi_communicator);
-  AssertThrow(max_pure_neumann == min_pure_neumann,
-              ExcMessage("Neumann/Dirichlet assignment over processors does not match."));
-
-  return pure_neumann_problem;
 }
