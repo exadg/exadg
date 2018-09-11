@@ -246,12 +246,13 @@ public:
   apply_smoother_on_fine_level(parallel::distributed::Vector<typename Operator::value_type> &       dst,
                                const parallel::distributed::Vector<typename Operator::value_type> & src) const;
 
+protected:
   virtual void
   update_smoother(unsigned int level);
 
   virtual void
   update_coarse_solver();
-
+  
 private:
   void
   initialize_smoother(Operator & matrix, unsigned int level);
