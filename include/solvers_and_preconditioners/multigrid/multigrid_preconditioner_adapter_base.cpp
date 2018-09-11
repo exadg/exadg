@@ -75,6 +75,37 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
   this->initialize_multigrid_preconditioner();
 }
 
+/*
+example: h_levels = [0 1 2], p_levels = [1 3 7]
+
+p-MG:
+global_levels  h_levels  p_levels
+2              2         7
+1              2         3
+0              2         1
+
+ph-MG:
+global_levels  h_levels  p_levels
+4              2         7
+3              2         3
+2              2         1
+1              1         1
+0              0         1
+
+h-MG:
+global_levels  h_levels  p_levels
+2              2         7
+1              1         7
+0              0         7
+
+hp-MG:
+global_levels  h_levels  p_levels
+4              2         7
+3              1         7
+2              0         7
+1              0         3
+0              0         1
+*/
 
 template<int dim, typename value_type, typename Operator>
 void
