@@ -282,7 +282,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
   // setup transfer for h-gmg
   for(unsigned int deg : p_levels)
   {
-    std::map<unsigned int, unsigned int> m;
+    std::map<unsigned int, unsigned int> map_global_level_to_h_level;
 
     for(unsigned int i = 1; i < global_levels.size(); i++)
     {
@@ -294,19 +294,19 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
         if(!rank)
           printf("  h-gmg (l=%2d,%2d) -> (k=%2d,%2d)\n", prev.first, prev.second, curr.first, curr.second);
 #endif
-        m[i] = curr.first;
+        map_global_level_to_h_level[i] = curr.first;
       }
     }
 
-    if(m.empty())
+    if(map_global_level_to_h_level.empty())
       continue;
 
     std::shared_ptr<MGTransferMF<dim, typename Operator::value_type>> transfer(
-      new MGTransferMF<dim, typename Operator::value_type>(m));
-    transfer->initialize_constraints(*mg_constrained_dofs[m.begin()->first]);
-    transfer->build(*mg_dofhandler[m.begin()->first]);
+      new MGTransferMF<dim, typename Operator::value_type>(map_global_level_to_h_level));
+    transfer->initialize_constraints(*mg_constrained_dofs[map_global_level_to_h_level.begin()->first]);
+    transfer->build(*mg_dofhandler[map_global_level_to_h_level.begin()->first]);
 
-    for(auto i : m)
+    for(auto i : map_global_level_to_h_level)
       mg_transfer[i.first] = transfer;
   }
 
