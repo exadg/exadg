@@ -59,7 +59,6 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
 
   unsigned int rank = Utilities::MPI::this_mpi_process(tria->get_communicator());
   
-
   // determine number of components
   // n_components is needed so that also vector quantities can be handled
   // (note: since at the moment continuous space is only selectable as an auxiliary 
@@ -105,9 +104,9 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
     AssertThrow(false, ExcMessage("This multigrid type does not exist!"));
       
 
-  int min_level         = 0;
-  int max_level         = seq.size() - 1;
   this->n_global_levels = seq.size();
+  int min_level         = 0;
+  int max_level         = this->n_global_levels - 1;
 
   this->mg_constrained_dofs.resize(min_level, max_level);
   this->mg_matrices.resize(min_level, max_level);
