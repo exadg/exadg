@@ -238,11 +238,6 @@ public:
         const parallel::distributed::Vector<value_type> & src) const;
 
   virtual void
-  operator()(const unsigned int /*level*/,
-             parallel::distributed::Vector<typename Operator::value_type> &       dst,
-             const parallel::distributed::Vector<typename Operator::value_type> & src) const;
-
-  virtual void
   apply_smoother_on_fine_level(parallel::distributed::Vector<typename Operator::value_type> &       dst,
                                const parallel::distributed::Vector<typename Operator::value_type> & src) const;
 

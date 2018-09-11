@@ -433,16 +433,6 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::vmult(
 
 template<int dim, typename value_type, typename Operator>
 void
-MyMultigridPreconditionerBase<dim, value_type, Operator>::
-operator()(const unsigned int /*level*/,
-           parallel::distributed::Vector<typename Operator::value_type> &       dst,
-           const parallel::distributed::Vector<typename Operator::value_type> & src) const
-{
-  multigrid_preconditioner->vmult(dst, src);
-}
-
-template<int dim, typename value_type, typename Operator>
-void
 MyMultigridPreconditionerBase<dim, value_type, Operator>::apply_smoother_on_fine_level(
   parallel::distributed::Vector<typename Operator::value_type> &       dst,
   const parallel::distributed::Vector<typename Operator::value_type> & src) const
