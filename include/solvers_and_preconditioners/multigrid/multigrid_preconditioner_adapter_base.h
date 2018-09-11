@@ -154,11 +154,13 @@ public:
 
 private:
   static unsigned int
-  get_next(unsigned int degree)
+  get_next_coarser_degree(unsigned int const degree)
   {
+    // examples:
+    // 9 -> 4; 8 -> 4; 7 -> 3; 6 -> 3; 5 -> 2; 4 -> 2; 3 -> 1; 2 -> 1
     if(degree == 1)
       return 1;
-    return (degree + 2) / 2 - 1;
+    return degree/2;
   }
 
 public:

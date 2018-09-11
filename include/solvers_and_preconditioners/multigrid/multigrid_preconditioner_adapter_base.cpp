@@ -71,7 +71,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
   do
   {
     seq_deg.push_back(temp);
-    temp = get_next(temp);
+    temp = get_next_coarser_degree(temp);
   } while(temp != seq_deg.back());
   std::reverse(std::begin(seq_deg), std::end(seq_deg));
 
