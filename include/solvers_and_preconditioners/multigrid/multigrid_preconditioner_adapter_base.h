@@ -166,12 +166,16 @@ private:
 public:
   virtual ~MyMultigridPreconditionerBase();
 
+  // initialization function for purely discontinuous Galerkin usage
+  // (in this no Dirchlet BC is needed for the constraint matrix)
   void
   initialize(const MultigridData &                                                mg_data_in,
              const DoFHandler<dim> &                                              dof_handler,
              const Mapping<dim> &                                                 mapping,
              void *                                                               operator_data_in);
 
+  // initialization function for discontinuous and continuous Galerkin methods (WIP)
+  // (also: if continuous Galerkin methods should be used as auxiliary space)
   void
   initialize(const MultigridData &                                                mg_data_in,
              const DoFHandler<dim> &                                              dof_handler,
