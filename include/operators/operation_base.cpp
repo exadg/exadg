@@ -129,7 +129,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::vmult_add(VectorType & dst, V
 {
   const VectorType * actual_src = &src;
   VectorType         tmp_projection_vector;
-  if(this->is_singular() && !is_mg)
+  if(this->is_singular() && !is_mg && is_dg)
   {
     tmp_projection_vector = src;
     set_zero_mean_value(tmp_projection_vector);
@@ -142,7 +142,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::vmult_add(VectorType & dst, V
   else
     data->cell_loop(&This::local_cell_hom, this, dst, *actual_src);
 
-  if(this->is_singular() && !is_mg)
+  if(this->is_singular() && !is_mg && is_dg)
     set_zero_mean_value(dst);
 }
 
