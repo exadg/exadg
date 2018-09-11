@@ -146,8 +146,7 @@ compute_eigenvalues_gmres(
 
 template<int dim, typename value_type, typename Operator>
 class MyMultigridPreconditionerBase
-  : public PreconditionerBase<value_type>,
-    public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type>>
+  : public PreconditionerBase<value_type>
 {
 public:
   MyMultigridPreconditionerBase(std::shared_ptr<Operator> underlying_operator);
