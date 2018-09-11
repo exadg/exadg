@@ -53,21 +53,39 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
   const parallel::Triangulation<dim> * tria =
     dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
 
-  // which mg-level should be processed
+  // extract paramters
   const auto   mg_type= this->mg_data.type;
   unsigned int degree = dof_handler.get_fe().degree;
 
-  unsigned int rank = Utilities::MPI::this_mpi_process(tria->get_communicator());
-  
-  // determine number of components
-  // n_components is needed so that also vector quantities can be handled
-  // (note: since at the moment continuous space is only selectable as an auxiliary 
-  // coarse space and vector quantities are not supported there, it is 
-  // enough to determine this number for DG)
-  const unsigned int n_components =
-    dof_handler.n_dofs() / tria->n_global_active_cells() / std::pow(1 + degree, dim);
-
+  // setup sequence
   std::vector<unsigned int> seq_geo, seq_deg;
+  std::vector<std::pair<unsigned int, unsigned int>> seq;
+  this->initialize_mg_sequence(tria, seq, seq_geo, seq_deg, degree, mg_type);
+  this->n_global_levels = seq.size(); // number of actual multigrid levels
+  
+  // setup-components
+  this->initialize_mg_dof_handler_and_constraints(dof_handler, tria, seq, seq_deg, dirichlet_bc,degree);
+  this->initialize_mg_matrices(seq, mapping, operator_data_in);
+  if(mg_data_in.coarse_solver == MultigridCoarseGridSolver::AMG_ML) // TODO: will be removed
+    this->initialize_auxiliary_space(tria, seq, dirichlet_bc, mapping, operator_data_in);
+  this->initialize_mg_matrices(seq, mapping, operator_data_in);
+  this->initialize_smoothers();
+  this->initialize_coarse_solver(seq[0].first);
+  this->initialize_mg_transfer(tria, seq, seq_geo, seq_deg);
+  this->initialize_multigrid_preconditioner();
+}
+
+
+template<int dim, typename value_type, typename Operator>
+void
+MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_sequence(
+    const parallel::Triangulation<dim> * tria,  
+    std::vector<std::pair<unsigned int, unsigned int>>& seq,
+    std::vector<unsigned int> & seq_geo,
+    std::vector<unsigned int>& seq_deg,
+    unsigned int degree,
+    MultigridType mg_type)
+{
 
   for(unsigned int i = 0; i < tria->n_global_levels(); i++)
     seq_geo.push_back(i);
@@ -80,7 +98,6 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
   } while(temp != seq_deg.back());
   std::reverse(std::begin(seq_deg), std::end(seq_deg));
 
-  std::vector<std::pair<unsigned int, unsigned int>> seq;
 
   if(mg_type == MultigridType::pMG || mg_type == MultigridType::phMG)
   {
@@ -102,18 +119,57 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
   }
   else
     AssertThrow(false, ExcMessage("This multigrid type does not exist!"));
-      
+}
 
-  this->n_global_levels = seq.size();
-  int min_level         = 0;
-  int max_level         = this->n_global_levels - 1;
 
-  this->mg_constrained_dofs.resize(min_level, max_level);
-  this->mg_matrices.resize(min_level, max_level);
-  this->mg_smoother.resize(min_level, max_level);
-  this->mg_dofhandler.resize(min_level, max_level);
-  this->mg_transfer.resize(min_level, max_level);
+template<int dim, typename value_type, typename Operator>
+void
+MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_auxiliary_space(
+    const parallel::Triangulation<dim> * tria, 
+    std::vector<std::pair<unsigned int, unsigned int>>& seq,
+    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
+    const Mapping<dim> & mapping,
+    void * operator_data_in)
+{
+    // create coarse matrix with fe_q
+    auto dof_handler_q = new DoFHandler<dim>(*tria);
+    dof_handler_q->distribute_dofs(FE_Q<dim>(seq[0].second));
+    dof_handler_q->distribute_mg_dofs();
+    this->cg_dofhandler.reset(dof_handler_q);
 
+    auto constrained_dofs_q = new MGConstrainedDoFs();
+    constrained_dofs_q->clear();
+    this->initialize_mg_constrained_dofs(*dof_handler_q, *constrained_dofs_q, dirichlet_bc);
+    this->cg_constrained_dofs.reset(constrained_dofs_q);
+
+    // TODO: remove static cast
+    auto matrix_q = static_cast<Operator *>(underlying_operator->get_new(seq[0].second));
+    matrix_q->reinit(*dof_handler_q, mapping, operator_data_in, *this->cg_constrained_dofs, seq[0].first);
+    this->cg_matrices.reset(matrix_q);    
+}
+
+template<int dim, typename value_type, typename Operator>
+void
+MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_dof_handler_and_constraints(
+    const DoFHandler<dim> & dof_handler,
+    const parallel::Triangulation<dim> * tria, 
+    std::vector<std::pair<unsigned int, unsigned int>>& seq,
+    std::vector<unsigned int>& seq_deg,
+    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
+    unsigned int degree)
+
+{
+  this->mg_constrained_dofs.resize(0, this->n_global_levels-1);
+  this->mg_dofhandler.resize(0, this->n_global_levels-1);
+  
+  // determine number of components
+  // n_components is needed so that also vector quantities can be handled
+  // (note: since at the moment continuous space is only selectable as an auxiliary 
+  // coarse space and vector quantities are not supported there, it is 
+  // enough to determine this number for DG)
+  const unsigned int n_components =
+    dof_handler.n_dofs() / tria->n_global_active_cells() / std::pow(1 + degree, dim);
+    
   // setup dof-handler and constrained dofs for each level
   for(unsigned int deg : seq_deg)
   {
@@ -137,45 +193,55 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
         mg_constrained_dofs[i] = temp_constraint;
       }
   }
+    
+}
 
+template<int dim, typename value_type, typename Operator>
+void
+MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_matrices(
+    std::vector<std::pair<unsigned int, unsigned int>>& seq,
+    const Mapping<dim> & mapping,
+    void * operator_data_in)
+{
+  this->mg_matrices.resize(0, this->n_global_levels-1);
+    
   // create and setup operator on each level
-  for(int i = min_level; i <= max_level; i++)
+  for(unsigned int i = 0; i < this->n_global_levels; i++)
   {
-    // TODO: remove static cast
     auto matrix = static_cast<Operator *>(underlying_operator->get_new(seq[i].second));
     matrix->reinit(*mg_dofhandler[i], mapping, operator_data_in, *this->mg_constrained_dofs[i], seq[i].first);
     mg_matrices[i].reset(matrix);
-
-    if(i == min_level)
-    {
-      if(mg_data_in.coarse_solver == MultigridCoarseGridSolver::AMG_ML)
-      {
-        // create coarse matrix with fe_q
-        auto dof_handler_q = new DoFHandler<dim>(*tria);
-        dof_handler_q->distribute_dofs(FE_Q<dim>(seq[i].second));
-        dof_handler_q->distribute_mg_dofs();
-        this->cg_dofhandler.reset(dof_handler_q);
-
-        auto constrained_dofs_q = new MGConstrainedDoFs();
-        constrained_dofs_q->clear();
-        this->initialize_mg_constrained_dofs(*dof_handler_q, *constrained_dofs_q, dirichlet_bc);
-        this->cg_constrained_dofs.reset(constrained_dofs_q);
-
-        // TODO: remove static cast
-        auto matrix_q = static_cast<Operator *>(underlying_operator->get_new(seq[i].second));
-        matrix_q->reinit(*dof_handler_q, mapping, operator_data_in, *this->cg_constrained_dofs, seq[i].first);
-        this->cg_matrices.reset(matrix_q);
-      }
-
-      // create coarse solver with coarse matrix fe_q and fe_dgq
-      this->initialize_coarse_solver(*matrix, *this->cg_matrices, seq[i].first);
-    }
-    else
-    {
-      this->initialize_smoother(*matrix, i);
-    }
   }
+}
 
+template<int dim, typename value_type, typename Operator>
+void
+MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_smoothers()
+{
+  this->mg_smoother.resize(0, this->n_global_levels-1);
+    
+  for(unsigned int i = 1; i < this->n_global_levels; i++)
+    this->initialize_smoother(*this->mg_matrices[i], i);
+}
+
+
+template<int dim, typename value_type, typename Operator>
+void
+MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer(
+    const parallel::Triangulation<dim> * tria,
+    std::vector<std::pair<unsigned int, unsigned int>>& seq,
+    std::vector<unsigned int> & /*seq_geo*/,
+    std::vector<unsigned int>& seq_deg)
+{
+    
+  this->mg_transfer.resize(0, this->n_global_levels-1);
+    
+#ifdef DEBUG
+  unsigned int rank = Utilities::MPI::this_mpi_process(tria->get_communicator());
+#else
+  (void)tria;
+#endif
+    
   // setup transfer for h-gmg
   for(unsigned int deg : seq_deg)
   {
@@ -187,8 +253,10 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
       auto curr = seq[i];
       if(prev.first != curr.first && deg == prev.second && deg == curr.second)
       {
+#ifdef DEBUG
         if(!rank)
           printf("  h-gmg (l=%2d,%2d) -> (k=%2d,%2d)\n", prev.first, prev.second, curr.first, curr.second);
+#endif
         m[i] = curr.first;
       }
     }
@@ -212,8 +280,10 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
     auto curr = seq[i];
     if(prev.second != curr.second)
     {
+#ifdef DEBUG
       if(!rank)
         printf("  p-gmg (l=%2d,k=%2d) -> (l=%2d,k=%2d)\n", prev.first, prev.second, curr.first, curr.second);
+#endif
       MGTransferBase<VECTOR_TYPE> * temp;
 
       const unsigned int from = curr.second, to = prev.second;
@@ -297,10 +367,8 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
       mg_transfer[i].reset(temp);
     }
   }
-
-  // finalize setup of preconditioner
-  this->initialize_multigrid_preconditioner();
 }
+
 
 template<int dim, typename value_type, typename Operator>
 void
@@ -536,10 +604,10 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_smoother(Op
 template<int dim, typename value_type, typename Operator>
 void
 MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_coarse_solver(
-  Operator &         matrix,
-  Operator &         matrix_q,
   const unsigned int coarse_level)
 {
+  Operator & matrix = *mg_matrices[0];
+    
   switch(mg_data.coarse_solver)
   {
     case MultigridCoarseGridSolver::Chebyshev:
@@ -612,7 +680,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_coarse_solv
     }
     case MultigridCoarseGridSolver::AMG_ML:
     {
-      mg_coarse.reset(new MGCoarseML<Operator>(matrix, matrix_q, true, coarse_level, this->mg_data.coarse_ml_data));
+      mg_coarse.reset(new MGCoarseML<Operator>(matrix, *cg_matrices, true, coarse_level, this->mg_data.coarse_ml_data));
       return;
     }
     default:

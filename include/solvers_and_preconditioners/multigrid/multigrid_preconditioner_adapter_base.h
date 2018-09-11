@@ -184,6 +184,46 @@ public:
              void *                                                               operator_data_in);
 
 private:
+    
+void initialize_mg_sequence(
+    const parallel::Triangulation<dim> * tria, 
+    std::vector<std::pair<unsigned int, unsigned int>>& seq,
+    std::vector<unsigned int> & seq_geo,
+    std::vector<unsigned int>& seq_deg,
+    unsigned int degree,
+    MultigridType mg_type);
+
+    
+void initialize_auxiliary_space(
+    const parallel::Triangulation<dim> * tria, 
+    std::vector<std::pair<unsigned int, unsigned int>>& seq,
+    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
+    const Mapping<dim> & mapping,
+    void * operator_data_in
+);
+    
+void initialize_mg_dof_handler_and_constraints(
+    const DoFHandler<dim> & dof_handler,
+    const parallel::Triangulation<dim> * tria, 
+    std::vector<std::pair<unsigned int, unsigned int>>& seq,
+    std::vector<unsigned int>& seq_deg,
+    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
+    unsigned int degree);
+
+
+void initialize_mg_matrices(
+    std::vector<std::pair<unsigned int, unsigned int>>& seq,
+    const Mapping<dim> & mapping,
+    void * operator_data_in);
+    
+  void initialize_smoothers();
+    
+  void initialize_mg_transfer(
+    const parallel::Triangulation<dim> * tria,
+    std::vector<std::pair<unsigned int, unsigned int>>& seq,
+    std::vector<unsigned int> & /*seq_geo*/,
+    std::vector<unsigned int>& seq_deg);
+    
   virtual void
   initialize_mg_constrained_dofs(
     const DoFHandler<dim> &,
@@ -218,7 +258,7 @@ private:
   initialize_smoother(Operator & matrix, unsigned int level);
 
   void
-  initialize_coarse_solver(Operator & matrix, Operator & matrix_q, const unsigned int coarse_level);
+  initialize_coarse_solver(const unsigned int coarse_level);
 
   virtual void
   initialize_multigrid_preconditioner();
