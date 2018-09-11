@@ -21,7 +21,7 @@ template class MGTransferMatrixFreeP<2, 14, 7, float, vfloat>;
 template class MGTransferMatrixFreeP<2, 14, 7, double, vdouble>;
 #endif
 
-#if DIM_2 && DEGREE_13 && DEGREE_4 && MG_FLOAT
+#if DIM_2 && DEGREE_13 && DEGREE_6 && MG_FLOAT
 template class MGTransferMatrixFreeP<2, 13, 6, float, vfloat>;
 #endif
 
@@ -134,7 +134,7 @@ template class MGTransferMatrixFreeP<3, 14, 7, float, vfloat>;
 template class MGTransferMatrixFreeP<3, 14, 7, double, vdouble>;
 #endif
 
-#if DIM_3 && DEGREE_13 && DEGREE_4 && MG_FLOAT
+#if DIM_3 && DEGREE_13 && DEGREE_6 && MG_FLOAT
 template class MGTransferMatrixFreeP<3, 13, 6, float, vfloat>;
 #endif
 
