@@ -187,16 +187,16 @@ private:
     
 void initialize_mg_sequence(
     const parallel::Triangulation<dim> * tria, 
-    std::vector<std::pair<unsigned int, unsigned int>>& seq,
-    std::vector<unsigned int> & seq_geo,
-    std::vector<unsigned int>& seq_deg,
+    std::vector<std::pair<unsigned int, unsigned int>>& global_levels,
+    std::vector<unsigned int> & h_levels,
+    std::vector<unsigned int>& p_levels,
     unsigned int degree,
     MultigridType mg_type);
 
     
 void initialize_auxiliary_space(
     const parallel::Triangulation<dim> * tria, 
-    std::vector<std::pair<unsigned int, unsigned int>>& seq,
+    std::vector<std::pair<unsigned int, unsigned int>>& global_levels,
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
     const Mapping<dim> & mapping,
     void * operator_data_in
@@ -205,14 +205,14 @@ void initialize_auxiliary_space(
 void initialize_mg_dof_handler_and_constraints(
     const DoFHandler<dim> & dof_handler,
     const parallel::Triangulation<dim> * tria, 
-    std::vector<std::pair<unsigned int, unsigned int>>& seq,
-    std::vector<unsigned int>& seq_deg,
+    std::vector<std::pair<unsigned int, unsigned int>>& global_levels,
+    std::vector<unsigned int>& p_levels,
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
     unsigned int degree);
 
 
 void initialize_mg_matrices(
-    std::vector<std::pair<unsigned int, unsigned int>>& seq,
+    std::vector<std::pair<unsigned int, unsigned int>>& global_levels,
     const Mapping<dim> & mapping,
     void * operator_data_in);
     
@@ -220,9 +220,9 @@ void initialize_mg_matrices(
     
   void initialize_mg_transfer(
     const parallel::Triangulation<dim> * tria,
-    std::vector<std::pair<unsigned int, unsigned int>>& seq,
-    std::vector<unsigned int> & /*seq_geo*/,
-    std::vector<unsigned int>& seq_deg);
+    std::vector<std::pair<unsigned int, unsigned int>>& global_levels,
+    std::vector<unsigned int> & /*h_levels*/,
+    std::vector<unsigned int>& p_levels);
     
   virtual void
   initialize_mg_constrained_dofs(

@@ -58,20 +58,20 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
   unsigned int degree = dof_handler.get_fe().degree;
 
   // setup sequence
-  std::vector<unsigned int> seq_geo, seq_deg;
-  std::vector<std::pair<unsigned int, unsigned int>> seq;
-  this->initialize_mg_sequence(tria, seq, seq_geo, seq_deg, degree, mg_type);
-  this->n_global_levels = seq.size(); // number of actual multigrid levels
+  std::vector<unsigned int> h_levels, p_levels;
+  std::vector<std::pair<unsigned int, unsigned int>> global_levels;
+  this->initialize_mg_sequence(tria, global_levels, h_levels, p_levels, degree, mg_type);
+  this->n_global_levels = global_levels.size(); // number of actual multigrid levels
   
   // setup-components
-  this->initialize_mg_dof_handler_and_constraints(dof_handler, tria, seq, seq_deg, dirichlet_bc,degree);
-  this->initialize_mg_matrices(seq, mapping, operator_data_in);
+  this->initialize_mg_dof_handler_and_constraints(dof_handler, tria, global_levels, p_levels, dirichlet_bc,degree);
+  this->initialize_mg_matrices(global_levels, mapping, operator_data_in);
   if(mg_data_in.coarse_solver == MultigridCoarseGridSolver::AMG_ML) // TODO: will be removed
-    this->initialize_auxiliary_space(tria, seq, dirichlet_bc, mapping, operator_data_in);
-  this->initialize_mg_matrices(seq, mapping, operator_data_in);
+    this->initialize_auxiliary_space(tria, global_levels, dirichlet_bc, mapping, operator_data_in);
+  this->initialize_mg_matrices(global_levels, mapping, operator_data_in);
   this->initialize_smoothers();
-  this->initialize_coarse_solver(seq[0].first);
-  this->initialize_mg_transfer(tria, seq, seq_geo, seq_deg);
+  this->initialize_coarse_solver(global_levels[0].first);
+  this->initialize_mg_transfer(tria, global_levels, h_levels, p_levels);
   this->initialize_multigrid_preconditioner();
 }
 
@@ -80,42 +80,42 @@ template<int dim, typename value_type, typename Operator>
 void
 MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_sequence(
     const parallel::Triangulation<dim> * tria,  
-    std::vector<std::pair<unsigned int, unsigned int>>& seq,
-    std::vector<unsigned int> & seq_geo,
-    std::vector<unsigned int>& seq_deg,
+    std::vector<std::pair<unsigned int, unsigned int>>& global_levels,
+    std::vector<unsigned int> & h_levels,
+    std::vector<unsigned int>& p_levels,
     unsigned int degree,
     MultigridType mg_type)
 {
 
   for(unsigned int i = 0; i < tria->n_global_levels(); i++)
-    seq_geo.push_back(i);
+    h_levels.push_back(i);
 
   unsigned int temp = degree;
   do
   {
-    seq_deg.push_back(temp);
+    p_levels.push_back(temp);
     temp = get_next_coarser_degree(temp);
-  } while(temp != seq_deg.back());
-  std::reverse(std::begin(seq_deg), std::end(seq_deg));
+  } while(temp != p_levels.back());
+  std::reverse(std::begin(p_levels), std::end(p_levels));
 
 
   if(mg_type == MultigridType::pMG || mg_type == MultigridType::phMG)
   {
     // top level: p-gmg
     if(mg_type == MultigridType::phMG) // low level: h-gmg
-      for(unsigned int i = 0; i < seq_geo.size() - 1; i++)
-        seq.push_back(std::pair<int, int>(seq_geo[i], seq_deg.front()));
-    for(auto deg : seq_deg)
-      seq.push_back(std::pair<int, int>(seq_geo.back(), deg));
+      for(unsigned int i = 0; i < h_levels.size() - 1; i++)
+        global_levels.push_back(std::pair<int, int>(h_levels[i], p_levels.front()));
+    for(auto deg : p_levels)
+      global_levels.push_back(std::pair<int, int>(h_levels.back(), deg));
   }
   else if(mg_type == MultigridType::hMG || mg_type == MultigridType::hpMG)
   {
     // top level: h-gmg
     if(mg_type == MultigridType::hpMG) // low level: p-gmg
-      for(unsigned int i = 0; i < seq_deg.size() - 1; i++)
-        seq.push_back(std::pair<int, int>(seq_geo.front(), seq_deg[i]));
-    for(auto geo : seq_geo)
-      seq.push_back(std::pair<int, int>(geo, seq_deg.back()));
+      for(unsigned int i = 0; i < p_levels.size() - 1; i++)
+        global_levels.push_back(std::pair<int, int>(h_levels.front(), p_levels[i]));
+    for(auto geo : h_levels)
+      global_levels.push_back(std::pair<int, int>(geo, p_levels.back()));
   }
   else
     AssertThrow(false, ExcMessage("This multigrid type does not exist!"));
@@ -126,14 +126,14 @@ template<int dim, typename value_type, typename Operator>
 void
 MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_auxiliary_space(
     const parallel::Triangulation<dim> * tria, 
-    std::vector<std::pair<unsigned int, unsigned int>>& seq,
+    std::vector<std::pair<unsigned int, unsigned int>>& global_levels,
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
     const Mapping<dim> & mapping,
     void * operator_data_in)
 {
     // create coarse matrix with fe_q
     auto dof_handler_q = new DoFHandler<dim>(*tria);
-    dof_handler_q->distribute_dofs(FE_Q<dim>(seq[0].second));
+    dof_handler_q->distribute_dofs(FE_Q<dim>(global_levels[0].second));
     dof_handler_q->distribute_mg_dofs();
     this->cg_dofhandler.reset(dof_handler_q);
 
@@ -143,8 +143,8 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_auxiliary_s
     this->cg_constrained_dofs.reset(constrained_dofs_q);
 
     // TODO: remove static cast
-    auto matrix_q = static_cast<Operator *>(underlying_operator->get_new(seq[0].second));
-    matrix_q->reinit(*dof_handler_q, mapping, operator_data_in, *this->cg_constrained_dofs, seq[0].first);
+    auto matrix_q = static_cast<Operator *>(underlying_operator->get_new(global_levels[0].second));
+    matrix_q->reinit(*dof_handler_q, mapping, operator_data_in, *this->cg_constrained_dofs, global_levels[0].first);
     this->cg_matrices.reset(matrix_q);    
 }
 
@@ -153,8 +153,8 @@ void
 MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_dof_handler_and_constraints(
     const DoFHandler<dim> & dof_handler,
     const parallel::Triangulation<dim> * tria, 
-    std::vector<std::pair<unsigned int, unsigned int>>& seq,
-    std::vector<unsigned int>& seq_deg,
+    std::vector<std::pair<unsigned int, unsigned int>>& global_levels,
+    std::vector<unsigned int>& p_levels,
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
     unsigned int degree)
 
@@ -171,7 +171,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_dof_hand
     dof_handler.n_dofs() / tria->n_global_active_cells() / std::pow(1 + degree, dim);
     
   // setup dof-handler and constrained dofs for each level
-  for(unsigned int deg : seq_deg)
+  for(unsigned int deg : p_levels)
   {
     // setup dof_handler: create dof_handler...
     auto dof_handler = new DoFHandler<dim>(*tria);
@@ -186,8 +186,8 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_dof_hand
     // populate dofhandler and constrained dofs all levels with the same degree
     std::shared_ptr<const DoFHandler<dim>> temp_dofh(dof_handler);
     std::shared_ptr<MGConstrainedDoFs>     temp_constraint(constrained_dofs);
-    for(unsigned int i = 0; i < seq.size(); i++)
-      if(seq[i].second == deg)
+    for(unsigned int i = 0; i < global_levels.size(); i++)
+      if(global_levels[i].second == deg)
       {
         mg_dofhandler[i]       = temp_dofh;
         mg_constrained_dofs[i] = temp_constraint;
@@ -199,7 +199,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_dof_hand
 template<int dim, typename value_type, typename Operator>
 void
 MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_matrices(
-    std::vector<std::pair<unsigned int, unsigned int>>& seq,
+    std::vector<std::pair<unsigned int, unsigned int>>& global_levels,
     const Mapping<dim> & mapping,
     void * operator_data_in)
 {
@@ -208,8 +208,8 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_matrices
   // create and setup operator on each level
   for(unsigned int i = 0; i < this->n_global_levels; i++)
   {
-    auto matrix = static_cast<Operator *>(underlying_operator->get_new(seq[i].second));
-    matrix->reinit(*mg_dofhandler[i], mapping, operator_data_in, *this->mg_constrained_dofs[i], seq[i].first);
+    auto matrix = static_cast<Operator *>(underlying_operator->get_new(global_levels[i].second));
+    matrix->reinit(*mg_dofhandler[i], mapping, operator_data_in, *this->mg_constrained_dofs[i], global_levels[i].first);
     mg_matrices[i].reset(matrix);
   }
 }
@@ -229,9 +229,9 @@ template<int dim, typename value_type, typename Operator>
 void
 MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer(
     const parallel::Triangulation<dim> * tria,
-    std::vector<std::pair<unsigned int, unsigned int>>& seq,
-    std::vector<unsigned int> & /*seq_geo*/,
-    std::vector<unsigned int>& seq_deg)
+    std::vector<std::pair<unsigned int, unsigned int>>& global_levels,
+    std::vector<unsigned int> & /*h_levels*/,
+    std::vector<unsigned int>& p_levels)
 {
     
   this->mg_transfer.resize(0, this->n_global_levels-1);
@@ -243,14 +243,14 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
 #endif
     
   // setup transfer for h-gmg
-  for(unsigned int deg : seq_deg)
+  for(unsigned int deg : p_levels)
   {
     std::map<unsigned int, unsigned int> m;
 
-    for(unsigned int i = 1; i < seq.size(); i++)
+    for(unsigned int i = 1; i < global_levels.size(); i++)
     {
-      auto prev = seq[i - 1];
-      auto curr = seq[i];
+      auto prev = global_levels[i - 1];
+      auto curr = global_levels[i];
       if(prev.first != curr.first && deg == prev.second && deg == curr.second)
       {
 #ifdef DEBUG
@@ -274,10 +274,10 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
   }
 
   // setup transfer for p-gmg
-  for(unsigned int i = 1; i < seq.size(); i++)
+  for(unsigned int i = 1; i < global_levels.size(); i++)
   {
-    auto prev = seq[i - 1];
-    auto curr = seq[i];
+    auto prev = global_levels[i - 1];
+    auto curr = global_levels[i];
     if(prev.second != curr.second)
     {
 #ifdef DEBUG
