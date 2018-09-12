@@ -5,6 +5,7 @@
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_system.h>
+#include <vector>
 
 #include "../mg_coarse/mg_coarse_ml.h"
 
@@ -105,6 +106,16 @@ global_levels  h_levels  p_levels
 2              0         7
 1              0         3
 0              0         1
+
+user specified sequence:
+global_levels  h_levels  p_levels
+6              5         7 
+5              4         7 
+4              3         7 
+3              3         3
+2              2         3 
+1              2         1 
+0              1         1 
 */
 
 template<int dim, typename value_type, typename Operator>
@@ -117,19 +128,39 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_sequence
     unsigned int degree,
     MultigridType mg_type)
 {
+    
+  // use specified sequence
+  if(mg_type == MultigridType::UserSpecifiedSequnce)
+    AssertThrow(false, ExcMessage("User specified sequences for Multigrid is not implemented yet!"));
 
-  for(unsigned int i = 0; i < tria->n_global_levels(); i++)
-    h_levels.push_back(i);
-
-  unsigned int temp = degree;
-  do
+  // setup h-levels
+  if(mg_type == MultigridType::pMG) // p-MG is only working on the finest h-level
   {
-    p_levels.push_back(temp);
-    temp = get_next_coarser_degree(temp);
-  } while(temp != p_levels.back());
-  std::reverse(std::begin(p_levels), std::end(p_levels));
+    h_levels.push_back(tria->n_global_levels()-1);
+  }
+  else // h-MG, hp-MG, and ph-MG are wokring on all h-levels
+  {
+    for(unsigned int i = 0; i < tria->n_global_levels(); i++)
+      h_levels.push_back(i);
+  }
 
+  // setup p-levls
+  if(mg_type == MultigridType::hMG) // h-MG is only working on high-order
+  {
+      p_levels.push_back(degree);
+  }
+  else // p-MG, hp-MG, and ph-MG are working on high- and low- order elements
+  {
+    unsigned int temp = degree;
+    do
+    {
+      p_levels.push_back(temp);
+      temp = get_next_coarser_degree(temp);
+    } while(temp != p_levels.back());
+    std::reverse(std::begin(p_levels), std::end(p_levels));
+  }
 
+  // setup global-levels
   if(mg_type == MultigridType::pMG || mg_type == MultigridType::phMG)
   {
     // top level: p-gmg

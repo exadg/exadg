@@ -13,7 +13,7 @@
 
 enum class MultigridType
 {
-    hMG, pMG, hpMG, phMG
+    hMG, pMG, hpMG, phMG, UserSpecifiedSequnce
 };
 
 enum class MultigridSmoother
@@ -222,7 +222,7 @@ struct MultigridData
     if(coarse_solver==MultigridCoarseGridSolver::AMG_ML)
         coarse_ml_data.print(pcout);
 
-    std::string str_type[] = { "h-MG", "p-MG", "hp-MG", "ph-MG"};
+    std::string str_type[] = { "h-MG", "p-MG", "hp-MG", "ph-MG", "User specified sequence"};
     print_parameter(pcout,"Multigrid type", str_type[(int)type]);
     
   }
