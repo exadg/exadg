@@ -62,6 +62,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize(
   std::vector<unsigned int> h_levels, p_levels;
   std::vector<std::pair<unsigned int, unsigned int>> global_levels;
   this->initialize_mg_sequence(tria, global_levels, h_levels, p_levels, degree, mg_type);
+  this->check_mg_sequence(global_levels);
   this->n_global_levels = global_levels.size(); // number of actual multigrid levels
   
   // setup-components
@@ -181,6 +182,21 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_sequence
   }
   else
     AssertThrow(false, ExcMessage("This multigrid type does not exist!"));
+}
+
+template<int dim, typename value_type, typename Operator>
+void 
+MyMultigridPreconditionerBase<dim, value_type, Operator>::check_mg_sequence(
+  std::vector<std::pair<unsigned int, unsigned int>>& global_levels)
+{
+  for(unsigned int i = 1; i < global_levels.size(); i++)
+  {
+    auto  fine_level   = global_levels[i-1];
+    auto  coarse_level = global_levels[i-0];
+      
+    AssertThrow((fine_level.first  != coarse_level.first) ^
+                (fine_level.second != coarse_level.second), ExcMessage("Between levels there is only ONE change allowed: either in h- or p-level!"));
+  }
 }
 
 
@@ -307,6 +323,8 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
 #ifndef DEBUG
   (void)tria; // so that we do not get a compiler warning
 #endif
+  
+  std::map<unsigned int, MGTransferMF<dim, typename Operator::value_type>*> mg_tranfers_temp;
     
   // setup transfer for h-MG: one h-transfer-operator is shared per p-level 
   for(unsigned int deg : p_levels)
@@ -320,13 +338,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
       auto coarse_level = global_levels[i - 1];
       auto fine_level   = global_levels[i];
       if(coarse_level.first != fine_level.first && deg == coarse_level.second && deg == fine_level.second)
-      {
-#ifdef DEBUG
-        if(Utilities::MPI::this_mpi_process(tria->get_communicator()) == 0)
-          printf("  h-MG (l=%2d,k=%2d) -> (l=%2d,k=%2d)\n", coarse_level.first, coarse_level.second, fine_level.first, fine_level.second);
-#endif
         map_global_level_to_h_level[i] = fine_level.first;
-      }
     }
 
     // there has been only one global level with this degree -> no h-transfer operator has to be created
@@ -334,103 +346,112 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
       continue;
 
     // create actual h-transfer-operator 
-    std::shared_ptr<MGTransferMF<dim, typename Operator::value_type>> transfer(
-      new MGTransferMF<dim, typename Operator::value_type>(map_global_level_to_h_level));
+    MGTransferMF<dim, typename Operator::value_type>* transfer = 
+      new MGTransferMF<dim, typename Operator::value_type>(map_global_level_to_h_level);
     transfer->initialize_constraints(*mg_constrained_dofs[map_global_level_to_h_level.begin()->first]);
     transfer->build(*mg_dofhandler[map_global_level_to_h_level.begin()->first]);
 
-    // populate new h-transfer to levels sharing it
-    for(auto i : map_global_level_to_h_level)
-      mg_transfer[i.first] = transfer;
+    mg_tranfers_temp[deg] = transfer;
   }
-
-  // setup transfer for p-MG
+  
+  // fill mg_transfer with the correct transfers
   for(unsigned int i = 1; i < global_levels.size(); i++)
   {
-    auto coarse_level = global_levels[i - 1];
-    auto fine_level  = global_levels[i];
+    auto coarse_level   = global_levels[i - 1];
+    auto fine_level     = global_levels[i];
+    auto h_coarse_level = coarse_level.first;
+    auto h_fine_level   = fine_level.first;
+    auto p_coarse_level = coarse_level.second;
+    auto p_fine_level   = fine_level.second;
+
+    MGTransferBase<VECTOR_TYPE> * temp;
     
-    if(coarse_level.second != fine_level.second)
+    if(h_coarse_level != h_fine_level) // h-transfer
     {
-      auto h_level = fine_level.first;
-      AssertThrow(h_level == coarse_level.first, ExcMessage("The mesh level has to be the same for p-transfer."))
+ #ifdef DEBUG
+      if(Utilities::MPI::this_mpi_process(tria->get_communicator()) == 0)
+        printf("  h-MG (l=%2d,k=%2d) -> (l=%2d,k=%2d)\n", h_coarse_level, p_coarse_level, h_fine_level, p_fine_level);
+#endif
+        
+      temp = mg_tranfers_temp[p_coarse_level]; // get the previously h-transfer operator
+    }
+    else if(p_coarse_level != p_fine_level) // p-transfer
+    {
+      
 #ifdef DEBUG
       if(Utilities::MPI::this_mpi_process(tria->get_communicator()) == 0)
-        printf("  p-MG (l=%2d,k=%2d) -> (l=%2d,k=%2d)\n", coarse_level.first, coarse_level.second, h_level, fine_level.second);
+        printf("  p-MG (l=%2d,k=%2d) -> (l=%2d,k=%2d)\n", h_coarse_level, p_coarse_level, h_fine_level, p_fine_level);
 #endif
-      MGTransferBase<VECTOR_TYPE> * temp;
-
-      const unsigned int from = fine_level.second, to = coarse_level.second;
 
 // clang-format off      
 #if DEGREE_15 && DEGREE_7
-      if(from == 15 && to == 7)
-        temp = new MGTransferMatrixFreeP<dim, 15, 7, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
+      if(p_fine_level == 15 && p_coarse_level == 7)
+        temp = new MGTransferMatrixFreeP<dim, 15, 7, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level);
       else
 #endif
 #if DEGREE_14 && DEGREE_7
-      if(from == 14 && to == 7)
-        temp = new MGTransferMatrixFreeP<dim, 14, 7, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
+      if(p_fine_level == 14 && p_coarse_level == 7)
+        temp = new MGTransferMatrixFreeP<dim, 14, 7, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level);
       else
 #endif
 #if DEGREE_13 && DEGREE_6
-      if(from == 13 && to == 6)
-        temp = new MGTransferMatrixFreeP<dim, 13, 6, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
+      if(p_fine_level == 13 && p_coarse_level == 6)
+        temp = new MGTransferMatrixFreeP<dim, 13, 6, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level);
       else
 #endif
 #if DEGREE_12 && DEGREE_6
-      if(from == 12 && to == 6)
-        temp = new MGTransferMatrixFreeP<dim, 12, 6, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
+      if(p_fine_level == 12 && p_coarse_level == 6)
+        temp = new MGTransferMatrixFreeP<dim, 12, 6, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level);
       else
 #endif
 #if DEGREE_11 && DEGREE_5
-      if(from == 11 && to == 5)
-        temp = new MGTransferMatrixFreeP<dim, 11, 5, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
+      if(p_fine_level == 11 && p_coarse_level == 5)
+        temp = new MGTransferMatrixFreeP<dim, 11, 5, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level);
       else
 #endif
 #if DEGREE_10 && DEGREE_5
-      if(from == 10 && to == 5)
-        temp = new MGTransferMatrixFreeP<dim, 9, 4, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
+      if(p_fine_level == 10 && p_coarse_level == 5)
+        temp = new MGTransferMatrixFreeP<dim, 9, 4, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level);
       else
 #endif
 #if DEGREE_9 && DEGREE_4
-      if(from == 9 && to == 4)
-        temp = new MGTransferMatrixFreeP<dim, 9, 4, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
+      if(p_fine_level == 9 && p_coarse_level == 4)
+        temp = new MGTransferMatrixFreeP<dim, 9, 4, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level);
       else
 #endif
 #if DEGREE_8 && DEGREE_4
-      if(from == 8 && to == 4)
-        temp = new MGTransferMatrixFreeP<dim, 8, 4, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
+      if(p_fine_level == 8 && p_coarse_level == 4)
+        temp = new MGTransferMatrixFreeP<dim, 8, 4, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level);
       else
 #endif
 #if DEGREE_7 && DEGREE_3
-      if(from == 7 && to == 3)
-        temp = new MGTransferMatrixFreeP<dim, 7, 3, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
+      if(p_fine_level == 7 && p_coarse_level == 3)
+        temp = new MGTransferMatrixFreeP<dim, 7, 3, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level);
       else
 #endif
 #if DEGREE_6 && DEGREE_3
-      if(from == 6 && to == 3)
-        temp = new MGTransferMatrixFreeP<dim, 6, 3, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
+      if(p_fine_level == 6 && p_coarse_level == 3)
+        temp = new MGTransferMatrixFreeP<dim, 6, 3, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level);
       else
 #endif
 #if DEGREE_5 && DEGREE_2
-      if(from == 5 && to == 2)
-        temp = new MGTransferMatrixFreeP<dim, 5, 2, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
+      if(p_fine_level == 5 && p_coarse_level == 2)
+        temp = new MGTransferMatrixFreeP<dim, 5, 2, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level);
       else
 #endif
 #if DEGREE_4 && DEGREE_2
-      if(from == 4 && to == 2)
-        temp = new MGTransferMatrixFreeP<dim, 4, 2, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
+      if(p_fine_level == 4 && p_coarse_level == 2)
+        temp = new MGTransferMatrixFreeP<dim, 4, 2, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level);
       else
 #endif
 #if DEGREE_3 && DEGREE_1
-      if(from == 3 && to == 1)
-        temp = new MGTransferMatrixFreeP<dim, 3, 1, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
+      if(p_fine_level == 3 && p_coarse_level == 1)
+        temp = new MGTransferMatrixFreeP<dim, 3, 1, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level);
       else
 #endif
 #if DEGREE_2 && DEGREE_1
-      if(from == 2 && to == 1)
-        temp = new MGTransferMatrixFreeP<dim, 2, 1, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_level);
+      if(p_fine_level == 2 && p_coarse_level == 1)
+        temp = new MGTransferMatrixFreeP<dim, 2, 1, typename Operator::value_type, VECTOR_TYPE>(*mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level);
       else
 #endif
 // clang-format on
@@ -438,8 +459,8 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
         AssertThrow(false, ExcMessage("This type of p-transfer is not implemented"));
       }
 
-      mg_transfer[i].reset(temp);
     }
+    mg_transfer[i].reset(temp);
   }
 }
 

@@ -191,7 +191,8 @@ void initialize_mg_sequence(
     std::vector<unsigned int>& p_levels,
     unsigned int degree,
     MultigridType mg_type);
-
+    
+void check_mg_sequence(std::vector<std::pair<unsigned int, unsigned int>>& global_levels);
     
 void initialize_auxiliary_space(
     const parallel::Triangulation<dim> * tria, 
