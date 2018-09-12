@@ -273,10 +273,8 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
     
   this->mg_transfer.resize(0, this->n_global_levels-1);
     
-#ifdef DEBUG
-  unsigned int rank = Utilities::MPI::this_mpi_process(tria->get_communicator());
-#else
-  (void)tria;
+#ifndef DEBUG
+  (void)tria; // so that we do not get a compiler warning
 #endif
     
   // setup transfer for h-MG: one h-transfer-operator is shared per p-level 
@@ -293,7 +291,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
       if(coarse_level.first != fine_level.first && deg == coarse_level.second && deg == fine_level.second)
       {
 #ifdef DEBUG
-        if(!rank)
+        if(Utilities::MPI::this_mpi_process(tria->get_communicator()) == 0)
           printf("  h-MG (l=%2d,k=%2d) -> (l=%2d,k=%2d)\n", coarse_level.first, coarse_level.second, fine_level.first, fine_level.second);
 #endif
         map_global_level_to_h_level[i] = fine_level.first;
@@ -326,7 +324,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
       auto h_level = fine_level.first;
       AssertThrow(h_level == coarse_level.first, ExcMessage("The mesh level has to be the same for p-transfer."))
 #ifdef DEBUG
-      if(!rank)
+      if(Utilities::MPI::this_mpi_process(tria->get_communicator()) == 0)
         printf("  p-MG (l=%2d,k=%2d) -> (l=%2d,k=%2d)\n", coarse_level.first, coarse_level.second, h_level, fine_level.second);
 #endif
       MGTransferBase<VECTOR_TYPE> * temp;
