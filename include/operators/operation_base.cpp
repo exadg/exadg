@@ -807,6 +807,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell_based
                                                                                  const VectorType & /*src*/,
                                                                                  const Range & range) const
 {
+#ifndef LAPLACE_CELL_TEST
+  AssertThrow(false, ExcMessage("Cell-based loops are currently working if FEEvaluationBase::read_cell_data()"
+          "is not used. Please check if this is the case. If yes, define the macro LAPLACE_CELL_TEST.")); 
+#endif
+    
   FEEvalCell fe_eval(data, operator_settings.dof_index, operator_settings.quad_index);
   FEEvalFace fe_eval_m(data, true, operator_settings.dof_index, operator_settings.quad_index);
   FEEvalFace fe_eval_p(data, false, operator_settings.dof_index, operator_settings.quad_index);
@@ -1056,6 +1061,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_cell
   const BlockMatrix & /*src*/,
   const Range & range) const
 {
+#ifndef LAPLACE_CELL_TEST
+  AssertThrow(false, ExcMessage("Cell-based loops are currently working if FEEvaluationBase::read_cell_data()"
+          "is not used. Please check if this is the case. If yes, define the macro LAPLACE_CELL_TEST.")); 
+#endif
+    
   FEEvalCell fe_eval(data, operator_settings.dof_index, operator_settings.quad_index);
   FEEvalFace fe_eval_m(data, true, operator_settings.dof_index, operator_settings.quad_index);
   FEEvalFace fe_eval_p(data, false, operator_settings.dof_index, operator_settings.quad_index);
