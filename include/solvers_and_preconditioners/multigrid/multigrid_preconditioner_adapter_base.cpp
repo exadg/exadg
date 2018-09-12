@@ -108,15 +108,6 @@ global_levels  h_levels  p_levels
 1              0         3
 0              0         1
 
-user specified sequence:
-global_levels  h_levels  p_levels
-6              5         7 
-5              4         7 
-4              3         7 
-3              3         3
-2              2         3 
-1              2         1 
-0              1         1 
 */
 
 template<int dim, typename value_type, typename Operator>
@@ -129,10 +120,6 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_sequence
     unsigned int degree,
     MultigridType mg_type)
 {
-    
-  // use specified sequence
-  if(mg_type == MultigridType::UserSpecifiedSequnce)
-    AssertThrow(false, ExcMessage("User specified sequences for Multigrid is not implemented yet!"));
 
   // setup h-levels
   if(mg_type == MultigridType::pMG) // p-MG is only working on the finest h-level
