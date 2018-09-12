@@ -6,6 +6,7 @@
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_system.h>
 #include <vector>
+#include <map>
 
 #include "../mg_coarse/mg_coarse_ml.h"
 
@@ -244,7 +245,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_dof_hand
   {
     // setup dof_handler: create dof_handler...
     auto dof_handler = new DoFHandler<dim>(*tria);
-    // ... create FE and distrubute it
+    // ... create FE and distribute it
     dof_handler->distribute_dofs(FESystem<dim>(FE_DGQ<dim>(degree), n_components));
     dof_handler->distribute_mg_dofs();
     // setup constrained dofs:
@@ -312,33 +313,35 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
 #endif
   
   std::map<unsigned int, MGTransferMF<dim, typename Operator::value_type>*> mg_tranfers_temp;
+  std::map<unsigned int, std::map<unsigned int, unsigned int>> map_global_level_to_h_levels;
     
-  // setup transfer for h-MG: one h-transfer-operator is shared per p-level 
+  // initialize maps so that we do not have to check existence later on
+  for(unsigned int deg : p_levels)
+    map_global_level_to_h_levels[deg] = {};
+  
+  // fill the maps
+  for(unsigned int i = 0; i < global_levels.size(); i++)
+  {
+    auto level = global_levels[i];
+    map_global_level_to_h_levels[level.second][i] = level.first;
+  }
+
+  // create h-transfer operators between levels
   for(unsigned int deg : p_levels)
   {
-    // map: global level -> h level (is needed by the h-transfer operator, since it accesses the triangulation directly)
-    std::map<unsigned int, unsigned int> map_global_level_to_h_level;
-
-    // fill the map
-    for(unsigned int i = 1; i < global_levels.size(); i++)
-    {
-      auto coarse_level = global_levels[i - 1];
-      auto fine_level   = global_levels[i];
-      if(coarse_level.first != fine_level.first && deg == coarse_level.second && deg == fine_level.second)
-        map_global_level_to_h_level[i] = fine_level.first;
-    }
-
-    // there has been only one global level with this degree -> no h-transfer operator has to be created
-    if(map_global_level_to_h_level.empty())
-      continue;
-
-    // create actual h-transfer-operator 
-    MGTransferMF<dim, typename Operator::value_type>* transfer = 
-      new MGTransferMF<dim, typename Operator::value_type>(map_global_level_to_h_level);
-    transfer->initialize_constraints(*mg_constrained_dofs[map_global_level_to_h_level.begin()->first]);
-    transfer->build(*mg_dofhandler[map_global_level_to_h_level.begin()->first]);
-
-    mg_tranfers_temp[deg] = transfer;
+    if(map_global_level_to_h_levels[deg].size() > 1)
+   {
+      // create actual h-transfer-operator 
+      MGTransferMF<dim, typename Operator::value_type>* transfer = 
+        new MGTransferMF<dim, typename Operator::value_type>(map_global_level_to_h_levels[deg]);
+      // dof-handlers and constrains are saved for global levels
+      // so we have to convert degree to any global level which has this degree
+      // (these share the same dof-handlers and constraints)
+      unsigned int global_level = map_global_level_to_h_levels[deg][0];
+      transfer->initialize_constraints(*mg_constrained_dofs[global_level]);
+      transfer->build(*mg_dofhandler[global_level]);
+      mg_tranfers_temp[deg] = transfer;
+    } // else: there is only one global level (and one h-level) on this p-level
   }
   
   // fill mg_transfer with the correct transfers
