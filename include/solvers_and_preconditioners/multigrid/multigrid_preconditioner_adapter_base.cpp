@@ -336,7 +336,7 @@ MyMultigridPreconditionerBase<dim, value_type, Operator>::initialize_mg_transfer
       // dof-handlers and constrains are saved for global levels
       // so we have to convert degree to any global level which has this degree
       // (these share the same dof-handlers and constraints)
-      unsigned int global_level = map_global_level_to_h_levels[deg][0];
+      unsigned int global_level = map_global_level_to_h_levels[deg].begin()->first;
       transfer->initialize_constraints(*mg_constrained_dofs[global_level]);
       transfer->build(*mg_dofhandler[global_level]);
       mg_tranfers_temp[deg] = transfer;
