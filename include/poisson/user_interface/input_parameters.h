@@ -69,11 +69,10 @@ public:
       max_iter(std::numeric_limits<unsigned int>::max()),
       preconditioner(Preconditioner::Undefined),
       multigrid_data(MultigridData()),
+      enable_cell_based_face_loops(false),
 
       // OUTPUT AND POSTPROCESSING
-      print_input_parameters(true),
-
-      enable_cell_based_for_loops(false)
+      print_input_parameters(true)
   {
   }
 
@@ -111,9 +110,6 @@ public:
 
     // OUTPUT AND POSTPROCESSING
     print_parameters_output_and_postprocessing(pcout);
-
-    pcout << std::endl << "Rest:" << std::endl;
-    print_parameter(pcout, "Enable cell-based face loops", enable_cell_based_for_loops);
   }
 
   void
@@ -165,6 +161,8 @@ public:
   print_parameters_numerical_parameters(ConditionalOStream & pcout)
   {
     pcout << std::endl << "Numerical parameters:" << std::endl;
+
+    print_parameter(pcout, "Enable cell-based face loops", enable_cell_based_face_loops);
   }
 
 
@@ -220,6 +218,20 @@ public:
 
   /**************************************************************************************/
   /*                                                                                    */
+  /*                                NUMERICAL PARAMETERS                                */
+  /*                                                                                    */
+  /**************************************************************************************/
+
+  // By default, the matrix-free implementation performs separate loops over all cells,
+  // interior faces, and boundary faces. For a certain type of operations, however, it
+  // is necessary to perform the face-loop as a loop over all faces of a cell with an
+  // outer loop over all cells, e.g., preconditioners operating on the level of
+  // individual cells (for example block Jacobi). With this parameter, the loop structure
+  // can be changed to such an algorithm (cell_based_face_loops).
+  bool enable_cell_based_face_loops;
+
+  /**************************************************************************************/
+  /*                                                                                    */
   /*                               OUTPUT AND POSTPROCESSING                            */
   /*                                                                                    */
   /**************************************************************************************/
@@ -229,8 +241,6 @@ public:
 
   // writing output
   OutputData output_data;
-
-  bool enable_cell_based_for_loops;
 };
 
 } // namespace Poisson
