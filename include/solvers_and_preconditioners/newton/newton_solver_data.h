@@ -11,15 +11,12 @@
 
 struct NewtonSolverData
 {
-  NewtonSolverData()
-    :
-    abs_tol(1.e-20),
-    rel_tol(1.e-12),
-    max_iter(100)
-  {}
+  NewtonSolverData() : abs_tol(1.e-20), rel_tol(1.e-12), max_iter(100)
+  {
+  }
 
-  double abs_tol;
-  double rel_tol;
+  double       abs_tol;
+  double       rel_tol;
   unsigned int max_iter;
 };
 

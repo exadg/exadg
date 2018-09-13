@@ -18,10 +18,9 @@ template<typename Operator>
 class JacobiPreconditioner : public PreconditionerBase<typename Operator::value_type>
 {
 public:
-    
-    typedef typename Operator::value_type value_type;
-    
-  JacobiPreconditioner(Operator const &underlying_operator_in)
+  typedef typename Operator::value_type value_type;
+
+  JacobiPreconditioner(Operator const & underlying_operator_in)
     : underlying_operator(underlying_operator_in)
   {
     underlying_operator.initialize_dof_vector(inverse_diagonal);
@@ -29,26 +28,30 @@ public:
     underlying_operator.calculate_inverse_diagonal(inverse_diagonal);
   }
 
-  void vmult (parallel::distributed::Vector<value_type>        &dst,
-              const parallel::distributed::Vector<value_type>  &src) const
+  void
+  vmult(parallel::distributed::Vector<value_type> &       dst,
+        const parallel::distributed::Vector<value_type> & src) const
   {
-    if (!PointerComparison::equal(&dst, &src))
+    if(!PointerComparison::equal(&dst, &src))
       dst = src;
     dst.scale(inverse_diagonal);
   }
 
-  void update(MatrixOperatorBase const * /*matrix_operator*/)
+  void
+  update(MatrixOperatorBase const * /*matrix_operator*/)
   {
     underlying_operator.calculate_inverse_diagonal(inverse_diagonal);
   }
 
-  unsigned int get_size_of_diagonal()
+  unsigned int
+  get_size_of_diagonal()
   {
     return inverse_diagonal.size();
   }
 
 private:
-  Operator const &underlying_operator;
+  Operator const & underlying_operator;
+
   parallel::distributed::Vector<value_type> inverse_diagonal;
 };
 

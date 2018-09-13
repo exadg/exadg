@@ -15,31 +15,35 @@ using namespace dealii;
 struct OutputData
 {
   OutputData()
-    :
-    write_output(false),
-    output_counter_start(0),
-    output_folder("output"),
-    output_name("name"),
-    output_start_time(std::numeric_limits<double>::max()),
-    output_interval_time(std::numeric_limits<double>::max()),
-    number_of_patches(1)
-  {}
+    : write_output(false),
+      output_counter_start(0),
+      output_folder("output"),
+      output_name("name"),
+      output_start_time(std::numeric_limits<double>::max()),
+      output_interval_time(std::numeric_limits<double>::max()),
+      number_of_patches(1)
+  {
+  }
 
-  void print(ConditionalOStream &pcout, bool unsteady)
+  void
+  print(ConditionalOStream & pcout, bool unsteady)
   {
     // output for visualization of results
-    print_parameter(pcout,"Write output",write_output);
+    print_parameter(pcout, "Write output", write_output);
+
     if(write_output == true)
     {
-      print_parameter(pcout,"Output counter start",output_counter_start);
-      print_parameter(pcout,"Output folder",output_folder);
-      print_parameter(pcout,"Name of output files",output_name);
+      print_parameter(pcout, "Output counter start", output_counter_start);
+      print_parameter(pcout, "Output folder", output_folder);
+      print_parameter(pcout, "Name of output files", output_name);
+
       if(unsteady == true)
       {
-        print_parameter(pcout,"Output start time",output_start_time);
-        print_parameter(pcout,"Output interval time",output_interval_time);
+        print_parameter(pcout, "Output start time", output_start_time);
+        print_parameter(pcout, "Output interval time", output_interval_time);
       }
-      print_parameter(pcout,"Number of patches",number_of_patches);
+
+      print_parameter(pcout, "Number of patches", number_of_patches);
     }
   }
 

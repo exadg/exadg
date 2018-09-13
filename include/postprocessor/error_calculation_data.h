@@ -1,5 +1,5 @@
 /*
- * ErrorCalculationData.h
+ * error_calculation_data.h
  *
  *  Created on: Oct 12, 2016
  *      Author: fehn
@@ -13,28 +13,29 @@
 struct ErrorCalculationData
 {
   ErrorCalculationData()
-    :
-    analytical_solution_available(false),
-    calculate_relative_errors(true),
-    calculate_H1_seminorm_velocity(false),
-    error_calc_start_time(std::numeric_limits<double>::max()),
-    error_calc_interval_time(std::numeric_limits<double>::max()),
-    calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
-    write_errors_to_file(false),
-    filename_prefix("error")
-  {}
-
-  void print(ConditionalOStream &pcout, bool unsteady)
+    : analytical_solution_available(false),
+      calculate_relative_errors(true),
+      calculate_H1_seminorm_velocity(false),
+      error_calc_start_time(std::numeric_limits<double>::max()),
+      error_calc_interval_time(std::numeric_limits<double>::max()),
+      calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
+      write_errors_to_file(false),
+      filename_prefix("error")
   {
-    print_parameter(pcout,"Calculate error",analytical_solution_available);
+  }
+
+  void
+  print(ConditionalOStream & pcout, bool unsteady)
+  {
+    print_parameter(pcout, "Calculate error", analytical_solution_available);
     if(analytical_solution_available == true && unsteady == true)
     {
-      print_parameter(pcout,"Calculate relative errors",calculate_relative_errors);
-      print_parameter(pcout,"Calculate H1-seminorm velocity",calculate_H1_seminorm_velocity);
-      print_parameter(pcout,"Error calculation start time",error_calc_start_time);
-      print_parameter(pcout,"Error calculation interval time",error_calc_interval_time);
-      print_parameter(pcout,"Calculate error every time steps",calculate_every_time_steps);
-      print_parameter(pcout,"Write errors to file",write_errors_to_file);
+      print_parameter(pcout, "Calculate relative errors", calculate_relative_errors);
+      print_parameter(pcout, "Calculate H1-seminorm velocity", calculate_H1_seminorm_velocity);
+      print_parameter(pcout, "Error calculation start time", error_calc_start_time);
+      print_parameter(pcout, "Error calculation interval time", error_calc_interval_time);
+      print_parameter(pcout, "Calculate error every time steps", calculate_every_time_steps);
+      print_parameter(pcout, "Write errors to file", write_errors_to_file);
       print_parameter(pcout, "Filename", filename_prefix);
     }
   }

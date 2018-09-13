@@ -31,6 +31,7 @@ CGToDGTransfer<dim, Number>::CGToDGTransfer(const MF &         data_dg,
     auto end    = dh1.end_mg(level);
 
     for(auto cell1 = start1, cell2 = start2; cell1 < end; cell1++, cell2++)
+    {
       if(cell1->is_locally_owned_on_level())
       {
         cell1->get_mg_dof_indices(dof_indices1);
@@ -39,6 +40,7 @@ CGToDGTransfer<dim, Number>::CGToDGTransfer(const MF &         data_dg,
         cell2->get_mg_dof_indices(dof_indices2);
         dof_indices_dg.push_back(dof_indices2[0]);
       }
+    }
   }
   else
   {
@@ -49,6 +51,7 @@ CGToDGTransfer<dim, Number>::CGToDGTransfer(const MF &         data_dg,
 
     // loop over all local cells
     for(auto cell1 = start1, cell2 = start2; cell1 < end; cell1++, cell2++)
+    {
       if(cell1->is_locally_owned())
       {
         // get indices for CG and ...
@@ -61,6 +64,7 @@ CGToDGTransfer<dim, Number>::CGToDGTransfer(const MF &         data_dg,
         // ... save the first entry (rest not needed: consecutive elements)
         dof_indices_dg.push_back(dof_indices2[0]);
       }
+    }
   }
 }
 
@@ -104,15 +108,19 @@ CGToDGTransfer<dim, Number>::transfer(VectorType &       dst,
 
   // do transfer:
   if(dh1.get_fe().dofs_per_vertex == 0)
+  {
     // DG -> CG
     for(unsigned int i = 0, k = 0; i < dof_indices_cg.size(); i += delta, k++)
       for(unsigned int j = 0; j < delta; j++)
         dst[dof_indices_cg[i + num_dst[j]]] += src[dof_indices_dg[k] + num_src[j]];
+  }
   else
+  {
     // CG -> DG
     for(unsigned int i = 0, k = 0; i < dof_indices_cg.size(); i += delta, k++)
       for(unsigned int j = 0; j < delta; j++)
         dst[dof_indices_dg[k] + num_dst[j]] += src[dof_indices_cg[i + num_src[j]]];
+  }
 }
 
 #include "dg_to_cg_transfer.hpp"

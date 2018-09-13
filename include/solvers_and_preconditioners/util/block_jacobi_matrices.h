@@ -13,11 +13,13 @@
  *  Initialize block Jacobi matrices with zeros.
  */
 template<typename Number>
-void initialize_block_jacobi_matrices_with_zero(std::vector<LAPACKFullMatrix<Number> > &matrices)
+void
+initialize_block_jacobi_matrices_with_zero(std::vector<LAPACKFullMatrix<Number>> & matrices)
 {
   // initialize matrices
-  for(typename std::vector<LAPACKFullMatrix<Number> >::iterator
-      it = matrices.begin(); it != matrices.end(); ++it)
+  for(typename std::vector<LAPACKFullMatrix<Number>>::iterator it = matrices.begin();
+      it != matrices.end();
+      ++it)
   {
     *it = 0;
   }
@@ -29,26 +31,28 @@ void initialize_block_jacobi_matrices_with_zero(std::vector<LAPACKFullMatrix<Num
  *  of matrices of type LAPACKFullMatrix.
  */
 template<typename Number>
-void calculate_lu_factorization_block_jacobi(std::vector<LAPACKFullMatrix<Number> > &matrices)
+void
+calculate_lu_factorization_block_jacobi(std::vector<LAPACKFullMatrix<Number>> & matrices)
 {
-  for(typename std::vector<LAPACKFullMatrix<Number> >::iterator
-      it = matrices.begin(); it != matrices.end(); ++it)
+  for(typename std::vector<LAPACKFullMatrix<Number>>::iterator it = matrices.begin();
+      it != matrices.end();
+      ++it)
   {
     LAPACKFullMatrix<Number> copy(*it);
     try // the matrix might be singular
     {
       (*it).compute_lu_factorization();
     }
-    catch (std::exception &exc)
+    catch(std::exception & exc)
     {
       // add a small, positive value to the diagonal
       // of the LU factorized matrix
-      for(unsigned int i=0; i<(*it).m(); ++i)
+      for(unsigned int i = 0; i < (*it).m(); ++i)
       {
-        for(unsigned int j=0; j<(*it).n(); ++j)
+        for(unsigned int j = 0; j < (*it).n(); ++j)
         {
-          if(i==j)
-            (*it)(i,j) += 1.e-4;
+          if(i == j)
+            (*it)(i, j) += 1.e-4;
         }
       }
     }

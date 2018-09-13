@@ -18,10 +18,9 @@ template<typename Operator>
 class BlockJacobiPreconditioner : public PreconditionerBase<typename Operator::value_type>
 {
 public:
-    
-    typedef typename Operator::value_type value_type;
-    
-  BlockJacobiPreconditioner(Operator const &underlying_operator_in)
+  typedef typename Operator::value_type value_type;
+
+  BlockJacobiPreconditioner(Operator const & underlying_operator_in)
     : underlying_operator(underlying_operator_in)
   {
     // initialize block Jacobi
@@ -33,7 +32,8 @@ public:
    *  Make sure that the underlying operator has been updated
    *  when calling this function.
    */
-  void update(MatrixOperatorBase const * /*matrix_operator*/)
+  void
+  update(MatrixOperatorBase const * /*matrix_operator*/)
   {
     underlying_operator.update_inverse_block_diagonal();
   }
@@ -43,14 +43,15 @@ public:
    *  Make sure that the block Jacobi preconditioner has been
    *  updated when calling this function.
    */
-  void vmult (parallel::distributed::Vector<value_type>       &dst,
-              const parallel::distributed::Vector<value_type> &src) const
+  void
+  vmult(parallel::distributed::Vector<value_type> &       dst,
+        const parallel::distributed::Vector<value_type> & src) const
   {
-    underlying_operator.apply_inverse_block_diagonal(dst,src);
+    underlying_operator.apply_inverse_block_diagonal(dst, src);
   }
 
 private:
-  Operator const &underlying_operator;
+  Operator const & underlying_operator;
 };
 
 

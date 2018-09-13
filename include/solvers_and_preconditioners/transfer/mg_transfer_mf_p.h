@@ -22,6 +22,8 @@ public:
                         const DoFHandler<dim> & dof_handler_2,
                         const unsigned int      level);
 
+  virtual ~MGTransferMatrixFreeP();
+
   void
   reinit(const DoFHandler<dim> & dof_handler_1,
          const DoFHandler<dim> & dof_handler_2,
@@ -30,7 +32,6 @@ public:
   void
   initialize_dof_vector(VectorType & vec_1, VectorType & vec_2);
 
-  ~MGTransferMatrixFreeP();
 
   virtual void
   restrict_and_add(const unsigned int /*level*/, VectorType & dst, const VectorType & src) const;
@@ -39,8 +40,9 @@ public:
   prolongate(const unsigned int /*level*/, VectorType & dst, const VectorType & src) const;
 
 private:
-  MatrixFree<dim, value_type>            data_1;
-  MatrixFree<dim, value_type>            data_2;
+  MatrixFree<dim, value_type> data_1;
+  MatrixFree<dim, value_type> data_2;
+
   AlignedVector<VectorizedArray<Number>> shape_values_rest;
   AlignedVector<VectorizedArray<Number>> shape_values_prol;
 

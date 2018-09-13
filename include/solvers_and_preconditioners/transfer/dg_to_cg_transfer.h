@@ -10,7 +10,8 @@ class CGToDGTransfer
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-  typedef MatrixFree<dim, Number>                    MF;
+
+  typedef MatrixFree<dim, Number> MF;
 
   CGToDGTransfer(const MF &         data_dg,
                  const MF &         data_cg,
@@ -27,7 +28,10 @@ public:
 
 private:
   void
-  transfer(VectorType & dst, const VectorType & src, const MF & data_dst, const MF & data_src) const;
+  transfer(VectorType &       dst,
+           const VectorType & src,
+           const MF &         data_dst,
+           const MF &         data_src) const;
 
   const MF &         data_dg;
   const MF &         data_cg;

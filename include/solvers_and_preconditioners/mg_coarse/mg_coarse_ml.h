@@ -36,6 +36,7 @@ struct AdditionalData
     const char * /*coarse_type*/                              = "Amesos-KLU")
   {
   }
+
   bool                           elliptic;
   bool                           higher_order_elements;
   unsigned int                   n_cycles;
@@ -68,19 +69,27 @@ struct MGCoarseMLData
     amg_data.n_cycles        = 1;
     amg_data.smoother_type   = "ILU";
   };
-  
-  void print(ConditionalOStream &pcout)
+
+  void
+  print(ConditionalOStream & pcout)
   {
-    print_parameter(pcout,"  Accelerate with conjugate gradient solver (PCG)",use_conjugate_gradient_solver);
-    if(use_conjugate_gradient_solver){
-      print_parameter(pcout,"    PCG max. iterations",max_iter);
-      print_parameter(pcout,"    PCG abs. tolerance",solver_tolerance_abs);
-      print_parameter(pcout,"    PCG rel. tolerance",solver_tolerance_rel);
-      print_parameter(pcout,"    PCG failure criterion",pcg_failure_criterion);
+    print_parameter(pcout,
+                    "  Accelerate with conjugate gradient solver (PCG)",
+                    use_conjugate_gradient_solver);
+
+    if(use_conjugate_gradient_solver)
+    {
+      print_parameter(pcout, "    PCG max. iterations", max_iter);
+      print_parameter(pcout, "    PCG abs. tolerance", solver_tolerance_abs);
+      print_parameter(pcout, "    PCG rel. tolerance", solver_tolerance_rel);
+      print_parameter(pcout, "    PCG failure criterion", pcg_failure_criterion);
     }
-    print_parameter(pcout,"  Perform transfer to continuous Galerkin",transfer_to_continuous_galerkin);
+
+    print_parameter(pcout,
+                    "  Perform transfer to continuous Galerkin",
+                    transfer_to_continuous_galerkin);
   }
-  
+
   bool   use_conjugate_gradient_solver;
   int    max_iter;
   double solver_tolerance_abs;
@@ -94,8 +103,9 @@ struct MGCoarseMLData
 #ifdef DEAL_II_WITH_TRILINOS
 
 template<typename Operator, typename Number = typename Operator::value_type>
-class MGCoarseML : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type>>,
-                   public PreconditionerBase<Number>
+class MGCoarseML
+  : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type>>,
+    public PreconditionerBase<Number>
 {
 public:
   typedef typename Operator::value_type  MultigridNumber;
@@ -139,13 +149,14 @@ public:
              const parallel::distributed::Vector<MultigridNumber> & src) const;
 
   void
-  vmult(parallel::distributed::Vector<Number> & dst, const parallel::distributed::Vector<Number> & src) const;
+  vmult(parallel::distributed::Vector<Number> &       dst,
+        const parallel::distributed::Vector<Number> & src) const;
 
 private:
   // reference to matrix-free operators
   const Operator & operator_dg;
   const Operator & operator_cg;
-  
+
   std::shared_ptr<CGToDGTransfer<Operator::DIM, MultigridNumber>> transfer;
   // distributed sparse system matrix
   MatrixType system_matrix;
@@ -158,8 +169,9 @@ private:
 #else
 
 template<typename Operator, typename Number = typename Operator::value_type>
-class MGCoarseML : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type>>,
-                   public PreconditionerBase<Number>
+class MGCoarseML
+  : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type>>,
+    public PreconditionerBase<Number>
 {
 public:
   typedef typename Operator::value_type MultigridNumber;
@@ -201,7 +213,8 @@ public:
              const parallel::distributed::Vector<MultigridNumber> & src) const;
 
   void
-  vmult(parallel::distributed::Vector<Number> & dst, const parallel::distributed::Vector<Number> & src) const;
+  vmult(parallel::distributed::Vector<Number> &       dst,
+        const parallel::distributed::Vector<Number> & src) const;
 };
 
 #endif
