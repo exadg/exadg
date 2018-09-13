@@ -44,8 +44,7 @@ Poisson::InputParameters::set_input_parameters()
   multigrid_data.gmres_smoother_data.number_of_iterations = 5;
   // MG coarse grid solver
   multigrid_data.coarse_solver = MultigridCoarseGridSolver::AMG_ML; // GMRES_PointJacobi;
-  // multigrid_data.two_levels = true;
-  multigrid_data.type = MultigridType::PGMG;
+  multigrid_data.type = MultigridType::pMG;
 
   // write output for visualization of results
   output_data.write_output  = true;

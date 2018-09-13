@@ -207,6 +207,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::vmult_add(
   }
 }
 
+#ifdef DEAL_II_WITH_TRILINOS
 template<int dim, int fe_degree, typename Number>
 void
 ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_system_matrix(
@@ -249,7 +250,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_system_matrix(
     convective_operator->calculate_system_matrix(system_matrix, this->eval_time);
   }
 }
-
+#endif
 
 template<int dim, int fe_degree, typename Number>
 void

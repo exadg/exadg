@@ -10,21 +10,31 @@ INCLUDE_DIRECTORIES(
         )
 
 SET( SOURCE_FILES
-     compressible_navier_stokes_operator_matrix_free.cc 
-     #steady_navier_stokes.cc
+     # Compressible Navier Stokes
+     #compressible_navier_stokes_operator_matrix_free.cc 
+     unsteady_compressible_navier_stokes.cc
+     
+     # Incompressible Navier Stokes
+     #navier_stokes_operator_matrix_free.cc
+     #navier_stokes_operator_matrix_free_basic.cc
+     steady_navier_stokes.cc
      unsteady_navier_stokes.cc
-     #unsteady_navier_stokes_two_domains.cc
+     unsteady_navier_stokes_two_domains.cc
+     
+     # Poisson
+     poisson.cc
+     #laplace_operator_matrix_free.cc
      #multigrid_solver.cc
+
+     # Scalar reaction-convection-diffusion
+     steady_convection_diffusion.cc
+     unsteady_convection_diffusion.cc
+
+     # Other
      #fe_flow_past_cylinder.cc
      #fe_turbulent_channel.cc
      #fe_poiseuille.cc
-     #poisson.cc
-     #steady_convection_diffusion.cc
-     #unsteady_convection_diffusion.cc
      #step-7.cc
-     #laplace_operator_matrix_free.cc
-     #navier_stokes_operator_matrix_free.cc
-     #navier_stokes_operator_matrix_free_basic.cc
      #gmres_test.cc
      )
 
