@@ -110,8 +110,6 @@ public:
 
     // OUTPUT AND POSTPROCESSING
     print_parameters_output_and_postprocessing(pcout);
-
-    pcout << std::endl << "Rest:" << std::endl;
   }
 
   void
