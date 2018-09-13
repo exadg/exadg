@@ -19,12 +19,12 @@
 #include "../../incompressible_navier_stokes/spatial_discretization/divergence_and_continuity_penalty_operators.h"
 #include "operators/base_operator.h"
 
-#include "../include/solvers_and_preconditioners/iterative_solvers.h"
-#include "solvers_and_preconditioners/internal_solvers.h"
-#include "solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
-#include "solvers_and_preconditioners/invert_diagonal.h"
-#include "solvers_and_preconditioners/verify_calculation_of_diagonal.h"
-#include "solvers_and_preconditioners/block_jacobi_matrices.h"
+#include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
+#include "../../solvers_and_preconditioners/solvers/internal_solvers.h"
+#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
+#include "../../solvers_and_preconditioners/util/invert_diagonal.h"
+#include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
+#include "../../solvers_and_preconditioners/util/block_jacobi_matrices.h"
 
 namespace IncNS
 {
@@ -241,10 +241,13 @@ private:
  *  of these penalty terms.
  *
  */
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 class ProjectionOperatorDivergenceAndContinuityPenalty : public ProjectionOperatorBase<dim>
 {
 public:
+  static const int DIM = dim;
+  typedef Number value_type;
+    
   typedef ProjectionOperatorDivergenceAndContinuityPenalty<dim, fe_degree,
       fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> This;
 
@@ -344,7 +347,7 @@ public:
   /*
    *  Apply block Jacobi preconditioner.
    */
-  void apply_block_jacobi (parallel::distributed::Vector<value_type>       &dst,
+  void apply_inverse_block_diagonal (parallel::distributed::Vector<value_type>       &dst,
                            parallel::distributed::Vector<value_type> const &src) const
   {
     this->mass_matrix_operator->get_data().cell_loop(&This::cell_loop_apply_inverse_block_jacobi_matrices, this, dst, src);
@@ -357,7 +360,7 @@ public:
    *  make sure that the block Jacobi matrices are allocated before calculating
    *  the matrices and the LU factorization.
    */
-  void update_block_jacobi () const
+  void update_inverse_block_diagonal () const
   {
     if(block_jacobi_matrices_have_been_initialized == false)
     {
@@ -408,8 +411,8 @@ private:
     // initialize block Jacobi matrices with zeros
     initialize_block_jacobi_matrices_with_zero(matrices);
 
-    divergence_penalty_operator->add_block_jacobi_matrices(matrices);
-    continuity_penalty_operator->add_block_jacobi_matrices(matrices);
+    divergence_penalty_operator->add_block_diagonal_matrices(matrices);
+    continuity_penalty_operator->add_block_diagonal_matrices(matrices);
 
     for(typename std::vector<LAPACKFullMatrix<value_type> >::iterator
         it = matrices.begin(); it != matrices.end(); ++it)
@@ -417,7 +420,7 @@ private:
       (*it) *= this->get_time_step_size();
     }
 
-    mass_matrix_operator->add_block_jacobi_matrices(matrices);
+    mass_matrix_operator->add_block_diagonal_matrices(matrices);
   }
 
   /*
@@ -447,7 +450,7 @@ private:
           src_vector(j) = fe_eval.begin_dof_values()[j][v];
 
         // apply inverse matrix
-        matrices[cell*VectorizedArray<value_type>::n_array_elements+v].apply_lu_factorization(src_vector,false);
+        matrices[cell*VectorizedArray<value_type>::n_array_elements+v].solve(src_vector,false);
 
         // write solution to dst-vector
         for (unsigned int j=0; j<dofs_per_cell; ++j)
@@ -598,7 +601,7 @@ public:
         for (unsigned int j=0; j<total_dofs_per_cell; ++j)
           vector_input(j)=(fe_eval_velocity.read_cellwise_dof_value(j))[v];
 
-        (matrices[v]).apply_lu_factorization(vector_input,false);
+        (matrices[v]).solve(vector_input,false);
         for (unsigned int j=0; j<total_dofs_per_cell; ++j)
           fe_eval_velocity.write_cellwise_dof_value(j,vector_input(j),v);
       }
@@ -754,7 +757,7 @@ struct OptimizedProjectionOperatorData
   std::shared_ptr<BoundaryDescriptorU<dim> > bc;
 };
 
-template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
+template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 class ProjectionOperatorOptimized : public ProjectionOperatorBase<dim>
 {
 public:
@@ -763,6 +766,9 @@ public:
     dirichlet,
     neumann
   };
+  
+  static const int DIM = dim;
+  typedef Number value_type;
 
   static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
@@ -1019,10 +1025,10 @@ private:
     }
   }
 
-  void boundary_face_loop(const MatrixFree<dim,value_type>                &data,
-                          parallel::distributed::Vector<value_type>       &dst,
-                          const parallel::distributed::Vector<value_type> &src,
-                          const std::pair<unsigned int,unsigned int>      &face_range) const
+  void boundary_face_loop(const MatrixFree<dim,value_type>                &/*data*/,
+                          parallel::distributed::Vector<value_type>       &/*dst*/,
+                          const parallel::distributed::Vector<value_type> &/*src*/,
+                          const std::pair<unsigned int,unsigned int>      &/*face_range*/) const
   {
 
   }

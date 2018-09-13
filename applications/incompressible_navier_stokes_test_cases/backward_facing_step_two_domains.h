@@ -923,7 +923,7 @@ void create_grid_and_set_boundary_conditions_1(
   // fill boundary descriptor velocity
   // no slip boundaries at lower and upper wall with ID=0
   std::shared_ptr<Function<dim> > zero_function_velocity;
-  zero_function_velocity.reset(new ZeroFunction<dim>(dim));
+  zero_function_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
                                                    (0,zero_function_velocity));
 
@@ -1022,7 +1022,7 @@ void create_grid_and_set_boundary_conditions_2(
   // fill boundary descriptor velocity
   // no slip boundaries at the upper and lower wall with ID=0
   std::shared_ptr<Function<dim> > zero_function_velocity;
-  zero_function_velocity.reset(new ZeroFunction<dim>(dim));
+  zero_function_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
                                                    (0,zero_function_velocity));
 
@@ -1052,7 +1052,7 @@ void create_grid_and_set_boundary_conditions_2(
 
   // outflow boundary condition at right boundary with ID=1: set pressure to zero
   std::shared_ptr<Function<dim> > zero_function_pressure;
-  zero_function_pressure.reset(new ZeroFunction<dim>(1));
+  zero_function_pressure.reset(new Functions::ZeroFunction<dim>(1));
   boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
                                                    (1,zero_function_pressure));
 }
@@ -1065,7 +1065,7 @@ void set_field_functions_1(std::shared_ptr<FieldFunctions<dim> > field_functions
   std::shared_ptr<Function<dim> > initial_solution_velocity;
   initial_solution_velocity.reset(new InitialSolutionVelocity<dim>());
   std::shared_ptr<Function<dim> > initial_solution_pressure;
-  initial_solution_pressure.reset(new ZeroFunction<dim>(1));
+  initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
 
   // use a constant body force for the turbulent channel (DOMAIN 1)
   std::shared_ptr<Function<dim> > right_hand_side;
@@ -1084,13 +1084,13 @@ void set_field_functions_2(std::shared_ptr<FieldFunctions<dim> > field_functions
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > initial_solution_velocity;
   initial_solution_velocity.reset(new InitialSolutionVelocity<dim>());
-//  initial_solution_velocity.reset(new ZeroFunction<dim>(dim));
+//  initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   std::shared_ptr<Function<dim> > initial_solution_pressure;
-  initial_solution_pressure.reset(new ZeroFunction<dim>(1));
+  initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
 
   // no body forces for the second domain
   std::shared_ptr<Function<dim> > right_hand_side;
-  right_hand_side.reset(new ZeroFunction<dim>(dim));
+  right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
 
   field_functions->initial_solution_velocity = initial_solution_velocity;
   field_functions->initial_solution_pressure = initial_solution_pressure;
@@ -1102,8 +1102,8 @@ void set_field_functions_2(std::shared_ptr<FieldFunctions<dim> > field_functions
 template<int dim>
 void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
 {
-  analytical_solution->velocity.reset(new ZeroFunction<dim>(dim));
-  analytical_solution->pressure.reset(new ZeroFunction<dim>(1));
+  analytical_solution->velocity.reset(new Functions::ZeroFunction<dim>(dim));
+  analytical_solution->pressure.reset(new Functions::ZeroFunction<dim>(1));
 }
 
 // Postprocessor

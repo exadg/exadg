@@ -8,7 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_DATA_NAVIER_STOKES_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_DATA_NAVIER_STOKES_H_
 
-#include "postprocessor/output_data.h"
+#include "../../postprocessor/output_data.h"
 
 /*
  *  Average velocity field over time for statistically steady, turbulent
@@ -28,10 +28,12 @@ struct OutputDataMeanVelocity
 
   void print(ConditionalOStream &pcout, bool unsteady)
   {
-    print_parameter(pcout,"Calculate mean velocity", calculate);
-    print_parameter(pcout,"  Sample start time", sample_start_time);
-    print_parameter(pcout,"  Sample end time", sample_end_time);
-    print_parameter(pcout,"  Sample every timesteps", sample_every_timesteps);
+    if(unsteady){
+      print_parameter(pcout,"Calculate mean velocity", calculate);
+      print_parameter(pcout,"  Sample start time", sample_start_time);
+      print_parameter(pcout,"  Sample end time", sample_end_time);
+      print_parameter(pcout,"  Sample every timesteps", sample_every_timesteps);
+    }
   }
 
   // calculate mean velocity field (for statistically steady, turbulent flows)
@@ -66,6 +68,8 @@ struct OutputDataNavierStokes : public OutputData
     print_parameter(pcout,"Write streamfunction", write_streamfunction);
     print_parameter(pcout,"Write Q criterion", write_q_criterion);
     print_parameter(pcout,"Write processor ID", write_processor_id);
+    
+    mean_velocity.print(pcout, unsteady);
   }
 
   // write divergence of velocity field

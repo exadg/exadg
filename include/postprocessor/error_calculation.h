@@ -62,7 +62,7 @@ public:
 
         ++error_counter;
       }
-    }
+    } 
   }
 
 private:

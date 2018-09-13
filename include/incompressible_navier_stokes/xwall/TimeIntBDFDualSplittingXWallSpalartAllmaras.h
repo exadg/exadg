@@ -67,8 +67,11 @@ protected:
   }
   void write_restart_data_sa(boost::archive::binary_oarchive & oa) const
   {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     VectorView<double> tmp(this->vt[0].local_size(),
                            this->vt[0].begin());
+#pragma GCC diagnostic pop
     oa << tmp;
     for (unsigned int i=1; i<this->vt.size(); i++)
     {

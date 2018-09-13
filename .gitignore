@@ -26,3 +26,4 @@ applications/unsteady_navier_stokes
 applications/unsteady_navier_stokes_coupled_solver
 applications/unsteady_navier_stokes_pressure_correction
 applications/output
+build/

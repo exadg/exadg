@@ -22,7 +22,7 @@ public:
   {}
 
   virtual ~MatrixOperatorBase(){}
-
+  
 private:
 };
 

@@ -17,12 +17,12 @@
 #include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_spectrum_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/turbulent_channel_data.h"
-#include "../include/functionalities/print_functions.h"
+#include "../../functionalities/print_functions.h"
 #include "../postprocessor/line_plot_data.h"
 #include "../postprocessor/mean_velocity_calculator.h"
-#include "postprocessor/error_calculation_data.h"
-#include "solvers_and_preconditioners/multigrid_input_parameters.h"
-#include "solvers_and_preconditioners/newton_solver_data.h"
+#include "../../postprocessor/error_calculation_data.h"
+#include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
+#include "../../solvers_and_preconditioners/newton/newton_solver_data.h"
 
 namespace IncNS
 {

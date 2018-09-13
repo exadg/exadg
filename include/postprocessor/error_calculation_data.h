@@ -8,7 +8,7 @@
 #ifndef INCLUDE_POSTPROCESSOR_ERROR_CALCULATION_DATA_H_
 #define INCLUDE_POSTPROCESSOR_ERROR_CALCULATION_DATA_H_
 
-#include "../include/functionalities/print_functions.h"
+#include "../functionalities/print_functions.h"
 
 struct ErrorCalculationData
 {

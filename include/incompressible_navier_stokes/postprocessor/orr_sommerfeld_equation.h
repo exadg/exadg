@@ -154,7 +154,7 @@ void compute_eigenvector(std::vector<std::complex<double> > &eigenvector,
   Gmat(3,2) = -fe.shape_grad(1,Point<dim>(1.))[0];
   Gmat(3,3) = -fe.shape_grad(m-2,Point<dim>(1.))[0];
   Gmat.compute_lu_factorization();
-  Gmat.apply_lu_factorization(constraints, false);
+  Gmat.solve(constraints, false);
 
   /*
   for (unsigned int i=0; i<4; ++i)

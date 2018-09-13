@@ -175,7 +175,7 @@ public:
     this->get_data().cell_loop(&This::cell_loop_diagonal, this, diagonal, src, false /*zero_dst_vector = false*/);
   }
 
-  void add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
+  void add_block_diagonal_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
   {
     parallel::distributed::Vector<value_type>  src;
     this->get_data().cell_loop(&This::cell_loop_calculate_block_jacobi_matrices, this, matrices, src, false /*zero_dst_vector = false*/);
@@ -544,7 +544,7 @@ public:
                           MatrixFree<dim,value_type>::only_values);
   }
 
-  void add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
+  void add_block_diagonal_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
   {
     parallel::distributed::Vector<value_type>  src;
 

@@ -15,7 +15,7 @@
 
 #include "../../incompressible_navier_stokes/user_interface/analytical_solution.h"
 #include "../../postprocessor/output_data.h"
-#include "postprocessor/solution_field.h"
+#include "../../postprocessor/solution_field.h"
 
 
 /*

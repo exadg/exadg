@@ -58,7 +58,7 @@ FluidBaseAlgorithm<dim>::set_open_boundary
  const std::shared_ptr<Function<dim> > &pressure_function)
 {
   if (pressure_function.get() == 0)
-    boundary->open_conditions_p[boundary_id] = std::shared_ptr<Function<dim> >(new ZeroFunction<dim>(1));
+    boundary->open_conditions_p[boundary_id] = std::shared_ptr<Function<dim> >(new Functions::ZeroFunction<dim>(1));
   else
     {
       AssertThrow (pressure_function->n_components == 1,
@@ -76,7 +76,7 @@ FluidBaseAlgorithm<dim>::set_open_boundary_with_normal_flux
  const std::shared_ptr<Function<dim> > &pressure_function)
 {
   if (pressure_function.get() == 0)
-    boundary->open_conditions_p[boundary_id] = std::shared_ptr<Function<dim> >(new ZeroFunction<dim>(1));
+    boundary->open_conditions_p[boundary_id] = std::shared_ptr<Function<dim> >(new Functions::ZeroFunction<dim>(1));
   else
     {
       AssertThrow (pressure_function->n_components == 1,

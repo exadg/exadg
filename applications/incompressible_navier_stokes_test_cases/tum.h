@@ -547,7 +547,7 @@ void create_grid_and_set_boundary_conditions(
 
   // fill boundary descriptor velocity
   std::shared_ptr<Function<dim> > zero_velocity;
-  zero_velocity.reset(new ZeroFunction<dim>(dim));
+  zero_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   // walls: ID = 0
   boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
                                                     (0,zero_velocity));
@@ -586,9 +586,9 @@ void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > initial_solution_velocity;
-  initial_solution_velocity.reset(new ZeroFunction<dim>(dim));
+  initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   std::shared_ptr<Function<dim> > initial_solution_pressure;
-  initial_solution_pressure.reset(new ZeroFunction<dim>(1));
+  initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
 
   std::shared_ptr<Function<dim> > right_hand_side;
   right_hand_side.reset(new RightHandSide<dim>());
@@ -603,8 +603,8 @@ void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field
 template<int dim>
 void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
 {
-  analytical_solution->velocity.reset(new ZeroFunction<dim>(dim));
-  analytical_solution->pressure.reset(new ZeroFunction<dim>(1));
+  analytical_solution->velocity.reset(new Functions::ZeroFunction<dim>(dim));
+  analytical_solution->pressure.reset(new Functions::ZeroFunction<dim>(1));
 }
 
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"

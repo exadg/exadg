@@ -398,11 +398,11 @@ void create_grid_and_set_boundary_conditions(
 
  // zero function scalar
  std::shared_ptr<Function<dim> > zero_function_scalar;
- zero_function_scalar.reset(new ZeroFunction<dim>(1));
+ zero_function_scalar.reset(new Functions::ZeroFunction<dim>(1));
 
  // zero function vectorial
  std::shared_ptr<Function<dim> > zero_function_vectorial;
- zero_function_vectorial.reset(new ZeroFunction<dim>(dim));
+ zero_function_vectorial.reset(new Functions::ZeroFunction<dim>(dim));
 
  // density
 
@@ -452,11 +452,11 @@ void set_field_functions(std::shared_ptr<CompNS::FieldFunctions<dim> > field_fun
 {
   // zero function scalar
   std::shared_ptr<Function<dim> > zero_function_scalar;
-  zero_function_scalar.reset(new ZeroFunction<dim>(1));
+  zero_function_scalar.reset(new Functions::ZeroFunction<dim>(1));
 
   // zero function vectorial
   std::shared_ptr<Function<dim> > zero_function_vectorial;
-  zero_function_vectorial.reset(new ZeroFunction<dim>(dim));
+  zero_function_vectorial.reset(new Functions::ZeroFunction<dim>(dim));
 
   // initial solution
   std::shared_ptr<Function<dim> > initial_solution;

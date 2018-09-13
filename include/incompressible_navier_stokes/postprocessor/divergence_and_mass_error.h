@@ -111,30 +111,30 @@ private:
                          const parallel::distributed::Vector<Number> &source,
                          const std::pair<unsigned int,unsigned int>  &cell_range)
   {
-    FEEvaluation<dim,fe_degree,fe_degree+1,dim,Number> phi(data,dof_quad_index_data.dof_index_velocity,dof_quad_index_data.quad_index_velocity);
+    FEEvaluation<dim,fe_degree,fe_degree+1,dim,Number> fe_eval(data,dof_quad_index_data.dof_index_velocity,dof_quad_index_data.quad_index_velocity);
 
-    AlignedVector<VectorizedArray<Number> > JxW_values(phi.n_q_points);
+    AlignedVector<VectorizedArray<Number> > JxW_values(fe_eval.n_q_points);
 
     Number div = 0.;
     Number ref = 0.;
 
     for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
     {
-      phi.reinit(cell);
-      phi.read_dof_values(source);
-//      phi.evaluate(false,true);
-      phi.evaluate(true,true);
-      phi.fill_JxW_values(JxW_values);
+      fe_eval.reinit(cell);
+      fe_eval.read_dof_values(source);
+//      fe_eval.evaluate(false,true);
+      fe_eval.evaluate(true,true);
+      fe_eval.fill_JxW_values(JxW_values);
 
       VectorizedArray<Number> div_vec = make_vectorized_array<Number>(0.);
       VectorizedArray<Number> ref_vec = make_vectorized_array<Number>(0.);
 
-      for (unsigned int q=0; q<phi.n_q_points; ++q)
+      for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
       {
 //        ref_vec += JxW_values[q];
-        Tensor<1,dim,VectorizedArray<Number> > velocity = phi.get_value(q);
+        Tensor<1,dim,VectorizedArray<Number> > velocity = fe_eval.get_value(q);
         ref_vec += JxW_values[q]*velocity.norm();
-        div_vec += JxW_values[q]*std::abs(phi.get_divergence(q));
+        div_vec += JxW_values[q]*std::abs(fe_eval.get_divergence(q));
       }
 
       // sum over entries of VectorizedArray, but only over those

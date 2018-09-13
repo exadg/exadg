@@ -8,10 +8,11 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_INPUT_PARAMETERS_H_
 #define INCLUDE_CONVECTION_DIFFUSION_INPUT_PARAMETERS_H_
 
-#include "../include/functionalities/print_functions.h"
-#include "postprocessor/error_calculation_data.h"
-#include "postprocessor/output_data.h"
-#include "solvers_and_preconditioners/multigrid_input_parameters.h"
+#include "../../functionalities/print_functions.h"
+#include "../../postprocessor/error_calculation_data.h"
+#include "../../postprocessor/output_data.h"
+#include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
+#include <deal.II/base/exceptions.h>
 
 namespace ConvDiff
 {
@@ -215,7 +216,9 @@ public:
     // calculation of errors
     error_data(ErrorCalculationData()),
 
-    output_solver_info_every_timesteps(1)
+    output_solver_info_every_timesteps(1),
+            
+    enable_cell_based_for_loops(false)
   {}
 
   /*
@@ -356,6 +359,10 @@ public:
  
     // OUTPUT AND POSTPROCESSING
     print_parameters_output_and_postprocessing(pcout);
+    
+    pcout << std::endl
+          << "Rest:" << std::endl;
+    print_parameter(pcout,"Enable cell-based face loops",enable_cell_based_for_loops);
   }
 
   void print_parameters_mathematical_model(ConditionalOStream &pcout)
@@ -714,6 +721,8 @@ public:
 
   // show solver performance (wall time, number of iterations) every ... timesteps
   unsigned int output_solver_info_every_timesteps;
+  
+  bool enable_cell_based_for_loops;
 };
 
 }

@@ -11,7 +11,7 @@
 #include "../../incompressible_navier_stokes/preconditioners/preconditioner_navier_stokes.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/projection_operators_and_solvers.h"
-#include "solvers_and_preconditioners/newton_solver.h"
+#include "solvers_and_preconditioners/newton/newton_solver.h"
 
 namespace IncNS
 {
@@ -44,7 +44,7 @@ public:
                       std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
                       std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure,
                       std::shared_ptr<FieldFunctions<dim> >      field_functions);
-
+  
   void setup_solvers(double const &scaling_factor_time_derivative_term = 1.0);
 
   void setup_velocity_conv_diff_operator(double const &scaling_factor_time_derivative_term = 1.0);
@@ -192,8 +192,13 @@ public:
   CompatibleLaplaceOperatorData<dim> const get_compatible_laplace_operator_data() const
   {
     CompatibleLaplaceOperatorData<dim> comp_laplace_operator_data;
-    comp_laplace_operator_data.dof_index_velocity = this->get_dof_index_velocity();
-    comp_laplace_operator_data.dof_index_pressure = this->get_dof_index_pressure();
+    comp_laplace_operator_data.dof_index_velocity                     = this->get_dof_index_velocity();
+    comp_laplace_operator_data.dof_index_pressure                     = this->get_dof_index_pressure();
+    comp_laplace_operator_data.dof_handler_u                          =&this->get_dof_handler_u();
+    comp_laplace_operator_data.gradient_operator_data                 = this->get_gradient_operator_data();
+    comp_laplace_operator_data.divergence_operator_data               = this->get_divergence_operator_data();
+    comp_laplace_operator_data.underlying_operator_dof_index_velocity = this->get_dof_index_velocity();
+      
     return comp_laplace_operator_data;
   }
 
@@ -366,11 +371,17 @@ setup_velocity_conv_diff_operator(double const &scaling_factor_time_derivative_t
 {
   VelocityConvDiffOperatorData<dim> vel_conv_diff_operator_data;
 
+  vel_conv_diff_operator_data.mass_matrix_operator_data = this->mass_matrix_operator_data;
+  vel_conv_diff_operator_data.viscous_operator_data = this->viscous_operator_data;
+  vel_conv_diff_operator_data.convective_operator_data = this->convective_operator_data;
+
   // unsteady problem
   if(unsteady_problem_has_to_be_solved())
     vel_conv_diff_operator_data.unsteady_problem = true;
   else
     vel_conv_diff_operator_data.unsteady_problem = false;
+
+  vel_conv_diff_operator_data.scaling_factor_time_derivative_term = scaling_factor_time_derivative_term;
 
   // convective problem
   if(nonlinear_problem_has_to_be_solved())
@@ -386,8 +397,6 @@ setup_velocity_conv_diff_operator(double const &scaling_factor_time_derivative_t
       this->mass_matrix_operator,
       this->viscous_operator,
       this->convective_operator);
-
-  velocity_conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
 }
 
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
@@ -521,7 +530,7 @@ setup_divergence_and_continuity_penalty_operators_and_solvers()
       // the penalty parameter of the projection operator has not been calculated and the time step size has
       // not been set. Hence, update_preconditioner = true should be used for the Jacobi preconditioner in order
       // to use to correct diagonal for preconditioning.
-      preconditioner_projection.reset(new JacobiPreconditioner<Number,PROJ_OPERATOR>
+      preconditioner_projection.reset(new JacobiPreconditioner<PROJ_OPERATOR>
           (*std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
     }
     else if(this->param.preconditioner_projection == PreconditionerProjection::BlockJacobi)
@@ -530,7 +539,7 @@ setup_divergence_and_continuity_penalty_operators_and_solvers()
       // the penalty parameter of the projection operator has not been calculated and the time step size has
       // not been set. Hence, update_preconditioner = true should be used for the Jacobi preconditioner in order
       // to use to correct diagonal blocks for preconditioning.
-      preconditioner_projection.reset(new BlockJacobiPreconditioner<Number,PROJ_OPERATOR>
+      preconditioner_projection.reset(new BlockJacobiPreconditioner<PROJ_OPERATOR>
           (*std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
     }
     else

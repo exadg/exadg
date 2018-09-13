@@ -8,7 +8,7 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_MULTIGRID_PRECONDITIONER_H_
 #define INCLUDE_CONVECTION_DIFFUSION_MULTIGRID_PRECONDITIONER_H_
 
-#include "solvers_and_preconditioners/multigrid_preconditioner_dg.h"
+#include "solvers_and_preconditioners/multigrid/multigrid_preconditioner_dg.h"
 
 namespace ConvDiff
 {
@@ -18,11 +18,11 @@ namespace ConvDiff
  *  operator of the scalar (reaction-)convection-diffusion equation.
  */
 template<int dim, typename value_type, typename Operator, typename UnderlyingOperator>
-class MultigridPreconditioner : public MyMultigridPreconditionerDG<dim,value_type,Operator,UnderlyingOperator>
+class MultigridPreconditioner : public MyMultigridPreconditionerDG<dim,value_type,Operator>
 {
 public:
-  MultigridPreconditioner(){}
-
+  MultigridPreconditioner() {}
+  
   virtual ~MultigridPreconditioner(){};
 
   /*
@@ -66,7 +66,10 @@ private:
   {
     for (int level = this->n_global_levels-1; level>=0; --level)
     {
-      this->mg_matrices[level].set_evaluation_time(evaluation_time);
+      // this->mg_matrices[level] is a std::shared_ptr<MultigridOperatorBase>:
+      // so we have to dereference the shared_ptr, get the reference to it and
+      // finally we can cast it to pointer of type Operator
+      dynamic_cast<Operator *>(&*this->mg_matrices[level])->set_evaluation_time(evaluation_time);
     }
   }
 
@@ -80,7 +83,10 @@ private:
   {
     for (int level = this->n_global_levels-1; level>=0; --level)
     {
-      this->mg_matrices[level].set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
+      // this->mg_matrices[level] is a std::shared_ptr<MultigridOperatorBase>:
+      // so we have to dereference the shared_ptr, get the reference to it and
+      // finally we can cast it to pointer of type Operator
+      dynamic_cast<Operator *>(&*this->mg_matrices[level])->set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
     }
   }
 

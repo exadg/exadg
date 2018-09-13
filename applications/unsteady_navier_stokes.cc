@@ -47,7 +47,7 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/beltrami.h"
-//#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
+#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
 //#include "incompressible_navier_stokes_test_cases/orr_sommerfeld.h"
 //#include "incompressible_navier_stokes_test_cases/kelvin_helmholtz.h"
 //#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
