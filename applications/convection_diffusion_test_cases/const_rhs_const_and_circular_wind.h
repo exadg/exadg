@@ -41,7 +41,7 @@ const double START_TIME = 0.0;
 const double DIFFUSIVITY = 1.0e0;
 
 enum class TypeVelocityField { Constant, Circular, CircularZeroAtBoundary };
-TypeVelocityField const TYPE_VELOCITY_FIELD = TypeVelocityField::Circular;
+TypeVelocityField const TYPE_VELOCITY_FIELD = TypeVelocityField::Constant; //Circular;
 
 void ConvDiff::InputParameters::set_input_parameters()
 {
@@ -73,15 +73,17 @@ void ConvDiff::InputParameters::set_input_parameters()
   IP_factor = 1.0;
 
   // SOLVER
-  solver = Solver::PCG; //GMRES;
+  solver = Solver::GMRES;
   abs_tol = 1.e-20;
   rel_tol = 1.e-8;
-  max_iter = 1e3;
+  max_iter = 1e4;
   max_n_tmp_vectors = 100;
-  preconditioner = Preconditioner::Multigrid; //PointJacobi; //BlockJacobi; //MultigridDiffusion; //MultigridConvectionDiffusion;
-  mg_operator_type = MultigridOperatorType::ReactionDiffusion;
+  preconditioner = Preconditioner::Multigrid; //PointJacobi; //BlockJacobi;
+  multigrid_data.type = MultigridType::phMG;
+  enable_cell_based_face_loops = true;
+  mg_operator_type = MultigridOperatorType::ReactionConvectionDiffusion;
   // MG smoother
-  multigrid_data.smoother = MultigridSmoother::Chebyshev; //Jacobi; //GMRES; //Chebyshev; //ChebyshevNonsymmetricOperator;
+  multigrid_data.smoother = MultigridSmoother::Jacobi; //Jacobi; //GMRES; //Chebyshev; //ChebyshevNonsymmetricOperator;
 
   // MG smoother data: Chebyshev smoother
   multigrid_data.chebyshev_smoother_data.smoother_poly_degree = 3;
@@ -96,11 +98,11 @@ void ConvDiff::InputParameters::set_input_parameters()
 
   // MG smoother data: Jacobi smoother
   multigrid_data.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
-  multigrid_data.jacobi_smoother_data.number_of_smoothing_steps = 4;
-  multigrid_data.jacobi_smoother_data.damping_factor = 0.7;
+  multigrid_data.jacobi_smoother_data.number_of_smoothing_steps = 5;
+  multigrid_data.jacobi_smoother_data.damping_factor = 0.8;
 
   // MG coarse grid solver
-  multigrid_data.coarse_solver = MultigridCoarseGridSolver::PCG_NoPreconditioner; //PCG_NoPreconditioner; //Chebyshev; //GMRES_Jacobi;
+  multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner; //PCG_NoPreconditioner; //Chebyshev; //GMRES_Jacobi;
 
   update_preconditioner = false;
 

@@ -205,6 +205,7 @@ public:
     update_preconditioner(false),
 
     // NUMERICAL PARAMETERS
+    enable_cell_based_face_loops(false),
     runtime_optimization(false),
 
     // OUTPUT AND POSTPROCESSING
@@ -216,9 +217,7 @@ public:
     // calculation of errors
     error_data(ErrorCalculationData()),
 
-    output_solver_info_every_timesteps(1),
-            
-    enable_cell_based_for_loops(false)
+    output_solver_info_every_timesteps(1)
   {}
 
   /*
@@ -359,10 +358,6 @@ public:
  
     // OUTPUT AND POSTPROCESSING
     print_parameters_output_and_postprocessing(pcout);
-    
-    pcout << std::endl
-          << "Rest:" << std::endl;
-    print_parameter(pcout,"Enable cell-based face loops",enable_cell_based_for_loops);
   }
 
   void print_parameters_mathematical_model(ConditionalOStream &pcout)
@@ -543,6 +538,7 @@ public:
     pcout << std::endl
           << "Numerical parameters:" << std::endl;
 
+    print_parameter(pcout,"Enable cell-based face loops", enable_cell_based_face_loops);
     print_parameter(pcout,"Runtime optimization",runtime_optimization);
   }
 
@@ -689,6 +685,14 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
+  // By default, the matrix-free implementation performs separate loops over all cells,
+  // interior faces, and boundary faces. For a certain type of operations, however, it
+  // is necessary to perform the face-loop as a loop over all faces of a cell with an
+  // outer loop over all cells, e.g., preconditioners operating on the level of
+  // individual cells (for example block Jacobi). With this parameter, the loop structure
+  // can be changed to such an algorithm (cell_based_face_loops).
+  bool enable_cell_based_face_loops;
+
   // Runtime optimization: Evaluate volume and surface integrals of convective term,
   // diffusive term and rhs term in one function (local_apply, local_apply_face,
   // local_apply_boundary_face) instead of implementing each operator seperately and
@@ -701,8 +705,6 @@ public:
   //  if the rhs operator, convective operator or diffusive operator is "inactive"
   //  because the volume and surface integrals of these operators will always be evaluated
   bool runtime_optimization;
-
-
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -721,8 +723,6 @@ public:
 
   // show solver performance (wall time, number of iterations) every ... timesteps
   unsigned int output_solver_info_every_timesteps;
-  
-  bool enable_cell_based_for_loops;
 };
 
 }

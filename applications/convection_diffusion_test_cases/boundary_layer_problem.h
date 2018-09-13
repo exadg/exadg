@@ -74,17 +74,20 @@ void ConvDiff::InputParameters::set_input_parameters()
   rel_tol = 1.e-8;
   max_iter = 1e4;
   preconditioner = Preconditioner::Multigrid;//Preconditioner::PointJacobi;
+  multigrid_data.type = MultigridType::hMG;
+  enable_cell_based_face_loops = true;
   mg_operator_type = MultigridOperatorType::ReactionConvectionDiffusion;
   // MG smoother
-  multigrid_data.smoother = MultigridSmoother::Chebyshev;
+  multigrid_data.smoother = MultigridSmoother::Jacobi; //Chebyshev;
   // MG smoother data
-  multigrid_data.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::None;
-  multigrid_data.gmres_smoother_data.number_of_iterations = 5;
+  multigrid_data.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi;
+  multigrid_data.jacobi_smoother_data.number_of_smoothing_steps = 5;
+//  multigrid_data.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::None;
+//  multigrid_data.gmres_smoother_data.number_of_iterations = 5;
+
   // MG coarse grid solver
   multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_PointJacobi;
   //multigrid_data.coarse_solver = MultigridCoarseGridSolver::AMG_ML;
-  //multigrid_data.two_levels = true;
-  multigrid_data.type = MultigridType::hMG;
   
   update_preconditioner = false;
 
