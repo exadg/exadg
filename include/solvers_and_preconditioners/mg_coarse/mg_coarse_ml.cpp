@@ -40,7 +40,8 @@ MGCoarseML<Operator, Number>::reinit(int level, MGCoarseMLData data_in)
   }
 
   // initialize system matrix
-  auto & matrix_temp = this->additional_data.transfer_to_continuous_galerkin ? operator_cg : operator_dg;
+  auto & matrix_temp =
+    this->additional_data.transfer_to_continuous_galerkin ? operator_cg : operator_dg;
   matrix_temp.init_system_matrix(system_matrix);
   matrix_temp.calculate_system_matrix(system_matrix);
 
@@ -56,9 +57,10 @@ MGCoarseML<Operator, Number>::update(MatrixOperatorBase const * /*matrix_operato
 
 template<typename Operator, typename Number>
 void
-MGCoarseML<Operator, Number>::operator()(const unsigned int /*level*/,
-                                         parallel::distributed::Vector<MultigridNumber> &       dst,
-                                         const parallel::distributed::Vector<MultigridNumber> & src) const
+MGCoarseML<Operator, Number>::
+operator()(const unsigned int /*level*/,
+           parallel::distributed::Vector<MultigridNumber> &       dst,
+           const parallel::distributed::Vector<MultigridNumber> & src) const
 {
   // TODO: remove unnecessary moves...
   parallel::distributed::Vector<MultigridNumber> src_0, dst_0;
@@ -68,7 +70,7 @@ MGCoarseML<Operator, Number>::operator()(const unsigned int /*level*/,
 
   parallel::distributed::Vector<MultigridNumber>  src_cg, dst_cg;
   parallel::distributed::Vector<MultigridNumber> *ptr_src, *ptr_dst;
-  
+
   // DG (MultigridNumber) -> CG (MultigridNumber)
   if(this->additional_data.transfer_to_continuous_galerkin)
   {
@@ -90,8 +92,9 @@ MGCoarseML<Operator, Number>::operator()(const unsigned int /*level*/,
   parallel::distributed::Vector<TrilinosWrappers::SparseMatrix::value_type> src_trilinos;
   src_trilinos.reinit(*ptr_src, false);
 
-  // convert MultigridNumber to TrilinosScalar 
-  // (TrilinosScalar is double, we generally use float as MultigridNumber, so an explicit conversion is needed)
+  // convert MultigridNumber to TrilinosScalar
+  // (TrilinosScalar is double, we generally use float as MultigridNumber, so an explicit conversion
+  // is needed)
   src_trilinos.copy_locally_owned_data_from(*ptr_src);
 
   if(additional_data.use_conjugate_gradient_solver)
@@ -134,7 +137,11 @@ MGCoarseML<Operator, Number>::vmult(parallel::distributed::Vector<Number> &,
 
 
 template<typename Operator, typename Number>
-MGCoarseML<Operator, Number>::MGCoarseML(Operator const &, Operator const &, bool, int, MGCoarseMLData)
+MGCoarseML<Operator, Number>::MGCoarseML(Operator const &,
+                                         Operator const &,
+                                         bool,
+                                         int,
+                                         MGCoarseMLData)
 {
 }
 
@@ -159,9 +166,10 @@ MGCoarseML<Operator, Number>::update(MatrixOperatorBase const *)
 
 template<typename Operator, typename Number>
 void
-MGCoarseML<Operator, Number>::operator()(const unsigned int,
-                                         parallel::distributed::Vector<MultigridNumber> &,
-                                         const parallel::distributed::Vector<MultigridNumber> &) const
+MGCoarseML<Operator, Number>::
+operator()(const unsigned int,
+           parallel::distributed::Vector<MultigridNumber> &,
+           const parallel::distributed::Vector<MultigridNumber> &) const
 {
   AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
 }

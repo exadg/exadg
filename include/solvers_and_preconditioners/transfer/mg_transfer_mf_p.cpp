@@ -22,7 +22,8 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::reinit
   const unsigned int      level)
 {
   {
-    QGaussLobatto<1>                                     quadrature(fe_degree_2 + 1);
+    QGaussLobatto<1> quadrature(fe_degree_2 + 1);
+
     typename MatrixFree<dim, value_type>::AdditionalData additional_data;
     additional_data.level_mg_handler = level;
 
@@ -31,7 +32,8 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::reinit
     data_1.reinit(dof_handler_1, dummy, quadrature, additional_data);
   }
   {
-    QGaussLobatto<1>                                     quadrature(fe_degree_1 + 1);
+    QGaussLobatto<1> quadrature(fe_degree_1 + 1);
+
     typename MatrixFree<dim, value_type>::AdditionalData additional_data;
     additional_data.level_mg_handler = level;
 
@@ -65,11 +67,11 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::restri
   VectorType &       dst,
   const VectorType & src) const
 {
-  data_1.cell_loop(
-    &MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::restrict_and_add_local,
-    this,
-    dst,
-    src);
+  data_1.cell_loop(&MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::
+                     restrict_and_add_local,
+                   this,
+                   dst,
+                   src);
 }
 
 template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VectorType>
@@ -121,6 +123,7 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::restri
                                                fe_degree_1 + 1,
                                                VectorizedArray<Number>>
         eval_val(shape_values_prol, shape_values_prol, shape_values_prol);
+
       eval_val.template values<1, false, false>(fe_eval1.begin_dof_values(), temp2.begin());
       eval_val.template values<0, false, false>(temp2.begin(), temp1.begin());
     }
@@ -133,6 +136,7 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::restri
                                                fe_degree_1 + 1,
                                                VectorizedArray<Number>>
         eval_val(shape_values_prol, shape_values_prol, shape_values_prol);
+
       eval_val.template values<2, false, false>(fe_eval1.begin_dof_values(), temp1.begin());
       eval_val.template values<1, false, false>(temp1.begin(), temp2.begin());
       eval_val.template values<0, false, false>(temp2.begin(), temp1.begin());
@@ -181,6 +185,7 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::prolon
                                                fe_degree_1 + 1,
                                                VectorizedArray<Number>>
         eval_val(shape_values_prol, shape_values_prol, shape_values_prol);
+
       eval_val.template values<0, true, false>(fe_eval2.begin_dof_values(), temp2.begin());
       eval_val.template values<1, true, false>(temp2.begin(), temp1.begin());
     }
@@ -193,6 +198,7 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::prolon
                                                fe_degree_1 + 1,
                                                VectorizedArray<Number>>
         eval_val(shape_values_prol, shape_values_prol, shape_values_prol);
+
       eval_val.template values<0, true, false>(fe_eval2.begin_dof_values(), temp1.begin());
       eval_val.template values<1, true, false>(temp1.begin(), temp2.begin());
       eval_val.template values<2, true, false>(temp2.begin(), temp1.begin());
@@ -217,19 +223,28 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::conver
 {
   const unsigned int stride = (n_q_points_1d + 1) / 2;
   shape_values_eo.resize((fe_degree + 1) * stride);
+
   for(unsigned int i = 0; i < (fe_degree + 1) / 2; ++i)
+  {
     for(unsigned int q = 0; q < stride; ++q)
     {
       shape_values_eo[i * stride + q] =
-        0.5 * (shape_values[i * n_q_points_1d + q] + shape_values[i * n_q_points_1d + n_q_points_1d - 1 - q]);
+        0.5 * (shape_values[i * n_q_points_1d + q] +
+               shape_values[i * n_q_points_1d + n_q_points_1d - 1 - q]);
       shape_values_eo[(fe_degree - i) * stride + q] =
-        0.5 * (shape_values[i * n_q_points_1d + q] - shape_values[i * n_q_points_1d + n_q_points_1d - 1 - q]);
+        0.5 * (shape_values[i * n_q_points_1d + q] -
+               shape_values[i * n_q_points_1d + n_q_points_1d - 1 - q]);
     }
+  }
+
   if(fe_degree % 2 == 0)
+  {
     for(unsigned int q = 0; q < stride; ++q)
     {
-      shape_values_eo[fe_degree / 2 * stride + q] = shape_values[(fe_degree / 2) * n_q_points_1d + q];
+      shape_values_eo[fe_degree / 2 * stride + q] =
+        shape_values[(fe_degree / 2) * n_q_points_1d + q];
     }
+  }
 }
 
 template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VectorType>
@@ -245,6 +260,7 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::fill_s
   // ... and convert to linearized format
   AlignedVector<VectorizedArray<Number>> shape_values_temp;
   shape_values_temp.resize((fe_degree_src + 1) * (fe_degree_dst + 1));
+
   for(unsigned int i = 0; i < fe_degree_src + 1; ++i)
     for(unsigned int q = 0; q < fe_degree_dst + 1; ++q)
       shape_values_temp[i * (fe_degree_dst + 1) + q] = matrix(q, i);

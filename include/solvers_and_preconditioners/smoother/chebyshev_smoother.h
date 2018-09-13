@@ -22,17 +22,20 @@ class ChebyshevSmoother : public SmootherBase<VectorType>
 public:
   typedef typename PreconditionChebyshev<Operator, VectorType>::AdditionalData AdditionalData;
 
-  ChebyshevSmoother(){}
-
-  void vmult(VectorType       &dst,
-             VectorType const &src) const
+  ChebyshevSmoother()
   {
-    smoother_object.vmult(dst,src);
   }
 
-  void initialize(Operator const &matrix, AdditionalData const &additional_data)
+  void
+  vmult(VectorType & dst, VectorType const & src) const
   {
-    smoother_object.initialize(matrix,additional_data);
+    smoother_object.vmult(dst, src);
+  }
+
+  void
+  initialize(Operator const & matrix, AdditionalData const & additional_data)
+  {
+    smoother_object.initialize(matrix, additional_data);
   }
 
 private:

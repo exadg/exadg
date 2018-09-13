@@ -22,11 +22,9 @@ template<typename Operator, typename VectorType>
 class JacobiSmoother : public SmootherBase<VectorType>
 {
 public:
-  JacobiSmoother()
-    :
-    underlying_operator(nullptr),
-    preconditioner(nullptr)
-  {}
+  JacobiSmoother() : underlying_operator(nullptr), preconditioner(nullptr)
+  {
+  }
 
   ~JacobiSmoother()
   {
@@ -35,7 +33,9 @@ public:
   }
 
   JacobiSmoother(JacobiSmoother const &) = delete;
-  JacobiSmoother & operator=(JacobiSmoother const &) = delete;
+
+  JacobiSmoother &
+  operator=(JacobiSmoother const &) = delete;
 
   struct AdditionalData
   {
@@ -43,11 +43,11 @@ public:
      * Constructor.
      */
     AdditionalData()
-     :
-     preconditioner(PreconditionerJacobiSmoother::Undefined),
-     number_of_smoothing_steps(5),
-     damping_factor(1.0)
-    {}
+      : preconditioner(PreconditionerJacobiSmoother::Undefined),
+        number_of_smoothing_steps(5),
+        damping_factor(1.0)
+    {
+    }
 
     // preconditioner
     PreconditionerJacobiSmoother preconditioner;
@@ -59,9 +59,11 @@ public:
     double damping_factor;
   };
 
-  void initialize(Operator &operator_in, AdditionalData const &additional_data_in)
+  void
+  initialize(Operator & operator_in, AdditionalData const & additional_data_in)
   {
     underlying_operator = &operator_in;
+
     data = additional_data_in;
 
     if(data.preconditioner == PreconditionerJacobiSmoother::PointJacobi)
@@ -75,12 +77,14 @@ public:
     else
     {
       AssertThrow(data.preconditioner == PreconditionerJacobiSmoother::PointJacobi ||
-                  data.preconditioner == PreconditionerJacobiSmoother::BlockJacobi,
-          ExcMessage("Specified type of preconditioner for Jacobi smoother not implemented."));
+                    data.preconditioner == PreconditionerJacobiSmoother::BlockJacobi,
+                  ExcMessage(
+                    "Specified type of preconditioner for Jacobi smoother not implemented."));
     }
   }
 
-  void update()
+  void
+  update()
   {
     if(preconditioner != nullptr)
       preconditioner->update(underlying_operator);
@@ -100,8 +104,8 @@ public:
    *    omega: damping factor
    *    P:     preconditioner
    */
-  void vmult(VectorType       &dst,
-             VectorType const &src) const
+  void
+  vmult(VectorType & dst, VectorType const & src) const
   {
     VectorType tmp(src), residual(src);
 
@@ -111,25 +115,26 @@ public:
     // set dst=0 since we want to add to the dst-vector: dst += ...
     dst = 0;
 
-    for(unsigned int k=0; k < data.number_of_smoothing_steps; ++k)
+    for(unsigned int k = 0; k < data.number_of_smoothing_steps; ++k)
     {
       // apply preconditioner: tmp = P^{-1} * residual
-      preconditioner->vmult(tmp,residual);
+      preconditioner->vmult(tmp, residual);
 
       // x^{k+1} = x^{k} + damping_factor * tmp
-      dst.add(data.damping_factor,tmp);
+      dst.add(data.damping_factor, tmp);
 
       // calculate new residual r^{k+1}
-      underlying_operator->vmult(residual,dst);
-      residual.sadd(-1.0,1.0,src);
+      underlying_operator->vmult(residual, dst);
+      residual.sadd(-1.0, 1.0, src);
     }
   }
 
 private:
-  Operator *underlying_operator;
+  Operator * underlying_operator;
+
   AdditionalData data;
 
-  PreconditionerBase<typename Operator::value_type> *preconditioner;
+  PreconditionerBase<typename Operator::value_type> * preconditioner;
 };
 
 

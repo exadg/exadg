@@ -17,12 +17,13 @@
  *  diagonal value is set to 1.0.
  */
 template<typename Number>
-void invert_diagonal(parallel::distributed::Vector<Number> &diagonal)
+void
+invert_diagonal(parallel::distributed::Vector<Number> & diagonal)
 {
-  for (unsigned int i=0;i<diagonal.local_size();++i)
+  for(unsigned int i = 0; i < diagonal.local_size(); ++i)
   {
-    if( std::abs(diagonal.local_element(i)) > 1.0e-10 )
-      diagonal.local_element(i) = 1.0/diagonal.local_element(i);
+    if(std::abs(diagonal.local_element(i)) > 1.0e-10)
+      diagonal.local_element(i) = 1.0 / diagonal.local_element(i);
     else
       diagonal.local_element(i) = 1.0;
   }

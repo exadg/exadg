@@ -10,7 +10,8 @@
 
 using namespace dealii;
 
-enum class SolutionFieldType {
+enum class SolutionFieldType
+{
   scalar,
   vector
 };
@@ -20,17 +21,17 @@ class SolutionField
 {
 public:
   SolutionField()
-    :
-    type(SolutionFieldType::scalar),
-    name("solution"),
-    dof_handler(nullptr),
-    vector(nullptr)
-  {}
+    : type(SolutionFieldType::scalar), name("solution"), dof_handler(nullptr), vector(nullptr)
+  {
+  }
 
   SolutionFieldType type;
+
   std::string name;
-  DoFHandler<dim> const *dof_handler;
-  parallel::distributed::Vector<Number> const *vector;
+
+  DoFHandler<dim> const * dof_handler;
+
+  parallel::distributed::Vector<Number> const * vector;
 };
 
 

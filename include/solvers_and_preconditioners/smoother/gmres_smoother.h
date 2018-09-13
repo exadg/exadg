@@ -15,8 +15,8 @@
 #include "smoother_base.h"
 
 // preconditioner
-#include "../preconditioner/jacobi_preconditioner.h"
 #include "../preconditioner/block_jacobi_preconditioner.h"
+#include "../preconditioner/jacobi_preconditioner.h"
 
 // parameters
 #include "../multigrid/multigrid_input_parameters.h"
@@ -25,11 +25,9 @@ template<typename Operator, typename VectorType>
 class GMRESSmoother : public SmootherBase<VectorType>
 {
 public:
-  GMRESSmoother()
-    :
-    underlying_operator(nullptr),
-    preconditioner(nullptr)
-  {}
+  GMRESSmoother() : underlying_operator(nullptr), preconditioner(nullptr)
+  {
+  }
 
   ~GMRESSmoother()
   {
@@ -38,18 +36,18 @@ public:
   }
 
   GMRESSmoother(GMRESSmoother const &) = delete;
-  GMRESSmoother & operator=(GMRESSmoother const &) = delete;
+
+  GMRESSmoother &
+  operator=(GMRESSmoother const &) = delete;
 
   struct AdditionalData
   {
     /**
      * Constructor.
      */
-    AdditionalData()
-     :
-     preconditioner(PreconditionerGMRESSmoother::None),
-     number_of_iterations(5)
-    {}
+    AdditionalData() : preconditioner(PreconditionerGMRESSmoother::None), number_of_iterations(5)
+    {
+    }
 
     // preconditioner
     PreconditionerGMRESSmoother preconditioner;
@@ -58,9 +56,11 @@ public:
     unsigned int number_of_iterations;
   };
 
-  void initialize(Operator &operator_in, AdditionalData const &additional_data_in)
+  void
+  initialize(Operator & operator_in, AdditionalData const & additional_data_in)
   {
     underlying_operator = &operator_in;
+
     data = additional_data_in;
 
     if(data.preconditioner == PreconditionerGMRESSmoother::PointJacobi)
@@ -74,37 +74,39 @@ public:
     else
     {
       AssertThrow(data.preconditioner == PreconditionerGMRESSmoother::None,
-          ExcMessage("Specified preconditioner not implemented for GMRES smoother"));
+                  ExcMessage("Specified preconditioner not implemented for GMRES smoother"));
     }
   }
 
-  void update()
+  void
+  update()
   {
     if(preconditioner != nullptr)
       preconditioner->update(underlying_operator);
   }
 
-  void vmult(VectorType       &dst,
-             VectorType const &src) const
+  void
+  vmult(VectorType & dst, VectorType const & src) const
   {
-    IterationNumberControl control (data.number_of_iterations,1.e-20,1.e-10);
+    IterationNumberControl control(data.number_of_iterations, 1.e-20, 1.e-10);
 
     typename SolverGMRES<VectorType>::AdditionalData additional_data;
     additional_data.right_preconditioning = true;
-    SolverGMRES<VectorType> solver (control,additional_data);
+    SolverGMRES<VectorType> solver(control, additional_data);
 
     dst = 0.0;
     if(preconditioner != nullptr)
-      solver.solve(*underlying_operator,dst,src,*preconditioner);
+      solver.solve(*underlying_operator, dst, src, *preconditioner);
     else
-      solver.solve(*underlying_operator,dst,src,PreconditionIdentity());
+      solver.solve(*underlying_operator, dst, src, PreconditionIdentity());
   }
 
 private:
-  Operator *underlying_operator;
+  Operator * underlying_operator;
+
   AdditionalData data;
 
-  PreconditionerBase<typename Operator::value_type> *preconditioner;
+  PreconditionerBase<typename Operator::value_type> * preconditioner;
 };
 
 

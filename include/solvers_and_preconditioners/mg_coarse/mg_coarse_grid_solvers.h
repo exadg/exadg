@@ -16,9 +16,9 @@
 
 #include "../preconditioner/preconditioner_base.h"
 
+#include "../../functionalities/set_zero_mean_value.h"
 #include "../preconditioner/block_jacobi_preconditioner.h"
 #include "../preconditioner/jacobi_preconditioner.h"
-#include "../../functionalities/set_zero_mean_value.h"
 
 enum class PreconditionerCoarseGridSolver
 {
@@ -28,7 +28,8 @@ enum class PreconditionerCoarseGridSolver
 };
 
 template<typename Operator>
-class MGCoarsePCG : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type>>
+class MGCoarsePCG
+  : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type>>
 {
 public:
   struct AdditionalData
@@ -67,7 +68,8 @@ public:
       AssertThrow(additional_data.preconditioner == PreconditionerCoarseGridSolver::None ||
                     additional_data.preconditioner == PreconditionerCoarseGridSolver::PointJacobi ||
                     additional_data.preconditioner == PreconditionerCoarseGridSolver::BlockJacobi,
-                  ExcMessage("Specified preconditioner for PCG coarse grid solver not implemented."));
+                  ExcMessage(
+                    "Specified preconditioner for PCG coarse grid solver not implemented."));
     }
   }
 
@@ -93,10 +95,12 @@ public:
     const double     rel_tol = 1.e-3; // 1.e-4;
     ReductionControl solver_control(1e4, abs_tol, rel_tol);
 
-    SolverCG<parallel::distributed::Vector<typename Operator::value_type>> solver_coarse(solver_control,
-                                                                                         solver_memory);
+    SolverCG<parallel::distributed::Vector<typename Operator::value_type>> solver_coarse(
+      solver_control, solver_memory);
+
     typename VectorMemory<parallel::distributed::Vector<typename Operator::value_type>>::Pointer r(
       solver_memory);
+
     *r = src;
     if(coarse_matrix.is_singular())
       set_zero_mean_value(*r);
@@ -106,19 +110,25 @@ public:
     else
       solver_coarse.solve(coarse_matrix, dst, *r, PreconditionIdentity());
 
-    //    std::cout << "Iterations coarse grid solver = " << solver_control.last_step() << std::endl;
+    //    std::cout << "Iterations coarse grid solver = " << solver_control.last_step() <<
+    //    std::endl;
   }
 
 private:
-  const Operator &                                                                          coarse_matrix;
-  std::shared_ptr<PreconditionerBase<typename Operator::value_type>>                        preconditioner;
-  mutable GrowingVectorMemory<parallel::distributed::Vector<typename Operator::value_type>> solver_memory;
+  const Operator & coarse_matrix;
+
+  std::shared_ptr<PreconditionerBase<typename Operator::value_type>> preconditioner;
+
+  mutable GrowingVectorMemory<parallel::distributed::Vector<typename Operator::value_type>>
+    solver_memory;
+
   bool use_preconditioner;
 };
 
 
 template<typename Operator>
-class MGCoarseGMRES : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type>>
+class MGCoarseGMRES
+  : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type>>
 {
 public:
   struct AdditionalData
@@ -157,7 +167,8 @@ public:
       AssertThrow(additional_data.preconditioner == PreconditionerCoarseGridSolver::None ||
                     additional_data.preconditioner == PreconditionerCoarseGridSolver::PointJacobi ||
                     additional_data.preconditioner == PreconditionerCoarseGridSolver::BlockJacobi,
-                  ExcMessage("Specified preconditioner for PCG coarse grid solver not implemented."));
+                  ExcMessage(
+                    "Specified preconditioner for PCG coarse grid solver not implemented."));
     }
   }
 
@@ -183,17 +194,18 @@ public:
     const double     rel_tol = 1.e-3; // 1.e-4;
     ReductionControl solver_control(1e4, abs_tol, rel_tol);
 
-    typename SolverGMRES<parallel::distributed::Vector<typename Operator::value_type>>::AdditionalData
-      additional_data;
+    typename SolverGMRES<
+      parallel::distributed::Vector<typename Operator::value_type>>::AdditionalData additional_data;
+
     additional_data.max_n_tmp_vectors     = 200;
     additional_data.right_preconditioning = true;
 
-    SolverGMRES<parallel::distributed::Vector<typename Operator::value_type>> solver_coarse(solver_control,
-                                                                                            solver_memory,
-                                                                                            additional_data);
+    SolverGMRES<parallel::distributed::Vector<typename Operator::value_type>> solver_coarse(
+      solver_control, solver_memory, additional_data);
 
     typename VectorMemory<parallel::distributed::Vector<typename Operator::value_type>>::Pointer r(
       solver_memory);
+
     *r = src;
     if(coarse_matrix.is_singular())
       set_zero_mean_value(*r);
@@ -204,17 +216,24 @@ public:
       solver_coarse.solve(coarse_matrix, dst, *r, PreconditionIdentity());
 
     if(solver_control.last_step() > 2 * additional_data.max_n_tmp_vectors)
+    {
       std::cout
         << "Number of iterations of GMRES coarse grid solver significantly larger than max_n_tmp_vectors."
         << std::endl;
+    }
 
-    //    std::cout << "Iterations coarse grid solver = " << solver_control.last_step() << std::endl;
+    //    std::cout << "Iterations coarse grid solver = " << solver_control.last_step() <<
+    //    std::endl;
   }
 
 private:
-  const Operator &                                                                          coarse_matrix;
-  std::shared_ptr<PreconditionerBase<typename Operator::value_type>>                        preconditioner;
-  mutable GrowingVectorMemory<parallel::distributed::Vector<typename Operator::value_type>> solver_memory;
+  const Operator & coarse_matrix;
+
+  std::shared_ptr<PreconditionerBase<typename Operator::value_type>> preconditioner;
+
+  mutable GrowingVectorMemory<parallel::distributed::Vector<typename Operator::value_type>>
+    solver_memory;
+
   bool use_preconditioner;
 };
 
@@ -237,6 +256,7 @@ public:
   {
     AssertThrow(inverse_operator.get() != 0,
                 ExcMessage("InverseOperator of multigrid coarse grid solver is uninitialized!"));
+
     AssertThrow(level == 0, ExcNotImplemented());
 
     inverse_operator->vmult(dst, src);
