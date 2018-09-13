@@ -24,8 +24,8 @@
 #include "../user_interface/field_functions.h"
 #include "../user_interface/input_parameters.h"
 
-#include "laplace_operator.h"
 #include "../../convection_diffusion/spatial_discretization/operators/rhs_operator.h"
+#include "laplace_operator.h"
 
 namespace Poisson
 {
@@ -83,7 +83,8 @@ private:
 
   Poisson::InputParameters const & param;
 
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> periodic_face_pairs;
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+    periodic_face_pairs;
 
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor;
   std::shared_ptr<Poisson::FieldFunctions<dim>>     field_functions;

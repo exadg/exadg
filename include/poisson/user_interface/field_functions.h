@@ -1,8 +1,8 @@
 /*
  * field_functions.h
  *
- *  Created on: 
- *      Author: 
+ *  Created on:
+ *      Author:
  */
 
 #ifndef INCLUDE_LAPLACE_FIELD_FUNCTIONS_H_
