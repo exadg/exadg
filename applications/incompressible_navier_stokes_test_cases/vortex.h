@@ -271,8 +271,12 @@ void InputParameters<dim>::set_input_parameters()
 
   // calculation of error
   error_data.analytical_solution_available = true;
+  error_data.calculate_relative_errors = false;
+  error_data.calculate_H1_seminorm_velocity = true;
   error_data.error_calc_start_time = start_time;
-  error_data.error_calc_interval_time = (end_time-start_time);// /10; // /output_data.output_interval_time;
+  error_data.error_calc_interval_time = output_data.output_interval_time;
+  error_data.write_errors_to_file = true;
+  error_data.filename_prefix = "output/vortex/error";
 
   // analysis of mass conservation error
   mass_data.calculate_error = false;
