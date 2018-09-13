@@ -231,7 +231,7 @@ public:
 };
 
 template<int dim>
-double NeumannBoundary<dim>::value(const Point<dim>   &p,
+double NeumannBoundary<dim>::value(const Point<dim>   &/*p*/,
                                    const unsigned int /* component */) const
 {
   double result = 0.0;
@@ -259,8 +259,8 @@ public:
 };
 
 template<int dim>
-double VelocityField<dim>::value(const Point<dim>   &point,
-                                 const unsigned int component) const
+double VelocityField<dim>::value(const Point<dim>   &/*point*/,
+                                 const unsigned int /*component*/) const
 {
   double value = 0.0;
 

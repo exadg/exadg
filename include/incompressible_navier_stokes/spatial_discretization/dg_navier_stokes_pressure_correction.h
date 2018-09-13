@@ -12,10 +12,10 @@
 #include "../../incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_projection_methods.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/helmholtz_operator.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/velocity_convection_diffusion_operator.h"
-#include "../include/solvers_and_preconditioners/jacobi_preconditioner.h"
-#include "solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
-#include "solvers_and_preconditioners/iterative_solvers.h"
-#include "solvers_and_preconditioners/newton_solver.h"
+#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
+#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
+#include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
+#include "../../solvers_and_preconditioners/newton/newton_solver.h"
 
 namespace IncNS
 {
@@ -150,6 +150,8 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
 
   // unsteady problem
   vel_conv_diff_operator_data.unsteady_problem = true;
+  
+  vel_conv_diff_operator_data.scaling_factor_time_derivative_term = scaling_factor_time_derivative_term;
 
   // convective problem
   if(this->param.equation_type == EquationType::NavierStokes &&
@@ -164,14 +166,16 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
 
   vel_conv_diff_operator_data.dof_index = this->get_dof_index_velocity();
 
+  vel_conv_diff_operator_data.mass_matrix_operator_data = this->mass_matrix_operator_data;
+  vel_conv_diff_operator_data.viscous_operator_data = this->viscous_operator_data;
+  vel_conv_diff_operator_data.convective_operator_data = this->convective_operator_data;
+  
   velocity_conv_diff_operator.initialize(
       this->get_data(),
       vel_conv_diff_operator_data,
       this->mass_matrix_operator,
       this->viscous_operator,
       this->convective_operator);
-
-  velocity_conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
 
 
   // setup preconditioner for momentum equation
@@ -184,13 +188,13 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::PointJacobi)
   {
-    momentum_preconditioner.reset(new JacobiPreconditioner<Number,
+    momentum_preconditioner.reset(new JacobiPreconditioner<
         VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> >
       (velocity_conv_diff_operator));
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::BlockJacobi)
   {
-    momentum_preconditioner.reset(new BlockJacobiPreconditioner<Number,
+    momentum_preconditioner.reset(new BlockJacobiPreconditioner<
         VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> >
       (velocity_conv_diff_operator));
   }
@@ -209,8 +213,8 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
     mg_preconditioner->initialize(this->param.multigrid_data_momentum,
                                   this->dof_handler_u,
                                   this->mapping,
-                                  velocity_conv_diff_operator,
-                                  this->periodic_face_pairs);
+                                  /*velocity_conv_diff_operator.get_operator_data().bc->dirichlet_bc,*/
+                                  (void *)&velocity_conv_diff_operator.get_operator_data());
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::VelocityConvectionDiffusion)
   {
@@ -227,8 +231,8 @@ setup_momentum_solver(double const &scaling_factor_time_derivative_term)
     mg_preconditioner->initialize(this->param.multigrid_data_momentum,
                                   this->get_dof_handler_u(),
                                   this->get_mapping(),
-                                  velocity_conv_diff_operator,
-                                  this->periodic_face_pairs);
+                                  /*velocity_conv_diff_operator.get_operator_data().bc->dirichlet_bc,*/
+                                  (void *)&velocity_conv_diff_operator.get_operator_data());
   }
 
   // setup linear solver for momentum equation

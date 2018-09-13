@@ -218,7 +218,7 @@ void FENavierStokesSolver<dim>::setup_problem
                                                 constraints_u);
 
   {
-    ZeroFunction<dim> zero_func(dim);
+    Functions::ZeroFunction<dim> zero_func(dim);
     typename FunctionMap<dim>::type homogeneous_dirichlet;
     for (typename std::map<types::boundary_id,
          std::shared_ptr<Function<dim> > >::
@@ -263,7 +263,7 @@ void FENavierStokesSolver<dim>::setup_problem
 
   constraints_p_solve.merge(constraints_p);
   {
-    ZeroFunction<dim> zero_func(1);
+    Functions::ZeroFunction<dim> zero_func(1);
     typename FunctionMap<dim>::type homogeneous_dirichlet;
     // open boundaries with prescribed pressure values -> insert zero function
     // for solving; we will manually set the values at other boundaries (TODO:
@@ -353,7 +353,7 @@ void FENavierStokesSolver<dim>::setup_problem
     // function. In order not to create spurious values during time
     // integration, we simply zero those entries when multiplying by the
     // inverse diagonal matrix, which is implemented here
-    ZeroFunction<dim> zero(dim);
+    Functions::ZeroFunction<dim> zero(dim);
     typename FunctionMap<dim>::type inhom_dirichlet;
     for (typename std::map<types::boundary_id,
            std::shared_ptr<Function<dim> > >::iterator it =

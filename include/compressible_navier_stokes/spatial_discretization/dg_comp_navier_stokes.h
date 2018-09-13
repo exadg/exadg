@@ -319,7 +319,7 @@ private:
     dof_handler_vector.distribute_dofs(*fe_vector);
     dof_handler_scalar.distribute_dofs(fe_scalar);
 
-    unsigned int ndofs_per_cell = Utilities::fixed_int_power<fe_degree+1,dim>::value*(dim+2);
+    constexpr int ndofs_per_cell = Utilities::pow(fe_degree+1,dim)*(dim+2);
 
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 

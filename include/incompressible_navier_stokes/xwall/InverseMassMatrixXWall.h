@@ -99,7 +99,7 @@ public:
           mass_data.vector_result = 0;
           for (unsigned int i=0; i<mass_data.fe_eval_components[0].dofs_per_cell; ++i)
             mass_data.vector_result[i] = mass_data.fe_eval_components[0].read_cellwise_dof_value(i,idim)[v];
-          (matrices[cell][v]).apply_lu_factorization(mass_data.vector_result,false);
+          (matrices[cell][v]).solve(mass_data.vector_result,false);
           for (unsigned int i=0; i<mass_data.fe_eval_components[0].dofs_per_cell; ++i)
             mass_data.fe_eval_components[0].write_cellwise_dof_value(i,idim,mass_data.vector_result[i],v);
         }
@@ -143,7 +143,7 @@ private:
             mass_data.vector_result = 0;
             for (unsigned int i=0; i<mass_data.fe_eval_components[0].dofs_per_cell; ++i)
               mass_data.vector_result[i] = mass_data.fe_eval_components[0].read_cellwise_dof_value(i,idim)[v];
-            (matrices[cell][v]).apply_lu_factorization(mass_data.vector_result,false);
+            (matrices[cell][v]).solve(mass_data.vector_result,false);
             for (unsigned int i=0; i<mass_data.fe_eval_components[0].dofs_per_cell; ++i)
               mass_data.fe_eval_components[0].write_cellwise_dof_value(i,idim,mass_data.vector_result[i],v);
           }

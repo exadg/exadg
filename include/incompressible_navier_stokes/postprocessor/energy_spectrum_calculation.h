@@ -51,7 +51,7 @@ public:
   {}
 
   void setup(MatrixFree<dim,Number> const    &matrix_free_data_in,
-             DofQuadIndexData const          &dof_quad_index_data_in,
+             DofQuadIndexData const          &/*dof_quad_index_data_in*/,
              KineticEnergySpectrumData const &data_in)
   {
     data = data_in;

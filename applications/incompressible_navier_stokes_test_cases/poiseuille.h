@@ -627,7 +627,7 @@ void create_grid_and_set_boundary_conditions(
     // slip boundary condition: always u*n=0
     // function will not be used -> use ZeroFunction
     std::shared_ptr<Function<dim> > zero_function;
-    zero_function.reset(new ZeroFunction<dim>(dim));
+    zero_function.reset(new Functions::ZeroFunction<dim>(dim));
     boundary_descriptor_velocity->symmetry_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
                                                      (2,zero_function));
   }
@@ -646,7 +646,7 @@ void create_grid_and_set_boundary_conditions(
     // (du/dt)*n = d(u*n)/dt = d(0)/dt = 0, i.e., the time derivative term is multiplied by the normal vector
     // and the normal velocity is zero (= symmetry boundary condition).
     std::shared_ptr<Function<dim> > pressure_bc_dudt;
-    pressure_bc_dudt.reset(new ZeroFunction<dim>(dim));
+    pressure_bc_dudt.reset(new Functions::ZeroFunction<dim>(dim));
     boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
                                                      (2,pressure_bc_dudt));
   }
@@ -666,10 +666,10 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > initial_solution_velocity;
 //  initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
-  initial_solution_velocity.reset(new ZeroFunction<dim>(dim));
+  initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   
   std::shared_ptr<Function<dim> > initial_solution_pressure;
-  initial_solution_pressure.reset(new ZeroFunction<dim>(1));
+  initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
   std::shared_ptr<Function<dim> > analytical_solution_pressure;
   analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
 

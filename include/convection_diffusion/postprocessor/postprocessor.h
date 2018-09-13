@@ -43,7 +43,7 @@ public:
   void setup(PostProcessorData const                             &postprocessor_data,
              DoFHandler<dim> const                               &dof_handler_in,
              Mapping<dim> const                                  &mapping_in,
-             MatrixFree<dim,double> const                        &matrix_free_data_in,
+             MatrixFree<dim,double> const                        &/*matrix_free_data_in*/,
              std::shared_ptr<ConvDiff::AnalyticalSolution<dim> > analytical_solution_in)
   {
     error_calculator.setup(dof_handler_in,

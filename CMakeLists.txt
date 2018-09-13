@@ -31,6 +31,8 @@ ENDIF()
 
 DEAL_II_INITIALIZE_CACHED_VARIABLES()
 
+include_directories(applications/macros)
+
 # Set the source files to be compiled
 SET( TARGET_SRC
      #source/fe_navierstokes_evaluator.cc
@@ -39,6 +41,15 @@ SET( TARGET_SRC
      source/SpaldingsLaw.cc
      source/statistics_manager.cc
      source/statistics_manager_ph.cc
+     include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_adapter_base.cpp
+     include/convection_diffusion/spatial_discretization/operators/convection_operator.cpp
+     include/convection_diffusion/spatial_discretization/operators/diffusive_operator.cpp
+     include/convection_diffusion/spatial_discretization/operators/mass_operator.cpp
+     include/convection_diffusion/spatial_discretization/operators/convection_diffusion_operator.cpp
+     include/poisson/spatial_discretization/laplace_operator.cpp
+     include/solvers_and_preconditioners/transfer/mg_transfer_mf_p.cpp
+     include/solvers_and_preconditioners/mg_coarse/mg_coarse_ml.cpp
+     include/solvers_and_preconditioners/transfer/dg_to_cg_transfer.cpp
    )
 
 # Set the include directory and the name of the project

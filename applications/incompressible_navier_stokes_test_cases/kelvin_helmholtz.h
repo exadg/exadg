@@ -446,14 +446,14 @@ void create_grid_and_set_boundary_conditions(
 
   // fill boundary descriptor velocity
   std::shared_ptr<Function<dim> > zero_function;
-  zero_function.reset(new ZeroFunction<dim>(dim));
+  zero_function.reset(new Functions::ZeroFunction<dim>(dim));
   // Symmetry boundaries: ID = 0
   boundary_descriptor_velocity->symmetry_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
                                                    (0,zero_function));
 
   // fill boundary descriptor pressure
   std::shared_ptr<Function<dim> > pressure_bc_dudt;
-  pressure_bc_dudt.reset(new ZeroFunction<dim>(dim));
+  pressure_bc_dudt.reset(new Functions::ZeroFunction<dim>(dim));
   // Neumann boundaries: ID = 0
   boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
                                                      (0,pressure_bc_dudt));

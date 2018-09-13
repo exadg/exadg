@@ -15,6 +15,7 @@
 #include "operators/base_operator.h"
 #include "../include/functionalities/evaluate_functions.h"
 #include "operators/interior_penalty_parameter.h"
+#include "../../operators/operator_type.h"
 
 
 namespace IncNS
@@ -211,7 +212,7 @@ public:
     data->cell_loop(&This::cell_loop_diagonal, this, diagonal, src, false /*zero_dst_vector = false*/);
   }
 
-  void add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
+  void add_block_diagonal_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
   {
     AssertThrow(std::abs(scaling_factor-1.0)<1.e-12,
         ExcMessage("Invalid parameter scaling_factor."));
@@ -366,12 +367,6 @@ class ViscousOperator : public BaseOperator<dim>
 public:
   typedef Number value_type;
 
-  enum class OperatorType {
-    full,
-    homogeneous,
-    inhomogeneous
-  };
-
   ViscousOperator()
     :
     data(nullptr),
@@ -520,7 +515,7 @@ public:
   }
 
   // apply matrix vector multiplication for block Jacobi operator
-  void apply_block_jacobi (parallel::distributed::Vector<Number>       &dst,
+  void apply_block_diagonal (parallel::distributed::Vector<Number>       &dst,
                            const parallel::distributed::Vector<Number> &src) const
   {
     data->loop(&This::cell_loop,
@@ -529,7 +524,7 @@ public:
                this, dst, src, true /*zero_dst_vector = true*/);
   }
 
-  void apply_block_jacobi_add (parallel::distributed::Vector<Number>       &dst,
+  void apply_block_diagonal_add (parallel::distributed::Vector<Number>       &dst,
                                const parallel::distributed::Vector<Number> &src) const
   {
     data->loop(&This::cell_loop,
@@ -606,7 +601,7 @@ public:
                this, diagonal, src, false /*zero_dst_vector = false*/);
   }
 
-  void add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
+  void add_block_diagonal_matrices(std::vector<LAPACKFullMatrix<value_type> > &matrices) const
   {
     parallel::distributed::Vector<value_type>  src;
 
@@ -1437,10 +1432,10 @@ private:
     }
   }
 
-  void boundary_face_loop_hom_operator_opt (const MatrixFree<dim,Number>                 &data,
-                                            parallel::distributed::Vector<Number>        &dst,
-                                            const parallel::distributed::Vector<Number>  &src,
-                                            const std::pair<unsigned int,unsigned int>   &face_range) const
+  void boundary_face_loop_hom_operator_opt (const MatrixFree<dim,Number>                 &/*data*/,
+                                            parallel::distributed::Vector<Number>        &/*dst*/,
+                                            const parallel::distributed::Vector<Number>  &/*src*/,
+                                            const std::pair<unsigned int,unsigned int>   &/*face_range*/) const
   {
     AssertThrow(false, ExcMessage("Should not arrive here. Optimized viscous operator only implemented for periodic BCs."));
   }
@@ -3392,7 +3387,7 @@ public:
     velocity_linearization = nullptr;
   }
 
-  void add_block_jacobi_matrices(std::vector<LAPACKFullMatrix<value_type> >      &matrices,
+  void add_block_diagonal_matrices(std::vector<LAPACKFullMatrix<value_type> >      &matrices,
                                  parallel::distributed::Vector<value_type> const *vector_linearization,
                                  double const                                    evaluation_time) const
   {

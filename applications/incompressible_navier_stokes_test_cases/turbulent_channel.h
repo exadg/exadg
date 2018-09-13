@@ -155,7 +155,8 @@ void InputParameters<dim>::set_input_parameters()
   multigrid_data_pressure_poisson.smoother = MultigridSmoother::Chebyshev; //Chebyshev; //Jacobi; //GMRES;
 
   //Chebyshev
-  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+//  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::AMG_ML;
 
   //GMRES
 //  multigrid_data_pressure_poisson.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::None; //None; //PointJacobi; //BlockJacobi;
@@ -320,7 +321,7 @@ void InputParameters<dim>::set_input_parameters()
   print_input_parameters = true;
 
   // write output for visualization of results
-  output_data.write_output = false;
+  output_data.write_output = true;
   output_data.output_folder = OUTPUT_FOLDER_VTU;
   output_data.output_name = OUTPUT_NAME;
   output_data.output_start_time = start_time;
@@ -714,8 +715,8 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 template<int dim>
 void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
 {
-  analytical_solution->velocity.reset(new ZeroFunction<dim>(dim));
-  analytical_solution->pressure.reset(new ZeroFunction<dim>(1));
+  analytical_solution->velocity.reset(new Functions::ZeroFunction<dim>(dim));
+  analytical_solution->pressure.reset(new Functions::ZeroFunction<dim>(1));
 }
 
 // Postprocessor

@@ -483,7 +483,7 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 //  initial_solution_velocity.reset(new ZeroFunction<dim>(dim));
   initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
   std::shared_ptr<Function<dim> > initial_solution_pressure;
-  initial_solution_pressure.reset(new ZeroFunction<dim>(1));
+  initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
   std::shared_ptr<Function<dim> > analytical_solution_pressure;
   analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
 

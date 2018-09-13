@@ -14,17 +14,17 @@
 #include <deal.II/lac/parallel_vector.h>
 #include <deal.II/numerics/vector_tools.h>
 
-#include "operators/inverse_mass_matrix.h"
-#include "operators/matrix_operator_base.h"
-#include "solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
-#include "solvers_and_preconditioners/iterative_solvers.h"
-#include "solvers_and_preconditioners/jacobi_preconditioner.h"
+#include "../../operators/inverse_mass_matrix.h"
+#include "../../operators/matrix_operator_base.h"
+#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
+#include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
+#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 
-#include "convection_diffusion/user_interface/boundary_descriptor.h"
-#include "convection_diffusion/user_interface/field_functions.h"
-#include "convection_diffusion/user_interface/input_parameters.h"
-#include "convection_diffusion/spatial_discretization/convection_diffusion_operators.h"
-#include "convection_diffusion/preconditioners/multigrid_preconditioner.h"
+#include "../../convection_diffusion/user_interface/boundary_descriptor.h"
+#include "../../convection_diffusion/user_interface/field_functions.h"
+#include "../../convection_diffusion/user_interface/input_parameters.h"
+#include "../../convection_diffusion/spatial_discretization/convection_diffusion_operators.h"
+#include "../../convection_diffusion/preconditioners/multigrid_preconditioner.h"
 
 namespace ConvDiff
 {
@@ -68,9 +68,58 @@ public:
   {
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
     pcout << std::endl << "Setup solver ..." << std::endl;
+    
+    // convection-diffusion operator
+    ConvDiff::ConvectionDiffusionOperatorData<dim> conv_diff_operator_data;
+    conv_diff_operator_data.mass_matrix_operator_data           = mass_matrix_operator.get_operator_data();
+    conv_diff_operator_data.convective_operator_data            = convective_operator.get_operator_data();
+    conv_diff_operator_data.diffusive_operator_data             = diffusive_operator.get_operator_data();
+    conv_diff_operator_data.scaling_factor_time_derivative_term = scaling_factor_time_derivative_term_in;
+    conv_diff_operator_data.use_cell_based_loops                = param.enable_cell_based_for_loops;
+    
+    if(this->param.problem_type == ConvDiff::ProblemType::Unsteady)
+    {
+      conv_diff_operator_data.unsteady_problem = true;
+    }
+    else
+    {
+      conv_diff_operator_data.unsteady_problem = false;
+    }
 
-    // scaling factor of time derivative term has to be set before initializing preconditioners
-    conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term_in);
+    if(this->param.equation_type == ConvDiff::EquationType::Diffusion ||
+       this->param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
+    {
+      conv_diff_operator_data.diffusive_problem = true;
+    }
+    else
+    {
+      conv_diff_operator_data.diffusive_problem = false;
+    }
+
+    if((this->param.equation_type == ConvDiff::EquationType::Convection ||
+        this->param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
+        &&
+       this->param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::Implicit)
+    {
+      conv_diff_operator_data.convective_problem = true;
+    }
+    else
+    {
+      conv_diff_operator_data.convective_problem = false;
+    }
+    
+    conv_diff_operator_data.update_mapping_update_flags();
+
+    conv_diff_operator_data.dof_index = 0;
+
+    conv_diff_operator_data.mg_operator_type = param.mg_operator_type;
+    conv_diff_operator_data.bc = boundary_descriptor;
+
+    conv_diff_operator.initialize(data,
+                                  conv_diff_operator_data,
+                                  mass_matrix_operator,
+                                  convective_operator,
+                                  diffusive_operator);
 
     // initialize preconditioner
     if(param.preconditioner == ConvDiff::Preconditioner::InverseMassMatrix)
@@ -79,28 +128,32 @@ public:
     }
     else if(param.preconditioner == ConvDiff::Preconditioner::PointJacobi)
     {
-      preconditioner.reset(new JacobiPreconditioner<value_type,
+      preconditioner.reset(new JacobiPreconditioner<
           ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,value_type> >(conv_diff_operator));
     }
     else if(param.preconditioner == ConvDiff::Preconditioner::BlockJacobi)
     {
-      preconditioner.reset(new BlockJacobiPreconditioner<value_type,
+      preconditioner.reset(new BlockJacobiPreconditioner<
           ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,value_type> >(conv_diff_operator));
     }
     else if(param.preconditioner == ConvDiff::Preconditioner::Multigrid)
     {
-       MultigridData mg_data;
-       mg_data = param.multigrid_data;
+      MultigridData mg_data;
+      mg_data = param.multigrid_data;
 
-       typedef float Number;
+      typedef float Number;
 
        typedef ConvDiff::MultigridPreconditioner<dim,value_type,
            ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,Number>,
            ConvDiff::ConvectionDiffusionOperator<dim,fe_degree,value_type> > MULTIGRID;
 
-       preconditioner.reset(new MULTIGRID());
-       std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
-       mg_preconditioner->initialize(mg_data,dof_handler,mapping,conv_diff_operator,this->periodic_face_pairs);
+      preconditioner.reset(new MULTIGRID());
+      std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
+      mg_preconditioner->initialize(mg_data,
+                                    dof_handler,
+                                    mapping,
+                                    conv_diff_operator.get_operator_data().bc->dirichlet_bc,
+                                    (void *)&conv_diff_operator.get_operator_data());
     }
     else
     {
@@ -328,9 +381,9 @@ private:
   {
     // enumerate degrees of freedom
     dof_handler.distribute_dofs(fe);
-    dof_handler.distribute_mg_dofs(fe);
+    dof_handler.distribute_mg_dofs();
 
-    unsigned int ndofs_per_cell = Utilities::fixed_int_power<fe_degree+1,dim>::value;
+    constexpr int ndofs_per_cell = Utilities::pow(fe_degree+1,dim);
 
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
@@ -364,6 +417,12 @@ private:
                                                            update_quadrature_points | update_normal_vectors |
                                                            update_values);
 
+    if(param.enable_cell_based_for_loops)
+    {
+      auto tria = dynamic_cast<const parallel::distributed::Triangulation<dim>*>(&dof_handler.get_triangulation());
+      Categorization::do_cell_based_loops(*tria, additional_data);
+    }
+    
     ConstraintMatrix dummy;
     dummy.close();
     data.reinit (mapping, dof_handler, dummy, quadrature, additional_data);
@@ -371,9 +430,12 @@ private:
 
   void setup_operators()
   {
+    
     // mass matrix operator
+    MassMatrixOperatorData<dim> mass_matrix_operator_data;
     mass_matrix_operator_data.dof_index = 0;
     mass_matrix_operator_data.quad_index = 0;
+    mass_matrix_operator_data.use_cell_based_loops = param.enable_cell_based_for_loops;
     mass_matrix_operator.initialize(data,mass_matrix_operator_data);
 
     // inverse mass matrix operator
@@ -381,19 +443,23 @@ private:
     inverse_mass_matrix_operator.initialize(data,0,0);
 
     // convective operator
+    ConvectiveOperatorData<dim> convective_operator_data;
     convective_operator_data.dof_index = 0;
     convective_operator_data.quad_index = 0;
     convective_operator_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
     convective_operator_data.bc = boundary_descriptor;
     convective_operator_data.velocity = field_functions->velocity;
+    convective_operator_data.use_cell_based_loops = param.enable_cell_based_for_loops;
     convective_operator.initialize(data,convective_operator_data);
 
     // diffusive operator
+    DiffusiveOperatorData<dim> diffusive_operator_data;
     diffusive_operator_data.dof_index = 0;
     diffusive_operator_data.quad_index = 0;
     diffusive_operator_data.IP_factor = param.IP_factor;
     diffusive_operator_data.diffusivity = param.diffusivity;
     diffusive_operator_data.bc = boundary_descriptor;
+    diffusive_operator_data.use_cell_based_loops = param.enable_cell_based_for_loops;
     diffusive_operator.initialize(mapping,data,diffusive_operator_data);
 
     // rhs operator
@@ -402,52 +468,7 @@ private:
     rhs_operator_data.quad_index = 0;
     rhs_operator_data.rhs = field_functions->right_hand_side;
     rhs_operator.initialize(data,rhs_operator_data);
-
-    // convection-diffusion operator
-    ConvDiff::ConvectionDiffusionOperatorData<dim> conv_diff_operator_data;
-    if(this->param.problem_type == ConvDiff::ProblemType::Unsteady)
-    {
-      conv_diff_operator_data.unsteady_problem = true;
-    }
-    else
-    {
-      conv_diff_operator_data.unsteady_problem = false;
-    }
-
-    if(this->param.equation_type == ConvDiff::EquationType::Diffusion ||
-       this->param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
-    {
-      conv_diff_operator_data.diffusive_problem = true;
-    }
-    else
-    {
-      conv_diff_operator_data.diffusive_problem = false;
-    }
-
-    if((this->param.equation_type == ConvDiff::EquationType::Convection ||
-        this->param.equation_type == ConvDiff::EquationType::ConvectionDiffusion)
-        &&
-       this->param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::Implicit)
-    {
-      conv_diff_operator_data.convective_problem = true;
-    }
-    else
-    {
-      conv_diff_operator_data.convective_problem = false;
-    }
-
-    conv_diff_operator_data.dof_index = 0;
-
-    conv_diff_operator_data.mg_operator_type = param.mg_operator_type;
-
-    conv_diff_operator.initialize(data,
-                                  conv_diff_operator_data,
-                                  mass_matrix_operator,
-                                  convective_operator,
-                                  diffusive_operator);
-
-
-
+    
     // convection-diffusion operator (efficient implementation, only for explicit time integration, includes also rhs operator)
     ConvDiff::ConvectionDiffusionOperatorDataEfficiency<dim,value_type> conv_diff_operator_data_eff;
     conv_diff_operator_data_eff.conv_data = convective_operator_data;
@@ -471,14 +492,9 @@ private:
   std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor;
   std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functions;
 
-  ConvDiff::MassMatrixOperatorData mass_matrix_operator_data;
   ConvDiff::MassMatrixOperator<dim, fe_degree, value_type> mass_matrix_operator;
   InverseMassMatrixOperator<dim,fe_degree,value_type,1> inverse_mass_matrix_operator;
-
-  ConvDiff::ConvectiveOperatorData<dim> convective_operator_data;
   ConvDiff::ConvectiveOperator<dim, fe_degree, value_type> convective_operator;
-
-  ConvDiff::DiffusiveOperatorData<dim> diffusive_operator_data;
   ConvDiff::DiffusiveOperator<dim, fe_degree, value_type> diffusive_operator;
   ConvDiff::RHSOperator<dim, fe_degree, value_type> rhs_operator;
 

@@ -29,7 +29,8 @@ enum class BoundaryType {
 };
 
 template<int dim, typename value_type>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
+inline DEAL_II_ALWAYS_INLINE// 
+VectorizedArray<value_type>
 calculate_pressure(Tensor<1,dim,VectorizedArray<value_type> > const &rho_u,
                    Tensor<1,dim,VectorizedArray<value_type> > const &u,
                    VectorizedArray<value_type> const                &rho_E,
@@ -39,7 +40,8 @@ calculate_pressure(Tensor<1,dim,VectorizedArray<value_type> > const &rho_u,
 }
 
 template<int dim, typename value_type>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
+inline DEAL_II_ALWAYS_INLINE// 
+VectorizedArray<value_type>
 calculate_pressure(VectorizedArray<value_type> const                &rho,
                    Tensor<1,dim,VectorizedArray<value_type> > const &u,
                    VectorizedArray<value_type> const                &E,
@@ -49,7 +51,8 @@ calculate_pressure(VectorizedArray<value_type> const                &rho,
 }
 
 template<typename value_type>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
+inline DEAL_II_ALWAYS_INLINE// 
+VectorizedArray<value_type>
 calculate_temperature(VectorizedArray<value_type> const &p,
                       VectorizedArray<value_type> const &rho,
                       value_type const                  &R)
@@ -67,7 +70,8 @@ calculate_energy(VectorizedArray<value_type> const                &T,
 }
 
 template<int dim, typename value_type>
-inline DEAL_II_ALWAYS_INLINE Tensor<1,dim,VectorizedArray<value_type> >
+inline DEAL_II_ALWAYS_INLINE// 
+Tensor<1,dim,VectorizedArray<value_type> >
 calculate_grad_E(VectorizedArray<value_type> const                &rho_inverse,
                  VectorizedArray<value_type> const                &rho_E,
                  Tensor<1,dim,VectorizedArray<value_type> > const &grad_rho,
@@ -79,7 +83,8 @@ calculate_grad_E(VectorizedArray<value_type> const                &rho_inverse,
 }
 
 template<int dim, typename value_type>
-inline DEAL_II_ALWAYS_INLINE Tensor<2,dim,VectorizedArray<value_type> >
+inline DEAL_II_ALWAYS_INLINE// 
+Tensor<2,dim,VectorizedArray<value_type> >
 calculate_grad_u(VectorizedArray<value_type> const                &rho_inverse,
                  Tensor<1,dim,VectorizedArray<value_type> > const &rho_u,
                  Tensor<1,dim,VectorizedArray<value_type> > const &grad_rho,
@@ -96,7 +101,8 @@ calculate_grad_u(VectorizedArray<value_type> const                &rho_inverse,
 }
 
 template<int dim, typename value_type>
-inline DEAL_II_ALWAYS_INLINE Tensor<1,dim,VectorizedArray<value_type> >
+inline DEAL_II_ALWAYS_INLINE// 
+Tensor<1,dim,VectorizedArray<value_type> >
 calculate_grad_T(Tensor<1,dim,VectorizedArray<value_type> > const &grad_E,
                  Tensor<1,dim,VectorizedArray<value_type> > const &u,
                  Tensor<2,dim,VectorizedArray<value_type> > const &grad_u,
@@ -107,7 +113,8 @@ calculate_grad_T(Tensor<1,dim,VectorizedArray<value_type> > const &grad_E,
 }
 
 template<int dim, typename value_type>
-inline DEAL_II_ALWAYS_INLINE Tensor<2,dim,VectorizedArray<value_type> >
+inline DEAL_II_ALWAYS_INLINE// 
+Tensor<2,dim,VectorizedArray<value_type> >
 calculate_stress_tensor(Tensor<2,dim,VectorizedArray<value_type> > const &grad_u,
                         value_type const                                 &viscosity)
 {
@@ -126,7 +133,8 @@ calculate_stress_tensor(Tensor<2,dim,VectorizedArray<value_type> > const &grad_u
  *  Calculate exterior state "+" for a scalar quantity depending on interior state "-" and boundary conditions.
  */
 template<int dim, typename value_type>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
+inline DEAL_II_ALWAYS_INLINE //
+VectorizedArray<value_type>
 calculate_exterior_value(VectorizedArray<value_type> const                       &value_m,
                          BoundaryType const                                      &boundary_type,
                          std::shared_ptr<CompNS::BoundaryDescriptor<dim> > const &boundary_descriptor,
@@ -161,7 +169,8 @@ calculate_exterior_value(VectorizedArray<value_type> const                      
  *  Calculate exterior state "+" for a scalar quantity depending on interior state "-" and boundary conditions.
  */
 template<int dim, typename value_type>
-inline DEAL_II_ALWAYS_INLINE Tensor<1,dim,VectorizedArray<value_type> >
+inline DEAL_II_ALWAYS_INLINE//
+Tensor<1,dim,VectorizedArray<value_type> >
 calculate_exterior_value(Tensor<1,dim,VectorizedArray<value_type> > const        &value_m,
                          BoundaryType const                                      boundary_type,
                          std::shared_ptr<CompNS::BoundaryDescriptor<dim> > const &boundary_descriptor,
@@ -196,7 +205,8 @@ calculate_exterior_value(Tensor<1,dim,VectorizedArray<value_type> > const       
  *  Calculate exterior state of normal stresses depending on interior data and boundary conditions.
  */
 template<int dim, typename value_type>
-inline DEAL_II_ALWAYS_INLINE Tensor<1,dim,VectorizedArray<value_type> >
+inline DEAL_II_ALWAYS_INLINE//
+Tensor<1,dim,VectorizedArray<value_type> >
 calculate_exterior_normal_grad(Tensor<1,dim,VectorizedArray<value_type> > const        &tau_M_normal,
                                BoundaryType const                                      &boundary_type,
                                std::shared_ptr<CompNS::BoundaryDescriptor<dim> > const &boundary_descriptor,
@@ -232,7 +242,8 @@ calculate_exterior_normal_grad(Tensor<1,dim,VectorizedArray<value_type> > const 
  *  Calculate exterior temperature gradient depending on interior data and boundary conditions.
  */
 template<int dim, typename value_type>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
+inline DEAL_II_ALWAYS_INLINE//
+VectorizedArray<value_type>
 calculate_exterior_normal_grad(VectorizedArray<value_type> const                       &grad_T_M_normal,
                                BoundaryType const                                      &boundary_type,
                                std::shared_ptr<CompNS::BoundaryDescriptor<dim> > const &boundary_descriptor,
@@ -268,7 +279,8 @@ calculate_exterior_normal_grad(VectorizedArray<value_type> const                
  *  This function calculates the Lax-Friedrichs flux for the momentum equation
  */
 template<int dim, typename value_type>
-inline DEAL_II_ALWAYS_INLINE Tensor<1,dim,VectorizedArray<value_type> >
+inline DEAL_II_ALWAYS_INLINE//
+Tensor<1,dim,VectorizedArray<value_type> >
 calculate_flux(Tensor<2,dim,VectorizedArray<value_type> > const &momentum_flux_M,
                Tensor<2,dim,VectorizedArray<value_type> > const &momentum_flux_P,
                Tensor<1,dim,VectorizedArray<value_type> > const &rho_u_M,
@@ -291,7 +303,8 @@ calculate_flux(Tensor<2,dim,VectorizedArray<value_type> > const &momentum_flux_M
  *  This function calculates the Lax-Friedrichs flux for scalar quantities (density/energy)
  */
 template<int dim, typename value_type>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
+inline DEAL_II_ALWAYS_INLINE//
+VectorizedArray<value_type>
 calculate_flux(Tensor<1,dim,VectorizedArray<value_type> > const &flux_M,
                Tensor<1,dim,VectorizedArray<value_type> > const &flux_P,
                VectorizedArray<value_type> const                &value_M,
@@ -309,7 +322,8 @@ calculate_flux(Tensor<1,dim,VectorizedArray<value_type> > const &flux_M,
  *  lambda = max( |u_M| + sqrt(|gamma * p_M / rho_M|) , |u_P| + sqrt(|gamma * p_P / rho_P|) )
  */
 template<int dim, typename value_type>
-inline DEAL_II_ALWAYS_INLINE VectorizedArray<value_type>
+inline DEAL_II_ALWAYS_INLINE//
+VectorizedArray<value_type>
 calculate_lambda(VectorizedArray<value_type> const                &rho_m,
                  VectorizedArray<value_type> const                &rho_p,
                  Tensor<1,dim,VectorizedArray<value_type> > const &u_m,

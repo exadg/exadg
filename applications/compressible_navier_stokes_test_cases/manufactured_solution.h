@@ -553,7 +553,7 @@ double AnalyticalSolutionCompNS<dim>::value(const Point<dim>    &p,
 
    // do not set boundary conditions for the pressure -> neumann_bc
    std::shared_ptr<Function<dim> > pressure_bc;
-   pressure_bc.reset(new ZeroFunction<dim>(1));
+   pressure_bc.reset(new Functions::ZeroFunction<dim>(1));
    boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,pressure_bc));
 
    std::shared_ptr<Function<dim> > energy_bc;

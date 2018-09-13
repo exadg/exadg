@@ -73,16 +73,19 @@ void ConvDiff::InputParameters::set_input_parameters()
   abs_tol = 1.e-20;
   rel_tol = 1.e-8;
   max_iter = 1e4;
-  preconditioner = Preconditioner::Multigrid;
+  preconditioner = Preconditioner::Multigrid;//Preconditioner::PointJacobi;
   mg_operator_type = MultigridOperatorType::ReactionConvectionDiffusion;
   // MG smoother
-  multigrid_data.smoother = MultigridSmoother::GMRES;
+  multigrid_data.smoother = MultigridSmoother::Chebyshev;
   // MG smoother data
   multigrid_data.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::None;
   multigrid_data.gmres_smoother_data.number_of_iterations = 5;
   // MG coarse grid solver
   multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_PointJacobi;
-
+  //multigrid_data.coarse_solver = MultigridCoarseGridSolver::AMG_ML;
+  //multigrid_data.two_levels = true;
+  multigrid_data.type = MultigridType::HGMG;
+  
   update_preconditioner = false;
 
   // NUMERICAL PARAMETERS
@@ -266,8 +269,8 @@ void create_grid_and_set_boundary_conditions(
     {
       if ((std::fabs(cell->face(face_number)->center()(1) - left) < 1e-12)||
          (std::fabs(cell->face(face_number)->center()(1) - right) < 1e-12)
-//         || (std::fabs(cell->face(face_number)->center()(0) - right) < 1e-12) // Neumann BC at right boundary
-         )
+         || ((dim==3) && ((std::fabs(cell->face(face_number)->center()(2) - left ) < 1e-12) || 
+                          (std::fabs(cell->face(face_number)->center()(2) - right) < 1e-12))))
         cell->face(face_number)->set_boundary_id (1);
     }
   }

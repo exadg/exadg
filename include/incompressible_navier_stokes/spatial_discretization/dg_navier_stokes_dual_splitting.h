@@ -14,10 +14,10 @@
 #include "../../incompressible_navier_stokes/spatial_discretization/pressure_neumann_bc_convective_term.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/pressure_neumann_bc_viscous_term.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/velocity_divergence_convective_term.h"
-#include "../include/solvers_and_preconditioners/jacobi_preconditioner.h"
-#include "solvers_and_preconditioners/inverse_mass_matrix_preconditioner.h"
-#include "solvers_and_preconditioners/iterative_solvers.h"
-#include "solvers_and_preconditioners/newton_solver.h"
+#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
+#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
+#include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
+#include "../../solvers_and_preconditioners/newton/newton_solver.h"
 
 namespace IncNS
 {
@@ -355,10 +355,10 @@ setup_helmholtz_solver (double const &scaling_factor_time_derivative_term)
   // always unsteady problem
   helmholtz_operator_data.unsteady_problem = true;
 
-  helmholtz_operator.initialize(this->data,helmholtz_operator_data,this->mass_matrix_operator,this->viscous_operator);
-
   // set scaling factor time derivative term!
-  helmholtz_operator.set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
+  helmholtz_operator_data.scaling_factor_time_derivative_term = scaling_factor_time_derivative_term;
+
+  helmholtz_operator.initialize(this->data,helmholtz_operator_data,this->mass_matrix_operator,this->viscous_operator);
 
   // 2. Setup Helmholtz preconditioner
   setup_helmholtz_preconditioner();
@@ -464,12 +464,12 @@ setup_helmholtz_preconditioner ()
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi)
   {
-    helmholtz_preconditioner.reset(new JacobiPreconditioner<Number,
+    helmholtz_preconditioner.reset(new JacobiPreconditioner<
         HelmholtzOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule, Number> >(helmholtz_operator));
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi)
   {
-    helmholtz_preconditioner.reset(new BlockJacobiPreconditioner<Number,
+    helmholtz_preconditioner.reset(new BlockJacobiPreconditioner<
         HelmholtzOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule, Number> >(helmholtz_operator));
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
@@ -491,8 +491,8 @@ setup_helmholtz_preconditioner ()
     mg_preconditioner->initialize(mg_data,
                                   this->dof_handler_u,
                                   this->mapping,
-                                  helmholtz_operator,
-                                  this->periodic_face_pairs);
+                                  /*helmholtz_operator.get_operator_data().bc->dirichlet_bc,*/
+                                  (void *)&helmholtz_operator.get_operator_data());
   }
 }
 

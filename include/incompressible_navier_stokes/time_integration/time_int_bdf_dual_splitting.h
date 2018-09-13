@@ -305,8 +305,11 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
 write_restart_vectors(boost::archive::binary_oarchive & oa) const
 {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   VectorView<double> tmp(velocity[0].local_size(),
                          velocity[0].begin());
+#pragma GCC diagnostic pop
   oa << tmp;
   for (unsigned int i=1; i<velocity.size(); i++)
   {
