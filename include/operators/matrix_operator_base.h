@@ -16,13 +16,14 @@
 class MatrixOperatorBase : public dealii::Subscriptor
 {
 public:
-  MatrixOperatorBase()
-  :
-  dealii::Subscriptor()
-  {}
+  MatrixOperatorBase() : dealii::Subscriptor()
+  {
+  }
 
-  virtual ~MatrixOperatorBase(){}
-  
+  virtual ~MatrixOperatorBase()
+  {
+  }
+
 private:
 };
 

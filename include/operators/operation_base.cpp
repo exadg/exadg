@@ -1,20 +1,21 @@
 #include "operation_base.h"
 
-#include <deal.II/dofs/dof_tools.h>
 #include <deal.II/distributed/tria.h>
+#include <deal.II/dofs/dof_tools.h>
 
 #include "../solvers_and_preconditioners/util/block_jacobi_matrices.h"
 #include "../solvers_and_preconditioners/util/invert_diagonal.h"
 
-#include "../functionalities/set_zero_mean_value.h"
 #include "../functionalities/categorization.h"
+#include "../functionalities/set_zero_mean_value.h"
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
   : operator_settings(AdditionalData()),
     data(),
     eval_time(0.0),
-    do_eval_faces(operator_settings.face_evaluate.do_eval() || operator_settings.face_integrate.do_eval()),
+    do_eval_faces(operator_settings.face_evaluate.do_eval() ||
+                  operator_settings.face_integrate.do_eval()),
     is_dg(true),
     is_mg(false),
     level_mg_handler(numbers::invalid_unsigned_int),
@@ -24,10 +25,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::reinit(MatrixFree_ const &             matrix_free,
-                                                          ConstraintMatrix const&              constraint_matrix,
-                                                          AdditionalData const & operator_settings,
-                                                          unsigned int           level_mg_handler) const
+OperatorBase<dim, degree, Number, AdditionalData>::reinit(
+  MatrixFree_ const &      matrix_free,
+  ConstraintMatrix const & constraint_matrix,
+  AdditionalData const &   operator_settings,
+  unsigned int             level_mg_handler) const
 {
   // reinit data structures
   this->data.reinit(matrix_free);
@@ -35,7 +37,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(MatrixFree_ const &   
   this->operator_settings = operator_settings;
 
   // check if dg or cg
-  // An approximation can have degrees of freedom on vertices, edges, quads and 
+  // An approximation can have degrees of freedom on vertices, edges, quads and
   // hexes. A vertex degree of freedom means that the degree of freedom is
   // the same on all cells that are adjacent to this vertex. A face degree of
   // freedom means that the two cells adjacent to that face see the same degree
@@ -47,21 +49,21 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(MatrixFree_ const &   
   // set mg level
   this->level_mg_handler = level_mg_handler;
 
-  // The default value is is_mg = false and this variable is set to true in case 
-  // the operator is applied in multigrid algorithm. By convention, the default 
-  // argument numbers::invalid_unsigned_int corresponds to the default 
+  // The default value is is_mg = false and this variable is set to true in case
+  // the operator is applied in multigrid algorithm. By convention, the default
+  // argument numbers::invalid_unsigned_int corresponds to the default
   // value is_mg = false
   this->is_mg = level_mg_handler != numbers::invalid_unsigned_int;
-
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> &   dof_handler,
-                                                          const Mapping<dim> &      mapping,
-                                                          void *                    operator_data_in,
-                                                          const MGConstrainedDoFs & mg_constrained_dofs,
-                                                          const unsigned int        level_mg_handler)
+OperatorBase<dim, degree, Number, AdditionalData>::reinit(
+  const DoFHandler<dim> &   dof_handler,
+  const Mapping<dim> &      mapping,
+  void *                    operator_data_in,
+  const MGConstrainedDoFs & mg_constrained_dofs,
+  const unsigned int        level_mg_handler)
 {
   // create copy of data and ...
   auto operator_settings = *static_cast<AdditionalData *>(operator_data_in);
@@ -78,19 +80,22 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
   // ... level of this mg level
   additional_data.level_mg_handler = level_mg_handler;
 
-  // ... update flags  
+  // ... update flags
   additional_data.mapping_update_flags = operator_settings.mapping_update_flags;
 
   if(is_dg)
   {
     additional_data.build_face_info = true;
-    additional_data.mapping_update_flags_inner_faces    = operator_settings.mapping_update_flags_inner_faces;
-    additional_data.mapping_update_flags_boundary_faces = operator_settings.mapping_update_flags_boundary_faces;
+    additional_data.mapping_update_flags_inner_faces =
+      operator_settings.mapping_update_flags_inner_faces;
+    additional_data.mapping_update_flags_boundary_faces =
+      operator_settings.mapping_update_flags_boundary_faces;
   }
-  
+
   if(operator_settings.use_cell_based_loops && is_dg)
   {
-    auto tria = dynamic_cast<const parallel::distributed::Triangulation<dim>*>(&dof_handler.get_triangulation());
+    auto tria = dynamic_cast<const parallel::distributed::Triangulation<dim> *>(
+      &dof_handler.get_triangulation());
     Categorization::do_cell_based_loops(*tria, additional_data, level_mg_handler);
   }
 
@@ -100,7 +105,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
 
   // setup constraint matrix for CG
   if(!is_dg)
-    this->add_constraints(dof_handler, constraint_own, mg_constrained_dofs, operator_settings, level_mg_handler);
+    this->add_constraints(
+      dof_handler, constraint_own, mg_constrained_dofs, operator_settings, level_mg_handler);
 
   // ...finalize constraint matrix
   constraint_own.close();
@@ -112,7 +118,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(const DoFHandler<dim> 
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::vmult(VectorType & dst, VectorType const & src) const
+OperatorBase<dim, degree, Number, AdditionalData>::vmult(VectorType &       dst,
+                                                         VectorType const & src) const
 {
   dst = 0;
   vmult_add(dst, src);
@@ -120,14 +127,16 @@ OperatorBase<dim, degree, Number, AdditionalData>::vmult(VectorType & dst, Vecto
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply(VectorType & dst, VectorType const & src) const
+OperatorBase<dim, degree, Number, AdditionalData>::apply(VectorType &       dst,
+                                                         VectorType const & src) const
 {
   vmult(dst, src);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::vmult_add(VectorType & dst, VectorType const & src) const
+OperatorBase<dim, degree, Number, AdditionalData>::vmult_add(VectorType &       dst,
+                                                             VectorType const & src) const
 {
   const VectorType * actual_src = &src;
   VectorType         tmp_projection_vector;
@@ -139,8 +148,12 @@ OperatorBase<dim, degree, Number, AdditionalData>::vmult_add(VectorType & dst, V
   }
 
   if(is_dg && do_eval_faces)
-    data->loop(
-      &This::local_cell_hom, &This::local_face_hom, &This::local_boundary_hom, this, dst, *actual_src);
+    data->loop(&This::local_cell_hom,
+               &This::local_face_hom,
+               &This::local_boundary_hom,
+               this,
+               dst,
+               *actual_src);
   else
     data->cell_loop(&This::local_cell_hom, this, dst, *actual_src);
 
@@ -150,7 +163,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::vmult_add(VectorType & dst, V
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply_add(VectorType & dst, VectorType const & src) const
+OperatorBase<dim, degree, Number, AdditionalData>::apply_add(VectorType &       dst,
+                                                             VectorType const & src) const
 {
   vmult_add(dst, src);
 }
@@ -167,16 +181,18 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_add(VectorType &       
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::vmult_interface_down(VectorType &       dst,
-                                                                        VectorType const & src) const
+OperatorBase<dim, degree, Number, AdditionalData>::vmult_interface_down(
+  VectorType &       dst,
+  VectorType const & src) const
 {
   vmult(dst, src);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::vmult_add_interface_up(VectorType &       dst,
-                                                                          VectorType const & src) const
+OperatorBase<dim, degree, Number, AdditionalData>::vmult_add_interface_up(
+  VectorType &       dst,
+  VectorType const & src) const
 {
   vmult_add(dst, src);
 }
@@ -204,7 +220,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::rhs_add(VectorType & dst) con
   VectorType tmp;
   tmp.reinit(dst, false);
 
-  data->loop(&This::local_cell_inhom, &This::local_face_inhom, &This::local_boundary_inhom, this, tmp, tmp);
+  data->loop(
+    &This::local_cell_inhom, &This::local_face_inhom, &This::local_boundary_inhom, this, tmp, tmp);
 
   // multiply by -1.0 since the boundary face integrals have to be shifted
   // to the right hand side
@@ -213,7 +230,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::rhs_add(VectorType & dst) con
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::rhs_add(VectorType & dst, Number const time) const
+OperatorBase<dim, degree, Number, AdditionalData>::rhs_add(VectorType & dst,
+                                                           Number const time) const
 {
   this->set_evaluation_time(time);
   this->rhs_add(dst);
@@ -237,7 +255,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::evaluate_add(VectorType &    
 {
   this->eval_time = time;
 
-  data->loop(&This::local_cell_hom, &This::local_face_hom, &This::local_boundary_full, this, dst, src);
+  data->loop(
+    &This::local_cell_hom, &This::local_face_hom, &This::local_boundary_full, this, dst, src);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
@@ -293,7 +312,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VectorType & dia
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::calculate_inverse_diagonal(VectorType & diagonal) const
+OperatorBase<dim, degree, Number, AdditionalData>::calculate_inverse_diagonal(
+  VectorType & diagonal) const
 {
   calculate_diagonal(diagonal);
   invert_diagonal(diagonal);
@@ -301,8 +321,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::calculate_inverse_diagonal(Ve
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply_inverse_block_diagonal(VectorType &       dst,
-                                                                      VectorType const & src) const
+OperatorBase<dim, degree, Number, AdditionalData>::apply_inverse_block_diagonal(
+  VectorType &       dst,
+  VectorType const & src) const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
   AssertThrow(block_jacobi_matrices_have_been_initialized,
@@ -313,8 +334,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_inverse_block_diagonal(
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply_block_diagonal(VectorType &       dst,
-                                                                        VectorType const & src) const
+OperatorBase<dim, degree, Number, AdditionalData>::apply_block_diagonal(
+  VectorType &       dst,
+  VectorType const & src) const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
   AssertThrow(block_jacobi_matrices_have_been_initialized,
@@ -339,10 +361,12 @@ OperatorBase<dim, degree, Number, AdditionalData>::calculate_block_diagonal_matr
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
 
   // allocate memory only the first time
-  if(block_jacobi_matrices_have_been_initialized == false || data->n_macro_cells() * vectorization_length != matrices.size())
+  if(block_jacobi_matrices_have_been_initialized == false ||
+     data->n_macro_cells() * vectorization_length != matrices.size())
   {
     auto dofs = data->get_shape_info().dofs_per_component_on_cell;
-    matrices.resize(data->n_macro_cells() * vectorization_length, LAPACKFullMatrix<Number>(dofs, dofs));
+    matrices.resize(data->n_macro_cells() * vectorization_length,
+                    LAPACKFullMatrix<Number>(dofs, dofs));
     block_jacobi_matrices_have_been_initialized = true;
   } // else: reuse old memory
 
@@ -355,10 +379,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::calculate_block_diagonal_matr
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::add_block_diagonal_matrices(BlockMatrix & matrices) const
+OperatorBase<dim, degree, Number, AdditionalData>::add_block_diagonal_matrices(
+  BlockMatrix & matrices) const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
-    
+
   if(do_eval_faces)
     if(operator_settings.use_cell_based_loops)
       data->cell_loop(&This::local_add_block_diagonal_cell_based, this, matrices, matrices);
@@ -375,8 +400,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_block_diagonal_matrices(B
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::add_block_diagonal_matrices(BlockMatrix &    matrices,
-                                                                             Number const time) const
+OperatorBase<dim, degree, Number, AdditionalData>::add_block_diagonal_matrices(
+  BlockMatrix & matrices,
+  Number const  time) const
 {
   this->set_evaluation_time(time);
   this->add_block_diagonal_matrices(matrices);
@@ -385,14 +411,17 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_block_diagonal_matrices(B
 #ifdef DEAL_II_WITH_TRILINOS
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::init_system_matrix(SparseMatrix & system_matrix) const
+OperatorBase<dim, degree, Number, AdditionalData>::init_system_matrix(
+  SparseMatrix & system_matrix) const
 {
   const DoFHandler<dim> & dof_handler = this->data->get_dof_handler();
-  MPI_Comm                comm;
+
+  MPI_Comm comm;
 
   // extract communicator
   {
-    auto tria = dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+    auto tria =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
 
     if(tria != NULL)
       comm = tria->get_communicator();
@@ -400,8 +429,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::init_system_matrix(SparseMatr
       comm = MPI_COMM_SELF;
   }
 
-  TrilinosWrappers::SparsityPattern dsp( is_mg ? dof_handler.locally_owned_mg_dofs(this->level_mg_handler) : dof_handler.locally_owned_dofs(), comm);
-  
+  TrilinosWrappers::SparsityPattern dsp(is_mg ? dof_handler.locally_owned_mg_dofs(
+                                                  this->level_mg_handler) :
+                                                dof_handler.locally_owned_dofs(),
+                                        comm);
+
   if(is_dg && is_mg)
     MGTools::make_flux_sparsity_pattern(dof_handler, dsp, this->level_mg_handler);
   else if(is_dg && !is_mg)
@@ -410,14 +442,15 @@ OperatorBase<dim, degree, Number, AdditionalData>::init_system_matrix(SparseMatr
     MGTools::make_sparsity_pattern(dof_handler, dsp, this->level_mg_handler);
   else /* if (!is_dg && !is_mg)*/
     DoFTools::make_sparsity_pattern(dof_handler, dsp);
-  
+
   dsp.compress();
   system_matrix.reinit(dsp);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::calculate_system_matrix(SparseMatrix & system_matrix) const
+OperatorBase<dim, degree, Number, AdditionalData>::calculate_system_matrix(
+  SparseMatrix & system_matrix) const
 {
   // assemble matrix locally on each process
   if(do_eval_faces && is_dg)
@@ -438,15 +471,16 @@ OperatorBase<dim, degree, Number, AdditionalData>::calculate_system_matrix(Spars
     // make zero entries on diagonal (due to constrained dofs) to one:
     auto p = system_matrix.local_range();
     for(auto i = p.first; i < p.second; i++)
-      if(system_matrix(i,i) == 0.0 && constraint->is_constrained(i))
-        system_matrix.add(i,i,1);
+      if(system_matrix(i, i) == 0.0 && constraint->is_constrained(i))
+        system_matrix.add(i, i, 1);
   } // nothing to do for dg
-
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::calculate_system_matrix(SparseMatrix & system_matrix, Number const time) const
+OperatorBase<dim, degree, Number, AdditionalData>::calculate_system_matrix(
+  SparseMatrix & system_matrix,
+  Number const   time) const
 {
   this->eval_time = time;
   calculate_system_matrix(system_matrix);
@@ -540,9 +574,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::is_singular() const
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::create_standard_basis(unsigned int j,
-                                                                         FEEvalFace & fe_eval_1,
-                                                                         FEEvalFace & fe_eval_2) const
+OperatorBase<dim, degree, Number, AdditionalData>::create_standard_basis(
+  unsigned int j,
+  FEEvalFace & fe_eval_1,
+  FEEvalFace & fe_eval_2) const
 {
   // create a standard basis in the dof values of the first FEFaceEvalution
   for(unsigned int i = 0; i < dofs_per_cell; ++i)
@@ -556,22 +591,24 @@ OperatorBase<dim, degree, Number, AdditionalData>::create_standard_basis(unsigne
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_cell_hom(const MatrixFree_ &         data,
-                                                                  VectorType &       dst,
-                                                                  const VectorType & src,
-                                                                  const Range &      range) const
+OperatorBase<dim, degree, Number, AdditionalData>::local_cell_hom(const MatrixFree_ & data,
+                                                                  VectorType &        dst,
+                                                                  const VectorType &  src,
+                                                                  const Range &       range) const
 {
   FEEvalCell fe_eval(data, operator_settings.dof_index, operator_settings.quad_index);
-  
+
   for(auto cell = range.first; cell < range.second; ++cell)
   {
     fe_eval.reinit(cell);
-    
+
     fe_eval.gather_evaluate(src,
                             this->operator_settings.cell_evaluate.value,
                             this->operator_settings.cell_evaluate.gradient,
                             this->operator_settings.cell_evaluate.hessians);
+
     this->do_cell_integral(fe_eval);
+
     fe_eval.integrate_scatter(this->operator_settings.cell_integrate.value,
                               this->operator_settings.cell_integrate.gradient,
                               dst);
@@ -580,28 +617,28 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_cell_hom(const MatrixFr
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_face_hom(const MatrixFree_ &         data,
-                                                                  VectorType &       dst,
-                                                                  const VectorType & src,
-                                                                  const Range &      range) const
+OperatorBase<dim, degree, Number, AdditionalData>::local_face_hom(const MatrixFree_ & data,
+                                                                  VectorType &        dst,
+                                                                  const VectorType &  src,
+                                                                  const Range &       range) const
 {
   FEEvalFace fe_eval_m(data, true, operator_settings.dof_index, operator_settings.quad_index);
   FEEvalFace fe_eval_p(data, false, operator_settings.dof_index, operator_settings.quad_index);
-  
+
   for(auto face = range.first; face < range.second; ++face)
   {
     fe_eval_m.reinit(face);
     fe_eval_p.reinit(face);
-    
+
     fe_eval_m.gather_evaluate(src,
                               this->operator_settings.face_evaluate.value,
                               this->operator_settings.face_evaluate.gradient);
     fe_eval_p.gather_evaluate(src,
                               this->operator_settings.face_evaluate.value,
                               this->operator_settings.face_evaluate.gradient);
-    
+
     this->do_face_integral(fe_eval_m, fe_eval_p);
-    
+
     fe_eval_m.integrate_scatter(this->operator_settings.face_integrate.value,
                                 this->operator_settings.face_integrate.gradient,
                                 dst);
@@ -613,20 +650,23 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_face_hom(const MatrixFr
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_hom(const MatrixFree_ &         data,
-                                                                      VectorType &       dst,
-                                                                      const VectorType & src,
-                                                                      const Range &      range) const
+OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_hom(const MatrixFree_ & data,
+                                                                      VectorType &        dst,
+                                                                      const VectorType &  src,
+                                                                      const Range & range) const
 {
   FEEvalFace fe_eval(data, true, operator_settings.dof_index, operator_settings.quad_index);
 
   for(unsigned int face = range.first; face < range.second; face++)
   {
     fe_eval.reinit(face);
+
     fe_eval.gather_evaluate(src,
                             this->operator_settings.face_evaluate.value,
                             this->operator_settings.face_evaluate.gradient);
+
     do_boundary_integral(fe_eval, OperatorType::homogeneous, data.get_boundary_id(face));
+
     fe_eval.integrate_scatter(this->operator_settings.face_integrate.value,
                               this->operator_settings.face_integrate.gradient,
                               dst);
@@ -635,8 +675,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_hom(const Matr
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_inhom(const MatrixFree_ &   data,
-                                                                        VectorType & dst,
+OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_inhom(const MatrixFree_ & data,
+                                                                        VectorType &        dst,
                                                                         const VectorType & /*src*/,
                                                                         const Range & range) const
 {
@@ -645,9 +685,12 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_inhom(const Ma
   for(unsigned int face = range.first; face < range.second; face++)
   {
     fe_eval.reinit(face);
-    // note: no gathering/evaluation is necessary when calculating the 
+
+    // note: no gathering/evaluation is necessary when calculating the
     //       inhomogeneous part of boundary face integrals
+
     do_boundary_integral(fe_eval, OperatorType::inhomogeneous, data.get_boundary_id(face));
+
     fe_eval.integrate_scatter(this->operator_settings.face_integrate.value,
                               this->operator_settings.face_integrate.gradient,
                               dst);
@@ -656,20 +699,23 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_inhom(const Ma
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_full(const MatrixFree_ &         data,
-                                                                       VectorType &       dst,
-                                                                       const VectorType & src,
-                                                                       const Range &      range) const
+OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_full(const MatrixFree_ & data,
+                                                                       VectorType &        dst,
+                                                                       const VectorType &  src,
+                                                                       const Range & range) const
 {
   FEEvalFace fe_eval(data, true, operator_settings.dof_index, operator_settings.quad_index);
 
   for(unsigned int face = range.first; face < range.second; face++)
   {
     fe_eval.reinit(face);
+
     fe_eval.gather_evaluate(src,
                             this->operator_settings.face_evaluate.value,
                             this->operator_settings.face_evaluate.gradient);
+
     do_boundary_integral(fe_eval, OperatorType::full, data.get_boundary_id(face));
+
     fe_eval.integrate_scatter(this->operator_settings.face_integrate.value,
                               this->operator_settings.face_integrate.gradient,
                               dst);
@@ -678,49 +724,54 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_boundary_full(const Mat
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell(const MatrixFree_ &   data,
-                                                                           VectorType & dst,
-                                                                           const VectorType & /*src*/,
-                                                                           const Range & range) const
+OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell(
+  const MatrixFree_ & data,
+  VectorType &        dst,
+  const VectorType & /*src*/,
+  const Range & range) const
 {
   FEEvalCell fe_eval(data, operator_settings.dof_index, operator_settings.quad_index);
-  
+
   for(auto cell = range.first; cell < range.second; ++cell)
   {
     // create temporal array for local diagonal
     VectorizedArray<Number> local_diag[dofs_per_cell];
-    
+
     fe_eval.reinit(cell);
-    
+
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       // write standard basis into dof values of FEEvaluation
       this->create_standard_basis(j, fe_eval);
+
       fe_eval.evaluate(this->operator_settings.cell_evaluate.value,
                        this->operator_settings.cell_evaluate.gradient,
                        this->operator_settings.cell_evaluate.hessians);
-      
+
       this->do_cell_integral(fe_eval);
 
       fe_eval.integrate(this->operator_settings.cell_integrate.value,
                         this->operator_settings.cell_integrate.gradient);
+
       // extract single value from result vector and temporally store it
       local_diag[j] = fe_eval.begin_dof_values()[j];
     }
-    // copy local diagonal entries into dof values of FEEvaluation and ...
+    // copy local diagonal entries into dof values of FEEvaluation ...
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
       fe_eval.begin_dof_values()[j] = local_diag[j];
-    // ... write it back to global vector
+
+    // ... and write it back to global vector
     fe_eval.distribute_local_to_global(dst);
   }
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_face(const MatrixFree_ &   data,
-                                                                           VectorType & dst,
-                                                                           const VectorType & /*src*/,
-                                                                           const Range & range) const
+OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_face(
+  const MatrixFree_ & data,
+  VectorType &        dst,
+  const VectorType & /*src*/,
+  const Range & range) const
 {
   FEEvalFace fe_eval_m(data, true, operator_settings.dof_index, operator_settings.quad_index);
   FEEvalFace fe_eval_p(data, false, operator_settings.dof_index, operator_settings.quad_index);
@@ -728,7 +779,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_face(const
   for(auto cell = range.first; cell < range.second; ++cell)
   {
     VectorizedArray<Number> local_diag[dofs_per_cell];
-    
+
     fe_eval_m.reinit(cell);
     fe_eval_p.reinit(cell);
 
@@ -736,67 +787,82 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_face(const
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval_m);
+
       fe_eval_m.evaluate(this->operator_settings.face_evaluate.value,
                          this->operator_settings.face_evaluate.gradient);
+
       this->do_face_int_integral(fe_eval_m, fe_eval_p);
+
       fe_eval_m.integrate(this->operator_settings.face_integrate.value,
                           this->operator_settings.face_integrate.gradient);
 
       local_diag[j] = fe_eval_m.begin_dof_values()[j];
     }
+
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
       fe_eval_m.begin_dof_values()[j] = local_diag[j];
+
     fe_eval_m.distribute_local_to_global(dst);
 
     // exterior face
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval_p);
+
       fe_eval_p.evaluate(this->operator_settings.face_evaluate.value,
                          this->operator_settings.face_evaluate.gradient);
+
       this->do_face_ext_integral(fe_eval_m, fe_eval_p);
+
       fe_eval_p.integrate(this->operator_settings.face_integrate.value,
                           this->operator_settings.face_integrate.gradient);
+
       local_diag[j] = fe_eval_p.begin_dof_values()[j];
     }
+
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
       fe_eval_p.begin_dof_values()[j] = local_diag[j];
+
     fe_eval_p.distribute_local_to_global(dst);
   }
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_boundary(const MatrixFree_ &   data,
-                                                                               VectorType & dst,
-                                                                               const VectorType & /*src*/,
-                                                                               const Range & range) const
+OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_boundary(
+  const MatrixFree_ & data,
+  VectorType &        dst,
+  const VectorType & /*src*/,
+  const Range & range) const
 {
   FEEvalFace fe_eval(data, true, operator_settings.dof_index, operator_settings.quad_index);
 
   for(unsigned int face = range.first; face < range.second; face++)
   {
     VectorizedArray<Number> local_diag[dofs_per_cell];
-    
+
     auto bid = data.get_boundary_id(face);
 
     fe_eval.reinit(face);
-    
+
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval);
+
       fe_eval.evaluate(this->operator_settings.face_evaluate.value,
                        this->operator_settings.face_evaluate.gradient);
-      
+
       this->do_boundary_integral(fe_eval, OperatorType::homogeneous, bid);
 
       fe_eval.integrate(this->operator_settings.face_integrate.value,
                         this->operator_settings.face_integrate.gradient);
+
       local_diag[j] = fe_eval.begin_dof_values()[j];
     }
-    
+
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
       fe_eval.begin_dof_values()[j] = local_diag[j];
+
     fe_eval.distribute_local_to_global(dst);
   }
 }
@@ -804,30 +870,34 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_boundary(c
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell_based(const MatrixFree_ &   data,
-                                                                                 VectorType & dst,
-                                                                                 const VectorType & /*src*/,
-                                                                                 const Range & range) const
+OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell_based(
+  const MatrixFree_ & data,
+  VectorType &        dst,
+  const VectorType & /*src*/,
+  const Range & range) const
 {
   FEEvalCell fe_eval(data, operator_settings.dof_index, operator_settings.quad_index);
   FEEvalFace fe_eval_m(data, true, operator_settings.dof_index, operator_settings.quad_index);
   FEEvalFace fe_eval_p(data, false, operator_settings.dof_index, operator_settings.quad_index);
-  
+
   for(auto cell = range.first; cell < range.second; ++cell)
   {
     VectorizedArray<Number> local_diag[dofs_per_cell];
     fe_eval.reinit(cell);
-    
+
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval);
+
       fe_eval.evaluate(this->operator_settings.cell_evaluate.value,
                        this->operator_settings.cell_evaluate.gradient,
                        this->operator_settings.cell_evaluate.hessians);
+
       this->do_cell_integral(fe_eval);
 
       fe_eval.integrate(this->operator_settings.cell_integrate.value,
                         this->operator_settings.cell_integrate.gradient);
+
       local_diag[j] = fe_eval.begin_dof_values()[j];
     }
 
@@ -838,34 +908,38 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell_based
       fe_eval_m.reinit(cell, face);
       fe_eval_p.reinit(cell, face);
       auto bids = data.get_faces_by_cells_boundary_id(cell, face);
-      auto bid = bids[0];
+      auto bid  = bids[0];
 #ifdef DEBUG
       const unsigned int n_filled_lanes = data.n_active_entries_per_cell_batch(cell);
       for(unsigned int v = 0; v < n_filled_lanes; v++)
-        Assert(bid == bids[v], ExcMessage("Cell-based face loop encountered face batch with different bids."));
+        Assert(bid == bids[v],
+               ExcMessage("Cell-based face loop encountered face batch with different bids."));
 #endif
 
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
       {
         this->create_standard_basis(j, fe_eval_m);
+
         fe_eval_m.evaluate(this->operator_settings.face_evaluate.value,
                            this->operator_settings.face_evaluate.gradient);
-        
+
         if(bid == numbers::internal_face_boundary_id) // internal face
           this->do_face_int_integral(fe_eval_m, fe_eval_p);
         else // boundary face
           this->do_boundary_integral(fe_eval_m, OperatorType::homogeneous, bid);
-            
+
         fe_eval_m.integrate(this->operator_settings.face_integrate.value,
                             this->operator_settings.face_integrate.gradient);
-        // note: += for accumulation of all contributions of this (macro) cell 
-        //          including: cell-, face-, boundary-stiffness matrix 
+
+        // note: += for accumulation of all contributions of this (macro) cell
+        //          including: cell-, face-, boundary-stiffness matrix
         local_diag[j] += fe_eval_m.begin_dof_values()[j];
       }
     }
-    
+
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
       fe_eval.begin_dof_values()[j] = local_diag[j];
+
     fe_eval.distribute_local_to_global(dst);
   }
 }
@@ -873,10 +947,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_diagonal_cell_based
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::local_apply_inverse_block_diagonal(
-  const MatrixFree_ &         data,
-  VectorType &       dst,
-  const VectorType & src,
-  const Range &      cell_range) const
+  const MatrixFree_ & data,
+  VectorType &        dst,
+  const VectorType &  src,
+  const Range &       cell_range) const
 {
   FEEvalCell fe_eval(data, operator_settings.dof_index, operator_settings.quad_index);
 
@@ -904,12 +978,14 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_inverse_block_dia
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_apply_block_diagonal(const MatrixFree_ &         data,
-                                                                              VectorType &       dst,
-                                                                              const VectorType & src,
-                                                                              const Range &      range) const
+OperatorBase<dim, degree, Number, AdditionalData>::local_apply_block_diagonal(
+  const MatrixFree_ & data,
+  VectorType &        dst,
+  const VectorType &  src,
+  const Range &       range) const
 {
   FEEvalCell fe_eval(data, operator_settings.dof_index, operator_settings.quad_index);
+
   for(unsigned int cell = range.first; cell < range.second; ++cell)
   {
     fe_eval.reinit(cell);
@@ -935,13 +1011,14 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_apply_block_diagonal(co
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_cell(const MatrixFree_ & data,
-                                                                                 BlockMatrix &  dst,
-                                                                                 const BlockMatrix & /*src*/,
-                                                                                 const Range & range) const
+OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_cell(
+  const MatrixFree_ & data,
+  BlockMatrix &       dst,
+  const BlockMatrix & /*src*/,
+  const Range & range) const
 {
   FEEvalCell fe_eval(data, operator_settings.dof_index, operator_settings.quad_index);
-  
+
   for(auto cell = range.first; cell < range.second; ++cell)
   {
     const unsigned int n_filled_lanes = data.n_active_entries_per_cell_batch(cell);
@@ -949,12 +1026,16 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_cell
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval);
+
       fe_eval.evaluate(this->operator_settings.cell_evaluate.value,
                        this->operator_settings.cell_evaluate.gradient,
                        this->operator_settings.cell_evaluate.hessians);
+
       this->do_cell_integral(fe_eval);
+
       fe_eval.integrate(this->operator_settings.cell_integrate.value,
                         this->operator_settings.cell_integrate.gradient);
+
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
           dst[cell * vectorization_length + v](i, j) += fe_eval.begin_dof_values()[i][v];
@@ -964,10 +1045,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_cell
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_face(const MatrixFree_ & data,
-                                                                                 BlockMatrix &  dst,
-                                                                                 const BlockMatrix & /*src*/,
-                                                                                 const Range & range) const
+OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_face(
+  const MatrixFree_ & data,
+  BlockMatrix &       dst,
+  const BlockMatrix & /*src*/,
+  const Range & range) const
 {
   FEEvalFace fe_eval_m(data, true, operator_settings.dof_index, operator_settings.quad_index);
   FEEvalFace fe_eval_p(data, false, operator_settings.dof_index, operator_settings.quad_index);
@@ -975,7 +1057,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_face
   for(auto face = range.first; face < range.second; ++face)
   {
     const unsigned int n_filled_lanes = data.n_active_entries_per_face_batch(face);
-    
+
     fe_eval_m.reinit(face);
     fe_eval_p.reinit(face);
 
@@ -983,11 +1065,15 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_face
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval_m);
+
       fe_eval_m.evaluate(this->operator_settings.face_evaluate.value,
                          this->operator_settings.face_evaluate.gradient);
+
       this->do_face_int_integral(fe_eval_m, fe_eval_p);
+
       fe_eval_m.integrate(this->operator_settings.face_integrate.value,
                           this->operator_settings.face_integrate.gradient);
+
       for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
         const unsigned int cell = data.get_face_info(face).cells_interior[v];
@@ -1000,11 +1086,15 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_face
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval_p);
+
       fe_eval_p.evaluate(this->operator_settings.face_evaluate.value,
                          this->operator_settings.face_evaluate.gradient);
+
       this->do_face_ext_integral(fe_eval_m, fe_eval_p);
+
       fe_eval_p.integrate(this->operator_settings.face_integrate.value,
                           this->operator_settings.face_integrate.gradient);
+
       for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
         const unsigned int cell = data.get_face_info(face).cells_exterior[v];
@@ -1019,7 +1109,7 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_boundary(
   const MatrixFree_ & data,
-  BlockMatrix &  dst,
+  BlockMatrix &       dst,
   const BlockMatrix & /*src*/,
   const Range & range) const
 {
@@ -1030,15 +1120,19 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_boun
     const unsigned int n_filled_lanes = data.n_active_entries_per_face_batch(face);
     fe_eval.reinit(face);
     auto bid = data.get_boundary_id(face);
-    
+
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval);
+
       fe_eval.evaluate(this->operator_settings.face_evaluate.value,
                        this->operator_settings.face_evaluate.gradient);
+
       this->do_boundary_integral(fe_eval, OperatorType::homogeneous, bid);
+
       fe_eval.integrate(this->operator_settings.face_integrate.value,
                         this->operator_settings.face_integrate.gradient);
+
       for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
         const unsigned int cell = data.get_face_info(face).cells_interior[v];
@@ -1054,31 +1148,33 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_cell_based(
   const MatrixFree_ & data,
-  BlockMatrix &  dst,
+  BlockMatrix &       dst,
   const BlockMatrix & /*src*/,
   const Range & range) const
 {
   FEEvalCell fe_eval(data, operator_settings.dof_index, operator_settings.quad_index);
   FEEvalFace fe_eval_m(data, true, operator_settings.dof_index, operator_settings.quad_index);
   FEEvalFace fe_eval_p(data, false, operator_settings.dof_index, operator_settings.quad_index);
-  
+
   for(auto cell = range.first; cell < range.second; ++cell)
   {
     const unsigned int n_filled_lanes = data.n_active_entries_per_cell_batch(cell);
-    
+
     fe_eval.reinit(cell);
-    
+
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval);
+
       fe_eval.evaluate(this->operator_settings.cell_evaluate.value,
                        this->operator_settings.cell_evaluate.gradient,
                        this->operator_settings.cell_evaluate.hessians);
-      
+
       this->do_cell_integral(fe_eval);
 
       fe_eval.integrate(this->operator_settings.cell_integrate.value,
                         this->operator_settings.cell_integrate.gradient);
+
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
           dst[cell * vectorization_length + v](i, j) += fe_eval.begin_dof_values()[i][v];
@@ -1091,25 +1187,28 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_add_block_diagonal_cell
       fe_eval_m.reinit(cell, face);
       fe_eval_p.reinit(cell, face);
       auto bids = data.get_faces_by_cells_boundary_id(cell, face);
-      auto bid = bids[0];
+      auto bid  = bids[0];
 #ifdef DEBUG
       for(unsigned int v = 0; v < n_filled_lanes; v++)
-        Assert(bid == bids[v], ExcMessage("Cell-based face loop encountered face batch with different bids."));
+        Assert(bid == bids[v],
+               ExcMessage("Cell-based face loop encountered face batch with different bids."));
 #endif
 
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
       {
         this->create_standard_basis(j, fe_eval_m);
+
         fe_eval_m.evaluate(this->operator_settings.face_evaluate.value,
                            this->operator_settings.face_evaluate.gradient);
-        
+
         if(bid == numbers::internal_face_boundary_id) // internal face
           this->do_face_int_integral(fe_eval_m, fe_eval_p);
         else // boundary face
           this->do_boundary_integral(fe_eval_m, OperatorType::homogeneous, bid);
-        
+
         fe_eval_m.integrate(this->operator_settings.face_integrate.value,
                             this->operator_settings.face_integrate.gradient);
+
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
           for(unsigned int i = 0; i < dofs_per_cell; ++i)
             dst[cell * vectorization_length + v](i, j) += fe_eval_m.begin_dof_values()[i][v];
@@ -1123,12 +1222,12 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix_cell(
   const MatrixFree_ & data,
-  SparseMatrix &  dst,
+  SparseMatrix &      dst,
   const SparseMatrix & /*src*/,
   const Range & range) const
 {
   FEEvalCell fe_eval(data, operator_settings.dof_index, operator_settings.quad_index);
-  
+
   for(auto cell = range.first; cell < range.second; ++cell)
   {
     const unsigned int n_filled_lanes = data.n_components_filled(cell);
@@ -1144,9 +1243,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval);
+
       fe_eval.evaluate(this->operator_settings.cell_evaluate.value,
                        this->operator_settings.cell_evaluate.gradient,
                        this->operator_settings.cell_evaluate.hessians);
+
       this->do_cell_integral(fe_eval);
 
       fe_eval.integrate(this->operator_settings.cell_integrate.value,
@@ -1161,7 +1262,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
     for(unsigned int v = 0; v < n_filled_lanes; v++)
     {
       auto cell_v = data.get_cell_iterator(cell, v);
-      
+
       std::vector<types::global_dof_index> dof_indices(dofs_per_cell);
       if(is_mg)
         cell_v->get_mg_dof_indices(dof_indices);
@@ -1187,22 +1288,22 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix_face(
   const MatrixFree_ & data,
-  SparseMatrix &  dst,
+  SparseMatrix &      dst,
   const SparseMatrix & /*src*/,
   const Range & range) const
 {
   FEEvalFace fe_eval_m(data, true, operator_settings.dof_index, operator_settings.quad_index);
   FEEvalFace fe_eval_p(data, false, operator_settings.dof_index, operator_settings.quad_index);
-  
+
   // There are four matrices: M_mm, M_mp, M_pm, M_pp with M_mm, M_pp denoting
-  // the block diagonal matrices for elements m,p and M_mp, M_pm the matrices 
+  // the block diagonal matrices for elements m,p and M_mp, M_pm the matrices
   // related to the coupling of neighboring elements. In the following, both
   // M_mm and M_mp are called matrices_m and both M_pm and M_pp are called
   // matrices_p so that we only have to store two matrices (matrices_m,
   // matrices_p) instead of four. This is possible since we compute M_mm, M_pm
   // in a first step (by varying solution functions on element m), and M_mp,
   // M_pp in a second step (by varying solution functions on element p).
-  
+
   // create two local matrix: first one tested by test functions on element m and ...
   FullMatrix_ matrices_m[vectorization_length];
   std::fill_n(matrices_m, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
@@ -1229,7 +1330,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
                          this->operator_settings.face_evaluate.gradient);
       fe_eval_p.evaluate(this->operator_settings.face_evaluate.value,
                          this->operator_settings.face_evaluate.gradient);
+
       this->do_face_integral(fe_eval_m, fe_eval_p);
+
       fe_eval_m.integrate(this->operator_settings.face_integrate.value,
                           this->operator_settings.face_integrate.gradient);
       fe_eval_p.integrate(this->operator_settings.face_integrate.value,
@@ -1252,8 +1355,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
       const auto cell_number_m = data.get_face_info(face).cells_interior[v];
       const auto cell_number_p = data.get_face_info(face).cells_exterior[v];
 
-      auto cell_m = data.get_cell_iterator(cell_number_m / vectorization_length, cell_number_m % vectorization_length);
-      auto cell_p = data.get_cell_iterator(cell_number_p / vectorization_length, cell_number_p % vectorization_length);
+      auto cell_m = data.get_cell_iterator(cell_number_m / vectorization_length,
+                                           cell_number_m % vectorization_length);
+      auto cell_p = data.get_cell_iterator(cell_number_p / vectorization_length,
+                                           cell_number_p % vectorization_length);
 
       // get position in global matrix
       std::vector<types::global_dof_index> dof_indices_m(dofs_per_cell);
@@ -1286,7 +1391,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
                          this->operator_settings.face_evaluate.gradient);
       fe_eval_p.evaluate(this->operator_settings.face_evaluate.value,
                          this->operator_settings.face_evaluate.gradient);
+
       this->do_face_integral(fe_eval_m, fe_eval_p);
+
       fe_eval_m.integrate(this->operator_settings.face_integrate.value,
                           this->operator_settings.face_integrate.gradient);
       fe_eval_p.integrate(this->operator_settings.face_integrate.value,
@@ -1309,8 +1416,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
       const auto cell_number_m = data.get_face_info(face).cells_interior[v];
       const auto cell_number_p = data.get_face_info(face).cells_exterior[v];
 
-      auto cell_m = data.get_cell_iterator(cell_number_m / vectorization_length, cell_number_m % vectorization_length);
-      auto cell_p = data.get_cell_iterator(cell_number_p / vectorization_length, cell_number_p % vectorization_length);
+      auto cell_m = data.get_cell_iterator(cell_number_m / vectorization_length,
+                                           cell_number_m % vectorization_length);
+      auto cell_p = data.get_cell_iterator(cell_number_p / vectorization_length,
+                                           cell_number_p % vectorization_length);
 
       // get position in global matrix
       std::vector<types::global_dof_index> dof_indices_m(dofs_per_cell);
@@ -1338,7 +1447,7 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix_boundary(
   const MatrixFree_ & data,
-  SparseMatrix &  dst,
+  SparseMatrix &      dst,
   const SparseMatrix & /*src*/,
   const Range & range) const
 {
@@ -1361,7 +1470,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
 
       fe_eval.evaluate(this->operator_settings.face_evaluate.value,
                        this->operator_settings.face_evaluate.gradient);
+
       this->do_boundary_integral(fe_eval, OperatorType::homogeneous, bid);
+
       fe_eval.integrate(this->operator_settings.face_integrate.value,
                         this->operator_settings.face_integrate.gradient);
 
@@ -1375,7 +1486,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
     {
       const unsigned int cell_number = data.get_face_info(face).cells_interior[v];
 
-      auto cell_v = data.get_cell_iterator(cell_number / vectorization_length, cell_number % vectorization_length);
+      auto cell_v = data.get_cell_iterator(cell_number / vectorization_length,
+                                           cell_number % vectorization_length);
       std::vector<types::global_dof_index> dof_indices(dofs_per_cell);
       if(is_mg)
         cell_v->get_mg_dof_indices(dof_indices);
@@ -1390,7 +1502,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::local_calculate_system_matrix
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::adjust_diagonal_for_singular_operator(VectorType & diagonal) const
+OperatorBase<dim, degree, Number, AdditionalData>::adjust_diagonal_for_singular_operator(
+  VectorType & diagonal) const
 {
   VectorType vec1, d;
   vec1.reinit(diagonal, true);
@@ -1405,7 +1518,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::adjust_diagonal_for_singular_
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::set_constraint_diagonal(VectorType & diagonal) const
+OperatorBase<dim, degree, Number, AdditionalData>::set_constraint_diagonal(
+  VectorType & diagonal) const
 {
   // set (diagonal) entries to 1.0 for constrained dofs
   for(auto i : data->get_constrained_dofs())
@@ -1414,28 +1528,32 @@ OperatorBase<dim, degree, Number, AdditionalData>::set_constraint_diagonal(Vecto
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::add_constraints(const DoFHandler<dim> & dof_handler,
-                  ConstraintMatrix& constraint_own, 
-                  const MGConstrainedDoFs & mg_constrained_dofs,
-                  AdditionalData & operator_settings,
-                  const unsigned int        level)
+OperatorBase<dim, degree, Number, AdditionalData>::add_constraints(
+  const DoFHandler<dim> &   dof_handler,
+  ConstraintMatrix &        constraint_own,
+  const MGConstrainedDoFs & mg_constrained_dofs,
+  AdditionalData &          operator_settings,
+  const unsigned int        level)
 {
   // 0) clear old content (to be on the safe side)
   constraint_own.clear();
-  
+
   // 1) add periodic bcs
-  this->add_periodicity_constraints(dof_handler, level, operator_settings.periodic_face_pairs_level0, constraint_own);
+  this->add_periodicity_constraints(dof_handler,
+                                    level,
+                                    operator_settings.periodic_face_pairs_level0,
+                                    constraint_own);
 
   // 2) add dirichlet bcs
   constraint_own.add_lines(mg_constrained_dofs.get_boundary_indices(level));
 
   verify_boundary_conditions(dof_handler, operator_settings);
-  
+
   // constraint zeroth DoF in continuous case (the mean value constraint will
   // be applied in the DG case). In case we have interface matrices, there are
   // Dirichlet constraints on parts of the boundary and no such transformation
   // is required.
-  if( this->is_singular() && constraint_own.can_store_line(0))
+  if(this->is_singular() && constraint_own.can_store_line(0))
   {
     // if dof 0 is constrained, it must be a periodic dof, so we take the
     // value on the other side
@@ -1444,19 +1562,25 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_constraints(const DoFHand
     {
       const std::vector<std::pair<types::global_dof_index, double>> * lines =
         constraint_own.get_constraint_entries(line_index);
+
       if(lines == 0)
       {
         constraint_own.add_line(line_index);
         // add the constraint back to the MGConstrainedDoFs field. This
         // is potentially dangerous but we know what we are doing... ;-)
         if(level != numbers::invalid_unsigned_int)
-          const_cast<IndexSet &>(mg_constrained_dofs.get_boundary_indices(level)).add_index(line_index);
+        {
+          const_cast<IndexSet &>(mg_constrained_dofs.get_boundary_indices(level))
+            .add_index(line_index);
+        }
+
         break;
       }
       else
       {
         Assert(lines->size() == 1 && std::abs((*lines)[0].second - 1.) < 1e-15,
                ExcMessage("Periodic index expected, bailing out"));
+
         line_index = (*lines)[0].first;
       }
     }
@@ -1465,10 +1589,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_constraints(const DoFHand
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(const DoFHandler<dim> & dof_handler, 
-                              const unsigned int level,
-                              std::vector<PeriodicFacePairIterator>& periodic_face_pairs_level0,
-                              ConstraintMatrix& constraint_own)
+OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(
+  const DoFHandler<dim> &                 dof_handler,
+  const unsigned int                      level,
+  std::vector<PeriodicFacePairIterator> & periodic_face_pairs_level0,
+  ConstraintMatrix &                      constraint_own)
 {
   // loop over all periodic face pairs of level 0
   for(auto & it : periodic_face_pairs_level0)
@@ -1482,8 +1607,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(c
                                                   0,
                                                   it.cell[0]->index(),
                                                   &dof_handler);
-    
-    // get reference to periodic faces on level and add recursively their 
+
+    // get reference to periodic faces on level and add recursively their
     // subfaces on the given level
     add_periodicity_constraints(
       level, level, cell1->face(it.face_idx[1]), cell0->face(it.face_idx[0]), constraint_own);
@@ -1503,7 +1628,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(
   {
     // level of interest has been reached
     const unsigned int dofs_per_face = face1->get_fe(0).dofs_per_face;
-    
+
     std::vector<types::global_dof_index> dofs_1(dofs_per_face);
     std::vector<types::global_dof_index> dofs_2(dofs_per_face);
 
@@ -1511,6 +1636,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(
     face2->get_mg_dof_indices(target_level, dofs_2, 0);
 
     for(unsigned int i = 0; i < dofs_per_face; ++i)
+    {
       if(constraints.can_store_line(dofs_2[i]) && constraints.can_store_line(dofs_1[i]) &&
          !constraints.is_constrained(dofs_2[i]))
       {
@@ -1519,12 +1645,16 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(
         // specify type of constraint: equality (dof_2[i]=dof_1[j]*1.0)
         constraints.add_entry(dofs_2[i], dofs_1[i], 1.);
       }
+    }
   }
   else if(face1->has_children() && face2->has_children())
   {
     // recursively visit all subfaces
     for(unsigned int c = 0; c < face1->n_children(); ++c)
-      add_periodicity_constraints(level - 1, target_level, face1->child(c), face2->child(c), constraints);
+    {
+      add_periodicity_constraints(
+        level - 1, target_level, face1->child(c), face2->child(c), constraints);
+    }
   }
 }
 
@@ -1550,9 +1680,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::verify_boundary_conditions(
                                    ->boundary_id());
   }
 
-  const Triangulation<dim> & tria                 = dof_handler.get_triangulation();
+  const Triangulation<dim> & tria = dof_handler.get_triangulation();
   for(typename Triangulation<dim>::cell_iterator cell = tria.begin(); cell != tria.end(); ++cell)
+  {
     for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+    {
       if(cell->at_boundary(f))
       {
         types::boundary_id bid = cell->face(f)->boundary_id();
@@ -1581,4 +1713,6 @@ OperatorBase<dim, degree, Number, AdditionalData>::verify_boundary_conditions(
                                " does neither set Dirichlet, Neumann, nor periodic " +
                                "boundary conditions! Bailing out."));
       }
+    }
+  }
 }

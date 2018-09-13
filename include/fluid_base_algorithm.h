@@ -5,40 +5,41 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/tensor_function.h>
 #include <deal.II/base/utilities.h>
-#include <deal.II/grid/grid_tools.h>
 #include <deal.II/fe/mapping_q.h>
+#include <deal.II/grid/grid_tools.h>
 
-#include <map>
-#include <set>
 #include <fstream>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
+#include <map>
 #include <memory>
+#include <set>
 
 using namespace dealii;
 
 
 namespace helpers
 {
-  /**
-   * Internal structure that keeps all information about boundary
-   * conditions. Necessary to enable different classes to share the boundary
-   * conditions.
-   */
-  template <int dim>
-  struct BoundaryDescriptor
-  {
-    std::map<types::boundary_id,std::shared_ptr<Function<dim> > > dirichlet_conditions_u;
-    std::map<types::boundary_id,std::shared_ptr<Function<dim> > > open_conditions_p;
-    std::map<types::boundary_id,std::shared_ptr<Function<dim> > > pressure_fix;
+/**
+ * Internal structure that keeps all information about boundary
+ * conditions. Necessary to enable different classes to share the boundary
+ * conditions.
+ */
+template<int dim>
+struct BoundaryDescriptor
+{
+  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_conditions_u;
+  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> open_conditions_p;
+  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> pressure_fix;
 
-    std::set<types::boundary_id> normal_flux;
-    std::set<types::boundary_id> symmetry;
-    std::set<types::boundary_id> no_slip;
+  std::set<types::boundary_id> normal_flux;
+  std::set<types::boundary_id> symmetry;
+  std::set<types::boundary_id> no_slip;
 
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_face_pairs_level0;
-  };
-}
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+    periodic_face_pairs_level0;
+};
+} // namespace helpers
 
 
 /**
@@ -64,10 +65,10 @@ namespace helpers
  * derived classes to use the methods here as given or to override them when
  * additional information is necessary.
  */
-template <int dim>
+template<int dim>
 class FluidBaseAlgorithm
 {
-  public:
+public:
   /**
    * Constructor.
    */
@@ -83,14 +84,16 @@ class FluidBaseAlgorithm
    * variables (vectors, matrices, etc.) and interpolates the initial velocity
    * field to the velocity variable.
    */
-  virtual void setup_problem (const Function<dim> &initial_velocity_field) = 0;
+  virtual void
+  setup_problem(const Function<dim> & initial_velocity_field) = 0;
 
   /**
    * Performs one complete time step of the problem. Returns the number of
    * accumulated linear iterations (on whatever solver is used) during the
    * time step.
    */
-  virtual unsigned int advance_time_step () = 0;
+  virtual unsigned int
+  advance_time_step() = 0;
 
   /**
    * Generic output interface. Allows to write the complete solution field to
@@ -101,13 +104,15 @@ class FluidBaseAlgorithm
    * default value (0, taking the velocity degree) the sub-refinement used for
    * representing higher order solutions.
    */
-  virtual void output_solution (const std::string output_base_name,
-                                const unsigned int n_subdivisions = 0) const = 0;
+  virtual void
+  output_solution(const std::string  output_base_name,
+                  const unsigned int n_subdivisions = 0) const = 0;
 
   /**
    * Deletes all stored boundary descriptions and the body force.
    */
-  void clear();
+  void
+  clear();
 
   /*
    * Sets a Dirichlet condition for the fluid velocity on the boundary of the
@@ -118,8 +123,9 @@ class FluidBaseAlgorithm
    *
    * Prerequisite: The given function must consist of dim components.
    */
-  void set_velocity_dirichlet_boundary (const types::boundary_id  boundary_id,
-                                        const std::shared_ptr<Function<dim> > &velocity_function);
+  void
+  set_velocity_dirichlet_boundary(const types::boundary_id               boundary_id,
+                                  const std::shared_ptr<Function<dim>> & velocity_function);
 
   /*
    * Sets a pressure condition on the boundary of the domain with the given
@@ -132,9 +138,10 @@ class FluidBaseAlgorithm
    *
    * Prerequisite: The given function must be scalar.
    */
-  void set_open_boundary (const types::boundary_id  boundary_id,
-                          const std::shared_ptr<Function<dim> > &pressure_function
-                          = std::shared_ptr<Function<dim> >());
+  void
+  set_open_boundary(
+    const types::boundary_id               boundary_id,
+    const std::shared_ptr<Function<dim>> & pressure_function = std::shared_ptr<Function<dim>>());
 
   /*
    * Sets a pressure condition on the boundary of the domain with the given
@@ -149,9 +156,10 @@ class FluidBaseAlgorithm
    *
    * Prerequisite: The given function must be scalar.
    */
-  void set_open_boundary_with_normal_flux (const types::boundary_id  boundary_id,
-                                           const std::shared_ptr<Function<dim> > &pressure_function
-                                           = std::shared_ptr<Function<dim> >());
+  void
+  set_open_boundary_with_normal_flux(
+    const types::boundary_id               boundary_id,
+    const std::shared_ptr<Function<dim>> & pressure_function = std::shared_ptr<Function<dim>>());
 
   /*
    * Fix one boundary node to a value specified by the given function,
@@ -163,9 +171,10 @@ class FluidBaseAlgorithm
    *
    * Prerequisite: The given function must be scalar.
    */
-  void fix_pressure_constant (const types::boundary_id  boundary_id,
-                              const std::shared_ptr<Function<dim> > &pressure_function
-                              = std::shared_ptr<Function<dim> >());
+  void
+  fix_pressure_constant(
+    const types::boundary_id               boundary_id,
+    const std::shared_ptr<Function<dim>> & pressure_function = std::shared_ptr<Function<dim>>());
 
   /*
    * Sets symmetry boundary conditions on the given boundaries. A symmetry
@@ -173,14 +182,16 @@ class FluidBaseAlgorithm
    * tangential velocities. Symmetry boundary conditions can be set on both
    * straight boundaries and curved boundaries.
    */
-  void set_symmetry_boundary (const types::boundary_id boundary_id);
+  void
+  set_symmetry_boundary(const types::boundary_id boundary_id);
 
   /*
    * Sets no-slip boundary conditions on the given side. This function sets
    * the velocity to zero along the boundary that corresponds to the given
    * boundary indicator.
    */
-  void set_no_slip_boundary (const types::boundary_id boundary_id);
+  void
+  set_no_slip_boundary(const types::boundary_id boundary_id);
 
   /**
    * Sets face pairs that indicate periodic directions.
@@ -200,23 +211,29 @@ class FluidBaseAlgorithm
    * The variable 'periodic_faces' generated by this call is passed to this
    * function.
    */
-  void set_periodic_boundaries (std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > &periodic_faces);
+  void
+  set_periodic_boundaries(
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+      periodic_faces);
 
   /**
    * Sets a constant body force given as a tensor.
    */
-  void set_body_force(const Tensor<1,dim> constant_body_force);
+  void
+  set_body_force(const Tensor<1, dim> constant_body_force);
 
   /**
    * Sets a general function for the body force. This is slower than the other
    * function, so prefer the other one whenever the function is constant.
    */
-  void set_body_force(const std::shared_ptr<TensorFunction<1,dim> > body_force);
+  void
+  set_body_force(const std::shared_ptr<TensorFunction<1, dim>> body_force);
 
   /**
    * Returns the body force on a given point.
    */
-  bool body_force_is_constant() const
+  bool
+  body_force_is_constant() const
   {
     return body_force.get() == 0;
   }
@@ -224,9 +241,10 @@ class FluidBaseAlgorithm
   /**
    * Returns the body force on a given point.
    */
-  Tensor<1,dim> get_body_force(const Point<dim> &p) const
+  Tensor<1, dim>
+  get_body_force(const Point<dim> & p) const
   {
-    if (body_force.get())
+    if(body_force.get())
       return body_force->value(p);
     else
       return constant_body_force;
@@ -235,12 +253,14 @@ class FluidBaseAlgorithm
   /**
    * Sets the fluid viscosity.
    */
-  void set_viscosity (const double viscosity);
+  void
+  set_viscosity(const double viscosity);
 
   /**
    * Returns the viscosity.
    */
-  double get_viscosity () const
+  double
+  get_viscosity() const
   {
     return viscosity;
   }
@@ -248,7 +268,8 @@ class FluidBaseAlgorithm
   /**
    * Sets the size of the time step.
    */
-  void set_time_step (const double time_step)
+  void
+  set_time_step(const double time_step)
   {
     time_step_size = time_step;
   }
@@ -256,7 +277,8 @@ class FluidBaseAlgorithm
   /**
    * Returns the time step size.
    */
-  double get_time_step () const
+  double
+  get_time_step() const
   {
     return time_step_size;
   }
@@ -266,17 +288,17 @@ protected:
    * The data container holding all boundary conditions for use in derived
    * classes.
    */
-  std::shared_ptr<helpers::BoundaryDescriptor<dim> > boundary;
+  std::shared_ptr<helpers::BoundaryDescriptor<dim>> boundary;
 
   /**
    * Tensor holding constant body forces.
    */
-  Tensor<1,dim> constant_body_force;
+  Tensor<1, dim> constant_body_force;
 
   /**
    * Function holding the body force.
    */
-  std::shared_ptr<TensorFunction<1,dim> > body_force;
+  std::shared_ptr<TensorFunction<1, dim>> body_force;
 
   /**
    * The mapping used for representing curved boundaries.

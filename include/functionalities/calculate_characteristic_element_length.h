@@ -15,29 +15,33 @@
  *  minimum vertex distance of element e.
  */
 template<int dim>
-double calculate_minimum_vertex_distance(Triangulation<dim> const &triangulation)
+double
+calculate_minimum_vertex_distance(Triangulation<dim> const & triangulation)
 {
-  typename Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(), endc = triangulation.end();
+  typename Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(),
+                                                    endc = triangulation.end();
 
   double diameter = 0.0, min_cell_diameter = std::numeric_limits<double>::max();
-  for (; cell!=endc; ++cell)
+
+  for(; cell != endc; ++cell)
   {
-    if (cell->is_locally_owned())
+    if(cell->is_locally_owned())
     {
       diameter = cell->minimum_vertex_distance();
-      if (diameter < min_cell_diameter)
+      if(diameter < min_cell_diameter)
         min_cell_diameter = diameter;
     }
   }
+
   const double global_min_cell_diameter = -Utilities::MPI::max(-min_cell_diameter, MPI_COMM_WORLD);
 
   return global_min_cell_diameter;
 }
 
-double calculate_characteristic_element_length(double const       element_length,
-                                               unsigned int const fe_degree)
+double
+calculate_characteristic_element_length(double const element_length, unsigned int const fe_degree)
 {
-  return element_length/((double)(fe_degree+1));
+  return element_length / ((double)(fe_degree + 1));
 }
 
 

@@ -13,8 +13,8 @@
 
 #include "operator_type.h"
 
-#include "multigrid_operator_base.h"
 #include "../functionalities/lazy_ptr.h"
+#include "multigrid_operator_base.h"
 
 using namespace dealii;
 
@@ -23,15 +23,15 @@ struct OperatorBaseData
 {
   OperatorBaseData(const unsigned int dof_index,
                    const unsigned int quad_index,
-                   const bool         cell_evaluate_values = false,
-                   const bool         cell_evaluate_gradients = false,
-                   const bool         cell_evaluate_hessians = false,
-                   const bool         cell_integrate_values = false,
+                   const bool         cell_evaluate_values     = false,
+                   const bool         cell_evaluate_gradients  = false,
+                   const bool         cell_evaluate_hessians   = false,
+                   const bool         cell_integrate_values    = false,
                    const bool         cell_integrate_gradients = false,
-                   const bool         cell_integrate_hessians = false,
-                   const bool         face_evaluate_values = false,
-                   const bool         face_evaluate_gradients = false,
-                   const bool         face_integrate_values = false,
+                   const bool         cell_integrate_hessians  = false,
+                   const bool         face_evaluate_values     = false,
+                   const bool         face_evaluate_gradients  = false,
+                   const bool         face_integrate_values    = false,
                    const bool         face_integrate_gradients = false)
     : dof_index(dof_index),
       quad_index(quad_index),
@@ -40,7 +40,7 @@ struct OperatorBaseData
       face_evaluate(face_evaluate_values, face_evaluate_gradients),
       face_integrate(face_integrate_values, face_integrate_gradients),
       use_cell_based_loops(false),
-      operator_is_singular(false), 
+      operator_is_singular(false),
       mapping_update_flags(update_default),
       mapping_update_flags_inner_faces(update_default),
       mapping_update_flags_boundary_faces(update_default)
@@ -51,7 +51,7 @@ struct OperatorBaseData
   {
     Cell(const bool value = false, const bool gradient = false, const bool hessians = false)
       : value(value), gradient(gradient), hessians(hessians){};
-      
+
     bool value;
     bool gradient;
     bool hessians;
@@ -59,25 +59,26 @@ struct OperatorBaseData
 
   struct Face
   {
-    Face(const bool value = false, const bool gradient = false) : value(value), gradient(gradient){};
+    Face(const bool value = false, const bool gradient = false)
+      : value(value), gradient(gradient){};
 
     bool
     do_eval() const
     {
       return value || gradient;
     }
-    
+
     bool value;
     bool gradient;
   };
-  
+
   template<typename Data>
   void
   append_mapping_update_flags(Data & other)
   {
-    this->mapping_update_flags                |= other.mapping_update_flags; 
-    this->mapping_update_flags_inner_faces    |= other.mapping_update_flags_inner_faces; 
-    this->mapping_update_flags_boundary_faces |= other.mapping_update_flags_boundary_faces; 
+    this->mapping_update_flags |= other.mapping_update_flags;
+    this->mapping_update_flags_inner_faces |= other.mapping_update_flags_inner_faces;
+    this->mapping_update_flags_boundary_faces |= other.mapping_update_flags_boundary_faces;
   }
 
   unsigned int dof_index;
@@ -91,7 +92,7 @@ struct OperatorBaseData
   bool use_cell_based_loops;
 
   bool operator_is_singular;
-  
+
   UpdateFlags mapping_update_flags;
   UpdateFlags mapping_update_flags_inner_faces;
   UpdateFlags mapping_update_flags_boundary_faces;
@@ -118,22 +119,25 @@ public:
   typedef std::pair<unsigned int, unsigned int>                Range;
   typedef FEEvaluation<dim, degree, degree + 1, 1, Number>     FEEvalCell;
   typedef FEFaceEvaluation<dim, degree, degree + 1, 1, Number> FEEvalFace;
-  typedef typename GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> PeriodicFacePairIterator;
+  typedef typename GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>
+    PeriodicFacePairIterator;
 
   static const unsigned int vectorization_length = VectorizedArray<Number>::n_array_elements;
   static const unsigned int dofs_per_cell        = FEEvalCell::static_dofs_per_cell;
 
   OperatorBase();
 
-  virtual ~OperatorBase(){}
+  virtual ~OperatorBase()
+  {
+  }
 
   // if this method is called without the forth argument `level_mg_handler`,
   // this operator is initialized for level -1, i.e. the finest grid
   void
-  reinit(MatrixFree_ const &    matrix_free,
-         ConstraintMatrix const &     constraint_matrix,
-         AdditionalData const & operator_settings,
-         unsigned int           level_mg_handler = numbers::invalid_unsigned_int) const;
+  reinit(MatrixFree_ const &      matrix_free,
+         ConstraintMatrix const & constraint_matrix,
+         AdditionalData const &   operator_settings,
+         unsigned int             level_mg_handler = numbers::invalid_unsigned_int) const;
 
   virtual void
   reinit(const DoFHandler<dim> &   dof_handler,
@@ -156,13 +160,13 @@ public:
 
   virtual void
   vmult(VectorType & dst, VectorType const & src) const;
-  
+
   virtual void
   vmult_add(VectorType & dst, VectorType const & src) const;
 
   void
   vmult_interface_down(VectorType & dst, VectorType const & src) const;
-  
+
   void
   vmult_add_interface_up(VectorType & dst, VectorType const & src) const;
 
@@ -171,19 +175,19 @@ public:
    */
   void
   rhs(VectorType & dst) const;
-  
+
   void
   rhs(VectorType & dst, Number const time) const;
-  
+
   void
   rhs_add(VectorType & dst) const;
-  
+
   void
   rhs_add(VectorType & dst, Number const time) const;
 
   void
   evaluate(VectorType & dst, VectorType const & src, Number const time) const;
-  
+
   void
   evaluate_add(VectorType & dst, VectorType const & src, Number const time) const;
 
@@ -192,13 +196,13 @@ public:
    */
   virtual void
   calculate_diagonal(VectorType & diagonal) const;
-  
+
   virtual void
   add_diagonal(VectorType & diagonal) const;
-  
+
   virtual void
   add_diagonal(VectorType & diagonal, Number const time) const;
-  
+
   void
   calculate_inverse_diagonal(VectorType & diagonal) const;
 
@@ -211,16 +215,16 @@ public:
   // TODO: add matrix-free and block matrix version
   void
   apply_block_diagonal(VectorType & dst, VectorType const & src) const;
-  
+
   void
   update_inverse_block_diagonal() const;
-  
+
   void
   calculate_block_diagonal_matrices() const;
-  
+
   virtual void
   add_block_diagonal_matrices(BlockMatrix & matrices) const;
-  
+
   virtual void
   add_block_diagonal_matrices(BlockMatrix & matrices, Number const time) const;
 
@@ -271,17 +275,17 @@ public:
 
   double
   get_evaluation_time() const;
-  
+
   bool
   is_singular() const;
-  
+
   unsigned int
-  get_level() const 
+  get_level() const
   {
-    return level_mg_handler;    
+    return level_mg_handler;
   }
-  
-  const ConstraintMatrix&
+
+  const ConstraintMatrix &
   get_constraint_matrix() const
   {
     return *constraint;
@@ -296,25 +300,25 @@ protected:
   {
     AssertThrow(false, ExcMessage("OperatorBase::do_cell_integral has not been implemented!"));
   }
-  
+
   virtual void
   do_face_integral(FEEvalFace & /*fe_eval_m*/, FEEvalFace & /*fe_eval_p*/) const
   {
     AssertThrow(false, ExcMessage("OperatorBase::do_face_integral has not been implemented!"));
   }
-  
+
   virtual void
   do_face_int_integral(FEEvalFace & /*fe_eval_m*/, FEEvalFace & /*fe_eval_p*/) const
   {
     AssertThrow(false, ExcMessage("OperatorBase::do_face_int_integral has not been implemented!"));
   }
-  
+
   virtual void
   do_face_ext_integral(FEEvalFace & /*fe_eval_m*/, FEEvalFace & /*fe_eval_p*/) const
   {
     AssertThrow(false, ExcMessage("OperatorBase::do_face_ext_integral has not been implemented!"));
   }
-  
+
   virtual void
   do_boundary_integral(FEEvalFace & /*fe_eval*/,
                        OperatorType const & /*operator_type*/,
@@ -328,12 +332,12 @@ protected:
    */
   template<typename FEEval>
   void
-  create_standard_basis(unsigned int j, FEEval& fe_eval) const
+  create_standard_basis(unsigned int j, FEEval & fe_eval) const
   {
-  // create a standard basis in the dof values of FEEvalution
-  for(unsigned int i = 0; i < dofs_per_cell; ++i)
-    fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-  fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+    // create a standard basis in the dof values of FEEvalution
+    for(unsigned int i = 0; i < dofs_per_cell; ++i)
+      fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+    fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
   }
 
   void
@@ -343,10 +347,16 @@ protected:
    * functions to be called from matrix-free loops and cell_loops: vmult (homogenous)
    */
   void
-  local_cell_hom(const MatrixFree_ & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
+  local_cell_hom(const MatrixFree_ & /*data*/,
+                 VectorType &       dst,
+                 const VectorType & src,
+                 const Range &      range) const;
 
   void
-  local_face_hom(const MatrixFree_ & /*data*/, VectorType & dst, const VectorType & src, const Range & range) const;
+  local_face_hom(const MatrixFree_ & /*data*/,
+                 VectorType &       dst,
+                 const VectorType & src,
+                 const Range &      range) const;
 
   void
   local_boundary_hom(const MatrixFree_ & /*data*/,
@@ -356,28 +366,34 @@ protected:
 
   /*
    * ... rhs (inhomogenous)
-   * note:  in the inhomogeneous case we only have to loop over the boundary 
-   * faces. This is, however, not possible with Matrixfree::loop(): that is 
+   * note:  in the inhomogeneous case we only have to loop over the boundary
+   * faces. This is, however, not possible with Matrixfree::loop(): that is
    * why two empty function have to be provided for cell and face.
    */
   void
-  local_cell_inhom(const MatrixFree_ & /*data*/, VectorType & /*dst*/, const VectorType & /*src*/, const Range & /*range*/) const
+  local_cell_inhom(const MatrixFree_ & /*data*/,
+                   VectorType & /*dst*/,
+                   const VectorType & /*src*/,
+                   const Range & /*range*/) const
   {
     // nothing to do
   }
 
   void
-  local_face_inhom(const MatrixFree_ & /*data*/, VectorType & /*dst*/, const VectorType & /*src*/, const Range & /*range*/) const
+  local_face_inhom(const MatrixFree_ & /*data*/,
+                   VectorType & /*dst*/,
+                   const VectorType & /*src*/,
+                   const Range & /*range*/) const
   {
     // nothing to do
   }
-  
+
   void
   local_boundary_inhom(const MatrixFree_ & /*data*/,
                        VectorType & /*dst*/,
                        const VectorType & /*src*/,
                        const Range & /*range*/) const;
-  
+
   /*
    * ... evaluate
    */
@@ -453,10 +469,10 @@ protected:
    * been performed with the method update_inverse_block_diagonal())
    */
   void
-  local_apply_inverse_block_diagonal(const MatrixFree_ &    data,
-                                     VectorType &       dst,
-                                     const VectorType & src,
-                                     const Range &      cell_range) const;
+  local_apply_inverse_block_diagonal(const MatrixFree_ & data,
+                                     VectorType &        dst,
+                                     const VectorType &  src,
+                                     const Range &       cell_range) const;
 
   /*
    * ... sparse matrix
@@ -490,25 +506,25 @@ protected:
    */
   void
   set_constraint_diagonal(VectorType & diagonal) const;
-  
-  void 
-  add_constraints(const DoFHandler<dim> & dof_handler,
-                  ConstraintMatrix& constraint_own, 
+
+  void
+  add_constraints(const DoFHandler<dim> &   dof_handler,
+                  ConstraintMatrix &        constraint_own,
                   const MGConstrainedDoFs & mg_constrained_dofs,
-                  AdditionalData & operator_settings,
-                  const unsigned int        level);  
-  
+                  AdditionalData &          operator_settings,
+                  const unsigned int        level);
+
   /*
    * Add periodic constraints: loop over all periodic face pairs on level 0
    */
   void
-  add_periodicity_constraints(const DoFHandler<dim> & dof_handler, 
-                              const unsigned int level,
-                              std::vector<PeriodicFacePairIterator>& periodic_face_pairs_level0,
-                              ConstraintMatrix& constraint_own);
+  add_periodicity_constraints(const DoFHandler<dim> &                 dof_handler,
+                              const unsigned int                      level,
+                              std::vector<PeriodicFacePairIterator> & periodic_face_pairs_level0,
+                              ConstraintMatrix &                      constraint_own);
 
   /*
-   * Add periodic constraints: for a given face pair on level 0 add recursively  
+   * Add periodic constraints: for a given face pair on level 0 add recursively
    * all subfaces on the given level
    */
   void
@@ -519,12 +535,13 @@ protected:
                               ConstraintMatrix &                            constraints);
 
   void
-  verify_boundary_conditions(DoFHandler<dim> const & dof_handler, AdditionalData const & operator_data);
+  verify_boundary_conditions(DoFHandler<dim> const & dof_handler,
+                             AdditionalData const &  operator_data);
 
 protected:
-  mutable AdditionalData operator_settings;
+  mutable AdditionalData        operator_settings;
   mutable lazy_ptr<MatrixFree_> data;
-  mutable double eval_time;
+  mutable double                eval_time;
 
 private:
   const bool                         do_eval_faces;
@@ -536,7 +553,6 @@ private:
   mutable std::vector<LAPACKFullMatrix<Number>> matrices;
 
   mutable bool block_jacobi_matrices_have_been_initialized;
-
 };
 
 #include "operation_base.cpp"

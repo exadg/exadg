@@ -40,16 +40,18 @@ public:
   vmult_interface_down(parallel::distributed::Vector<Number> & /*dst*/,
                        const parallel::distributed::Vector<Number> & /*src*/) const
   {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult_interface_down should be overwritten!"));
+    AssertThrow(false,
+                ExcMessage("MultigridOperatorBase::vmult_interface_down should be overwritten!"));
   }
 
   virtual void
   vmult_add_interface_up(parallel::distributed::Vector<Number> & /*dst*/,
                          const parallel::distributed::Vector<Number> & /*src*/) const
   {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult_add_interface_up should be overwritten!"));
+    AssertThrow(false,
+                ExcMessage("MultigridOperatorBase::vmult_add_interface_up should be overwritten!"));
   }
-  
+
   virtual types::global_dof_index
   m() const
   {
@@ -74,32 +76,41 @@ public:
   virtual void
   initialize_dof_vector(parallel::distributed::Vector<Number> & /*vector*/) const
   {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::initialize_dof_vector should be overwritten!"));
+    AssertThrow(false,
+                ExcMessage("MultigridOperatorBase::initialize_dof_vector should be overwritten!"));
   }
 
   virtual void
-  calculate_inverse_diagonal(parallel::distributed::Vector<Number> & /*inverse_diagonal_entries*/) const
+  calculate_inverse_diagonal(
+    parallel::distributed::Vector<Number> & /*inverse_diagonal_entries*/) const
   {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::calculate_inverse_diagonal should be overwritten!"));
+    AssertThrow(false,
+                ExcMessage(
+                  "MultigridOperatorBase::calculate_inverse_diagonal should be overwritten!"));
   }
 
   virtual void
   apply_inverse_block_diagonal(parallel::distributed::Vector<Number> & /*dst*/,
-                     parallel::distributed::Vector<Number> const & /*src*/) const
+                               parallel::distributed::Vector<Number> const & /*src*/) const
   {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::apply_inverse_block_diagonal should be overwritten!"));
+    AssertThrow(false,
+                ExcMessage(
+                  "MultigridOperatorBase::apply_inverse_block_diagonal should be overwritten!"));
   }
 
   virtual void
   update_inverse_block_diagonal() const
   {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::update_inverse_block_diagonal should be overwritten!"));
+    AssertThrow(false,
+                ExcMessage(
+                  "MultigridOperatorBase::update_inverse_block_diagonal should be overwritten!"));
   }
 
   virtual bool
   is_empty_locally() const
   {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::is_empty_locally should be overwritten!"));
+    AssertThrow(false,
+                ExcMessage("MultigridOperatorBase::is_empty_locally should be overwritten!"));
     return 0;
   }
 
@@ -123,7 +134,7 @@ public:
     AssertThrow(false, ExcMessage("MultigridOperatorBase::get_new should be overwritten!"));
     return nullptr;
   }
-  
+
   virtual bool
   is_singular() const
   {
@@ -136,13 +147,15 @@ public:
   virtual void
   init_system_matrix(TrilinosWrappers::SparseMatrix & /*system_matrix*/) const
   {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::init_system_matrix should be overwritten!"));
+    AssertThrow(false,
+                ExcMessage("MultigridOperatorBase::init_system_matrix should be overwritten!"));
   }
 
   virtual void
   calculate_system_matrix(TrilinosWrappers::SparseMatrix & /*system_matrix*/) const
   {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::calculate_system_matrix should be overwritten!"));
+    AssertThrow(
+      false, ExcMessage("MultigridOperatorBase::calculate_system_matrix should be overwritten!"));
   }
 #endif
 
