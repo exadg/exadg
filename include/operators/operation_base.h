@@ -120,10 +120,12 @@ public:
   typedef FEFaceEvaluation<dim, degree, degree + 1, 1, Number> FEEvalFace;
   typedef typename GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> PeriodicFacePairIterator;
 
-  OperatorBase();
-
   static const unsigned int vectorization_length = VectorizedArray<Number>::n_array_elements;
   static const unsigned int dofs_per_cell        = FEEvalCell::static_dofs_per_cell;
+
+  OperatorBase();
+
+  virtual ~OperatorBase(){}
 
   // if this method is called without the forth argument `level_mg_handler`,
   // this operator is initialized for level -1, i.e. the finest grid

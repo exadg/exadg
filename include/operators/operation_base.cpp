@@ -15,6 +15,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
     data(),
     eval_time(0.0),
     do_eval_faces(operator_settings.face_evaluate.do_eval() || operator_settings.face_integrate.do_eval()),
+    is_dg(true),
+    is_mg(false),
     level_mg_handler(numbers::invalid_unsigned_int),
     block_jacobi_matrices_have_been_initialized(false)
 {
