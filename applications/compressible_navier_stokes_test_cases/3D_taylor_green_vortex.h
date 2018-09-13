@@ -38,18 +38,18 @@ const unsigned int QPOINTS_VIS = QPOINTS_CONV;
 //const unsigned int QPOINTS_VIS = FE_DEGREE + 1;
 
 // set the number of refine levels for spatial convergence tests
-const unsigned int REFINE_STEPS_SPACE_MIN = 4;
-const unsigned int REFINE_STEPS_SPACE_MAX = 4;
+const unsigned int REFINE_STEPS_SPACE_MIN = 3;
+const unsigned int REFINE_STEPS_SPACE_MAX = 3;
+
+enum class MeshType{ Cartesian, Curvilinear };
+const MeshType MESH_TYPE = MeshType::Cartesian;
+
+// only relevant for Cartesian mesh
+const unsigned int N_CELLS_1D_COARSE_GRID = 1;
 
 // set the number of refine levels for temporal convergence tests
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
 const unsigned int REFINE_STEPS_TIME_MAX = 0;
-
-enum class MeshType{ Cartesian, Curvilinear };
-const MeshType MESH_TYPE = MeshType::Curvilinear;
-
-// only relevant for Cartesian mesh
-const unsigned int N_CELLS_1D_COARSE_GRID = 1;
 
 // set parameters according to Wiart et al. ("Assessment of discontinuous Galerkin method
 // for the simulation of vortical flows at high Reynolds number"):
@@ -77,6 +77,7 @@ const double p_0 = RHO_0*R*T_0;
 const double MAX_VELOCITY = V_0;
 const double CHARACTERISTIC_TIME = L/V_0;
 
+// output folders and filenames
 std::string OUTPUT_FOLDER = "output_comp_ns/taylor_green_vortex/";
 std::string FILENAME = "test"; // "Re1600_l2_k15_overint";
 
@@ -101,7 +102,7 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   // TEMPORAL DISCRETIZATION
   temporal_discretization = TemporalDiscretization::ExplRK3Stage7Reg2; //ExplRK; //SSPRK; //ExplRK4Stage5Reg3C; //ExplRK3Stage7Reg2;
   order_time_integrator = 3;
-  stages = 8;
+  stages = 7;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFLAndDiffusion;
   time_step_size = 1.0e-3;
   max_velocity = MAX_VELOCITY;
@@ -130,7 +131,7 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   // SSPRK(8,4): CFL_crit = 1.25 - 1.3, costs = stages / CFL = 6.2 - 6.4
 
   cfl_number = 0.6;
-  diffusion_number = 0.03;
+  diffusion_number = 0.02;
   exponent_fe_degree_cfl = 1.5; //2.0;
   exponent_fe_degree_viscous = 3.0; //4.0;
 
@@ -147,7 +148,7 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
   calculate_velocity = true; // activate this for kinetic energy calculations (see below)
-  output_data.write_output = false;
+  output_data.write_output = true; //false;
   output_data.write_pressure = true;
   output_data.write_velocity = true;
   output_data.write_temperature = true;
@@ -160,13 +161,13 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   output_data.number_of_patches = FE_DEGREE;
 
   // kinetic energy
-  kinetic_energy_data.calculate = true;
+  kinetic_energy_data.calculate = false; //true;
   kinetic_energy_data.calculate_every_time_steps = 1;
   kinetic_energy_data.viscosity = DYN_VISCOSITY/RHO_0;
   kinetic_energy_data.filename_prefix = OUTPUT_FOLDER + FILENAME;
 
   // kinetic energy spectrum
-  kinetic_energy_spectrum_data.calculate = false; //true;
+  kinetic_energy_spectrum_data.calculate = true;
   kinetic_energy_spectrum_data.calculate_every_time_steps = -1;
   kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
   kinetic_energy_spectrum_data.filename_prefix = OUTPUT_FOLDER + "spectrum_l2_k15_overint";
@@ -265,6 +266,9 @@ double AnalyticalSolution<dim>::value(const Point<dim>    &x,
    }
    else if(MESH_TYPE == MeshType::Curvilinear)
    {
+     AssertThrow(N_CELLS_1D_COARSE_GRID == 1,
+         ExcMessage("Only N_CELLS_1D_COARSE_GRID=1 possible for curvilinear grid."));
+
      triangulation.set_all_manifold_ids(1);
      double const deformation = 0.5;
      unsigned const frequency = 2;

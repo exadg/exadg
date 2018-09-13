@@ -51,7 +51,7 @@ const double U_0 = 1.0;
 const double V_0 = 0.0;
 const double RHO_0 = 1.0;
 const double E_0 = 1.0e5;
-const double EPSILON = 0.1;
+const double EPSILON = 0.1*RHO_0;
 const double T_MAX = 140.0;
 
 std::string OUTPUT_FOLDER = "output_comp_ns/";
@@ -90,7 +90,7 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   time_step_size = 1.0e-3;
   max_velocity = std::sqrt(U_0*U_0+V_0*V_0);
   cfl_number = 0.025;
-  diffusion_number = 0.01; //cfl_number;
+  diffusion_number = 0.1;
   exponent_fe_degree_cfl = 2.0;
   exponent_fe_degree_viscous = 4.0;
 
@@ -102,12 +102,13 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   // SOLVER
 
   // NUMERICAL PARAMETERS
+  detect_instabilities = false;
   use_combined_operator = false;
 
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
   calculate_velocity = true;
-  output_data.write_output = true; //false;
+  output_data.write_output = false;
   output_data.write_pressure = true;
   output_data.write_velocity = true;
   output_data.write_temperature = true;
@@ -123,7 +124,7 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   error_data.error_calc_start_time = start_time;
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
-  output_solver_info_every_timesteps = 1e4; //1e6;
+  output_solver_info_every_timesteps = 1e5; //1e6;
 
   lift_and_drag_data.calculate_lift_and_drag = false;
   pressure_difference_data.calculate_pressure_difference = false;
