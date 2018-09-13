@@ -62,7 +62,9 @@ public:
   typedef typename Parent::FEEvalCell                                                    FEEvalCell;
   typedef typename Parent::FEEvalFace                                                    FEEvalFace;
   typedef typename Parent::BlockMatrix                                                   BlockMatrix;
+#ifdef DEAL_II_WITH_TRILINOS
   typedef typename Parent::SparseMatrix                                                  SparseMatrix;
+#endif
 
   typedef MassMatrixOperator<dim, fe_degree, Number> MassMatrixOp;
   typedef ConvectiveOperator<dim, fe_degree, Number> ConvectiveOp;
@@ -119,11 +121,13 @@ public:
   vmult_add(parallel::distributed::Vector<Number> &       dst,
             parallel::distributed::Vector<Number> const & src) const;
   
+#ifdef DEAL_II_WITH_TRILINOS
   virtual void
   calculate_system_matrix(SparseMatrix & system_matrix, Number const time) const;
   
   virtual void
   calculate_system_matrix(SparseMatrix & system_matrix) const;
+#endif
 
   /*
    *  This function calculates the diagonal of the scalar reaction-convection-diffusion operator.
