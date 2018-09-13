@@ -22,7 +22,10 @@ class ErrorCalculator
 public:
   ErrorCalculator()
     :
-    error_counter(0)
+    clear_files_velocity(true),
+    clear_files_pressure(true),
+    clear_files_velocity_H1_seminorm(true),
+    counter(0)
   {}
 
   void setup(DoFHandler<dim> const                     &dof_handler_velocity_in,
@@ -38,6 +41,7 @@ public:
     error_data = error_data_in;
   }
 
+public:
   void evaluate(parallel::distributed::Vector<Number> const  &velocity,
                 parallel::distributed::Vector<Number> const  &pressure,
                 double const                                 &time,
@@ -49,32 +53,31 @@ public:
     {
       if(time_step_number >= 0) // unsteady problem
       {
-        const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
-        if((time > (error_data.error_calc_start_time + error_counter*error_data.error_calc_interval_time - EPSILON)) )
+        if(error_has_to_be_calculated(time,time_step_number))
         {
           pcout << std::endl << "Calculate error at time t = "
                 << std::scientific << std::setprecision(4) << time << ":" << std::endl;
 
           do_evaluate(velocity,pressure,time);
-
-          ++error_counter;
         }
       }
       else // steady problem (time_step_number = -1)
       {
         pcout << std::endl << "Calculate error for "
-              << (error_counter == 0 ? "initial" : "solution") << " data"
+              << (counter == 0 ? "initial" : "solution") << " data"
               << std::endl;
 
         do_evaluate(velocity,pressure,time);
 
-        ++error_counter;
+        ++counter;
       }
     }
   }
 
 private:
-  unsigned int error_counter;
+  bool clear_files_velocity, clear_files_pressure;
+  bool clear_files_velocity_H1_seminorm;
+  unsigned int counter;
 
   SmartPointer< DoFHandler<dim> const > dof_handler_velocity;
   SmartPointer< DoFHandler<dim> const > dof_handler_pressure;
@@ -84,42 +87,183 @@ private:
 
   ErrorCalculationData error_data;
 
+  bool error_has_to_be_calculated(double const &time,
+                                  int const    &time_step_number)
+  {
+    double const EPSILON = 1.0e-10; // small number which is much smaller than the time step size
+    if((time > (error_data.error_calc_start_time + counter*error_data.error_calc_interval_time - EPSILON)))
+    {
+      counter++;
+      return true;
+    }
+    else if(time > error_data.error_calc_start_time && time_step_number % error_data.calculate_every_time_steps == 0)
+    {
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+
   void do_evaluate(parallel::distributed::Vector<Number> const  &velocity,
                    parallel::distributed::Vector<Number> const  &pressure,
                    double const                                 &time)
   {
-    // velocity
-    bool relative_velocity = true;
+    bool const relative_errors = error_data.calculate_relative_errors;
 
+    // velocity
     parallel::distributed::Vector<double> velocity_double;
     velocity_double = velocity;
 
-    double const error_velocity = calculate_L2_error<dim>(relative_velocity,
-                                                          *dof_handler_velocity,
-                                                          *mapping,
-                                                          velocity_double,
-                                                          analytical_solution->velocity,
-                                                          time);
+    // L2-norm
+    double const error_velocity = calculate_error<dim>(relative_errors,
+                                                       *dof_handler_velocity,
+                                                       *mapping,
+                                                       velocity_double,
+                                                       analytical_solution->velocity,
+                                                       time,
+                                                       VectorTools::L2_norm);
 
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-    pcout << ((relative_velocity == true) ? "  Relative " : "  ABSOLUTE ") << "error (L2-norm) velocity u: "
+    pcout << ((relative_errors == true) ? "  Relative " : "  Absolute ") << "L2-error velocity u: "
           << std::scientific << std::setprecision(5) << error_velocity << std::endl;
 
+    if(error_data.write_errors_to_file)
+    {
+      // write output file
+      if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+      {
+        std::ostringstream filename;
+        filename << error_data.filename_prefix + "_velocity_L2";
+
+        std::ofstream f;
+        if(clear_files_velocity == true)
+        {
+          f.open(filename.str().c_str(),std::ios::trunc);
+          if(relative_errors == true)
+            f << "Relative L2-error velocity || u - u_h ||_Omega / || u_h ||_Omega:" << std::endl;
+          else
+            f << "Absolute L2-error velocity || u - u_h ||_Omega:" << std::endl;
+
+          f << std::endl
+            << "  Time                Error" << std::endl;
+
+          clear_files_velocity = false;
+        }
+        else
+        {
+          f.open(filename.str().c_str(),std::ios::app);
+        }
+
+        unsigned int precision = 12;
+        f << std::scientific << std::setprecision(precision)
+          << std::setw(precision+8) << time
+          << std::setw(precision+8) << error_velocity << std::endl;
+      }
+    }
+
+    // H1-seminorm
+    if(error_data.calculate_H1_seminorm_velocity)
+    {
+      double const error_velocity = calculate_error<dim>(relative_errors,
+                                                         *dof_handler_velocity,
+                                                         *mapping,
+                                                         velocity_double,
+                                                         analytical_solution->velocity,
+                                                         time,
+                                                         VectorTools::H1_seminorm);
+
+      ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+      pcout << ((relative_errors == true) ? "  Relative " : "  Absolute ") << "H1-seminorm error velocity u: "
+            << std::scientific << std::setprecision(5) << error_velocity << std::endl;
+
+      if(error_data.write_errors_to_file)
+      {
+        // write output file
+        if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+        {
+          std::ostringstream filename;
+          filename << error_data.filename_prefix + "_velocity_H1_seminorm";
+
+          std::ofstream f;
+          if(clear_files_velocity_H1_seminorm == true)
+          {
+            f.open(filename.str().c_str(),std::ios::trunc);
+            if(relative_errors == true)
+              f << "Relative H1-seminorm error velocity || (grad(u) - (grad(u_h) ||_Omega / || grad(u_h) ||_Omega:" << std::endl;
+            else
+              f << "Absolute H1-seminorm error velocity || grad(u) - grad(u_h) ||_Omega:" << std::endl;
+
+            f << std::endl
+              << "  Time                Error" << std::endl;
+
+            clear_files_velocity_H1_seminorm = false;
+          }
+          else
+          {
+            f.open(filename.str().c_str(),std::ios::app);
+          }
+
+          unsigned int precision = 12;
+          f << std::scientific << std::setprecision(precision)
+            << std::setw(precision+8) << time
+            << std::setw(precision+8) << error_velocity << std::endl;
+        }
+      }
+    }
+
+
     // pressure
-    bool relative_pressure = true;
 
     parallel::distributed::Vector<double> pressure_double;
     pressure_double = pressure;
 
-    double const error_pressure = calculate_L2_error<dim>(relative_pressure,
-                                                          *dof_handler_pressure,
-                                                          *mapping,
-                                                          pressure_double,
-                                                          analytical_solution->pressure,
-                                                          time);
+    // L2-norm
+    double const error_pressure = calculate_error<dim>(relative_errors,
+                                                       *dof_handler_pressure,
+                                                       *mapping,
+                                                       pressure_double,
+                                                       analytical_solution->pressure,
+                                                       time,
+                                                       VectorTools::L2_norm);
 
-    pcout << ((relative_pressure == true) ? "  Relative " : "  ABSOLUTE ") << "error (L2-norm) pressure p: "
+    pcout << ((relative_errors == true) ? "  Relative " : "  Absolute ") << "L2-error pressure p: "
           << std::scientific << std::setprecision(5) << error_pressure << std::endl;
+
+    if(error_data.write_errors_to_file)
+    {
+      // write output file
+      if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+      {
+        std::ostringstream filename;
+        filename << error_data.filename_prefix + "_pressure_L2";
+
+        std::ofstream f;
+        if(clear_files_pressure == true)
+        {
+          f.open(filename.str().c_str(),std::ios::trunc);
+          if(relative_errors == true)
+            f << "Relative L2-error pressure || p - p_h ||_Omega / || p_h ||_Omega:" << std::endl;
+          else
+            f << "Absolute L2-error pressure || p - p_h ||_Omega:" << std::endl;
+
+          f << std::endl
+            << "  Time                Error" << std::endl;
+
+          clear_files_pressure = false;
+        }
+        else
+        {
+          f.open(filename.str().c_str(),std::ios::app);
+        }
+
+        unsigned int precision = 12;
+        f << std::scientific << std::setprecision(precision)
+          << std::setw(precision+8) << time
+          << std::setw(precision+8) << error_velocity << std::endl;
+      }
+    }
   }
 };
 

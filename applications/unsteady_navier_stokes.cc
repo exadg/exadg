@@ -53,7 +53,8 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
 //#include "incompressible_navier_stokes_test_cases/cavity_3D.h"
 //#include "incompressible_navier_stokes_test_cases/backward_facing_step_tim.h"
-#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
+//#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
+#include "incompressible_navier_stokes_test_cases/unstable_beltrami.h"
 
 template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number=double>
 class NavierStokesProblem
