@@ -13,25 +13,25 @@
 
 namespace IncNS
 {
-
-template <int dim>
-class BaseOperator: public MatrixOperatorBase
+template<int dim>
+class BaseOperator : public MatrixOperatorBase
 {
 public:
-  BaseOperator()
-    :
-    fe_param(nullptr)
-  {}
+  BaseOperator() : fe_param(nullptr)
+  {
+  }
 
-  void set_fe_param(FEParameters<dim> * fe_param_in)
+  void
+  set_fe_param(FEParameters<dim> * fe_param_in)
   {
     fe_param = fe_param_in;
   }
+
 protected:
   FEParameters<dim> * fe_param;
 };
 
 
-}
+} // namespace IncNS
 
 #endif /* INCLUDE_OPERATORS_BASEOPERATOR_H_ */

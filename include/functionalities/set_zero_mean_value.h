@@ -4,7 +4,8 @@
 #include <deal.II/lac/parallel_vector.h>
 
 template<typename Number>
-void set_zero_mean_value(parallel::distributed::Vector<Number> &vec)
+void
+set_zero_mean_value(parallel::distributed::Vector<Number> & vec)
 {
   const Number mean_val = vec.mean_value();
   vec.add(-mean_val);

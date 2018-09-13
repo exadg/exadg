@@ -5,7 +5,7 @@ class Categorization
 {
 public:
   /**
-   * Adjust MatrixFree::AdditionalData such that 
+   * Adjust MatrixFree::AdditionalData such that
    *   1) cells which have the same boundary IDs for all faces are put into the
    *      same category
    *   2) cell based loops are enabled (incl. FEEvaluationBase::read_cell_data()
@@ -14,16 +14,15 @@ public:
   template<int dim, typename AdditionalData>
   static void
   do_cell_based_loops(const parallel::distributed::Triangulation<dim> & tria,
-                      AdditionalData &  data,
-                      const unsigned int level  = numbers::invalid_unsigned_int)
+                      AdditionalData &                                  data,
+                      const unsigned int level = numbers::invalid_unsigned_int)
   {
-      
     bool is_mg = level != numbers::invalid_unsigned_int;
 
     // ... create list for the category of each cell
-    if (is_mg) 
+    if(is_mg)
       data.cell_vectorization_category.resize(std::distance(tria.begin(level), tria.end(level)));
-    else 
+    else
       data.cell_vectorization_category.resize(tria.n_active_cells());
 
     // ... setup scaling factor
@@ -39,8 +38,8 @@ public:
       for(unsigned int i = 0; i < dim * 2; i++, offset = offset * bids)
         factors[i] = offset;
     }
-      
-    auto to_category = [&](auto & cell){
+
+    auto to_category = [&](auto & cell) {
       unsigned int c_num = 0;
       for(unsigned int i = 0; i < dim * 2; i++)
       {
@@ -54,18 +53,22 @@ public:
     if(!is_mg)
     {
       for(auto cell = tria.begin_active(); cell != tria.end(); ++cell)
+      {
         if(cell->is_locally_owned())
           data.cell_vectorization_category[cell->active_cell_index()] = to_category(cell);
+      }
     }
     else
     {
       for(auto cell = tria.begin(level); cell != tria.end(level); ++cell)
+      {
         if(cell->is_locally_owned_on_level())
           data.cell_vectorization_category[cell->index()] = to_category(cell);
+      }
     }
 
     // ... finalize setup of matrix_free
-    data.hold_all_faces_to_owned_cells = true;
+    data.hold_all_faces_to_owned_cells        = true;
     data.cell_vectorization_categories_strict = true;
     data.mapping_update_flags_faces_by_cells =
       data.mapping_update_flags_inner_faces | data.mapping_update_flags_boundary_faces;
