@@ -1,8 +1,8 @@
 /*
  * analytical_solution.h
  *
- *  Created on: 
- *      Author: 
+ *  Created on:
+ *      Author:
  */
 
 #ifndef INCLUDE_LAPLACE_ANALYTICAL_SOLUTION_H_

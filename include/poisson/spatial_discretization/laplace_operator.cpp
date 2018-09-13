@@ -23,9 +23,10 @@ inline DEAL_II_ALWAYS_INLINE //
 template<int dim, int fe_degree, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
-  LaplaceOperator<dim, fe_degree, Number>::calculate_interior_value(unsigned int const   q,
-                                                                    FEEvalFace const &   fe_eval,
-                                                                    OperatorType const & operator_type) const
+  LaplaceOperator<dim, fe_degree, Number>::calculate_interior_value(
+    unsigned int const   q,
+    FEEvalFace const &   fe_eval,
+    OperatorType const & operator_type) const
 {
   VectorizedArray<Number> value_m = make_vectorized_array<Number>(0.0);
 
@@ -193,7 +194,7 @@ LaplaceOperator<dim, fe_degree, value_type>::do_face_integral(FEEvalFace & fe_ev
     std::max(fe_eval.read_cell_data(array_penalty_parameter),
              fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
     IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
-  
+
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
     VectorizedArray<value_type> jump_value = fe_eval.get_value(q) - fe_eval_neighbor.get_value(q);
@@ -214,8 +215,9 @@ LaplaceOperator<dim, fe_degree, value_type>::do_face_integral(FEEvalFace & fe_ev
 
 template<int dim, int fe_degree, typename value_type>
 void
-LaplaceOperator<dim, fe_degree, value_type>::do_face_int_integral(FEEvalFace & fe_eval,
-                                                                  FEEvalFace & fe_eval_neighbor) const
+LaplaceOperator<dim, fe_degree, value_type>::do_face_int_integral(
+  FEEvalFace & fe_eval,
+  FEEvalFace & fe_eval_neighbor) const
 {
   VectorizedArray<value_type> tau_IP =
     std::max(fe_eval.read_cell_data(array_penalty_parameter),
@@ -241,14 +243,15 @@ LaplaceOperator<dim, fe_degree, value_type>::do_face_int_integral(FEEvalFace & f
 
 template<int dim, int fe_degree, typename value_type>
 void
-LaplaceOperator<dim, fe_degree, value_type>::do_face_ext_integral(FEEvalFace & fe_eval,
-                                                                  FEEvalFace & fe_eval_neighbor) const
+LaplaceOperator<dim, fe_degree, value_type>::do_face_ext_integral(
+  FEEvalFace & fe_eval,
+  FEEvalFace & fe_eval_neighbor) const
 {
   VectorizedArray<value_type> tau_IP =
     std::max(fe_eval.read_cell_data(array_penalty_parameter),
              fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
     IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
-  
+
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
     // set value_m to zero
@@ -262,8 +265,8 @@ LaplaceOperator<dim, fe_degree, value_type>::do_face_ext_integral(FEEvalFace & f
     VectorizedArray<value_type> gradient_flux =
       calculate_gradient_flux(normal_gradient_m, normal_gradient_p, jump_value, tau_IP);
 
-    fe_eval_neighbor.submit_normal_gradient(-value_flux,
-                                            q); // minus sign since n⁺ = -n⁻
+    // minus sign since n⁺ = -n⁻
+    fe_eval_neighbor.submit_normal_gradient(-value_flux, q);
     fe_eval_neighbor.submit_value(-gradient_flux, q);
   }
 }
@@ -280,7 +283,7 @@ LaplaceOperator<dim, fe_degree, value_type>::do_boundary_integral(
   VectorizedArray<value_type> tau_IP =
     fe_eval.read_cell_data(array_penalty_parameter) *
     IP::get_penalty_factor<value_type>(fe_degree, this->operator_settings.IP_factor);
-  
+
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
     VectorizedArray<value_type> value_m = calculate_interior_value(q, fe_eval, operator_type);
@@ -369,8 +372,7 @@ LaplaceOperator<dim, fe_degree, Number>::get_new(unsigned int deg) const
 #endif
     default:
       AssertThrow(false, ExcMessage("LaplaceOperator not implemented for this degree!"));
-      return new LaplaceOperator<dim, 1, Number>(); // dummy return (statement not
-                                                    // reached)
+      return new LaplaceOperator<dim, 1, Number>(); // dummy return (statement not reached)
   }
 }
 

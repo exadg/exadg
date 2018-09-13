@@ -72,7 +72,7 @@ public:
 
       // OUTPUT AND POSTPROCESSING
       print_input_parameters(true),
-              
+
       enable_cell_based_for_loops(false)
   {
   }
@@ -111,10 +111,9 @@ public:
 
     // OUTPUT AND POSTPROCESSING
     print_parameters_output_and_postprocessing(pcout);
-    
-    pcout << std::endl
-          << "Rest:" << std::endl;
-    print_parameter(pcout,"Enable cell-based face loops",enable_cell_based_for_loops);
+
+    pcout << std::endl << "Rest:" << std::endl;
+    print_parameter(pcout, "Enable cell-based face loops", enable_cell_based_for_loops);
   }
 
   void
@@ -153,8 +152,7 @@ public:
     print_parameter(pcout, "Relative solver tolerance", rel_tol);
     print_parameter(pcout, "Maximum number of iterations", max_iter);
 
-    std::string str_precon[] = {
-      "Undefined", "None", "PointJacobi", "BlockJacobi", "GMG"};
+    std::string str_precon[] = {"Undefined", "None", "PointJacobi", "BlockJacobi", "GMG"};
 
     print_parameter(pcout, "Preconditioner", str_precon[(int)preconditioner]);
 
@@ -174,9 +172,8 @@ public:
   print_parameters_output_and_postprocessing(ConditionalOStream & pcout)
   {
     pcout << std::endl << "Output and postprocessing:" << std::endl;
-   
-    output_data.print(pcout,false /*steady*/);
-    
+
+    output_data.print(pcout, false /*steady*/);
   }
 
 
@@ -232,7 +229,7 @@ public:
 
   // writing output
   OutputData output_data;
-  
+
   bool enable_cell_based_for_loops;
 };
 

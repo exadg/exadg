@@ -9,7 +9,6 @@
 
 namespace Poisson
 {
-
 enum class BoundaryType
 {
   undefined,
@@ -22,21 +21,21 @@ struct LaplaceOperatorData : public OperatorBaseData<dim, BoundaryDescriptor<dim
 {
 public:
   LaplaceOperatorData()
-// clang-format off
+    // clang-format off
     : OperatorBaseData<dim, BoundaryDescriptor<dim>>(0, 0,
           false, true, false, false, true, false, // cell
           true,  true,        true,  true         // face
       ),
-// clang-format on
+      // clang-format on
       IP_factor(1.0)
   {
     this->mapping_update_flags = update_gradients | update_JxW_values;
-    this->mapping_update_flags_inner_faces = 
+    this->mapping_update_flags_inner_faces =
       this->mapping_update_flags | update_values | update_normal_vectors;
-    this->mapping_update_flags_boundary_faces = 
+    this->mapping_update_flags_boundary_faces =
       this->mapping_update_flags_inner_faces | update_quadrature_points;
   }
-    
+
 
   inline DEAL_II_ALWAYS_INLINE //
     BoundaryType

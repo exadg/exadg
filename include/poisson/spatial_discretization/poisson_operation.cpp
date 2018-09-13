@@ -48,12 +48,14 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
   if(param.preconditioner == Poisson::Preconditioner::PointJacobi)
   {
     preconditioner.reset(
-      new JacobiPreconditioner<Poisson::LaplaceOperator<dim, fe_degree, value_type>>(laplace_operator));
+      new JacobiPreconditioner<Poisson::LaplaceOperator<dim, fe_degree, value_type>>(
+        laplace_operator));
   }
   else if(param.preconditioner == Poisson::Preconditioner::BlockJacobi)
   {
     preconditioner.reset(
-      new BlockJacobiPreconditioner<Poisson::LaplaceOperator<dim, fe_degree, value_type>>(laplace_operator));
+      new BlockJacobiPreconditioner<Poisson::LaplaceOperator<dim, fe_degree, value_type>>(
+        laplace_operator));
   }
   else if(param.preconditioner == Poisson::Preconditioner::Multigrid)
   {
@@ -68,7 +70,8 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
       MULTIGRID;
 
     preconditioner.reset(new MULTIGRID());
-    std::shared_ptr<MULTIGRID> mg_preconditioner = std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
+    std::shared_ptr<MULTIGRID> mg_preconditioner =
+      std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
     mg_preconditioner->initialize(mg_data,
                                   dof_handler,
                                   mapping,
@@ -96,9 +99,10 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
       solver_data.use_preconditioner = true;
 
     // initialize solver
-    iterative_solver.reset(new CGSolver<Poisson::LaplaceOperator<dim, fe_degree, value_type>,
-                                        PreconditionerBase<value_type>,
-                                        VectorType>(laplace_operator, *preconditioner, solver_data));
+    iterative_solver.reset(
+      new CGSolver<Poisson::LaplaceOperator<dim, fe_degree, value_type>,
+                   PreconditionerBase<value_type>,
+                   VectorType>(laplace_operator, *preconditioner, solver_data));
   }
   else
   {
@@ -168,7 +172,9 @@ DGOperation<dim, fe_degree, value_type>::create_dofs()
 
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
-  pcout << std::endl << "Discontinuous Galerkin finite element discretization:" << std::endl << std::endl;
+  pcout << std::endl
+        << "Discontinuous Galerkin finite element discretization:" << std::endl
+        << std::endl;
 
   print_parameter(pcout, "degree of 1D polynomials", fe_degree);
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
@@ -184,23 +190,29 @@ DGOperation<dim, fe_degree, value_type>::initialize_matrix_free()
 
   // initialize matrix_free_data
   typename MatrixFree<dim, value_type>::AdditionalData additional_data;
-  additional_data.tasks_parallel_scheme = MatrixFree<dim, value_type>::AdditionalData::partition_partition;
-  additional_data.build_face_info       = true;
+  additional_data.tasks_parallel_scheme =
+    MatrixFree<dim, value_type>::AdditionalData::partition_partition;
+  additional_data.build_face_info = true;
+
   additional_data.mapping_update_flags =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values);
+    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+     update_values);
 
   additional_data.mapping_update_flags_inner_faces =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values);
+    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+     update_values);
 
   additional_data.mapping_update_flags_boundary_faces =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values);
+    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+     update_values);
 
   if(param.enable_cell_based_for_loops)
   {
-    auto tria = dynamic_cast<const parallel::distributed::Triangulation<dim>*>(&dof_handler.get_triangulation());
+    auto tria = dynamic_cast<const parallel::distributed::Triangulation<dim> *>(
+      &dof_handler.get_triangulation());
     Categorization::do_cell_based_loops(*tria, additional_data);
   }
-  
+
   ConstraintMatrix dummy;
   dummy.close();
   data.reinit(mapping, dof_handler, dummy, quadrature, additional_data);
