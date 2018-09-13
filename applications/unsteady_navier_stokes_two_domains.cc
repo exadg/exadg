@@ -466,17 +466,20 @@ set_combined_time_step_size()
   // DOMAIN 1
   if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    if(time_integrator_coupled_1->get_time() > param_1.start_time - EPSILON)
+    if(time_integrator_coupled_1->get_time() > param_1.start_time - EPSILON ||
+       use_adaptive_time_stepping == false)
       time_step_size_1 = time_integrator_coupled_1->get_time_step_size();
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    if(time_integrator_dual_splitting_1->get_time() > param_1.start_time - EPSILON)
+    if(time_integrator_dual_splitting_1->get_time() > param_1.start_time - EPSILON ||
+       use_adaptive_time_stepping == false)
       time_step_size_1 = time_integrator_dual_splitting_1->get_time_step_size();
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    if(time_integrator_pressure_correction_1->get_time() > param_1.start_time - EPSILON)
+    if(time_integrator_pressure_correction_1->get_time() > param_1.start_time - EPSILON ||
+       use_adaptive_time_stepping == false)
       time_step_size_1 = time_integrator_pressure_correction_1->get_time_step_size();
   }
   else
@@ -486,17 +489,20 @@ set_combined_time_step_size()
   // DOMAIN 2
   if(this->param_2.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    if(time_integrator_coupled_2->get_time() > param_2.start_time - EPSILON)
+    if(time_integrator_coupled_2->get_time() > param_2.start_time - EPSILON ||
+       use_adaptive_time_stepping == false)
       time_step_size_2 = time_integrator_coupled_2->get_time_step_size();
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    if(time_integrator_dual_splitting_2->get_time() > param_2.start_time - EPSILON)
+    if(time_integrator_dual_splitting_2->get_time() > param_2.start_time - EPSILON ||
+       use_adaptive_time_stepping == false)
       time_step_size_2 = time_integrator_dual_splitting_2->get_time_step_size();
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    if(time_integrator_pressure_correction_2->get_time() > param_2.start_time - EPSILON)
+    if(time_integrator_pressure_correction_2->get_time() > param_2.start_time - EPSILON ||
+       use_adaptive_time_stepping == false)
       time_step_size_2 = time_integrator_pressure_correction_2->get_time_step_size();
   }
   else
@@ -505,8 +511,6 @@ set_combined_time_step_size()
   }
 
   double time_step_size = std::min(time_step_size_1,time_step_size_2);
-
-  std::cout << "time step size = " << time_step_size << std::endl;
 
   // decrease time_step in order to exactly hit end_time
   if(use_adaptive_time_stepping == false)

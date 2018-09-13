@@ -33,10 +33,10 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for DOMAIN 1
-unsigned int const REFINE_STEPS_SPACE_DOMAIN1 = 0;
+unsigned int const REFINE_STEPS_SPACE_DOMAIN1 = 4;
 
 // set the number of refine levels for DOMAIN 2
-unsigned int const REFINE_STEPS_SPACE_DOMAIN2 = 0;
+unsigned int const REFINE_STEPS_SPACE_DOMAIN2 = 3;
 
 // needed for single domain solver only
 unsigned int const REFINE_STEPS_SPACE_MIN = REFINE_STEPS_SPACE_DOMAIN2;
@@ -58,10 +58,10 @@ bool const USE_RANDOM_PERTURBATION = false;
 double const FACTOR_RANDOM_PERTURBATIONS = 0.05;
 
 // set the throat Reynolds number Re_throat = U_{mean,throat} * (2 R_throat) / nu
-double const RE = 500; //500; //2000; //3500; //5000; //6500;
+double const RE = 8000; //500; //2000; //3500; //5000; //6500; //8000;
 
 // output folders
-std::string OUTPUT_FOLDER = "output/fda/Re500/l0_k32/";
+std::string OUTPUT_FOLDER = "output/fda/paper_final/Re8000/l4_l3_k32/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string OUTPUT_NAME_1 = "precursor";
 std::string OUTPUT_NAME_2 = "nozzle";
@@ -73,6 +73,7 @@ std::string FILENAME_FLOWRATE = "precursor_mean_velocity";
 double const R = 0.002;
 double const R_INNER = R;
 double const R_OUTER = 3.0*R;
+double const D = 2.0*R_OUTER;
 
 // lengths (dimensions in flow direction z)
 double const LENGTH_PRECURSOR = 8.0*R_OUTER;
@@ -117,6 +118,7 @@ double const VISCOSITY = 3.31e-6;
 
 double const MEAN_VELOCITY_THROAT = RE * VISCOSITY / (2.0*R_INNER);
 double const TARGET_FLOW_RATE = MEAN_VELOCITY_THROAT*AREA_THROAT;
+double const MEAN_VELOCITY_INFLOW = TARGET_FLOW_RATE/AREA_INFLOW;
 
 double const MAX_VELOCITY = 2.0*TARGET_FLOW_RATE/AREA_INFLOW;
 double const MAX_VELOCITY_CFL = 2.0*TARGET_FLOW_RATE/AREA_THROAT;
@@ -128,7 +130,7 @@ double const MAX_VELOCITY_CFL = 2.0*TARGET_FLOW_RATE/AREA_THROAT;
 double const T_0 = LENGTH_THROAT/MEAN_VELOCITY_THROAT;
 double const START_TIME_PRECURSOR = -500.0*T_0; // let the flow develop
 double const START_TIME_NOZZLE = 0.0*T_0;
-double const END_TIME = 150.0*T_0;
+double const END_TIME = 250.0*T_0; //150.0*T_0;
 
 // output
 bool const WRITE_OUTPUT = true;
@@ -187,9 +189,9 @@ public:
   {
     // use an I-controller to asymptotically reach the desired target flow rate
 
-    // dimensional analysis: [k] = 1/(m^2 s^2) -> k = const * nu^2 / A_inflow^3
-    // TODO determination of constant
-    double const k = 1.0e3*std::pow(VISCOSITY,2.0)/std::pow(AREA_INFLOW,3.0);
+    // dimensional analysis: [k] = 1/(m^2 s^2) -> k = const * U_{mean,inflow}^2 / D^4
+    // constant: choose a default value of 1
+    double const k = 1.0e0*std::pow(MEAN_VELOCITY_INFLOW,2.0)/std::pow(D,4.0);
     f += k*(TARGET_FLOW_RATE - FLOW_RATE)*TIME_STEP_FLOW_RATE_CONTROLLER;
   }
 
@@ -303,8 +305,8 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
 //  calculation_of_time_step_size = TimeStepCalculation::AdaptiveTimeStepCFL;
   temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
-  calculation_of_time_step_size = TimeStepCalculation::AdaptiveTimeStepCFL; //TODO //ConstTimeStepCFL;
-  adaptive_time_stepping_limiting_factor = 10.0;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
+  adaptive_time_stepping_limiting_factor = 3.0;
   max_velocity = MAX_VELOCITY_CFL;
   // ConstTimeStepCFL: CFL_critical = 0.3 - 0.5 for k=3
   // AdaptiveTimeStepCFL: CFL_critical = 0.125 - 0.15 for k=3
@@ -669,6 +671,7 @@ public:
     :
     Function<dim>(n_components, time)
   {
+    srand(0); // initialize rand() to obtain reproducible results
   }
 
   virtual ~InitialSolutionVelocity(){};
