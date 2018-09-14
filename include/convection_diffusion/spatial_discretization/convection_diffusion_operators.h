@@ -183,8 +183,9 @@ private:
           fe_eval_velocity_neighbor.get_value(q);
 
         Tensor<1, dim, VectorizedArray<value_type>> normal = fe_eval.get_normal_vector(q);
-        VectorizedArray<value_type>                 velocity_m_normal = velocity_m * normal;
-        VectorizedArray<value_type>                 velocity_p_normal = velocity_p * normal;
+
+        VectorizedArray<value_type> velocity_m_normal = velocity_m * normal;
+        VectorizedArray<value_type> velocity_p_normal = velocity_p * normal;
 
         VectorizedArray<value_type> value_m = fe_eval.get_value(q);
         VectorizedArray<value_type> value_p = fe_eval_neighbor.get_value(q);
@@ -239,7 +240,8 @@ private:
         Tensor<1, dim, VectorizedArray<value_type>> velocity_m = fe_eval_velocity.get_value(q);
 
         Tensor<1, dim, VectorizedArray<value_type>> normal = fe_eval.get_normal_vector(q);
-        VectorizedArray<value_type>                 velocity_m_normal = velocity_m * normal;
+
+        VectorizedArray<value_type> velocity_m_normal = velocity_m * normal;
 
         VectorizedArray<value_type> value_m = fe_eval.get_value(q);
         VectorizedArray<value_type> value_p = make_vectorized_array<value_type>(0.0);
@@ -273,8 +275,10 @@ private:
     }
   }
 
-  MatrixFree<dim, value_type> const *                       data;
-  ConvectiveOperatorDataDiscontinuousVelocity<dim>          operator_data;
+  MatrixFree<dim, value_type> const * data;
+
+  ConvectiveOperatorDataDiscontinuousVelocity<dim> operator_data;
+
   mutable parallel::distributed::Vector<value_type> const * velocity;
 };
 
@@ -411,6 +415,7 @@ private:
       for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
       {
         Point<dim, VectorizedArray<value_type>> q_points = fe_eval.quadrature_point(q);
+
         // velocity
         Tensor<1, dim, VectorizedArray<value_type>> velocity;
         for(unsigned int d = 0; d < dim; ++d)
@@ -425,9 +430,11 @@ private:
           }
           velocity[d].load(&array[0]);
         }
+
         // rhs
         VectorizedArray<value_type> rhs = make_vectorized_array<value_type>(0.0);
-        value_type                  array[VectorizedArray<value_type>::n_array_elements];
+
+        value_type array[VectorizedArray<value_type>::n_array_elements];
         for(unsigned int n = 0; n < VectorizedArray<value_type>::n_array_elements; ++n)
         {
           Point<dim> q_point;
@@ -436,8 +443,7 @@ private:
           array[n] = operator_data.rhs_data.rhs->value(q_point);
         }
         rhs.load(&array[0]);
-        //                           |<-    convective term      ->|  |<-                  diffusive
-        //                           term                                  ->|
+
         fe_eval.submit_gradient(-1.0 * (-fe_eval.get_value(q) * velocity +
                                         make_vectorized_array<value_type>(diffusivity) *
                                           fe_eval.get_gradient(q)),
@@ -481,7 +487,8 @@ private:
 
       for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
       {
-        Point<dim, VectorizedArray<value_type>>     q_points = fe_eval.quadrature_point(q);
+        Point<dim, VectorizedArray<value_type>> q_points = fe_eval.quadrature_point(q);
+
         Tensor<1, dim, VectorizedArray<value_type>> velocity;
         for(unsigned int d = 0; d < dim; ++d)
         {
@@ -495,22 +502,28 @@ private:
           }
           velocity[d].load(&array[0]);
         }
-        Tensor<1, dim, VectorizedArray<value_type>> normal        = fe_eval.get_normal_vector(q);
-        VectorizedArray<value_type>                 u_n           = velocity * normal;
-        VectorizedArray<value_type>                 value_m       = fe_eval.get_value(q);
-        VectorizedArray<value_type>                 value_p       = fe_eval_neighbor.get_value(q);
-        VectorizedArray<value_type>                 average_value = 0.5 * (value_m + value_p);
-        VectorizedArray<value_type>                 jump_value    = value_m - value_p;
-        VectorizedArray<value_type>                 lambda        = std::abs(u_n);
-        VectorizedArray<value_type> lf_flux = make_vectorized_array<value_type>(0.0);
+        Tensor<1, dim, VectorizedArray<value_type>> normal = fe_eval.get_normal_vector(q);
+
+        VectorizedArray<value_type> u_n           = velocity * normal;
+        VectorizedArray<value_type> value_m       = fe_eval.get_value(q);
+        VectorizedArray<value_type> value_p       = fe_eval_neighbor.get_value(q);
+        VectorizedArray<value_type> average_value = 0.5 * (value_m + value_p);
+        VectorizedArray<value_type> jump_value    = value_m - value_p;
+        VectorizedArray<value_type> lambda        = std::abs(u_n);
+        VectorizedArray<value_type> lf_flux       = make_vectorized_array<value_type>(0.0);
 
         if(this->operator_data.conv_data.numerical_flux_formulation ==
            NumericalFluxConvectiveOperator::CentralFlux)
+        {
           lf_flux = u_n * average_value;
+        }
         else if(this->operator_data.conv_data.numerical_flux_formulation ==
                 NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+        {
           lf_flux = u_n * average_value + 0.5 * lambda * jump_value;
+        }
         else
+        {
           AssertThrow(
             this->operator_data.conv_data.numerical_flux_formulation ==
                 NumericalFluxConvectiveOperator::CentralFlux ||
@@ -518,6 +531,7 @@ private:
                 NumericalFluxConvectiveOperator::LaxFriedrichsFlux,
             ExcMessage(
               "Specified numerical flux function for convective operator is not implemented!"));
+        }
 
         VectorizedArray<value_type> gradient_flux =
           (fe_eval.get_normal_gradient(q) + fe_eval_neighbor.get_normal_gradient(q)) * 0.5;
@@ -575,7 +589,8 @@ private:
           // homogeneous part: {{grad(u)}}*n = grad(u⁻)*n
           // inhomogeneous part: {{grad(u)}}*n = 0
 
-          Point<dim, VectorizedArray<value_type>>     q_points = fe_eval.quadrature_point(q);
+          Point<dim, VectorizedArray<value_type>> q_points = fe_eval.quadrature_point(q);
+
           Tensor<1, dim, VectorizedArray<value_type>> velocity;
           for(unsigned int d = 0; d < dim; ++d)
           {
@@ -589,9 +604,10 @@ private:
             }
             velocity[d].load(&array[0]);
           }
-          Tensor<1, dim, VectorizedArray<value_type>> normal  = fe_eval.get_normal_vector(q);
-          VectorizedArray<value_type>                 u_n     = velocity * normal;
-          VectorizedArray<value_type>                 value_m = fe_eval.get_value(q);
+          Tensor<1, dim, VectorizedArray<value_type>> normal = fe_eval.get_normal_vector(q);
+
+          VectorizedArray<value_type> u_n     = velocity * normal;
+          VectorizedArray<value_type> value_m = fe_eval.get_value(q);
 
           // set the correct time for the evaluation of the boundary conditions
           it->second->set_time(eval_time);
@@ -614,11 +630,16 @@ private:
 
           if(this->operator_data.conv_data.numerical_flux_formulation ==
              NumericalFluxConvectiveOperator::CentralFlux)
+          {
             lf_flux = u_n * average_value;
+          }
           else if(this->operator_data.conv_data.numerical_flux_formulation ==
                   NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+          {
             lf_flux = u_n * average_value + 0.5 * lambda * jump_value;
+          }
           else
+          {
             AssertThrow(
               this->operator_data.conv_data.numerical_flux_formulation ==
                   NumericalFluxConvectiveOperator::CentralFlux ||
@@ -626,9 +647,11 @@ private:
                   NumericalFluxConvectiveOperator::LaxFriedrichsFlux,
               ExcMessage(
                 "Specified numerical flux function for convective operator is not implemented!"));
+          }
 
           VectorizedArray<value_type> gradient_flux = fe_eval.get_normal_gradient(q);
-          gradient_flux                             = gradient_flux - tau_IP * jump_value;
+
+          gradient_flux = gradient_flux - tau_IP * jump_value;
 
           fe_eval.submit_normal_gradient(-1.0 * (-0.5 * diffusivity * jump_value), q);
 
@@ -659,22 +682,28 @@ private:
             }
             velocity[d].load(&array[0]);
           }
-          Tensor<1, dim, VectorizedArray<value_type>> normal        = fe_eval.get_normal_vector(q);
-          VectorizedArray<value_type>                 u_n           = velocity * normal;
-          VectorizedArray<value_type>                 value_m       = fe_eval.get_value(q);
-          VectorizedArray<value_type>                 value_p       = value_m;
-          VectorizedArray<value_type>                 average_value = 0.5 * (value_m + value_p);
-          VectorizedArray<value_type>                 jump_value    = value_m - value_p;
-          VectorizedArray<value_type>                 lambda        = std::abs(u_n);
-          VectorizedArray<value_type> lf_flux = make_vectorized_array<value_type>(0.0);
+          Tensor<1, dim, VectorizedArray<value_type>> normal = fe_eval.get_normal_vector(q);
+
+          VectorizedArray<value_type> u_n           = velocity * normal;
+          VectorizedArray<value_type> value_m       = fe_eval.get_value(q);
+          VectorizedArray<value_type> value_p       = value_m;
+          VectorizedArray<value_type> average_value = 0.5 * (value_m + value_p);
+          VectorizedArray<value_type> jump_value    = value_m - value_p;
+          VectorizedArray<value_type> lambda        = std::abs(u_n);
+          VectorizedArray<value_type> lf_flux       = make_vectorized_array<value_type>(0.0);
 
           if(this->operator_data.conv_data.numerical_flux_formulation ==
              NumericalFluxConvectiveOperator::CentralFlux)
+          {
             lf_flux = u_n * average_value;
+          }
           else if(this->operator_data.conv_data.numerical_flux_formulation ==
                   NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+          {
             lf_flux = u_n * average_value + 0.5 * lambda * jump_value;
+          }
           else
+          {
             AssertThrow(
               this->operator_data.conv_data.numerical_flux_formulation ==
                   NumericalFluxConvectiveOperator::CentralFlux ||
@@ -682,6 +711,7 @@ private:
                   NumericalFluxConvectiveOperator::LaxFriedrichsFlux,
               ExcMessage(
                 "Specified numerical flux function for convective operator is not implemented!"));
+          }
 
           VectorizedArray<value_type> gradient_flux = make_vectorized_array<value_type>(0.0);
 
@@ -707,11 +737,15 @@ private:
     }
   }
 
-  MatrixFree<dim, value_type> const *                        data;
+  MatrixFree<dim, value_type> const * data;
+
   ConvectionDiffusionOperatorDataEfficiency<dim, value_type> operator_data;
-  AlignedVector<VectorizedArray<value_type>>                 array_penalty_parameter;
-  double                                                     diffusivity;
-  mutable value_type                                         eval_time;
+
+  AlignedVector<VectorizedArray<value_type>> array_penalty_parameter;
+
+  double diffusivity;
+
+  mutable value_type eval_time;
 };
 
 } // namespace ConvDiff
