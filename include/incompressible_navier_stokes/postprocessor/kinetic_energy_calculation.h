@@ -8,6 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_KINETIC_ENERGY_CALCULATION_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_KINETIC_ENERGY_CALCULATION_H_
 
+#include "../../incompressible_navier_stokes/postprocessor/postprocessor_base.h"
 #include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_data.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/curl_compute.h"
 

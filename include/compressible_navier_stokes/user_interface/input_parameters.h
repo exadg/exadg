@@ -9,6 +9,8 @@
 #include "../../incompressible_navier_stokes/postprocessor/lift_and_drag_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/pressure_difference_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/turbulent_channel_data.h"
+#include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_data.h"
+#include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_spectrum_data.h"
 #include "../include/functionalities/print_functions.h"
 #include "postprocessor/error_calculation_data.h"
 #include "postprocessor/output_data.h"
