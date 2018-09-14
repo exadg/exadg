@@ -5,7 +5,6 @@
 
 namespace ConvDiff
 {
-
 enum class BoundaryType
 {
   undefined,

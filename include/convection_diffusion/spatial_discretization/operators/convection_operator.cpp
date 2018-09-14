@@ -8,8 +8,8 @@ template<int dim, int fe_degree, typename value_type>
 void
 ConvectiveOperator<dim, fe_degree, value_type>::initialize(
   MatrixFree<dim, value_type> const & mf_data,
-  ConvectiveOperatorData<dim> const & operator_data_in,  
-  unsigned int level_mg_handler)
+  ConvectiveOperatorData<dim> const & operator_data_in,
+  unsigned int                        level_mg_handler)
 {
   ConstraintMatrix constraint_matrix;
   Parent::reinit(mf_data, constraint_matrix, operator_data_in, level_mg_handler);
@@ -19,16 +19,15 @@ template<int dim, int fe_degree, typename value_type>
 void
 ConvectiveOperator<dim, fe_degree, value_type>::initialize(
   MatrixFree<dim, value_type> const & mf_data,
-  ConstraintMatrix const&                  constraint_matrix,
+  ConstraintMatrix const &            constraint_matrix,
   ConvectiveOperatorData<dim> const & operator_data_in,
-  unsigned int level_mg_handler)
+  unsigned int                        level_mg_handler)
 {
   Parent::reinit(mf_data, constraint_matrix, operator_data_in, level_mg_handler);
 }
 
 /*
- *  This function calculates the numerical flux for interior faces
- *  using the central flux.
+ *  This function calculates the numerical flux using the central flux.
  */
 template<int dim, int fe_degree, typename value_type>
 inline DEAL_II_ALWAYS_INLINE //
@@ -43,8 +42,7 @@ inline DEAL_II_ALWAYS_INLINE //
 }
 
 /*
- *  This function calculates the numerical flux for interior faces
- *  using the Lax-Friedrichs flux.
+ *  This function calculates the numerical flux using the Lax-Friedrichs flux.
  */
 template<int dim, int fe_degree, typename value_type>
 inline DEAL_II_ALWAYS_INLINE //
@@ -61,28 +59,35 @@ inline DEAL_II_ALWAYS_INLINE //
 }
 
 /*
- *  This function calculates the numerical flux for interior faces where
- *  the type of the numerical flux depends on the specified input parameter.
+ * This function calculates the numerical flux where the type of the numerical flux depends on the
+ * specified input parameter.
  */
 template<int dim, int fe_degree, typename value_type>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<value_type>
-  ConvectiveOperator<dim, fe_degree, value_type>::calculate_flux(unsigned int const            q,
-                                                                 FEEvalFace &                  fe_eval,
-                                                                 VectorizedArray<value_type> & value_m,
-                                                                 VectorizedArray<value_type> & value_p) const
+  ConvectiveOperator<dim, fe_degree, value_type>::calculate_flux(
+    unsigned int const            q,
+    FEEvalFace &                  fe_eval,
+    VectorizedArray<value_type> & value_m,
+    VectorizedArray<value_type> & value_p) const
 {
   VectorizedArray<value_type> flux = make_vectorized_array<value_type>(0.0);
 
-  Point<dim, VectorizedArray<value_type>>     q_points = fe_eval.quadrature_point(q);
+  Point<dim, VectorizedArray<value_type>> q_points = fe_eval.quadrature_point(q);
+
   Tensor<1, dim, VectorizedArray<value_type>> velocity;
 
-  evaluate_vectorial_function(velocity, this->operator_settings.velocity, q_points, this->eval_time);
+  evaluate_vectorial_function(velocity,
+                              this->operator_settings.velocity,
+                              q_points,
+                              this->eval_time);
 
-  Tensor<1, dim, VectorizedArray<value_type>> normal          = fe_eval.get_normal_vector(q);
-  VectorizedArray<value_type>                 normal_velocity = velocity * normal;
+  Tensor<1, dim, VectorizedArray<value_type>> normal = fe_eval.get_normal_vector(q);
 
-  if(this->operator_settings.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
+  VectorizedArray<value_type> normal_velocity = velocity * normal;
+
+  if(this->operator_settings.numerical_flux_formulation ==
+     NumericalFluxConvectiveOperator::CentralFlux)
   {
     flux = calculate_central_flux(value_m, value_p, normal_velocity);
   }
@@ -113,9 +118,10 @@ inline DEAL_II_ALWAYS_INLINE //
 template<int dim, int fe_degree, typename value_type>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<value_type>
-  ConvectiveOperator<dim, fe_degree, value_type>::calculate_interior_value(unsigned int const   q,
-                                                                           FEEvalFace const &   fe_eval,
-                                                                           OperatorType const & operator_type) const
+  ConvectiveOperator<dim, fe_degree, value_type>::calculate_interior_value(
+    unsigned int const   q,
+    FEEvalFace const &   fe_eval,
+    OperatorType const & operator_type) const
 {
   if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
     return fe_eval.get_value(q);
@@ -179,10 +185,14 @@ ConvectiveOperator<dim, fe_degree, value_type>::do_cell_integral(FEEvalCell & fe
 {
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
-    Point<dim, VectorizedArray<value_type>>     q_points = fe_eval.quadrature_point(q);
+    Point<dim, VectorizedArray<value_type>> q_points = fe_eval.quadrature_point(q);
+
     Tensor<1, dim, VectorizedArray<value_type>> velocity;
 
-    evaluate_vectorial_function(velocity, this->operator_settings.velocity, q_points, this->eval_time);
+    evaluate_vectorial_function(velocity,
+                                this->operator_settings.velocity,
+                                q_points,
+                                this->eval_time);
 
     fe_eval.submit_gradient(-fe_eval.get_value(q) * velocity, q);
   }
@@ -190,13 +200,15 @@ ConvectiveOperator<dim, fe_degree, value_type>::do_cell_integral(FEEvalCell & fe
 
 template<int dim, int fe_degree, typename value_type>
 void
-ConvectiveOperator<dim, fe_degree, value_type>::do_face_integral(FEEvalFace & fe_eval,
-                                                                 FEEvalFace & fe_eval_neighbor) const
+ConvectiveOperator<dim, fe_degree, value_type>::do_face_integral(
+  FEEvalFace & fe_eval,
+  FEEvalFace & fe_eval_neighbor) const
 {
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
-    VectorizedArray<value_type> value_m        = fe_eval.get_value(q);
-    VectorizedArray<value_type> value_p        = fe_eval_neighbor.get_value(q);
+    VectorizedArray<value_type> value_m = fe_eval.get_value(q);
+    VectorizedArray<value_type> value_p = fe_eval_neighbor.get_value(q);
+
     VectorizedArray<value_type> numerical_flux = calculate_flux(q, fe_eval, value_m, value_p);
 
     fe_eval.submit_value(numerical_flux, q);
@@ -206,14 +218,16 @@ ConvectiveOperator<dim, fe_degree, value_type>::do_face_integral(FEEvalFace & fe
 
 template<int dim, int fe_degree, typename value_type>
 void
-ConvectiveOperator<dim, fe_degree, value_type>::do_face_int_integral(FEEvalFace & fe_eval,
-                                                                     FEEvalFace & /*fe_eval_neighbor*/) const
+ConvectiveOperator<dim, fe_degree, value_type>::do_face_int_integral(
+  FEEvalFace & fe_eval,
+  FEEvalFace & /*fe_eval_neighbor*/) const
 {
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
     VectorizedArray<value_type> value_m = fe_eval.get_value(q);
     // set value_p to zero
-    VectorizedArray<value_type> value_p        = make_vectorized_array<value_type>(0.0);
+    VectorizedArray<value_type> value_p = make_vectorized_array<value_type>(0.0);
+
     VectorizedArray<value_type> numerical_flux = calculate_flux(q, fe_eval, value_m, value_p);
 
     fe_eval.submit_value(numerical_flux, q);
@@ -222,15 +236,17 @@ ConvectiveOperator<dim, fe_degree, value_type>::do_face_int_integral(FEEvalFace 
 
 template<int dim, int fe_degree, typename value_type>
 void
-ConvectiveOperator<dim, fe_degree, value_type>::do_face_ext_integral(FEEvalFace & /*fe_eval*/,
-                                                                     FEEvalFace & fe_eval_neighbor) const
+ConvectiveOperator<dim, fe_degree, value_type>::do_face_ext_integral(
+  FEEvalFace & /*fe_eval*/,
+  FEEvalFace & fe_eval_neighbor) const
 {
   for(unsigned int q = 0; q < fe_eval_neighbor.n_q_points; ++q)
   {
     // set value_m to zero
-    VectorizedArray<value_type> value_m        = make_vectorized_array<value_type>(0.0);
-    VectorizedArray<value_type> value_p        = fe_eval_neighbor.get_value(q);
-    VectorizedArray<value_type> numerical_flux = calculate_flux(q, fe_eval_neighbor, value_m, value_p);
+    VectorizedArray<value_type> value_m = make_vectorized_array<value_type>(0.0);
+    VectorizedArray<value_type> value_p = fe_eval_neighbor.get_value(q);
+    VectorizedArray<value_type> numerical_flux =
+      calculate_flux(q, fe_eval_neighbor, value_m, value_p);
 
     // hack (minus sign) since n⁺ = -n⁻
     fe_eval_neighbor.submit_value(-numerical_flux, q);

@@ -15,14 +15,13 @@ using namespace dealii;
 
 namespace ConvDiff
 {
-
 template<int dim>
 struct BoundaryDescriptor
 {
-  std::map<types::boundary_id,std::shared_ptr<Function<dim> > > dirichlet_bc;
-  std::map<types::boundary_id,std::shared_ptr<Function<dim> > > neumann_bc;
+  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
+  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
 };
 
-}
+} // namespace ConvDiff
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_BOUNDARY_DESCRIPTOR_H_ */
