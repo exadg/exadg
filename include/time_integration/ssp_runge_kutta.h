@@ -19,84 +19,81 @@
  *    The Runge-Kutta scheme is implemented in Shu-Osher form instead of the Butcher form.
  *
  */
-template <typename Operator, typename Vector>
-class SSPRK : public ExplicitTimeIntegrator<Operator,Vector>
+template<typename Operator, typename Vector>
+class SSPRK : public ExplicitTimeIntegrator<Operator, Vector>
 {
 public:
   SSPRK(std::shared_ptr<Operator> const operator_in,
         unsigned int const              order_in,
         unsigned int const              stages_in)
-    :
-    ExplicitTimeIntegrator<Operator, Vector>(operator_in),
-    order(order_in)
+    : ExplicitTimeIntegrator<Operator, Vector>(operator_in), order(order_in)
   {
     initialize_coeffs(stages_in);
   }
 
-  void solve_timestep(Vector       &vec_np,
-                      Vector       &vec_n,
-                      double const time,
-                      double const time_step);
+  void
+  solve_timestep(Vector & vec_np, Vector & vec_n, double const time, double const time_step);
 
 private:
-  void initialize_coeffs(unsigned int const stages);
+  void
+  initialize_coeffs(unsigned int const stages);
 
-  FullMatrix<double> A,B;
+  FullMatrix<double>  A, B;
   std::vector<double> c;
-  unsigned int const order;
+  unsigned int const  order;
 
   std::vector<Vector> u_vec, F_vec;
 };
 
-template <typename Operator, typename Vector>
-void SSPRK<Operator,Vector>::
-solve_timestep(Vector       &vec_np,
-               Vector       &vec_n,
-               double const time,
-               double const time_step)
+template<typename Operator, typename Vector>
+void
+SSPRK<Operator, Vector>::solve_timestep(Vector &     vec_np,
+                                        Vector &     vec_n,
+                                        double const time,
+                                        double const time_step)
 {
   const unsigned int stages = A.m();
 
   // Initialize vectors if necessary
-  if (u_vec.empty() || !u_vec[0].partitioners_are_globally_compatible(*vec_n.get_partitioner()))
+  if(u_vec.empty() || !u_vec[0].partitioners_are_globally_compatible(*vec_n.get_partitioner()))
   {
-    u_vec.resize(stages+1);
-    for (unsigned int d=0; d<u_vec.size(); ++d)
+    u_vec.resize(stages + 1);
+    for(unsigned int d = 0; d < u_vec.size(); ++d)
       u_vec[d].reinit(vec_n);
 
     F_vec.resize(stages);
-    for (unsigned int d=0; d<F_vec.size(); ++d)
+    for(unsigned int d = 0; d < F_vec.size(); ++d)
       F_vec[d].reinit(vec_n, true);
   }
 
   u_vec[0] = vec_n;
 
-  for (unsigned int s=1; s<=stages; ++s)
+  for(unsigned int s = 1; s <= stages; ++s)
   {
-    this->underlying_operator->evaluate(F_vec[s-1],u_vec[s-1],time + c[s-1]*time_step);
+    this->underlying_operator->evaluate(F_vec[s - 1], u_vec[s - 1], time + c[s - 1] * time_step);
 
     u_vec[s] = 0.; // Do not forget to reset u_vec[s]!
-    for (unsigned int l=0; l<s; ++l)
+    for(unsigned int l = 0; l < s; ++l)
     {
-      u_vec[s].add(A[s-1][l], u_vec[l], B[s-1][l]*time_step, F_vec[l]);
+      u_vec[s].add(A[s - 1][l], u_vec[l], B[s - 1][l] * time_step, F_vec[l]);
     }
   }
 
   vec_np = u_vec[stages];
 }
 
-template <typename Operator, typename Vector>
+template<typename Operator, typename Vector>
 void
-SSPRK<Operator,Vector>::initialize_coeffs (const unsigned int stages)
+SSPRK<Operator, Vector>::initialize_coeffs(const unsigned int stages)
 {
   A.reinit(stages, stages);
   B.reinit(stages, stages);
 
   bool coefficients_are_initialized = false;
 
-  if (order == 3)
+  if(order == 3)
   {
-    if (stages == 4)
+    if(stages == 4)
     {
       A[0][0] = 1.;
       A[0][1] = 0.;
@@ -134,7 +131,7 @@ SSPRK<Operator,Vector>::initialize_coeffs (const unsigned int stages)
 
       coefficients_are_initialized = true;
     }
-    else if (stages == 5)
+    else if(stages == 5)
     {
       A[0][0] = 1.;
       A[0][1] = 0.;
@@ -190,7 +187,7 @@ SSPRK<Operator,Vector>::initialize_coeffs (const unsigned int stages)
 
       coefficients_are_initialized = true;
     }
-    else if (stages == 6)
+    else if(stages == 6)
     {
       A[0][0] = 1.;
       A[0][1] = 0.;
@@ -268,7 +265,7 @@ SSPRK<Operator,Vector>::initialize_coeffs (const unsigned int stages)
 
       coefficients_are_initialized = true;
     }
-    else if (stages == 7)
+    else if(stages == 7)
     {
       A[0][0] = 1.;
       A[0][1] = 0.;
@@ -372,7 +369,7 @@ SSPRK<Operator,Vector>::initialize_coeffs (const unsigned int stages)
 
       coefficients_are_initialized = true;
     }
-    else if (stages == 8)
+    else if(stages == 8)
     {
       A[0][0] = 1.;
       A[0][1] = 0.;
@@ -511,9 +508,9 @@ SSPRK<Operator,Vector>::initialize_coeffs (const unsigned int stages)
       AssertThrow(false, ExcNotImplemented());
     }
   }
-  else if (order == 4)
+  else if(order == 4)
   {
-    if (stages == 5)
+    if(stages == 5)
     {
       A[0][0] = 1.;
       A[0][1] = 0.;
@@ -569,7 +566,7 @@ SSPRK<Operator,Vector>::initialize_coeffs (const unsigned int stages)
 
       coefficients_are_initialized = true;
     }
-    else if (stages == 6)
+    else if(stages == 6)
     {
       A[0][0] = 1.;
       A[0][1] = 0.;
@@ -647,7 +644,7 @@ SSPRK<Operator,Vector>::initialize_coeffs (const unsigned int stages)
 
       coefficients_are_initialized = true;
     }
-    else if (stages == 7)
+    else if(stages == 7)
     {
       A[0][0] = 1.;
       A[0][1] = 0.;
@@ -751,7 +748,7 @@ SSPRK<Operator,Vector>::initialize_coeffs (const unsigned int stages)
 
       coefficients_are_initialized = true;
     }
-    else if (stages == 8)
+    else if(stages == 8)
     {
       A[0][0] = 1.;
       A[0][1] = 0.;
@@ -900,30 +897,30 @@ SSPRK<Operator,Vector>::initialize_coeffs (const unsigned int stages)
   // calculate coefficients c_i for non-autonomous systems, i.e.,
   // systems with explicit time-dependency
   FullMatrix<double> crk;
-  crk.reinit(stages,stages);
+  crk.reinit(stages, stages);
 
-  for(unsigned int k=0; k<stages; ++k)
+  for(unsigned int k = 0; k < stages; ++k)
   {
-    for(unsigned int i=0; i<stages; ++i)
+    for(unsigned int i = 0; i < stages; ++i)
     {
       double csum = 0.;
-      for(unsigned int l=k+1; l<i+1; ++l)
+      for(unsigned int l = k + 1; l < i + 1; ++l)
       {
-        csum = csum + crk[l-1][k]*A[i][l];
-      } 
+        csum = csum + crk[l - 1][k] * A[i][l];
+      }
       crk[i][k] = B[i][k] + csum;
     }
-  } 
+  }
 
   c.resize(stages);
   c[0] = 0.;
-  for(unsigned int k=1; k<stages; ++k)
+  for(unsigned int k = 1; k < stages; ++k)
   {
     c[k] = 0.;
-    for(unsigned int l=0; l<k+1; ++l)
+    for(unsigned int l = 0; l < k + 1; ++l)
     {
-      c[k] = c[k] + crk[k-1][l];
-    }    
+      c[k] = c[k] + crk[k - 1][l];
+    }
   }
 }
 

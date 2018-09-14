@@ -9,15 +9,13 @@
 #define INCLUDE_TIME_INTEGRATION_PUSH_BACK_VECTORS_H_
 
 /*
- *  This function implements a push-back operation that is
- *  needed in multistep time integration schemes like BDF schemes
- *  in order to update the solution vectors from one time step
- *  to the next.
- *  The prerequisite to call this function is that the type T
- *  implements a swap-function!
+ * This function implements a push-back operation that is needed in multistep time integration
+ * schemes like BDF schemes in order to update the solution vectors from one time step to the
+ * next. The prerequisite to call this function is that the type T implements a swap-function!
  */
 template<typename T>
-void push_back(std::vector<T> &vector)
+void
+push_back(std::vector<T> & vector)
 {
   /*
    *   time t
@@ -33,9 +31,9 @@ void push_back(std::vector<T> &vector)
    */
 
   // solution at t_{n-i} <-- solution at t_{n-i+1}
-  for(int i=vector.size()-1; i>0; --i)
+  for(int i = vector.size() - 1; i > 0; --i)
   {
-    vector[i].swap(vector[i-1]);
+    vector[i].swap(vector[i - 1]);
   }
 }
 
