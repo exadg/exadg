@@ -11,6 +11,8 @@
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/data_out_dof_data.h>
 
+#include "../../postprocessor/output_data.h"
+
 namespace ConvDiff
 {
 template<int dim>
