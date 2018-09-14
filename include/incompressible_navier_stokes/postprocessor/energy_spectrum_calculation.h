@@ -14,6 +14,7 @@
 #include <memory>
 #include <deal.II/lac/la_parallel_vector.h>
 
+#include "incompressible_navier_stokes/postprocessor/postprocessor_base.h"
 #include "incompressible_navier_stokes/postprocessor/kinetic_energy_spectrum_data.h"
 
 #ifdef USE_DEAL_SPECTRUM

@@ -8,6 +8,8 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_TURBULENT_CHANNEL_DATA_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_TURBULENT_CHANNEL_DATA_H_
 
+#include <deal.II/base/conditional_ostream.h>
+#include "../../functionalities/print_functions.h"
 
 // turbulent channel data
 
