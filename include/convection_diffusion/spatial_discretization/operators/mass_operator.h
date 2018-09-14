@@ -9,28 +9,29 @@
 namespace ConvDiff
 {
 template<int dim>
-struct MassMatrixOperatorData
-  : public OperatorBaseData<dim, ConvDiff::BoundaryDescriptor<dim>>
+struct MassMatrixOperatorData : public OperatorBaseData<dim, ConvDiff::BoundaryDescriptor<dim>>
 {
   MassMatrixOperatorData()
-// clang-format off
+    // clang-format off
     : OperatorBaseData<dim, ConvDiff::BoundaryDescriptor<dim>>(0, 0,
-          true, false, false, true, false, false
-      )
-// clang-format on
+          true, false, false, true, false, false)
+  // clang-format on
   {
     this->mapping_update_flags = update_values | update_quadrature_points;
   }
 };
 
 template<int dim, int fe_degree, typename value_type>
-class MassMatrixOperator : public OperatorBase<dim, fe_degree, value_type, MassMatrixOperatorData<dim>>
+class MassMatrixOperator
+  : public OperatorBase<dim, fe_degree, value_type, MassMatrixOperatorData<dim>>
 {
 public:
-  typedef MassMatrixOperator<dim, fe_degree, value_type>                        This;
+  typedef MassMatrixOperator<dim, fe_degree, value_type> This;
+
   typedef OperatorBase<dim, fe_degree, value_type, MassMatrixOperatorData<dim>> Parent;
-  typedef typename Parent::FEEvalCell                                           FEEvalCell;
-  typedef typename Parent::FEEvalFace                                           FEEvalFace;
+
+  typedef typename Parent::FEEvalCell FEEvalCell;
+  typedef typename Parent::FEEvalFace FEEvalFace;
 
   MassMatrixOperator()
   {
@@ -39,13 +40,13 @@ public:
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,
              MassMatrixOperatorData<dim> const & mass_matrix_operator_data_in,
-             unsigned int           level_mg_handler = numbers::invalid_unsigned_int);
+             unsigned int                        level_mg_handler = numbers::invalid_unsigned_int);
 
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,
-             ConstraintMatrix const& constraint_matrix,
+             ConstraintMatrix const &            constraint_matrix,
              MassMatrixOperatorData<dim> const & mass_matrix_operator_data_in,
-             unsigned int           level_mg_handler = numbers::invalid_unsigned_int);
+             unsigned int                        level_mg_handler = numbers::invalid_unsigned_int);
 
 private:
   void

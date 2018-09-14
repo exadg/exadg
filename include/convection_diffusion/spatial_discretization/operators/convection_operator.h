@@ -9,24 +9,23 @@
 namespace ConvDiff
 {
 template<int dim>
-struct ConvectiveOperatorData
-  : public OperatorBaseData<dim, ConvDiff::BoundaryDescriptor<dim>>
+struct ConvectiveOperatorData : public OperatorBaseData<dim, ConvDiff::BoundaryDescriptor<dim>>
 {
   ConvectiveOperatorData()
-// clang-format off
+    // clang-format off
     : OperatorBaseData<dim, ConvDiff::BoundaryDescriptor<dim>>(0, 0,
           true, false, false, false, true, false, // cell
           true, false,        true,  false        // face
       ),
-// clang-format on
+      // clang-format on
       numerical_flux_formulation(NumericalFluxConvectiveOperator::Undefined)
   {
-    this->mapping_update_flags = update_gradients | update_JxW_values  | update_quadrature_points;
-    this->mapping_update_flags_inner_faces = 
+    this->mapping_update_flags = update_gradients | update_JxW_values | update_quadrature_points;
+    this->mapping_update_flags_inner_faces =
       this->mapping_update_flags | update_values | update_normal_vectors;
     this->mapping_update_flags_boundary_faces = this->mapping_update_flags_inner_faces;
   }
-  
+
   inline DEAL_II_ALWAYS_INLINE //
     BoundaryType
     get_boundary_type(types::boundary_id const & boundary_id) const
@@ -46,29 +45,31 @@ struct ConvectiveOperatorData
 };
 
 template<int dim, int fe_degree, typename value_type>
-class ConvectiveOperator : public OperatorBase<dim, fe_degree, value_type, ConvectiveOperatorData<dim>>
+class ConvectiveOperator
+  : public OperatorBase<dim, fe_degree, value_type, ConvectiveOperatorData<dim>>
 {
 public:
-  typedef ConvectiveOperator<dim, fe_degree, value_type>                        This;
+  typedef ConvectiveOperator<dim, fe_degree, value_type> This;
+
   typedef OperatorBase<dim, fe_degree, value_type, ConvectiveOperatorData<dim>> Parent;
-  typedef typename Parent::FEEvalCell                                           FEEvalCell;
-  typedef typename Parent::FEEvalFace                                           FEEvalFace;
-  typedef typename Parent::VectorType                                           VectorType;
+
+  typedef typename Parent::FEEvalCell FEEvalCell;
+  typedef typename Parent::FEEvalFace FEEvalFace;
+  typedef typename Parent::VectorType VectorType;
 
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,
              ConvectiveOperatorData<dim> const & operator_data_in,
-             unsigned int           level_mg_handler = numbers::invalid_unsigned_int);
+             unsigned int                        level_mg_handler = numbers::invalid_unsigned_int);
 
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,
-             ConstraintMatrix const&                  constraint_matrx,
+             ConstraintMatrix const &            constraint_matrx,
              ConvectiveOperatorData<dim> const & operator_data_in,
-             unsigned int           level_mg_handler = numbers::invalid_unsigned_int);
+             unsigned int                        level_mg_handler = numbers::invalid_unsigned_int);
 
   /*
-   *  This function calculates the numerical flux for interior faces
-   *  using the central flux.
+   * This function calculates the numerical flux using the central flux.
    */
   inline DEAL_II_ALWAYS_INLINE //
     VectorizedArray<value_type>
@@ -77,8 +78,7 @@ public:
                            VectorizedArray<value_type> & normal_velocity) const;
 
   /*
-   *  This function calculates the numerical flux for interior faces
-   *  using the Lax-Friedrichs flux.
+   * This function calculates the numerical flux using the Lax-Friedrichs flux.
    */
   inline DEAL_II_ALWAYS_INLINE //
     VectorizedArray<value_type>
@@ -87,8 +87,8 @@ public:
                                   VectorizedArray<value_type> & normal_velocity) const;
 
   /*
-   *  This function calculates the numerical flux for interior faces where
-   *  the type of the numerical flux depends on the specified input parameter.
+   * This function calculates the numerical flux where the type of the numerical flux depends on the
+   * specified input parameter.
    */
   inline DEAL_II_ALWAYS_INLINE //
     VectorizedArray<value_type>
@@ -110,7 +110,7 @@ public:
                              FEEvalFace const &                  fe_eval_m,
                              OperatorType const &                operator_type,
                              BoundaryType const &                boundary_type,
-                             types::boundary_id const            boundary_id = types::boundary_id()) const;
+                             types::boundary_id const boundary_id = types::boundary_id()) const;
 
   void
   do_cell_integral(FEEvalCell & fe_eval) const;

@@ -7,10 +7,11 @@ namespace ConvDiff
 {
 template<int dim, int fe_degree, typename value_type>
 void
-DiffusiveOperator<dim, fe_degree, value_type>::initialize(Mapping<dim> const &                mapping,
-                                                          MatrixFree<dim, value_type> const & mf_data,
-                                                          DiffusiveOperatorData<dim> const & operator_data_in,
-                                                          unsigned int level_mg_handler)
+DiffusiveOperator<dim, fe_degree, value_type>::initialize(
+  Mapping<dim> const &                mapping,
+  MatrixFree<dim, value_type> const & mf_data,
+  DiffusiveOperatorData<dim> const &  operator_data_in,
+  unsigned int                        level_mg_handler)
 {
   ConstraintMatrix constraint_matrix;
   Parent::reinit(mf_data, constraint_matrix, operator_data_in, level_mg_handler);
@@ -24,11 +25,12 @@ DiffusiveOperator<dim, fe_degree, value_type>::initialize(Mapping<dim> const &  
 }
 template<int dim, int fe_degree, typename value_type>
 void
-DiffusiveOperator<dim, fe_degree, value_type>::initialize(Mapping<dim> const &                mapping,
-                                                          MatrixFree<dim, value_type> const & mf_data,
-                                                          ConstraintMatrix const& constraint_matrix,
-                                                          DiffusiveOperatorData<dim> const & operator_data_in,
-                                                          unsigned int level_mg_handler)
+DiffusiveOperator<dim, fe_degree, value_type>::initialize(
+  Mapping<dim> const &                mapping,
+  MatrixFree<dim, value_type> const & mf_data,
+  ConstraintMatrix const &            constraint_matrix,
+  DiffusiveOperatorData<dim> const &  operator_data_in,
+  unsigned int                        level_mg_handler)
 {
   Parent::reinit(mf_data, constraint_matrix, operator_data_in, level_mg_handler);
 
@@ -42,7 +44,8 @@ DiffusiveOperator<dim, fe_degree, value_type>::initialize(Mapping<dim> const &  
 
 template<int dim, int fe_degree, typename value_type>
 void
-DiffusiveOperator<dim, fe_degree, value_type>::apply_add(VectorType & dst, VectorType const & src) const
+DiffusiveOperator<dim, fe_degree, value_type>::apply_add(VectorType &       dst,
+                                                         VectorType const & src) const
 {
   AssertThrow(diffusivity > 0.0, ExcMessage("Diffusivity is not set!"));
   Parent::apply_add(dst, src);
@@ -50,13 +53,14 @@ DiffusiveOperator<dim, fe_degree, value_type>::apply_add(VectorType & dst, Vecto
 
 template<int dim, int fe_degree, typename value_type>
 void
-DiffusiveOperator<dim, fe_degree, value_type>::apply_add(VectorType &       /*dst*/,
+DiffusiveOperator<dim, fe_degree, value_type>::apply_add(VectorType & /*dst*/,
                                                          VectorType const & /*src*/,
-                                                         value_type const   /*time*/) const
+                                                         value_type const /*time*/) const
 {
-  // This function has to be overwritten explicitly else the compiler 
+  // This function has to be overwritten explicitly. Otherwise the compiler
   // complains that this function of the base class is hidden by the other apply_add
-  AssertThrow(false, ExcMessage("DiffusiveOperator cannot be called with time!"));
+  AssertThrow(false,
+              ExcMessage("DiffusiveOperator cannot be called with additional parameter time!"));
 }
 
 template<int dim, int fe_degree, typename value_type>
@@ -306,14 +310,16 @@ DiffusiveOperator<dim, fe_degree, value_type>::do_face_integral(FEEvalFace & fe_
     fe_eval_neighbor.submit_normal_gradient(value_flux, q);
 
     fe_eval.submit_value(-gradient_flux, q);
-    fe_eval_neighbor.submit_value(gradient_flux, q); // + sign since n⁺ = -n⁻
+    // + sign since n⁺ = -n⁻
+    fe_eval_neighbor.submit_value(gradient_flux, q);
   }
 }
 
 template<int dim, int fe_degree, typename value_type>
 void
-DiffusiveOperator<dim, fe_degree, value_type>::do_face_int_integral(FEEvalFace & fe_eval,
-                                                                    FEEvalFace & fe_eval_neighbor) const
+DiffusiveOperator<dim, fe_degree, value_type>::do_face_int_integral(
+  FEEvalFace & fe_eval,
+  FEEvalFace & fe_eval_neighbor) const
 {
   VectorizedArray<value_type> tau_IP =
     std::max(fe_eval.read_cell_data(array_penalty_parameter),
@@ -339,8 +345,9 @@ DiffusiveOperator<dim, fe_degree, value_type>::do_face_int_integral(FEEvalFace &
 
 template<int dim, int fe_degree, typename value_type>
 void
-DiffusiveOperator<dim, fe_degree, value_type>::do_face_ext_integral(FEEvalFace & fe_eval,
-                                                                    FEEvalFace & fe_eval_neighbor) const
+DiffusiveOperator<dim, fe_degree, value_type>::do_face_ext_integral(
+  FEEvalFace & fe_eval,
+  FEEvalFace & fe_eval_neighbor) const
 {
   VectorizedArray<value_type> tau_IP =
     std::max(fe_eval.read_cell_data(array_penalty_parameter),
@@ -360,8 +367,8 @@ DiffusiveOperator<dim, fe_degree, value_type>::do_face_ext_integral(FEEvalFace &
     VectorizedArray<value_type> gradient_flux =
       calculate_gradient_flux(normal_gradient_m, normal_gradient_p, jump_value, tau_IP);
 
-    fe_eval_neighbor.submit_normal_gradient(-value_flux,
-                                            q); // minus sign since n⁺ = -n⁻
+    // minus sign since n⁺ = -n⁻
+    fe_eval_neighbor.submit_normal_gradient(-value_flux, q);
     fe_eval_neighbor.submit_value(-gradient_flux, q);
   }
 }

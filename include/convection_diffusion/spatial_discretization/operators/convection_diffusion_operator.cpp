@@ -6,6 +6,7 @@ namespace ConvDiff
 {
 template<int dim, int fe_degree, typename Number>
 ConvectionDiffusionOperator<dim, fe_degree, Number>::ConvectionDiffusionOperator()
+  : scaling_factor_time_derivative_term(-1.0)
 {
 }
 
@@ -23,18 +24,20 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::initialize(
   this->mass_matrix_operator.reinit(mass_matrix_operator_in);
   this->convective_operator.reinit(convective_operator_in);
   this->diffusive_operator.reinit(diffusive_operator_in);
-  
+
   // mass matrix term: set scaling factor time derivative term
-  this->scaling_factor_time_derivative_term = this->operator_settings.scaling_factor_time_derivative_term;
+  this->scaling_factor_time_derivative_term =
+    this->operator_settings.scaling_factor_time_derivative_term;
 }
 
 template<int dim, int fe_degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(const DoFHandler<dim> &   dof_handler,
-                                                            const Mapping<dim> &      mapping,
-                                                            void *                    operator_data_in,
-                                                            const MGConstrainedDoFs & mg_constrained_dofs,
-                                                            const unsigned int        level)
+ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(
+  const DoFHandler<dim> &   dof_handler,
+  const Mapping<dim> &      mapping,
+  void *                    operator_data_in,
+  const MGConstrainedDoFs & mg_constrained_dofs,
+  const unsigned int        level)
 {
   Parent::reinit(dof_handler, mapping, operator_data_in, mg_constrained_dofs, level);
 
@@ -48,7 +51,10 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(const DoFHandler<dim
     auto & op_data     = this->operator_settings.mass_matrix_operator_data;
     op_data.dof_index  = 0;
     op_data.quad_index = 0;
-    mass_matrix_operator.own().initialize(this->get_data(), this->get_constraint_matrix(), op_data, level);
+    mass_matrix_operator.own().initialize(this->get_data(),
+                                          this->get_constraint_matrix(),
+                                          op_data,
+                                          level);
   }
 
   // setup own convective operator
@@ -56,7 +62,10 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(const DoFHandler<dim
     auto & op_data     = this->operator_settings.convective_operator_data;
     op_data.dof_index  = 0;
     op_data.quad_index = 0;
-    convective_operator.own().initialize(this->get_data(), this->get_constraint_matrix(), op_data, level);
+    convective_operator.own().initialize(this->get_data(),
+                                         this->get_constraint_matrix(),
+                                         op_data,
+                                         level);
   }
 
   // setup own viscous operator
@@ -64,7 +73,8 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(const DoFHandler<dim
     auto & op_data     = this->operator_settings.diffusive_operator_data;
     op_data.dof_index  = 0;
     op_data.quad_index = 0;
-    diffusive_operator.own().initialize(mapping, this->get_data(), this->get_constraint_matrix(), op_data, level);
+    diffusive_operator.own().initialize(
+      mapping, this->get_data(), this->get_constraint_matrix(), op_data, level);
   }
 
   // When solving the reaction-convection-diffusion equations, it might be possible
@@ -82,7 +92,8 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(const DoFHandler<dim
       false; // deactivate convective term for multigrid preconditioner
     this->operator_settings.diffusive_problem = true;
   }
-  else if(this->operator_settings.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
+  else if(this->operator_settings.mg_operator_type ==
+          MultigridOperatorType::ReactionConvectionDiffusion)
   {
     this->operator_settings.convective_problem = true;
     this->operator_settings.diffusive_problem  = true;
@@ -95,7 +106,8 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(const DoFHandler<dim
   // Initialize other variables:
 
   // mass matrix term: set scaling factor time derivative term
-  this->scaling_factor_time_derivative_term = this->operator_settings.scaling_factor_time_derivative_term;
+  this->scaling_factor_time_derivative_term =
+    this->operator_settings.scaling_factor_time_derivative_term;
 
   // convective term: evaluation_time
   // This variables is not set here. If the convective term
@@ -211,7 +223,8 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::vmult_add(
 template<int dim, int fe_degree, typename Number>
 void
 ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_system_matrix(
-  SparseMatrix & system_matrix, Number const time) const
+  SparseMatrix & system_matrix,
+  Number const   time) const
 {
   Parent::calculate_system_matrix(system_matrix, time);
 }
@@ -221,10 +234,9 @@ void
 ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_system_matrix(
   SparseMatrix & system_matrix) const
 {
-  
   // clear content of matrix since the next calculate_system_matrix-commands add their result
-  system_matrix*=0.0;
-    
+  system_matrix *= 0.0;
+
   if(this->operator_settings.unsteady_problem == true)
   {
     AssertThrow(
@@ -285,19 +297,20 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_diagonal(
 
 template<int dim, int fe_degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_diagonal_matrices(BlockMatrix & matrices,
-                                                                               Number const time) const
+ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_diagonal_matrices(
+  BlockMatrix & matrices,
+  Number const  time) const
 {
   Parent::add_block_diagonal_matrices(matrices, time);
 }
 
 template<int dim, int fe_degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_diagonal_matrices(BlockMatrix & matrices) const
+ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_diagonal_matrices(
+  BlockMatrix & matrices) const
 {
-   
   Number const time = this->get_evaluation_time();
-    
+
   // calculate block Jacobi matrices
   if(this->operator_settings.unsteady_problem == true)
   {
@@ -306,7 +319,8 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_diagonal_matrices
 
     mass_matrix_operator->add_block_diagonal_matrices(matrices);
 
-    for(typename std::vector<LAPACKFullMatrix<Number>>::iterator it = matrices.begin(); it != matrices.end();
+    for(typename std::vector<LAPACKFullMatrix<Number>>::iterator it = matrices.begin();
+        it != matrices.end();
         ++it)
     {
       (*it) *= this->operator_settings.scaling_factor_time_derivative_term;
@@ -391,7 +405,8 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::get_new(unsigned int deg) c
       return new ConvectionDiffusionOperator<dim, 15, Number>();
 #endif
     default:
-      AssertThrow(false, ExcMessage("ConvectionDiffusionOperator not implemented for this degree!"));
+      AssertThrow(false,
+                  ExcMessage("ConvectionDiffusionOperator not implemented for this degree!"));
       return nullptr;
   }
 }

@@ -22,13 +22,14 @@ struct ConvectionDiffusionOperatorData
       unsteady_problem(true),
       convective_problem(true),
       diffusive_problem(true),
-      mg_operator_type(MultigridOperatorType::Undefined),
-      scaling_factor_time_derivative_term(-1.0)
+      scaling_factor_time_derivative_term(-1.0),
+      mg_operator_type(MultigridOperatorType::Undefined)
   {
   }
-  
+
   void
-  update_mapping_update_flags(){
+  update_mapping_update_flags()
+  {
     if(unsteady_problem)
       this->append_mapping_update_flags(mass_matrix_operator_data);
     if(convective_problem)
@@ -37,16 +38,17 @@ struct ConvectionDiffusionOperatorData
       this->append_mapping_update_flags(diffusive_operator_data);
   }
 
-  bool                  unsteady_problem;
-  bool                  convective_problem;
-  bool                  diffusive_problem;
-  MultigridOperatorType mg_operator_type;
+  bool unsteady_problem;
+  bool convective_problem;
+  bool diffusive_problem;
 
   double scaling_factor_time_derivative_term;
 
   MassMatrixOperatorData<dim> mass_matrix_operator_data;
   ConvectiveOperatorData<dim> convective_operator_data;
   DiffusiveOperatorData<dim>  diffusive_operator_data;
+
+  MultigridOperatorType mg_operator_type;
 };
 
 template<int dim, int fe_degree, typename Number = double>
@@ -55,15 +57,19 @@ class ConvectionDiffusionOperator
 {
 public:
   // TODO: Issue#2
-  typedef Number                                                                         value_type;
-  typedef ConvectionDiffusionOperator<dim, fe_degree, Number>                            This;
-  static const int                                                                       DIM = dim;
+  static const int DIM = dim;
+  typedef Number   value_type;
+
+  typedef ConvectionDiffusionOperator<dim, fe_degree, Number> This;
+
   typedef OperatorBase<dim, fe_degree, value_type, ConvectionDiffusionOperatorData<dim>> Parent;
-  typedef typename Parent::FEEvalCell                                                    FEEvalCell;
-  typedef typename Parent::FEEvalFace                                                    FEEvalFace;
-  typedef typename Parent::BlockMatrix                                                   BlockMatrix;
+
+  typedef typename Parent::FEEvalCell FEEvalCell;
+  typedef typename Parent::FEEvalFace FEEvalFace;
+
+  typedef typename Parent::BlockMatrix BlockMatrix;
 #ifdef DEAL_II_WITH_TRILINOS
-  typedef typename Parent::SparseMatrix                                                  SparseMatrix;
+  typedef typename Parent::SparseMatrix SparseMatrix;
 #endif
 
   typedef MassMatrixOperator<dim, fe_degree, Number> MassMatrixOp;
@@ -115,16 +121,17 @@ public:
 
   // Apply matrix-vector multiplication.
   void
-  vmult(parallel::distributed::Vector<Number> & dst, parallel::distributed::Vector<Number> const & src) const;
+  vmult(parallel::distributed::Vector<Number> &       dst,
+        parallel::distributed::Vector<Number> const & src) const;
 
   void
   vmult_add(parallel::distributed::Vector<Number> &       dst,
             parallel::distributed::Vector<Number> const & src) const;
-  
+
 #ifdef DEAL_II_WITH_TRILINOS
   virtual void
   calculate_system_matrix(SparseMatrix & system_matrix, Number const time) const;
-  
+
   virtual void
   calculate_system_matrix(SparseMatrix & system_matrix) const;
 #endif
