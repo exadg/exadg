@@ -6,16 +6,15 @@
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_
 #define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_
 
-#include "../include/functionalities/print_functions.h"
-#include "postprocessor/error_calculation_data.h"
-#include "postprocessor/output_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/lift_and_drag_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/pressure_difference_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/turbulent_channel_data.h"
+#include "../include/functionalities/print_functions.h"
+#include "postprocessor/error_calculation_data.h"
+#include "postprocessor/output_data.h"
 
 namespace CompNS
 {
-
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 MATHEMATICAL MODEL                                 */
@@ -138,25 +137,26 @@ enum class TimeStepCalculation
 struct OutputDataCompNavierStokes : public OutputData
 {
   OutputDataCompNavierStokes()
-    :
-    write_velocity(false),
-    write_pressure(false),
-    write_temperature(false),
-    write_vorticity(false),
-    write_divergence(false),
-    write_processor_id(false)
-  {}
-
-  void print(ConditionalOStream &pcout, bool unsteady)
+    : write_velocity(false),
+      write_pressure(false),
+      write_temperature(false),
+      write_vorticity(false),
+      write_divergence(false),
+      write_processor_id(false)
   {
-    OutputData::print(pcout,unsteady);
+  }
 
-    print_parameter(pcout,"Write velocity", write_velocity);
-    print_parameter(pcout,"Write pressure", write_pressure);
-    print_parameter(pcout,"Write temperature", write_temperature);
-    print_parameter(pcout,"Write vorticity", write_vorticity);
-    print_parameter(pcout,"Write divergence", write_divergence);
-    print_parameter(pcout,"Write processor ID", write_processor_id);
+  void
+  print(ConditionalOStream & pcout, bool unsteady)
+  {
+    OutputData::print(pcout, unsteady);
+
+    print_parameter(pcout, "Write velocity", write_velocity);
+    print_parameter(pcout, "Write pressure", write_pressure);
+    print_parameter(pcout, "Write temperature", write_temperature);
+    print_parameter(pcout, "Write vorticity", write_vorticity);
+    print_parameter(pcout, "Write divergence", write_divergence);
+    print_parameter(pcout, "Write processor ID", write_processor_id);
   }
 
   // write velocity
@@ -185,77 +185,77 @@ class InputParameters
 public:
   // standard constructor that initializes parameters with default values
   InputParameters()
-    :
-  // MATHEMATICAL MODEL
-  problem_type(ProblemType::Undefined),
-  equation_type(EquationType::Undefined),
-  right_hand_side(false),
+    : // MATHEMATICAL MODEL
+      problem_type(ProblemType::Undefined),
+      equation_type(EquationType::Undefined),
+      right_hand_side(false),
 
-  // PHYSICAL QUANTITIES
-  start_time(0.),
-  end_time(-1.),
-  dynamic_viscosity(0.),
-  reference_density(1.0),
-	heat_capacity_ratio(1.4),
-	thermal_conductivity(0.0262),
-	specific_gas_constant(287.058),
-	max_temperature(273.15),
+      // PHYSICAL QUANTITIES
+      start_time(0.),
+      end_time(-1.),
+      dynamic_viscosity(0.),
+      reference_density(1.0),
+      heat_capacity_ratio(1.4),
+      thermal_conductivity(0.0262),
+      specific_gas_constant(287.058),
+      max_temperature(273.15),
 
-  // TEMPORAL DISCRETIZATION
-  temporal_discretization(TemporalDiscretization::Undefined),
-  order_time_integrator(1),
-  stages(1),
-  calculation_of_time_step_size(TimeStepCalculation::Undefined),
-  time_step_size(-1.),
-  max_velocity(-1.),
-  cfl_number(-1.),
-  diffusion_number(-1.),
-  exponent_fe_degree_cfl(2.0),
-	exponent_fe_degree_viscous(4.0),
+      // TEMPORAL DISCRETIZATION
+      temporal_discretization(TemporalDiscretization::Undefined),
+      order_time_integrator(1),
+      stages(1),
+      calculation_of_time_step_size(TimeStepCalculation::Undefined),
+      time_step_size(-1.),
+      max_velocity(-1.),
+      cfl_number(-1.),
+      diffusion_number(-1.),
+      exponent_fe_degree_cfl(2.0),
+      exponent_fe_degree_viscous(4.0),
 
-  // SPATIAL DISCRETIZATION
-  IP_factor(1.0),
+      // SPATIAL DISCRETIZATION
+      IP_factor(1.0),
 
-  // SOLVER
+      // SOLVER
 
-  // NUMERICAL PARAMETERS
-  detect_instabilities(true),
-  use_combined_operator(false),
+      // NUMERICAL PARAMETERS
+      detect_instabilities(true),
+      use_combined_operator(false),
 
-  // OUTPUT AND POSTPROCESSING
-  print_input_parameters(false),
-  calculate_velocity(false),
-  calculate_pressure(false),
+      // OUTPUT AND POSTPROCESSING
+      print_input_parameters(false),
+      calculate_velocity(false),
+      calculate_pressure(false),
 
-	// write output for visualization of results
-	output_data(OutputDataCompNavierStokes()),
+      // write output for visualization of results
+      output_data(OutputDataCompNavierStokes()),
 
-    // calculation of errors
-	error_data(ErrorCalculationData()),
+      // calculation of errors
+      error_data(ErrorCalculationData()),
 
-	output_solver_info_every_timesteps(1),
+      output_solver_info_every_timesteps(1),
 
-	// lift and drag
-	lift_and_drag_data(LiftAndDragData()),
+      // lift and drag
+      lift_and_drag_data(LiftAndDragData()),
 
-	// pressure difference
-	pressure_difference_data(PressureDifferenceData<dim>())
-  {}
+      // pressure difference
+      pressure_difference_data(PressureDifferenceData<dim>())
+  {
+  }
 
   /*
    *  This function is implemented in the header file of the test case
    *  that has to be solved.
    */
-  void set_input_parameters();
+  void
+  set_input_parameters();
 
-  void check_input_parameters()
+  void
+  check_input_parameters()
   {
     // MATHEMATICAL MODEL
-    AssertThrow(problem_type != ProblemType::Undefined,
-                ExcMessage("parameter must be defined"));
+    AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("parameter must be defined"));
 
-    AssertThrow(equation_type != EquationType::Undefined,
-                ExcMessage("parameter must be defined"));
+    AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
 
 
     // PHYSICAL QUANTITIES
@@ -303,18 +303,19 @@ public:
     // OUTPUT AND POSTPROCESSING
     if(lift_and_drag_data.calculate_lift_and_drag == true)
     {
-      AssertThrow(calculate_velocity==true && calculate_pressure ==true,
-          ExcMessage("Invalid parameters. One has to calculate velocity and pressure in order to compute lift and drag forces."));
+      AssertThrow(
+        calculate_velocity == true && calculate_pressure == true,
+        ExcMessage(
+          "Invalid parameters. One has to calculate velocity and pressure in order to compute lift and drag forces."));
     }
-
   }
 
 
 
-  void print(ConditionalOStream &pcout)
+  void
+  print(ConditionalOStream & pcout)
   {
-    pcout << std::endl
-          << "List of input parameters:" << std::endl;
+    pcout << std::endl << "List of input parameters:" << std::endl;
 
     // MATHEMATICAL MODEL
     print_parameters_mathematical_model(pcout);
@@ -332,69 +333,69 @@ public:
     // If a linear system of equations has to be solved:
     // for the current implementation this means
     print_parameters_solver(pcout);
- 
+
     // NUMERICAL PARAMETERS
     print_parameters_numerical_parameters(pcout);
- 
+
     // OUTPUT AND POSTPROCESSING
     print_parameters_output_and_postprocessing(pcout);
   }
 
-  void print_parameters_mathematical_model(ConditionalOStream &pcout)
+  void
+  print_parameters_mathematical_model(ConditionalOStream & pcout)
   {
-     pcout << std::endl
-           << "Mathematical model:" << std::endl;
+    pcout << std::endl << "Mathematical model:" << std::endl;
 
     /*
-     *  The definition of string-arrays in this function is somehow redundant with the 
-     *  enum declarations but I think C++ does not offer a more elaborate conversion 
+     *  The definition of string-arrays in this function is somehow redundant with the
+     *  enum declarations but I think C++ does not offer a more elaborate conversion
      *  from enums to strings
      */
 
-     // equation type
-     std::string str_equation_type[] = {"Undefined", 
-                                        "Convection", 
-                                        "Diffusion",
-                                        "ConvectionDiffusion" };
+    // equation type
+    std::string str_equation_type[] = {"Undefined",
+                                       "Convection",
+                                       "Diffusion",
+                                       "ConvectionDiffusion"};
 
 
     // right hand side
-     print_parameter(pcout,"Right-hand side",right_hand_side);
+    print_parameter(pcout, "Right-hand side", right_hand_side);
   }
-  
-  void print_parameters_physical_quantities(ConditionalOStream &pcout)
+
+  void
+  print_parameters_physical_quantities(ConditionalOStream & pcout)
   {
-    pcout << std::endl
-          << "Physical quantities:" << std::endl;
+    pcout << std::endl << "Physical quantities:" << std::endl;
 
     // start and end time
     if(true /*problem_type == ProblemType::Unsteady*/)
     {
-      print_parameter(pcout,"Start time",start_time);
-      print_parameter(pcout,"End time",end_time);
+      print_parameter(pcout, "Start time", start_time);
+      print_parameter(pcout, "End time", end_time);
     }
-    
-    print_parameter(pcout,"Dynamic viscosity",dynamic_viscosity);
-    print_parameter(pcout,"Reference density",reference_density);
-    print_parameter(pcout,"Heat capacity ratio",heat_capacity_ratio);
-    print_parameter(pcout,"Thermal conductivity",thermal_conductivity);
-    print_parameter(pcout,"Specific gas constant",specific_gas_constant);
-  }  
 
-  void print_parameters_temporal_discretization(ConditionalOStream &pcout)
+    print_parameter(pcout, "Dynamic viscosity", dynamic_viscosity);
+    print_parameter(pcout, "Reference density", reference_density);
+    print_parameter(pcout, "Heat capacity ratio", heat_capacity_ratio);
+    print_parameter(pcout, "Thermal conductivity", thermal_conductivity);
+    print_parameter(pcout, "Specific gas constant", specific_gas_constant);
+  }
+
+  void
+  print_parameters_temporal_discretization(ConditionalOStream & pcout)
   {
-    pcout << std::endl
-          << "Temporal discretization:" << std::endl;
+    pcout << std::endl << "Temporal discretization:" << std::endl;
 
-    std::string str_temp_discret[] = { "Undefined",
-                                       "Classical, explicit Runge-Kutta",
-                                       "ExplRK3Stage4Reg2C",
-                                       "ExplRK3Stage7Reg2",
-                                       "ExplRK4Stage5Reg2C",
-                                       "ExplRK4Stage8Reg2",
-                                       "ExplRK4Stage5Reg3C",
-                                       "ExplRK5Stage9Reg2S",
-                                       "SSPRK" };
+    std::string str_temp_discret[] = {"Undefined",
+                                      "Classical, explicit Runge-Kutta",
+                                      "ExplRK3Stage4Reg2C",
+                                      "ExplRK3Stage7Reg2",
+                                      "ExplRK4Stage5Reg2C",
+                                      "ExplRK4Stage8Reg2",
+                                      "ExplRK4Stage5Reg3C",
+                                      "ExplRK5Stage9Reg2S",
+                                      "SSPRK"};
 
     print_parameter(pcout,
                     "Temporal discretization method",
@@ -402,20 +403,20 @@ public:
 
     if(temporal_discretization == TemporalDiscretization::ExplRK)
     {
-      print_parameter(pcout,"Order of time integrator",order_time_integrator);
+      print_parameter(pcout, "Order of time integrator", order_time_integrator);
     }
 
     if(temporal_discretization == TemporalDiscretization::SSPRK)
     {
-      print_parameter(pcout,"Order of time integrator",order_time_integrator);
-      print_parameter(pcout,"Number of stages",stages);
+      print_parameter(pcout, "Order of time integrator", order_time_integrator);
+      print_parameter(pcout, "Number of stages", stages);
     }
 
-    std::string str_time_step_calc[] = { "Undefined",
-                                         "ConstTimeStepUserSpecified",
-                                         "ConstTimeStepCFL",
-                                         "ConstTimeStepDiffusion",
-                                         "ConstTimeStepCFLAndDiffusion" };
+    std::string str_time_step_calc[] = {"Undefined",
+                                        "ConstTimeStepUserSpecified",
+                                        "ConstTimeStepCFL",
+                                        "ConstTimeStepDiffusion",
+                                        "ConstTimeStepCFLAndDiffusion"};
 
     print_parameter(pcout,
                     "Calculation of time step size",
@@ -423,19 +424,20 @@ public:
 
 
     // here we do not print quantities such as  cfl_number, diffusion_number, time_step_size
-    // because this is done by the time integration scheme (or the functions that 
+    // because this is done by the time integration scheme (or the functions that
     // calculate the time step size)
   }
 
-  void print_parameters_spatial_discretization(ConditionalOStream &pcout)
+  void
+  print_parameters_spatial_discretization(ConditionalOStream & pcout)
   {
-    pcout << std::endl
-          << "Spatial Discretization:" << std::endl;
-   
-    print_parameter(pcout,"IP factor viscous term",IP_factor);
+    pcout << std::endl << "Spatial Discretization:" << std::endl;
+
+    print_parameter(pcout, "IP factor viscous term", IP_factor);
   }
 
-  void print_parameters_solver(ConditionalOStream &/*pcout*/)
+  void
+  print_parameters_solver(ConditionalOStream & /*pcout*/)
   {
     /*
     pcout << std::endl
@@ -444,26 +446,26 @@ public:
   }
 
 
-  void print_parameters_numerical_parameters(ConditionalOStream &pcout)
+  void
+  print_parameters_numerical_parameters(ConditionalOStream & pcout)
   {
-    pcout << std::endl
-          << "Numerical parameters:" << std::endl;
+    pcout << std::endl << "Numerical parameters:" << std::endl;
 
-    print_parameter(pcout,"Detect instabilities",detect_instabilities);
-    print_parameter(pcout,"Use combined operator",use_combined_operator);
+    print_parameter(pcout, "Detect instabilities", detect_instabilities);
+    print_parameter(pcout, "Use combined operator", use_combined_operator);
   }
 
 
-  void print_parameters_output_and_postprocessing(ConditionalOStream &pcout)
+  void
+  print_parameters_output_and_postprocessing(ConditionalOStream & pcout)
   {
-    pcout << std::endl
-          << "Output and postprocessing:" << std::endl;
+    pcout << std::endl << "Output and postprocessing:" << std::endl;
 
-    print_parameter(pcout,"Calculate velocity field",calculate_velocity);
-    print_parameter(pcout,"Calculate pressure field",calculate_pressure);
+    print_parameter(pcout, "Calculate velocity field", calculate_velocity);
+    print_parameter(pcout, "Calculate pressure field", calculate_pressure);
 
-    output_data.print(pcout,problem_type == ProblemType::Unsteady);
-    error_data.print(pcout,problem_type == ProblemType::Unsteady);
+    output_data.print(pcout, problem_type == ProblemType::Unsteady);
+    error_data.print(pcout, problem_type == ProblemType::Unsteady);
 
     // kinetic energy
     kinetic_energy_data.print(pcout);
@@ -475,7 +477,7 @@ public:
     turb_ch_data.print(pcout);
   }
 
- 
+
   /**************************************************************************************/
   /*                                                                                    */
   /*                                 MATHEMATICAL MODEL                                 */
@@ -633,6 +635,6 @@ public:
   TurbulentChannelData turb_ch_data;
 };
 
-}
+} // namespace CompNS
 
 #endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_*/
