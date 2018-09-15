@@ -12,58 +12,65 @@
 
 namespace IncNS
 {
-
-template<int dim,typename Number> class PostProcessorBase;
+template<int dim, typename Number>
+class PostProcessorBase;
 
 template<int dim, typename value_type, typename NavierStokesOperation>
 class DriverSteadyProblems
 {
 public:
-  DriverSteadyProblems(std::shared_ptr<NavierStokesOperation>              navier_stokes_operation_in,
-                       std::shared_ptr<PostProcessorBase<dim,value_type> > postprocessor_in,
-                       InputParameters<dim> const                          &param_in)
-    :
-    navier_stokes_operation(navier_stokes_operation_in),
-    postprocessor(postprocessor_in),
-    param(param_in),
-    total_time(0.0)
-  {}
+  DriverSteadyProblems(std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
+                       std::shared_ptr<PostProcessorBase<dim, value_type>> postprocessor_in,
+                       InputParameters<dim> const &                        param_in)
+    : navier_stokes_operation(navier_stokes_operation_in),
+      postprocessor(postprocessor_in),
+      param(param_in),
+      total_time(0.0)
+  {
+  }
 
-  void setup();
+  void
+  setup();
 
-  void solve_steady_problem();
+  void
+  solve_steady_problem();
 
-  void analyze_computing_times() const;
+  void
+  analyze_computing_times() const;
 
 private:
-  void initialize_vectors();
-  void initialize_solution();
+  void
+  initialize_vectors();
+  void
+  initialize_solution();
 
-  void solve();
-  void postprocessing();
+  void
+  solve();
+  void
+  postprocessing();
 
   std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
-  std::shared_ptr<PostProcessorBase<dim,value_type> > postprocessor;
-  InputParameters<dim> const &param;
+  std::shared_ptr<PostProcessorBase<dim, value_type>> postprocessor;
+  InputParameters<dim> const &                        param;
 
-  Timer global_timer;
+  Timer      global_timer;
   value_type total_time;
 
   parallel::distributed::BlockVector<value_type> solution;
   parallel::distributed::BlockVector<value_type> rhs_vector;
-  parallel::distributed::Vector<value_type> vorticity;
-  parallel::distributed::Vector<value_type> divergence;
-  parallel::distributed::Vector<value_type> velocity_magnitude;
-  parallel::distributed::Vector<value_type> vorticity_magnitude;
-  parallel::distributed::Vector<value_type> q_criterion;
+  parallel::distributed::Vector<value_type>      vorticity;
+  parallel::distributed::Vector<value_type>      divergence;
+  parallel::distributed::Vector<value_type>      velocity_magnitude;
+  parallel::distributed::Vector<value_type>      vorticity_magnitude;
+  parallel::distributed::Vector<value_type>      q_criterion;
 
-  std::vector<SolutionField<dim,value_type> > additional_fields;
+  std::vector<SolutionField<dim, value_type>> additional_fields;
 };
 
 template<int dim, typename value_type, typename NavierStokesOperation>
-void DriverSteadyProblems<dim, value_type, NavierStokesOperation>::
-setup()
+void
+DriverSteadyProblems<dim, value_type, NavierStokesOperation>::setup()
 {
   // initialize global solution vectors (allocation)
   initialize_vectors();
@@ -74,8 +81,8 @@ setup()
 }
 
 template<int dim, typename value_type, typename NavierStokesOperation>
-void DriverSteadyProblems<dim, value_type, NavierStokesOperation>::
-initialize_vectors()
+void
+DriverSteadyProblems<dim, value_type, NavierStokesOperation>::initialize_vectors()
 {
   // solution
   navier_stokes_operation->initialize_block_vector_velocity_pressure(solution);
@@ -92,10 +99,10 @@ initialize_vectors()
   {
     navier_stokes_operation->initialize_vector_velocity_scalar(divergence);
 
-    SolutionField<dim,value_type> div;
-    div.name = "div_u";
+    SolutionField<dim, value_type> div;
+    div.name        = "div_u";
     div.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
-    div.vector = &divergence;
+    div.vector      = &divergence;
     this->additional_fields.push_back(div);
   }
 
@@ -104,10 +111,10 @@ initialize_vectors()
   {
     navier_stokes_operation->initialize_vector_velocity_scalar(this->velocity_magnitude);
 
-    SolutionField<dim,value_type> sol;
-    sol.name = "velocity_magnitude";
+    SolutionField<dim, value_type> sol;
+    sol.name        = "velocity_magnitude";
     sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
-    sol.vector = &velocity_magnitude;
+    sol.vector      = &velocity_magnitude;
     this->additional_fields.push_back(sol);
   }
 
@@ -116,10 +123,10 @@ initialize_vectors()
   {
     navier_stokes_operation->initialize_vector_velocity_scalar(this->vorticity_magnitude);
 
-    SolutionField<dim,value_type> sol;
-    sol.name = "vorticity_magnitude";
+    SolutionField<dim, value_type> sol;
+    sol.name        = "vorticity_magnitude";
     sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
-    sol.vector = &vorticity_magnitude;
+    sol.vector      = &vorticity_magnitude;
     this->additional_fields.push_back(sol);
   }
 
@@ -128,26 +135,26 @@ initialize_vectors()
   {
     navier_stokes_operation->initialize_vector_velocity_scalar(this->q_criterion);
 
-    SolutionField<dim,value_type> sol;
-    sol.name = "q_criterion";
+    SolutionField<dim, value_type> sol;
+    sol.name        = "q_criterion";
     sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
-    sol.vector = &q_criterion;
+    sol.vector      = &q_criterion;
     this->additional_fields.push_back(sol);
   }
 }
 
 template<int dim, typename value_type, typename NavierStokesOperation>
-void DriverSteadyProblems<dim, value_type, NavierStokesOperation>::
-initialize_solution()
+void
+DriverSteadyProblems<dim, value_type, NavierStokesOperation>::initialize_solution()
 {
   double time = 0.0;
-  navier_stokes_operation->prescribe_initial_conditions(solution.block(0),solution.block(1),time);
+  navier_stokes_operation->prescribe_initial_conditions(solution.block(0), solution.block(1), time);
 }
 
 
 template<int dim, typename value_type, typename NavierStokesOperation>
-void DriverSteadyProblems<dim, value_type, NavierStokesOperation>::
-solve()
+void
+DriverSteadyProblems<dim, value_type, NavierStokesOperation>::solve()
 {
   Timer timer;
   timer.restart();
@@ -160,8 +167,7 @@ solve()
   // instead of applying these terms in a postprocessing step.
   if(this->param.add_penalty_terms_to_monolithic_system == true)
   {
-    if(this->param.use_divergence_penalty == true ||
-       this->param.use_continuity_penalty == true)
+    if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
     {
       if(this->param.use_divergence_penalty == true)
       {
@@ -181,14 +187,16 @@ solve()
     navier_stokes_operation->rhs_stokes_problem(rhs_vector);
 
     // solve coupled system of equations
-    unsigned int iterations = navier_stokes_operation->solve_linear_stokes_problem(solution,rhs_vector);
+    unsigned int iterations =
+      navier_stokes_operation->solve_linear_stokes_problem(solution, rhs_vector);
     // write output
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
-      std::cout << std:: endl
+      std::cout << std::endl
                 << "Solve linear Stokes problem:" << std::endl
                 << "  Iterations:   " << std::setw(12) << std::right << iterations << std::endl
-                << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(4) << timer.wall_time() << std::endl;
+                << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(4)
+                << timer.wall_time() << std::endl;
     }
   }
   else // Steady Navier-Stokes equations
@@ -196,17 +204,24 @@ solve()
     // Newton solver
     unsigned int newton_iterations;
     unsigned int linear_iterations;
-    navier_stokes_operation->solve_nonlinear_steady_problem(solution,newton_iterations,linear_iterations);
+    navier_stokes_operation->solve_nonlinear_steady_problem(solution,
+                                                            newton_iterations,
+                                                            linear_iterations);
 
     // write output
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
       std::cout << std::endl
                 << "Solve nonlinear Navier-Stokes problem:" << std::endl
-                << "  Newton iterations:      " << std::setw(12) << std::right << newton_iterations << std::endl
-                << "  Linear iterations (avg):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << double(linear_iterations)/double(newton_iterations) << std::endl
-                << "  Linear iterations (tot):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << linear_iterations << std::endl
-                << "  Wall time [s]:          " << std::setw(12) << std::scientific << std::setprecision(4) << timer.wall_time() << std::endl;
+                << "  Newton iterations:      " << std::setw(12) << std::right << newton_iterations
+                << std::endl
+                << "  Linear iterations (avg):" << std::setw(12) << std::scientific
+                << std::setprecision(4) << std::right
+                << double(linear_iterations) / double(newton_iterations) << std::endl
+                << "  Linear iterations (tot):" << std::setw(12) << std::scientific
+                << std::setprecision(4) << std::right << linear_iterations << std::endl
+                << "  Wall time [s]:          " << std::setw(12) << std::scientific
+                << std::setprecision(4) << timer.wall_time() << std::endl;
     }
   }
 
@@ -224,8 +239,8 @@ solve()
 }
 
 template<int dim, typename value_type, typename NavierStokesOperation>
-void DriverSteadyProblems<dim, value_type, NavierStokesOperation>::
-solve_steady_problem()
+void
+DriverSteadyProblems<dim, value_type, NavierStokesOperation>::solve_steady_problem()
 {
   global_timer.restart();
 
@@ -241,11 +256,11 @@ solve_steady_problem()
 }
 
 template<int dim, typename value_type, typename NavierStokesOperation>
-void DriverSteadyProblems<dim, value_type, NavierStokesOperation>::
-postprocessing()
+void
+DriverSteadyProblems<dim, value_type, NavierStokesOperation>::postprocessing()
 {
   // calculate vorticity
-  navier_stokes_operation->compute_vorticity(vorticity,solution.block(0));
+  navier_stokes_operation->compute_vorticity(vorticity, solution.block(0));
 
   // calculate divergence
   if(this->param.output_data.write_divergence == true)
@@ -279,25 +294,29 @@ postprocessing()
 }
 
 template<int dim, typename value_type, typename NavierStokesOperation>
-void DriverSteadyProblems<dim, value_type, NavierStokesOperation>::
-analyze_computing_times() const
+void
+DriverSteadyProblems<dim, value_type, NavierStokesOperation>::analyze_computing_times() const
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl
-        << "_________________________________________________________________________________" << std::endl << std::endl
-        << "Computing times:          min        avg        max        rel      p_min  p_max " << std::endl;
+        << "_________________________________________________________________________________"
+        << std::endl
+        << std::endl
+        << "Computing times:          min        avg        max        rel      p_min  p_max "
+        << std::endl;
 
-  Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg (this->total_time, MPI_COMM_WORLD);
-  pcout << "  Global time:         " << std::scientific
-        << std::setprecision(4) << std::setw(10) << data.min << " "
-        << std::setprecision(4) << std::setw(10) << data.avg << " "
+  Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(this->total_time, MPI_COMM_WORLD);
+  pcout << "  Global time:         " << std::scientific << std::setprecision(4) << std::setw(10)
+        << data.min << " " << std::setprecision(4) << std::setw(10) << data.avg << " "
         << std::setprecision(4) << std::setw(10) << data.max << " "
-        << "          " << "  "
-        << std::setw(6) << std::left << data.min_index << " "
-        << std::setw(6) << std::left << data.max_index << std::endl
-        << "_________________________________________________________________________________" << std::endl << std::endl;
+        << "          "
+        << "  " << std::setw(6) << std::left << data.min_index << " " << std::setw(6) << std::left
+        << data.max_index << std::endl
+        << "_________________________________________________________________________________"
+        << std::endl
+        << std::endl;
 }
 
-}
+} // namespace IncNS
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_DRIVER_STEADY_PROBLEMS_H_ */

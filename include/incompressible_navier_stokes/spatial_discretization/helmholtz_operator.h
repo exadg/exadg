@@ -19,50 +19,63 @@
 
 namespace IncNS
 {
-
 template<int dim>
 struct HelmholtzOperatorData
 {
-  HelmholtzOperatorData ()
-    :
-    unsteady_problem(true),
-    dof_index(0),
-    scaling_factor_time_derivative_term(-1.0)
-  {}
+  HelmholtzOperatorData()
+    : unsteady_problem(true), dof_index(0), scaling_factor_time_derivative_term(-1.0)
+  {
+  }
 
   bool unsteady_problem;
 
   unsigned int dof_index;
-  
+
   double scaling_factor_time_derivative_term;
-  MassMatrixOperatorData mass_matrix_operator_data;
+
+  MassMatrixOperatorData   mass_matrix_operator_data;
   ViscousOperatorData<dim> viscous_operator_data;
 };
 
-template <int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number = double>
+template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number = double>
 class HelmholtzOperator : public MultigridOperatorBase<dim, Number>
 {
 public:
   static const int DIM = dim;
-  typedef Number value_type;
-    
-  static const bool is_xwall = (xwall_quad_rule>1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear = (is_xwall) ? xwall_quad_rule : fe_degree+1;
-  typedef FEEvaluationWrapper<dim,fe_degree,fe_degree_xwall,n_actual_q_points_vel_linear,
-                              dim,value_type,is_xwall> FEEval_Velocity_Velocity_linear;
+  typedef Number   value_type;
 
-  typedef HelmholtzOperator<dim,fe_degree,fe_degree_xwall,xwall_quad_rule,Number> This;
+  static const bool         is_xwall = (xwall_quad_rule > 1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear =
+    (is_xwall) ? xwall_quad_rule : fe_degree + 1;
+  typedef FEEvaluationWrapper<dim,
+                              fe_degree,
+                              fe_degree_xwall,
+                              n_actual_q_points_vel_linear,
+                              dim,
+                              value_type,
+                              is_xwall>
+    FEEval_Velocity_Velocity_linear;
+
+  typedef HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> This;
 
   HelmholtzOperator();
 
-  //TODO
-  double get_wall_time() const;
+  virtual ~HelmholtzOperator()
+  {
+  }
+
+  // TODO
+  double
+  get_wall_time() const;
 
 
-  void initialize(MatrixFree<dim,Number> const                                                        &mf_data_in,
-                  HelmholtzOperatorData<dim> const                                                    &operator_data_in,
-                  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const &mass_matrix_operator_in,
-                  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const     &viscous_operator_in);
+  void
+  initialize(MatrixFree<dim, Number> const &    mf_data_in,
+             HelmholtzOperatorData<dim> const & operator_data_in,
+             MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const &
+               mass_matrix_operator_in,
+             ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const &
+               viscous_operator_in);
 
   /*
    *  This function is called by the multigrid algorithm to initialize the
@@ -71,76 +84,93 @@ public:
    *  the setup, i.e., the information that is needed to call the
    *  member function initialize(...).
    */
-  void reinit (const DoFHandler<dim>                            &dof_handler,
-               const Mapping<dim>                                &mapping,
-               void * operator_data_in,
-               const MGConstrainedDoFs & mg_constrained_dofs ,
-               const unsigned int level);
+  void
+  reinit(const DoFHandler<dim> &   dof_handler,
+         const Mapping<dim> &      mapping,
+         void *                    operator_data_in,
+         const MGConstrainedDoFs & mg_constrained_dofs,
+         const unsigned int        level);
 
   /*
    *  Scaling factor of time derivative term (mass matrix term)
    */
-  void set_scaling_factor_time_derivative_term(double const &factor);
+  void
+  set_scaling_factor_time_derivative_term(double const & factor);
 
-  double get_scaling_factor_time_derivative_term() const;
+  double
+  get_scaling_factor_time_derivative_term() const;
 
   /*
    *  Operator data
    */
-  HelmholtzOperatorData<dim> const & get_operator_data() const;
+  HelmholtzOperatorData<dim> const &
+  get_operator_data() const;
 
   /*
    *  Operator data of basic operators: mass matrix, viscous operator
    */
-  MassMatrixOperatorData const & get_mass_matrix_operator_data() const;
+  MassMatrixOperatorData const &
+  get_mass_matrix_operator_data() const;
 
-  ViscousOperatorData<dim> const & get_viscous_operator_data() const;
+  ViscousOperatorData<dim> const &
+  get_viscous_operator_data() const;
 
   /*
    *  Other function needed in order to apply geometric multigrid to this operator
    */
-  void vmult_interface_down(parallel::distributed::Vector<Number>       &dst,
-                            const parallel::distributed::Vector<Number> &src) const;
+  void
+  vmult_interface_down(parallel::distributed::Vector<Number> &       dst,
+                       const parallel::distributed::Vector<Number> & src) const;
 
-  void vmult_add_interface_up(parallel::distributed::Vector<Number>       &dst,
-                              const parallel::distributed::Vector<Number> &src) const;
+  void
+  vmult_add_interface_up(parallel::distributed::Vector<Number> &       dst,
+                         const parallel::distributed::Vector<Number> & src) const;
 
-  types::global_dof_index m() const;
+  types::global_dof_index
+  m() const;
 
-  Number el (const unsigned int,  const unsigned int) const;
+  Number
+  el(const unsigned int, const unsigned int) const;
 
-  MatrixFree<dim,value_type> const & get_data() const;
+  MatrixFree<dim, value_type> const &
+  get_data() const;
 
   /*
    *  This function applies the matrix vector multiplication.
    */
-  void vmult (parallel::distributed::Vector<Number>       &dst,
-              const parallel::distributed::Vector<Number> &src) const;
+  void
+  vmult(parallel::distributed::Vector<Number> &       dst,
+        const parallel::distributed::Vector<Number> & src) const;
 
   /*
    *  This function applies the matrix-vector product and adds the result
    *  to the dst-vector.
    */
-  void vmult_add(parallel::distributed::Vector<Number>       &dst,
-                 const parallel::distributed::Vector<Number> &src) const;
+  void
+  vmult_add(parallel::distributed::Vector<Number> &       dst,
+            const parallel::distributed::Vector<Number> & src) const;
 
-  unsigned int get_dof_index() const;
+  unsigned int
+  get_dof_index() const;
 
   /*
    *  This function initializes a global dof-vector.
    */
-  void initialize_dof_vector(parallel::distributed::Vector<Number> &vector) const;
+  void
+  initialize_dof_vector(parallel::distributed::Vector<Number> & vector) const;
 
   /*
    *  Calculation of inverse diagonal (needed for smoothers and preconditioners)
    */
-  void calculate_inverse_diagonal(parallel::distributed::Vector<Number> &diagonal) const;
+  void
+  calculate_inverse_diagonal(parallel::distributed::Vector<Number> & diagonal) const;
 
   /*
    *  Apply block Jacobi preconditioner.
    */
-  void apply_inverse_block_diagonal (parallel::distributed::Vector<Number>       &dst,
-                           parallel::distributed::Vector<Number> const &src) const;
+  void
+  apply_inverse_block_diagonal(parallel::distributed::Vector<Number> &       dst,
+                               parallel::distributed::Vector<Number> const & src) const;
 
   /*
    *  This function updates the block Jacobi preconditioner.
@@ -148,69 +178,86 @@ public:
    *  make sure that the block Jacobi matrices are allocated before calculating
    *  the matrices and the LU factorization.
    */
-  void update_inverse_block_diagonal () const;
+  void
+  update_inverse_block_diagonal() const;
 
 private:
   /*
    *  This function calculates the diagonal of the discrete operator representing the
    *  velocity convection-diffusion operator.
    */
-  void calculate_diagonal(parallel::distributed::Vector<Number> &diagonal) const;
+  void
+  calculate_diagonal(parallel::distributed::Vector<Number> & diagonal) const;
 
   /*
    * This function calculates the block Jacobi matrices.
    * This is done sequentially for the different operators.
    */
-  void calculate_block_jacobi_matrices() const;
+  void
+  calculate_block_jacobi_matrices() const;
 
   /*
    *  This function loops over all cells and applies the inverse block Jacobi matrices elementwise.
    */
-  void cell_loop_apply_inverse_block_jacobi_matrices (MatrixFree<dim,Number> const                &data,
-                                                      parallel::distributed::Vector<Number>       &dst,
-                                                      parallel::distributed::Vector<Number> const &src,
-                                                      std::pair<unsigned int,unsigned int> const  &cell_range) const;
+  void
+  cell_loop_apply_inverse_block_jacobi_matrices(
+    MatrixFree<dim, Number> const &               data,
+    parallel::distributed::Vector<Number> &       dst,
+    parallel::distributed::Vector<Number> const & src,
+    std::pair<unsigned int, unsigned int> const & cell_range) const;
 
   /*
    * Verify computation of block Jacobi matrices.
    */
-   void check_block_jacobi_matrices(parallel::distributed::Vector<Number> const &src) const;
+  void
+  check_block_jacobi_matrices(parallel::distributed::Vector<Number> const & src) const;
 
-   /*
-    * Apply matrix-vector multiplication (matrix-free) for global block Jacobi system.
-    * Do that sequentially for the different operators.
-    * This function is only needed when solving the global block Jacobi problem
-    * iteratively in which case the function vmult_block_jacobi() represents
-    * the "vmult()" operation of the linear system of equations.
-    */
-   void vmult_block_jacobi (parallel::distributed::Vector<Number>       &dst,
-                            const parallel::distributed::Vector<Number> &src) const;
+  /*
+   * Apply matrix-vector multiplication (matrix-free) for global block Jacobi system.
+   * Do that sequentially for the different operators.
+   * This function is only needed when solving the global block Jacobi problem
+   * iteratively in which case the function vmult_block_jacobi() represents
+   * the "vmult()" operation of the linear system of equations.
+   */
+  void
+  vmult_block_jacobi(parallel::distributed::Vector<Number> &       dst,
+                     const parallel::distributed::Vector<Number> & src) const;
 
-   /*
-    * Apply matrix-vector multiplication (matrix-based) for global block Jacobi system
-    * by looping over all cells and applying the matrix-based matrix-vector product cellwise.
-    * This function is only needed for testing.
-    */
-   void vmult_block_jacobi_test (parallel::distributed::Vector<Number>       &dst,
-                                 parallel::distributed::Vector<Number> const &src) const;
+  /*
+   * Apply matrix-vector multiplication (matrix-based) for global block Jacobi system
+   * by looping over all cells and applying the matrix-based matrix-vector product cellwise.
+   * This function is only needed for testing.
+   */
+  void
+  vmult_block_jacobi_test(parallel::distributed::Vector<Number> &       dst,
+                          parallel::distributed::Vector<Number> const & src) const;
 
-   /*
-    *  This function is only needed for testing.
-    */
-   void cell_loop_apply_block_diagonal_matrices_test (MatrixFree<dim,Number> const                &data,
-                                                    parallel::distributed::Vector<Number>       &dst,
-                                                    parallel::distributed::Vector<Number> const &src,
-                                                    std::pair<unsigned int,unsigned int> const  &cell_range) const;
-   
-  virtual MultigridOperatorBase<dim, Number>* get_new(unsigned int deg) const;
+  /*
+   *  This function is only needed for testing.
+   */
+  void
+  cell_loop_apply_block_diagonal_matrices_test(
+    MatrixFree<dim, Number> const &               data,
+    parallel::distributed::Vector<Number> &       dst,
+    parallel::distributed::Vector<Number> const & src,
+    std::pair<unsigned int, unsigned int> const & cell_range) const;
 
-  mutable std::vector<LAPACKFullMatrix<Number> > matrices;
+  virtual MultigridOperatorBase<dim, Number> *
+  get_new(unsigned int deg) const;
+
+  mutable std::vector<LAPACKFullMatrix<Number>> matrices;
+
   mutable bool block_jacobi_matrices_have_been_initialized;
 
-  MatrixFree<dim,Number> const * data;
-  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const *mass_matrix_operator;
-  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>  const *viscous_operator;
+  MatrixFree<dim, Number> const * data;
+  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const *
+    mass_matrix_operator;
+
+  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const *
+    viscous_operator;
+
   HelmholtzOperatorData<dim> operator_data;
+
   double scaling_factor_time_derivative_term;
 
   /*
@@ -224,9 +271,13 @@ private:
    * ojects by setting the above pointers to the own_objects_storage,
    *   e.g., data = &own_matrix_free_storage;
    */
-  MatrixFree<dim,Number> own_matrix_free_storage;
-  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> own_mass_matrix_operator_storage;
-  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> own_viscous_operator_storage;
+  MatrixFree<dim, Number> own_matrix_free_storage;
+
+  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>
+    own_mass_matrix_operator_storage;
+
+  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>
+    own_viscous_operator_storage;
 
   // TODO
   mutable double wall_time;
@@ -236,7 +287,7 @@ private:
 };
 
 
-}
+} // namespace IncNS
 
 #include "helmholtz_operator.cpp"
 

@@ -1,5 +1,5 @@
 /*
- * TurbulenceStatisticsData.h
+ * turbulence_statistics_data.h
  *
  *  Created on: Oct 19, 2016
  *      Author: krank
@@ -11,13 +11,13 @@
 struct TurbulenceStatisticsData
 {
   TurbulenceStatisticsData()
-    :
-    statistics_start_time(1.e9),
-    statistics_every(1),
-    statistics_end_time(1.e9),
-    viscosity(1.),
-    write_output_q_criterion(false)
-  {}
+    : statistics_start_time(1.e9),
+      statistics_every(1),
+      statistics_end_time(1.e9),
+      viscosity(1.),
+      write_output_q_criterion(false)
+  {
+  }
 
   // before then no statistics calculation will be performed
   double statistics_start_time;
@@ -33,7 +33,6 @@ struct TurbulenceStatisticsData
   double viscosity;
 
   bool write_output_q_criterion;
-
 };
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_TURBULENCE_STATISTICS_DATA_H_ */

@@ -10,13 +10,15 @@
 namespace IncNS
 {
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::VelocityConvDiffOperator()
+VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  VelocityConvDiffOperator()
   : block_jacobi_matrices_have_been_initialized(false),
     data(nullptr),
     mass_matrix_operator(nullptr),
     viscous_operator(nullptr),
     convective_operator(nullptr),
-    evaluation_time(0.0)
+    evaluation_time(0.0),
+    scaling_factor_time_derivative_term(-1.0)
 {
 }
 
@@ -26,9 +28,11 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
   MatrixFree<dim, Number> const &           mf_data_in,
   VelocityConvDiffOperatorData<dim> const & operator_data_in,
   MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const &
-                                                                                       mass_matrix_operator_in,
-  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const &    viscous_operator_in,
-  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const & convective_operator_in)
+    mass_matrix_operator_in,
+  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const &
+    viscous_operator_in,
+  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const &
+    convective_operator_in)
 {
   // copy parameters into element variables
   this->data                 = &mf_data_in;
@@ -41,7 +45,7 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
   {
     this->initialize_dof_vector(velocity_linearization);
   }
-  
+
   // mass matrix term: set scaling factor time derivative term
   set_scaling_factor_time_derivative_term(this->operator_data.scaling_factor_time_derivative_term);
 }
@@ -55,7 +59,6 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
   const MGConstrainedDoFs & /*mg_constrained_dofs*/,
   const unsigned int level)
 {
-  // create copy of data and ...
   auto operator_data = *static_cast<VelocityConvDiffOperatorData<dim> *>(operator_data_in);
 
   // setup own matrix free object
@@ -76,7 +79,8 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
   std::vector<Quadrature<1>> quadrature_vec;
   quadrature_vec.resize(2);
   quadrature_vec[0] = QGauss<1>(dof_handler.get_fe().degree + 1);
-  quadrature_vec[1] = QGauss<1>(dof_handler.get_fe().degree + (dof_handler.get_fe().degree + 2) / 2);
+  quadrature_vec[1] =
+    QGauss<1>(dof_handler.get_fe().degree + (dof_handler.get_fe().degree + 2) / 2);
 
   // additional data
   typename MatrixFree<dim, Number>::AdditionalData addit_data;
@@ -85,19 +89,23 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
     addit_data.build_face_info = true;
 
   addit_data.mapping_update_flags =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values);
+    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+     update_values);
 
   addit_data.mapping_update_flags_inner_faces =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values);
+    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+     update_values);
 
   addit_data.mapping_update_flags_boundary_faces =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values);
+    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+     update_values);
 
 
   addit_data.level_mg_handler = level;
 
   // reinit
-  own_matrix_free_storage.reinit(mapping, dof_handler_vec, constraint_matrix_vec, quadrature_vec, addit_data);
+  own_matrix_free_storage.reinit(
+    mapping, dof_handler_vec, constraint_matrix_vec, quadrature_vec, addit_data);
 
 
   // setup own mass matrix operator
@@ -177,30 +185,32 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
   get_solution_linearization() const
 {
   AssertThrow(operator_data.convective_problem == true,
-              ExcMessage("Attempt to access velocity_linearization which has not been initialized."));
+              ExcMessage(
+                "Attempt to access velocity_linearization which has not been initialized."));
 
   return velocity_linearization;
 }
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
-VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::set_evaluation_time(
-  double const & evaluation_time_in)
+VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  set_evaluation_time(double const & evaluation_time_in)
 {
   evaluation_time = evaluation_time_in;
 }
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 double
-VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::get_evaluation_time()
-  const
+VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  get_evaluation_time() const
 {
   return evaluation_time;
 }
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 VelocityConvDiffOperatorData<dim> const &
-VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::get_operator_data() const
+VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  get_operator_data() const
 {
   return this->operator_data;
 }
@@ -243,18 +253,18 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
-VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmult_interface_down(
-  parallel::distributed::Vector<Number> &       dst,
-  const parallel::distributed::Vector<Number> & src) const
+VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  vmult_interface_down(parallel::distributed::Vector<Number> &       dst,
+                       const parallel::distributed::Vector<Number> & src) const
 {
   vmult(dst, src);
 }
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
-VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmult_add_interface_up(
-  parallel::distributed::Vector<Number> &       dst,
-  const parallel::distributed::Vector<Number> & src) const
+VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  vmult_add_interface_up(parallel::distributed::Vector<Number> &       dst,
+                         const parallel::distributed::Vector<Number> & src) const
 {
   vmult_add(dst, src);
 }
@@ -341,9 +351,9 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
-VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmult_block_jacobi(
-  parallel::distributed::Vector<Number> &       dst,
-  parallel::distributed::Vector<Number> const & src) const
+VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  vmult_block_jacobi(parallel::distributed::Vector<Number> &       dst,
+                     parallel::distributed::Vector<Number> const & src) const
 {
   if(operator_data.unsteady_problem == true)
   {
@@ -373,15 +383,16 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 unsigned int
-VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::get_dof_index() const
+VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::get_dof_index()
+  const
 {
   return operator_data.dof_index;
 }
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
-VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::initialize_dof_vector(
-  parallel::distributed::Vector<Number> & vector) const
+VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  initialize_dof_vector(parallel::distributed::Vector<Number> & vector) const
 {
   data->initialize_dof_vector(vector, get_dof_index());
 }
@@ -400,9 +411,9 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
-VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::apply_inverse_block_diagonal(
-  parallel::distributed::Vector<Number> &       dst,
-  parallel::distributed::Vector<Number> const & src) const
+VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  apply_inverse_block_diagonal(parallel::distributed::Vector<Number> &       dst,
+                               parallel::distributed::Vector<Number> const & src) const
 {
   // VARIANT 1: solve global block Jacobi problem iteratively
   /*
@@ -411,8 +422,9 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
   additional_data.right_preconditioning = true;
   SolverGMRES<parallel::distributed::Vector<Number> > solver (control,additional_data);
 
-  typedef VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> MY_TYPE;
-  VelocityConvectionDiffusionBlockJacobiOperator<MY_TYPE, Number> block_jacobi_operator(*this);
+  typedef VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>
+  MY_TYPE; VelocityConvectionDiffusionBlockJacobiOperator<MY_TYPE, Number>
+  block_jacobi_operator(*this);
 
   dst = 0.0;
   solver.solve(block_jacobi_operator,dst,src,PreconditionIdentity());
@@ -429,8 +441,8 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
-VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::update_inverse_block_diagonal()
-  const
+VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  update_inverse_block_diagonal() const
 {
   if(block_jacobi_matrices_have_been_initialized == false)
   {
@@ -449,8 +461,8 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
-VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::calculate_diagonal(
-  parallel::distributed::Vector<Number> & diagonal) const
+VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  calculate_diagonal(parallel::distributed::Vector<Number> & diagonal) const
 {
   if(operator_data.unsteady_problem == true)
   {
@@ -486,13 +498,15 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
   // calculate block Jacobi matrices
   if(operator_data.unsteady_problem == true)
   {
-    AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
-                ExcMessage(
-                  "Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
+    AssertThrow(
+      this->get_scaling_factor_time_derivative_term() > 0.0,
+      ExcMessage(
+        "Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
 
     mass_matrix_operator->add_block_diagonal_matrices(matrices);
 
-    for(typename std::vector<LAPACKFullMatrix<Number>>::iterator it = matrices.begin(); it != matrices.end();
+    for(typename std::vector<LAPACKFullMatrix<Number>>::iterator it = matrices.begin();
+        it != matrices.end();
         ++it)
     {
       (*it) *= this->get_scaling_factor_time_derivative_term();
@@ -503,7 +517,9 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
 
   if(operator_data.convective_problem == true)
   {
-    convective_operator->add_block_diagonal_matrices(matrices, &velocity_linearization, evaluation_time);
+    convective_operator->add_block_diagonal_matrices(matrices,
+                                                     &velocity_linearization,
+                                                     evaluation_time);
   }
 }
 
@@ -516,7 +532,9 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
     parallel::distributed::Vector<Number> const & src,
     std::pair<unsigned int, unsigned int> const & cell_range) const
 {
-  FEEval_Velocity_Velocity_linear fe_eval(data, viscous_operator->get_fe_param(), operator_data.dof_index);
+  FEEval_Velocity_Velocity_linear fe_eval(data,
+                                          viscous_operator->get_fe_param(),
+                                          operator_data.dof_index);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
@@ -575,9 +593,9 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
-VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmult_block_jacobi_test(
-  parallel::distributed::Vector<Number> &       dst,
-  parallel::distributed::Vector<Number> const & src) const
+VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  vmult_block_jacobi_test(parallel::distributed::Vector<Number> &       dst,
+                          parallel::distributed::Vector<Number> const & src) const
 {
   data->cell_loop(&This::cell_loop_apply_block_diagonal_matrices_test, this, dst, src);
 }
@@ -585,12 +603,15 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
 VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
-  cell_loop_apply_block_diagonal_matrices_test(MatrixFree<dim, Number> const &               data,
-                                             parallel::distributed::Vector<Number> &       dst,
-                                             parallel::distributed::Vector<Number> const & src,
-                                             std::pair<unsigned int, unsigned int> const & cell_range) const
+  cell_loop_apply_block_diagonal_matrices_test(
+    MatrixFree<dim, Number> const &               data,
+    parallel::distributed::Vector<Number> &       dst,
+    parallel::distributed::Vector<Number> const & src,
+    std::pair<unsigned int, unsigned int> const & cell_range) const
 {
-  FEEval_Velocity_Velocity_linear fe_eval(data, viscous_operator->get_fe_param(), operator_data.dof_index);
+  FEEval_Velocity_Velocity_linear fe_eval(data,
+                                          viscous_operator->get_fe_param(),
+                                          operator_data.dof_index);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
@@ -608,7 +629,9 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
         src_vector(j) = fe_eval.begin_dof_values()[j][v];
 
       // apply matrix-vector product
-      matrices[cell * VectorizedArray<Number>::n_array_elements + v].vmult(dst_vector, src_vector, false);
+      matrices[cell * VectorizedArray<Number>::n_array_elements + v].vmult(dst_vector,
+                                                                           src_vector,
+                                                                           false);
 
       // write solution to dst-vector
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
@@ -624,7 +647,7 @@ MultigridOperatorBase<dim, Number> *
 VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::get_new(
   unsigned int deg) const
 {
-  AssertThrow(deg==fe_degree, ExcMessage("Not compatible for p-GMG!"));
+  AssertThrow(deg == fe_degree, ExcMessage("Not compatible for p-GMG!"));
   return new VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>();
 }
 

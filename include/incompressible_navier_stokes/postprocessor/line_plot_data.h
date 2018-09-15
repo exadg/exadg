@@ -25,17 +25,17 @@ enum class QuantityType
 
 struct Quantity
 {
-  Quantity()
-    :
-    type(QuantityType::Undefined)
-  {}
+  Quantity() : type(QuantityType::Undefined)
+  {
+  }
 
-  Quantity(QuantityType const &quantity_type)
-    :
-    type(quantity_type)
-  {}
+  Quantity(QuantityType const & quantity_type) : type(quantity_type)
+  {
+  }
 
-  virtual ~Quantity(){}
+  virtual ~Quantity()
+  {
+  }
 
   QuantityType type;
 };
@@ -53,35 +53,33 @@ template<int dim>
 struct QuantityStatistics : Quantity
 {
   QuantityStatistics()
-    :
-    Quantity(),
-    average_circumferential(false),
-    n_points_circumferential(4),
-    normal_vector(Tensor<1,dim>()),
-    average_homogeneous_direction(false),
-    averaging_direction(0)
-  {}
+    : Quantity(),
+      average_circumferential(false),
+      n_points_circumferential(4),
+      normal_vector(Tensor<1, dim>()),
+      average_homogeneous_direction(false),
+      averaging_direction(0)
+  {
+  }
 
   bool average_circumferential;
   // number of points used for averaging in circumferential direction
   // only used in average_circumferential == true
   unsigned int n_points_circumferential;
   // has to be specified in case of averaging in circumferential direction
-  Tensor<1,dim> normal_vector;
+  Tensor<1, dim> normal_vector;
 
   bool average_homogeneous_direction;
   // has to be specified in case of averaging in homogeneous direction
-  unsigned int averaging_direction; //x = 0, y = 1, z = 2
+  unsigned int averaging_direction; // x = 0, y = 1, z = 2
 };
 
 template<int dim>
 struct QuantityStatisticsPressureCoefficient : QuantityStatistics<dim>
 {
-  QuantityStatisticsPressureCoefficient()
-    :
-    QuantityStatistics<dim>(),
-    reference_point(Point<dim>())
-  {}
+  QuantityStatisticsPressureCoefficient() : QuantityStatistics<dim>(), reference_point(Point<dim>())
+  {
+  }
 
   Point<dim> reference_point;
 };
@@ -90,26 +88,24 @@ template<int dim>
 struct QuantityStatisticsSkinFriction : QuantityStatistics<dim>
 {
   QuantityStatisticsSkinFriction()
-    :
-    QuantityStatistics<dim>(),
-    viscosity(1.0),
-    normal_vector(Tensor<1,dim,double>()),
-    tangent_vector(Tensor<1,dim,double>())
-  {}
+    : QuantityStatistics<dim>(),
+      viscosity(1.0),
+      normal_vector(Tensor<1, dim, double>()),
+      tangent_vector(Tensor<1, dim, double>())
+  {
+  }
 
-  double viscosity;
-  Tensor<1,dim,double> normal_vector;
-  Tensor<1,dim,double> tangent_vector;
+  double                 viscosity;
+  Tensor<1, dim, double> normal_vector;
+  Tensor<1, dim, double> tangent_vector;
 };
 
 template<int dim>
 struct Line
 {
-  Line()
-   :
-   n_points(2),
-   name("line")
-  {}
+  Line() : n_points(2), name("line")
+  {
+  }
 
   /*
    *  begin and end points of line
@@ -130,30 +126,31 @@ struct Line
   /*
    *  Specify for which fields/quantities to write output
    */
-  std::vector<Quantity*> quantities;
+  std::vector<Quantity *> quantities;
 };
 
 struct StatisticsData
 {
   StatisticsData()
-   :
-   calculate_statistics(false),
-   sample_start_time(0.0),
-   sample_end_time(1.0),
-   sample_every_timesteps(1),
-   write_output_every_timesteps(100)
-  {}
+    : calculate_statistics(false),
+      sample_start_time(0.0),
+      sample_end_time(1.0),
+      sample_every_timesteps(1),
+      write_output_every_timesteps(100)
+  {
+  }
 
-  void print(ConditionalOStream &pcout)
+  void
+  print(ConditionalOStream & pcout)
   {
     if(calculate_statistics == true)
     {
       pcout << "  Statistics data:" << std::endl;
-      print_parameter(pcout,"Calculate statistics",calculate_statistics);
-      print_parameter(pcout,"Sample start time",sample_start_time);
-      print_parameter(pcout,"Sample end time",sample_end_time);
-      print_parameter(pcout,"Sample every timesteps",sample_every_timesteps);
-      print_parameter(pcout,"Write output every timesteps",write_output_every_timesteps);
+      print_parameter(pcout, "Calculate statistics", calculate_statistics);
+      print_parameter(pcout, "Sample start time", sample_start_time);
+      print_parameter(pcout, "Sample end time", sample_end_time);
+      print_parameter(pcout, "Sample every timesteps", sample_every_timesteps);
+      print_parameter(pcout, "Write output every timesteps", write_output_every_timesteps);
     }
   }
 
@@ -174,18 +171,16 @@ struct StatisticsData
 };
 
 
-template <int dim>
+template<int dim>
 struct LinePlotData
 {
-  LinePlotData()
-    :
-    write_output(false),
-    filename_prefix("output/"),
-    precision(10)
+  LinePlotData() : write_output(false), filename_prefix("output/"), precision(10)
 
-  {}
+  {
+  }
 
-  void print(ConditionalOStream &pcout)
+  void
+  print(ConditionalOStream & pcout)
   {
     // TODO: add output for basic line plot data
 
@@ -213,7 +208,7 @@ struct LinePlotData
   /*
    *  a vector of lines along which we want to write output
    */
-  std::vector<Line<dim> > lines;
+  std::vector<Line<dim>> lines;
 
   /*
    *  Statistics data (only relevant if statistics have to
