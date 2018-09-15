@@ -76,7 +76,8 @@ private:
   // number of samples
   int number_of_samples;
 
-  bool                 write_final_output;
+  bool write_final_output;
+
   TurbulentChannelData turb_channel_data;
 };
 
