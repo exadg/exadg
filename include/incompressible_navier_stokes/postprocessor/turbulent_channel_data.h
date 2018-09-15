@@ -16,30 +16,31 @@
 struct TurbulentChannelData
 {
   TurbulentChannelData()
-   :
-   calculate_statistics(false),
-   cells_are_stretched(false),
-   sample_start_time(0.0),
-   sample_end_time(1.0),
-   sample_every_timesteps(1),
-   viscosity(1.0),
-   density(1.0),
-   filename_prefix("indexa")
-  {}
+    : calculate_statistics(false),
+      cells_are_stretched(false),
+      sample_start_time(0.0),
+      sample_end_time(1.0),
+      sample_every_timesteps(1),
+      viscosity(1.0),
+      density(1.0),
+      filename_prefix("indexa")
+  {
+  }
 
-  void print(ConditionalOStream &pcout)
+  void
+  print(ConditionalOStream & pcout)
   {
     if(calculate_statistics == true)
     {
       pcout << "  Turbulent channel statistics:" << std::endl;
-      print_parameter(pcout,"Calculate statistics",calculate_statistics);
-      print_parameter(pcout,"Cells are stretched",cells_are_stretched);
-      print_parameter(pcout,"Sample start time",sample_start_time);
-      print_parameter(pcout,"Sample end time",sample_end_time);
-      print_parameter(pcout,"Sample every timesteps",sample_every_timesteps);
-      print_parameter(pcout,"Dynamic viscosity",viscosity);
-      print_parameter(pcout,"Density",density);
-      print_parameter(pcout,"Filename prefix",filename_prefix);
+      print_parameter(pcout, "Calculate statistics", calculate_statistics);
+      print_parameter(pcout, "Cells are stretched", cells_are_stretched);
+      print_parameter(pcout, "Sample start time", sample_start_time);
+      print_parameter(pcout, "Sample end time", sample_end_time);
+      print_parameter(pcout, "Sample every timesteps", sample_every_timesteps);
+      print_parameter(pcout, "Dynamic viscosity", viscosity);
+      print_parameter(pcout, "Density", density);
+      print_parameter(pcout, "Filename prefix", filename_prefix);
     }
   }
 

@@ -1,5 +1,5 @@
 /*
- * AnalyticalSolutionNavierStokes.h
+ * analytical_solution.h
  *
  *  Created on: Oct 11, 2016
  *      Author: fehn
@@ -14,21 +14,20 @@ using namespace dealii;
 
 namespace IncNS
 {
-
 template<int dim>
 struct AnalyticalSolution
 {
   /*
    *  velocity
    */
-  std::shared_ptr<Function<dim> > velocity;
+  std::shared_ptr<Function<dim>> velocity;
 
   /*
    *  pressure
    */
-  std::shared_ptr<Function<dim> > pressure;
+  std::shared_ptr<Function<dim>> pressure;
 };
 
-}
+} // namespace IncNS
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_ANALYTICAL_SOLUTION_H_ */

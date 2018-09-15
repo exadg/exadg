@@ -13,10 +13,9 @@ template<int dim>
 struct PressureDifferenceData
 {
   PressureDifferenceData()
-    :
-    calculate_pressure_difference(false),
-    filename_prefix_pressure_difference("indexa")
-  {}
+    : calculate_pressure_difference(false), filename_prefix_pressure_difference("indexa")
+  {
+  }
 
   /*
    *  active or not

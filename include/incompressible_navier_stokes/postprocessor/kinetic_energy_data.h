@@ -13,28 +13,29 @@
 struct KineticEnergyData
 {
   KineticEnergyData()
-    :
-  calculate(false),
-  calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
-  viscosity(1.0),
-  filename_prefix("kinetic_energy")
-  {}
+    : calculate(false),
+      calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
+      viscosity(1.0),
+      filename_prefix("kinetic_energy")
+  {
+  }
 
-  void print(ConditionalOStream &pcout)
+  void
+  print(ConditionalOStream & pcout)
   {
     if(calculate == true)
     {
       pcout << std::endl << "  Calculate kinetic energy:" << std::endl;
-      print_parameter(pcout,"Calculate energy",calculate);
-      print_parameter(pcout,"Calculate every timesteps",calculate_every_time_steps);
+      print_parameter(pcout, "Calculate energy", calculate);
+      print_parameter(pcout, "Calculate every timesteps", calculate_every_time_steps);
       print_parameter(pcout, "Filename", filename_prefix);
     }
   }
 
-  bool calculate;
+  bool         calculate;
   unsigned int calculate_every_time_steps;
-  double viscosity;
-  std::string filename_prefix;
+  double       viscosity;
+  std::string  filename_prefix;
 };
 
 

@@ -19,22 +19,22 @@ template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
 class PressureDifferenceCalculator
 {
 public:
-  PressureDifferenceCalculator()
-    :
-    clear_files_pressure_difference(true)
-  {}
-
-  void setup(DoFHandler<dim> const             &dof_handler_pressure_in,
-             Mapping<dim> const                &mapping_in,
-             PressureDifferenceData<dim> const &pressure_difference_data_in)
+  PressureDifferenceCalculator() : clear_files_pressure_difference(true)
   {
-    dof_handler_pressure = &dof_handler_pressure_in;
-    mapping = &mapping_in;
+  }
+
+  void
+  setup(DoFHandler<dim> const &             dof_handler_pressure_in,
+        Mapping<dim> const &                mapping_in,
+        PressureDifferenceData<dim> const & pressure_difference_data_in)
+  {
+    dof_handler_pressure     = &dof_handler_pressure_in;
+    mapping                  = &mapping_in;
     pressure_difference_data = pressure_difference_data_in;
   }
 
-  void evaluate(parallel::distributed::Vector<Number> const &pressure,
-                double const                                &time) const
+  void
+  evaluate(parallel::distributed::Vector<Number> const & pressure, double const & time) const
   {
     if(pressure_difference_data.calculate_pressure_difference == true)
     {
@@ -44,32 +44,36 @@ public:
       point_1 = pressure_difference_data.point_1;
       point_2 = pressure_difference_data.point_2;
 
-      evaluate_scalar_quantity_in_point(*dof_handler_pressure,*mapping,pressure,point_1,pressure_1);
-      evaluate_scalar_quantity_in_point(*dof_handler_pressure,*mapping,pressure,point_2,pressure_2);
+      evaluate_scalar_quantity_in_point(
+        *dof_handler_pressure, *mapping, pressure, point_1, pressure_1);
+      evaluate_scalar_quantity_in_point(
+        *dof_handler_pressure, *mapping, pressure, point_2, pressure_2);
 
       Number const pressure_difference = pressure_1 - pressure_2;
 
-      if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+      if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
       {
-        std::string filename = pressure_difference_data.filename_prefix_pressure_difference
-            + "_refine_" + Utilities::int_to_string(dof_handler_pressure->get_triangulation().n_levels()-1)
-            + "_fe_degree_" + Utilities::int_to_string(fe_degree_u) + "-" + Utilities::int_to_string(fe_degree_p)
-            + "_pressure_difference.txt";
+        std::string filename =
+          pressure_difference_data.filename_prefix_pressure_difference + "_refine_" +
+          Utilities::int_to_string(dof_handler_pressure->get_triangulation().n_levels() - 1) +
+          "_fe_degree_" + Utilities::int_to_string(fe_degree_u) + "-" +
+          Utilities::int_to_string(fe_degree_p) + "_pressure_difference.txt";
 
         std::ofstream f;
         if(clear_files_pressure_difference)
         {
-          f.open(filename.c_str(),std::ios::trunc);
+          f.open(filename.c_str(), std::ios::trunc);
           clear_files_pressure_difference = false;
         }
         else
         {
-          f.open(filename.c_str(),std::ios::app);
+          f.open(filename.c_str(), std::ios::app);
         }
 
         unsigned int precision = 12;
 
-        f << std::scientific << std::setprecision(precision) << time << "\t" << pressure_difference << std::endl;
+        f << std::scientific << std::setprecision(precision) << time << "\t" << pressure_difference
+          << std::endl;
         f.close();
       }
     }
@@ -78,8 +82,8 @@ public:
 private:
   mutable bool clear_files_pressure_difference;
 
-  SmartPointer< DoFHandler<dim> const > dof_handler_pressure;
-  SmartPointer< Mapping<dim> const > mapping;
+  SmartPointer<DoFHandler<dim> const> dof_handler_pressure;
+  SmartPointer<Mapping<dim> const>    mapping;
 
   PressureDifferenceData<dim> pressure_difference_data;
 };

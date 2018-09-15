@@ -1,5 +1,5 @@
 /*
- * LiftAndDragData.h
+ * lift_and_drag_data.h
  *
  *  Created on: Oct 11, 2016
  *      Author: fehn
@@ -15,13 +15,13 @@ using namespace dealii;
 struct LiftAndDragData
 {
   LiftAndDragData()
-    :
-    calculate_lift_and_drag(false),
-    viscosity(1.0),
-    reference_value(1.0),
-    filename_prefix_lift("indexa"),
-    filename_prefix_drag("indexa")
-  {}
+    : calculate_lift_and_drag(false),
+      viscosity(1.0),
+      reference_value(1.0),
+      filename_prefix_lift("indexa"),
+      filename_prefix_drag("indexa")
+  {
+  }
 
   /*
    *  active or not

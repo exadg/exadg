@@ -15,9 +15,10 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::Hel
     data(nullptr),
     mass_matrix_operator(nullptr),
     viscous_operator(nullptr),
+    scaling_factor_time_derivative_term(-1.0),
     wall_time(0.0),
-    use_optimized_implementation(
-      false) // TODO: use optimized implementation for performance measurements only
+    // TODO: use optimized implementation for performance measurements only
+    use_optimized_implementation(false)
 {
 }
 
@@ -35,15 +36,16 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::ini
   MatrixFree<dim, Number> const &    mf_data_in,
   HelmholtzOperatorData<dim> const & operator_data_in,
   MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const &
-                                                                                    mass_matrix_operator_in,
-  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const & viscous_operator_in)
+    mass_matrix_operator_in,
+  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const &
+    viscous_operator_in)
 {
   // copy parameters into element variables
   this->data                 = &mf_data_in;
   this->operator_data        = operator_data_in;
   this->mass_matrix_operator = &mass_matrix_operator_in;
   this->viscous_operator     = &viscous_operator_in;
-  
+
   // mass matrix term: set scaling factor time derivative term
   set_scaling_factor_time_derivative_term(this->operator_data.scaling_factor_time_derivative_term);
 }
@@ -61,7 +63,8 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::rei
   auto operator_data = *static_cast<HelmholtzOperatorData<dim> *>(operator_data_in);
 
   // setup own matrix free object
-  const QGauss<1>                                  quad(dof_handler.get_fe().degree + 1);
+  const QGauss<1> quad(dof_handler.get_fe().degree + 1);
+
   typename MatrixFree<dim, Number>::AdditionalData addit_data;
   addit_data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::none;
   if(dof_handler.get_fe().dofs_per_vertex == 0)
@@ -76,12 +79,14 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::rei
   // setup own mass matrix operator
   MassMatrixOperatorData & mass_matrix_operator_data = operator_data.mass_matrix_operator_data;
   mass_matrix_operator_data.dof_index                = 0;
+
   own_mass_matrix_operator_storage.initialize(own_matrix_free_storage, mass_matrix_operator_data);
 
   // setup own viscous operator
   ViscousOperatorData<dim> & viscous_operator_data = operator_data.viscous_operator_data;
   // set dof index to zero since matrix free object only contains one dof-handler
   viscous_operator_data.dof_index = 0;
+
   own_viscous_operator_storage.initialize(mapping, own_matrix_free_storage, viscous_operator_data);
 
   // setup Helmholtz operator
@@ -116,22 +121,24 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 HelmholtzOperatorData<dim> const &
-HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::get_operator_data() const
+HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::get_operator_data()
+  const
 {
   return this->operator_data;
 }
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 MassMatrixOperatorData const &
-HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::get_mass_matrix_operator_data()
-  const
+HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  get_mass_matrix_operator_data() const
 {
   return mass_matrix_operator->get_operator_data();
 }
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 ViscousOperatorData<dim> const &
-HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::get_viscous_operator_data() const
+HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  get_viscous_operator_data() const
 {
   return viscous_operator->get_operator_data();
 }
@@ -163,8 +170,9 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::m()
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 Number
-HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::el(const unsigned int,
-                                                                                const unsigned int) const
+HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::el(
+  const unsigned int,
+  const unsigned int) const
 {
   AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
   return Number();
@@ -187,9 +195,12 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmu
   Timer timer;
   timer.restart();
 
-  if(use_optimized_implementation == true) // optimized version (use only for performance measurements)
+  // optimized version (use only for performance measurements)
+  if(use_optimized_implementation == true)
   {
-    viscous_operator->apply_helmholtz_operator(dst, this->get_scaling_factor_time_derivative_term(), src);
+    viscous_operator->apply_helmholtz_operator(dst,
+                                               this->get_scaling_factor_time_derivative_term(),
+                                               src);
   }
   else // standard implementation with modular implementation (operator by operator)
   {
@@ -228,11 +239,14 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmu
   // helmholtz operator = mass_matrix_operator + viscous_operator
   if(operator_data.unsteady_problem == true)
   {
-    AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
-                ExcMessage(
-                  "Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
+    AssertThrow(
+      this->get_scaling_factor_time_derivative_term() > 0.0,
+      ExcMessage(
+        "Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
 
-    mass_matrix_operator->apply_scale_add(dst, this->get_scaling_factor_time_derivative_term(), src);
+    mass_matrix_operator->apply_scale_add(dst,
+                                          this->get_scaling_factor_time_derivative_term(),
+                                          src);
   }
 
   viscous_operator->apply_add(dst, src);
@@ -258,8 +272,8 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::ini
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
-HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::calculate_inverse_diagonal(
-  parallel::distributed::Vector<Number> & diagonal) const
+HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  calculate_inverse_diagonal(parallel::distributed::Vector<Number> & diagonal) const
 {
   calculate_diagonal(diagonal);
 
@@ -270,9 +284,9 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::cal
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
-HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::apply_inverse_block_diagonal(
-  parallel::distributed::Vector<Number> &       dst,
-  parallel::distributed::Vector<Number> const & src) const
+HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  apply_inverse_block_diagonal(parallel::distributed::Vector<Number> &       dst,
+                               parallel::distributed::Vector<Number> const & src) const
 {
   // check_block_jacobi_matrices(src);
 
@@ -281,7 +295,8 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::app
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
-HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::update_inverse_block_diagonal() const
+HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  update_inverse_block_diagonal() const
 {
   if(block_jacobi_matrices_have_been_initialized == false)
   {
@@ -305,9 +320,10 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::cal
 {
   if(operator_data.unsteady_problem == true)
   {
-    AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
-                ExcMessage(
-                  "Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
+    AssertThrow(
+      this->get_scaling_factor_time_derivative_term() > 0.0,
+      ExcMessage(
+        "Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
 
     mass_matrix_operator->calculate_diagonal(diagonal);
     diagonal *= this->get_scaling_factor_time_derivative_term();
@@ -322,8 +338,8 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::cal
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
-HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::calculate_block_jacobi_matrices()
-  const
+HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  calculate_block_jacobi_matrices() const
 {
   // initialize block Jacobi matrices with zeros
   initialize_block_jacobi_matrices_with_zero(matrices);
@@ -331,13 +347,15 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::cal
   // calculate block Jacobi matrices
   if(operator_data.unsteady_problem == true)
   {
-    AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
-                ExcMessage(
-                  "Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
+    AssertThrow(
+      this->get_scaling_factor_time_derivative_term() > 0.0,
+      ExcMessage(
+        "Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
 
     mass_matrix_operator->add_block_diagonal_matrices(matrices);
 
-    for(typename std::vector<LAPACKFullMatrix<Number>>::iterator it = matrices.begin(); it != matrices.end();
+    for(typename std::vector<LAPACKFullMatrix<Number>>::iterator it = matrices.begin();
+        it != matrices.end();
         ++it)
     {
       (*it) *= this->get_scaling_factor_time_derivative_term();
@@ -356,7 +374,9 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
     parallel::distributed::Vector<Number> const & src,
     std::pair<unsigned int, unsigned int> const & cell_range) const
 {
-  FEEval_Velocity_Velocity_linear fe_eval(data, viscous_operator->get_fe_param(), operator_data.dof_index);
+  FEEval_Velocity_Velocity_linear fe_eval(data,
+                                          viscous_operator->get_fe_param(),
+                                          operator_data.dof_index);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
@@ -386,8 +406,8 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
-HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::check_block_jacobi_matrices(
-  parallel::distributed::Vector<Number> const & src) const
+HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  check_block_jacobi_matrices(parallel::distributed::Vector<Number> const & src) const
 {
   calculate_block_jacobi_matrices();
 
@@ -421,9 +441,10 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmu
 {
   if(operator_data.unsteady_problem == true)
   {
-    AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
-                ExcMessage(
-                  "Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
+    AssertThrow(
+      this->get_scaling_factor_time_derivative_term() > 0.0,
+      ExcMessage(
+        "Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
 
     // mass matrix operator has already "block Jacobi form" in DG
     mass_matrix_operator->apply_scale(dst, this->get_scaling_factor_time_derivative_term(), src);
@@ -438,9 +459,9 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmu
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
-HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmult_block_jacobi_test(
-  parallel::distributed::Vector<Number> &       dst,
-  parallel::distributed::Vector<Number> const & src) const
+HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
+  vmult_block_jacobi_test(parallel::distributed::Vector<Number> &       dst,
+                          parallel::distributed::Vector<Number> const & src) const
 {
   data->cell_loop(&This::cell_loop_apply_block_diagonal_matrices_test, this, dst, src);
 }
@@ -448,12 +469,15 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmu
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
 HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
-  cell_loop_apply_block_diagonal_matrices_test(MatrixFree<dim, Number> const &               data,
-                                             parallel::distributed::Vector<Number> &       dst,
-                                             parallel::distributed::Vector<Number> const & src,
-                                             std::pair<unsigned int, unsigned int> const & cell_range) const
+  cell_loop_apply_block_diagonal_matrices_test(
+    MatrixFree<dim, Number> const &               data,
+    parallel::distributed::Vector<Number> &       dst,
+    parallel::distributed::Vector<Number> const & src,
+    std::pair<unsigned int, unsigned int> const & cell_range) const
 {
-  FEEval_Velocity_Velocity_linear fe_eval(data, viscous_operator->get_fe_param(), operator_data.dof_index);
+  FEEval_Velocity_Velocity_linear fe_eval(data,
+                                          viscous_operator->get_fe_param(),
+                                          operator_data.dof_index);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
@@ -471,7 +495,9 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
         src_vector(j) = fe_eval.begin_dof_values()[j][v];
 
       // apply matrix-vector product
-      matrices[cell * VectorizedArray<Number>::n_array_elements + v].vmult(dst_vector, src_vector, false);
+      matrices[cell * VectorizedArray<Number>::n_array_elements + v].vmult(dst_vector,
+                                                                           src_vector,
+                                                                           false);
 
       // write solution to dst-vector
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
@@ -484,9 +510,10 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 MultigridOperatorBase<dim, Number> *
-HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::get_new(unsigned int deg) const
+HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::get_new(
+  unsigned int deg) const
 {
-  AssertThrow(deg==fe_degree, ExcMessage("Not compatible for p-GMG!"));
+  AssertThrow(deg == fe_degree, ExcMessage("Not compatible for p-GMG!"));
   return new HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>();
 }
 

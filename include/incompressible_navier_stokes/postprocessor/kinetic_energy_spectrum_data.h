@@ -14,37 +14,38 @@
 struct KineticEnergySpectrumData
 {
   KineticEnergySpectrumData()
-    :
-  calculate(false),
-  start_time(0.0),
-  calculate_every_time_steps(-1),
-  calculate_every_time_interval(-1.0),
-  filename_prefix("energy_spectrum"),
-  output_tolerance(std::numeric_limits<double>::min()),
-  evaluation_points_per_cell(0)
-  {}
+    : calculate(false),
+      start_time(0.0),
+      calculate_every_time_steps(-1),
+      calculate_every_time_interval(-1.0),
+      filename_prefix("energy_spectrum"),
+      output_tolerance(std::numeric_limits<double>::min()),
+      evaluation_points_per_cell(0)
+  {
+  }
 
-  void print(ConditionalOStream &pcout)
+  void
+  print(ConditionalOStream & pcout)
   {
     if(calculate == true)
     {
       pcout << std::endl << "  Calculate kinetic energy spectrum:" << std::endl;
-      print_parameter(pcout,"Start time",start_time);
+      print_parameter(pcout, "Start time", start_time);
       if(calculate_every_time_steps >= 0)
-        print_parameter(pcout,"Calculate every timesteps",calculate_every_time_steps);
+        print_parameter(pcout, "Calculate every timesteps", calculate_every_time_steps);
       if(calculate_every_time_interval >= 0.0)
-        print_parameter(pcout,"Calculate every time interval",calculate_every_time_interval);
-      print_parameter(pcout,"Output precision",output_tolerance);
-      print_parameter(pcout,"Evaluation points per cell",evaluation_points_per_cell);
+        print_parameter(pcout, "Calculate every time interval", calculate_every_time_interval);
+      print_parameter(pcout, "Output precision", output_tolerance);
+      print_parameter(pcout, "Evaluation points per cell", evaluation_points_per_cell);
     }
   }
 
-  bool calculate;
-  double start_time;
-  int calculate_every_time_steps;
-  double calculate_every_time_interval;
-  std::string filename_prefix;
-  double output_tolerance;
+  bool         calculate;
+  double       start_time;
+  int          calculate_every_time_steps;
+  double       calculate_every_time_interval;
+  std::string  filename_prefix;
+  double       output_tolerance;
   unsigned int evaluation_points_per_cell;
 };
 

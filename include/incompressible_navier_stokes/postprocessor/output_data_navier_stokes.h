@@ -1,5 +1,5 @@
 /*
- * OutputDataNavierStokes.h
+ * output_data_navier_stokes.h
  *
  *  Created on: Oct 12, 2016
  *      Author: fehn
@@ -19,20 +19,19 @@
 struct OutputDataMeanVelocity
 {
   OutputDataMeanVelocity()
-    :
-    calculate(false),
-    sample_start_time(0.0),
-    sample_end_time(0.0),
-    sample_every_timesteps(1)
-  {}
-
-  void print(ConditionalOStream &pcout, bool unsteady)
+    : calculate(false), sample_start_time(0.0), sample_end_time(0.0), sample_every_timesteps(1)
   {
-    if(unsteady){
-      print_parameter(pcout,"Calculate mean velocity", calculate);
-      print_parameter(pcout,"  Sample start time", sample_start_time);
-      print_parameter(pcout,"  Sample end time", sample_end_time);
-      print_parameter(pcout,"  Sample every timesteps", sample_every_timesteps);
+  }
+
+  void
+  print(ConditionalOStream & pcout, bool unsteady)
+  {
+    if(unsteady)
+    {
+      print_parameter(pcout, "Calculate mean velocity", calculate);
+      print_parameter(pcout, "  Sample start time", sample_start_time);
+      print_parameter(pcout, "  Sample end time", sample_end_time);
+      print_parameter(pcout, "  Sample every timesteps", sample_every_timesteps);
     }
   }
 
@@ -40,35 +39,36 @@ struct OutputDataMeanVelocity
   bool calculate;
 
   // sampling information
-  double sample_start_time;
-  double sample_end_time;
+  double       sample_start_time;
+  double       sample_end_time;
   unsigned int sample_every_timesteps;
 };
 
 struct OutputDataNavierStokes : public OutputData
 {
   OutputDataNavierStokes()
-    :
-    write_divergence(false),
-    write_velocity_magnitude(false),
-    write_vorticity_magnitude(false),
-    write_streamfunction(false),
-    write_q_criterion(false),
-    write_processor_id(false),
-    mean_velocity(OutputDataMeanVelocity())
-  {}
-
-  void print(ConditionalOStream &pcout, bool unsteady)
+    : write_divergence(false),
+      write_velocity_magnitude(false),
+      write_vorticity_magnitude(false),
+      write_streamfunction(false),
+      write_q_criterion(false),
+      write_processor_id(false),
+      mean_velocity(OutputDataMeanVelocity())
   {
-    OutputData::print(pcout,unsteady);
+  }
 
-    print_parameter(pcout,"Write divergence", write_divergence);
-    print_parameter(pcout,"Write velocity magnitude", write_velocity_magnitude);
-    print_parameter(pcout,"Write vorticity magnitude", write_vorticity_magnitude);
-    print_parameter(pcout,"Write streamfunction", write_streamfunction);
-    print_parameter(pcout,"Write Q criterion", write_q_criterion);
-    print_parameter(pcout,"Write processor ID", write_processor_id);
-    
+  void
+  print(ConditionalOStream & pcout, bool unsteady)
+  {
+    OutputData::print(pcout, unsteady);
+
+    print_parameter(pcout, "Write divergence", write_divergence);
+    print_parameter(pcout, "Write velocity magnitude", write_velocity_magnitude);
+    print_parameter(pcout, "Write vorticity magnitude", write_vorticity_magnitude);
+    print_parameter(pcout, "Write streamfunction", write_streamfunction);
+    print_parameter(pcout, "Write Q criterion", write_q_criterion);
+    print_parameter(pcout, "Write processor ID", write_processor_id);
+
     mean_velocity.print(pcout, unsteady);
   }
 
