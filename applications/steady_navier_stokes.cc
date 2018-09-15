@@ -5,9 +5,9 @@
  *      Author: fehn
  */
 
+#include <deal.II/base/revision.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
-#include <deal.II/base/revision.h>
 
 // postprocessor
 #include "../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
@@ -19,10 +19,10 @@
 #include "../include/incompressible_navier_stokes/time_integration/driver_steady_problems.h"
 
 // Paramters, BCs, etc.
-#include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
+#include "../include/incompressible_navier_stokes/user_interface/analytical_solution.h"
 #include "../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
-#include "../include/incompressible_navier_stokes/user_interface/analytical_solution.h"
+#include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
 
 #include "../include/functionalities/print_general_infos.h"
 
@@ -39,48 +39,69 @@ using namespace IncNS;
 #include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
 
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number=double>
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number = double>
 class NavierStokesProblem
 {
 public:
-  NavierStokesProblem(const unsigned int refine_steps_space, const unsigned int refine_steps_time=0);
-  void solve_problem();
+  NavierStokesProblem(const unsigned int refine_steps_space,
+                      const unsigned int refine_steps_time = 0);
+  void
+  solve_problem();
 
 private:
-  void print_header();
-  void setup_postprocessor();
+  void
+  print_header();
+  void
+  setup_postprocessor();
 
   ConditionalOStream pcout;
 
   parallel::distributed::Triangulation<dim> triangulation;
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_faces;
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+    periodic_faces;
 
   const unsigned int n_refine_space;
 
-  std::shared_ptr<FieldFunctions<dim> > field_functions;
-  std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure;
+  std::shared_ptr<FieldFunctions<dim>>      field_functions;
+  std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure;
 
-  std::shared_ptr<AnalyticalSolution<dim> > analytical_solution;
+  std::shared_ptr<AnalyticalSolution<dim>> analytical_solution;
 
   InputParameters<dim> param;
 
-  std::shared_ptr<DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> > navier_stokes_operation;
+  std::shared_ptr<
+    DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>>
+    navier_stokes_operation;
 
-  std::shared_ptr<PostProcessorBase<dim,Number> > postprocessor;
+  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
 
-  std::shared_ptr<DriverSteadyProblems<dim, Number,
-    DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> > > driver_steady;
+  std::shared_ptr<DriverSteadyProblems<
+    dim,
+    Number,
+    DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>>>
+    driver_steady;
 };
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
 NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-NavierStokesProblem(unsigned int const refine_steps_space,
-                    unsigned int const /*refine_steps_time*/)
-  :
-  pcout (std::cout,Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0),
-  triangulation(MPI_COMM_WORLD,dealii::Triangulation<dim>::none,parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
-  n_refine_space(refine_steps_space)
+  NavierStokesProblem(unsigned int const refine_steps_space,
+                      unsigned int const /*refine_steps_time*/)
+  : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
+    triangulation(MPI_COMM_WORLD,
+                  dealii::Triangulation<dim>::none,
+                  parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
+    n_refine_space(refine_steps_space)
 {
   param.set_input_parameters();
   param.check_input_parameters();
@@ -107,24 +128,43 @@ NavierStokesProblem(unsigned int const refine_steps_space,
   boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
 
   AssertThrow(param.solver_type == SolverType::Steady,
-      ExcMessage("This is a steady solver. Check input parameters."));
+              ExcMessage("This is a steady solver. Check input parameters."));
 
   // initialize navier_stokes_operation
-  navier_stokes_operation.reset(new DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
-      (triangulation,param));
+  navier_stokes_operation.reset(new DGNavierStokesCoupled<dim,
+                                                          fe_degree_u,
+                                                          fe_degree_p,
+                                                          fe_degree_xwall,
+                                                          xwall_quad_rule,
+                                                          Number>(triangulation, param));
 
   // initialize postprocessor
-  postprocessor = construct_postprocessor<dim,Number>(param);
+  postprocessor = construct_postprocessor<dim, Number>(param);
 
-  // initialize driver for steady state problem that depends on both navier_stokes_operation and postprocessor
-  driver_steady.reset(new DriverSteadyProblems<dim, Number, DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> >
-      (navier_stokes_operation,postprocessor,param));
+  // initialize driver for steady state problem that depends on both navier_stokes_operation and
+  // postprocessor
+  driver_steady.reset(new DriverSteadyProblems<dim,
+                                               Number,
+                                               DGNavierStokesCoupled<dim,
+                                                                     fe_degree_u,
+                                                                     fe_degree_p,
+                                                                     fe_degree_xwall,
+                                                                     xwall_quad_rule,
+                                                                     Number>>(
+    navier_stokes_operation, postprocessor, param));
 }
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-print_header()
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+void
+NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+  print_header()
 {
+  // clang-format off
   pcout << std::endl << std::endl << std::endl
   << "_________________________________________________________________________________" << std::endl
   << "                                                                                 " << std::endl
@@ -133,16 +173,24 @@ print_header()
   << "            based on coupled solution approach of Newton-Krylov type             " << std::endl
   << "_________________________________________________________________________________" << std::endl
   << std::endl;
+  // clang-format on
 }
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-setup_postprocessor()
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+void
+NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+  setup_postprocessor()
 {
   DofQuadIndexData dof_quad_index_data;
   dof_quad_index_data.dof_index_velocity = navier_stokes_operation->get_dof_index_velocity();
   dof_quad_index_data.dof_index_pressure = navier_stokes_operation->get_dof_index_pressure();
-  dof_quad_index_data.quad_index_velocity = navier_stokes_operation->get_quad_index_velocity_linear();
+  dof_quad_index_data.quad_index_velocity =
+    navier_stokes_operation->get_quad_index_velocity_linear();
 
   postprocessor->setup(navier_stokes_operation->get_dof_handler_u(),
                        navier_stokes_operation->get_dof_handler_p(),
@@ -153,9 +201,15 @@ setup_postprocessor()
 }
 
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-solve_problem()
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+void
+NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+  solve_problem()
 {
   // this function has to be defined in the header file that implements all
   // problem specific things like parameters, geometry, boundary conditions, etc.
@@ -165,9 +219,7 @@ solve_problem()
                                           boundary_descriptor_pressure,
                                           periodic_faces);
 
-  print_grid_data(pcout,
-                  n_refine_space,
-                  triangulation);
+  print_grid_data(pcout, n_refine_space, triangulation);
 
   navier_stokes_operation->setup(periodic_faces,
                                  boundary_descriptor_velocity,
@@ -181,57 +233,64 @@ solve_problem()
   setup_postprocessor();
 
   driver_steady->solve_steady_problem();
-
 }
 
-int main (int argc, char** argv)
+int
+main(int argc, char ** argv)
 {
   try
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
-    if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
       std::cout << "deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch "
-                << DEAL_II_GIT_BRANCH << std::endl << std::endl;
+                << DEAL_II_GIT_BRANCH << std::endl
+                << std::endl;
     }
 
     deallog.depth_console(0);
 
-    //mesh refinements in order to perform spatial convergence tests
-    for(unsigned int refine_steps_space = REFINE_STEPS_SPACE_MIN;refine_steps_space <= REFINE_STEPS_SPACE_MAX;++refine_steps_space)
+    // mesh refinements in order to perform spatial convergence tests
+    for(unsigned int refine_steps_space = REFINE_STEPS_SPACE_MIN;
+        refine_steps_space <= REFINE_STEPS_SPACE_MAX;
+        ++refine_steps_space)
     {
-      //time refinements in order to perform temporal convergence tests
-      for(unsigned int refine_steps_time = REFINE_STEPS_TIME_MIN;refine_steps_time <= REFINE_STEPS_TIME_MAX;++refine_steps_time)
+      // time refinements in order to perform temporal convergence tests
+      for(unsigned int refine_steps_time = REFINE_STEPS_TIME_MIN;
+          refine_steps_time <= REFINE_STEPS_TIME_MAX;
+          ++refine_steps_time)
       {
-        NavierStokesProblem<DIMENSION, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL>
-            navier_stokes_problem(refine_steps_space,refine_steps_time);
+        NavierStokesProblem<DIMENSION,
+                            FE_DEGREE_VELOCITY,
+                            FE_DEGREE_PRESSURE,
+                            FE_DEGREE_XWALL,
+                            N_Q_POINTS_1D_XWALL>
+          navier_stokes_problem(refine_steps_space, refine_steps_time);
 
         navier_stokes_problem.solve_problem();
       }
     }
   }
-  catch (std::exception &exc)
+  catch(std::exception & exc)
   {
-    std::cerr << std::endl << std::endl
-              << "----------------------------------------------------"
-              << std::endl;
+    std::cerr << std::endl
+              << std::endl
+              << "----------------------------------------------------" << std::endl;
     std::cerr << "Exception on processing: " << std::endl
               << exc.what() << std::endl
               << "Aborting!" << std::endl
-              << "----------------------------------------------------"
-              << std::endl;
+              << "----------------------------------------------------" << std::endl;
     return 1;
   }
-  catch (...)
+  catch(...)
   {
-    std::cerr << std::endl << std::endl
-              << "----------------------------------------------------"
-              << std::endl;
+    std::cerr << std::endl
+              << std::endl
+              << "----------------------------------------------------" << std::endl;
     std::cerr << "Unknown exception!" << std::endl
               << "Aborting!" << std::endl
-              << "----------------------------------------------------"
-              << std::endl;
+              << "----------------------------------------------------" << std::endl;
     return 1;
   }
   return 0;

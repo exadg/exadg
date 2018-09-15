@@ -20,7 +20,7 @@
 using namespace dealii;
 
 #include "fluid_base_algorithm.h"
-#include "poisson/laplace_operator.h"
+#include "../include/poisson/spatial_discretization/laplace_operator.h"
 
 
 template<int dim>
@@ -100,7 +100,7 @@ private:
   std::shared_ptr<PreconditionerBase<double>> preconditioner;
   PoissonSolver<dim>                          poisson_solver;
 
-  LaplaceOperator<dim, double> laplace_operator;
+  Poisson::LaplaceOperator<dim, double> laplace_operator;
 
   parallel::distributed::Vector<double> velocity_diagonal_mass;
   parallel::distributed::Vector<double> pressure_diagonal_mass;

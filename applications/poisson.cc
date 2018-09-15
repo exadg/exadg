@@ -1,8 +1,8 @@
 /*
  * poisson.cc
  *
- *  Created on:
- *      Author:
+ *  Created on: 2018
+ *      Author: münch
  */
 
 #include <deal.II/base/conditional_ostream.h>
@@ -39,7 +39,10 @@ const int best_of = 1;
 
 template<int dim, int fe_degree, typename Function>
 void
-measure_minimum_time(const unsigned int best_of, ConvergenceTable & table, std::string label, Function f)
+measure_minimum_time(const unsigned int best_of,
+                     ConvergenceTable & table,
+                     std::string        label,
+                     Function           f)
 {
   Timer  timer;
   double min_time = std::numeric_limits<double>::max();
@@ -96,7 +99,8 @@ private:
   const unsigned int                        n_refine_space;
   Poisson::InputParameters                  param;
 
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> periodic_faces;
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+    periodic_faces;
 
   std::shared_ptr<Poisson::FieldFunctions<dim>>     field_functions;
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor;
@@ -136,22 +140,24 @@ template<int dim, int fe_degree, typename Number>
 void
 PoissonProblem<dim, fe_degree, Number>::print_header()
 {
-  pcout << std::endl
-        << std::endl
-        << std::endl
+  // clang-format off
+  pcout << std::endl << std::endl << std::endl
         << "_________________________________________________________________________________" << std::endl
         << "                                                                                 " << std::endl
         << "                High-order discontinuous Galerkin solver for the                 " << std::endl
-        << "                            Laplace/Poisson equation                             " << std::endl
+        << "                                Poisson equation                                 " << std::endl
         << "_________________________________________________________________________________" << std::endl
         << std::endl;
+  // clang-format on
 }
 
 template<int dim, int fe_degree, typename Number>
 void
 PoissonProblem<dim, fe_degree, Number>::print_grid_data()
 {
-  pcout << std::endl << "Generating grid for " << dim << "-dimensional problem:" << std::endl << std::endl;
+  pcout << std::endl
+        << "Generating grid for " << dim << "-dimensional problem:" << std::endl
+        << std::endl;
 
   print_parameter(pcout, "Number of refinements", n_refine_space);
   print_parameter(pcout, "Number of cells", triangulation.n_global_active_cells());
@@ -164,7 +170,11 @@ void
 PoissonProblem<dim, fe_degree, Number>::solve_problem(ConvergenceTable & convergence_table)
 {
   // create grid and set bc
-  create_grid_and_set_boundary_conditions(triangulation, n_refine_space, boundary_descriptor, periodic_faces);
+  create_grid_and_set_boundary_conditions(triangulation,
+                                          n_refine_space,
+                                          boundary_descriptor,
+                                          periodic_faces);
+
   print_grid_data();
 
   // setup poisson operation
@@ -189,7 +199,8 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(ConvergenceTable & converg
   convergence_table.set_scientific("setup", true);
 
   if(param.output_data.write_output)
-    this->output_data(param.output_data.output_folder + param.output_data.output_name + "0.vtu", solution);
+    this->output_data(param.output_data.output_folder + param.output_data.output_name + "0.vtu",
+                      solution);
 
   measure_minimum_time<dim, fe_degree>(best_of, convergence_table, "rhs", [&]() mutable {
     poisson_operation->rhs(rhs);
@@ -203,7 +214,8 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(ConvergenceTable & converg
   convergence_table.add_value("cycles", cycles);
 
   if(param.output_data.write_output)
-    this->output_data(param.output_data.output_folder + param.output_data.output_name + "1.vtu", solution);
+    this->output_data(param.output_data.output_folder + param.output_data.output_name + "1.vtu",
+                      solution);
 }
 
 template<int dim, int fe_degree>
@@ -238,8 +250,8 @@ main(int argc, char ** argv)
 
     if(!rank)
     {
-      std::cout << "deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch " << DEAL_II_GIT_BRANCH
-                << std::endl
+      std::cout << "deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch "
+                << DEAL_II_GIT_BRANCH << std::endl
                 << std::endl;
     }
 

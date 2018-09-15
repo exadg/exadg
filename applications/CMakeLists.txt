@@ -10,13 +10,12 @@ INCLUDE_DIRECTORIES(
         )
 
 SET( SOURCE_FILES
-     # Compressible Navier Stokes
+     # Compressible Navier-Stokes
      #compressible_navier_stokes_operator_matrix_free.cc 
      unsteady_compressible_navier_stokes.cc
      
-     # Incompressible Navier Stokes
+     # Incompressible Navier-Stokes
      #navier_stokes_operator_matrix_free.cc
-     #navier_stokes_operator_matrix_free_basic.cc
      steady_navier_stokes.cc
      unsteady_navier_stokes.cc
      unsteady_navier_stokes_two_domains.cc
