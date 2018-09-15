@@ -33,6 +33,8 @@ template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
 class LinePlotCalculator
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   LinePlotCalculator() : clear_files(true)
   {
   }
@@ -50,8 +52,7 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<Number> const & velocity,
-           parallel::distributed::Vector<Number> const & pressure) const
+  evaluate(VectorType const & velocity, VectorType const & pressure) const
   {
     if(data.write_output == true)
     {

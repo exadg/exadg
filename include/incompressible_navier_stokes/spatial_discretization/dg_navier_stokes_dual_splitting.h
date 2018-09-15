@@ -43,6 +43,8 @@ public:
                                           Number>
     PROJECTION_METHODS_BASE;
 
+  typedef typename PROJECTION_METHODS_BASE::VectorType VectorType;
+
   typedef DGNavierStokesDualSplitting<dim,
                                       fe_degree,
                                       fe_degree_p,
@@ -72,27 +74,26 @@ public:
    *  implicit solution of convective step
    */
   void
-  solve_nonlinear_convective_problem(parallel::distributed::Vector<Number> &       dst,
-                                     parallel::distributed::Vector<Number> const & sum_alphai_ui,
-                                     double const &                                eval_time,
-                                     double const & scaling_factor_mass_matrix_term,
-                                     unsigned int & newton_iterations,
-                                     unsigned int & linear_iterations);
+  solve_nonlinear_convective_problem(VectorType &       dst,
+                                     VectorType const & sum_alphai_ui,
+                                     double const &     eval_time,
+                                     double const &     scaling_factor_mass_matrix_term,
+                                     unsigned int &     newton_iterations,
+                                     unsigned int &     linear_iterations);
 
   /*
    *  The implementation of the Newton solver requires that the underlying operator
    *  implements a function called "evaluate_nonlinear_residual"
    */
   void
-  evaluate_nonlinear_residual(parallel::distributed::Vector<Number> &       dst,
-                              parallel::distributed::Vector<Number> const & src);
+  evaluate_nonlinear_residual(VectorType & dst, VectorType const & src);
 
   /*
    * The implementation of the Newton solver requires that the underlying operator
    * implements a function called "initialize_vector_for_newton_solver"
    */
   void
-  initialize_vector_for_newton_solver(parallel::distributed::Vector<Number> & src) const
+  initialize_vector_for_newton_solver(VectorType & src) const
   {
     this->initialize_vector_velocity(src);
   }
@@ -102,7 +103,7 @@ public:
    * implements a function called "set_solution_linearization"
    */
   void
-  set_solution_linearization(parallel::distributed::Vector<Number> const & solution_linearization)
+  set_solution_linearization(VectorType const & solution_linearization)
   {
     velocity_linearization = solution_linearization;
   }
@@ -112,69 +113,59 @@ public:
    *  has to implement a function called "vmult"
    */
   void
-  vmult(parallel::distributed::Vector<Number> &       dst,
-        parallel::distributed::Vector<Number> const & src) const;
+  vmult(VectorType & dst, VectorType const & src) const;
 
   /*
    *  This function calculates the matrix vector product for the linearized convective problem.
    */
   void
-  apply_linearized_convective_problem(parallel::distributed::Vector<Number> &       dst,
-                                      parallel::distributed::Vector<Number> const & src) const;
+  apply_linearized_convective_problem(VectorType & dst, VectorType const & src) const;
 
   // convective term
   void
-  evaluate_convective_term_and_apply_inverse_mass_matrix(
-    parallel::distributed::Vector<Number> &       dst,
-    parallel::distributed::Vector<Number> const & src,
-    double const                                  evaluation_time) const;
+  evaluate_convective_term_and_apply_inverse_mass_matrix(VectorType &       dst,
+                                                         VectorType const & src,
+                                                         double const       evaluation_time) const;
 
   // body forces
   void
-  evaluate_body_force_and_apply_inverse_mass_matrix(parallel::distributed::Vector<Number> & dst,
+  evaluate_body_force_and_apply_inverse_mass_matrix(VectorType & dst,
                                                     double const evaluation_time) const;
 
   // rhs pressure: velocity divergence
   void
-  apply_velocity_divergence_term(parallel::distributed::Vector<Number> &       dst,
-                                 const parallel::distributed::Vector<Number> & src) const;
+  apply_velocity_divergence_term(VectorType & dst, VectorType const & src) const;
 
   void
-  rhs_velocity_divergence_term(parallel::distributed::Vector<Number> & dst,
-                               double const &                          evaluation_time) const;
+  rhs_velocity_divergence_term(VectorType & dst, double const & evaluation_time) const;
 
   void
-  rhs_ppe_div_term_body_forces_add(parallel::distributed::Vector<Number> & dst,
-                                   double const &                          eval_time);
+  rhs_ppe_div_term_body_forces_add(VectorType & dst, double const & eval_time);
 
   void
-  rhs_ppe_div_term_convective_term_add(parallel::distributed::Vector<Number> &       dst,
-                                       parallel::distributed::Vector<Number> const & src);
+  rhs_ppe_div_term_convective_term_add(VectorType & dst, VectorType const & src);
 
   // rhs pressure
   void
-  rhs_ppe_nbc_add(parallel::distributed::Vector<Number> & dst, double const & evaluation_time);
+  rhs_ppe_nbc_add(VectorType & dst, double const & evaluation_time);
 
   // rhs pressure: Neumann BC convective term
   void
-  rhs_ppe_convective_add(parallel::distributed::Vector<Number> &       dst,
-                         const parallel::distributed::Vector<Number> & src) const;
+  rhs_ppe_convective_add(VectorType & dst, VectorType const & src) const;
 
   // rhs pressure: Neumann BC viscous term
   void
-  rhs_ppe_viscous_add(parallel::distributed::Vector<Number> &       dst,
-                      const parallel::distributed::Vector<Number> & src) const;
+  rhs_ppe_viscous_add(VectorType & dst, VectorType const & src) const;
 
   // viscous step
   unsigned int
-  solve_viscous(parallel::distributed::Vector<Number> &       dst,
-                parallel::distributed::Vector<Number> const & src,
-                double const &                                scaling_factor_time_derivative_term);
+  solve_viscous(VectorType &       dst,
+                VectorType const & src,
+                double const &     scaling_factor_time_derivative_term);
 
   // apply Helmholtz operator
   void
-  apply_helmholtz_operator(parallel::distributed::Vector<Number> &       dst,
-                           parallel::distributed::Vector<Number> const & src) const;
+  apply_helmholtz_operator(VectorType & dst, VectorType const & src) const;
 
   FEParameters<dim> const &
   get_fe_parameters() const
@@ -241,22 +232,19 @@ protected:
 
 private:
   // Helmholtz solver
-  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<Number>>> helmholtz_solver;
+  std::shared_ptr<IterativeSolverBase<VectorType>> helmholtz_solver;
 
   // Implicit solution of convective step
-  parallel::distributed::Vector<Number>         velocity_linearization;
-  parallel::distributed::Vector<Number>         temp;
-  parallel::distributed::Vector<Number> const * sum_alphai_ui;
+  VectorType         velocity_linearization;
+  VectorType         temp;
+  VectorType const * sum_alphai_ui;
 
   // implicit solution of convective step
   std::shared_ptr<InverseMassMatrixPreconditioner<dim, fe_degree, Number>>
     preconditioner_convective_problem;
 
-  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<Number>>> linear_solver;
-  std::shared_ptr<NewtonSolver<parallel::distributed::Vector<Number>,
-                               THIS,
-                               THIS,
-                               IterativeSolverBase<parallel::distributed::Vector<Number>>>>
+  std::shared_ptr<IterativeSolverBase<VectorType>> linear_solver;
+  std::shared_ptr<NewtonSolver<VectorType, THIS, THIS, IterativeSolverBase<VectorType>>>
     newton_solver;
 
 
@@ -306,44 +294,44 @@ private:
   // body force term
   void
   local_rhs_ppe_div_term_body_forces(
-    const MatrixFree<dim, Number> &               data,
-    parallel::distributed::Vector<Number> &       dst,
-    const parallel::distributed::Vector<Number> & src,
-    const std::pair<unsigned int, unsigned int> & cell_range) const;
+    MatrixFree<dim, Number> const &               data,
+    VectorType &                                  dst,
+    VectorType const &                            src,
+    std::pair<unsigned int, unsigned int> const & cell_range) const;
 
   void
   local_rhs_ppe_div_term_body_forces_face(
-    const MatrixFree<dim, Number> &               data,
-    parallel::distributed::Vector<Number> &       dst,
-    const parallel::distributed::Vector<Number> & src,
-    const std::pair<unsigned int, unsigned int> & face_range) const;
+    MatrixFree<dim, Number> const &               data,
+    VectorType &                                  dst,
+    VectorType const &                            src,
+    std::pair<unsigned int, unsigned int> const & face_range) const;
 
   void
   local_rhs_ppe_div_term_body_forces_boundary_face(
-    const MatrixFree<dim, Number> &               data,
-    parallel::distributed::Vector<Number> &       dst,
-    const parallel::distributed::Vector<Number> & src,
-    const std::pair<unsigned int, unsigned int> & face_range) const;
+    MatrixFree<dim, Number> const &               data,
+    VectorType &                                  dst,
+    VectorType const &                            src,
+    std::pair<unsigned int, unsigned int> const & face_range) const;
 
   // rhs pressure: NBC term
   void
-  local_rhs_ppe_nbc_add(const MatrixFree<dim, Number> &               data,
-                        parallel::distributed::Vector<Number> &       dst,
-                        const parallel::distributed::Vector<Number> & src,
-                        const std::pair<unsigned int, unsigned int> & cell_range) const;
+  local_rhs_ppe_nbc_add(MatrixFree<dim, Number> const &               data,
+                        VectorType &                                  dst,
+                        VectorType const &                            src,
+                        std::pair<unsigned int, unsigned int> const & cell_range) const;
 
   void
-  local_rhs_ppe_nbc_add_face(const MatrixFree<dim, Number> &               data,
-                             parallel::distributed::Vector<Number> &       dst,
-                             const parallel::distributed::Vector<Number> & src,
-                             const std::pair<unsigned int, unsigned int> & face_range) const;
+  local_rhs_ppe_nbc_add_face(MatrixFree<dim, Number> const &               data,
+                             VectorType &                                  dst,
+                             VectorType const &                            src,
+                             std::pair<unsigned int, unsigned int> const & face_range) const;
 
   void
   local_rhs_ppe_nbc_add_boundary_face(
-    const MatrixFree<dim, Number> &               data,
-    parallel::distributed::Vector<Number> &       dst,
-    const parallel::distributed::Vector<Number> & src,
-    const std::pair<unsigned int, unsigned int> & face_range) const;
+    MatrixFree<dim, Number> const &               data,
+    VectorType &                                  dst,
+    VectorType const &                            src,
+    std::pair<unsigned int, unsigned int> const & face_range) const;
 };
 
 template<int dim,
@@ -405,16 +393,12 @@ DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_
   solver_data.use_preconditioner = true;
 
   // setup linear solver
-  linear_solver.reset(new GMRESSolver<THIS,
-                                      InverseMassMatrixPreconditioner<dim, fe_degree, Number>,
-                                      parallel::distributed::Vector<Number>>(
-    *this, *preconditioner_convective_problem, solver_data));
+  linear_solver.reset(
+    new GMRESSolver<THIS, InverseMassMatrixPreconditioner<dim, fe_degree, Number>, VectorType>(
+      *this, *preconditioner_convective_problem, solver_data));
 
   // setup Newton solver
-  newton_solver.reset(new NewtonSolver<parallel::distributed::Vector<Number>,
-                                       THIS,
-                                       THIS,
-                                       IterativeSolverBase<parallel::distributed::Vector<Number>>>(
+  newton_solver.reset(new NewtonSolver<VectorType, THIS, THIS, IterativeSolverBase<VectorType>>(
     this->param.newton_solver_data_convective, *this, *this, *linear_solver));
 }
 
@@ -426,7 +410,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  setup_pressure_poisson_solver(const double time_step_size)
+  setup_pressure_poisson_solver(double const time_step_size)
 {
   // Call setup function of base class
   PROJECTION_METHODS_BASE::setup_pressure_poisson_solver(time_step_size);
@@ -510,9 +494,7 @@ DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_
     helmholtz_solver.reset(
       new CGSolver<HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
                    PreconditionerBase<Number>,
-                   parallel::distributed::Vector<Number>>(helmholtz_operator,
-                                                          *helmholtz_preconditioner,
-                                                          solver_data));
+                   VectorType>(helmholtz_operator, *helmholtz_preconditioner, solver_data));
   }
   else if(this->param.solver_viscous == SolverViscous::GMRES)
   {
@@ -539,9 +521,7 @@ DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_
     helmholtz_solver.reset(
       new GMRESSolver<HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
                       PreconditionerBase<Number>,
-                      parallel::distributed::Vector<Number>>(helmholtz_operator,
-                                                             *helmholtz_preconditioner,
-                                                             solver_data));
+                      VectorType>(helmholtz_operator, *helmholtz_preconditioner, solver_data));
   }
   else if(this->param.solver_viscous == SolverViscous::FGMRES)
   {
@@ -563,9 +543,7 @@ DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_
     helmholtz_solver.reset(
       new FGMRESSolver<HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
                        PreconditionerBase<Number>,
-                       parallel::distributed::Vector<Number>>(helmholtz_operator,
-                                                              *helmholtz_preconditioner,
-                                                              solver_data));
+                       VectorType>(helmholtz_operator, *helmholtz_preconditioner, solver_data));
   }
   else
   {
@@ -642,12 +620,12 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  solve_nonlinear_convective_problem(parallel::distributed::Vector<Number> &       dst,
-                                     parallel::distributed::Vector<Number> const & sum_alphai_ui,
-                                     double const &                                eval_time,
-                                     double const & scaling_factor_mass_matrix_term,
-                                     unsigned int & newton_iterations,
-                                     unsigned int & linear_iterations)
+  solve_nonlinear_convective_problem(VectorType &       dst,
+                                     VectorType const & sum_alphai_ui,
+                                     double const &     eval_time,
+                                     double const &     scaling_factor_mass_matrix_term,
+                                     unsigned int &     newton_iterations,
+                                     unsigned int &     linear_iterations)
 {
   // Set sum_alphai_ui, this variable is used when evaluating the nonlinear residual
   this->sum_alphai_ui = &sum_alphai_ui;
@@ -675,8 +653,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  evaluate_nonlinear_residual(parallel::distributed::Vector<Number> &       dst,
-                              const parallel::distributed::Vector<Number> & src)
+  evaluate_nonlinear_residual(VectorType & dst, VectorType const & src)
 {
   if(this->param.right_hand_side == true)
   {
@@ -708,8 +685,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  vmult(parallel::distributed::Vector<Number> &       dst,
-        parallel::distributed::Vector<Number> const & src) const
+  vmult(VectorType & dst, VectorType const & src) const
 {
   apply_linearized_convective_problem(dst, src);
 }
@@ -722,8 +698,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  apply_linearized_convective_problem(parallel::distributed::Vector<Number> &       dst,
-                                      parallel::distributed::Vector<Number> const & src) const
+  apply_linearized_convective_problem(VectorType & dst, VectorType const & src) const
 {
   this->mass_matrix_operator.apply(dst, src);
 
@@ -743,10 +718,9 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  evaluate_convective_term_and_apply_inverse_mass_matrix(
-    parallel::distributed::Vector<Number> &       dst,
-    parallel::distributed::Vector<Number> const & src,
-    double const                                  evaluation_time) const
+  evaluate_convective_term_and_apply_inverse_mass_matrix(VectorType &       dst,
+                                                         VectorType const & src,
+                                                         double const       evaluation_time) const
 {
   this->convective_operator.evaluate(dst, src, evaluation_time);
   this->inverse_mass_matrix_operator->apply(dst, dst);
@@ -760,7 +734,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  evaluate_body_force_and_apply_inverse_mass_matrix(parallel::distributed::Vector<Number> & dst,
+  evaluate_body_force_and_apply_inverse_mass_matrix(VectorType & dst,
                                                     double const evaluation_time) const
 {
   this->body_force_operator.evaluate(dst, evaluation_time);
@@ -776,8 +750,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  apply_velocity_divergence_term(parallel::distributed::Vector<Number> &       dst,
-                                 const parallel::distributed::Vector<Number> & src) const
+  apply_velocity_divergence_term(VectorType & dst, VectorType const & src) const
 {
   this->divergence_operator.apply(dst, src);
 }
@@ -790,8 +763,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  rhs_velocity_divergence_term(parallel::distributed::Vector<Number> & dst,
-                               double const &                          evaluation_time) const
+  rhs_velocity_divergence_term(VectorType & dst, double const & evaluation_time) const
 {
   this->divergence_operator.rhs(dst, evaluation_time);
 }
@@ -804,12 +776,11 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  rhs_ppe_div_term_body_forces_add(parallel::distributed::Vector<Number> & dst,
-                                   double const &                          eval_time)
+  rhs_ppe_div_term_body_forces_add(VectorType & dst, double const & eval_time)
 {
   evaluation_time = eval_time;
 
-  parallel::distributed::Vector<Number> src_dummy;
+  VectorType src_dummy;
   this->data.loop(&THIS::local_rhs_ppe_div_term_body_forces,
                   &THIS::local_rhs_ppe_div_term_body_forces_face,
                   &THIS::local_rhs_ppe_div_term_body_forces_boundary_face,
@@ -826,10 +797,10 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  local_rhs_ppe_div_term_body_forces(const MatrixFree<dim, Number> &,
-                                     parallel::distributed::Vector<Number> &,
-                                     const parallel::distributed::Vector<Number> &,
-                                     const std::pair<unsigned int, unsigned int> &) const
+  local_rhs_ppe_div_term_body_forces(MatrixFree<dim, Number> const &,
+                                     VectorType &,
+                                     VectorType const &,
+                                     std::pair<unsigned int, unsigned int> const &) const
 {
 }
 
@@ -841,10 +812,10 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  local_rhs_ppe_div_term_body_forces_face(const MatrixFree<dim, Number> &,
-                                          parallel::distributed::Vector<Number> &,
-                                          const parallel::distributed::Vector<Number> &,
-                                          const std::pair<unsigned int, unsigned int> &) const
+  local_rhs_ppe_div_term_body_forces_face(MatrixFree<dim, Number> const &,
+                                          VectorType &,
+                                          VectorType const &,
+                                          std::pair<unsigned int, unsigned int> const &) const
 {
 }
 
@@ -857,10 +828,10 @@ template<int dim,
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
   local_rhs_ppe_div_term_body_forces_boundary_face(
-    const MatrixFree<dim, Number> &         data,
-    parallel::distributed::Vector<Number> & dst,
-    const parallel::distributed::Vector<Number> &,
-    const std::pair<unsigned int, unsigned int> & face_range) const
+    MatrixFree<dim, Number> const & data,
+    VectorType &                    dst,
+    VectorType const &,
+    std::pair<unsigned int, unsigned int> const & face_range) const
 {
   unsigned int dof_index_pressure  = this->get_dof_index_pressure();
   unsigned int quad_index_pressure = this->get_quad_index_pressure();
@@ -945,8 +916,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  rhs_ppe_div_term_convective_term_add(parallel::distributed::Vector<Number> &       dst,
-                                       parallel::distributed::Vector<Number> const & src)
+  rhs_ppe_div_term_convective_term_add(VectorType & dst, VectorType const & src)
 {
   velocity_divergence_convective_term.calculate(dst, src);
 }
@@ -959,11 +929,11 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  rhs_ppe_nbc_add(parallel::distributed::Vector<Number> & dst, double const & eval_time)
+  rhs_ppe_nbc_add(VectorType & dst, double const & eval_time)
 {
   evaluation_time = eval_time;
 
-  parallel::distributed::Vector<Number> src_dummy;
+  VectorType src_dummy;
   this->data.loop(&THIS::local_rhs_ppe_nbc_add,
                   &THIS::local_rhs_ppe_nbc_add_face,
                   &THIS::local_rhs_ppe_nbc_add_boundary_face,
@@ -980,10 +950,10 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  local_rhs_ppe_nbc_add(const MatrixFree<dim, Number> &,
-                        parallel::distributed::Vector<Number> &,
-                        const parallel::distributed::Vector<Number> &,
-                        const std::pair<unsigned int, unsigned int> &) const
+  local_rhs_ppe_nbc_add(MatrixFree<dim, Number> const &,
+                        VectorType &,
+                        VectorType const &,
+                        std::pair<unsigned int, unsigned int> const &) const
 {
 }
 
@@ -995,10 +965,10 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  local_rhs_ppe_nbc_add_face(const MatrixFree<dim, Number> &,
-                             parallel::distributed::Vector<Number> &,
-                             const parallel::distributed::Vector<Number> &,
-                             const std::pair<unsigned int, unsigned int> &) const
+  local_rhs_ppe_nbc_add_face(MatrixFree<dim, Number> const &,
+                             VectorType &,
+                             VectorType const &,
+                             std::pair<unsigned int, unsigned int> const &) const
 {
 }
 
@@ -1012,10 +982,10 @@ template<int dim,
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
   local_rhs_ppe_nbc_add_boundary_face(
-    const MatrixFree<dim, Number> &         data,
-    parallel::distributed::Vector<Number> & dst,
-    const parallel::distributed::Vector<Number> &,
-    const std::pair<unsigned int, unsigned int> & face_range) const
+    MatrixFree<dim, Number> const & data,
+    VectorType &                    dst,
+    VectorType const &,
+    std::pair<unsigned int, unsigned int> const & face_range) const
 {
   unsigned int dof_index_pressure  = this->get_dof_index_pressure();
   unsigned int quad_index_pressure = this->get_quad_index_pressure();
@@ -1098,8 +1068,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  rhs_ppe_convective_add(parallel::distributed::Vector<Number> &       dst,
-                         const parallel::distributed::Vector<Number> & src) const
+  rhs_ppe_convective_add(VectorType & dst, VectorType const & src) const
 {
   pressure_nbc_convective_term.calculate(dst, src);
 }
@@ -1112,8 +1081,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  rhs_ppe_viscous_add(parallel::distributed::Vector<Number> &       dst,
-                      const parallel::distributed::Vector<Number> & src) const
+  rhs_ppe_viscous_add(VectorType & dst, VectorType const & src) const
 {
   pressure_nbc_viscous_term.calculate(dst, src);
 }
@@ -1126,9 +1094,7 @@ template<int dim,
          typename Number>
 unsigned int
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  solve_viscous(parallel::distributed::Vector<Number> &       dst,
-                parallel::distributed::Vector<Number> const & src,
-                double const &                                factor)
+  solve_viscous(VectorType & dst, VectorType const & src, double const & factor)
 {
   // Update Helmholtz operator
   helmholtz_operator.set_scaling_factor_time_derivative_term(factor);
@@ -1146,8 +1112,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  apply_helmholtz_operator(parallel::distributed::Vector<Number> &       dst,
-                           parallel::distributed::Vector<Number> const & src) const
+  apply_helmholtz_operator(VectorType & dst, VectorType const & src) const
 {
   // Update Helmholtz operator
   helmholtz_operator.vmult(dst, src);

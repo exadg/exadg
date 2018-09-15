@@ -293,6 +293,12 @@ public:
   static const int DIM = dim;
   typedef Number   value_type;
 
+  static const bool         is_xwall = (xwall_quad_rule > 1) ? true : false;
+  static const unsigned int n_actual_q_points_vel_linear =
+    (is_xwall) ? xwall_quad_rule : fe_degree + 1;
+
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   typedef ProjectionOperatorDivergenceAndContinuityPenalty<dim,
                                                            fe_degree,
                                                            fe_degree_p,
@@ -300,10 +306,6 @@ public:
                                                            xwall_quad_rule,
                                                            value_type>
     This;
-
-  static const bool         is_xwall = (xwall_quad_rule > 1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear =
-    (is_xwall) ? xwall_quad_rule : fe_degree + 1;
 
   typedef FEEvaluationWrapper<dim,
                               fe_degree,
@@ -353,8 +355,7 @@ public:
    *  A prerequisite to call this function is that the time step size is set correctly.
    */
   void
-  vmult(parallel::distributed::Vector<value_type> &       dst,
-        parallel::distributed::Vector<value_type> const & src) const
+  vmult(VectorType & dst, VectorType const & src) const
   {
     // TODO
     Timer timer;
@@ -377,9 +378,9 @@ public:
    *  A prerequisite to call this function is that the time step size is set correctly.
    */
   void
-  rhs(parallel::distributed::Vector<value_type> & dst, double const eval_time) const
+  rhs(VectorType & dst, double const eval_time) const
   {
-    parallel::distributed::Vector<value_type> temp(dst);
+    VectorType temp(dst);
 
     continuity_penalty_operator->rhs(temp, eval_time);
 
@@ -394,9 +395,9 @@ public:
    *  A prerequisite to call this function is that the time step size is set correctly.
    */
   void
-  rhs_add(parallel::distributed::Vector<value_type> & dst, double const eval_time) const
+  rhs_add(VectorType & dst, double const eval_time) const
   {
-    parallel::distributed::Vector<value_type> temp(dst);
+    VectorType temp(dst);
 
     continuity_penalty_operator->rhs(temp, eval_time);
 
@@ -407,7 +408,7 @@ public:
    *  Calculate inverse diagonal which is needed for the Jacobi preconditioner.
    */
   void
-  calculate_inverse_diagonal(parallel::distributed::Vector<value_type> & diagonal) const
+  calculate_inverse_diagonal(VectorType & diagonal) const
   {
     calculate_diagonal(diagonal);
 
@@ -420,8 +421,7 @@ public:
    *  Apply block Jacobi preconditioner.
    */
   void
-  apply_inverse_block_diagonal(parallel::distributed::Vector<value_type> &       dst,
-                               parallel::distributed::Vector<value_type> const & src) const
+  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const
   {
     this->mass_matrix_operator->get_data().cell_loop(
       &This::cell_loop_apply_inverse_block_jacobi_matrices, this, dst, src);
@@ -458,7 +458,7 @@ public:
    *  Initialize dof vector (required when using the Jacobi preconditioner).
    */
   void
-  initialize_dof_vector(parallel::distributed::Vector<value_type> & vector) const
+  initialize_dof_vector(VectorType & vector) const
   {
     this->mass_matrix_operator->get_data().initialize_dof_vector(
       vector, this->mass_matrix_operator->get_operator_data().dof_index);
@@ -471,7 +471,7 @@ private:
    *  A prerequisite to call this function is that the time step size is set correctly.
    */
   void
-  calculate_diagonal(parallel::distributed::Vector<value_type> & diagonal) const
+  calculate_diagonal(VectorType & diagonal) const
   {
     divergence_penalty_operator->calculate_diagonal(diagonal);
     continuity_penalty_operator->add_diagonal(diagonal);
@@ -509,10 +509,10 @@ private:
    */
   void
   cell_loop_apply_inverse_block_jacobi_matrices(
-    MatrixFree<dim, value_type> const &               data,
-    parallel::distributed::Vector<value_type> &       dst,
-    parallel::distributed::Vector<value_type> const & src,
-    std::pair<unsigned int, unsigned int> const &     cell_range) const
+    MatrixFree<dim, value_type> const &           data,
+    VectorType &                                  dst,
+    VectorType const &                            src,
+    std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_linear fe_eval(
       data,
@@ -578,9 +578,11 @@ private:
  */
 template<int dim, int fe_degree, typename value_type>
 class ProjectionSolverNoPenalty
-  : public IterativeSolverBase<parallel::distributed::Vector<value_type>>
+  : public IterativeSolverBase<LinearAlgebra::distributed::Vector<value_type>>
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   ProjectionSolverNoPenalty(MatrixFree<dim, value_type> const & data_in,
                             unsigned int const                  dof_index_in,
                             unsigned int const                  quad_index_in)
@@ -588,8 +590,7 @@ public:
     inverse_mass_matrix_operator.initialize(data_in, dof_index_in, quad_index_in);
   }
   unsigned int
-  solve(parallel::distributed::Vector<value_type> &       dst,
-        const parallel::distributed::Vector<value_type> & src) const
+  solve(VectorType & dst, VectorType const & src) const
   {
     inverse_mass_matrix_operator.apply(dst, src);
 
@@ -611,9 +612,11 @@ template<int dim,
          int xwall_quad_rule,
          typename value_type>
 class DirectProjectionSolverDivergencePenalty
-  : public IterativeSolverBase<parallel::distributed::Vector<value_type>>
+  : public IterativeSolverBase<LinearAlgebra::distributed::Vector<value_type>>
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   typedef ProjectionOperatorDivergencePenaltyDirect<dim,
                                                     fe_degree,
                                                     fe_degree_p,
@@ -649,8 +652,7 @@ public:
   }
 
   unsigned int
-  solve(parallel::distributed::Vector<value_type> &       dst,
-        const parallel::distributed::Vector<value_type> & src) const
+  solve(VectorType & dst, VectorType const & src) const
   {
     dst = 0;
 
@@ -660,10 +662,10 @@ public:
   }
 
   void
-  local_solve(const MatrixFree<dim, value_type> &               data,
-              parallel::distributed::Vector<value_type> &       dst,
-              const parallel::distributed::Vector<value_type> & src,
-              const std::pair<unsigned int, unsigned int> &     cell_range) const
+  local_solve(MatrixFree<dim, value_type> const &           data,
+              VectorType &                                  dst,
+              VectorType const &                            src,
+              std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_linear fe_eval_velocity(data,
                                                      projection_operator->get_fe_param(),
@@ -769,9 +771,11 @@ template<int dim,
          int xwall_quad_rule,
          typename value_type>
 class IterativeProjectionSolverDivergencePenalty
-  : public IterativeSolverBase<parallel::distributed::Vector<value_type>>
+  : public IterativeSolverBase<LinearAlgebra::distributed::Vector<value_type>>
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   typedef ProjectionOperatorDivergencePenaltyIterative<dim,
                                                        fe_degree,
                                                        fe_degree_p,
@@ -799,8 +803,7 @@ public:
   }
 
   unsigned int
-  solve(parallel::distributed::Vector<value_type> &       dst,
-        const parallel::distributed::Vector<value_type> & src) const
+  solve(VectorType & dst, VectorType const & src) const
   {
     dst = 0;
 
@@ -810,10 +813,10 @@ public:
   }
 
   virtual void
-  local_solve(const MatrixFree<dim, value_type> &               data,
-              parallel::distributed::Vector<value_type> &       dst,
-              const parallel::distributed::Vector<value_type> & src,
-              const std::pair<unsigned int, unsigned int> &     cell_range) const
+  local_solve(MatrixFree<dim, value_type> const &           data,
+              VectorType &                                  dst,
+              VectorType const &                            src,
+              std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type> fe_eval(
       data, projection_operator.get_dof_index(), projection_operator.get_quad_index());
@@ -930,6 +933,8 @@ public:
   static const unsigned int n_actual_q_points_vel_linear =
     (is_xwall) ? xwall_quad_rule : fe_degree + 1;
 
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   typedef FEEvaluationWrapper<dim,
                               fe_degree,
                               fe_degree_xwall,
@@ -985,14 +990,14 @@ public:
   }
 
   void
-  calculate_array_penalty_parameter(parallel::distributed::Vector<value_type> const & velocity)
+  calculate_array_penalty_parameter(VectorType const & velocity)
   {
     calculate_array_penalty_parameter_div(velocity);
     calculate_array_penalty_parameter_conti(velocity);
   }
 
   void
-  calculate_array_penalty_parameter_div(parallel::distributed::Vector<value_type> const & velocity)
+  calculate_array_penalty_parameter_div(VectorType const & velocity)
   {
     velocity.update_ghost_values();
 
@@ -1045,8 +1050,7 @@ public:
   }
 
   void
-  calculate_array_penalty_parameter_conti(
-    parallel::distributed::Vector<value_type> const & velocity)
+  calculate_array_penalty_parameter_conti(VectorType const & velocity)
   {
     velocity.update_ghost_values();
 
@@ -1130,8 +1134,7 @@ public:
   }
 
   void
-  vmult(parallel::distributed::Vector<value_type> &       dst,
-        parallel::distributed::Vector<value_type> const & src) const
+  vmult(VectorType & dst, VectorType const & src) const
   {
     // TODO
     Timer timer;
@@ -1144,8 +1147,7 @@ public:
   }
 
   void
-  apply(parallel::distributed::Vector<value_type> &       dst,
-        parallel::distributed::Vector<value_type> const & src) const
+  apply(VectorType & dst, VectorType const & src) const
   {
     this->get_data().loop(&This::cell_loop,
                           &This::face_loop,
@@ -1159,8 +1161,7 @@ public:
   }
 
   void
-  apply_add(parallel::distributed::Vector<value_type> &       dst,
-            parallel::distributed::Vector<value_type> const & src) const
+  apply_add(VectorType & dst, VectorType const & src) const
   {
     this->get_data().loop(&This::cell_loop,
                           &This::face_loop,
@@ -1175,10 +1176,10 @@ public:
 
 private:
   void
-  cell_loop(const MatrixFree<dim, value_type> &               data,
-            parallel::distributed::Vector<value_type> &       dst,
-            const parallel::distributed::Vector<value_type> & src,
-            const std::pair<unsigned int, unsigned int> &     cell_range) const
+  cell_loop(MatrixFree<dim, value_type> const &           data,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_linear fe_eval(data, this->get_fe_param(), this->get_dof_index());
 
@@ -1201,10 +1202,10 @@ private:
   }
 
   void
-  face_loop(const MatrixFree<dim, value_type> &               data,
-            parallel::distributed::Vector<value_type> &       dst,
-            const parallel::distributed::Vector<value_type> & src,
-            const std::pair<unsigned int, unsigned int> &     face_range) const
+  face_loop(MatrixFree<dim, value_type> const &           data,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval(data,
                                                 this->get_fe_param(),
@@ -1248,10 +1249,10 @@ private:
   }
 
   void
-  boundary_face_loop(const MatrixFree<dim, value_type> & /*data*/,
-                     parallel::distributed::Vector<value_type> & /*dst*/,
-                     const parallel::distributed::Vector<value_type> & /*src*/,
-                     const std::pair<unsigned int, unsigned int> & /*face_range*/) const
+  boundary_face_loop(MatrixFree<dim, value_type> const & /*data*/,
+                     VectorType & /*dst*/,
+                     VectorType const & /*src*/,
+                     std::pair<unsigned int, unsigned int> const & /*face_range*/) const
   {
   }
 

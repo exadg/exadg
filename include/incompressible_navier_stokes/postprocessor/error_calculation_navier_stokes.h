@@ -19,6 +19,8 @@ template<int dim, typename Number>
 class ErrorCalculator
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   ErrorCalculator()
     : clear_files_velocity(true),
       clear_files_pressure(true),
@@ -43,10 +45,10 @@ public:
 
 public:
   void
-  evaluate(parallel::distributed::Vector<Number> const & velocity,
-           parallel::distributed::Vector<Number> const & pressure,
-           double const &                                time,
-           int const &                                   time_step_number)
+  evaluate(VectorType const & velocity,
+           VectorType const & pressure,
+           double const &     time,
+           int const &        time_step_number)
   {
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
@@ -111,9 +113,7 @@ private:
   }
 
   void
-  do_evaluate(parallel::distributed::Vector<Number> const & velocity,
-              parallel::distributed::Vector<Number> const & pressure,
-              double const &                                time)
+  do_evaluate(VectorType const & velocity, VectorType const & pressure, double const & time)
   {
     bool const relative_errors = error_data.calculate_relative_errors;
 

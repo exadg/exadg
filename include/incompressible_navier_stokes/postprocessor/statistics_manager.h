@@ -12,6 +12,8 @@ template<int dim>
 class StatisticsManager
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<double> VectorType;
+
   StatisticsManager(const DoFHandler<dim> & dof_handler_velocity, const Mapping<dim> & mapping);
 
   // The argument grid_transform indicates how the y-direction that is initially distributed from
@@ -22,21 +24,19 @@ public:
         TurbulentChannelData const &                  turb_channel_data);
 
   void
-  evaluate(parallel::distributed::Vector<double> const & velocity,
-           double const &                                time,
-           unsigned int const &                          time_step_number);
+  evaluate(VectorType const & velocity, double const & time, unsigned int const & time_step_number);
 
   void
-  evaluate(const parallel::distributed::Vector<double> & velocity);
+  evaluate(const VectorType & velocity);
 
   void
-  evaluate(const std::vector<parallel::distributed::Vector<double>> & velocity);
+  evaluate(const std::vector<VectorType> & velocity);
 
   void
-  evaluate_xwall(const parallel::distributed::Vector<double> & velocity,
-                 const DoFHandler<dim> &                       dof_handler_wdist,
-                 const FEParameters<dim> &                     fe_param,
-                 const double                                  viscosity);
+  evaluate_xwall(const VectorType &        velocity,
+                 const DoFHandler<dim> &   dof_handler_wdist,
+                 const FEParameters<dim> & fe_param,
+                 const double              viscosity);
 
   void
   write_output(const std::string output_prefix,
@@ -51,13 +51,13 @@ private:
   unsigned int              n_points_y_per_cell;
 
   void
-  do_evaluate(const std::vector<const parallel::distributed::Vector<double> *> & velocity);
+  do_evaluate(const std::vector<const VectorType *> & velocity);
 
   void
-  do_evaluate_xwall(const std::vector<const parallel::distributed::Vector<double> *> & velocity,
-                    const DoFHandler<dim> &   dof_handler_wdist,
-                    const FEParameters<dim> & fe_param,
-                    const double              viscosity);
+  do_evaluate_xwall(const std::vector<const VectorType *> & velocity,
+                    const DoFHandler<dim> &                 dof_handler_wdist,
+                    const FEParameters<dim> &               fe_param,
+                    const double                            viscosity);
 
   const DoFHandler<dim> & dof_handler;
   const Mapping<dim> &    mapping;

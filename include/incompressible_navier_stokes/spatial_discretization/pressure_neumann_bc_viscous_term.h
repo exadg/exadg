@@ -42,6 +42,8 @@ public:
   static const unsigned int n_actual_q_points_vel_linear =
     (is_xwall) ? xwall_quad_rule : fe_degree_u + 1;
 
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   /*
    * nomenclature typdedef FEEvaluationWrapper:
    * FEEval_name1_name2 : name1 specifies the dof handler, name2 the quadrature formula
@@ -91,34 +93,33 @@ public:
   }
 
   void
-  calculate(parallel::distributed::Vector<value_type> &       dst,
-            const parallel::distributed::Vector<value_type> & src) const
+  calculate(VectorType & dst, VectorType const & src) const
   {
     this->data->loop(&This::cell_loop, &This::face_loop, &This::boundary_face_loop, this, dst, src);
   }
 
 private:
   void
-  cell_loop(const MatrixFree<dim, value_type> &,
-            parallel::distributed::Vector<value_type> &,
-            const parallel::distributed::Vector<value_type> &,
-            const std::pair<unsigned int, unsigned int> &) const
+  cell_loop(MatrixFree<dim, value_type> const &,
+            VectorType &,
+            VectorType const &,
+            std::pair<unsigned int, unsigned int> const &) const
   {
   }
 
   void
-  face_loop(const MatrixFree<dim, value_type> &,
-            parallel::distributed::Vector<value_type> &,
-            const parallel::distributed::Vector<value_type> &,
-            const std::pair<unsigned int, unsigned int> &) const
+  face_loop(MatrixFree<dim, value_type> const &,
+            VectorType &,
+            VectorType const &,
+            std::pair<unsigned int, unsigned int> const &) const
   {
   }
 
   void
-  boundary_face_loop(const MatrixFree<dim, value_type> &               data,
-                     parallel::distributed::Vector<value_type> &       dst,
-                     const parallel::distributed::Vector<value_type> & src,
-                     const std::pair<unsigned int, unsigned int> &     face_range) const
+  boundary_face_loop(MatrixFree<dim, value_type> const &           data,
+                     VectorType &                                  dst,
+                     VectorType const &                            src,
+                     std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval_omega(data,
                                                       this->fe_param,

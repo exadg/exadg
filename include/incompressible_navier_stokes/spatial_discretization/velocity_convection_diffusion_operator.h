@@ -28,14 +28,15 @@ template<typename UnderlyingOperator, typename Number>
 class VelocityConvectionDiffusionBlockJacobiOperator
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   VelocityConvectionDiffusionBlockJacobiOperator(UnderlyingOperator const & underlying_operator_in)
     : underlying_operator(underlying_operator_in)
   {
   }
 
   void
-  vmult(parallel::distributed::Vector<Number> &       dst,
-        const parallel::distributed::Vector<Number> & src) const
+  vmult(VectorType & dst, VectorType const & src) const
   {
     underlying_operator.vmult_block_jacobi(dst, src);
   }
@@ -78,6 +79,8 @@ public:
   static const bool         is_xwall = (xwall_quad_rule > 1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear =
     (is_xwall) ? xwall_quad_rule : fe_degree + 1;
+
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef FEEvaluationWrapper<dim,
                               fe_degree,
@@ -133,7 +136,7 @@ public:
    *  Linearized velocity field for convective operator
    */
   void
-  set_solution_linearization(parallel::distributed::Vector<Number> const & solution_linearization);
+  set_solution_linearization(VectorType const & solution_linearization);
 
   parallel::distributed::Vector<value_type> &
   get_solution_linearization() const;
@@ -177,12 +180,10 @@ public:
    *  Other function needed in order to apply geometric multigrid to this operator
    */
   void
-  vmult_interface_down(parallel::distributed::Vector<Number> &       dst,
-                       const parallel::distributed::Vector<Number> & src) const;
+  vmult_interface_down(VectorType & dst, VectorType const & src) const;
 
   void
-  vmult_add_interface_up(parallel::distributed::Vector<Number> &       dst,
-                         const parallel::distributed::Vector<Number> & src) const;
+  vmult_add_interface_up(VectorType & dst, VectorType const & src) const;
 
   types::global_dof_index
   m() const;
@@ -197,24 +198,21 @@ public:
    *  This function applies the matrix vector multiplication.
    */
   void
-  vmult(parallel::distributed::Vector<Number> &       dst,
-        const parallel::distributed::Vector<Number> & src) const;
+  vmult(VectorType & dst, VectorType const & src) const;
 
   /*
    *  This function applies matrix vector product and adds the result
    *  to the dst-vector.
    */
   void
-  vmult_add(parallel::distributed::Vector<Number> &       dst,
-            const parallel::distributed::Vector<Number> & src) const;
+  vmult_add(VectorType & dst, VectorType const & src) const;
 
 
   /*
    *  This function applies the matrix-vector multiplication for the block Jacobi operation.
    */
   void
-  vmult_block_jacobi(parallel::distributed::Vector<Number> &       dst,
-                     parallel::distributed::Vector<Number> const & src) const;
+  vmult_block_jacobi(VectorType & dst, VectorType const & src) const;
 
   unsigned int
   get_dof_index() const;
@@ -223,20 +221,19 @@ public:
    *  This function initializes a global dof-vector.
    */
   void
-  initialize_dof_vector(parallel::distributed::Vector<Number> & vector) const;
+  initialize_dof_vector(VectorType & vector) const;
 
   /*
    *  Calculation of inverse diagonal (needed for smoothers and preconditioners)
    */
   void
-  calculate_inverse_diagonal(parallel::distributed::Vector<Number> & diagonal) const;
+  calculate_inverse_diagonal(VectorType & diagonal) const;
 
   /*
    *  Apply block Jacobi preconditioner.
    */
   void
-  apply_inverse_block_diagonal(parallel::distributed::Vector<Number> &       dst,
-                               parallel::distributed::Vector<Number> const & src) const;
+  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const;
 
 
   /*
@@ -254,7 +251,7 @@ private:
    *  velocity convection-diffusion operator.
    */
   void
-  calculate_diagonal(parallel::distributed::Vector<Number> & diagonal) const;
+  calculate_diagonal(VectorType & diagonal) const;
 
   /*
    * This function calculates the block Jacobi matrices.
@@ -269,15 +266,15 @@ private:
   void
   cell_loop_apply_inverse_block_jacobi_matrices(
     MatrixFree<dim, Number> const &               data,
-    parallel::distributed::Vector<Number> &       dst,
-    parallel::distributed::Vector<Number> const & src,
+    VectorType &                                  dst,
+    VectorType const &                            src,
     std::pair<unsigned int, unsigned int> const & cell_range) const;
 
   /*
    * Verify computation of block Jacobi matrices.
    */
   void
-  check_block_jacobi_matrices(parallel::distributed::Vector<Number> const & src) const;
+  check_block_jacobi_matrices(VectorType const & src) const;
 
   /*
    * Apply matrix-vector multiplication (matrix-based) for global block Jacobi system
@@ -285,8 +282,7 @@ private:
    * This function is only needed for testing.
    */
   void
-  vmult_block_jacobi_test(parallel::distributed::Vector<Number> &       dst,
-                          parallel::distributed::Vector<Number> const & src) const;
+  vmult_block_jacobi_test(VectorType & dst, VectorType const & src) const;
 
   /*
    *  This function is only needed for testing.
@@ -294,8 +290,8 @@ private:
   void
   cell_loop_apply_block_diagonal_matrices_test(
     MatrixFree<dim, Number> const &               data,
-    parallel::distributed::Vector<Number> &       dst,
-    parallel::distributed::Vector<Number> const & src,
+    VectorType &                                  dst,
+    VectorType const &                            src,
     std::pair<unsigned int, unsigned int> const & cell_range) const;
 
   virtual MultigridOperatorBase<dim, Number> *
@@ -318,8 +314,8 @@ private:
 
   VelocityConvDiffOperatorData<dim> operator_data;
 
-  parallel::distributed::Vector<Number> mutable temp_vector;
-  parallel::distributed::Vector<Number> mutable velocity_linearization;
+  VectorType mutable temp_vector;
+  VectorType mutable velocity_linearization;
 
   double evaluation_time;
   double scaling_factor_time_derivative_term;

@@ -35,6 +35,8 @@ template<int dim>
 class LinePlotCalculatorStatistics
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<double> VectorType;
+
   typedef
     typename std::vector<std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>>>
       TYPE;
@@ -99,10 +101,10 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<double> const & velocity,
-           parallel::distributed::Vector<double> const & pressure,
-           double const &                                time,
-           unsigned int const &                          time_step_number)
+  evaluate(VectorType const &   velocity,
+           VectorType const &   pressure,
+           double const &       time,
+           unsigned int const & time_step_number)
   {
     // EPSILON: small number which is much smaller than the time step size
     const double EPSILON = 1.0e-10;
@@ -144,8 +146,7 @@ public:
 
 private:
   void
-  do_evaluate(const parallel::distributed::Vector<double> & velocity,
-              const parallel::distributed::Vector<double> & pressure)
+  do_evaluate(VectorType const & velocity, VectorType const & pressure)
   {
     // increment number of samples
     number_of_samples++;
@@ -351,9 +352,9 @@ private:
   }
 
   void
-  do_evaluate_velocity(parallel::distributed::Vector<double> const & velocity,
-                       Line<dim> const &                             line,
-                       unsigned int const                            line_iterator)
+  do_evaluate_velocity(VectorType const & velocity,
+                       Line<dim> const &  line,
+                       unsigned int const line_iterator)
   {
     // Local variables for the current line:
 
@@ -438,9 +439,9 @@ private:
   }
 
   void
-  do_evaluate_pressure(parallel::distributed::Vector<double> const & pressure,
-                       Line<dim> const &                             line,
-                       unsigned int const                            line_iterator)
+  do_evaluate_pressure(VectorType const & pressure,
+                       Line<dim> const &  line,
+                       unsigned int const line_iterator)
   {
     // Local variables for the current line:
 
@@ -691,6 +692,8 @@ template<int dim>
 class LinePlotCalculatorStatisticsHomogeneousDirection
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<double> VectorType;
+
   typedef
     typename std::vector<std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>>>
       TYPE;
@@ -982,10 +985,10 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<double> const & velocity,
-           parallel::distributed::Vector<double> const & pressure,
-           double const &                                time,
-           unsigned int const &                          time_step_number)
+  evaluate(VectorType const &   velocity,
+           VectorType const &   pressure,
+           double const &       time,
+           unsigned int const & time_step_number)
   {
     // EPSILON: small number which is much smaller than the time step size
     const double EPSILON = 1.0e-10;
@@ -1027,8 +1030,7 @@ public:
 
 private:
   void
-  do_evaluate(const parallel::distributed::Vector<double> & velocity,
-              const parallel::distributed::Vector<double> & pressure)
+  do_evaluate(VectorType const & velocity, VectorType const & pressure)
   {
     // increment number of samples
     number_of_samples++;
@@ -1073,9 +1075,9 @@ private:
   }
 
   void
-  do_evaluate_velocity(parallel::distributed::Vector<double> const & velocity,
-                       Line<dim> const &                             line,
-                       unsigned int const                            line_iterator)
+  do_evaluate_velocity(VectorType const & velocity,
+                       Line<dim> const &  line,
+                       unsigned int const line_iterator)
   {
     // Local variables for specific line
     std::vector<double>                 length_local(line.n_points);
@@ -1247,9 +1249,9 @@ private:
   }
 
   void
-  do_evaluate_pressure(parallel::distributed::Vector<double> const & pressure,
-                       Line<dim> const &                             line,
-                       unsigned int const                            line_iterator)
+  do_evaluate_pressure(VectorType const & pressure,
+                       Line<dim> const &  line,
+                       unsigned int const line_iterator)
   {
     for(typename std::vector<Quantity *>::const_iterator quantity = line.quantities.begin();
         quantity != line.quantities.end();
@@ -1303,10 +1305,10 @@ private:
   }
 
   void
-  average_pressure_for_given_point(parallel::distributed::Vector<double> const & pressure,
-                                   TYPE const & vector_cells_and_ref_points,
-                                   double &     length_local,
-                                   double &     pressure_local)
+  average_pressure_for_given_point(VectorType const & pressure,
+                                   TYPE const &       vector_cells_and_ref_points,
+                                   double &           length_local,
+                                   double &           pressure_local)
   {
     const unsigned int scalar_dofs_per_cell =
       dof_handler_pressure.get_fe().base_element(0).dofs_per_cell;

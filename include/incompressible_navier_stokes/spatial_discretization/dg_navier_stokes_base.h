@@ -89,6 +89,8 @@ template<int dim,
 class DGNavierStokesBase : public MatrixOperatorBase
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   enum class DofHandlerSelector
   {
     velocity        = 0,
@@ -163,17 +165,15 @@ public:
         std::shared_ptr<FieldFunctions<dim>>      field_functions);
 
   void
-  apply_mass_matrix(parallel::distributed::Vector<Number> &       dst,
-                    parallel::distributed::Vector<Number> const & src) const;
+  apply_mass_matrix(VectorType & dst, VectorType const & src) const;
 
   void
-  apply_mass_matrix_add(parallel::distributed::Vector<Number> &       dst,
-                        parallel::distributed::Vector<Number> const & src) const;
+  apply_mass_matrix_add(VectorType & dst, VectorType const & src) const;
 
   virtual void
-  prescribe_initial_conditions(parallel::distributed::Vector<Number> & velocity,
-                               parallel::distributed::Vector<Number> & pressure,
-                               double const                            evaluation_time) const;
+  prescribe_initial_conditions(VectorType & velocity,
+                               VectorType & pressure,
+                               double const evaluation_time) const;
 
 
   MatrixFree<dim, Number> const &
@@ -292,25 +292,25 @@ public:
 
   // initialization of vectors
   void
-  initialize_vector_velocity(parallel::distributed::Vector<Number> & src) const
+  initialize_vector_velocity(VectorType & src) const
   {
     this->data.initialize_dof_vector(src, dof_index_u);
   }
 
   void
-  initialize_vector_velocity_scalar(parallel::distributed::Vector<Number> & src) const
+  initialize_vector_velocity_scalar(VectorType & src) const
   {
     this->data.initialize_dof_vector(src, dof_index_u_scalar);
   }
 
   void
-  initialize_vector_vorticity(parallel::distributed::Vector<Number> & src) const
+  initialize_vector_vorticity(VectorType & src) const
   {
     this->data.initialize_dof_vector(src, dof_index_u);
   }
 
   void
-  initialize_vector_pressure(parallel::distributed::Vector<Number> & src) const
+  initialize_vector_pressure(VectorType & src) const
   {
     this->data.initialize_dof_vector(src, dof_index_p);
   }
@@ -320,78 +320,70 @@ public:
   // coincides the the analytical pressure solution in an arbitrary point.
   // Note that the parameter 'eval_time' is only needed for unsteady problems.
   void
-  shift_pressure(parallel::distributed::Vector<Number> & pressure,
-                 double const &                          eval_time = 0.0) const;
+  shift_pressure(VectorType & pressure, double const & eval_time = 0.0) const;
 
   // special case: pure Dirichlet boundary conditions
   // if analytical solution is available: shift pressure so that the numerical pressure solution
   // has a mean value identical to the "exact pressure solution" obtained by interpolation of
   // analytical solution. Note that the parameter 'eval_time' is only needed for unsteady problems.
   void
-  shift_pressure_mean_value(parallel::distributed::Vector<Number> & pressure,
-                            double const &                          eval_time = 0.0) const;
+  shift_pressure_mean_value(VectorType & pressure, double const & eval_time = 0.0) const;
 
   // special case: pure Dirichlet boundary conditions
   // if no analytical solution is available: set mean value of pressure vector to zero
   void
-  apply_zero_mean(parallel::distributed::Vector<Number> & dst) const;
+  apply_zero_mean(VectorType & dst) const;
 
   // vorticity
   void
-  compute_vorticity(parallel::distributed::Vector<Number> &       dst,
-                    const parallel::distributed::Vector<Number> & src) const;
+  compute_vorticity(VectorType & dst, VectorType const & src) const;
 
   // divergence
   void
-  compute_divergence(parallel::distributed::Vector<Number> &       dst,
-                     const parallel::distributed::Vector<Number> & src) const;
+  compute_divergence(VectorType & dst, VectorType const & src) const;
 
   // velocity_magnitude
   void
-  compute_velocity_magnitude(parallel::distributed::Vector<Number> &       dst,
-                             const parallel::distributed::Vector<Number> & src) const;
+  compute_velocity_magnitude(VectorType & dst, VectorType const & src) const;
 
   // streamfunction
   void
-  compute_streamfunction(parallel::distributed::Vector<Number> &       dst,
-                         const parallel::distributed::Vector<Number> & src) const;
+  compute_streamfunction(VectorType & dst, VectorType const & src) const;
 
   // Q criterion
   void
-  compute_q_criterion(parallel::distributed::Vector<Number> &       dst,
-                      const parallel::distributed::Vector<Number> & src) const;
+  compute_q_criterion(VectorType & dst, VectorType const & src) const;
 
   void
-  evaluate_convective_term(parallel::distributed::Vector<Number> &       dst,
-                           parallel::distributed::Vector<Number> const & src,
-                           Number const                                  evaluation_time) const;
+  evaluate_convective_term(VectorType &       dst,
+                           VectorType const & src,
+                           Number const       evaluation_time) const;
 
   // TODO OIF splitting
   //  void evaluate_negative_convective_term_and_apply_inverse_mass_matrix (
-  //                                 parallel::distributed::Vector<Number>       &dst,
-  //                                 parallel::distributed::Vector<Number> const &src,
-  //                                 Number const                                evaluation_time)
+  //                                 VectorType       &dst,
+  //                                 VectorType const &src,
+  //                                 Number const     evaluation_time)
   //                                 const;
 
   void
   evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
-    parallel::distributed::Vector<Number> &       dst,
-    parallel::distributed::Vector<Number> const & src,
-    Number const                                  evaluation_time,
-    parallel::distributed::Vector<Number> const & velocity) const;
+    VectorType &       dst,
+    VectorType const & src,
+    Number const       evaluation_time,
+    VectorType const & velocity) const;
 
   // inverse velocity mass matrix
   void
-  apply_inverse_mass_matrix(parallel::distributed::Vector<Number> &       dst,
-                            parallel::distributed::Vector<Number> const & src) const;
+  apply_inverse_mass_matrix(VectorType & dst, VectorType const & src) const;
 
   /*
    *  Update turbulence model, i.e., calculate turbulent viscosity
    */
   void
-  update_turbulence_model(parallel::distributed::Vector<Number> const & velocity);
+  update_turbulence_model(VectorType const & velocity);
 
-  parallel::distributed::Vector<Number> &
+  LinearAlgebra::distributed::Vector<Number> &
   get_viscosity_dof_vector()
   {
     return viscous_operator.get_viscosity_dof_vector();
@@ -768,9 +760,9 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  prescribe_initial_conditions(parallel::distributed::Vector<Number> & velocity,
-                               parallel::distributed::Vector<Number> & pressure,
-                               double const                            evaluation_time) const
+  prescribe_initial_conditions(VectorType & velocity,
+                               VectorType & pressure,
+                               double const evaluation_time) const
 {
   this->field_functions->initial_solution_velocity->set_time(evaluation_time);
   this->field_functions->initial_solution_pressure->set_time(evaluation_time);
@@ -802,8 +794,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  apply_mass_matrix(parallel::distributed::Vector<Number> &       dst,
-                    parallel::distributed::Vector<Number> const & src) const
+  apply_mass_matrix(VectorType & dst, VectorType const & src) const
 {
   this->mass_matrix_operator.apply(dst, src);
 }
@@ -816,8 +807,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  apply_mass_matrix_add(parallel::distributed::Vector<Number> &       dst,
-                        parallel::distributed::Vector<Number> const & src) const
+  apply_mass_matrix_add(VectorType & dst, VectorType const & src) const
 {
   this->mass_matrix_operator.apply_add(dst, src);
 }
@@ -830,14 +820,14 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  shift_pressure(parallel::distributed::Vector<Number> & pressure, double const & eval_time) const
+  shift_pressure(VectorType & pressure, double const & eval_time) const
 {
   AssertThrow(
     this->param.error_data.analytical_solution_available == true,
     ExcMessage(
       "The function shift_pressure is intended to be used only if an analytical solution is available!"));
 
-  parallel::distributed::Vector<Number> vec1(pressure);
+  VectorType vec1(pressure);
   for(unsigned int i = 0; i < vec1.local_size(); ++i)
     vec1.local_element(i) = 1.;
   this->field_functions->analytical_solution_pressure->set_time(eval_time);
@@ -857,8 +847,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  shift_pressure_mean_value(parallel::distributed::Vector<Number> & pressure,
-                            double const &                          eval_time) const
+  shift_pressure_mean_value(VectorType & pressure, double const & eval_time) const
 {
   AssertThrow(
     this->param.error_data.analytical_solution_available == true,
@@ -879,7 +868,7 @@ DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule
   double const exact   = vec_double.mean_value();
   double const current = pressure.mean_value();
 
-  parallel::distributed::Vector<Number> vec_temp2(pressure);
+  VectorType vec_temp2(pressure);
   for(unsigned int i = 0; i < vec_temp2.local_size(); ++i)
     vec_temp2.local_element(i) = 1.;
 
@@ -894,7 +883,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  apply_zero_mean(parallel::distributed::Vector<Number> & vector) const
+  apply_zero_mean(VectorType & vector) const
 {
   const Number mean_value = vector.mean_value();
   vector.add(-mean_value);
@@ -908,8 +897,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  compute_vorticity(parallel::distributed::Vector<Number> &       dst,
-                    const parallel::distributed::Vector<Number> & src) const
+  compute_vorticity(VectorType & dst, VectorType const & src) const
 {
   vorticity_calculator.compute_vorticity(dst, src);
 
@@ -924,8 +912,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  compute_divergence(parallel::distributed::Vector<Number> &       dst,
-                     const parallel::distributed::Vector<Number> & src) const
+  compute_divergence(VectorType & dst, VectorType const & src) const
 {
   divergence_calculator.compute_divergence(dst, src);
 
@@ -940,8 +927,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  compute_velocity_magnitude(parallel::distributed::Vector<Number> &       dst,
-                             const parallel::distributed::Vector<Number> & src) const
+  compute_velocity_magnitude(VectorType & dst, VectorType const & src) const
 {
   velocity_magnitude_calculator.compute(dst, src);
 
@@ -970,8 +956,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  compute_streamfunction(parallel::distributed::Vector<Number> &       dst,
-                         parallel::distributed::Vector<Number> const & src) const
+  compute_streamfunction(VectorType & dst, VectorType const & src) const
 {
   AssertThrow(dim == 2, ExcMessage("Calculation of streamfunction can only be used for dim==2."));
 
@@ -979,7 +964,7 @@ DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule
   StreamfunctionCalculatorRHSOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>
     rhs_operator;
   rhs_operator.initialize(data, dof_index_u, dof_index_u_scalar);
-  parallel::distributed::Vector<Number> rhs;
+  VectorType rhs;
   this->initialize_vector_velocity_scalar(rhs);
   rhs_operator.apply(rhs, src);
 
@@ -1036,9 +1021,7 @@ DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule
   solver_data.solver_tolerance_rel = 1.e-10;
   solver_data.use_preconditioner   = true;
 
-  CGSolver<Poisson::LaplaceOperator<dim, fe_degree, Number>,
-           PreconditionerBase<Number>,
-           parallel::distributed::Vector<Number>>
+  CGSolver<Poisson::LaplaceOperator<dim, fe_degree, Number>, PreconditionerBase<Number>, VectorType>
     poisson_solver(laplace_operator, *preconditioner, solver_data);
 
   // solve Poisson problem
@@ -1053,8 +1036,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  compute_q_criterion(parallel::distributed::Vector<Number> &       dst,
-                      const parallel::distributed::Vector<Number> & src) const
+  compute_q_criterion(VectorType & dst, VectorType const & src) const
 {
   q_criterion_calculator.compute(dst, src);
 
@@ -1069,8 +1051,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  apply_inverse_mass_matrix(parallel::distributed::Vector<Number> &       dst,
-                            parallel::distributed::Vector<Number> const & src) const
+  apply_inverse_mass_matrix(VectorType & dst, VectorType const & src) const
 {
   inverse_mass_matrix_operator->apply(dst, src);
 }
@@ -1083,9 +1064,9 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  evaluate_convective_term(parallel::distributed::Vector<Number> &       dst,
-                           parallel::distributed::Vector<Number> const & src,
-                           Number const                                  evaluation_time) const
+  evaluate_convective_term(VectorType &       dst,
+                           VectorType const & src,
+                           Number const       evaluation_time) const
 {
   convective_operator.evaluate(dst, src, evaluation_time);
 }
@@ -1094,9 +1075,9 @@ DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule
 // template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule,
 // typename Number> void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall,
 // xwall_quad_rule, Number>:: evaluate_negative_convective_term_and_apply_inverse_mass_matrix (
-//                          parallel::distributed::Vector<Number>       &dst,
-//                          parallel::distributed::Vector<Number> const &src,
-//                          Number const                                evaluation_time) const
+//                          VectorType       &dst,
+//                          VectorType const &src,
+//                          Number const     evaluation_time) const
 //{
 //  convective_operator.evaluate(dst,src,evaluation_time);
 //
@@ -1114,11 +1095,10 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
-    parallel::distributed::Vector<Number> &       dst,
-    parallel::distributed::Vector<Number> const & src,
-    Number const                                  evaluation_time,
-    parallel::distributed::Vector<Number> const & velocity) const
+  evaluate_negative_convective_term_and_apply_inverse_mass_matrix(VectorType &       dst,
+                                                                  VectorType const & src,
+                                                                  Number const evaluation_time,
+                                                                  VectorType const & velocity) const
 {
   // evaluate convective term using a "prescribed" advection velocity (which is divergence-free)
   convective_operator.evaluate_oif(dst, src, evaluation_time, velocity);
@@ -1138,7 +1118,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  update_turbulence_model(parallel::distributed::Vector<Number> const & velocity)
+  update_turbulence_model(VectorType const & velocity)
 {
   // calculate turbulent viscosity locally in each cell and face quadrature point
   turbulence_model.calculate_turbulent_viscosity(velocity);
@@ -1147,35 +1127,37 @@ DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule
 /*
  *  Convective operator needed for OIF (operator integration factor splitting) substepping
  */
-template<typename Operator, typename value_type>
+template<typename Operator, typename Number>
 class ConvectiveOperatorNavierStokes
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   ConvectiveOperatorNavierStokes(std::shared_ptr<Operator> operation_in)
     : underlying_operator(operation_in)
   {
   }
 
   // TODO OIF splitting
-  //  void evaluate(parallel::distributed::Vector<value_type>       &dst,
-  //                parallel::distributed::Vector<value_type> const &src,
-  //                value_type const                                evaluation_time) const
+  //  void evaluate(VectorType       &dst,
+  //                VectorType const &src,
+  //                Number const     evaluation_time) const
   //  {
   //    underlying_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(dst,src,evaluation_time);
   //  }
 
   void
-  evaluate(parallel::distributed::Vector<value_type> &       dst,
-           parallel::distributed::Vector<value_type> const & src,
-           value_type const                                  evaluation_time,
-           parallel::distributed::Vector<value_type> const & velocity) const
+  evaluate(VectorType &       dst,
+           VectorType const & src,
+           Number const       evaluation_time,
+           VectorType const & velocity) const
   {
     underlying_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
       dst, src, evaluation_time, velocity);
   }
 
   void
-  initialize_dof_vector(parallel::distributed::Vector<value_type> & src) const
+  initialize_dof_vector(VectorType & src) const
   {
     underlying_operator->initialize_vector_velocity(src);
   }

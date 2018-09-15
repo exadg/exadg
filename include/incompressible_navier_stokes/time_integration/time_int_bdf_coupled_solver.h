@@ -21,6 +21,11 @@ class TimeIntBDFCoupled
   : public TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>
 {
 public:
+  typedef TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation> Base;
+
+  typedef typename Base::VectorType                           VectorType;
+  typedef LinearAlgebra::distributed::BlockVector<value_type> BlockVectorType;
+
   TimeIntBDFCoupled(std::shared_ptr<NavierStokesOperation>              navier_stokes_operation_in,
                     std::shared_ptr<PostProcessorBase<dim, value_type>> postprocessor_in,
                     InputParameters<dim> const &                        param_in,
@@ -51,10 +56,10 @@ public:
   analyze_computing_times() const;
 
 protected:
-  std::vector<parallel::distributed::BlockVector<value_type>> solution;
-  parallel::distributed::BlockVector<value_type>              solution_np;
+  std::vector<BlockVectorType> solution;
+  BlockVectorType              solution_np;
 
-  mutable parallel::distributed::Vector<value_type> vorticity;
+  mutable VectorType vorticity;
 
   std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
@@ -98,7 +103,7 @@ private:
   virtual void
   prepare_vectors_for_next_timestep();
 
-  virtual parallel::distributed::Vector<value_type> const &
+  virtual LinearAlgebra::distributed::Vector<value_type> const &
   get_velocity();
 
   virtual void
@@ -107,10 +112,10 @@ private:
   virtual void
   write_restart_vectors(boost::archive::binary_oarchive & oa) const;
 
-  parallel::distributed::Vector<value_type>      sum_alphai_ui;
-  parallel::distributed::BlockVector<value_type> rhs_vector;
+  VectorType      sum_alphai_ui;
+  BlockVectorType rhs_vector;
 
-  std::vector<parallel::distributed::Vector<value_type>> vec_convective_term;
+  std::vector<VectorType> vec_convective_term;
 
   // performance analysis: average number of iterations and solver time
   std::vector<value_type>   computing_times;
@@ -122,8 +127,8 @@ private:
   double characteristic_element_length;
 
   // temporary vectors needed for pseudo-timestepping algorithm
-  parallel::distributed::Vector<value_type> velocity_tmp;
-  parallel::distributed::Vector<value_type> pressure_tmp;
+  VectorType velocity_tmp;
+  VectorType pressure_tmp;
 };
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -218,7 +223,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-parallel::distributed::Vector<value_type> const &
+LinearAlgebra::distributed::Vector<value_type> const &
 TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity()
 {
   return solution[0].block(0);
@@ -316,7 +321,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
     {
       // extrapolate velocity to time t_n+1 and use this velocity field to
       // caculate the penalty parameter for the divergence and continuity penalty term
-      parallel::distributed::Vector<value_type> velocity_extrapolated(solution[0].block(0));
+      VectorType velocity_extrapolated(solution[0].block(0));
       velocity_extrapolated = 0;
       for(unsigned int i = 0; i < solution.size(); ++i)
         velocity_extrapolated.add(this->extra.get_beta(i), solution[i].block(0));
@@ -363,7 +368,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
     {
       // fill vectors with old velocity solutions and old time instants for
       // interpolation of velocity field
-      std::vector<parallel::distributed::Vector<value_type> *> solutions;
+      std::vector<VectorType *> solutions;
 
       std::vector<double> times;
 
@@ -543,12 +548,12 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::postproc
   Timer timer;
   timer.restart();
 
-  parallel::distributed::Vector<value_type> temp(solution_np.block(0));
+  VectorType temp(solution_np.block(0));
   navier_stokes_operation->apply_mass_matrix(temp, solution_np.block(0));
 
   // extrapolate velocity to time t_n+1 and use this velocity field to
   // caculate the penalty parameter for the divergence and continuity penalty term
-  parallel::distributed::Vector<value_type> velocity_extrapolated(solution[0].block(0));
+  VectorType velocity_extrapolated(solution[0].block(0));
   velocity_extrapolated = 0;
   for(unsigned int i = 0; i < solution.size(); ++i)
     velocity_extrapolated.add(this->extra.get_beta(i), solution[i].block(0));
@@ -598,10 +603,10 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::postproc
 
 
   // consider velocity and pressure errors
-  //  parallel::distributed::Vector<value_type> velocity_exact;
+  //  VectorType velocity_exact;
   //  navier_stokes_operation->initialize_vector_velocity(velocity_exact);
   //
-  //  parallel::distributed::Vector<value_type> pressure_exact;
+  //  VectorType pressure_exact;
   //  navier_stokes_operation->initialize_vector_pressure(pressure_exact);
   //
   //  navier_stokes_operation->prescribe_initial_conditions(velocity_exact,pressure_exact,this->time);

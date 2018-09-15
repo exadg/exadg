@@ -249,9 +249,9 @@ StatisticsManager<dim>::setup(const std::function<double(double const &)> & grid
 
 template<int dim>
 void
-StatisticsManager<dim>::evaluate(const parallel::distributed::Vector<double> & velocity,
-                                 double const &                                time,
-                                 unsigned int const &                          time_step_number)
+StatisticsManager<dim>::evaluate(const VectorType &   velocity,
+                                 double const &       time,
+                                 unsigned int const & time_step_number)
 {
   if(turb_channel_data.calculate_statistics == true)
   {
@@ -287,9 +287,9 @@ StatisticsManager<dim>::evaluate(const parallel::distributed::Vector<double> & v
 
 template<int dim>
 void
-StatisticsManager<dim>::evaluate(const parallel::distributed::Vector<double> & velocity)
+StatisticsManager<dim>::evaluate(const VectorType & velocity)
 {
-  std::vector<const parallel::distributed::Vector<double> *> vecs;
+  std::vector<const VectorType *> vecs;
   vecs.push_back(&velocity);
   do_evaluate(vecs);
 }
@@ -298,10 +298,9 @@ StatisticsManager<dim>::evaluate(const parallel::distributed::Vector<double> & v
 
 template<int dim>
 void
-StatisticsManager<dim>::evaluate(
-  const std::vector<parallel::distributed::Vector<double>> & velocity)
+StatisticsManager<dim>::evaluate(const std::vector<VectorType> & velocity)
 {
-  std::vector<const parallel::distributed::Vector<double> *> vecs;
+  std::vector<const VectorType *> vecs;
   for(unsigned int i = 0; i < velocity.size(); ++i)
     vecs.push_back(&velocity[i]);
   do_evaluate(vecs);
@@ -402,8 +401,7 @@ StatisticsManager<dim>::reset()
  */
 template<int dim>
 void
-StatisticsManager<dim>::do_evaluate(
-  const std::vector<const parallel::distributed::Vector<double> *> & velocity)
+StatisticsManager<dim>::do_evaluate(const std::vector<const VectorType *> & velocity)
 {
   // Use local vectors xxx_loc in order to average/integrate over all
   // locally owned cells of current processor.
@@ -599,23 +597,22 @@ StatisticsManager<dim>::do_evaluate(
 
 template<int dim>
 void
-StatisticsManager<dim>::evaluate_xwall(const parallel::distributed::Vector<double> & velocity,
+StatisticsManager<dim>::evaluate_xwall(const VectorType &        velocity,
                                        const DoFHandler<dim> &   dof_handler_wdist,
                                        const FEParameters<dim> & fe_param,
                                        const double              viscosity)
 {
-  std::vector<const parallel::distributed::Vector<double> *> vecs;
+  std::vector<const VectorType *> vecs;
   vecs.push_back(&velocity);
   do_evaluate_xwall(vecs, dof_handler_wdist, fe_param, viscosity);
 }
 
 template<int dim>
 void
-StatisticsManager<dim>::do_evaluate_xwall(
-  const std::vector<const parallel::distributed::Vector<double> *> & velocity,
-  const DoFHandler<dim> &                                            dof_handler_wdist,
-  const FEParameters<dim> &                                          fe_param,
-  const double                                                       viscosity)
+StatisticsManager<dim>::do_evaluate_xwall(const std::vector<const VectorType *> & velocity,
+                                          const DoFHandler<dim> &                 dof_handler_wdist,
+                                          const FEParameters<dim> &               fe_param,
+                                          const double                            viscosity)
 {
   std::vector<double> area_loc(vel_glob[0].size());
 

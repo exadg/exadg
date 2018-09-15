@@ -31,6 +31,8 @@ class DGNavierStokesProjectionMethods
 public:
   typedef DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> BASE;
 
+  typedef typename BASE::VectorType VectorType;
+
   DGNavierStokesProjectionMethods(parallel::distributed::Triangulation<dim> const & triangulation,
                                   InputParameters<dim> const &                      parameter)
     : BASE(triangulation, parameter), use_optimized_projection_operator(false) // TODO
@@ -50,56 +52,51 @@ public:
 
   // velocity divergence
   void
-  evaluate_velocity_divergence_term(parallel::distributed::Vector<Number> &       dst,
-                                    parallel::distributed::Vector<Number> const & src,
-                                    double const evaluation_time) const;
+  evaluate_velocity_divergence_term(VectorType &       dst,
+                                    VectorType const & src,
+                                    double const       evaluation_time) const;
 
   // pressure gradient term
   void
-  evaluate_pressure_gradient_term(parallel::distributed::Vector<Number> &       dst,
-                                  parallel::distributed::Vector<Number> const & src,
-                                  double const evaluation_time) const;
+  evaluate_pressure_gradient_term(VectorType &       dst,
+                                  VectorType const & src,
+                                  double const       evaluation_time) const;
 
   // rhs viscous term (add)
   void
-  rhs_add_viscous_term(parallel::distributed::Vector<Number> & dst,
-                       double const                            evaluation_time) const;
+  rhs_add_viscous_term(VectorType & dst, double const evaluation_time) const;
 
   // rhs pressure Poisson equation: inhomogeneous parts of boundary face
   // integrals of negative Laplace operator
   void
-  rhs_ppe_laplace_add(parallel::distributed::Vector<Number> & dst,
-                      double const &                          evaluation_time) const;
+  rhs_ppe_laplace_add(VectorType & dst, double const & evaluation_time) const;
 
   // solve pressure step
   unsigned int
-  solve_pressure(parallel::distributed::Vector<Number> &       dst,
-                 parallel::distributed::Vector<Number> const & src) const;
+  solve_pressure(VectorType & dst, VectorType const & src) const;
 
   // solve projection step
   unsigned int
-  solve_projection(parallel::distributed::Vector<Number> &       dst,
-                   parallel::distributed::Vector<Number> const & src,
-                   parallel::distributed::Vector<Number> const & velocity,
-                   double const                                  time_step_size) const;
+  solve_projection(VectorType &       dst,
+                   VectorType const & src,
+                   VectorType const & velocity,
+                   double const       time_step_size) const;
 
   // apply projection operator
   void
-  apply_projection_operator(parallel::distributed::Vector<Number> &       dst,
-                            parallel::distributed::Vector<Number> const & src) const;
+  apply_projection_operator(VectorType & dst, VectorType const & src) const;
 
   // Evaluate residual of steady, coupled incompressible Navier-Stokes equations
   void
-  evaluate_nonlinear_residual_steady(parallel::distributed::Vector<Number> &       dst_u,
-                                     parallel::distributed::Vector<Number> &       dst_p,
-                                     parallel::distributed::Vector<Number> const & src_u,
-                                     parallel::distributed::Vector<Number> const & src_p,
-                                     double const &                                evaluation_time);
+  evaluate_nonlinear_residual_steady(VectorType &       dst_u,
+                                     VectorType &       dst_p,
+                                     VectorType const & src_u,
+                                     VectorType const & src_p,
+                                     double const &     evaluation_time);
 
   // apply homogeneous Laplace operator
   void
-  apply_laplace_operator(parallel::distributed::Vector<Number> &       dst,
-                         parallel::distributed::Vector<Number> const & src) const;
+  apply_laplace_operator(VectorType & dst, VectorType const & src) const;
 
 protected:
   virtual void
@@ -113,8 +110,7 @@ protected:
 
   std::shared_ptr<PreconditionerBase<Number>> preconditioner_pressure_poisson;
 
-  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<Number>>>
-    pressure_poisson_solver;
+  std::shared_ptr<IterativeSolverBase<VectorType>> pressure_poisson_solver;
 
   // Projection method
 
@@ -142,8 +138,8 @@ protected:
   std::shared_ptr<ProjectionOperatorBase<dim>> projection_operator;
 
   // projection solver
-  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<Number>>> projection_solver;
-  std::shared_ptr<PreconditionerBase<Number>> preconditioner_projection;
+  std::shared_ptr<IterativeSolverBase<VectorType>> projection_solver;
+  std::shared_ptr<PreconditionerBase<Number>>      preconditioner_projection;
 
 private:
 };
@@ -266,10 +262,10 @@ DGNavierStokesProjectionMethods<dim,
     }
 
     // setup solver
-    pressure_poisson_solver.reset(new CGSolver<Poisson::LaplaceOperator<dim, fe_degree_p, Number>,
-                                               PreconditionerBase<Number>,
-                                               parallel::distributed::Vector<Number>>(
-      laplace_operator, *preconditioner_pressure_poisson, solver_data));
+    pressure_poisson_solver.reset(
+      new CGSolver<Poisson::LaplaceOperator<dim, fe_degree_p, Number>,
+                   PreconditionerBase<Number>,
+                   VectorType>(laplace_operator, *preconditioner_pressure_poisson, solver_data));
   }
   else if(this->param.solver_pressure_poisson == SolverPressurePoisson::FGMRES)
   {
@@ -290,9 +286,9 @@ DGNavierStokesProjectionMethods<dim,
     pressure_poisson_solver.reset(
       new FGMRESSolver<Poisson::LaplaceOperator<dim, fe_degree_p, Number>,
                        PreconditionerBase<Number>,
-                       parallel::distributed::Vector<Number>>(laplace_operator,
-                                                              *preconditioner_pressure_poisson,
-                                                              solver_data));
+                       VectorType>(laplace_operator,
+                                   *preconditioner_pressure_poisson,
+                                   solver_data));
   }
   else
   {
@@ -528,9 +524,7 @@ DGNavierStokesProjectionMethods<dim,
       }
 
       // setup solver
-      projection_solver.reset(new CGSolver<PROJ_OPERATOR,
-                                           PreconditionerBase<Number>,
-                                           parallel::distributed::Vector<Number>>(
+      projection_solver.reset(new CGSolver<PROJ_OPERATOR, PreconditionerBase<Number>, VectorType>(
         *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator),
         *preconditioner_projection,
         projection_solver_data));
@@ -604,9 +598,7 @@ DGNavierStokesProjectionMethods<dim,
       }
 
       // setup solver
-      projection_solver.reset(new CGSolver<PROJ_OPERATOR,
-                                           PreconditionerBase<Number>,
-                                           parallel::distributed::Vector<Number>>(
+      projection_solver.reset(new CGSolver<PROJ_OPERATOR, PreconditionerBase<Number>, VectorType>(
         *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator),
         *preconditioner_projection,
         projection_solver_data));
@@ -633,15 +625,15 @@ template<int dim,
          int xwall_quad_rule,
          typename Number>
 void
-DGNavierStokesProjectionMethods<
-  dim,
-  fe_degree,
-  fe_degree_p,
-  fe_degree_xwall,
-  xwall_quad_rule,
-  Number>::evaluate_velocity_divergence_term(parallel::distributed::Vector<Number> &       dst,
-                                             parallel::distributed::Vector<Number> const & src,
-                                             double const evaluation_time) const
+DGNavierStokesProjectionMethods<dim,
+                                fe_degree,
+                                fe_degree_p,
+                                fe_degree_xwall,
+                                xwall_quad_rule,
+                                Number>::evaluate_velocity_divergence_term(VectorType &       dst,
+                                                                           VectorType const & src,
+                                                                           double const
+                                                                             evaluation_time) const
 {
   this->divergence_operator.evaluate(dst, src, evaluation_time);
 }
@@ -653,15 +645,15 @@ template<int dim,
          int xwall_quad_rule,
          typename Number>
 void
-DGNavierStokesProjectionMethods<
-  dim,
-  fe_degree,
-  fe_degree_p,
-  fe_degree_xwall,
-  xwall_quad_rule,
-  Number>::evaluate_pressure_gradient_term(parallel::distributed::Vector<Number> &       dst,
-                                           parallel::distributed::Vector<Number> const & src,
-                                           double const evaluation_time) const
+DGNavierStokesProjectionMethods<dim,
+                                fe_degree,
+                                fe_degree_p,
+                                fe_degree_xwall,
+                                xwall_quad_rule,
+                                Number>::evaluate_pressure_gradient_term(VectorType &       dst,
+                                                                         VectorType const & src,
+                                                                         double const
+                                                                           evaluation_time) const
 {
   this->gradient_operator.evaluate(dst, src, evaluation_time);
 }
@@ -673,14 +665,13 @@ template<int dim,
          int xwall_quad_rule,
          typename Number>
 void
-DGNavierStokesProjectionMethods<
-  dim,
-  fe_degree,
-  fe_degree_p,
-  fe_degree_xwall,
-  xwall_quad_rule,
-  Number>::rhs_add_viscous_term(parallel::distributed::Vector<Number> & dst,
-                                double const                            evaluation_time) const
+DGNavierStokesProjectionMethods<dim,
+                                fe_degree,
+                                fe_degree_p,
+                                fe_degree_xwall,
+                                xwall_quad_rule,
+                                Number>::rhs_add_viscous_term(VectorType & dst,
+                                                              double const evaluation_time) const
 {
   this->viscous_operator.rhs_add(dst, evaluation_time);
 }
@@ -697,8 +688,7 @@ DGNavierStokesProjectionMethods<dim,
                                 fe_degree_p,
                                 fe_degree_xwall,
                                 xwall_quad_rule,
-                                Number>::rhs_ppe_laplace_add(parallel::distributed::Vector<Number> &
-                                                                            dst,
+                                Number>::rhs_ppe_laplace_add(VectorType &   dst,
                                                              double const & evaluation_time) const
 {
   const Poisson::LaplaceOperatorData<dim> & data = this->laplace_operator.get_operator_data();
@@ -721,14 +711,13 @@ template<int dim,
          int xwall_quad_rule,
          typename Number>
 unsigned int
-DGNavierStokesProjectionMethods<
-  dim,
-  fe_degree,
-  fe_degree_p,
-  fe_degree_xwall,
-  xwall_quad_rule,
-  Number>::solve_pressure(parallel::distributed::Vector<Number> &       dst,
-                          parallel::distributed::Vector<Number> const & src) const
+DGNavierStokesProjectionMethods<dim,
+                                fe_degree,
+                                fe_degree_p,
+                                fe_degree_xwall,
+                                xwall_quad_rule,
+                                Number>::solve_pressure(VectorType &       dst,
+                                                        VectorType const & src) const
 {
   //  typedef float MultigridNumber;
   //  typedef MyMultigridPreconditionerLaplace<dim, Number,
@@ -754,14 +743,13 @@ template<int dim,
          int xwall_quad_rule,
          typename Number>
 void
-DGNavierStokesProjectionMethods<
-  dim,
-  fe_degree,
-  fe_degree_p,
-  fe_degree_xwall,
-  xwall_quad_rule,
-  Number>::apply_laplace_operator(parallel::distributed::Vector<Number> &       dst,
-                                  parallel::distributed::Vector<Number> const & src) const
+DGNavierStokesProjectionMethods<dim,
+                                fe_degree,
+                                fe_degree_p,
+                                fe_degree_xwall,
+                                xwall_quad_rule,
+                                Number>::apply_laplace_operator(VectorType &       dst,
+                                                                VectorType const & src) const
 {
   this->laplace_operator.vmult(dst, src);
 }
@@ -773,16 +761,15 @@ template<int dim,
          int xwall_quad_rule,
          typename Number>
 unsigned int
-DGNavierStokesProjectionMethods<
-  dim,
-  fe_degree,
-  fe_degree_p,
-  fe_degree_xwall,
-  xwall_quad_rule,
-  Number>::solve_projection(parallel::distributed::Vector<Number> &       dst,
-                            parallel::distributed::Vector<Number> const & src,
-                            parallel::distributed::Vector<Number> const & velocity,
-                            double const                                  time_step_size) const
+DGNavierStokesProjectionMethods<dim,
+                                fe_degree,
+                                fe_degree_p,
+                                fe_degree_xwall,
+                                xwall_quad_rule,
+                                Number>::solve_projection(VectorType &       dst,
+                                                          VectorType const & src,
+                                                          VectorType const & velocity,
+                                                          double const       time_step_size) const
 {
   if(use_optimized_projection_operator == false)
   {
@@ -833,14 +820,13 @@ template<int dim,
          int xwall_quad_rule,
          typename Number>
 void
-DGNavierStokesProjectionMethods<
-  dim,
-  fe_degree,
-  fe_degree_p,
-  fe_degree_xwall,
-  xwall_quad_rule,
-  Number>::apply_projection_operator(parallel::distributed::Vector<Number> &       dst,
-                                     parallel::distributed::Vector<Number> const & src) const
+DGNavierStokesProjectionMethods<dim,
+                                fe_degree,
+                                fe_degree_p,
+                                fe_degree_xwall,
+                                xwall_quad_rule,
+                                Number>::apply_projection_operator(VectorType &       dst,
+                                                                   VectorType const & src) const
 {
   if(use_optimized_projection_operator == false)
   {
@@ -892,11 +878,11 @@ DGNavierStokesProjectionMethods<
   fe_degree_p,
   fe_degree_xwall,
   xwall_quad_rule,
-  Number>::evaluate_nonlinear_residual_steady(parallel::distributed::Vector<Number> &       dst_u,
-                                              parallel::distributed::Vector<Number> &       dst_p,
-                                              parallel::distributed::Vector<Number> const & src_u,
-                                              parallel::distributed::Vector<Number> const & src_p,
-                                              double const & evaluation_time)
+  Number>::evaluate_nonlinear_residual_steady(VectorType &       dst_u,
+                                              VectorType &       dst_p,
+                                              VectorType const & src_u,
+                                              VectorType const & src_p,
+                                              double const &     evaluation_time)
 {
   // velocity-block
 

@@ -14,15 +14,15 @@
 
 template<int dim, typename Number>
 void
-write_output(OutputDataNavierStokes const &                  output_data,
-             DoFHandler<dim> const &                         dof_handler_velocity,
-             DoFHandler<dim> const &                         dof_handler_pressure,
-             Mapping<dim> const &                            mapping,
-             parallel::distributed::Vector<Number> const &   velocity,
-             parallel::distributed::Vector<Number> const &   pressure,
-             parallel::distributed::Vector<Number> const &   vorticity,
-             std::vector<SolutionField<dim, Number>> const & additional_fields,
-             unsigned int const                              output_counter)
+write_output(OutputDataNavierStokes const &                     output_data,
+             DoFHandler<dim> const &                            dof_handler_velocity,
+             DoFHandler<dim> const &                            dof_handler_pressure,
+             Mapping<dim> const &                               mapping,
+             LinearAlgebra::distributed::Vector<Number> const & velocity,
+             LinearAlgebra::distributed::Vector<Number> const & pressure,
+             LinearAlgebra::distributed::Vector<Number> const & vorticity,
+             std::vector<SolutionField<dim, Number>> const &    additional_fields,
+             unsigned int const                                 output_counter)
 {
   DataOut<dim> data_out;
 
@@ -103,6 +103,8 @@ template<int dim, typename Number>
 class OutputGenerator
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   OutputGenerator() : output_counter(0)
   {
   }
@@ -123,9 +125,9 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<Number> const &   velocity,
-           parallel::distributed::Vector<Number> const &   pressure,
-           parallel::distributed::Vector<Number> const &   vorticity,
+  evaluate(VectorType const &                              velocity,
+           VectorType const &                              pressure,
+           VectorType const &                              vorticity,
            std::vector<SolutionField<dim, Number>> const & additional_fields,
            double const &                                  time,
            int const &                                     time_step_number)

@@ -49,6 +49,8 @@ template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
 class PostProcessor : public PostProcessorBase<dim, Number>
 {
 public:
+  typedef typename PostProcessorBase<dim, Number>::VectorType VectorType;
+
   PostProcessor(PostProcessorData<dim> const & postprocessor_data) : pp_data(postprocessor_data)
   {
   }
@@ -104,10 +106,10 @@ public:
   }
 
   virtual void
-  do_postprocessing(parallel::distributed::Vector<Number> const &   velocity,
-                    parallel::distributed::Vector<Number> const &   intermediate_velocity,
-                    parallel::distributed::Vector<Number> const &   pressure,
-                    parallel::distributed::Vector<Number> const &   vorticity,
+  do_postprocessing(VectorType const &                              velocity,
+                    VectorType const &                              intermediate_velocity,
+                    VectorType const &                              pressure,
+                    VectorType const &                              vorticity,
                     std::vector<SolutionField<dim, Number>> const & additional_fields,
                     double const                                    time,
                     int const                                       time_step_number)

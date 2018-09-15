@@ -28,6 +28,8 @@ template<int dim, int fe_degree, typename Number>
 class DivergenceAndMassErrorCalculator
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   DivergenceAndMassErrorCalculator()
     : clear_files_mass_error(true),
       number_of_samples(0),
@@ -48,9 +50,7 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<Number> const & velocity,
-           double const &                                time,
-           int const &                                   time_step_number)
+  evaluate(VectorType const & velocity, double const & time, int const & time_step_number)
   {
     if(div_and_mass_data.calculate_error == true)
     {
@@ -84,12 +84,12 @@ private:
    *  Reference value for mass error: (1,|0.5(um + up)*n|)_dOmegaI
    */
   void
-  do_evaluate(MatrixFree<dim, Number> const &               matrix_free_data,
-              parallel::distributed::Vector<Number> const & velocity,
-              Number &                                      div_error,
-              Number &                                      div_error_reference,
-              Number &                                      mass_error,
-              Number &                                      mass_error_reference)
+  do_evaluate(MatrixFree<dim, Number> const & matrix_free_data,
+              VectorType const &              velocity,
+              Number &                        div_error,
+              Number &                        div_error_reference,
+              Number &                        mass_error,
+              Number &                        mass_error_reference)
   {
     std::vector<Number> dst(4, 0.0);
     matrix_free_data.loop(
@@ -109,7 +109,7 @@ private:
   void
   local_compute_div(const MatrixFree<dim, Number> &               data,
                     std::vector<Number> &                         dst,
-                    const parallel::distributed::Vector<Number> & source,
+                    const VectorType &                            source,
                     const std::pair<unsigned int, unsigned int> & cell_range)
   {
     FEEvaluation<dim, fe_degree, fe_degree + 1, dim, Number> fe_eval(
@@ -152,7 +152,7 @@ private:
   void
   local_compute_div_face(const MatrixFree<dim, Number> &               data,
                          std::vector<Number> &                         dst,
-                         const parallel::distributed::Vector<Number> & source,
+                         const VectorType &                            source,
                          const std::pair<unsigned int, unsigned int> & face_range)
   {
     FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, Number> fe_eval(
@@ -203,14 +203,14 @@ private:
   void
   local_compute_div_boundary_face(const MatrixFree<dim, Number> &,
                                   std::vector<Number> &,
-                                  const parallel::distributed::Vector<Number> &,
+                                  const VectorType &,
                                   const std::pair<unsigned int, unsigned int> &)
   {
   }
 
   void
-  analyze_div_and_mass_error_unsteady(parallel::distributed::Vector<Number> const & velocity,
-                                      double const                                  time,
+  analyze_div_and_mass_error_unsteady(VectorType const & velocity,
+                                      double const       time,
                                       unsigned int const time_step_number)
   {
     if(time > div_and_mass_data.start_time - 1.e-10)
@@ -293,7 +293,7 @@ private:
   }
 
   void
-  analyze_div_and_mass_error_steady(parallel::distributed::Vector<Number> const & velocity)
+  analyze_div_and_mass_error_steady(VectorType const & velocity)
   {
     Number div_error = 1.0, div_error_reference = 1.0, mass_error = 1.0, mass_error_reference = 1.0;
 

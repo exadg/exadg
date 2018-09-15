@@ -37,6 +37,8 @@ public:
   static const unsigned int n_actual_q_points_vel_linear =
     (is_xwall) ? xwall_quad_rule : fe_degree + 1;
 
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   typedef FEEvaluationWrapper<dim,
                               fe_degree,
                               fe_degree_xwall,
@@ -83,9 +85,9 @@ public:
    *  This function calculates the turbulent viscosity for a given velocity field.
    */
   void
-  calculate_turbulent_viscosity(parallel::distributed::Vector<Number> const & velocity) const
+  calculate_turbulent_viscosity(VectorType const & velocity) const
   {
-    parallel::distributed::Vector<Number> dummy;
+    VectorType dummy;
 
     matrix_free_data->loop(&This::cell_loop_set_coefficients,
                            &This::face_loop_set_coefficients,
@@ -96,8 +98,7 @@ public:
   }
 
   void
-  calculate_turbulent_viscosity(parallel::distributed::Vector<Number> &       dst,
-                                parallel::distributed::Vector<Number> const & velocity) const
+  calculate_turbulent_viscosity(VectorType & dst, VectorType const & velocity) const
   {
     // set dst-vector to zero
     dst = 0.0;
@@ -109,8 +110,8 @@ public:
 private:
   void
   cell_loop_set_coefficients(MatrixFree<dim, Number> const & data,
-                             parallel::distributed::Vector<Number> &,
-                             parallel::distributed::Vector<Number> const & src,
+                             VectorType &,
+                             VectorType const &                            src,
                              std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_linear fe_eval(data,
@@ -151,8 +152,8 @@ private:
 
   void
   face_loop_set_coefficients(MatrixFree<dim, Number> const & data,
-                             parallel::distributed::Vector<Number> &,
-                             parallel::distributed::Vector<Number> const & src,
+                             VectorType &,
+                             VectorType const &                            src,
                              std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval(data,
@@ -217,8 +218,8 @@ private:
   void
   boundary_face_loop_set_coefficients(
     MatrixFree<dim, Number> const & data,
-    parallel::distributed::Vector<Number> &,
-    parallel::distributed::Vector<Number> const & src,
+    VectorType &,
+    VectorType const &                            src,
     std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval(data,
@@ -260,8 +261,8 @@ private:
 
   void
   cell_loop_calculate_dof_vector(MatrixFree<dim, Number> const &               data,
-                                 parallel::distributed::Vector<Number> &       dst,
-                                 parallel::distributed::Vector<Number> const & src,
+                                 VectorType &                                  dst,
+                                 VectorType const &                            src,
                                  std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_linear fe_eval(data,
