@@ -2,24 +2,24 @@
 #include "fe_navierstokes_solver.h"
 #include "fe_navierstokes_evaluator.h"
 
-#include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/mpi.h>
-#include <deal.II/base/timer.h>
 #include <deal.II/base/parallel.h>
-#include <deal.II/lac/parallel_vector.h>
-#include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/precondition.h>
-#include <deal.II/fe/fe_system.h>
-#include <deal.II/grid/tria.h>
-#include <deal.II/grid/grid_tools.h>
-#include <deal.II/dofs/dof_handler.h>
-#include <deal.II/dofs/dof_accessor.h>
-#include <deal.II/dofs/dof_tools.h>
-#include <deal.II/numerics/vector_tools.h>
-#include <deal.II/numerics/data_out.h>
-#include <deal.II/multigrid/mg_constrained_dofs.h>
-#include <deal.II/matrix_free/matrix_free.h>
+#include <deal.II/base/quadrature_lib.h>
+#include <deal.II/base/timer.h>
 #include <deal.II/distributed/tria.h>
+#include <deal.II/dofs/dof_accessor.h>
+#include <deal.II/dofs/dof_handler.h>
+#include <deal.II/dofs/dof_tools.h>
+#include <deal.II/fe/fe_system.h>
+#include <deal.II/grid/grid_tools.h>
+#include <deal.II/grid/tria.h>
+#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/precondition.h>
+#include <deal.II/lac/solver_cg.h>
+#include <deal.II/matrix_free/matrix_free.h>
+#include <deal.II/multigrid/mg_constrained_dofs.h>
+#include <deal.II/numerics/data_out.h>
+#include <deal.II/numerics/vector_tools.h>
 
 #include <fstream>
 #include <sstream>
@@ -28,106 +28,106 @@
 using namespace dealii;
 
 
-template <int dim>
-FENavierStokesSolver<dim>::FENavierStokesSolver(const parallel::distributed::Triangulation<dim> &triangulation,
-                                                const unsigned int velocity_degree)
-  :
-  FluidBaseAlgorithm<dim> (velocity_degree),
-  fe_u (FE_Q<dim>(QGaussLobatto<1>(velocity_degree+1)), dim),
-  dof_handler_u (triangulation),
-  fe_p (QGaussLobatto<1>(velocity_degree)),
-  dof_handler_p (triangulation),
-  time (0),
-  step_number (0),
-  time_step_output_frequency (1),
-  communicator (triangulation.get_communicator()),
-  pcout (std::cout,
-         Utilities::MPI::this_mpi_process(communicator) == 0)
-{}
+template<int dim>
+FENavierStokesSolver<dim>::FENavierStokesSolver(
+  const parallel::distributed::Triangulation<dim> & triangulation,
+  const unsigned int                                velocity_degree)
+  : FluidBaseAlgorithm<dim>(velocity_degree),
+    fe_u(FE_Q<dim>(QGaussLobatto<1>(velocity_degree + 1)), dim),
+    dof_handler_u(triangulation),
+    fe_p(QGaussLobatto<1>(velocity_degree)),
+    dof_handler_p(triangulation),
+    time(0),
+    step_number(0),
+    time_step_output_frequency(1),
+    communicator(triangulation.get_communicator()),
+    pcout(std::cout, Utilities::MPI::this_mpi_process(communicator) == 0)
+{
+}
 
 
 
 namespace
 {
-  template <int dim>
-  void compute_diagonal_mass_inverse(const Mapping<dim> &mapping,
-                                     const DoFHandler<dim> &dof_handler,
-                                     const ConstraintMatrix &constraints,
-                                     parallel::distributed::Vector<double> &vector)
-  {
-    QGaussLobatto<dim> quad(dof_handler.get_fe().degree+1);
-    FEValues<dim> fe_values(mapping, dof_handler.get_fe(), quad,
-                            update_values | update_JxW_values);
+template<int dim>
+void
+compute_diagonal_mass_inverse(const Mapping<dim> &                    mapping,
+                              const DoFHandler<dim> &                 dof_handler,
+                              const ConstraintMatrix &                constraints,
+                              parallel::distributed::Vector<double> & vector)
+{
+  QGaussLobatto<dim> quad(dof_handler.get_fe().degree + 1);
+  FEValues<dim> fe_values(mapping, dof_handler.get_fe(), quad, update_values | update_JxW_values);
 
-    Vector<double> values(dof_handler.get_fe().dofs_per_cell);
-    std::vector<types::global_dof_index> local_dof_indices(values.size());
+  Vector<double> values(dof_handler.get_fe().dofs_per_cell);
 
-    for (typename DoFHandler<dim>::active_cell_iterator cell=dof_handler.begin_active();
-         cell != dof_handler.end(); ++cell)
-      if (cell->is_locally_owned())
-        {
-          fe_values.reinit(cell);
-          for (unsigned int i=0; i<values.size(); ++i)
-            {
-              double sum = 0;
-              const double* shape_vals_i = &fe_values.shape_value(i,0);
-              for (unsigned int q=0; q<quad.size(); ++q)
-                sum += (shape_vals_i[q] * shape_vals_i[q]) * fe_values.JxW(q);
-              values(i) = sum;
-            }
-          cell->get_dof_indices(local_dof_indices);
-          constraints.distribute_local_to_global(values, local_dof_indices, vector);
-        }
-    vector.compress(VectorOperation::add);
-    for (unsigned int i=0; i<vector.local_size(); ++i)
-      if (std::abs(vector.local_element(i)) > 1e-20)
-        vector.local_element(i) = 1./vector.local_element(i);
-      else
-        vector.local_element(i) = 1.;
-  }
+  std::vector<types::global_dof_index> local_dof_indices(values.size());
 
+  for(typename DoFHandler<dim>::active_cell_iterator cell = dof_handler.begin_active();
+      cell != dof_handler.end();
+      ++cell)
+    if(cell->is_locally_owned())
+    {
+      fe_values.reinit(cell);
+      for(unsigned int i = 0; i < values.size(); ++i)
+      {
+        double         sum          = 0;
+        const double * shape_vals_i = &fe_values.shape_value(i, 0);
+        for(unsigned int q = 0; q < quad.size(); ++q)
+          sum += (shape_vals_i[q] * shape_vals_i[q]) * fe_values.JxW(q);
+        values(i) = sum;
+      }
+      cell->get_dof_indices(local_dof_indices);
+      constraints.distribute_local_to_global(values, local_dof_indices, vector);
+    }
+  vector.compress(VectorOperation::add);
+  for(unsigned int i = 0; i < vector.local_size(); ++i)
+    if(std::abs(vector.local_element(i)) > 1e-20)
+      vector.local_element(i) = 1. / vector.local_element(i);
+    else
+      vector.local_element(i) = 1.;
 }
 
+} // namespace
 
 
-template <int dim>
-void FENavierStokesSolver<dim>::setup_problem
-(const Function<dim> &initial_velocity_field)
+
+template<int dim>
+void
+FENavierStokesSolver<dim>::setup_problem(const Function<dim> & initial_velocity_field)
 {
   Timer timer;
 
   double shortest_edge = std::numeric_limits<double>::max();
-  for (typename Triangulation<dim>::active_cell_iterator it =
-         dof_handler_u.get_triangulation().begin_active();
-       it != dof_handler_u.get_triangulation().end(); ++it)
-    shortest_edge = std::min(shortest_edge,
-                             it->minimum_vertex_distance());
+  for(typename Triangulation<dim>::active_cell_iterator it =
+        dof_handler_u.get_triangulation().begin_active();
+      it != dof_handler_u.get_triangulation().end();
+      ++it)
+    shortest_edge = std::min(shortest_edge, it->minimum_vertex_distance());
   shortest_edge = Utilities::MPI::min(shortest_edge, communicator);
 
-  const double cfl = 0.08/fe_u.degree;
-  this->time_step_size = std::min(shortest_edge * cfl,
-                                  shortest_edge * shortest_edge * cfl * 0.5 / this->viscosity);
+  const double cfl = 0.08 / fe_u.degree;
+  this->time_step_size =
+    std::min(shortest_edge * cfl, shortest_edge * shortest_edge * cfl * 0.5 / this->viscosity);
 
-  pcout << "Shortest edge: " << shortest_edge << ", time step estimate: "
-        << this->time_step_size << std::endl;
+  pcout << "Shortest edge: " << shortest_edge << ", time step estimate: " << this->time_step_size
+        << std::endl;
 
   timer.restart();
 
-  dof_handler_u.distribute_dofs (fe_u);
-  dof_handler_p.distribute_dofs (fe_p);
-  dof_handler_p.distribute_mg_dofs (fe_p);
+  dof_handler_u.distribute_dofs(fe_u);
+  dof_handler_p.distribute_dofs(fe_p);
+  dof_handler_p.distribute_mg_dofs(fe_p);
 
-  pcout << "Number of degrees of freedom: "
-        << dof_handler_u.n_dofs() + dof_handler_p.n_dofs()
-        << " (" << dim << "*" << dof_handler_u.n_dofs()/dim << " + "
-        << dof_handler_p.n_dofs()  << ")"
-        << std::endl;
+  pcout << "Number of degrees of freedom: " << dof_handler_u.n_dofs() + dof_handler_p.n_dofs()
+        << " (" << dim << "*" << dof_handler_u.n_dofs() / dim << " + " << dof_handler_p.n_dofs()
+        << ")" << std::endl;
 
   pcout << "Time distribute dofs: " << timer.wall_time() << std::endl;
   timer.restart();
 
-  //TODO
-//  PoissonSolverData<dim> poisson_data;
+  // TODO
+  //  PoissonSolverData<dim> poisson_data;
   LaplaceOperatorData<dim> laplace_operator_data;
 
   // no-slip boundaries directly filled into velocity system
@@ -144,141 +144,148 @@ void FENavierStokesSolver<dim>::setup_problem
   DoFTools::make_hanging_node_constraints(dof_handler_u, constraints_u);
   DoFTools::make_hanging_node_constraints(dof_handler_p, constraints_p);
 
-  std::vector<GridTools::PeriodicFacePair<typename DoFHandler<dim>::cell_iterator> > periodic_faces_u, periodic_faces_p;
-  for (typename std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> >::iterator
-         it = this->boundary->periodic_face_pairs_level0.begin();
-       it != this->boundary->periodic_face_pairs_level0.end(); ++it)
+  std::vector<GridTools::PeriodicFacePair<typename DoFHandler<dim>::cell_iterator>>
+    periodic_faces_u, periodic_faces_p;
+  for(typename std::vector<
+        GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>::iterator it =
+        this->boundary->periodic_face_pairs_level0.begin();
+      it != this->boundary->periodic_face_pairs_level0.end();
+      ++it)
+  {
+    const types::boundary_id in  = it->cell[0]->face(it->face_idx[0])->boundary_id();
+    const types::boundary_id out = it->cell[1]->face(it->face_idx[1])->boundary_id();
+    AssertThrow(this->boundary->open_conditions_p.find(in) ==
+                    this->boundary->open_conditions_p.end() &&
+                  this->boundary->open_conditions_p.find(out) ==
+                    this->boundary->open_conditions_p.end() &&
+                  this->boundary->dirichlet_conditions_u.find(in) ==
+                    this->boundary->dirichlet_conditions_u.end() &&
+                  this->boundary->dirichlet_conditions_u.find(out) ==
+                    this->boundary->dirichlet_conditions_u.end() &&
+                  this->boundary->no_slip.find(in) == this->boundary->no_slip.end() &&
+                  this->boundary->no_slip.find(out) == this->boundary->no_slip.end() &&
+                  this->boundary->symmetry.find(in) == this->boundary->symmetry.end() &&
+                  this->boundary->symmetry.find(out) == this->boundary->symmetry.end(),
+                ExcMessage("Cannot mix periodic boundary conditions with "
+                           "other types of boundary conditions on same "
+                           "boundary!"));
+
+    GridTools::PeriodicFacePair<typename DoFHandler<dim>::cell_iterator> periodic_u;
+    GridTools::PeriodicFacePair<typename DoFHandler<dim>::cell_iterator> periodic_p;
+    for(unsigned int i = 0; i < 2; ++i)
     {
-      const types::boundary_id in = it->cell[0]->face(it->face_idx[0])->boundary_id();
-      const types::boundary_id out = it->cell[1]->face(it->face_idx[1])->boundary_id();
-      AssertThrow (this->boundary->open_conditions_p.find(in) ==
-                   this->boundary->open_conditions_p.end() &&
-                   this->boundary->open_conditions_p.find(out) ==
-                   this->boundary->open_conditions_p.end() &&
-                   this->boundary->dirichlet_conditions_u.find(in) ==
-                   this->boundary->dirichlet_conditions_u.end() &&
-                   this->boundary->dirichlet_conditions_u.find(out) ==
-                   this->boundary->dirichlet_conditions_u.end() &&
-                   this->boundary->no_slip.find(in) ==
-                   this->boundary->no_slip.end() &&
-                   this->boundary->no_slip.find(out) ==
-                   this->boundary->no_slip.end() &&
-                   this->boundary->symmetry.find(in) ==
-                   this->boundary->symmetry.end() &&
-                   this->boundary->symmetry.find(out) ==
-                   this->boundary->symmetry.end(),
-                   ExcMessage("Cannot mix periodic boundary conditions with "
-                              "other types of boundary conditions on same "
-                              "boundary!"));
+      periodic_u.cell[i] =
+        typename DoFHandler<dim>::cell_iterator(&dof_handler_u.get_triangulation(),
+                                                it->cell[i]->level(),
+                                                it->cell[i]->index(),
+                                                &dof_handler_u);
+      periodic_u.face_idx[i] = it->face_idx[i];
 
-      GridTools::PeriodicFacePair<typename DoFHandler<dim>::cell_iterator> periodic_u;
-      GridTools::PeriodicFacePair<typename DoFHandler<dim>::cell_iterator> periodic_p;
-      for (unsigned int i=0; i<2; ++i)
-        {
-          periodic_u.cell[i] = typename DoFHandler<dim>::cell_iterator
-            (&dof_handler_u.get_triangulation(),
-             it->cell[i]->level(), it->cell[i]->index(), &dof_handler_u);
-          periodic_u.face_idx[i] = it->face_idx[i];
-
-          periodic_p.cell[i] = typename DoFHandler<dim>::cell_iterator
-            (&dof_handler_p.get_triangulation(),
-             it->cell[i]->level(), it->cell[i]->index(), &dof_handler_p);
-          periodic_p.face_idx[i] = it->face_idx[i];
-        }
-      periodic_u.orientation = it->orientation;
-      periodic_u.matrix = it->matrix;
-      periodic_faces_u.push_back(periodic_u);
-      periodic_p.orientation = it->orientation;
-      periodic_p.matrix = it->matrix;
-      periodic_faces_p.push_back(periodic_p);
+      periodic_p.cell[i] =
+        typename DoFHandler<dim>::cell_iterator(&dof_handler_p.get_triangulation(),
+                                                it->cell[i]->level(),
+                                                it->cell[i]->index(),
+                                                &dof_handler_p);
+      periodic_p.face_idx[i] = it->face_idx[i];
     }
-  DoFTools::make_periodicity_constraints<DoFHandler<dim> > (periodic_faces_u,
-                                                            constraints_u);
-  DoFTools::make_periodicity_constraints<DoFHandler<dim> > (periodic_faces_p,
-                                                            constraints_p);
+    periodic_u.orientation = it->orientation;
+    periodic_u.matrix      = it->matrix;
+    periodic_faces_u.push_back(periodic_u);
+    periodic_p.orientation = it->orientation;
+    periodic_p.matrix      = it->matrix;
+    periodic_faces_p.push_back(periodic_p);
+  }
+  DoFTools::make_periodicity_constraints<DoFHandler<dim>>(periodic_faces_u, constraints_u);
+  DoFTools::make_periodicity_constraints<DoFHandler<dim>>(periodic_faces_p, constraints_p);
   laplace_operator_data.periodic_face_pairs_level0 = this->boundary->periodic_face_pairs_level0;
 
-  for (typename std::set<types::boundary_id>::const_iterator it =
-         this->boundary->symmetry.begin();
-       it != this->boundary->symmetry.end(); ++it)
+  for(typename std::set<types::boundary_id>::const_iterator it = this->boundary->symmetry.begin();
+      it != this->boundary->symmetry.end();
+      ++it)
+  {
+    AssertThrow(this->boundary->open_conditions_p.find(*it) ==
+                    this->boundary->open_conditions_p.end() &&
+                  this->boundary->no_slip.find(*it) == this->boundary->no_slip.end() &&
+                  this->boundary->dirichlet_conditions_u.find(*it) ==
+                    this->boundary->dirichlet_conditions_u.end(),
+                ExcMessage("Cannot mix symmetry boundary conditions with "
+                           "other boundary conditions on same boundary!"));
+    laplace_operator_data.neumann_boundaries.insert(*it);
+  }
+
+  VectorTools::compute_no_normal_flux_constraints(dof_handler_u,
+                                                  0,
+                                                  this->boundary->symmetry,
+                                                  constraints_u);
+  VectorTools::compute_normal_flux_constraints(dof_handler_u,
+                                               0,
+                                               this->boundary->normal_flux,
+                                               constraints_u);
+
+  {
+    Functions::ZeroFunction<dim>    zero_func(dim);
+    typename FunctionMap<dim>::type homogeneous_dirichlet;
+    for(typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::const_iterator it =
+          this->boundary->dirichlet_conditions_u.begin();
+        it != this->boundary->dirichlet_conditions_u.end();
+        ++it)
     {
-      AssertThrow (this->boundary->open_conditions_p.find(*it) == this->boundary->open_conditions_p.end() &&
-                   this->boundary->no_slip.find(*it) == this->boundary->no_slip.end() &&
-                   this->boundary->dirichlet_conditions_u.find(*it) == this->boundary->dirichlet_conditions_u.end(),
-                   ExcMessage("Cannot mix symmetry boundary conditions with "
-                              "other boundary conditions on same boundary!"));
+      AssertThrow(this->boundary->open_conditions_p.find(it->first) ==
+                    this->boundary->open_conditions_p.end(),
+                  ExcMessage("Cannot mix velocity Dirichlet conditions with "
+                             "open/pressure boundary conditions on same "
+                             "boundary!"));
+      laplace_operator_data.neumann_boundaries.insert(it->first);
+
+      // we don't add this to the list of Dirichlet boundaries on the
+      // velocity because we will manually set the appropriate boundary
+      // values before evaluation
+    }
+
+    // no-slip boundaries
+    for(typename std::set<types::boundary_id>::const_iterator it = this->boundary->no_slip.begin();
+        it != this->boundary->no_slip.end();
+        ++it)
+    {
+      AssertThrow(this->boundary->open_conditions_p.find(*it) ==
+                    this->boundary->open_conditions_p.end(),
+                  ExcMessage("Cannot mix velocity Dirichlet conditions with "
+                             "open/pressure boundary conditions on same "
+                             "boundary!"));
+      homogeneous_dirichlet[*it] = &zero_func;
       laplace_operator_data.neumann_boundaries.insert(*it);
     }
 
-  VectorTools::compute_no_normal_flux_constraints (dof_handler_u, 0,
-                                                   this->boundary->symmetry,
-                                                   constraints_u);
-  VectorTools::compute_normal_flux_constraints (dof_handler_u, 0,
-                                                this->boundary->normal_flux,
-                                                constraints_u);
-
-  {
-    Functions::ZeroFunction<dim> zero_func(dim);
-    typename FunctionMap<dim>::type homogeneous_dirichlet;
-    for (typename std::map<types::boundary_id,
-         std::shared_ptr<Function<dim> > >::
-         const_iterator it = this->boundary->dirichlet_conditions_u.begin();
-         it != this->boundary->dirichlet_conditions_u.end(); ++it)
-      {
-        AssertThrow (this->boundary->open_conditions_p.find(it->first) ==
-                     this->boundary->open_conditions_p.end(),
-                     ExcMessage("Cannot mix velocity Dirichlet conditions with "
-                                "open/pressure boundary conditions on same "
-                                "boundary!"));
-        laplace_operator_data.neumann_boundaries.insert(it->first);
-
-        // we don't add this to the list of Dirichlet boundaries on the
-        // velocity because we will manually set the appropriate boundary
-        // values before evaluation
-      }
-
-    // no-slip boundaries
-    for (typename std::set<types::boundary_id>::const_iterator it =
-           this->boundary->no_slip.begin();
-         it != this->boundary->no_slip.end(); ++it)
-      {
-        AssertThrow (this->boundary->open_conditions_p.find(*it) ==
-                     this->boundary->open_conditions_p.end(),
-                     ExcMessage("Cannot mix velocity Dirichlet conditions with "
-                                "open/pressure boundary conditions on same "
-                                "boundary!"));
-        homogeneous_dirichlet[*it] = &zero_func;
-        laplace_operator_data.neumann_boundaries.insert(*it);
-      }
-
-    VectorTools::interpolate_boundary_values(this->mapping, dof_handler_u,
+    VectorTools::interpolate_boundary_values(this->mapping,
+                                             dof_handler_u,
                                              homogeneous_dirichlet,
                                              constraints_u);
   }
 
-  constraints_u.close ();
-  AssertThrow (constraints_u.has_inhomogeneities() == false,
-               ExcMessage("Constraint matrix for u has inhomogeneities which "
-                          "is not allowed."));
+  constraints_u.close();
+  AssertThrow(constraints_u.has_inhomogeneities() == false,
+              ExcMessage("Constraint matrix for u has inhomogeneities which "
+                         "is not allowed."));
 
   constraints_p_solve.merge(constraints_p);
   {
-    Functions::ZeroFunction<dim> zero_func(1);
+    Functions::ZeroFunction<dim>    zero_func(1);
     typename FunctionMap<dim>::type homogeneous_dirichlet;
     // open boundaries with prescribed pressure values -> insert zero function
     // for solving; we will manually set the values at other boundaries (TODO:
     // implement nonzero pressure values for the momentum equation on Neumann
     // boundaries).
-    for (typename std::map<types::boundary_id,
-         std::shared_ptr<Function<dim> > >::
-         const_iterator it = this->boundary->open_conditions_p.begin();
-         it != this->boundary->open_conditions_p.end(); ++it)
-      {
-        homogeneous_dirichlet[it->first] = &zero_func;
-        laplace_operator_data.dirichlet_boundaries.insert(it->first);
-      }
+    for(typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::const_iterator it =
+          this->boundary->open_conditions_p.begin();
+        it != this->boundary->open_conditions_p.end();
+        ++it)
+    {
+      homogeneous_dirichlet[it->first] = &zero_func;
+      laplace_operator_data.dirichlet_boundaries.insert(it->first);
+    }
 
-    VectorTools::interpolate_boundary_values(this->mapping, dof_handler_p,
+    VectorTools::interpolate_boundary_values(this->mapping,
+                                             dof_handler_p,
                                              homogeneous_dirichlet,
                                              constraints_p_solve);
   }
@@ -291,40 +298,48 @@ void FENavierStokesSolver<dim>::setup_problem
 
   // setup matrix-free object (integrator for all FE-related stuff)
   {
-    std::vector<const DoFHandler<dim>*> dofs;
+    std::vector<const DoFHandler<dim> *> dofs;
     dofs.push_back(&dof_handler_u);
     dofs.push_back(&dof_handler_p);
     dofs.push_back(&dof_handler_p);
     std::vector<const ConstraintMatrix *> constraints;
-    constraints.push_back (&constraints_u);
-    constraints.push_back (&constraints_p);
-    constraints.push_back (&constraints_p_solve);
-    std::vector<Quadrature<1> > quadratures;
+    constraints.push_back(&constraints_u);
+    constraints.push_back(&constraints_p);
+    constraints.push_back(&constraints_p_solve);
+    std::vector<Quadrature<1>> quadratures;
     // Choose enough points to avoid aliasing effects
-    quadratures.push_back(QGauss<1>(fe_u.degree+1+fe_u.degree/2));
+    quadratures.push_back(QGauss<1>(fe_u.degree + 1 + fe_u.degree / 2));
     quadratures.push_back(QGauss<1>(fe_u.degree));
-    typename MatrixFree<dim>::AdditionalData data (communicator);
+    typename MatrixFree<dim>::AdditionalData data(communicator);
     data.tasks_parallel_scheme = MatrixFree<dim>::AdditionalData::none;
-    data.tasks_block_size = 16;
+    data.tasks_block_size      = 16;
     data.mapping_update_flags |= update_quadrature_points;
-    matrix_free.reinit (this->mapping, dofs, constraints, quadratures, data);
+    matrix_free.reinit(this->mapping, dofs, constraints, quadratures, data);
   }
 
-  laplace_operator_data.laplace_dof_index = 2;
+  laplace_operator_data.laplace_dof_index  = 2;
   laplace_operator_data.laplace_quad_index = 1;
-  laplace_operator.reinit(matrix_free, this->mapping,laplace_operator_data);
+  laplace_operator.reinit(matrix_free, this->mapping, laplace_operator_data);
 
   MultigridData mg_data;
   mg_data.smoother_smoothing_range = 25;
-  mg_data.coarse_solver = MultigridCoarseGridSolver::PCG_Jacobi;
+  mg_data.coarse_solver            = MultigridCoarseGridSolver::PCG_Jacobi;
 
   typedef float Number;
 
-  preconditioner.reset(new MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> >());
+  preconditioner.reset(new MyMultigridPreconditioner<dim,
+                                                     double,
+                                                     LaplaceOperator<dim, Number>,
+                                                     LaplaceOperatorData<dim>>());
 
-  std::shared_ptr<MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> > >
-       mg_preconditioner = std::dynamic_pointer_cast<MyMultigridPreconditioner<dim,double,LaplaceOperator<dim,Number>, LaplaceOperatorData<dim> > >
-    (preconditioner);
+  std::shared_ptr<
+    MyMultigridPreconditioner<dim, double, LaplaceOperator<dim, Number>, LaplaceOperatorData<dim>>>
+    mg_preconditioner =
+      std::dynamic_pointer_cast<MyMultigridPreconditioner<dim,
+                                                          double,
+                                                          LaplaceOperator<dim, Number>,
+                                                          LaplaceOperatorData<dim>>>(
+        preconditioner);
 
   mg_preconditioner->initialize(mg_data,
                                 this->dof_handler_p,
@@ -334,7 +349,7 @@ void FENavierStokesSolver<dim>::setup_problem
 
   PoissonSolverData poisson_solver_data;
   poisson_solver_data.solver_tolerance_rel = 5e-5;
-  poisson_solver_data.use_preconditioner = true;
+  poisson_solver_data.use_preconditioner   = true;
 
   poisson_solver.initialize(laplace_operator, *preconditioner, matrix_free, poisson_solver_data);
 
@@ -343,9 +358,13 @@ void FENavierStokesSolver<dim>::setup_problem
   matrix_free.initialize_dof_vector(velocity_diagonal_mass, 0);
   matrix_free.initialize_dof_vector(pressure_diagonal_mass, 1);
 
-  compute_diagonal_mass_inverse(this->mapping, dof_handler_p, constraints_p,
+  compute_diagonal_mass_inverse(this->mapping,
+                                dof_handler_p,
+                                constraints_p,
                                 pressure_diagonal_mass);
-  compute_diagonal_mass_inverse(this->mapping, dof_handler_u, constraints_u,
+  compute_diagonal_mass_inverse(this->mapping,
+                                dof_handler_u,
+                                constraints_u,
                                 velocity_diagonal_mass);
   {
     // for evaluating inhomogeneous boundary conditions, we choose to always
@@ -353,26 +372,28 @@ void FENavierStokesSolver<dim>::setup_problem
     // function. In order not to create spurious values during time
     // integration, we simply zero those entries when multiplying by the
     // inverse diagonal matrix, which is implemented here
-    Functions::ZeroFunction<dim> zero(dim);
+    Functions::ZeroFunction<dim>    zero(dim);
     typename FunctionMap<dim>::type inhom_dirichlet;
-    for (typename std::map<types::boundary_id,
-           std::shared_ptr<Function<dim> > >::iterator it =
-         this->boundary->dirichlet_conditions_u.begin();
-       it != this->boundary->dirichlet_conditions_u.end(); ++it)
+    for(typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
+          this->boundary->dirichlet_conditions_u.begin();
+        it != this->boundary->dirichlet_conditions_u.end();
+        ++it)
     {
       inhom_dirichlet[it->first] = &zero;
     }
 
-    std::map<types::global_dof_index,double> boundary_values;
-    VectorTools::interpolate_boundary_values (this->mapping, dof_handler_u,
-                                              inhom_dirichlet,
-                                              boundary_values);
+    std::map<types::global_dof_index, double> boundary_values;
+    VectorTools::interpolate_boundary_values(this->mapping,
+                                             dof_handler_u,
+                                             inhom_dirichlet,
+                                             boundary_values);
 
-    const Utilities::MPI::Partitioner &vel_part = *velocity_diagonal_mass.get_partitioner();
-    for (std::map<types::global_dof_index,double>::const_iterator
-           it = boundary_values.begin(); it != boundary_values.end(); ++it)
-      if (vel_part.in_local_range(it->first))
-        velocity_diagonal_mass.local_element(it->first-vel_part.local_range().first) = 0;
+    const Utilities::MPI::Partitioner & vel_part = *velocity_diagonal_mass.get_partitioner();
+    for(std::map<types::global_dof_index, double>::const_iterator it = boundary_values.begin();
+        it != boundary_values.end();
+        ++it)
+      if(vel_part.in_local_range(it->first))
+        velocity_diagonal_mass.local_element(it->first - vel_part.local_range().first) = 0;
   }
 
   solution.reinit(2);
@@ -390,39 +411,37 @@ void FENavierStokesSolver<dim>::setup_problem
   {
     AssertDimension(initial_velocity_field.n_components, dim);
     Quadrature<dim> quad(fe_u.base_element(0).get_unit_support_points());
-    FEValues<dim> fe_values(this->mapping, fe_u, quad,
-                            update_values | update_quadrature_points);
-    std::vector<Vector<double> > sol_values(quad.size(), Vector<double>(dim));
+    FEValues<dim>   fe_values(this->mapping, fe_u, quad, update_values | update_quadrature_points);
+    std::vector<Vector<double>>          sol_values(quad.size(), Vector<double>(dim));
     std::vector<types::global_dof_index> dof_indices(fe_u.dofs_per_cell);
-    Table<2,unsigned int> component_to_system_index(dim, quad.size());
-    for (unsigned int d=0; d<dim; ++d)
-      for (unsigned int i=0; i<quad.size(); ++i)
-        {
-          component_to_system_index(d,i) = fe_u.component_to_system_index(d,i);
-          Assert(quad.point(i).distance(fe_u.get_unit_support_points()[component_to_system_index(d,i)]) < 1e-14,
-                 ExcInternalError());
-        }
+    Table<2, unsigned int>               component_to_system_index(dim, quad.size());
+    for(unsigned int d = 0; d < dim; ++d)
+      for(unsigned int i = 0; i < quad.size(); ++i)
+      {
+        component_to_system_index(d, i) = fe_u.component_to_system_index(d, i);
+        Assert(quad.point(i).distance(
+                 fe_u.get_unit_support_points()[component_to_system_index(d, i)]) < 1e-14,
+               ExcInternalError());
+      }
     IndexSet locally_owned_indices = dof_handler_u.locally_owned_dofs();
-    double *vec_data = solution.block(0).begin();
+    double * vec_data              = solution.block(0).begin();
 
-    for (typename DoFHandler<dim>::active_cell_iterator
-           cell=dof_handler_u.begin_active(); cell != dof_handler_u.end(); ++cell)
-      if (cell->is_locally_owned())
-        {
-          fe_values.reinit(cell);
-          initial_velocity_field.vector_value_list(fe_values.get_quadrature_points(),
-                                                   sol_values);
-          cell->get_dof_indices(dof_indices);
-          for (unsigned int i=0; i<quad.size(); ++i)
-            for (unsigned int d=0; d<dim; ++d)
-              {
-                const types::global_dof_index glob_index
-                  = dof_indices[component_to_system_index(d,i)];
-                if (locally_owned_indices.is_element(glob_index))
-                  vec_data[locally_owned_indices.index_within_set(glob_index)]
-                    = sol_values[i](d);
-              }
-        }
+    for(typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_u.begin_active();
+        cell != dof_handler_u.end();
+        ++cell)
+      if(cell->is_locally_owned())
+      {
+        fe_values.reinit(cell);
+        initial_velocity_field.vector_value_list(fe_values.get_quadrature_points(), sol_values);
+        cell->get_dof_indices(dof_indices);
+        for(unsigned int i = 0; i < quad.size(); ++i)
+          for(unsigned int d = 0; d < dim; ++d)
+          {
+            const types::global_dof_index glob_index = dof_indices[component_to_system_index(d, i)];
+            if(locally_owned_indices.is_element(glob_index))
+              vec_data[locally_owned_indices.index_within_set(glob_index)] = sol_values[i](d);
+          }
+      }
   }
   constraints_u.distribute(solution.block(0));
 
@@ -435,57 +454,58 @@ void FENavierStokesSolver<dim>::setup_problem
 
 
 
-template <int dim>
+template<int dim>
 void
-FENavierStokesSolver<dim>::apply_inhomogeneous_velocity_boundary_conditions
-(const parallel::distributed::Vector<double> &in_vec,
- const double current_time) const
+FENavierStokesSolver<dim>::apply_inhomogeneous_velocity_boundary_conditions(
+  const parallel::distributed::Vector<double> & in_vec,
+  const double                                  current_time) const
 {
-  if (this->boundary->dirichlet_conditions_u.empty())
+  if(this->boundary->dirichlet_conditions_u.empty())
     return;
 
   typename FunctionMap<dim>::type dirichlet_u;
 
   // set the correct time in the function
-  for (typename std::map<types::boundary_id,
-         std::shared_ptr<Function<dim> > >::iterator it =
-         this->boundary->dirichlet_conditions_u.begin();
-       it != this->boundary->dirichlet_conditions_u.end(); ++it)
-    {
-      it->second->set_time(current_time);
-      dirichlet_u[it->first] = it->second.get();
-    }
+  for(typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
+        this->boundary->dirichlet_conditions_u.begin();
+      it != this->boundary->dirichlet_conditions_u.end();
+      ++it)
+  {
+    it->second->set_time(current_time);
+    dirichlet_u[it->first] = it->second.get();
+  }
 
-  std::map<types::global_dof_index,double> boundary_values;
-  VectorTools::interpolate_boundary_values (this->mapping, dof_handler_u,
-                                            dirichlet_u,
-                                            boundary_values);
+  std::map<types::global_dof_index, double> boundary_values;
+  VectorTools::interpolate_boundary_values(this->mapping,
+                                           dof_handler_u,
+                                           dirichlet_u,
+                                           boundary_values);
 
-  parallel::distributed::Vector<double> &src_vel =
+  parallel::distributed::Vector<double> & src_vel =
     const_cast<parallel::distributed::Vector<double> &>(in_vec);
-  const Utilities::MPI::Partitioner &vel_part = *src_vel.get_partitioner();
-  for (std::map<types::global_dof_index,double>::const_iterator
-         it = boundary_values.begin(); it != boundary_values.end(); ++it)
-    if (vel_part.in_local_range(it->first))
-      src_vel.local_element(it->first-vel_part.local_range().first) = it->second;
+  const Utilities::MPI::Partitioner & vel_part = *src_vel.get_partitioner();
+  for(std::map<types::global_dof_index, double>::const_iterator it = boundary_values.begin();
+      it != boundary_values.end();
+      ++it)
+    if(vel_part.in_local_range(it->first))
+      src_vel.local_element(it->first - vel_part.local_range().first) = it->second;
 }
 
 
-template <int dim>
+template<int dim>
 void
-FENavierStokesSolver<dim>
-::apply_velocity_operator(const double                                 current_time,
-                          const parallel::distributed::Vector<double> &src,
-                          parallel::distributed::Vector<double>       &dst) const
+FENavierStokesSolver<dim>::apply_velocity_operator(
+  const double                                  current_time,
+  const parallel::distributed::Vector<double> & src,
+  parallel::distributed::Vector<double> &       dst) const
 {
   // apply inhomogeneous velocity boundary values (no-slip is applied via
   // MatrixFree)
   apply_inhomogeneous_velocity_boundary_conditions(src, current_time);
 
-  if (this->body_force.get())
+  if(this->body_force.get())
     this->body_force->set_time(current_time);
-  FENavierStokesEvaluator<dim> evaluator(matrix_free, solution.block(1),
-                                         updates1.block(1), *this);
+  FENavierStokesEvaluator<dim> evaluator(matrix_free, solution.block(1), updates1.block(1), *this);
   evaluator.advection_integrals(src, dst);
 }
 
@@ -493,118 +513,114 @@ FENavierStokesSolver<dim>
 
 namespace
 {
-  template <int dim>
-  struct RKVectorUpdater
+template<int dim>
+struct RKVectorUpdater
+{
+  RKVectorUpdater(const parallel::distributed::Vector<double> & matrix_diagonal_inverse,
+                  const double                                  factor1,
+                  const double                                  factor2,
+                  const bool                                    is_last,
+                  parallel::distributed::Vector<double> &       vector1,
+                  parallel::distributed::Vector<double> &       vector2,
+                  parallel::distributed::Vector<double> &       vector3)
+    : matrix_diagonal_inverse(matrix_diagonal_inverse),
+      factor1(factor1),
+      factor2(factor2),
+      is_last(is_last),
+      vector1(vector1),
+      vector2(vector2),
+      vector3(vector3)
   {
-    RKVectorUpdater (const parallel::distributed::Vector<double> &matrix_diagonal_inverse,
-                     const double  factor1,
-                     const double  factor2,
-                     const bool    is_last,
-                     parallel::distributed::Vector<double> &vector1,
-                     parallel::distributed::Vector<double> &vector2,
-                     parallel::distributed::Vector<double> &vector3)
-      :
-      matrix_diagonal_inverse (matrix_diagonal_inverse),
-      factor1 (factor1),
-      factor2 (factor2),
-      is_last (is_last),
-      vector1 (vector1),
-      vector2 (vector2),
-      vector3 (vector3)
-    {
-      AssertDimension(vector1.size(), matrix_diagonal_inverse.size());
-      AssertDimension(vector2.size(), matrix_diagonal_inverse.size());
-      AssertDimension(vector3.size(), matrix_diagonal_inverse.size());
-    }
+    AssertDimension(vector1.size(), matrix_diagonal_inverse.size());
+    AssertDimension(vector2.size(), matrix_diagonal_inverse.size());
+    AssertDimension(vector3.size(), matrix_diagonal_inverse.size());
+  }
 
-    void
-    apply_to_subrange (const std::size_t begin,
-                       const std::size_t end) const
-    {
-      const double factor1 = this->factor1;
-      const double factor2 = this->factor2;
-      double *vector1 = this->vector1.begin(),
-        *vector2 = this->vector2.begin(),
-        *vector3 = this->vector3.begin();
-      const double* matrix_diagonal_inverse = this->matrix_diagonal_inverse.begin();
-      if (is_last)
-        {
-          DEAL_II_OPENMP_SIMD_PRAGMA
-            for (std::size_t i=begin; i<end; ++i)
-              {
-                const double update = vector1[i] * matrix_diagonal_inverse[i];
-                vector2[i] += factor1 * update;
-                vector1[i] = 0;
-              }
-        }
-      else
-        {
-          DEAL_II_OPENMP_SIMD_PRAGMA
-            for (std::size_t i=begin; i<end; ++i)
-              {
-                const double update = vector1[i] * matrix_diagonal_inverse[i];
-                vector2[i] += factor1 * update;
-                vector3[i] = vector2[i] + factor2 * update;
-                vector1[i] = 0;
-              }
-        }
-    }
-
-    const parallel::distributed::Vector<double> &matrix_diagonal_inverse;
-    const double factor1;
-    const double factor2;
-    const bool   is_last;
-    parallel::distributed::Vector<double> &vector1;
-    parallel::distributed::Vector<double> &vector2;
-    parallel::distributed::Vector<double> &vector3;
-  };
-
-  template<int dim>
-  struct RKVectorUpdatesRange : public parallel::ParallelForInteger
+  void
+  apply_to_subrange(const std::size_t begin, const std::size_t end) const
   {
-    RKVectorUpdatesRange(const parallel::distributed::Vector<double> &matrix_diagonal_inverse,
-                         const double  factor1,
-                         const double  factor2,
-                         const bool    is_last,
-                         parallel::distributed::Vector<double> &vector1,
-                         parallel::distributed::Vector<double> &vector2,
-                         parallel::distributed::Vector<double> &vector3)
-      :
-      updater (matrix_diagonal_inverse, factor1, factor2, is_last,
-               vector1, vector2, vector3)
+    const double factor1 = this->factor1;
+    const double factor2 = this->factor2;
+    double *     vector1 = this->vector1.begin(), *vector2 = this->vector2.begin(),
+           *vector3                        = this->vector3.begin();
+    const double * matrix_diagonal_inverse = this->matrix_diagonal_inverse.begin();
+    if(is_last)
     {
-      const std::size_t size = vector1.local_size();
-      if (size < internal::Vector::minimum_parallel_grain_size)
-        apply_to_subrange (0, size);
-      else
-        apply_parallel (0, size,
-                        internal::Vector::minimum_parallel_grain_size);
+      DEAL_II_OPENMP_SIMD_PRAGMA
+      for(std::size_t i = begin; i < end; ++i)
+      {
+        const double update = vector1[i] * matrix_diagonal_inverse[i];
+        vector2[i] += factor1 * update;
+        vector1[i] = 0;
+      }
     }
-
-    ~RKVectorUpdatesRange() {}
-
-    virtual void
-    apply_to_subrange (const std::size_t begin,
-                       const std::size_t end) const
+    else
     {
-      updater.apply_to_subrange(begin, end);
+      DEAL_II_OPENMP_SIMD_PRAGMA
+      for(std::size_t i = begin; i < end; ++i)
+      {
+        const double update = vector1[i] * matrix_diagonal_inverse[i];
+        vector2[i] += factor1 * update;
+        vector3[i] = vector2[i] + factor2 * update;
+        vector1[i] = 0;
+      }
     }
+  }
 
-    const RKVectorUpdater<dim> updater;
-  };
-}
+  const parallel::distributed::Vector<double> & matrix_diagonal_inverse;
+  const double                                  factor1;
+  const double                                  factor2;
+  const bool                                    is_last;
+  parallel::distributed::Vector<double> &       vector1;
+  parallel::distributed::Vector<double> &       vector2;
+  parallel::distributed::Vector<double> &       vector3;
+};
+
+template<int dim>
+struct RKVectorUpdatesRange : public parallel::ParallelForInteger
+{
+  RKVectorUpdatesRange(const parallel::distributed::Vector<double> & matrix_diagonal_inverse,
+                       const double                                  factor1,
+                       const double                                  factor2,
+                       const bool                                    is_last,
+                       parallel::distributed::Vector<double> &       vector1,
+                       parallel::distributed::Vector<double> &       vector2,
+                       parallel::distributed::Vector<double> &       vector3)
+    : updater(matrix_diagonal_inverse, factor1, factor2, is_last, vector1, vector2, vector3)
+  {
+    const std::size_t size = vector1.local_size();
+    if(size < internal::Vector::minimum_parallel_grain_size)
+      apply_to_subrange(0, size);
+    else
+      apply_parallel(0, size, internal::Vector::minimum_parallel_grain_size);
+  }
+
+  ~RKVectorUpdatesRange()
+  {
+  }
+
+  virtual void
+  apply_to_subrange(const std::size_t begin, const std::size_t end) const
+  {
+    updater.apply_to_subrange(begin, end);
+  }
+
+  const RKVectorUpdater<dim> updater;
+};
+} // namespace
 
 
 
-template <int dim>
+template<int dim>
 unsigned int
 FENavierStokesSolver<dim>::advance_time_step()
 {
-  const bool output_info = step_number % time_step_output_frequency == (time_step_output_frequency-1);
+  const bool output_info =
+    step_number % time_step_output_frequency == (time_step_output_frequency - 1);
 
-  if (output_info)
-    pcout << "Step " << std::setw(5) << step_number+1 << " to t = "
-          << std::setw(8) << time+this->time_step_size;
+  if(output_info)
+    pcout << "Step " << std::setw(5) << step_number + 1 << " to t = " << std::setw(8)
+          << time + this->time_step_size;
 
   Timer time;
 
@@ -612,22 +628,38 @@ FENavierStokesSolver<dim>::advance_time_step()
 
   const double a21 = 0.755726351946097;
   const double a32 = 0.386954477304099;
-  const double b1 = 0.245170287303492;
-  const double b2 = 0.184896052186740;
-  const double b3 = 0.569933660509768;
+  const double b1  = 0.245170287303492;
+  const double b2  = 0.184896052186740;
+  const double b3  = 0.569933660509768;
 
   apply_velocity_operator(this->time, solution.block(0), updates1.block(0));
-  RKVectorUpdatesRange<dim>(velocity_diagonal_mass, -a21*this->time_step_size,
-                            (a21-b1)*this->time_step_size, false, updates1.block(0),
-                            solution.block(0), updates2.block(0));
-  apply_velocity_operator(this->time+a21*this->time_step_size, solution.block(0), updates1.block(0));
-  RKVectorUpdatesRange<dim>(velocity_diagonal_mass, -a32*this->time_step_size,
-                            (a32-b2)*this->time_step_size, false, updates1.block(0),
-                            updates2.block(0), solution.block(0));
-  apply_velocity_operator(this->time+(b1+a32)*this->time_step_size, updates2.block(0), updates1.block(0));
-  RKVectorUpdatesRange<dim>(velocity_diagonal_mass, -b3*this->time_step_size,
-                            0,                  true,  updates1.block(0),
-                            solution.block(0), updates2.block(0));
+  RKVectorUpdatesRange<dim>(velocity_diagonal_mass,
+                            -a21 * this->time_step_size,
+                            (a21 - b1) * this->time_step_size,
+                            false,
+                            updates1.block(0),
+                            solution.block(0),
+                            updates2.block(0));
+  apply_velocity_operator(this->time + a21 * this->time_step_size,
+                          solution.block(0),
+                          updates1.block(0));
+  RKVectorUpdatesRange<dim>(velocity_diagonal_mass,
+                            -a32 * this->time_step_size,
+                            (a32 - b2) * this->time_step_size,
+                            false,
+                            updates1.block(0),
+                            updates2.block(0),
+                            solution.block(0));
+  apply_velocity_operator(this->time + (b1 + a32) * this->time_step_size,
+                          updates2.block(0),
+                          updates1.block(0));
+  RKVectorUpdatesRange<dim>(velocity_diagonal_mass,
+                            -b3 * this->time_step_size,
+                            0,
+                            true,
+                            updates1.block(0),
+                            solution.block(0),
+                            updates2.block(0));
 
   this->time += this->time_step_size;
 
@@ -636,48 +668,48 @@ FENavierStokesSolver<dim>::advance_time_step()
 
   // step 2: compute divergence for pressure Poisson equation and solve
   updates2.block(1) = 0;
-  FENavierStokesEvaluator<dim> evaluator(matrix_free, solution.block(1),
-                                         updates1.block(1), *this);
+  FENavierStokesEvaluator<dim> evaluator(matrix_free, solution.block(1), updates1.block(1), *this);
   evaluator.divergence_integrals(solution.block(0), updates2.block(1));
 
   // get pressure boundary values
   typename FunctionMap<dim>::type dirichlet_p;
 
   // set the correct time in the function
-  for (typename std::map<types::boundary_id,
-         std::shared_ptr<Function<dim> > >::iterator it =
-         this->boundary->open_conditions_p.begin();
-       it != this->boundary->open_conditions_p.end(); ++it)
-    {
-      it->second->set_time(this->time);
-      dirichlet_p[it->first] = it->second.get();
-    }
+  for(typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
+        this->boundary->open_conditions_p.begin();
+      it != this->boundary->open_conditions_p.end();
+      ++it)
+  {
+    it->second->set_time(this->time);
+    dirichlet_p[it->first] = it->second.get();
+  }
 
-  std::map<types::global_dof_index,double> boundary_values;
-  VectorTools::interpolate_boundary_values (this->mapping, dof_handler_p,
-                                            dirichlet_p,
-                                            boundary_values);
+  std::map<types::global_dof_index, double> boundary_values;
+  VectorTools::interpolate_boundary_values(this->mapping,
+                                           dof_handler_p,
+                                           dirichlet_p,
+                                           boundary_values);
 
-  const Utilities::MPI::Partitioner &pres_part = *updates2.block(1).get_partitioner();
-  for (std::map<types::global_dof_index,double>::const_iterator
-         it = boundary_values.begin(); it != boundary_values.end(); ++it)
-    if (pres_part.in_local_range(it->first))
-      updates2.block(1).local_element(it->first-pres_part.local_range().first) = 0;
+  const Utilities::MPI::Partitioner & pres_part = *updates2.block(1).get_partitioner();
+  for(std::map<types::global_dof_index, double>::const_iterator it = boundary_values.begin();
+      it != boundary_values.end();
+      ++it)
+    if(pres_part.in_local_range(it->first))
+      updates2.block(1).local_element(it->first - pres_part.local_range().first) = 0;
   laplace_operator.apply_nullspace_projection(updates2.block(1));
 
   computing_times[1] += time.wall_time();
   time.restart();
 
   // solve the pressure Poisson equation
-  updates1.block(1) = 0;
+  updates1.block(1)         = 0;
   const unsigned int n_iter = poisson_solver.solve(updates1.block(1), updates2.block(1));
-  if (output_info)
-    {
-      std::cout.precision(3);
-      pcout << ", div norm: " << std::setw(8) << updates2.block(1).l2_norm()
-            << ", cg its: " << n_iter << ", Poisson time: " << time.wall_time()
-            << "s" << std::endl;
-    }
+  if(output_info)
+  {
+    std::cout.precision(3);
+    pcout << ", div norm: " << std::setw(8) << updates2.block(1).l2_norm() << ", cg its: " << n_iter
+          << ", Poisson time: " << time.wall_time() << "s" << std::endl;
+  }
 
   computing_times[2] += time.wall_time();
   time.restart();
@@ -686,14 +718,17 @@ FENavierStokesSolver<dim>::advance_time_step()
   // equation and a rotational part (to prescribe consistent boundary values
   // for the pressure)
   updates2.block(1).scale(pressure_diagonal_mass);
-  solution.block(1).add(-this->viscosity, updates2.block(1),
-                        1./this->time_step_size, updates1.block(1));
+  solution.block(1).add(-this->viscosity,
+                        updates2.block(1),
+                        1. / this->time_step_size,
+                        updates1.block(1));
 
   // apply pressure boundary values
-  for (std::map<types::global_dof_index,double>::const_iterator
-         it = boundary_values.begin(); it != boundary_values.end(); ++it)
-    if (pres_part.in_local_range(it->first))
-      solution.block(1).local_element(it->first-pres_part.local_range().first) = it->second;
+  for(std::map<types::global_dof_index, double>::const_iterator it = boundary_values.begin();
+      it != boundary_values.end();
+      ++it)
+    if(pres_part.in_local_range(it->first))
+      solution.block(1).local_element(it->first - pres_part.local_range().first) = it->second;
 
   solution.block(1).update_ghost_values();
   updates1.block(1).update_ghost_values();
@@ -706,13 +741,12 @@ FENavierStokesSolver<dim>::advance_time_step()
 
 
 
-template <int dim>
+template<int dim>
 void
 FENavierStokesSolver<dim>::compute_vorticity() const
 {
   updates1.block(0) = 0;
-  FENavierStokesEvaluator<dim> evaluator(matrix_free, solution.block(1),
-                                         updates1.block(1), *this);
+  FENavierStokesEvaluator<dim> evaluator(matrix_free, solution.block(1), updates1.block(1), *this);
   evaluator.curl_integrals(solution.block(0), updates1.block(0));
 
   updates1.block(0).scale(velocity_diagonal_mass);
@@ -720,10 +754,10 @@ FENavierStokesSolver<dim>::compute_vorticity() const
 
 
 
-template <int dim>
+template<int dim>
 void
-FENavierStokesSolver<dim>::output_solution (const std::string  filename_base,
-                                            const unsigned int n_patches) const
+FENavierStokesSolver<dim>::output_solution(const std::string  filename_base,
+                                           const unsigned int n_patches) const
 {
   compute_vorticity();
 
@@ -734,89 +768,81 @@ FENavierStokesSolver<dim>::output_solution (const std::string  filename_base,
   updates1.update_ghost_values();
   updates2.update_ghost_values();
 
-  std::vector<std::string> velocity_name (dim, "velocity");
-  std::vector<std::string> vorticity_name (dim, "vorticity");
-  DataOut<dim> data_out;
-  data_out.attach_triangulation (dof_handler_u.get_triangulation());
-  std::vector< DataComponentInterpretation::DataComponentInterpretation >
-    component_interpretation (dim,
-                              DataComponentInterpretation::component_is_part_of_vector);
-  data_out.add_data_vector (dof_handler_u, solution.block(0),
-                            velocity_name, component_interpretation);
-  data_out.add_data_vector (dof_handler_p, solution.block(1), "pressure");
-  data_out.add_data_vector (dof_handler_p, updates2.block(1), "velocity_div");
-  data_out.add_data_vector (dof_handler_u, updates1.block(0),
-                            vorticity_name, component_interpretation);
-  data_out.build_patches (n_patches);
+  std::vector<std::string> velocity_name(dim, "velocity");
+  std::vector<std::string> vorticity_name(dim, "vorticity");
+  DataOut<dim>             data_out;
+  data_out.attach_triangulation(dof_handler_u.get_triangulation());
+  std::vector<DataComponentInterpretation::DataComponentInterpretation> component_interpretation(
+    dim, DataComponentInterpretation::component_is_part_of_vector);
+  data_out.add_data_vector(dof_handler_u,
+                           solution.block(0),
+                           velocity_name,
+                           component_interpretation);
+  data_out.add_data_vector(dof_handler_p, solution.block(1), "pressure");
+  data_out.add_data_vector(dof_handler_p, updates2.block(1), "velocity_div");
+  data_out.add_data_vector(dof_handler_u,
+                           updates1.block(0),
+                           vorticity_name,
+                           component_interpretation);
+  data_out.build_patches(n_patches);
 
   std::ostringstream filename;
-  filename << filename_base
-           << "_Proc"
-           << Utilities::MPI::this_mpi_process(communicator)
-           << ".vtu";
+  filename << filename_base << "_Proc" << Utilities::MPI::this_mpi_process(communicator) << ".vtu";
 
-  std::ofstream output (filename.str().c_str());
-  data_out.write_vtu (output);
+  std::ofstream output(filename.str().c_str());
+  data_out.write_vtu(output);
 
-  if ( Utilities::MPI::this_mpi_process(communicator) == 0)
+  if(Utilities::MPI::this_mpi_process(communicator) == 0)
+  {
+    // remove directory part from filename_base
+    std::string            filename_plain = filename_base;
+    std::string::size_type found          = filename_plain.find_last_of("/\\");
+    if(found != std::string::npos)
+      filename_plain = filename_plain.substr(found + 1);
+
+    std::vector<std::string> filenames;
+    for(unsigned int i = 0; i < Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD); ++i)
     {
-      // remove directory part from filename_base
-      std::string filename_plain = filename_base;
-      std::string::size_type found = filename_plain.find_last_of("/\\");
-      if (found != std::string::npos)
-        filename_plain = filename_plain.substr(found+1);
+      std::ostringstream filename;
+      filename << filename_plain << "_Proc" << i << ".vtu";
 
-      std::vector<std::string> filenames;
-      for (unsigned int i=0;i<Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);++i)
-        {
-          std::ostringstream filename;
-          filename << filename_plain
-                   << "_Proc"
-                   << i
-                   << ".vtu";
-
-          filenames.push_back(filename.str().c_str());
-        }
-      std::string master_name = filename_base +  ".pvtu";
-      std::ofstream master_output (master_name.c_str());
-      data_out.write_pvtu_record (master_output, filenames);
+      filenames.push_back(filename.str().c_str());
     }
+    std::string   master_name = filename_base + ".pvtu";
+    std::ofstream master_output(master_name.c_str());
+    data_out.write_pvtu_record(master_output, filenames);
+  }
 
   updates1.block(0) = 0;
-
 }
 
 
 
-template <int dim>
+template<int dim>
 void
 FENavierStokesSolver<dim>::print_computing_times() const
 {
-  std::string names [4] = {"Advection","Velocity div","Pressure","Other   "};
-  pcout << std::endl << "Computing times:    \t       min       avg       max    p_min  p_max" << std::endl;
+  std::string names[4] = {"Advection", "Velocity div", "Pressure", "Other   "};
+  pcout << std::endl
+        << "Computing times:    \t       min       avg       max    p_min  p_max" << std::endl;
   double total_avg_time = 0;
-  for (unsigned int i=0; i<computing_times.size(); ++i)
-    {
-      Utilities::MPI::MinMaxAvg data =
-        Utilities::MPI::min_max_avg (computing_times[i], communicator);
-      pcout << "Step " << i+1 <<  ": " << names[i] << "\t "
-            << std::setprecision(4) << std::setw(9) << data.min << " "
-            << std::setprecision(4) << std::setw(9) << data.avg << " "
-            << std::setprecision(4) << std::setw(9) << data.max << "   "
-            << std::setw(6) << data.min_index << " "
-            << std::setw(6) << data.max_index << std::endl;
-      total_avg_time += data.avg;
-    }
-  pcout  <<"Time in steps 1-" << computing_times.size() << ":\t           "
-         << std::setprecision(4) << std::setw(9) << total_avg_time << std::endl;
+  for(unsigned int i = 0; i < computing_times.size(); ++i)
+  {
+    Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(computing_times[i], communicator);
+    pcout << "Step " << i + 1 << ": " << names[i] << "\t " << std::setprecision(4) << std::setw(9)
+          << data.min << " " << std::setprecision(4) << std::setw(9) << data.avg << " "
+          << std::setprecision(4) << std::setw(9) << data.max << "   " << std::setw(6)
+          << data.min_index << " " << std::setw(6) << data.max_index << std::endl;
+    total_avg_time += data.avg;
+  }
+  pcout << "Time in steps 1-" << computing_times.size() << ":\t           " << std::setprecision(4)
+        << std::setw(9) << total_avg_time << std::endl;
   Utilities::MPI::MinMaxAvg data =
-    Utilities::MPI::min_max_avg (global_timer.wall_time(), communicator);
-  pcout  <<"Global time since setup: "
-         << std::setprecision(4) << std::setw(9) << data.min << " "
-         << std::setprecision(4) << std::setw(9) << data.avg << " "
-         << std::setprecision(4) << std::setw(9) << data.max << "   "
-         << std::setw(6) << data.min_index << " "
-         << std::setw(6) << data.max_index << std::endl;
+    Utilities::MPI::min_max_avg(global_timer.wall_time(), communicator);
+  pcout << "Global time since setup: " << std::setprecision(4) << std::setw(9) << data.min << " "
+        << std::setprecision(4) << std::setw(9) << data.avg << " " << std::setprecision(4)
+        << std::setw(9) << data.max << "   " << std::setw(6) << data.min_index << " "
+        << std::setw(6) << data.max_index << std::endl;
 }
 
 
