@@ -6,9 +6,9 @@
  */
 
 // deal.II
+#include <deal.II/base/revision.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
-#include <deal.II/base/revision.h>
 
 // postprocessor
 #include "../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
@@ -24,10 +24,10 @@
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h"
 
 // Paramters, BCs, etc.
-#include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
+#include "../include/incompressible_navier_stokes/user_interface/analytical_solution.h"
 #include "../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
-#include "../include/incompressible_navier_stokes/user_interface/analytical_solution.h"
+#include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
 
 #include "../include/functionalities/print_general_infos.h"
 
@@ -56,75 +56,124 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
 //#include "incompressible_navier_stokes_test_cases/unstable_beltrami.h"
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number=double>
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number = double>
 class NavierStokesProblem
 {
 public:
   NavierStokesProblem(unsigned int const refine_steps_space,
                       unsigned int const refine_steps_time = 0);
 
-  void solve_problem(bool const do_restart);
+  void
+  solve_problem(bool const do_restart);
 
 private:
-  void print_header();
+  void
+  print_header();
 
-  void setup_navier_stokes_operation();
-  void setup_time_integrator(bool const do_restart);
-  void setup_solvers();
-  void setup_postprocessor();
-  void run_timeloop();
+  void
+  setup_navier_stokes_operation();
+
+  void
+  setup_time_integrator(bool const do_restart);
+
+  void
+  setup_solvers();
+
+  void
+  setup_postprocessor();
+
+  void
+  run_timeloop();
 
   ConditionalOStream pcout;
 
   parallel::distributed::Triangulation<dim> triangulation;
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator> > periodic_faces;
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+    periodic_faces;
 
   const unsigned int n_refine_space;
 
-  std::shared_ptr<FieldFunctions<dim> > field_functions;
-  std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure;
-  std::shared_ptr<AnalyticalSolution<dim> > analytical_solution;
+  std::shared_ptr<FieldFunctions<dim>>      field_functions;
+  std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure;
+  std::shared_ptr<AnalyticalSolution<dim>>  analytical_solution;
 
   InputParameters<dim> param;
 
-  std::shared_ptr<DGNavierStokesBase<dim, fe_degree_u, fe_degree_p,
-    fe_degree_xwall, xwall_quad_rule, Number> > navier_stokes_operation;
+  std::shared_ptr<
+    DGNavierStokesBase<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>>
+    navier_stokes_operation;
 
-  std::shared_ptr<DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p,
-    fe_degree_xwall, xwall_quad_rule, Number> > navier_stokes_operation_coupled;
+  std::shared_ptr<
+    DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>>
+    navier_stokes_operation_coupled;
 
-  std::shared_ptr<DGNavierStokesDualSplitting<dim, fe_degree_u, fe_degree_p,
-    fe_degree_xwall, xwall_quad_rule, Number> > navier_stokes_operation_dual_splitting;
+  std::shared_ptr<DGNavierStokesDualSplitting<dim,
+                                              fe_degree_u,
+                                              fe_degree_p,
+                                              fe_degree_xwall,
+                                              xwall_quad_rule,
+                                              Number>>
+    navier_stokes_operation_dual_splitting;
 
-  std::shared_ptr<DGNavierStokesPressureCorrection<dim, fe_degree_u, fe_degree_p,
-    fe_degree_xwall, xwall_quad_rule, Number> > navier_stokes_operation_pressure_correction;
+  std::shared_ptr<DGNavierStokesPressureCorrection<dim,
+                                                   fe_degree_u,
+                                                   fe_degree_p,
+                                                   fe_degree_xwall,
+                                                   xwall_quad_rule,
+                                                   Number>>
+    navier_stokes_operation_pressure_correction;
 
-  std::shared_ptr<IncNS::PostProcessorBase<dim,Number> > postprocessor;
+  std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> postprocessor;
 
-  std::shared_ptr<TimeIntBDFCoupled<dim, fe_degree_u, Number,
-                  DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p,
-                    fe_degree_xwall, xwall_quad_rule, Number> > > time_integrator_coupled;
+  std::shared_ptr<TimeIntBDFCoupled<
+    dim,
+    fe_degree_u,
+    Number,
+    DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>>>
+    time_integrator_coupled;
 
-  std::shared_ptr<TimeIntBDFDualSplitting<dim, fe_degree_u, Number,
-                  DGNavierStokesDualSplitting<dim, fe_degree_u, fe_degree_p,
-                    fe_degree_xwall, xwall_quad_rule, Number> > > time_integrator_dual_splitting;
+  std::shared_ptr<TimeIntBDFDualSplitting<dim,
+                                          fe_degree_u,
+                                          Number,
+                                          DGNavierStokesDualSplitting<dim,
+                                                                      fe_degree_u,
+                                                                      fe_degree_p,
+                                                                      fe_degree_xwall,
+                                                                      xwall_quad_rule,
+                                                                      Number>>>
+    time_integrator_dual_splitting;
 
-  std::shared_ptr<TimeIntBDFPressureCorrection<dim, fe_degree_u, Number,
-                  DGNavierStokesPressureCorrection<dim, fe_degree_u, fe_degree_p,
-                    fe_degree_xwall, xwall_quad_rule, Number> > > time_integrator_pressure_correction;
+  std::shared_ptr<TimeIntBDFPressureCorrection<dim,
+                                               fe_degree_u,
+                                               Number,
+                                               DGNavierStokesPressureCorrection<dim,
+                                                                                fe_degree_u,
+                                                                                fe_degree_p,
+                                                                                fe_degree_xwall,
+                                                                                xwall_quad_rule,
+                                                                                Number>>>
+    time_integrator_pressure_correction;
 };
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
 NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-NavierStokesProblem(unsigned int const refine_steps_space,
-                    unsigned int const refine_steps_time)
-  :
-  pcout(std::cout,Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0),
-  triangulation(MPI_COMM_WORLD,
-                dealii::Triangulation<dim>::none,
-                parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
-  n_refine_space(refine_steps_space)
+  NavierStokesProblem(unsigned int const refine_steps_space, unsigned int const refine_steps_time)
+  : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
+    triangulation(MPI_COMM_WORLD,
+                  dealii::Triangulation<dim>::none,
+                  parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
+    n_refine_space(refine_steps_space)
 {
   param.set_input_parameters();
   param.check_input_parameters();
@@ -155,36 +204,47 @@ NavierStokesProblem(unsigned int const refine_steps_space,
     use_adaptive_time_stepping = true;
 
   AssertThrow(param.solver_type == SolverType::Unsteady,
-      ExcMessage("This is an unsteady solver. Check input parameters."));
+              ExcMessage("This is an unsteady solver. Check input parameters."));
 
   // initialize navier_stokes_operation
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    navier_stokes_operation_coupled.reset(
-        new DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
-        (triangulation,param));
+    navier_stokes_operation_coupled.reset(new DGNavierStokesCoupled<dim,
+                                                                    fe_degree_u,
+                                                                    fe_degree_p,
+                                                                    fe_degree_xwall,
+                                                                    xwall_quad_rule,
+                                                                    Number>(triangulation, param));
 
     navier_stokes_operation = navier_stokes_operation_coupled;
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
     navier_stokes_operation_dual_splitting.reset(
-        new DGNavierStokesDualSplitting<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
-        (triangulation,param));
+      new DGNavierStokesDualSplitting<dim,
+                                      fe_degree_u,
+                                      fe_degree_p,
+                                      fe_degree_xwall,
+                                      xwall_quad_rule,
+                                      Number>(triangulation, param));
 
     navier_stokes_operation = navier_stokes_operation_dual_splitting;
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
     navier_stokes_operation_pressure_correction.reset(
-        new DGNavierStokesPressureCorrection<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
-        (triangulation,param));
+      new DGNavierStokesPressureCorrection<dim,
+                                           fe_degree_u,
+                                           fe_degree_p,
+                                           fe_degree_xwall,
+                                           xwall_quad_rule,
+                                           Number>(triangulation, param));
 
     navier_stokes_operation = navier_stokes_operation_pressure_correction;
   }
   else
   {
-    AssertThrow(false,ExcMessage("Not implemented."));
+    AssertThrow(false, ExcMessage("Not implemented."));
   }
 
 
@@ -192,37 +252,79 @@ NavierStokesProblem(unsigned int const refine_steps_space,
   // this function has to be defined in the header file
   // that implements all problem specific things like
   // parameters, geometry, boundary conditions, etc.
-  postprocessor = construct_postprocessor<dim,Number>(param);
+  postprocessor = construct_postprocessor<dim, Number>(param);
 
   // initialize time integrator that depends on both navier_stokes_operation and postprocessor
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    time_integrator_coupled.reset(new TimeIntBDFCoupled<dim, fe_degree_u, Number,
-        DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> >
-        (navier_stokes_operation_coupled,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
+    time_integrator_coupled.reset(
+      new TimeIntBDFCoupled<dim,
+                            fe_degree_u,
+                            Number,
+                            DGNavierStokesCoupled<dim,
+                                                  fe_degree_u,
+                                                  fe_degree_p,
+                                                  fe_degree_xwall,
+                                                  xwall_quad_rule,
+                                                  Number>>(navier_stokes_operation_coupled,
+                                                           postprocessor,
+                                                           param,
+                                                           refine_steps_time,
+                                                           use_adaptive_time_stepping));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    time_integrator_dual_splitting.reset(new TimeIntBDFDualSplitting<dim, fe_degree_u, Number,
-        DGNavierStokesDualSplitting<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> >
-        (navier_stokes_operation_dual_splitting,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
+    time_integrator_dual_splitting.reset(
+      new TimeIntBDFDualSplitting<dim,
+                                  fe_degree_u,
+                                  Number,
+                                  DGNavierStokesDualSplitting<dim,
+                                                              fe_degree_u,
+                                                              fe_degree_p,
+                                                              fe_degree_xwall,
+                                                              xwall_quad_rule,
+                                                              Number>>(
+        navier_stokes_operation_dual_splitting,
+        postprocessor,
+        param,
+        refine_steps_time,
+        use_adaptive_time_stepping));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    time_integrator_pressure_correction.reset(new TimeIntBDFPressureCorrection<dim, fe_degree_u, Number,
-        DGNavierStokesPressureCorrection<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> >
-        (navier_stokes_operation_pressure_correction,postprocessor,param,refine_steps_time,use_adaptive_time_stepping));
+    time_integrator_pressure_correction.reset(
+      new TimeIntBDFPressureCorrection<dim,
+                                       fe_degree_u,
+                                       Number,
+                                       DGNavierStokesPressureCorrection<dim,
+                                                                        fe_degree_u,
+                                                                        fe_degree_p,
+                                                                        fe_degree_xwall,
+                                                                        xwall_quad_rule,
+                                                                        Number>>(
+        navier_stokes_operation_pressure_correction,
+        postprocessor,
+        param,
+        refine_steps_time,
+        use_adaptive_time_stepping));
   }
   else
   {
-    AssertThrow(false,ExcMessage("Not implemented."));
+    AssertThrow(false, ExcMessage("Not implemented."));
   }
 }
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-print_header()
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+void
+NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+  print_header()
 {
+  // clang-format off
   pcout << std::endl << std::endl << std::endl
   << "_________________________________________________________________________________" << std::endl
   << "                                                                                 " << std::endl
@@ -231,18 +333,26 @@ print_header()
   << "                     based on a matrix-free implementation                       " << std::endl
   << "_________________________________________________________________________________" << std::endl
   << std::endl;
+  // clang-format on
 }
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-setup_postprocessor()
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+void
+NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+  setup_postprocessor()
 {
   AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
 
   DofQuadIndexData dof_quad_index_data;
   dof_quad_index_data.dof_index_velocity = navier_stokes_operation->get_dof_index_velocity();
   dof_quad_index_data.dof_index_pressure = navier_stokes_operation->get_dof_index_pressure();
-  dof_quad_index_data.quad_index_velocity = navier_stokes_operation->get_quad_index_velocity_linear();
+  dof_quad_index_data.quad_index_velocity =
+    navier_stokes_operation->get_quad_index_velocity_linear();
 
   postprocessor->setup(navier_stokes_operation->get_dof_handler_u(),
                        navier_stokes_operation->get_dof_handler_p(),
@@ -252,9 +362,15 @@ setup_postprocessor()
                        analytical_solution);
 }
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-setup_navier_stokes_operation()
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+void
+NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+  setup_navier_stokes_operation()
 {
   AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
 
@@ -264,9 +380,15 @@ setup_navier_stokes_operation()
                                  field_functions);
 }
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-setup_time_integrator(bool const do_restart)
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+void
+NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+  setup_time_integrator(bool const do_restart)
 {
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
@@ -282,37 +404,52 @@ setup_time_integrator(bool const do_restart)
   }
   else
   {
-    AssertThrow(false,ExcMessage("Not implemented."));
+    AssertThrow(false, ExcMessage("Not implemented."));
   }
 }
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-setup_solvers()
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+void
+NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+  setup_solvers()
 {
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    navier_stokes_operation_coupled->setup_solvers(time_integrator_coupled->get_scaling_factor_time_derivative_term());
+    navier_stokes_operation_coupled->setup_solvers(
+      time_integrator_coupled->get_scaling_factor_time_derivative_term());
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    navier_stokes_operation_dual_splitting->setup_solvers(time_integrator_dual_splitting->get_time_step_size(),
-                                                          time_integrator_dual_splitting->get_scaling_factor_time_derivative_term());
+    navier_stokes_operation_dual_splitting->setup_solvers(
+      time_integrator_dual_splitting->get_time_step_size(),
+      time_integrator_dual_splitting->get_scaling_factor_time_derivative_term());
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    navier_stokes_operation_pressure_correction->setup_solvers(time_integrator_pressure_correction->get_time_step_size(),
-                                                               time_integrator_pressure_correction->get_scaling_factor_time_derivative_term());
+    navier_stokes_operation_pressure_correction->setup_solvers(
+      time_integrator_pressure_correction->get_time_step_size(),
+      time_integrator_pressure_correction->get_scaling_factor_time_derivative_term());
   }
   else
   {
-    AssertThrow(false,ExcMessage("Not implemented."));
+    AssertThrow(false, ExcMessage("Not implemented."));
   }
 }
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-run_timeloop()
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+void
+NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+  run_timeloop()
 {
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
@@ -343,13 +480,19 @@ run_timeloop()
   }
   else
   {
-    AssertThrow(false,ExcMessage("Not implemented."));
+    AssertThrow(false, ExcMessage("Not implemented."));
   }
 }
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-void NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-solve_problem(bool const do_restart)
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+void
+NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+  solve_problem(bool const do_restart)
 {
   // this function has to be defined in the header file that implements all
   // problem specific things like parameters, geometry, boundary conditions, etc.
@@ -359,9 +502,7 @@ solve_problem(bool const do_restart)
                                           boundary_descriptor_pressure,
                                           periodic_faces);
 
-  print_grid_data(pcout,
-                  n_refine_space,
-                  triangulation);
+  print_grid_data(pcout, n_refine_space, triangulation);
 
   setup_navier_stokes_operation();
 
@@ -377,69 +518,80 @@ solve_problem(bool const do_restart)
   run_timeloop();
 }
 
-int main (int argc, char** argv)
+int
+main(int argc, char ** argv)
 {
   try
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
-    if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
       std::cout << "deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch "
-                << DEAL_II_GIT_BRANCH << std::endl << std::endl;
+                << DEAL_II_GIT_BRANCH << std::endl
+                << std::endl;
     }
 
     deallog.depth_console(0);
 
     bool do_restart = false;
-    if (argc > 1)
+    if(argc > 1)
     {
       do_restart = std::atoi(argv[1]);
       if(do_restart)
       {
-        AssertThrow(REFINE_STEPS_SPACE_MIN == REFINE_STEPS_SPACE_MAX, ExcMessage("Spatial refinement with restart not possible!"));
+        AssertThrow(REFINE_STEPS_SPACE_MIN == REFINE_STEPS_SPACE_MAX,
+                    ExcMessage("Spatial refinement with restart not possible!"));
 
-        //this does in principle work
-        //although it doesn't make much sense
-        if(REFINE_STEPS_TIME_MIN != REFINE_STEPS_TIME_MAX && Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-          std::cout << "Warning: you are starting from a restart and refine the time steps!" << std::endl;
+        // this does in principle work although it doesn't make much sense
+        if(REFINE_STEPS_TIME_MIN != REFINE_STEPS_TIME_MAX &&
+           Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+          std::cout << "Warning: you are starting from a restart and refine the time steps!"
+                    << std::endl;
       }
     }
 
-    //mesh refinements in order to perform spatial convergence tests
-    for(unsigned int refine_steps_space = REFINE_STEPS_SPACE_MIN; refine_steps_space <= REFINE_STEPS_SPACE_MAX;++refine_steps_space)
+    // mesh refinements in order to perform spatial convergence tests
+    for(unsigned int refine_steps_space = REFINE_STEPS_SPACE_MIN;
+        refine_steps_space <= REFINE_STEPS_SPACE_MAX;
+        ++refine_steps_space)
     {
-      //time refinements in order to perform temporal convergence tests
-      for(unsigned int refine_steps_time = REFINE_STEPS_TIME_MIN; refine_steps_time <= REFINE_STEPS_TIME_MAX;++refine_steps_time)
+      // time refinements in order to perform temporal convergence tests
+      for(unsigned int refine_steps_time = REFINE_STEPS_TIME_MIN;
+          refine_steps_time <= REFINE_STEPS_TIME_MAX;
+          ++refine_steps_time)
       {
-        NavierStokesProblem<DIMENSION, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, VALUE_TYPE>
-            navier_stokes_problem(refine_steps_space,refine_steps_time);
+        NavierStokesProblem<DIMENSION,
+                            FE_DEGREE_VELOCITY,
+                            FE_DEGREE_PRESSURE,
+                            FE_DEGREE_XWALL,
+                            N_Q_POINTS_1D_XWALL,
+                            VALUE_TYPE>
+          navier_stokes_problem(refine_steps_space, refine_steps_time);
 
         navier_stokes_problem.solve_problem(do_restart);
       }
     }
   }
-  catch (std::exception &exc)
+  catch(std::exception & exc)
   {
-    std::cerr << std::endl << std::endl
-              << "----------------------------------------------------"
-              << std::endl;
+    std::cerr << std::endl
+              << std::endl
+              << "----------------------------------------------------" << std::endl;
     std::cerr << "Exception on processing: " << std::endl
               << exc.what() << std::endl
               << "Aborting!" << std::endl
-              << "----------------------------------------------------"
-              << std::endl;
+              << "----------------------------------------------------" << std::endl;
     return 1;
   }
-  catch (...)
+  catch(...)
   {
-    std::cerr << std::endl << std::endl
-              << "----------------------------------------------------"
-              << std::endl;
+    std::cerr << std::endl
+              << std::endl
+              << "----------------------------------------------------" << std::endl;
     std::cerr << "Unknown exception!" << std::endl
               << "Aborting!" << std::endl
-              << "----------------------------------------------------"
-              << std::endl;
+              << "----------------------------------------------------" << std::endl;
     return 1;
   }
   return 0;
