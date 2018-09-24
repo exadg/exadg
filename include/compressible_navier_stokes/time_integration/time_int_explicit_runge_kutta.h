@@ -24,6 +24,8 @@ template<int dim, int fe_degree, typename value_type, typename NavierStokesOpera
 class TimeIntExplRKCompNavierStokes
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   TimeIntExplRKCompNavierStokes(
     std::shared_ptr<NavierStokesOperation>                 comp_navier_stokes_operation_in,
     std::shared_ptr<CompNS::PostProcessor<dim, fe_degree>> postprocessor_in,
@@ -93,9 +95,7 @@ private:
 
   std::shared_ptr<NavierStokesOperation> comp_navier_stokes_operation;
 
-  std::shared_ptr<
-    ExplicitTimeIntegrator<NavierStokesOperation, parallel::distributed::Vector<value_type>>>
-    rk_time_integrator;
+  std::shared_ptr<ExplicitTimeIntegrator<NavierStokesOperation, VectorType>> rk_time_integrator;
 
   std::shared_ptr<CompNS::PostProcessor<dim, fe_degree>> postprocessor;
 
@@ -113,14 +113,14 @@ private:
   double l2_norm;
 
   // DoF vectors for conserved variables: (rho, rho u, rho E)
-  parallel::distributed::Vector<value_type> solution_n, solution_np;
+  VectorType solution_n, solution_np;
 
   // DoF vectors for derived quantities: (p, u, T)
-  parallel::distributed::Vector<value_type> pressure;
-  parallel::distributed::Vector<value_type> velocity;
-  parallel::distributed::Vector<value_type> temperature;
-  parallel::distributed::Vector<value_type> vorticity;
-  parallel::distributed::Vector<value_type> divergence;
+  VectorType pressure;
+  VectorType velocity;
+  VectorType temperature;
+  VectorType vorticity;
+  VectorType divergence;
 
   std::vector<SolutionField<dim, value_type>> additional_fields;
 
@@ -154,55 +154,43 @@ TimeIntExplRKCompNavierStokes<dim, fe_degree, value_type, NavierStokesOperation>
   if(this->param.temporal_discretization == CompNS::TemporalDiscretization::ExplRK)
   {
     rk_time_integrator.reset(
-      new ExplicitRungeKuttaTimeIntegrator<NavierStokesOperation,
-                                           parallel::distributed::Vector<value_type>>(
+      new ExplicitRungeKuttaTimeIntegrator<NavierStokesOperation, VectorType>(
         param.order_time_integrator, comp_navier_stokes_operation));
   }
   else if(this->param.temporal_discretization == CompNS::TemporalDiscretization::ExplRK3Stage4Reg2C)
   {
-    rk_time_integrator.reset(
-      new LowStorageRK3Stage4Reg2C<NavierStokesOperation,
-                                   parallel::distributed::Vector<value_type>>(
-        comp_navier_stokes_operation));
+    rk_time_integrator.reset(new LowStorageRK3Stage4Reg2C<NavierStokesOperation, VectorType>(
+      comp_navier_stokes_operation));
   }
   else if(this->param.temporal_discretization == CompNS::TemporalDiscretization::ExplRK4Stage5Reg2C)
   {
-    rk_time_integrator.reset(
-      new LowStorageRK4Stage5Reg2C<NavierStokesOperation,
-                                   parallel::distributed::Vector<value_type>>(
-        comp_navier_stokes_operation));
+    rk_time_integrator.reset(new LowStorageRK4Stage5Reg2C<NavierStokesOperation, VectorType>(
+      comp_navier_stokes_operation));
   }
   else if(this->param.temporal_discretization == CompNS::TemporalDiscretization::ExplRK4Stage5Reg3C)
   {
-    rk_time_integrator.reset(
-      new LowStorageRK4Stage5Reg3C<NavierStokesOperation,
-                                   parallel::distributed::Vector<value_type>>(
-        comp_navier_stokes_operation));
+    rk_time_integrator.reset(new LowStorageRK4Stage5Reg3C<NavierStokesOperation, VectorType>(
+      comp_navier_stokes_operation));
   }
   else if(this->param.temporal_discretization == CompNS::TemporalDiscretization::ExplRK5Stage9Reg2S)
   {
-    rk_time_integrator.reset(
-      new LowStorageRK5Stage9Reg2S<NavierStokesOperation,
-                                   parallel::distributed::Vector<value_type>>(
-        comp_navier_stokes_operation));
+    rk_time_integrator.reset(new LowStorageRK5Stage9Reg2S<NavierStokesOperation, VectorType>(
+      comp_navier_stokes_operation));
   }
   else if(this->param.temporal_discretization == CompNS::TemporalDiscretization::ExplRK3Stage7Reg2)
   {
     rk_time_integrator.reset(
-      new LowStorageRKTD<NavierStokesOperation, parallel::distributed::Vector<value_type>>(
-        comp_navier_stokes_operation, 3, 7));
+      new LowStorageRKTD<NavierStokesOperation, VectorType>(comp_navier_stokes_operation, 3, 7));
   }
   else if(this->param.temporal_discretization == CompNS::TemporalDiscretization::ExplRK4Stage8Reg2)
   {
     rk_time_integrator.reset(
-      new LowStorageRKTD<NavierStokesOperation, parallel::distributed::Vector<value_type>>(
-        comp_navier_stokes_operation, 4, 8));
+      new LowStorageRKTD<NavierStokesOperation, VectorType>(comp_navier_stokes_operation, 4, 8));
   }
   else if(this->param.temporal_discretization == CompNS::TemporalDiscretization::SSPRK)
   {
-    rk_time_integrator.reset(
-      new SSPRK<NavierStokesOperation, parallel::distributed::Vector<value_type>>(
-        comp_navier_stokes_operation, param.order_time_integrator, param.stages));
+    rk_time_integrator.reset(new SSPRK<NavierStokesOperation, VectorType>(
+      comp_navier_stokes_operation, param.order_time_integrator, param.stages));
   }
 
   pcout << std::endl << "... done!" << std::endl;

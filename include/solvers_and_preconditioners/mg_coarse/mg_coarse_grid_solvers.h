@@ -29,9 +29,13 @@ enum class PreconditionerCoarseGridSolver
 
 template<typename Operator>
 class MGCoarsePCG
-  : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type>>
+  : public MGCoarseGridBase<LinearAlgebra::distributed::Vector<typename Operator::value_type>>
 {
 public:
+  typedef typename Operator::value_type value_type;
+
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   struct AdditionalData
   {
     /**
@@ -87,19 +91,16 @@ public:
   }
 
   virtual void
-  operator()(const unsigned int,
-             parallel::distributed::Vector<typename Operator::value_type> &       dst,
-             const parallel::distributed::Vector<typename Operator::value_type> & src) const
+  operator()(unsigned int const, VectorType & dst, VectorType const & src) const
   {
-    const double     abs_tol = 1.e-20;
-    const double     rel_tol = 1.e-3; // 1.e-4;
+    double const abs_tol = 1.e-20;
+    double const rel_tol = 1.e-3; // 1.e-4;
+
     ReductionControl solver_control(1e4, abs_tol, rel_tol);
 
-    SolverCG<parallel::distributed::Vector<typename Operator::value_type>> solver_coarse(
-      solver_control, solver_memory);
+    SolverCG<VectorType> solver_coarse(solver_control, solver_memory);
 
-    typename VectorMemory<parallel::distributed::Vector<typename Operator::value_type>>::Pointer r(
-      solver_memory);
+    typename VectorMemory<VectorType>::Pointer r(solver_memory);
 
     *r = src;
     if(coarse_matrix.is_singular())
@@ -117,10 +118,9 @@ public:
 private:
   const Operator & coarse_matrix;
 
-  std::shared_ptr<PreconditionerBase<typename Operator::value_type>> preconditioner;
+  std::shared_ptr<PreconditionerBase<value_type>> preconditioner;
 
-  mutable GrowingVectorMemory<parallel::distributed::Vector<typename Operator::value_type>>
-    solver_memory;
+  mutable GrowingVectorMemory<VectorType> solver_memory;
 
   bool use_preconditioner;
 };
@@ -128,9 +128,13 @@ private:
 
 template<typename Operator>
 class MGCoarseGMRES
-  : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type>>
+  : public MGCoarseGridBase<LinearAlgebra::distributed::Vector<typename Operator::value_type>>
 {
 public:
+  typedef typename Operator::value_type value_type;
+
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   struct AdditionalData
   {
     /**
@@ -186,25 +190,20 @@ public:
   }
 
   virtual void
-  operator()(const unsigned int,
-             parallel::distributed::Vector<typename Operator::value_type> &       dst,
-             const parallel::distributed::Vector<typename Operator::value_type> & src) const
+  operator()(unsigned int const, VectorType & dst, VectorType const & src) const
   {
     const double     abs_tol = 1.e-20;
     const double     rel_tol = 1.e-3; // 1.e-4;
     ReductionControl solver_control(1e4, abs_tol, rel_tol);
 
-    typename SolverGMRES<
-      parallel::distributed::Vector<typename Operator::value_type>>::AdditionalData additional_data;
+    typename SolverGMRES<VectorType>::AdditionalData additional_data;
 
     additional_data.max_n_tmp_vectors     = 200;
     additional_data.right_preconditioning = true;
 
-    SolverGMRES<parallel::distributed::Vector<typename Operator::value_type>> solver_coarse(
-      solver_control, solver_memory, additional_data);
+    SolverGMRES<VectorType> solver_coarse(solver_control, solver_memory, additional_data);
 
-    typename VectorMemory<parallel::distributed::Vector<typename Operator::value_type>>::Pointer r(
-      solver_memory);
+    typename VectorMemory<VectorType>::Pointer r(solver_memory);
 
     *r = src;
     if(coarse_matrix.is_singular())
@@ -229,10 +228,9 @@ public:
 private:
   const Operator & coarse_matrix;
 
-  std::shared_ptr<PreconditionerBase<typename Operator::value_type>> preconditioner;
+  std::shared_ptr<PreconditionerBase<value_type>> preconditioner;
 
-  mutable GrowingVectorMemory<parallel::distributed::Vector<typename Operator::value_type>>
-    solver_memory;
+  mutable GrowingVectorMemory<VectorType> solver_memory;
 
   bool use_preconditioner;
 };

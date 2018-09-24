@@ -49,6 +49,8 @@ template<int dim, int fe_degree>
 class PostProcessor
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<double> VectorType;
+
   PostProcessor(PostProcessorData<dim> const & postprocessor_data) : pp_data(postprocessor_data)
   {
   }
@@ -92,9 +94,9 @@ public:
   }
 
   virtual void
-  do_postprocessing(parallel::distributed::Vector<double> const &   solution,
-                    parallel::distributed::Vector<double> const &   velocity,
-                    parallel::distributed::Vector<double> const &   pressure,
+  do_postprocessing(VectorType const &                              solution,
+                    VectorType const &                              velocity,
+                    VectorType const &                              pressure,
                     std::vector<SolutionField<dim, double>> const & additional_fields,
                     double const                                    time,
                     int const                                       time_step_number);
@@ -113,9 +115,9 @@ private:
 template<int dim, int fe_degree>
 void
 PostProcessor<dim, fe_degree>::do_postprocessing(
-  parallel::distributed::Vector<double> const &   solution,
-  parallel::distributed::Vector<double> const &   velocity,
-  parallel::distributed::Vector<double> const &   pressure,
+  VectorType const &                              solution,
+  VectorType const &                              velocity,
+  VectorType const &                              pressure,
   std::vector<SolutionField<dim, double>> const & additional_fields,
   double const                                    time,
   int const                                       time_step_number)

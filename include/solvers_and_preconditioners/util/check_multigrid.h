@@ -14,6 +14,12 @@ template<int dim, typename value_type, typename Operator, typename Preconditione
 class CheckMultigrid
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
+  typedef float NumberMG;
+
+  typedef LinearAlgebra::distributed::Vector<NumberMG> VectorTypeMG;
+
   CheckMultigrid(Operator const &                underlying_operator_in,
                  std::shared_ptr<Preconditioner> preconditioner_in)
     : underlying_operator(underlying_operator_in), preconditioner(preconditioner_in)
@@ -43,10 +49,9 @@ public:
     /*
      *  Whole MG Cycle
      */
-    parallel::distributed::Vector<value_type> initial_solution;
+    VectorType initial_solution;
     underlying_operator.initialize_dof_vector(initial_solution);
-    parallel::distributed::Vector<value_type> solution_after_mg_cylce(initial_solution),
-      tmp(initial_solution);
+    VectorType solution_after_mg_cylce(initial_solution), tmp(initial_solution);
 
     for(unsigned int i = 0; i < initial_solution.local_size(); ++i)
       initial_solution.local_element(i) = (double)rand() / RAND_MAX;
@@ -59,11 +64,10 @@ public:
     /*
      *  Smoothing
      */
-    typedef float Number;
 
-    parallel::distributed::Vector<Number> initial_solution_float;
+    VectorTypeMG initial_solution_float;
     initial_solution_float = initial_solution;
-    parallel::distributed::Vector<Number> solution_after_smoothing, tmp_float;
+    VectorTypeMG solution_after_smoothing, tmp_float;
     solution_after_smoothing = initial_solution;
     tmp_float                = tmp;
 
@@ -82,9 +86,9 @@ public:
   }
 
   void
-  write_output(parallel::distributed::Vector<value_type> const & initial_solution,
-               parallel::distributed::Vector<value_type> const & solution_after_mg_cylce,
-               parallel::distributed::Vector<float> const &      solution_after_smoothing) const
+  write_output(VectorType const &   initial_solution,
+               VectorType const &   solution_after_mg_cylce,
+               VectorTypeMG const & solution_after_smoothing) const
   {
     DataOut<dim> data_out;
     unsigned int dof_index = underlying_operator.get_dof_index();

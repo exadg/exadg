@@ -1,5 +1,5 @@
 /*
- * PushBackVectors.h
+ * push_back_vectors.h
  *
  *  Created on: Aug 23, 2016
  *      Author: fehn
@@ -11,11 +11,12 @@
 /*
  * This function implements a push-back operation that is needed in multistep time integration
  * schemes like BDF schemes in order to update the solution vectors from one time step to the
- * next. The prerequisite to call this function is that the type T implements a swap-function!
+ * next. The prerequisite to call this function is that the type VectorType implements a
+ * swap-function!
  */
-template<typename T>
+template<typename VectorType>
 void
-push_back(std::vector<T> & vector)
+push_back(std::vector<VectorType> & vector)
 {
   /*
    *   time t

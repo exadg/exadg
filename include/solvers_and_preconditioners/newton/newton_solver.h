@@ -10,7 +10,7 @@
 
 #include "newton_solver_data.h"
 
-template<typename Vector,
+template<typename VectorType,
          typename NonlinearOperator,
          typename LinearOperator,
          typename SolverLinearizedProblem>
@@ -32,7 +32,7 @@ public:
   }
 
   void
-  solve(Vector & dst, unsigned int & newton_iterations, unsigned int & linear_iterations)
+  solve(VectorType & dst, unsigned int & newton_iterations, unsigned int & linear_iterations)
   {
     // evaluate residual using the given estimate of the solution
     nonlinear_operator.evaluate_nonlinear_residual(residual, dst);
@@ -131,7 +131,7 @@ private:
   NonlinearOperator &       nonlinear_operator;
   LinearOperator &          linear_operator;
   SolverLinearizedProblem & linear_solver;
-  Vector                    residual, increment, tmp;
+  VectorType                residual, increment, tmp;
 };
 
 

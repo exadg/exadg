@@ -19,20 +19,23 @@
  *    The Runge-Kutta scheme is implemented in Shu-Osher form instead of the Butcher form.
  *
  */
-template<typename Operator, typename Vector>
-class SSPRK : public ExplicitTimeIntegrator<Operator, Vector>
+template<typename Operator, typename VectorType>
+class SSPRK : public ExplicitTimeIntegrator<Operator, VectorType>
 {
 public:
   SSPRK(std::shared_ptr<Operator> const operator_in,
         unsigned int const              order_in,
         unsigned int const              stages_in)
-    : ExplicitTimeIntegrator<Operator, Vector>(operator_in), order(order_in)
+    : ExplicitTimeIntegrator<Operator, VectorType>(operator_in), order(order_in)
   {
     initialize_coeffs(stages_in);
   }
 
   void
-  solve_timestep(Vector & vec_np, Vector & vec_n, double const time, double const time_step);
+  solve_timestep(VectorType & vec_np,
+                 VectorType & vec_n,
+                 double const time,
+                 double const time_step);
 
 private:
   void
@@ -42,17 +45,17 @@ private:
   std::vector<double> c;
   unsigned int const  order;
 
-  std::vector<Vector> u_vec, F_vec;
+  std::vector<VectorType> u_vec, F_vec;
 };
 
-template<typename Operator, typename Vector>
+template<typename Operator, typename VectorType>
 void
-SSPRK<Operator, Vector>::solve_timestep(Vector &     vec_np,
-                                        Vector &     vec_n,
-                                        double const time,
-                                        double const time_step)
+SSPRK<Operator, VectorType>::solve_timestep(VectorType & vec_np,
+                                            VectorType & vec_n,
+                                            double const time,
+                                            double const time_step)
 {
-  const unsigned int stages = A.m();
+  unsigned int const stages = A.m();
 
   // Initialize vectors if necessary
   if(u_vec.empty() || !u_vec[0].partitioners_are_globally_compatible(*vec_n.get_partitioner()))
@@ -82,9 +85,9 @@ SSPRK<Operator, Vector>::solve_timestep(Vector &     vec_np,
   vec_np = u_vec[stages];
 }
 
-template<typename Operator, typename Vector>
+template<typename Operator, typename VectorType>
 void
-SSPRK<Operator, Vector>::initialize_coeffs(const unsigned int stages)
+SSPRK<Operator, VectorType>::initialize_coeffs(unsigned int const stages)
 {
   A.reinit(stages, stages);
   B.reinit(stages, stages);

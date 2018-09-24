@@ -24,6 +24,8 @@ template<int dim, int fe_degree, typename value_type, typename ConvDiffOperation
 class DriverSteadyProblems
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   DriverSteadyProblems(std::shared_ptr<ConvDiffOperation> conv_diff_operation_in,
                        std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree>> postprocessor_in,
                        ConvDiff::InputParameters const &                        param_in)
@@ -144,12 +146,12 @@ private:
   ConvDiff::InputParameters const & param;
 
   // timer
-  Timer      global_timer;
-  value_type total_time;
+  Timer  global_timer;
+  double total_time;
 
   // vectors
-  parallel::distributed::Vector<value_type> solution;
-  parallel::distributed::Vector<value_type> rhs_vector;
+  VectorType solution;
+  VectorType rhs_vector;
 };
 
 } // namespace ConvDiff

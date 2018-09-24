@@ -19,6 +19,8 @@ class VorticityCalculator
 public:
   static const unsigned int number_vorticity_components = (dim == 2) ? 1 : dim;
 
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   typedef VorticityCalculator<dim, fe_degree, value_type> This;
 
   typedef FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type> FEEval_vectorial;
@@ -36,18 +38,17 @@ public:
   }
 
   void
-  compute_vorticity(parallel::distributed::Vector<value_type> &       dst,
-                    parallel::distributed::Vector<value_type> const & src) const
+  compute_vorticity(VectorType & dst, VectorType const & src) const
   {
     data->cell_loop(&This::local_compute_vorticity, this, dst, src);
   }
 
 private:
   void
-  local_compute_vorticity(MatrixFree<dim, value_type> const &               data,
-                          parallel::distributed::Vector<value_type> &       dst,
-                          parallel::distributed::Vector<value_type> const & src,
-                          std::pair<unsigned int, unsigned int> const &     cell_range) const
+  local_compute_vorticity(MatrixFree<dim, value_type> const &           data,
+                          VectorType &                                  dst,
+                          VectorType const &                            src,
+                          std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_vectorial fe_eval(data, dof_index, quad_index, 0);
 
@@ -86,6 +87,8 @@ template<int dim, int fe_degree, typename value_type>
 class DivergenceCalculator
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   typedef DivergenceCalculator<dim, fe_degree, value_type> This;
 
   typedef FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type> FEEval_vectorial;
@@ -106,18 +109,17 @@ public:
   }
 
   void
-  compute_divergence(parallel::distributed::Vector<value_type> &       dst,
-                     parallel::distributed::Vector<value_type> const & src) const
+  compute_divergence(VectorType & dst, VectorType const & src) const
   {
     data->cell_loop(&This::local_compute_divergence, this, dst, src);
   }
 
 private:
   void
-  local_compute_divergence(MatrixFree<dim, value_type> const &               data,
-                           parallel::distributed::Vector<value_type> &       dst,
-                           parallel::distributed::Vector<value_type> const & src,
-                           std::pair<unsigned int, unsigned int> const &     cell_range) const
+  local_compute_divergence(MatrixFree<dim, value_type> const &           data,
+                           VectorType &                                  dst,
+                           VectorType const &                            src,
+                           std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_vectorial fe_eval_vectorial(data, dof_index_vector, quad_index, 0);
     FEEval_scalar    fe_eval_scalar(data, dof_index_scalar, quad_index, 0);
@@ -158,6 +160,8 @@ template<int dim, int fe_degree, int n_q_points, typename value_type>
 class p_u_T_Calculator
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   typedef p_u_T_Calculator<dim, fe_degree, n_q_points, value_type> This;
 
   typedef FEEvaluation<dim, fe_degree, n_q_points, 1, value_type>   FEEval_scalar;
@@ -191,8 +195,7 @@ public:
   }
 
   void
-  compute_pressure(parallel::distributed::Vector<value_type> &       pressure,
-                   parallel::distributed::Vector<value_type> const & solution_conserved)
+  compute_pressure(VectorType & pressure, VectorType const & solution_conserved)
   {
     AssertThrow(heat_capacity_ratio > 0.0, ExcMessage("heat capacity ratio has not been set!"));
     AssertThrow(specific_gas_constant > 0.0, ExcMessage("specific gas constant has not been set!"));
@@ -201,15 +204,13 @@ public:
   }
 
   void
-  compute_velocity(parallel::distributed::Vector<value_type> &       velocity,
-                   parallel::distributed::Vector<value_type> const & solution_conserved)
+  compute_velocity(VectorType & velocity, VectorType const & solution_conserved)
   {
     data->cell_loop(&This::local_apply_velocity, this, velocity, solution_conserved);
   }
 
   void
-  compute_temperature(parallel::distributed::Vector<value_type> &       temperature,
-                      parallel::distributed::Vector<value_type> const & solution_conserved)
+  compute_temperature(VectorType & temperature, VectorType const & solution_conserved)
   {
     AssertThrow(heat_capacity_ratio > 0.0, ExcMessage("heat capacity ratio has not been set!"));
     AssertThrow(specific_gas_constant > 0.0, ExcMessage("specific gas constant has not been set!"));
@@ -219,10 +220,10 @@ public:
 
 private:
   void
-  local_apply_pressure(MatrixFree<dim, value_type> const &               data,
-                       parallel::distributed::Vector<value_type> &       dst,
-                       parallel::distributed::Vector<value_type> const & src,
-                       std::pair<unsigned int, unsigned int> const &     cell_range) const
+  local_apply_pressure(MatrixFree<dim, value_type> const &           data,
+                       VectorType &                                  dst,
+                       VectorType const &                            src,
+                       std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     // src-vector
     FEEval_scalar    fe_eval_density(data, dof_index_all, quad_index, 0);
@@ -271,10 +272,10 @@ private:
   }
 
   void
-  local_apply_velocity(MatrixFree<dim, value_type> const &               data,
-                       parallel::distributed::Vector<value_type> &       dst,
-                       parallel::distributed::Vector<value_type> const & src,
-                       std::pair<unsigned int, unsigned int> const &     cell_range) const
+  local_apply_velocity(MatrixFree<dim, value_type> const &           data,
+                       VectorType &                                  dst,
+                       VectorType const &                            src,
+                       std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     // src-vector
     FEEval_scalar    fe_eval_density(data, dof_index_all, quad_index, 0);
@@ -314,10 +315,10 @@ private:
   }
 
   void
-  local_apply_temperature(MatrixFree<dim, value_type> const &               data,
-                          parallel::distributed::Vector<value_type> &       dst,
-                          parallel::distributed::Vector<value_type> const & src,
-                          std::pair<unsigned int, unsigned int> const &     cell_range) const
+  local_apply_temperature(MatrixFree<dim, value_type> const &           data,
+                          VectorType &                                  dst,
+                          VectorType const &                            src,
+                          std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     // src-vector
     FEEval_scalar    fe_eval_density(data, dof_index_all, quad_index, 0);

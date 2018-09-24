@@ -17,13 +17,13 @@ class MyMultigridPreconditionerDG
                                          MultigridOperatorBase<dim, typename Operator::value_type>>
 {
 public:
+  typedef MultigridOperatorBase<dim, typename Operator::value_type> OPERATOR_BASE;
+
   MyMultigridPreconditionerDG()
     : MyMultigridPreconditionerBase<dim, value_type, OPERATOR_BASE>(
         std::shared_ptr<OPERATOR_BASE>(new Operator()))
   {
   }
-
-  typedef MultigridOperatorBase<dim, typename Operator::value_type> OPERATOR_BASE;
 };
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_DG_H_ */

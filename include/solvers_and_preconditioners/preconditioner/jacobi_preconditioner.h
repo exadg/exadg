@@ -18,7 +18,7 @@ template<typename Operator>
 class JacobiPreconditioner : public PreconditionerBase<typename Operator::value_type>
 {
 public:
-  typedef typename Operator::value_type value_type;
+  typedef typename PreconditionerBase<typename Operator::value_type>::VectorType VectorType;
 
   JacobiPreconditioner(Operator const & underlying_operator_in)
     : underlying_operator(underlying_operator_in)
@@ -29,8 +29,7 @@ public:
   }
 
   void
-  vmult(parallel::distributed::Vector<value_type> &       dst,
-        const parallel::distributed::Vector<value_type> & src) const
+  vmult(VectorType & dst, VectorType const & src) const
   {
     if(!PointerComparison::equal(&dst, &src))
       dst = src;
@@ -52,7 +51,7 @@ public:
 private:
   Operator const & underlying_operator;
 
-  parallel::distributed::Vector<value_type> inverse_diagonal;
+  VectorType inverse_diagonal;
 };
 
 

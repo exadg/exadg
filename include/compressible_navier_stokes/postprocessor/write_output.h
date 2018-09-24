@@ -13,12 +13,12 @@
 #include "../../incompressible_navier_stokes/postprocessor/output_data_navier_stokes.h"
 #include "../user_interface/input_parameters.h"
 
-template<int dim>
+template<int dim, typename VectorType>
 void
 write_output(CompNS::OutputDataCompNavierStokes const &      output_data,
              DoFHandler<dim> const &                         dof_handler,
              Mapping<dim> const &                            mapping,
-             parallel::distributed::Vector<double> const &   solution_conserved,
+             VectorType const &                              solution_conserved,
              std::vector<SolutionField<dim, double>> const & additional_fields,
              unsigned int const                              output_counter)
 {
@@ -95,6 +95,8 @@ template<int dim>
 class OutputGenerator
 {
 public:
+  typedef parallel::distributed::Vector<double> VectorType;
+
   OutputGenerator() : output_counter(0)
   {
   }
@@ -113,7 +115,7 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<double> const &   solution_conserved,
+  evaluate(VectorType const &                              solution_conserved,
            std::vector<SolutionField<dim, double>> const & additional_fields,
            double const &                                  time,
            int const &                                     time_step_number)

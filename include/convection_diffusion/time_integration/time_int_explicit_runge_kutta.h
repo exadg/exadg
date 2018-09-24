@@ -26,6 +26,8 @@ template<int dim, int fe_degree, typename value_type>
 class TimeIntExplRK
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   TimeIntExplRK(
     std::shared_ptr<ConvDiff::DGOperation<dim, fe_degree, value_type>> conv_diff_operation_in,
     std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree>>           postprocessor_in,
@@ -57,24 +59,29 @@ public:
 private:
   void
   initialize_vectors();
+
   void
   initialize_solution();
+
   void
   postprocessing() const;
+
   void
   solve_timestep();
+
   void
   prepare_vectors_for_next_timestep();
+
   void
   calculate_timestep();
+
   void
   analyze_computing_times() const;
 
   std::shared_ptr<ConvDiff::DGOperation<dim, fe_degree, value_type>> conv_diff_operation;
 
   std::shared_ptr<
-    ExplicitRungeKuttaTimeIntegrator<ConvDiff::DGOperation<dim, fe_degree, value_type>,
-                                     parallel::distributed::Vector<value_type>>>
+    ExplicitRungeKuttaTimeIntegrator<ConvDiff::DGOperation<dim, fe_degree, value_type>, VectorType>>
     rk_time_integrator;
 
   std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree>> postprocessor;
@@ -91,7 +98,7 @@ private:
   ConditionalOStream pcout;
 
   // solution vectors
-  parallel::distributed::Vector<value_type> solution_n, solution_np;
+  VectorType solution_n, solution_np;
 
   // current time and time step size
   double time, time_step;
@@ -123,8 +130,7 @@ TimeIntExplRK<dim, fe_degree, value_type>::setup()
   // initialize Runge-Kutta time integrator
   rk_time_integrator.reset(
     new ExplicitRungeKuttaTimeIntegrator<ConvDiff::DGOperation<dim, fe_degree, value_type>,
-                                         parallel::distributed::Vector<value_type>>(
-      order, conv_diff_operation));
+                                         VectorType>(order, conv_diff_operation));
 
   pcout << std::endl << "... done!" << std::endl;
 }

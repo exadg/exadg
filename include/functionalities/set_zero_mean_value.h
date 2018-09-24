@@ -5,10 +5,10 @@
 
 template<typename Number>
 void
-set_zero_mean_value(parallel::distributed::Vector<Number> & vec)
+set_zero_mean_value(LinearAlgebra::distributed::Vector<Number> & vector)
 {
-  const Number mean_val = vec.mean_value();
-  vec.add(-mean_val);
+  Number const mean_value = vector.mean_value();
+  vector.add(-mean_value);
 }
 
 #endif

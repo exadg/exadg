@@ -1,5 +1,5 @@
 /*
- * VerifyCalculationOfDiagonal.h
+ * verify_calculation_of_diagonal.h
  *
  *  Created on: Dec 1, 2016
  *      Author: fehn
@@ -20,7 +20,8 @@
  */
 template<typename Operator, typename value_type>
 void
-verify_calculation_of_diagonal(Operator & op, parallel::distributed::Vector<value_type> & diagonal)
+verify_calculation_of_diagonal(Operator &                                       op,
+                               LinearAlgebra::distributed::Vector<value_type> & diagonal)
 {
   AssertThrow(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) == 1,
               ExcMessage("Number of MPI processes has to be 1."));
@@ -28,9 +29,11 @@ verify_calculation_of_diagonal(Operator & op, parallel::distributed::Vector<valu
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << "Verify calculation of diagonal:" << std::endl;
 
-  parallel::distributed::Vector<value_type> diagonal_check(diagonal);
-  parallel::distributed::Vector<value_type> src(diagonal);
-  parallel::distributed::Vector<value_type> dst(diagonal);
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
+  VectorType diagonal_check(diagonal);
+  VectorType src(diagonal);
+  VectorType dst(diagonal);
 
   diagonal_check = 0.0;
   src            = 0.0;

@@ -16,7 +16,7 @@ DGOperation<dim, fe_degree, value_type>::DGOperation(
 template<int dim, int fe_degree, typename value_type>
 void
 DGOperation<dim, fe_degree, value_type>::setup(
-  const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                     periodic_face_pairs,
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor_in,
   std::shared_ptr<Poisson::FieldFunctions<dim>>     field_functions_in)
@@ -208,7 +208,7 @@ DGOperation<dim, fe_degree, value_type>::initialize_matrix_free()
 
   if(param.enable_cell_based_face_loops)
   {
-    auto tria = dynamic_cast<const parallel::distributed::Triangulation<dim> *>(
+    auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
       &dof_handler.get_triangulation());
     Categorization::do_cell_based_loops(*tria, additional_data);
   }

@@ -6,11 +6,11 @@ template<int dim, int fe_degree, typename value_type>
 void
 MassMatrixOperator<dim, fe_degree, value_type>::initialize(
   MatrixFree<dim, value_type> const & mf_data,
-  MassMatrixOperatorData<dim> const & mass_matrix_operator_data_in,
+  MassMatrixOperatorData<dim> const & mass_matrix_operator_data,
   unsigned int                        level_mg_handler)
 {
   ConstraintMatrix constraint_matrix;
-  Parent::reinit(mf_data, constraint_matrix, mass_matrix_operator_data_in, level_mg_handler);
+  Parent::reinit(mf_data, constraint_matrix, mass_matrix_operator_data, level_mg_handler);
 }
 
 template<int dim, int fe_degree, typename value_type>
@@ -18,10 +18,10 @@ void
 MassMatrixOperator<dim, fe_degree, value_type>::initialize(
   MatrixFree<dim, value_type> const & mf_data,
   ConstraintMatrix const &            constraint_matrix,
-  MassMatrixOperatorData<dim> const & mass_matrix_operator_data_in,
+  MassMatrixOperatorData<dim> const & mass_matrix_operator_data,
   unsigned int                        level_mg_handler)
 {
-  Parent::reinit(mf_data, constraint_matrix, mass_matrix_operator_data_in, level_mg_handler);
+  Parent::reinit(mf_data, constraint_matrix, mass_matrix_operator_data, level_mg_handler);
 }
 
 template<int dim, int fe_degree, typename value_type>

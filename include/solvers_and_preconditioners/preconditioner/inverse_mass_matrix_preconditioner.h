@@ -18,6 +18,8 @@ template<int dim, int fe_degree, typename value_type, int n_components = dim>
 class InverseMassMatrixPreconditioner : public PreconditionerBase<value_type>
 {
 public:
+  typedef typename PreconditionerBase<value_type>::VectorType VectorType;
+
   InverseMassMatrixPreconditioner(MatrixFree<dim, value_type> const & mf_data,
                                   unsigned int const                  dof_index,
                                   unsigned int const                  quad_index)
@@ -26,8 +28,7 @@ public:
   }
 
   void
-  vmult(parallel::distributed::Vector<value_type> &       dst,
-        const parallel::distributed::Vector<value_type> & src) const
+  vmult(VectorType & dst, VectorType const & src) const
   {
     inverse_mass_matrix_operator.apply(dst, src);
   }
@@ -45,6 +46,8 @@ template<int dim, int fe_degree, typename value_type, int n_components = dim>
 class InverseMassMatrixPreconditionerPtr : public PreconditionerBase<value_type>
 {
 public:
+  typedef typename PreconditionerBase<value_type>::VectorType VectorType;
+
   InverseMassMatrixPreconditionerPtr(
     std::shared_ptr<InverseMassMatrixOperator<dim, fe_degree, value_type, n_components>>
       inv_mass_operator)
@@ -53,8 +56,7 @@ public:
   }
 
   void
-  vmult(parallel::distributed::Vector<value_type> &       dst,
-        const parallel::distributed::Vector<value_type> & src) const
+  vmult(VectorType & dst, VectorType const & src) const
   {
     inverse_mass_matrix_operator->apply_inverse_mass_matrix(dst, src);
   }

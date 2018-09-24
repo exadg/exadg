@@ -104,11 +104,19 @@ struct MGCoarseMLData
 
 template<typename Operator, typename Number = typename Operator::value_type>
 class MGCoarseML
-  : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type>>,
+  : public MGCoarseGridBase<LinearAlgebra::distributed::Vector<typename Operator::value_type>>,
     public PreconditionerBase<Number>
 {
 public:
-  typedef typename Operator::value_type  MultigridNumber;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef typename Operator::value_type NumberMG;
+
+  typedef LinearAlgebra::distributed::Vector<NumberMG> VectorTypeMG;
+
+  typedef LinearAlgebra::distributed::Vector<typename TrilinosWrappers::SparseMatrix::value_type>
+    VectorTypeTrilinos;
+
   typedef TrilinosWrappers::SparseMatrix MatrixType;
 
   static const int DIM = Operator::DIM;
@@ -144,18 +152,15 @@ public:
    * @param src right hand side b
    */
   virtual void
-  operator()(const unsigned int /*level*/,
-             parallel::distributed::Vector<MultigridNumber> &       dst,
-             const parallel::distributed::Vector<MultigridNumber> & src) const;
+  operator()(unsigned int const /*level*/, VectorTypeMG & dst, VectorTypeMG const & src) const;
 
   void
-  vmult(parallel::distributed::Vector<Number> &       dst,
-        const parallel::distributed::Vector<Number> & src) const;
+  vmult(VectorType & dst, VectorType const & src) const;
 
 private:
   // reference to matrix-free operators
-  const Operator & operator_dg;
-  const Operator & operator_cg;
+  Operator const & operator_dg;
+  Operator const & operator_cg;
 
   std::shared_ptr<CGToDGTransfer<Operator::DIM, MultigridNumber>> transfer;
   // distributed sparse system matrix
@@ -170,12 +175,17 @@ private:
 
 template<typename Operator, typename Number = typename Operator::value_type>
 class MGCoarseML
-  : public MGCoarseGridBase<parallel::distributed::Vector<typename Operator::value_type>>,
+  : public MGCoarseGridBase<LinearAlgebra::distributed::Vector<typename Operator::value_type>>,
     public PreconditionerBase<Number>
 {
 public:
-  typedef typename Operator::value_type MultigridNumber;
-  static const int                      DIM = Operator::DIM;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef typename Operator::value_type NumberMG;
+
+  typedef LinearAlgebra::distributed::Vector<NumberMG> VectorTypeMG;
+
+  static const int DIM = Operator::DIM;
 
   /**
    * Constructor
@@ -187,7 +197,7 @@ public:
              MGCoarseMLData   data  = MGCoarseMLData());
 
   /**
-   * Deconstructor
+   * Destructor
    */
   virtual ~MGCoarseML();
 
@@ -208,13 +218,10 @@ public:
    * @param src right hand side b
    */
   virtual void
-  operator()(const unsigned int /*level*/,
-             parallel::distributed::Vector<MultigridNumber> &       dst,
-             const parallel::distributed::Vector<MultigridNumber> & src) const;
+  operator()(unsigned int const /*level*/, VectorTypeMG & dst, VectorTypeMG const & src) const;
 
   void
-  vmult(parallel::distributed::Vector<Number> &       dst,
-        const parallel::distributed::Vector<Number> & src) const;
+  vmult(VectorType & dst, VectorType const & src) const;
 };
 
 #endif

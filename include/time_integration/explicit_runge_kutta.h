@@ -8,7 +8,7 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_EXPLICIT_RUNGE_KUTTA_H_
 #define INCLUDE_CONVECTION_DIFFUSION_EXPLICIT_RUNGE_KUTTA_H_
 
-template<typename Operator, typename Vector>
+template<typename Operator, typename VectorType>
 class ExplicitTimeIntegrator
 {
 public:
@@ -21,7 +21,7 @@ public:
   }
 
   virtual void
-  solve_timestep(Vector & dst, Vector & src, double const time, double const time_step) = 0;
+  solve_timestep(VectorType & dst, VectorType & src, double const time, double const time_step) = 0;
 
 protected:
   std::shared_ptr<Operator> underlying_operator;
@@ -30,14 +30,14 @@ protected:
 /*
  *  Classical, explicit Runge-Kutta time integration schemes of order 1-4
  */
-template<typename Operator, typename Vector>
-class ExplicitRungeKuttaTimeIntegrator : public ExplicitTimeIntegrator<Operator, Vector>
+template<typename Operator, typename VectorType>
+class ExplicitRungeKuttaTimeIntegrator : public ExplicitTimeIntegrator<Operator, VectorType>
 {
 public:
   // Constructor
   ExplicitRungeKuttaTimeIntegrator(unsigned int                    order_time_integrator,
                                    std::shared_ptr<Operator> const operator_in)
-    : ExplicitTimeIntegrator<Operator, Vector>(operator_in), order(order_time_integrator)
+    : ExplicitTimeIntegrator<Operator, VectorType>(operator_in), order(order_time_integrator)
   {
     // initialize vectors
     if(order >= 2)
@@ -47,7 +47,7 @@ public:
   }
 
   void
-  solve_timestep(Vector & dst, Vector & src, double time, double time_step)
+  solve_timestep(VectorType & dst, VectorType & src, double time, double time_step)
   {
     if(order == 1) // explicit Euler method
     {
@@ -162,7 +162,7 @@ public:
 private:
   unsigned int order;
 
-  Vector vec_rhs, vec_temp;
+  VectorType vec_rhs, vec_temp;
 };
 
 
@@ -202,17 +202,17 @@ private:
  *  Kennedy et al. (2000), where this method is denoted as RK3(2)4[2R+]C,
  *  see Table 1 on page 189 for the coefficients.
  */
-template<typename Operator, typename Vector>
-class LowStorageRK3Stage4Reg2C : public ExplicitTimeIntegrator<Operator, Vector>
+template<typename Operator, typename VectorType>
+class LowStorageRK3Stage4Reg2C : public ExplicitTimeIntegrator<Operator, VectorType>
 {
 public:
   LowStorageRK3Stage4Reg2C(std::shared_ptr<Operator> const operator_in)
-    : ExplicitTimeIntegrator<Operator, Vector>(operator_in)
+    : ExplicitTimeIntegrator<Operator, VectorType>(operator_in)
   {
   }
 
   void
-  solve_timestep(Vector & vec_np, Vector & vec_n, double const time, double const time_step)
+  solve_timestep(VectorType & vec_np, VectorType & vec_n, double const time, double const time_step)
   {
     if(!vec_tmp1.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
     {
@@ -266,7 +266,7 @@ public:
   }
 
 private:
-  Vector vec_tmp1;
+  VectorType vec_tmp1;
 };
 
 
@@ -275,17 +275,17 @@ private:
  *  Kennedy et al. (2000), where this method is denoted as RK4(3)5[2R+]C,
  *  see Table 1 on page 189 for the coefficients.
  */
-template<typename Operator, typename Vector>
-class LowStorageRK4Stage5Reg2C : public ExplicitTimeIntegrator<Operator, Vector>
+template<typename Operator, typename VectorType>
+class LowStorageRK4Stage5Reg2C : public ExplicitTimeIntegrator<Operator, VectorType>
 {
 public:
   LowStorageRK4Stage5Reg2C(std::shared_ptr<Operator> const operator_in)
-    : ExplicitTimeIntegrator<Operator, Vector>(operator_in)
+    : ExplicitTimeIntegrator<Operator, VectorType>(operator_in)
   {
   }
 
   void
-  solve_timestep(Vector & vec_np, Vector & vec_n, double const time, double const time_step)
+  solve_timestep(VectorType & vec_np, VectorType & vec_n, double const time, double const time_step)
   {
     if(!vec_tmp1.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
     {
@@ -348,7 +348,7 @@ public:
   }
 
 private:
-  Vector vec_tmp1;
+  VectorType vec_tmp1;
 };
 
 /*
@@ -356,17 +356,17 @@ private:
  *  Kennedy et al. (2000), where this method is denoted as RK4(3)5[3R+]C,
  *  see Table 2 on page 190 for the coefficients.
  */
-template<typename Operator, typename Vector>
-class LowStorageRK4Stage5Reg3C : public ExplicitTimeIntegrator<Operator, Vector>
+template<typename Operator, typename VectorType>
+class LowStorageRK4Stage5Reg3C : public ExplicitTimeIntegrator<Operator, VectorType>
 {
 public:
   LowStorageRK4Stage5Reg3C(std::shared_ptr<Operator> const operator_in)
-    : ExplicitTimeIntegrator<Operator, Vector>(operator_in)
+    : ExplicitTimeIntegrator<Operator, VectorType>(operator_in)
   {
   }
 
   void
-  solve_timestep(Vector & vec_np, Vector & vec_n, double const time, double const time_step)
+  solve_timestep(VectorType & vec_np, VectorType & vec_n, double const time, double const time_step)
   {
     if(!vec_tmp1.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
     {
@@ -451,7 +451,7 @@ public:
   }
 
 private:
-  Vector vec_tmp1, vec_tmp2;
+  VectorType vec_tmp1, vec_tmp2;
 };
 
 /*
@@ -459,17 +459,17 @@ private:
  *  Kennedy et al. (2000), where this method is denoted as RK5(4)9[2R+]S,
  *  see Table 1 on page 189 for the coefficients.
  */
-template<typename Operator, typename Vector>
-class LowStorageRK5Stage9Reg2S : public ExplicitTimeIntegrator<Operator, Vector>
+template<typename Operator, typename VectorType>
+class LowStorageRK5Stage9Reg2S : public ExplicitTimeIntegrator<Operator, VectorType>
 {
 public:
   LowStorageRK5Stage9Reg2S(std::shared_ptr<Operator> const operator_in)
-    : ExplicitTimeIntegrator<Operator, Vector>(operator_in)
+    : ExplicitTimeIntegrator<Operator, VectorType>(operator_in)
   {
   }
 
   void
-  solve_timestep(Vector & vec_np, Vector & vec_n, double const time, double const time_step)
+  solve_timestep(VectorType & vec_np, VectorType & vec_n, double const time, double const time_step)
   {
     if(!vec_tmp1.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
     {
@@ -568,7 +568,7 @@ public:
   }
 
 private:
-  Vector vec_tmp1;
+  VectorType vec_tmp1;
 };
 
 
@@ -583,19 +583,19 @@ private:
  *  In our nomenclature, these time integration schemes are deonted as
  *  ExplRK3Stage7Reg2 and ExplRK4Stage8Reg2, respectively.
  */
-template<typename Operator, typename Vector>
-class LowStorageRKTD : public ExplicitTimeIntegrator<Operator, Vector>
+template<typename Operator, typename VectorType>
+class LowStorageRKTD : public ExplicitTimeIntegrator<Operator, VectorType>
 {
 public:
   LowStorageRKTD(std::shared_ptr<Operator> const operator_in,
                  unsigned int const              order_in,
                  unsigned int const              stages_in)
-    : ExplicitTimeIntegrator<Operator, Vector>(operator_in), order(order_in), stages(stages_in)
+    : ExplicitTimeIntegrator<Operator, VectorType>(operator_in), order(order_in), stages(stages_in)
   {
   }
 
   void
-  solve_timestep(Vector & vec_np, Vector & vec_n, double const time, double const time_step)
+  solve_timestep(VectorType & vec_np, VectorType & vec_n, double const time, double const time_step)
   {
     if(!vec_tmp.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
     {
@@ -681,7 +681,7 @@ public:
   }
 
 private:
-  Vector       vec_tmp;
+  VectorType   vec_tmp;
   unsigned int order;
   unsigned int stages;
 };
