@@ -57,6 +57,8 @@ template<int dim, int fe_degree, typename Number>
 class KineticEnergySpectrumCalculator
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   KineticEnergySpectrumCalculator()
     : clear_files(true), deal_spectrum_wrapper(false, true), counter(0)
   {
@@ -84,9 +86,7 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<Number> const & velocity,
-           double const &                                time,
-           int const &                                   time_step_number)
+  evaluate(VectorType const & velocity, double const & time, int const & time_step_number)
   {
     if(data.calculate == true)
     {
@@ -106,9 +106,7 @@ public:
 
 private:
   void
-  do_evaluate(parallel::distributed::Vector<Number> const & velocity,
-              double const                                  time,
-              unsigned int const                            time_step_number)
+  do_evaluate(VectorType const & velocity, double const time, unsigned int const time_step_number)
   {
     bool evaluate = false;
 

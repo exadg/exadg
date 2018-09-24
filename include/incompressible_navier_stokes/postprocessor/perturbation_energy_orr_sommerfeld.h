@@ -12,6 +12,8 @@ template<int dim, int fe_degree, typename Number>
 class PerturbationEnergyCalculator
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   PerturbationEnergyCalculator()
     : clear_files(true),
       counter(0),
@@ -32,9 +34,7 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<Number> const & velocity,
-           double const &                                time,
-           int const &                                   time_step_number)
+  evaluate(VectorType const & velocity, double const & time, int const & time_step_number)
   {
     if(energy_data.calculate == true)
     {
@@ -56,9 +56,9 @@ private:
   PerturbationEnergyData          energy_data;
 
   void
-  calculate_unsteady(parallel::distributed::Vector<Number> const & velocity,
-                     double const                                  time,
-                     unsigned int const                            time_step_number)
+  calculate_unsteady(VectorType const & velocity,
+                     double const       time,
+                     unsigned int const time_step_number)
   {
     if((time_step_number - 1) % energy_data.calculate_every_time_steps == 0)
     {
@@ -112,7 +112,7 @@ private:
   }
 
   void
-  calculate_steady(parallel::distributed::Vector<Number> const & velocity)
+  calculate_steady(VectorType const & velocity)
   {
     AssertThrow(false,
                 ExcMessage("Calculation of perturbation energy for "
@@ -125,9 +125,9 @@ private:
    *  Perturbation energy: E = (1,u*u)_Omega
    */
   void
-  integrate(MatrixFree<dim, Number> const &               matrix_free_data,
-            parallel::distributed::Vector<Number> const & velocity,
-            Number &                                      energy)
+  integrate(MatrixFree<dim, Number> const & matrix_free_data,
+            VectorType const &              velocity,
+            Number &                        energy)
   {
     std::vector<Number> dst(1, 0.0);
     matrix_free_data.cell_loop(&PerturbationEnergyCalculator<dim, fe_degree, Number>::local_compute,
@@ -140,10 +140,10 @@ private:
   }
 
   void
-  local_compute(const MatrixFree<dim, Number> &               data,
+  local_compute(MatrixFree<dim, Number> const &               data,
                 std::vector<Number> &                         dst,
-                const parallel::distributed::Vector<Number> & src,
-                const std::pair<unsigned int, unsigned int> & cell_range)
+                VectorType const &                            src,
+                std::pair<unsigned int, unsigned int> const & cell_range)
   {
     FEEvaluation<dim, fe_degree, fe_degree + 1, dim, Number> fe_eval(
       data, dof_quad_index_data.dof_index_velocity, dof_quad_index_data.quad_index_velocity);

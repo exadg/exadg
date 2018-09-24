@@ -32,6 +32,8 @@ template<int dim, int fe_degree, int fe_degree_velocity, typename value_type>
 class PressureConvectionDiffusionOperator
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   PressureConvectionDiffusionOperator(
     Mapping<dim> const &                                 mapping,
     MatrixFree<dim, value_type> const &                  matrix_free_data_in,
@@ -57,9 +59,7 @@ public:
   }
 
   void
-  apply(parallel::distributed::Vector<value_type> &       dst,
-        parallel::distributed::Vector<value_type> const & src,
-        parallel::distributed::Vector<value_type> const * velocity_vector)
+  apply(VectorType & dst, VectorType const & src, VectorType const * velocity_vector)
   {
     // time derivate term in case of unsteady problems
     if(operator_data.unsteady_problem == true)

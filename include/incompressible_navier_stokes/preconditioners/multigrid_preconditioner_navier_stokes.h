@@ -110,16 +110,17 @@ public:
       ExcMessage(
         "Multigrid preconditioner: UnderlyingOperator and MatrixOperator are not compatible!"));
 
-    parallel::distributed::Vector<value_type> const & vector_linearization =
+    LinearAlgebra::distributed::Vector<value_type> const & vector_linearization =
       underlying_operator->get_solution_linearization();
 
     // convert value_type --> Operator::value_type, e.g., double --> float, but only if necessary
-    parallel::distributed::Vector<typename Operator::value_type>         vector_multigrid_type_copy;
-    parallel::distributed::Vector<typename Operator::value_type> const * vector_multigrid_type_ptr;
+    LinearAlgebra::distributed::Vector<typename Operator::value_type> vector_multigrid_type_copy;
+    LinearAlgebra::distributed::Vector<typename Operator::value_type> const *
+      vector_multigrid_type_ptr;
     if(std::is_same<typename Operator::value_type, value_type>::value)
     {
       vector_multigrid_type_ptr =
-        reinterpret_cast<parallel::distributed::Vector<typename Operator::value_type> const *>(
+        reinterpret_cast<LinearAlgebra::distributed::Vector<typename Operator::value_type> const *>(
           &vector_linearization);
     }
     else
@@ -145,8 +146,8 @@ private:
    */
   void
   update_mg_matrices(
-    parallel::distributed::Vector<typename Operator::value_type> const & vector_linearization,
-    double const &                                                       evaluation_time,
+    LinearAlgebra::distributed::Vector<typename Operator::value_type> const & vector_linearization,
+    double const &                                                            evaluation_time,
     double const & scaling_factor_time_derivative_term)
   {
     set_vector_linearization(vector_linearization);
@@ -160,7 +161,7 @@ private:
    */
   void
   set_vector_linearization(
-    parallel::distributed::Vector<typename Operator::value_type> const & vector_linearization)
+    LinearAlgebra::distributed::Vector<typename Operator::value_type> const & vector_linearization)
   {
     for(int level = this->n_global_levels - 1; level >= 0; --level)
     {
@@ -175,9 +176,9 @@ private:
       else // all coarser levels
       {
         // restrict vector_linearization from fine to coarse level
-        parallel::distributed::Vector<typename Operator::value_type> & vector_fine_level =
+        LinearAlgebra::distributed::Vector<typename Operator::value_type> & vector_fine_level =
           dynamic_cast<Operator *>(&*this->mg_matrices[level + 1])->get_solution_linearization();
-        parallel::distributed::Vector<typename Operator::value_type> & vector_coarse_level =
+        LinearAlgebra::distributed::Vector<typename Operator::value_type> & vector_coarse_level =
           dynamic_cast<Operator *>(&*this->mg_matrices[level])->get_solution_linearization();
 
         unsigned int dof_index_velocity =

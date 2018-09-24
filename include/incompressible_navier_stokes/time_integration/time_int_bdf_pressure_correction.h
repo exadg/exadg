@@ -18,6 +18,9 @@ class TimeIntBDFPressureCorrection
   : public TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>
 {
 public:
+  typedef TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation> Base;
+  typedef typename Base::VectorType                                                   VectorType;
+
   TimeIntBDFPressureCorrection(std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
                                std::shared_ptr<PostProcessorBase<dim, value_type>> postprocessor_in,
                                InputParameters<dim> const &                        param_in,
@@ -52,13 +55,13 @@ public:
   analyze_computing_times() const;
 
 protected:
-  parallel::distributed::Vector<value_type>              velocity_np;
-  std::vector<parallel::distributed::Vector<value_type>> velocity;
+  VectorType              velocity_np;
+  std::vector<VectorType> velocity;
 
-  parallel::distributed::Vector<value_type>              pressure_np;
-  std::vector<parallel::distributed::Vector<value_type>> pressure;
+  VectorType              pressure_np;
+  std::vector<VectorType> pressure;
 
-  mutable parallel::distributed::Vector<value_type> vorticity;
+  mutable VectorType vorticity;
 
   std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
@@ -138,26 +141,26 @@ private:
   virtual void
   write_restart_vectors(boost::archive::binary_oarchive & oa) const;
 
-  virtual parallel::distributed::Vector<value_type> const &
+  virtual LinearAlgebra::distributed::Vector<value_type> const &
   get_velocity();
 
-  parallel::distributed::Vector<value_type> pressure_increment;
+  VectorType pressure_increment;
 
-  std::vector<parallel::distributed::Vector<value_type>> vec_convective_term;
+  std::vector<VectorType> vec_convective_term;
 
   // solve convective step implicitly
-  parallel::distributed::Vector<value_type> sum_alphai_ui;
+  VectorType sum_alphai_ui;
 
   // rhs vector momentum step
-  parallel::distributed::Vector<value_type> rhs_vec_momentum;
+  VectorType rhs_vec_momentum;
 
   // rhs vector pressur step
-  parallel::distributed::Vector<value_type> rhs_vec_pressure;
-  parallel::distributed::Vector<value_type> rhs_vec_pressure_temp;
+  VectorType rhs_vec_pressure;
+  VectorType rhs_vec_pressure_temp;
 
   // rhs vector projection step
-  parallel::distributed::Vector<value_type> rhs_vec_projection;
-  parallel::distributed::Vector<value_type> rhs_vec_projection_temp;
+  VectorType rhs_vec_projection;
+  VectorType rhs_vec_projection_temp;
 
   // incremental formulation of pressure-correction scheme
   unsigned int order_pressure_extrapolation;
@@ -165,7 +168,7 @@ private:
   // time integrator constants: extrapolation scheme
   ExtrapolationConstants extra_pressure_gradient;
 
-  std::vector<parallel::distributed::Vector<value_type>> vec_pressure_gradient_term;
+  std::vector<VectorType> vec_pressure_gradient_term;
 
   std::vector<value_type>   computing_times;
   std::vector<unsigned int> iterations;
@@ -173,8 +176,8 @@ private:
   unsigned int N_iter_nonlinear_momentum;
 
   // temporary vectors needed for pseudo-timestepping algorithm
-  parallel::distributed::Vector<value_type> velocity_tmp;
-  parallel::distributed::Vector<value_type> pressure_tmp;
+  VectorType velocity_tmp;
+  VectorType pressure_tmp;
 };
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -334,7 +337,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-parallel::distributed::Vector<value_type> const &
+LinearAlgebra::distributed::Vector<value_type> const &
 TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity()
 {
   return velocity[0];
@@ -403,11 +406,13 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
                                          this->time,
                                          this->time_step_number);
 
-  //  // check pressure error and formation of numerical boundary layers for standard vs. rotational
-  //  formulation parallel::distributed::Vector<value_type> velocity_exact;
+  // check pressure error and formation of numerical boundary layers for standard vs. rotational
+  // formulation
+
+  //  VectorType velocity_exact;
   //  navier_stokes_operation->initialize_vector_velocity(velocity_exact);
   //
-  //  parallel::distributed::Vector<value_type> pressure_exact;
+  //  VectorType pressure_exact;
   //  navier_stokes_operation->initialize_vector_pressure(pressure_exact);
   //
   //  navier_stokes_operation->prescribe_initial_conditions(velocity_exact,pressure_exact,this->time);
@@ -682,8 +687,8 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   {
     // fill vectors with old velocity solutions and old time instants for
     // interpolation of velocity field
-    std::vector<parallel::distributed::Vector<value_type> *> solutions;
-    std::vector<double>                                      times;
+    std::vector<VectorType *> solutions;
+    std::vector<double>       times;
 
     unsigned int current_order = 0;
 
@@ -1006,7 +1011,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   // compute right-hand-side vector
   rhs_projection();
 
-  parallel::distributed::Vector<value_type> velocity_extrapolated;
+  VectorType velocity_extrapolated;
 
   // extrapolate velocity to time t_n+1 and use this velocity field to
   // caculate the penalty parameter for the divergence and continuity penalty term

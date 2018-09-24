@@ -19,6 +19,9 @@ template<int dim, typename value_type, typename NavierStokesOperation>
 class DriverSteadyProblems
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type>      VectorType;
+  typedef LinearAlgebra::distributed::BlockVector<value_type> BlockVectorType;
+
   DriverSteadyProblems(std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
                        std::shared_ptr<PostProcessorBase<dim, value_type>> postprocessor_in,
                        InputParameters<dim> const &                        param_in)
@@ -57,13 +60,14 @@ private:
   Timer      global_timer;
   value_type total_time;
 
-  parallel::distributed::BlockVector<value_type> solution;
-  parallel::distributed::BlockVector<value_type> rhs_vector;
-  parallel::distributed::Vector<value_type>      vorticity;
-  parallel::distributed::Vector<value_type>      divergence;
-  parallel::distributed::Vector<value_type>      velocity_magnitude;
-  parallel::distributed::Vector<value_type>      vorticity_magnitude;
-  parallel::distributed::Vector<value_type>      q_criterion;
+  BlockVectorType solution;
+  BlockVectorType rhs_vector;
+
+  VectorType vorticity;
+  VectorType divergence;
+  VectorType velocity_magnitude;
+  VectorType vorticity_magnitude;
+  VectorType q_criterion;
 
   std::vector<SolutionField<dim, value_type>> additional_fields;
 };

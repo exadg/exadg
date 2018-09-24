@@ -49,7 +49,7 @@ CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_qu
 
   // Check whether the Laplace matrix is singular when applied to a vector
   // consisting of only ones (except for constrained entries)
-  parallel::distributed::Vector<Number> in_vec, out_vec;
+  VectorType in_vec, out_vec;
   initialize_dof_vector(in_vec);
   initialize_dof_vector(out_vec);
   in_vec = 1;
@@ -202,8 +202,7 @@ template<int dim,
          typename Number>
 void
 CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  vmult(parallel::distributed::Vector<Number> &       dst,
-        const parallel::distributed::Vector<Number> & src) const
+  vmult(VectorType & dst, VectorType const & src) const
 {
   dst = 0;
   vmult_add(dst, src);
@@ -217,8 +216,7 @@ template<int dim,
          typename Number>
 void
 CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  Tvmult(parallel::distributed::Vector<Number> &       dst,
-         const parallel::distributed::Vector<Number> & src) const
+  Tvmult(VectorType & dst, VectorType const & src) const
 {
   vmult(dst, src);
 }
@@ -231,8 +229,7 @@ template<int dim,
          typename Number>
 void
 CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  Tvmult_add(parallel::distributed::Vector<Number> &       dst,
-             const parallel::distributed::Vector<Number> & src) const
+  Tvmult_add(VectorType & dst, VectorType const & src) const
 {
   vmult_add(dst, src);
 }
@@ -245,10 +242,9 @@ template<int dim,
          typename Number>
 void
 CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  vmult_add(parallel::distributed::Vector<Number> &       dst,
-            const parallel::distributed::Vector<Number> & src) const
+  vmult_add(VectorType & dst, VectorType const & src) const
 {
-  const parallel::distributed::Vector<Number> * actual_src = &src;
+  VectorType const * actual_src = &src;
   if(apply_mean_value_constraint_in_matvec)
   {
     tmp_projection_vector = src;
@@ -275,8 +271,7 @@ template<int dim,
          typename Number>
 void
 CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  vmult_interface_down(parallel::distributed::Vector<Number> &       dst,
-                       const parallel::distributed::Vector<Number> & src) const
+  vmult_interface_down(VectorType & dst, VectorType const & src) const
 {
   vmult(dst, src);
 }
@@ -289,8 +284,7 @@ template<int dim,
          typename Number>
 void
 CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  vmult_add_interface_up(parallel::distributed::Vector<Number> &       dst,
-                         const parallel::distributed::Vector<Number> & src) const
+  vmult_add_interface_up(VectorType & dst, VectorType const & src) const
 {
   vmult_add(dst, src);
 }
@@ -356,11 +350,11 @@ template<int dim,
          typename Number>
 void
 CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  calculate_diagonal(parallel::distributed::Vector<Number> & diagonal) const
+  calculate_diagonal(VectorType & diagonal) const
 {
   // naive implementation of calculation of diagonal (TODO)
   diagonal = 0.0;
-  parallel::distributed::Vector<Number> src(diagonal), dst(diagonal);
+  VectorType src(diagonal), dst(diagonal);
   for(unsigned int i = 0; i < diagonal.local_size(); ++i)
   {
     src.local_element(i) = 1.0;
@@ -371,11 +365,11 @@ CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_qu
 
   if(apply_mean_value_constraint_in_matvec)
   {
-    parallel::distributed::Vector<Number> vec1;
+    VectorType vec1;
     vec1.reinit(diagonal, true);
     for(unsigned int i = 0; i < vec1.local_size(); ++i)
       vec1.local_element(i) = 1.;
-    parallel::distributed::Vector<Number> d;
+    VectorType d;
     d.reinit(diagonal, true);
     vmult(d, vec1);
     double length = vec1 * vec1;
@@ -392,7 +386,7 @@ template<int dim,
          typename Number>
 void
 CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  calculate_inverse_diagonal(parallel::distributed::Vector<Number> & diagonal) const
+  calculate_inverse_diagonal(VectorType & diagonal) const
 {
   calculate_diagonal(diagonal);
 
@@ -407,7 +401,7 @@ template<int dim,
          typename Number>
 void
 CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  initialize_dof_vector(parallel::distributed::Vector<Number> & vector) const
+  initialize_dof_vector(VectorType & vector) const
 {
   initialize_dof_vector_pressure(vector);
 }
@@ -420,7 +414,7 @@ template<int dim,
          typename Number>
 void
 CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  initialize_dof_vector_pressure(parallel::distributed::Vector<Number> & vector) const
+  initialize_dof_vector_pressure(VectorType & vector) const
 {
   data->initialize_dof_vector(vector, compatible_laplace_operator_data.dof_index_pressure);
 }
@@ -433,7 +427,7 @@ template<int dim,
          typename Number>
 void
 CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  initialize_dof_vector_velocity(parallel::distributed::Vector<Number> & vector) const
+  initialize_dof_vector_velocity(VectorType & vector) const
 {
   data->initialize_dof_vector(vector, compatible_laplace_operator_data.dof_index_velocity);
 }
@@ -446,8 +440,7 @@ template<int dim,
          typename Number>
 void
 CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  apply_inverse_block_diagonal(parallel::distributed::Vector<Number> & /*dst*/,
-                               parallel::distributed::Vector<Number> const & /*src*/) const
+  apply_inverse_block_diagonal(VectorType & /*dst*/, VectorType const & /*src*/) const
 {
   AssertThrow(false,
               ExcMessage(

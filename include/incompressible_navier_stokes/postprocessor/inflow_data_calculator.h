@@ -149,7 +149,7 @@ public:
   }
 
   void
-  calculate(parallel::distributed::Vector<Number> const & velocity)
+  calculate(LinearAlgebra::distributed::Vector<Number> const & velocity)
   {
     if(inflow_data.write_inflow_data == true)
     {

@@ -16,6 +16,9 @@ template<int dim>
 class StatisticsManagerPH //: public StatisticsManager<dim>
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<double>      VectorType;
+  typedef LinearAlgebra::distributed::BlockVector<double> BlockVectorType;
+
   StatisticsManagerPH(const DoFHandler<dim> & dof_handler_velocity,
                       const DoFHandler<dim> & dof_handler_pressure,
                       const Mapping<dim> &    mapping,
@@ -46,22 +49,19 @@ public:
         const bool            enriched);
 
   void
-  evaluate(const parallel::distributed::Vector<double> & velocity,
-           const parallel::distributed::Vector<double> & pressure);
+  evaluate(const VectorType & velocity, const VectorType & pressure);
 
   void
-  evaluate(const std::vector<parallel::distributed::Vector<double>> & velocity,
-           const parallel::distributed::Vector<double> &              pressure);
+  evaluate(const std::vector<VectorType> & velocity, const VectorType & pressure);
 
   void
-  evaluate(const parallel::distributed::BlockVector<double> & velocity,
-           const parallel::distributed::Vector<double> &      pressure);
+  evaluate(const BlockVectorType & velocity, const VectorType & pressure);
 
   void
-  evaluate_xwall(const parallel::distributed::Vector<double> & velocity,
-                 const parallel::distributed::Vector<double> & pressure,
-                 const DoFHandler<dim> &                       dof_handler_wdist,
-                 const FEParameters<dim> &                     fe_param);
+  evaluate_xwall(const VectorType &        velocity,
+                 const VectorType &        pressure,
+                 const DoFHandler<dim> &   dof_handler_wdist,
+                 const FEParameters<dim> & fe_param);
 
   void
   write_output(const std::string output_prefix,
@@ -84,14 +84,13 @@ private:
   int                  numchsamp;
 
   void
-  do_evaluate(const std::vector<const parallel::distributed::Vector<double> *> & velocity,
-              const parallel::distributed::Vector<double> &                      pressure);
+  do_evaluate(const std::vector<const VectorType *> & velocity, const VectorType & pressure);
 
   void
-  do_evaluate_xwall(const std::vector<const parallel::distributed::Vector<double> *> & velocity,
-                    const parallel::distributed::Vector<double> &                      pressure,
-                    const DoFHandler<dim> &   dof_handler_wdist,
-                    const FEParameters<dim> & fe_param);
+  do_evaluate_xwall(const std::vector<const VectorType *> & velocity,
+                    const VectorType &                      pressure,
+                    const DoFHandler<dim> &                 dof_handler_wdist,
+                    const FEParameters<dim> &               fe_param);
 
   inline bool
   exists_test0(const std::string & name)

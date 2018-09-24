@@ -198,7 +198,9 @@ class BlockPreconditionerNavierStokes
   : public PreconditionerNavierStokesBase<value_type, UnderlyingOperator>
 {
 public:
-  typedef float Number;
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
+  typedef float MultigridNumber;
 
   BlockPreconditionerNavierStokes(DGNavierStokesCoupled<dim,
                                                         fe_degree,
@@ -544,7 +546,7 @@ private:
       typedef MyMultigridPreconditionerVelocityDiffusion<
         dim,
         value_type,
-        HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
+        HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, MultigridNumber>,
         VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>>
         MULTIGRID;
 
@@ -566,7 +568,7 @@ private:
       typedef MyMultigridPreconditionerVelocityConvectionDiffusion<
         dim,
         value_type,
-        VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>,
+        VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, MultigridNumber>,
         VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>>
         MULTIGRID;
 
@@ -610,8 +612,9 @@ private:
         new FGMRESSolver<
           VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>,
           PreconditionerBase<value_type>,
-          parallel::distributed::Vector<value_type>>(
-          underlying_operator->velocity_conv_diff_operator, *preconditioner_momentum, gmres_data));
+          VectorType>(underlying_operator->velocity_conv_diff_operator,
+                      *preconditioner_momentum,
+                      gmres_data));
     }
     else
     {
@@ -628,8 +631,9 @@ private:
         new GMRESSolver<
           VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>,
           PreconditionerBase<value_type>,
-          parallel::distributed::Vector<value_type>>(
-          underlying_operator->velocity_conv_diff_operator, *preconditioner_momentum, gmres_data));
+          VectorType>(underlying_operator->velocity_conv_diff_operator,
+                      *preconditioner_momentum,
+                      gmres_data));
     }
   }
 
@@ -648,7 +652,7 @@ private:
                                                                     fe_degree_p,
                                                                     fe_degree_xwall,
                                                                     xwall_quad_rule,
-                                                                    Number>>
+                                                                    MultigridNumber>>
         MULTIGRID;
 
       multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
@@ -680,7 +684,7 @@ private:
 
       typedef MyMultigridPreconditionerDG<dim,
                                           value_type,
-                                          Poisson::LaplaceOperator<dim, fe_degree, Number>>
+                                          Poisson::LaplaceOperator<dim, fe_degree, MultigridNumber>>
         MULTIGRID;
       multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
 
@@ -734,8 +738,9 @@ private:
       solver_pressure_block.reset(
         new CGSolver<Poisson::LaplaceOperator<dim, fe_degree_p, value_type>,
                      PreconditionerBase<value_type>,
-                     parallel::distributed::Vector<value_type>>(
-          *laplace_operator_classical, *multigrid_preconditioner_schur_complement, solver_data));
+                     VectorType>(*laplace_operator_classical,
+                                 *multigrid_preconditioner_schur_complement,
+                                 solver_data));
     }
     else if(preconditioner_data.discretization_of_laplacian ==
             DiscretizationOfLaplacian::Compatible)
@@ -773,7 +778,7 @@ private:
                                                                          xwall_quad_rule,
                                                                          value_type>,
                                                PreconditionerBase<value_type>,
-                                               parallel::distributed::Vector<value_type>>(
+                                               VectorType>(
         *laplace_operator_compatible, *multigrid_preconditioner_schur_complement, solver_data));
     }
   }
@@ -878,8 +883,7 @@ private:
   }
 
   void
-  vmult_velocity_block(parallel::distributed::Vector<value_type> &       dst,
-                       const parallel::distributed::Vector<value_type> & src) const
+  vmult_velocity_block(VectorType & dst, VectorType const & src) const
   {
     if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::None)
     {
@@ -915,7 +919,7 @@ private:
         // CheckMultigrid
         //        typedef MyMultigridPreconditionerVelocityConvectionDiffusion<dim,value_type,
         //            VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule,
-        //            Number>, VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall,
+        //            MultigridNumber>, VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall,
         //            xwall_quad_rule, value_type> > MULTIGRID;
         //
         //        std::shared_ptr<MULTIGRID> my_preconditioner =
@@ -955,8 +959,7 @@ private:
   }
 
   void
-  vmult_pressure_block(parallel::distributed::Vector<value_type> &       dst,
-                       const parallel::distributed::Vector<value_type> & src) const
+  vmult_pressure_block(VectorType & dst, VectorType const & src) const
   {
     if(preconditioner_data.schur_complement_preconditioner == SchurComplementPreconditioner::None)
     {
@@ -1100,9 +1103,7 @@ private:
   }
 
   void
-  apply_inverse_negative_laplace_operator(
-    parallel::distributed::Vector<value_type> &       dst,
-    parallel::distributed::Vector<value_type> const & src) const
+  apply_inverse_negative_laplace_operator(VectorType & dst, VectorType const & src) const
   {
     if(preconditioner_data.exact_inversion_of_laplace_operator == false)
     {
@@ -1114,7 +1115,7 @@ private:
     {
       // solve a linear system of equations for negative Laplace operator to given (relative)
       // tolerance using the PCG method
-      parallel::distributed::Vector<value_type> const * pointer_to_src = &src;
+      VectorType const * pointer_to_src = &src;
       if(underlying_operator->param.pure_dirichlet_bc == true)
       {
         tmp_projection_vector = src;
@@ -1142,8 +1143,7 @@ private:
   // preconditioner velocity/momentum block
   std::shared_ptr<PreconditionerBase<value_type>> preconditioner_momentum;
 
-  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type>>>
-    solver_velocity_block;
+  std::shared_ptr<IterativeSolverBase<VectorType>> solver_velocity_block;
 
   // preconditioner pressure/Schur-complement block
   std::shared_ptr<PreconditionerBase<value_type>> multigrid_preconditioner_schur_complement;
@@ -1163,21 +1163,20 @@ private:
                                             value_type>>
     laplace_operator_compatible;
 
-  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type>>>
-    solver_pressure_block;
+  std::shared_ptr<IterativeSolverBase<VectorType>> solver_pressure_block;
 
   // temporary vectors that are necessary when using preconditioners of block-triangular type
-  parallel::distributed::Vector<value_type> mutable vec_tmp_pressure;
-  parallel::distributed::Vector<value_type> mutable vec_tmp_velocity;
-  parallel::distributed::Vector<value_type> mutable vec_tmp_velocity_2;
+  VectorType mutable vec_tmp_pressure;
+  VectorType mutable vec_tmp_velocity;
+  VectorType mutable vec_tmp_velocity_2;
 
   // temporary vectors that are necessary when applying the Schur-complement preconditioner (scp)
-  parallel::distributed::Vector<value_type> mutable tmp_scp_pressure;
-  parallel::distributed::Vector<value_type> mutable tmp_scp_velocity, tmp_scp_velocity_2;
+  VectorType mutable tmp_scp_pressure;
+  VectorType mutable tmp_scp_velocity, tmp_scp_velocity_2;
 
   // temporary vector that is needed if negative Laplace operator is inverted exactly
   // and if a problem with pure Dirichlet BC's is considered
-  parallel::distributed::Vector<value_type> mutable tmp_projection_vector;
+  VectorType mutable tmp_projection_vector;
 };
 
 

@@ -21,15 +21,15 @@
 
 template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
 void
-calculate_lift_and_drag_force(MatrixFree<dim, Number> const &               matrix_free_data,
-                              unsigned int const &                          dof_index_velocity,
-                              unsigned int const &                          quad_index_velocity,
-                              unsigned int const &                          dof_index_pressure,
-                              std::set<types::boundary_id> const &          boundary_IDs,
-                              parallel::distributed::Vector<Number> const & velocity,
-                              parallel::distributed::Vector<Number> const & pressure,
-                              double const &                                viscosity,
-                              Tensor<1, dim, Number> &                      Force)
+calculate_lift_and_drag_force(MatrixFree<dim, Number> const &      matrix_free_data,
+                              unsigned int const &                 dof_index_velocity,
+                              unsigned int const &                 quad_index_velocity,
+                              unsigned int const &                 dof_index_pressure,
+                              std::set<types::boundary_id> const & boundary_IDs,
+                              LinearAlgebra::distributed::Vector<Number> const & velocity,
+                              LinearAlgebra::distributed::Vector<Number> const & pressure,
+                              double const &                                     viscosity,
+                              Tensor<1, dim, Number> &                           Force)
 {
   FEFaceEvaluation<dim, fe_degree_u, fe_degree_u + 1, dim, Number> fe_eval_velocity(
     matrix_free_data, true, dof_index_velocity, quad_index_velocity);
@@ -88,6 +88,8 @@ template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
 class LiftAndDragCalculator
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   LiftAndDragCalculator() : clear_files_lift_and_drag(true), matrix_free_data(nullptr)
   {
   }
@@ -105,9 +107,7 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<Number> const & velocity,
-           parallel::distributed::Vector<Number> const & pressure,
-           Number const &                                time) const
+  evaluate(VectorType const & velocity, VectorType const & pressure, Number const & time) const
   {
     if(lift_and_drag_data.calculate_lift_and_drag == true)
     {

@@ -47,6 +47,8 @@ public:
   static const int DIM = dim;
   typedef Number   value_type;
 
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   CompatibleLaplaceOperator();
 
   // clang-format off
@@ -166,28 +168,22 @@ public:
 
   // apply matrix vector multiplication
   void
-  vmult(parallel::distributed::Vector<Number> &       dst,
-        const parallel::distributed::Vector<Number> & src) const;
+  vmult(VectorType & dst, VectorType const & src) const;
 
   void
-  Tvmult(parallel::distributed::Vector<Number> &       dst,
-         const parallel::distributed::Vector<Number> & src) const;
+  Tvmult(VectorType & dst, VectorType const & src) const;
 
   void
-  Tvmult_add(parallel::distributed::Vector<Number> &       dst,
-             const parallel::distributed::Vector<Number> & src) const;
+  Tvmult_add(VectorType & dst, VectorType const & src) const;
 
   void
-  vmult_add(parallel::distributed::Vector<Number> &       dst,
-            const parallel::distributed::Vector<Number> & src) const;
+  vmult_add(VectorType & dst, VectorType const & src) const;
 
   void
-  vmult_interface_down(parallel::distributed::Vector<Number> &       dst,
-                       const parallel::distributed::Vector<Number> & src) const;
+  vmult_interface_down(VectorType & dst, VectorType const & src) const;
 
   void
-  vmult_add_interface_up(parallel::distributed::Vector<Number> &       dst,
-                         const parallel::distributed::Vector<Number> & src) const;
+  vmult_add_interface_up(VectorType & dst, VectorType const & src) const;
 
   types::global_dof_index
   m() const;
@@ -202,26 +198,25 @@ public:
   get_data() const;
 
   void
-  calculate_diagonal(parallel::distributed::Vector<Number> & diagonal) const;
+  calculate_diagonal(VectorType & diagonal) const;
 
   void
-  calculate_inverse_diagonal(parallel::distributed::Vector<Number> & diagonal) const;
+  calculate_inverse_diagonal(VectorType & diagonal) const;
 
   void
-  initialize_dof_vector(parallel::distributed::Vector<Number> & vector) const;
+  initialize_dof_vector(VectorType & vector) const;
 
   void
-  initialize_dof_vector_pressure(parallel::distributed::Vector<Number> & vector) const;
+  initialize_dof_vector_pressure(VectorType & vector) const;
 
   void
-  initialize_dof_vector_velocity(parallel::distributed::Vector<Number> & vector) const;
+  initialize_dof_vector_velocity(VectorType & vector) const;
 
   /*
    *  Apply block Jacobi preconditioner
    */
   void
-  apply_inverse_block_diagonal(parallel::distributed::Vector<Number> & /*dst*/,
-                               parallel::distributed::Vector<Number> const & /*src*/) const;
+  apply_inverse_block_diagonal(VectorType & /*dst*/, VectorType const & /*src*/) const;
 
   /*
    *  Update block Jacobi preconditioner
@@ -254,7 +249,7 @@ private:
 
   CompatibleLaplaceOperatorData<dim> compatible_laplace_operator_data;
 
-  parallel::distributed::Vector<Number> mutable tmp;
+  VectorType mutable tmp;
 
   /*
    * The following variables are necessary when applying the multigrid preconditioner to the
@@ -278,7 +273,7 @@ private:
   bool needs_mean_value_constraint;
   bool apply_mean_value_constraint_in_matvec;
 
-  mutable parallel::distributed::Vector<Number> tmp_projection_vector;
+  mutable VectorType tmp_projection_vector;
 };
 
 

@@ -16,6 +16,8 @@ namespace IncNS
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class VorticityCalculator : public BaseOperator<dim>
 {
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   typedef VorticityCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> THIS;
 
   static const unsigned int number_vorticity_components = (dim == 2) ? 1 : dim;
@@ -43,15 +45,14 @@ public:
   VorticityCalculator() : data(nullptr), dof_index(0){};
 
   void
-  initialize(MatrixFree<dim, value_type> const & mf_data, const unsigned int dof_index_in)
+  initialize(MatrixFree<dim, value_type> const & mf_data, unsigned int const dof_index_in)
   {
     this->data = &mf_data;
     dof_index  = dof_index_in;
   }
 
   void
-  compute_vorticity(parallel::distributed::Vector<value_type> &       dst,
-                    const parallel::distributed::Vector<value_type> & src) const
+  compute_vorticity(VectorType & dst, VectorType const & src) const
   {
     dst = 0;
 
@@ -60,10 +61,10 @@ public:
 
 private:
   void
-  local_compute_vorticity(const MatrixFree<dim, value_type> &               data,
-                          parallel::distributed::Vector<value_type> &       dst,
-                          const parallel::distributed::Vector<value_type> & src,
-                          const std::pair<unsigned int, unsigned int> &     cell_range) const
+  local_compute_vorticity(MatrixFree<dim, value_type> const &           data,
+                          VectorType &                                  dst,
+                          VectorType const &                            src,
+                          std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_linear velocity(data, this->fe_param, dof_index);
 
@@ -100,6 +101,8 @@ private:
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class DivergenceCalculator : public BaseOperator<dim>
 {
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   typedef DivergenceCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> THIS;
 
   static const bool         is_xwall = (xwall_quad_rule > 1) ? true : false;
@@ -136,8 +139,8 @@ public:
 
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,
-             const unsigned int                  dof_index_u_in,
-             const unsigned int                  dof_index_u_scalar_in)
+             unsigned int const                  dof_index_u_in,
+             unsigned int const                  dof_index_u_scalar_in)
   {
     this->data         = &mf_data;
     dof_index_u        = dof_index_u_in;
@@ -145,8 +148,7 @@ public:
   }
 
   void
-  compute_divergence(parallel::distributed::Vector<value_type> &       dst,
-                     const parallel::distributed::Vector<value_type> & src) const
+  compute_divergence(VectorType & dst, VectorType const & src) const
   {
     dst = 0;
 
@@ -155,10 +157,10 @@ public:
 
 private:
   void
-  local_compute_divergence(const MatrixFree<dim, value_type> &               data,
-                           parallel::distributed::Vector<value_type> &       dst,
-                           const parallel::distributed::Vector<value_type> & src,
-                           const std::pair<unsigned int, unsigned int> &     cell_range) const
+  local_compute_divergence(MatrixFree<dim, value_type> const &           data,
+                           VectorType &                                  dst,
+                           VectorType const &                            src,
+                           std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_linear        fe_eval_velocity(data, this->fe_param, dof_index_u);
     FEEval_Velocity_scalar_Velocity_linear fe_eval_velocity_scalar(data,
@@ -194,6 +196,8 @@ private:
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class VelocityMagnitudeCalculator : public BaseOperator<dim>
 {
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   typedef VelocityMagnitudeCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>
     THIS;
 
@@ -231,8 +235,8 @@ public:
 
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,
-             const unsigned int                  dof_index_u_in,
-             const unsigned int                  dof_index_u_scalar_in)
+             unsigned int const                  dof_index_u_in,
+             unsigned int const                  dof_index_u_scalar_in)
   {
     this->data         = &mf_data;
     dof_index_u        = dof_index_u_in;
@@ -240,8 +244,7 @@ public:
   }
 
   void
-  compute(parallel::distributed::Vector<value_type> &       dst,
-          const parallel::distributed::Vector<value_type> & src) const
+  compute(VectorType & dst, VectorType const & src) const
   {
     dst = 0;
 
@@ -250,10 +253,10 @@ public:
 
 private:
   void
-  local_compute(const MatrixFree<dim, value_type> &               data,
-                parallel::distributed::Vector<value_type> &       dst,
-                const parallel::distributed::Vector<value_type> & src,
-                const std::pair<unsigned int, unsigned int> &     cell_range) const
+  local_compute(MatrixFree<dim, value_type> const &           data,
+                VectorType &                                  dst,
+                VectorType const &                            src,
+                std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_linear        fe_eval_velocity(data, this->fe_param, dof_index_u);
     FEEval_Velocity_scalar_Velocity_linear fe_eval_velocity_scalar(data,
@@ -296,6 +299,8 @@ private:
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class StreamfunctionCalculatorRHSOperator : public BaseOperator<dim>
 {
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   typedef StreamfunctionCalculatorRHSOperator<dim,
                                               fe_degree,
                                               fe_degree_xwall,
@@ -340,8 +345,8 @@ public:
 
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,
-             const unsigned int                  dof_index_u_in,
-             const unsigned int                  dof_index_u_scalar_in)
+             unsigned int const                  dof_index_u_in,
+             unsigned int const                  dof_index_u_scalar_in)
   {
     this->data         = &mf_data;
     dof_index_u        = dof_index_u_in;
@@ -349,8 +354,7 @@ public:
   }
 
   void
-  apply(parallel::distributed::Vector<value_type> &       dst,
-        const parallel::distributed::Vector<value_type> & src) const
+  apply(VectorType & dst, VectorType const & src) const
   {
     dst = 0;
 
@@ -359,10 +363,10 @@ public:
 
 private:
   void
-  local_apply(const MatrixFree<dim, value_type> &               data,
-              parallel::distributed::Vector<value_type> &       dst,
-              const parallel::distributed::Vector<value_type> & src,
-              const std::pair<unsigned int, unsigned int> &     cell_range) const
+  local_apply(MatrixFree<dim, value_type> const &           data,
+              VectorType &                                  dst,
+              VectorType const &                            src,
+              std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_linear        fe_eval_velocity(data, this->fe_param, dof_index_u);
     FEEval_Velocity_scalar_Velocity_linear fe_eval_velocity_scalar(data,
@@ -397,6 +401,8 @@ private:
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename value_type>
 class QCriterionCalculator : public BaseOperator<dim>
 {
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   typedef QCriterionCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> THIS;
 
   static const bool         is_xwall = (xwall_quad_rule > 1) ? true : false;
@@ -441,8 +447,7 @@ public:
   }
 
   void
-  compute(parallel::distributed::Vector<value_type> &       dst,
-          parallel::distributed::Vector<value_type> const & src) const
+  compute(VectorType & dst, VectorType const & src) const
   {
     dst = 0;
 
@@ -451,10 +456,10 @@ public:
 
 private:
   void
-  local_compute(const MatrixFree<dim, value_type> &               data,
-                parallel::distributed::Vector<value_type> &       dst,
-                const parallel::distributed::Vector<value_type> & src,
-                const std::pair<unsigned int, unsigned int> &     cell_range) const
+  local_compute(MatrixFree<dim, value_type> const &           data,
+                VectorType &                                  dst,
+                VectorType const &                            src,
+                std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_linear        fe_eval_velocity(data, this->fe_param, dof_index_u);
     FEEval_Velocity_scalar_Velocity_linear fe_eval_velocity_scalar(data,
@@ -482,7 +487,7 @@ private:
             S[i][j]  = 0.5 * (gradu[i][j] + gradu[j][i]);
           }
         }
-        const VectorizedArray<value_type> Q = 0.5 * (Om.norm_square() - S.norm_square());
+        VectorizedArray<value_type> const Q = 0.5 * (Om.norm_square() - S.norm_square());
         fe_eval_velocity_scalar.submit_value(Q, q);
       }
       fe_eval_velocity_scalar.integrate(true, false);

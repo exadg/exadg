@@ -18,6 +18,9 @@ class TimeIntBDFDualSplitting
   : public TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>
 {
 public:
+  typedef TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation> Base;
+  typedef typename Base::VectorType                                                   VectorType;
+
   TimeIntBDFDualSplitting(std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
                           std::shared_ptr<PostProcessorBase<dim, value_type>> postprocessor_in,
                           InputParameters<dim> const &                        param_in,
@@ -73,23 +76,23 @@ protected:
   virtual void
   write_restart_vectors(boost::archive::binary_oarchive & oa) const;
 
-  std::vector<parallel::distributed::Vector<value_type>> velocity;
+  std::vector<VectorType> velocity;
 
-  std::vector<parallel::distributed::Vector<value_type>> pressure;
+  std::vector<VectorType> pressure;
 
-  parallel::distributed::Vector<value_type> velocity_np;
+  VectorType velocity_np;
 
-  std::vector<parallel::distributed::Vector<value_type>> vorticity;
+  std::vector<VectorType> vorticity;
 
-  std::vector<parallel::distributed::Vector<value_type>> vec_convective_term;
+  std::vector<VectorType> vec_convective_term;
 
   std::vector<double>       computing_times;
   std::vector<unsigned int> iterations;
 
-  parallel::distributed::Vector<value_type> rhs_vec_viscous;
+  VectorType rhs_vec_viscous;
 
   // postprocessing: intermediate velocity
-  parallel::distributed::Vector<value_type> intermediate_velocity;
+  VectorType intermediate_velocity;
 
   virtual void
   postprocessing() const;
@@ -142,7 +145,7 @@ private:
   double
   evaluate_residual();
 
-  virtual parallel::distributed::Vector<value_type> const &
+  virtual LinearAlgebra::distributed::Vector<value_type> const &
   get_velocity();
 
   void
@@ -151,24 +154,24 @@ private:
   // time integrator constants: extrapolation scheme
   ExtrapolationConstants extra_pressure_nbc;
 
-  parallel::distributed::Vector<value_type> pressure_np;
+  VectorType pressure_np;
 
-  parallel::distributed::Vector<value_type> vorticity_extrapolated;
+  VectorType vorticity_extrapolated;
 
   // solve convective step implicitly
-  parallel::distributed::Vector<value_type> sum_alphai_ui;
+  VectorType sum_alphai_ui;
 
-  parallel::distributed::Vector<value_type> rhs_vec_pressure;
-  parallel::distributed::Vector<value_type> rhs_vec_pressure_temp;
+  VectorType rhs_vec_pressure;
+  VectorType rhs_vec_pressure_temp;
 
-  parallel::distributed::Vector<value_type> rhs_vec_projection;
-  parallel::distributed::Vector<value_type> rhs_vec_projection_temp;
+  VectorType rhs_vec_projection;
+  VectorType rhs_vec_projection_temp;
 
   std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
   // temporary vectors needed for pseudo-timestepping algorithm
-  parallel::distributed::Vector<value_type> velocity_tmp;
-  parallel::distributed::Vector<value_type> pressure_tmp;
+  VectorType velocity_tmp;
+  VectorType pressure_tmp;
 };
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -333,7 +336,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-parallel::distributed::Vector<value_type> const &
+LinearAlgebra::distributed::Vector<value_type> const &
 TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity()
 {
   return velocity[0];
@@ -404,10 +407,10 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::po
                                          this->time_step_number);
 
   //  // check pressure error and velocity error
-  //  parallel::distributed::Vector<value_type> velocity_exact;
+  //  VectorType velocity_exact;
   //  navier_stokes_operation->initialize_vector_velocity(velocity_exact);
   //
-  //  parallel::distributed::Vector<value_type> pressure_exact;
+  //  VectorType pressure_exact;
   //  navier_stokes_operation->initialize_vector_pressure(pressure_exact);
   //
   //  navier_stokes_operation->prescribe_initial_conditions(velocity_exact,pressure_exact,this->time);
@@ -424,10 +427,10 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::po
   //                                         this->time_step_number);
 
   //  // plot solution increment
-  //  parallel::distributed::Vector<value_type> velocity_incr;
+  //  VectorType velocity_incr;
   //  navier_stokes_operation->initialize_vector_velocity(velocity_incr);
   //
-  //  parallel::distributed::Vector<value_type> pressure_incr;
+  //  VectorType pressure_incr;
   //  navier_stokes_operation->initialize_vector_pressure(pressure_incr);
   //
   //  velocity_incr = velocity[0];
@@ -577,8 +580,8 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::co
   {
     // fill vectors with old velocity solutions and old time instants for
     // interpolation of velocity field
-    std::vector<parallel::distributed::Vector<value_type> *> solutions;
-    std::vector<double>                                      times;
+    std::vector<VectorType *> solutions;
+    std::vector<double>       times;
 
     unsigned int current_order = 0;
 
@@ -884,7 +887,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::pr
   // compute right-hand-side vector
   rhs_projection();
 
-  parallel::distributed::Vector<value_type> velocity_extrapolated;
+  VectorType velocity_extrapolated;
 
   // extrapolate velocity to time t_n+1 and use this velocity field to
   // caculate the penalty parameter for the divergence and continuity penalty term
@@ -955,7 +958,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::vi
 
     // extrapolate velocity to time t_n+1 and use this velocity field to
     // update the turbulence model (to recalculate the turbulent viscosity)
-    parallel::distributed::Vector<value_type> velocity_extrapolated(velocity[0]);
+    VectorType velocity_extrapolated(velocity[0]);
     velocity_extrapolated = 0;
     for(unsigned int i = 0; i < velocity.size(); ++i)
       velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);

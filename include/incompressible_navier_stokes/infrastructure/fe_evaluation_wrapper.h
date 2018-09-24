@@ -40,6 +40,8 @@ template<int dim,
 class FEEvaluationWrapper
   : public FEEvaluation<dim, fe_degree, n_q_points_1d, n_components_, Number>
 {
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
 private:
   static unsigned int
   find_quadrature_slot(const MatrixFree<dim, Number> & mf, const int quad_no)
@@ -323,6 +325,8 @@ class FEEvaluationWrapper<dim,
                           Number,
                           true>
 {
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
 private:
   typedef FEEvaluation<dim, fe_degree, n_q_points_1d, n_components_, Number> BaseClass;
   typedef Number                                                             number_type;
@@ -574,7 +578,7 @@ public:
   }
 
   void
-  read_dof_values(const parallel::distributed::Vector<Number> & src)
+  read_dof_values(const VectorType & src)
   {
     fe_eval[quad_type]->read_dof_values(src);
     if(enriched)
@@ -779,7 +783,7 @@ public:
   }
 
   void
-  distribute_local_to_global(parallel::distributed::Vector<Number> & dst)
+  distribute_local_to_global(VectorType & dst)
   {
     fe_eval[quad_type]->distribute_local_to_global(dst);
     if(enriched)
@@ -787,7 +791,7 @@ public:
   }
 
   void
-  set_dof_values(parallel::distributed::Vector<Number> & dst)
+  set_dof_values(VectorType & dst)
   {
     fe_eval[quad_type]->set_dof_values(dst);
     if(enriched)
@@ -1188,7 +1192,8 @@ class FEFaceEvaluationWrapper<dim,
                               true>
 {
 public:
-  typedef Number number_type;
+  typedef Number                                     number_type;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
 private:
   typedef FEFaceEvaluation<dim, fe_degree, n_q_points_1d, n_components_, Number> BaseClass;
@@ -1401,7 +1406,7 @@ public:
   }
 
   void
-  read_dof_values(const parallel::distributed::Vector<Number> & src)
+  read_dof_values(const VectorType & src)
   {
     fe_eval[quad_type]->read_dof_values(src);
     if(enriched)
@@ -1568,7 +1573,7 @@ public:
   }
 
   void
-  distribute_local_to_global(parallel::distributed::Vector<Number> & dst)
+  distribute_local_to_global(VectorType & dst)
   {
     fe_eval[quad_type]->distribute_local_to_global(dst);
     if(enriched)

@@ -28,6 +28,10 @@ public:
   typedef DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
     BASE;
 
+  typedef typename BASE::VectorType VectorType;
+
+  typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
+
   typedef DGNavierStokesCoupled<dim,
                                 fe_degree,
                                 fe_degree_p,
@@ -67,7 +71,7 @@ public:
 
   // initialization of vectors
   void
-  initialize_block_vector_velocity_pressure(parallel::distributed::BlockVector<Number> & src) const
+  initialize_block_vector_velocity_pressure(BlockVectorType & src) const
   {
     // velocity(1st block) + pressure(2nd block)
     src.reinit(2);
@@ -79,7 +83,7 @@ public:
   }
 
   void
-  initialize_vector_for_newton_solver(parallel::distributed::BlockVector<Number> & src) const
+  initialize_vector_for_newton_solver(BlockVectorType & src) const
   {
     initialize_block_vector_velocity_pressure(src);
   }
@@ -115,14 +119,14 @@ public:
    *  which depends on the current velocity field
    */
   void
-  update_divergence_penalty_operator(parallel::distributed::Vector<Number> const & velocity) const;
+  update_divergence_penalty_operator(VectorType const & velocity) const;
 
   /*
    *  Update continuity penalty operator by recalculating the penalty parameter
    *  which depends on the current velocity field
    */
   void
-  update_continuity_penalty_operator(parallel::distributed::Vector<Number> const & velocity) const;
+  update_continuity_penalty_operator(VectorType const & velocity) const;
 
 
   /*
@@ -132,9 +136,9 @@ public:
    *  For steady problems this parameter is omitted.
    */
   unsigned int
-  solve_linear_stokes_problem(parallel::distributed::BlockVector<Number> &       dst,
-                              parallel::distributed::BlockVector<Number> const & src,
-                              double const & scaling_factor_mass_matrix_term = 1.0);
+  solve_linear_stokes_problem(BlockVectorType &       dst,
+                              BlockVectorType const & src,
+                              double const &          scaling_factor_mass_matrix_term = 1.0);
 
 
   /*
@@ -142,15 +146,13 @@ public:
    *  implement a function called vmult().
    */
   void
-  vmult(parallel::distributed::BlockVector<Number> &       dst,
-        parallel::distributed::BlockVector<Number> const & src) const;
+  vmult(BlockVectorType & dst, BlockVectorType const & src) const;
 
   /*
    *  This function calculates the matrix vector product for the linear(ized) problem.
    */
   void
-  apply_linearized_problem(parallel::distributed::BlockVector<Number> &       dst,
-                           parallel::distributed::BlockVector<Number> const & src) const;
+  apply_linearized_problem(BlockVectorType & dst, BlockVectorType const & src) const;
 
   /*
    *  This function calculates the rhs of the steady Stokes problem, or unsteady Stokes problem,
@@ -159,36 +161,34 @@ public:
    *  For steady problems these parameters are omitted.
    */
   void
-  rhs_stokes_problem(parallel::distributed::BlockVector<Number> & dst,
-                     double const &                               eval_time = 0.0) const;
+  rhs_stokes_problem(BlockVectorType & dst, double const & eval_time = 0.0) const;
 
 
   /*
    *  This function solves the nonlinear problem for steady problems.
    */
   void
-  solve_nonlinear_steady_problem(parallel::distributed::BlockVector<Number> & dst,
-                                 unsigned int &                               newton_iterations,
-                                 unsigned int &                               linear_iterations);
+  solve_nonlinear_steady_problem(BlockVectorType & dst,
+                                 unsigned int &    newton_iterations,
+                                 unsigned int &    linear_iterations);
 
   /*
    *  This function solves the nonlinear problem for unsteady problems.
    */
   void
-  solve_nonlinear_problem(parallel::distributed::BlockVector<Number> &  dst,
-                          parallel::distributed::Vector<Number> const & sum_alphai_ui,
-                          double const &                                eval_time,
-                          double const & scaling_factor_mass_matrix_term,
-                          unsigned int & newton_iterations,
-                          unsigned int & linear_iterations);
+  solve_nonlinear_problem(BlockVectorType &  dst,
+                          VectorType const & sum_alphai_ui,
+                          double const &     eval_time,
+                          double const &     scaling_factor_mass_matrix_term,
+                          unsigned int &     newton_iterations,
+                          unsigned int &     linear_iterations);
 
 
   /*
    *  This function evaluates the nonlinear residual.
    */
   void
-  evaluate_nonlinear_residual(parallel::distributed::BlockVector<Number> &       dst,
-                              parallel::distributed::BlockVector<Number> const & src);
+  evaluate_nonlinear_residual(BlockVectorType & dst, BlockVectorType const & src);
 
   /*
    *  This function evaluates the nonlinear residual of the steady Navier-Stokes equations.
@@ -197,18 +197,16 @@ public:
    * evaluated).
    */
   void
-  evaluate_nonlinear_residual_steady(parallel::distributed::BlockVector<Number> &       dst,
-                                     parallel::distributed::BlockVector<Number> const & src);
+  evaluate_nonlinear_residual_steady(BlockVectorType & dst, BlockVectorType const & src);
 
 
   void
-  set_solution_linearization(
-    parallel::distributed::BlockVector<Number> const & solution_linearization)
+  set_solution_linearization(BlockVectorType const & solution_linearization)
   {
     velocity_conv_diff_operator.set_solution_linearization(solution_linearization.block(0));
   }
 
-  parallel::distributed::Vector<Number> const &
+  LinearAlgebra::distributed::Vector<Number> const &
   get_velocity_linearization() const
   {
     AssertThrow(nonlinear_problem_has_to_be_solved() == true,
@@ -219,7 +217,7 @@ public:
   }
 
   void
-  set_sum_alphai_ui(parallel::distributed::Vector<Number> const * vector = nullptr)
+  set_sum_alphai_ui(VectorType const * vector = nullptr)
   {
     this->sum_alphai_ui = vector;
   }
@@ -244,15 +242,13 @@ public:
    *  postprocessing step after each time step.
    */
   void
-  update_projection_operator(parallel::distributed::Vector<Number> const & velocity,
-                             double const                                  time_step_size) const;
+  update_projection_operator(VectorType const & velocity, double const time_step_size) const;
 
   unsigned int
-  solve_projection(parallel::distributed::Vector<Number> &       dst,
-                   parallel::distributed::Vector<Number> const & src) const;
+  solve_projection(VectorType & dst, VectorType const & src) const;
 
   void
-  rhs_projection_add(parallel::distributed::Vector<Number> & dst, double const time) const;
+  rhs_projection_add(VectorType & dst, double const time) const;
 
 private:
   friend class BlockPreconditionerNavierStokes<dim,
@@ -287,21 +283,18 @@ private:
   std::shared_ptr<ProjectionOperatorBase<dim>> projection_operator;
 
   // projection solver
-  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<Number>>> projection_solver;
-  std::shared_ptr<PreconditionerBase<Number>> preconditioner_projection;
+  std::shared_ptr<IterativeSolverBase<VectorType>> projection_solver;
+  std::shared_ptr<PreconditionerBase<Number>>      preconditioner_projection;
 
-  parallel::distributed::Vector<Number> mutable temp_vector;
-  parallel::distributed::Vector<Number> const *      sum_alphai_ui;
-  parallel::distributed::BlockVector<Number> const * vector_linearization;
+  VectorType mutable temp_vector;
+  VectorType const *      sum_alphai_ui;
+  BlockVectorType const * vector_linearization;
 
   std::shared_ptr<PreconditionerNavierStokesBase<Number, THIS>> preconditioner;
 
-  std::shared_ptr<IterativeSolverBase<parallel::distributed::BlockVector<Number>>> linear_solver;
+  std::shared_ptr<IterativeSolverBase<BlockVectorType>> linear_solver;
 
-  std::shared_ptr<NewtonSolver<parallel::distributed::BlockVector<Number>,
-                               THIS,
-                               THIS,
-                               IterativeSolverBase<parallel::distributed::BlockVector<Number>>>>
+  std::shared_ptr<NewtonSolver<BlockVectorType, THIS, THIS, IterativeSolverBase<BlockVectorType>>>
     newton_solver;
 
   double evaluation_time;
@@ -408,11 +401,9 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
       solver_data.use_preconditioner = true;
     }
 
-    linear_solver.reset(new GMRESSolver<THIS,
-                                        PreconditionerNavierStokesBase<Number, THIS>,
-                                        parallel::distributed::BlockVector<Number>>(*this,
-                                                                                    *preconditioner,
-                                                                                    solver_data));
+    linear_solver.reset(
+      new GMRESSolver<THIS, PreconditionerNavierStokesBase<Number, THIS>, BlockVectorType>(
+        *this, *preconditioner, solver_data));
   }
   else if(this->param.solver_linearized_navier_stokes == SolverLinearizedNavierStokes::FGMRES)
   {
@@ -433,10 +424,9 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
       solver_data.use_preconditioner = true;
     }
 
-    linear_solver.reset(new FGMRESSolver<THIS,
-                                         PreconditionerNavierStokesBase<Number, THIS>,
-                                         parallel::distributed::BlockVector<Number>>(
-      *this, *preconditioner, solver_data));
+    linear_solver.reset(
+      new FGMRESSolver<THIS, PreconditionerNavierStokesBase<Number, THIS>, BlockVectorType>(
+        *this, *preconditioner, solver_data));
   }
   else
   {
@@ -451,10 +441,7 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
   if(nonlinear_problem_has_to_be_solved())
   {
     newton_solver.reset(
-      new NewtonSolver<parallel::distributed::BlockVector<Number>,
-                       THIS,
-                       THIS,
-                       IterativeSolverBase<parallel::distributed::BlockVector<Number>>>(
+      new NewtonSolver<BlockVectorType, THIS, THIS, IterativeSolverBase<BlockVectorType>>(
         this->param.newton_solver_data_coupled, *this, *this, *linear_solver));
   }
 
@@ -722,9 +709,7 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
       }
 
       // setup solver
-      projection_solver.reset(new CGSolver<PROJ_OPERATOR,
-                                           PreconditionerBase<Number>,
-                                           parallel::distributed::Vector<Number>>(
+      projection_solver.reset(new CGSolver<PROJ_OPERATOR, PreconditionerBase<Number>, VectorType>(
         *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator),
         *preconditioner_projection,
         projection_solver_data));
@@ -752,7 +737,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  update_divergence_penalty_operator(parallel::distributed::Vector<Number> const & velocity) const
+  update_divergence_penalty_operator(VectorType const & velocity) const
 {
   this->divergence_penalty_operator->calculate_array_penalty_parameter(velocity);
 }
@@ -765,7 +750,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  update_continuity_penalty_operator(parallel::distributed::Vector<Number> const & velocity) const
+  update_continuity_penalty_operator(VectorType const & velocity) const
 {
   this->continuity_penalty_operator->calculate_array_penalty_parameter(velocity);
 }
@@ -778,9 +763,9 @@ template<int dim,
          typename Number>
 unsigned int
 DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  solve_linear_stokes_problem(parallel::distributed::BlockVector<Number> &       dst,
-                              parallel::distributed::BlockVector<Number> const & src,
-                              double const & scaling_factor_mass_matrix_term)
+  solve_linear_stokes_problem(BlockVectorType &       dst,
+                              BlockVectorType const & src,
+                              double const &          scaling_factor_mass_matrix_term)
 {
   // Set scaling_factor_time_derivative_term for linear operator (velocity_conv_diff_operator).
   velocity_conv_diff_operator.set_scaling_factor_time_derivative_term(
@@ -801,8 +786,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  rhs_stokes_problem(parallel::distributed::BlockVector<Number> & dst,
-                     double const &                               eval_time) const
+  rhs_stokes_problem(BlockVectorType & dst, double const & eval_time) const
 {
   // velocity-block
   this->gradient_operator.rhs(dst.block(0), eval_time);
@@ -836,8 +820,8 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::vmult(
-  parallel::distributed::BlockVector<Number> &       dst,
-  parallel::distributed::BlockVector<Number> const & src) const
+  BlockVectorType &       dst,
+  BlockVectorType const & src) const
 {
   apply_linearized_problem(dst, src);
 }
@@ -851,8 +835,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  apply_linearized_problem(parallel::distributed::BlockVector<Number> &       dst,
-                           parallel::distributed::BlockVector<Number> const & src) const
+  apply_linearized_problem(BlockVectorType & dst, BlockVectorType const & src) const
 {
   // (1,1) block of saddle point matrix
   velocity_conv_diff_operator.vmult(dst.block(0), src.block(0));
@@ -888,9 +871,9 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  solve_nonlinear_steady_problem(parallel::distributed::BlockVector<Number> & dst,
-                                 unsigned int &                               newton_iterations,
-                                 unsigned int &                               linear_iterations)
+  solve_nonlinear_steady_problem(BlockVectorType & dst,
+                                 unsigned int &    newton_iterations,
+                                 unsigned int &    linear_iterations)
 {
   // solve nonlinear problem
   newton_solver->solve(dst, newton_iterations, linear_iterations);
@@ -904,12 +887,12 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  solve_nonlinear_problem(parallel::distributed::BlockVector<Number> &  dst,
-                          parallel::distributed::Vector<Number> const & sum_alphai_ui,
-                          double const &                                eval_time,
-                          double const & scaling_factor_mass_matrix_term,
-                          unsigned int & newton_iterations,
-                          unsigned int & linear_iterations)
+  solve_nonlinear_problem(BlockVectorType &  dst,
+                          VectorType const & sum_alphai_ui,
+                          double const &     eval_time,
+                          double const &     scaling_factor_mass_matrix_term,
+                          unsigned int &     newton_iterations,
+                          unsigned int &     linear_iterations)
 {
   // Set sum_alphai_ui (this variable is used when evaluating the nonlinear residual).
   this->sum_alphai_ui = &sum_alphai_ui;
@@ -940,8 +923,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  evaluate_nonlinear_residual(parallel::distributed::BlockVector<Number> &       dst,
-                              parallel::distributed::BlockVector<Number> const & src)
+  evaluate_nonlinear_residual(BlockVectorType & dst, BlockVectorType const & src)
 {
   // velocity-block
 
@@ -999,8 +981,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  evaluate_nonlinear_residual_steady(parallel::distributed::BlockVector<Number> &       dst,
-                                     parallel::distributed::BlockVector<Number> const & src)
+  evaluate_nonlinear_residual_steady(BlockVectorType & dst, BlockVectorType const & src)
 {
   // velocity-block
 
@@ -1053,8 +1034,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  update_projection_operator(parallel::distributed::Vector<Number> const & velocity,
-                             double const                                  time_step_size) const
+  update_projection_operator(VectorType const & velocity, double const time_step_size) const
 {
   // Update projection operator, i.e., the penalty parameters that depend on
   // the current solution (velocity field).
@@ -1081,8 +1061,7 @@ template<int dim,
          typename Number>
 unsigned int
 DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  solve_projection(parallel::distributed::Vector<Number> &       dst,
-                   parallel::distributed::Vector<Number> const & src) const
+  solve_projection(VectorType & dst, VectorType const & src) const
 {
   // Solve projection equation.
   Assert(projection_solver.get() != 0, ExcMessage("Projection solver has not been initialized."));
@@ -1099,7 +1078,7 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  rhs_projection_add(parallel::distributed::Vector<Number> & dst, double const eval_time) const
+  rhs_projection_add(VectorType & dst, double const eval_time) const
 {
   if(this->param.use_divergence_penalty == true && this->param.use_continuity_penalty == true)
   {

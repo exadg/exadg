@@ -15,7 +15,7 @@
 #include "time_integration/extrapolation_scheme.h"
 #include "time_integration/time_step_calculation.h"
 
-template<typename Operator, typename Vector>
+template<typename Operator, typename VectorType>
 class ExplicitRungeKuttaTimeIntegratorOIF
 {
 public:
@@ -34,10 +34,10 @@ public:
   }
 
   void
-  interpolate(Vector &                    dst,
-              double const                evaluation_time,
-              std::vector<Vector *> const solutions,
-              std::vector<double> const   times) const
+  interpolate(VectorType &                    dst,
+              double const                    evaluation_time,
+              std::vector<VectorType *> const solutions,
+              std::vector<double> const       times) const
   {
     dst = 0;
 
@@ -60,12 +60,12 @@ public:
   }
 
   void
-  solve_timestep(Vector &                    dst,
-                 Vector const &              src,
-                 double                      time_n,
-                 double                      time_step,
-                 std::vector<Vector *> const solutions,
-                 std::vector<double> const   times)
+  solve_timestep(VectorType &                    dst,
+                 VectorType const &              src,
+                 double                          time_n,
+                 double                          time_step,
+                 std::vector<VectorType *> const solutions,
+                 std::vector<double> const       times)
   {
     if(order == 1) // explicit Euler method
     {
@@ -164,8 +164,8 @@ private:
 
   std::shared_ptr<Operator> underlying_operator;
 
-  Vector vec_rhs, vec_temp;
-  Vector solution_interpolated;
+  VectorType vec_rhs, vec_temp;
+  VectorType solution_interpolated;
 };
 
 namespace IncNS
@@ -177,6 +177,8 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 class TimeIntBDFNavierStokes
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   TimeIntBDFNavierStokes(std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
                          std::shared_ptr<PostProcessorBase<dim, value_type>> postprocessor_in,
                          InputParameters<dim> const &                        param_in,
@@ -283,35 +285,28 @@ protected:
   update_time_integrator_constants();
 
   void
-  calculate_vorticity(parallel::distributed::Vector<value_type> &       dst,
-                      parallel::distributed::Vector<value_type> const & src) const;
+  calculate_vorticity(VectorType & dst, VectorType const & src) const;
 
   void
-  calculate_divergence(parallel::distributed::Vector<value_type> &       dst,
-                       parallel::distributed::Vector<value_type> const & src) const;
+  calculate_divergence(VectorType & dst, VectorType const & src) const;
 
   void
-  calculate_velocity_magnitude(parallel::distributed::Vector<value_type> &       dst,
-                               parallel::distributed::Vector<value_type> const & src) const;
+  calculate_velocity_magnitude(VectorType & dst, VectorType const & src) const;
 
   void
-  calculate_vorticity_magnitude(parallel::distributed::Vector<value_type> &       dst,
-                                parallel::distributed::Vector<value_type> const & src) const;
+  calculate_vorticity_magnitude(VectorType & dst, VectorType const & src) const;
 
   void
-  calculate_streamfunction(parallel::distributed::Vector<value_type> &       dst,
-                           parallel::distributed::Vector<value_type> const & src) const;
+  calculate_streamfunction(VectorType & dst, VectorType const & src) const;
 
   void
-  calculate_q_criterion(parallel::distributed::Vector<value_type> &       dst,
-                        parallel::distributed::Vector<value_type> const & src) const;
+  calculate_q_criterion(VectorType & dst, VectorType const & src) const;
 
   void
-  calculate_processor_id(parallel::distributed::Vector<value_type> & dst) const;
+  calculate_processor_id(VectorType & dst) const;
 
   void
-  calculate_mean_velocity(parallel::distributed::Vector<value_type> &       dst,
-                          parallel::distributed::Vector<value_type> const & src) const;
+  calculate_mean_velocity(VectorType & dst, VectorType const & src) const;
 
   void
   initialize_oif();
@@ -378,7 +373,7 @@ protected:
 
   std::shared_ptr<ExplicitRungeKuttaTimeIntegratorOIF<
     ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
-    parallel::distributed::Vector<value_type>>>
+    VectorType>>
     rk_time_integrator_OIF;
 
   // cfl number cfl_oif for operator-integration-factor splitting
@@ -391,21 +386,21 @@ protected:
   double delta_s;
 
   // solution vectors needed for OIF substepping of convective term
-  parallel::distributed::Vector<value_type> solution_tilde_m;
-  parallel::distributed::Vector<value_type> solution_tilde_mp;
+  VectorType solution_tilde_m;
+  VectorType solution_tilde_mp;
 
   ConditionalOStream pcout;
 
   // postprocessing: additional fields
-  mutable parallel::distributed::Vector<value_type> divergence;
-  mutable parallel::distributed::Vector<value_type> velocity_magnitude;
-  mutable parallel::distributed::Vector<value_type> vorticity_magnitude;
-  mutable parallel::distributed::Vector<value_type> streamfunction;
-  mutable parallel::distributed::Vector<value_type> q_criterion;
-  mutable parallel::distributed::Vector<value_type> processor_id;
+  mutable VectorType divergence;
+  mutable VectorType velocity_magnitude;
+  mutable VectorType vorticity_magnitude;
+  mutable VectorType streamfunction;
+  mutable VectorType q_criterion;
+  mutable VectorType processor_id;
   // mean velocity, i.e., velocity field averaged over time
-  mutable parallel::distributed::Vector<value_type> mean_velocity;
-  mutable unsigned int                              counter_mean_velocity;
+  mutable VectorType   mean_velocity;
+  mutable unsigned int counter_mean_velocity;
 
   std::vector<SolutionField<dim, value_type>> additional_fields;
 
@@ -441,7 +436,7 @@ private:
   virtual void
   prepare_vectors_for_next_timestep() = 0;
 
-  virtual parallel::distributed::Vector<value_type> const &
+  virtual VectorType const &
   get_velocity() = 0;
 
   unsigned int const n_refine_time;
@@ -654,10 +649,9 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::ini
       new ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>(
         navier_stokes_operation));
 
-    rk_time_integrator_OIF.reset(
-      new ExplicitRungeKuttaTimeIntegratorOIF<
-        ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
-        parallel::distributed::Vector<value_type>>(this->order, convective_operator_OIF));
+    rk_time_integrator_OIF.reset(new ExplicitRungeKuttaTimeIntegratorOIF<
+                                 ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
+                                 VectorType>(this->order, convective_operator_OIF));
 
     // temporary vectors required for operator-integration-factor splitting of convective term
     navier_stokes_operation->initialize_vector_velocity(solution_tilde_m);
@@ -704,8 +698,8 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::wri
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
 TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::calculate_vorticity(
-  parallel::distributed::Vector<value_type> &       dst,
-  parallel::distributed::Vector<value_type> const & src) const
+  VectorType &       dst,
+  VectorType const & src) const
 {
   navier_stokes_operation->compute_vorticity(dst, src);
 }
@@ -713,8 +707,8 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::cal
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
 TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::calculate_divergence(
-  parallel::distributed::Vector<value_type> &       dst,
-  parallel::distributed::Vector<value_type> const & src) const
+  VectorType &       dst,
+  VectorType const & src) const
 {
   if(this->param.output_data.write_output == true &&
      this->param.output_data.write_divergence == true)
@@ -726,8 +720,7 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::cal
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
 TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  calculate_velocity_magnitude(parallel::distributed::Vector<value_type> &       dst,
-                               parallel::distributed::Vector<value_type> const & src) const
+  calculate_velocity_magnitude(VectorType & dst, VectorType const & src) const
 {
   if(this->param.output_data.write_output == true &&
      this->param.output_data.write_velocity_magnitude == true)
@@ -739,8 +732,7 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
 TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  calculate_vorticity_magnitude(parallel::distributed::Vector<value_type> &       dst,
-                                parallel::distributed::Vector<value_type> const & src) const
+  calculate_vorticity_magnitude(VectorType & dst, VectorType const & src) const
 {
   if(this->param.output_data.write_output == true &&
      this->param.output_data.write_vorticity_magnitude == true)
@@ -753,8 +745,7 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
 TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  calculate_streamfunction(parallel::distributed::Vector<value_type> &       dst,
-                           parallel::distributed::Vector<value_type> const & src) const
+  calculate_streamfunction(VectorType & dst, VectorType const & src) const
 {
   if(this->param.output_data.write_output == true &&
      this->param.output_data.write_streamfunction == true)
@@ -767,8 +758,8 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
 TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::calculate_q_criterion(
-  parallel::distributed::Vector<value_type> &       dst,
-  parallel::distributed::Vector<value_type> const & src) const
+  VectorType &       dst,
+  VectorType const & src) const
 {
   if(this->param.output_data.write_output == true &&
      this->param.output_data.write_q_criterion == true)
@@ -780,7 +771,7 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::cal
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
 TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::calculate_processor_id(
-  parallel::distributed::Vector<value_type> & dst) const
+  VectorType & dst) const
 {
   if(this->param.output_data.write_output == true &&
      this->param.output_data.write_processor_id == true)
@@ -792,8 +783,7 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::cal
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
 TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  calculate_mean_velocity(parallel::distributed::Vector<value_type> &       dst,
-                          parallel::distributed::Vector<value_type> const & src) const
+  calculate_mean_velocity(VectorType & dst, VectorType const & src) const
 {
   if(this->param.output_data.write_output == true &&
      this->param.output_data.mean_velocity.calculate == true)

@@ -146,8 +146,8 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
 HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmult_interface_down(
-  parallel::distributed::Vector<Number> &       dst,
-  const parallel::distributed::Vector<Number> & src) const
+  VectorType &       dst,
+  VectorType const & src) const
 {
   vmult(dst, src);
 }
@@ -155,8 +155,8 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmu
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
 HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmult_add_interface_up(
-  parallel::distributed::Vector<Number> &       dst,
-  const parallel::distributed::Vector<Number> & src) const
+  VectorType &       dst,
+  VectorType const & src) const
 {
   vmult_add(dst, src);
 }
@@ -188,8 +188,8 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::get
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
 HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmult(
-  parallel::distributed::Vector<Number> &       dst,
-  const parallel::distributed::Vector<Number> & src) const
+  VectorType &       dst,
+  VectorType const & src) const
 {
   // TODO
   Timer timer;
@@ -229,8 +229,8 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmu
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
 HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmult_add(
-  parallel::distributed::Vector<Number> &       dst,
-  const parallel::distributed::Vector<Number> & src) const
+  VectorType &       dst,
+  VectorType const & src) const
 {
   // TODO
   Timer timer;
@@ -265,7 +265,7 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::get
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
 HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::initialize_dof_vector(
-  parallel::distributed::Vector<Number> & vector) const
+  VectorType & vector) const
 {
   data->initialize_dof_vector(vector, get_dof_index());
 }
@@ -273,7 +273,7 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::ini
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
 HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
-  calculate_inverse_diagonal(parallel::distributed::Vector<Number> & diagonal) const
+  calculate_inverse_diagonal(VectorType & diagonal) const
 {
   calculate_diagonal(diagonal);
 
@@ -285,8 +285,7 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
 HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
-  apply_inverse_block_diagonal(parallel::distributed::Vector<Number> &       dst,
-                               parallel::distributed::Vector<Number> const & src) const
+  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const
 {
   // check_block_jacobi_matrices(src);
 
@@ -316,7 +315,7 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
 HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::calculate_diagonal(
-  parallel::distributed::Vector<Number> & diagonal) const
+  VectorType & diagonal) const
 {
   if(operator_data.unsteady_problem == true)
   {
@@ -370,8 +369,8 @@ void
 HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
   cell_loop_apply_inverse_block_jacobi_matrices(
     MatrixFree<dim, Number> const &               data,
-    parallel::distributed::Vector<Number> &       dst,
-    parallel::distributed::Vector<Number> const & src,
+    VectorType &                                  dst,
+    VectorType const &                            src,
     std::pair<unsigned int, unsigned int> const & cell_range) const
 {
   FEEval_Velocity_Velocity_linear fe_eval(data,
@@ -407,14 +406,14 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
 HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
-  check_block_jacobi_matrices(parallel::distributed::Vector<Number> const & src) const
+  check_block_jacobi_matrices(VectorType const & src) const
 {
   calculate_block_jacobi_matrices();
 
   // test matrix-vector product for block Jacobi problem by comparing
   // matrix-free matrix-vector product and matrix-based matrix-vector product
   // (where the matrices are generated using the matrix-free implementation)
-  parallel::distributed::Vector<Number> tmp1(src), tmp2(src), diff(src);
+  VectorType tmp1(src), tmp2(src), diff(src);
   tmp1 = 0.0;
   tmp2 = 0.0;
 
@@ -436,8 +435,8 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
 HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmult_block_jacobi(
-  parallel::distributed::Vector<Number> &       dst,
-  const parallel::distributed::Vector<Number> & src) const
+  VectorType &       dst,
+  VectorType const & src) const
 {
   if(operator_data.unsteady_problem == true)
   {
@@ -460,8 +459,7 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmu
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
 HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
-  vmult_block_jacobi_test(parallel::distributed::Vector<Number> &       dst,
-                          parallel::distributed::Vector<Number> const & src) const
+  vmult_block_jacobi_test(VectorType & dst, VectorType const & src) const
 {
   data->cell_loop(&This::cell_loop_apply_block_diagonal_matrices_test, this, dst, src);
 }
@@ -471,8 +469,8 @@ void
 HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
   cell_loop_apply_block_diagonal_matrices_test(
     MatrixFree<dim, Number> const &               data,
-    parallel::distributed::Vector<Number> &       dst,
-    parallel::distributed::Vector<Number> const & src,
+    VectorType &                                  dst,
+    VectorType const &                            src,
     std::pair<unsigned int, unsigned int> const & cell_range) const
 {
   FEEval_Velocity_Velocity_linear fe_eval(data,

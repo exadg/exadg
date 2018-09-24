@@ -67,6 +67,8 @@ template<int dim, int fe_degree, typename Number>
 class MeanVelocityCalculator
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   MeanVelocityCalculator(MatrixFree<dim, Number> const &         matrix_free_data_in,
                          DofQuadIndexData const &                dof_quad_index_data_in,
                          MeanVelocityCalculatorData<dim> const & data_in)
@@ -82,8 +84,7 @@ public:
   }
 
   Number
-  calculate_mean_velocity_area(parallel::distributed::Vector<Number> const & velocity,
-                               double const &                                time)
+  calculate_mean_velocity_area(VectorType const & velocity, double const & time)
   {
     if(data.calculate == true)
     {
@@ -111,8 +112,7 @@ public:
   }
 
   Number
-  calculate_mean_velocity_volume(parallel::distributed::Vector<Number> const & velocity,
-                                 double const &                                time)
+  calculate_mean_velocity_volume(VectorType const & velocity, double const & time)
   {
     if(data.calculate == true)
     {
@@ -136,8 +136,7 @@ public:
   }
 
   Number
-  calculate_flow_rate_area(parallel::distributed::Vector<Number> const & velocity,
-                           double const &                                time)
+  calculate_flow_rate_area(VectorType const & velocity, double const & time)
   {
     if(data.calculate == true)
     {
@@ -232,7 +231,7 @@ private:
   {
     std::vector<Number> dst(1, 0.0);
 
-    parallel::distributed::Vector<Number> src_dummy;
+    VectorType src_dummy;
     matrix_free_data.cell_loop(
       &MeanVelocityCalculator<dim, fe_degree, Number>::local_calculate_volume,
       this,
@@ -247,10 +246,10 @@ private:
   }
 
   void
-  local_calculate_volume(const MatrixFree<dim, Number> & data,
+  local_calculate_volume(MatrixFree<dim, Number> const & data,
                          std::vector<Number> &           dst,
-                         const parallel::distributed::Vector<Number> &,
-                         const std::pair<unsigned int, unsigned int> & cell_range)
+                         VectorType const &,
+                         std::pair<unsigned int, unsigned int> const & cell_range)
   {
     FEEvaluation<dim, fe_degree, fe_degree + 1, dim, Number> fe_eval(
       data, dof_quad_index_data.dof_index_velocity, dof_quad_index_data.quad_index_velocity);
@@ -283,7 +282,7 @@ private:
   }
 
   Number
-  do_calculate_flow_rate_area(parallel::distributed::Vector<Number> const & velocity)
+  do_calculate_flow_rate_area(VectorType const & velocity)
   {
     FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, Number> fe_eval_velocity(
       matrix_free_data,
@@ -331,7 +330,7 @@ private:
   }
 
   Number
-  do_calculate_mean_velocity_volume(parallel::distributed::Vector<Number> const & velocity)
+  do_calculate_mean_velocity_volume(VectorType const & velocity)
   {
     std::vector<Number> dst(1, 0.0);
     matrix_free_data.cell_loop(
@@ -353,10 +352,10 @@ private:
   }
 
   void
-  local_calculate_flow_rate_volume(const MatrixFree<dim, Number> &               data,
+  local_calculate_flow_rate_volume(MatrixFree<dim, Number> const &               data,
                                    std::vector<Number> &                         dst,
-                                   const parallel::distributed::Vector<Number> & src,
-                                   const std::pair<unsigned int, unsigned int> & cell_range)
+                                   VectorType const &                            src,
+                                   std::pair<unsigned int, unsigned int> const & cell_range)
   {
     FEEvaluation<dim, fe_degree, fe_degree + 1, dim, Number> fe_eval(
       data, dof_quad_index_data.dof_index_velocity, dof_quad_index_data.quad_index_velocity);

@@ -529,10 +529,9 @@ StatisticsManagerPH<dim>::setup(const Function<dim> & push_forward_function,
 
 template<int dim>
 void
-StatisticsManagerPH<dim>::evaluate(const parallel::distributed::Vector<double> & velocity,
-                                   const parallel::distributed::Vector<double> & pressure)
+StatisticsManagerPH<dim>::evaluate(const VectorType & velocity, const VectorType & pressure)
 {
-  std::vector<const parallel::distributed::Vector<double> *> vecs;
+  std::vector<const VectorType *> vecs;
   vecs.push_back(&velocity);
   do_evaluate(vecs, pressure);
 }
@@ -541,11 +540,10 @@ StatisticsManagerPH<dim>::evaluate(const parallel::distributed::Vector<double> &
 
 template<int dim>
 void
-StatisticsManagerPH<dim>::evaluate(
-  const std::vector<parallel::distributed::Vector<double>> & velocity,
-  const parallel::distributed::Vector<double> &              pressure)
+StatisticsManagerPH<dim>::evaluate(const std::vector<VectorType> & velocity,
+                                   const VectorType &              pressure)
 {
-  std::vector<const parallel::distributed::Vector<double> *> vecs;
+  std::vector<const VectorType *> vecs;
   for(unsigned int i = 0; i < velocity.size(); ++i)
     vecs.push_back(&velocity[i]);
   do_evaluate(vecs, pressure);
@@ -553,10 +551,9 @@ StatisticsManagerPH<dim>::evaluate(
 
 template<int dim>
 void
-StatisticsManagerPH<dim>::evaluate(const parallel::distributed::BlockVector<double> & velocity,
-                                   const parallel::distributed::Vector<double> &      pressure)
+StatisticsManagerPH<dim>::evaluate(const BlockVectorType & velocity, const VectorType & pressure)
 {
-  std::vector<const parallel::distributed::Vector<double> *> vecs;
+  std::vector<const VectorType *> vecs;
   for(unsigned int i = 0; i < velocity.n_blocks(); ++i)
     vecs.push_back(&(velocity.block(i)));
   do_evaluate(vecs, pressure);
@@ -564,12 +561,12 @@ StatisticsManagerPH<dim>::evaluate(const parallel::distributed::BlockVector<doub
 
 template<int dim>
 void
-StatisticsManagerPH<dim>::evaluate_xwall(const parallel::distributed::Vector<double> & velocity,
-                                         const parallel::distributed::Vector<double> & pressure,
+StatisticsManagerPH<dim>::evaluate_xwall(const VectorType &        velocity,
+                                         const VectorType &        pressure,
                                          const DoFHandler<dim> &   dof_handler_wdist,
                                          const FEParameters<dim> & fe_param)
 {
-  std::vector<const parallel::distributed::Vector<double> *> vecs;
+  std::vector<const VectorType *> vecs;
   vecs.push_back(&velocity);
   do_evaluate_xwall(vecs, pressure, dof_handler_wdist, fe_param);
 }
@@ -733,9 +730,8 @@ StatisticsManagerPH<dim>::reset()
 
 template<int dim>
 void
-StatisticsManagerPH<dim>::do_evaluate(
-  const std::vector<const parallel::distributed::Vector<double> *> & velocity,
-  const parallel::distributed::Vector<double> &                      pressure)
+StatisticsManagerPH<dim>::do_evaluate(const std::vector<const VectorType *> & velocity,
+                                      const VectorType &                      pressure)
 {
   // ---------------------------------------------------
   // evaluate velocity at given x_over_h positions
@@ -1365,11 +1361,10 @@ StatisticsManagerPH<dim>::do_evaluate(
 
 template<int dim>
 void
-StatisticsManagerPH<dim>::do_evaluate_xwall(
-  const std::vector<const parallel::distributed::Vector<double> *> & velocity,
-  const parallel::distributed::Vector<double> &                      pressure,
-  const DoFHandler<dim> &                                            dof_handler_wdist,
-  const FEParameters<dim> &                                          fe_param)
+StatisticsManagerPH<dim>::do_evaluate_xwall(const std::vector<const VectorType *> & velocity,
+                                            const VectorType &                      pressure,
+                                            const DoFHandler<dim> &   dof_handler_wdist,
+                                            const FEParameters<dim> & fe_param)
 {
   // ---------------------------------------------------
   // evaluate velocity at given x_over_h positions

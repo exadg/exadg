@@ -45,6 +45,8 @@ template<int dim, typename Number>
 class PostProcessorBase
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   PostProcessorBase()
   {
   }
@@ -72,10 +74,10 @@ public:
    * tools decide whether to apply the steady or unsteady postprocessing functions.
    */
   virtual void
-  do_postprocessing(parallel::distributed::Vector<Number> const &   velocity,
-                    parallel::distributed::Vector<Number> const &   intermediate_velocity,
-                    parallel::distributed::Vector<Number> const &   pressure,
-                    parallel::distributed::Vector<Number> const &   vorticity,
+  do_postprocessing(VectorType const &                              velocity,
+                    VectorType const &                              intermediate_velocity,
+                    VectorType const &                              pressure,
+                    VectorType const &                              vorticity,
                     std::vector<SolutionField<dim, Number>> const & additional_fields,
                     double const                                    time             = 0.0,
                     int const                                       time_step_number = -1) = 0;

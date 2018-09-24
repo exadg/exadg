@@ -19,6 +19,8 @@ template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
 class PressureDifferenceCalculator
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   PressureDifferenceCalculator() : clear_files_pressure_difference(true)
   {
   }
@@ -34,7 +36,7 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<Number> const & pressure, double const & time) const
+  evaluate(VectorType const & pressure, double const & time) const
   {
     if(pressure_difference_data.calculate_pressure_difference == true)
     {

@@ -73,6 +73,8 @@ template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typen
 class BodyForceOperator : public BaseOperator<dim>
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   BodyForceOperator() : data(nullptr), eval_time(0.0)
   {
   }
@@ -101,29 +103,29 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<value_type> & dst, double const evaluation_time) const
+  evaluate(VectorType & dst, double const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
-    parallel::distributed::Vector<value_type> src;
+    VectorType src;
     data->cell_loop(&This::cell_loop, this, dst, src, true /*zero_dst_vector = true*/);
   }
 
   void
-  evaluate_add(parallel::distributed::Vector<value_type> & dst, double const evaluation_time) const
+  evaluate_add(VectorType & dst, double const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
-    parallel::distributed::Vector<value_type> src;
+    VectorType src;
     data->cell_loop(&This::cell_loop, this, dst, src, false /*zero_dst_vector = false*/);
   }
 
 private:
   void
-  cell_loop(const MatrixFree<dim, value_type> &         data,
-            parallel::distributed::Vector<value_type> & dst,
-            const parallel::distributed::Vector<value_type> &,
-            const std::pair<unsigned int, unsigned int> & cell_range) const
+  cell_loop(MatrixFree<dim, value_type> const & data,
+            VectorType &                        dst,
+            VectorType const &,
+            std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_linear fe_eval(data, this->fe_param, operator_data.dof_index);
 
@@ -165,9 +167,7 @@ template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typen
 class MassMatrixOperator : public BaseOperator<dim>
 {
 public:
-  MassMatrixOperator() : data(nullptr), scaling_factor(1.0)
-  {
-  }
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
 
   static const bool         is_xwall = (xwall_quad_rule > 1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear =
@@ -184,6 +184,10 @@ public:
 
   typedef MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> This;
 
+  MassMatrixOperator() : data(nullptr), scaling_factor(1.0)
+  {
+  }
+
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,
              MassMatrixOperatorData const &      operator_data_in)
@@ -194,8 +198,7 @@ public:
 
   // apply matrix vector multiplication
   void
-  apply(parallel::distributed::Vector<value_type> &       dst,
-        parallel::distributed::Vector<value_type> const & src) const
+  apply(VectorType & dst, VectorType const & src) const
   {
     AssertThrow(std::abs(scaling_factor - 1.0) < 1.e-12,
                 ExcMessage("Invalid parameter scaling_factor."));
@@ -204,9 +207,7 @@ public:
   }
 
   void
-  apply_scale(parallel::distributed::Vector<value_type> &       dst,
-              value_type const &                                factor,
-              parallel::distributed::Vector<value_type> const & src) const
+  apply_scale(VectorType & dst, value_type const & factor, VectorType const & src) const
   {
     scaling_factor = factor;
 
@@ -216,8 +217,7 @@ public:
   }
 
   void
-  apply_add(parallel::distributed::Vector<value_type> &       dst,
-            parallel::distributed::Vector<value_type> const & src) const
+  apply_add(VectorType & dst, VectorType const & src) const
   {
     AssertThrow(std::abs(scaling_factor - 1.0) < 1.e-12,
                 ExcMessage("Invalid parameter scaling_factor."));
@@ -226,9 +226,7 @@ public:
   }
 
   void
-  apply_scale_add(parallel::distributed::Vector<value_type> &       dst,
-                  value_type const &                                factor,
-                  parallel::distributed::Vector<value_type> const & src) const
+  apply_scale_add(VectorType & dst, value_type const & factor, VectorType const & src) const
   {
     scaling_factor = factor;
 
@@ -238,23 +236,23 @@ public:
   }
 
   void
-  calculate_diagonal(parallel::distributed::Vector<value_type> & diagonal) const
+  calculate_diagonal(VectorType & diagonal) const
   {
     AssertThrow(std::abs(scaling_factor - 1.0) < 1.e-12,
                 ExcMessage("Invalid parameter scaling_factor."));
 
-    parallel::distributed::Vector<value_type> src;
+    VectorType src;
     data->cell_loop(
       &This::cell_loop_diagonal, this, diagonal, src, true /*zero_dst_vector = true*/);
   }
 
   void
-  add_diagonal(parallel::distributed::Vector<value_type> & diagonal) const
+  add_diagonal(VectorType & diagonal) const
   {
     AssertThrow(std::abs(scaling_factor - 1.0) < 1.e-12,
                 ExcMessage("Invalid parameter scaling_factor."));
 
-    parallel::distributed::Vector<value_type> src;
+    VectorType src;
     data->cell_loop(
       &This::cell_loop_diagonal, this, diagonal, src, false /*zero_dst_vector = false*/);
   }
@@ -265,7 +263,7 @@ public:
     AssertThrow(std::abs(scaling_factor - 1.0) < 1.e-12,
                 ExcMessage("Invalid parameter scaling_factor."));
 
-    parallel::distributed::Vector<value_type> src;
+    VectorType src;
 
     data->cell_loop(&This::cell_loop_calculate_block_jacobi_matrices, this, matrices, src);
   }
@@ -303,10 +301,10 @@ private:
   }
 
   void
-  cell_loop(MatrixFree<dim, value_type> const &               data,
-            parallel::distributed::Vector<value_type> &       dst,
-            parallel::distributed::Vector<value_type> const & src,
-            std::pair<unsigned int, unsigned int> const &     cell_range) const
+  cell_loop(MatrixFree<dim, value_type> const &           data,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_linear fe_eval(data, this->fe_param, operator_data.dof_index);
 
@@ -322,9 +320,9 @@ private:
   }
 
   void
-  cell_loop_diagonal(MatrixFree<dim, value_type> const &         data,
-                     parallel::distributed::Vector<value_type> & dst,
-                     parallel::distributed::Vector<value_type> const &,
+  cell_loop_diagonal(MatrixFree<dim, value_type> const & data,
+                     VectorType &                        dst,
+                     VectorType const &,
                      std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_linear fe_eval(data, this->fe_param, operator_data.dof_index);
@@ -358,7 +356,7 @@ private:
   cell_loop_calculate_block_jacobi_matrices(
     MatrixFree<dim, value_type> const &         data,
     std::vector<LAPACKFullMatrix<value_type>> & matrices,
-    parallel::distributed::Vector<value_type> const &,
+    VectorType const &,
     std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_linear fe_eval(data, this->fe_param, operator_data.dof_index);
@@ -426,15 +424,9 @@ template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typen
 class ViscousOperator : public BaseOperator<dim>
 {
 public:
-  typedef Number value_type;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  ViscousOperator()
-    : data(nullptr),
-      const_viscosity(-1.0),
-      eval_time(0.0),
-      scaling_factor_time_derivative_term(-1.0) // TODO
-  {
-  }
+  typedef Number value_type;
 
   static const bool         is_xwall = (xwall_quad_rule > 1) ? true : false;
   static const unsigned int n_actual_q_points_vel_linear =
@@ -459,6 +451,14 @@ public:
     FEFaceEval_Velocity_Velocity_linear;
 
   typedef ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> This;
+
+  ViscousOperator()
+    : data(nullptr),
+      const_viscosity(-1.0),
+      eval_time(0.0),
+      scaling_factor_time_derivative_term(-1.0) // TODO
+  {
+  }
 
   void
   initialize(Mapping<dim> const &             mapping,
@@ -564,16 +564,14 @@ public:
 
   // apply matrix vector multiplication
   void
-  vmult(parallel::distributed::Vector<Number> &       dst,
-        const parallel::distributed::Vector<Number> & src) const
+  vmult(VectorType & dst, VectorType const & src) const
   {
     apply(dst, src);
   }
 
   // apply matrix vector multiplication
   void
-  apply(parallel::distributed::Vector<Number> &       dst,
-        const parallel::distributed::Vector<Number> & src) const
+  apply(VectorType & dst, VectorType const & src) const
   {
     data->loop(&This::cell_loop,
                &This::face_loop,
@@ -585,8 +583,7 @@ public:
   }
 
   void
-  apply_add(parallel::distributed::Vector<Number> &       dst,
-            const parallel::distributed::Vector<Number> & src) const
+  apply_add(VectorType & dst, VectorType const & src) const
   {
     data->loop(&This::cell_loop,
                &This::face_loop,
@@ -600,9 +597,9 @@ public:
   // TODO optimized implementation
   // apply matrix vector multiplication for Helmholtz operator
   void
-  apply_helmholtz_operator(parallel::distributed::Vector<Number> &       dst,
-                           const double &                                scaling_factor,
-                           const parallel::distributed::Vector<Number> & src) const
+  apply_helmholtz_operator(VectorType &       dst,
+                           double const &     scaling_factor,
+                           VectorType const & src) const
   {
     scaling_factor_time_derivative_term = scaling_factor;
 
@@ -617,8 +614,7 @@ public:
 
   // apply matrix vector multiplication for block Jacobi operator
   void
-  apply_block_diagonal(parallel::distributed::Vector<Number> &       dst,
-                       const parallel::distributed::Vector<Number> & src) const
+  apply_block_diagonal(VectorType & dst, VectorType const & src) const
   {
     data->loop(&This::cell_loop,
                &This::face_loop_block_jacobi,
@@ -630,8 +626,7 @@ public:
   }
 
   void
-  apply_block_diagonal_add(parallel::distributed::Vector<Number> &       dst,
-                           const parallel::distributed::Vector<Number> & src) const
+  apply_block_diagonal_add(VectorType & dst, VectorType const & src) const
   {
     data->loop(&This::cell_loop,
                &This::face_loop_block_jacobi,
@@ -643,11 +638,11 @@ public:
   }
 
   void
-  rhs(parallel::distributed::Vector<Number> & dst, double const evaluation_time) const
+  rhs(VectorType & dst, double const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
-    parallel::distributed::Vector<Number> src;
+    VectorType src;
     data->loop(&This::cell_loop_inhom_operator,
                &This::face_loop_inhom_operator,
                &This::boundary_face_loop_inhom_operator,
@@ -658,11 +653,11 @@ public:
   }
 
   void
-  rhs_add(parallel::distributed::Vector<Number> & dst, double const evaluation_time) const
+  rhs_add(VectorType & dst, double const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
-    parallel::distributed::Vector<Number> src;
+    VectorType src;
     data->loop(&This::cell_loop_inhom_operator,
                &This::face_loop_inhom_operator,
                &This::boundary_face_loop_inhom_operator,
@@ -673,9 +668,7 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<Number> &       dst,
-           const parallel::distributed::Vector<Number> & src,
-           double const                                  evaluation_time) const
+  evaluate(VectorType & dst, VectorType const & src, double const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
@@ -689,9 +682,7 @@ public:
   }
 
   void
-  evaluate_add(parallel::distributed::Vector<Number> &       dst,
-               const parallel::distributed::Vector<Number> & src,
-               double const                                  evaluation_time) const
+  evaluate_add(VectorType & dst, VectorType const & src, double const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
@@ -705,9 +696,9 @@ public:
   }
 
   void
-  calculate_diagonal(parallel::distributed::Vector<Number> & diagonal) const
+  calculate_diagonal(VectorType & diagonal) const
   {
-    parallel::distributed::Vector<Number> src;
+    VectorType src;
 
     data->loop(&This::cell_loop_diagonal,
                &This::face_loop_diagonal,
@@ -719,9 +710,9 @@ public:
   }
 
   void
-  add_diagonal(parallel::distributed::Vector<Number> & diagonal) const
+  add_diagonal(VectorType & diagonal) const
   {
-    parallel::distributed::Vector<Number> src;
+    VectorType src;
 
     data->loop(&This::cell_loop_diagonal,
                &This::face_loop_diagonal,
@@ -735,7 +726,7 @@ public:
   void
   add_block_diagonal_matrices(std::vector<LAPACKFullMatrix<value_type>> & matrices) const
   {
-    parallel::distributed::Vector<value_type> src;
+    VectorType src;
 
     data->loop(&This::cell_loop_calculate_block_jacobi_matrices,
                &This::face_loop_calculate_block_jacobi_matrices,
@@ -754,7 +745,7 @@ public:
   void
   extract_viscous_coefficient_from_dof_vector()
   {
-    parallel::distributed::Vector<Number> dummy;
+    VectorType dummy;
 
     data->loop(&This::cell_loop_extract_viscous_coeff,
                &This::face_loop_extract_viscous_coeff,
@@ -764,7 +755,7 @@ public:
                this->viscosity);
   }
 
-  parallel::distributed::Vector<Number> &
+  LinearAlgebra::distributed::Vector<Number> &
   get_viscosity_dof_vector()
   {
     return this->viscosity;
@@ -808,10 +799,10 @@ private:
   }
 
   void
-  cell_loop(const MatrixFree<dim, Number> &               data,
-            parallel::distributed::Vector<Number> &       dst,
-            const parallel::distributed::Vector<Number> & src,
-            const std::pair<unsigned int, unsigned int> & cell_range) const
+  cell_loop(MatrixFree<dim, Number> const &               data,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_linear fe_eval(data, this->fe_param, operator_data.dof_index);
 
@@ -1294,10 +1285,10 @@ private:
   }
 
   void
-  face_loop(const MatrixFree<dim, Number> &               data,
-            parallel::distributed::Vector<Number> &       dst,
-            const parallel::distributed::Vector<Number> & src,
-            const std::pair<unsigned int, unsigned int> & face_range) const
+  face_loop(MatrixFree<dim, Number> const &               data,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval(data,
                                                 this->fe_param,
@@ -1363,10 +1354,10 @@ private:
   }
 
   void
-  boundary_face_loop_hom_operator(const MatrixFree<dim, Number> &               data,
-                                  parallel::distributed::Vector<Number> &       dst,
-                                  const parallel::distributed::Vector<Number> & src,
-                                  const std::pair<unsigned int, unsigned int> & face_range) const
+  boundary_face_loop_hom_operator(MatrixFree<dim, Number> const &               data,
+                                  VectorType &                                  dst,
+                                  VectorType const &                            src,
+                                  std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval(data,
                                                 this->fe_param,
@@ -1428,10 +1419,10 @@ private:
   }
 
   void
-  boundary_face_loop_full_operator(const MatrixFree<dim, Number> &               data,
-                                   parallel::distributed::Vector<Number> &       dst,
-                                   const parallel::distributed::Vector<Number> & src,
-                                   const std::pair<unsigned int, unsigned int> & face_range) const
+  boundary_face_loop_full_operator(MatrixFree<dim, Number> const &               data,
+                                   VectorType &                                  dst,
+                                   VectorType const &                            src,
+                                   std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval(data,
                                                 this->fe_param,
@@ -1494,26 +1485,26 @@ private:
   }
 
   void
-  cell_loop_inhom_operator(const MatrixFree<dim, Number> &,
-                           parallel::distributed::Vector<Number> &,
-                           const parallel::distributed::Vector<Number> &,
-                           const std::pair<unsigned int, unsigned int> &) const
+  cell_loop_inhom_operator(MatrixFree<dim, Number> const &,
+                           VectorType &,
+                           VectorType const &,
+                           std::pair<unsigned int, unsigned int> const &) const
   {
   }
 
   void
-  face_loop_inhom_operator(const MatrixFree<dim, Number> &,
-                           parallel::distributed::Vector<Number> &,
-                           const parallel::distributed::Vector<Number> &,
-                           const std::pair<unsigned int, unsigned int> &) const
+  face_loop_inhom_operator(MatrixFree<dim, Number> const &,
+                           VectorType &,
+                           VectorType const &,
+                           std::pair<unsigned int, unsigned int> const &) const
   {
   }
 
   void
-  boundary_face_loop_inhom_operator(const MatrixFree<dim, Number> &         data,
-                                    parallel::distributed::Vector<Number> & dst,
-                                    const parallel::distributed::Vector<Number> &,
-                                    const std::pair<unsigned int, unsigned int> & face_range) const
+  boundary_face_loop_inhom_operator(MatrixFree<dim, Number> const & data,
+                                    VectorType &                    dst,
+                                    VectorType const &,
+                                    std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval(data,
                                                 this->fe_param,
@@ -1583,10 +1574,10 @@ private:
   // use this code version only for performance measurements since the implementation might
   // not be up to date, e.g., only Laplace formulation implemented and constant viscosity
   void
-  cell_loop_opt(const MatrixFree<dim, Number> &               data,
-                parallel::distributed::Vector<Number> &       dst,
-                const parallel::distributed::Vector<Number> & src,
-                const std::pair<unsigned int, unsigned int> & cell_range) const
+  cell_loop_opt(MatrixFree<dim, Number> const &               data,
+                VectorType &                                  dst,
+                VectorType const &                            src,
+                std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     AssertThrow(operator_data.formulation_viscous_term ==
                   FormulationViscousTerm::LaplaceFormulation,
@@ -1611,10 +1602,10 @@ private:
   }
 
   void
-  face_loop_opt(const MatrixFree<dim, Number> &               data,
-                parallel::distributed::Vector<Number> &       dst,
-                const parallel::distributed::Vector<Number> & src,
-                const std::pair<unsigned int, unsigned int> & face_range) const
+  face_loop_opt(MatrixFree<dim, Number> const &               data,
+                VectorType &                                  dst,
+                VectorType const &                            src,
+                std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval(data,
                                                 this->fe_param,
@@ -1671,10 +1662,10 @@ private:
 
   void
   boundary_face_loop_hom_operator_opt(
-    const MatrixFree<dim, Number> & /*data*/,
-    parallel::distributed::Vector<Number> & /*dst*/,
-    const parallel::distributed::Vector<Number> & /*src*/,
-    const std::pair<unsigned int, unsigned int> & /*face_range*/) const
+    MatrixFree<dim, Number> const & /*data*/,
+    VectorType & /*dst*/,
+    VectorType const & /*src*/,
+    std::pair<unsigned int, unsigned int> const & /*face_range*/) const
   {
     AssertThrow(
       false,
@@ -1688,10 +1679,10 @@ private:
    *  identical to homogeneous operator.
    */
   void
-  face_loop_block_jacobi(const MatrixFree<dim, Number> &               data,
-                         parallel::distributed::Vector<Number> &       dst,
-                         const parallel::distributed::Vector<Number> & src,
-                         const std::pair<unsigned int, unsigned int> & face_range) const
+  face_loop_block_jacobi(MatrixFree<dim, Number> const &               data,
+                         VectorType &                                  dst,
+                         VectorType const &                            src,
+                         std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval(data,
                                                 this->fe_param,
@@ -1810,10 +1801,10 @@ private:
    *  Calculation of diagonal.
    */
   void
-  cell_loop_diagonal(const MatrixFree<dim, Number> &         data,
-                     parallel::distributed::Vector<Number> & dst,
-                     const parallel::distributed::Vector<Number> &,
-                     const std::pair<unsigned int, unsigned int> & cell_range) const
+  cell_loop_diagonal(MatrixFree<dim, Number> const & data,
+                     VectorType &                    dst,
+                     VectorType const &,
+                     std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_linear fe_eval(data, this->fe_param, operator_data.dof_index);
 
@@ -1840,10 +1831,10 @@ private:
   }
 
   void
-  face_loop_diagonal(const MatrixFree<dim, Number> &         data,
-                     parallel::distributed::Vector<Number> & dst,
-                     const parallel::distributed::Vector<Number> &,
-                     const std::pair<unsigned int, unsigned int> & face_range) const
+  face_loop_diagonal(MatrixFree<dim, Number> const & data,
+                     VectorType &                    dst,
+                     VectorType const &,
+                     std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval(data,
                                                 this->fe_param,
@@ -1986,10 +1977,10 @@ private:
   // TODO: This function has to be removed as soon as the new infrastructure is used that
   // allows to perform face integrals over all faces of the current element.
   void
-  boundary_face_loop_diagonal(const MatrixFree<dim, Number> &         data,
-                              parallel::distributed::Vector<Number> & dst,
-                              const parallel::distributed::Vector<Number> &,
-                              const std::pair<unsigned int, unsigned int> & face_range) const
+  boundary_face_loop_diagonal(MatrixFree<dim, Number> const & data,
+                              VectorType &                    dst,
+                              VectorType const &,
+                              std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval(data,
                                                 this->fe_param,
@@ -2073,7 +2064,7 @@ private:
   cell_loop_calculate_block_jacobi_matrices(
     const MatrixFree<dim, value_type> &         data,
     std::vector<LAPACKFullMatrix<value_type>> & matrices,
-    const parallel::distributed::Vector<value_type> &,
+    const VectorType &,
     const std::pair<unsigned int, unsigned int> & cell_range) const
   {
     FEEval_Velocity_Velocity_linear fe_eval(data, this->fe_param, operator_data.dof_index);
@@ -2104,7 +2095,7 @@ private:
   face_loop_calculate_block_jacobi_matrices(
     const MatrixFree<dim, value_type> &         data,
     std::vector<LAPACKFullMatrix<value_type>> & matrices,
-    const parallel::distributed::Vector<value_type> &,
+    const VectorType &,
     const std::pair<unsigned int, unsigned int> & face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval(data,
@@ -2257,7 +2248,7 @@ private:
   boundary_face_loop_calculate_block_jacobi_matrices(
     const MatrixFree<dim, value_type> &         data,
     std::vector<LAPACKFullMatrix<value_type>> & matrices,
-    const parallel::distributed::Vector<value_type> &,
+    const VectorType &,
     const std::pair<unsigned int, unsigned int> & face_range) const
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval(data,
@@ -2342,8 +2333,8 @@ private:
 
   void
   cell_loop_extract_viscous_coeff(MatrixFree<dim, Number> const & data,
-                                  parallel::distributed::Vector<Number> &,
-                                  parallel::distributed::Vector<Number> const & src,
+                                  VectorType &,
+                                  VectorType const &                            src,
                                   std::pair<unsigned int, unsigned int> const & cell_range)
   {
     FEEval_Velocity_Velocity_linear fe_eval(data, this->fe_param, operator_data.dof_index);
@@ -2376,8 +2367,8 @@ private:
 
   void
   face_loop_extract_viscous_coeff(MatrixFree<dim, Number> const & data,
-                                  parallel::distributed::Vector<Number> &,
-                                  parallel::distributed::Vector<Number> const & src,
+                                  VectorType &,
+                                  VectorType const &                            src,
                                   std::pair<unsigned int, unsigned int> const & face_range)
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval(data,
@@ -2429,8 +2420,8 @@ private:
 
   void
   boundary_face_loop_extract_viscous_coeff(MatrixFree<dim, Number> const & data,
-                                           parallel::distributed::Vector<Number> &,
-                                           parallel::distributed::Vector<Number> const & src,
+                                           VectorType &,
+                                           VectorType const &                            src,
                                            std::pair<unsigned int, unsigned int> const & face_range)
   {
     FEFaceEval_Velocity_Velocity_linear fe_eval(data,
@@ -2473,7 +2464,7 @@ private:
   Number const_viscosity;
 
   // TODO dof-vector for variable viscosity field
-  parallel::distributed::Vector<Number> viscosity;
+  VectorType viscosity;
 
   Table<2, VectorizedArray<Number>> viscous_coefficient_cell;
   Table<2, VectorizedArray<Number>> viscous_coefficient_face;
@@ -2515,6 +2506,8 @@ template<int dim,
 class GradientOperator : public BaseOperator<dim>
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   enum class OperatorType
   {
     full,
@@ -2588,8 +2581,7 @@ public:
   }
 
   void
-  apply(parallel::distributed::Vector<value_type> &       dst,
-        const parallel::distributed::Vector<value_type> & src) const
+  apply(VectorType & dst, const VectorType & src) const
   {
     data->loop(&This::cell_loop,
                &This::face_loop,
@@ -2601,8 +2593,7 @@ public:
   }
 
   void
-  apply_add(parallel::distributed::Vector<value_type> &       dst,
-            const parallel::distributed::Vector<value_type> & src) const
+  apply_add(VectorType & dst, const VectorType & src) const
   {
     data->loop(&This::cell_loop,
                &This::face_loop,
@@ -2614,14 +2605,14 @@ public:
   }
 
   void
-  rhs(parallel::distributed::Vector<value_type> & dst, double const evaluation_time) const
+  rhs(VectorType & dst, double const evaluation_time) const
   {
     dst = 0;
     rhs_add(dst, evaluation_time);
 
     this->eval_time = evaluation_time;
 
-    parallel::distributed::Vector<value_type> src;
+    VectorType src;
     data->loop(&This::cell_loop_inhom_operator,
                &This::face_loop_inhom_operator,
                &This::boundary_face_loop_inhom_operator,
@@ -2632,11 +2623,11 @@ public:
   }
 
   void
-  rhs_add(parallel::distributed::Vector<value_type> & dst, double const evaluation_time) const
+  rhs_add(VectorType & dst, double const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
-    parallel::distributed::Vector<value_type> src;
+    VectorType src;
     data->loop(&This::cell_loop_inhom_operator,
                &This::face_loop_inhom_operator,
                &This::boundary_face_loop_inhom_operator,
@@ -2647,9 +2638,7 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<value_type> &       dst,
-           const parallel::distributed::Vector<value_type> & src,
-           double const                                      evaluation_time) const
+  evaluate(VectorType & dst, VectorType const & src, double const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
@@ -2663,9 +2652,7 @@ public:
   }
 
   void
-  evaluate_add(parallel::distributed::Vector<value_type> &       dst,
-               const parallel::distributed::Vector<value_type> & src,
-               double const                                      evaluation_time) const
+  evaluate_add(VectorType & dst, VectorType const & src, double const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
@@ -2833,10 +2820,10 @@ private:
   }
 
   void
-  cell_loop(const MatrixFree<dim, value_type> &               data,
-            parallel::distributed::Vector<value_type> &       dst,
-            const parallel::distributed::Vector<value_type> & src,
-            const std::pair<unsigned int, unsigned int> &     cell_range) const
+  cell_loop(MatrixFree<dim, value_type> const &           data,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_linear fe_eval_velocity(data,
                                                      this->fe_param,
@@ -2858,10 +2845,10 @@ private:
   }
 
   void
-  face_loop(const MatrixFree<dim, value_type> &               data,
-            parallel::distributed::Vector<value_type> &       dst,
-            const parallel::distributed::Vector<value_type> & src,
-            const std::pair<unsigned int, unsigned int> &     face_range) const
+  face_loop(MatrixFree<dim, value_type> const &           data,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & face_range) const
   {
     if(operator_data.integration_by_parts_of_gradP == true)
     {
@@ -2918,10 +2905,10 @@ private:
   }
 
   void
-  boundary_face_loop_hom_operator(const MatrixFree<dim, value_type> &               data,
-                                  parallel::distributed::Vector<value_type> &       dst,
-                                  const parallel::distributed::Vector<value_type> & src,
-                                  const std::pair<unsigned int, unsigned int> & face_range) const
+  boundary_face_loop_hom_operator(MatrixFree<dim, value_type> const &           data,
+                                  VectorType &                                  dst,
+                                  VectorType const &                            src,
+                                  std::pair<unsigned int, unsigned int> const & face_range) const
   {
     if(operator_data.integration_by_parts_of_gradP == true)
     {
@@ -2982,10 +2969,10 @@ private:
   }
 
   void
-  boundary_face_loop_full_operator(const MatrixFree<dim, value_type> &               data,
-                                   parallel::distributed::Vector<value_type> &       dst,
-                                   const parallel::distributed::Vector<value_type> & src,
-                                   const std::pair<unsigned int, unsigned int> & face_range) const
+  boundary_face_loop_full_operator(MatrixFree<dim, value_type> const &           data,
+                                   VectorType &                                  dst,
+                                   VectorType const &                            src,
+                                   std::pair<unsigned int, unsigned int> const & face_range) const
   {
     if(operator_data.integration_by_parts_of_gradP == true)
     {
@@ -3046,26 +3033,26 @@ private:
   }
 
   void
-  cell_loop_inhom_operator(const MatrixFree<dim, value_type> &,
-                           parallel::distributed::Vector<value_type> &,
-                           const parallel::distributed::Vector<value_type> &,
-                           const std::pair<unsigned int, unsigned int> &) const
+  cell_loop_inhom_operator(MatrixFree<dim, value_type> const &,
+                           VectorType &,
+                           VectorType const &,
+                           std::pair<unsigned int, unsigned int> const &) const
   {
   }
 
   void
-  face_loop_inhom_operator(const MatrixFree<dim, value_type> &,
-                           parallel::distributed::Vector<value_type> &,
-                           const parallel::distributed::Vector<value_type> &,
-                           const std::pair<unsigned int, unsigned int> &) const
+  face_loop_inhom_operator(MatrixFree<dim, value_type> const &,
+                           VectorType &,
+                           VectorType const &,
+                           std::pair<unsigned int, unsigned int> const &) const
   {
   }
 
   void
-  boundary_face_loop_inhom_operator(const MatrixFree<dim, value_type> &         data,
-                                    parallel::distributed::Vector<value_type> & dst,
-                                    const parallel::distributed::Vector<value_type> &,
-                                    const std::pair<unsigned int, unsigned int> & face_range) const
+  boundary_face_loop_inhom_operator(MatrixFree<dim, value_type> const & data,
+                                    VectorType &                        dst,
+                                    VectorType const &,
+                                    std::pair<unsigned int, unsigned int> const & face_range) const
   {
     if(operator_data.integration_by_parts_of_gradP == true &&
        operator_data.use_boundary_data == true)
@@ -3157,6 +3144,8 @@ template<int dim,
 class DivergenceOperator : public BaseOperator<dim>
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   enum class OperatorType
   {
     full,
@@ -3225,8 +3214,7 @@ public:
   }
 
   void
-  apply(parallel::distributed::Vector<value_type> &       dst,
-        const parallel::distributed::Vector<value_type> & src) const
+  apply(VectorType & dst, VectorType const & src) const
   {
     data->loop(&This::cell_loop,
                &This::face_loop,
@@ -3238,8 +3226,7 @@ public:
   }
 
   void
-  apply_add(parallel::distributed::Vector<value_type> &       dst,
-            const parallel::distributed::Vector<value_type> & src) const
+  apply_add(VectorType & dst, VectorType const & src) const
   {
     data->loop(&This::cell_loop,
                &This::face_loop,
@@ -3251,11 +3238,11 @@ public:
   }
 
   void
-  rhs(parallel::distributed::Vector<value_type> & dst, double const evaluation_time) const
+  rhs(VectorType & dst, double const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
-    parallel::distributed::Vector<value_type> src;
+    VectorType src;
     data->loop(&This::cell_loop_inhom_operator,
                &This::face_loop_inhom_operator,
                &This::boundary_face_loop_inhom_operator,
@@ -3266,11 +3253,11 @@ public:
   }
 
   void
-  rhs_add(parallel::distributed::Vector<value_type> & dst, double const evaluation_time) const
+  rhs_add(VectorType & dst, double const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
-    parallel::distributed::Vector<value_type> src;
+    VectorType src;
     data->loop(&This::cell_loop_inhom_operator,
                &This::face_loop_inhom_operator,
                &This::boundary_face_loop_inhom_operator,
@@ -3281,9 +3268,7 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<value_type> &       dst,
-           const parallel::distributed::Vector<value_type> & src,
-           double const                                      evaluation_time) const
+  evaluate(VectorType & dst, VectorType const & src, double const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
@@ -3297,9 +3282,7 @@ public:
   }
 
   void
-  evaluate_add(parallel::distributed::Vector<value_type> &       dst,
-               const parallel::distributed::Vector<value_type> & src,
-               double const                                      evaluation_time) const
+  evaluate_add(VectorType & dst, VectorType const & src, double const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
@@ -3480,10 +3463,10 @@ private:
   }
 
   void
-  cell_loop(const MatrixFree<dim, value_type> &               data,
-            parallel::distributed::Vector<value_type> &       dst,
-            const parallel::distributed::Vector<value_type> & src,
-            const std::pair<unsigned int, unsigned int> &     cell_range) const
+  cell_loop(MatrixFree<dim, value_type> const &           data,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_linear fe_eval_velocity(data,
                                                      this->fe_param,
@@ -3506,10 +3489,10 @@ private:
   }
 
   void
-  face_loop(const MatrixFree<dim, value_type> &               data,
-            parallel::distributed::Vector<value_type> &       dst,
-            const parallel::distributed::Vector<value_type> & src,
-            const std::pair<unsigned int, unsigned int> &     face_range) const
+  face_loop(MatrixFree<dim, value_type> const &           data,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & face_range) const
   {
     if(operator_data.integration_by_parts_of_divU == true)
     {
@@ -3565,10 +3548,10 @@ private:
   }
 
   void
-  boundary_face_loop_hom_operator(const MatrixFree<dim, value_type> &               data,
-                                  parallel::distributed::Vector<value_type> &       dst,
-                                  const parallel::distributed::Vector<value_type> & src,
-                                  const std::pair<unsigned int, unsigned int> & face_range) const
+  boundary_face_loop_hom_operator(MatrixFree<dim, value_type> const &           data,
+                                  VectorType &                                  dst,
+                                  VectorType const &                            src,
+                                  std::pair<unsigned int, unsigned int> const & face_range) const
   {
     if(operator_data.integration_by_parts_of_divU == true)
     {
@@ -3632,10 +3615,10 @@ private:
   }
 
   void
-  boundary_face_loop_full_operator(const MatrixFree<dim, value_type> &               data,
-                                   parallel::distributed::Vector<value_type> &       dst,
-                                   const parallel::distributed::Vector<value_type> & src,
-                                   const std::pair<unsigned int, unsigned int> & face_range) const
+  boundary_face_loop_full_operator(MatrixFree<dim, value_type> const &           data,
+                                   VectorType &                                  dst,
+                                   VectorType const &                            src,
+                                   std::pair<unsigned int, unsigned int> const & face_range) const
   {
     if(operator_data.integration_by_parts_of_divU == true)
     {
@@ -3699,26 +3682,26 @@ private:
   }
 
   void
-  cell_loop_inhom_operator(const MatrixFree<dim, value_type> &,
-                           parallel::distributed::Vector<value_type> &,
-                           const parallel::distributed::Vector<value_type> &,
-                           const std::pair<unsigned int, unsigned int> &) const
+  cell_loop_inhom_operator(MatrixFree<dim, value_type> const &,
+                           VectorType &,
+                           VectorType const &,
+                           std::pair<unsigned int, unsigned int> const &) const
   {
   }
 
   void
-  face_loop_inhom_operator(const MatrixFree<dim, value_type> &,
-                           parallel::distributed::Vector<value_type> &,
-                           const parallel::distributed::Vector<value_type> &,
-                           const std::pair<unsigned int, unsigned int> &) const
+  face_loop_inhom_operator(MatrixFree<dim, value_type> const &,
+                           VectorType &,
+                           VectorType const &,
+                           std::pair<unsigned int, unsigned int> const &) const
   {
   }
 
   void
-  boundary_face_loop_inhom_operator(const MatrixFree<dim, value_type> &         data,
-                                    parallel::distributed::Vector<value_type> & dst,
-                                    const parallel::distributed::Vector<value_type> &,
-                                    const std::pair<unsigned int, unsigned int> & face_range) const
+  boundary_face_loop_inhom_operator(MatrixFree<dim, value_type> const & data,
+                                    VectorType &                        dst,
+                                    VectorType const &,
+                                    std::pair<unsigned int, unsigned int> const & face_range) const
   {
     if(operator_data.integration_by_parts_of_divU == true &&
        operator_data.use_boundary_data == true)
@@ -3799,9 +3782,7 @@ template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typen
 class ConvectiveOperator : public BaseOperator<dim>
 {
 public:
-  ConvectiveOperator() : data(nullptr), eval_time(0.0), velocity_linearization(nullptr)
-  {
-  }
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
 
   static const bool         is_xwall = (xwall_quad_rule > 1) ? true : false;
   static const unsigned int n_actual_q_points_vel_nonlinear =
@@ -3827,6 +3808,10 @@ public:
 
   typedef ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type> This;
 
+  ConvectiveOperator() : data(nullptr), eval_time(0.0), velocity_linearization(nullptr)
+  {
+  }
+
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,
              ConvectiveOperatorData<dim> const & operator_data_in)
@@ -3836,9 +3821,7 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<value_type> &       dst,
-           parallel::distributed::Vector<value_type> const & src,
-           double const                                      evaluation_time) const
+  evaluate(VectorType & dst, VectorType const & src, double const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
@@ -3855,10 +3838,10 @@ public:
 
   // TODO: OIF splitting approach
   void
-  evaluate_oif(parallel::distributed::Vector<value_type> &       dst,
-               parallel::distributed::Vector<value_type> const & src,
-               double const                                      evaluation_time,
-               parallel::distributed::Vector<value_type> const & velocity) const
+  evaluate_oif(VectorType &       dst,
+               VectorType const & src,
+               double const       evaluation_time,
+               VectorType const & velocity) const
   {
     this->eval_time        = evaluation_time;
     velocity_linearization = &velocity;
@@ -3877,9 +3860,7 @@ public:
   }
 
   void
-  evaluate_add(parallel::distributed::Vector<value_type> &       dst,
-               parallel::distributed::Vector<value_type> const & src,
-               double const                                      evaluation_time) const
+  evaluate_add(VectorType & dst, VectorType const & src, double const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
@@ -3895,10 +3876,10 @@ public:
   }
 
   void
-  apply_linearized(parallel::distributed::Vector<value_type> &       dst,
-                   parallel::distributed::Vector<value_type> const & src,
-                   parallel::distributed::Vector<value_type> const * vector_linearization,
-                   double const                                      evaluation_time) const
+  apply_linearized(VectorType &       dst,
+                   VectorType const & src,
+                   VectorType const * vector_linearization,
+                   double const       evaluation_time) const
   {
     this->eval_time        = evaluation_time;
     velocity_linearization = vector_linearization;
@@ -3917,10 +3898,10 @@ public:
   }
 
   void
-  apply_linearized_add(parallel::distributed::Vector<value_type> &       dst,
-                       parallel::distributed::Vector<value_type> const & src,
-                       parallel::distributed::Vector<value_type> const * vector_linearization,
-                       double const                                      evaluation_time) const
+  apply_linearized_add(VectorType &       dst,
+                       VectorType const & src,
+                       VectorType const * vector_linearization,
+                       double const       evaluation_time) const
   {
     this->eval_time        = evaluation_time;
     velocity_linearization = vector_linearization;
@@ -3939,11 +3920,10 @@ public:
   }
 
   void
-  apply_linearized_block_jacobi(
-    parallel::distributed::Vector<value_type> &       dst,
-    parallel::distributed::Vector<value_type> const & src,
-    parallel::distributed::Vector<value_type> const * vector_linearization,
-    double const                                      evaluation_time) const
+  apply_linearized_block_jacobi(VectorType &       dst,
+                                VectorType const & src,
+                                VectorType const * vector_linearization,
+                                double const       evaluation_time) const
   {
     this->eval_time        = evaluation_time;
     velocity_linearization = vector_linearization;
@@ -3962,11 +3942,10 @@ public:
   }
 
   void
-  apply_linearized_block_jacobi_add(
-    parallel::distributed::Vector<value_type> &       dst,
-    parallel::distributed::Vector<value_type> const & src,
-    parallel::distributed::Vector<value_type> const * vector_linearization,
-    double const                                      evaluation_time) const
+  apply_linearized_block_jacobi_add(VectorType &       dst,
+                                    VectorType const & src,
+                                    VectorType const * vector_linearization,
+                                    double const       evaluation_time) const
   {
     this->eval_time        = evaluation_time;
     velocity_linearization = vector_linearization;
@@ -3985,14 +3964,14 @@ public:
   }
 
   void
-  calculate_diagonal(parallel::distributed::Vector<value_type> &       diagonal,
-                     parallel::distributed::Vector<value_type> const * vector_linearization,
-                     double const                                      evaluation_time) const
+  calculate_diagonal(VectorType &       diagonal,
+                     VectorType const * vector_linearization,
+                     double const       evaluation_time) const
   {
     this->eval_time        = evaluation_time;
     velocity_linearization = vector_linearization;
 
-    parallel::distributed::Vector<value_type> src;
+    VectorType src;
 
     data->loop(&This::cell_loop_diagonal,
                &This::face_loop_diagonal,
@@ -4008,14 +3987,14 @@ public:
   }
 
   void
-  add_diagonal(parallel::distributed::Vector<value_type> &       diagonal,
-               parallel::distributed::Vector<value_type> const * vector_linearization,
-               double const                                      evaluation_time) const
+  add_diagonal(VectorType &       diagonal,
+               VectorType const * vector_linearization,
+               double const       evaluation_time) const
   {
     this->eval_time        = evaluation_time;
     velocity_linearization = vector_linearization;
 
-    parallel::distributed::Vector<value_type> src;
+    VectorType src;
 
     data->loop(&This::cell_loop_diagonal,
                &This::face_loop_diagonal,
@@ -4031,15 +4010,14 @@ public:
   }
 
   void
-  add_block_diagonal_matrices(
-    std::vector<LAPACKFullMatrix<value_type>> &       matrices,
-    parallel::distributed::Vector<value_type> const * vector_linearization,
-    double const                                      evaluation_time) const
+  add_block_diagonal_matrices(std::vector<LAPACKFullMatrix<value_type>> & matrices,
+                              VectorType const *                          vector_linearization,
+                              double const                                evaluation_time) const
   {
     this->eval_time        = evaluation_time;
     velocity_linearization = vector_linearization;
 
-    parallel::distributed::Vector<value_type> src;
+    VectorType src;
 
     data->loop(&This::cell_loop_calculate_block_jacobi_matrices,
                &This::face_loop_calculate_block_jacobi_matrices,
@@ -4296,10 +4274,10 @@ private:
    *  Evaluation of nonlinear convective operator.
    */
   void
-  cell_loop_nonlinear_operator(const MatrixFree<dim, value_type> &               data,
-                               parallel::distributed::Vector<value_type> &       dst,
-                               const parallel::distributed::Vector<value_type> & src,
-                               const std::pair<unsigned int, unsigned int> &     cell_range) const
+  cell_loop_nonlinear_operator(MatrixFree<dim, value_type> const &           data,
+                               VectorType &                                  dst,
+                               VectorType const &                            src,
+                               std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_nonlinear fe_eval(data, this->fe_param, operator_data.dof_index);
 
@@ -4315,10 +4293,10 @@ private:
   }
 
   void
-  face_loop_nonlinear_operator(const MatrixFree<dim, value_type> &               data,
-                               parallel::distributed::Vector<value_type> &       dst,
-                               const parallel::distributed::Vector<value_type> & src,
-                               const std::pair<unsigned int, unsigned int> &     face_range) const
+  face_loop_nonlinear_operator(MatrixFree<dim, value_type> const &           data,
+                               VectorType &                                  dst,
+                               VectorType const &                            src,
+                               std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,
                                                    this->fe_param,
@@ -4377,10 +4355,10 @@ private:
 
   void
   boundary_face_loop_nonlinear_operator(
-    const MatrixFree<dim, value_type> &               data,
-    parallel::distributed::Vector<value_type> &       dst,
-    const parallel::distributed::Vector<value_type> & src,
-    const std::pair<unsigned int, unsigned int> &     face_range) const
+    MatrixFree<dim, value_type> const &           data,
+    VectorType &                                  dst,
+    VectorType const &                            src,
+    std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,
                                                    this->fe_param,
@@ -4464,10 +4442,10 @@ private:
    *  Evaluate linearized convective operator (homogeneous part of operator).
    */
   void
-  cell_loop_linearized_operator(const MatrixFree<dim, value_type> &               data,
-                                parallel::distributed::Vector<value_type> &       dst,
-                                const parallel::distributed::Vector<value_type> & src,
-                                const std::pair<unsigned int, unsigned int> &     cell_range) const
+  cell_loop_linearized_operator(MatrixFree<dim, value_type> const &           data,
+                                VectorType &                                  dst,
+                                VectorType const &                            src,
+                                std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_nonlinear fe_eval(data, this->fe_param, operator_data.dof_index);
     FEEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,
@@ -4489,10 +4467,10 @@ private:
   }
 
   void
-  face_loop_linearized_operator(const MatrixFree<dim, value_type> &               data,
-                                parallel::distributed::Vector<value_type> &       dst,
-                                const parallel::distributed::Vector<value_type> & src,
-                                const std::pair<unsigned int, unsigned int> &     face_range) const
+  face_loop_linearized_operator(MatrixFree<dim, value_type> const &           data,
+                                VectorType &                                  dst,
+                                VectorType const &                            src,
+                                std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,
                                                    this->fe_param,
@@ -4555,10 +4533,10 @@ private:
 
   void
   boundary_face_loop_linearized_operator(
-    const MatrixFree<dim, value_type> &               data,
-    parallel::distributed::Vector<value_type> &       dst,
-    const parallel::distributed::Vector<value_type> & src,
-    const std::pair<unsigned int, unsigned int> &     face_range) const
+    MatrixFree<dim, value_type> const &           data,
+    VectorType &                                  dst,
+    VectorType const &                            src,
+    std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,
                                                    this->fe_param,
@@ -4614,10 +4592,10 @@ private:
    *  OIF splitting approach
    */
   void
-  cell_loop_OIF(const MatrixFree<dim, value_type> &               data,
-                parallel::distributed::Vector<value_type> &       dst,
-                const parallel::distributed::Vector<value_type> & src,
-                const std::pair<unsigned int, unsigned int> &     cell_range) const
+  cell_loop_OIF(MatrixFree<dim, value_type> const &           data,
+                VectorType &                                  dst,
+                VectorType const &                            src,
+                std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_nonlinear fe_eval(data, this->fe_param, operator_data.dof_index);
     FEEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,
@@ -4649,10 +4627,10 @@ private:
   }
 
   void
-  face_loop_OIF(const MatrixFree<dim, value_type> &               data,
-                parallel::distributed::Vector<value_type> &       dst,
-                const parallel::distributed::Vector<value_type> & src,
-                const std::pair<unsigned int, unsigned int> &     face_range) const
+  face_loop_OIF(MatrixFree<dim, value_type> const &           data,
+                VectorType &                                  dst,
+                VectorType const &                            src,
+                std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,
                                                    this->fe_param,
@@ -4716,10 +4694,10 @@ private:
   }
 
   void
-  boundary_face_loop_OIF(const MatrixFree<dim, value_type> &               data,
-                         parallel::distributed::Vector<value_type> &       dst,
-                         const parallel::distributed::Vector<value_type> & src,
-                         const std::pair<unsigned int, unsigned int> &     face_range) const
+  boundary_face_loop_OIF(MatrixFree<dim, value_type> const &           data,
+                         VectorType &                                  dst,
+                         VectorType const &                            src,
+                         std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,
                                                    this->fe_param,
@@ -4785,10 +4763,10 @@ private:
    */
   void
   face_loop_linearized_operator_block_jacobi(
-    const MatrixFree<dim, value_type> &               data,
-    parallel::distributed::Vector<value_type> &       dst,
-    const parallel::distributed::Vector<value_type> & src,
-    const std::pair<unsigned int, unsigned int> &     face_range) const
+    MatrixFree<dim, value_type> const &           data,
+    VectorType &                                  dst,
+    VectorType const &                            src,
+    std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,
                                                                  this->fe_param,
@@ -4886,10 +4864,10 @@ private:
    *  Calculation of diagonal of linearized convective operator.
    */
   void
-  cell_loop_diagonal(const MatrixFree<dim, value_type> &         data,
-                     parallel::distributed::Vector<value_type> & dst,
-                     const parallel::distributed::Vector<value_type> &,
-                     const std::pair<unsigned int, unsigned int> & cell_range) const
+  cell_loop_diagonal(MatrixFree<dim, value_type> const & data,
+                     VectorType &                        dst,
+                     VectorType const &,
+                     std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_nonlinear fe_eval(data, this->fe_param, operator_data.dof_index);
     FEEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,
@@ -4925,10 +4903,10 @@ private:
   }
 
   void
-  face_loop_diagonal(const MatrixFree<dim, value_type> &         data,
-                     parallel::distributed::Vector<value_type> & dst,
-                     const parallel::distributed::Vector<value_type> &,
-                     const std::pair<unsigned int, unsigned int> & face_range) const
+  face_loop_diagonal(MatrixFree<dim, value_type> const & data,
+                     VectorType &                        dst,
+                     VectorType const &,
+                     std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,
                                                    this->fe_param,
@@ -5056,10 +5034,10 @@ private:
   // TODO: this function has to be removed as soon as the new infrastructure is used that
   // allows to perform face integrals over all faces of the current element
   void
-  boundary_face_loop_diagonal(const MatrixFree<dim, value_type> &         data,
-                              parallel::distributed::Vector<value_type> & dst,
-                              const parallel::distributed::Vector<value_type> &,
-                              const std::pair<unsigned int, unsigned int> & face_range) const
+  boundary_face_loop_diagonal(MatrixFree<dim, value_type> const & data,
+                              VectorType &                        dst,
+                              VectorType const &,
+                              std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,
                                                    this->fe_param,
@@ -5129,10 +5107,10 @@ private:
 
   void
   cell_loop_calculate_block_jacobi_matrices(
-    const MatrixFree<dim, value_type> &         data,
+    MatrixFree<dim, value_type> const &         data,
     std::vector<LAPACKFullMatrix<value_type>> & matrices,
-    const parallel::distributed::Vector<value_type> &,
-    const std::pair<unsigned int, unsigned int> & cell_range) const
+    VectorType const &,
+    std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_Velocity_Velocity_nonlinear fe_eval(data, this->fe_param, operator_data.dof_index);
     FEEval_Velocity_Velocity_nonlinear fe_eval_linearization(data,
@@ -5166,10 +5144,10 @@ private:
 
   void
   face_loop_calculate_block_jacobi_matrices(
-    const MatrixFree<dim, value_type> &         data,
+    MatrixFree<dim, value_type> const &         data,
     std::vector<LAPACKFullMatrix<value_type>> & matrices,
-    const parallel::distributed::Vector<value_type> &,
-    const std::pair<unsigned int, unsigned int> & face_range) const
+    VectorType const &,
+    std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,
                                                    this->fe_param,
@@ -5299,10 +5277,10 @@ private:
   // allows to perform face integrals over all faces of the current element.
   void
   boundary_face_loop_calculate_block_jacobi_matrices(
-    const MatrixFree<dim, value_type> &         data,
+    MatrixFree<dim, value_type> const &         data,
     std::vector<LAPACKFullMatrix<value_type>> & matrices,
-    const parallel::distributed::Vector<value_type> &,
-    const std::pair<unsigned int, unsigned int> & face_range) const
+    VectorType const &,
+    std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_Velocity_Velocity_nonlinear fe_eval(data,
                                                    this->fe_param,
@@ -5377,7 +5355,7 @@ private:
 
   mutable double eval_time;
 
-  mutable parallel::distributed::Vector<value_type> const * velocity_linearization;
+  mutable VectorType const * velocity_linearization;
 };
 
 
