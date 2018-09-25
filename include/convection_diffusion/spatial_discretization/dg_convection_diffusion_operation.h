@@ -32,6 +32,8 @@ template<int dim, int fe_degree, typename value_type>
 class DGOperation : public MatrixOperatorBase
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   DGOperation(parallel::distributed::Triangulation<dim> const & triangulation,
               ConvDiff::InputParameters const &                 param_in)
     : fe(fe_degree), mapping(fe_degree), dof_handler(triangulation), param(param_in)
@@ -183,9 +185,7 @@ public:
       iterative_solver.reset(
         new CGSolver<ConvDiff::ConvectionDiffusionOperator<dim, fe_degree, value_type>,
                      PreconditionerBase<value_type>,
-                     parallel::distributed::Vector<value_type>>(conv_diff_operator,
-                                                                *preconditioner,
-                                                                solver_data));
+                     VectorType>(conv_diff_operator, *preconditioner, solver_data));
     }
     else if(param.solver == ConvDiff::Solver::GMRES)
     {
@@ -205,9 +205,7 @@ public:
       iterative_solver.reset(
         new GMRESSolver<ConvDiff::ConvectionDiffusionOperator<dim, fe_degree, value_type>,
                         PreconditionerBase<value_type>,
-                        parallel::distributed::Vector<value_type>>(conv_diff_operator,
-                                                                   *preconditioner,
-                                                                   solver_data));
+                        VectorType>(conv_diff_operator, *preconditioner, solver_data));
     }
     else
     {
@@ -219,14 +217,13 @@ public:
   }
 
   void
-  initialize_dof_vector(parallel::distributed::Vector<value_type> & src) const
+  initialize_dof_vector(VectorType & src) const
   {
     data.initialize_dof_vector(src);
   }
 
   void
-  prescribe_initial_conditions(parallel::distributed::Vector<value_type> & src,
-                               const double                                evaluation_time) const
+  prescribe_initial_conditions(VectorType & src, double const evaluation_time) const
   {
     field_functions->analytical_solution->set_time(evaluation_time);
     VectorTools::interpolate(dof_handler, *(field_functions->analytical_solution), src);
@@ -240,9 +237,7 @@ public:
    *  and finally applies the inverse mass matrix operator.
    */
   void
-  evaluate(parallel::distributed::Vector<value_type> &       dst,
-           parallel::distributed::Vector<value_type> const & src,
-           const value_type                                  evaluation_time) const
+  evaluate(VectorType & dst, VectorType const & src, double const evaluation_time) const
   {
     if(param.runtime_optimization ==
        false) // apply volume and surface integrals for each operator separately
@@ -282,18 +277,18 @@ public:
   }
 
   void
-  evaluate_convective_term(parallel::distributed::Vector<value_type> &       dst,
-                           parallel::distributed::Vector<value_type> const & src,
-                           const value_type                                  evaluation_time) const
+  evaluate_convective_term(VectorType &       dst,
+                           VectorType const & src,
+                           double const       evaluation_time) const
   {
     convective_operator.evaluate(dst, src, evaluation_time);
   }
 
   void
   evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
-    parallel::distributed::Vector<value_type> &       dst,
-    parallel::distributed::Vector<value_type> const & src,
-    const value_type                                  evaluation_time) const
+    VectorType &       dst,
+    VectorType const & src,
+    double const       evaluation_time) const
   {
     convective_operator.evaluate(dst, src, evaluation_time);
 
@@ -314,7 +309,7 @@ public:
    *  added to the right-hand side of the equations.
    */
   void
-  rhs(parallel::distributed::Vector<value_type> & dst, double const evaluation_time = 0.0) const
+  rhs(VectorType & dst, double const evaluation_time = 0.0) const
   {
     // set dst to zero since we call functions of type ..._add()
     dst = 0;
@@ -350,17 +345,16 @@ public:
    *  and adds the result to the dst-vector.
    */
   void
-  apply_mass_matrix_add(parallel::distributed::Vector<value_type> &       dst,
-                        parallel::distributed::Vector<value_type> const & src) const
+  apply_mass_matrix_add(VectorType & dst, VectorType const & src) const
   {
     mass_matrix_operator.apply_add(dst, src);
   }
 
   unsigned int
-  solve(parallel::distributed::Vector<value_type> &       sol,
-        parallel::distributed::Vector<value_type> const & rhs,
-        double const scaling_factor_time_derivative_term_in = -1.0,
-        double const evaluation_time_in                     = -1.0)
+  solve(VectorType &       sol,
+        VectorType const & rhs,
+        double const       scaling_factor_time_derivative_term_in = -1.0,
+        double const       evaluation_time_in                     = -1.0)
   {
     conv_diff_operator.set_scaling_factor_time_derivative_term(
       scaling_factor_time_derivative_term_in);
@@ -528,13 +522,15 @@ private:
 
   std::shared_ptr<PreconditionerBase<value_type>> preconditioner;
 
-  std::shared_ptr<IterativeSolverBase<parallel::distributed::Vector<value_type>>> iterative_solver;
+  std::shared_ptr<IterativeSolverBase<VectorType>> iterative_solver;
 };
 
 template<int dim, int fe_degree, typename value_type>
 class ConvectiveOperatorOIFSplitting
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   ConvectiveOperatorOIFSplitting(
     std::shared_ptr<ConvDiff::DGOperation<dim, fe_degree, value_type>> conv_diff_operation_in)
     : conv_diff_operation(conv_diff_operation_in)
@@ -542,16 +538,14 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<value_type> &       dst,
-           parallel::distributed::Vector<value_type> const & src,
-           const value_type                                  evaluation_time) const
+  evaluate(VectorType & dst, VectorType const & src, double const evaluation_time) const
   {
     conv_diff_operation->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
       dst, src, evaluation_time);
   }
 
   void
-  initialize_dof_vector(parallel::distributed::Vector<value_type> & src) const
+  initialize_dof_vector(VectorType & src) const
   {
     conv_diff_operation->initialize_dof_vector(src);
   }

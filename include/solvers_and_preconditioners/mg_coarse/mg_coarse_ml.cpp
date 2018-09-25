@@ -35,7 +35,7 @@ MGCoarseML<Operator, Number>::reinit(int level, MGCoarseMLData data_in)
   if(this->additional_data.transfer_to_continuous_galerkin)
   {
     const unsigned int degree = operator_dg.get_data().get_dof_handler().get_fe().degree;
-    this->transfer.reset(new CGToDGTransfer<Operator::DIM, MultigridNumber>(
+    this->transfer.reset(new CGToDGTransfer<Operator::DIM, NumberMG>(
       operator_dg.get_data(), operator_cg.get_data(), level, degree));
   }
 
@@ -58,20 +58,18 @@ MGCoarseML<Operator, Number>::update(MatrixOperatorBase const * /*matrix_operato
 template<typename Operator, typename Number>
 void
 MGCoarseML<Operator, Number>::
-operator()(const unsigned int /*level*/,
-           parallel::distributed::Vector<MultigridNumber> &       dst,
-           const parallel::distributed::Vector<MultigridNumber> & src) const
+operator()(unsigned int const /*level*/, VectorTypeMG & dst, VectorTypeMG const & src) const
 {
   // TODO: remove unnecessary moves...
-  parallel::distributed::Vector<MultigridNumber> src_0, dst_0;
+  VectorTypeMG src_0, dst_0;
   src_0.reinit(src, false);
   src_0.copy_locally_owned_data_from(src);
   dst_0.reinit(dst, false);
 
-  parallel::distributed::Vector<MultigridNumber>  src_cg, dst_cg;
-  parallel::distributed::Vector<MultigridNumber> *ptr_src, *ptr_dst;
+  VectorTypeMG  src_cg, dst_cg;
+  VectorTypeMG *ptr_src, *ptr_dst;
 
-  // DG (MultigridNumber) -> CG (MultigridNumber)
+  // DG (NumberMG) -> CG (NumberMG)
   if(this->additional_data.transfer_to_continuous_galerkin)
   {
     this->operator_cg.initialize_dof_vector(src_cg);
@@ -87,13 +85,13 @@ operator()(const unsigned int /*level*/,
   }
 
   // create temporal vectors of type TrilinosScalar
-  parallel::distributed::Vector<TrilinosWrappers::SparseMatrix::value_type> dst_trilinos;
+  VectorTypeTrilinos dst_trilinos;
   dst_trilinos.reinit(*ptr_dst, false);
-  parallel::distributed::Vector<TrilinosWrappers::SparseMatrix::value_type> src_trilinos;
+  VectorTypeTrilinos src_trilinos;
   src_trilinos.reinit(*ptr_src, false);
 
-  // convert MultigridNumber to TrilinosScalar
-  // (TrilinosScalar is double, we generally use float as MultigridNumber, so an explicit conversion
+  // convert NumberMG to TrilinosScalar
+  // (TrilinosScalar is double, we generally use float as NumberMG, so an explicit conversion
   // is needed)
   src_trilinos.copy_locally_owned_data_from(*ptr_src);
 
@@ -104,9 +102,10 @@ operator()(const unsigned int /*level*/,
                                     additional_data.solver_tolerance_abs,
                                     additional_data.solver_tolerance_rel);
     solver_control.set_failure_criterion(additional_data.pcg_failure_criterion);
-    SolverCG<parallel::distributed::Vector<TrilinosWrappers::SparseMatrix::value_type>> solver(
-      solver_control);
+    SolverCG<VectorTypeTrilinos> solver(solver_control);
+
     solver.solve(system_matrix, dst_trilinos, src_trilinos, pamg);
+
     // std::cout << "   " << solver_control.last_step() << "   "
     //          << solver_control.last_value() << "   " << std::endl;
   }
@@ -116,10 +115,10 @@ operator()(const unsigned int /*level*/,
     pamg.vmult(dst_trilinos, src_trilinos);
   }
 
-  // convert TrilinosScalar to MultigridNumber
+  // convert TrilinosScalar to NumberMG
   ptr_dst->copy_locally_owned_data_from(dst_trilinos);
   ptr_dst->update_ghost_values();
-  // CG (MultigridNumber) -> DG (MultigridNumber)
+  // CG (NumberMG) -> DG (NumberMG)
   if(this->additional_data.transfer_to_continuous_galerkin)
     transfer->toDG(dst_0, *ptr_dst);
   dst.copy_locally_owned_data_from(dst_0);
@@ -127,8 +126,7 @@ operator()(const unsigned int /*level*/,
 
 template<typename Operator, typename Number>
 void
-MGCoarseML<Operator, Number>::vmult(parallel::distributed::Vector<Number> &,
-                                    const parallel::distributed::Vector<Number> &) const
+MGCoarseML<Operator, Number>::vmult(VectorType &, VectorType const &) const
 {
   AssertThrow(false, ExcMessage("MGCoarseML::vmult not implemented yet!"));
 }
@@ -167,17 +165,14 @@ MGCoarseML<Operator, Number>::update(MatrixOperatorBase const *)
 template<typename Operator, typename Number>
 void
 MGCoarseML<Operator, Number>::
-operator()(const unsigned int,
-           parallel::distributed::Vector<MultigridNumber> &,
-           const parallel::distributed::Vector<MultigridNumber> &) const
+operator()(unsigned int const, VectorTypeMG &, VectorTypeMG const &) const
 {
   AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
 }
 
 template<typename Operator, typename Number>
 void
-MGCoarseML<Operator, Number>::vmult(parallel::distributed::Vector<Number> &,
-                                    const parallel::distributed::Vector<Number> &) const
+MGCoarseML<Operator, Number>::vmult(VectorType &, VectorType const &) const
 {
   AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
 }

@@ -18,7 +18,7 @@
  */
 template<typename Number>
 void
-invert_diagonal(parallel::distributed::Vector<Number> & diagonal)
+invert_diagonal(LinearAlgebra::distributed::Vector<Number> & diagonal)
 {
   for(unsigned int i = 0; i < diagonal.local_size(); ++i)
   {

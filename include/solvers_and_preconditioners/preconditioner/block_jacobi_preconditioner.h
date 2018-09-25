@@ -18,7 +18,7 @@ template<typename Operator>
 class BlockJacobiPreconditioner : public PreconditionerBase<typename Operator::value_type>
 {
 public:
-  typedef typename Operator::value_type value_type;
+  typedef typename PreconditionerBase<typename Operator::value_type>::VectorType VectorType;
 
   BlockJacobiPreconditioner(Operator const & underlying_operator_in)
     : underlying_operator(underlying_operator_in)
@@ -44,8 +44,7 @@ public:
    *  updated when calling this function.
    */
   void
-  vmult(parallel::distributed::Vector<value_type> &       dst,
-        const parallel::distributed::Vector<value_type> & src) const
+  vmult(VectorType & dst, VectorType const & src) const
   {
     underlying_operator.apply_inverse_block_diagonal(dst, src);
   }

@@ -31,7 +31,7 @@ public:
 
   DoFHandler<dim> const * dof_handler;
 
-  parallel::distributed::Vector<Number> const * vector;
+  LinearAlgebra::distributed::Vector<Number> const * vector;
 };
 
 

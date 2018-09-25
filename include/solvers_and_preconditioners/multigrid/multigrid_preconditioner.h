@@ -33,6 +33,8 @@ template<int dim, typename Number>
 class MGTransferMF : public MGTransferMatrixFree<dim, Number>
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   MGTransferMF(std::map<unsigned int, unsigned int> level_to_triangulation_level_map)
     : underlying_operator(0), level_to_triangulation_level_map(level_to_triangulation_level_map)
   {
@@ -46,9 +48,7 @@ public:
   }
 
   virtual void
-  prolongate(const unsigned int                                 to_level,
-             LinearAlgebra::distributed::Vector<Number> &       dst,
-             const LinearAlgebra::distributed::Vector<Number> & src) const
+  prolongate(unsigned int const to_level, VectorType & dst, VectorType const & src) const
   {
     MGTransferMatrixFree<dim, Number>::prolongate(level_to_triangulation_level_map[to_level],
                                                   dst,
@@ -56,9 +56,7 @@ public:
   }
 
   virtual void
-  restrict_and_add(const unsigned int                                 from_level,
-                   LinearAlgebra::distributed::Vector<Number> &       dst,
-                   const LinearAlgebra::distributed::Vector<Number> & src) const
+  restrict_and_add(unsigned int const from_level, VectorType & dst, VectorType const & src) const
   {
     MGTransferMatrixFree<dim, Number>::restrict_and_add(
       level_to_triangulation_level_map[from_level], dst, src);
@@ -69,16 +67,16 @@ public:
    */
   template<class InVector, int spacedim>
   void
-  copy_to_mg(const DoFHandler<dim, spacedim> &                      mg_dof,
-             MGLevelObject<parallel::distributed::Vector<Number>> & dst,
-             const InVector &                                       src) const
+  copy_to_mg(const DoFHandler<dim, spacedim> & mg_dof,
+             MGLevelObject<VectorType> &       dst,
+             const InVector &                  src) const
   {
     AssertThrow(underlying_operator != 0, ExcNotInitialized());
 
     for(unsigned int level = dst.min_level(); level <= dst.max_level(); ++level)
       (*underlying_operator)[level]->initialize_dof_vector(dst[level]);
 
-    MGLevelGlobalTransfer<parallel::distributed::Vector<Number>>::copy_to_mg(mg_dof, dst, src);
+    MGLevelGlobalTransfer<VectorType>::copy_to_mg(mg_dof, dst, src);
   }
 
 private:

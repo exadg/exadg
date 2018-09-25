@@ -39,13 +39,13 @@ public:
 
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,
-             MassMatrixOperatorData<dim> const & mass_matrix_operator_data_in,
+             MassMatrixOperatorData<dim> const & mass_matrix_operator_data,
              unsigned int                        level_mg_handler = numbers::invalid_unsigned_int);
 
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,
              ConstraintMatrix const &            constraint_matrix,
-             MassMatrixOperatorData<dim> const & mass_matrix_operator_data_in,
+             MassMatrixOperatorData<dim> const & mass_matrix_operator_data,
              unsigned int                        level_mg_handler = numbers::invalid_unsigned_int);
 
 private:

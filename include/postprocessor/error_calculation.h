@@ -15,6 +15,8 @@ template<int dim, typename Number>
 class ErrorCalculator
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   ErrorCalculator() : error_counter(0)
   {
   }
@@ -32,9 +34,7 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<Number> const & solution,
-           double const &                                time,
-           int const &                                   time_step_number)
+  evaluate(VectorType const & solution, double const & time, int const & time_step_number)
   {
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
@@ -80,8 +80,7 @@ private:
   ErrorCalculationData error_data;
 
   void
-  do_evaluate(parallel::distributed::Vector<double> const & solution_vector,
-              double const                                  time) const
+  do_evaluate(VectorType const & solution_vector, double const time) const
   {
     bool relative = true;
 

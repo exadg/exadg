@@ -18,13 +18,14 @@ template<typename value_type>
 class PreconditionerBase
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   virtual ~PreconditionerBase()
   {
   }
 
   virtual void
-  vmult(parallel::distributed::Vector<value_type> &       dst,
-        const parallel::distributed::Vector<value_type> & src) const = 0;
+  vmult(VectorType & dst, VectorType const & src) const = 0;
 
   virtual void
   update(MatrixOperatorBase const * matrix_operator) = 0;

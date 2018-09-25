@@ -1,5 +1,5 @@
 /*
- * ScalarConvectionDiffusionOperators.h
+ * convection_diffusion_operators.h
  *
  *  Created on: Jul 29, 2016
  *      Author: fehn
@@ -53,6 +53,8 @@ template<int dim, int fe_degree, int fe_degree_velocity, typename value_type>
 class ConvectiveOperatorDiscontinuousVelocity
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   typedef ConvectiveOperatorDiscontinuousVelocity<dim, fe_degree, fe_degree_velocity, value_type>
     This;
 
@@ -70,18 +72,14 @@ public:
 
   // apply matrix vector multiplication
   void
-  apply(parallel::distributed::Vector<value_type> &       dst,
-        parallel::distributed::Vector<value_type> const & src,
-        parallel::distributed::Vector<value_type> const * vector) const
+  apply(VectorType & dst, VectorType const & src, VectorType const * vector) const
   {
     dst = 0;
     apply_add(dst, src, vector);
   }
 
   void
-  apply_add(parallel::distributed::Vector<value_type> &       dst,
-            parallel::distributed::Vector<value_type> const & src,
-            parallel::distributed::Vector<value_type> const * vector) const
+  apply_add(VectorType & dst, VectorType const & src, VectorType const * vector) const
   {
     velocity = vector;
 
@@ -103,10 +101,10 @@ private:
    *  Calculate cell integrals.
    */
   void
-  cell_loop(MatrixFree<dim, value_type> const &               data,
-            parallel::distributed::Vector<value_type> &       dst,
-            parallel::distributed::Vector<value_type> const & src,
-            std::pair<unsigned int, unsigned int> const &     cell_range) const
+  cell_loop(MatrixFree<dim, value_type> const &           data,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEvaluation<dim, fe_degree, fe_degree + 1, 1, value_type> fe_eval(data,
                                                                        operator_data.dof_index,
@@ -138,10 +136,10 @@ private:
    *  Calculate interior face integrals for homogeneous operator.
    */
   void
-  face_loop(MatrixFree<dim, value_type> const &               data,
-            parallel::distributed::Vector<value_type> &       dst,
-            parallel::distributed::Vector<value_type> const & src,
-            std::pair<unsigned int, unsigned int> const &     face_range) const
+  face_loop(MatrixFree<dim, value_type> const &           data,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1, value_type> fe_eval(
       data, true, operator_data.dof_index, operator_data.quad_index);
@@ -211,9 +209,9 @@ private:
    *  Calculate boundary face integrals for homogeneous operator.
    */
   void
-  boundary_face_loop_hom_operator(MatrixFree<dim, value_type> const &               data,
-                                  parallel::distributed::Vector<value_type> &       dst,
-                                  parallel::distributed::Vector<value_type> const & src,
+  boundary_face_loop_hom_operator(MatrixFree<dim, value_type> const &           data,
+                                  VectorType &                                  dst,
+                                  VectorType const &                            src,
                                   std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1, value_type> fe_eval(
@@ -279,7 +277,7 @@ private:
 
   ConvectiveOperatorDataDiscontinuousVelocity<dim> operator_data;
 
-  mutable parallel::distributed::Vector<value_type> const * velocity;
+  mutable VectorType const * velocity;
 };
 
 
@@ -291,14 +289,15 @@ template<typename UnderlyingOperator, typename Number>
 class ConvectionDiffusionBlockJacobiOperator
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   ConvectionDiffusionBlockJacobiOperator(UnderlyingOperator const & underlying_operator_in)
     : underlying_operator(underlying_operator_in)
   {
   }
 
   void
-  vmult(parallel::distributed::Vector<Number> &       dst,
-        const parallel::distributed::Vector<Number> & src) const
+  vmult(VectorType & dst, VectorType const & src) const
   {
     underlying_operator.vmult_block_jacobi(dst, src);
   }
@@ -343,6 +342,8 @@ template<int dim, int fe_degree, typename value_type>
 class ConvectionDiffusionOperatorEfficiency
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   typedef ConvectionDiffusionOperatorEfficiency<dim, fe_degree, value_type> This;
 
   ConvectionDiffusionOperatorEfficiency() : data(nullptr), diffusivity(-1.0)
@@ -369,18 +370,14 @@ public:
   // functions)
 
   void
-  evaluate(parallel::distributed::Vector<value_type> &       dst,
-           parallel::distributed::Vector<value_type> const & src,
-           value_type const                                  evaluation_time) const
+  evaluate(VectorType & dst, VectorType const & src, value_type const evaluation_time) const
   {
     dst = 0;
     evaluate_add(dst, src, evaluation_time);
   }
 
   void
-  evaluate_add(parallel::distributed::Vector<value_type> &       dst,
-               parallel::distributed::Vector<value_type> const & src,
-               value_type const                                  evaluation_time) const
+  evaluate_add(VectorType & dst, VectorType const & src, value_type const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
@@ -394,10 +391,10 @@ public:
 
 private:
   void
-  local_apply_cell(MatrixFree<dim, value_type> const &               data,
-                   parallel::distributed::Vector<value_type> &       dst,
-                   parallel::distributed::Vector<value_type> const & src,
-                   std::pair<unsigned int, unsigned int> const &     cell_range) const
+  local_apply_cell(MatrixFree<dim, value_type> const &           data,
+                   VectorType &                                  dst,
+                   VectorType const &                            src,
+                   std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEvaluation<dim, fe_degree, fe_degree + 1, 1, value_type> fe_eval(
       data, operator_data.diff_data.dof_index, operator_data.diff_data.quad_index);
@@ -457,10 +454,10 @@ private:
   }
 
   void
-  local_apply_face(MatrixFree<dim, value_type> const &               data,
-                   parallel::distributed::Vector<value_type> &       dst,
-                   parallel::distributed::Vector<value_type> const & src,
-                   std::pair<unsigned int, unsigned int> const &     face_range) const
+  local_apply_face(MatrixFree<dim, value_type> const &           data,
+                   VectorType &                                  dst,
+                   VectorType const &                            src,
+                   std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1, value_type> fe_eval(
       data, true, operator_data.diff_data.dof_index, operator_data.diff_data.quad_index);
@@ -551,10 +548,10 @@ private:
   }
 
   void
-  local_evaluate_boundary_face(MatrixFree<dim, value_type> const &               data,
-                               parallel::distributed::Vector<value_type> &       dst,
-                               parallel::distributed::Vector<value_type> const & src,
-                               std::pair<unsigned int, unsigned int> const &     face_range) const
+  local_evaluate_boundary_face(MatrixFree<dim, value_type> const &           data,
+                               VectorType &                                  dst,
+                               VectorType const &                            src,
+                               std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1, value_type> fe_eval(
       data, true, operator_data.diff_data.dof_index, operator_data.diff_data.quad_index);

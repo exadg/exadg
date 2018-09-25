@@ -13,11 +13,11 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::ConvectionDiffusionOperator
 template<int dim, int fe_degree, typename Number>
 void
 ConvectionDiffusionOperator<dim, fe_degree, Number>::initialize(
-  MatrixFree<dim, Number> const &              mf_data_in,
-  ConvectionDiffusionOperatorData<dim> const & operator_data_in,
-  MassMatrixOp const &                         mass_matrix_operator_in,
-  ConvectiveOp const &                         convective_operator_in,
-  DiffusiveOp const &                          diffusive_operator_in)
+  MatrixFree<dim, Number> const &                    mf_data_in,
+  ConvectionDiffusionOperatorData<dim> const &       operator_data_in,
+  MassMatrixOperator<dim, fe_degree, Number> const & mass_matrix_operator_in,
+  ConvectiveOperator<dim, fe_degree, Number> const & convective_operator_in,
+  DiffusiveOperator<dim, fe_degree, Number> const &  diffusive_operator_in)
 {
   ConstraintMatrix constraint_matrix;
   Parent::reinit(mf_data_in, constraint_matrix, operator_data_in);
@@ -33,11 +33,11 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::initialize(
 template<int dim, int fe_degree, typename Number>
 void
 ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(
-  const DoFHandler<dim> &   dof_handler,
-  const Mapping<dim> &      mapping,
+  DoFHandler<dim> const &   dof_handler,
+  Mapping<dim> const &      mapping,
   void *                    operator_data_in,
-  const MGConstrainedDoFs & mg_constrained_dofs,
-  const unsigned int        level)
+  MGConstrainedDoFs const & mg_constrained_dofs,
+  unsigned int const        level)
 {
   Parent::reinit(dof_handler, mapping, operator_data_in, mg_constrained_dofs, level);
 
@@ -162,9 +162,8 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::get_diffusive_operator_data
 
 template<int dim, int fe_degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, fe_degree, Number>::vmult(
-  parallel::distributed::Vector<Number> &       dst,
-  parallel::distributed::Vector<Number> const & src) const
+ConvectionDiffusionOperator<dim, fe_degree, Number>::vmult(VectorType &       dst,
+                                                           VectorType const & src) const
 {
   if(this->operator_settings.unsteady_problem == true)
   {
@@ -192,9 +191,8 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::vmult(
 
 template<int dim, int fe_degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, fe_degree, Number>::vmult_add(
-  parallel::distributed::Vector<Number> &       dst,
-  parallel::distributed::Vector<Number> const & src) const
+ConvectionDiffusionOperator<dim, fe_degree, Number>::vmult_add(VectorType &       dst,
+                                                               VectorType const & src) const
 {
   if(this->operator_settings.unsteady_problem == true)
   {
@@ -266,8 +264,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_system_matrix(
 
 template<int dim, int fe_degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_diagonal(
-  parallel::distributed::Vector<Number> & diagonal) const
+ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_diagonal(VectorType & diagonal) const
 {
   if(this->operator_settings.unsteady_problem == true)
   {

@@ -367,9 +367,7 @@ template<int dim, int fe_degree, int n_q_points_1d, typename value_type>
 class BodyForceOperator
 {
 public:
-  BodyForceOperator() : data(nullptr), eval_time(0.0)
-  {
-  }
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
 
   typedef FEEvaluation<dim, fe_degree, n_q_points_1d, 1, value_type>   FEEval_scalar;
   typedef FEEvaluation<dim, fe_degree, n_q_points_1d, dim, value_type> FEEval_velocity;
@@ -381,6 +379,10 @@ public:
   typedef Tensor<2, dim, VectorizedArray<value_type>> tensor;
   typedef Point<dim, VectorizedArray<value_type>>     point;
 
+  BodyForceOperator() : data(nullptr), eval_time(0.0)
+  {
+  }
+
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,
              BodyForceOperatorData<dim> const &  operator_data_in)
@@ -390,18 +392,14 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<value_type> &       dst,
-           parallel::distributed::Vector<value_type> const & src,
-           double const                                      evaluation_time) const
+  evaluate(VectorType & dst, VectorType const & src, double const evaluation_time) const
   {
     dst = 0;
     evaluate_add(dst, src, evaluation_time);
   }
 
   void
-  evaluate_add(parallel::distributed::Vector<value_type> &       dst,
-               parallel::distributed::Vector<value_type> const & src,
-               double const                                      evaluation_time) const
+  evaluate_add(VectorType & dst, VectorType const & src, double const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
@@ -410,10 +408,10 @@ public:
 
 private:
   void
-  cell_loop(const MatrixFree<dim, value_type> &               data,
-            parallel::distributed::Vector<value_type> &       dst,
-            const parallel::distributed::Vector<value_type> & src,
-            const std::pair<unsigned int, unsigned int> &     cell_range) const
+  cell_loop(MatrixFree<dim, value_type> const &           data,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_scalar   fe_eval_density(data, operator_data.dof_index, operator_data.quad_index, 0);
     FEEval_velocity fe_eval_momentum(data, operator_data.dof_index, operator_data.quad_index, 1);
@@ -472,14 +470,16 @@ template<int dim, int fe_degree, int n_q_points_1d, typename value_type>
 class MassMatrixOperator
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   typedef MassMatrixOperator<dim, fe_degree, n_q_points_1d, value_type> This;
+
+  typedef FEEvaluation<dim, fe_degree, n_q_points_1d, 1, value_type>   FEEval_scalar;
+  typedef FEEvaluation<dim, fe_degree, n_q_points_1d, dim, value_type> FEEval_velocity;
 
   MassMatrixOperator() : data(nullptr)
   {
   }
-
-  typedef FEEvaluation<dim, fe_degree, n_q_points_1d, 1, value_type>   FEEval_scalar;
-  typedef FEEvaluation<dim, fe_degree, n_q_points_1d, dim, value_type> FEEval_velocity;
 
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,
@@ -491,26 +491,24 @@ public:
 
   // apply matrix vector multiplication
   void
-  apply(parallel::distributed::Vector<value_type> &       dst,
-        const parallel::distributed::Vector<value_type> & src) const
+  apply(VectorType & dst, VectorType const & src) const
   {
     dst = 0;
     apply_add(dst, src);
   }
 
   void
-  apply_add(parallel::distributed::Vector<value_type> &       dst,
-            const parallel::distributed::Vector<value_type> & src) const
+  apply_add(VectorType & dst, VectorType const & src) const
   {
     data->cell_loop(&This::cell_loop, this, dst, src);
   }
 
 private:
   void
-  cell_loop(const MatrixFree<dim, value_type> &               data,
-            parallel::distributed::Vector<value_type> &       dst,
-            const parallel::distributed::Vector<value_type> & src,
-            const std::pair<unsigned int, unsigned int> &     cell_range) const
+  cell_loop(MatrixFree<dim, value_type> const &           data,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_scalar fe_eval_density(data,
                                   mass_matrix_operator_data.dof_index,
@@ -579,11 +577,9 @@ template<int dim, int fe_degree, int n_q_points_1d, typename value_type>
 class ConvectiveOperator
 {
 public:
-  typedef ConvectiveOperator<dim, fe_degree, n_q_points_1d, value_type> This;
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
 
-  ConvectiveOperator() : data(nullptr)
-  {
-  }
+  typedef ConvectiveOperator<dim, fe_degree, n_q_points_1d, value_type> This;
 
   typedef FEEvaluation<dim, fe_degree, n_q_points_1d, 1, value_type>       FEEval_scalar;
   typedef FEFaceEvaluation<dim, fe_degree, n_q_points_1d, 1, value_type>   FEFaceEval_scalar;
@@ -595,6 +591,10 @@ public:
   typedef Tensor<2, dim, VectorizedArray<value_type>> tensor;
   typedef Point<dim, VectorizedArray<value_type>>     point;
 
+  ConvectiveOperator() : data(nullptr)
+  {
+  }
+
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,
              ConvectiveOperatorData<dim> const & operator_data_in)
@@ -604,18 +604,14 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<value_type> &       dst,
-           parallel::distributed::Vector<value_type> const & src,
-           value_type const                                  evaluation_time) const
+  evaluate(VectorType & dst, VectorType const & src, value_type const evaluation_time) const
   {
     dst = 0;
     evaluate_add(dst, src, evaluation_time);
   }
 
   void
-  evaluate_add(parallel::distributed::Vector<value_type> &       dst,
-               parallel::distributed::Vector<value_type> const & src,
-               value_type const                                  evaluation_time) const
+  evaluate_add(VectorType & dst, VectorType const & src, value_type const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
@@ -624,10 +620,10 @@ public:
 
 private:
   void
-  cell_loop(const MatrixFree<dim, value_type> &               data,
-            parallel::distributed::Vector<value_type> &       dst,
-            const parallel::distributed::Vector<value_type> & src,
-            const std::pair<unsigned int, unsigned int> &     cell_range) const
+  cell_loop(MatrixFree<dim, value_type> const &           data,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_scalar    fe_eval_density(data, operator_data.dof_index, operator_data.quad_index, 0);
     FEEval_vectorial fe_eval_momentum(data, operator_data.dof_index, operator_data.quad_index, 1);
@@ -669,10 +665,10 @@ private:
   }
 
   void
-  face_loop(const MatrixFree<dim, value_type> &               data,
-            parallel::distributed::Vector<value_type> &       dst,
-            const parallel::distributed::Vector<value_type> & src,
-            const std::pair<unsigned int, unsigned int> &     face_range) const
+  face_loop(MatrixFree<dim, value_type> const &           data,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_scalar fe_eval_density(
       data, true, operator_data.dof_index, operator_data.quad_index, 0);
@@ -779,10 +775,10 @@ private:
   }
 
   void
-  boundary_face_loop(const MatrixFree<dim, value_type> &               data,
-                     parallel::distributed::Vector<value_type> &       dst,
-                     const parallel::distributed::Vector<value_type> & src,
-                     const std::pair<unsigned int, unsigned int> &     face_range) const
+  boundary_face_loop(MatrixFree<dim, value_type> const &           data,
+                     VectorType &                                  dst,
+                     VectorType const &                            src,
+                     std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_scalar fe_eval_density(
       data, true, operator_data.dof_index, operator_data.quad_index, 0);
@@ -1018,11 +1014,9 @@ template<int dim, int fe_degree, int n_q_points_1d, typename value_type>
 class ViscousOperator
 {
 public:
-  typedef ViscousOperator<dim, fe_degree, n_q_points_1d, value_type> This;
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
 
-  ViscousOperator() : data(nullptr)
-  {
-  }
+  typedef ViscousOperator<dim, fe_degree, n_q_points_1d, value_type> This;
 
   typedef FEEvaluation<dim, fe_degree, n_q_points_1d, 1, value_type>       FEEval_scalar;
   typedef FEFaceEvaluation<dim, fe_degree, n_q_points_1d, 1, value_type>   FEFaceEval_scalar;
@@ -1033,6 +1027,10 @@ public:
   typedef Tensor<1, dim, VectorizedArray<value_type>> vector;
   typedef Tensor<2, dim, VectorizedArray<value_type>> tensor;
   typedef Point<dim, VectorizedArray<value_type>>     point;
+
+  ViscousOperator() : data(nullptr)
+  {
+  }
 
   void
   initialize(Mapping<dim> const &                mapping,
@@ -1049,18 +1047,14 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<value_type> &       dst,
-           const parallel::distributed::Vector<value_type> & src,
-           value_type const                                  evaluation_time) const
+  evaluate(VectorType & dst, VectorType const & src, value_type const evaluation_time) const
   {
     dst = 0;
     evaluate_add(dst, src, evaluation_time);
   }
 
   void
-  evaluate_add(parallel::distributed::Vector<value_type> &       dst,
-               const parallel::distributed::Vector<value_type> & src,
-               value_type const                                  evaluation_time) const
+  evaluate_add(VectorType & dst, VectorType const & src, value_type const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
@@ -1069,10 +1063,10 @@ public:
 
 private:
   void
-  cell_loop(const MatrixFree<dim, value_type> &               data,
-            parallel::distributed::Vector<value_type> &       dst,
-            const parallel::distributed::Vector<value_type> & src,
-            const std::pair<unsigned int, unsigned int> &     cell_range) const
+  cell_loop(MatrixFree<dim, value_type> const &           data,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_scalar    fe_eval_density(data, operator_data.dof_index, operator_data.quad_index, 0);
     FEEval_vectorial fe_eval_momentum(data, operator_data.dof_index, operator_data.quad_index, 1);
@@ -1125,10 +1119,10 @@ private:
   }
 
   void
-  face_loop(const MatrixFree<dim, value_type> &               data,
-            parallel::distributed::Vector<value_type> &       dst,
-            const parallel::distributed::Vector<value_type> & src,
-            const std::pair<unsigned int, unsigned int> &     face_range) const
+  face_loop(MatrixFree<dim, value_type> const &           data,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_scalar fe_eval_density(
       data, true, operator_data.dof_index, operator_data.quad_index, 0);
@@ -1303,10 +1297,10 @@ private:
   }
 
   void
-  boundary_face_loop(const MatrixFree<dim, value_type> &               data,
-                     parallel::distributed::Vector<value_type> &       dst,
-                     const parallel::distributed::Vector<value_type> & src,
-                     const std::pair<unsigned int, unsigned int> &     face_range) const
+  boundary_face_loop(MatrixFree<dim, value_type> const &           data,
+                     VectorType &                                  dst,
+                     VectorType const &                            src,
+                     std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_scalar fe_eval_density(
       data, true, operator_data.dof_index, operator_data.quad_index, 0);
@@ -1576,11 +1570,9 @@ template<int dim, int fe_degree, int n_q_points_1d, typename value_type>
 class CombinedOperator
 {
 public:
-  typedef CombinedOperator<dim, fe_degree, n_q_points_1d, value_type> This;
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
 
-  CombinedOperator() : data(nullptr)
-  {
-  }
+  typedef CombinedOperator<dim, fe_degree, n_q_points_1d, value_type> This;
 
   typedef FEEvaluation<dim, fe_degree, n_q_points_1d, 1, value_type>       FEEval_scalar;
   typedef FEFaceEvaluation<dim, fe_degree, n_q_points_1d, 1, value_type>   FEFaceEval_scalar;
@@ -1591,6 +1583,10 @@ public:
   typedef Tensor<1, dim, VectorizedArray<value_type>> vector;
   typedef Tensor<2, dim, VectorizedArray<value_type>> tensor;
   typedef Point<dim, VectorizedArray<value_type>>     point;
+
+  CombinedOperator() : data(nullptr)
+  {
+  }
 
   void
   initialize(Mapping<dim> const &                mapping,
@@ -1607,18 +1603,14 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<value_type> &       dst,
-           const parallel::distributed::Vector<value_type> & src,
-           value_type const                                  evaluation_time) const
+  evaluate(VectorType & dst, VectorType const & src, value_type const evaluation_time) const
   {
     dst = 0;
     evaluate_add(dst, src, evaluation_time);
   }
 
   void
-  evaluate_add(parallel::distributed::Vector<value_type> &       dst,
-               const parallel::distributed::Vector<value_type> & src,
-               value_type const                                  evaluation_time) const
+  evaluate_add(VectorType & dst, VectorType const & src, value_type const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
@@ -1630,10 +1622,10 @@ public:
 
 private:
   void
-  cell_loop(const MatrixFree<dim, value_type> &               data,
-            parallel::distributed::Vector<value_type> &       dst,
-            const parallel::distributed::Vector<value_type> & src,
-            const std::pair<unsigned int, unsigned int> &     cell_range) const
+  cell_loop(MatrixFree<dim, value_type> const &           data,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEval_scalar    fe_eval_density(data, operator_data.dof_index, operator_data.quad_index, 0);
     FEEval_vectorial fe_eval_momentum(data, operator_data.dof_index, operator_data.quad_index, 1);
@@ -1696,10 +1688,10 @@ private:
   }
 
   void
-  face_loop(const MatrixFree<dim, value_type> &               data,
-            parallel::distributed::Vector<value_type> &       dst,
-            const parallel::distributed::Vector<value_type> & src,
-            const std::pair<unsigned int, unsigned int> &     face_range) const
+  face_loop(MatrixFree<dim, value_type> const &           data,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_scalar fe_eval_density(
       data, true, operator_data.dof_index, operator_data.quad_index, 0);
@@ -1905,10 +1897,10 @@ private:
   }
 
   void
-  boundary_face_loop(const MatrixFree<dim, value_type> &               data,
-                     parallel::distributed::Vector<value_type> &       dst,
-                     const parallel::distributed::Vector<value_type> & src,
-                     const std::pair<unsigned int, unsigned int> &     face_range) const
+  boundary_face_loop(MatrixFree<dim, value_type> const &           data,
+                     VectorType &                                  dst,
+                     VectorType const &                            src,
+                     std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_scalar fe_eval_density(
       data, true, operator_data.dof_index, operator_data.quad_index, 0);

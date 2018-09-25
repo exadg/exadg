@@ -22,7 +22,7 @@
 double
 calculate_const_time_step(double const dt, unsigned int const n_refine_time)
 {
-  double time_step = dt / std::pow(2., n_refine_time);
+  double const time_step = dt / std::pow(2., n_refine_time);
 
   return time_step;
 }
@@ -60,7 +60,7 @@ calculate_max_velocity(Triangulation<dim> const &     triangulation,
         max_U = U;
     }
   }
-  const double global_max_U = Utilities::MPI::max(max_U, MPI_COMM_WORLD);
+  double const global_max_U = Utilities::MPI::max(max_U, MPI_COMM_WORLD);
 
   return global_max_U;
 }
@@ -77,7 +77,7 @@ calculate_const_time_step_cfl(double const       cfl,
                               unsigned int const fe_degree,
                               double const       exponent_fe_degree = 2.0)
 {
-  double time_step =
+  double const time_step =
     cfl / pow(fe_degree, exponent_fe_degree) * global_min_cell_diameter / max_velocity;
 
   return time_step;
@@ -95,8 +95,8 @@ calculate_const_time_step_diff(double const       diffusion_number,
                                unsigned int const fe_degree,
                                double const       exponent_fe_degree = 3.0)
 {
-  double time_step = diffusion_number / pow(fe_degree, exponent_fe_degree) *
-                     pow(global_min_cell_diameter, 2.0) / diffusivity;
+  double const time_step = diffusion_number / pow(fe_degree, exponent_fe_degree) *
+                           pow(global_min_cell_diameter, 2.0) / diffusivity;
 
   return time_step;
 }
@@ -115,8 +115,8 @@ calculate_time_step_max_efficiency(double const       c_eff,
                                    unsigned int const order_time_integration,
                                    unsigned int const n_refine_time)
 {
-  double exponent = (double)(fe_degree + 1) / order_time_integration;
-  double time_step =
+  double const exponent = (double)(fe_degree + 1) / order_time_integration;
+  double const time_step =
     c_eff * std::pow(global_min_cell_diameter, exponent) / std::pow(2., n_refine_time);
 
   return time_step;
@@ -133,9 +133,9 @@ calculate_adaptive_time_step_cfl(MatrixFree<dim, value_type> const &            
 {
   FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type> fe_eval(data, dof_index, quad_index);
 
-  value_type new_time_step = std::numeric_limits<value_type>::max();
+  double new_time_step = std::numeric_limits<value_type>::max();
 
-  value_type cfl_p = cfl / pow(fe_degree, exponent_fe_degree);
+  double const cfl_p = cfl / pow(fe_degree, exponent_fe_degree);
 
   // loop over cells of processor
   for(unsigned int cell = 0; cell < data.n_macro_cells(); ++cell)
@@ -214,9 +214,9 @@ calculate_adaptive_time_step_diffusion(MatrixFree<dim, value_type> const &      
 {
   FEEvaluation<dim, fe_degree, fe_degree + 1, 1, value_type> fe_eval(data, dof_index, quad_index);
 
-  value_type new_time_step = std::numeric_limits<value_type>::max();
+  double new_time_step = std::numeric_limits<value_type>::max();
 
-  value_type d_p = d / pow(fe_degree, exponent_fe_degree);
+  double const d_p = d / pow(fe_degree, exponent_fe_degree);
 
   // loop over cells of processor
   for(unsigned int cell = 0; cell < data.n_macro_cells(); ++cell)
@@ -260,7 +260,7 @@ calculate_adaptive_time_step_diffusion(MatrixFree<dim, value_type> const &      
   new_time_step = Utilities::MPI::min(new_time_step, MPI_COMM_WORLD);
 
   // TODO
-  double factor = 1.2;
+  double const factor = 1.2;
   limit_time_step_change(new_time_step, last_time_step, factor);
 
   return new_time_step;

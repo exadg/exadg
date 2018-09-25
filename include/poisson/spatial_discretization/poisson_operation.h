@@ -39,7 +39,7 @@ public:
               Poisson::InputParameters const &                  param_in);
 
   void
-  setup(const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+  setup(std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                           periodic_face_pairs,
         std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor_in,
         std::shared_ptr<Poisson::FieldFunctions<dim>>     field_functions_in);

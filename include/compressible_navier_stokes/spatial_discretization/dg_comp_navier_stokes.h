@@ -49,6 +49,8 @@ public:
 
   typedef value_type Number;
 
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   static const unsigned int dof_index_all =
     static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
       DofHandlerSelector::all_components);
@@ -117,27 +119,26 @@ public:
 
   // initialization of DoF vectors
   void
-  initialize_dof_vector(parallel::distributed::Vector<value_type> & src) const
+  initialize_dof_vector(VectorType & src) const
   {
     data.initialize_dof_vector(src, dof_index_all);
   }
 
   void
-  initialize_dof_vector_scalar(parallel::distributed::Vector<value_type> & src) const
+  initialize_dof_vector_scalar(VectorType & src) const
   {
     data.initialize_dof_vector(src, dof_index_scalar);
   }
 
   void
-  initialize_dof_vector_dim_components(parallel::distributed::Vector<value_type> & src) const
+  initialize_dof_vector_dim_components(VectorType & src) const
   {
     data.initialize_dof_vector(src, dof_index_vector);
   }
 
   // set initial conditions
   void
-  prescribe_initial_conditions(parallel::distributed::Vector<value_type> & src,
-                               double const                                evaluation_time) const
+  prescribe_initial_conditions(VectorType & src, double const evaluation_time) const
   {
     this->field_functions->initial_solution->set_time(evaluation_time);
 
@@ -152,9 +153,7 @@ public:
    *  and finally applies the inverse mass matrix operator.
    */
   void
-  evaluate(parallel::distributed::Vector<value_type> &       dst,
-           parallel::distributed::Vector<value_type> const & src,
-           value_type const                                  evaluation_time) const
+  evaluate(VectorType & dst, VectorType const & src, value_type const evaluation_time) const
   {
     Timer timer;
     timer.restart();
@@ -199,9 +198,9 @@ public:
   }
 
   void
-  evaluate_convective(parallel::distributed::Vector<value_type> &       dst,
-                      parallel::distributed::Vector<value_type> const & src,
-                      value_type const                                  evaluation_time) const
+  evaluate_convective(VectorType &       dst,
+                      VectorType const & src,
+                      value_type const   evaluation_time) const
   {
     // set dst to zero
     dst = 0.0;
@@ -215,9 +214,7 @@ public:
   }
 
   void
-  evaluate_viscous(parallel::distributed::Vector<value_type> &       dst,
-                   parallel::distributed::Vector<value_type> const & src,
-                   value_type const                                  evaluation_time) const
+  evaluate_viscous(VectorType & dst, VectorType const & src, value_type const evaluation_time) const
   {
     // set dst to zero
     dst = 0.0;
@@ -230,9 +227,9 @@ public:
   }
 
   void
-  evaluate_convective_and_viscous(parallel::distributed::Vector<value_type> &       dst,
-                                  parallel::distributed::Vector<value_type> const & src,
-                                  value_type const evaluation_time) const
+  evaluate_convective_and_viscous(VectorType &       dst,
+                                  VectorType const & src,
+                                  value_type const   evaluation_time) const
   {
     // set dst to zero
     dst = 0.0;
@@ -260,8 +257,7 @@ public:
   }
 
   void
-  apply_inverse_mass(parallel::distributed::Vector<value_type> &       dst,
-                     parallel::distributed::Vector<value_type> const & src) const
+  apply_inverse_mass(VectorType & dst, VectorType const & src) const
   {
     // apply inverse mass matrix
     inverse_mass_matrix_operator->apply(dst, src);
@@ -324,28 +320,23 @@ public:
 
   // pressure
   void
-  compute_pressure(parallel::distributed::Vector<value_type> &       dst,
-                   const parallel::distributed::Vector<value_type> & src);
+  compute_pressure(VectorType & dst, VectorType const & src);
 
   // velocity
   void
-  compute_velocity(parallel::distributed::Vector<value_type> &       dst,
-                   const parallel::distributed::Vector<value_type> & src);
+  compute_velocity(VectorType & dst, VectorType const & src);
 
   // temperature
   void
-  compute_temperature(parallel::distributed::Vector<value_type> &       dst,
-                      const parallel::distributed::Vector<value_type> & src);
+  compute_temperature(VectorType & dst, VectorType const & src);
 
   // vorticity
   void
-  compute_vorticity(parallel::distributed::Vector<value_type> &       dst,
-                    const parallel::distributed::Vector<value_type> & src) const;
+  compute_vorticity(VectorType & dst, VectorType const & src) const;
 
   // divergence
   void
-  compute_divergence(parallel::distributed::Vector<value_type> &       dst,
-                     const parallel::distributed::Vector<value_type> & src) const;
+  compute_divergence(VectorType & dst, VectorType const & src) const;
 
   double
   get_wall_time_operator_evaluation() const
@@ -577,8 +568,7 @@ private:
 template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
 void
 DGCompNavierStokesOperation<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>::
-  compute_pressure(parallel::distributed::Vector<value_type> &       dst,
-                   const parallel::distributed::Vector<value_type> & src)
+  compute_pressure(VectorType & dst, VectorType const & src)
 {
   p_u_T_calculator.compute_pressure(dst, src);
   inverse_mass_matrix_operator_scalar->apply(dst, dst);
@@ -587,8 +577,7 @@ DGCompNavierStokesOperation<dim, fe_degree, n_q_points_conv, n_q_points_vis, val
 template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
 void
 DGCompNavierStokesOperation<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>::
-  compute_velocity(parallel::distributed::Vector<value_type> &       dst,
-                   const parallel::distributed::Vector<value_type> & src)
+  compute_velocity(VectorType & dst, VectorType const & src)
 {
   p_u_T_calculator.compute_velocity(dst, src);
   inverse_mass_matrix_operator_vector->apply(dst, dst);
@@ -597,8 +586,7 @@ DGCompNavierStokesOperation<dim, fe_degree, n_q_points_conv, n_q_points_vis, val
 template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
 void
 DGCompNavierStokesOperation<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>::
-  compute_temperature(parallel::distributed::Vector<value_type> &       dst,
-                      const parallel::distributed::Vector<value_type> & src)
+  compute_temperature(VectorType & dst, VectorType const & src)
 {
   p_u_T_calculator.compute_temperature(dst, src);
   inverse_mass_matrix_operator_scalar->apply(dst, dst);
@@ -607,8 +595,7 @@ DGCompNavierStokesOperation<dim, fe_degree, n_q_points_conv, n_q_points_vis, val
 template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
 void
 DGCompNavierStokesOperation<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>::
-  compute_vorticity(parallel::distributed::Vector<value_type> &       dst,
-                    const parallel::distributed::Vector<value_type> & src) const
+  compute_vorticity(VectorType & dst, VectorType const & src) const
 {
   vorticity_calculator.compute_vorticity(dst, src);
   inverse_mass_matrix_operator_vector->apply(dst, dst);
@@ -617,8 +604,7 @@ DGCompNavierStokesOperation<dim, fe_degree, n_q_points_conv, n_q_points_vis, val
 template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
 void
 DGCompNavierStokesOperation<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>::
-  compute_divergence(parallel::distributed::Vector<value_type> &       dst,
-                     const parallel::distributed::Vector<value_type> & src) const
+  compute_divergence(VectorType & dst, VectorType const & src) const
 {
   divergence_calculator.compute_divergence(dst, src);
   inverse_mass_matrix_operator_scalar->apply(dst, dst);

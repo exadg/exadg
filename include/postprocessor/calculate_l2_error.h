@@ -15,16 +15,16 @@
 
 using namespace dealii;
 
-template<int dim>
+template<int dim, typename VectorType>
 double
-calculate_error(bool const &                                  relative_error,
-                DoFHandler<dim> const &                       dof_handler,
-                Mapping<dim> const &                          mapping,
-                parallel::distributed::Vector<double> const & numerical_solution,
-                std::shared_ptr<Function<dim>> const          analytical_solution,
-                double const &                                time,
-                VectorTools::NormType const &                 norm_type,
-                unsigned int const                            additional_quadrature_points = 3)
+calculate_error(bool const &                         relative_error,
+                DoFHandler<dim> const &              dof_handler,
+                Mapping<dim> const &                 mapping,
+                VectorType const &                   numerical_solution,
+                std::shared_ptr<Function<dim>> const analytical_solution,
+                double const &                       time,
+                VectorTools::NormType const &        norm_type,
+                unsigned int const                   additional_quadrature_points = 3)
 {
   double error = 1.0;
   analytical_solution->set_time(time);
@@ -47,7 +47,7 @@ calculate_error(bool const &                                  relative_error,
   {
     // calculate solution norm
     Vector<double> solution_norm_per_cell(dof_handler.get_triangulation().n_active_cells());
-    parallel::distributed::Vector<double> zero_solution;
+    VectorType     zero_solution;
     zero_solution.reinit(numerical_solution);
     VectorTools::integrate_difference(mapping,
                                       dof_handler,
@@ -62,7 +62,7 @@ calculate_error(bool const &                                  relative_error,
       std::sqrt(Utilities::MPI::sum(solution_norm_per_cell.norm_sqr(), MPI_COMM_WORLD));
 
     AssertThrow(solution_norm > 1.e-15,
-                ExcMessage("Cannot compute relative error since absolute error tends to zero."));
+                ExcMessage("Cannot compute relative error since norm of solution tends to zero."));
 
     error = error_norm / solution_norm;
   }

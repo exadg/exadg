@@ -15,7 +15,7 @@ template<int dim, typename Number>
 void
 my_point_value(Mapping<dim> const &                                   mapping,
                DoFHandler<dim> const &                                dof_handler,
-               parallel::distributed::Vector<Number> const &          solution,
+               LinearAlgebra::distributed::Vector<Number> const &     solution,
                typename DoFHandler<dim>::active_cell_iterator const & cell,
                Point<dim> const &                                     point_in_ref_coord,
                Vector<Number> &                                       value)
@@ -134,11 +134,12 @@ my_point_value(Mapping<dim> const &                                   mapping,
 
 template<int dim, typename Number>
 void
-evaluate_scalar_quantity_in_point(DoFHandler<dim> const &                       dof_handler,
-                                  Mapping<dim> const &                          mapping,
-                                  parallel::distributed::Vector<double> const & numerical_solution,
-                                  Point<dim> const &                            point,
-                                  Number &                                      solution_value)
+evaluate_scalar_quantity_in_point(
+  DoFHandler<dim> const &                            dof_handler,
+  Mapping<dim> const &                               mapping,
+  LinearAlgebra::distributed::Vector<Number> const & numerical_solution,
+  Point<dim> const &                                 point,
+  Number &                                           solution_value)
 {
   // processor local variables: initialize with zeros since we add values to these variables
   unsigned int counter = 0;
@@ -177,11 +178,11 @@ evaluate_scalar_quantity_in_point(DoFHandler<dim> const &                       
 template<int dim, typename Number>
 void
 evaluate_vectorial_quantity_in_point(
-  DoFHandler<dim> const &                       dof_handler,
-  Mapping<dim> const &                          mapping,
-  parallel::distributed::Vector<double> const & numerical_solution,
-  Point<dim> const &                            point,
-  Tensor<1, dim, Number> &                      solution_value)
+  DoFHandler<dim> const &                            dof_handler,
+  Mapping<dim> const &                               mapping,
+  LinearAlgebra::distributed::Vector<Number> const & numerical_solution,
+  Point<dim> const &                                 point,
+  Tensor<1, dim, Number> &                           solution_value)
 {
   // processor local variables: initialize with zeros since we add values to these variables
   unsigned int counter = 0;
@@ -231,7 +232,7 @@ void
 get_global_dof_index_and_shape_values(
   DoFHandler<dim> const &                                     dof_handler,
   Mapping<dim> const &                                        mapping,
-  parallel::distributed::Vector<double> const &               numerical_solution,
+  LinearAlgebra::distributed::Vector<Number> const &          numerical_solution,
   Point<dim> const &                                          point,
   std::vector<std::pair<unsigned int, std::vector<Number>>> & global_dof_index_and_shape_values)
 {
@@ -279,11 +280,11 @@ get_global_dof_index_and_shape_values(
  */
 template<int dim, typename Number>
 void
-interpolate_value_vectorial_quantity(DoFHandler<dim> const &                       dof_handler,
-                                     parallel::distributed::Vector<Number> const & solution,
-                                     unsigned int const &                          global_dof_index,
-                                     std::vector<Number> const &                   fe_shape_values,
-                                     Tensor<1, dim, Number> &                      result)
+interpolate_value_vectorial_quantity(DoFHandler<dim> const &                            dof_handler,
+                                     LinearAlgebra::distributed::Vector<Number> const & solution,
+                                     unsigned int const &        global_dof_index,
+                                     std::vector<Number> const & fe_shape_values,
+                                     Tensor<1, dim, Number> &    result)
 {
   FiniteElement<dim> const & fe = dof_handler.get_fe();
 
@@ -301,11 +302,11 @@ interpolate_value_vectorial_quantity(DoFHandler<dim> const &                    
  */
 template<int dim, typename Number>
 void
-interpolate_value_scalar_quantity(DoFHandler<dim> const &                       dof_handler,
-                                  parallel::distributed::Vector<Number> const & solution,
-                                  unsigned int const &                          global_dof_index,
-                                  std::vector<Number> const &                   fe_shape_values,
-                                  Number &                                      result)
+interpolate_value_scalar_quantity(DoFHandler<dim> const &                            dof_handler,
+                                  LinearAlgebra::distributed::Vector<Number> const & solution,
+                                  unsigned int const &        global_dof_index,
+                                  std::vector<Number> const & fe_shape_values,
+                                  Number &                    result)
 {
   FiniteElement<dim> const & fe = dof_handler.get_fe();
 

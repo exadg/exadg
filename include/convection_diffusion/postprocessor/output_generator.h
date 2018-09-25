@@ -15,13 +15,13 @@
 
 namespace ConvDiff
 {
-template<int dim>
+template<int dim, typename VectorType>
 void
-write_output(OutputData const &                            output_data,
-             DoFHandler<dim> const &                       dof_handler,
-             Mapping<dim> const &                          mapping,
-             parallel::distributed::Vector<double> const & solution_vector,
-             unsigned int const                            output_counter)
+write_output(OutputData const &      output_data,
+             DoFHandler<dim> const & dof_handler,
+             Mapping<dim> const &    mapping,
+             VectorType const &      solution_vector,
+             unsigned int const      output_counter)
 {
   DataOut<dim> data_out;
 
@@ -42,6 +42,8 @@ template<int dim>
 class OutputGenerator
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<double> VectorType;
+
   OutputGenerator() : output_counter(0)
   {
   }
@@ -60,9 +62,7 @@ public:
   }
 
   void
-  evaluate(parallel::distributed::Vector<double> const & solution,
-           double const &                                time,
-           int const &                                   time_step_number)
+  evaluate(VectorType const & solution, double const & time, int const & time_step_number)
   {
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 

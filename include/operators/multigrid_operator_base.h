@@ -16,6 +16,8 @@ public:
   typedef Number   value_type;
   static const int DIM = dim;
 
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   virtual void
   clear()
   {
@@ -23,30 +25,26 @@ public:
   }
 
   virtual void
-  vmult(parallel::distributed::Vector<Number> & /*dst*/,
-        const parallel::distributed::Vector<Number> & /*src*/) const
+  vmult(VectorType & /*dst*/, VectorType const & /*src*/) const
   {
     AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
   }
 
   virtual void
-  vmult_add(parallel::distributed::Vector<Number> & /*dst*/,
-            const parallel::distributed::Vector<Number> & /*src*/) const
+  vmult_add(VectorType & /*dst*/, VectorType const & /*src*/) const
   {
     AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult_add should be overwritten!"));
   }
 
   virtual void
-  vmult_interface_down(parallel::distributed::Vector<Number> & /*dst*/,
-                       const parallel::distributed::Vector<Number> & /*src*/) const
+  vmult_interface_down(VectorType & /*dst*/, VectorType const & /*src*/) const
   {
     AssertThrow(false,
                 ExcMessage("MultigridOperatorBase::vmult_interface_down should be overwritten!"));
   }
 
   virtual void
-  vmult_add_interface_up(parallel::distributed::Vector<Number> & /*dst*/,
-                         const parallel::distributed::Vector<Number> & /*src*/) const
+  vmult_add_interface_up(VectorType & /*dst*/, VectorType const & /*src*/) const
   {
     AssertThrow(false,
                 ExcMessage("MultigridOperatorBase::vmult_add_interface_up should be overwritten!"));
@@ -74,15 +72,14 @@ public:
   }
 
   virtual void
-  initialize_dof_vector(parallel::distributed::Vector<Number> & /*vector*/) const
+  initialize_dof_vector(VectorType & /*vector*/) const
   {
     AssertThrow(false,
                 ExcMessage("MultigridOperatorBase::initialize_dof_vector should be overwritten!"));
   }
 
   virtual void
-  calculate_inverse_diagonal(
-    parallel::distributed::Vector<Number> & /*inverse_diagonal_entries*/) const
+  calculate_inverse_diagonal(VectorType & /*inverse_diagonal_entries*/) const
   {
     AssertThrow(false,
                 ExcMessage(
@@ -90,8 +87,7 @@ public:
   }
 
   virtual void
-  apply_inverse_block_diagonal(parallel::distributed::Vector<Number> & /*dst*/,
-                               parallel::distributed::Vector<Number> const & /*src*/) const
+  apply_inverse_block_diagonal(VectorType & /*dst*/, VectorType const & /*src*/) const
   {
     AssertThrow(false,
                 ExcMessage(

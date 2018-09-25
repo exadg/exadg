@@ -27,6 +27,8 @@ template<int dim, int fe_degree, typename value_type>
 class TimeIntBDF
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   TimeIntBDF(
     std::shared_ptr<ConvDiff::DGOperation<dim, fe_degree, value_type>> conv_diff_operation_in,
     std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree>>           postprocessor_in,
@@ -76,23 +78,31 @@ public:
 private:
   void
   initialize_time_integrator_constants();
+
   void
   update_time_integrator_constants();
 
   void
   initialize_vectors();
+
   void
   initialize_solution();
+
   void
   initialize_vec_convective_term();
+
   void
   calculate_timestep();
+
   void
   prepare_vectors_for_next_timestep();
+
   void
   solve_timestep();
+
   void
   postprocessing() const;
+
   void
   analyze_computing_times() const;
 
@@ -131,16 +141,16 @@ private:
   ExtrapolationConstants     extra;
 
   // solution vectors
-  parallel::distributed::Vector<value_type>              solution_np;
-  std::vector<parallel::distributed::Vector<value_type>> solution;
-  std::vector<parallel::distributed::Vector<value_type>> vec_convective_term;
+  VectorType              solution_np;
+  std::vector<VectorType> solution;
+  std::vector<VectorType> vec_convective_term;
 
   std::shared_ptr<ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>>
     convective_operator_OIF;
 
   std::shared_ptr<
     ExplicitRungeKuttaTimeIntegrator<ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>,
-                                     parallel::distributed::Vector<value_type>>>
+                                     VectorType>>
     rk_time_integrator;
 
   // cfl number cfl_oif for operator-integration-factor splitting
@@ -150,11 +160,11 @@ private:
   // substepping time step size delta_s for operator-integration-factor splitting
   double delta_s;
 
-  parallel::distributed::Vector<value_type> solution_tilde_m;
-  parallel::distributed::Vector<value_type> solution_tilde_mp;
+  VectorType solution_tilde_m;
+  VectorType solution_tilde_mp;
 
-  parallel::distributed::Vector<value_type> sum_alphai_ui;
-  parallel::distributed::Vector<value_type> rhs_vector;
+  VectorType sum_alphai_ui;
+  VectorType rhs_vector;
 
   double N_iter_average;
   double solver_time_average;
@@ -194,10 +204,9 @@ TimeIntBDF<dim, fe_degree, value_type>::setup(bool /*do_restart*/)
   {
     convective_operator_OIF.reset(
       new ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>(conv_diff_operation));
-    rk_time_integrator.reset(
-      new ExplicitRungeKuttaTimeIntegrator<
-        ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>,
-        parallel::distributed::Vector<value_type>>(order, convective_operator_OIF));
+    rk_time_integrator.reset(new ExplicitRungeKuttaTimeIntegrator<
+                             ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>,
+                             VectorType>(order, convective_operator_OIF));
   }
 
   pcout << std::endl << "... done!" << std::endl;
@@ -295,14 +304,14 @@ TimeIntBDF<dim, fe_degree, value_type>::calculate_timestep()
                 ExcMessage("Time step calculation ConstTimeStepCFL does not make sense!"));
 
     // calculate minimum vertex distance
-    const double global_min_cell_diameter = calculate_minimum_vertex_distance(
+    double const global_min_cell_diameter = calculate_minimum_vertex_distance(
       conv_diff_operation->get_data().get_dof_handler().get_triangulation());
 
     print_parameter(pcout, "h_min", global_min_cell_diameter);
 
     double time_step_conv = 1.0;
 
-    const double max_velocity =
+    double const max_velocity =
       calculate_max_velocity(conv_diff_operation->get_data().get_dof_handler().get_triangulation(),
                              velocity,
                              time);
@@ -323,7 +332,7 @@ TimeIntBDF<dim, fe_degree, value_type>::calculate_timestep()
           ConvDiff::TimeStepCalculation::ConstTimeStepMaxEfficiency)
   {
     // calculate minimum vertex distance
-    const double global_min_cell_diameter = calculate_minimum_vertex_distance(
+    double const global_min_cell_diameter = calculate_minimum_vertex_distance(
       conv_diff_operation->get_data().get_dof_handler().get_triangulation());
 
     double time_step = calculate_time_step_max_efficiency(

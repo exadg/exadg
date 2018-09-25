@@ -38,6 +38,8 @@ template<int dim, int fe_degree>
 class PostProcessor
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<double> VectorType;
+
   PostProcessor()
   {
   }
@@ -59,9 +61,9 @@ public:
 
   // unsteady problems
   void
-  do_postprocessing(parallel::distributed::Vector<double> const & solution,
-                    double const                                  time             = 0.0,
-                    int const                                     time_step_number = -1);
+  do_postprocessing(VectorType const & solution,
+                    double const       time             = 0.0,
+                    int const          time_step_number = -1);
 
 private:
   ConvDiff::OutputGenerator<dim> output_generator;
@@ -71,10 +73,9 @@ private:
 // unsteady problems
 template<int dim, int fe_degree>
 void
-PostProcessor<dim, fe_degree>::do_postprocessing(
-  parallel::distributed::Vector<double> const & solution,
-  double const                                  time,
-  int const                                     time_step_number)
+PostProcessor<dim, fe_degree>::do_postprocessing(VectorType const & solution,
+                                                 double const       time,
+                                                 int const          time_step_number)
 {
   /*
    *  write output

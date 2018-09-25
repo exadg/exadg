@@ -100,11 +100,11 @@ public:
   }
 
   void
-  reinit(const DoFHandler<dim> &   dof_handler,
-         const Mapping<dim> &      mapping,
+  reinit(DoFHandler<dim> const &   dof_handler,
+         Mapping<dim> const &      mapping,
          void *                    operator_data_in,
-         const MGConstrainedDoFs & mg_constrained_dofs,
-         const unsigned int        level)
+         MGConstrainedDoFs const & mg_constrained_dofs,
+         unsigned int const        level)
   {
     Parent::reinit(dof_handler, mapping, operator_data_in, mg_constrained_dofs, level);
 

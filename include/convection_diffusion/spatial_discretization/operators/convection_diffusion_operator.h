@@ -60,6 +60,8 @@ public:
   static const int DIM = dim;
   typedef Number   value_type;
 
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   typedef ConvectionDiffusionOperator<dim, fe_degree, Number> This;
 
   typedef OperatorBase<dim, fe_degree, value_type, ConvectionDiffusionOperatorData<dim>> Parent;
@@ -68,13 +70,10 @@ public:
   typedef typename Parent::FEEvalFace FEEvalFace;
 
   typedef typename Parent::BlockMatrix BlockMatrix;
+
 #ifdef DEAL_II_WITH_TRILINOS
   typedef typename Parent::SparseMatrix SparseMatrix;
 #endif
-
-  typedef MassMatrixOperator<dim, fe_degree, Number> MassMatrixOp;
-  typedef ConvectiveOperator<dim, fe_degree, Number> ConvectiveOp;
-  typedef DiffusiveOperator<dim, fe_degree, Number>  DiffusiveOp;
 
   ConvectionDiffusionOperator();
 
@@ -92,11 +91,11 @@ public:
    *  created.
    */
   void
-  reinit(const DoFHandler<dim> &   dof_handler,
-         const Mapping<dim> &      mapping,
+  reinit(DoFHandler<dim> const &   dof_handler,
+         Mapping<dim> const &      mapping,
          void *                    operator_data_in,
-         const MGConstrainedDoFs & mg_constrained_dofs,
-         const unsigned int        level);
+         MGConstrainedDoFs const & mg_constrained_dofs,
+         unsigned int const        level);
 
   /*
    *  Scaling factor of time derivative term (mass matrix term)
@@ -121,12 +120,10 @@ public:
 
   // Apply matrix-vector multiplication.
   void
-  vmult(parallel::distributed::Vector<Number> &       dst,
-        parallel::distributed::Vector<Number> const & src) const;
+  vmult(VectorType & dst, VectorType const & src) const;
 
   void
-  vmult_add(parallel::distributed::Vector<Number> &       dst,
-            parallel::distributed::Vector<Number> const & src) const;
+  vmult_add(VectorType & dst, VectorType const & src) const;
 
 #ifdef DEAL_II_WITH_TRILINOS
   virtual void
@@ -140,7 +137,7 @@ public:
    *  This function calculates the diagonal of the scalar reaction-convection-diffusion operator.
    */
   void
-  calculate_diagonal(parallel::distributed::Vector<Number> & diagonal) const;
+  calculate_diagonal(VectorType & diagonal) const;
 
 private:
   /*
@@ -149,6 +146,7 @@ private:
    */
   void
   add_block_diagonal_matrices(BlockMatrix & matrices) const;
+
   void
   add_block_diagonal_matrices(BlockMatrix & matrices, Number const time) const;
 
@@ -156,10 +154,11 @@ private:
   get_new(unsigned int deg) const;
 
 private:
-  mutable lazy_ptr<MassMatrixOp> mass_matrix_operator;
-  mutable lazy_ptr<ConvectiveOp> convective_operator;
-  mutable lazy_ptr<DiffusiveOp>  diffusive_operator;
-  parallel::distributed::Vector<Number> mutable temp;
+  mutable lazy_ptr<MassMatrixOperator<dim, fe_degree, Number>> mass_matrix_operator;
+  mutable lazy_ptr<ConvectiveOperator<dim, fe_degree, Number>> convective_operator;
+  mutable lazy_ptr<DiffusiveOperator<dim, fe_degree, Number>>  diffusive_operator;
+
+  VectorType mutable temp;
   double scaling_factor_time_derivative_term;
 };
 

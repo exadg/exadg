@@ -25,6 +25,8 @@ template<int dim, int fe_degree, typename value_type>
 class RHSOperator
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+
   typedef RHSOperator<dim, fe_degree, value_type> This;
 
   RHSOperator() : data(nullptr), eval_time(0.0)
@@ -41,19 +43,18 @@ public:
 
   // apply matrix vector multiplication
   void
-  evaluate(parallel::distributed::Vector<value_type> & dst, value_type const evaluation_time) const
+  evaluate(VectorType & dst, double const evaluation_time) const
   {
     dst = 0;
     evaluate_add(dst, evaluation_time);
   }
 
   void
-  evaluate_add(parallel::distributed::Vector<value_type> & dst,
-               value_type const                            evaluation_time) const
+  evaluate_add(VectorType & dst, double const evaluation_time) const
   {
     this->eval_time = evaluation_time;
 
-    parallel::distributed::Vector<value_type> src;
+    VectorType src;
     data->cell_loop(&This::cell_loop, this, dst, src);
   }
 
@@ -75,9 +76,9 @@ private:
   }
 
   void
-  cell_loop(MatrixFree<dim, value_type> const &         data,
-            parallel::distributed::Vector<value_type> & dst,
-            parallel::distributed::Vector<value_type> const &,
+  cell_loop(MatrixFree<dim, value_type> const & data,
+            VectorType &                        dst,
+            VectorType const &,
             std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEvaluation<dim, fe_degree, fe_degree + 1, 1, value_type> fe_eval(data,
@@ -98,7 +99,7 @@ private:
 
   RHSOperatorData<dim> operator_data;
 
-  value_type mutable eval_time;
+  double mutable eval_time;
 };
 
 } // namespace ConvDiff
