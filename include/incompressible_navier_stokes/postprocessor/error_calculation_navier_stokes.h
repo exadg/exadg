@@ -264,7 +264,7 @@ private:
 
         unsigned int precision = 12;
         f << std::scientific << std::setprecision(precision) << std::setw(precision + 8) << time
-          << std::setw(precision + 8) << error_velocity << std::endl;
+          << std::setw(precision + 8) << error_pressure << std::endl;
       }
     }
   }
