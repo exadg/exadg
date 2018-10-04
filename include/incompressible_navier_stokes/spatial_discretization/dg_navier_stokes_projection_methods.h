@@ -691,17 +691,7 @@ DGNavierStokesProjectionMethods<dim,
                                 Number>::rhs_ppe_laplace_add(VectorType &   dst,
                                                              double const & evaluation_time) const
 {
-  const Poisson::LaplaceOperatorData<dim> & data = this->laplace_operator.get_operator_data();
-
-  // Set correct time for evaluation of functions on pressure Dirichlet boundaries
-  // (not needed for pressure Neumann boundaries because all functions are ZeroFunction in Neumann
-  // BC map!)
-  for(auto & it : data.bc->dirichlet_bc)
-  {
-    it.second->set_time(evaluation_time);
-  }
-
-  this->laplace_operator.rhs_add(dst);
+  this->laplace_operator.rhs_add(dst, evaluation_time);
 }
 
 template<int dim,
