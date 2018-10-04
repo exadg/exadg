@@ -12,23 +12,15 @@
 
 namespace IncNS
 {
-template<int dim, typename Number>
-class PostProcessorBase;
-
 template<int dim, typename value_type, typename NavierStokesOperation>
 class DriverSteadyProblems
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<value_type>      VectorType;
   typedef LinearAlgebra::distributed::BlockVector<value_type> BlockVectorType;
 
   DriverSteadyProblems(std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
-                       std::shared_ptr<PostProcessorBase<dim, value_type>> postprocessor_in,
-                       InputParameters<dim> const &                        param_in)
-    : navier_stokes_operation(navier_stokes_operation_in),
-      postprocessor(postprocessor_in),
-      param(param_in),
-      total_time(0.0)
+                       InputParameters<dim> const &           param_in)
+    : navier_stokes_operation(navier_stokes_operation_in), param(param_in), total_time(0.0)
   {
   }
 
@@ -44,32 +36,25 @@ public:
 private:
   void
   initialize_vectors();
+
   void
   initialize_solution();
 
   void
   solve();
+
   void
   postprocessing();
 
   std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
-  std::shared_ptr<PostProcessorBase<dim, value_type>> postprocessor;
-  InputParameters<dim> const &                        param;
+  InputParameters<dim> const & param;
 
   Timer      global_timer;
   value_type total_time;
 
   BlockVectorType solution;
   BlockVectorType rhs_vector;
-
-  VectorType vorticity;
-  VectorType divergence;
-  VectorType velocity_magnitude;
-  VectorType vorticity_magnitude;
-  VectorType q_criterion;
-
-  std::vector<SolutionField<dim, value_type>> additional_fields;
 };
 
 template<int dim, typename value_type, typename NavierStokesOperation>
@@ -94,57 +79,6 @@ DriverSteadyProblems<dim, value_type, NavierStokesOperation>::initialize_vectors
   // rhs_vector
   if(this->param.equation_type == EquationType::Stokes)
     navier_stokes_operation->initialize_block_vector_velocity_pressure(rhs_vector);
-
-  // vorticity
-  navier_stokes_operation->initialize_vector_vorticity(vorticity);
-
-  // divergence
-  if(this->param.output_data.write_divergence == true)
-  {
-    navier_stokes_operation->initialize_vector_velocity_scalar(divergence);
-
-    SolutionField<dim, value_type> div;
-    div.name        = "div_u";
-    div.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
-    div.vector      = &divergence;
-    this->additional_fields.push_back(div);
-  }
-
-  // velocity magnitude
-  if(this->param.output_data.write_velocity_magnitude == true)
-  {
-    navier_stokes_operation->initialize_vector_velocity_scalar(this->velocity_magnitude);
-
-    SolutionField<dim, value_type> sol;
-    sol.name        = "velocity_magnitude";
-    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
-    sol.vector      = &velocity_magnitude;
-    this->additional_fields.push_back(sol);
-  }
-
-  // vorticity magnitude
-  if(this->param.output_data.write_vorticity_magnitude == true)
-  {
-    navier_stokes_operation->initialize_vector_velocity_scalar(this->vorticity_magnitude);
-
-    SolutionField<dim, value_type> sol;
-    sol.name        = "vorticity_magnitude";
-    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
-    sol.vector      = &vorticity_magnitude;
-    this->additional_fields.push_back(sol);
-  }
-
-  // q criterion
-  if(this->param.output_data.write_q_criterion == true)
-  {
-    navier_stokes_operation->initialize_vector_velocity_scalar(this->q_criterion);
-
-    SolutionField<dim, value_type> sol;
-    sol.name        = "q_criterion";
-    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
-    sol.vector      = &q_criterion;
-    this->additional_fields.push_back(sol);
-  }
 }
 
 template<int dim, typename value_type, typename NavierStokesOperation>
@@ -263,38 +197,7 @@ template<int dim, typename value_type, typename NavierStokesOperation>
 void
 DriverSteadyProblems<dim, value_type, NavierStokesOperation>::postprocessing()
 {
-  // calculate vorticity
-  navier_stokes_operation->compute_vorticity(vorticity, solution.block(0));
-
-  // calculate divergence
-  if(this->param.output_data.write_divergence == true)
-  {
-    navier_stokes_operation->compute_divergence(divergence, solution.block(0));
-  }
-
-  // calculate velocity magnitude
-  if(this->param.output_data.write_velocity_magnitude == true)
-  {
-    navier_stokes_operation->compute_velocity_magnitude(velocity_magnitude, solution.block(0));
-  }
-
-  // calculate vorticity magnitude
-  if(this->param.output_data.write_vorticity_magnitude == true)
-  {
-    navier_stokes_operation->compute_velocity_magnitude(vorticity_magnitude, solution.block(0));
-  }
-
-  // calculate q criterion
-  if(this->param.output_data.write_q_criterion == true)
-  {
-    navier_stokes_operation->compute_q_criterion(q_criterion, solution.block(0));
-  }
-
-  this->postprocessor->do_postprocessing(solution.block(0),
-                                         solution.block(0), // intermediate_velocity = velocity
-                                         solution.block(1),
-                                         vorticity,
-                                         additional_fields);
+  navier_stokes_operation->do_postprocessing_steady_problem(solution.block(0), solution.block(1));
 }
 
 template<int dim, typename value_type, typename NavierStokesOperation>

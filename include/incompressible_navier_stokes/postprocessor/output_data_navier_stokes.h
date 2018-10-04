@@ -47,7 +47,8 @@ struct OutputDataMeanVelocity
 struct OutputDataNavierStokes : public OutputData
 {
   OutputDataNavierStokes()
-    : write_divergence(false),
+    : write_vorticity(false),
+      write_divergence(false),
       write_velocity_magnitude(false),
       write_vorticity_magnitude(false),
       write_streamfunction(false),
@@ -62,6 +63,7 @@ struct OutputDataNavierStokes : public OutputData
   {
     OutputData::print(pcout, unsteady);
 
+    print_parameter(pcout, "Write vorticity", write_vorticity);
     print_parameter(pcout, "Write divergence", write_divergence);
     print_parameter(pcout, "Write velocity magnitude", write_velocity_magnitude);
     print_parameter(pcout, "Write vorticity magnitude", write_vorticity_magnitude);
@@ -71,6 +73,9 @@ struct OutputDataNavierStokes : public OutputData
 
     mean_velocity.print(pcout, unsteady);
   }
+
+  // write vorticity of velocity field
+  bool write_vorticity;
 
   // write divergence of velocity field
   bool write_divergence;

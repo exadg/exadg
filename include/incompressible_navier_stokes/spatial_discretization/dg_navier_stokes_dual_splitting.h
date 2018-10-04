@@ -54,9 +54,10 @@ public:
     THIS;
 
   DGNavierStokesDualSplitting(parallel::distributed::Triangulation<dim> const & triangulation,
-                              InputParameters<dim> const &                      parameter)
-    : PROJECTION_METHODS_BASE(triangulation, parameter),
-      fe_param(parameter),
+                              InputParameters<dim> const &                      parameters_in,
+                              std::shared_ptr<PostProcessorBase<dim, Number>>   postprocessor_in)
+    : PROJECTION_METHODS_BASE(triangulation, parameters_in, postprocessor_in),
+      fe_param(parameters_in),
       sum_alphai_ui(nullptr),
       evaluation_time(0.0),
       scaling_factor_time_derivative_term(1.0)
@@ -224,6 +225,18 @@ public:
     wall_time_helmholtz = this->helmholtz_operator.get_wall_time();
   }
 
+  void
+  do_postprocessing(VectorType const & velocity,
+                    VectorType const & intermediate_velocity,
+                    VectorType const & pressure,
+                    double const       time,
+                    unsigned int const time_step_number);
+
+  void
+  do_postprocessing_steady_problem(VectorType const & velocity,
+                                   VectorType const & intermediate_velocity,
+                                   VectorType const & pressure);
+
 protected:
   FEParameters<dim> fe_param;
 
@@ -231,52 +244,6 @@ protected:
   std::shared_ptr<PreconditionerBase<Number>> helmholtz_preconditioner;
 
 private:
-  // Helmholtz solver
-  std::shared_ptr<IterativeSolverBase<VectorType>> helmholtz_solver;
-
-  // Implicit solution of convective step
-  VectorType         velocity_linearization;
-  VectorType         temp;
-  VectorType const * sum_alphai_ui;
-
-  // implicit solution of convective step
-  std::shared_ptr<InverseMassMatrixPreconditioner<dim, fe_degree, Number>>
-    preconditioner_convective_problem;
-
-  std::shared_ptr<IterativeSolverBase<VectorType>> linear_solver;
-  std::shared_ptr<NewtonSolver<VectorType, THIS, THIS, IterativeSolverBase<VectorType>>>
-    newton_solver;
-
-
-  // rhs pressure Poisson equation: Velocity divergence term
-  VelocityDivergenceConvectiveTerm<dim,
-                                   fe_degree,
-                                   fe_degree_p,
-                                   fe_degree_xwall,
-                                   xwall_quad_rule,
-                                   Number>
-    velocity_divergence_convective_term;
-
-  // pressure Neumann BC
-  PressureNeumannBCConvectiveTerm<dim,
-                                  fe_degree,
-                                  fe_degree_p,
-                                  fe_degree_xwall,
-                                  xwall_quad_rule,
-                                  Number>
-    pressure_nbc_convective_term;
-
-  PressureNeumannBCViscousTerm<dim,
-                               fe_degree,
-                               fe_degree_p,
-                               fe_degree_xwall,
-                               xwall_quad_rule,
-                               Number>
-    pressure_nbc_viscous_term;
-
-  double evaluation_time;
-  double scaling_factor_time_derivative_term;
-
   // setup of solvers
   void
   setup_convective_solver();
@@ -332,6 +299,52 @@ private:
     VectorType &                                  dst,
     VectorType const &                            src,
     std::pair<unsigned int, unsigned int> const & face_range) const;
+
+  // Helmholtz solver
+  std::shared_ptr<IterativeSolverBase<VectorType>> helmholtz_solver;
+
+  // Implicit solution of convective step
+  VectorType         velocity_linearization;
+  VectorType         temp;
+  VectorType const * sum_alphai_ui;
+
+  // implicit solution of convective step
+  std::shared_ptr<InverseMassMatrixPreconditioner<dim, fe_degree, Number>>
+    preconditioner_convective_problem;
+
+  std::shared_ptr<IterativeSolverBase<VectorType>> linear_solver;
+  std::shared_ptr<NewtonSolver<VectorType, THIS, THIS, IterativeSolverBase<VectorType>>>
+    newton_solver;
+
+
+  // rhs pressure Poisson equation: Velocity divergence term
+  VelocityDivergenceConvectiveTerm<dim,
+                                   fe_degree,
+                                   fe_degree_p,
+                                   fe_degree_xwall,
+                                   xwall_quad_rule,
+                                   Number>
+    velocity_divergence_convective_term;
+
+  // pressure Neumann BC
+  PressureNeumannBCConvectiveTerm<dim,
+                                  fe_degree,
+                                  fe_degree_p,
+                                  fe_degree_xwall,
+                                  xwall_quad_rule,
+                                  Number>
+    pressure_nbc_convective_term;
+
+  PressureNeumannBCViscousTerm<dim,
+                               fe_degree,
+                               fe_degree_p,
+                               fe_degree_xwall,
+                               xwall_quad_rule,
+                               Number>
+    pressure_nbc_viscous_term;
+
+  double evaluation_time;
+  double scaling_factor_time_derivative_term;
 };
 
 template<int dim,
@@ -1118,7 +1131,117 @@ DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_
   helmholtz_operator.vmult(dst, src);
 }
 
+template<int dim,
+         int fe_degree,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+void
+DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+  do_postprocessing(VectorType const & velocity,
+                    VectorType const & intermediate_velocity,
+                    VectorType const & pressure,
+                    double const       time,
+                    unsigned int const time_step_number)
+{
+  if(this->param.output_data.write_output)
+  {
+    // Calculate divergence of intermediate velocity field u_hathat,
+    // because this is the velocity field that should be divergence-free.
+    // Alternatively, also the final velocity field at the end of the time step
+    // could be considered instead.
+    if(this->param.output_data.write_vorticity == true)
+      this->compute_vorticity(this->vorticity, velocity);
+    if(this->param.output_data.write_divergence == true)
+      this->compute_divergence(this->divergence, intermediate_velocity);
+    if(this->param.output_data.write_velocity_magnitude == true)
+      this->compute_velocity_magnitude(this->velocity_magnitude, velocity);
+    if(this->param.output_data.write_vorticity_magnitude == true)
+      this->compute_vorticity_magnitude(this->vorticity_magnitude, this->vorticity);
+    if(this->param.output_data.write_streamfunction == true)
+      this->compute_streamfunction(this->streamfunction, this->vorticity);
+    if(this->param.output_data.write_q_criterion == true)
+      this->compute_q_criterion(this->q_criterion, velocity);
+    if(this->param.output_data.write_processor_id == true)
+      this->compute_processor_id(this->processor_id);
+    if(this->param.output_data.mean_velocity.calculate == true)
+      this->compute_mean_velocity(this->mean_velocity, velocity, time, time_step_number);
+  }
 
+  bool const standard = true;
+  if(standard)
+  {
+    this->postprocessor->do_postprocessing(velocity,
+                                           intermediate_velocity,
+                                           pressure,
+                                           this->vorticity,
+                                           this->additional_fields,
+                                           time,
+                                           time_step_number);
+  }
+  else // consider pressure error and velocity error
+  {
+    VectorType velocity_error;
+    this->initialize_vector_velocity(velocity_error);
+
+    VectorType pressure_error;
+    this->initialize_vector_pressure(pressure_error);
+
+    this->prescribe_initial_conditions(velocity_error, pressure_error, time);
+
+    velocity_error.add(-1.0, velocity);
+    pressure_error.add(-1.0, pressure);
+
+    this->postprocessor->do_postprocessing(velocity_error,
+                                           intermediate_velocity,
+                                           pressure_error,
+                                           this->vorticity,
+                                           this->additional_fields,
+                                           time,
+                                           time_step_number);
+  }
+}
+
+template<int dim,
+         int fe_degree,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+void
+DGNavierStokesDualSplitting<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+  do_postprocessing_steady_problem(VectorType const & velocity,
+                                   VectorType const & intermediate_velocity,
+                                   VectorType const & pressure)
+{
+  if(this->param.output_data.write_output)
+  {
+    // Calculate divergence of intermediate velocity field u_hathat,
+    // because this is the velocity field that should be divergence-free.
+    // Alternatively, also the final velocity field at the end of the time step
+    // could be considered instead.
+    if(this->param.output_data.write_vorticity == true)
+      this->compute_vorticity(this->vorticity, velocity);
+    if(this->param.output_data.write_divergence == true)
+      this->compute_divergence(this->divergence, intermediate_velocity);
+    if(this->param.output_data.write_velocity_magnitude == true)
+      this->compute_velocity_magnitude(this->velocity_magnitude, velocity);
+    if(this->param.output_data.write_vorticity_magnitude == true)
+      this->compute_vorticity_magnitude(this->vorticity_magnitude, this->vorticity);
+    if(this->param.output_data.write_streamfunction == true)
+      this->compute_streamfunction(this->streamfunction, this->vorticity);
+    if(this->param.output_data.write_q_criterion == true)
+      this->compute_q_criterion(this->q_criterion, velocity);
+    this->compute_processor_id(this->processor_id);
+
+    AssertThrow(this->param.output_data.mean_velocity.calculate == false,
+                ExcMessage("Computation of mean velocity only makes sense to unsteady problems."));
+  }
+
+  this->postprocessor->do_postprocessing(
+    velocity, intermediate_velocity, pressure, this->vorticity, this->additional_fields);
+}
 
 } // namespace IncNS
 

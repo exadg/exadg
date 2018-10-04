@@ -170,9 +170,6 @@ private:
 
 namespace IncNS
 {
-template<int dim, typename Number>
-class PostProcessorBase;
-
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 class TimeIntBDFNavierStokes
 {
@@ -180,12 +177,10 @@ public:
   typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
 
   TimeIntBDFNavierStokes(std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
-                         std::shared_ptr<PostProcessorBase<dim, value_type>> postprocessor_in,
-                         InputParameters<dim> const &                        param_in,
-                         unsigned int const                                  n_refine_time_in,
-                         bool const use_adaptive_time_stepping)
-    : postprocessor(postprocessor_in),
-      param(param_in),
+                         InputParameters<dim> const &           param_in,
+                         unsigned int const                     n_refine_time_in,
+                         bool const                             use_adaptive_time_stepping)
+    : param(param_in),
       total_time(0.0),
       time(param.start_time),
       time_step_number(1),
@@ -199,7 +194,6 @@ public:
       M(1),
       delta_s(1.0),
       pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-      counter_mean_velocity(0),
       n_refine_time(n_refine_time_in),
       navier_stokes_operation(navier_stokes_operation_in)
   {
@@ -269,44 +263,17 @@ public:
     return bdf.get_gamma0() / time_steps[0];
   }
 
-protected:
-  std::shared_ptr<PostProcessorBase<dim, value_type>> postprocessor;
-
   void
   do_timestep();
 
   virtual void
-  initialize_vectors();
+  initialize_vectors() = 0;
 
   virtual void
   initialize_time_integrator_constants();
 
   virtual void
   update_time_integrator_constants();
-
-  void
-  calculate_vorticity(VectorType & dst, VectorType const & src) const;
-
-  void
-  calculate_divergence(VectorType & dst, VectorType const & src) const;
-
-  void
-  calculate_velocity_magnitude(VectorType & dst, VectorType const & src) const;
-
-  void
-  calculate_vorticity_magnitude(VectorType & dst, VectorType const & src) const;
-
-  void
-  calculate_streamfunction(VectorType & dst, VectorType const & src) const;
-
-  void
-  calculate_q_criterion(VectorType & dst, VectorType const & src) const;
-
-  void
-  calculate_processor_id(VectorType & dst) const;
-
-  void
-  calculate_mean_velocity(VectorType & dst, VectorType const & src) const;
 
   void
   initialize_oif();
@@ -390,19 +357,6 @@ protected:
   VectorType solution_tilde_mp;
 
   ConditionalOStream pcout;
-
-  // postprocessing: additional fields
-  mutable VectorType divergence;
-  mutable VectorType velocity_magnitude;
-  mutable VectorType vorticity_magnitude;
-  mutable VectorType streamfunction;
-  mutable VectorType q_criterion;
-  mutable VectorType processor_id;
-  // mean velocity, i.e., velocity field averaged over time
-  mutable VectorType   mean_velocity;
-  mutable unsigned int counter_mean_velocity;
-
-  std::vector<SolutionField<dim, value_type>> additional_fields;
 
 private:
   virtual void
@@ -508,103 +462,6 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::initialize_vectors()
-{
-  // divergence
-  if(this->param.output_data.write_divergence == true)
-  {
-    navier_stokes_operation->initialize_vector_velocity_scalar(this->divergence);
-
-    SolutionField<dim, value_type> sol;
-    sol.type        = SolutionFieldType::scalar;
-    sol.name        = "div_u";
-    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
-    sol.vector      = &divergence;
-    this->additional_fields.push_back(sol);
-  }
-
-  // velocity magnitude
-  if(this->param.output_data.write_velocity_magnitude == true)
-  {
-    navier_stokes_operation->initialize_vector_velocity_scalar(this->velocity_magnitude);
-
-    SolutionField<dim, value_type> sol;
-    sol.type        = SolutionFieldType::scalar;
-    sol.name        = "velocity_magnitude";
-    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
-    sol.vector      = &velocity_magnitude;
-    this->additional_fields.push_back(sol);
-  }
-
-  // vorticity magnitude
-  if(this->param.output_data.write_vorticity_magnitude == true)
-  {
-    navier_stokes_operation->initialize_vector_velocity_scalar(this->vorticity_magnitude);
-
-    SolutionField<dim, value_type> sol;
-    sol.type        = SolutionFieldType::scalar;
-    sol.name        = "vorticity_magnitude";
-    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
-    sol.vector      = &vorticity_magnitude;
-    this->additional_fields.push_back(sol);
-  }
-
-
-  // streamfunction
-  if(this->param.output_data.write_streamfunction == true)
-  {
-    navier_stokes_operation->initialize_vector_velocity_scalar(this->streamfunction);
-
-    SolutionField<dim, value_type> sol;
-    sol.type        = SolutionFieldType::scalar;
-    sol.name        = "streamfunction";
-    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
-    sol.vector      = &streamfunction;
-    this->additional_fields.push_back(sol);
-  }
-
-  // q criterion
-  if(this->param.output_data.write_q_criterion == true)
-  {
-    navier_stokes_operation->initialize_vector_velocity_scalar(this->q_criterion);
-
-    SolutionField<dim, value_type> sol;
-    sol.type        = SolutionFieldType::scalar;
-    sol.name        = "q_criterion";
-    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
-    sol.vector      = &q_criterion;
-    this->additional_fields.push_back(sol);
-  }
-
-  // processor id
-  if(this->param.output_data.write_processor_id == true)
-  {
-    navier_stokes_operation->initialize_vector_velocity_scalar(this->processor_id);
-
-    SolutionField<dim, value_type> sol;
-    sol.type        = SolutionFieldType::scalar;
-    sol.name        = "processor_id";
-    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u_scalar();
-    sol.vector      = &processor_id;
-    this->additional_fields.push_back(sol);
-  }
-
-  // mean velocity
-  if(this->param.output_data.mean_velocity.calculate == true)
-  {
-    navier_stokes_operation->initialize_vector_velocity(this->mean_velocity);
-
-    SolutionField<dim, value_type> sol;
-    sol.type        = SolutionFieldType::vector;
-    sol.name        = "mean_velocity";
-    sol.dof_handler = &navier_stokes_operation->get_dof_handler_u();
-    sol.vector      = &mean_velocity;
-    this->additional_fields.push_back(sol);
-  }
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
 TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
   initialize_solution_and_calculate_timestep(bool do_restart)
 {
@@ -692,110 +549,6 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::wri
     write_restart_preamble<dim, value_type>(oa, param, time_steps, time, order);
     write_restart_vectors(oa);
     write_restart_file<dim>(oss, param);
-  }
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::calculate_vorticity(
-  VectorType &       dst,
-  VectorType const & src) const
-{
-  navier_stokes_operation->compute_vorticity(dst, src);
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::calculate_divergence(
-  VectorType &       dst,
-  VectorType const & src) const
-{
-  if(this->param.output_data.write_output == true &&
-     this->param.output_data.write_divergence == true)
-  {
-    navier_stokes_operation->compute_divergence(dst, src);
-  }
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  calculate_velocity_magnitude(VectorType & dst, VectorType const & src) const
-{
-  if(this->param.output_data.write_output == true &&
-     this->param.output_data.write_velocity_magnitude == true)
-  {
-    navier_stokes_operation->compute_velocity_magnitude(dst, src);
-  }
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  calculate_vorticity_magnitude(VectorType & dst, VectorType const & src) const
-{
-  if(this->param.output_data.write_output == true &&
-     this->param.output_data.write_vorticity_magnitude == true)
-  {
-    // use the same implementation as for velocity_magnitude
-    navier_stokes_operation->compute_velocity_magnitude(dst, src);
-  }
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  calculate_streamfunction(VectorType & dst, VectorType const & src) const
-{
-  if(this->param.output_data.write_output == true &&
-     this->param.output_data.write_streamfunction == true)
-  {
-    navier_stokes_operation->compute_streamfunction(dst, src);
-  }
-}
-
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::calculate_q_criterion(
-  VectorType &       dst,
-  VectorType const & src) const
-{
-  if(this->param.output_data.write_output == true &&
-     this->param.output_data.write_q_criterion == true)
-  {
-    navier_stokes_operation->compute_q_criterion(dst, src);
-  }
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::calculate_processor_id(
-  VectorType & dst) const
-{
-  if(this->param.output_data.write_output == true &&
-     this->param.output_data.write_processor_id == true)
-  {
-    dst = Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
-  }
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  calculate_mean_velocity(VectorType & dst, VectorType const & src) const
-{
-  if(this->param.output_data.write_output == true &&
-     this->param.output_data.mean_velocity.calculate == true)
-  {
-    if(this->time >= this->param.output_data.mean_velocity.sample_start_time &&
-       this->time <= this->param.output_data.mean_velocity.sample_end_time &&
-       this->time_step_number % this->param.output_data.mean_velocity.sample_every_timesteps == 0)
-    {
-      dst.sadd((double)counter_mean_velocity, 1.0, src);
-      ++counter_mean_velocity;
-      dst *= 1. / (double)counter_mean_velocity;
-    }
   }
 }
 

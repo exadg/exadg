@@ -41,8 +41,9 @@ public:
     THIS;
 
   DGNavierStokesCoupled(parallel::distributed::Triangulation<dim> const & triangulation,
-                        InputParameters<dim> const &                      parameter)
-    : BASE(triangulation, parameter),
+                        InputParameters<dim> const &                      parameters_in,
+                        std::shared_ptr<PostProcessorBase<dim, Number>>   postprocessor_in)
+    : BASE(triangulation, parameters_in, postprocessor_in),
       sum_alphai_ui(nullptr),
       vector_linearization(nullptr),
       evaluation_time(0.0),
@@ -58,7 +59,8 @@ public:
                                                   periodic_face_pairs,
         std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
         std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure,
-        std::shared_ptr<FieldFunctions<dim>>      field_functions);
+        std::shared_ptr<FieldFunctions<dim>>      field_functions,
+        std::shared_ptr<AnalyticalSolution<dim>>  analytical_solution);
 
   void
   setup_solvers(double const & scaling_factor_time_derivative_term = 1.0);
@@ -250,6 +252,15 @@ public:
   void
   rhs_projection_add(VectorType & dst, double const time) const;
 
+  void
+  do_postprocessing(VectorType const & velocity,
+                    VectorType const & pressure,
+                    double const       time,
+                    unsigned int const time_step_number);
+
+  void
+  do_postprocessing_steady_problem(VectorType const & velocity, VectorType const & pressure);
+
 private:
   friend class BlockPreconditionerNavierStokes<dim,
                                                fe_degree,
@@ -316,12 +327,14 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
                                             periodic_face_pairs,
   std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity_in,
   std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure_in,
-  std::shared_ptr<FieldFunctions<dim>>      field_functions_in)
+  std::shared_ptr<FieldFunctions<dim>>      field_functions_in,
+  std::shared_ptr<AnalyticalSolution<dim>>  analytical_solution_in)
 {
   BASE::setup(periodic_face_pairs,
               boundary_descriptor_velocity_in,
               boundary_descriptor_pressure_in,
-              field_functions_in);
+              field_functions_in,
+              analytical_solution_in);
 
   this->initialize_vector_velocity(temp_vector);
 }
@@ -1094,6 +1107,111 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
       std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator);
     proj_operator_div_and_conti_penalty->rhs_add(dst, eval_time);
   }
+}
+
+template<int dim,
+         int fe_degree,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+void
+DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+  do_postprocessing(VectorType const & velocity,
+                    VectorType const & pressure,
+                    double const       time,
+                    unsigned int const time_step_number)
+{
+  if(this->param.output_data.write_output)
+  {
+    if(this->param.output_data.write_vorticity == true)
+      this->compute_vorticity(this->vorticity, velocity);
+    if(this->param.output_data.write_divergence == true)
+      this->compute_divergence(this->divergence, velocity);
+    if(this->param.output_data.write_velocity_magnitude == true)
+      this->compute_velocity_magnitude(this->velocity_magnitude, velocity);
+    if(this->param.output_data.write_vorticity_magnitude == true)
+      this->compute_vorticity_magnitude(this->vorticity_magnitude, this->vorticity);
+    if(this->param.output_data.write_streamfunction == true)
+      this->compute_streamfunction(this->streamfunction, this->vorticity);
+    if(this->param.output_data.write_q_criterion == true)
+      this->compute_q_criterion(this->q_criterion, velocity);
+    if(this->param.output_data.write_processor_id == true)
+      this->compute_processor_id(this->processor_id);
+    if(this->param.output_data.mean_velocity.calculate == true)
+      this->compute_mean_velocity(this->mean_velocity, velocity, time, time_step_number);
+  }
+
+  bool const standard = true;
+  if(standard)
+  {
+    this->postprocessor->do_postprocessing(velocity,
+                                           velocity, // intermediate_velocity
+                                           pressure,
+                                           this->vorticity,
+                                           this->additional_fields,
+                                           time,
+                                           time_step_number);
+  }
+  else // consider velocity and pressure errors instead
+  {
+    VectorType velocity_error;
+    this->initialize_vector_velocity(velocity_error);
+
+    VectorType pressure_error;
+    this->initialize_vector_pressure(pressure_error);
+
+    this->prescribe_initial_conditions(velocity_error, pressure_error, time);
+
+    velocity_error.add(-1.0, velocity);
+    pressure_error.add(-1.0, pressure);
+
+    this->postprocessor->do_postprocessing(velocity_error, // error!
+                                           velocity,       // intermediate_velocity
+                                           pressure_error, // error!
+                                           this->vorticity,
+                                           this->additional_fields,
+                                           time,
+                                           time_step_number);
+  }
+}
+
+template<int dim,
+         int fe_degree,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+void
+DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+  do_postprocessing_steady_problem(VectorType const & velocity, VectorType const & pressure)
+{
+  if(this->param.output_data.write_output)
+  {
+    if(this->param.output_data.write_vorticity == true)
+      this->compute_vorticity(this->vorticity, velocity);
+    if(this->param.output_data.write_divergence == true)
+      this->compute_divergence(this->divergence, velocity);
+    if(this->param.output_data.write_velocity_magnitude == true)
+      this->compute_velocity_magnitude(this->velocity_magnitude, velocity);
+    if(this->param.output_data.write_vorticity_magnitude == true)
+      this->compute_vorticity_magnitude(this->vorticity_magnitude, this->vorticity);
+    if(this->param.output_data.write_streamfunction == true)
+      this->compute_streamfunction(this->streamfunction, this->vorticity);
+    if(this->param.output_data.write_q_criterion == true)
+      this->compute_q_criterion(this->q_criterion, velocity);
+    if(this->param.output_data.write_processor_id == true)
+      this->compute_processor_id(this->processor_id);
+
+    AssertThrow(this->param.output_data.mean_velocity.calculate == false,
+                ExcMessage("Computation of mean velocity only makes sense to unsteady problems."));
+  }
+
+  this->postprocessor->do_postprocessing(velocity,
+                                         velocity, // intermediate_velocity
+                                         pressure,
+                                         this->vorticity,
+                                         this->additional_fields);
 }
 
 

@@ -19,25 +19,21 @@ class TimeIntBDFDualSplitting
 {
 public:
   typedef TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation> Base;
-  typedef typename Base::VectorType                                                   VectorType;
+
+  typedef typename Base::VectorType VectorType;
 
   TimeIntBDFDualSplitting(std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
-                          std::shared_ptr<PostProcessorBase<dim, value_type>> postprocessor_in,
-                          InputParameters<dim> const &                        param_in,
-                          unsigned int const                                  n_refine_time_in,
-                          bool const use_adaptive_time_stepping)
+                          InputParameters<dim> const &           param_in,
+                          unsigned int const                     n_refine_time_in,
+                          bool const                             use_adaptive_time_stepping)
     : TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>(
         navier_stokes_operation_in,
-        postprocessor_in,
         param_in,
         n_refine_time_in,
         use_adaptive_time_stepping),
       velocity(this->order),
       pressure(this->order),
-      // vorticity has at least length >=1 since the vorticity is also used for postprocessing
-      vorticity(this->param.order_extrapolation_pressure_nbc > 1 ?
-                  this->param.order_extrapolation_pressure_nbc :
-                  1),
+      vorticity(this->param.order_extrapolation_pressure_nbc),
       vec_convective_term(this->order),
       computing_times(4),
       iterations(4),
@@ -96,6 +92,7 @@ protected:
 
   virtual void
   postprocessing() const;
+
   virtual void
   postprocessing_steady_problem() const;
 
@@ -230,8 +227,6 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void
 TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::initialize_vectors()
 {
-  TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::initialize_vectors();
-
   // velocity
   for(unsigned int i = 0; i < velocity.size(); ++i)
     navier_stokes_operation->initialize_vector_velocity(velocity[i]);
@@ -290,8 +285,10 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < velocity.size(); ++i)
+  {
     navier_stokes_operation->prescribe_initial_conditions(
       velocity[i], pressure[i], this->time - double(i) * this->time_steps[0]);
+  }
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -386,65 +383,28 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void
 TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::postprocessing() const
 {
-  // Calculate divergence of intermediate velocity field u_hathat,
-  // because this is the velocity field that should be divergence-free.
-  // Alternatively, also the final velocity field at the end of the time step
-  // could be considered instead.
-  this->calculate_divergence(this->divergence, intermediate_velocity);
-  this->calculate_velocity_magnitude(this->velocity_magnitude, velocity[0]);
-  this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity[0]);
-  this->calculate_streamfunction(this->streamfunction, vorticity[0]);
-  this->calculate_q_criterion(this->q_criterion, velocity[0]);
-  this->calculate_processor_id(this->processor_id);
-  this->calculate_mean_velocity(this->mean_velocity, velocity[0]);
+  bool const standard = true;
+  if(standard)
+  {
+    navier_stokes_operation->do_postprocessing(
+      velocity[0], intermediate_velocity, pressure[0], this->time, this->time_step_number);
+  }
+  else // consider solution increment
+  {
+    VectorType velocity_incr;
+    navier_stokes_operation->initialize_vector_velocity(velocity_incr);
 
-  this->postprocessor->do_postprocessing(velocity[0],
-                                         intermediate_velocity,
-                                         pressure[0],
-                                         vorticity[0],
-                                         this->additional_fields,
-                                         this->time,
-                                         this->time_step_number);
+    VectorType pressure_incr;
+    navier_stokes_operation->initialize_vector_pressure(pressure_incr);
 
-  //  // check pressure error and velocity error
-  //  VectorType velocity_exact;
-  //  navier_stokes_operation->initialize_vector_velocity(velocity_exact);
-  //
-  //  VectorType pressure_exact;
-  //  navier_stokes_operation->initialize_vector_pressure(pressure_exact);
-  //
-  //  navier_stokes_operation->prescribe_initial_conditions(velocity_exact,pressure_exact,this->time);
-  //
-  //  velocity_exact.add(-1.0,velocity[0]);
-  //  pressure_exact.add(-1.0,pressure[0]);
-  //
-  //  this->postprocessor->do_postprocessing(velocity_exact,
-  //                                         intermediate_velocity,
-  //                                         pressure_exact,
-  //                                         vorticity[0],
-  //                                         this->additional_fields,
-  //                                         this->time,
-  //                                         this->time_step_number);
+    velocity_incr = velocity[0];
+    velocity_incr.add(-1.0, velocity[1]);
+    pressure_incr = pressure[0];
+    pressure_incr.add(-1.0, pressure[1]);
 
-  //  // plot solution increment
-  //  VectorType velocity_incr;
-  //  navier_stokes_operation->initialize_vector_velocity(velocity_incr);
-  //
-  //  VectorType pressure_incr;
-  //  navier_stokes_operation->initialize_vector_pressure(pressure_incr);
-  //
-  //  velocity_incr = velocity[0];
-  //  velocity_incr.add(-1.0,velocity[1]);
-  //  pressure_incr = pressure[0];
-  //  pressure_incr.add(-1.0,pressure[1]);
-  //
-  //  this->postprocessor->do_postprocessing(velocity_incr,
-  //                                         intermediate_velocity,
-  //                                         pressure_incr,
-  //                                         vorticity[0],
-  //                                         this->additional_fields,
-  //                                         this->time,
-  //                                         this->time_step_number);
+    navier_stokes_operation->do_postprocessing(
+      velocity_incr, intermediate_velocity, pressure_incr, this->time, this->time_step_number);
+  }
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -452,19 +412,9 @@ void
 TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
   postprocessing_steady_problem() const
 {
-  // Calculate divergence of intermediate velocity field u_hathat,
-  // because this is the velocity field that should be divergence-free.
-  // Alternatively, also the final velocity field at the end of the time step
-  // could be considered instead.
-  this->calculate_divergence(this->divergence, intermediate_velocity);
-  this->calculate_velocity_magnitude(this->velocity_magnitude, velocity[0]);
-  this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity[0]);
-  this->calculate_streamfunction(this->streamfunction, vorticity[0]);
-  this->calculate_q_criterion(this->q_criterion, velocity[0]);
-  this->calculate_processor_id(this->processor_id);
-
-  this->postprocessor->do_postprocessing(
-    velocity[0], intermediate_velocity, pressure[0], vorticity[0], this->additional_fields);
+  navier_stokes_operation->do_postprocessing_steady_problem(velocity[0],
+                                                            intermediate_velocity,
+                                                            pressure[0]);
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
