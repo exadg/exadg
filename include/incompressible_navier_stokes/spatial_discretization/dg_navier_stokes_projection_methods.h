@@ -34,8 +34,10 @@ public:
   typedef typename BASE::VectorType VectorType;
 
   DGNavierStokesProjectionMethods(parallel::distributed::Triangulation<dim> const & triangulation,
-                                  InputParameters<dim> const &                      parameter)
-    : BASE(triangulation, parameter), use_optimized_projection_operator(false) // TODO
+                                  InputParameters<dim> const &                      parameters_in,
+                                  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in)
+    : BASE(triangulation, parameters_in, postprocessor_in),
+      use_optimized_projection_operator(false) // TODO
   {
     AssertThrow(fe_degree_p > 0,
                 ExcMessage("Polynomial degree of pressure shape functions has to be larger than "
@@ -140,8 +142,6 @@ protected:
   // projection solver
   std::shared_ptr<IterativeSolverBase<VectorType>> projection_solver;
   std::shared_ptr<PreconditionerBase<Number>>      preconditioner_projection;
-
-private:
 };
 
 template<int dim,
@@ -227,8 +227,8 @@ DGNavierStokesProjectionMethods<dim,
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
 
     // TODO: not necessary
-    typedef typename Triangulation<dim>::cell_iterator    TriIterator;
-    std::vector<GridTools::PeriodicFacePair<TriIterator>> periodic_face_pairs;
+    //    typedef typename Triangulation<dim>::cell_iterator    TriIterator;
+    //    std::vector<GridTools::PeriodicFacePair<TriIterator>> periodic_face_pairs;
 
     mg_preconditioner->initialize(mg_data,
                                   this->dof_handler_p,

@@ -26,19 +26,17 @@ public:
   typedef typename Base::VectorType                           VectorType;
   typedef LinearAlgebra::distributed::BlockVector<value_type> BlockVectorType;
 
-  TimeIntBDFCoupled(std::shared_ptr<NavierStokesOperation>              navier_stokes_operation_in,
-                    std::shared_ptr<PostProcessorBase<dim, value_type>> postprocessor_in,
-                    InputParameters<dim> const &                        param_in,
-                    unsigned int const                                  n_refine_time_in,
-                    bool const                                          use_adaptive_time_stepping)
+  TimeIntBDFCoupled(std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
+                    InputParameters<dim> const &           param_in,
+                    unsigned int const                     n_refine_time_in,
+                    bool const                             use_adaptive_time_stepping)
     : TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>(
         navier_stokes_operation_in,
-        postprocessor_in,
         param_in,
         n_refine_time_in,
         use_adaptive_time_stepping),
-      solution(this->order),
       navier_stokes_operation(navier_stokes_operation_in),
+      solution(this->order),
       vec_convective_term(this->order),
       computing_times(2),
       iterations(2),
@@ -54,14 +52,6 @@ public:
 
   virtual void
   analyze_computing_times() const;
-
-protected:
-  std::vector<BlockVectorType> solution;
-  BlockVectorType              solution_np;
-
-  mutable VectorType vorticity;
-
-  std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
 private:
   virtual void
@@ -112,6 +102,11 @@ private:
   virtual void
   write_restart_vectors(boost::archive::binary_oarchive & oa) const;
 
+  std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
+
+  std::vector<BlockVectorType> solution;
+  BlockVectorType              solution_np;
+
   VectorType      sum_alphai_ui;
   BlockVectorType rhs_vector;
 
@@ -135,8 +130,6 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void
 TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::initialize_vectors()
 {
-  TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::initialize_vectors();
-
   // solution
   for(unsigned int i = 0; i < solution.size(); ++i)
     navier_stokes_operation->initialize_block_vector_velocity_pressure(solution[i]);
@@ -160,9 +153,6 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::initiali
   {
     navier_stokes_operation->initialize_block_vector_velocity_pressure(rhs_vector);
   }
-
-  // vorticity
-  navier_stokes_operation->initialize_vector_vorticity(vorticity);
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -583,44 +573,10 @@ template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOpe
 void
 TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::postprocessing() const
 {
-  this->calculate_vorticity(vorticity, solution[0].block(0));
-  this->calculate_divergence(this->divergence, solution[0].block(0));
-
-  this->calculate_velocity_magnitude(this->velocity_magnitude, solution[0].block(0));
-  this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity);
-  this->calculate_streamfunction(this->streamfunction, vorticity);
-  this->calculate_q_criterion(this->q_criterion, solution[0].block(0));
-  this->calculate_processor_id(this->processor_id);
-  this->calculate_mean_velocity(this->mean_velocity, solution[0].block(0));
-
-  this->postprocessor->do_postprocessing(solution[0].block(0),
-                                         solution[0].block(0), // intermediate_velocity = velocity
-                                         solution[0].block(1),
-                                         vorticity,
-                                         this->additional_fields,
-                                         this->time,
-                                         this->time_step_number);
-
-
-  // consider velocity and pressure errors
-  //  VectorType velocity_exact;
-  //  navier_stokes_operation->initialize_vector_velocity(velocity_exact);
-  //
-  //  VectorType pressure_exact;
-  //  navier_stokes_operation->initialize_vector_pressure(pressure_exact);
-  //
-  //  navier_stokes_operation->prescribe_initial_conditions(velocity_exact,pressure_exact,this->time);
-  //
-  //  velocity_exact.add(-1.0,solution[0].block(0));
-  //  pressure_exact.add(-1.0,solution[0].block(1));
-  //
-  //  this->postprocessor->do_postprocessing(velocity_exact,
-  //                                         solution[0].block(0),
-  //                                         pressure_exact,
-  //                                         vorticity,
-  //                                         divergence,
-  //                                         this->time,
-  //                                         this->time_step_number);
+  navier_stokes_operation->do_postprocessing(solution[0].block(0),
+                                             solution[0].block(1),
+                                             this->time,
+                                             this->time_step_number);
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -628,20 +584,8 @@ void
 TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
   postprocessing_steady_problem() const
 {
-  this->calculate_vorticity(vorticity, solution[0].block(0));
-  this->calculate_divergence(this->divergence, solution[0].block(0));
-
-  this->calculate_velocity_magnitude(this->velocity_magnitude, solution[0].block(0));
-  this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity);
-  this->calculate_streamfunction(this->streamfunction, vorticity);
-  this->calculate_q_criterion(this->q_criterion, solution[0].block(0));
-  this->calculate_processor_id(this->processor_id);
-
-  this->postprocessor->do_postprocessing(solution[0].block(0),
-                                         solution[0].block(0), // intermediate_velocity = velocity
-                                         solution[0].block(1),
-                                         vorticity,
-                                         this->additional_fields);
+  navier_stokes_operation->do_postprocessing_steady_problem(solution[0].block(0),
+                                                            solution[0].block(1));
 }
 
 

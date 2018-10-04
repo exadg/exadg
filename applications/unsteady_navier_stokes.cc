@@ -1,5 +1,5 @@
 /*
- * UnsteadyNavierStokesCoupledSolver.cc
+ * unsteady_navier_stokes.cc
  *
  *  Created on: Oct 10, 2016
  *      Author: fehn
@@ -43,11 +43,11 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/stokes_shahbazi.h"
 //#include "incompressible_navier_stokes_test_cases/stokes_curl_flow.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
-//#include "incompressible_navier_stokes_test_cases/vortex.h"
+#include "incompressible_navier_stokes_test_cases/vortex.h"
 //#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/beltrami.h"
-#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
+//#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
 //#include "incompressible_navier_stokes_test_cases/orr_sommerfeld.h"
 //#include "incompressible_navier_stokes_test_cases/kelvin_helmholtz.h"
 //#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
@@ -83,9 +83,6 @@ private:
 
   void
   setup_solvers();
-
-  void
-  setup_postprocessor();
 
   void
   run_timeloop();
@@ -206,15 +203,22 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
   AssertThrow(param.solver_type == SolverType::Unsteady,
               ExcMessage("This is an unsteady solver. Check input parameters."));
 
+  // initialize postprocessor
+  // this function has to be defined in the header file
+  // that implements all problem specific things like
+  // parameters, geometry, boundary conditions, etc.
+  postprocessor = construct_postprocessor<dim, Number>(param);
+
   // initialize navier_stokes_operation
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    navier_stokes_operation_coupled.reset(new DGNavierStokesCoupled<dim,
-                                                                    fe_degree_u,
-                                                                    fe_degree_p,
-                                                                    fe_degree_xwall,
-                                                                    xwall_quad_rule,
-                                                                    Number>(triangulation, param));
+    navier_stokes_operation_coupled.reset(
+      new DGNavierStokesCoupled<dim,
+                                fe_degree_u,
+                                fe_degree_p,
+                                fe_degree_xwall,
+                                xwall_quad_rule,
+                                Number>(triangulation, param, postprocessor));
 
     navier_stokes_operation = navier_stokes_operation_coupled;
   }
@@ -226,7 +230,7 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
                                       fe_degree_p,
                                       fe_degree_xwall,
                                       xwall_quad_rule,
-                                      Number>(triangulation, param));
+                                      Number>(triangulation, param, postprocessor));
 
     navier_stokes_operation = navier_stokes_operation_dual_splitting;
   }
@@ -238,7 +242,7 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
                                            fe_degree_p,
                                            fe_degree_xwall,
                                            xwall_quad_rule,
-                                           Number>(triangulation, param));
+                                           Number>(triangulation, param, postprocessor));
 
     navier_stokes_operation = navier_stokes_operation_pressure_correction;
   }
@@ -248,29 +252,19 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
   }
 
 
-  // initialize postprocessor
-  // this function has to be defined in the header file
-  // that implements all problem specific things like
-  // parameters, geometry, boundary conditions, etc.
-  postprocessor = construct_postprocessor<dim, Number>(param);
-
-  // initialize time integrator that depends on both navier_stokes_operation and postprocessor
+  // initialize time integrator that depends on navier_stokes_operation
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    time_integrator_coupled.reset(
-      new TimeIntBDFCoupled<dim,
-                            fe_degree_u,
-                            Number,
-                            DGNavierStokesCoupled<dim,
-                                                  fe_degree_u,
-                                                  fe_degree_p,
-                                                  fe_degree_xwall,
-                                                  xwall_quad_rule,
-                                                  Number>>(navier_stokes_operation_coupled,
-                                                           postprocessor,
-                                                           param,
-                                                           refine_steps_time,
-                                                           use_adaptive_time_stepping));
+    time_integrator_coupled.reset(new TimeIntBDFCoupled<dim,
+                                                        fe_degree_u,
+                                                        Number,
+                                                        DGNavierStokesCoupled<dim,
+                                                                              fe_degree_u,
+                                                                              fe_degree_p,
+                                                                              fe_degree_xwall,
+                                                                              xwall_quad_rule,
+                                                                              Number>>(
+      navier_stokes_operation_coupled, param, refine_steps_time, use_adaptive_time_stepping));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
@@ -285,7 +279,6 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
                                                               xwall_quad_rule,
                                                               Number>>(
         navier_stokes_operation_dual_splitting,
-        postprocessor,
         param,
         refine_steps_time,
         use_adaptive_time_stepping));
@@ -303,7 +296,6 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
                                                                         xwall_quad_rule,
                                                                         Number>>(
         navier_stokes_operation_pressure_correction,
-        postprocessor,
         param,
         refine_steps_time,
         use_adaptive_time_stepping));
@@ -344,32 +336,6 @@ template<int dim,
          typename Number>
 void
 NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  setup_postprocessor()
-{
-  AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
-
-  DofQuadIndexData dof_quad_index_data;
-  dof_quad_index_data.dof_index_velocity = navier_stokes_operation->get_dof_index_velocity();
-  dof_quad_index_data.dof_index_pressure = navier_stokes_operation->get_dof_index_pressure();
-  dof_quad_index_data.quad_index_velocity =
-    navier_stokes_operation->get_quad_index_velocity_linear();
-
-  postprocessor->setup(navier_stokes_operation->get_dof_handler_u(),
-                       navier_stokes_operation->get_dof_handler_p(),
-                       navier_stokes_operation->get_mapping(),
-                       navier_stokes_operation->get_data(),
-                       dof_quad_index_data,
-                       analytical_solution);
-}
-
-template<int dim,
-         int fe_degree_u,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
-void
-NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
   setup_navier_stokes_operation()
 {
   AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
@@ -377,7 +343,8 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
   navier_stokes_operation->setup(periodic_faces,
                                  boundary_descriptor_velocity,
                                  boundary_descriptor_pressure,
-                                 field_functions);
+                                 field_functions,
+                                 analytical_solution);
 }
 
 template<int dim,
@@ -512,8 +479,6 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
   setup_time_integrator(do_restart);
 
   setup_solvers();
-
-  setup_postprocessor();
 
   run_timeloop();
 }

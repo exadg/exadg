@@ -41,6 +41,9 @@ namespace IncNS
 template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule>
 class DGNavierStokesDualSplittingXWall;
 
+template<int dim, typename Number>
+class PostProcessorBase;
+
 template<int dim>
 struct ViscousOperatorData;
 template<int dim>
@@ -134,17 +137,21 @@ public:
 
   // Constructor
   DGNavierStokesBase(parallel::distributed::Triangulation<dim> const & triangulation,
-                     InputParameters<dim> const &                      parameter)
+                     InputParameters<dim> const &                      parameters_in,
+                     std::shared_ptr<PostProcessorBase<dim, Number>>   postprocessor_in)
     : fe_u(new FESystem<dim>(FE_DGQ<dim>(fe_degree), dim)),
       fe_p(fe_degree_p),
       fe_u_scalar(fe_degree),
-      mapping(fe_degree), // mapping(fe_degree <= 10 ? fe_degree : 10), //TODO
+      mapping(fe_degree), // mapping(fe_degree <= 10 ? fe_degree : 10), //TODO introduce template
+                          // parameter fe_degree_mapping
       dof_handler_u(triangulation),
       dof_handler_p(triangulation),
       dof_handler_u_scalar(triangulation),
       dof_index_first_point(0),
-      param(parameter),
-      inverse_mass_matrix_operator(nullptr)
+      param(parameters_in),
+      inverse_mass_matrix_operator(nullptr),
+      postprocessor(postprocessor_in),
+      counter_mean_velocity(0)
   {
   }
 
@@ -158,11 +165,12 @@ public:
   initialize_boundary_descriptor_laplace();
 
   virtual void
-  setup(const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+  setup(std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs,
         std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
         std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure,
-        std::shared_ptr<FieldFunctions<dim>>      field_functions);
+        std::shared_ptr<FieldFunctions<dim>>      field_functions,
+        std::shared_ptr<AnalyticalSolution<dim>>  analytical_solution);
 
   void
   apply_mass_matrix(VectorType & dst, VectorType const & src) const;
@@ -346,6 +354,10 @@ public:
   void
   compute_velocity_magnitude(VectorType & dst, VectorType const & src) const;
 
+  // vorticity_magnitude
+  void
+  compute_vorticity_magnitude(VectorType & dst, VectorType const & src) const;
+
   // streamfunction
   void
   compute_streamfunction(VectorType & dst, VectorType const & src) const;
@@ -353,6 +365,16 @@ public:
   // Q criterion
   void
   compute_q_criterion(VectorType & dst, VectorType const & src) const;
+
+  void
+  compute_processor_id(VectorType & dst) const;
+
+  // mean velocity
+  void
+  compute_mean_velocity(VectorType &       dst,
+                        VectorType const & src,
+                        double const       time,
+                        unsigned int const time_step_number);
 
   void
   evaluate_convective_term(VectorType &       dst,
@@ -395,6 +417,9 @@ private:
 
   virtual void
   data_reinit(typename MatrixFree<dim, Number>::AdditionalData & additional_data);
+
+  void
+  initialize_additional_vectors();
 
 protected:
   MatrixFree<dim, Number> data;
@@ -449,6 +474,8 @@ protected:
   std::shared_ptr<InverseMassMatrixOperator<dim, fe_degree, Number, 1>>
     inverse_velocity_mass_matrix_operator_scalar;
 
+  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
+
   VorticityCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>
     vorticity_calculator;
   DivergenceCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>
@@ -457,6 +484,20 @@ protected:
     velocity_magnitude_calculator;
   QCriterionCalculator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>
     q_criterion_calculator;
+
+  // postprocessing: additional fields
+  VectorType vorticity;
+  VectorType divergence;
+  VectorType velocity_magnitude;
+  VectorType vorticity_magnitude;
+  VectorType streamfunction;
+  VectorType q_criterion;
+  VectorType processor_id;
+  // mean velocity, i.e., velocity field averaged over time
+  VectorType   mean_velocity;
+  unsigned int counter_mean_velocity;
+
+  std::vector<SolutionField<dim, Number>> additional_fields;
 
 private:
   // LES turbulence modeling
@@ -509,7 +550,8 @@ DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule
                                             periodic_face_pairs,
   std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity_in,
   std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure_in,
-  std::shared_ptr<FieldFunctions<dim>>      field_functions_in)
+  std::shared_ptr<FieldFunctions<dim>>      field_functions_in,
+  std::shared_ptr<AnalyticalSolution<dim>>  analytical_solution_in)
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Setup Navier-Stokes operation ..." << std::endl << std::flush;
@@ -610,6 +652,18 @@ DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule
     turbulence_model.initialize(data, mapping, viscous_operator, model_data);
   }
 
+  // postprocessor
+  DofQuadIndexData dof_quad_index_data;
+  dof_quad_index_data.dof_index_velocity  = dof_index_u;
+  dof_quad_index_data.dof_index_pressure  = dof_index_p;
+  dof_quad_index_data.quad_index_velocity = quad_index_u;
+
+  postprocessor->setup(
+    dof_handler_u, dof_handler_p, mapping, data, dof_quad_index_data, analytical_solution_in);
+
+  // initialize additional fields
+  initialize_additional_vectors();
+
   // vorticity
   vorticity_calculator.initialize(data, dof_index_u);
   // divergence
@@ -665,6 +719,119 @@ DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule
   }
 
   pcout << std::endl << "... done!" << std::endl << std::flush;
+}
+
+template<int dim,
+         int fe_degree,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+void
+DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+  initialize_additional_vectors()
+{
+  if(this->param.output_data.write_output == true)
+  {
+    // vorticity
+    // TODO: add this field to additional_fields
+    if(this->param.output_data.write_vorticity == true)
+    {
+      initialize_vector_velocity(this->vorticity);
+    }
+
+    // divergence
+    if(this->param.output_data.write_divergence == true)
+    {
+      initialize_vector_velocity_scalar(this->divergence);
+
+      SolutionField<dim, Number> sol;
+      sol.type        = SolutionFieldType::scalar;
+      sol.name        = "div_u";
+      sol.dof_handler = &get_dof_handler_u_scalar();
+      sol.vector      = &divergence;
+      this->additional_fields.push_back(sol);
+    }
+
+    // velocity magnitude
+    if(this->param.output_data.write_velocity_magnitude == true)
+    {
+      initialize_vector_velocity_scalar(this->velocity_magnitude);
+
+      SolutionField<dim, Number> sol;
+      sol.type        = SolutionFieldType::scalar;
+      sol.name        = "velocity_magnitude";
+      sol.dof_handler = &get_dof_handler_u_scalar();
+      sol.vector      = &velocity_magnitude;
+      this->additional_fields.push_back(sol);
+    }
+
+    // vorticity magnitude
+    if(this->param.output_data.write_vorticity_magnitude == true)
+    {
+      initialize_vector_velocity_scalar(this->vorticity_magnitude);
+
+      SolutionField<dim, Number> sol;
+      sol.type        = SolutionFieldType::scalar;
+      sol.name        = "vorticity_magnitude";
+      sol.dof_handler = &get_dof_handler_u_scalar();
+      sol.vector      = &vorticity_magnitude;
+      this->additional_fields.push_back(sol);
+    }
+
+
+    // streamfunction
+    if(this->param.output_data.write_streamfunction == true)
+    {
+      initialize_vector_velocity_scalar(this->streamfunction);
+
+      SolutionField<dim, Number> sol;
+      sol.type        = SolutionFieldType::scalar;
+      sol.name        = "streamfunction";
+      sol.dof_handler = &get_dof_handler_u_scalar();
+      sol.vector      = &streamfunction;
+      this->additional_fields.push_back(sol);
+    }
+
+    // q criterion
+    if(this->param.output_data.write_q_criterion == true)
+    {
+      initialize_vector_velocity_scalar(this->q_criterion);
+
+      SolutionField<dim, Number> sol;
+      sol.type        = SolutionFieldType::scalar;
+      sol.name        = "q_criterion";
+      sol.dof_handler = &get_dof_handler_u_scalar();
+      sol.vector      = &q_criterion;
+      this->additional_fields.push_back(sol);
+    }
+
+    // processor id
+    if(this->param.output_data.write_processor_id == true)
+    {
+      initialize_vector_velocity_scalar(this->processor_id);
+
+      SolutionField<dim, Number> sol;
+      sol.type        = SolutionFieldType::scalar;
+      sol.name        = "processor_id";
+      sol.dof_handler = &get_dof_handler_u_scalar();
+      sol.vector      = &processor_id;
+      this->additional_fields.push_back(sol);
+    }
+
+    // mean velocity
+    if(this->param.output_data.mean_velocity.calculate == true)
+    {
+      initialize_vector_velocity(this->mean_velocity);
+
+      SolutionField<dim, Number> sol;
+      sol.type        = SolutionFieldType::vector;
+      sol.name        = "mean_velocity";
+      sol.dof_handler = &get_dof_handler_u();
+      sol.vector      = &mean_velocity;
+      this->additional_fields.push_back(sol);
+    }
+  }
 }
 
 template<int dim,
@@ -934,6 +1101,21 @@ DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule
   inverse_velocity_mass_matrix_operator_scalar->apply(dst, dst);
 }
 
+template<int dim,
+         int fe_degree,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+void
+DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+  compute_vorticity_magnitude(VectorType & dst, VectorType const & src) const
+{
+  velocity_magnitude_calculator.compute(dst, src);
+
+  inverse_velocity_mass_matrix_operator_scalar->apply(dst, dst);
+}
+
 /*
  *  Streamfunction psi (2D only): defined as u1 = d(psi)/dx2, u2 = - d(psi)/dx1
  *
@@ -1041,6 +1223,42 @@ DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule
   q_criterion_calculator.compute(dst, src);
 
   inverse_velocity_mass_matrix_operator_scalar->apply(dst, dst);
+}
+
+template<int dim,
+         int fe_degree,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+void
+DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+  compute_processor_id(VectorType & dst) const
+{
+  dst = Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+}
+
+template<int dim,
+         int fe_degree,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+void
+DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+  compute_mean_velocity(VectorType &       dst,
+                        VectorType const & src,
+                        double const       time,
+                        unsigned const     time_step_number)
+{
+  if(time >= this->param.output_data.mean_velocity.sample_start_time &&
+     time <= this->param.output_data.mean_velocity.sample_end_time &&
+     time_step_number % this->param.output_data.mean_velocity.sample_every_timesteps == 0)
+  {
+    dst.sadd((double)counter_mean_velocity, 1.0, src);
+    ++counter_mean_velocity;
+    dst *= 1. / (double)counter_mean_velocity;
+  }
 }
 
 template<int dim,

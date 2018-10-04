@@ -19,23 +19,21 @@ class TimeIntBDFPressureCorrection
 {
 public:
   typedef TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation> Base;
-  typedef typename Base::VectorType                                                   VectorType;
+
+  typedef typename Base::VectorType VectorType;
 
   TimeIntBDFPressureCorrection(std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
-                               std::shared_ptr<PostProcessorBase<dim, value_type>> postprocessor_in,
-                               InputParameters<dim> const &                        param_in,
-                               unsigned int const                                  n_refine_time_in,
-                               bool const use_adaptive_time_stepping)
+                               InputParameters<dim> const &           param_in,
+                               unsigned int const                     n_refine_time_in,
+                               bool const                             use_adaptive_time_stepping)
     : TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>(
         navier_stokes_operation_in,
-        postprocessor_in,
         param_in,
         n_refine_time_in,
         use_adaptive_time_stepping),
+      navier_stokes_operation(navier_stokes_operation_in),
       velocity(this->order),
       pressure(this->order),
-      vorticity(this->order),
-      navier_stokes_operation(navier_stokes_operation_in),
       vec_convective_term(this->order),
       order_pressure_extrapolation(this->param.order_pressure_extrapolation),
       extra_pressure_gradient(this->param.order_pressure_extrapolation,
@@ -53,17 +51,6 @@ public:
 
   virtual void
   analyze_computing_times() const;
-
-protected:
-  VectorType              velocity_np;
-  std::vector<VectorType> velocity;
-
-  VectorType              pressure_np;
-  std::vector<VectorType> pressure;
-
-  mutable VectorType vorticity;
-
-  std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
 private:
   virtual void
@@ -143,6 +130,14 @@ private:
 
   virtual LinearAlgebra::distributed::Vector<value_type> const &
   get_velocity();
+
+  std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
+
+  VectorType              velocity_np;
+  std::vector<VectorType> velocity;
+
+  VectorType              pressure_np;
+  std::vector<VectorType> pressure;
 
   VectorType pressure_increment;
 
@@ -246,8 +241,6 @@ void
 TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
   initialize_vectors()
 {
-  TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::initialize_vectors();
-
   // velocity
   for(unsigned int i = 0; i < velocity.size(); ++i)
     navier_stokes_operation->initialize_vector_velocity(velocity[i]);
@@ -258,9 +251,6 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
     navier_stokes_operation->initialize_vector_pressure(pressure[i]);
   navier_stokes_operation->initialize_vector_pressure(pressure_np);
   navier_stokes_operation->initialize_vector_pressure(pressure_increment);
-
-  // vorticity
-  navier_stokes_operation->initialize_vector_vorticity(vorticity);
 
   // vec_convective_term
   if(this->param.equation_type == EquationType::NavierStokes &&
@@ -305,8 +295,10 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < velocity.size(); ++i)
+  {
     navier_stokes_operation->prescribe_initial_conditions(
       velocity[i], pressure[i], this->time - double(i) * this->time_steps[0]);
+  }
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -388,45 +380,10 @@ void
 TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::postprocessing()
   const
 {
-  this->calculate_vorticity(vorticity, velocity[0]);
-  this->calculate_divergence(this->divergence, velocity[0]);
-
-  this->calculate_velocity_magnitude(this->velocity_magnitude, velocity[0]);
-  this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity);
-  this->calculate_streamfunction(this->streamfunction, vorticity);
-  this->calculate_q_criterion(this->q_criterion, velocity[0]);
-  this->calculate_processor_id(this->processor_id);
-  this->calculate_mean_velocity(this->mean_velocity, velocity[0]);
-
-  this->postprocessor->do_postprocessing(velocity[0],
-                                         velocity[0],
-                                         pressure[0],
-                                         vorticity,
-                                         this->additional_fields,
-                                         this->time,
-                                         this->time_step_number);
-
-  // check pressure error and formation of numerical boundary layers for standard vs. rotational
-  // formulation
-
-  //  VectorType velocity_exact;
-  //  navier_stokes_operation->initialize_vector_velocity(velocity_exact);
-  //
-  //  VectorType pressure_exact;
-  //  navier_stokes_operation->initialize_vector_pressure(pressure_exact);
-  //
-  //  navier_stokes_operation->prescribe_initial_conditions(velocity_exact,pressure_exact,this->time);
-  //
-  //  velocity_exact.add(-1.0,velocity[0]);
-  //  pressure_exact.add(-1.0,pressure[0]);
-  //
-  //  this->postprocessor->do_postprocessing(velocity_exact,
-  //                                         velocity[0],
-  //                                         pressure_exact,
-  //                                         vorticity,
-  //                                         this->additional_fields,
-  //                                         this->time,
-  //                                         this->time_step_number);
+  navier_stokes_operation->do_postprocessing(velocity[0],
+                                             pressure[0],
+                                             this->time,
+                                             this->time_step_number);
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -434,17 +391,7 @@ void
 TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
   postprocessing_steady_problem() const
 {
-  this->calculate_vorticity(vorticity, velocity[0]);
-  this->calculate_divergence(this->divergence, velocity[0]);
-
-  this->calculate_velocity_magnitude(this->velocity_magnitude, velocity[0]);
-  this->calculate_vorticity_magnitude(this->vorticity_magnitude, vorticity);
-  this->calculate_streamfunction(this->streamfunction, vorticity);
-  this->calculate_q_criterion(this->q_criterion, velocity[0]);
-  this->calculate_processor_id(this->processor_id);
-
-  this->postprocessor->do_postprocessing(
-    velocity[0], velocity[0], pressure[0], vorticity, this->additional_fields);
+  navier_stokes_operation->do_postprocessing_steady_problem(velocity[0], pressure[0]);
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -554,7 +501,8 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   }
 
 
-  /*  Calculate the right-hand side of the linear system of equations
+  /*
+   *  Calculate the right-hand side of the linear system of equations
    *  (in case of an explicit formulation of the convective term or Stokes equations)
    *  or the vector that is constant when solving the nonlinear momentum equation
    *  (where constant means that the vector does not change from one Newton iteration

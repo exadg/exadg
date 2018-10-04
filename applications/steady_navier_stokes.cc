@@ -1,5 +1,5 @@
 /*
- * SteadyNavierStokes.cc
+ * steady_navier_stokes.cc
  *
  *  Created on: Oct 10, 2016
  *      Author: fehn
@@ -33,10 +33,10 @@ using namespace IncNS;
 
 //#include "incompressible_navier_stokes_test_cases/stokes_curl_flow.h"
 //#include "incompressible_navier_stokes_test_cases/couette.h"
-//#include "incompressible_navier_stokes_test_cases/poiseuille.h"
+#include "incompressible_navier_stokes_test_cases/poiseuille.h"
 //#include "incompressible_navier_stokes_test_cases/cavity.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
-#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
+//#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
 
 
 template<int dim,
@@ -50,14 +50,16 @@ class NavierStokesProblem
 public:
   NavierStokesProblem(const unsigned int refine_steps_space,
                       const unsigned int refine_steps_time = 0);
+
   void
   solve_problem();
 
 private:
   void
   print_header();
+
   void
-  setup_postprocessor();
+  setup_navier_stokes_operation();
 
   ConditionalOStream pcout;
 
@@ -130,28 +132,28 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
   AssertThrow(param.solver_type == SolverType::Steady,
               ExcMessage("This is a steady solver. Check input parameters."));
 
-  // initialize navier_stokes_operation
-  navier_stokes_operation.reset(new DGNavierStokesCoupled<dim,
-                                                          fe_degree_u,
-                                                          fe_degree_p,
-                                                          fe_degree_xwall,
-                                                          xwall_quad_rule,
-                                                          Number>(triangulation, param));
-
   // initialize postprocessor
   postprocessor = construct_postprocessor<dim, Number>(param);
 
-  // initialize driver for steady state problem that depends on both navier_stokes_operation and
-  // postprocessor
-  driver_steady.reset(new DriverSteadyProblems<dim,
-                                               Number,
-                                               DGNavierStokesCoupled<dim,
-                                                                     fe_degree_u,
-                                                                     fe_degree_p,
-                                                                     fe_degree_xwall,
-                                                                     xwall_quad_rule,
-                                                                     Number>>(
-    navier_stokes_operation, postprocessor, param));
+  // initialize navier_stokes_operation
+  navier_stokes_operation.reset(
+    new DGNavierStokesCoupled<dim,
+                              fe_degree_u,
+                              fe_degree_p,
+                              fe_degree_xwall,
+                              xwall_quad_rule,
+                              Number>(triangulation, param, postprocessor));
+
+  // initialize driver for steady state problem that depends on navier_stokes_operation
+  driver_steady.reset(
+    new DriverSteadyProblems<dim,
+                             Number,
+                             DGNavierStokesCoupled<dim,
+                                                   fe_degree_u,
+                                                   fe_degree_p,
+                                                   fe_degree_xwall,
+                                                   xwall_quad_rule,
+                                                   Number>>(navier_stokes_operation, param));
 }
 
 template<int dim,
@@ -184,22 +186,16 @@ template<int dim,
          typename Number>
 void
 NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  setup_postprocessor()
+  setup_navier_stokes_operation()
 {
-  DofQuadIndexData dof_quad_index_data;
-  dof_quad_index_data.dof_index_velocity = navier_stokes_operation->get_dof_index_velocity();
-  dof_quad_index_data.dof_index_pressure = navier_stokes_operation->get_dof_index_pressure();
-  dof_quad_index_data.quad_index_velocity =
-    navier_stokes_operation->get_quad_index_velocity_linear();
+  AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
 
-  postprocessor->setup(navier_stokes_operation->get_dof_handler_u(),
-                       navier_stokes_operation->get_dof_handler_p(),
-                       navier_stokes_operation->get_mapping(),
-                       navier_stokes_operation->get_data(),
-                       dof_quad_index_data,
-                       analytical_solution);
+  navier_stokes_operation->setup(periodic_faces,
+                                 boundary_descriptor_velocity,
+                                 boundary_descriptor_pressure,
+                                 field_functions,
+                                 analytical_solution);
 }
-
 
 template<int dim,
          int fe_degree_u,
@@ -221,16 +217,11 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
 
   print_grid_data(pcout, n_refine_space, triangulation);
 
-  navier_stokes_operation->setup(periodic_faces,
-                                 boundary_descriptor_velocity,
-                                 boundary_descriptor_pressure,
-                                 field_functions);
+  setup_navier_stokes_operation();
 
   driver_steady->setup();
 
   navier_stokes_operation->setup_solvers();
-
-  setup_postprocessor();
 
   driver_steady->solve_steady_problem();
 }
