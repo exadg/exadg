@@ -1,5 +1,5 @@
 /*
- * DGCompNavierStokes.h
+ * dg_comp_navier_stokes.h
  *
  *
  */
@@ -51,6 +51,9 @@ public:
 
   typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
 
+  typedef CompNS::PostProcessor<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>
+    Postprocessor;
+
   static const unsigned int dof_index_all =
     static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
       DofHandlerSelector::all_components);
@@ -79,7 +82,8 @@ public:
     (quad_index_l2_projections == quad_index_standard) ? fe_degree + 1 : n_q_points_conv;
 
   DGCompNavierStokesOperation(parallel::distributed::Triangulation<dim> const & triangulation,
-                              CompNS::InputParameters<dim> const &              param_in)
+                              CompNS::InputParameters<dim> const &              param_in,
+                              std::shared_ptr<Postprocessor>                    postprocessor_in)
     : fe(new FESystem<dim>(FE_DGQ<dim>(fe_degree), dim + 2)),
       fe_vector(new FESystem<dim>(FE_DGQ<dim>(fe_degree), dim)),
       fe_scalar(fe_degree),
@@ -88,6 +92,7 @@ public:
       dof_handler_vector(triangulation),
       dof_handler_scalar(triangulation),
       param(param_in),
+      postprocessor(postprocessor_in),
       wall_time_operator_evaluation(0.0)
   {
   }
@@ -97,7 +102,8 @@ public:
         std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_velocity_in,
         std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_pressure_in,
         std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy_in,
-        std::shared_ptr<CompNS::FieldFunctions<dim>>           field_functions_in)
+        std::shared_ptr<CompNS::FieldFunctions<dim>>           field_functions_in,
+        std::shared_ptr<CompNS::AnalyticalSolution<dim>>       analytical_solution_in)
   {
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
     pcout << std::endl << "Setup compressible Navier-Stokes DG operator ..." << std::endl;
@@ -113,6 +119,8 @@ public:
     initialize_matrix_free();
 
     setup_operators();
+
+    setup_postprocessor(analytical_solution_in);
 
     pcout << std::endl << "... done!" << std::endl;
   }
@@ -320,28 +328,54 @@ public:
 
   // pressure
   void
-  compute_pressure(VectorType & dst, VectorType const & src);
+  compute_pressure(VectorType & dst, VectorType const & src) const
+  {
+    p_u_T_calculator.compute_pressure(dst, src);
+    inverse_mass_matrix_operator_scalar->apply(dst, dst);
+  }
 
   // velocity
   void
-  compute_velocity(VectorType & dst, VectorType const & src);
+  compute_velocity(VectorType & dst, VectorType const & src) const
+  {
+    p_u_T_calculator.compute_velocity(dst, src);
+    inverse_mass_matrix_operator_vector->apply(dst, dst);
+  }
 
   // temperature
   void
-  compute_temperature(VectorType & dst, VectorType const & src);
+  compute_temperature(VectorType & dst, VectorType const & src) const
+  {
+    p_u_T_calculator.compute_temperature(dst, src);
+    inverse_mass_matrix_operator_scalar->apply(dst, dst);
+  }
 
   // vorticity
   void
-  compute_vorticity(VectorType & dst, VectorType const & src) const;
+  compute_vorticity(VectorType & dst, VectorType const & src) const
+  {
+    vorticity_calculator.compute_vorticity(dst, src);
+    inverse_mass_matrix_operator_vector->apply(dst, dst);
+  }
 
   // divergence
   void
-  compute_divergence(VectorType & dst, VectorType const & src) const;
+  compute_divergence(VectorType & dst, VectorType const & src) const
+  {
+    divergence_calculator.compute_divergence(dst, src);
+    inverse_mass_matrix_operator_scalar->apply(dst, dst);
+  }
 
   double
   get_wall_time_operator_evaluation() const
   {
     return wall_time_operator_evaluation;
+  }
+
+  void
+  do_postprocessing(VectorType const & solution, double const time, int const time_step_number)
+  {
+    postprocessor->do_postprocessing(solution, time, time_step_number);
   }
 
 private:
@@ -504,6 +538,24 @@ private:
     divergence_calculator.initialize(data, dof_index_vector, dof_index_scalar, quad_index_standard);
   }
 
+  void
+  setup_postprocessor(std::shared_ptr<CompNS::AnalyticalSolution<dim>> analytical_solution_in)
+  {
+    DofQuadIndexData dof_quad_index_data;
+    dof_quad_index_data.dof_index_velocity  = dof_index_vector;
+    dof_quad_index_data.dof_index_pressure  = dof_index_scalar;
+    dof_quad_index_data.quad_index_velocity = quad_index_standard;
+
+    postprocessor->setup(*this,
+                         dof_handler,
+                         dof_handler_vector,
+                         dof_handler_scalar,
+                         mapping,
+                         data,
+                         dof_quad_index_data,
+                         analytical_solution_in);
+  }
+
   // fe
   std::shared_ptr<FESystem<dim>> fe;        // all (dim+2) components: (rho, rho u, rho E)
   std::shared_ptr<FESystem<dim>> fe_vector; // e.g. velocity
@@ -561,54 +613,11 @@ private:
   VorticityCalculator<dim, fe_degree, value_type>                         vorticity_calculator;
   DivergenceCalculator<dim, fe_degree, value_type>                        divergence_calculator;
 
+  // postprocessor
+  std::shared_ptr<Postprocessor> postprocessor;
+
   // wall time for operator evaluation
   mutable double wall_time_operator_evaluation;
 };
-
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
-void
-DGCompNavierStokesOperation<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>::
-  compute_pressure(VectorType & dst, VectorType const & src)
-{
-  p_u_T_calculator.compute_pressure(dst, src);
-  inverse_mass_matrix_operator_scalar->apply(dst, dst);
-}
-
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
-void
-DGCompNavierStokesOperation<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>::
-  compute_velocity(VectorType & dst, VectorType const & src)
-{
-  p_u_T_calculator.compute_velocity(dst, src);
-  inverse_mass_matrix_operator_vector->apply(dst, dst);
-}
-
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
-void
-DGCompNavierStokesOperation<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>::
-  compute_temperature(VectorType & dst, VectorType const & src)
-{
-  p_u_T_calculator.compute_temperature(dst, src);
-  inverse_mass_matrix_operator_scalar->apply(dst, dst);
-}
-
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
-void
-DGCompNavierStokesOperation<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>::
-  compute_vorticity(VectorType & dst, VectorType const & src) const
-{
-  vorticity_calculator.compute_vorticity(dst, src);
-  inverse_mass_matrix_operator_vector->apply(dst, dst);
-}
-
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
-void
-DGCompNavierStokesOperation<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>::
-  compute_divergence(VectorType & dst, VectorType const & src) const
-{
-  divergence_calculator.compute_divergence(dst, src);
-  inverse_mass_matrix_operator_scalar->apply(dst, dst);
-}
-
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_DG_CONVECTION_DIFFUSION_OPERATION_H_ */

@@ -37,8 +37,8 @@
 //#include "compressible_navier_stokes_test_cases/steady_shear_flow.h"
 //#include "compressible_navier_stokes_test_cases/manufactured_solution.h"
 //#include "compressible_navier_stokes_test_cases/flow_past_cylinder.h"
-//#include "compressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
-#include "compressible_navier_stokes_test_cases/turbulent_channel.h"
+#include "compressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
+//#include "compressible_navier_stokes_test_cases/turbulent_channel.h"
 
 using namespace dealii;
 using namespace CompNS;
@@ -64,9 +64,6 @@ private:
   void
   print_header();
 
-  void
-  setup_postprocessor();
-
   ConditionalOStream pcout;
 
   parallel::distributed::Triangulation<dim> triangulation;
@@ -87,7 +84,9 @@ private:
 
   std::shared_ptr<DG_OPERATOR> comp_navier_stokes_operator;
 
-  std::shared_ptr<CompNS::PostProcessor<dim, fe_degree>> postprocessor;
+  std::shared_ptr<
+    CompNS::PostProcessor<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>>
+    postprocessor;
 
   std::shared_ptr<TIME_INT> time_integrator;
 };
@@ -122,18 +121,18 @@ CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>
   boundary_descriptor_pressure.reset(new CompNS::BoundaryDescriptor<dim>());
   boundary_descriptor_energy.reset(new CompNS::BoundaryDescriptorEnergy<dim>());
 
-  // initialize compressible Navier-Stokes operator
-  comp_navier_stokes_operator.reset(new DG_OPERATOR(triangulation, param));
-
   // initialize postprocessor
   // this function has to be defined in the header file
   // that implements all problem specific things like
   // parameters, geometry, boundary conditions, etc.
-  postprocessor = construct_postprocessor<dim, fe_degree>(param);
+  postprocessor =
+    construct_postprocessor<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>(param);
+
+  // initialize compressible Navier-Stokes operator
+  comp_navier_stokes_operator.reset(new DG_OPERATOR(triangulation, param, postprocessor));
 
   // initialize time integrator
-  time_integrator.reset(
-    new TIME_INT(comp_navier_stokes_operator, postprocessor, param, n_refine_time));
+  time_integrator.reset(new TIME_INT(comp_navier_stokes_operator, param, n_refine_time));
 }
 
 template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis>
@@ -149,25 +148,6 @@ CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>
   << "_________________________________________________________________________________" << std::endl
   << std::endl;
   // clang-format on
-}
-
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis>
-void
-CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>::
-  setup_postprocessor()
-{
-  DofQuadIndexData dof_quad_index_data;
-  dof_quad_index_data.dof_index_velocity  = comp_navier_stokes_operator->get_dof_index_vector();
-  dof_quad_index_data.dof_index_pressure  = comp_navier_stokes_operator->get_dof_index_scalar();
-  dof_quad_index_data.quad_index_velocity = comp_navier_stokes_operator->get_quad_index_standard();
-
-  postprocessor->setup(comp_navier_stokes_operator->get_dof_handler(),
-                       comp_navier_stokes_operator->get_dof_handler_vector(),
-                       comp_navier_stokes_operator->get_dof_handler_scalar(),
-                       comp_navier_stokes_operator->get_mapping(),
-                       comp_navier_stokes_operator->get_data(),
-                       dof_quad_index_data,
-                       analytical_solution);
 }
 
 template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis>
@@ -190,9 +170,8 @@ CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>
                                      boundary_descriptor_velocity,
                                      boundary_descriptor_pressure,
                                      boundary_descriptor_energy,
-                                     field_functions);
-
-  setup_postprocessor();
+                                     field_functions,
+                                     analytical_solution);
 
   time_integrator->setup();
   time_integrator->timeloop();

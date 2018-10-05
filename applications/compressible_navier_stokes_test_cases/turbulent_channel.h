@@ -450,17 +450,22 @@ struct PostProcessorDataTurbulentChannel
   TurbulentChannelData turb_ch_data;
 };
 
-template<int dim, int fe_degree>
-class PostProcessorTurbulentChannel : public CompNS::PostProcessor<dim,fe_degree>
+template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
+class PostProcessorTurbulentChannel : public CompNS::PostProcessor<dim,fe_degree, n_q_points_conv, n_q_points_vis, value_type>
 {
 public:
+  typedef CompNS::PostProcessor<dim,fe_degree, n_q_points_conv, n_q_points_vis, value_type> Base;
+
+  typedef typename Base::NavierStokesOperator NavierStokesOperator;
+
   PostProcessorTurbulentChannel(PostProcessorDataTurbulentChannel<dim> const & pp_data_turb_channel)
     :
-    CompNS::PostProcessor<dim,fe_degree>(pp_data_turb_channel.pp_data),
+    Base(pp_data_turb_channel.pp_data),
     turb_ch_data(pp_data_turb_channel.turb_ch_data)
   {}
 
-  void setup(DoFHandler<dim> const                             &dof_handler_in,
+  void setup(NavierStokesOperator const                        &navier_stokes_operator_in,
+             DoFHandler<dim> const                             &dof_handler_in,
              DoFHandler<dim> const                             &dof_handler_vector_in,
              DoFHandler<dim> const                             &dof_handler_scalar_in,
              Mapping<dim> const                                &mapping_in,
@@ -469,7 +474,8 @@ public:
              std::shared_ptr<CompNS::AnalyticalSolution<dim> > analytical_solution_in)
   {
     // call setup function of base class
-    CompNS::PostProcessor<dim,fe_degree>::setup(
+    Base::setup(
+        navier_stokes_operator_in,
         dof_handler_in,
         dof_handler_vector_in,
         dof_handler_scalar_in,
@@ -484,33 +490,29 @@ public:
   }
 
   void do_postprocessing(parallel::distributed::Vector<double> const   &solution,
-                         parallel::distributed::Vector<double> const   &velocity,
-                         parallel::distributed::Vector<double> const   &pressure,
-                         std::vector<SolutionField<dim,double> > const &additional_fields,
                          double const                                  time,
                          int const                                     time_step_number)
   {
-    CompNS::PostProcessor<dim,fe_degree>::do_postprocessing(
+    Base::do_postprocessing(
         solution,
-        velocity,
-        pressure,
-        additional_fields,
         time,
         time_step_number);
 
-    statistics_turb_ch->evaluate(velocity,time,time_step_number);
+    statistics_turb_ch->evaluate(this->velocity,time,time_step_number);
   }
 
   TurbulentChannelData turb_ch_data;
   std::shared_ptr<StatisticsManager<dim> > statistics_turb_ch;
 };
 
-template<int dim, int fe_degree>
-std::shared_ptr<CompNS::PostProcessor<dim,fe_degree> >
+template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
+std::shared_ptr<CompNS::PostProcessor<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type> >
 construct_postprocessor(CompNS::InputParameters<dim> const &param)
 {
   CompNS::PostProcessorData<dim> pp_data;
 
+  pp_data.calculate_velocity = param.calculate_velocity;
+  pp_data.calculate_pressure = param.calculate_pressure;
   pp_data.output_data = param.output_data;
   pp_data.error_data = param.error_data;
   pp_data.lift_and_drag_data = param.lift_and_drag_data;
@@ -522,8 +524,8 @@ construct_postprocessor(CompNS::InputParameters<dim> const &param)
   pp_data_turb_ch.pp_data = pp_data;
   pp_data_turb_ch.turb_ch_data = param.turb_ch_data;
 
-  std::shared_ptr<CompNS::PostProcessor<dim,fe_degree> > pp;
-  pp.reset(new PostProcessorTurbulentChannel<dim,fe_degree>(pp_data_turb_ch));
+  std::shared_ptr<CompNS::PostProcessor<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type> > pp;
+  pp.reset(new PostProcessorTurbulentChannel<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>(pp_data_turb_ch));
 
   return pp;
 }
