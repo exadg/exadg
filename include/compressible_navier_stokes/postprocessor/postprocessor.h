@@ -111,7 +111,7 @@ public:
   do_postprocessing(VectorType const & solution, double const time, int const time_step_number)
   {
     /*
-     *
+     * calculate derived quantities such as velocity, pressure, etc.
      */
     calculate_additional_vectors(solution);
 

@@ -51,6 +51,9 @@ public:
 
   typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
 
+  typedef CompNS::PostProcessor<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>
+    Postprocessor;
+
   static const unsigned int dof_index_all =
     static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
       DofHandlerSelector::all_components);
@@ -78,12 +81,9 @@ public:
   static const unsigned int n_q_points_l2_projections =
     (quad_index_l2_projections == quad_index_standard) ? fe_degree + 1 : n_q_points_conv;
 
-  DGCompNavierStokesOperation(
-    parallel::distributed::Triangulation<dim> const & triangulation,
-    CompNS::InputParameters<dim> const &              param_in,
-    std::shared_ptr<
-      CompNS::PostProcessor<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>>
-      postprocessor_in)
+  DGCompNavierStokesOperation(parallel::distributed::Triangulation<dim> const & triangulation,
+                              CompNS::InputParameters<dim> const &              param_in,
+                              std::shared_ptr<Postprocessor>                    postprocessor_in)
     : fe(new FESystem<dim>(FE_DGQ<dim>(fe_degree), dim + 2)),
       fe_vector(new FESystem<dim>(FE_DGQ<dim>(fe_degree), dim)),
       fe_scalar(fe_degree),
@@ -614,9 +614,7 @@ private:
   DivergenceCalculator<dim, fe_degree, value_type>                        divergence_calculator;
 
   // postprocessor
-  std::shared_ptr<
-    CompNS::PostProcessor<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>>
-    postprocessor;
+  std::shared_ptr<Postprocessor> postprocessor;
 
   // wall time for operator evaluation
   mutable double wall_time_operator_evaluation;

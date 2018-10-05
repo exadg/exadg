@@ -78,7 +78,7 @@ const double MAX_VELOCITY = V_0;
 const double CHARACTERISTIC_TIME = L/V_0;
 
 // output folders and filenames
-std::string OUTPUT_FOLDER = "output_comp_ns/taylor_green_vortex/test_new/";
+std::string OUTPUT_FOLDER = "output_comp_ns/taylor_green_vortex/";
 std::string FILENAME = "test"; // "Re1600_l2_k15_overint";
 
 template<int dim>
