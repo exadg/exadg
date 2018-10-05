@@ -19,9 +19,6 @@
 
 namespace ConvDiff
 {
-template<int dim, int fe_degree>
-class PostProcessor;
-
 template<int dim, int fe_degree, typename value_type>
 class TimeIntExplRK
 {
@@ -30,12 +27,10 @@ public:
 
   TimeIntExplRK(
     std::shared_ptr<ConvDiff::DGOperation<dim, fe_degree, value_type>> conv_diff_operation_in,
-    std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree>>           postprocessor_in,
     ConvDiff::InputParameters const &                                  param_in,
     std::shared_ptr<Function<dim>>                                     velocity_in,
     unsigned int const                                                 n_refine_time_in)
     : conv_diff_operation(conv_diff_operation_in),
-      postprocessor(postprocessor_in),
       param(param_in),
       velocity(velocity_in),
       total_time(0.0),
@@ -83,8 +78,6 @@ private:
   std::shared_ptr<
     ExplicitRungeKuttaTimeIntegrator<ConvDiff::DGOperation<dim, fe_degree, value_type>, VectorType>>
     rk_time_integrator;
-
-  std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree>> postprocessor;
 
   ConvDiff::InputParameters const & param;
 
@@ -340,7 +333,7 @@ template<int dim, int fe_degree, typename value_type>
 void
 TimeIntExplRK<dim, fe_degree, value_type>::postprocessing() const
 {
-  postprocessor->do_postprocessing(solution_n, time, 0 /*use a value >=0 for unsteady problems*/);
+  conv_diff_operation->do_postprocessing(solution_n, time, time_step_number);
 }
 
 template<int dim, int fe_degree, typename value_type>
