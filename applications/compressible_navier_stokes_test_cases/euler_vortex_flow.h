@@ -387,19 +387,23 @@ void set_analytical_solution(std::shared_ptr<CompNS::AnalyticalSolution<dim> > a
   analytical_solution->solution.reset(new AnalyticalSolutionCompNS<dim>());
 }
 
-template<int dim, int fe_degree>
-std::shared_ptr<CompNS::PostProcessor<dim,fe_degree> >
+template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
+std::shared_ptr<CompNS::PostProcessor<dim,fe_degree, n_q_points_conv, n_q_points_vis, value_type> >
 construct_postprocessor(CompNS::InputParameters<dim> const &param)
 {
   CompNS::PostProcessorData<dim> pp_data;
 
+  pp_data.calculate_velocity = param.calculate_velocity;
+  pp_data.calculate_pressure = param.calculate_pressure;
   pp_data.output_data = param.output_data;
   pp_data.error_data = param.error_data;
   pp_data.lift_and_drag_data = param.lift_and_drag_data;
   pp_data.pressure_difference_data = param.pressure_difference_data;
+  pp_data.kinetic_energy_data = param.kinetic_energy_data;
+  pp_data.kinetic_energy_spectrum_data = param.kinetic_energy_spectrum_data;
 
-  std::shared_ptr<CompNS::PostProcessor<dim,fe_degree> > pp;
-  pp.reset(new CompNS::PostProcessor<dim,fe_degree>(pp_data));
+  std::shared_ptr<CompNS::PostProcessor<dim,fe_degree, n_q_points_conv, n_q_points_vis, value_type> > pp;
+  pp.reset(new CompNS::PostProcessor<dim,fe_degree, n_q_points_conv, n_q_points_vis, value_type>(pp_data));
 
   return pp;
 }
