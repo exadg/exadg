@@ -195,7 +195,7 @@ public:
   }
 
   void
-  compute_pressure(VectorType & pressure, VectorType const & solution_conserved)
+  compute_pressure(VectorType & pressure, VectorType const & solution_conserved) const
   {
     AssertThrow(heat_capacity_ratio > 0.0, ExcMessage("heat capacity ratio has not been set!"));
     AssertThrow(specific_gas_constant > 0.0, ExcMessage("specific gas constant has not been set!"));
@@ -204,13 +204,13 @@ public:
   }
 
   void
-  compute_velocity(VectorType & velocity, VectorType const & solution_conserved)
+  compute_velocity(VectorType & velocity, VectorType const & solution_conserved) const
   {
     data->cell_loop(&This::local_apply_velocity, this, velocity, solution_conserved);
   }
 
   void
-  compute_temperature(VectorType & temperature, VectorType const & solution_conserved)
+  compute_temperature(VectorType & temperature, VectorType const & solution_conserved) const
   {
     AssertThrow(heat_capacity_ratio > 0.0, ExcMessage("heat capacity ratio has not been set!"));
     AssertThrow(specific_gas_constant > 0.0, ExcMessage("specific gas constant has not been set!"));

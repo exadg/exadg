@@ -1,5 +1,5 @@
 /*
- * TimeIntExplRKCompNavierStokes.h
+ * time_int_explicit_runge_kutta.h
  *
  */
 
@@ -17,9 +17,6 @@
 #include "time_integration/ssp_runge_kutta.h"
 #include "time_integration/time_step_calculation.h"
 
-template<int dim, int fe_degree>
-class PostProcessor;
-
 template<int dim, int fe_degree, typename value_type, typename NavierStokesOperation>
 class TimeIntExplRKCompNavierStokes
 {
@@ -27,12 +24,10 @@ public:
   typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
 
   TimeIntExplRKCompNavierStokes(
-    std::shared_ptr<NavierStokesOperation>                 comp_navier_stokes_operation_in,
-    std::shared_ptr<CompNS::PostProcessor<dim, fe_degree>> postprocessor_in,
-    CompNS::InputParameters<dim> const &                   param_in,
-    unsigned int const                                     n_refine_time_in)
+    std::shared_ptr<NavierStokesOperation> comp_navier_stokes_operation_in,
+    CompNS::InputParameters<dim> const &   param_in,
+    unsigned int const                     n_refine_time_in)
     : comp_navier_stokes_operation(comp_navier_stokes_operation_in),
-      postprocessor(postprocessor_in),
       param(param_in),
       total_time(0.0),
       time_postprocessing(0.0),
@@ -97,8 +92,6 @@ private:
 
   std::shared_ptr<ExplicitTimeIntegrator<NavierStokesOperation, VectorType>> rk_time_integrator;
 
-  std::shared_ptr<CompNS::PostProcessor<dim, fe_degree>> postprocessor;
-
   CompNS::InputParameters<dim> const & param;
 
   // timer
@@ -114,15 +107,6 @@ private:
 
   // DoF vectors for conserved variables: (rho, rho u, rho E)
   VectorType solution_n, solution_np;
-
-  // DoF vectors for derived quantities: (p, u, T)
-  VectorType pressure;
-  VectorType velocity;
-  VectorType temperature;
-  VectorType vorticity;
-  VectorType divergence;
-
-  std::vector<SolutionField<dim, value_type>> additional_fields;
 
   // current time and time step size
   double time, time_step;
@@ -206,71 +190,6 @@ TimeIntExplRKCompNavierStokes<dim, fe_degree, value_type, NavierStokesOperation>
 {
   comp_navier_stokes_operation->initialize_dof_vector(solution_n);
   comp_navier_stokes_operation->initialize_dof_vector(solution_np);
-
-  // pressure
-  if(this->param.output_data.write_pressure == true)
-  {
-    comp_navier_stokes_operation->initialize_dof_vector_scalar(pressure);
-
-    SolutionField<dim, value_type> field;
-    field.type        = SolutionFieldType::scalar;
-    field.name        = "pressure";
-    field.dof_handler = &comp_navier_stokes_operation->get_dof_handler_scalar();
-    field.vector      = &pressure;
-    this->additional_fields.push_back(field);
-  }
-
-  // velocity
-  if(this->param.output_data.write_velocity == true)
-  {
-    comp_navier_stokes_operation->initialize_dof_vector_dim_components(velocity);
-
-    SolutionField<dim, value_type> field;
-    field.type        = SolutionFieldType::vector;
-    field.name        = "velocity";
-    field.dof_handler = &comp_navier_stokes_operation->get_dof_handler_vector();
-    field.vector      = &velocity;
-    this->additional_fields.push_back(field);
-  }
-
-  // temperature
-  if(this->param.output_data.write_temperature == true)
-  {
-    comp_navier_stokes_operation->initialize_dof_vector_scalar(temperature);
-
-    SolutionField<dim, value_type> field;
-    field.type        = SolutionFieldType::scalar;
-    field.name        = "temperature";
-    field.dof_handler = &comp_navier_stokes_operation->get_dof_handler_scalar();
-    field.vector      = &temperature;
-    this->additional_fields.push_back(field);
-  }
-
-  // vorticity
-  if(this->param.output_data.write_vorticity == true)
-  {
-    comp_navier_stokes_operation->initialize_dof_vector_dim_components(vorticity);
-
-    SolutionField<dim, value_type> field;
-    field.type        = SolutionFieldType::vector;
-    field.name        = "vorticity";
-    field.dof_handler = &comp_navier_stokes_operation->get_dof_handler_vector();
-    field.vector      = &vorticity;
-    this->additional_fields.push_back(field);
-  }
-
-  // divergence
-  if(this->param.output_data.write_divergence == true)
-  {
-    comp_navier_stokes_operation->initialize_dof_vector_scalar(divergence);
-
-    SolutionField<dim, value_type> field;
-    field.type        = SolutionFieldType::scalar;
-    field.name        = "velocity_divergence";
-    field.dof_handler = &comp_navier_stokes_operation->get_dof_handler_scalar();
-    field.vector      = &divergence;
-    this->additional_fields.push_back(field);
-  }
 }
 
 /*
@@ -407,75 +326,6 @@ TimeIntExplRKCompNavierStokes<dim, fe_degree, value_type, NavierStokesOperation>
   }
 }
 
-template<int dim, int fe_degree, typename value_type, typename NavierStokesOperation>
-void
-TimeIntExplRKCompNavierStokes<dim, fe_degree, value_type, NavierStokesOperation>::
-  calculate_pressure()
-{
-  if((this->param.output_data.write_output == true &&
-      this->param.output_data.write_pressure == true) ||
-     this->param.calculate_pressure == true)
-  {
-    comp_navier_stokes_operation->compute_pressure(pressure, solution_n);
-  }
-}
-
-template<int dim, int fe_degree, typename value_type, typename NavierStokesOperation>
-void
-TimeIntExplRKCompNavierStokes<dim, fe_degree, value_type, NavierStokesOperation>::
-  calculate_velocity()
-{
-  if((this->param.output_data.write_output == true &&
-      this->param.output_data.write_velocity == true) ||
-     this->param.calculate_velocity == true)
-  {
-    comp_navier_stokes_operation->compute_velocity(velocity, solution_n);
-  }
-}
-
-template<int dim, int fe_degree, typename value_type, typename NavierStokesOperation>
-void
-TimeIntExplRKCompNavierStokes<dim, fe_degree, value_type, NavierStokesOperation>::
-  calculate_temperature()
-{
-  if(this->param.output_data.write_output == true &&
-     this->param.output_data.write_temperature == true)
-  {
-    comp_navier_stokes_operation->compute_temperature(temperature, solution_n);
-  }
-}
-
-template<int dim, int fe_degree, typename value_type, typename NavierStokesOperation>
-void
-TimeIntExplRKCompNavierStokes<dim, fe_degree, value_type, NavierStokesOperation>::
-  calculate_vorticity()
-{
-  if(this->param.output_data.write_output == true &&
-     this->param.output_data.write_vorticity == true)
-  {
-    AssertThrow(this->param.calculate_velocity == true,
-                ExcMessage(
-                  "The velocity field has to be computed in order to calculate vorticity."));
-
-    comp_navier_stokes_operation->compute_vorticity(vorticity, velocity);
-  }
-}
-
-template<int dim, int fe_degree, typename value_type, typename NavierStokesOperation>
-void
-TimeIntExplRKCompNavierStokes<dim, fe_degree, value_type, NavierStokesOperation>::
-  calculate_divergence()
-{
-  if(this->param.output_data.write_output == true &&
-     this->param.output_data.write_divergence == true)
-  {
-    AssertThrow(this->param.calculate_velocity == true,
-                ExcMessage(
-                  "The velocity field has to be computed in order to calculate vorticity."));
-
-    comp_navier_stokes_operation->compute_divergence(divergence, velocity);
-  }
-}
 
 template<int dim, int fe_degree, typename value_type, typename NavierStokesOperation>
 void
@@ -519,6 +369,7 @@ TimeIntExplRKCompNavierStokes<dim, fe_degree, value_type, NavierStokesOperation>
     if(l2_norm > 1.e-12)
       AssertThrow(l2_norm_new < 10. * l2_norm,
                   ExcMessage("Instabilities detected. Norm of solution vector seems to explode."));
+
     l2_norm = l2_norm_new;
   }
 }
@@ -531,14 +382,7 @@ TimeIntExplRKCompNavierStokes<dim, fe_degree, value_type, NavierStokesOperation>
 
   detect_instabilities();
 
-  calculate_pressure();
-  calculate_velocity();
-  calculate_temperature();
-  calculate_vorticity();
-  calculate_divergence();
-
-  postprocessor->do_postprocessing(
-    solution_n, velocity, pressure, this->additional_fields, this->time, this->time_step_number);
+  comp_navier_stokes_operation->do_postprocessing(solution_n, this->time, this->time_step_number);
 
   time_postprocessing += timer_postprocessing.wall_time();
 }
