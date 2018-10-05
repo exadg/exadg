@@ -344,11 +344,6 @@ public:
   void
   shift_pressure_mean_value(VectorType & pressure, double const & eval_time = 0.0) const;
 
-  // special case: pure Dirichlet boundary conditions
-  // if no analytical solution is available: set mean value of pressure vector to zero
-  void
-  apply_zero_mean(VectorType & dst) const;
-
   // vorticity
   void
   compute_vorticity(VectorType & dst, VectorType const & src) const;
@@ -920,20 +915,6 @@ DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule
     vec_temp2.local_element(i) = 1.;
 
   pressure.add(exact - current, vec_temp2);
-}
-
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
-void
-DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  apply_zero_mean(VectorType & vector) const
-{
-  const Number mean_value = vector.mean_value();
-  vector.add(-mean_value);
 }
 
 template<int dim,

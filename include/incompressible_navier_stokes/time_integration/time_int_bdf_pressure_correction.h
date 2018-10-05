@@ -777,7 +777,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
     {
-      navier_stokes_operation->apply_zero_mean(pressure_np);
+      set_zero_mean_value(pressure_np);
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
     {
@@ -857,8 +857,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   }
 
   // special case: pure Dirichlet BC's
-  // TODO:
-  // check if this is really necessary, because from a theoretical
+  // Unclear if this is really necessary, because from a theoretical
   // point of view one would expect that the mean value of the rhs of the
   // presssure Poisson equation is zero if consistent Dirichlet boundary
   // conditions are prescribed.
@@ -868,7 +867,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   // in case of the pressure-correction scheme.
 
   if(this->param.pure_dirichlet_bc)
-    navier_stokes_operation->apply_zero_mean(rhs_vec_pressure);
+    set_zero_mean_value(rhs_vec_pressure);
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
