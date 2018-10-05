@@ -33,9 +33,11 @@ public:
 
   typedef typename BASE::VectorType VectorType;
 
+  typedef typename BASE::Postprocessor Postprocessor;
+
   DGNavierStokesProjectionMethods(parallel::distributed::Triangulation<dim> const & triangulation,
                                   InputParameters<dim> const &                      parameters_in,
-                                  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in)
+                                  std::shared_ptr<Postprocessor> postprocessor_in)
     : BASE(triangulation, parameters_in, postprocessor_in),
       use_optimized_projection_operator(false) // TODO
   {
@@ -99,6 +101,12 @@ public:
   // apply homogeneous Laplace operator
   void
   apply_laplace_operator(VectorType & dst, VectorType const & src) const;
+
+  double
+  calculate_dissipation_divergence_term(VectorType const & velocity) const;
+
+  double
+  calculate_dissipation_continuity_term(VectorType const & velocity) const;
 
 protected:
   virtual void
@@ -742,6 +750,62 @@ DGNavierStokesProjectionMethods<dim,
                                                                 VectorType const & src) const
 {
   this->laplace_operator.vmult(dst, src);
+}
+
+template<int dim,
+         int fe_degree,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+double
+DGNavierStokesProjectionMethods<dim,
+                                fe_degree,
+                                fe_degree_p,
+                                fe_degree_xwall,
+                                xwall_quad_rule,
+                                Number>::calculate_dissipation_divergence_term(VectorType const &
+                                                                                 velocity) const
+{
+  if(this->param.use_divergence_penalty == true)
+  {
+    VectorType dst;
+    dst.reinit(velocity, false);
+    this->divergence_penalty_operator->apply(dst, velocity);
+    return velocity * dst;
+  }
+  else
+  {
+    return 0.0;
+  }
+}
+
+template<int dim,
+         int fe_degree,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+double
+DGNavierStokesProjectionMethods<dim,
+                                fe_degree,
+                                fe_degree_p,
+                                fe_degree_xwall,
+                                xwall_quad_rule,
+                                Number>::calculate_dissipation_continuity_term(VectorType const &
+                                                                                 velocity) const
+{
+  if(this->param.use_continuity_penalty == true)
+  {
+    VectorType dst;
+    dst.reinit(velocity, false);
+    this->continuity_penalty_operator->apply(dst, velocity);
+    return velocity * dst;
+  }
+  else
+  {
+    return 0.0;
+  }
 }
 
 template<int dim,

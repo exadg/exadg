@@ -629,7 +629,7 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytica
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
 template<int dim, typename Number>
-std::shared_ptr<PostProcessorBase<dim,Number> >
+std::shared_ptr<PostProcessorBase<dim, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -640,8 +640,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data.pressure_difference_data = param.pressure_difference_data;
   pp_data.mass_data = param.mass_data;
 
-  std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,Number> > pp;
-  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,Number>(pp_data));
+  std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number> > pp;
+  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number>(pp_data));
 
   return pp;
 }

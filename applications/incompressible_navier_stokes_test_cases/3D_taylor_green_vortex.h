@@ -27,7 +27,7 @@ unsigned int const DIMENSION = 3;
 
 // set the polynomial degree of the shape functions for velocity and pressure
 unsigned int const FE_DEGREE_VELOCITY = 3;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
+unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
 // set xwall specific parameters
 unsigned int const FE_DEGREE_XWALL = 1;
@@ -39,7 +39,7 @@ unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
-unsigned int const REFINE_STEPS_TIME_MAX = 0; //REFINE_STEPS_TIME_MIN;
+unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
 const double Re = 1600.0;
@@ -54,13 +54,13 @@ const double CHARACTERISTIC_TIME = L/V_0;
 
 std::string OUTPUT_FOLDER = "output/taylor_green_vortex/test/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "test";//"Re1600_l2_k1514_CFL_0-125_div_conti_penalty";
+std::string OUTPUT_NAME = "Re1600_l3_k32";//"Re1600_l2_k1514_CFL_0-125_div_conti_penalty";
 
 enum class MeshType{ Cartesian, Curvilinear };
 const MeshType MESH_TYPE = MeshType::Cartesian;
 
 // only relevant for Cartesian mesh
-const unsigned int N_CELLS_1D_COARSE_GRID = 4;
+const unsigned int N_CELLS_1D_COARSE_GRID = 1;
 
 template<int dim>
 void InputParameters<dim>::set_input_parameters()
@@ -116,11 +116,11 @@ void InputParameters<dim>::set_input_parameters()
   pure_dirichlet_bc = true;
 
   // div-div and continuity penalty
-  // these parameters are only used for the coupled solver
   use_divergence_penalty = true;
   divergence_penalty_factor = 1.0e0;
   use_continuity_penalty = true;
   continuity_penalty_use_boundary_data = false;
+  add_penalty_terms_to_monolithic_system = true;
   continuity_penalty_components = ContinuityPenaltyComponents::Normal;
   type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
   continuity_penalty_factor = divergence_penalty_factor;
@@ -139,9 +139,9 @@ void InputParameters<dim>::set_input_parameters()
   // pressure Poisson equation
   IP_factor_pressure = 1.0;
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
-//  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
-  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::AMG_ML;
-  abs_tol_pressure = 1.e-9;
+  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+//  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::AMG_ML;
+  abs_tol_pressure = 1.e-12;
   rel_tol_pressure = 1.e-6;
 
   // stability in the limit of small time steps
@@ -247,15 +247,17 @@ void InputParameters<dim>::set_input_parameters()
   print_input_parameters = true; //false;
 
   // write output for visualization of results
-  output_data.write_output = true; //false; //true;
+  output_data.write_output = true;
   output_data.output_folder = OUTPUT_FOLDER_VTU;
   output_data.output_name = OUTPUT_NAME;
   output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time)/200;
-  output_data.write_divergence = false;
+  output_data.output_interval_time = (end_time-start_time)/20;
+  output_data.write_vorticity = true;
+  output_data.write_divergence = true;
   output_data.write_velocity_magnitude = true;
   output_data.write_vorticity_magnitude = true;
   output_data.write_q_criterion = true;
+  output_data.write_processor_id = true;
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error
@@ -272,11 +274,12 @@ void InputParameters<dim>::set_input_parameters()
 
   // kinetic energy
   kinetic_energy_data.calculate = true;
+  kinetic_energy_data.evaluate_individual_terms = true;
   kinetic_energy_data.calculate_every_time_steps = 1;
   kinetic_energy_data.viscosity = VISCOSITY;
   kinetic_energy_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
 
-  kinetic_energy_spectrum_data.calculate = true;
+  kinetic_energy_spectrum_data.calculate = false; // true;
   kinetic_energy_spectrum_data.calculate_every_time_steps = 100;
   kinetic_energy_spectrum_data.filename_prefix = OUTPUT_FOLDER + "spectrum";
 
@@ -492,7 +495,7 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytica
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
 template<int dim, typename Number>
-std::shared_ptr<PostProcessorBase<dim,Number> >
+std::shared_ptr<PostProcessorBase<dim, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -504,8 +507,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data.kinetic_energy_data = param.kinetic_energy_data;
   pp_data.kinetic_energy_spectrum_data = param.kinetic_energy_spectrum_data;
 
-  std::shared_ptr<PostProcessorBase<dim,Number> > pp;
-  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,Number>(pp_data));
+  std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number> > pp;
+  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number>(pp_data));
 
   return pp;
 }

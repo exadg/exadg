@@ -1569,7 +1569,6 @@ private:
     }
   }
 
-
   // TODO: cell loop optimized implementation: viscous operator to mass matrix operator
   // use this code version only for performance measurements since the implementation might
   // not be up to date, e.g., only Laplace formulation implemented and constant viscosity

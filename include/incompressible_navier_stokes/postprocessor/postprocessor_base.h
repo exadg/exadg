@@ -36,16 +36,38 @@ struct DofQuadIndexData
 
 namespace IncNS
 {
+// forward declarations
+template<int dim,
+         int fe_degree,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+class DGNavierStokesBase;
+
 /*
  *  Interface class for postprocessor of the
  *  incompressible Navier-Stokes equation.
  *
  */
-template<int dim, typename Number>
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
 class PostProcessorBase
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef DGNavierStokesBase<dim,
+                             fe_degree_u,
+                             fe_degree_p,
+                             fe_degree_xwall,
+                             xwall_quad_rule,
+                             Number>
+    NavierStokesOperator;
 
   PostProcessorBase()
   {
@@ -59,7 +81,8 @@ public:
    * Setup function.
    */
   virtual void
-  setup(DoFHandler<dim> const &                  dof_handler_velocity,
+  setup(NavierStokesOperator const &             navier_stokes_operator,
+        DoFHandler<dim> const &                  dof_handler_velocity,
         DoFHandler<dim> const &                  dof_handler_pressure,
         Mapping<dim> const &                     mapping,
         MatrixFree<dim, Number> const &          matrix_free_data,
@@ -74,13 +97,11 @@ public:
    * tools decide whether to apply the steady or unsteady postprocessing functions.
    */
   virtual void
-  do_postprocessing(VectorType const &                              velocity,
-                    VectorType const &                              intermediate_velocity,
-                    VectorType const &                              pressure,
-                    VectorType const &                              vorticity,
-                    std::vector<SolutionField<dim, Number>> const & additional_fields,
-                    double const                                    time             = 0.0,
-                    int const                                       time_step_number = -1) = 0;
+  do_postprocessing(VectorType const & velocity,
+                    VectorType const & intermediate_velocity,
+                    VectorType const & pressure,
+                    double const       time             = 0.0,
+                    int const          time_step_number = -1) = 0;
 };
 
 

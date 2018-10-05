@@ -45,11 +45,26 @@ struct PostProcessorData
   LinePlotData<dim>           line_plot_data;
 };
 
-template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
-class PostProcessor : public PostProcessorBase<dim, Number>
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+class PostProcessor : public PostProcessorBase<dim,
+                                               fe_degree_u,
+                                               fe_degree_p,
+                                               fe_degree_xwall,
+                                               xwall_quad_rule,
+                                               Number>
 {
 public:
-  typedef typename PostProcessorBase<dim, Number>::VectorType VectorType;
+  typedef PostProcessorBase<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
+    Base;
+
+  typedef typename Base::VectorType VectorType;
+
+  typedef typename Base::NavierStokesOperator NavierStokesOperator;
 
   PostProcessor(PostProcessorData<dim> const & postprocessor_data) : pp_data(postprocessor_data)
   {
@@ -60,14 +75,16 @@ public:
   }
 
   virtual void
-  setup(DoFHandler<dim> const &                  dof_handler_velocity_in,
+  setup(NavierStokesOperator const &             navier_stokes_operator_in,
+        DoFHandler<dim> const &                  dof_handler_velocity_in,
         DoFHandler<dim> const &                  dof_handler_pressure_in,
         Mapping<dim> const &                     mapping_in,
         MatrixFree<dim, Number> const &          matrix_free_data_in,
         DofQuadIndexData const &                 dof_quad_index_data_in,
         std::shared_ptr<AnalyticalSolution<dim>> analytical_solution_in)
   {
-    output_generator.setup(dof_handler_velocity_in,
+    output_generator.setup(navier_stokes_operator_in,
+                           dof_handler_velocity_in,
                            dof_handler_pressure_in,
                            mapping_in,
                            pp_data.output_data);
@@ -91,7 +108,8 @@ public:
                                         dof_quad_index_data_in,
                                         pp_data.mass_data);
 
-    kinetic_energy_calculator.setup(matrix_free_data_in,
+    kinetic_energy_calculator.setup(navier_stokes_operator_in,
+                                    matrix_free_data_in,
                                     dof_quad_index_data_in,
                                     pp_data.kinetic_energy_data);
 
@@ -106,19 +124,16 @@ public:
   }
 
   virtual void
-  do_postprocessing(VectorType const &                              velocity,
-                    VectorType const &                              intermediate_velocity,
-                    VectorType const &                              pressure,
-                    VectorType const &                              vorticity,
-                    std::vector<SolutionField<dim, Number>> const & additional_fields,
-                    double const                                    time,
-                    int const                                       time_step_number)
+  do_postprocessing(VectorType const & velocity,
+                    VectorType const & intermediate_velocity,
+                    VectorType const & pressure,
+                    double const       time,
+                    int const          time_step_number)
   {
     /*
      *  write output
      */
-    output_generator.evaluate(
-      velocity, pressure, vorticity, additional_fields, time, time_step_number);
+    output_generator.evaluate(velocity, intermediate_velocity, pressure, time, time_step_number);
 
     /*
      *  calculate error
@@ -160,15 +175,39 @@ public:
 private:
   PostProcessorData<dim> pp_data;
 
-  OutputGenerator<dim, Number>                                 output_generator;
-  ErrorCalculator<dim, Number>                                 error_calculator;
+  // write output for visualization of results (e.g., using paraview)
+  OutputGenerator<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
+    output_generator;
+
+  // calculate errors for verification purposes for problems with known analytical solution
+  ErrorCalculator<dim, Number> error_calculator;
+
+  // calculate lift and drag forces for flow around bodies
   LiftAndDragCalculator<dim, fe_degree_u, fe_degree_p, Number> lift_and_drag_calculator;
+
+  // calculate pressure difference between two points, e.g., the leading and trailing edge of a body
   PressureDifferenceCalculator<dim, fe_degree_u, fe_degree_p, Number>
-                                                             pressure_difference_calculator;
+    pressure_difference_calculator;
+
+  // calculate divergence and continuity errors as a measure of mass conservation (particularly
+  // relevant for turbulent flows)
   DivergenceAndMassErrorCalculator<dim, fe_degree_u, Number> div_and_mass_error_calculator;
-  KineticEnergyCalculator<dim, fe_degree_u, Number>          kinetic_energy_calculator;
-  KineticEnergySpectrumCalculator<dim, fe_degree_u, Number>  kinetic_energy_spectrum_calculator;
-  LinePlotCalculator<dim, fe_degree_u, fe_degree_p, Number>  line_plot_calculator;
+
+  // calculate kinetic energy as well as dissipation rates (particularly relevant for turbulent
+  // flows)
+  KineticEnergyCalculatorDetailed<dim,
+                                  fe_degree_u,
+                                  fe_degree_p,
+                                  fe_degree_xwall,
+                                  xwall_quad_rule,
+                                  Number>
+    kinetic_energy_calculator;
+
+  // evaluate kinetic energy in spectral space (i.e., as a function of the wavenumber)
+  KineticEnergySpectrumCalculator<dim, fe_degree_u, Number> kinetic_energy_spectrum_calculator;
+
+  // evaluate quantities along lines through the domain
+  LinePlotCalculator<dim, fe_degree_u, fe_degree_p, Number> line_plot_calculator;
 };
 
 

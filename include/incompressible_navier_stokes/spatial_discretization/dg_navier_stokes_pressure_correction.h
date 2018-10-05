@@ -46,6 +46,8 @@ public:
 
   typedef typename PROJECTION_METHODS_BASE::VectorType VectorType;
 
+  typedef typename PROJECTION_METHODS_BASE::Postprocessor Postprocessor;
+
   typedef DGNavierStokesPressureCorrection<dim,
                                            fe_degree,
                                            fe_degree_p,
@@ -65,7 +67,7 @@ public:
 
   DGNavierStokesPressureCorrection(parallel::distributed::Triangulation<dim> const & triangulation,
                                    InputParameters<dim> const &                      parameters_in,
-                                   std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in)
+                                   std::shared_ptr<Postprocessor> postprocessor_in)
     : PROJECTION_METHODS_BASE(triangulation, parameters_in, postprocessor_in),
       rhs_vector(nullptr),
       evaluation_time(0.0),
@@ -651,34 +653,12 @@ DGNavierStokesPressureCorrection<dim,
                                                             double const       time,
                                                             unsigned int const time_step_number)
 {
-  if(this->param.output_data.write_output)
-  {
-    if(this->param.output_data.write_vorticity == true)
-      this->compute_vorticity(this->vorticity, velocity);
-    if(this->param.output_data.write_divergence == true)
-      this->compute_divergence(this->divergence, velocity);
-    if(this->param.output_data.write_velocity_magnitude == true)
-      this->compute_velocity_magnitude(this->velocity_magnitude, velocity);
-    if(this->param.output_data.write_vorticity_magnitude == true)
-      this->compute_vorticity_magnitude(this->vorticity_magnitude, this->vorticity);
-    if(this->param.output_data.write_streamfunction == true)
-      this->compute_streamfunction(this->streamfunction, this->vorticity);
-    if(this->param.output_data.write_q_criterion == true)
-      this->compute_q_criterion(this->q_criterion, velocity);
-    if(this->param.output_data.write_processor_id == true)
-      this->compute_processor_id(this->processor_id);
-    if(this->param.output_data.mean_velocity.calculate == true)
-      this->compute_mean_velocity(this->mean_velocity, velocity, time, time_step_number);
-  }
-
   bool const standard = true;
   if(standard)
   {
     this->postprocessor->do_postprocessing(velocity,
                                            velocity, // intermediate_velocity
                                            pressure,
-                                           this->vorticity,
-                                           this->additional_fields,
                                            time,
                                            time_step_number);
   }
@@ -698,8 +678,6 @@ DGNavierStokesPressureCorrection<dim,
     this->postprocessor->do_postprocessing(velocity_error, // error!
                                            velocity,       // intermediate_velocity
                                            pressure_error, // error!
-                                           this->vorticity,
-                                           this->additional_fields,
                                            time,
                                            time_step_number);
   }
@@ -721,32 +699,9 @@ DGNavierStokesPressureCorrection<
   Number>::do_postprocessing_steady_problem(VectorType const & velocity,
                                             VectorType const & pressure)
 {
-  if(this->param.output_data.write_output)
-  {
-    if(this->param.output_data.write_vorticity == true)
-      this->compute_vorticity(this->vorticity, velocity);
-    if(this->param.output_data.write_divergence == true)
-      this->compute_divergence(this->divergence, velocity);
-    if(this->param.output_data.write_velocity_magnitude == true)
-      this->compute_velocity_magnitude(this->velocity_magnitude, velocity);
-    if(this->param.output_data.write_vorticity_magnitude == true)
-      this->compute_vorticity_magnitude(this->vorticity_magnitude, this->vorticity);
-    if(this->param.output_data.write_streamfunction == true)
-      this->compute_streamfunction(this->streamfunction, this->vorticity);
-    if(this->param.output_data.write_q_criterion == true)
-      this->compute_q_criterion(this->q_criterion, velocity);
-    if(this->param.output_data.write_processor_id == true)
-      this->compute_processor_id(this->processor_id);
-
-    AssertThrow(this->param.output_data.mean_velocity.calculate == false,
-                ExcMessage("Computation of mean velocity only makes sense to unsteady problems."));
-  }
-
   this->postprocessor->do_postprocessing(velocity,
                                          velocity, // intermediate_velocity
-                                         pressure,
-                                         this->vorticity,
-                                         this->additional_fields);
+                                         pressure);
 }
 
 } // namespace IncNS

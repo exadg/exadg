@@ -14,6 +14,7 @@ struct KineticEnergyData
 {
   KineticEnergyData()
     : calculate(false),
+      evaluate_individual_terms(false),
       calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
       viscosity(1.0),
       filename_prefix("kinetic_energy")
@@ -26,16 +27,29 @@ struct KineticEnergyData
     if(calculate == true)
     {
       pcout << std::endl << "  Calculate kinetic energy:" << std::endl;
+
       print_parameter(pcout, "Calculate energy", calculate);
+      print_parameter(pcout, "Evaluate individual terms", evaluate_individual_terms);
       print_parameter(pcout, "Calculate every timesteps", calculate_every_time_steps);
       print_parameter(pcout, "Filename", filename_prefix);
     }
   }
 
-  bool         calculate;
+  // calculate kinetic energy (dissipation)?
+  bool calculate;
+
+  // perform detailed analysis and evaluate contribution of individual terms (e.g., convective term,
+  // viscous term) to overall kinetic energy dissipation?
+  bool evaluate_individual_terms;
+
+  // calculate every ... time steps
   unsigned int calculate_every_time_steps;
-  double       viscosity;
-  std::string  filename_prefix;
+
+  // kinematic viscosity
+  double viscosity;
+
+  // filename
+  std::string filename_prefix;
 };
 
 
