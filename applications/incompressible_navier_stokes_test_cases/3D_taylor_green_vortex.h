@@ -52,9 +52,9 @@ const double VISCOSITY = V_0*L/Re;
 const double MAX_VELOCITY = V_0;
 const double CHARACTERISTIC_TIME = L/V_0;
 
-std::string OUTPUT_FOLDER = "output/taylor_green_vortex/test_new/";
+std::string OUTPUT_FOLDER = "output/taylor_green_vortex/test/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "test";//"Re1600_l2_k1514_CFL_0-125_div_conti_penalty";
+std::string OUTPUT_NAME = "Re1600_l3_k32";//"Re1600_l2_k1514_CFL_0-125_div_conti_penalty";
 
 enum class MeshType{ Cartesian, Curvilinear };
 const MeshType MESH_TYPE = MeshType::Cartesian;

@@ -61,7 +61,7 @@ double const FACTOR_RANDOM_PERTURBATIONS = 0.05;
 double const RE = 500; //500; //2000; //3500; //5000; //6500; //8000;
 
 // output folders
-std::string OUTPUT_FOLDER = "output/fda/Re500test2/";
+std::string OUTPUT_FOLDER = "output/fda/Re500/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string OUTPUT_NAME_1 = "precursor";
 std::string OUTPUT_NAME_2 = "nozzle";
@@ -128,21 +128,20 @@ double const MAX_VELOCITY_CFL = 2.0*TARGET_FLOW_RATE/AREA_THROAT;
 // estimation of flow-through time T_0 (through nozzle section)
 // based on the mean velocity through throat
 double const T_0 = LENGTH_THROAT/MEAN_VELOCITY_THROAT;
-double const START_TIME_PRECURSOR = 0.0*T_0; //TODO // -500.0*T_0; // let the flow develop
+double const START_TIME_PRECURSOR = -500.0*T_0; // let the flow develop
 double const START_TIME_NOZZLE = 0.0*T_0;
-double const END_TIME = 10.0*T_0; //TODO // 250.0*T_0; //150.0*T_0;
+double const END_TIME = 250.0*T_0; //150.0*T_0;
 
 // output
 bool const WRITE_OUTPUT = true;
 double const OUTPUT_START_TIME_PRECURSOR = START_TIME_PRECURSOR;
 double const OUTPUT_START_TIME_NOZZLE = START_TIME_NOZZLE;
-double const OUTPUT_INTERVAL_TIME = T_0; //TODO // 5.0*T_0;  //10.0*T_0;
+double const OUTPUT_INTERVAL_TIME = 5.0*T_0;  //10.0*T_0;
 
 // sampling
 
 // sampling interval should last over (100-200) * T_0 according to preliminary results.
-// might be reduced when using averaging in circumferential direction.
-double const SAMPLE_START_TIME = T_0; //TODO // 50.0*T_0; // let the flow develop
+double const SAMPLE_START_TIME = 50.0*T_0; // let the flow develop
 double const SAMPLE_END_TIME = END_TIME; // that's the only reasonable choice
 unsigned int SAMPLE_EVERY_TIMESTEPS = 1;
 unsigned int WRITE_OUTPUT_EVERY_TIMESTEPS = SAMPLE_EVERY_TIMESTEPS*100;
