@@ -47,9 +47,6 @@ private:
   void
   print_grid_data();
 
-  void
-  setup_postprocessor();
-
   ConditionalOStream pcout;
 
   parallel::distributed::Triangulation<dim> triangulation;
@@ -105,12 +102,12 @@ ConvDiffProblem<dim, fe_degree, Number>::ConvDiffProblem(const unsigned int n_re
 
   boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<dim>());
 
-  // initialize convection diffusion operation
-  conv_diff_operation.reset(
-    new ConvDiff::DGOperation<dim, fe_degree, value_type>(triangulation, param));
-
   // initialize postprocessor
   postprocessor.reset(new ConvDiff::PostProcessor<dim, fe_degree>());
+
+  // initialize convection diffusion operation
+  conv_diff_operation.reset(
+    new ConvDiff::DGOperation<dim, fe_degree, value_type>(triangulation, param, postprocessor));
 
   // initialize driver for steady convection-diffusion problems
   driver_steady.reset(
@@ -118,7 +115,7 @@ ConvDiffProblem<dim, fe_degree, Number>::ConvDiffProblem(const unsigned int n_re
                                        fe_degree,
                                        value_type,
                                        ConvDiff::DGOperation<dim, fe_degree, value_type>>(
-      conv_diff_operation, postprocessor, param));
+      conv_diff_operation, param));
 }
 
 template<int dim, int fe_degree, typename Number>
@@ -152,22 +149,6 @@ ConvDiffProblem<dim, fe_degree, Number>::print_grid_data()
 
 template<int dim, int fe_degree, typename Number>
 void
-ConvDiffProblem<dim, fe_degree, Number>::setup_postprocessor()
-{
-  ConvDiff::PostProcessorData pp_data;
-
-  pp_data.output_data = param.output_data;
-  pp_data.error_data  = param.error_data;
-
-  postprocessor->setup(pp_data,
-                       conv_diff_operation->get_dof_handler(),
-                       conv_diff_operation->get_mapping(),
-                       conv_diff_operation->get_data(),
-                       analytical_solution);
-}
-
-template<int dim, int fe_degree, typename Number>
-void
 ConvDiffProblem<dim, fe_degree, Number>::solve_problem()
 {
   // this function has to be defined in the header file that implements
@@ -176,11 +157,12 @@ ConvDiffProblem<dim, fe_degree, Number>::solve_problem()
 
   print_grid_data();
 
-  conv_diff_operation->setup(periodic_faces, boundary_descriptor, field_functions);
+  conv_diff_operation->setup(periodic_faces,
+                             boundary_descriptor,
+                             field_functions,
+                             analytical_solution);
 
   conv_diff_operation->setup_solver(/*no parameter since this is a steady problem*/);
-
-  setup_postprocessor();
 
   driver_steady->setup();
 

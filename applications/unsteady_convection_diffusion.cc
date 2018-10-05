@@ -67,9 +67,6 @@ private:
   void
   print_grid_data();
 
-  void
-  setup_postprocessor();
-
   ConditionalOStream pcout;
 
   parallel::distributed::Triangulation<dim> triangulation;
@@ -124,23 +121,23 @@ ConvDiffProblem<dim, fe_degree, Number>::ConvDiffProblem(const unsigned int n_re
 
   boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<dim>());
 
-  // initialize convection diffusion operation
-  conv_diff_operation.reset(
-    new ConvDiff::DGOperation<dim, fe_degree, value_type>(triangulation, param));
-
   // initialize postprocessor
   postprocessor.reset(new ConvDiff::PostProcessor<dim, fe_degree>());
+
+  // initialize convection diffusion operation
+  conv_diff_operation.reset(
+    new ConvDiff::DGOperation<dim, fe_degree, value_type>(triangulation, param, postprocessor));
 
   // initialize time integrator
   if(param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
   {
     time_integrator_explRK.reset(new ConvDiff::TimeIntExplRK<dim, fe_degree, value_type>(
-      conv_diff_operation, postprocessor, param, field_functions->velocity, n_refine_time));
+      conv_diff_operation, param, field_functions->velocity, n_refine_time));
   }
   else if(param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
   {
     time_integrator_BDF.reset(new ConvDiff::TimeIntBDF<dim, fe_degree, value_type>(
-      conv_diff_operation, postprocessor, param, field_functions->velocity, n_refine_time));
+      conv_diff_operation, param, field_functions->velocity, n_refine_time));
   }
   else
   {
@@ -181,22 +178,6 @@ ConvDiffProblem<dim, fe_degree, Number>::print_grid_data()
 
 template<int dim, int fe_degree, typename Number>
 void
-ConvDiffProblem<dim, fe_degree, Number>::setup_postprocessor()
-{
-  ConvDiff::PostProcessorData pp_data;
-
-  pp_data.output_data = param.output_data;
-  pp_data.error_data  = param.error_data;
-
-  postprocessor->setup(pp_data,
-                       conv_diff_operation->get_dof_handler(),
-                       conv_diff_operation->get_mapping(),
-                       conv_diff_operation->get_data(),
-                       analytical_solution);
-}
-
-template<int dim, int fe_degree, typename Number>
-void
 ConvDiffProblem<dim, fe_degree, Number>::solve_problem()
 {
   // this function has to be defined in the header file that implements
@@ -205,9 +186,10 @@ ConvDiffProblem<dim, fe_degree, Number>::solve_problem()
 
   print_grid_data();
 
-  conv_diff_operation->setup(periodic_faces, boundary_descriptor, field_functions);
-
-  setup_postprocessor();
+  conv_diff_operation->setup(periodic_faces,
+                             boundary_descriptor,
+                             field_functions,
+                             analytical_solution);
 
   if(param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
   {
