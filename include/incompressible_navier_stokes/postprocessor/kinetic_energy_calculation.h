@@ -27,30 +27,33 @@ public:
   void
   setup(MatrixFree<dim, Number> const & matrix_free_data_in,
         DofQuadIndexData const &        dof_quad_index_data_in,
-        KineticEnergyData const &       data_in)
+        KineticEnergyData const &       kinetic_energy_data_in)
   {
     matrix_free_data    = &matrix_free_data_in;
     dof_quad_index_data = dof_quad_index_data_in;
-    data                = data_in;
+    data                = kinetic_energy_data_in;
   }
 
   void
   evaluate(VectorType const & velocity, double const & time, int const & time_step_number)
   {
+    AssertThrow(time_step_number >= 0,
+                ExcMessage("This postprocessing tool can only be used for unsteady problems."));
+
+    AssertThrow(data.evaluate_individual_terms == false,
+                ExcMessage("Not implemented in this class."));
+
     if(data.calculate == true)
     {
-      if(time_step_number >= 0) // unsteady problem
-        calculate_unsteady(velocity, time, time_step_number);
-      else // steady problem (time_step_number = -1)
-        calculate_steady(velocity);
+      calculate_basic(velocity, time, time_step_number);
     }
   }
 
-private:
+protected:
   void
-  calculate_unsteady(VectorType const & velocity,
-                     double const       time,
-                     unsigned int const time_step_number)
+  calculate_basic(VectorType const & velocity,
+                  double const       time,
+                  unsigned int const time_step_number)
   {
     if((time_step_number - 1) % data.calculate_every_time_steps == 0)
     {
@@ -61,6 +64,7 @@ private:
       // write output file
       if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
       {
+        // clang-format off
         std::ostringstream filename;
         filename << data.filename_prefix;
 
@@ -69,8 +73,7 @@ private:
         {
           f.open(filename.str().c_str(), std::ios::trunc);
           f << "Kinetic energy: E_k = 1/V * 1/2 * (u,u)_Omega, where V=(1,1)_Omega" << std::endl
-            << "Dissipation rate: epsilon = nu/V * (grad(u),grad(u))_Omega, where V=(1,1)_Omega"
-            << std::endl
+            << "Dissipation rate: epsilon = nu/V * (grad(u),grad(u))_Omega, where V=(1,1)_Omega" << std::endl
             << "Enstrophy: E = 1/V * 1/2 * (rot(u),rot(u))_Omega, where V=(1,1)_Omega" << std::endl;
 
           f << std::endl
@@ -85,47 +88,14 @@ private:
         }
 
         unsigned int precision = 12;
-        f << std::scientific << std::setprecision(precision) << std::setw(precision + 8) << time
-          << std::setw(precision + 8) << kinetic_energy << std::setw(precision + 8) << dissipation
-          << std::setw(precision + 8) << enstrophy << std::endl;
+        f << std::scientific << std::setprecision(precision)
+          << std::setw(precision + 8) << time
+          << std::setw(precision + 8) << kinetic_energy
+          << std::setw(precision + 8) << dissipation
+          << std::setw(precision + 8) << enstrophy
+          << std::endl;
+        // clang-format on
       }
-    }
-  }
-
-  void
-  calculate_steady(VectorType const & velocity)
-  {
-    Number kinetic_energy = 1.0, enstrophy = 1.0, dissipation = 1.0;
-
-    integrate(*matrix_free_data, velocity, kinetic_energy, enstrophy, dissipation);
-
-    // write output file
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    {
-      std::ostringstream filename;
-      filename << data.filename_prefix;
-
-      std::ofstream f;
-      if(clear_files == true)
-      {
-        f.open(filename.str().c_str(), std::ios::trunc);
-        f << "Kinetic energy: E_k = 1/V * 1/2 * (u,u)_Omega, where V=(1,1)_Omega" << std::endl
-          << "Dissipation rate: epsilon = nu/V * (grad(u),grad(u))_Omega, where V=(1,1)_Omega"
-          << std::endl
-          << "Enstrophy: E = 1/V * 1/2 * (rot(u),rot(u))_Omega, where V=(1,1)_Omega" << std::endl;
-
-        f << std::endl << "          Kin. energy    dissipation    enstrophy" << std::endl;
-
-        clear_files = false;
-      }
-      else
-      {
-        f.open(filename.str().c_str(), std::ios::app);
-      }
-
-      f << (counter++ == 0 ? "initial " : "solution") << std::scientific << std::setprecision(7)
-        << std::setw(15) << kinetic_energy << std::setw(15) << dissipation << std::setw(15)
-        << enstrophy << std::endl;
     }
   }
 
@@ -144,7 +114,7 @@ private:
    *
    *  for incompressible flows (div(u)=0) and periodic boundary conditions.
    */
-  void
+  Number
   integrate(MatrixFree<dim, Number> const & matrix_free_data,
             VectorType const &              velocity,
             Number &                        energy,
@@ -152,7 +122,7 @@ private:
             Number &                        dissipation)
   {
     std::vector<Number> dst(4, 0.0);
-    matrix_free_data.cell_loop(&KineticEnergyCalculator<dim, fe_degree, Number>::local_compute,
+    matrix_free_data.cell_loop(&KineticEnergyCalculator<dim, fe_degree, Number>::cell_loop,
                                this,
                                dst,
                                velocity);
@@ -167,13 +137,15 @@ private:
     energy /= volume;
     enstrophy /= volume;
     dissipation /= volume;
+
+    return volume;
   }
 
   void
-  local_compute(MatrixFree<dim, Number> const &               data,
-                std::vector<Number> &                         dst,
-                VectorType const &                            src,
-                std::pair<unsigned int, unsigned int> const & cell_range)
+  cell_loop(MatrixFree<dim, Number> const &               data,
+            std::vector<Number> &                         dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & cell_range)
   {
     FEEvaluation<dim, fe_degree, fe_degree + 1, dim, Number> fe_eval(
       data, dof_quad_index_data.dof_index_velocity, dof_quad_index_data.quad_index_velocity);
@@ -240,5 +212,141 @@ private:
   DofQuadIndexData                dof_quad_index_data;
   KineticEnergyData               data;
 };
+
+namespace IncNS
+{
+// forward declarations
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+class DGNavierStokesBase;
+
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+class KineticEnergyCalculatorDetailed : public KineticEnergyCalculator<dim, fe_degree_u, Number>
+{
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef KineticEnergyCalculator<dim, fe_degree_u, Number> Base;
+
+  typedef DGNavierStokesBase<dim,
+                             fe_degree_u,
+                             fe_degree_p,
+                             fe_degree_xwall,
+                             xwall_quad_rule,
+                             Number>
+    NavierStokesOperator;
+
+public:
+  KineticEnergyCalculatorDetailed()
+  {
+  }
+
+  void
+  setup(NavierStokesOperator const &    navier_stokes_operator_in,
+        MatrixFree<dim, Number> const & matrix_free_data_in,
+        DofQuadIndexData const &        dof_quad_index_data_in,
+        KineticEnergyData const &       kinetic_energy_data_in)
+  {
+    Base::setup(matrix_free_data_in, dof_quad_index_data_in, kinetic_energy_data_in);
+
+    navier_stokes_operator = &navier_stokes_operator_in;
+  }
+
+  void
+  evaluate(VectorType const & velocity, double const & time, int const & time_step_number)
+  {
+    AssertThrow(time_step_number >= 0,
+                ExcMessage("This postprocessing tool can only be used for unsteady problems."));
+
+    if(this->data.calculate == true)
+    {
+      if(this->data.evaluate_individual_terms)
+        calculate_detailed(velocity, time, time_step_number);
+      else
+        this->calculate_basic(velocity, time, time_step_number);
+    }
+  }
+
+private:
+  void
+  calculate_detailed(VectorType const & velocity,
+                     double const       time,
+                     unsigned int const time_step_number)
+  {
+    if((time_step_number - 1) % this->data.calculate_every_time_steps == 0)
+    {
+      Number kinetic_energy = 1.0, enstrophy = 1.0, dissipation = 1.0;
+
+      Number volume =
+        this->integrate(*this->matrix_free_data, velocity, kinetic_energy, enstrophy, dissipation);
+
+      AssertThrow(navier_stokes_operator != nullptr, ExcMessage("Invalid pointer."));
+      Number dissipation_convective =
+        navier_stokes_operator->calculate_dissipation_convective_term(velocity, time) / volume;
+      Number dissipation_viscous =
+        navier_stokes_operator->calculate_dissipation_viscous_term(velocity) / volume;
+      Number dissipation_divergence =
+        navier_stokes_operator->calculate_dissipation_divergence_term(velocity) / volume;
+      Number dissipation_continuity =
+        navier_stokes_operator->calculate_dissipation_continuity_term(velocity) / volume;
+
+      // write output file
+      if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+      {
+        // clang-format off
+        std::ostringstream filename;
+        filename << this->data.filename_prefix;
+
+        std::ofstream f;
+        if(this->clear_files == true)
+        {
+          f.open(filename.str().c_str(), std::ios::trunc);
+          f << "Kinetic energy: E_k = 1/V * 1/2 * (u,u)_Omega, where V=(1,1)_Omega" << std::endl
+            << "Dissipation rate: epsilon = nu/V * (grad(u),grad(u))_Omega, where V=(1,1)_Omega" << std::endl
+            << "Enstrophy: E = 1/V * 1/2 * (rot(u),rot(u))_Omega, where V=(1,1)_Omega" << std::endl
+            << "Dissipation convective term: eps_conv = 1/V * c(u,u)_Omega, where V=(1,1)_Omega" << std::endl
+            << "Dissipation viscous term: eps_vis = 1/V * v(u,u)_Omega, where V=(1,1)_Omega" << std::endl
+            << "Dissipation divergence penalty term: eps_div = 1/V * a_D(u,u)_Omega, where V=(1,1)_Omega" << std::endl
+            << "Dissipation continuity penalty term: eps_conti = 1/V * a_C(u,u)_Omega, where V=(1,1)_Omega" << std::endl;
+
+          f << std::endl
+            << "  Time                Kin. energy         dissipation         enstrophy           convective          viscous             divergence          continuity"
+            << std::endl;
+
+          this->clear_files = false;
+        }
+        else
+        {
+          f.open(filename.str().c_str(), std::ios::app);
+        }
+
+        unsigned int precision = 12;
+        f << std::scientific << std::setprecision(precision)
+          << std::setw(precision + 8) << time
+          << std::setw(precision + 8) << kinetic_energy
+          << std::setw(precision + 8) << dissipation
+          << std::setw(precision + 8) << enstrophy
+          << std::setw(precision + 8) << dissipation_convective
+          << std::setw(precision + 8) << dissipation_viscous
+          << std::setw(precision + 8) << dissipation_divergence
+          << std::setw(precision + 8) << dissipation_continuity
+          << std::endl;
+        // clang-format on
+      }
+    }
+  }
+
+  SmartPointer<NavierStokesOperator const> navier_stokes_operator;
+};
+
+} // namespace IncNS
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_KINETIC_ENERGY_CALCULATION_H_ */

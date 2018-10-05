@@ -20,7 +20,6 @@ write_output(OutputDataNavierStokes const &                     output_data,
              Mapping<dim> const &                               mapping,
              LinearAlgebra::distributed::Vector<Number> const & velocity,
              LinearAlgebra::distributed::Vector<Number> const & pressure,
-             LinearAlgebra::distributed::Vector<Number> const & vorticity,
              std::vector<SolutionField<dim, Number>> const &    additional_fields,
              unsigned int const                                 output_counter)
 {
@@ -35,16 +34,6 @@ write_output(OutputDataNavierStokes const &                     output_data,
                            velocity,
                            velocity_names,
                            velocity_component_interpretation);
-
-  std::vector<std::string> vorticity_names(dim, "vorticity");
-  std::vector<DataComponentInterpretation::DataComponentInterpretation>
-    vorticity_component_interpretation(dim,
-                                       DataComponentInterpretation::component_is_part_of_vector);
-
-  data_out.add_data_vector(dof_handler_velocity,
-                           vorticity,
-                           vorticity_names,
-                           vorticity_component_interpretation);
 
   pressure.update_ghost_values();
   data_out.add_data_vector(dof_handler_pressure, pressure, "p");
@@ -99,43 +88,70 @@ write_output(OutputDataNavierStokes const &                     output_data,
   }
 }
 
-template<int dim, typename Number>
+namespace IncNS
+{
+// forward declarations
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+class DGNavierStokesBase;
+
+template<int dim,
+         int fe_degree_u,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
 class OutputGenerator
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  OutputGenerator() : output_counter(0)
+  typedef DGNavierStokesBase<dim,
+                             fe_degree_u,
+                             fe_degree_p,
+                             fe_degree_xwall,
+                             xwall_quad_rule,
+                             Number>
+    NavierStokesOperator;
+
+  OutputGenerator() : output_counter(0), counter_mean_velocity(0)
   {
   }
 
   void
-  setup(DoFHandler<dim> const &        dof_handler_velocity_in,
+  setup(NavierStokesOperator const &   navier_stokes_operator_in,
+        DoFHandler<dim> const &        dof_handler_velocity_in,
         DoFHandler<dim> const &        dof_handler_pressure_in,
         Mapping<dim> const &           mapping_in,
         OutputDataNavierStokes const & output_data_in)
   {
-    dof_handler_velocity = &dof_handler_velocity_in;
-    dof_handler_pressure = &dof_handler_pressure_in;
-    mapping              = &mapping_in;
-    output_data          = output_data_in;
+    navier_stokes_operator = &navier_stokes_operator_in;
+    dof_handler_velocity   = &dof_handler_velocity_in;
+    dof_handler_pressure   = &dof_handler_pressure_in;
+    mapping                = &mapping_in;
+    output_data            = output_data_in;
 
     // reset output counter
     output_counter = output_data.output_counter_start;
+
+    initialize_additional_fields();
   }
 
   void
-  evaluate(VectorType const &                              velocity,
-           VectorType const &                              pressure,
-           VectorType const &                              vorticity,
-           std::vector<SolutionField<dim, Number>> const & additional_fields,
-           double const &                                  time,
-           int const &                                     time_step_number)
+  evaluate(VectorType const & velocity,
+           VectorType const & intermediate_velocity,
+           VectorType const & pressure,
+           double const &     time,
+           int const &        time_step_number)
   {
-    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-
     if(output_data.write_output == true)
     {
+      ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+
       if(time_step_number >= 0) // unsteady problem
       {
         // small number which is much smaller than the time step size
@@ -147,13 +163,14 @@ public:
                 << "OUTPUT << Write data at time t = " << std::scientific << std::setprecision(4)
                 << time << std::endl;
 
+          calculate_additional_fields(velocity, intermediate_velocity, time, time_step_number);
+
           write_output<dim>(output_data,
                             *dof_handler_velocity,
                             *dof_handler_pressure,
                             *mapping,
                             velocity,
                             pressure,
-                            vorticity,
                             additional_fields,
                             output_counter);
 
@@ -166,13 +183,14 @@ public:
               << "OUTPUT << Write " << (output_counter == 0 ? "initial" : "solution") << " data"
               << std::endl;
 
+        calculate_additional_fields(velocity, intermediate_velocity, time, time_step_number);
+
         write_output<dim>(output_data,
                           *dof_handler_velocity,
                           *dof_handler_pressure,
                           *mapping,
                           velocity,
                           pressure,
-                          vorticity,
                           additional_fields,
                           output_counter);
 
@@ -182,13 +200,218 @@ public:
   }
 
 private:
+  void
+  initialize_additional_fields()
+  {
+    if(output_data.write_output == true)
+    {
+      // vorticity
+      if(output_data.write_vorticity == true)
+      {
+        navier_stokes_operator->initialize_vector_velocity(vorticity);
+
+        SolutionField<dim, Number> sol;
+        sol.type        = SolutionFieldType::vector;
+        sol.name        = "vorticity";
+        sol.dof_handler = &navier_stokes_operator->get_dof_handler_u();
+        sol.vector      = &vorticity;
+        this->additional_fields.push_back(sol);
+      }
+
+      // divergence
+      if(output_data.write_divergence == true)
+      {
+        navier_stokes_operator->initialize_vector_velocity_scalar(divergence);
+
+        SolutionField<dim, Number> sol;
+        sol.type        = SolutionFieldType::scalar;
+        sol.name        = "div_u";
+        sol.dof_handler = &navier_stokes_operator->get_dof_handler_u_scalar();
+        sol.vector      = &divergence;
+        this->additional_fields.push_back(sol);
+      }
+
+      // velocity magnitude
+      if(output_data.write_velocity_magnitude == true)
+      {
+        navier_stokes_operator->initialize_vector_velocity_scalar(velocity_magnitude);
+
+        SolutionField<dim, Number> sol;
+        sol.type        = SolutionFieldType::scalar;
+        sol.name        = "velocity_magnitude";
+        sol.dof_handler = &navier_stokes_operator->get_dof_handler_u_scalar();
+        sol.vector      = &velocity_magnitude;
+        this->additional_fields.push_back(sol);
+      }
+
+      // vorticity magnitude
+      if(output_data.write_vorticity_magnitude == true)
+      {
+        navier_stokes_operator->initialize_vector_velocity_scalar(vorticity_magnitude);
+
+        SolutionField<dim, Number> sol;
+        sol.type        = SolutionFieldType::scalar;
+        sol.name        = "vorticity_magnitude";
+        sol.dof_handler = &navier_stokes_operator->get_dof_handler_u_scalar();
+        sol.vector      = &vorticity_magnitude;
+        this->additional_fields.push_back(sol);
+      }
+
+
+      // streamfunction
+      if(output_data.write_streamfunction == true)
+      {
+        navier_stokes_operator->initialize_vector_velocity_scalar(streamfunction);
+
+        SolutionField<dim, Number> sol;
+        sol.type        = SolutionFieldType::scalar;
+        sol.name        = "streamfunction";
+        sol.dof_handler = &navier_stokes_operator->get_dof_handler_u_scalar();
+        sol.vector      = &streamfunction;
+        this->additional_fields.push_back(sol);
+      }
+
+      // q criterion
+      if(output_data.write_q_criterion == true)
+      {
+        navier_stokes_operator->initialize_vector_velocity_scalar(q_criterion);
+
+        SolutionField<dim, Number> sol;
+        sol.type        = SolutionFieldType::scalar;
+        sol.name        = "q_criterion";
+        sol.dof_handler = &navier_stokes_operator->get_dof_handler_u_scalar();
+        sol.vector      = &q_criterion;
+        this->additional_fields.push_back(sol);
+      }
+
+      // processor id
+      if(output_data.write_processor_id == true)
+      {
+        navier_stokes_operator->initialize_vector_velocity_scalar(processor_id);
+
+        SolutionField<dim, Number> sol;
+        sol.type        = SolutionFieldType::scalar;
+        sol.name        = "processor_id";
+        sol.dof_handler = &navier_stokes_operator->get_dof_handler_u_scalar();
+        sol.vector      = &processor_id;
+        this->additional_fields.push_back(sol);
+      }
+
+      // mean velocity
+      if(output_data.mean_velocity.calculate == true)
+      {
+        navier_stokes_operator->initialize_vector_velocity(mean_velocity);
+
+        SolutionField<dim, Number> sol;
+        sol.type        = SolutionFieldType::vector;
+        sol.name        = "mean_velocity";
+        sol.dof_handler = &navier_stokes_operator->get_dof_handler_u();
+        sol.vector      = &mean_velocity;
+        this->additional_fields.push_back(sol);
+      }
+    }
+  }
+
+  void
+  compute_processor_id(VectorType & dst) const
+  {
+    dst = Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+  }
+
+  void
+  compute_mean_velocity(VectorType &       mean_velocity,
+                        VectorType const & velocity,
+                        double const       time,
+                        int const          time_step_number)
+  {
+    if(time >= output_data.mean_velocity.sample_start_time &&
+       time <= output_data.mean_velocity.sample_end_time &&
+       time_step_number % output_data.mean_velocity.sample_every_timesteps == 0)
+    {
+      mean_velocity.sadd((double)counter_mean_velocity, 1.0, velocity);
+      ++counter_mean_velocity;
+      mean_velocity *= 1. / (double)counter_mean_velocity;
+    }
+  }
+
+  void
+  calculate_additional_fields(VectorType const & velocity,
+                              VectorType const & intermediate_velocity,
+                              double const &     time,
+                              int const &        time_step_number)
+  {
+    if(output_data.write_output)
+    {
+      bool vorticity_is_up_to_date = false;
+      if(output_data.write_vorticity == true)
+      {
+        navier_stokes_operator->compute_vorticity(vorticity, velocity);
+        vorticity_is_up_to_date = true;
+      }
+      if(output_data.write_divergence == true)
+      {
+        navier_stokes_operator->compute_divergence(divergence, intermediate_velocity);
+      }
+      if(output_data.write_velocity_magnitude == true)
+      {
+        navier_stokes_operator->compute_velocity_magnitude(velocity_magnitude, velocity);
+      }
+      if(output_data.write_vorticity_magnitude == true)
+      {
+        AssertThrow(vorticity_is_up_to_date == true,
+                    ExcMessage("Vorticity vector needs to be updated to compute its magnitude."));
+
+        navier_stokes_operator->compute_vorticity_magnitude(vorticity_magnitude, vorticity);
+      }
+      if(output_data.write_streamfunction == true)
+      {
+        AssertThrow(vorticity_is_up_to_date == true,
+                    ExcMessage("Vorticity vector needs to be updated to compute its magnitude."));
+
+        navier_stokes_operator->compute_streamfunction(streamfunction, vorticity);
+      }
+      if(output_data.write_q_criterion == true)
+      {
+        navier_stokes_operator->compute_q_criterion(q_criterion, velocity);
+      }
+      if(output_data.write_processor_id == true)
+      {
+        compute_processor_id(processor_id);
+      }
+      if(output_data.mean_velocity.calculate == true)
+      {
+        if(time_step_number >= 0) // unsteady problems
+          compute_mean_velocity(mean_velocity, velocity, time, time_step_number);
+        else // time_step_number < 0 -> steady problems
+          AssertThrow(false,
+                      ExcMessage("Mean velocity can only be computed for unsteady problems."));
+      }
+    }
+  }
+
   unsigned int output_counter;
 
-  SmartPointer<DoFHandler<dim> const> dof_handler_velocity;
-  SmartPointer<DoFHandler<dim> const> dof_handler_pressure;
-  SmartPointer<Mapping<dim> const>    mapping;
-  OutputDataNavierStokes              output_data;
+  OutputDataNavierStokes output_data;
+
+  SmartPointer<DoFHandler<dim> const>      dof_handler_velocity;
+  SmartPointer<DoFHandler<dim> const>      dof_handler_pressure;
+  SmartPointer<Mapping<dim> const>         mapping;
+  SmartPointer<NavierStokesOperator const> navier_stokes_operator;
+
+  // additional fields
+  VectorType   vorticity;
+  VectorType   divergence;
+  VectorType   velocity_magnitude;
+  VectorType   vorticity_magnitude;
+  VectorType   streamfunction;
+  VectorType   q_criterion;
+  VectorType   processor_id;
+  VectorType   mean_velocity; // velocity field averaged over time
+  unsigned int counter_mean_velocity;
+
+  std::vector<SolutionField<dim, Number>> additional_fields;
 };
 
+} // namespace IncNS
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_WRITE_OUTPUT_NAVIER_STOKES_H_ */
