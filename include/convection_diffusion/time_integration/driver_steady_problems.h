@@ -15,9 +15,6 @@ using namespace dealii;
 
 namespace ConvDiff
 {
-template<int dim, int fe_degree>
-class PostProcessor;
-
 class InputParameters;
 
 template<int dim, int fe_degree, typename value_type, typename ConvDiffOperation>
@@ -27,12 +24,8 @@ public:
   typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
 
   DriverSteadyProblems(std::shared_ptr<ConvDiffOperation> conv_diff_operation_in,
-                       std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree>> postprocessor_in,
-                       ConvDiff::InputParameters const &                        param_in)
-    : conv_diff_operation(conv_diff_operation_in),
-      postprocessor(postprocessor_in),
-      param(param_in),
-      total_time(0.0)
+                       ConvDiff::InputParameters const &  param_in)
+    : conv_diff_operation(conv_diff_operation_in), param(param_in), total_time(0.0)
   {
   }
 
@@ -136,12 +129,10 @@ private:
   void
   postprocessing()
   {
-    this->postprocessor->do_postprocessing(solution);
+    conv_diff_operation->do_postprocessing(solution);
   }
 
   std::shared_ptr<ConvDiffOperation> conv_diff_operation;
-
-  std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree>> postprocessor;
 
   ConvDiff::InputParameters const & param;
 

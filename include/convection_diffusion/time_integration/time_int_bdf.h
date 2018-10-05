@@ -20,9 +20,6 @@
 
 namespace ConvDiff
 {
-template<int dim, int fe_degree>
-class PostProcessor;
-
 template<int dim, int fe_degree, typename value_type>
 class TimeIntBDF
 {
@@ -31,12 +28,10 @@ public:
 
   TimeIntBDF(
     std::shared_ptr<ConvDiff::DGOperation<dim, fe_degree, value_type>> conv_diff_operation_in,
-    std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree>>           postprocessor_in,
     ConvDiff::InputParameters const &                                  param_in,
     std::shared_ptr<Function<dim>>                                     velocity_in,
     unsigned int const                                                 n_refine_time_in)
     : conv_diff_operation(conv_diff_operation_in),
-      postprocessor(postprocessor_in),
       param(param_in),
       velocity(velocity_in),
       n_refine_time(n_refine_time_in),
@@ -55,7 +50,7 @@ public:
       M(1),
       delta_s(1.0),
       N_iter_average(0.0),
-      solver_time_average(.0)
+      solver_time_average(0.0)
   {
   }
 
@@ -107,8 +102,6 @@ private:
   analyze_computing_times() const;
 
   std::shared_ptr<ConvDiff::DGOperation<dim, fe_degree, value_type>> conv_diff_operation;
-
-  std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree>> postprocessor;
 
   ConvDiff::InputParameters const & param;
 
@@ -432,7 +425,7 @@ template<int dim, int fe_degree, typename value_type>
 void
 TimeIntBDF<dim, fe_degree, value_type>::postprocessing() const
 {
-  postprocessor->do_postprocessing(solution[0], time, time_step_number);
+  conv_diff_operation->do_postprocessing(solution[0], time, time_step_number);
 }
 
 template<int dim, int fe_degree, typename value_type>

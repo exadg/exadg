@@ -59,7 +59,6 @@ public:
     output_generator.setup(dof_handler_in, mapping_in, postprocessor_data.output_data);
   }
 
-  // unsteady problems
   void
   do_postprocessing(VectorType const & solution,
                     double const       time             = 0.0,
@@ -70,7 +69,6 @@ private:
   ErrorCalculator<dim, double>   error_calculator;
 };
 
-// unsteady problems
 template<int dim, int fe_degree>
 void
 PostProcessor<dim, fe_degree>::do_postprocessing(VectorType const & solution,

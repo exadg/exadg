@@ -34,9 +34,14 @@ class DGOperation : public MatrixOperatorBase
 public:
   typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
 
-  DGOperation(parallel::distributed::Triangulation<dim> const & triangulation,
-              ConvDiff::InputParameters const &                 param_in)
-    : fe(fe_degree), mapping(fe_degree), dof_handler(triangulation), param(param_in)
+  DGOperation(parallel::distributed::Triangulation<dim> const &        triangulation,
+              ConvDiff::InputParameters const &                        param_in,
+              std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree>> postprocessor_in)
+    : fe(fe_degree),
+      mapping(fe_degree),
+      dof_handler(triangulation),
+      param(param_in),
+      postprocessor(postprocessor_in)
   {
   }
 
@@ -44,7 +49,8 @@ public:
   setup(const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
                                                            periodic_face_pairs,
         std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor_in,
-        std::shared_ptr<ConvDiff::FieldFunctions<dim>>     field_functions_in)
+        std::shared_ptr<ConvDiff::FieldFunctions<dim>>     field_functions_in,
+        std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> analytical_solution_in)
   {
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
     pcout << std::endl << "Setup convection-diffusion operation ..." << std::endl;
@@ -58,6 +64,8 @@ public:
     initialize_matrix_free();
 
     setup_operators();
+
+    setup_postprocessor(analytical_solution_in);
 
     pcout << std::endl << "... done!" << std::endl;
   }
@@ -384,6 +392,14 @@ public:
     return dof_handler;
   }
 
+  void
+  do_postprocessing(VectorType const & solution,
+                    double const       time             = 0.0,
+                    int const          time_step_number = -1) const
+  {
+    postprocessor->do_postprocessing(solution, time, time_step_number);
+  }
+
 
 private:
   void
@@ -492,6 +508,16 @@ private:
     convection_diffusion_operator_efficiency.initialize(mapping, data, conv_diff_operator_data_eff);
   }
 
+  void
+  setup_postprocessor(std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> analytical_solution_in)
+  {
+    PostProcessorData pp_data;
+    pp_data.output_data = param.output_data;
+    pp_data.error_data  = param.error_data;
+
+    postprocessor->setup(pp_data, dof_handler, mapping, data, analytical_solution_in);
+  }
+
 
   FE_DGQ<dim>          fe;
   MappingQGeneric<dim> mapping;
@@ -523,6 +549,9 @@ private:
   std::shared_ptr<PreconditionerBase<value_type>> preconditioner;
 
   std::shared_ptr<IterativeSolverBase<VectorType>> iterative_solver;
+
+  // postprocessor
+  std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree>> postprocessor;
 };
 
 template<int dim, int fe_degree, typename value_type>
