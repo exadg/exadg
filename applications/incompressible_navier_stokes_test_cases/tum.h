@@ -52,7 +52,7 @@ std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string OUTPUT_NAME = "test"; //"Re1e3_l6_k21_outflow_bc_dual_splitting";
 
 template<int dim>
-void InputParametersNavierStokes<dim>::set_input_parameters()
+void InputParameters<dim>::set_input_parameters()
 {
   // MATHEMATICAL MODEL
   problem_type = PROBLEM_TYPE; // PROBLEM_TYPE is also needed somewhere else
@@ -456,15 +456,15 @@ template<int dim>
 /*                                                                                    */
 /**************************************************************************************/
 
-template<int dim>
-void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>              &triangulation,
-    unsigned int const                                     n_refine_space,
-    std::shared_ptr<BoundaryDescriptorNavierStokesU<dim> > boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorNavierStokesP<dim> > boundary_descriptor_pressure,
-    std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >                 &/*periodic_faces*/)
-{
+ template<int dim>
+ void create_grid_and_set_boundary_conditions(
+     parallel::distributed::Triangulation<dim>         &triangulation,
+     unsigned int const                                n_refine_space,
+     std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
+     std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
+     std::vector<GridTools::PeriodicFacePair<typename
+       Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
+ {
   if(dim == 2)
   {
     Triangulation<dim> tria_h1, tria_h2, tria_h3, tria_v1, tria_v2, tria_v3, tria_v4, tria_v5;
@@ -582,7 +582,7 @@ void create_grid_and_set_boundary_conditions(
 
 
 template<int dim>
-void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field_functions)
+void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > initial_solution_velocity;
@@ -601,7 +601,7 @@ void set_field_functions(std::shared_ptr<FieldFunctionsNavierStokes<dim> > field
 }
 
 template<int dim>
-void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim> > analytical_solution)
+void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
 {
   analytical_solution->velocity.reset(new Functions::ZeroFunction<dim>(dim));
   analytical_solution->pressure.reset(new Functions::ZeroFunction<dim>(1));
@@ -610,8 +610,8 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolutionNavierStokes<dim>
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
 template<int dim, typename Number>
-std::shared_ptr<PostProcessorBase<dim,Number> >
-construct_postprocessor(InputParametersNavierStokes<dim> const &param)
+std::shared_ptr<PostProcessorBase<dim, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, Number> >
+construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
 
@@ -623,8 +623,8 @@ construct_postprocessor(InputParametersNavierStokes<dim> const &param)
   pp_data.kinetic_energy_data = param.kinetic_energy_data;
   pp_data.line_plot_data = param.line_plot_data;
 
-  std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE, Number> > pp;
-  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE, Number>(pp_data));
+  std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number> > pp;
+  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number>(pp_data));
 
   return pp;
 }

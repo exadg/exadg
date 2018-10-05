@@ -23,7 +23,7 @@
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h"
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h"
 
-// Paramters, BCs, etc.
+// Parameters, BCs, etc.
 #include "../include/incompressible_navier_stokes/user_interface/analytical_solution.h"
 #include "../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
@@ -43,13 +43,14 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/stokes_shahbazi.h"
 //#include "incompressible_navier_stokes_test_cases/stokes_curl_flow.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
-#include "incompressible_navier_stokes_test_cases/vortex.h"
+//#include "incompressible_navier_stokes_test_cases/vortex.h"
 //#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
-//#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
+#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/beltrami.h"
 //#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
 //#include "incompressible_navier_stokes_test_cases/orr_sommerfeld.h"
 //#include "incompressible_navier_stokes_test_cases/kelvin_helmholtz.h"
+//#include "incompressible_navier_stokes_test_cases/tum.h"
 //#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
 //#include "incompressible_navier_stokes_test_cases/cavity_3D.h"
 //#include "incompressible_navier_stokes_test_cases/backward_facing_step_tim.h"
@@ -126,7 +127,10 @@ private:
                                                    Number>>
     navier_stokes_operation_pressure_correction;
 
-  std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> postprocessor;
+  std::shared_ptr<
+    IncNS::
+      PostProcessorBase<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>>
+    postprocessor;
 
   std::shared_ptr<TimeIntBDFCoupled<
     dim,

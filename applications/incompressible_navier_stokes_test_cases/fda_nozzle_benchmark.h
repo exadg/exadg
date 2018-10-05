@@ -33,10 +33,10 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for DOMAIN 1
-unsigned int const REFINE_STEPS_SPACE_DOMAIN1 = 4;
+unsigned int const REFINE_STEPS_SPACE_DOMAIN1 = 1; //4;
 
 // set the number of refine levels for DOMAIN 2
-unsigned int const REFINE_STEPS_SPACE_DOMAIN2 = 3;
+unsigned int const REFINE_STEPS_SPACE_DOMAIN2 = 0; //3;
 
 // needed for single domain solver only
 unsigned int const REFINE_STEPS_SPACE_MIN = REFINE_STEPS_SPACE_DOMAIN2;
@@ -58,10 +58,10 @@ bool const USE_RANDOM_PERTURBATION = false;
 double const FACTOR_RANDOM_PERTURBATIONS = 0.05;
 
 // set the throat Reynolds number Re_throat = U_{mean,throat} * (2 R_throat) / nu
-double const RE = 8000; //500; //2000; //3500; //5000; //6500; //8000;
+double const RE = 500; //500; //2000; //3500; //5000; //6500; //8000;
 
 // output folders
-std::string OUTPUT_FOLDER = "output/fda/paper_final/Re8000/l4_l3_k32/";
+std::string OUTPUT_FOLDER = "output/fda/Re500test2/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string OUTPUT_NAME_1 = "precursor";
 std::string OUTPUT_NAME_2 = "nozzle";
@@ -128,21 +128,21 @@ double const MAX_VELOCITY_CFL = 2.0*TARGET_FLOW_RATE/AREA_THROAT;
 // estimation of flow-through time T_0 (through nozzle section)
 // based on the mean velocity through throat
 double const T_0 = LENGTH_THROAT/MEAN_VELOCITY_THROAT;
-double const START_TIME_PRECURSOR = -500.0*T_0; // let the flow develop
+double const START_TIME_PRECURSOR = 0.0*T_0; //TODO // -500.0*T_0; // let the flow develop
 double const START_TIME_NOZZLE = 0.0*T_0;
-double const END_TIME = 250.0*T_0; //150.0*T_0;
+double const END_TIME = 10.0*T_0; //TODO // 250.0*T_0; //150.0*T_0;
 
 // output
 bool const WRITE_OUTPUT = true;
 double const OUTPUT_START_TIME_PRECURSOR = START_TIME_PRECURSOR;
 double const OUTPUT_START_TIME_NOZZLE = START_TIME_NOZZLE;
-double const OUTPUT_INTERVAL_TIME = 5.0*T_0;  //10.0*T_0;
+double const OUTPUT_INTERVAL_TIME = T_0; //TODO // 5.0*T_0;  //10.0*T_0;
 
 // sampling
 
 // sampling interval should last over (100-200) * T_0 according to preliminary results.
 // might be reduced when using averaging in circumferential direction.
-double const SAMPLE_START_TIME = 50.0*T_0; // let the flow develop
+double const SAMPLE_START_TIME = T_0; //TODO // 50.0*T_0; // let the flow develop
 double const SAMPLE_END_TIME = END_TIME; // that's the only reasonable choice
 unsigned int SAMPLE_EVERY_TIMESTEPS = 1;
 unsigned int WRITE_OUTPUT_EVERY_TIMESTEPS = SAMPLE_EVERY_TIMESTEPS*100;
@@ -1350,20 +1350,25 @@ struct PostProcessorDataFDA
   LinePlotData<dim> line_plot_data;
 };
 
-template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
-class PostProcessorFDA : public PostProcessor<dim, fe_degree_u, fe_degree_p, Number>
+template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+class PostProcessorFDA : public PostProcessor<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
 {
 public:
+  typedef PostProcessor<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> Base;
+
+  typedef typename Base::NavierStokesOperator NavierStokesOperator;
+
   PostProcessorFDA(PostProcessorDataFDA<dim> const & pp_data_in)
     :
-    PostProcessor<dim,fe_degree_u,fe_degree_p, Number>(pp_data_in.pp_data),
+    Base(pp_data_in.pp_data),
     pp_data_fda(pp_data_in),
     time_old(START_TIME_PRECURSOR)
   {
     inflow_data_calculator.reset(new InflowDataCalculator<dim,Number>(pp_data_in.inflow_data));
   }
 
-  void setup(DoFHandler<dim> const                     &dof_handler_velocity_in,
+  void setup(NavierStokesOperator const                &navier_stokes_operator_in,
+             DoFHandler<dim> const                     &dof_handler_velocity_in,
              DoFHandler<dim> const                     &dof_handler_pressure_in,
              Mapping<dim> const                        &mapping_in,
              MatrixFree<dim,Number> const              &matrix_free_data_in,
@@ -1371,7 +1376,8 @@ public:
              std::shared_ptr<AnalyticalSolution<dim> > analytical_solution_in)
   {
     // call setup function of base class
-    PostProcessor<dim,fe_degree_u,fe_degree_p,Number>::setup(
+    Base::setup(
+        navier_stokes_operator_in,
         dof_handler_velocity_in,
         dof_handler_pressure_in,
         mapping_in,
@@ -1392,20 +1398,16 @@ public:
     line_plot_calculator_statistics->setup(pp_data_fda.line_plot_data);
   }
 
-  void do_postprocessing(parallel::distributed::Vector<Number> const   &velocity,
-                         parallel::distributed::Vector<Number> const   &intermediate_velocity,
-                         parallel::distributed::Vector<Number> const   &pressure,
-                         parallel::distributed::Vector<Number> const   &vorticity,
-                         std::vector<SolutionField<dim,Number> > const &additional_fields,
-                         double const                                  time,
-                         int const                                     time_step_number)
+  void do_postprocessing(parallel::distributed::Vector<Number> const &velocity,
+                         parallel::distributed::Vector<Number> const &intermediate_velocity,
+                         parallel::distributed::Vector<Number> const &pressure,
+                         double const                                time,
+                         int const                                   time_step_number)
   {
-    PostProcessor<dim,fe_degree_u,fe_degree_p,Number>::do_postprocessing(
+    Base::do_postprocessing(
 	      velocity,
         intermediate_velocity,
         pressure,
-        vorticity,
-        additional_fields,
         time,
         time_step_number);
 
@@ -1440,19 +1442,23 @@ public:
 private:
   // postprocessor data supplemented with data required for FDA benchmark
   PostProcessorDataFDA<dim> pp_data_fda;
+
   // interpolate velocity field to a predefined set of interpolation points
   std::shared_ptr<InflowDataCalculator<dim, Number> > inflow_data_calculator;
+
   // calculate flow rate in precursor domain so that the flow rate can be
   // dynamically adjusted by a flow rate controller.
   std::shared_ptr<MeanVelocityCalculator<dim,fe_degree_u,Number> > mean_velocity_calculator;
-  // the low rate controller needs the time step size, so we have to store the previous time instant
+
+  // the flow rate controller needs the time step size, so we have to store the previous time instant
   double time_old;
+
   // evaluation of results along lines
   std::shared_ptr<LinePlotCalculatorStatistics<dim> > line_plot_calculator_statistics;
 };
 
 template<int dim, typename Number>
-std::shared_ptr<PostProcessorBase<dim,Number> >
+std::shared_ptr<PostProcessorBase<dim, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   // basic modules
@@ -1470,8 +1476,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data_fda.mean_velocity_data = param.mean_velocity_data;
   pp_data_fda.line_plot_data = param.line_plot_data;
 
-  std::shared_ptr<PostProcessorBase<dim,Number> > pp;
-  pp.reset(new PostProcessorFDA<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,Number>(pp_data_fda));
+  std::shared_ptr<PostProcessorFDA<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number> > pp;
+  pp.reset(new PostProcessorFDA<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number>(pp_data_fda));
 
   return pp;
 }

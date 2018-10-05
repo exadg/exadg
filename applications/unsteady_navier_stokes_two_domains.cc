@@ -120,7 +120,10 @@ private:
                                                    Number>>
     navier_stokes_operation_pressure_correction_1, navier_stokes_operation_pressure_correction_2;
 
-  std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> postprocessor_1, postprocessor_2;
+  std::shared_ptr<
+    IncNS::
+      PostProcessorBase<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>>
+    postprocessor_1, postprocessor_2;
 
   std::shared_ptr<TimeIntBDFCoupled<
     dim,

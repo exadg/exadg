@@ -1122,27 +1122,33 @@ struct PostProcessorDataBFS
   LinePlotData<dim> line_plot_data;
 };
 
-template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
-class PostProcessorBFS : public PostProcessor<dim, fe_degree_u, fe_degree_p, Number>
+template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+class PostProcessorBFS : public PostProcessor<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
 {
 public:
+  typedef PostProcessor<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> Base;
+
+  typedef typename Base::NavierStokesOperator NavierStokesOperator;
+
   PostProcessorBFS(PostProcessorDataBFS<dim> const & pp_data_bfs_in)
     :
-    PostProcessor<dim,fe_degree_u,fe_degree_p, Number>(pp_data_bfs_in.pp_data),
+    Base(pp_data_bfs_in.pp_data),
     write_final_output(true),
     write_final_output_lines(true),
     pp_data_bfs(pp_data_bfs_in)
   {}
 
-  void setup(DoFHandler<dim> const                      &dof_handler_velocity_in,
-             DoFHandler<dim> const                      &dof_handler_pressure_in,
-             Mapping<dim> const                         &mapping_in,
-             MatrixFree<dim,Number> const               &matrix_free_data_in,
-             DofQuadIndexData const                     &dof_quad_index_data_in,
-             std::shared_ptr<AnalyticalSolution<dim> >  analytical_solution_in)
+  void setup(NavierStokesOperator const                &navier_stokes_operator_in,
+             DoFHandler<dim> const                     &dof_handler_velocity_in,
+             DoFHandler<dim> const                     &dof_handler_pressure_in,
+             Mapping<dim> const                        &mapping_in,
+             MatrixFree<dim,Number> const              &matrix_free_data_in,
+             DofQuadIndexData const                    &dof_quad_index_data_in,
+             std::shared_ptr<AnalyticalSolution<dim> > analytical_solution_in)
   {
     // call setup function of base class
-    PostProcessor<dim,fe_degree_u,fe_degree_p,Number>::setup(
+    Base::setup(
+        navier_stokes_operator_in,
         dof_handler_velocity_in,
         dof_handler_pressure_in,
         mapping_in,
@@ -1170,17 +1176,13 @@ public:
   void do_postprocessing(parallel::distributed::Vector<Number> const &velocity,
                          parallel::distributed::Vector<Number> const &intermediate_velocity,
                          parallel::distributed::Vector<Number> const &pressure,
-                         parallel::distributed::Vector<Number> const &vorticity,
-                         std::vector<SolutionField<dim,Number> > const &additional_fields,
                          double const                                time,
                          int const                                   time_step_number)
   {
-    PostProcessor<dim,fe_degree_u,fe_degree_p,Number>::do_postprocessing(
+    Base::do_postprocessing(
         velocity,
         intermediate_velocity,
         pressure,
-        vorticity,
-        additional_fields,
         time,
         time_step_number);
 
@@ -1206,7 +1208,7 @@ public:
 };
 
 template<int dim, typename Number>
-std::shared_ptr<PostProcessorBase<dim,Number> >
+std::shared_ptr<PostProcessorBase<dim, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -1222,8 +1224,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data_bfs.inflow_data = param.inflow_data;
   pp_data_bfs.line_plot_data = param.line_plot_data;
 
-  std::shared_ptr<PostProcessorBase<dim,Number> > pp;
-  pp.reset(new PostProcessorBFS<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,Number>(pp_data_bfs));
+  std::shared_ptr<PostProcessorBase<dim, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, Number> > pp;
+  pp.reset(new PostProcessorBFS<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number>(pp_data_bfs));
 
   return pp;
 }

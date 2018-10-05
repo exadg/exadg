@@ -41,7 +41,7 @@ unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
-const ProblemType PROBLEM_TYPE = ProblemType::Unsteady;
+const ProblemType PROBLEM_TYPE = ProblemType::Steady; //Unsteady;
 const double MAX_VELOCITY = 1.0;
 const double VISCOSITY = 1.0e-1;
 
@@ -72,17 +72,20 @@ void InputParameters<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFDualSplittingScheme; //BDFCoupledSolution;
+  solver_type = SolverType::Unsteady; //Steady; //Unsteady;
+  temporal_discretization = TemporalDiscretization::BDFPressureCorrection; //BDFDualSplittingScheme; //BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified;
   max_velocity = MAX_VELOCITY; // MAX_VELOCITY is also needed somewhere else
   cfl = 1.0e-1;
-  time_step_size = 1.0e-2;
+  time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
   order_time_integrator = 2; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
 
+  convergence_criterion_steady_problem = ConvergenceCriterionSteadyProblem::SolutionIncrement; //ResidualSteadyNavierStokes;
+  abs_tol_steady = 1.e-12;
+  rel_tol_steady = 1.e-6;
 
   // SPATIAL DISCRETIZATION
 
@@ -151,7 +154,7 @@ void InputParameters<dim>::set_input_parameters()
 
   // viscous step
   solver_viscous = SolverViscous::PCG;
-  preconditioner_viscous = PreconditionerViscous::GeometricMultigrid;
+  preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; // GeometricMultigrid;
   multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_viscous = 1.e-20;
   rel_tol_viscous = 1.e-6;
@@ -201,8 +204,8 @@ void InputParameters<dim>::set_input_parameters()
   update_preconditioner = true;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityConvectionDiffusion;
-  multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::Jacobi; //Jacobi; //Chebyshev; //GMRES;
+  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion;
+  multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::Chebyshev; //Jacobi; //Chebyshev; //GMRES;
 
   // GMRES smoother data
   multigrid_data_momentum_preconditioner.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
@@ -233,11 +236,20 @@ void InputParameters<dim>::set_input_parameters()
 
   // write output for visualization of results
   output_data.write_output = true;
-  output_data.output_folder = "output/poiseuille/";
+  output_data.output_folder = "output/poiseuille/vtu/";
   output_data.output_name = "poiseuille";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
+  output_data.write_vorticity = true;
   output_data.write_divergence = true;
+  output_data.write_velocity_magnitude = true;
+  output_data.write_vorticity_magnitude = true;
+  output_data.write_processor_id = true;
+  output_data.write_q_criterion = true;
+  output_data.mean_velocity.calculate = false;
+  output_data.mean_velocity.sample_start_time = start_time;
+  output_data.mean_velocity.sample_end_time = end_time;
+  output_data.mean_velocity.sample_every_timesteps = 1;
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error
@@ -692,7 +704,7 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytica
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
 template<int dim, typename Number>
-std::shared_ptr<PostProcessorBase<dim,Number> >
+std::shared_ptr<PostProcessorBase<dim, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -704,8 +716,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data.mass_data = param.mass_data;
   pp_data.line_plot_data = param.line_plot_data;
 
-  std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,Number> > pp;
-  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,Number>(pp_data));
+  std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number> > pp;
+  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number>(pp_data));
 
   return pp;
 }

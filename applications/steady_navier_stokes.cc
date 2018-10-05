@@ -81,7 +81,9 @@ private:
     DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>>
     navier_stokes_operation;
 
-  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
+  std::shared_ptr<
+    PostProcessorBase<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>>
+    postprocessor;
 
   std::shared_ptr<DriverSteadyProblems<
     dim,
