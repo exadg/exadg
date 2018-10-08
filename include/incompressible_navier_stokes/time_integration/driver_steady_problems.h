@@ -169,7 +169,7 @@ DriverSteadyProblems<dim, value_type, NavierStokesOperation>::solve()
     if(this->param.error_data.analytical_solution_available == true)
       navier_stokes_operation->shift_pressure(solution.block(1));
     else // analytical_solution_available == false
-      navier_stokes_operation->apply_zero_mean(solution.block(1));
+      set_zero_mean_value(solution.block(1));
   }
 
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)

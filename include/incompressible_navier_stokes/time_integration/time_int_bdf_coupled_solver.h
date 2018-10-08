@@ -502,7 +502,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
     {
-      navier_stokes_operation->apply_zero_mean(solution_np.block(1));
+      set_zero_mean_value(solution_np.block(1));
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
     {
