@@ -120,6 +120,27 @@ enum class TreatmentOfConvectiveTerm
 };
 
 /*
+ *  Temporal discretization method for OIF splitting:
+ *
+ *    Explicit Runge-Kutta methods
+ */
+enum class TimeIntegratorOIF
+{
+  Undefined,
+  ExplRK1Stage1,
+  ExplRK2Stage2,
+  ExplRK3Stage3,
+  ExplRK4Stage4,
+  ExplRK3Stage4Reg2C,
+  ExplRK3Stage7Reg2, // optimized for maximum time step sizes in DG context
+  ExplRK4Stage5Reg2C,
+  ExplRK4Stage8Reg2, // optimized for maximum time step sizes in DG context
+  ExplRK4Stage5Reg3C,
+  ExplRK5Stage9Reg2S
+};
+
+
+/*
  * calculation of time step size
  */
 enum class TimeStepCalculation
@@ -612,6 +633,7 @@ public:
       solver_type(SolverType::Undefined),
       temporal_discretization(TemporalDiscretization::Undefined),
       treatment_of_convective_term(TreatmentOfConvectiveTerm::Undefined),
+      time_integrator_oif(TimeIntegratorOIF::Undefined),
       calculation_of_time_step_size(TimeStepCalculation::Undefined),
       adaptive_time_stepping_limiting_factor(1.2),
       max_velocity(-1.),
@@ -1008,6 +1030,9 @@ public:
     // OPERATOR-INTEGRATION-FACTOR SPLITTING
     if(treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
     {
+      AssertThrow(time_integrator_oif != TimeIntegratorOIF::Undefined,
+                  ExcMessage("parameter must be defined"));
+
       AssertThrow(cfl > 0., ExcMessage("parameter must be defined"));
       AssertThrow(cfl_oif > 0., ExcMessage("parameter must be defined"));
     }
@@ -1144,6 +1169,25 @@ public:
     print_parameter(pcout,
                     "Treatment of convective term",
                     str_conv_term[(int)treatment_of_convective_term]);
+
+    if(treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+    {
+      std::string str_time_int_oif[] = {"Undefined",
+                                        "ExplRK1Stage1",
+                                        "ExplRK2Stage2",
+                                        "ExplRK3Stage3",
+                                        "ExplRK4Stage4",
+                                        "ExplRK3Stage4Reg2C",
+                                        "ExplRK3Stage7Reg2",
+                                        "ExplRK4Stage5Reg2C",
+                                        "ExplRK4Stage8Reg2",
+                                        "ExplRK4Stage5Reg3C",
+                                        "ExplRK5Stage9Reg2S"};
+
+      print_parameter(pcout,
+                      "Time integrator for OIF splitting",
+                      str_time_int_oif[(int)time_integrator_oif]);
+    }
 
     // calculation of time step size
     std::string str_calc_time_step[] = {"Undefined",
@@ -1773,6 +1817,9 @@ public:
 
   // description: see enum declaration
   TreatmentOfConvectiveTerm treatment_of_convective_term;
+
+  // description: see enum declaration
+  TimeIntegratorOIF time_integrator_oif;
 
   // description: see enum declaration
   TimeStepCalculation calculation_of_time_step_size;

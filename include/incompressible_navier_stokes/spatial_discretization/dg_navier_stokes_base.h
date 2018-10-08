@@ -373,13 +373,14 @@ public:
                            VectorType const & src,
                            Number const       evaluation_time) const;
 
-  // TODO OIF splitting
-  //  void evaluate_negative_convective_term_and_apply_inverse_mass_matrix (
-  //                                 VectorType       &dst,
-  //                                 VectorType const &src,
-  //                                 Number const     evaluation_time)
-  //                                 const;
+  // OIF splitting (nonlinear transport)
+  void
+  evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
+    VectorType &       dst,
+    VectorType const & src,
+    Number const       evaluation_time) const;
 
+  // OIF splitting (transport with interpolated velocity)
   void
   evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
     VectorType &       dst,
@@ -1114,22 +1115,29 @@ DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule
   convective_operator.evaluate(dst, src, evaluation_time);
 }
 
-// TODO OIF splitting
-// template<int dim, int fe_degree, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule,
-// typename Number> void DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall,
-// xwall_quad_rule, Number>:: evaluate_negative_convective_term_and_apply_inverse_mass_matrix (
-//                          VectorType       &dst,
-//                          VectorType const &src,
-//                          Number const     evaluation_time) const
-//{
-//  convective_operator.evaluate(dst,src,evaluation_time);
-//
-//  // shift convective term to the rhs of the equation
-//  dst *= -1.0;
-//
-//  inverse_mass_matrix_operator->apply(dst,dst);
-//}
+// OIF splitting (nonlinear transport)
+template<int dim,
+         int fe_degree,
+         int fe_degree_p,
+         int fe_degree_xwall,
+         int xwall_quad_rule,
+         typename Number>
+void
+DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+  evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
+    VectorType &       dst,
+    VectorType const & src,
+    Number const       evaluation_time) const
+{
+  convective_operator.evaluate(dst, src, evaluation_time);
 
+  // shift convective term to the rhs of the equation
+  dst *= -1.0;
+
+  inverse_mass_matrix_operator->apply(dst, dst);
+}
+
+// OIF splitting (transport with interpolated velocity)
 template<int dim,
          int fe_degree,
          int fe_degree_p,
@@ -1200,7 +1208,7 @@ DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule
 }
 
 /*
- *  Convective operator needed for OIF (operator integration factor splitting) substepping
+ *  Convective operator needed for OIF (operator-integration-factor) substepping
  */
 template<typename Operator, typename Number>
 class ConvectiveOperatorNavierStokes
@@ -1209,26 +1217,64 @@ public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   ConvectiveOperatorNavierStokes(std::shared_ptr<Operator> operation_in)
-    : underlying_operator(operation_in)
+    : underlying_operator(operation_in), transport_with_interpolated_velocity(false) // TODO
   {
+    if(transport_with_interpolated_velocity)
+      underlying_operator->initialize_vector_velocity(solution_interpolated);
   }
 
-  // TODO OIF splitting
-  //  void evaluate(VectorType       &dst,
-  //                VectorType const &src,
-  //                Number const     evaluation_time) const
-  //  {
-  //    underlying_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(dst,src,evaluation_time);
-  //  }
-
+  // OIF splitting (transport with interpolated velocity)
   void
-  evaluate(VectorType &       dst,
-           VectorType const & src,
-           Number const       evaluation_time,
-           VectorType const & velocity) const
+  set_solutions_and_times(std::vector<VectorType const *> & solutions_in,
+                          std::vector<double> &             times_in)
   {
-    underlying_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
-      dst, src, evaluation_time, velocity);
+    solutions = solutions_in;
+    times     = times_in;
+  }
+
+  // OIF splitting (transport with interpolated velocity)
+  void
+  interpolate(VectorType &                          dst,
+              double const                          evaluation_time,
+              std::vector<VectorType const *> const solutions,
+              std::vector<double> const             times) const
+  {
+    dst = 0;
+
+    // loop over all interpolation points
+    for(unsigned int k = 0; k < solutions.size(); ++k)
+    {
+      // evaluate Lagrange polynomial l_k
+      double l_k = 1.0;
+
+      for(unsigned int j = 0; j < solutions.size(); ++j)
+      {
+        if(j != k)
+        {
+          l_k *= (evaluation_time - times[j]) / (times[k] - times[j]);
+        }
+      }
+
+      dst.add(l_k, *solutions[k]);
+    }
+  }
+
+  // OIF splitting
+  void
+  evaluate(VectorType & dst, VectorType const & src, Number const evaluation_time) const
+  {
+    if(transport_with_interpolated_velocity)
+    {
+      interpolate(solution_interpolated, evaluation_time, solutions, times);
+
+      underlying_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
+        dst, src, evaluation_time, solution_interpolated);
+    }
+    else // nonlinear transport (standard convective term)
+    {
+      underlying_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
+        dst, src, evaluation_time);
+    }
   }
 
   void
@@ -1239,6 +1285,12 @@ public:
 
 private:
   std::shared_ptr<Operator> underlying_operator;
+
+  // OIF splitting (transport with interpolated velocity)
+  bool                            transport_with_interpolated_velocity;
+  std::vector<VectorType const *> solutions;
+  std::vector<double>             times;
+  VectorType mutable solution_interpolated;
 };
 
 } // namespace IncNS

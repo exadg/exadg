@@ -96,6 +96,9 @@ private:
   virtual LinearAlgebra::distributed::Vector<value_type> const &
   get_velocity();
 
+  virtual LinearAlgebra::distributed::Vector<value_type> const &
+  get_velocity(unsigned int i /* t_{n-i} */);
+
   virtual void
   read_restart_vectors(boost::archive::binary_iarchive & ia);
 
@@ -107,7 +110,6 @@ private:
   std::vector<BlockVectorType> solution;
   BlockVectorType              solution_np;
 
-  VectorType      sum_alphai_ui;
   BlockVectorType rhs_vector;
 
   std::vector<VectorType> vec_convective_term;
@@ -144,7 +146,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::initiali
   }
 
   // temporal derivative term: sum_i (alpha_i * u_i)
-  navier_stokes_operation->initialize_vector_velocity(sum_alphai_ui);
+  navier_stokes_operation->initialize_vector_velocity(this->sum_alphai_ui);
 
   // rhs_vector
   if(this->param.equation_type == EquationType::Stokes ||
@@ -217,6 +219,13 @@ LinearAlgebra::distributed::Vector<value_type> const &
 TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity()
 {
   return solution[0].block(0);
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+LinearAlgebra::distributed::Vector<value_type> const &
+TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity(unsigned int i)
+{
+  return solution[i].block(0);
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -350,84 +359,25 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
         rhs_vector.block(0).add(-this->extra.get_beta(i), vec_convective_term[i]);
     }
 
-    // TODO OIF splitting
     // calculate sum (alpha_i/dt * u_tilde_i) in case of explicit treatment of convective term
-    // and operator-integration-factor splitting
+    // and operator-integration-factor (OIF) splitting
     if(this->param.equation_type == EquationType::NavierStokes &&
        this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
     {
-      // fill vectors with old velocity solutions and old time instants for
-      // interpolation of velocity field
-      std::vector<VectorType *> solutions;
-
-      std::vector<double> times;
-
-      unsigned int current_order = 0;
-
-      if(this->time_step_number <= this->order && this->param.start_with_low_order == true)
-      {
-        current_order = this->time_step_number;
-      }
-      else
-      {
-        current_order = this->order;
-      }
-
-      AssertThrow(current_order > 0 && current_order <= solution.size(),
-                  ExcMessage("Invalid parameter current_order"));
-
-      for(unsigned int i = 0; i < current_order; ++i)
-      {
-        solutions.push_back(&solution[i].block(0));
-        times.push_back(this->time - (double)(i) * this->time_steps[0]);
-      }
-
-      // Loop over all previous time instants required by the BDF scheme
-      // and calculate u_tilde by substepping algorithm, i.e.,
-      // integrate over time interval t_{n-i} <= t <= t_{n+1}
-      // using explicit Runge-Kutta methods.
-      for(unsigned int i = 0; i < current_order; ++i)
-      {
-        // initialize solution: u_tilde(s=0) = u(t_{n-i})
-        this->solution_tilde_m = solution[i].block(0);
-
-        // calculate start time t_{n-i} (assume equidistant time step sizes!!!)
-        double const time_n_i = this->time - (double)(i) * this->time_steps[i];
-
-        // time loop substepping: t_{n-i} <= t <= t_{n+1}
-        for(unsigned int m = 0; m < this->M * (i + 1); ++m)
-        {
-          // solve time step
-          this->rk_time_integrator_OIF->solve_timestep(this->solution_tilde_mp,
-                                                       this->solution_tilde_m,
-                                                       time_n_i + this->delta_s * m,
-                                                       this->delta_s,
-                                                       solutions,
-                                                       times);
-
-          this->solution_tilde_mp.swap(this->solution_tilde_m);
-        }
-
-        // calculate sum (alpha_i/dt * u_tilde_i)
-        if(i == 0)
-          sum_alphai_ui.equ(this->bdf.get_alpha(i) / this->time_steps[0], this->solution_tilde_m);
-        else // i>0
-          sum_alphai_ui.add(this->bdf.get_alpha(i) / this->time_steps[0], this->solution_tilde_m);
-      }
+      this->calculate_sum_alphai_ui_oif_substepping();
     }
     // calculate sum (alpha_i/dt * u_i) for standard BDF discretization
     else
     {
-      sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->time_steps[0], solution[0].block(0));
+      this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->time_steps[0], solution[0].block(0));
       for(unsigned int i = 1; i < solution.size(); ++i)
       {
-        sum_alphai_ui.add(this->bdf.get_alpha(i) / this->time_steps[0], solution[i].block(0));
+        this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->time_steps[0], solution[i].block(0));
       }
     }
-    // TODO OIF splitting
 
     // apply mass matrix to sum_alphai_ui and add to rhs vector
-    navier_stokes_operation->apply_mass_matrix_add(rhs_vector.block(0), sum_alphai_ui);
+    navier_stokes_operation->apply_mass_matrix_add(rhs_vector.block(0), this->sum_alphai_ui);
 
     // solve coupled system of equations
     unsigned int linear_iterations = navier_stokes_operation->solve_linear_stokes_problem(
@@ -447,11 +397,11 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
   }
   else // a nonlinear system of equations has to be solved
   {
-    // calculate sum (alpha_i/dt * u_i)
-    sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->time_steps[0], solution[0].block(0));
+    // calculate Sum_i (alpha_i/dt * u_i)
+    this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->time_steps[0], solution[0].block(0));
     for(unsigned int i = 1; i < solution.size(); ++i)
     {
-      sum_alphai_ui.add(this->bdf.get_alpha(i) / this->time_steps[0], solution[i].block(0));
+      this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->time_steps[0], solution[i].block(0));
     }
 
     // Newton solver
@@ -459,7 +409,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
     unsigned int linear_iterations = 0;
     navier_stokes_operation->solve_nonlinear_problem(
       solution_np,
-      sum_alphai_ui,
+      this->sum_alphai_ui,
       this->time + this->time_steps[0],
       this->get_scaling_factor_time_derivative_term(),
       newton_iterations,
