@@ -37,6 +37,12 @@ public:
                  double const time,
                  double const time_step);
 
+  unsigned int
+  get_order() const
+  {
+    return order;
+  }
+
 private:
   void
   initialize_coeffs(unsigned int const stages);

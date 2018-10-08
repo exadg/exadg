@@ -142,9 +142,8 @@ private:
     convective_operator_OIF;
 
   std::shared_ptr<
-    ExplicitRungeKuttaTimeIntegrator<ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>,
-                                     VectorType>>
-    rk_time_integrator;
+    ExplicitTimeIntegrator<ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>, VectorType>>
+    time_integrator_OIF;
 
   // cfl number cfl_oif for operator-integration-factor splitting
   double const cfl_oif;
@@ -197,9 +196,71 @@ TimeIntBDF<dim, fe_degree, value_type>::setup(bool /*do_restart*/)
   {
     convective_operator_OIF.reset(
       new ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>(conv_diff_operation));
-    rk_time_integrator.reset(new ExplicitRungeKuttaTimeIntegrator<
-                             ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>,
-                             VectorType>(order, convective_operator_OIF));
+
+    if(this->param.time_integrator_oif == ConvDiff::TimeIntegratorRK::ExplRK1Stage1)
+    {
+      time_integrator_OIF.reset(new ExplicitRungeKuttaTimeIntegrator<
+                                ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>,
+                                VectorType>(1, convective_operator_OIF));
+    }
+    else if(this->param.time_integrator_oif == ConvDiff::TimeIntegratorRK::ExplRK2Stage2)
+    {
+      time_integrator_OIF.reset(new ExplicitRungeKuttaTimeIntegrator<
+                                ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>,
+                                VectorType>(2, convective_operator_OIF));
+    }
+    else if(this->param.time_integrator_oif == ConvDiff::TimeIntegratorRK::ExplRK3Stage3)
+    {
+      time_integrator_OIF.reset(new ExplicitRungeKuttaTimeIntegrator<
+                                ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>,
+                                VectorType>(3, convective_operator_OIF));
+    }
+    else if(this->param.time_integrator_oif == ConvDiff::TimeIntegratorRK::ExplRK4Stage4)
+    {
+      time_integrator_OIF.reset(new ExplicitRungeKuttaTimeIntegrator<
+                                ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>,
+                                VectorType>(4, convective_operator_OIF));
+    }
+    else if(this->param.time_integrator_oif == ConvDiff::TimeIntegratorRK::ExplRK3Stage4Reg2C)
+    {
+      time_integrator_OIF.reset(
+        new LowStorageRK3Stage4Reg2C<ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>,
+                                     VectorType>(convective_operator_OIF));
+    }
+    else if(this->param.time_integrator_oif == ConvDiff::TimeIntegratorRK::ExplRK4Stage5Reg2C)
+    {
+      time_integrator_OIF.reset(
+        new LowStorageRK4Stage5Reg2C<ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>,
+                                     VectorType>(convective_operator_OIF));
+    }
+    else if(this->param.time_integrator_oif == ConvDiff::TimeIntegratorRK::ExplRK4Stage5Reg3C)
+    {
+      time_integrator_OIF.reset(
+        new LowStorageRK4Stage5Reg3C<ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>,
+                                     VectorType>(convective_operator_OIF));
+    }
+    else if(this->param.time_integrator_oif == ConvDiff::TimeIntegratorRK::ExplRK5Stage9Reg2S)
+    {
+      time_integrator_OIF.reset(
+        new LowStorageRK5Stage9Reg2S<ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>,
+                                     VectorType>(convective_operator_OIF));
+    }
+    else if(this->param.time_integrator_oif == ConvDiff::TimeIntegratorRK::ExplRK3Stage7Reg2)
+    {
+      time_integrator_OIF.reset(
+        new LowStorageRKTD<ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>, VectorType>(
+          convective_operator_OIF, 3, 7));
+    }
+    else if(this->param.time_integrator_oif == ConvDiff::TimeIntegratorRK::ExplRK4Stage8Reg2)
+    {
+      time_integrator_OIF.reset(
+        new LowStorageRKTD<ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>, VectorType>(
+          convective_operator_OIF, 4, 8));
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
   }
 
   pcout << std::endl << "... done!" << std::endl;
@@ -311,9 +372,13 @@ TimeIntBDF<dim, fe_degree, value_type>::calculate_timestep()
 
     print_parameter(pcout, "U_max", max_velocity);
     print_parameter(pcout, "CFL", cfl_number);
+    print_parameter(pcout, "Exponent fe_degree (convection)", param.exponent_fe_degree_convection);
 
-    time_step_conv =
-      calculate_const_time_step_cfl(cfl_number, max_velocity, global_min_cell_diameter, fe_degree);
+    time_step_conv = calculate_const_time_step_cfl(cfl_number,
+                                                   max_velocity,
+                                                   global_min_cell_diameter,
+                                                   fe_degree,
+                                                   param.exponent_fe_degree_convection);
 
     // decrease time_step in order to exactly hit end_time
     time_steps[0] = (param.end_time - param.start_time) /
@@ -375,9 +440,11 @@ TimeIntBDF<dim, fe_degree, value_type>::calculate_timestep()
     // calculate substepping time step size delta_s
     delta_s = this->time_steps[0] / (double)M;
 
+    // output
     pcout << std::endl
           << "Calculation of OIF substepping time step size:" << std::endl
           << std::endl;
+
     print_parameter(pcout, "CFL (OIF)", cfl_oif);
     print_parameter(pcout, "Number of substeps", M);
     print_parameter(pcout, "Substepping time step size", delta_s);
@@ -505,10 +572,10 @@ TimeIntBDF<dim, fe_degree, value_type>::solve_timestep()
       // time loop substepping: t_{n-i} <= t <= t_{n+1}
       for(unsigned int m = 0; m < M * (i + 1) /*assume equidistant time step sizes*/; ++m)
       {
-        rk_time_integrator->solve_timestep(solution_tilde_mp,
-                                           solution_tilde_m,
-                                           time_n_i + delta_s * m,
-                                           delta_s);
+        time_integrator_OIF->solve_timestep(solution_tilde_mp,
+                                            solution_tilde_m,
+                                            time_n_i + delta_s * m,
+                                            delta_s);
 
         solution_tilde_mp.swap(solution_tilde_m);
       }

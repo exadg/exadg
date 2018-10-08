@@ -23,6 +23,9 @@ public:
   virtual void
   solve_timestep(VectorType & dst, VectorType & src, double const time, double const time_step) = 0;
 
+  virtual unsigned int
+  get_order() const = 0;
+
 protected:
   std::shared_ptr<Operator> underlying_operator;
 };
@@ -159,6 +162,12 @@ public:
     }
   }
 
+  unsigned int
+  get_order() const
+  {
+    return order;
+  }
+
 private:
   unsigned int order;
 
@@ -265,6 +274,12 @@ public:
     vec_np.add(b4 * time_step, vec_tmp1); /* = u_p */
   }
 
+  unsigned int
+  get_order() const
+  {
+    return 3;
+  }
+
 private:
   VectorType vec_tmp1;
 };
@@ -345,6 +360,12 @@ public:
     // stage 5
     this->underlying_operator->evaluate(vec_tmp1, vec_np /* u_4 */, time + c5 * time_step);
     vec_np.equ(1., vec_n, b5 * time_step, vec_tmp1);
+  }
+
+  unsigned int
+  get_order() const
+  {
+    return 4;
   }
 
 private:
@@ -448,6 +469,12 @@ public:
                                         time + c5 * time_step);
     vec_np = vec_n;
     vec_np.add(b5 * time_step, vec_tmp1 /* F_5 */); /* = u_p */
+  }
+
+  unsigned int
+  get_order() const
+  {
+    return 4;
   }
 
 private:
@@ -567,6 +594,12 @@ public:
     vec_np.equ(1., vec_n, b9 * time_step, vec_tmp1);
   }
 
+  unsigned int
+  get_order() const
+  {
+    return 5;
+  }
+
 private:
   VectorType vec_tmp1;
 };
@@ -678,6 +711,12 @@ public:
     }
 
     vec_np = vec_n;
+  }
+
+  unsigned int
+  get_order() const
+  {
+    return order;
   }
 
 private:

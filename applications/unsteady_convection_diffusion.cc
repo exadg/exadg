@@ -34,12 +34,12 @@
 // convection problems
 
 //#include "convection_diffusion_test_cases/propagating_sine_wave.h"
-//#include "convection_diffusion_test_cases/rotating_hill.h"
+#include "convection_diffusion_test_cases/rotating_hill.h"
 //#include "convection_diffusion_test_cases/deforming_hill.h"
 
 // diffusion problems
 
-#include "convection_diffusion_test_cases/diffusive_problem.h"
+//#include "convection_diffusion_test_cases/diffusive_problem.h"
 
 // convection-diffusion problems
 
