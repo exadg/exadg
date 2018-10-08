@@ -216,6 +216,7 @@ void InputParameters<dim>::set_input_parameters()
 
   // calculation of error
   error_data.analytical_solution_available = true;
+  error_data.calculate_relative_errors = false;
   error_data.error_calc_start_time = start_time;
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
