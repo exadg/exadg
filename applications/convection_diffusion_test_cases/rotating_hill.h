@@ -22,7 +22,7 @@
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 4;
+const unsigned int FE_DEGREE = 8;
 
 // set the number of refine levels for spatial convergence tests
 const unsigned int REFINE_STEPS_SPACE_MIN = 3;
@@ -46,15 +46,24 @@ void ConvDiff::InputParameters::set_input_parameters()
   diffusivity = 0.0;
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDF; //BDF; //ExplRK;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; //Explicit; //ExplicitOIF;
+  temporal_discretization = TemporalDiscretization::ExplRK; //BDF; //ExplRK;
+
+  // Explicit RK
+  time_integrator_rk = TimeIntegratorRK::ExplRK3Stage7Reg2;
+
+  // BDF
   order_time_integrator = 2; // instabilities for BDF 3 and 4
   start_with_low_order = false;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepMaxEfficiency; //ConstTimeStepUserSpecified; //ConstTimeStepCFL;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::ExplicitOIF; //Explicit; //ExplicitOIF;
+  time_integrator_oif = TimeIntegratorRK::ExplRK4Stage8Reg2; //ExplRK3Stage7Reg2; //ExplRK4Stage8Reg2;
+
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
   time_step_size = 1.e-2;
-  cfl_number = 0.2; //1.25;
-  cfl_oif = cfl_number/3.0;
+  cfl_oif = 2.0;
+  cfl_number = cfl_oif * 1.0;
   diffusion_number = 0.01;
+  exponent_fe_degree_convection = 2.0;
+  exponent_fe_degree_diffusion = 3.0;
   c_eff = 1.0e0;
 
   // SPATIAL DISCRETIZATION
@@ -70,7 +79,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   rel_tol = 1.e-8;
   max_iter = 1e3;
   max_n_tmp_vectors = 100;
-  preconditioner = Preconditioner::BlockJacobi; //MultigridConvectionDiffusion; //MultigridDiffusion; //None; //PointJacobi; //BlockJacobi; //InverseMassMatrix; //MultigridDiffusion; //MultigridConvectionDiffusion;
+  preconditioner = Preconditioner::InverseMassMatrix; //MultigridConvectionDiffusion; //MultigridDiffusion; //None; //PointJacobi; //BlockJacobi; //InverseMassMatrix; //MultigridDiffusion; //MultigridConvectionDiffusion;
   // MG smoother
   multigrid_data.smoother = MultigridSmoother::Jacobi; //GMRES; //Chebyshev; //ChebyshevNonsymmetricOperator;
 
@@ -86,13 +95,13 @@ void ConvDiff::InputParameters::set_input_parameters()
   // MG coarse grid solver
   multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner; //GMRES_NoPreconditioner; //Chebyshev; //GMRES_Jacobi;
 
-  update_preconditioner = true; //true;
+  update_preconditioner = false; //true;
 
   // NUMERICAL PARAMETERS
   runtime_optimization = false;
 
   // OUTPUT AND POSTPROCESSING
-  print_input_parameters = false;
+  print_input_parameters = true;
   output_data.write_output = true;
   output_data.output_folder = "output_conv_diff/";
   output_data.output_name = "rotating_hill";

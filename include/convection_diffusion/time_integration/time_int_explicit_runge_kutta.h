@@ -38,7 +38,6 @@ public:
       time(param.start_time),
       time_step(1.0),
       time_step_number(1),
-      order(param.order_time_integrator),
       n_refine_time(n_refine_time_in),
       cfl_number(param.cfl_number / std::pow(2.0, n_refine_time)),
       diffusion_number(param.diffusion_number / std::pow(2.0, n_refine_time))
@@ -71,12 +70,15 @@ private:
   calculate_timestep();
 
   void
+  initialize_time_integrator();
+
+  void
   analyze_computing_times() const;
 
   std::shared_ptr<ConvDiff::DGOperation<dim, fe_degree, value_type>> conv_diff_operation;
 
   std::shared_ptr<
-    ExplicitRungeKuttaTimeIntegrator<ConvDiff::DGOperation<dim, fe_degree, value_type>, VectorType>>
+    ExplicitTimeIntegrator<ConvDiff::DGOperation<dim, fe_degree, value_type>, VectorType>>
     rk_time_integrator;
 
   ConvDiff::InputParameters const & param;
@@ -99,7 +101,6 @@ private:
   // the number of the current time step starting with time_step_number = 1
   unsigned int time_step_number;
 
-  unsigned int const order;
   unsigned int const n_refine_time;
   double const       cfl_number;
   double const       diffusion_number;
@@ -117,13 +118,11 @@ TimeIntExplRK<dim, fe_degree, value_type>::setup()
   // initializes the solution by interpolation of analytical solution
   initialize_solution();
 
+  // initialize time integrator
+  initialize_time_integrator();
+
   // calculate time step size
   calculate_timestep();
-
-  // initialize Runge-Kutta time integrator
-  rk_time_integrator.reset(
-    new ExplicitRungeKuttaTimeIntegrator<ConvDiff::DGOperation<dim, fe_degree, value_type>,
-                                         VectorType>(order, conv_diff_operation));
 
   pcout << std::endl << "... done!" << std::endl;
 }
@@ -177,9 +176,13 @@ TimeIntExplRK<dim, fe_degree, value_type>::calculate_timestep()
 
     print_parameter(pcout, "U_max", max_velocity);
     print_parameter(pcout, "CFL", cfl_number);
+    print_parameter(pcout, "Exponent fe_degree (convection)", param.exponent_fe_degree_convection);
 
-    time_step_conv =
-      calculate_const_time_step_cfl(cfl_number, max_velocity, global_min_cell_diameter, fe_degree);
+    time_step_conv = calculate_const_time_step_cfl(cfl_number,
+                                                   max_velocity,
+                                                   global_min_cell_diameter,
+                                                   fe_degree,
+                                                   param.exponent_fe_degree_convection);
 
     // decrease time_step in order to exactly hit end_time
     time_step = (param.end_time - param.start_time) /
@@ -201,13 +204,15 @@ TimeIntExplRK<dim, fe_degree, value_type>::calculate_timestep()
     print_parameter(pcout, "h_min", global_min_cell_diameter);
 
     print_parameter(pcout, "Diffusion number", diffusion_number);
+    print_parameter(pcout, "Exponent fe_degree (diffusion)", param.exponent_fe_degree_diffusion);
 
     double time_step_diff = 1.0;
     // calculate time step according to Diffusion number condition
     time_step_diff = calculate_const_time_step_diff(diffusion_number,
                                                     param.diffusivity,
                                                     global_min_cell_diameter,
-                                                    fe_degree);
+                                                    fe_degree,
+                                                    param.exponent_fe_degree_diffusion);
 
     // decrease time_step in order to exactly hit end_time
     time_step = (param.end_time - param.start_time) /
@@ -239,9 +244,13 @@ TimeIntExplRK<dim, fe_degree, value_type>::calculate_timestep()
 
     print_parameter(pcout, "U_max", max_velocity);
     print_parameter(pcout, "CFL", cfl_number);
+    print_parameter(pcout, "Exponent fe_degree (convection)", param.exponent_fe_degree_convection);
 
-    time_step_conv =
-      calculate_const_time_step_cfl(cfl_number, max_velocity, global_min_cell_diameter, fe_degree);
+    time_step_conv = calculate_const_time_step_cfl(cfl_number,
+                                                   max_velocity,
+                                                   global_min_cell_diameter,
+                                                   fe_degree,
+                                                   param.exponent_fe_degree_convection);
 
     print_parameter(pcout, "Time step size (convection)", time_step_conv);
 
@@ -250,9 +259,11 @@ TimeIntExplRK<dim, fe_degree, value_type>::calculate_timestep()
     time_step_diff = calculate_const_time_step_diff(diffusion_number,
                                                     param.diffusivity,
                                                     global_min_cell_diameter,
-                                                    fe_degree);
+                                                    fe_degree,
+                                                    param.exponent_fe_degree_diffusion);
 
     print_parameter(pcout, "Diffusion number", diffusion_number);
+    print_parameter(pcout, "Exponent fe_degree (diffusion)", param.exponent_fe_degree_diffusion);
     print_parameter(pcout, "Time step size (diffusion)", time_step_diff);
 
     // adopt minimum time step size
@@ -270,6 +281,8 @@ TimeIntExplRK<dim, fe_degree, value_type>::calculate_timestep()
     // calculate minimum vertex distance
     const double global_min_cell_diameter = calculate_minimum_vertex_distance(
       conv_diff_operation->get_data().get_dof_handler().get_triangulation());
+
+    unsigned int const order = rk_time_integrator->get_order();
 
     double time_step_tmp = calculate_time_step_max_efficiency(
       param.c_eff, global_min_cell_diameter, fe_degree, order, n_refine_time);
@@ -298,6 +311,75 @@ TimeIntExplRK<dim, fe_degree, value_type>::calculate_timestep()
   }
 }
 
+template<int dim, int fe_degree, typename value_type>
+void
+TimeIntExplRK<dim, fe_degree, value_type>::initialize_time_integrator()
+{
+  if(this->param.time_integrator_rk == ConvDiff::TimeIntegratorRK::ExplRK1Stage1)
+  {
+    rk_time_integrator.reset(
+      new ExplicitRungeKuttaTimeIntegrator<ConvDiff::DGOperation<dim, fe_degree, value_type>,
+                                           VectorType>(1, conv_diff_operation));
+  }
+  else if(this->param.time_integrator_rk == ConvDiff::TimeIntegratorRK::ExplRK2Stage2)
+  {
+    rk_time_integrator.reset(
+      new ExplicitRungeKuttaTimeIntegrator<ConvDiff::DGOperation<dim, fe_degree, value_type>,
+                                           VectorType>(2, conv_diff_operation));
+  }
+  else if(this->param.time_integrator_rk == ConvDiff::TimeIntegratorRK::ExplRK3Stage3)
+  {
+    rk_time_integrator.reset(
+      new ExplicitRungeKuttaTimeIntegrator<ConvDiff::DGOperation<dim, fe_degree, value_type>,
+                                           VectorType>(3, conv_diff_operation));
+  }
+  else if(this->param.time_integrator_rk == ConvDiff::TimeIntegratorRK::ExplRK4Stage4)
+  {
+    rk_time_integrator.reset(
+      new ExplicitRungeKuttaTimeIntegrator<ConvDiff::DGOperation<dim, fe_degree, value_type>,
+                                           VectorType>(4, conv_diff_operation));
+  }
+  else if(this->param.time_integrator_rk == ConvDiff::TimeIntegratorRK::ExplRK3Stage4Reg2C)
+  {
+    rk_time_integrator.reset(
+      new LowStorageRK3Stage4Reg2C<ConvDiff::DGOperation<dim, fe_degree, value_type>, VectorType>(
+        conv_diff_operation));
+  }
+  else if(this->param.time_integrator_rk == ConvDiff::TimeIntegratorRK::ExplRK4Stage5Reg2C)
+  {
+    rk_time_integrator.reset(
+      new LowStorageRK4Stage5Reg2C<ConvDiff::DGOperation<dim, fe_degree, value_type>, VectorType>(
+        conv_diff_operation));
+  }
+  else if(this->param.time_integrator_rk == ConvDiff::TimeIntegratorRK::ExplRK4Stage5Reg3C)
+  {
+    rk_time_integrator.reset(
+      new LowStorageRK4Stage5Reg3C<ConvDiff::DGOperation<dim, fe_degree, value_type>, VectorType>(
+        conv_diff_operation));
+  }
+  else if(this->param.time_integrator_rk == ConvDiff::TimeIntegratorRK::ExplRK5Stage9Reg2S)
+  {
+    rk_time_integrator.reset(
+      new LowStorageRK5Stage9Reg2S<ConvDiff::DGOperation<dim, fe_degree, value_type>, VectorType>(
+        conv_diff_operation));
+  }
+  else if(this->param.time_integrator_rk == ConvDiff::TimeIntegratorRK::ExplRK3Stage7Reg2)
+  {
+    rk_time_integrator.reset(
+      new LowStorageRKTD<ConvDiff::DGOperation<dim, fe_degree, value_type>, VectorType>(
+        conv_diff_operation, 3, 7));
+  }
+  else if(this->param.time_integrator_rk == ConvDiff::TimeIntegratorRK::ExplRK4Stage8Reg2)
+  {
+    rk_time_integrator.reset(
+      new LowStorageRKTD<ConvDiff::DGOperation<dim, fe_degree, value_type>, VectorType>(
+        conv_diff_operation, 4, 8));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
+}
 
 template<int dim, int fe_degree, typename value_type>
 void

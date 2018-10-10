@@ -69,10 +69,11 @@ void InputParameters<dim>::set_input_parameters()
   solver_type = SolverType::Unsteady;
   temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  time_integrator_oif = TimeIntegratorOIF::ExplRK2Stage2;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepMaxEfficiency; //ConstTimeStepUserSpecified; //ConstTimeStepCFL; //ConstTimeStepUserSpecified;
   max_velocity = 1.4 * U_X_MAX;
   cfl = 0.0625;
-  cfl_oif = cfl/8.0;
+  cfl_oif = cfl/1.0;
   cfl_exponent_fe_degree_velocity = 1.5;
   c_eff = 8.0;
   time_step_size = 1.e-2; //5.e-5; //1.e-1; //1.e-4;

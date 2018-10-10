@@ -86,6 +86,26 @@ enum class TreatmentOfConvectiveTerm
 };
 
 /*
+ *  Temporal discretization method for OIF splitting:
+ *
+ *    Explicit Runge-Kutta methods
+ */
+enum class TimeIntegratorRK
+{
+  Undefined,
+  ExplRK1Stage1,
+  ExplRK2Stage2,
+  ExplRK3Stage3,
+  ExplRK4Stage4,
+  ExplRK3Stage4Reg2C,
+  ExplRK3Stage7Reg2, // optimized for maximum time step sizes in DG context
+  ExplRK4Stage5Reg2C,
+  ExplRK4Stage8Reg2, // optimized for maximum time step sizes in DG context
+  ExplRK4Stage5Reg3C,
+  ExplRK5Stage9Reg2S
+};
+
+/*
  * calculation of time step size
  */
 enum class TimeStepCalculation
@@ -158,6 +178,9 @@ enum class MultigridOperatorType
 /*                                                                                    */
 /**************************************************************************************/
 
+// there are currently no enums for this section
+
+
 
 class InputParameters
 {
@@ -176,15 +199,19 @@ public:
 
       // TEMPORAL DISCRETIZATION
       temporal_discretization(TemporalDiscretization::Undefined),
-      treatment_of_convective_term(TreatmentOfConvectiveTerm::Undefined),
+      time_integrator_rk(TimeIntegratorRK::Undefined),
       order_time_integrator(1),
       start_with_low_order(true),
+      treatment_of_convective_term(TreatmentOfConvectiveTerm::Undefined),
       calculation_of_time_step_size(TimeStepCalculation::Undefined),
       time_step_size(-1.),
       cfl_number(-1.),
+      time_integrator_oif(TimeIntegratorRK::Undefined),
       cfl_oif(-1.),
       diffusion_number(-1.),
       c_eff(-1.),
+      exponent_fe_degree_convection(1.5),
+      exponent_fe_degree_diffusion(3.0),
 
       // SPATIAL DISCRETIZATION
       numerical_flux_convective_operator(NumericalFluxConvectiveOperator::Undefined),
@@ -254,6 +281,12 @@ public:
                   ExcMessage("parameter must be defined"));
     }
 
+    if(temporal_discretization == TemporalDiscretization::ExplRK)
+    {
+      AssertThrow(time_integrator_rk != TimeIntegratorRK::Undefined,
+                  ExcMessage("parameter must be defined"));
+    }
+
     AssertThrow(calculation_of_time_step_size != TimeStepCalculation::Undefined,
                 ExcMessage("parameter must be defined"));
 
@@ -278,19 +311,16 @@ public:
     {
       AssertThrow(order_time_integrator >= 1 && order_time_integrator <= 4,
                   ExcMessage("Specified order of time integrator BDF not implemented!"));
+
+      if(treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+      {
+        AssertThrow(time_integrator_oif != TimeIntegratorRK::Undefined,
+                    ExcMessage("parameter must be defined"));
+
+        AssertThrow(cfl_number > 0., ExcMessage("parameter must be defined"));
+        AssertThrow(cfl_oif > 0., ExcMessage("parameter must be defined"));
+      }
     }
-
-    if(treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
-    {
-      AssertThrow(
-        temporal_discretization == TemporalDiscretization::BDF,
-        ExcMessage(
-          "Operator-integration-factor splitting of convective term is only available for BDF time integration."));
-
-      AssertThrow(cfl_number > 0., ExcMessage("parameter must be defined"));
-      AssertThrow(cfl_oif > 0., ExcMessage("parameter must be defined"));
-    }
-
 
     // SPATIAL DISCRETIZATION
     if(equation_type == EquationType::Convection ||
@@ -415,19 +445,56 @@ public:
                     "Temporal discretization method",
                     str_temp_discret[(int)temporal_discretization]);
 
+    if(temporal_discretization == TemporalDiscretization::ExplRK)
+    {
+      std::string str_expl_time_int[] = {"Undefined",
+                                         "ExplRK1Stage1",
+                                         "ExplRK2Stage2",
+                                         "ExplRK3Stage3",
+                                         "ExplRK4Stage4",
+                                         "ExplRK3Stage4Reg2C",
+                                         "ExplRK3Stage7Reg2",
+                                         "ExplRK4Stage5Reg2C",
+                                         "ExplRK4Stage8Reg2",
+                                         "ExplRK4Stage5Reg3C",
+                                         "ExplRK5Stage9Reg2S"};
+
+      print_parameter(pcout,
+                      "Explicit time integrator",
+                      str_expl_time_int[(int)time_integrator_rk]);
+    }
+
     if(temporal_discretization == TemporalDiscretization::BDF)
     {
+      print_parameter(pcout, "Order of time integrator", order_time_integrator);
+
+      print_parameter(pcout, "Start with low order method", start_with_low_order);
+
       std::string str_treatment_conv[] = {"Undefined", "Explicit", "ExplicitOIF", "Implicit"};
 
       print_parameter(pcout,
                       "Treatment of convective term",
                       str_treatment_conv[(int)treatment_of_convective_term]);
+
+      if(treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+      {
+        std::string str_time_int_oif[] = {"Undefined",
+                                          "ExplRK1Stage1",
+                                          "ExplRK2Stage2",
+                                          "ExplRK3Stage3",
+                                          "ExplRK4Stage4",
+                                          "ExplRK3Stage4Reg2C",
+                                          "ExplRK3Stage7Reg2",
+                                          "ExplRK4Stage5Reg2C",
+                                          "ExplRK4Stage8Reg2",
+                                          "ExplRK4Stage5Reg3C",
+                                          "ExplRK5Stage9Reg2S"};
+
+        print_parameter(pcout,
+                        "Time integrator for OIF splitting",
+                        str_time_int_oif[(int)time_integrator_oif]);
+      }
     }
-
-    print_parameter(pcout, "Order of time integrator", order_time_integrator);
-
-    if(temporal_discretization == TemporalDiscretization::BDF)
-      print_parameter(pcout, "Start with low order method", start_with_low_order);
 
     std::string str_time_step_calc[] = {"Undefined",
                                         "ConstTimeStepUserSpecified",
@@ -576,14 +643,17 @@ public:
   // temporal discretization method
   TemporalDiscretization temporal_discretization;
 
-  // description: see enum declaration
-  TreatmentOfConvectiveTerm treatment_of_convective_term;
+  // description: see enum declaration (only relevant explicit time integration ExplRK)
+  TimeIntegratorRK time_integrator_rk;
 
-  // order of time integration scheme
+  // order of time integration scheme (only relevant for BDF time integration)
   unsigned int order_time_integrator;
 
-  // start with low order
+  // start with low order (only relevant for BDF time integration)
   bool start_with_low_order;
+
+  // description: see enum declaration (only relevant for BDF time integration)
+  TreatmentOfConvectiveTerm treatment_of_convective_term;
 
   // calculation of time step size
   TimeStepCalculation calculation_of_time_step_size;
@@ -597,6 +667,10 @@ public:
   // of operator-integration-factor splitting)
   double cfl_number;
 
+  // specify the time integration scheme that is used for the OIF substepping of the
+  // convective term (only relevant for BDF time integration)
+  TimeIntegratorRK time_integrator_oif;
+
   // cfl number for operator-integration-factor splitting (has to be smaller than the
   // critical time step size arising from the CFL restriction)
   double cfl_oif;
@@ -609,6 +683,12 @@ public:
   // MaxEfficiency, which means that the time step is selected such that the errors of
   // the temporal and spatial discretization are comparable
   double c_eff;
+
+  // exponent of fe_degree used in the calculation of the convective time step size
+  double exponent_fe_degree_convection;
+
+  // exponent of fe_degree used in the calculation of the diffusion time step size
+  double exponent_fe_degree_diffusion;
 
   /**************************************************************************************/
   /*                                                                                    */
