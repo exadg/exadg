@@ -162,7 +162,7 @@ private:
   Operator const & operator_dg;
   Operator const & operator_cg;
 
-  std::shared_ptr<CGToDGTransfer<Operator::DIM, MultigridNumber>> transfer;
+  std::shared_ptr<CGToDGTransfer<Operator::DIM, NumberMG>> transfer;
   // distributed sparse system matrix
   MatrixType system_matrix;
   // AMG preconditioner

@@ -35,12 +35,9 @@ include_directories(applications/macros)
 
 # Set the source files to be compiled
 SET( TARGET_SRC
-     #source/fe_navierstokes_evaluator.cc
-     #source/fe_navierstokes_solver.cc
-     source/fluid_base_algorithm.cc
-     source/SpaldingsLaw.cc
-     source/statistics_manager.cc
-     source/statistics_manager_ph.cc
+     include/incompressible_navier_stokes/xwall/SpaldingsLaw.cc
+     include/incompressible_navier_stokes/postprocessor/statistics_manager.cc
+     include/incompressible_navier_stokes/postprocessor/statistics_manager_ph.cc
      include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_adapter_base.cpp
      include/convection_diffusion/spatial_discretization/operators/convection_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/diffusive_operator.cpp

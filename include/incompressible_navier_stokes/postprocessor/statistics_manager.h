@@ -3,7 +3,6 @@
 #define __indexa_statistics_manager_h
 
 #include <deal.II/lac/parallel_vector.h>
-#include <fluid_base_algorithm.h>
 #include "../../incompressible_navier_stokes/infrastructure/fe_parameters.h"
 
 using namespace IncNS;
