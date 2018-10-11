@@ -38,10 +38,33 @@ Since we also have to install other software packages apart from the **naviersto
 ```bash
 mkdir sw
 ```
+### navierstokes code (part 1)
 
-### Trilinos code (optional)
+Go to the *workspace*-folder in your working directory
 
-For some functionalities in the navierstokes code (e.g., algebraic multigrid solver), **trilinos** is required. The default setting is to not install **trilinos** and installing this package is optional.
+```bash
+cd /working_directory/workspace/
+```
+
+##### Fork navierstokes project
+
+Fork from the supervisor's **navierstokes** project *git@gitlab.lrz.de:supervisor_id/navierstokes.git*, e.g.,
+
+*git@gitlab.lrz.de:ga34jem/navierstokes.git* (Niklas) or 
+*git@gitlab.lrz.de:ne96pad/navierstokes.git* (Martin). 
+
+This has to be done on website https://gitlab.lrz.de/ (open the supervisor's **navierstokes** project and press the *Fork* button). As a result, a **navierstokes** project with the student's ID **ab12xyz** is created.
+
+```bash
+git clone git@gitlab.lrz.de:ab12xyz/navierstokes.git
+git remote add supervisor git@gitlab.lrz.de:supervisor_id/navierstokes.git
+```
+
+### Interlude - install other software packages
+
+#### Trilinos code (optional)
+
+For some functionalities in the **navierstokes** code (e.g., algebraic multigrid solver), **trilinos** is required. The default setting is to not install **trilinos** and installing this package is optional.
 
 If you want to use **trilinos**, go to the *sw*-folder in your working directory
 
@@ -63,7 +86,7 @@ Copy the script *config_trilinos.sh* from the folder *navierstokes/scripts/* to 
 ```bash
 cp /working_directory/workspace/navierstokes/scripts/config_trilinos.sh .
 ```
-**N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described below, i.e., you have to fork and clone the **navierstokes** project.
+**N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described above, i.e., you have to fork and clone the **navierstokes** project.
 
 Next, adapt the directory settings at the top of the script and run the script
 
@@ -77,7 +100,7 @@ make -j2
 make install
 ```
 
-### deal.II code
+#### deal.II code
 
 The **navierstokes** code uses the **deal.II** library (https://www.dealii.org/), which is an open source finite element library based on the object-oriented C++ programming language.
 
@@ -113,7 +136,7 @@ Copy the script *config_dealii.sh* from the folder *navierstokes/scripts/* to th
 ```bash
 cp /working_directory/workspace/navierstokes/scripts/config_dealii.sh .
 ```
-**N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described below, i.e., you have to fork and clone the **navierstokes** project.
+**N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described above, i.e., you have to fork and clone the **navierstokes** project.
 
 ```bash
 ./config_dealii.sh
@@ -125,7 +148,7 @@ Build the **deal.II** code
 make -j2
 ```
 
-### fftw code (optional)
+#### fftw code (optional)
 
 Install **fftw** (Fast Fourier transformation) for evaluation of kinetic energy spectra:
 
@@ -143,38 +166,17 @@ Copy the script *combine_fftw.sh* from the folder *navierstokes/scripts/* to the
 ```bash
 cp /working_directory/workspace/navierstokes/scripts/combine_fftw.sh .
 ```
-**N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described below, i.e., you have to fork and clone the **navierstokes** project.
+**N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described above, i.e., you have to fork and clone the **navierstokes** project.
 
 Run the script in order to combine the two libraries *libfftw3.a* and *libfftw3_mpi.a*
 
 ```bash
-./combine.sh
+./combine_fftw.sh
 ```
 
-### navierstokes code
+### navierstokes code continued (part 2)
 
-The working directory is again */scratch/students_name/* for students at LNM. Create a folder named *workspace*
-
-```bash
-cd /working_directory/
-mkdir workspace
-cd workspace/
-```
-##### Fork navierstokes project
-
-Fork from the supervisor's **navierstokes** project *git@gitlab.lrz.de:supervisor_id/navierstokes.git*, e.g.,
-
-*git@gitlab.lrz.de:ga34jem/navierstokes.git* (Niklas) or 
-*git@gitlab.lrz.de:ne96pad/navierstokes.git* (Martin). 
-
-This has to be done on website https://gitlab.lrz.de/ (open the supervisor's **navierstokes** project and press the *Fork* button). As a result, a **navierstokes** project with the student's ID **ab12xyz** is created.
-
-```bash
-git clone git@gitlab.lrz.de:ab12xyz/navierstokes.git
-git remote add supervisor git@gitlab.lrz.de:supervisor_id/navierstokes.git
-```
-
-##### Link deal.II code and build the code
+#### Link deal.II code and build the code
 
 ```bash
 cd navierstokes/
@@ -206,7 +208,7 @@ You can now run your first simulations by selecting a test case in one of the *m
 mpirun -np xxx ./my_application
 ```
 
-##### Switching to debug-version
+#### Switching to debug-version
 
 To build the debug-version, run the following commands
 
@@ -225,7 +227,7 @@ cd applications/
 make -j2
 ```
 
-##### Working with git
+#### Working with git
 
 Get recent updates of the supervisor's **navierstokes** code
 
@@ -259,7 +261,7 @@ Start a merge-request on the website https://gitlab.lrz.de/:
 
 Open your own **navierstokes** project, and press button *Merge Requests*. Select your own project as source and the supervisor's project as target.
 
-### Setup an eclipse project
+#### Setup an eclipse project
 
 Open **eclipse** and choose folder *workspace* as "workspace" in eclipse
 
