@@ -61,6 +61,12 @@ cd fftw-3.3.7
 ./configure --enable-mpi --prefix=/scratch/students_name/sw/fftw-3.3.7-install
 make
 make install
-cd ../fftw-3.3.7-install
+cd ../fftw-3.3.7-install/lib/
 ```
+Copy script *compine.sh* to folder */scratch/students_name/sw/fftw-3.3.7-install/lib/*
 
+Run the script in order to combine the two libraries *libfftw3.a* and *libfftw3_mpi.a*
+
+```bash
+./combine.sh
+```
