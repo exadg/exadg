@@ -183,3 +183,19 @@ git push
 Start a merge-request on the website https://gitlab.lrz.de/:
 
 Open the supervisor's **navierstokes** project, and press button *Merge Requests*.
+
+### Setup an eclipse project
+
+Open eclipse and choose folder *workspace* as "workspace" in eclipse
+
+1. File > New > Project > C/C++ > Makefile Project with Existing Code
+  * fill in Project Name = navierstokes
+  * Existing Code Location = /working_directory/workspace/navierstokes/
+  * disable C, enable C++
+  * choose Cross GCC
+2. Project > Properties > C/C++ Build
+  * use default build command or user specified build command, e.g., make -j4
+  * fill in build directory (choose navierstokes/applications)
+3. Project > Properties > C/C++ General > Code Analysis: disable 'syntax and semantic errors'
+4. Project > Properties > C/C++ General > Formatter: lnm/styles/baci-eclipse-style
+5. Project > Properties > C/C++ General > Paths and Symbols: use /working_directory/sw/matrixfree/include (for Assembly, GNU C, GNU C++)
