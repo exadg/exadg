@@ -26,7 +26,7 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 4;
+unsigned int const FE_DEGREE_VELOCITY = 5;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set xwall specific parameters
@@ -34,7 +34,7 @@ unsigned int const FE_DEGREE_XWALL = 1;
 unsigned int const N_Q_POINTS_1D_XWALL = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 2;
+unsigned int const REFINE_STEPS_SPACE_MIN = 0;
 unsigned int const REFINE_STEPS_SPACE_MAX = 2; //REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
@@ -43,7 +43,7 @@ unsigned int const REFINE_STEPS_TIME_MAX = 0; //REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
 const double U_X_MAX = 1.0;
-const double VISCOSITY = 1.0e-2; //1.e-2; //2.5e-2;
+const double VISCOSITY = 2.5e-2; //1.e-2; //2.5e-2;
 const FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::LaplaceFormulation; //LaplaceFormulation; //DivergenceFormulation;
 
 enum class MeshType{ UniformCartesian, ComplexSurfaceManifold, ComplexVolumeManifold };
@@ -56,6 +56,7 @@ void InputParameters<dim>::set_input_parameters()
   problem_type = ProblemType::Unsteady;
   equation_type = EquationType::NavierStokes;
   formulation_viscous_term = FORMULATION_VISCOUS_TERM;
+  formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
   right_hand_side = false;
 
 
@@ -70,13 +71,13 @@ void InputParameters<dim>::set_input_parameters()
   temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   time_integrator_oif = TimeIntegratorOIF::ExplRK2Stage2;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepMaxEfficiency; //ConstTimeStepUserSpecified; //ConstTimeStepCFL; //ConstTimeStepUserSpecified;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepMaxEfficiency; //ConstTimeStepUserSpecified; //ConstTimeStepCFL; //ConstTimeStepUserSpecified;
   max_velocity = 1.4 * U_X_MAX;
   cfl = 0.0625;
   cfl_oif = cfl/1.0;
   cfl_exponent_fe_degree_velocity = 1.5;
   c_eff = 8.0;
-  time_step_size = 1.e-2; //5.e-5; //1.e-1; //1.e-4;
+  time_step_size = 5.e-5; //1.e-1; //1.e-4;
   max_number_of_time_steps = 1e8;
   order_time_integrator = 2;
   start_with_low_order = false; // true; // false;
@@ -113,6 +114,7 @@ void InputParameters<dim>::set_input_parameters()
   continuity_penalty_use_boundary_data = false;
   continuity_penalty_factor = divergence_penalty_factor;
   type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
+  add_penalty_terms_to_monolithic_system = false; //true;
 
   // TURBULENCE
   use_turbulence_model = false;
@@ -229,7 +231,7 @@ void InputParameters<dim>::set_input_parameters()
   update_preconditioner = false; //true;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion; //VelocityConvectionDiffusion; //InverseMassMatrix; //VelocityDiffusion;
+  momentum_preconditioner = MomentumPreconditioner::InverseMassMatrix; //VelocityConvectionDiffusion; //InverseMassMatrix; //VelocityDiffusion;
   multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::Chebyshev; //Jacobi; //Chebyshev; //GMRES;
 
   // Jacobi smoother data
@@ -261,7 +263,7 @@ void InputParameters<dim>::set_input_parameters()
   print_input_parameters = true; //false; //true;
 
   // write output for visualization of results
-  output_data.write_output = true; //false;
+  output_data.write_output = false;
   output_data.output_folder = "output/vortex/vtu/";
   output_data.output_name = "vortex";
   output_data.output_start_time = start_time;
@@ -282,8 +284,8 @@ void InputParameters<dim>::set_input_parameters()
   error_data.calculate_relative_errors = true;
   error_data.calculate_H1_seminorm_velocity = false;
   error_data.error_calc_start_time = start_time;
-  error_data.error_calc_interval_time = output_data.output_interval_time;
-  error_data.write_errors_to_file = true;
+  error_data.error_calc_interval_time = end_time - start_time;
+  error_data.write_errors_to_file = false; //true;
   error_data.filename_prefix = "output/vortex/error";
 
   // analysis of mass conservation error

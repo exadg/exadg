@@ -26,7 +26,7 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 3;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 3;
+unsigned int const FE_DEGREE_VELOCITY = 9;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
 // set xwall specific parameters
@@ -52,9 +52,9 @@ const double VISCOSITY = V_0*L/Re;
 const double MAX_VELOCITY = V_0;
 const double CHARACTERISTIC_TIME = L/V_0;
 
-std::string OUTPUT_FOLDER = "output/taylor_green_vortex/test/";
+std::string OUTPUT_FOLDER = "output/taylor_green_vortex/coupled_solver_BDF2_monolithic/divergence_formulation/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "Re1600_l3_k32";//"Re1600_l2_k1514_CFL_0-125_div_conti_penalty";
+std::string OUTPUT_NAME = "Re1600_N8_k9_CFL_0-15_div_normal_conti_penalty_1-0";
 
 enum class MeshType{ Cartesian, Curvilinear };
 const MeshType MESH_TYPE = MeshType::Cartesian;
@@ -69,6 +69,7 @@ void InputParameters<dim>::set_input_parameters()
   problem_type = ProblemType::Unsteady;
   equation_type = EquationType::NavierStokes;
   formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
+  formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
   right_hand_side = false;
 
   // PHYSICAL QUANTITIES
@@ -79,12 +80,13 @@ void InputParameters<dim>::set_input_parameters()
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
+  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit; //Implicit;
+  time_integrator_oif = TimeIntegratorOIF::ExplRK2Stage2;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
   max_velocity = MAX_VELOCITY;
-  cfl = 0.125;
-  cfl_oif = cfl/5.0;
+  cfl_oif = 0.15; //0.125;
+  cfl = cfl_oif * 1.0;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-3; // 1.0e-4;
   max_number_of_time_steps = 1e8;
@@ -119,11 +121,11 @@ void InputParameters<dim>::set_input_parameters()
   use_divergence_penalty = true;
   divergence_penalty_factor = 1.0e0;
   use_continuity_penalty = true;
+  continuity_penalty_factor = divergence_penalty_factor;
   continuity_penalty_use_boundary_data = false;
-  add_penalty_terms_to_monolithic_system = true;
   continuity_penalty_components = ContinuityPenaltyComponents::Normal;
   type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
-  continuity_penalty_factor = divergence_penalty_factor;
+  add_penalty_terms_to_monolithic_system = true;
 
   // TURBULENCE
   use_turbulence_model = false;
@@ -247,7 +249,7 @@ void InputParameters<dim>::set_input_parameters()
   print_input_parameters = true; //false;
 
   // write output for visualization of results
-  output_data.write_output = true;
+  output_data.write_output = false;
   output_data.output_folder = OUTPUT_FOLDER_VTU;
   output_data.output_name = OUTPUT_NAME;
   output_data.output_start_time = start_time;
@@ -284,7 +286,7 @@ void InputParameters<dim>::set_input_parameters()
   kinetic_energy_spectrum_data.filename_prefix = OUTPUT_FOLDER + "spectrum";
 
   // output of solver information
-  output_solver_info_every_timesteps = 1; //1e5;
+  output_solver_info_every_timesteps = 100; //1e5;
 }
 
 /**************************************************************************************/
