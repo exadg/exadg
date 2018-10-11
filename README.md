@@ -1,8 +1,8 @@
 Finite-element-based Navier-Stokes solvers
 ==========================================
 
-This is a collection of solvers for the Navier-Stokes equations based on
-high-order discontinuous and continuous finite element method.
+This project provides efficient solvers for the Navier-Stokes equations based on
+high-order discontinuous Galerkin finite element methods. By the use of efficient solution algorithms as well as solvers and preconditioners based on the matrix-free paradigm, this project aims at offering next generation's fluid solvers exploiting modern computer hardware and being prepared for the massively parallel era.
 
 ## Installation of software
 
