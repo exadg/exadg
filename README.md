@@ -8,7 +8,8 @@ high-order discontinuous and continuous finite element method.
 
 As a prerequisite to get access to the code, a new user has to login at https://gitlab.lrz.de/ with the TUMOnline account **ab12xyz** so that the user can be added to the project.
 
-**N.B.**: For students at LNM, the *scratch*-directory has to be used (as opposed to the home directory) as a folder for the subsequent installations. This directory is called *working_directory* in the following:
+**N.B.**: For students at LNM, the *scratch*-directory has to be used (as opposed to the home directory) as a folder for the subsequent installations. 
+This directory is called *working_directory* in the following:
 
 Go to *working_directory*, e.g.,
 
@@ -17,6 +18,8 @@ cd /scratch/students_name/
 ```
 
 ### deal.II code
+
+The **navierstokes** code uses the **deal.II** library (https://www.dealii.org/), which is an open source finite element library based on the object-oriented C++ programming language.
 
 Create a folder *sw* (software) where to install the deal.II code
 
@@ -146,3 +149,37 @@ make release
 cd applications/
 make -j2
 ```
+
+##### Working with git
+
+Get recent updates of the supervisor's **navierstokes** code
+
+```bash
+git pull supervisor master
+```
+Commit changes and push:
+
+Run *clang-format* for all files that have been changed, e.g.,
+
+```bash
+clang-format -i changed_file.cc
+clang-format -i new_file.h
+```
+
+Get an overview of what has been changed and add/commit. The following commands are used alternatingly
+
+```bash
+git status
+git add changed_file.cc new_file.h
+git commit -m "a message describing what has been done/changed"
+```
+
+and finally push
+
+```bash
+git push
+```
+
+Start a merge-request on the website https://gitlab.lrz.de/:
+
+Open the supervisor's **navierstokes** project, and press button *Merge Requests*.
