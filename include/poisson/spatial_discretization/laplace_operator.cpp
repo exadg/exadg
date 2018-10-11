@@ -310,6 +310,10 @@ LaplaceOperator<dim, fe_degree, Number>::get_new(unsigned int deg) const
 {
   switch(deg)
   {
+#if DEGREE_0
+    case 0:
+      return new LaplaceOperator<dim, 0, Number>();
+#endif
 #if DEGREE_1
     case 1:
       return new LaplaceOperator<dim, 1, Number>();

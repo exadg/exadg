@@ -4,6 +4,13 @@
 
 namespace ConvDiff
 {
+#if DIM_2 && DEGREE_0 && (OP_FLOAT || MG_FLOAT)
+template class MassMatrixOperator<2, 0, float>;
+#endif
+#if DIM_2 && DEGREE_0 && (OP_DOUBLE || MG_DOUBLE)
+template class MassMatrixOperator<2, 0, double>;
+#endif
+
 #if DIM_2 && DEGREE_1 && (OP_FLOAT || MG_FLOAT)
 template class MassMatrixOperator<2, 1, float>;
 #endif
