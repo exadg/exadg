@@ -57,9 +57,9 @@ make -j2
 
 ### fftw code (optional)
 
-Install **fftw** (Fast Fourier transformation) for evaluation of kinetic energy spectra
+Install **fftw** (Fast Fourier transformation) for evaluation of kinetic energy spectra:
 
-download **fftw** from homepage http://www.fftw.org/download.html and copy to folder *sw*
+Download **fftw** from homepage http://www.fftw.org/download.html and copy to folder *sw*
 
 ```bash
 cd fftw-3.3.7
@@ -182,11 +182,11 @@ git push
 
 Start a merge-request on the website https://gitlab.lrz.de/:
 
-Open the supervisor's **navierstokes** project, and press button *Merge Requests*.
+Open your own **navierstokes** project, and press button *Merge Requests*. Select your own project as source and the supervisor's project as target.
 
 ### Setup an eclipse project
 
-Open eclipse and choose folder *workspace* as "workspace" in eclipse
+Open **eclipse** and choose folder *workspace* as "workspace" in eclipse
 
 1. File > New > Project > C/C++ > Makefile Project with Existing Code
   * fill in Project Name = navierstokes
