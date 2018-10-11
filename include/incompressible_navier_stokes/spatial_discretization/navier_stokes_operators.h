@@ -3762,14 +3762,19 @@ template<int dim>
 struct ConvectiveOperatorData
 {
   ConvectiveOperatorData()
-    : dof_index(0),
+    : formulation_convective_term(FormulationConvectiveTerm::DivergenceFormulation),
+      dof_index(0),
       use_outflow_bc(false),
       type_imposition_of_dirichlet_values(TypeDirichletBCs::Mirror)
   {
   }
 
-  unsigned int     dof_index;
-  bool             use_outflow_bc;
+  FormulationConvectiveTerm formulation_convective_term;
+
+  unsigned int dof_index;
+
+  bool use_outflow_bc;
+
   TypeDirichletBCs type_imposition_of_dirichlet_values;
 
   std::shared_ptr<BoundaryDescriptorU<dim>> bc;
@@ -3835,13 +3840,34 @@ public:
                MatrixFree<dim, value_type>::only_values);
   }
 
-  // TODO: OIF splitting approach
+  void
+  evaluate_add(VectorType & dst, VectorType const & src, double const evaluation_time) const
+  {
+    this->eval_time = evaluation_time;
+
+    data->loop(&This::cell_loop_nonlinear_operator,
+               &This::face_loop_nonlinear_operator,
+               &This::boundary_face_loop_nonlinear_operator,
+               this,
+               dst,
+               src,
+               false /*zero_dst_vector = false*/,
+               MatrixFree<dim, value_type>::only_values,
+               MatrixFree<dim, value_type>::only_values);
+  }
+
+  // TODO: OIF splitting approach: transport with interpolated/extrapolated velocity.
+  //       We can use the element variable velocity_linearization for this purpose.
   void
   evaluate_oif(VectorType &       dst,
                VectorType const & src,
                double const       evaluation_time,
                VectorType const & velocity) const
   {
+    AssertThrow(operator_data.formulation_convective_term ==
+                  FormulationConvectiveTerm::DivergenceFormulation,
+                ExcMessage("Only divergence formulation is implemented."));
+
     this->eval_time        = evaluation_time;
     velocity_linearization = &velocity;
 
@@ -3859,27 +3885,15 @@ public:
   }
 
   void
-  evaluate_add(VectorType & dst, VectorType const & src, double const evaluation_time) const
-  {
-    this->eval_time = evaluation_time;
-
-    data->loop(&This::cell_loop_nonlinear_operator,
-               &This::face_loop_nonlinear_operator,
-               &This::boundary_face_loop_nonlinear_operator,
-               this,
-               dst,
-               src,
-               false /*zero_dst_vector = false*/,
-               MatrixFree<dim, value_type>::only_values,
-               MatrixFree<dim, value_type>::only_values);
-  }
-
-  void
   apply_linearized(VectorType &       dst,
                    VectorType const & src,
                    VectorType const * vector_linearization,
                    double const       evaluation_time) const
   {
+    AssertThrow(operator_data.formulation_convective_term ==
+                  FormulationConvectiveTerm::DivergenceFormulation,
+                ExcMessage("Only divergence formulation is implemented."));
+
     this->eval_time        = evaluation_time;
     velocity_linearization = vector_linearization;
 
@@ -3902,6 +3916,10 @@ public:
                        VectorType const * vector_linearization,
                        double const       evaluation_time) const
   {
+    AssertThrow(operator_data.formulation_convective_term ==
+                  FormulationConvectiveTerm::DivergenceFormulation,
+                ExcMessage("Only divergence formulation is implemented."));
+
     this->eval_time        = evaluation_time;
     velocity_linearization = vector_linearization;
 
@@ -3924,6 +3942,10 @@ public:
                                 VectorType const * vector_linearization,
                                 double const       evaluation_time) const
   {
+    AssertThrow(operator_data.formulation_convective_term ==
+                  FormulationConvectiveTerm::DivergenceFormulation,
+                ExcMessage("Only divergence formulation is implemented."));
+
     this->eval_time        = evaluation_time;
     velocity_linearization = vector_linearization;
 
@@ -3946,6 +3968,10 @@ public:
                                     VectorType const * vector_linearization,
                                     double const       evaluation_time) const
   {
+    AssertThrow(operator_data.formulation_convective_term ==
+                  FormulationConvectiveTerm::DivergenceFormulation,
+                ExcMessage("Only divergence formulation is implemented."));
+
     this->eval_time        = evaluation_time;
     velocity_linearization = vector_linearization;
 
@@ -3967,6 +3993,10 @@ public:
                      VectorType const * vector_linearization,
                      double const       evaluation_time) const
   {
+    AssertThrow(operator_data.formulation_convective_term ==
+                  FormulationConvectiveTerm::DivergenceFormulation,
+                ExcMessage("Only divergence formulation is implemented."));
+
     this->eval_time        = evaluation_time;
     velocity_linearization = vector_linearization;
 
@@ -3990,6 +4020,10 @@ public:
                VectorType const * vector_linearization,
                double const       evaluation_time) const
   {
+    AssertThrow(operator_data.formulation_convective_term ==
+                  FormulationConvectiveTerm::DivergenceFormulation,
+                ExcMessage("Only divergence formulation is implemented."));
+
     this->eval_time        = evaluation_time;
     velocity_linearization = vector_linearization;
 
@@ -4013,6 +4047,10 @@ public:
                               VectorType const *                          vector_linearization,
                               double const                                evaluation_time) const
   {
+    AssertThrow(operator_data.formulation_convective_term ==
+                  FormulationConvectiveTerm::DivergenceFormulation,
+                ExcMessage("Only divergence formulation is implemented."));
+
     this->eval_time        = evaluation_time;
     velocity_linearization = vector_linearization;
 
@@ -4040,30 +4078,55 @@ private:
   inline void
   do_cell_integral_nonlinear_operator(FEEvaluation & fe_eval) const
   {
-    fe_eval.evaluate(true, false, false);
-    for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+    if(operator_data.formulation_convective_term ==
+       FormulationConvectiveTerm::DivergenceFormulation)
     {
-      // nonlinear convective flux F(u) = uu
-      Tensor<1, dim, VectorizedArray<value_type>> u = fe_eval.get_value(q);
-      Tensor<2, dim, VectorizedArray<value_type>> F = outer_product(u, u);
-      fe_eval.submit_gradient(-F, q); // minus sign due to integration by parts
+      fe_eval.evaluate(true, false, false);
+      for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+      {
+        // nonlinear convective flux F(u) = uu
+        Tensor<1, dim, VectorizedArray<value_type>> u = fe_eval.get_value(q);
+        Tensor<2, dim, VectorizedArray<value_type>> F = outer_product(u, u);
+        fe_eval.submit_gradient(-F, q); // minus sign due to integration by parts
+      }
+      fe_eval.integrate(false, true);
     }
-    fe_eval.integrate(false, true);
-
-    // TODO: energy preserving formulation of convective term
-    //    fe_eval.evaluate (true,true,false);
-    //    for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
-    //    {
-    //      // nonlinear convective flux F(u) = uu
-    //      Tensor<1,dim,VectorizedArray<value_type> > u = fe_eval.get_value(q);
-    //      Tensor<2,dim,VectorizedArray<value_type> > F = outer_product(u,u);
-    //      VectorizedArray<value_type> divergence = fe_eval.get_divergence(q);
-    //      Tensor<1,dim,VectorizedArray<value_type> > div_term = -0.5*divergence*u;
-    //      fe_eval.submit_gradient (-F, q); // minus sign due to integration by parts
-    //      fe_eval.submit_value(div_term,q);
-    //    }
-    //    fe_eval.integrate (true,true);
-    // TODO: energy preserving formulation of convective term
+    else if(operator_data.formulation_convective_term ==
+            FormulationConvectiveTerm::ConvectiveFormulation)
+    {
+      fe_eval.evaluate(true, true, false);
+      for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+      {
+        // convective formulation: (u * grad) u = grad(u) * u
+        Tensor<1, dim, VectorizedArray<value_type>> u          = fe_eval.get_value(q);
+        Tensor<2, dim, VectorizedArray<value_type>> gradient_u = fe_eval.get_gradient(q);
+        Tensor<1, dim, VectorizedArray<value_type>> F          = gradient_u * u;
+        // plus sign since the strong formulation is used, i.e. integration by parts is performed
+        // twice
+        fe_eval.submit_value(F, q);
+      }
+      fe_eval.integrate(true, false);
+    }
+    else if(operator_data.formulation_convective_term ==
+            FormulationConvectiveTerm::EnergyPreservingFormulation)
+    {
+      fe_eval.evaluate(true, true, false);
+      for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+      {
+        // nonlinear convective flux F(u) = uu
+        Tensor<1, dim, VectorizedArray<value_type>> u          = fe_eval.get_value(q);
+        Tensor<2, dim, VectorizedArray<value_type>> F          = outer_product(u, u);
+        VectorizedArray<value_type>                 divergence = fe_eval.get_divergence(q);
+        Tensor<1, dim, VectorizedArray<value_type>> div_term   = -0.5 * divergence * u;
+        fe_eval.submit_gradient(-F, q); // minus sign due to integration by parts
+        fe_eval.submit_value(div_term, q);
+      }
+      fe_eval.integrate(true, true);
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
   }
 
   template<typename FEEvaluation>
@@ -4085,9 +4148,10 @@ private:
   }
 
   /*
+   *  Lax-Friedrichs flux (divergence formulation)
    *  Calculation of lambda according to Shahbazi et al.:
    *  lambda = max ( max |lambda(flux_jacobian_M)| , max |lambda(flux_jacobian_P)| )
-   *         = max ( | 2*(uM)^T*normal | , | 2*(uM)^T*normal | )
+   *         = max ( | 2*(uM)^T*normal | , | 2*(uP)^T*normal | )
    */
   inline void
   calculate_lambda(VectorizedArray<value_type> &       lambda,
@@ -4098,7 +4162,7 @@ private:
   }
 
   /*
-   *  Calculate Lax-Friedrichs flux for nonlinear operator.
+   *  Calculate Lax-Friedrichs flux for nonlinear operator (divergence formulation).
    */
   inline void
     calculate_flux_nonlinear_operator(Tensor<1, dim, VectorizedArray<value_type>> &       flux,
@@ -4120,6 +4184,26 @@ private:
     calculate_lambda(lambda, uM_n, uP_n);
 
     flux = average_normal_flux + 0.5 * lambda * jump_value;
+  }
+
+  /*
+   *  Calculate upwind flux for nonlinear operator (convective formulation).
+   */
+  inline void calculate_upwind_flux_nonlinear_operator(
+    Tensor<1, dim, VectorizedArray<value_type>> &       flux,
+    Tensor<1, dim, VectorizedArray<value_type>> const & uM,
+    Tensor<1, dim, VectorizedArray<value_type>> const & uP,
+    Tensor<1, dim, VectorizedArray<value_type>> const & normalM) const
+  {
+    Tensor<1, dim, VectorizedArray<value_type>> average_velocity =
+      make_vectorized_array<value_type>(0.5) * (uM + uP);
+
+    VectorizedArray<value_type> average_normal_velocity = average_velocity * normalM;
+
+    Tensor<1, dim, VectorizedArray<value_type>> jump_value = uM - uP;
+
+    flux = average_normal_velocity * average_velocity +
+           0.5 * std::abs(average_normal_velocity) * jump_value;
   }
 
   /*
@@ -4200,7 +4284,8 @@ private:
     else if(boundary_type == BoundaryTypeU::Symmetry)
     {
       Tensor<1, dim, VectorizedArray<value_type>> normalM = fe_eval.get_normal_vector(q);
-      uP                                                  = uM - 2. * (uM * normalM) * normalM;
+
+      uP = uM - 2. * (uM * normalM) * normalM;
     }
     else
     {
@@ -4316,34 +4401,69 @@ private:
       fe_eval_neighbor.read_dof_values(src);
       fe_eval_neighbor.evaluate(true, false);
 
-      for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+      if(operator_data.formulation_convective_term ==
+         FormulationConvectiveTerm::DivergenceFormulation)
       {
-        Tensor<1, dim, VectorizedArray<value_type>> uM     = fe_eval.get_value(q);
-        Tensor<1, dim, VectorizedArray<value_type>> uP     = fe_eval_neighbor.get_value(q);
-        Tensor<1, dim, VectorizedArray<value_type>> normal = fe_eval.get_normal_vector(q);
+        for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+        {
+          Tensor<1, dim, VectorizedArray<value_type>> uM     = fe_eval.get_value(q);
+          Tensor<1, dim, VectorizedArray<value_type>> uP     = fe_eval_neighbor.get_value(q);
+          Tensor<1, dim, VectorizedArray<value_type>> normal = fe_eval.get_normal_vector(q);
 
-        Tensor<1, dim, VectorizedArray<value_type>> flux;
-        calculate_flux_nonlinear_operator(flux, uM, uP, normal);
+          Tensor<1, dim, VectorizedArray<value_type>> flux;
+          calculate_flux_nonlinear_operator(flux, uM, uP, normal);
 
-        fe_eval.submit_value(flux, q);
-        fe_eval_neighbor.submit_value(-flux, q); // minus sign since n⁺ = - n⁻
-
-        // TODO: energy preserving flux function
-        //        Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval.get_value(q);
-        //        Tensor<1,dim,VectorizedArray<value_type> > uP = fe_eval_neighbor.get_value(q);
-        //        Tensor<1,dim,VectorizedArray<value_type> > jump = uM - uP;
-        //        Tensor<1,dim,VectorizedArray<value_type> > normal = fe_eval.get_normal_vector(q);
-        //
-        //        Tensor<1,dim,VectorizedArray<value_type> > flux, flux_m, flux_p;
-        //        calculate_flux_nonlinear_operator(flux,uM,uP,normal);
-        //
-        //        flux_m = flux + 0.25 * jump*normal * uP;
-        //        flux_p = -flux + 0.25 * jump*normal * uM;
-        //
-        //        fe_eval.submit_value(flux_m,q);
-        //        fe_eval_neighbor.submit_value(flux_p,q);
-        // TODO: energy preserving flux function
+          fe_eval.submit_value(flux, q);
+          fe_eval_neighbor.submit_value(-flux, q); // minus sign since n⁺ = - n⁻
+        }
       }
+      else if(operator_data.formulation_convective_term ==
+              FormulationConvectiveTerm::ConvectiveFormulation)
+      {
+        for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+        {
+          Tensor<1, dim, VectorizedArray<value_type>> uM     = fe_eval.get_value(q);
+          Tensor<1, dim, VectorizedArray<value_type>> uP     = fe_eval_neighbor.get_value(q);
+          Tensor<1, dim, VectorizedArray<value_type>> normal = fe_eval.get_normal_vector(q);
+
+          Tensor<1, dim, VectorizedArray<value_type>> flux_times_normal;
+          calculate_upwind_flux_nonlinear_operator(flux_times_normal, uM, uP, normal);
+          VectorizedArray<value_type> average_normal_velocity = 0.5 * (uM + uP) * normal;
+
+          // second term appears since the strong formulation is implemented (integration by parts
+          // is performed twice)
+          fe_eval.submit_value(flux_times_normal - average_normal_velocity * uM, q);
+          // opposite signs since n⁺ = - n⁻
+          fe_eval_neighbor.submit_value(-flux_times_normal + average_normal_velocity * uP, q);
+        }
+      }
+      else if(operator_data.formulation_convective_term ==
+              FormulationConvectiveTerm::EnergyPreservingFormulation)
+      {
+        for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+        {
+          Tensor<1, dim, VectorizedArray<value_type>> uM     = fe_eval.get_value(q);
+          Tensor<1, dim, VectorizedArray<value_type>> uP     = fe_eval_neighbor.get_value(q);
+          Tensor<1, dim, VectorizedArray<value_type>> jump   = uM - uP;
+          Tensor<1, dim, VectorizedArray<value_type>> normal = fe_eval.get_normal_vector(q);
+
+          Tensor<1, dim, VectorizedArray<value_type>> flux, flux_m, flux_p;
+          calculate_flux_nonlinear_operator(flux, uM, uP, normal);
+
+          // corrections to obtain an energy preserving flux (which is not conservative!)
+          flux_m = flux + 0.25 * jump * normal * uP;
+          flux_p = -flux + 0.25 * jump * normal * uM;
+
+          fe_eval.submit_value(flux_m, q);
+          fe_eval_neighbor.submit_value(flux_p, q);
+        }
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Not implemented."));
+      }
+
+
       fe_eval.integrate(true, false);
       fe_eval_neighbor.integrate(true, false);
 
@@ -4384,54 +4504,87 @@ private:
       fe_eval.read_dof_values(src);
       fe_eval.evaluate(true, false);
 
-      for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+      if(operator_data.formulation_convective_term ==
+         FormulationConvectiveTerm::DivergenceFormulation)
       {
-        Tensor<1, dim, VectorizedArray<value_type>> uM = fe_eval.get_value(q);
-        Tensor<1, dim, VectorizedArray<value_type>> uP;
-        calculate_exterior_velocity_boundary_face(uP, uM, q, fe_eval, boundary_type, boundary_id);
-        Tensor<1, dim, VectorizedArray<value_type>> normalM = fe_eval.get_normal_vector(q);
-
-        // calculate flux
-        Tensor<1, dim, VectorizedArray<value_type>> flux;
-
-        if(operator_data.use_outflow_bc == true && boundary_type == BoundaryTypeU::Neumann)
+        for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
         {
-          // outflow BC according to Gravemeier et al. (2012):
-          // we need a factor indicating whether we have inflow or outflow
-          // on the Neumann part of the boundary.
-          // outflow: factor =  1.0 (do nothing, neutral element of multiplication)
-          // inflow:  factor = -1.0 (set convective flux to zero)
-          VectorizedArray<value_type> outflow_indicator = make_vectorized_array<value_type>(1.0);
+          Tensor<1, dim, VectorizedArray<value_type>> uM = fe_eval.get_value(q);
+          Tensor<1, dim, VectorizedArray<value_type>> uP;
+          calculate_exterior_velocity_boundary_face(uP, uM, q, fe_eval, boundary_type, boundary_id);
+          Tensor<1, dim, VectorizedArray<value_type>> normalM = fe_eval.get_normal_vector(q);
 
-          VectorizedArray<value_type> uM_n = uM * normalM;
+          // calculate flux
+          Tensor<1, dim, VectorizedArray<value_type>> flux;
 
-          for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
+          if(operator_data.use_outflow_bc == true && boundary_type == BoundaryTypeU::Neumann)
           {
-            if(uM_n[v] < 0.0) // inflow
-              outflow_indicator[v] = -1.0;
+            // outflow BC according to Gravemeier et al. (2012):
+            // we need a factor indicating whether we have inflow or outflow
+            // on the Neumann part of the boundary.
+            // outflow: factor =  1.0 (do nothing, neutral element of multiplication)
+            // inflow:  factor = -1.0 (set convective flux to zero)
+            VectorizedArray<value_type> outflow_indicator = make_vectorized_array<value_type>(1.0);
+
+            VectorizedArray<value_type> uM_n = uM * normalM;
+
+            for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
+            {
+              if(uM_n[v] < 0.0) // inflow
+                outflow_indicator[v] = -1.0;
+            }
+
+            calculate_flux_nonlinear_operator(flux, uM, uP, normalM, outflow_indicator);
+          }
+          else // standard
+          {
+            calculate_flux_nonlinear_operator(flux, uM, uP, normalM);
           }
 
-          calculate_flux_nonlinear_operator(flux, uM, uP, normalM, outflow_indicator);
+          fe_eval.submit_value(flux, q);
         }
-        else // standard
-        {
-          calculate_flux_nonlinear_operator(flux, uM, uP, normalM);
-        }
-
-        fe_eval.submit_value(flux, q);
-
-        // TODO: energy preserving flux function
-        //        Tensor<1,dim,VectorizedArray<value_type> > uM = fe_eval.get_value(q);
-        //        Tensor<1,dim,VectorizedArray<value_type> > uP;
-        //        calculate_exterior_velocity_boundary_face(uP,uM,q,fe_eval,boundary_type,boundary_id);
-        //        Tensor<1,dim,VectorizedArray<value_type> > normalM = fe_eval.get_normal_vector(q);
-        //
-        //        Tensor<1,dim,VectorizedArray<value_type> > flux;
-        //        calculate_flux_nonlinear_operator(flux,uM,uP,normalM);
-        //        flux = flux + 0.25 * (uM-uP)*normalM * uP;
-        //        fe_eval.submit_value(flux,q);
-        // TODO: energy preserving flux function
       }
+      else if(operator_data.formulation_convective_term ==
+              FormulationConvectiveTerm::ConvectiveFormulation)
+      {
+        for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+        {
+          Tensor<1, dim, VectorizedArray<value_type>> uM = fe_eval.get_value(q);
+          Tensor<1, dim, VectorizedArray<value_type>> uP;
+          calculate_exterior_velocity_boundary_face(uP, uM, q, fe_eval, boundary_type, boundary_id);
+          Tensor<1, dim, VectorizedArray<value_type>> normal = fe_eval.get_normal_vector(q);
+
+          Tensor<1, dim, VectorizedArray<value_type>> flux_times_normal;
+          calculate_upwind_flux_nonlinear_operator(flux_times_normal, uM, uP, normal);
+          VectorizedArray<value_type> average_normal_velocity = 0.5 * (uM + uP) * normal;
+
+          // second term appears since the strong formulation is implemented (integration by parts
+          // is performed twice)
+          fe_eval.submit_value(flux_times_normal - average_normal_velocity * uM, q);
+        }
+      }
+      else if(operator_data.formulation_convective_term ==
+              FormulationConvectiveTerm::EnergyPreservingFormulation)
+      {
+        for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+        {
+          Tensor<1, dim, VectorizedArray<value_type>> uM = fe_eval.get_value(q);
+          Tensor<1, dim, VectorizedArray<value_type>> uP;
+          calculate_exterior_velocity_boundary_face(uP, uM, q, fe_eval, boundary_type, boundary_id);
+          Tensor<1, dim, VectorizedArray<value_type>> normalM = fe_eval.get_normal_vector(q);
+
+          Tensor<1, dim, VectorizedArray<value_type>> flux;
+          calculate_flux_nonlinear_operator(flux, uM, uP, normalM);
+          // corrections to obtain an energy preserving flux (which is not conservative!)
+          flux = flux + 0.25 * (uM - uP) * normalM * uP;
+          fe_eval.submit_value(flux, q);
+        }
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Not implemented."));
+      }
+
       fe_eval.integrate(true, false);
       fe_eval.distribute_local_to_global(dst);
     }

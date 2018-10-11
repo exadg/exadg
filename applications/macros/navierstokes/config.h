@@ -10,6 +10,7 @@
 #define MG_FLOAT 1
 #define MG_DOUBLE 0
 
+#define DEGREE_0 1
 #define DEGREE_1 1
 #define DEGREE_2 1
 #define DEGREE_3 1

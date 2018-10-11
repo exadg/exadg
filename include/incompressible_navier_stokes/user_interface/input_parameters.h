@@ -67,6 +67,17 @@ enum class FormulationViscousTerm
   LaplaceFormulation
 };
 
+/*
+ *  Formulation of convective term: divergence formulation or convective formulation
+ */
+enum class FormulationConvectiveTerm
+{
+  Undefined,
+  DivergenceFormulation,
+  ConvectiveFormulation,
+  EnergyPreservingFormulation
+};
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 PHYSICAL QUANTITIES                                */
@@ -621,7 +632,8 @@ public:
       problem_type(ProblemType::Undefined),
       equation_type(EquationType::Undefined),
       use_outflow_bc_convective_term(false),
-      formulation_viscous_term(FormulationViscousTerm::Undefined),
+      formulation_viscous_term(FormulationViscousTerm::LaplaceFormulation),
+      formulation_convective_term(FormulationConvectiveTerm::DivergenceFormulation),
       right_hand_side(false),
 
       // PHYSICAL QUANTITIES
@@ -860,7 +872,17 @@ public:
     // MATHEMATICAL MODEL
     AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("parameter must be defined"));
     AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
+
+    if(use_outflow_bc_convective_term)
+    {
+      AssertThrow(formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation,
+                  ExcMessage("Outflow boundary condition for convective term is currently "
+                             "only implemented for divergence formulation of convective term"));
+    }
+
     AssertThrow(formulation_viscous_term != FormulationViscousTerm::Undefined,
+                ExcMessage("parameter must be defined"));
+    AssertThrow(formulation_convective_term != FormulationConvectiveTerm::Undefined,
                 ExcMessage("parameter must be defined"));
 
     // PHYSICAL QUANTITIES
@@ -1122,6 +1144,16 @@ public:
                     "Formulation of viscous term",
                     str_form_viscous_term[(int)formulation_viscous_term]);
 
+    // formulation of convective term
+    std::string str_form_convective_term[] = {"Undefined",
+                                              "Divergence formulation",
+                                              "Convective formulation",
+                                              "Energy preserving formulation"};
+
+    print_parameter(pcout,
+                    "Formulation of convective term",
+                    str_form_convective_term[(int)formulation_convective_term]);
+
     // right hand side
     print_parameter(pcout, "Right-hand side", right_hand_side);
   }
@@ -1322,7 +1354,7 @@ public:
       std::string continuity_penalty_components_str[] = {"Undefined", "All", "Normal"};
 
       print_parameter(pcout,
-                      "Continuity penalty term compenents",
+                      "Continuity penalty term components",
                       continuity_penalty_components_str[(int)continuity_penalty_components]);
     }
 
@@ -1779,6 +1811,9 @@ public:
 
   // description: see enum declaration
   FormulationViscousTerm formulation_viscous_term;
+
+  // description: see enum declaration
+  FormulationConvectiveTerm formulation_convective_term;
 
   // if the body force vector on the right-hand side of the momentum equation of the
   // Navier-Stokes equations is unequal zero, set right_hand_side = true
