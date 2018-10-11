@@ -8,25 +8,108 @@ high-order discontinuous Galerkin finite element methods. By the use of efficien
 
 As a prerequisite to get access to the code, a new user has to login at https://gitlab.lrz.de/ with the TUMOnline account **ab12xyz** so that the user can be added to the project.
 
-**N.B.**: For students at LNM, the *scratch*-directory has to be used (as opposed to the home directory) as a folder for the subsequent installations. 
-This directory is called *working_directory* in the following:
+### Structure of folders
 
-Go to *working_directory*, e.g.,
+Go to your *working_directory*
+
+```bash
+cd /working_directory/
+```
+
+**N.B.**: For students at LNM, the *scratch*-directory has to be used (as opposed to the home directory) as a folder for the subsequent installations
 
 ```bash
 cd /scratch/students_name/
 ```
+This directory is called *working_directory* in the following. 
 
-### deal.II code
+For other users, the working directory might for example be
 
-The **navierstokes** code uses the **deal.II** library (https://www.dealii.org/), which is an open source finite element library based on the object-oriented C++ programming language.
+```bash
+cd /home/username/
+```
+We now create a folder called *workspace* in the *working_directory/* where we will later install the **navierstokes** code
 
-Create a folder *sw* (software) where to install the deal.II code
+```bash
+mkdir workspace
+```
+Since we also have to install other software packages apart from the **navierstokes** code, we create another folder called *sw* (software) for third party software packages
 
 ```bash
 mkdir sw
-cd sw/
 ```
+### navierstokes code (part 1)
+
+Go to the *workspace*-folder in your working directory
+
+```bash
+cd /working_directory/workspace/
+```
+
+##### Fork navierstokes project
+
+Fork from the supervisor's **navierstokes** project *git@gitlab.lrz.de:supervisor_id/navierstokes.git*, e.g.,
+
+*git@gitlab.lrz.de:ga34jem/navierstokes.git* (Niklas) or 
+*git@gitlab.lrz.de:ne96pad/navierstokes.git* (Martin). 
+
+This has to be done on website https://gitlab.lrz.de/ (open the supervisor's **navierstokes** project and press the *Fork* button). As a result, a **navierstokes** project with the student's ID **ab12xyz** is created.
+
+```bash
+git clone git@gitlab.lrz.de:ab12xyz/navierstokes.git
+git remote add supervisor git@gitlab.lrz.de:supervisor_id/navierstokes.git
+```
+
+### Interlude - install other software packages
+
+#### Trilinos code (optional)
+
+For some functionalities in the **navierstokes** code (e.g., algebraic multigrid solver), **trilinos** is required. The default setting is to not install **trilinos** and installing this package is optional.
+
+If you want to use **trilinos**, go to the *sw*-folder in your working directory
+
+```bash
+cd /working_directory/sw/
+```
+Download **trilinos** and run the following commands
+
+```bash
+wget https://github.com/trilinos/Trilinos/archive/trilinos-release-12-12-1.tar.gz
+tar xf Trilinos-trilinos-release-12-12-1.tar.gz 
+cd Trilinos-trilinos-release-12-12-1/
+
+mkdir build
+cd build/
+```
+Copy the script *config_trilinos.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
+
+```bash
+cp /working_directory/workspace/navierstokes/scripts/config_trilinos.sh .
+```
+**N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described above, i.e., you have to fork and clone the **navierstokes** project.
+
+Next, adapt the directory settings at the top of the script and run the script
+
+```bash
+bash ./config_trilinos.sh
+```
+Build the code
+
+```bash
+make -j2
+make install
+```
+
+#### deal.II code
+
+The **navierstokes** code uses the **deal.II** library (https://www.dealii.org/), which is an open source finite element library based on the object-oriented C++ programming language.
+
+Go to the *sw*-folder in your working directory
+
+```bash
+cd /working_directory/sw/
+```
+
 Clone the **deal.II** code from the gitlab project called **matrixfree**
 
 ```bash
@@ -48,14 +131,40 @@ Create a folder *build*
 mkdir build
 cd build/
 ```
-Copy the file *config.mpi* to the build-folder and adjust folders in *config.mpi* to the folders on the local machine (write **matrixfree** isntead of **deal.II** in the last line)
+Copy the script *config_dealii.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
 
 ```bash
-./config.mpi
+cp /working_directory/workspace/navierstokes/scripts/config_dealii.sh .
+```
+**N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described above, i.e., you have to fork and clone the **navierstokes** project.
+
+Next, adapt the directory settings at the top of the script and switch on trilinos if desired (and adjust the trilinos folder if necessary)
+
+```bash
+...
+-D DEAL_II_WITH_TRILINOS:BOOL="ON"
+...
+```
+Run the script
+
+```bash
+./config_dealii.sh
+```
+
+Build the **deal.II** code
+
+```bash
 make -j2
 ```
 
-### fftw code (optional)
+**Remark**: If you later change settings and want to run the cmake script again, remove *CMakeCache.txt* and *CMakeFiles/* in advance
+
+```bash
+rm -rf CMakeCache.txt CMakeFiles/
+./config_dealii.sh
+```
+
+#### fftw code (optional)
 
 Install **fftw** (Fast Fourier transformation) for evaluation of kinetic energy spectra:
 
@@ -68,38 +177,22 @@ make
 make install
 cd ../fftw-3.3.7-install/lib/
 ```
-Copy script *compine.sh* to folder */working_directory/sw/fftw-3.3.7-install/lib/*
+Copy the script *combine_fftw.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
+
+```bash
+cp /working_directory/workspace/navierstokes/scripts/combine_fftw.sh .
+```
+**N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described above, i.e., you have to fork and clone the **navierstokes** project.
 
 Run the script in order to combine the two libraries *libfftw3.a* and *libfftw3_mpi.a*
 
 ```bash
-./combine.sh
+./combine_fftw.sh
 ```
 
-### navierstokes code
+### navierstokes code continued (part 2)
 
-The working directory is again */scratch/students_name/* for students at LNM. Create a folder named *workspace*
-
-```bash
-cd /working_directory/
-mkdir workspace
-cd workspace/
-```
-##### Fork navierstokes project
-
-Fork from the supervisor's **navierstokes** project *git@gitlab.lrz.de:supervisor_id/navierstokes.git*, e.g.,
-
-*git@gitlab.lrz.de:ga34jem/navierstokes.git* (Niklas) or 
-*git@gitlab.lrz.de:ne96pad/navierstokes.git* (Martin). 
-
-This has to be done on website https://gitlab.lrz.de/ (open the supervisor's **navierstokes** project and press the *Fork* button). As a result, a **navierstokes** project with the student's ID **ab12xyz** is created.
-
-```bash
-git clone git@gitlab.lrz.de:ab12xyz/navierstokes.git
-git remote add supervisor git@gitlab.lrz.de:supervisor_id/navierstokes.git
-```
-
-##### Link deal.II code and build the code
+#### Link deal.II code and build the code
 
 ```bash
 cd navierstokes/
@@ -131,7 +224,7 @@ You can now run your first simulations by selecting a test case in one of the *m
 mpirun -np xxx ./my_application
 ```
 
-##### Switching to debug-version
+#### Switching to debug-version
 
 To build the debug-version, run the following commands
 
@@ -150,7 +243,7 @@ cd applications/
 make -j2
 ```
 
-##### Working with git
+#### Working with git
 
 Get recent updates of the supervisor's **navierstokes** code
 
@@ -162,7 +255,7 @@ Commit changes and push:
 Run *clang-format* for all files that have been changed, e.g.,
 
 ```bash
-clang-format -i changed_file.cc
+clang-format -i changed_file.cpp
 clang-format -i new_file.h
 ```
 
@@ -170,7 +263,7 @@ Get an overview of what has been changed and add/commit. The following commands 
 
 ```bash
 git status
-git add changed_file.cc new_file.h
+git add changed_file.cpp new_file.h
 git commit -m "a message describing what has been done/changed"
 ```
 
@@ -184,7 +277,7 @@ Start a merge-request on the website https://gitlab.lrz.de/:
 
 Open your own **navierstokes** project, and press button *Merge Requests*. Select your own project as source and the supervisor's project as target.
 
-### Setup an eclipse project
+#### Setup an eclipse project
 
 Open **eclipse** and choose folder *workspace* as "workspace" in eclipse
 
