@@ -8,25 +8,85 @@ high-order discontinuous Galerkin finite element methods. By the use of efficien
 
 As a prerequisite to get access to the code, a new user has to login at https://gitlab.lrz.de/ with the TUMOnline account **ab12xyz** so that the user can be added to the project.
 
-**N.B.**: For students at LNM, the *scratch*-directory has to be used (as opposed to the home directory) as a folder for the subsequent installations. 
-This directory is called *working_directory* in the following:
+### Structure of folders
 
-Go to *working_directory*, e.g.,
+Go to your *working_directory*
+
+```bash
+cd /working_directory/
+```
+
+**N.B.**: For students at LNM, the *scratch*-directory has to be used (as opposed to the home directory) as a folder for the subsequent installations
 
 ```bash
 cd /scratch/students_name/
+```
+This directory is called *working_directory* in the following. 
+
+For other users, the working directory might for example be
+
+```bash
+cd /home/username/
+```
+We now create a folder called *workspace* in the *working_directory/* where we will later install the **navierstokes** code
+
+```bash
+mkdir workspace
+```
+Since we also have to install other software packages apart from the **navierstokes** code, we create another folder called *sw* (software) for third party software packages
+
+```bash
+mkdir sw
+```
+
+### Trilinos code (optional)
+
+For some functionalities in the navierstokes code (e.g., algebraic multigrid solver), **trilinos** is required. The default setting is to not install **trilinos** and installing this package is optional.
+
+If you want to use **trilinos**, go to the *sw*-folder in your working directory
+
+```bash
+cd /working_directory/sw/
+```
+Download **trilinos** and run the following commands
+
+```bash
+wget https://github.com/trilinos/Trilinos/archive/trilinos-release-12-12-1.tar.gz
+tar xf Trilinos-trilinos-release-12-12-1.tar.gz 
+cd Trilinos-trilinos-release-12-12-1/
+
+mkdir build
+cd build/
+```
+Copy the script *config_trilinos.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
+
+```bash
+cp /working_directory/workspace/navierstokes/scripts/config_trilinos.sh .
+```
+**N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described below, i.e., you have to fork and clone the **navierstokes** project.
+
+Next, adapt the directory settings at the top of the script and run the script
+
+```bash
+bash ./config_trilinos.sh
+```
+Build the code
+
+```bash
+make -j2
+make install
 ```
 
 ### deal.II code
 
 The **navierstokes** code uses the **deal.II** library (https://www.dealii.org/), which is an open source finite element library based on the object-oriented C++ programming language.
 
-Create a folder *sw* (software) where to install the deal.II code
+Go to the *sw*-folder in your working directory
 
 ```bash
-mkdir sw
-cd sw/
+cd /working_directory/sw/
 ```
+
 Clone the **deal.II** code from the gitlab project called **matrixfree**
 
 ```bash
@@ -48,10 +108,20 @@ Create a folder *build*
 mkdir build
 cd build/
 ```
-Copy the file *config.mpi* to the build-folder and adjust folders in *config.mpi* to the folders on the local machine (write **matrixfree** isntead of **deal.II** in the last line)
+Copy the script *config_dealii.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
 
 ```bash
-./config.mpi
+cp /working_directory/workspace/navierstokes/scripts/config_dealii.sh .
+```
+**N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described below, i.e., you have to fork and clone the **navierstokes** project.
+
+```bash
+./config_dealii.sh
+```
+
+Build the **deal.II** code
+
+```bash
 make -j2
 ```
 
@@ -68,7 +138,12 @@ make
 make install
 cd ../fftw-3.3.7-install/lib/
 ```
-Copy script *compine.sh* to folder */working_directory/sw/fftw-3.3.7-install/lib/*
+Copy the script *combine_fftw.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
+
+```bash
+cp /working_directory/workspace/navierstokes/scripts/combine_fftw.sh .
+```
+**N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described below, i.e., you have to fork and clone the **navierstokes** project.
 
 Run the script in order to combine the two libraries *libfftw3.a* and *libfftw3_mpi.a*
 
@@ -162,7 +237,7 @@ Commit changes and push:
 Run *clang-format* for all files that have been changed, e.g.,
 
 ```bash
-clang-format -i changed_file.cc
+clang-format -i changed_file.cpp
 clang-format -i new_file.h
 ```
 
@@ -170,7 +245,7 @@ Get an overview of what has been changed and add/commit. The following commands 
 
 ```bash
 git status
-git add changed_file.cc new_file.h
+git add changed_file.cpp new_file.h
 git commit -m "a message describing what has been done/changed"
 ```
 
