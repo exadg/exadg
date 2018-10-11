@@ -30,10 +30,6 @@ SET( SOURCE_FILES
      unsteady_convection_diffusion.cc
 
      # Other
-     #fe_flow_past_cylinder.cc
-     #fe_turbulent_channel.cc
-     #fe_poiseuille.cc
-     #step-7.cc
      #gmres_test.cc
      )
 

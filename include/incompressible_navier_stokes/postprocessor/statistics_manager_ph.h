@@ -5,7 +5,6 @@
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/lac/parallel_block_vector.h>
 #include <deal.II/lac/parallel_vector.h>
-#include <fluid_base_algorithm.h>
 #include <fstream>
 
 #include "../../incompressible_navier_stokes/infrastructure/fe_parameters.h"

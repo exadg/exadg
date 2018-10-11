@@ -8,6 +8,8 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_LIFT_AND_DRAG_DATA_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_LIFT_AND_DRAG_DATA_H_
 
+#include <set>
+
 #include <deal.II/base/types.h>
 
 using namespace dealii;

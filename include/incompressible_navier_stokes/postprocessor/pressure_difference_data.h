@@ -1,5 +1,5 @@
 /*
- * PressureDifferenceData.h
+ * pressure_difference_data.h
  *
  *  Created on: Oct 11, 2016
  *      Author: fehn
@@ -8,6 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_PRESSURE_DIFFERENCE_DATA_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_PRESSURE_DIFFERENCE_DATA_H_
 
+#include <deal.II/base/point.h>
 
 template<int dim>
 struct PressureDifferenceData
