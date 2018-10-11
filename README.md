@@ -138,6 +138,15 @@ cp /working_directory/workspace/navierstokes/scripts/config_dealii.sh .
 ```
 **N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described above, i.e., you have to fork and clone the **navierstokes** project.
 
+Next, adapt the directory settings at the top of the script and switch on trilinos if desired (and adjust the trilinos folder if necessary)
+
+```bash
+...
+-D DEAL_II_WITH_TRILINOS:BOOL="ON"
+...
+```
+Run the script
+
 ```bash
 ./config_dealii.sh
 ```
@@ -146,6 +155,13 @@ Build the **deal.II** code
 
 ```bash
 make -j2
+```
+
+**Remark**: If you later change settings and want to run the cmake script again, remove *CMakeCache.txt* and *CMakeFiles/* in advance
+
+```bash
+rm -rf CMakeCache.txt CMakeFiles/
+./config_dealii.sh
 ```
 
 #### fftw code (optional)
