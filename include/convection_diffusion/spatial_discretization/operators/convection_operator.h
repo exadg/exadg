@@ -64,7 +64,7 @@ public:
 
   void
   initialize(MatrixFree<dim, value_type> const & mf_data,
-             ConstraintMatrix const &            constraint_matrx,
+             ConstraintMatrix const &            constraint_matrix,
              ConvectiveOperatorData<dim> const & operator_data_in,
              unsigned int                        level_mg_handler = numbers::invalid_unsigned_int);
 
@@ -128,6 +128,11 @@ public:
   do_boundary_integral(FEEvalFace &               fe_eval_m,
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
+
+  virtual void
+  do_verify_boundary_conditions(types::boundary_id const             boundary_id,
+                                ConvectiveOperatorData<dim> const &  operator_data,
+                                std::set<types::boundary_id> const & periodic_boundary_ids) const;
 };
 } // namespace ConvDiff
 

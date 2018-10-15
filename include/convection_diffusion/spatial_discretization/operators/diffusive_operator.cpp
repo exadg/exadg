@@ -405,6 +405,27 @@ DiffusiveOperator<dim, fe_degree, value_type>::do_boundary_integral(
     fe_eval.submit_value(-gradient_flux, q);
   }
 }
+
+template<int dim, int fe_degree, typename value_type>
+void
+DiffusiveOperator<dim, fe_degree, value_type>::do_verify_boundary_conditions(
+  types::boundary_id const             boundary_id,
+  DiffusiveOperatorData<dim> const &   operator_data,
+  std::set<types::boundary_id> const & periodic_boundary_ids) const
+{
+  unsigned int counter = 0;
+  if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
+    counter++;
+
+  if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
+    counter++;
+
+  if(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())
+    counter++;
+
+  AssertThrow(counter == 1, ExcMessage("Boundary face with non-unique boundary type found."));
+}
+
 } // namespace ConvDiff
 
 #include "diffusive_operator.hpp"

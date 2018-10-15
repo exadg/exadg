@@ -36,7 +36,14 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(
   this->constraint.reinit(constraint_matrix);
   this->operator_settings = operator_settings;
 
-  // check if dg or cg
+  // verify boundary conditions
+  if(this->operator_settings.evaluate_face_integrals)
+  {
+    this->verify_boundary_conditions(data->get_dof_handler(this->operator_settings.dof_index),
+                                     this->operator_settings);
+  }
+
+  // check if DG or CG
   // An approximation can have degrees of freedom on vertices, edges, quads and
   // hexes. A vertex degree of freedom means that the degree of freedom is
   // the same on all cells that are adjacent to this vertex. A face degree of
@@ -44,7 +51,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(
   // of freedom. A DG element does not share any degrees of freedom over a
   // vertex but has all of them in the last item, i.e., quads in 2D and hexes
   // in 3D, and thus necessarily has dofs_per_vertex=0
-  is_dg = data->get_dof_handler(operator_settings.dof_index).get_fe().dofs_per_vertex == 0;
+  is_dg = data->get_dof_handler(this->operator_settings.dof_index).get_fe().dofs_per_vertex == 0;
 
   // set mg level
   this->level_mg_handler = level_mg_handler;
@@ -71,7 +78,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(
   operator_settings.dof_index  = 0;
   operator_settings.quad_index = 0;
 
-  // check it dg or cg (for explanation: see above)
+  // check if DG or CG (for explanation: see above)
   is_dg = dof_handler.get_fe().dofs_per_vertex == 0;
 
   // setup MatrixFree::AdditionalData
@@ -113,6 +120,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(
 
   QGauss<1> const quad(dof_handler.get_fe().degree + 1);
   data_own.reinit(mapping, dof_handler, constraint_own, quad, additional_data);
+
+
   reinit(data_own, constraint_own, operator_settings, level_mg_handler);
 }
 
@@ -1547,9 +1556,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_constraints(
   // 2) add dirichlet bcs
   constraint_own.add_lines(mg_constrained_dofs.get_boundary_indices(level));
 
-  verify_boundary_conditions(dof_handler, operator_settings);
-
-  // constraint zeroth DoF in continuous case (the mean value constraint will
+  // constrain zeroth DoF in continuous case (the mean value constraint will
   // be applied in the DG case). In case we have interface matrices, there are
   // Dirichlet constraints on parts of the boundary and no such transformation
   // is required.
@@ -1662,9 +1669,9 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::verify_boundary_conditions(
   DoFHandler<dim> const & dof_handler,
-  AdditionalData const &  operator_data)
+  AdditionalData const &  operator_data) const
 {
-  // Check that the Dirichlet and Neumann boundary conditions do not overlap
+  // fill set with periodic boundary ids
   std::set<types::boundary_id> periodic_boundary_ids;
   for(unsigned int i = 0; i < operator_data.periodic_face_pairs_level0.size(); ++i)
   {
@@ -1680,6 +1687,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::verify_boundary_conditions(
                                    ->boundary_id());
   }
 
+  // Make sure that each boundary face has exactly one boundary type
   Triangulation<dim> const & tria = dof_handler.get_triangulation();
   for(typename Triangulation<dim>::cell_iterator cell = tria.begin(); cell != tria.end(); ++cell)
   {
@@ -1688,30 +1696,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::verify_boundary_conditions(
       if(cell->at_boundary(f))
       {
         types::boundary_id bid = cell->face(f)->boundary_id();
-        if(operator_data.bc->dirichlet_bc.find(bid) != operator_data.bc->dirichlet_bc.end())
-        {
-          AssertThrow(operator_data.bc->neumann_bc.find(bid) == operator_data.bc->neumann_bc.end(),
-                      ExcMessage("Boundary id " + Utilities::to_string((int)bid) +
-                                 " wants to set both Dirichlet and Neumann " +
-                                 "boundary conditions, which is impossible!"));
-          AssertThrow(periodic_boundary_ids.find(bid) == periodic_boundary_ids.end(),
-                      ExcMessage("Boundary id " + Utilities::to_string((int)bid) +
-                                 " wants to set both Dirichlet and periodic " +
-                                 "boundary conditions, which is impossible!"));
-          continue;
-        }
-        if(operator_data.bc->neumann_bc.find(bid) != operator_data.bc->neumann_bc.end())
-        {
-          AssertThrow(periodic_boundary_ids.find(bid) == periodic_boundary_ids.end(),
-                      ExcMessage("Boundary id " + Utilities::to_string((int)bid) +
-                                 " wants to set both Neumann and periodic " +
-                                 "boundary conditions, which is impossible!"));
-          continue;
-        }
-        AssertThrow(periodic_boundary_ids.find(bid) != periodic_boundary_ids.end(),
-                    ExcMessage("Boundary id " + Utilities::to_string((int)bid) +
-                               " does neither set Dirichlet, Neumann, nor periodic " +
-                               "boundary conditions! Bailing out."));
+        do_verify_boundary_conditions(bid, operator_data, periodic_boundary_ids);
       }
     }
   }
