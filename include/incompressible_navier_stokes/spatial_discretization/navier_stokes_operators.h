@@ -3764,6 +3764,7 @@ struct ConvectiveOperatorData
   ConvectiveOperatorData()
     : formulation_convective_term(FormulationConvectiveTerm::DivergenceFormulation),
       dof_index(0),
+      upwind_factor(1.0),
       use_outflow_bc(false),
       type_imposition_of_dirichlet_values(TypeDirichletBCs::Mirror)
   {
@@ -3772,6 +3773,8 @@ struct ConvectiveOperatorData
   FormulationConvectiveTerm formulation_convective_term;
 
   unsigned int dof_index;
+
+  double upwind_factor;
 
   bool use_outflow_bc;
 
@@ -4158,7 +4161,7 @@ private:
                    VectorizedArray<value_type> const & uM_n,
                    VectorizedArray<value_type> const & uP_n) const
   {
-    lambda = 2.0 * std::max(std::abs(uM_n), std::abs(uP_n));
+    lambda = this->operator_data.upwind_factor * 2.0 * std::max(std::abs(uM_n), std::abs(uP_n));
   }
 
   /*
@@ -4203,7 +4206,7 @@ private:
     Tensor<1, dim, VectorizedArray<value_type>> jump_value = uM - uP;
 
     flux = average_normal_velocity * average_velocity +
-           0.5 * std::abs(average_normal_velocity) * jump_value;
+           this->operator_data.upwind_factor * 0.5 * std::abs(average_normal_velocity) * jump_value;
   }
 
   /*

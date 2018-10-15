@@ -631,9 +631,9 @@ public:
     : // MATHEMATICAL MODEL
       problem_type(ProblemType::Undefined),
       equation_type(EquationType::Undefined),
-      use_outflow_bc_convective_term(false),
       formulation_viscous_term(FormulationViscousTerm::LaplaceFormulation),
       formulation_convective_term(FormulationConvectiveTerm::DivergenceFormulation),
+      use_outflow_bc_convective_term(false),
       right_hand_side(false),
 
       // PHYSICAL QUANTITIES
@@ -666,6 +666,7 @@ public:
       // SPATIAL DISCRETIZATION
       // spatial discretization method
       spatial_discretization(SpatialDiscretization::Undefined),
+      upwind_factor(1.0),
       imposition_of_dirichlet_bc_convective(TypeDirichletBCs::Mirror),
 
       // convective term - currently no parameters
@@ -944,6 +945,11 @@ public:
       AssertThrow(penalty_term_div_formulation != PenaltyTermDivergenceFormulation::Undefined,
                   ExcMessage("parameter must be defined"));
 
+    if(equation_type == EquationType::NavierStokes)
+    {
+      AssertThrow(upwind_factor >= 0.0, ExcMessage("Upwind factor must not be negative."));
+    }
+
     if(pure_dirichlet_bc == true)
     {
       if(adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint ||
@@ -1132,9 +1138,6 @@ public:
 
     print_parameter(pcout, "Equation type", str_equation_type[(int)equation_type]);
 
-    // outflow BC for convective term
-    print_parameter(pcout, "Outflow BC for convective term", use_outflow_bc_convective_term);
-
     // formulation of viscous term
     std::string str_form_viscous_term[] = {"Undefined",
                                            "Divergence formulation",
@@ -1144,15 +1147,21 @@ public:
                     "Formulation of viscous term",
                     str_form_viscous_term[(int)formulation_viscous_term]);
 
-    // formulation of convective term
-    std::string str_form_convective_term[] = {"Undefined",
-                                              "Divergence formulation",
-                                              "Convective formulation",
-                                              "Energy preserving formulation"};
+    if(equation_type == EquationType::NavierStokes)
+    {
+      // formulation of convective term
+      std::string str_form_convective_term[] = {"Undefined",
+                                                "Divergence formulation",
+                                                "Convective formulation",
+                                                "Energy preserving formulation"};
 
-    print_parameter(pcout,
-                    "Formulation of convective term",
-                    str_form_convective_term[(int)formulation_convective_term]);
+      print_parameter(pcout,
+                      "Formulation of convective term",
+                      str_form_convective_term[(int)formulation_convective_term]);
+
+      // outflow BC for convective term
+      print_parameter(pcout, "Outflow BC for convective term", use_outflow_bc_convective_term);
+    }
 
     // right hand side
     print_parameter(pcout, "Right-hand side", right_hand_side);
@@ -1287,11 +1296,16 @@ public:
                     "Spatial discretization method",
                     str_spatial_discret[(int)spatial_discretization]);
 
-    std::string str_type_dirichlet_convective[] = {"Direct", "Mirror"};
+    if(equation_type == EquationType::NavierStokes)
+    {
+      print_parameter(pcout, "Upwind factor", upwind_factor);
 
-    print_parameter(pcout,
-                    "Type of Dirichlet BC's (convective)",
-                    str_type_dirichlet_convective[(int)imposition_of_dirichlet_bc_convective]);
+      std::string str_type_dirichlet_convective[] = {"Direct", "Mirror"};
+
+      print_parameter(pcout,
+                      "Type of Dirichlet BC's (convective)",
+                      str_type_dirichlet_convective[(int)imposition_of_dirichlet_bc_convective]);
+    }
 
 
     // interior penalty formulation of viscous term
@@ -1805,15 +1819,15 @@ public:
   // description: see enum declaration
   EquationType equation_type;
 
-  // use stable outflow boundary condition for convective term according to
-  // Gravemeier et al. (2012)
-  bool use_outflow_bc_convective_term;
-
   // description: see enum declaration
   FormulationViscousTerm formulation_viscous_term;
 
   // description: see enum declaration
   FormulationConvectiveTerm formulation_convective_term;
+
+  // use stable outflow boundary condition for convective term according to
+  // Gravemeier et al. (2012)
+  bool use_outflow_bc_convective_term;
 
   // if the body force vector on the right-hand side of the momentum equation of the
   // Navier-Stokes equations is unequal zero, set right_hand_side = true
@@ -1926,6 +1940,16 @@ public:
 
   // description: see enum declaration
   SpatialDiscretization spatial_discretization;
+
+  // convective term: upwind factor describes the scaling factor in front of the
+  // stabilization term (which is strictly dissipative) of the numerical function
+  // of the convective term. For the divergence formulation of the convective term with
+  // local Lax-Friedrichs flux, a value of upwind_factor = 1.0 corresponds to the
+  // theoretical value (e.g., maximum eigenvalue of the flux Jacobian, lambda = 2 |u*n|)
+  // but a lower value (e.g., upwind_factor = 0.5, lambda = |u*n|) might be much more
+  // advantages in terms of computational costs by allowing significantly larger time
+  // step sizes.
+  double upwind_factor;
 
   // description: see enum declaration
   TypeDirichletBCs imposition_of_dirichlet_bc_convective;

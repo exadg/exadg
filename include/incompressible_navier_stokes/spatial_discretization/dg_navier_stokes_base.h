@@ -611,6 +611,7 @@ DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule
   // convective operator
   convective_operator_data.formulation_convective_term = param.formulation_convective_term;
   convective_operator_data.dof_index                   = dof_index_u;
+  convective_operator_data.upwind_factor               = param.upwind_factor;
   convective_operator_data.bc                          = boundary_descriptor_velocity;
   convective_operator_data.use_outflow_bc              = param.use_outflow_bc_convective_term;
   convective_operator_data.type_imposition_of_dirichlet_values =
