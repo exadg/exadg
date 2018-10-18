@@ -143,13 +143,13 @@ public:
   void
   reinit(MatrixFree_ const &      matrix_free,
          ConstraintMatrix const & constraint_matrix,
-         AdditionalData const &   operator_settings,
+         AdditionalData const &   operator_data,
          unsigned int             level_mg_handler = numbers::invalid_unsigned_int) const;
 
   virtual void
   reinit(DoFHandler<dim> const &   dof_handler,
          Mapping<dim> const &      mapping,
-         void *                    operator_settings,
+         void *                    operator_data,
          MGConstrainedDoFs const & mg_constrained_dofs,
          unsigned int const        level_mg_handler);
 
@@ -339,6 +339,13 @@ protected:
                 ExcMessage("OperatorBase::do_boundary_integral() has not been implemented!"));
   }
 
+  mutable AdditionalData operator_data;
+
+  mutable lazy_ptr<MatrixFree_> data;
+
+  mutable double eval_time;
+
+private:
   /*
    * helper functions
    */
@@ -522,7 +529,7 @@ protected:
   add_constraints(DoFHandler<dim> const &   dof_handler,
                   ConstraintMatrix &        constraint_own,
                   MGConstrainedDoFs const & mg_constrained_dofs,
-                  AdditionalData &          operator_settings,
+                  AdditionalData &          operator_data,
                   unsigned int const        level);
 
   /*
@@ -567,13 +574,8 @@ protected:
         "OperatorBase::do_verify_boundary_conditions() has to be implemented by derived classes."));
   }
 
-  mutable AdditionalData operator_settings;
-
-  mutable lazy_ptr<MatrixFree_> data;
-
-  mutable double eval_time;
-
-private:
+  // do we have to evaluate (boundary) face integrals for this operator? For example,
+  // some operators such as the mass matrix operator only involve cell integrals.
   const bool do_eval_faces;
 
   mutable lazy_ptr<ConstraintMatrix> constraint;
@@ -586,9 +588,9 @@ private:
 
   mutable unsigned int level_mg_handler;
 
+  // vector of matrices for block-diagonal preconditioners
   mutable std::vector<LAPACKFullMatrix<Number>> matrices;
-
-  mutable bool block_jacobi_matrices_have_been_initialized;
+  mutable bool                                  block_jacobi_matrices_have_been_initialized;
 };
 
 #include "operation_base.cpp"

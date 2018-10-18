@@ -68,6 +68,7 @@ public:
              ConvectiveOperatorData<dim> const & operator_data_in,
              unsigned int                        level_mg_handler = numbers::invalid_unsigned_int);
 
+private:
   /*
    * This function calculates the numerical flux using the central flux.
    */

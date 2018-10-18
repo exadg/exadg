@@ -81,7 +81,7 @@ public:
     IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
                                                          *this->data,
                                                          mapping,
-                                                         this->operator_settings.dof_index);
+                                                         this->operator_data.dof_index);
   }
 
   void
@@ -96,7 +96,7 @@ public:
     IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
                                                          *this->data,
                                                          mapping,
-                                                         this->operator_settings.dof_index);
+                                                         this->operator_data.dof_index);
   }
 
   void
@@ -112,28 +112,8 @@ public:
     IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
                                                          *this->data,
                                                          mapping,
-                                                         this->operator_settings.dof_index);
+                                                         this->operator_data.dof_index);
   }
-
-  void
-  do_cell_integral(FEEvalCell & fe_eval) const;
-
-  void
-  do_face_integral(FEEvalFace & fe_eval, FEEvalFace & fe_eval_neighbor) const;
-
-  void
-  do_face_int_integral(FEEvalFace & fe_eval, FEEvalFace & fe_eval_neighbor) const;
-
-  void
-  do_face_ext_integral(FEEvalFace & fe_eval, FEEvalFace & fe_eval_neighbor) const;
-
-  void
-  do_boundary_integral(FEEvalFace &               fe_eval,
-                       OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id) const;
-
-  MultigridOperatorBase<dim, Number> *
-  get_new(unsigned int deg) const;
 
 private:
   inline DEAL_II_ALWAYS_INLINE //
@@ -176,6 +156,26 @@ private:
                                        OperatorType const &            operator_type,
                                        BoundaryType const &            boundary_type,
                                        types::boundary_id const        boundary_id) const;
+
+  void
+  do_cell_integral(FEEvalCell & fe_eval) const;
+
+  void
+  do_face_integral(FEEvalFace & fe_eval, FEEvalFace & fe_eval_neighbor) const;
+
+  void
+  do_face_int_integral(FEEvalFace & fe_eval, FEEvalFace & fe_eval_neighbor) const;
+
+  void
+  do_face_ext_integral(FEEvalFace & fe_eval, FEEvalFace & fe_eval_neighbor) const;
+
+  void
+  do_boundary_integral(FEEvalFace &               fe_eval,
+                       OperatorType const &       operator_type,
+                       types::boundary_id const & boundary_id) const;
+
+  MultigridOperatorBase<dim, Number> *
+  get_new(unsigned int deg) const;
 
   virtual void
   do_verify_boundary_conditions(types::boundary_id const             boundary_id,
