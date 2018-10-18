@@ -56,7 +56,8 @@ Fork from the supervisor's **navierstokes** project *git@gitlab.lrz.de:superviso
 This has to be done on website https://gitlab.lrz.de/ (open the supervisor's **navierstokes** project and press the *Fork* button). As a result, a **navierstokes** project with the student's ID **ab12xyz** is created.
 
 ```bash
-git clone git@gitlab.lrz.de:ab12xyz/navierstokes.git
+git clone https://gitlab.lrz.de/ab12xyz/navierstokes.git
+cd navierstokes/
 git remote add supervisor git@gitlab.lrz.de:supervisor_id/navierstokes.git
 ```
 
@@ -148,7 +149,7 @@ Next, adapt the directory settings at the top of the script and switch on trilin
 Run the script
 
 ```bash
-./config_dealii.sh
+bash ./config_dealii.sh
 ```
 
 Build the **deal.II** code

@@ -40,6 +40,7 @@ struct OperatorBaseData
       face_evaluate(face_evaluate_values, face_evaluate_gradients),
       face_integrate(face_integrate_values, face_integrate_gradients),
       use_cell_based_loops(false),
+      evaluate_face_integrals(face_evaluate.do_eval() || face_integrate.do_eval()),
       operator_is_singular(false),
       mapping_update_flags(update_default),
       mapping_update_flags_inner_faces(update_default),
@@ -90,6 +91,8 @@ struct OperatorBaseData
   Face face_integrate;
 
   bool use_cell_based_loops;
+
+  bool evaluate_face_integrals;
 
   bool operator_is_singular;
 
@@ -304,25 +307,27 @@ protected:
   virtual void
   do_cell_integral(FEEvalCell & /*fe_eval*/) const
   {
-    AssertThrow(false, ExcMessage("OperatorBase::do_cell_integral has not been implemented!"));
+    AssertThrow(false, ExcMessage("OperatorBase::do_cell_integral() has not been implemented!"));
   }
 
   virtual void
   do_face_integral(FEEvalFace & /*fe_eval_m*/, FEEvalFace & /*fe_eval_p*/) const
   {
-    AssertThrow(false, ExcMessage("OperatorBase::do_face_integral has not been implemented!"));
+    AssertThrow(false, ExcMessage("OperatorBase::do_face_integral() has not been implemented!"));
   }
 
   virtual void
   do_face_int_integral(FEEvalFace & /*fe_eval_m*/, FEEvalFace & /*fe_eval_p*/) const
   {
-    AssertThrow(false, ExcMessage("OperatorBase::do_face_int_integral has not been implemented!"));
+    AssertThrow(false,
+                ExcMessage("OperatorBase::do_face_int_integral() has not been implemented!"));
   }
 
   virtual void
   do_face_ext_integral(FEEvalFace & /*fe_eval_m*/, FEEvalFace & /*fe_eval_p*/) const
   {
-    AssertThrow(false, ExcMessage("OperatorBase::do_face_ext_integral has not been implemented!"));
+    AssertThrow(false,
+                ExcMessage("OperatorBase::do_face_ext_integral() has not been implemented!"));
   }
 
   virtual void
@@ -330,7 +335,8 @@ protected:
                        OperatorType const & /*operator_type*/,
                        types::boundary_id const & /*boundary_id*/) const
   {
-    AssertThrow(false, ExcMessage("OperatorBase::do_boundary_integral has not been implemented!"));
+    AssertThrow(false,
+                ExcMessage("OperatorBase::do_boundary_integral() has not been implemented!"));
   }
 
   /*
@@ -503,12 +509,11 @@ protected:
                                          Range const & /*range*/) const;
 #endif
 
-protected:
   void
   adjust_diagonal_for_singular_operator(VectorType & diagonal) const;
 
   /*
-   * set entries in the diagonal corresponding to a constraint dof to one
+   * set entries in the diagonal corresponding to constraint DoFs to one
    */
   void
   set_constraint_diagonal(VectorType & diagonal) const;
@@ -540,11 +545,28 @@ protected:
                               typename DoFHandler<dim>::face_iterator const face2,
                               ConstraintMatrix &                            constraints);
 
+  /*
+   *  Verify that each boundary face is assigned exactly one boundary type.
+   */
   void
   verify_boundary_conditions(DoFHandler<dim> const & dof_handler,
-                             AdditionalData const &  operator_data);
+                             AdditionalData const &  operator_data) const;
 
-protected:
+  /*
+   *  Since the type of boundary conditions depends on the operator, this function has
+   *  to be implemented by derived classes and can not be implemented in the abstract base class.
+   */
+  virtual void
+  do_verify_boundary_conditions(types::boundary_id const             boundary_id,
+                                AdditionalData const &               operator_data,
+                                std::set<types::boundary_id> const & periodic_boundary_ids) const
+  {
+    AssertThrow(
+      false,
+      ExcMessage(
+        "OperatorBase::do_verify_boundary_conditions() has to be implemented by derived classes."));
+  }
+
   mutable AdditionalData operator_settings;
 
   mutable lazy_ptr<MatrixFree_> data;
@@ -556,7 +578,10 @@ private:
 
   mutable lazy_ptr<ConstraintMatrix> constraint;
 
+  // discretization is based on discontinuous Galerin method?
   mutable bool is_dg;
+
+  // operator is used as a multigrid level operator?
   mutable bool is_mg;
 
   mutable unsigned int level_mg_handler;

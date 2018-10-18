@@ -72,10 +72,10 @@ public:
   void
   initialize(Mapping<dim> const &             mapping,
              MatrixFree<dim, Number> const &  mf_data,
-             LaplaceOperatorData<dim> const & operator_data_in)
+             LaplaceOperatorData<dim> const & operator_data)
   {
     ConstraintMatrix constraint_matrix;
-    Parent::reinit(mf_data, constraint_matrix, operator_data_in);
+    Parent::reinit(mf_data, constraint_matrix, operator_data);
 
     // calculate penalty parameters
     IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
@@ -88,9 +88,9 @@ public:
   initialize(Mapping<dim> const &             mapping,
              MatrixFree<dim, Number> &        mf_data,
              ConstraintMatrix &               constraint_matrix,
-             LaplaceOperatorData<dim> const & operator_settings)
+             LaplaceOperatorData<dim> const & operator_data)
   {
-    Parent::reinit(mf_data, constraint_matrix, operator_settings);
+    Parent::reinit(mf_data, constraint_matrix, operator_data);
 
     // calculate penalty parameters
     IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
@@ -102,11 +102,11 @@ public:
   void
   reinit(DoFHandler<dim> const &   dof_handler,
          Mapping<dim> const &      mapping,
-         void *                    operator_data_in,
+         void *                    operator_data,
          MGConstrainedDoFs const & mg_constrained_dofs,
          unsigned int const        level)
   {
-    Parent::reinit(dof_handler, mapping, operator_data_in, mg_constrained_dofs, level);
+    Parent::reinit(dof_handler, mapping, operator_data, mg_constrained_dofs, level);
 
     // calculate penalty parameters
     IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
@@ -115,6 +115,27 @@ public:
                                                          this->operator_settings.dof_index);
   }
 
+  void
+  do_cell_integral(FEEvalCell & fe_eval) const;
+
+  void
+  do_face_integral(FEEvalFace & fe_eval, FEEvalFace & fe_eval_neighbor) const;
+
+  void
+  do_face_int_integral(FEEvalFace & fe_eval, FEEvalFace & fe_eval_neighbor) const;
+
+  void
+  do_face_ext_integral(FEEvalFace & fe_eval, FEEvalFace & fe_eval_neighbor) const;
+
+  void
+  do_boundary_integral(FEEvalFace &               fe_eval,
+                       OperatorType const &       operator_type,
+                       types::boundary_id const & boundary_id) const;
+
+  MultigridOperatorBase<dim, Number> *
+  get_new(unsigned int deg) const;
+
+private:
   inline DEAL_II_ALWAYS_INLINE //
     VectorizedArray<Number>
     calculate_value_flux(VectorizedArray<Number> const & jump_value) const;
@@ -156,27 +177,12 @@ public:
                                        BoundaryType const &            boundary_type,
                                        types::boundary_id const        boundary_id) const;
 
-  void
-  do_cell_integral(FEEvalCell & fe_eval) const;
+  virtual void
+  do_verify_boundary_conditions(types::boundary_id const             boundary_id,
+                                LaplaceOperatorData<dim> const &     operator_data,
+                                std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
-  void
-  do_face_integral(FEEvalFace & fe_eval, FEEvalFace & fe_eval_neighbor) const;
-
-  void
-  do_face_int_integral(FEEvalFace & fe_eval, FEEvalFace & fe_eval_neighbor) const;
-
-  void
-  do_face_ext_integral(FEEvalFace & fe_eval, FEEvalFace & fe_eval_neighbor) const;
-
-  void
-  do_boundary_integral(FEEvalFace &               fe_eval,
-                       OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id) const;
-
-  MultigridOperatorBase<dim, Number> *
-  get_new(unsigned int deg) const;
-
-private:
+  // stores the penalty parameter of the interior penalty method for each cell
   AlignedVector<VectorizedArray<Number>> array_penalty_parameter;
 };
 

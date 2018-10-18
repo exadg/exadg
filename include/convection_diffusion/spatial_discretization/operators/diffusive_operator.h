@@ -142,6 +142,11 @@ public:
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
 
+  virtual void
+  do_verify_boundary_conditions(types::boundary_id const             boundary_id,
+                                DiffusiveOperatorData<dim> const &   operator_data,
+                                std::set<types::boundary_id> const & periodic_boundary_ids) const;
+
   AlignedVector<VectorizedArray<value_type>> array_penalty_parameter;
   double                                     diffusivity;
 };

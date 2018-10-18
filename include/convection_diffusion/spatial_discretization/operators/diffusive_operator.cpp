@@ -1,5 +1,7 @@
 #include "diffusive_operator.h"
 
+#include "verify_boundary_conditions.h"
+
 #include "../../../functionalities/evaluate_functions.h"
 #include "../../../operators/interior_penalty_parameter.h"
 
@@ -405,6 +407,17 @@ DiffusiveOperator<dim, fe_degree, value_type>::do_boundary_integral(
     fe_eval.submit_value(-gradient_flux, q);
   }
 }
+
+template<int dim, int fe_degree, typename value_type>
+void
+DiffusiveOperator<dim, fe_degree, value_type>::do_verify_boundary_conditions(
+  types::boundary_id const             boundary_id,
+  DiffusiveOperatorData<dim> const &   operator_data,
+  std::set<types::boundary_id> const & periodic_boundary_ids) const
+{
+  ConvDiff::do_verify_boundary_conditions(boundary_id, operator_data, periodic_boundary_ids);
+}
+
 } // namespace ConvDiff
 
 #include "diffusive_operator.hpp"
