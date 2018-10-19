@@ -138,8 +138,10 @@ public:
   {
   }
 
-  // if this method is called without the forth argument `level_mg_handler`,
-  // this operator is initialized for level -1, i.e. the finest grid
+  /*
+   * If this method is called without the forth argument `level_mg_handler`, this operator is
+   * initialized for level -1, i.e. the finest grid.
+   */
   void
   reinit(MatrixFree_ const &      matrix_free,
          ConstraintMatrix const & constraint_matrix,
@@ -154,7 +156,10 @@ public:
          unsigned int const        level_mg_handler);
 
   /*
-   * matrix vector multiplication
+   * Evaluate the homogeneous part of an operator. The homogeneous operator is the operator that is
+   * obtained for homogeneous boundary conditions. This operation is typically applied in linear
+   * iterative solvers (as well as multigrid preconditioners and smoothers). Operations of this type
+   * are called apply_...() and vmult_...() as required by deal.II interfaces.
    */
   virtual void
   apply(VectorType & dst, VectorType const & src) const;
@@ -171,6 +176,9 @@ public:
   virtual void
   vmult_add(VectorType & dst, VectorType const & src) const;
 
+  /*
+   * Multigrid specific vmult_...() functions
+   */
   void
   vmult_interface_down(VectorType & dst, VectorType const & src) const;
 
@@ -178,7 +186,9 @@ public:
   vmult_add_interface_up(VectorType & dst, VectorType const & src) const;
 
   /*
-   *
+   * evaluate inhomogeneous parts of operator related to inhomogeneous boundary face integrals.
+   * Operations of this type are called rhs_...() since these functions are called to calculate the
+   * vector forming the right-hand side vector of linear systems of equations.
    */
   void
   rhs(VectorType & dst) const;
@@ -192,6 +202,11 @@ public:
   void
   rhs_add(VectorType & dst, Number const time) const;
 
+  /*
+   * Evaluate the operator including homogeneous and inhomogeneous contributions. The typical use
+   * case would be explicit time integration or the evaluation of nonlinear residuals where a
+   * splitting into homogeneous and inhomogeneous contributions in not required.
+   */
   void
   evaluate(VectorType & dst, VectorType const & src, Number const time) const;
 
@@ -199,7 +214,7 @@ public:
   evaluate_add(VectorType & dst, VectorType const & src, Number const time) const;
 
   /*
-   * point Jacobi method
+   * point Jacobi preconditioner (diagonal)
    */
   virtual void
   calculate_diagonal(VectorType & diagonal) const;
@@ -214,7 +229,7 @@ public:
   calculate_inverse_diagonal(VectorType & diagonal) const;
 
   /*
-   * block Jacobi methods
+   * block Jacobi preconditioner (block-diagonal)
    */
   void
   apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const;
@@ -250,7 +265,7 @@ public:
 #endif
 
   /*
-   * utility functions
+   * Utility functions required by deal.II as interfaces.
    */
   types::global_dof_index
   m() const;
@@ -264,6 +279,9 @@ public:
   bool
   is_empty_locally() const;
 
+  /*
+   *  Getters and setters.
+   */
   const MatrixFree<dim, Number> &
   get_data() const;
 
@@ -277,32 +295,34 @@ public:
   get_operator_data() const;
 
   void
-  initialize_dof_vector(VectorType & vector) const;
-
-  void
   set_evaluation_time(double const evaluation_time_in) const;
 
   double
   get_evaluation_time() const;
 
+  unsigned int
+  get_level() const;
+
+  ConstraintMatrix const &
+  get_constraint_matrix() const;
+
+  /*
+   * Initializes a dof-vector.
+   */
+  void
+  initialize_dof_vector(VectorType & vector) const;
+
+  /*
+   * Returns whether the operator is singular, e.g., the Laplace operator with pure Neumann boundary
+   * conditions is singular.
+   */
   bool
   is_singular() const;
 
-  unsigned int
-  get_level() const
-  {
-    return level_mg_handler;
-  }
-
-  ConstraintMatrix const &
-  get_constraint_matrix() const
-  {
-    return *constraint;
-  }
-
 protected:
   /*
-   * methods to be overwritten
+   * These methods have to be overwritten by derived classes because these functions are
+   * operator-specific and define how the operator looks like.
    */
   virtual void
   do_cell_integral(FEEvalCell & /*fe_eval*/) const
@@ -339,188 +359,216 @@ protected:
                 ExcMessage("OperatorBase::do_boundary_integral() has not been implemented!"));
   }
 
+  /*
+   * Data structure containing all operator-specific data.
+   */
   mutable AdditionalData operator_data;
 
+  /*
+   * Matrix-free object.
+   */
   mutable lazy_ptr<MatrixFree_> data;
 
+  /*
+   * Evaluation time (required for time-dependent problems).
+   */
   mutable double eval_time;
 
 private:
   /*
-   * helper functions
+   * Helper functions:
+   *
+   * The diagonal, block-diagonal, as well as the system matrix (assembled into a sparse matrix) are
+   * computed columnwise. This means that column i of the block-matrix is computed by evaluating the
+   * operator for a unit vector which takes a value of 1 in row i and is 0 for all other entries.
    */
-  template<typename FEEval>
   void
-  create_standard_basis(unsigned int j, FEEval & fe_eval) const
+  create_standard_basis(unsigned int j, FEEvalCell & fe_eval) const;
+
+  void
+  create_standard_basis(unsigned int j, FEEvalFace & fe_eval) const;
+
+  void
+  create_standard_basis(unsigned int j, FEEvalFace & fe_eval_1, FEEvalFace & fe_eval_2) const;
+
+  /*
+   * This function loops over all cells and calculates cell integrals.
+   */
+  void
+  cell_loop(MatrixFree_ const & /*data*/,
+            VectorType &       dst,
+            VectorType const & src,
+            Range const &      range) const;
+
+  /*
+   * This function loops over all interior faces and calculates face integrals.
+   */
+  void
+  face_loop(MatrixFree_ const & /*data*/,
+            VectorType &       dst,
+            VectorType const & src,
+            Range const &      range) const;
+
+  /*
+   * The following functions loop over all boundary faces and calculate boundary face integrals.
+   * Depending on the operator type, we distinguish between boundary face integrals of type
+   * homogeneous, inhomogeneous, and full.
+   */
+
+  // homogeneous operator
+  void
+  boundary_face_loop_hom_operator(MatrixFree_ const & /*data*/,
+                                  VectorType & /*dst*/,
+                                  VectorType const & /*src*/,
+                                  Range const & /*range*/) const;
+
+  // inhomogeneous operator
+  void
+  boundary_face_loop_inhom_operator(MatrixFree_ const & /*data*/,
+                                    VectorType & /*dst*/,
+                                    VectorType const & /*src*/,
+                                    Range const & /*range*/) const;
+
+  // full operator
+  void
+  boundary_face_loop_full_operator(MatrixFree_ const & /*data*/,
+                                   VectorType & /*dst*/,
+                                   VectorType const & /*src*/,
+                                   Range const & /*range*/) const;
+
+  /*
+   * inhomogeneous operator: For the inhomogeneous operator, we only have to calculate boundary face
+   * integrals. The matrix-free implementation, however, does not offer interfaces for boundary face
+   * integrals only. Hence we have to provide empty functions for cell and interior face integrals.
+   */
+  void
+  cell_loop_empty(MatrixFree_ const & /*data*/,
+                  VectorType & /*dst*/,
+                  VectorType const & /*src*/,
+                  Range const & /*range*/) const
   {
-    // create a standard basis in the dof values of FEEvalution
-    for(unsigned int i = 0; i < dofs_per_cell; ++i)
-      fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-    fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+    // nothing to do
   }
 
   void
-  create_standard_basis(unsigned int j, FEEvalFace & fe_eval1, FEEvalFace & fe_eval2) const;
+  face_loop_empty(MatrixFree_ const & /*data*/,
+                  VectorType & /*dst*/,
+                  VectorType const & /*src*/,
+                  Range const & /*range*/) const
+  {
+    // nothing to do
+  }
 
   /*
-   * functions to be called from matrix-free loops and cell_loops: vmult (homogenous)
+   * Calculate diagonal.
    */
   void
-  local_cell_hom(MatrixFree_ const & /*data*/,
-                 VectorType &       dst,
-                 VectorType const & src,
-                 Range const &      range) const;
-
-  void
-  local_face_hom(MatrixFree_ const & /*data*/,
-                 VectorType &       dst,
-                 VectorType const & src,
-                 Range const &      range) const;
-
-  void
-  local_boundary_hom(MatrixFree_ const & /*data*/,
-                     VectorType & /*dst*/,
+  cell_loop_diagonal(MatrixFree_ const & /*data*/,
+                     VectorType & dst,
                      VectorType const & /*src*/,
-                     Range const & /*range*/) const;
-
-  /*
-   * ... rhs (inhomogenous)
-   * note:  in the inhomogeneous case we only have to loop over the boundary
-   * faces. This is, however, not possible with Matrixfree::loop(): that is
-   * why two empty function have to be provided for cell and face.
-   */
-  void
-  local_cell_inhom(MatrixFree_ const & /*data*/,
-                   VectorType & /*dst*/,
-                   VectorType const & /*src*/,
-                   Range const & /*range*/) const
-  {
-    // nothing to do
-  }
+                     Range const & range) const;
 
   void
-  local_face_inhom(MatrixFree_ const & /*data*/,
-                   VectorType & /*dst*/,
-                   VectorType const & /*src*/,
-                   Range const & /*range*/) const
-  {
-    // nothing to do
-  }
+  face_loop_diagonal(MatrixFree_ const & /*data*/,
+                     VectorType & dst,
+                     VectorType const & /*src*/,
+                     Range const & range) const;
 
   void
-  local_boundary_inhom(MatrixFree_ const & /*data*/,
-                       VectorType & /*dst*/,
-                       VectorType const & /*src*/,
-                       Range const & /*range*/) const;
-
-  /*
-   * ... evaluate
-   */
-  void
-  local_boundary_full(MatrixFree_ const & /*data*/,
-                      VectorType & /*dst*/,
-                      VectorType const & /*src*/,
-                      Range const & /*range*/) const;
-
-  /*
-   * ... diagonal
-   */
-  void
-  local_add_diagonal_cell(MatrixFree_ const & /*data*/,
-                          VectorType & dst,
-                          VectorType const & /*src*/,
-                          Range const & range) const;
-
-  void
-  local_add_diagonal_face(MatrixFree_ const & /*data*/,
-                          VectorType & dst,
-                          VectorType const & /*src*/,
-                          Range const & range) const;
-
-  void
-  local_add_diagonal_boundary(MatrixFree_ const & /*data*/,
+  boundary_face_loop_diagonal(MatrixFree_ const & /*data*/,
                               VectorType & dst,
                               VectorType const & /*src*/,
                               Range const & range) const;
 
   void
-  local_add_diagonal_cell_based(MatrixFree_ const & /*data*/,
-                                VectorType & dst,
-                                VectorType const & /*src*/,
-                                Range const & range) const;
+  cell_based_loop_diagonal(MatrixFree_ const & /*data*/,
+                           VectorType & dst,
+                           VectorType const & /*src*/,
+                           Range const & range) const;
 
   /*
-   * ... block diagonal
+   * Calculate block diagonal.
    */
   void
-  local_apply_block_diagonal(MatrixFree_ const & /*data*/,
-                             VectorType &       dst,
-                             VectorType const & src,
-                             Range const &      range) const;
-  void
-  local_add_block_diagonal_cell(MatrixFree_ const & /*data*/,
-                                BlockMatrix & dst,
-                                BlockMatrix const & /*src*/,
-                                Range const & range) const;
+  cell_loop_block_diagonal(MatrixFree_ const & /*data*/,
+                           BlockMatrix & dst,
+                           BlockMatrix const & /*src*/,
+                           Range const & range) const;
 
   void
-  local_add_block_diagonal_face(MatrixFree_ const & /*data*/,
-                                BlockMatrix & dst,
-                                BlockMatrix const & /*src*/,
-                                Range const & range) const;
+  face_loop_block_diagonal(MatrixFree_ const & /*data*/,
+                           BlockMatrix & dst,
+                           BlockMatrix const & /*src*/,
+                           Range const & range) const;
 
   void
-  local_add_block_diagonal_boundary(MatrixFree_ const & /*data*/,
+  boundary_face_loop_block_diagonal(MatrixFree_ const & /*data*/,
                                     BlockMatrix & dst,
                                     BlockMatrix const & /*src*/,
                                     Range const & range) const;
 
+  // cell-based variant for computation of both cell and face integrals
   void
-  local_add_block_diagonal_cell_based(MatrixFree_ const & /*data*/,
-                                      BlockMatrix & dst,
-                                      BlockMatrix const & /*src*/,
-                                      Range const & range) const;
+  cell_based_loop_block_diagonal(MatrixFree_ const & /*data*/,
+                                 BlockMatrix & dst,
+                                 BlockMatrix const & /*src*/,
+                                 Range const & range) const;
+
 
   /*
-   * ... block Jacobi (inverse of block diagonal)
-   * same as local_apply_block_diagonal, but instead of applying the block matrix B
-   * we solve the linear system B*dst=src (LU factorization should have already
-   * been performed with the method update_inverse_block_diagonal())
+   * Apply block diagonal.
    */
   void
-  local_apply_inverse_block_diagonal(MatrixFree_ const & data,
-                                     VectorType &        dst,
-                                     VectorType const &  src,
-                                     Range const &       cell_range) const;
+  cell_loop_apply_block_diagonal(MatrixFree_ const & /*data*/,
+                                 VectorType &       dst,
+                                 VectorType const & src,
+                                 Range const &      range) const;
 
   /*
-   * ... sparse matrix
+   * Apply inverse block diagonal:
+   *
+   * instead of applying the block matrix B we solve the linear system B*dst=src (LU factorization
+   * should have already been performed with the method update_inverse_block_diagonal())
    */
+  void
+  cell_loop_apply_inverse_block_diagonal(MatrixFree_ const & data,
+                                         VectorType &        dst,
+                                         VectorType const &  src,
+                                         Range const &       cell_range) const;
+
 #ifdef DEAL_II_WITH_TRILINOS
+  /*
+   * Calculate sparse matrix.
+   */
   void
-  local_calculate_system_matrix_cell(MatrixFree_ const & /*data*/,
-                                     SparseMatrix & dst,
-                                     SparseMatrix const & /*src*/,
-                                     Range const & range) const;
+  cell_loop_calculate_system_matrix(MatrixFree_ const & /*data*/,
+                                    SparseMatrix & dst,
+                                    SparseMatrix const & /*src*/,
+                                    Range const & range) const;
 
   void
-  local_calculate_system_matrix_face(MatrixFree_ const & /*data*/,
-                                     SparseMatrix & dst,
-                                     SparseMatrix const & /*src*/,
-                                     Range const & range) const;
+  face_loop_calculate_system_matrix(MatrixFree_ const & /*data*/,
+                                    SparseMatrix & dst,
+                                    SparseMatrix const & /*src*/,
+                                    Range const & range) const;
 
   void
-  local_calculate_system_matrix_boundary(MatrixFree_ const & /*data*/,
-                                         SparseMatrix & /*dst*/,
-                                         SparseMatrix const & /*src*/,
-                                         Range const & /*range*/) const;
+  boundary_face_loop_calculate_system_matrix(MatrixFree_ const & /*data*/,
+                                             SparseMatrix & /*dst*/,
+                                             SparseMatrix const & /*src*/,
+                                             Range const & /*range*/) const;
 #endif
 
+  /*
+   * For singular operators, a Krylov projection is applied onto the subspace of vectors with zero
+   * mean. This function calculates the diagonal for the projected system given the diagonal of the
+   * original system.
+   */
   void
   adjust_diagonal_for_singular_operator(VectorType & diagonal) const;
 
   /*
-   * set entries in the diagonal corresponding to constraint DoFs to one
+   * This function sets entries in the diagonal corresponding to constraint DoFs to one.
    */
   void
   set_constraint_diagonal(VectorType & diagonal) const;
@@ -574,23 +622,43 @@ private:
         "OperatorBase::do_verify_boundary_conditions() has to be implemented by derived classes."));
   }
 
-  // do we have to evaluate (boundary) face integrals for this operator? For example,
-  // some operators such as the mass matrix operator only involve cell integrals.
+  /*
+   * Do we have to evaluate (boundary) face integrals for this operator? For example, ome operators
+   * such as the mass matrix operator only involve cell integrals.
+   */
   const bool do_eval_faces;
 
+  /*
+   * Constraint matrix.
+   */
   mutable lazy_ptr<ConstraintMatrix> constraint;
 
-  // discretization is based on discontinuous Galerin method?
+  /*
+   * Is the discretization based on discontinuous Galerin method?
+   */
   mutable bool is_dg;
 
-  // operator is used as a multigrid level operator?
+  /*
+   * Operator is used as a multigrid level operator?
+   */
   mutable bool is_mg;
 
+  /*
+   * Multigrid level: 0 <= level_mg_handler <= max_level. If the operator is not used as a multigrid
+   * level operator, this variable takes a value of numbers::invalid_unsigned_int.
+   */
   mutable unsigned int level_mg_handler;
 
-  // vector of matrices for block-diagonal preconditioners
+  /*
+   * Vector of matrices for block-diagonal preconditioners.
+   */
   mutable std::vector<LAPACKFullMatrix<Number>> matrices;
-  mutable bool                                  block_jacobi_matrices_have_been_initialized;
+
+  /*
+   * We want to initialize the block jacobi matrices only the once, so we store the status of
+   * initialization in a variable.
+   */
+  mutable bool block_jacobi_matrices_have_been_initialized;
 };
 
 #include "operation_base.cpp"
