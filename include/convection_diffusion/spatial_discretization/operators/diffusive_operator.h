@@ -81,6 +81,7 @@ public:
   virtual void
   apply_add(VectorType & dst, VectorType const & src) const;
 
+private:
   /*
    *  Calculation of "value_flux".
    */

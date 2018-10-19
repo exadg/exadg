@@ -168,6 +168,7 @@ enum class MultigridOperatorType
 {
   Undefined,
   ReactionDiffusion,
+  ReactionConvection,
   ReactionConvectionDiffusion
 };
 
@@ -571,7 +572,10 @@ public:
 
     if(preconditioner == Preconditioner::Multigrid)
     {
-      std::string str_mg[] = {"Undefined", "Reaction-Diffusion", "Reaction-Convection-Diffusion"};
+      std::string str_mg[] = {"Undefined",
+                              "Reaction-Diffusion",
+                              "Reaction-Convection",
+                              "Reaction-Convection-Diffusion"};
 
       print_parameter(pcout, "MG Operator type", str_mg[(int)mg_operator_type]);
       multigrid_data.print(pcout);

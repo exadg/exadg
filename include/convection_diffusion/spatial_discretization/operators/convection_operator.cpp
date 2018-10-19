@@ -79,21 +79,17 @@ inline DEAL_II_ALWAYS_INLINE //
 
   Tensor<1, dim, VectorizedArray<value_type>> velocity;
 
-  evaluate_vectorial_function(velocity,
-                              this->operator_settings.velocity,
-                              q_points,
-                              this->eval_time);
+  evaluate_vectorial_function(velocity, this->operator_data.velocity, q_points, this->eval_time);
 
   Tensor<1, dim, VectorizedArray<value_type>> normal = fe_eval.get_normal_vector(q);
 
   VectorizedArray<value_type> normal_velocity = velocity * normal;
 
-  if(this->operator_settings.numerical_flux_formulation ==
-     NumericalFluxConvectiveOperator::CentralFlux)
+  if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
   {
     flux = calculate_central_flux(value_m, value_p, normal_velocity);
   }
-  else if(this->operator_settings.numerical_flux_formulation ==
+  else if(this->operator_data.numerical_flux_formulation ==
           NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
   {
     flux = calculate_lax_friedrichs_flux(value_m, value_p, normal_velocity);
@@ -154,7 +150,7 @@ inline DEAL_II_ALWAYS_INLINE //
     {
       VectorizedArray<value_type> g = make_vectorized_array<value_type>(0.0);
       typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-      it = this->operator_settings.bc->dirichlet_bc.find(boundary_id);
+      it = this->operator_data.bc->dirichlet_bc.find(boundary_id);
       Point<dim, VectorizedArray<value_type>> q_points = fe_eval.quadrature_point(q);
       evaluate_scalar_function(g, it->second, q_points, this->eval_time);
 
@@ -191,10 +187,7 @@ ConvectiveOperator<dim, fe_degree, value_type>::do_cell_integral(FEEvalCell & fe
 
     Tensor<1, dim, VectorizedArray<value_type>> velocity;
 
-    evaluate_vectorial_function(velocity,
-                                this->operator_settings.velocity,
-                                q_points,
-                                this->eval_time);
+    evaluate_vectorial_function(velocity, this->operator_data.velocity, q_points, this->eval_time);
 
     fe_eval.submit_gradient(-fe_eval.get_value(q) * velocity, q);
   }
@@ -262,7 +255,7 @@ ConvectiveOperator<dim, fe_degree, value_type>::do_boundary_integral(
   OperatorType const &       operator_type,
   types::boundary_id const & boundary_id) const
 {
-  BoundaryType boundary_type = this->operator_settings.get_boundary_type(boundary_id);
+  BoundaryType boundary_type = this->operator_data.get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {

@@ -78,7 +78,7 @@ private:
   void
   cell_loop(MatrixFree<dim, value_type> const & data,
             VectorType &                        dst,
-            VectorType const &,
+            VectorType const & /*src*/,
             std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEvaluation<dim, fe_degree, fe_degree + 1, 1, value_type> fe_eval(data,
