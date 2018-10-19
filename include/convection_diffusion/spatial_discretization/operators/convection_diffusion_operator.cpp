@@ -88,9 +88,15 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::reinit(
 
   if(this->operator_data.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
   {
-    this->operator_data.convective_problem =
-      false; // deactivate convective term for multigrid preconditioner
-    this->operator_data.diffusive_problem = true;
+    // deactivate convective term for multigrid preconditioner
+    this->operator_data.convective_problem = false;
+    this->operator_data.diffusive_problem  = true;
+  }
+  if(this->operator_data.mg_operator_type == MultigridOperatorType::ReactionConvection)
+  {
+    this->operator_data.convective_problem = true;
+    // deactivate viscous term for multigrid preconditioner
+    this->operator_data.diffusive_problem = false;
   }
   else if(this->operator_data.mg_operator_type ==
           MultigridOperatorType::ReactionConvectionDiffusion)
@@ -298,7 +304,8 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_diagonal_matrices
   BlockMatrix & matrices,
   Number const  time) const
 {
-  Parent::add_block_diagonal_matrices(matrices, time);
+  // We have to override this function but do not need it for this operator.
+  AssertThrow(false, ExcMessage("Should not arrive here."));
 }
 
 template<int dim, int fe_degree, typename Number>
@@ -306,8 +313,6 @@ void
 ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_diagonal_matrices(
   BlockMatrix & matrices) const
 {
-  Number const time = this->get_evaluation_time();
-
   // calculate block Jacobi matrices
   if(this->operator_data.unsteady_problem == true)
   {
@@ -331,6 +336,7 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_diagonal_matrices
 
   if(this->operator_data.convective_problem == true)
   {
+    Number const time = this->get_evaluation_time();
     convective_operator->add_block_diagonal_matrices(matrices, time);
   }
 }
