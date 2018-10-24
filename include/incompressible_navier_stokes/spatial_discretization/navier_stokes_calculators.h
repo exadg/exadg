@@ -1,8 +1,8 @@
 /*
- * NavierStokesCalculators.h
+ * navier_stokes_calculators.h
  *
  *  Created on: Oct 28, 2016
- *      Author: krank
+ *      Author: fehn
  */
 
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_NAVIER_STOKES_CALCULATORS_H_
