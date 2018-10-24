@@ -14,17 +14,16 @@
 #include <deal.II/lac/parallel_vector.h>
 #include <deal.II/numerics/vector_tools.h>
 
-#include "../../operators/inverse_mass_matrix.h"
-#include "../../operators/matrix_operator_base.h"
-#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
-#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
-#include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
-
 #include "../../convection_diffusion/preconditioners/multigrid_preconditioner.h"
 #include "../../convection_diffusion/spatial_discretization/convection_diffusion_operators.h"
 #include "../../convection_diffusion/user_interface/boundary_descriptor.h"
 #include "../../convection_diffusion/user_interface/field_functions.h"
 #include "../../convection_diffusion/user_interface/input_parameters.h"
+#include "../../operators/inverse_mass_matrix.h"
+#include "../../operators/matrix_operator_base.h"
+#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
+#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
+#include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
 
 namespace ConvDiff
 {
@@ -78,12 +77,16 @@ public:
 
     // convection-diffusion operator
     ConvDiff::ConvectionDiffusionOperatorData<dim> conv_diff_operator_data;
-    conv_diff_operator_data.mass_matrix_operator_data = mass_matrix_operator.get_operator_data();
-    conv_diff_operator_data.convective_operator_data  = convective_operator.get_operator_data();
-    conv_diff_operator_data.diffusive_operator_data   = diffusive_operator.get_operator_data();
+    conv_diff_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
+    conv_diff_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+      param.implement_block_diagonal_preconditioner_matrix_free;
+    conv_diff_operator_data.preconditioner_block_jacobi = param.preconditioner_block_diagonal;
+    conv_diff_operator_data.block_jacobi_solver_data    = param.block_jacobi_solver_data;
+    conv_diff_operator_data.mass_matrix_operator_data   = mass_matrix_operator.get_operator_data();
+    conv_diff_operator_data.convective_operator_data    = convective_operator.get_operator_data();
+    conv_diff_operator_data.diffusive_operator_data     = diffusive_operator.get_operator_data();
     conv_diff_operator_data.scaling_factor_time_derivative_term =
       scaling_factor_time_derivative_term_in;
-    conv_diff_operator_data.use_cell_based_loops = param.enable_cell_based_face_loops;
 
     if(this->param.problem_type == ConvDiff::ProblemType::Unsteady)
     {
@@ -445,7 +448,7 @@ private:
       (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
        update_values);
 
-    if(param.enable_cell_based_face_loops)
+    if(param.use_cell_based_face_loops)
     {
       auto tria = dynamic_cast<const parallel::distributed::Triangulation<dim> *>(
         &dof_handler.get_triangulation());
@@ -464,7 +467,7 @@ private:
     MassMatrixOperatorData<dim> mass_matrix_operator_data;
     mass_matrix_operator_data.dof_index            = 0;
     mass_matrix_operator_data.quad_index           = 0;
-    mass_matrix_operator_data.use_cell_based_loops = param.enable_cell_based_face_loops;
+    mass_matrix_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
     mass_matrix_operator.initialize(data, mass_matrix_operator_data);
 
     // inverse mass matrix operator
@@ -478,7 +481,7 @@ private:
     convective_operator_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
     convective_operator_data.bc                         = boundary_descriptor;
     convective_operator_data.velocity                   = field_functions->velocity;
-    convective_operator_data.use_cell_based_loops       = param.enable_cell_based_face_loops;
+    convective_operator_data.use_cell_based_loops       = param.use_cell_based_face_loops;
     convective_operator.initialize(data, convective_operator_data);
 
     // diffusive operator
@@ -488,7 +491,7 @@ private:
     diffusive_operator_data.IP_factor            = param.IP_factor;
     diffusive_operator_data.diffusivity          = param.diffusivity;
     diffusive_operator_data.bc                   = boundary_descriptor;
-    diffusive_operator_data.use_cell_based_loops = param.enable_cell_based_face_loops;
+    diffusive_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
     diffusive_operator.initialize(mapping, data, diffusive_operator_data);
 
     // rhs operator

@@ -17,7 +17,7 @@
 #include "../../incompressible_navier_stokes/spatial_discretization/helmholtz_operator.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/velocity_convection_diffusion_operator.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
-#include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
+#include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
 #include "../../solvers_and_preconditioners/util/check_multigrid.h"
 
 #include "../../functionalities/set_zero_mean_value.h"

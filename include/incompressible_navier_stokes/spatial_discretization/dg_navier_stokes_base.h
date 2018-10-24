@@ -28,8 +28,11 @@
 #include "operators/matrix_operator_base.h"
 #include "turbulence_model.h"
 
+#include "../../incompressible_navier_stokes/preconditioners/multigrid_preconditioner_navier_stokes.h"
+#include "../../solvers_and_preconditioners/newton/newton_solver.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
-#include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
+#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
+#include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
 
 #include "../../poisson/spatial_discretization/laplace_operator.h"
 #include "projection_operators.h"
@@ -512,7 +515,7 @@ protected:
   std::shared_ptr<ELEMENTWISE_PROJ_OPERATOR> elementwise_projection_operator;
 
   // preconditioner for elementwise solver
-  std::shared_ptr<InternalSolvers::PreconditionerBase<VectorizedArray<Number>>>
+  std::shared_ptr<Elementwise::PreconditionerBase<VectorizedArray<Number>>>
     elementwise_preconditioner_projection;
 
   // projection solver
@@ -1325,6 +1328,8 @@ DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule
   proj_op_data.use_cell_based_loops   = this->param.use_cell_based_face_loops;
   proj_op_data.implement_block_diagonal_preconditioner_matrix_free =
     this->param.implement_block_diagonal_preconditioner_matrix_free;
+  proj_op_data.preconditioner_block_jacobi = this->param.preconditioner_block_diagonal_projection;
+  proj_op_data.block_jacobi_solver_data    = this->param.solver_data_block_diagonal_projection;
 
   projection_operator.reset(new PROJ_OPERATOR(this->data,
                                               this->get_dof_index_velocity(),
@@ -1369,18 +1374,18 @@ DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule
       elementwise_projection_operator.reset(new ELEMENTWISE_PROJ_OPERATOR(*projection_operator));
 
       // preconditioner
-      typedef InternalSolvers::PreconditionerBase<VectorizedArray<Number>> PROJ_PRECONDITIONER;
+      typedef Elementwise::PreconditionerBase<VectorizedArray<Number>> PROJ_PRECONDITIONER;
 
       if(this->param.preconditioner_projection == PreconditionerProjection::None)
       {
-        typedef InternalSolvers::PreconditionerIdentity<VectorizedArray<Number>> IDENTITY;
+        typedef Elementwise::PreconditionerIdentity<VectorizedArray<Number>> IDENTITY;
 
         elementwise_preconditioner_projection.reset(
           new IDENTITY(elementwise_projection_operator->get_problem_size()));
       }
       else if(this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
       {
-        typedef ElementwiseInverseMassMatrixPreconditioner<dim, dim, fe_degree, Number>
+        typedef Elementwise::InverseMassMatrixPreconditioner<dim, dim, fe_degree, Number>
           INVERSE_MASS;
 
         elementwise_preconditioner_projection.reset(
@@ -1394,18 +1399,14 @@ DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule
       }
 
       // solver
-      ElementwiseIterativeSolverData projection_solver_data;
-      projection_solver_data.solver_type         = InternalSolvers::SolverType::CG;
+      Elementwise::IterativeSolverData projection_solver_data;
+      projection_solver_data.solver_type         = Elementwise::SolverType::CG;
       projection_solver_data.solver_data.abs_tol = this->param.abs_tol_projection;
       projection_solver_data.solver_data.rel_tol = this->param.rel_tol_projection;
 
-      typedef ElementwiseIterativeSolver<dim,
-                                         dim,
-                                         fe_degree,
-                                         Number,
-                                         ELEMENTWISE_PROJ_OPERATOR,
-                                         PROJ_PRECONDITIONER>
-        PROJ_SOLVER;
+      typedef Elementwise::
+        IterativeSolver<dim, dim, fe_degree, Number, ELEMENTWISE_PROJ_OPERATOR, PROJ_PRECONDITIONER>
+          PROJ_SOLVER;
 
       projection_solver.reset(new PROJ_SOLVER(
         *std::dynamic_pointer_cast<ELEMENTWISE_PROJ_OPERATOR>(elementwise_projection_operator),

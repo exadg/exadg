@@ -44,7 +44,8 @@ struct OperatorBaseData
       operator_is_singular(false),
       mapping_update_flags(update_default),
       mapping_update_flags_inner_faces(update_default),
-      mapping_update_flags_boundary_faces(update_default)
+      mapping_update_flags_boundary_faces(update_default),
+      implement_block_diagonal_preconditioner_matrix_free(false)
   {
   }
 
@@ -104,6 +105,8 @@ struct OperatorBaseData
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_face_pairs_level0;
+
+  bool implement_block_diagonal_preconditioner_matrix_free;
 };
 
 template<int dim, int degree, typename Number, typename AdditionalData>
@@ -231,18 +234,49 @@ public:
   /*
    * block Jacobi preconditioner (block-diagonal)
    */
-  void
+  virtual void
   apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const;
 
-  // TODO: add matrix-free and block matrix version
+  // apply block diagonal elementwise: matrix-free implementation
   void
-  apply_block_diagonal(VectorType & dst, VectorType const & src) const;
+  apply_add_block_diagonal_elementwise(unsigned int const                    cell,
+                                       FEEvalCell &                          fe_eval,
+                                       FEEvalFace &                          fe_eval_m,
+                                       FEEvalFace &                          fe_eval_p,
+                                       VectorizedArray<Number> * const       dst,
+                                       VectorizedArray<Number> const * const src) const;
 
+  // apply block diagonal elementwise: matrix-free implementation
   void
-  update_inverse_block_diagonal() const;
+  apply_add_block_diagonal_elementwise(unsigned int const                    cell,
+                                       FEEvalCell &                          fe_eval,
+                                       FEEvalFace &                          fe_eval_m,
+                                       FEEvalFace &                          fe_eval_p,
+                                       VectorizedArray<Number> * const       dst,
+                                       VectorizedArray<Number> const * const src,
+                                       Number const                          evaluation_time) const;
 
+  // apply block diagonal: matrix-based implementation
   void
-  calculate_block_diagonal_matrices() const;
+  apply_block_diagonal_matrix_based(VectorType & dst, VectorType const & src) const;
+
+  // Update block diagonal preconditioner: initialize everything related to block diagonal
+  // preconditioner when this function is called the first time. Recompute block matrices in case of
+  // matrix-based implementation.
+  virtual void
+  update_block_diagonal_preconditioner() const;
+
+  // This function has to initialize everything related to the block diagonal preconditioner when
+  // using the matrix-free variant with elementwise iterative solvers and matrix-free operator
+  // evaluation.
+  virtual void
+  initialize_block_diagonal_preconditioner_matrix_free() const
+  {
+    AssertThrow(
+      false,
+      ExcMessage(
+        "Should not arrive here. Function initialize_block_diagonal_preconditioner_matrix_free() has to be implemented by derived classes."));
+  }
 
   virtual void
   add_block_diagonal_matrices(BlockMatrix & matrices) const;
@@ -357,6 +391,13 @@ protected:
   {
     AssertThrow(false,
                 ExcMessage("OperatorBase::do_boundary_integral() has not been implemented!"));
+  }
+
+  virtual void
+  do_block_diagonal_cell_based() const
+  {
+    AssertThrow(
+      false, ExcMessage("OperatorBase::do_block_diagonal_cell_based() has not been implemented!"));
   }
 
   /*
@@ -487,30 +528,30 @@ private:
                            Range const & range) const;
 
   /*
-   * Calculate block diagonal.
+   * Calculate (assemble) block diagonal.
    */
   void
-  cell_loop_block_diagonal(MatrixFree_ const & /*data*/,
-                           BlockMatrix & dst,
+  cell_loop_block_diagonal(MatrixFree_ const & data,
+                           BlockMatrix &       matrices,
                            BlockMatrix const & /*src*/,
                            Range const & range) const;
 
   void
-  face_loop_block_diagonal(MatrixFree_ const & /*data*/,
-                           BlockMatrix & dst,
+  face_loop_block_diagonal(MatrixFree_ const & data,
+                           BlockMatrix &       matrices,
                            BlockMatrix const & /*src*/,
                            Range const & range) const;
 
   void
-  boundary_face_loop_block_diagonal(MatrixFree_ const & /*data*/,
-                                    BlockMatrix & dst,
+  boundary_face_loop_block_diagonal(MatrixFree_ const & data,
+                                    BlockMatrix &       matrices,
                                     BlockMatrix const & /*src*/,
                                     Range const & range) const;
 
   // cell-based variant for computation of both cell and face integrals
   void
-  cell_based_loop_block_diagonal(MatrixFree_ const & /*data*/,
-                                 BlockMatrix & dst,
+  cell_based_loop_block_diagonal(MatrixFree_ const & data,
+                                 BlockMatrix &       matrices,
                                  BlockMatrix const & /*src*/,
                                  Range const & range) const;
 
@@ -519,15 +560,15 @@ private:
    * Apply block diagonal.
    */
   void
-  cell_loop_apply_block_diagonal(MatrixFree_ const & /*data*/,
-                                 VectorType &       dst,
-                                 VectorType const & src,
-                                 Range const &      range) const;
+  cell_loop_apply_block_diagonal_matrix_based(MatrixFree_ const & /*data*/,
+                                              VectorType &       dst,
+                                              VectorType const & src,
+                                              Range const &      range) const;
 
   /*
    * Apply inverse block diagonal:
    *
-   * instead of applying the block matrix B we solve the linear system B*dst=src (LU factorization
+   * instead of applying the block matrix B we compute dst = B^{-1} * src (LU factorization
    * should have already been performed with the method update_inverse_block_diagonal())
    */
   void
@@ -655,10 +696,13 @@ private:
   mutable std::vector<LAPACKFullMatrix<Number>> matrices;
 
   /*
-   * We want to initialize the block jacobi matrices only the once, so we store the status of
+   * We want to initialize the block diagonal preconditioner (block diagonal matrices or elementwise
+   * iterative solvers in case of matrix-free implementation) only once, so we store the status of
    * initialization in a variable.
    */
-  mutable bool block_jacobi_matrices_have_been_initialized;
+  mutable bool block_diagonal_preconditioner_is_initialized;
+
+  unsigned int n_mpi_processes;
 };
 
 #include "operation_base.cpp"

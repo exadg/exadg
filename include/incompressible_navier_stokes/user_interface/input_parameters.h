@@ -21,6 +21,7 @@
 #include "../../postprocessor/error_calculation_data.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
 #include "../../solvers_and_preconditioners/newton/newton_solver_data.h"
+#include "../../solvers_and_preconditioners/solvers/solver_data.h"
 #include "../postprocessor/line_plot_data.h"
 #include "../postprocessor/mean_velocity_calculator.h"
 
@@ -265,6 +266,24 @@ enum class TypePenaltyParameter
   ConvectiveTerm,
   ViscousTerm,
   ViscousAndConvectiveTerms
+};
+
+/**************************************************************************************/
+/*                                                                                    */
+/*                              NUMERICAL PARAMETERS                                  */
+/*                                                                                    */
+/**************************************************************************************/
+
+
+/*
+ * Elementwise preconditioner for block Jacobi preconditioner (only relevant for
+ * elementwise iterative solution procedure)
+ */
+enum class PreconditionerBlockDiagonal
+{
+  Undefined,
+  None,
+  InverseMassMatrix
 };
 
 
@@ -719,6 +738,8 @@ public:
       // projection step
       solver_projection(SolverProjection::PCG),
       preconditioner_projection(PreconditionerProjection::InverseMassMatrix),
+      preconditioner_block_diagonal_projection(PreconditionerBlockDiagonal::InverseMassMatrix),
+      solver_data_block_diagonal_projection(SolverData(1000, 1.e-12, 1.e-2)),
       update_preconditioner_projection(true),
       abs_tol_projection(1.e-20),
       rel_tol_projection(1.e-12),
@@ -1449,6 +1470,18 @@ public:
                         "Preconditioner projection step",
                         str_precon_proj[(int)preconditioner_projection]);
 
+        if(preconditioner_projection == PreconditionerProjection::BlockJacobi &&
+           implement_block_diagonal_preconditioner_matrix_free)
+        {
+          std::string str_precon[] = {"Undefined", "None", "InverseMassMatrix"};
+
+          print_parameter(pcout,
+                          "Preconditioner block diagonal",
+                          str_precon[(int)preconditioner_block_diagonal_projection]);
+
+          solver_data_block_diagonal_projection.print(pcout);
+        }
+
         print_parameter(pcout,
                         "Update preconditioner projection step",
                         update_preconditioner_projection);
@@ -2068,6 +2101,14 @@ public:
 
   // description: see enum declaration
   PreconditionerProjection preconditioner_projection;
+
+  // description: see enum declaration (only relevant if block diagonal is used as
+  // preconditioner)
+  PreconditionerBlockDiagonal preconditioner_block_diagonal_projection;
+
+  // solver data for block Jacobi preconditioner (only relevant if elementwise
+  // iterative solution procedure is used for block diagonal preconditioner)
+  SolverData solver_data_block_diagonal_projection;
 
   // Update preconditioner before solving the linear system of equations.
   // Note that this variable is only used when using an iterative method

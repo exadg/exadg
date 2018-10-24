@@ -33,8 +33,7 @@ public:
       fe_eval(1,
               FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>(op.get_data(),
                                                                            op.get_dof_index(),
-                                                                           op.get_quad_index())),
-      tau(1)
+                                                                           op.get_quad_index()))
   {
   }
 
@@ -59,7 +58,6 @@ public:
   void
   setup(const unsigned int cell)
   {
-    tau[0] = op.get_array_div_penalty_parameter()[cell];
     fe_eval[0].reinit(cell);
   }
 
@@ -72,29 +70,100 @@ public:
   void
   vmult(VectorizedArray<value_type> * dst, VectorizedArray<value_type> * src) const
   {
-    Assert(fe_eval[0].get_shape_info().element_type <=
-             dealii::internal::MatrixFreeFunctions::tensor_symmetric,
-           ExcNotImplemented());
-
-    // compute matrix vector product on element
-    fe_eval[0].evaluate(src, true, true, false);
-
-    for(unsigned int q = 0; q < fe_eval[0].n_q_points; ++q)
-    {
-      fe_eval[0].submit_divergence(op.get_time_step_size() * tau[0] * fe_eval[0].get_divergence(q),
-                                   q);
-      fe_eval[0].submit_value(fe_eval[0].get_value(q), q);
-    }
-
-    fe_eval[0].integrate(true, true, dst);
+    Elementwise::vector_init(dst, fe_eval[0].dofs_per_cell);
+    op.apply_add_block_diagonal_elementwise_cell(fe_eval[0], dst, src);
   }
 
 private:
   Operator const & op;
 
   mutable AlignedVector<FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>> fe_eval;
+};
 
-  AlignedVector<VectorizedArray<value_type>> tau;
+
+/*
+ * Projection operator (mass matrix + divergence penalty term + continuity penalty term) where the
+ * integrals are computed elementwise. This wrapper is needed to define the interface to the
+ * elementwise iterative solver.
+ *
+ *  Weak form:
+ *
+ *   (v_h, u_h)_Omega^e + delta_t * (div(v_h), tau_div * div(u_h))_Omega^e
+ *                      + delta_t * (jump(v_h), tau_conti * jump(u_h))_Omega^e.
+ *
+ */
+template<int dim, int fe_degree, typename value_type, typename Operator>
+class ElementwiseProjectionOperator
+{
+public:
+  ElementwiseProjectionOperator(Operator const & operator_in)
+    : op(operator_in),
+      current_cell(1),
+      fe_eval(1,
+              FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>(op.get_data(),
+                                                                           op.get_dof_index(),
+                                                                           op.get_quad_index())),
+      fe_eval_m(
+        FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>(op.get_data(),
+                                                                         true,
+                                                                         op.get_dof_index(),
+                                                                         op.get_quad_index())),
+      fe_eval_p(
+        FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>(op.get_data(),
+                                                                         false,
+                                                                         op.get_dof_index(),
+                                                                         op.get_quad_index()))
+  {
+  }
+
+  MatrixFree<dim, value_type> const &
+  get_data() const
+  {
+    return op.get_data();
+  }
+
+  unsigned int
+  get_dof_index() const
+  {
+    return op.get_dof_index();
+  }
+
+  unsigned int
+  get_quad_index() const
+  {
+    return op.get_dof_index();
+  }
+
+  void
+  setup(const unsigned int cell)
+  {
+    fe_eval[0].reinit(cell);
+
+    current_cell = cell;
+  }
+
+  unsigned int
+  get_problem_size() const
+  {
+    return fe_eval[0].dofs_per_cell;
+  }
+
+  void
+  vmult(VectorizedArray<value_type> * dst, VectorizedArray<value_type> * src) const
+  {
+    Elementwise::vector_init(dst, fe_eval[0].dofs_per_cell);
+    op.apply_add_block_diagonal_elementwise(
+      current_cell, fe_eval[0], fe_eval_m, fe_eval_p, dst, src);
+  }
+
+private:
+  Operator const & op;
+
+  unsigned int current_cell;
+
+  mutable AlignedVector<FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>> fe_eval;
+  mutable FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>            fe_eval_m;
+  mutable FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>            fe_eval_p;
 };
 
 
@@ -158,7 +227,9 @@ struct CombinedDivergenceContinuityPenaltyOperatorData
       penalty_factor_conti(1.0),
       which_components(ContinuityPenaltyComponents::Normal),
       implement_block_diagonal_preconditioner_matrix_free(false),
-      use_cell_based_loops(false)
+      use_cell_based_loops(false),
+      preconditioner_block_jacobi(PreconditionerBlockDiagonal::InverseMassMatrix),
+      block_jacobi_solver_data(SolverData(100, 1.e-12, 1.e-1))
   {
   }
 
@@ -180,6 +251,10 @@ struct CombinedDivergenceContinuityPenaltyOperatorData
 
   // use cell based loops
   bool use_cell_based_loops;
+
+  // elementwise iterative solution of block Jacobi problems
+  PreconditionerBlockDiagonal preconditioner_block_jacobi;
+  SolverData                  block_jacobi_solver_data;
 };
 
 template<int dim,
@@ -240,6 +315,7 @@ public:
       operator_data(operator_data_in),
       scaling_factor_div(1.0),
       scaling_factor_conti(1.0),
+      n_mpi_processes(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD)),
       block_diagonal_preconditioner_is_initialized(false)
   {
     array_conti_penalty_parameter.resize(data.n_macro_cells() + data.n_macro_ghost_cells());
@@ -531,12 +607,9 @@ public:
     // matrix-free
     if(this->operator_data.implement_block_diagonal_preconditioner_matrix_free)
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
-
       // Solve block Jacobi problems iteratively using an elementwise solver vectorized
       // over several elements.
-      // TODO
-      //      elementwise_solver->solve(dst,src);
+      elementwise_solver->solve(dst, src);
     }
     else // matrix based
     {
@@ -560,10 +633,7 @@ public:
     {
       if(operator_data.implement_block_diagonal_preconditioner_matrix_free)
       {
-        AssertThrow(false, ExcMessage("Not implemented."));
-
-        // TODO
-        //        initialize_block_diagonal_preconditioner_matrix_free();
+        initialize_block_diagonal_preconditioner_matrix_free();
       }
       else // matrix-based variant
       {
@@ -593,9 +663,89 @@ public:
     }
   }
 
-private:
+  typedef FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>     FEEvalCell;
+  typedef FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type> FEEvalFace;
+
   void
-  do_cell_integral(FEEval_Velocity_Velocity_linear & fe_eval) const
+  apply_add_block_diagonal_elementwise_cell(FEEvalCell &                          fe_eval,
+                                            VectorizedArray<Number> * const       dst,
+                                            VectorizedArray<Number> const * const src) const
+  {
+    unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
+
+    for(unsigned int i = 0; i < dofs_per_cell; ++i)
+      fe_eval.begin_dof_values()[i] = src[i];
+
+    fe_eval.evaluate(true, true, false);
+
+    do_cell_integral(fe_eval);
+
+    fe_eval.integrate(true, true);
+
+    for(unsigned int i = 0; i < dofs_per_cell; ++i)
+      dst[i] += fe_eval.begin_dof_values()[i];
+  }
+
+  void
+  apply_add_block_diagonal_elementwise(unsigned int const                    cell,
+                                       FEEvalCell &                          fe_eval,
+                                       FEEvalFace &                          fe_eval_m,
+                                       FEEvalFace &                          fe_eval_p,
+                                       VectorizedArray<Number> * const       dst,
+                                       VectorizedArray<Number> const * const src) const
+  {
+    unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
+
+    for(unsigned int i = 0; i < dofs_per_cell; ++i)
+      fe_eval.begin_dof_values()[i] = src[i];
+
+    fe_eval.evaluate(true, true, false);
+
+    do_cell_integral(fe_eval);
+
+    fe_eval.integrate(true, true);
+
+    for(unsigned int i = 0; i < dofs_per_cell; ++i)
+      dst[i] += fe_eval.begin_dof_values()[i];
+
+    // face integrals
+    unsigned int const n_faces = GeometryInfo<dim>::faces_per_cell;
+    for(unsigned int face = 0; face < n_faces; ++face)
+    {
+      fe_eval_m.reinit(cell, face);
+      fe_eval_p.reinit(cell, face);
+
+      for(unsigned int i = 0; i < dofs_per_cell; ++i)
+        fe_eval_m.begin_dof_values()[i] = src[i];
+
+      // do not need to read dof values for fe_eval_p (already initialized with 0)
+
+      fe_eval_m.evaluate(true, false);
+
+      auto bids = data.get_faces_by_cells_boundary_id(cell, face);
+      auto bid  = bids[0];
+
+      if(bid == numbers::internal_face_boundary_id) // internal face
+      {
+        do_face_int_integral(fe_eval_m, fe_eval_p);
+      }
+      else // boundary face
+      {
+        // use same fe_eval so that the result becomes zero (only jumps involved)
+        do_face_int_integral(fe_eval_m, fe_eval_m);
+      }
+
+      fe_eval_m.integrate(true, false);
+
+      for(unsigned int i = 0; i < dofs_per_cell; ++i)
+        dst[i] += fe_eval_m.begin_dof_values()[i];
+    }
+  }
+
+private:
+  template<typename FEEval>
+  void
+  do_cell_integral(FEEval & fe_eval) const
   {
     VectorizedArray<value_type> tau =
       fe_eval.read_cell_data(array_div_penalty_parameter) * scaling_factor_div;
@@ -607,8 +757,9 @@ private:
     }
   }
 
+  template<typename FEEval>
   void
-  do_cell_integral_div_penalty(FEEval_Velocity_Velocity_linear & fe_eval) const
+  do_cell_integral_div_penalty(FEEval & fe_eval) const
   {
     VectorizedArray<value_type> tau =
       fe_eval.read_cell_data(array_div_penalty_parameter) * scaling_factor_div;
@@ -619,9 +770,9 @@ private:
     }
   }
 
+  template<typename FEFaceEval>
   void
-  do_face_integral(FEFaceEval_Velocity_Velocity_linear & fe_eval,
-                   FEFaceEval_Velocity_Velocity_linear & fe_eval_neighbor) const
+  do_face_integral(FEFaceEval & fe_eval, FEFaceEval & fe_eval_neighbor) const
   {
     VectorizedArray<value_type> tau =
       0.5 *
@@ -658,9 +809,9 @@ private:
     }
   }
 
+  template<typename FEFaceEval>
   void
-  do_face_int_integral(FEFaceEval_Velocity_Velocity_linear & fe_eval,
-                       FEFaceEval_Velocity_Velocity_linear & fe_eval_neighbor) const
+  do_face_int_integral(FEFaceEval & fe_eval, FEFaceEval & fe_eval_neighbor) const
   {
     VectorizedArray<value_type> tau =
       0.5 *
@@ -695,9 +846,9 @@ private:
     }
   }
 
+  template<typename FEFaceEval>
   void
-  do_face_ext_integral(FEFaceEval_Velocity_Velocity_linear & fe_eval,
-                       FEFaceEval_Velocity_Velocity_linear & fe_eval_neighbor) const
+  do_face_ext_integral(FEFaceEval & fe_eval, FEFaceEval & fe_eval_neighbor) const
   {
     VectorizedArray<value_type> tau =
       0.5 *
@@ -954,6 +1105,39 @@ private:
     // do nothing
   }
 
+  void
+  initialize_block_diagonal_preconditioner_matrix_free() const
+  {
+    elementwise_operator.reset(new ELEMENTWISE_OPERATOR(*this));
+
+    if(this->operator_data.preconditioner_block_jacobi == PreconditionerBlockDiagonal::None)
+    {
+      typedef Elementwise::PreconditionerIdentity<VectorizedArray<Number>> IDENTITY;
+      elementwise_preconditioner.reset(new IDENTITY(elementwise_operator->get_problem_size()));
+    }
+    else if(this->operator_data.preconditioner_block_jacobi ==
+            PreconditionerBlockDiagonal::InverseMassMatrix)
+    {
+      typedef Elementwise::InverseMassMatrixPreconditioner<dim, dim, fe_degree, Number>
+        INVERSE_MASS;
+
+      elementwise_preconditioner.reset(
+        new INVERSE_MASS(this->get_data(), this->get_dof_index(), this->get_quad_index()));
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+
+    Elementwise::IterativeSolverData iterative_solver_data;
+    iterative_solver_data.solver_type = Elementwise::SolverType::CG;
+    iterative_solver_data.solver_data = this->operator_data.block_jacobi_solver_data;
+
+    elementwise_solver.reset(new ELEMENTWISE_SOLVER(
+      *std::dynamic_pointer_cast<ELEMENTWISE_OPERATOR>(elementwise_operator),
+      *std::dynamic_pointer_cast<PRECONDITIONER_BASE>(elementwise_preconditioner),
+      iterative_solver_data));
+  }
 
   void
   add_block_diagonal_matrices(std::vector<LAPACKFullMatrix<value_type>> & matrices) const
@@ -969,6 +1153,12 @@ private:
     }
     else
     {
+      AssertThrow(
+        n_mpi_processes == 1,
+        ExcMessage(
+          "Block diagonal calculation with separate loops over cells and faces only works in serial. "
+          "Use cell based loops for parallel computations."));
+
       data.loop(&This::cell_loop_calculate_block_diagonal,
                 &This::face_loop_calculate_block_diagonal,
                 &This::boundary_face_loop_calculate_block_diagonal,
@@ -1152,11 +1342,14 @@ private:
           fe_eval_m.evaluate(true, false);
 
           if(bid == numbers::internal_face_boundary_id) // internal face
+          {
             do_face_int_integral(fe_eval_m, fe_eval_p);
+          }
           else // boundary face
-            do_face_int_integral(
-              fe_eval_m,
-              fe_eval_m); // use same fe_eval so that the result becomes zero (only jumps involved)
+          {
+            // use same fe_eval so that the result becomes zero (only jumps involved)
+            do_face_int_integral(fe_eval_m, fe_eval_m);
+          }
 
           fe_eval_m.integrate(true, false);
 
@@ -1230,6 +1423,8 @@ private:
   // of 1.
   mutable double scaling_factor_div, scaling_factor_conti;
 
+  unsigned int n_mpi_processes;
+
   /*
    * Vector of matrices for block-diagonal preconditioners.
    */
@@ -1241,6 +1436,20 @@ private:
    * initialization in a variable.
    */
   mutable bool block_diagonal_preconditioner_is_initialized;
+
+
+  /*
+   * Block Jacobi preconditioner/smoother: matrix-free version with elementwise iterative solver
+   */
+  typedef ElementwiseProjectionOperator<dim, fe_degree, Number, This> ELEMENTWISE_OPERATOR;
+  typedef Elementwise::PreconditionerBase<VectorizedArray<Number>>    PRECONDITIONER_BASE;
+  typedef Elementwise::
+    IterativeSolver<dim, dim, fe_degree, Number, ELEMENTWISE_OPERATOR, PRECONDITIONER_BASE>
+      ELEMENTWISE_SOLVER;
+
+  mutable std::shared_ptr<ELEMENTWISE_OPERATOR> elementwise_operator;
+  mutable std::shared_ptr<PRECONDITIONER_BASE>  elementwise_preconditioner;
+  mutable std::shared_ptr<ELEMENTWISE_SOLVER>   elementwise_solver;
 };
 
 } // namespace IncNS

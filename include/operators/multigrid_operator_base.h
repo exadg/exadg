@@ -95,11 +95,12 @@ public:
   }
 
   virtual void
-  update_inverse_block_diagonal() const
+  update_block_diagonal_preconditioner() const
   {
-    AssertThrow(false,
-                ExcMessage(
-                  "MultigridOperatorBase::update_inverse_block_diagonal should be overwritten!"));
+    AssertThrow(
+      false,
+      ExcMessage(
+        "MultigridOperatorBase::update_block_diagonal_preconditioner should be overwritten!"));
   }
 
   virtual bool

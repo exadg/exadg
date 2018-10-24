@@ -11,55 +11,12 @@
 #include <sstream>
 
 // deal.ii
-#include <deal.II/base/convergence_table.h>
-#include <deal.II/base/function.h>
-#include <deal.II/base/logstream.h>
-#include <deal.II/base/quadrature_lib.h>
-#include <deal.II/base/timer.h>
-
-#include <deal.II/lac/full_matrix.h>
-#include <deal.II/lac/parallel_vector.h>
-#include <deal.II/lac/precondition.h>
-#include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/solver_gmres.h>
-#include <deal.II/lac/trilinos_sparse_matrix.h>
-
-#include <deal.II/fe/fe_dgq.h>
-#include <deal.II/fe/fe_q.h>
-#include <deal.II/fe/fe_values.h>
-#include <deal.II/fe/mapping_q.h>
-
-#include <deal.II/distributed/tria.h>
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/tria.h>
-#include <deal.II/grid/tria_accessor.h>
-#include <deal.II/grid/tria_boundary_lib.h>
-#include <deal.II/grid/tria_iterator.h>
-
-#include <deal.II/multigrid/mg_matrix.h>
-#include <deal.II/multigrid/mg_smoother.h>
-#include <deal.II/multigrid/mg_tools.h>
-#include <deal.II/multigrid/mg_transfer_matrix_free.h>
-#include <deal.II/multigrid/multigrid.h>
-
-#include <deal.II/numerics/data_out.h>
-#include <deal.II/numerics/vector_tools.h>
-
 #include <deal.II/matrix_free/fe_evaluation.h>
 #include <deal.II/matrix_free/matrix_free.h>
 
-#include <deal.II/meshworker/assembler.h>
-#include <deal.II/meshworker/dof_info.h>
-#include <deal.II/meshworker/integration_info.h>
-#include <deal.II/meshworker/loop.h>
-
-#include <deal.II/integrators/laplace.h>
-
-#include <deal.II/base/conditional_ostream.h>
-
-
 // internal solvers
-#include "../include/solvers_and_preconditioners/solvers/internal_solvers.h"
+#include "../include/solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
+#include "../include/solvers_and_preconditioners/solvers/elementwise_krylov_solvers.h"
 
 using namespace dealii;
 
@@ -70,6 +27,10 @@ using namespace dealii;
 /**************************************************************************************/
 unsigned int const M = 3;
 
+
+/*
+ * Own implementation of vector class.
+ */
 template<typename value_type>
 class MyVector
 {
@@ -126,6 +87,10 @@ private:
   AlignedVector<value_type> data;
 };
 
+
+/*
+ * Own implementation of matrix class.
+ */
 template<typename value_type>
 class MyMatrix
 {
@@ -192,8 +157,9 @@ gmres_test_1a()
 {
   std::cout << std::endl << "GMRES solver (double), size M=3:" << std::endl << std::endl;
 
-  InternalSolvers::SolverGMRES<double>            gmres_solver(M, 1e-12, 1e-12, 100);
-  InternalSolvers::PreconditionerIdentity<double> preconditioner(M);
+  SolverData                                  solver_data(100, 1e-12, 1e-12);
+  Elementwise::SolverGMRES<double>            gmres_solver(M, solver_data);
+  Elementwise::PreconditionerIdentity<double> preconditioner(M);
 
   MyVector<double> b(M);
   b.set_value(1.0, 0);
@@ -235,9 +201,10 @@ gmres_test_1b()
 {
   std::cout << std::endl << "GMRES solver (double), size M=10000:" << std::endl << std::endl;
 
-  const unsigned int                              M_large = 10000;
-  InternalSolvers::SolverGMRES<double>            gmres_solver(M_large, 1e-12, 1e-12, 100);
-  InternalSolvers::PreconditionerIdentity<double> preconditioner(M_large);
+  const unsigned int                          M_large = 10000;
+  SolverData                                  solver_data(100, 1e-12, 1e-12);
+  Elementwise::SolverGMRES<double>            gmres_solver(M_large, solver_data);
+  Elementwise::PreconditionerIdentity<double> preconditioner(M_large);
 
   MyVector<double> b(M_large);
   for(unsigned int i = 0; i < M_large; ++i)
@@ -297,9 +264,10 @@ gmres_test_2a()
             << std::endl
             << std::endl;
 
-  InternalSolvers::SolverGMRES<VectorizedArray<double>> gmres_solver(M, 1e-12, 1e-12, 100);
-  InternalSolvers::PreconditionerIdentity<VectorizedArray<double>> preconditioner(M);
-  MyVector<VectorizedArray<double>>                                b(M);
+  SolverData                                                   solver_data(100, 1e-12, 1e-12);
+  Elementwise::SolverGMRES<VectorizedArray<double>>            gmres_solver(M, solver_data);
+  Elementwise::PreconditionerIdentity<VectorizedArray<double>> preconditioner(M);
+  MyVector<VectorizedArray<double>>                            b(M);
   b.set_value(make_vectorized_array<double>(1.0), 0);
   b.set_value(make_vectorized_array<double>(2.0), 1);
   b.set_value(make_vectorized_array<double>(3.0), 2);
@@ -345,8 +313,9 @@ gmres_test_2b()
             << std::endl
             << std::endl;
 
-  InternalSolvers::SolverGMRES<VectorizedArray<double>> gmres_solver(M, 1e-12, 1e-12, 100);
-  InternalSolvers::PreconditionerIdentity<VectorizedArray<double>> preconditioner(M);
+  SolverData                                                   solver_data(100, 1e-12, 1e-12);
+  Elementwise::SolverGMRES<VectorizedArray<double>>            gmres_solver(M, solver_data);
+  Elementwise::PreconditionerIdentity<VectorizedArray<double>> preconditioner(M);
 
   MyVector<VectorizedArray<double>> b(M);
   b.set_value(make_vectorized_array<double>(1.0), 0);
@@ -398,9 +367,10 @@ gmres_test_2c()
             << std::endl
             << std::endl;
 
-  InternalSolvers::SolverGMRES<VectorizedArray<double>> gmres_solver(M, 1e-12, 1e-12, 100);
-  InternalSolvers::PreconditionerIdentity<VectorizedArray<double>> preconditioner(M);
-  MyVector<VectorizedArray<double>>                                b(M);
+  SolverData                                                   solver_data(100, 1e-12, 1e-12);
+  Elementwise::SolverGMRES<VectorizedArray<double>>            gmres_solver(M, solver_data);
+  Elementwise::PreconditionerIdentity<VectorizedArray<double>> preconditioner(M);
+  MyVector<VectorizedArray<double>>                            b(M);
   b.set_value(make_vectorized_array<double>(1.0), 0);
   b.set_value(make_vectorized_array<double>(2.0), 1);
   b.set_value(make_vectorized_array<double>(3.0), 2);

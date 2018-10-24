@@ -1,5 +1,5 @@
 /*
- * IterativeSolvers.h
+ * iterative_solvers_dealii_wrapper.h
  *
  *  Created on: Aug 9, 2016
  *      Author: fehn
@@ -15,7 +15,8 @@ template<typename VectorType>
 class IterativeSolverBase
 {
 public:
-  IterativeSolverBase() : performance_metrics_available(false)
+  IterativeSolverBase()
+    : performance_metrics_available(false), l2_0(1.0), l2_n(1.0), n(1), rho(1.0), r(1.0), n10(1)
   {
   }
 
@@ -45,12 +46,12 @@ public:
 
   // performance metrics
   mutable bool         performance_metrics_available;
-  mutable double       l2_0;
-  mutable double       l2_n;
-  mutable unsigned int n;   // number of iterations
-  mutable double       rho; // average convergence rate
-  mutable double       r;   // logarithmic convergence rate
-  mutable int          n10; // number of cycles needed to reduce the residual by 1e10
+  mutable double       l2_0; // norm of initial residual
+  mutable double       l2_n; // norm of final residual
+  mutable unsigned int n;    // number of iterations
+  mutable double       rho;  // average convergence rate
+  mutable double       r;    // logarithmic convergence rate
+  mutable int          n10;  // number of cycles needed to reduce the residual by 1e10
 };
 
 struct CGSolverData

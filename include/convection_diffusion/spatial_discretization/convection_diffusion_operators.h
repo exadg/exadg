@@ -9,8 +9,6 @@
 #define INCLUDE_CONVECTION_DIFFUSION_CONVECTION_DIFFUSION_OPERATORS_H_
 
 #include <deal.II/lac/parallel_vector.h>
-#include <deal.II/lac/precondition.h>
-#include <deal.II/lac/solver_gmres.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
 
 #include "convection_diffusion/user_interface/boundary_descriptor.h"
@@ -21,10 +19,6 @@
 
 #include "functionalities/evaluate_functions.h"
 
-#include "../../solvers_and_preconditioners/util/block_jacobi_matrices.h"
-#include "../../solvers_and_preconditioners/util/invert_diagonal.h"
-#include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
-
 #include "types.h"
 
 #include "operators/mass_operator.h"
@@ -33,6 +27,7 @@
 #include "operators/convection_diffusion_operator.h"
 #include "operators/convection_operator.h"
 #include "operators/diffusive_operator.h"
+
 namespace ConvDiff
 {
 template<int dim>
@@ -279,33 +274,6 @@ private:
 
   mutable VectorType const * velocity;
 };
-
-
-/*
- *  This class is used as an interface to apply the global block Jacobi
- *  matrix-vector product for a given operator that implements this operation.
- */
-template<typename UnderlyingOperator, typename Number>
-class ConvectionDiffusionBlockJacobiOperator
-{
-public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-
-  ConvectionDiffusionBlockJacobiOperator(UnderlyingOperator const & underlying_operator_in)
-    : underlying_operator(underlying_operator_in)
-  {
-  }
-
-  void
-  vmult(VectorType & dst, VectorType const & src) const
-  {
-    underlying_operator.vmult_block_jacobi(dst, src);
-  }
-
-private:
-  UnderlyingOperator const & underlying_operator;
-};
-
 
 // Convection-diffusion operator for runtime optimization:
 // Evaluate volume and surface integrals of convective term, diffusive term and
