@@ -23,24 +23,21 @@ struct InverseMassMatrixData
   InverseMassMatrixData(MatrixFree<dim, Number> const & data,
                         unsigned int const              fe_index   = 0,
                         unsigned int const              quad_index = 0)
-    : fe_eval(1,
-              FEEvaluation<dim, fe_degree, fe_degree + 1, n_components, Number>(data,
-                                                                                fe_index,
-                                                                                quad_index)),
+    : fe_eval(data, fe_index, quad_index),
       coefficients(Utilities::pow(fe_degree + 1, dim)),
-      inverse(fe_eval[0])
+      inverse(fe_eval)
   {
   }
 
   // Manually implement the copy operator because CellwiseInverseMassMatrix must point to the object
   // 'fe_eval'
   InverseMassMatrixData(InverseMassMatrixData const & other)
-    : fe_eval(other.fe_eval), coefficients(other.coefficients), inverse(fe_eval[0])
+    : fe_eval(other.fe_eval), coefficients(other.coefficients), inverse(fe_eval)
   {
   }
 
   // For memory alignment reasons, need to place the FEEvaluation object into an aligned vector
-  AlignedVector<FEEvaluation<dim, fe_degree, fe_degree + 1, n_components, Number>> fe_eval;
+  FEEvaluation<dim, fe_degree, fe_degree + 1, n_components, Number> fe_eval;
 
   AlignedVector<VectorizedArray<Number>> coefficients;
 
@@ -102,16 +99,16 @@ private:
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
-      mass_data.fe_eval[0].reinit(cell);
-      mass_data.fe_eval[0].read_dof_values(src, 0);
+      mass_data.fe_eval.reinit(cell);
+      mass_data.fe_eval.read_dof_values(src, 0);
 
       mass_data.inverse.fill_inverse_JxW_values(mass_data.coefficients);
       mass_data.inverse.apply(mass_data.coefficients,
                               n_components,
-                              mass_data.fe_eval[0].begin_dof_values(),
-                              mass_data.fe_eval[0].begin_dof_values());
+                              mass_data.fe_eval.begin_dof_values(),
+                              mass_data.fe_eval.begin_dof_values());
 
-      mass_data.fe_eval[0].set_dof_values(dst, 0);
+      mass_data.fe_eval.set_dof_values(dst, 0);
     }
   }
 };

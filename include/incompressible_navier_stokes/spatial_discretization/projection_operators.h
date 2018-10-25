@@ -29,11 +29,7 @@ class ElementwiseProjectionOperatorDivergencePenalty
 {
 public:
   ElementwiseProjectionOperatorDivergencePenalty(Operator const & operator_in)
-    : op(operator_in),
-      fe_eval(1,
-              FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>(op.get_data(),
-                                                                           op.get_dof_index(),
-                                                                           op.get_quad_index()))
+    : op(operator_in), fe_eval(op.get_data(), op.get_dof_index(), op.get_quad_index())
   {
   }
 
@@ -58,26 +54,26 @@ public:
   void
   setup(const unsigned int cell)
   {
-    fe_eval[0].reinit(cell);
+    fe_eval.reinit(cell);
   }
 
   unsigned int
   get_problem_size() const
   {
-    return fe_eval[0].dofs_per_cell;
+    return fe_eval.dofs_per_cell;
   }
 
   void
   vmult(VectorizedArray<value_type> * dst, VectorizedArray<value_type> * src) const
   {
-    Elementwise::vector_init(dst, fe_eval[0].dofs_per_cell);
-    op.apply_add_block_diagonal_elementwise_cell(fe_eval[0], dst, src);
+    Elementwise::vector_init(dst, fe_eval.dofs_per_cell);
+    op.apply_add_block_diagonal_elementwise_cell(fe_eval, dst, src);
   }
 
 private:
   Operator const & op;
 
-  mutable AlignedVector<FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>> fe_eval;
+  mutable FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type> fe_eval;
 };
 
 
@@ -99,20 +95,9 @@ public:
   ElementwiseProjectionOperator(Operator const & operator_in)
     : op(operator_in),
       current_cell(1),
-      fe_eval(1,
-              FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>(op.get_data(),
-                                                                           op.get_dof_index(),
-                                                                           op.get_quad_index())),
-      fe_eval_m(
-        FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>(op.get_data(),
-                                                                         true,
-                                                                         op.get_dof_index(),
-                                                                         op.get_quad_index())),
-      fe_eval_p(
-        FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>(op.get_data(),
-                                                                         false,
-                                                                         op.get_dof_index(),
-                                                                         op.get_quad_index()))
+      fe_eval(op.get_data(), op.get_dof_index(), op.get_quad_index()),
+      fe_eval_m(op.get_data(), true, op.get_dof_index(), op.get_quad_index()),
+      fe_eval_p(op.get_data(), false, op.get_dof_index(), op.get_quad_index())
   {
   }
 
@@ -137,7 +122,7 @@ public:
   void
   setup(const unsigned int cell)
   {
-    fe_eval[0].reinit(cell);
+    fe_eval.reinit(cell);
 
     current_cell = cell;
   }
@@ -145,15 +130,14 @@ public:
   unsigned int
   get_problem_size() const
   {
-    return fe_eval[0].dofs_per_cell;
+    return fe_eval.dofs_per_cell;
   }
 
   void
   vmult(VectorizedArray<value_type> * dst, VectorizedArray<value_type> * src) const
   {
-    Elementwise::vector_init(dst, fe_eval[0].dofs_per_cell);
-    op.apply_add_block_diagonal_elementwise(
-      current_cell, fe_eval[0], fe_eval_m, fe_eval_p, dst, src);
+    Elementwise::vector_init(dst, fe_eval.dofs_per_cell);
+    op.apply_add_block_diagonal_elementwise(current_cell, fe_eval, fe_eval_m, fe_eval_p, dst, src);
   }
 
 private:
@@ -161,9 +145,9 @@ private:
 
   unsigned int current_cell;
 
-  mutable AlignedVector<FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>> fe_eval;
-  mutable FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>            fe_eval_m;
-  mutable FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>            fe_eval_p;
+  mutable FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>     fe_eval;
+  mutable FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type> fe_eval_m;
+  mutable FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type> fe_eval_p;
 };
 
 

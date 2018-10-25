@@ -22,21 +22,9 @@ public:
   ElementwiseBlockJacobiOperator(Operator const & operator_in)
     : op(operator_in),
       current_cell(1),
-      fe_eval(
-        1,
-        FEEvaluation<dim, fe_degree, fe_degree + 1, 1 /*scalar*/, Number>(op.get_data(),
-                                                                          op.get_dof_index(),
-                                                                          op.get_quad_index())),
-      fe_eval_m(
-        FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1 /*scalar*/, Number>(op.get_data(),
-                                                                              true,
-                                                                              op.get_dof_index(),
-                                                                              op.get_quad_index())),
-      fe_eval_p(
-        FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1 /*scalar*/, Number>(op.get_data(),
-                                                                              false,
-                                                                              op.get_dof_index(),
-                                                                              op.get_quad_index()))
+      fe_eval(op.get_data(), op.get_dof_index(), op.get_quad_index()),
+      fe_eval_m(op.get_data(), true, op.get_dof_index(), op.get_quad_index()),
+      fe_eval_p(op.get_data(), false, op.get_dof_index(), op.get_quad_index())
   {
   }
 
@@ -61,7 +49,7 @@ public:
   void
   setup(unsigned int const cell)
   {
-    fe_eval[0].reinit(cell);
+    fe_eval.reinit(cell);
 
     current_cell = cell;
   }
@@ -69,18 +57,17 @@ public:
   unsigned int
   get_problem_size() const
   {
-    return fe_eval[0].dofs_per_cell;
+    return fe_eval.dofs_per_cell;
   }
 
   void
   vmult(VectorizedArray<Number> * dst, VectorizedArray<Number> * src) const
   {
     // set dst vector to zero
-    Elementwise::vector_init(dst, fe_eval[0].dofs_per_cell);
+    Elementwise::vector_init(dst, fe_eval.dofs_per_cell);
 
     // evaluate block diagonal
-    op.apply_add_block_diagonal_elementwise(
-      current_cell, fe_eval[0], fe_eval_m, fe_eval_p, dst, src);
+    op.apply_add_block_diagonal_elementwise(current_cell, fe_eval, fe_eval_m, fe_eval_p, dst, src);
   }
 
 private:
@@ -88,9 +75,9 @@ private:
 
   unsigned int current_cell;
 
-  mutable AlignedVector<FEEvaluation<dim, fe_degree, fe_degree + 1, 1, Number>> fe_eval;
-  mutable FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1, Number>            fe_eval_m;
-  mutable FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1, Number>            fe_eval_p;
+  mutable FEEvaluation<dim, fe_degree, fe_degree + 1, 1 /*scalar*/, Number>     fe_eval;
+  mutable FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1 /*scalar*/, Number> fe_eval_m;
+  mutable FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1 /*scalar*/, Number> fe_eval_p;
 };
 
 
