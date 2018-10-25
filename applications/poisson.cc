@@ -259,13 +259,14 @@ main(int argc, char ** argv)
 
     ConvergenceTable convergence_table;
 
-    Run<DIMENSION, 3>::run(convergence_table);
-    //    Run<DIMENSION,4>::run(convergence_table);
-    //    Run<DIMENSION,5>::run(convergence_table);
-    //    Run<DIMENSION,6>::run(convergence_table);
-    //    Run<DIMENSION,7>::run(convergence_table);
-    //    Run<DIMENSION,8>::run(convergence_table);
-    //    Run<DIMENSION,9>::run(convergence_table);
+    Run<DIMENSION,2>::run(convergence_table);
+//    Run<DIMENSION,3>::run(convergence_table);
+//    Run<DIMENSION,4>::run(convergence_table);
+//    Run<DIMENSION,5>::run(convergence_table);
+//    Run<DIMENSION,6>::run(convergence_table);
+//    Run<DIMENSION,7>::run(convergence_table);
+//    Run<DIMENSION,8>::run(convergence_table);
+//    Run<DIMENSION,9>::run(convergence_table);
 
     if(!rank)
     {

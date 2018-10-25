@@ -180,7 +180,6 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
   divergence_penalty_factor = 1.0e0;
   use_continuity_penalty = true;
   continuity_penalty_components = ContinuityPenaltyComponents::Normal;
-  continuity_penalty_use_boundary_data = false;
   continuity_penalty_factor = divergence_penalty_factor;
 
   // TURBULENCE

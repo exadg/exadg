@@ -1,5 +1,5 @@
 /*
- * RotatingHill.h
+ * rotating_hill.h
  *
  *  Created on: Aug 18, 2016
  *      Author: fehn
@@ -22,11 +22,11 @@
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 8;
+const unsigned int FE_DEGREE = 6;
 
 // set the number of refine levels for spatial convergence tests
-const unsigned int REFINE_STEPS_SPACE_MIN = 3;
-const unsigned int REFINE_STEPS_SPACE_MAX = 3;
+const unsigned int REFINE_STEPS_SPACE_MIN = 1;
+const unsigned int REFINE_STEPS_SPACE_MAX = 6;
 
 // set the number of refine levels for temporal convergence tests
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
@@ -46,7 +46,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   diffusivity = 0.0;
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::ExplRK; //BDF; //ExplRK;
+  temporal_discretization = TemporalDiscretization::BDF; //BDF; //ExplRK;
 
   // Explicit RK
   time_integrator_rk = TimeIntegratorRK::ExplRK3Stage7Reg2;
@@ -54,10 +54,10 @@ void ConvDiff::InputParameters::set_input_parameters()
   // BDF
   order_time_integrator = 2; // instabilities for BDF 3 and 4
   start_with_low_order = false;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::ExplicitOIF; //Explicit; //ExplicitOIF;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; //ExplicitOIF; //Explicit; //ExplicitOIF;
   time_integrator_oif = TimeIntegratorRK::ExplRK4Stage8Reg2; //ExplRK3Stage7Reg2; //ExplRK4Stage8Reg2;
 
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepCFL;
   time_step_size = 1.e-2;
   cfl_oif = 2.0;
   cfl_number = cfl_oif * 1.0;
@@ -79,7 +79,18 @@ void ConvDiff::InputParameters::set_input_parameters()
   rel_tol = 1.e-8;
   max_iter = 1e3;
   max_n_tmp_vectors = 100;
-  preconditioner = Preconditioner::InverseMassMatrix; //MultigridConvectionDiffusion; //MultigridDiffusion; //None; //PointJacobi; //BlockJacobi; //InverseMassMatrix; //MultigridDiffusion; //MultigridConvectionDiffusion;
+  preconditioner = Preconditioner::BlockJacobi; //None; //InverseMassMatrix; //PointJacobi; //BlockJacobi; //Multigrid;
+  update_preconditioner = true;
+
+  // BlockJacobi (these parameters are also relevant if used as a smoother in multigrid)
+  implement_block_diagonal_preconditioner_matrix_free = true;
+  preconditioner_block_diagonal = PreconditionerBlockDiagonal::InverseMassMatrix;
+  block_jacobi_solver_data = SolverData(1000,1.e-12,1.e-2);
+
+  // Multigrid
+  multigrid_data.type = MultigridType::hMG;
+  mg_operator_type = MultigridOperatorType::ReactionConvection;
+
   // MG smoother
   multigrid_data.smoother = MultigridSmoother::Jacobi; //GMRES; //Chebyshev; //ChebyshevNonsymmetricOperator;
 
@@ -95,9 +106,10 @@ void ConvDiff::InputParameters::set_input_parameters()
   // MG coarse grid solver
   multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner; //GMRES_NoPreconditioner; //Chebyshev; //GMRES_Jacobi;
 
-  update_preconditioner = false; //true;
+
 
   // NUMERICAL PARAMETERS
+  use_cell_based_face_loops = true;
   runtime_optimization = false;
 
   // OUTPUT AND POSTPROCESSING
