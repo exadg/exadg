@@ -487,8 +487,8 @@ public:
   void
   apply(VectorType & dst, VectorType const & src) const
   {
-    scaling_factor_div   = this->time_step_size;
-    scaling_factor_conti = this->time_step_size;
+    scaling_factor_div   = time_step_size;
+    scaling_factor_conti = time_step_size;
 
     data.loop(&This::cell_loop,
               &This::face_loop,
@@ -504,8 +504,8 @@ public:
   void
   apply_add(VectorType & dst, VectorType const & src) const
   {
-    scaling_factor_div   = this->time_step_size;
-    scaling_factor_conti = this->time_step_size;
+    scaling_factor_div   = time_step_size;
+    scaling_factor_conti = time_step_size;
 
     data.loop(&This::cell_loop,
               &This::face_loop,
@@ -671,6 +671,9 @@ public:
                                             VectorizedArray<Number> * const       dst,
                                             VectorizedArray<Number> const * const src) const
   {
+    scaling_factor_div   = time_step_size;
+    scaling_factor_conti = time_step_size;
+
     unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
 
     for(unsigned int i = 0; i < dofs_per_cell; ++i)
@@ -694,6 +697,9 @@ public:
                                        VectorizedArray<Number> * const       dst,
                                        VectorizedArray<Number> const * const src) const
   {
+    scaling_factor_div   = time_step_size;
+    scaling_factor_conti = time_step_size;
+
     unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
 
     for(unsigned int i = 0; i < dofs_per_cell; ++i)
@@ -973,8 +979,8 @@ private:
   void
   calculate_diagonal(VectorType & diagonal) const
   {
-    scaling_factor_div   = this->time_step_size;
-    scaling_factor_conti = this->time_step_size;
+    scaling_factor_div   = time_step_size;
+    scaling_factor_conti = time_step_size;
 
     VectorType src_dummy(diagonal);
     data.loop(&This::cell_loop_diagonal,
@@ -1142,8 +1148,8 @@ private:
   void
   add_block_diagonal_matrices(std::vector<LAPACKFullMatrix<value_type>> & matrices) const
   {
-    scaling_factor_div   = this->time_step_size;
-    scaling_factor_conti = this->time_step_size;
+    scaling_factor_div   = time_step_size;
+    scaling_factor_conti = time_step_size;
 
     VectorType src;
 
