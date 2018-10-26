@@ -789,6 +789,8 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::pr
 
   VectorType velocity_extrapolated;
 
+  unsigned int iterations_projection = 0;
+
   // extrapolate velocity to time t_n+1 and use this velocity field to
   // caculate the penalty parameter for the divergence and continuity penalty term
   if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
@@ -796,11 +798,17 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::pr
     velocity_extrapolated.reinit(velocity[0]);
     for(unsigned int i = 0; i < velocity.size(); ++i)
       velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
-  }
 
-  // solve linear system of equations
-  unsigned int iterations_projection = navier_stokes_operation->solve_projection(
-    velocity_np, rhs_vec_projection, velocity_extrapolated, this->time_steps[0]);
+    navier_stokes_operation->update_projection_operator(velocity_extrapolated, this->time_steps[0]);
+
+    // solve linear system of equations
+    iterations_projection =
+      navier_stokes_operation->solve_projection(velocity_np, rhs_vec_projection);
+  }
+  else // no penalty terms, simply apply inverse mass matrix
+  {
+    navier_stokes_operation->apply_inverse_mass_matrix(velocity_np, rhs_vec_projection);
+  }
 
   // write output
   if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
@@ -1084,29 +1092,6 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
               << "Number of time steps =            " << std::left << N_time_steps << std::endl
               << "Average wall time per time step = " << std::scientific << std::setprecision(4)
               << total_avg_time / (double)N_time_steps << std::endl;
-
-  // TODO: measure relative share of wall time for application of projection operator and Helmholtz
-  // operator
-  double wall_time_projection = 0.0, wall_time_helmholtz = 0.0;
-  this->navier_stokes_operation->get_wall_times_projection_helmholtz_operator(wall_time_projection,
-                                                                              wall_time_helmholtz);
-  Utilities::MPI::MinMaxAvg data_projection =
-    Utilities::MPI::min_max_avg(wall_time_projection, MPI_COMM_WORLD);
-  Utilities::MPI::MinMaxAvg data_helmholtz =
-    Utilities::MPI::min_max_avg(wall_time_helmholtz, MPI_COMM_WORLD);
-
-  this->pcout << std::endl
-              << "Projection operator:" << std::endl
-              << "Wall time [s]  = " << data_projection.avg << std::endl
-              << "Relative share = " << data_projection.avg / total_avg_time << std::endl
-              << std::endl;
-
-  this->pcout << "Helmholtz operator:" << std::endl
-              << "Wall time [s]  = " << data_helmholtz.avg << std::endl
-              << "Relative share = " << data_helmholtz.avg / total_avg_time << std::endl
-              << std::endl;
-  // TODO: measure relative share of wall time for application of projection operator and Helmholtz
-  // operator
 
   // overall wall time including postprocessing
   Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(this->total_time, MPI_COMM_WORLD);

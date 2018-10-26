@@ -1,5 +1,5 @@
 /*
- * DGNavierStokesDualSplitting.h
+ * dg_navier_stokes_dual_splitting.h
  *
  *  Created on: Jun 27, 2016
  *      Author: fehn
@@ -8,16 +8,11 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_DUAL_SPLITTING_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_DUAL_SPLITTING_H_
 
-#include "../../incompressible_navier_stokes/preconditioners/multigrid_preconditioner_navier_stokes.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_projection_methods.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/helmholtz_operator.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/pressure_neumann_bc_convective_term.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/pressure_neumann_bc_viscous_term.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/velocity_divergence_convective_term.h"
-#include "../../solvers_and_preconditioners/newton/newton_solver.h"
-#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
-#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
-#include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
 
 namespace IncNS
 {
@@ -174,57 +169,6 @@ public:
   get_fe_parameters() const
   {
     return this->fe_param;
-  }
-
-  // TODO
-  void
-  get_wall_times_projection_helmholtz_operator(double & wall_time_projection,
-                                               double & wall_time_helmholtz)
-  {
-    if(this->param.use_divergence_penalty == true && this->param.use_continuity_penalty == true)
-    {
-      if(this->use_optimized_projection_operator == false)
-      {
-        typedef ProjectionOperatorDivergenceAndContinuityPenalty<dim,
-                                                                 fe_degree,
-                                                                 fe_degree_p,
-                                                                 fe_degree_xwall,
-                                                                 xwall_quad_rule,
-                                                                 Number>
-          PROJ_OPERATOR;
-
-        std::shared_ptr<PROJ_OPERATOR> proj_op =
-          std::dynamic_pointer_cast<PROJ_OPERATOR>(this->projection_operator);
-        AssertThrow(proj_op.get() != 0,
-                    ExcMessage("Projection operator is not initialized correctly."));
-
-        wall_time_projection = proj_op->get_wall_time();
-      }
-      // TODO
-      else // use_optimized_projection_operator == true
-      {
-        typedef ProjectionOperatorOptimized<dim,
-                                            fe_degree,
-                                            fe_degree_p,
-                                            fe_degree_xwall,
-                                            xwall_quad_rule,
-                                            Number>
-          PROJ_OPERATOR;
-
-        std::shared_ptr<PROJ_OPERATOR> proj_op =
-          std::dynamic_pointer_cast<PROJ_OPERATOR>(this->projection_operator);
-        AssertThrow(proj_op.get() != 0,
-                    ExcMessage("Projection operator is not initialized correctly."));
-
-        wall_time_projection = proj_op->get_wall_time();
-      }
-    }
-    else
-    {
-      wall_time_projection = 0.0;
-    }
-
-    wall_time_helmholtz = this->helmholtz_operator.get_wall_time();
   }
 
   void

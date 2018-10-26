@@ -16,19 +16,10 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::Hel
     mass_matrix_operator(nullptr),
     viscous_operator(nullptr),
     scaling_factor_time_derivative_term(-1.0),
-    wall_time(0.0),
     // TODO: use optimized implementation for performance measurements only
     use_optimized_implementation(false)
 {
 }
-
-template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-double
-HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::get_wall_time() const
-{
-  return wall_time;
-}
-
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
@@ -191,10 +182,6 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmu
   VectorType &       dst,
   VectorType const & src) const
 {
-  // TODO
-  Timer timer;
-  timer.restart();
-
   // optimized version (use only for performance measurements)
   if(use_optimized_implementation == true)
   {
@@ -221,9 +208,6 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmu
 
     viscous_operator->apply_add(dst, src);
   }
-
-  // TODO
-  wall_time += timer.wall_time();
 }
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
@@ -232,10 +216,6 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmu
   VectorType &       dst,
   VectorType const & src) const
 {
-  // TODO
-  Timer timer;
-  timer.restart();
-
   // helmholtz operator = mass_matrix_operator + viscous_operator
   if(operator_data.unsteady_problem == true)
   {
@@ -250,9 +230,6 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::vmu
   }
 
   viscous_operator->apply_add(dst, src);
-
-  // TODO
-  wall_time += timer.wall_time();
 }
 
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
@@ -295,7 +272,7 @@ HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
 HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
-  update_inverse_block_diagonal() const
+  update_block_diagonal_preconditioner() const
 {
   if(block_jacobi_matrices_have_been_initialized == false)
   {

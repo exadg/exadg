@@ -18,7 +18,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
     is_dg(true),
     is_mg(false),
     level_mg_handler(numbers::invalid_unsigned_int),
-    block_jacobi_matrices_have_been_initialized(false)
+    block_diagonal_preconditioner_is_initialized(false),
+    n_mpi_processes(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
 {
 }
 
@@ -111,8 +112,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(
 
   // setup constraint matrix for CG
   if(!is_dg)
+  {
     this->add_constraints(
       dof_handler, constraint_own, mg_constrained_dofs, operator_data, level_mg_handler);
+  }
 
   // ...finalize constraint matrix
   constraint_own.close();
@@ -292,14 +295,18 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VectorType & dia
   if(is_dg && do_eval_faces)
   {
     if(operator_data.use_cell_based_loops)
+    {
       data->cell_loop(&This::cell_based_loop_diagonal, this, diagonal, diagonal);
+    }
     else
+    {
       data->loop(&This::cell_loop_diagonal,
                  &This::face_loop_diagonal,
                  &This::boundary_face_loop_diagonal,
                  this,
                  diagonal,
                  diagonal);
+    }
   }
   else
   {
@@ -345,7 +352,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_inverse_block_diagonal(
   VectorType const & src) const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
-  AssertThrow(block_jacobi_matrices_have_been_initialized,
+  AssertThrow(block_diagonal_preconditioner_is_initialized,
               ExcMessage("Block Jacobi matrices have not been initialized!"));
 
   data->cell_loop(&This::cell_loop_apply_inverse_block_diagonal, this, dst, src);
@@ -353,47 +360,132 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_inverse_block_diagonal(
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply_block_diagonal(
+OperatorBase<dim, degree, Number, AdditionalData>::apply_add_block_diagonal_elementwise(
+  unsigned int const                    cell,
+  FEEvalCell &                          fe_eval,
+  FEEvalFace &                          fe_eval_m,
+  FEEvalFace &                          fe_eval_p,
+  VectorizedArray<Number> * const       dst,
+  VectorizedArray<Number> const * const src,
+  Number const                          evaluation_time) const
+{
+  this->set_evaluation_time(evaluation_time);
+
+  apply_add_block_diagonal_elementwise(cell, fe_eval, fe_eval_m, fe_eval_p, dst, src);
+}
+
+template<int dim, int degree, typename Number, typename AdditionalData>
+void
+OperatorBase<dim, degree, Number, AdditionalData>::apply_add_block_diagonal_elementwise(
+  unsigned int const                    cell,
+  FEEvalCell &                          fe_eval,
+  FEEvalFace &                          fe_eval_m,
+  FEEvalFace &                          fe_eval_p,
+  VectorizedArray<Number> * const       dst,
+  VectorizedArray<Number> const * const src) const
+{
+  AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
+
+  for(unsigned int i = 0; i < dofs_per_cell; ++i)
+    fe_eval.begin_dof_values()[i] = src[i];
+
+  fe_eval.evaluate(this->operator_data.cell_evaluate.value,
+                   this->operator_data.cell_evaluate.gradient,
+                   this->operator_data.cell_evaluate.hessians);
+
+  this->do_cell_integral(fe_eval);
+
+  fe_eval.integrate(this->operator_data.cell_integrate.value,
+                    this->operator_data.cell_integrate.gradient);
+
+  for(unsigned int i = 0; i < dofs_per_cell; ++i)
+    dst[i] += fe_eval.begin_dof_values()[i];
+
+  if(is_dg && do_eval_faces)
+  {
+    // face integrals
+    unsigned int const n_faces = GeometryInfo<dim>::faces_per_cell;
+    for(unsigned int face = 0; face < n_faces; ++face)
+    {
+      fe_eval_m.reinit(cell, face);
+      fe_eval_p.reinit(cell, face);
+
+      for(unsigned int i = 0; i < dofs_per_cell; ++i)
+        fe_eval_m.begin_dof_values()[i] = src[i];
+
+      // do not need to read dof values for fe_eval_p (already initialized with 0)
+
+      fe_eval_m.evaluate(this->operator_data.face_evaluate.value,
+                         this->operator_data.face_evaluate.gradient);
+
+      auto bids = (*data).get_faces_by_cells_boundary_id(cell, face);
+      auto bid  = bids[0];
+      if(bid == numbers::internal_face_boundary_id) // internal face
+        this->do_face_int_integral(fe_eval_m, fe_eval_p);
+      else // boundary face
+        this->do_boundary_integral(fe_eval_m, OperatorType::homogeneous, bid);
+
+      fe_eval_m.integrate(this->operator_data.face_integrate.value,
+                          this->operator_data.face_integrate.gradient);
+
+      for(unsigned int i = 0; i < dofs_per_cell; ++i)
+        dst[i] += fe_eval_m.begin_dof_values()[i];
+    }
+  }
+}
+
+template<int dim, int degree, typename Number, typename AdditionalData>
+void
+OperatorBase<dim, degree, Number, AdditionalData>::apply_block_diagonal_matrix_based(
   VectorType &       dst,
   VectorType const & src) const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
-  AssertThrow(block_jacobi_matrices_have_been_initialized,
+  AssertThrow(block_diagonal_preconditioner_is_initialized,
               ExcMessage("Block Jacobi matrices have not been initialized!"));
 
-  data->cell_loop(&This::cell_loop_apply_block_diagonal, this, dst, src);
+  data->cell_loop(&This::cell_loop_apply_block_diagonal_matrix_based, this, dst, src);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::update_inverse_block_diagonal() const
-{
-  this->calculate_block_diagonal_matrices();
-  // perform lu factorization for block matrices
-  calculate_lu_factorization_block_jacobi(matrices);
-}
-
-template<int dim, int degree, typename Number, typename AdditionalData>
-void
-OperatorBase<dim, degree, Number, AdditionalData>::calculate_block_diagonal_matrices() const
+OperatorBase<dim, degree, Number, AdditionalData>::update_block_diagonal_preconditioner() const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
 
-  // allocate memory only the first time
-  if(block_jacobi_matrices_have_been_initialized == false ||
-     data->n_macro_cells() * vectorization_length != matrices.size())
+  // initialization
+
+  if(!block_diagonal_preconditioner_is_initialized)
   {
-    auto dofs = data->get_shape_info().dofs_per_component_on_cell;
-    matrices.resize(data->n_macro_cells() * vectorization_length,
-                    LAPACKFullMatrix<Number>(dofs, dofs));
-    block_jacobi_matrices_have_been_initialized = true;
-  } // else: reuse old memory
+    if(operator_data.implement_block_diagonal_preconditioner_matrix_free)
+    {
+      initialize_block_diagonal_preconditioner_matrix_free();
+    }
+    else // matrix-based variant
+    {
+      // allocate memory only the first time
+      auto dofs = data->get_shape_info().dofs_per_component_on_cell;
+      matrices.resize(data->n_macro_cells() * vectorization_length,
+                      LAPACKFullMatrix<Number>(dofs, dofs));
+    }
 
-  // clear matrices
-  initialize_block_jacobi_matrices_with_zero(matrices);
+    block_diagonal_preconditioner_is_initialized = true;
+  }
 
-  // compute block matrices
-  add_block_diagonal_matrices(matrices);
+  // update
+
+  // For the matrix-free variant there is nothing to do.
+  // For the matrix-based variant we have to recompute the block matrices.
+  if(!operator_data.implement_block_diagonal_preconditioner_matrix_free)
+  {
+    // clear matrices
+    initialize_block_jacobi_matrices_with_zero(matrices);
+
+    // compute block matrices and add
+    add_block_diagonal_matrices(matrices);
+
+    calculate_lu_factorization_block_jacobi(matrices);
+  }
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
@@ -406,14 +498,24 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_block_diagonal_matrices(
   if(do_eval_faces)
   {
     if(operator_data.use_cell_based_loops)
+    {
       data->cell_loop(&This::cell_based_loop_block_diagonal, this, matrices, matrices);
+    }
     else
+    {
+      AssertThrow(
+        n_mpi_processes == 1,
+        ExcMessage(
+          "Block diagonal calculation with separate loops over cells and faces only works in serial. "
+          "Use cell based loops for parallel computations."));
+
       data->loop(&This::cell_loop_block_diagonal,
                  &This::face_loop_block_diagonal,
                  &This::boundary_face_loop_block_diagonal,
                  this,
                  matrices,
                  matrices);
+    }
   }
   else
   {
@@ -967,8 +1069,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_based_loop_diagonal(
     }
 
     // loop over all faces and gather results into local diagonal local_diag
-    unsigned int const nr_faces = GeometryInfo<dim>::faces_per_cell;
-    for(unsigned int face = 0; face < nr_faces; ++face)
+    unsigned int const n_faces = GeometryInfo<dim>::faces_per_cell;
+    for(unsigned int face = 0; face < n_faces; ++face)
     {
       fe_eval_m.reinit(cell, face);
       fe_eval_p.reinit(cell, face);
@@ -1043,7 +1145,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_loop_apply_inverse_block
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::cell_loop_apply_block_diagonal(
+OperatorBase<dim, degree, Number, AdditionalData>::cell_loop_apply_block_diagonal_matrix_based(
   MatrixFree_ const & data,
   VectorType &        dst,
   VectorType const &  src,
@@ -1078,8 +1180,8 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::cell_loop_block_diagonal(
   MatrixFree_ const & data,
-  BlockMatrix &       dst,
-  BlockMatrix const & /*src*/,
+  BlockMatrix &       matrices,
+  BlockMatrix const &,
   Range const & range) const
 {
   FEEvalCell fe_eval(data, operator_data.dof_index, operator_data.quad_index);
@@ -1103,7 +1205,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_loop_block_diagonal(
 
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          dst[cell * vectorization_length + v](i, j) += fe_eval.begin_dof_values()[i][v];
+          matrices[cell * vectorization_length + v](i, j) += fe_eval.begin_dof_values()[i][v];
     }
   }
 }
@@ -1112,8 +1214,8 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::face_loop_block_diagonal(
   MatrixFree_ const & data,
-  BlockMatrix &       dst,
-  BlockMatrix const & /*src*/,
+  BlockMatrix &       matrices,
+  BlockMatrix const &,
   Range const & range) const
 {
   FEEvalFace fe_eval_m(data, true, operator_data.dof_index, operator_data.quad_index);
@@ -1143,7 +1245,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::face_loop_block_diagonal(
       {
         unsigned int const cell = data.get_face_info(face).cells_interior[v];
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          dst[cell](i, j) += fe_eval_m.begin_dof_values()[i][v];
+          matrices[cell](i, j) += fe_eval_m.begin_dof_values()[i][v];
       }
     }
 
@@ -1164,7 +1266,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::face_loop_block_diagonal(
       {
         unsigned int const cell = data.get_face_info(face).cells_exterior[v];
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          dst[cell](i, j) += fe_eval_p.begin_dof_values()[i][v];
+          matrices[cell](i, j) += fe_eval_p.begin_dof_values()[i][v];
       }
     }
   }
@@ -1174,8 +1276,8 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_block_diagonal(
   MatrixFree_ const & data,
-  BlockMatrix &       dst,
-  BlockMatrix const & /*src*/,
+  BlockMatrix &       matrices,
+  BlockMatrix const &,
   Range const & range) const
 {
   FEEvalFace fe_eval(data, true, operator_data.dof_index, operator_data.quad_index);
@@ -1202,7 +1304,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_block_diag
       {
         unsigned int const cell = data.get_face_info(face).cells_interior[v];
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          dst[cell](i, j) += fe_eval.begin_dof_values()[i][v];
+          matrices[cell](i, j) += fe_eval.begin_dof_values()[i][v];
       }
     }
   }
@@ -1213,8 +1315,8 @@ template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::cell_based_loop_block_diagonal(
   MatrixFree_ const & data,
-  BlockMatrix &       dst,
-  BlockMatrix const & /*src*/,
+  BlockMatrix &       matrices,
+  BlockMatrix const &,
   Range const & range) const
 {
   FEEvalCell fe_eval(data, operator_data.dof_index, operator_data.quad_index);
@@ -1242,17 +1344,18 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_based_loop_block_diagona
 
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          dst[cell * vectorization_length + v](i, j) += fe_eval.begin_dof_values()[i][v];
+          matrices[cell * vectorization_length + v](i, j) += fe_eval.begin_dof_values()[i][v];
     }
 
     // loop over all faces
-    unsigned int const nr_faces = GeometryInfo<dim>::faces_per_cell;
-    for(unsigned int face = 0; face < nr_faces; ++face)
+    unsigned int const n_faces = GeometryInfo<dim>::faces_per_cell;
+    for(unsigned int face = 0; face < n_faces; ++face)
     {
       fe_eval_m.reinit(cell, face);
       fe_eval_p.reinit(cell, face);
       auto bids = data.get_faces_by_cells_boundary_id(cell, face);
       auto bid  = bids[0];
+
 #ifdef DEBUG
       for(unsigned int v = 0; v < n_filled_lanes; v++)
         Assert(bid == bids[v],
@@ -1274,9 +1377,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_based_loop_block_diagona
         fe_eval_m.integrate(this->operator_data.face_integrate.value,
                             this->operator_data.face_integrate.gradient);
 
-        for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          for(unsigned int i = 0; i < dofs_per_cell; ++i)
-            dst[cell * vectorization_length + v](i, j) += fe_eval_m.begin_dof_values()[i][v];
+        for(unsigned int i = 0; i < dofs_per_cell; ++i)
+          for(unsigned int v = 0; v < n_filled_lanes; ++v)
+            matrices[cell * vectorization_length + v](i, j) += fe_eval_m.begin_dof_values()[i][v];
       }
     }
   }

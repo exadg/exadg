@@ -67,11 +67,6 @@ public:
   {
   }
 
-  // TODO
-  double
-  get_wall_time() const;
-
-
   void
   initialize(MatrixFree<dim, Number> const &    mf_data_in,
              HelmholtzOperatorData<dim> const & operator_data_in,
@@ -177,7 +172,7 @@ public:
    *  the matrices and the LU factorization.
    */
   void
-  update_inverse_block_diagonal() const;
+  update_block_diagonal_preconditioner() const;
 
 private:
   /*
@@ -274,9 +269,6 @@ private:
 
   ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>
     own_viscous_operator_storage;
-
-  // TODO
-  mutable double wall_time;
 
   // TODO
   bool use_optimized_implementation;

@@ -650,7 +650,7 @@ TimeIntBDF<dim, fe_degree, value_type>::analyze_computing_times() const
         << std::endl;
 
   Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(this->total_time, MPI_COMM_WORLD);
-  pcout << "  Global time:         " << std::scientific << std::setprecision(4) << std::setw(10)
+  pcout << "  Time loop:           " << std::scientific << std::setprecision(4) << std::setw(10)
         << data.min << " " << std::setprecision(4) << std::setw(10) << data.avg << " "
         << std::setprecision(4) << std::setw(10) << data.max << " "
         << "          "

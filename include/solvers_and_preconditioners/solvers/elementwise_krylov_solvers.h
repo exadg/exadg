@@ -1,16 +1,18 @@
 /*
- * InternalSolvers.h
+ * elementwise_krylov_solvers.h
  *
  *  Created on: Dec 8, 2016
  *      Author: fehn
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_INTERNALSOLVERS_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_INTERNALSOLVERS_H_
+#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_ELEMENTWISE_KRYLOV_SOLVERS_H_
+#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_ELEMENTWISE_KRYLOV_SOLVERS_H_
+
+#include "solver_data.h"
 
 using namespace dealii;
 
-namespace InternalSolvers
+namespace Elementwise
 {
 template<typename Number, typename Number2>
 bool
@@ -115,6 +117,14 @@ scale(value_type * dst, value_type const scalar, unsigned int const size)
     dst[i] *= scalar;
 }
 
+template<typename value_type, typename value_type_scalar>
+void
+scale(value_type * dst, value_type_scalar const scalar, unsigned int const size)
+{
+  for(unsigned int i = 0; i < size; ++i)
+    dst[i] = scalar * dst[i];
+}
+
 template<typename value_type>
 value_type
 inner_product(value_type const * vector1, value_type const * vector2, unsigned int const size)
@@ -176,14 +186,20 @@ add(value_type *       dst,
     dst[i] += scalar * in_vector[i];
 }
 
+enum class SolverType
+{
+  CG,
+  GMRES
+};
+
+/*
+ * CG solver.
+ */
 template<typename value_type>
 class SolverCG
 {
 public:
-  SolverCG(unsigned int const unknowns,
-           double const       abs_tol  = 1.e-12,
-           double const       rel_tol  = 1.e-8,
-           unsigned int const max_iter = 1e5);
+  SolverCG(unsigned int const unknowns, SolverData const & solver_data);
 
   template<typename Matrix, typename Preconditioner>
   void
@@ -202,14 +218,14 @@ private:
 };
 
 /*
- *  Implementation of local CG solver
+ *  Implementation of CG solver
  */
 template<typename value_type>
-SolverCG<value_type>::SolverCG(unsigned int const unknowns,
-                               double const       abs_tol,
-                               double const       rel_tol,
-                               unsigned int const max_iter)
-  : M(unknowns), ABS_TOL(abs_tol), REL_TOL(rel_tol), MAX_ITER(max_iter)
+SolverCG<value_type>::SolverCG(unsigned int const unknowns, SolverData const & solver_data)
+  : M(unknowns),
+    ABS_TOL(solver_data.abs_tol),
+    REL_TOL(solver_data.rel_tol),
+    MAX_ITER(solver_data.max_iter)
 {
   storage.resize(3 * M);
   p = storage.begin();
@@ -301,61 +317,16 @@ SolverCG<value_type>::solve(Matrix const *         matrix,
   //    std::cout<<"Number of iterations = "<< n_iter << std::endl;
 }
 
-template<typename value_type>
-class PreconditionerBase
-{
-public:
-  PreconditionerBase()
-  {
-  }
-
-  virtual ~PreconditionerBase()
-  {
-  }
-
-  virtual void
-  vmult(value_type * dst, value_type const * src) const = 0;
-
-private:
-};
-
-template<typename value_type>
-class PreconditionerIdentity
-{
-public:
-  PreconditionerIdentity(unsigned int const size) : M(size)
-  {
-  }
-
-  virtual ~PreconditionerIdentity()
-  {
-  }
-
-  virtual void
-  vmult(value_type * dst, value_type const * src) const
-  {
-    value_type one;
-    one = 1.0;
-    equ(dst, one, src, M);
-  }
-
-private:
-  unsigned int const M;
-};
-
 
 /*
- *  implementation of local GMRES solver
- *  with right preconditioning and restart
+ *  GMRES solver with right preconditioning and restart.
  */
 template<typename value_type>
 class SolverGMRES
 {
 public:
   SolverGMRES(unsigned int const unknowns,
-              double const       abs_tol         = 1.e-12,
-              double const       rel_tol         = 1.e-8,
-              unsigned int const max_iter        = 1e3,
+              SolverData const & solver_data,
               unsigned int const max_krylov_size = 1e3);
 
   template<typename Matrix, typename Preconditioner>
@@ -436,16 +407,17 @@ private:
   print(VectorizedArray<Number> y, std::string name);
 };
 
+/*
+ * Implementation of GMRES solver.
+ */
 template<typename value_type>
 SolverGMRES<value_type>::SolverGMRES(unsigned int const unknowns,
-                                     double const       abs_tol,
-                                     double const       rel_tol,
-                                     unsigned int const max_iter,
+                                     SolverData const & solver_data,
                                      unsigned int const max_krylov_size)
   : M(unknowns),
-    ABS_TOL(abs_tol),
-    REL_TOL(rel_tol),
-    MAX_ITER(max_iter),
+    ABS_TOL(solver_data.abs_tol),
+    REL_TOL(solver_data.rel_tol),
+    MAX_ITER(solver_data.max_iter),
     MAX_KRYLOV_SIZE(max_krylov_size),
     iterations(0),
     k(0)
@@ -511,7 +483,7 @@ SolverGMRES<value_type>::print(VectorizedArray<Number> y, std::string name)
  *  ignored in case that the solver has already converged
  *  for a specific component of the vectorized array
  *  (we explicitly overwrite this column of the Hessenberg
- *  matrix when peforming the Givens rotation.
+ *  matrix when performing the Givens rotation.
  */
 template<typename value_type>
 void
@@ -561,10 +533,10 @@ template<typename Number>
 void
   SolverGMRES<value_type>::perform_givens_rotation_and_calculate_residual(VectorizedArray<Number>)
 {
-  VectorizedArray<double> H_i_k   = VectorizedArray<double>();
-  VectorizedArray<double> H_ip1_k = VectorizedArray<double>();
+  VectorizedArray<Number> H_i_k   = VectorizedArray<Number>();
+  VectorizedArray<Number> H_ip1_k = VectorizedArray<Number>();
 
-  for(unsigned int v = 0; v < VectorizedArray<double>::n_array_elements; ++v)
+  for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
   {
     if(convergence_status[v] > 0.0)
     {
@@ -592,15 +564,15 @@ void
     }
   }
 
-  VectorizedArray<double> beta        = VectorizedArray<double>();
-  VectorizedArray<double> sin         = VectorizedArray<double>();
-  VectorizedArray<double> cos         = VectorizedArray<double>();
-  VectorizedArray<double> res_k_store = VectorizedArray<double>();
+  VectorizedArray<Number> beta        = VectorizedArray<Number>();
+  VectorizedArray<Number> sin         = VectorizedArray<Number>();
+  VectorizedArray<Number> cos         = VectorizedArray<Number>();
+  VectorizedArray<Number> res_k_store = VectorizedArray<Number>();
   res_k_store                         = res[k];
-  VectorizedArray<double> res_k       = VectorizedArray<double>();
-  VectorizedArray<double> res_kp1     = VectorizedArray<double>();
+  VectorizedArray<Number> res_k       = VectorizedArray<Number>();
+  VectorizedArray<Number> res_kp1     = VectorizedArray<Number>();
 
-  for(unsigned int v = 0; v < VectorizedArray<double>::n_array_elements; ++v)
+  for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
   {
     if(convergence_status[v] > 0.0)
     {
@@ -807,7 +779,8 @@ SolverGMRES<value_type>::do_solve(Matrix const *         A,
   P->vmult(temp.begin(), delta.begin());
   add(x, one, temp.begin(), M);
 }
-} // namespace InternalSolvers
+
+} // namespace Elementwise
 
 
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_INTERNALSOLVERS_H_ */
+#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_ELEMENTWISE_KRYLOV_SOLVERS_H_ */

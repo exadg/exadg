@@ -300,6 +300,102 @@ ConvectionDiffusionOperator<dim, fe_degree, Number>::calculate_diagonal(VectorTy
 
 template<int dim, int fe_degree, typename Number>
 void
+ConvectionDiffusionOperator<dim, fe_degree, Number>::apply_inverse_block_diagonal(
+  VectorType &       dst,
+  VectorType const & src) const
+{
+  // matrix-free
+  if(this->operator_data.implement_block_diagonal_preconditioner_matrix_free)
+  {
+    // Solve elementwise block Jacobi problems iteratively using an elementwise solver vectorized
+    // over several elements.
+    elementwise_solver->solve(dst, src);
+  }
+  else // matrix based
+  {
+    // Simply apply inverse of block matrices (using the LU factorization that has been computed
+    // before).
+    Parent::apply_inverse_block_diagonal(dst, src);
+  }
+}
+
+template<int dim, int fe_degree, typename Number>
+void
+ConvectionDiffusionOperator<dim, fe_degree, Number>::
+  initialize_block_diagonal_preconditioner_matrix_free() const
+{
+  elementwise_operator.reset(new ELEMENTWISE_OPERATOR(*this));
+
+  if(this->operator_data.preconditioner_block_jacobi == PreconditionerBlockDiagonal::None)
+  {
+    typedef Elementwise::PreconditionerIdentity<VectorizedArray<Number>> IDENTITY;
+    elementwise_preconditioner.reset(new IDENTITY(elementwise_operator->get_problem_size()));
+  }
+  else if(this->operator_data.preconditioner_block_jacobi ==
+          PreconditionerBlockDiagonal::InverseMassMatrix)
+  {
+    typedef Elementwise::
+      InverseMassMatrixPreconditioner<dim, 1 /*scalar equation*/, fe_degree, Number>
+        INVERSE_MASS;
+
+    elementwise_preconditioner.reset(
+      new INVERSE_MASS(this->get_data(), this->get_dof_index(), this->get_quad_index()));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
+
+  Elementwise::IterativeSolverData iterative_solver_data;
+  iterative_solver_data.solver_type = Elementwise::SolverType::GMRES;
+  iterative_solver_data.solver_data = this->operator_data.block_jacobi_solver_data;
+
+  elementwise_solver.reset(new ELEMENTWISE_SOLVER(
+    *std::dynamic_pointer_cast<ELEMENTWISE_OPERATOR>(elementwise_operator),
+    *std::dynamic_pointer_cast<PRECONDITIONER_BASE>(elementwise_preconditioner),
+    iterative_solver_data));
+}
+
+template<int dim, int fe_degree, typename Number>
+void
+ConvectionDiffusionOperator<dim, fe_degree, Number>::apply_add_block_diagonal_elementwise(
+  unsigned int const                                           cell,
+  FEEvaluation<dim, fe_degree, fe_degree + 1, 1, Number> &     fe_eval,
+  FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1, Number> & fe_eval_m,
+  FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1, Number> & fe_eval_p,
+  VectorizedArray<Number> * const                              dst,
+  VectorizedArray<Number> const * const                        src) const
+{
+  // calculate block Jacobi matrices
+  if(this->operator_data.unsteady_problem == true)
+  {
+    AssertThrow(this->operator_data.scaling_factor_time_derivative_term > 0.0,
+                ExcMessage("Scaling factor of time derivative term has not been initialized!"));
+
+    mass_matrix_operator->apply_add_block_diagonal_elementwise(
+      cell, fe_eval, fe_eval_m, fe_eval_p, dst, src);
+
+    Elementwise::scale(dst,
+                       this->operator_data.scaling_factor_time_derivative_term,
+                       fe_eval.dofs_per_cell);
+  }
+
+  if(this->operator_data.diffusive_problem == true)
+  {
+    diffusive_operator->apply_add_block_diagonal_elementwise(
+      cell, fe_eval, fe_eval_m, fe_eval_p, dst, src);
+  }
+
+  if(this->operator_data.convective_problem == true)
+  {
+    Number const time = this->get_evaluation_time();
+    convective_operator->apply_add_block_diagonal_elementwise(
+      cell, fe_eval, fe_eval_m, fe_eval_p, dst, src, time);
+  }
+}
+
+template<int dim, int fe_degree, typename Number>
+void
 ConvectionDiffusionOperator<dim, fe_degree, Number>::add_block_diagonal_matrices(
   BlockMatrix & matrices,
   Number const  time) const

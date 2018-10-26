@@ -1,5 +1,5 @@
 /*
- * DGNavierStokesPressureCorrection.h
+ * dg_navier_stokes_pressure_correction.h
  *
  *  Created on: Oct 26, 2016
  *      Author: fehn
@@ -15,7 +15,6 @@
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
-#include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
 
 namespace IncNS
 {

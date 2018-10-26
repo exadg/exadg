@@ -243,7 +243,7 @@ public:
    *  the matrices and the LU factorization.
    */
   void
-  update_inverse_block_diagonal() const;
+  update_block_diagonal_preconditioner() const;
 
 private:
   /*

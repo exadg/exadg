@@ -13,6 +13,7 @@
 #include "../../postprocessor/error_calculation_data.h"
 #include "../../postprocessor/output_data.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
+#include "../../solvers_and_preconditioners/solvers/solver_data.h"
 
 namespace ConvDiff
 {
@@ -164,6 +165,21 @@ enum class Preconditioner
   Multigrid
 };
 
+/*
+ * Elementwise preconditioner for block Jacobi preconditioner (only relevant for
+ * elementwise iterative solution procedure)
+ */
+enum class PreconditionerBlockDiagonal
+{
+  Undefined,
+  None,
+  InverseMassMatrix
+};
+
+/*
+ * Specify the operator type to be used for multigrid (which can differ from the
+ * equation type)
+ */
 enum class MultigridOperatorType
 {
   Undefined,
@@ -171,7 +187,6 @@ enum class MultigridOperatorType
   ReactionConvection,
   ReactionConvectionDiffusion
 };
-
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -226,12 +241,15 @@ public:
       rel_tol(1.e-12),
       max_iter(std::numeric_limits<unsigned int>::max()),
       preconditioner(Preconditioner::Undefined),
+      update_preconditioner(false),
+      implement_block_diagonal_preconditioner_matrix_free(false),
+      preconditioner_block_diagonal(PreconditionerBlockDiagonal::InverseMassMatrix),
+      block_jacobi_solver_data(SolverData(1000, 1.e-12, 1.e-2)),
       mg_operator_type(MultigridOperatorType::Undefined),
       multigrid_data(MultigridData()),
-      update_preconditioner(false),
 
       // NUMERICAL PARAMETERS
-      enable_cell_based_face_loops(false),
+      use_cell_based_face_loops(false),
       runtime_optimization(false),
 
       // OUTPUT AND POSTPROCESSING
@@ -560,15 +578,27 @@ public:
     print_parameter(pcout, "Relative solver tolerance", rel_tol);
     print_parameter(pcout, "Maximum number of iterations", max_iter);
 
-    std::string str_precon[] = {"Undefined",
-                                "None",
-                                "InverseMassMatrix",
-                                "PointJacobi",
-                                "BlockJacobi",
-                                "GMG (Reaction-)Diffusion",
-                                "GMG (Reaction-)Convection-Diffusion"};
+    std::string str_precon[] = {
+      "Undefined", "None", "InverseMassMatrix", "PointJacobi", "BlockJacobi", "Multigrid"};
 
     print_parameter(pcout, "Preconditioner", str_precon[(int)preconditioner]);
+
+    print_parameter(pcout, "Update preconditioner", update_preconditioner);
+
+    print_parameter(pcout,
+                    "Block Jacobi matrix-free",
+                    implement_block_diagonal_preconditioner_matrix_free);
+
+    if(implement_block_diagonal_preconditioner_matrix_free)
+    {
+      std::string str_precon[] = {"Undefined", "None", "InverseMassMatrix"};
+
+      print_parameter(pcout,
+                      "Preconditioner block diagonal",
+                      str_precon[(int)preconditioner_block_diagonal]);
+
+      block_jacobi_solver_data.print(pcout);
+    }
 
     if(preconditioner == Preconditioner::Multigrid)
     {
@@ -580,8 +610,6 @@ public:
       print_parameter(pcout, "MG Operator type", str_mg[(int)mg_operator_type]);
       multigrid_data.print(pcout);
     }
-
-    print_parameter(pcout, "Update preconditioner", update_preconditioner);
   }
 
 
@@ -590,7 +618,10 @@ public:
   {
     pcout << std::endl << "Numerical parameters:" << std::endl;
 
-    print_parameter(pcout, "Enable cell-based face loops", enable_cell_based_face_loops);
+    print_parameter(pcout, "Use cell-based face loops", use_cell_based_face_loops);
+    print_parameter(pcout,
+                    "Block Jacobi implemented matrix-free",
+                    implement_block_diagonal_preconditioner_matrix_free);
     print_parameter(pcout, "Runtime optimization", runtime_optimization);
   }
 
@@ -734,14 +765,26 @@ public:
   // description: see enum declaration
   Preconditioner preconditioner;
 
+  // update preconditioner in case of varying parameters
+  bool update_preconditioner;
+
+  // Implement block diagonal (block Jacobi) preconditioner in a matrix-free way
+  // by solving the block Jacobi problems elementwise using iterative solvers and
+  // matrix-free operator evaluation
+  bool implement_block_diagonal_preconditioner_matrix_free;
+
+  // description: see enum declaration
+  PreconditionerBlockDiagonal preconditioner_block_diagonal;
+
+  // solver data for block Jacobi preconditioner (only relevant for elementwise
+  // iterative solution procedure)
+  SolverData block_jacobi_solver_data;
+
   // description: see enum declaration
   MultigridOperatorType mg_operator_type;
 
   // description: see declaration of MultigridData
   MultigridData multigrid_data;
-
-  // update preconditioner in case of varying parameters
-  bool update_preconditioner;
 
 
   /**************************************************************************************/
@@ -756,7 +799,7 @@ public:
   // outer loop over all cells, e.g., preconditioners operating on the level of
   // individual cells (for example block Jacobi). With this parameter, the loop structure
   // can be changed to such an algorithm (cell_based_face_loops).
-  bool enable_cell_based_face_loops;
+  bool use_cell_based_face_loops;
 
   // Runtime optimization: Evaluate volume and surface integrals of convective term,
   // diffusive term and rhs term in one function (local_apply, local_apply_face,

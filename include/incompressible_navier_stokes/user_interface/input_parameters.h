@@ -21,6 +21,7 @@
 #include "../../postprocessor/error_calculation_data.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
 #include "../../solvers_and_preconditioners/newton/newton_solver_data.h"
+#include "../../solvers_and_preconditioners/solvers/solver_data.h"
 #include "../postprocessor/line_plot_data.h"
 #include "../postprocessor/mean_velocity_calculator.h"
 
@@ -265,6 +266,24 @@ enum class TypePenaltyParameter
   ConvectiveTerm,
   ViscousTerm,
   ViscousAndConvectiveTerms
+};
+
+/**************************************************************************************/
+/*                                                                                    */
+/*                              NUMERICAL PARAMETERS                                  */
+/*                                                                                    */
+/**************************************************************************************/
+
+
+/*
+ * Elementwise preconditioner for block Jacobi preconditioner (only relevant for
+ * elementwise iterative solution procedure)
+ */
+enum class PreconditionerBlockDiagonal
+{
+  Undefined,
+  None,
+  InverseMassMatrix
 };
 
 
@@ -693,10 +712,13 @@ public:
       divergence_penalty_factor(1.),
       use_continuity_penalty(false),
       continuity_penalty_components(ContinuityPenaltyComponents::Undefined),
-      continuity_penalty_use_boundary_data(false),
       continuity_penalty_factor(1.),
       type_penalty_parameter(TypePenaltyParameter::Undefined),
       add_penalty_terms_to_monolithic_system(false),
+
+      // NUMERICAL PARAMETERS
+      implement_block_diagonal_preconditioner_matrix_free(false),
+      use_cell_based_face_loops(false),
 
       // PROJECTION METHODS
 
@@ -716,6 +738,8 @@ public:
       // projection step
       solver_projection(SolverProjection::PCG),
       preconditioner_projection(PreconditionerProjection::InverseMassMatrix),
+      preconditioner_block_diagonal_projection(PreconditionerBlockDiagonal::InverseMassMatrix),
+      solver_data_block_diagonal_projection(SolverData(1000, 1.e-12, 1.e-2)),
       update_preconditioner_projection(true),
       abs_tol_projection(1.e-20),
       rel_tol_projection(1.e-12),
@@ -966,18 +990,6 @@ public:
     {
       AssertThrow(continuity_penalty_components != ContinuityPenaltyComponents::Undefined,
                   ExcMessage("Parameter must be defined"));
-
-      // in case of projection solvers, the projected velocity field does not fulfill
-      // the velocity boundary conditions
-      // --> make sure that use_boundary_data == false
-      if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme ||
-         temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-      {
-        AssertThrow(
-          continuity_penalty_use_boundary_data == false,
-          ExcMessage(
-            "continuity_penalty_use_boundary_data has to be false in case of projection solvers."));
-      }
     }
 
     if(use_divergence_penalty == true || use_continuity_penalty == true)
@@ -1094,6 +1106,9 @@ public:
 
     // SPATIAL DISCRETIZATION
     print_parameters_spatial_discretization(pcout);
+
+    // NUMERICAL PARAMTERS
+    print_parameters_numerical_parameters(pcout);
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
     if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
@@ -1359,10 +1374,6 @@ public:
 
     if(use_continuity_penalty == true)
     {
-      print_parameter(pcout,
-                      "Continuity penalty use boundary data",
-                      continuity_penalty_use_boundary_data);
-
       print_parameter(pcout, "Penalty factor continuity", continuity_penalty_factor);
 
       std::string continuity_penalty_components_str[] = {"Undefined", "All", "Normal"};
@@ -1391,6 +1402,16 @@ public:
                         "Add penalty terms to monolithic system",
                         add_penalty_terms_to_monolithic_system);
     }
+  }
+
+  void
+  print_parameters_numerical_parameters(ConditionalOStream & pcout)
+  {
+    print_parameter(pcout,
+                    "Block Jacobi matrix-free",
+                    implement_block_diagonal_preconditioner_matrix_free);
+
+    print_parameter(pcout, "Use cell-based face loops", use_cell_based_face_loops);
   }
 
   void
@@ -1448,6 +1469,18 @@ public:
         print_parameter(pcout,
                         "Preconditioner projection step",
                         str_precon_proj[(int)preconditioner_projection]);
+
+        if(preconditioner_projection == PreconditionerProjection::BlockJacobi &&
+           implement_block_diagonal_preconditioner_matrix_free)
+        {
+          std::string str_precon[] = {"Undefined", "None", "InverseMassMatrix"};
+
+          print_parameter(pcout,
+                          "Preconditioner block diagonal",
+                          str_precon[(int)preconditioner_block_diagonal_projection]);
+
+          solver_data_block_diagonal_projection.print(pcout);
+        }
 
         print_parameter(pcout,
                         "Update preconditioner projection step",
@@ -1956,6 +1989,7 @@ public:
 
   // description: see enum declaration
   InteriorPenaltyFormulation IP_formulation_viscous;
+
   // description: see enum declaration
   PenaltyTermDivergenceFormulation penalty_term_div_formulation;
 
@@ -1996,9 +2030,6 @@ public:
   // components only or all components
   ContinuityPenaltyComponents continuity_penalty_components;
 
-  // use Dirichlet boundary data when applying the continuity penalty operator
-  bool continuity_penalty_use_boundary_data;
-
   // penalty factor of continuity penalty term
   double continuity_penalty_factor;
 
@@ -2009,6 +2040,25 @@ public:
   // This parameter is only relevant for the coupled solution approach but not for
   // the projection-type solution methods.
   bool add_penalty_terms_to_monolithic_system;
+
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                              NUMERICAL PARAMETERS                                  */
+  /*                                                                                    */
+  /**************************************************************************************/
+
+  // Implement block diagonal (block Jacobi) preconditioner in a matrix-free way
+  // by solving the block Jacobi problems elementwise using iterative solvers and
+  // matrix-free operator evaluation
+  bool implement_block_diagonal_preconditioner_matrix_free;
+
+  // By default, the matrix-free implementation performs separate loops over all cells,
+  // interior faces, and boundary faces. For a certain type of operations, however, it
+  // is necessary to perform the face-loop as a loop over all faces of a cell with an
+  // outer loop over all cells, e.g., preconditioners operating on the level of
+  // individual cells (for example block Jacobi). With this parameter, the loop structure
+  // can be changed to such an algorithm (cell_based_face_loops).
+  bool use_cell_based_face_loops;
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -2051,6 +2101,14 @@ public:
 
   // description: see enum declaration
   PreconditionerProjection preconditioner_projection;
+
+  // description: see enum declaration (only relevant if block diagonal is used as
+  // preconditioner)
+  PreconditionerBlockDiagonal preconditioner_block_diagonal_projection;
+
+  // solver data for block Jacobi preconditioner (only relevant if elementwise
+  // iterative solution procedure is used for block diagonal preconditioner)
+  SolverData solver_data_block_diagonal_projection;
 
   // Update preconditioner before solving the linear system of equations.
   // Note that this variable is only used when using an iterative method
@@ -2226,8 +2284,6 @@ public:
 
   // Update preconditioner
   bool update_preconditioner;
-
-
 
   /**************************************************************************************/
   /*                                                                                    */

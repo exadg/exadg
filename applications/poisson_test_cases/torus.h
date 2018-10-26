@@ -9,7 +9,7 @@
 /******************************************************************************/
 
 const unsigned int DIMENSION              = 3;
-const unsigned int FE_DEGREE              = 7;
+const unsigned int FE_DEGREE              = 2;
 const unsigned int REFINE_STEPS_SPACE_MIN = 5;
 const unsigned int REFINE_STEPS_SPACE_MAX = 5;
 
@@ -25,8 +25,6 @@ Poisson::InputParameters::set_input_parameters()
   right_hand_side = true;
 
   // PHYSICAL QUANTITIES
-
-  // TEMPORAL DISCRETIZATION
 
   // SPATIAL DISCRETIZATION
   IP_factor = 1.0;
@@ -55,7 +53,6 @@ Poisson::InputParameters::set_input_parameters()
 /******************************************************************************/
 /*                                                                            */
 /* FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.) */
-/*                                                                            */
 /*                                                                            */
 /******************************************************************************/
 

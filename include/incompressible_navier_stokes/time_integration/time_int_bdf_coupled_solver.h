@@ -501,12 +501,10 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::postproc
   // update projection operator
   navier_stokes_operation->update_projection_operator(velocity_extrapolated, this->time_steps[0]);
 
-  // calculate inhomogeneous boundary faces integrals and add to rhs
-  navier_stokes_operation->rhs_projection_add(temp, this->time + this->time_steps[0]);
-
   // solve projection (where also the preconditioner is updated)
   unsigned int iterations_postprocessing =
     navier_stokes_operation->solve_projection(solution_np.block(0), temp);
+
   iterations[1] += iterations_postprocessing;
 
   // write output

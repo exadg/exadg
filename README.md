@@ -293,3 +293,4 @@ Open **eclipse** and choose folder *workspace* as "workspace" in eclipse
 3. Project > Properties > C/C++ General > Code Analysis: disable 'syntax and semantic errors'
 4. Project > Properties > C/C++ General > Formatter: lnm/styles/baci-eclipse-style
 5. Project > Properties > C/C++ General > Paths and Symbols: use /working_directory/sw/matrixfree/include (for Assembly, GNU C, GNU C++)
+6. Window > Preferences > General > Editors > Text Editors > Annotations > C/C++ Indexer Markers > uncheck all checkboxes > Apply > OK

@@ -111,7 +111,6 @@ void InputParameters<dim>::set_input_parameters()
   divergence_penalty_factor = 1.0e0;
   use_continuity_penalty = true;
   continuity_penalty_components = ContinuityPenaltyComponents::Normal;
-  continuity_penalty_use_boundary_data = false;
   continuity_penalty_factor = divergence_penalty_factor;
   type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
   add_penalty_terms_to_monolithic_system = false; //true;

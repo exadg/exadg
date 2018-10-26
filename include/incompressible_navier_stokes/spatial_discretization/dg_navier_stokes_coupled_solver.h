@@ -1,5 +1,5 @@
 /*
- * DGNavierStokesCoupled.h
+ * dg_navier_stokes_coupled_solver.h
  *
  *  Created on: Jun 27, 2016
  *      Author: fehn
@@ -10,7 +10,6 @@
 
 #include "../../incompressible_navier_stokes/preconditioners/preconditioner_navier_stokes.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h"
-#include "../../incompressible_navier_stokes/spatial_discretization/projection_operators_and_solvers.h"
 #include "solvers_and_preconditioners/newton/newton_solver.h"
 
 namespace IncNS
@@ -69,9 +68,6 @@ public:
 
   void
   setup_velocity_conv_diff_operator(double const & scaling_factor_time_derivative_term = 1.0);
-
-  void
-  setup_divergence_and_continuity_penalty_operators_and_solvers();
 
   // initialization of vectors
   void
@@ -241,19 +237,6 @@ public:
     return comp_laplace_operator_data;
   }
 
-  /*
-   *  Perform projection based on divergence and continuity penalty terms in a
-   *  postprocessing step after each time step.
-   */
-  void
-  update_projection_operator(VectorType const & velocity, double const time_step_size) const;
-
-  unsigned int
-  solve_projection(VectorType & dst, VectorType const & src) const;
-
-  void
-  rhs_projection_add(VectorType & dst, double const time) const;
-
   void
   do_postprocessing(VectorType const & velocity,
                     VectorType const & pressure,
@@ -262,12 +245,6 @@ public:
 
   void
   do_postprocessing_steady_problem(VectorType const & velocity, VectorType const & pressure);
-
-  double
-  calculate_dissipation_divergence_term(VectorType const & velocity) const;
-
-  double
-  calculate_dissipation_continuity_term(VectorType const & velocity) const;
 
 private:
   friend class BlockPreconditionerNavierStokes<dim,
@@ -280,30 +257,6 @@ private:
 
   VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>
     velocity_conv_diff_operator;
-
-  // div-div-penalty and continuity penalty operator
-  std::shared_ptr<DivergencePenaltyOperator<dim,
-                                            fe_degree,
-                                            fe_degree_p,
-                                            fe_degree_xwall,
-                                            xwall_quad_rule,
-                                            Number>>
-    divergence_penalty_operator;
-
-  std::shared_ptr<ContinuityPenaltyOperator<dim,
-                                            fe_degree,
-                                            fe_degree_p,
-                                            fe_degree_xwall,
-                                            xwall_quad_rule,
-                                            Number>>
-    continuity_penalty_operator;
-
-  // projection operator
-  std::shared_ptr<ProjectionOperatorBase<dim>> projection_operator;
-
-  // projection solver
-  std::shared_ptr<IterativeSolverBase<VectorType>> projection_solver;
-  std::shared_ptr<PreconditionerBase<Number>>      preconditioner_projection;
 
   VectorType mutable temp_vector;
   VectorType const *      sum_alphai_ui;
@@ -466,7 +419,7 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
         this->param.newton_solver_data_coupled, *this, *this, *linear_solver));
   }
 
-  setup_divergence_and_continuity_penalty_operators_and_solvers();
+  this->setup_projection_solver();
 
   pcout << std::endl << "... done!" << std::endl;
 }
@@ -519,248 +472,9 @@ template<int dim,
          typename Number>
 void
 DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  setup_divergence_and_continuity_penalty_operators_and_solvers()
-{
-  // divergence penalty operator
-  if(this->param.use_divergence_penalty == true)
-  {
-    DivergencePenaltyOperatorData div_penalty_data;
-    div_penalty_data.type_penalty_parameter = this->param.type_penalty_parameter;
-    div_penalty_data.viscosity              = this->param.viscosity;
-    div_penalty_data.penalty_parameter      = this->param.divergence_penalty_factor;
-
-    divergence_penalty_operator.reset(
-      new DivergencePenaltyOperator<dim,
-                                    fe_degree,
-                                    fe_degree_p,
-                                    fe_degree_xwall,
-                                    xwall_quad_rule,
-                                    Number>(this->data,
-                                            this->get_dof_index_velocity(),
-                                            this->get_quad_index_velocity_linear(),
-                                            div_penalty_data));
-  }
-
-  // continuity penalty operator
-  if(this->param.use_continuity_penalty == true)
-  {
-    ContinuityPenaltyOperatorData<dim> conti_penalty_data;
-    conti_penalty_data.type_penalty_parameter = this->param.type_penalty_parameter;
-    conti_penalty_data.viscosity              = this->param.viscosity;
-    conti_penalty_data.penalty_parameter      = this->param.continuity_penalty_factor;
-    conti_penalty_data.which_components       = this->param.continuity_penalty_components;
-    conti_penalty_data.use_boundary_data      = this->param.continuity_penalty_use_boundary_data;
-    conti_penalty_data.bc                     = this->boundary_descriptor_velocity;
-
-    continuity_penalty_operator.reset(
-      new ContinuityPenaltyOperator<dim,
-                                    fe_degree,
-                                    fe_degree_p,
-                                    fe_degree_xwall,
-                                    xwall_quad_rule,
-                                    Number>(this->data,
-                                            this->get_dof_index_velocity(),
-                                            this->get_quad_index_velocity_linear(),
-                                            conti_penalty_data));
-  }
-
-  // TODO: copied from DGNavierStokesProjectionMethods with only minor changes!
-
-  // setup projection operator and projection solver
-
-  // no penalty terms
-  if(this->param.use_divergence_penalty == false && this->param.use_continuity_penalty == false)
-  {
-    // do nothing
-  }
-  // divergence penalty only
-  else if(this->param.use_divergence_penalty == true && this->param.use_continuity_penalty == false)
-  {
-    // use direct solver
-    if(this->param.solver_projection == SolverProjection::LU)
-    {
-      AssertThrow(divergence_penalty_operator.get() != 0,
-                  ExcMessage("Divergence penalty operator has not been initialized."));
-
-      // projection operator
-      typedef ProjectionOperatorDivergencePenaltyDirect<dim,
-                                                        fe_degree,
-                                                        fe_degree_p,
-                                                        fe_degree_xwall,
-                                                        xwall_quad_rule,
-                                                        Number>
-        PROJ_OPERATOR;
-
-      projection_operator.reset(new PROJ_OPERATOR(*divergence_penalty_operator));
-
-      typedef DirectProjectionSolverDivergencePenalty<dim,
-                                                      fe_degree,
-                                                      fe_degree_p,
-                                                      fe_degree_xwall,
-                                                      xwall_quad_rule,
-                                                      Number>
-        PROJ_SOLVER;
-
-      projection_solver.reset(
-        new PROJ_SOLVER(std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
-    }
-    // use iterative solver (PCG)
-    else if(this->param.solver_projection == SolverProjection::PCG)
-    {
-      AssertThrow(divergence_penalty_operator.get() != 0,
-                  ExcMessage("Divergence penalty operator has not been initialized."));
-
-      // projection operator
-      typedef ProjectionOperatorDivergencePenaltyIterative<dim,
-                                                           fe_degree,
-                                                           fe_degree_p,
-                                                           fe_degree_xwall,
-                                                           xwall_quad_rule,
-                                                           Number>
-        PROJ_OPERATOR;
-
-      projection_operator.reset(new PROJ_OPERATOR(*divergence_penalty_operator));
-
-      // solver
-      ProjectionSolverData projection_solver_data;
-      projection_solver_data.solver_tolerance_abs = this->param.abs_tol_projection;
-      projection_solver_data.solver_tolerance_rel = this->param.rel_tol_projection;
-
-      typedef IterativeProjectionSolverDivergencePenalty<dim,
-                                                         fe_degree,
-                                                         fe_degree_p,
-                                                         fe_degree_xwall,
-                                                         xwall_quad_rule,
-                                                         Number>
-        PROJ_SOLVER;
-
-      projection_solver.reset(
-        new PROJ_SOLVER(*std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator),
-                        projection_solver_data));
-    }
-    else
-    {
-      AssertThrow(this->param.solver_projection == SolverProjection::LU ||
-                    this->param.solver_projection == SolverProjection::PCG,
-                  ExcMessage("Specified projection solver not implemented."));
-    }
-  }
-  // both divergence and continuity penalty terms
-  else if(this->param.use_divergence_penalty == true && this->param.use_continuity_penalty == true)
-  {
-    AssertThrow(divergence_penalty_operator.get() != 0,
-                ExcMessage("Divergence penalty operator has not been initialized."));
-
-    AssertThrow(continuity_penalty_operator.get() != 0,
-                ExcMessage("Continuity penalty operator has not been initialized."));
-
-    // projection operator consisting of mass matrix operator,
-    // divergence penalty operator, and continuity penalty operator
-    typedef ProjectionOperatorDivergenceAndContinuityPenalty<dim,
-                                                             fe_degree,
-                                                             fe_degree_p,
-                                                             fe_degree_xwall,
-                                                             xwall_quad_rule,
-                                                             Number>
-      PROJ_OPERATOR;
-
-    projection_operator.reset(new PROJ_OPERATOR(this->mass_matrix_operator,
-                                                *this->divergence_penalty_operator,
-                                                *this->continuity_penalty_operator));
-
-    // preconditioner
-    if(this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
-    {
-      preconditioner_projection.reset(new InverseMassMatrixPreconditioner<dim, fe_degree, Number>(
-        this->data, this->get_dof_index_velocity(), this->get_quad_index_velocity_linear()));
-    }
-    else if(this->param.preconditioner_projection == PreconditionerProjection::PointJacobi)
-    {
-      // Note that at this point (when initializing the Jacobi preconditioner and calculating the
-      // diagonal) the penalty parameter of the projection operator has not been calculated and the
-      // time step size has not been set. Hence, update_preconditioner = true should be used for the
-      // Jacobi preconditioner in order to use to correct diagonal for preconditioning.
-      preconditioner_projection.reset(new JacobiPreconditioner<PROJ_OPERATOR>(
-        *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
-    }
-    else if(this->param.preconditioner_projection == PreconditionerProjection::BlockJacobi)
-    {
-      // Note that at this point (when initializing the Jacobi preconditioner)
-      // the penalty parameter of the projection operator has not been calculated and the time step
-      // size has not been set. Hence, update_preconditioner = true should be used for the Jacobi
-      // preconditioner in order to use to correct diagonal blocks for preconditioning.
-      preconditioner_projection.reset(new BlockJacobiPreconditioner<PROJ_OPERATOR>(
-        *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
-    }
-    else
-    {
-      AssertThrow(this->param.preconditioner_projection == PreconditionerProjection::None ||
-                    this->param.preconditioner_projection ==
-                      PreconditionerProjection::InverseMassMatrix ||
-                    this->param.preconditioner_projection ==
-                      PreconditionerProjection::PointJacobi ||
-                    this->param.preconditioner_projection == PreconditionerProjection::BlockJacobi,
-                  ExcMessage("Specified preconditioner of projection solver not implemented."));
-    }
-
-    // solver
-    if(this->param.solver_projection == SolverProjection::PCG)
-    {
-      // setup solver data
-      CGSolverData projection_solver_data;
-      // use default value of max_iter
-      projection_solver_data.solver_tolerance_abs = this->param.abs_tol_projection;
-      projection_solver_data.solver_tolerance_rel = this->param.rel_tol_projection;
-      // default value of use_preconditioner = false
-      if(this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix ||
-         this->param.preconditioner_projection == PreconditionerProjection::PointJacobi ||
-         this->param.preconditioner_projection == PreconditionerProjection::BlockJacobi)
-      {
-        projection_solver_data.use_preconditioner    = true;
-        projection_solver_data.update_preconditioner = this->param.update_preconditioner_projection;
-      }
-      else
-      {
-        AssertThrow(
-          this->param.preconditioner_projection == PreconditionerProjection::None ||
-            this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix ||
-            this->param.preconditioner_projection == PreconditionerProjection::PointJacobi ||
-            this->param.preconditioner_projection == PreconditionerProjection::BlockJacobi,
-          ExcMessage("Specified preconditioner of projection solver not implemented."));
-      }
-
-      // setup solver
-      projection_solver.reset(new CGSolver<PROJ_OPERATOR, PreconditionerBase<Number>, VectorType>(
-        *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator),
-        *preconditioner_projection,
-        projection_solver_data));
-    }
-    else
-    {
-      AssertThrow(this->param.solver_projection == SolverProjection::PCG,
-                  ExcMessage("Specified projection solver not implemented."));
-    }
-  }
-  else
-  {
-    AssertThrow(
-      false,
-      ExcMessage(
-        "Specified combination of divergence and continuity penalty operators not implemented."));
-  }
-}
-
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
-void
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
   update_divergence_penalty_operator(VectorType const & velocity) const
 {
-  this->divergence_penalty_operator->calculate_array_penalty_parameter(velocity);
+  this->projection_operator->calculate_array_div_penalty_parameter(velocity);
 }
 
 template<int dim,
@@ -773,7 +487,7 @@ void
 DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
   update_continuity_penalty_operator(VectorType const & velocity) const
 {
-  this->continuity_penalty_operator->calculate_array_penalty_parameter(velocity);
+  this->projection_operator->calculate_array_conti_penalty_parameter(velocity);
 }
 
 template<int dim,
@@ -818,12 +532,7 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
   if(this->param.right_hand_side == true)
     this->body_force_operator.evaluate_add(dst.block(0), eval_time);
 
-  // Divergence and continuity penalty operators
-  if(this->param.add_penalty_terms_to_monolithic_system == true)
-  {
-    if(this->param.use_continuity_penalty == true)
-      continuity_penalty_operator->rhs_add(dst.block(0), eval_time);
-  }
+  // Divergence and continuity penalty operators: no contribution to rhs
 
   // pressure-block
   this->divergence_operator.rhs(dst.block(1), eval_time);
@@ -865,9 +574,9 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
   if(this->param.add_penalty_terms_to_monolithic_system == true)
   {
     if(this->param.use_divergence_penalty == true)
-      divergence_penalty_operator->apply_add(dst.block(0), src.block(0));
+      this->projection_operator->apply_add_div_penalty(dst.block(0), src.block(0));
     if(this->param.use_continuity_penalty == true)
-      continuity_penalty_operator->apply_add(dst.block(0), src.block(0));
+      this->projection_operator->apply_add_conti_penalty(dst.block(0), src.block(0));
   }
 
   // (1,2) block of saddle point matrix
@@ -975,9 +684,9 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
   if(this->param.add_penalty_terms_to_monolithic_system == true)
   {
     if(this->param.use_divergence_penalty == true)
-      divergence_penalty_operator->apply_add(dst.block(0), src.block(0));
+      this->projection_operator->apply_add_div_penalty(dst.block(0), src.block(0));
     if(this->param.use_continuity_penalty == true)
-      continuity_penalty_operator->evaluate_add(dst.block(0), src.block(0), evaluation_time);
+      this->projection_operator->apply_add_conti_penalty(dst.block(0), src.block(0));
   }
 
   // gradient operator scaled by scaling_factor_continuity
@@ -1028,9 +737,9 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
   if(this->param.add_penalty_terms_to_monolithic_system == true)
   {
     if(this->param.use_divergence_penalty == true)
-      divergence_penalty_operator->apply_add(dst.block(0), src.block(0));
+      this->projection_operator->apply_add_div_penalty(dst.block(0), src.block(0));
     if(this->param.use_continuity_penalty == true)
-      continuity_penalty_operator->apply_add(dst.block(0), src.block(0));
+      this->projection_operator->apply_add_conti_penalty(dst.block(0), src.block(0));
   }
 
   // gradient operator scaled by scaling_factor_continuity
@@ -1045,76 +754,6 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
   // with respect to pressure gradient term and velocity divergence term
   // scale by scaling_factor_continuity
   dst.block(1) *= -scaling_factor_continuity;
-}
-
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
-void
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  update_projection_operator(VectorType const & velocity, double const time_step_size) const
-{
-  // Update projection operator, i.e., the penalty parameters that depend on
-  // the current solution (velocity field).
-  if(this->param.use_divergence_penalty == true)
-  {
-    update_divergence_penalty_operator(velocity);
-  }
-  if(this->param.use_continuity_penalty == true)
-  {
-    update_continuity_penalty_operator(velocity);
-  }
-
-  // Set the correct time step size.
-  Assert(projection_operator.get() != 0,
-         ExcMessage("Projection operator has not been initialized."));
-  projection_operator->set_time_step_size(time_step_size);
-}
-
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
-unsigned int
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  solve_projection(VectorType & dst, VectorType const & src) const
-{
-  // Solve projection equation.
-  Assert(projection_solver.get() != 0, ExcMessage("Projection solver has not been initialized."));
-  unsigned int n_iter = projection_solver->solve(dst, src);
-
-  return n_iter;
-}
-
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
-void
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  rhs_projection_add(VectorType & dst, double const eval_time) const
-{
-  if(this->param.use_divergence_penalty == true && this->param.use_continuity_penalty == true)
-  {
-    typedef ProjectionOperatorDivergenceAndContinuityPenalty<dim,
-                                                             fe_degree,
-                                                             fe_degree_p,
-                                                             fe_degree_xwall,
-                                                             xwall_quad_rule,
-                                                             Number>
-      PROJ_OPERATOR;
-
-    std::shared_ptr<PROJ_OPERATOR> proj_operator_div_and_conti_penalty =
-      std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator);
-    proj_operator_div_and_conti_penalty->rhs_add(dst, eval_time);
-  }
 }
 
 template<int dim,
@@ -1174,53 +813,6 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
                                          velocity, // intermediate_velocity
                                          pressure);
 }
-
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
-double
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  calculate_dissipation_divergence_term(VectorType const & velocity) const
-{
-  if(this->param.use_divergence_penalty == true)
-  {
-    VectorType dst;
-    dst.reinit(velocity, false);
-    this->divergence_penalty_operator->apply(dst, velocity);
-    return velocity * dst;
-  }
-  else
-  {
-    return 0.0;
-  }
-}
-
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
-double
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  calculate_dissipation_continuity_term(VectorType const & velocity) const
-{
-  if(this->param.use_continuity_penalty == true)
-  {
-    VectorType dst;
-    dst.reinit(velocity, false);
-    this->continuity_penalty_operator->apply(dst, velocity);
-    return velocity * dst;
-  }
-  else
-  {
-    return 0.0;
-  }
-}
-
 
 } // namespace IncNS
 

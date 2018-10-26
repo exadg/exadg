@@ -75,7 +75,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   max_iter = 1e4;
   preconditioner = Preconditioner::Multigrid;//Preconditioner::PointJacobi;
   multigrid_data.type = MultigridType::hMG;
-  enable_cell_based_face_loops = true;
+  use_cell_based_face_loops = true;
   mg_operator_type = MultigridOperatorType::ReactionConvectionDiffusion;
   // MG smoother
   multigrid_data.smoother = MultigridSmoother::Jacobi; //Chebyshev;

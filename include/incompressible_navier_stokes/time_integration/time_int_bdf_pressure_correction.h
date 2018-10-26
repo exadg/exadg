@@ -910,18 +910,26 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
 
   VectorType velocity_extrapolated;
 
+  unsigned int iterations_projection = 0;
+
   // extrapolate velocity to time t_n+1 and use this velocity field to
-  // caculate the penalty parameter for the divergence and continuity penalty term
+  // calculate the penalty parameter for the divergence and continuity penalty term
   if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
   {
     velocity_extrapolated.reinit(velocity[0]);
     for(unsigned int i = 0; i < velocity.size(); ++i)
       velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
-  }
 
-  // solve linear system of equations
-  unsigned int iterations_projection = navier_stokes_operation->solve_projection(
-    velocity_np, rhs_vec_projection, velocity_extrapolated, this->time_steps[0]);
+    navier_stokes_operation->update_projection_operator(velocity_extrapolated, this->time_steps[0]);
+
+    // solve linear system of equations
+    iterations_projection =
+      navier_stokes_operation->solve_projection(velocity_np, rhs_vec_projection);
+  }
+  else // no penalty terms, simply apply inverse mass matrix
+  {
+    navier_stokes_operation->apply_inverse_mass_matrix(velocity_np, rhs_vec_projection);
+  }
 
   // write output
   if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)

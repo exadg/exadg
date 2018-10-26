@@ -24,7 +24,7 @@ public:
     : underlying_operator(underlying_operator_in)
   {
     // initialize block Jacobi
-    underlying_operator.update_inverse_block_diagonal();
+    underlying_operator.update_block_diagonal_preconditioner();
   }
 
   /*
@@ -35,7 +35,7 @@ public:
   void
   update(MatrixOperatorBase const * /*matrix_operator*/)
   {
-    underlying_operator.update_inverse_block_diagonal();
+    underlying_operator.update_block_diagonal_preconditioner();
   }
 
   /*

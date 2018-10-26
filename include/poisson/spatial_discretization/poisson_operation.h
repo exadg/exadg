@@ -18,8 +18,7 @@
 #include "../../operators/matrix_operator_base.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
-#include "../../solvers_and_preconditioners/solvers/iterative_solvers.h"
-
+#include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
 #include "../user_interface/boundary_descriptor.h"
 #include "../user_interface/field_functions.h"
 #include "../user_interface/input_parameters.h"

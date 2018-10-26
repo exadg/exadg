@@ -10,9 +10,77 @@
 #include "diffusive_operator.h"
 #include "mass_operator.h"
 
+#include "../../../solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
+#include "../../../solvers_and_preconditioners/solvers/wrapper_elementwise_solvers.h"
 
 namespace ConvDiff
 {
+template<int dim, int fe_degree, typename Number, typename Operator>
+class ElementwiseBlockJacobiOperator
+{
+public:
+  ElementwiseBlockJacobiOperator(Operator const & operator_in)
+    : op(operator_in),
+      current_cell(1),
+      fe_eval(op.get_data(), op.get_dof_index(), op.get_quad_index()),
+      fe_eval_m(op.get_data(), true, op.get_dof_index(), op.get_quad_index()),
+      fe_eval_p(op.get_data(), false, op.get_dof_index(), op.get_quad_index())
+  {
+  }
+
+  MatrixFree<dim, Number> const &
+  get_data() const
+  {
+    return op.get_data();
+  }
+
+  unsigned int
+  get_dof_index() const
+  {
+    return op.get_dof_index();
+  }
+
+  unsigned int
+  get_quad_index() const
+  {
+    return op.get_dof_index();
+  }
+
+  void
+  setup(unsigned int const cell)
+  {
+    fe_eval.reinit(cell);
+
+    current_cell = cell;
+  }
+
+  unsigned int
+  get_problem_size() const
+  {
+    return fe_eval.dofs_per_cell;
+  }
+
+  void
+  vmult(VectorizedArray<Number> * dst, VectorizedArray<Number> * src) const
+  {
+    // set dst vector to zero
+    Elementwise::vector_init(dst, fe_eval.dofs_per_cell);
+
+    // evaluate block diagonal
+    op.apply_add_block_diagonal_elementwise(current_cell, fe_eval, fe_eval_m, fe_eval_p, dst, src);
+  }
+
+private:
+  Operator const & op;
+
+  unsigned int current_cell;
+
+  mutable FEEvaluation<dim, fe_degree, fe_degree + 1, 1 /*scalar*/, Number>     fe_eval;
+  mutable FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1 /*scalar*/, Number> fe_eval_m;
+  mutable FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1 /*scalar*/, Number> fe_eval_p;
+};
+
+
 template<int dim>
 struct ConvectionDiffusionOperatorData
   : public OperatorBaseData<dim, ConvDiff::BoundaryDescriptor<dim>>
@@ -23,6 +91,8 @@ struct ConvectionDiffusionOperatorData
       convective_problem(true),
       diffusive_problem(true),
       scaling_factor_time_derivative_term(-1.0),
+      preconditioner_block_jacobi(PreconditionerBlockDiagonal::InverseMassMatrix),
+      block_jacobi_solver_data(SolverData(1000, 1.e-12, 1.e-2)),
       mg_operator_type(MultigridOperatorType::Undefined)
   {
   }
@@ -47,6 +117,10 @@ struct ConvectionDiffusionOperatorData
   MassMatrixOperatorData<dim> mass_matrix_operator_data;
   ConvectiveOperatorData<dim> convective_operator_data;
   DiffusiveOperatorData<dim>  diffusive_operator_data;
+
+  // elementwise iterative solution of block Jacobi problems
+  PreconditionerBlockDiagonal preconditioner_block_jacobi;
+  SolverData                  block_jacobi_solver_data;
 
   MultigridOperatorType mg_operator_type;
 };
@@ -134,15 +208,32 @@ public:
 #endif
 
   /*
-   *  This function calculates the diagonal of the scalar reaction-convection-diffusion operator.
+   * This function calculates the diagonal.
    */
   void
   calculate_diagonal(VectorType & diagonal) const;
 
+  /*
+   * Block diagonal preconditioner.
+   */
+
+  // apply the inverse block diagonal operator (for matrix-based and matrix-free variants)
+  void
+  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const;
+
+  void
+  apply_add_block_diagonal_elementwise(
+    unsigned int const                                           cell,
+    FEEvaluation<dim, fe_degree, fe_degree + 1, 1, Number> &     fe_eval,
+    FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1, Number> & fe_eval_m,
+    FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1, Number> & fe_eval_p,
+    VectorizedArray<Number> * const                              dst,
+    VectorizedArray<Number> const * const                        src) const;
+
 private:
   /*
-   * This function calculates the block Jacobi matrices.
-   * This is done sequentially for the different operators.
+   * This function calculates the block Jacobi matrices and adds the result to matrices. This is
+   * done sequentially for the different operators.
    */
   void
   add_block_diagonal_matrices(BlockMatrix & matrices) const;
@@ -150,16 +241,33 @@ private:
   void
   add_block_diagonal_matrices(BlockMatrix & matrices, Number const time) const;
 
+  void
+  initialize_block_diagonal_preconditioner_matrix_free() const;
+
   MultigridOperatorBase<dim, Number> *
   get_new(unsigned int deg) const;
 
-private:
   mutable lazy_ptr<MassMatrixOperator<dim, fe_degree, Number>> mass_matrix_operator;
   mutable lazy_ptr<ConvectiveOperator<dim, fe_degree, Number>> convective_operator;
   mutable lazy_ptr<DiffusiveOperator<dim, fe_degree, Number>>  diffusive_operator;
 
-  VectorType mutable temp;
-  double scaling_factor_time_derivative_term;
+  mutable VectorType temp;
+  double             scaling_factor_time_derivative_term;
+
+  // Block Jacobi preconditioner/smoother: matrix-free version with elementwise iterative solver
+  typedef ElementwiseBlockJacobiOperator<dim, fe_degree, Number, This> ELEMENTWISE_OPERATOR;
+  typedef Elementwise::PreconditionerBase<VectorizedArray<Number>>     PRECONDITIONER_BASE;
+  typedef Elementwise::IterativeSolver<dim,
+                                       1 /*scalar equation*/,
+                                       fe_degree,
+                                       Number,
+                                       ELEMENTWISE_OPERATOR,
+                                       PRECONDITIONER_BASE>
+    ELEMENTWISE_SOLVER;
+
+  mutable std::shared_ptr<ELEMENTWISE_OPERATOR> elementwise_operator;
+  mutable std::shared_ptr<PRECONDITIONER_BASE>  elementwise_preconditioner;
+  mutable std::shared_ptr<ELEMENTWISE_SOLVER>   elementwise_solver;
 };
 
 } // namespace ConvDiff

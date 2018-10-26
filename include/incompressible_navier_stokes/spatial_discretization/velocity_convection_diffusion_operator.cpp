@@ -438,7 +438,7 @@ VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Numbe
 template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
 void
 VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>::
-  update_inverse_block_diagonal() const
+  update_block_diagonal_preconditioner() const
 {
   if(block_jacobi_matrices_have_been_initialized == false)
   {
