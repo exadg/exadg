@@ -1,5 +1,5 @@
 /*
- * CompNavierStokesCalculators.h
+ * comp_navier_stokes_calculators.h
  *
  */
 
@@ -10,8 +10,6 @@
 #include <deal.II/lac/parallel_vector.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
 #include <deal.II/matrix_free/matrix_free.h>
-
-#include "operators/base_operator.h"
 
 template<int dim, int fe_degree, typename value_type>
 class VorticityCalculator
