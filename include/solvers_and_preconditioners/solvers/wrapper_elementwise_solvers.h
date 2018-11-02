@@ -114,7 +114,7 @@ private:
       fe_eval.read_dof_values(src, 0);
 
       // initialize operator and preconditioner for current cell
-      op.setup(cell);
+      op.setup(cell, dofs_per_cell);
       preconditioner.setup(cell);
 
       // call iterative solver and solve on current cell

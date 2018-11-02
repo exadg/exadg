@@ -52,7 +52,7 @@ public:
   }
 
   virtual void
-  setup(unsigned int const cell)
+  setup(unsigned int const /* cell */)
   {
     // nothing to do
   }
