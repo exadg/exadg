@@ -9,6 +9,9 @@
 #define INCLUDE_EVALUATEFUNCTIONS_H_
 
 #include <deal.II/base/function.h>
+#include <deal.II/base/point.h>
+#include <deal.II/base/tensor.h>
+#include <deal.II/base/vectorization.h>
 
 template<int dim, typename value_type>
 inline void
