@@ -5,17 +5,17 @@
 
 namespace Poisson
 {
-template<int dim, int fe_degree, typename value_type>
-DGOperation<dim, fe_degree, value_type>::DGOperation(
+template<int dim, int degree, typename Number>
+DGOperation<dim, degree, Number>::DGOperation(
   parallel::distributed::Triangulation<dim> const & triangulation,
   Poisson::InputParameters const &                  param_in)
-  : fe(fe_degree), mapping(fe_degree), dof_handler(triangulation), param(param_in)
+  : fe(degree), mapping(degree), dof_handler(triangulation), param(param_in)
 {
 }
 
-template<int dim, int fe_degree, typename value_type>
+template<int dim, int degree, typename Number>
 void
-DGOperation<dim, fe_degree, value_type>::setup(
+DGOperation<dim, degree, Number>::setup(
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                     periodic_face_pairs,
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor_in,
@@ -37,9 +37,9 @@ DGOperation<dim, fe_degree, value_type>::setup(
   pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, int fe_degree, typename value_type>
+template<int dim, int degree, typename Number>
 void
-DGOperation<dim, fe_degree, value_type>::setup_solver()
+DGOperation<dim, degree, Number>::setup_solver()
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Setup solver ..." << std::endl;
@@ -48,13 +48,12 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
   if(param.preconditioner == Poisson::Preconditioner::PointJacobi)
   {
     preconditioner.reset(
-      new JacobiPreconditioner<Poisson::LaplaceOperator<dim, fe_degree, value_type>>(
-        laplace_operator));
+      new JacobiPreconditioner<Poisson::LaplaceOperator<dim, degree, Number>>(laplace_operator));
   }
   else if(param.preconditioner == Poisson::Preconditioner::BlockJacobi)
   {
     preconditioner.reset(
-      new BlockJacobiPreconditioner<Poisson::LaplaceOperator<dim, fe_degree, value_type>>(
+      new BlockJacobiPreconditioner<Poisson::LaplaceOperator<dim, degree, Number>>(
         laplace_operator));
   }
   else if(param.preconditioner == Poisson::Preconditioner::Multigrid)
@@ -62,11 +61,11 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
     MultigridData mg_data;
     mg_data = param.multigrid_data;
 
-    typedef float Number;
+    typedef float MultigridNumber;
 
     typedef MyMultigridPreconditionerDG<dim,
-                                        value_type,
-                                        Poisson::LaplaceOperator<dim, fe_degree, Number>>
+                                        Number,
+                                        Poisson::LaplaceOperator<dim, degree, MultigridNumber>>
       MULTIGRID;
 
     preconditioner.reset(new MULTIGRID());
@@ -100,8 +99,8 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
 
     // initialize solver
     iterative_solver.reset(
-      new CGSolver<Poisson::LaplaceOperator<dim, fe_degree, value_type>,
-                   PreconditionerBase<value_type>,
+      new CGSolver<Poisson::LaplaceOperator<dim, degree, Number>,
+                   PreconditionerBase<Number>,
                    VectorType>(laplace_operator, *preconditioner, solver_data));
   }
   else
@@ -113,16 +112,16 @@ DGOperation<dim, fe_degree, value_type>::setup_solver()
   pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, int fe_degree, typename value_type>
+template<int dim, int degree, typename Number>
 void
-DGOperation<dim, fe_degree, value_type>::initialize_dof_vector(VectorType & src) const
+DGOperation<dim, degree, Number>::initialize_dof_vector(VectorType & src) const
 {
   data.initialize_dof_vector(src);
 }
 
-template<int dim, int fe_degree, typename value_type>
+template<int dim, int degree, typename Number>
 void
-DGOperation<dim, fe_degree, value_type>::rhs(VectorType & dst, double const evaluation_time) const
+DGOperation<dim, degree, Number>::rhs(VectorType & dst, double const evaluation_time) const
 {
   dst = 0;
   laplace_operator.rhs_add(dst, evaluation_time);
@@ -130,45 +129,45 @@ DGOperation<dim, fe_degree, value_type>::rhs(VectorType & dst, double const eval
     rhs_operator.evaluate_add(dst, evaluation_time);
 }
 
-template<int dim, int fe_degree, typename value_type>
+template<int dim, int degree, typename Number>
 unsigned int
-DGOperation<dim, fe_degree, value_type>::solve(VectorType & sol, VectorType const & rhs)
+DGOperation<dim, degree, Number>::solve(VectorType & sol, VectorType const & rhs)
 {
   unsigned int iterations = iterative_solver->solve(sol, rhs);
 
   return iterations;
 }
 
-template<int dim, int fe_degree, typename value_type>
-MatrixFree<dim, value_type> const &
-DGOperation<dim, fe_degree, value_type>::get_data() const
+template<int dim, int degree, typename Number>
+MatrixFree<dim, Number> const &
+DGOperation<dim, degree, Number>::get_data() const
 {
   return data;
 }
 
-template<int dim, int fe_degree, typename value_type>
+template<int dim, int degree, typename Number>
 Mapping<dim> const &
-DGOperation<dim, fe_degree, value_type>::get_mapping() const
+DGOperation<dim, degree, Number>::get_mapping() const
 {
   return mapping;
 }
 
-template<int dim, int fe_degree, typename value_type>
+template<int dim, int degree, typename Number>
 DoFHandler<dim> const &
-DGOperation<dim, fe_degree, value_type>::get_dof_handler() const
+DGOperation<dim, degree, Number>::get_dof_handler() const
 {
   return dof_handler;
 }
 
-template<int dim, int fe_degree, typename value_type>
+template<int dim, int degree, typename Number>
 void
-DGOperation<dim, fe_degree, value_type>::create_dofs()
+DGOperation<dim, degree, Number>::create_dofs()
 {
   // enumerate degrees of freedom
   dof_handler.distribute_dofs(fe);
   dof_handler.distribute_mg_dofs();
 
-  unsigned int ndofs_per_cell = Utilities::pow(fe_degree + 1, dim);
+  unsigned int ndofs_per_cell = Utilities::pow(degree + 1, dim);
 
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
@@ -176,22 +175,22 @@ DGOperation<dim, fe_degree, value_type>::create_dofs()
         << "Discontinuous Galerkin finite element discretization:" << std::endl
         << std::endl;
 
-  print_parameter(pcout, "degree of 1D polynomials", fe_degree);
+  print_parameter(pcout, "degree of 1D polynomials", degree);
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
 }
 
-template<int dim, int fe_degree, typename value_type>
+template<int dim, int degree, typename Number>
 void
-DGOperation<dim, fe_degree, value_type>::initialize_matrix_free()
+DGOperation<dim, degree, Number>::initialize_matrix_free()
 {
   // quadrature formula used to perform integrals
-  QGauss<1> quadrature(fe_degree + 1);
+  QGauss<1> quadrature(degree + 1);
 
   // initialize matrix_free_data
-  typename MatrixFree<dim, value_type>::AdditionalData additional_data;
+  typename MatrixFree<dim, Number>::AdditionalData additional_data;
   additional_data.tasks_parallel_scheme =
-    MatrixFree<dim, value_type>::AdditionalData::partition_partition;
+    MatrixFree<dim, Number>::AdditionalData::partition_partition;
   additional_data.build_face_info = true;
 
   additional_data.mapping_update_flags =
@@ -218,9 +217,9 @@ DGOperation<dim, fe_degree, value_type>::initialize_matrix_free()
   data.reinit(mapping, dof_handler, dummy, quadrature, additional_data);
 }
 
-template<int dim, int fe_degree, typename value_type>
+template<int dim, int degree, typename Number>
 void
-DGOperation<dim, fe_degree, value_type>::setup_operators()
+DGOperation<dim, degree, Number>::setup_operators()
 {
   // laplace operator
   Poisson::LaplaceOperatorData<dim> laplace_operator_data;

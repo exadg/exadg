@@ -8,6 +8,9 @@
 #ifndef INCLUDE_OPERATORS_INTERIOR_PENALTY_PARAMETER_H_
 #define INCLUDE_OPERATORS_INTERIOR_PENALTY_PARAMETER_H_
 
+#include <deal.II/fe/mapping.h>
+#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/matrix_free.h>
 
 namespace IP // IP = interior penalty
 {
