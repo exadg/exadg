@@ -19,8 +19,6 @@
 
 #include "functionalities/evaluate_functions.h"
 
-#include "types.h"
-
 #include "operators/mass_operator.h"
 #include "operators/rhs_operator.h"
 

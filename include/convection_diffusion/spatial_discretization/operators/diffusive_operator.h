@@ -1,19 +1,18 @@
 #ifndef CONV_DIFF_DIFFUSIVE_OPERATOR
 #define CONV_DIFF_DIFFUSIVE_OPERATOR
 
-#include "../../../operators/operation_base.h"
+#include "../../../operators/operator_base.h"
 #include "../../user_interface/boundary_descriptor.h"
 #include "../../user_interface/input_parameters.h"
-#include "../types.h"
 
 namespace ConvDiff
 {
 template<int dim>
-struct DiffusiveOperatorData : public OperatorBaseData<dim, ConvDiff::BoundaryDescriptor<dim>>
+struct DiffusiveOperatorData : public OperatorBaseData<dim>
 {
   DiffusiveOperatorData()
     // clang-format off
-    : OperatorBaseData<dim, ConvDiff::BoundaryDescriptor<dim>>(0, 0,
+    : OperatorBaseData<dim>(0, 0,
           false, true, false, false, true, false, // cell
           true,  true,        true,  true         // face
       ),
@@ -27,58 +26,47 @@ struct DiffusiveOperatorData : public OperatorBaseData<dim, ConvDiff::BoundaryDe
     this->mapping_update_flags_boundary_faces = this->mapping_update_flags_inner_faces;
   }
 
-  inline DEAL_II_ALWAYS_INLINE //
-    BoundaryType
-    get_boundary_type(types::boundary_id const & boundary_id) const
-  {
-    if(this->bc->dirichlet_bc.find(boundary_id) != this->bc->dirichlet_bc.end())
-      return BoundaryType::dirichlet;
-    else if(this->bc->neumann_bc.find(boundary_id) != this->bc->neumann_bc.end())
-      return BoundaryType::neumann;
-
-    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
-
-    return BoundaryType::undefined;
-  }
-
   double IP_factor;
   double diffusivity;
+
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;
 };
 
-template<int dim, int fe_degree, typename value_type>
-class DiffusiveOperator
-  : public OperatorBase<dim, fe_degree, value_type, DiffusiveOperatorData<dim>>
+template<int dim, int degree, typename Number>
+class DiffusiveOperator : public OperatorBase<dim, degree, Number, DiffusiveOperatorData<dim>>
 {
 public:
-  typedef DiffusiveOperator<dim, fe_degree, value_type> This;
+  typedef DiffusiveOperator<dim, degree, Number> This;
 
-  typedef OperatorBase<dim, fe_degree, value_type, DiffusiveOperatorData<dim>> Parent;
+  typedef OperatorBase<dim, degree, Number, DiffusiveOperatorData<dim>> Parent;
 
   typedef typename Parent::FEEvalCell FEEvalCell;
   typedef typename Parent::FEEvalFace FEEvalFace;
   typedef typename Parent::VectorType VectorType;
+
+  typedef VectorizedArray<Number> scalar;
 
   DiffusiveOperator() : diffusivity(-1.0)
   {
   }
 
   void
-  initialize(Mapping<dim> const &                mapping,
-             MatrixFree<dim, value_type> const & mf_data,
-             DiffusiveOperatorData<dim> const &  operator_data_in,
-             unsigned int                        level_mg_handler = numbers::invalid_unsigned_int);
+  initialize(Mapping<dim> const &               mapping,
+             MatrixFree<dim, Number> const &    mf_data,
+             DiffusiveOperatorData<dim> const & operator_data_in,
+             unsigned int                       level_mg_handler = numbers::invalid_unsigned_int);
 
   void
-  initialize(Mapping<dim> const &                mapping,
-             MatrixFree<dim, value_type> const & mf_data,
-             ConstraintMatrix const &            constraint_matrx,
-             DiffusiveOperatorData<dim> const &  operator_data_in,
-             unsigned int                        level_mg_handler = numbers::invalid_unsigned_int);
+  initialize(Mapping<dim> const &               mapping,
+             MatrixFree<dim, Number> const &    mf_data,
+             ConstraintMatrix const &           constraint_matrx,
+             DiffusiveOperatorData<dim> const & operator_data_in,
+             unsigned int                       level_mg_handler = numbers::invalid_unsigned_int);
 
-  virtual void
-  apply_add(VectorType & dst, VectorType const & src, value_type const time) const;
+  void
+  apply_add(VectorType & dst, VectorType const & src, Number const time) const;
 
-  virtual void
+  void
   apply_add(VectorType & dst, VectorType const & src) const;
 
 private:
@@ -86,45 +74,45 @@ private:
    *  Calculation of "value_flux".
    */
   inline DEAL_II_ALWAYS_INLINE //
-    VectorizedArray<value_type>
-    calculate_value_flux(VectorizedArray<value_type> const & jump_value) const;
+    scalar
+    calculate_value_flux(scalar const & jump_value) const;
 
   inline DEAL_II_ALWAYS_INLINE //
-    VectorizedArray<value_type>
+    scalar
     calculate_interior_value(unsigned int const   q,
                              FEEvalFace const &   fe_eval,
                              OperatorType const & operator_type) const;
 
   inline DEAL_II_ALWAYS_INLINE //
-    VectorizedArray<value_type>
-    calculate_exterior_value(VectorizedArray<value_type> const & value_m,
-                             unsigned int const                  q,
-                             FEEvalFace const &                  fe_eval,
-                             OperatorType const &                operator_type,
-                             BoundaryType const &                boundary_type,
-                             types::boundary_id const            boundary_id) const;
+    scalar
+    calculate_exterior_value(scalar const &           value_m,
+                             unsigned int const       q,
+                             FEEvalFace const &       fe_eval,
+                             OperatorType const &     operator_type,
+                             BoundaryType const &     boundary_type,
+                             types::boundary_id const boundary_id) const;
 
   inline DEAL_II_ALWAYS_INLINE //
-    VectorizedArray<value_type>
-    calculate_gradient_flux(VectorizedArray<value_type> const & normal_gradient_m,
-                            VectorizedArray<value_type> const & normal_gradient_p,
-                            VectorizedArray<value_type> const & jump_value,
-                            VectorizedArray<value_type> const & penalty_parameter) const;
+    scalar
+    calculate_gradient_flux(scalar const & normal_gradient_m,
+                            scalar const & normal_gradient_p,
+                            scalar const & jump_value,
+                            scalar const & penalty_parameter) const;
 
   inline DEAL_II_ALWAYS_INLINE //
-    VectorizedArray<value_type>
+    scalar
     calculate_interior_normal_gradient(unsigned int const   q,
                                        FEEvalFace const &   fe_eval,
                                        OperatorType const & operator_type) const;
 
   inline DEAL_II_ALWAYS_INLINE //
-    VectorizedArray<value_type>
-    calculate_exterior_normal_gradient(VectorizedArray<value_type> const & normal_gradient_m,
-                                       unsigned int const                  q,
-                                       FEEvalFace const &                  fe_eval,
-                                       OperatorType const &                operator_type,
-                                       BoundaryType const &                boundary_type,
-                                       types::boundary_id const            boundary_id) const;
+    scalar
+    calculate_exterior_normal_gradient(scalar const &           normal_gradient_m,
+                                       unsigned int const       q,
+                                       FEEvalFace const &       fe_eval,
+                                       OperatorType const &     operator_type,
+                                       BoundaryType const &     boundary_type,
+                                       types::boundary_id const boundary_id) const;
 
   void
   do_cell_integral(FEEvalCell & fe_eval) const;
@@ -143,13 +131,13 @@ private:
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
 
-  virtual void
+  void
   do_verify_boundary_conditions(types::boundary_id const             boundary_id,
                                 DiffusiveOperatorData<dim> const &   operator_data,
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
-  AlignedVector<VectorizedArray<value_type>> array_penalty_parameter;
-  double                                     diffusivity;
+  AlignedVector<scalar> array_penalty_parameter;
+  double                diffusivity;
 };
 } // namespace ConvDiff
 

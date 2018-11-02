@@ -1,11 +1,10 @@
 #ifndef CONV_DIFF_CONVECTION_DIFFUSION_OPERATOR
 #define CONV_DIFF_CONVECTION_DIFFUSION_OPERATOR
 
-#include "../../../operators/operation_base.h"
-
+#include "../../../operators/elementwise_operator.h"
+#include "../../../operators/operator_base.h"
 #include "../../user_interface/boundary_descriptor.h"
 #include "../../user_interface/input_parameters.h"
-#include "../types.h"
 #include "convection_operator.h"
 #include "diffusive_operator.h"
 #include "mass_operator.h"
@@ -15,78 +14,11 @@
 
 namespace ConvDiff
 {
-template<int dim, int fe_degree, typename Number, typename Operator>
-class ElementwiseBlockJacobiOperator
-{
-public:
-  ElementwiseBlockJacobiOperator(Operator const & operator_in)
-    : op(operator_in),
-      current_cell(1),
-      fe_eval(op.get_data(), op.get_dof_index(), op.get_quad_index()),
-      fe_eval_m(op.get_data(), true, op.get_dof_index(), op.get_quad_index()),
-      fe_eval_p(op.get_data(), false, op.get_dof_index(), op.get_quad_index())
-  {
-  }
-
-  MatrixFree<dim, Number> const &
-  get_data() const
-  {
-    return op.get_data();
-  }
-
-  unsigned int
-  get_dof_index() const
-  {
-    return op.get_dof_index();
-  }
-
-  unsigned int
-  get_quad_index() const
-  {
-    return op.get_dof_index();
-  }
-
-  void
-  setup(unsigned int const cell)
-  {
-    fe_eval.reinit(cell);
-
-    current_cell = cell;
-  }
-
-  unsigned int
-  get_problem_size() const
-  {
-    return fe_eval.dofs_per_cell;
-  }
-
-  void
-  vmult(VectorizedArray<Number> * dst, VectorizedArray<Number> * src) const
-  {
-    // set dst vector to zero
-    Elementwise::vector_init(dst, fe_eval.dofs_per_cell);
-
-    // evaluate block diagonal
-    op.apply_add_block_diagonal_elementwise(current_cell, fe_eval, fe_eval_m, fe_eval_p, dst, src);
-  }
-
-private:
-  Operator const & op;
-
-  unsigned int current_cell;
-
-  mutable FEEvaluation<dim, fe_degree, fe_degree + 1, 1 /*scalar*/, Number>     fe_eval;
-  mutable FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1 /*scalar*/, Number> fe_eval_m;
-  mutable FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1 /*scalar*/, Number> fe_eval_p;
-};
-
-
 template<int dim>
-struct ConvectionDiffusionOperatorData
-  : public OperatorBaseData<dim, ConvDiff::BoundaryDescriptor<dim>>
+struct ConvectionDiffusionOperatorData : public OperatorBaseData<dim>
 {
   ConvectionDiffusionOperatorData()
-    : OperatorBaseData<dim, ConvDiff::BoundaryDescriptor<dim>>(0, 0),
+    : OperatorBaseData<dim>(0, 0),
       unsteady_problem(true),
       convective_problem(true),
       diffusive_problem(true),
@@ -123,22 +55,27 @@ struct ConvectionDiffusionOperatorData
   SolverData                  block_jacobi_solver_data;
 
   MultigridOperatorType mg_operator_type;
+
+  // TODO: do we really need this here because the convective and diffusive operators already have
+  // it
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;
 };
 
-template<int dim, int fe_degree, typename Number = double>
+template<int dim, int degree, typename Number = double>
 class ConvectionDiffusionOperator
-  : public OperatorBase<dim, fe_degree, Number, ConvectionDiffusionOperatorData<dim>>
+  : public OperatorBase<dim, degree, Number, ConvectionDiffusionOperatorData<dim>>
 {
 public:
   // TODO: Issue#2
   static const int DIM = dim;
-  typedef Number   value_type;
+
+  typedef Number value_type;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef ConvectionDiffusionOperator<dim, fe_degree, Number> This;
+  typedef ConvectionDiffusionOperator<dim, degree, Number> This;
 
-  typedef OperatorBase<dim, fe_degree, value_type, ConvectionDiffusionOperatorData<dim>> Parent;
+  typedef OperatorBase<dim, degree, value_type, ConvectionDiffusionOperatorData<dim>> Parent;
 
   typedef typename Parent::FEEvalCell FEEvalCell;
   typedef typename Parent::FEEvalFace FEEvalFace;
@@ -152,11 +89,11 @@ public:
   ConvectionDiffusionOperator();
 
   void
-  initialize(MatrixFree<dim, Number> const &                    mf_data_in,
-             ConvectionDiffusionOperatorData<dim> const &       operator_data_in,
-             MassMatrixOperator<dim, fe_degree, Number> const & mass_matrix_operator_in,
-             ConvectiveOperator<dim, fe_degree, Number> const & convective_operator_in,
-             DiffusiveOperator<dim, fe_degree, Number> const &  diffusive_operator_in);
+  initialize(MatrixFree<dim, Number> const &                 mf_data_in,
+             ConvectionDiffusionOperatorData<dim> const &    operator_data_in,
+             MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator_in,
+             ConvectiveOperator<dim, degree, Number> const & convective_operator_in,
+             DiffusiveOperator<dim, degree, Number> const &  diffusive_operator_in);
 
 
   /*
@@ -222,13 +159,10 @@ public:
   apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const;
 
   void
-  apply_add_block_diagonal_elementwise(
-    unsigned int const                                           cell,
-    FEEvaluation<dim, fe_degree, fe_degree + 1, 1, Number> &     fe_eval,
-    FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1, Number> & fe_eval_m,
-    FEFaceEvaluation<dim, fe_degree, fe_degree + 1, 1, Number> & fe_eval_p,
-    VectorizedArray<Number> * const                              dst,
-    VectorizedArray<Number> const * const                        src) const;
+  apply_add_block_diagonal_elementwise(unsigned int const                    cell,
+                                       VectorizedArray<Number> * const       dst,
+                                       VectorizedArray<Number> const * const src,
+                                       unsigned int const problem_size = 1) const;
 
 private:
   /*
@@ -247,19 +181,19 @@ private:
   MultigridOperatorBase<dim, Number> *
   get_new(unsigned int deg) const;
 
-  mutable lazy_ptr<MassMatrixOperator<dim, fe_degree, Number>> mass_matrix_operator;
-  mutable lazy_ptr<ConvectiveOperator<dim, fe_degree, Number>> convective_operator;
-  mutable lazy_ptr<DiffusiveOperator<dim, fe_degree, Number>>  diffusive_operator;
+  mutable lazy_ptr<MassMatrixOperator<dim, degree, Number>> mass_matrix_operator;
+  mutable lazy_ptr<ConvectiveOperator<dim, degree, Number>> convective_operator;
+  mutable lazy_ptr<DiffusiveOperator<dim, degree, Number>>  diffusive_operator;
 
   mutable VectorType temp;
   double             scaling_factor_time_derivative_term;
 
   // Block Jacobi preconditioner/smoother: matrix-free version with elementwise iterative solver
-  typedef ElementwiseBlockJacobiOperator<dim, fe_degree, Number, This> ELEMENTWISE_OPERATOR;
-  typedef Elementwise::PreconditionerBase<VectorizedArray<Number>>     PRECONDITIONER_BASE;
+  typedef Elementwise::OperatorBase<dim, Number, This>             ELEMENTWISE_OPERATOR;
+  typedef Elementwise::PreconditionerBase<VectorizedArray<Number>> PRECONDITIONER_BASE;
   typedef Elementwise::IterativeSolver<dim,
                                        1 /*scalar equation*/,
-                                       fe_degree,
+                                       degree,
                                        Number,
                                        ELEMENTWISE_OPERATOR,
                                        PRECONDITIONER_BASE>
