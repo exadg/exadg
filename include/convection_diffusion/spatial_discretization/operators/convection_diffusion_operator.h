@@ -1,14 +1,15 @@
 #ifndef CONV_DIFF_CONVECTION_DIFFUSION_OPERATOR
 #define CONV_DIFF_CONVECTION_DIFFUSION_OPERATOR
 
-#include "../../../operators/elementwise_operator.h"
 #include "../../../operators/operator_base.h"
 #include "../../user_interface/boundary_descriptor.h"
 #include "../../user_interface/input_parameters.h"
+
 #include "convection_operator.h"
 #include "diffusive_operator.h"
 #include "mass_operator.h"
 
+#include "../../../operators/elementwise_operator.h"
 #include "../../../solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
 #include "../../../solvers_and_preconditioners/solvers/wrapper_elementwise_solvers.h"
 

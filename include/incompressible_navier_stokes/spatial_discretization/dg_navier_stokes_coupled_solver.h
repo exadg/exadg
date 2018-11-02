@@ -14,18 +14,11 @@
 
 namespace IncNS
 {
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
-class DGNavierStokesCoupled
-  : public DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
+template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
+class DGNavierStokesCoupled : public DGNavierStokesBase<dim, degree_u, degree_p, Number>
 {
 public:
-  typedef DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
-    BASE;
+  typedef DGNavierStokesBase<dim, degree_u, degree_p, Number> BASE;
 
   typedef typename BASE::Postprocessor Postprocessor;
 
@@ -33,13 +26,7 @@ public:
 
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef DGNavierStokesCoupled<dim,
-                                fe_degree,
-                                fe_degree_p,
-                                fe_degree_xwall,
-                                xwall_quad_rule,
-                                Number>
-    THIS;
+  typedef DGNavierStokesCoupled<dim, degree_u, degree_p, Number> THIS;
 
   DGNavierStokesCoupled(parallel::distributed::Triangulation<dim> const & triangulation,
                         InputParameters<dim> const &                      parameters_in,
@@ -247,16 +234,9 @@ public:
   do_postprocessing_steady_problem(VectorType const & velocity, VectorType const & pressure);
 
 private:
-  friend class BlockPreconditionerNavierStokes<dim,
-                                               fe_degree,
-                                               fe_degree_p,
-                                               fe_degree_xwall,
-                                               xwall_quad_rule,
-                                               Number,
-                                               THIS>;
+  friend class BlockPreconditionerNavierStokes<dim, degree_u, degree_p, Number, THIS>;
 
-  VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>
-    velocity_conv_diff_operator;
+  VelocityConvDiffOperator<dim, degree_u, Number> velocity_conv_diff_operator;
 
   VectorType mutable temp_vector;
   VectorType const *      sum_alphai_ui;
@@ -276,14 +256,9 @@ private:
   double scaling_factor_continuity;
 };
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::setup(
+DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::setup(
   const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
                                             periodic_face_pairs,
   std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity_in,
@@ -300,15 +275,10 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
   this->initialize_vector_velocity(temp_vector);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  setup_solvers(double const & scaling_factor_time_derivative_term)
+DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::setup_solvers(
+  double const & scaling_factor_time_derivative_term)
 {
   // Setup velocity convection-diffusion operator.
   // This is done in function setup_solvers() since velocity convection-diffusion
@@ -344,13 +314,8 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
     preconditioner_data.rel_tol_solver_schur_complement_preconditioner = this->param.rel_tol_solver_schur_complement_preconditioner;
     // clang-format on
 
-    preconditioner.reset(new BlockPreconditionerNavierStokes<dim,
-                                                             fe_degree,
-                                                             fe_degree_p,
-                                                             fe_degree_xwall,
-                                                             xwall_quad_rule,
-                                                             Number,
-                                                             THIS>(this, preconditioner_data));
+    preconditioner.reset(new BlockPreconditionerNavierStokes<dim, degree_u, degree_p, Number, THIS>(
+      this, preconditioner_data));
   }
 
   // setup linear solver
@@ -424,15 +389,10 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
   pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  setup_velocity_conv_diff_operator(double const & scaling_factor_time_derivative_term)
+DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::setup_velocity_conv_diff_operator(
+  double const & scaling_factor_time_derivative_term)
 {
   VelocityConvDiffOperatorData<dim> vel_conv_diff_operator_data;
 
@@ -455,7 +415,12 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
   else
     vel_conv_diff_operator_data.convective_problem = false;
 
-  vel_conv_diff_operator_data.dof_index = this->get_dof_index_velocity();
+  vel_conv_diff_operator_data.dof_index      = this->get_dof_index_velocity();
+  vel_conv_diff_operator_data.quad_index_std = this->get_quad_index_velocity_linear();
+
+  vel_conv_diff_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
+  vel_conv_diff_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+    this->param.implement_block_diagonal_preconditioner_matrix_free;
 
   velocity_conv_diff_operator.initialize(this->get_data(),
                                          vel_conv_diff_operator_data,
@@ -464,43 +429,28 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
                                          this->convective_operator);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  update_divergence_penalty_operator(VectorType const & velocity) const
+DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::update_divergence_penalty_operator(
+  VectorType const & velocity) const
 {
   this->projection_operator->calculate_array_div_penalty_parameter(velocity);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  update_continuity_penalty_operator(VectorType const & velocity) const
+DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::update_continuity_penalty_operator(
+  VectorType const & velocity) const
 {
   this->projection_operator->calculate_array_conti_penalty_parameter(velocity);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 unsigned int
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  solve_linear_stokes_problem(BlockVectorType &       dst,
-                              BlockVectorType const & src,
-                              double const &          scaling_factor_mass_matrix_term)
+DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::solve_linear_stokes_problem(
+  BlockVectorType &       dst,
+  BlockVectorType const & src,
+  double const &          scaling_factor_mass_matrix_term)
 {
   // Set scaling_factor_time_derivative_term for linear operator (velocity_conv_diff_operator).
   velocity_conv_diff_operator.set_scaling_factor_time_derivative_term(
@@ -513,15 +463,11 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
   return linear_solver->solve(dst, src);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  rhs_stokes_problem(BlockVectorType & dst, double const & eval_time) const
+DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::rhs_stokes_problem(
+  BlockVectorType & dst,
+  double const &    eval_time) const
 {
   // velocity-block
   this->gradient_operator.rhs(dst.block(0), eval_time);
@@ -542,30 +488,20 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
   dst.block(1) *= -scaling_factor_continuity;
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::vmult(
-  BlockVectorType &       dst,
-  BlockVectorType const & src) const
+DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::vmult(BlockVectorType &       dst,
+                                                              BlockVectorType const & src) const
 {
   apply_linearized_problem(dst, src);
 }
 
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  apply_linearized_problem(BlockVectorType & dst, BlockVectorType const & src) const
+DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::apply_linearized_problem(
+  BlockVectorType &       dst,
+  BlockVectorType const & src) const
 {
   // (1,1) block of saddle point matrix
   velocity_conv_diff_operator.vmult(dst.block(0), src.block(0));
@@ -593,36 +529,26 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
   dst.block(1) *= -scaling_factor_continuity;
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  solve_nonlinear_steady_problem(BlockVectorType & dst,
-                                 unsigned int &    newton_iterations,
-                                 unsigned int &    linear_iterations)
+DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::solve_nonlinear_steady_problem(
+  BlockVectorType & dst,
+  unsigned int &    newton_iterations,
+  unsigned int &    linear_iterations)
 {
   // solve nonlinear problem
   newton_solver->solve(dst, newton_iterations, linear_iterations);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  solve_nonlinear_problem(BlockVectorType &  dst,
-                          VectorType const & sum_alphai_ui,
-                          double const &     eval_time,
-                          double const &     scaling_factor_mass_matrix_term,
-                          unsigned int &     newton_iterations,
-                          unsigned int &     linear_iterations)
+DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::solve_nonlinear_problem(
+  BlockVectorType &  dst,
+  VectorType const & sum_alphai_ui,
+  double const &     eval_time,
+  double const &     scaling_factor_mass_matrix_term,
+  unsigned int &     newton_iterations,
+  unsigned int &     linear_iterations)
 {
   // Set sum_alphai_ui (this variable is used when evaluating the nonlinear residual).
   this->sum_alphai_ui = &sum_alphai_ui;
@@ -645,15 +571,11 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
   this->sum_alphai_ui = nullptr;
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  evaluate_nonlinear_residual(BlockVectorType & dst, BlockVectorType const & src)
+DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::evaluate_nonlinear_residual(
+  BlockVectorType &       dst,
+  BlockVectorType const & src)
 {
   // velocity-block
 
@@ -703,15 +625,11 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
   dst.block(1) *= -scaling_factor_continuity;
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  evaluate_nonlinear_residual_steady(BlockVectorType & dst, BlockVectorType const & src)
+DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::evaluate_nonlinear_residual_steady(
+  BlockVectorType &       dst,
+  BlockVectorType const & src)
 {
   // velocity-block
 
@@ -756,18 +674,13 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
   dst.block(1) *= -scaling_factor_continuity;
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  do_postprocessing(VectorType const & velocity,
-                    VectorType const & pressure,
-                    double const       time,
-                    unsigned int const time_step_number)
+DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::do_postprocessing(
+  VectorType const & velocity,
+  VectorType const & pressure,
+  double const       time,
+  unsigned int const time_step_number)
 {
   bool const standard = true;
   if(standard)
@@ -799,15 +712,11 @@ DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_r
   }
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  do_postprocessing_steady_problem(VectorType const & velocity, VectorType const & pressure)
+DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::do_postprocessing_steady_problem(
+  VectorType const & velocity,
+  VectorType const & pressure)
 {
   this->postprocessor->do_postprocessing(velocity,
                                          velocity, // intermediate_velocity

@@ -16,18 +16,21 @@
 // timer
 #include <deal.II/base/timer.h>
 
-// ExaDG
-#include "../include/incompressible_navier_stokes/user_interface/analytical_solution.h"
-#include "../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
-#include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
-#include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
+// postprocessor
+#include "../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+
+#include "../include/postprocessor/output_data.h"
 
 // Navier-Stokes operator
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_dual_splitting.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.h"
 
-#include "../include/postprocessor/output_data.h"
+// Parameters, BCs, etc.
+#include "../include/incompressible_navier_stokes/user_interface/analytical_solution.h"
+#include "../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
+#include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
+#include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
 
 using namespace dealii;
 using namespace IncNS;
@@ -54,8 +57,8 @@ using namespace IncNS;
 /**************************************************************************************/
 
 // set the polynomial degree k of the shape functions
-unsigned int const FE_DEGREE_U_MIN = 1;
-unsigned int const FE_DEGREE_U_MAX = 15;
+unsigned int const FE_DEGREE_U_MIN = 2;
+unsigned int const FE_DEGREE_U_MAX = 2;
 
 // refinement level: l = REFINE_LEVELS[fe_degree-1]
 std::vector<int> REFINE_LEVELS = {
@@ -102,12 +105,7 @@ unsigned int const N_REPETITIONS_OUTER = 10;  // take the minimum of outer repet
 std::vector<std::pair<unsigned int, double>> wall_times;
 
 
-template<int dim,
-         int fe_degree_u,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 class NavierStokesProblem
 {
 public:
@@ -145,42 +143,33 @@ private:
 
   InputParameters<dim> param;
 
-  std::shared_ptr<
-    DGNavierStokesBase<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>>
-    navier_stokes_operation;
+  typedef PostProcessorBase<dim, degree_u, degree_p, Number> Postprocessor;
 
-  std::shared_ptr<
-    DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>>
-    navier_stokes_operation_coupled;
+  std::shared_ptr<Postprocessor> postprocessor;
 
-  std::shared_ptr<DGNavierStokesDualSplitting<dim,
-                                              fe_degree_u,
-                                              fe_degree_p,
-                                              fe_degree_xwall,
-                                              xwall_quad_rule,
-                                              Number>>
-    navier_stokes_operation_dual_splitting;
+  typedef DGNavierStokesBase<dim, degree_u, degree_p, Number> DGBase;
 
-  std::shared_ptr<DGNavierStokesPressureCorrection<dim,
-                                                   fe_degree_u,
-                                                   fe_degree_p,
-                                                   fe_degree_xwall,
-                                                   xwall_quad_rule,
-                                                   Number>>
-    navier_stokes_operation_pressure_correction;
+  typedef DGNavierStokesCoupled<dim, degree_u, degree_p, Number> DGCoupled;
+
+  typedef DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number> DGDualSplitting;
+
+  typedef DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number> DGPressureCorrection;
+
+  std::shared_ptr<DGBase> navier_stokes_operation;
+
+  std::shared_ptr<DGCoupled> navier_stokes_operation_coupled;
+
+  std::shared_ptr<DGDualSplitting> navier_stokes_operation_dual_splitting;
+
+  std::shared_ptr<DGPressureCorrection> navier_stokes_operation_pressure_correction;
 
   // number of matrix-vector products
   unsigned int const n_repetitions_inner, n_repetitions_outer;
 };
 
-template<int dim,
-         int fe_degree_u,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
-NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  NavierStokesProblem(unsigned int const refine_steps_space)
+template<int dim, int degree_u, int degree_p, typename Number>
+NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
+  unsigned int const refine_steps_space)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     triangulation(MPI_COMM_WORLD,
                   dealii::Triangulation<dim>::none,
@@ -207,42 +196,29 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
   boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
   boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
 
+  postprocessor = construct_postprocessor<dim, degree_u, degree_p, Number>(param);
+
   AssertThrow(param.solver_type == SolverType::Unsteady,
               ExcMessage("This is an unsteady solver. Check input parameters."));
 
   // initialize navier_stokes_operation
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    navier_stokes_operation_coupled.reset(new DGNavierStokesCoupled<dim,
-                                                                    fe_degree_u,
-                                                                    fe_degree_p,
-                                                                    fe_degree_xwall,
-                                                                    xwall_quad_rule,
-                                                                    Number>(triangulation, param));
+    navier_stokes_operation_coupled.reset(new DGCoupled(triangulation, param, postprocessor));
 
     navier_stokes_operation = navier_stokes_operation_coupled;
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
     navier_stokes_operation_dual_splitting.reset(
-      new DGNavierStokesDualSplitting<dim,
-                                      fe_degree_u,
-                                      fe_degree_p,
-                                      fe_degree_xwall,
-                                      xwall_quad_rule,
-                                      Number>(triangulation, param));
+      new DGDualSplitting(triangulation, param, postprocessor));
 
     navier_stokes_operation = navier_stokes_operation_dual_splitting;
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
     navier_stokes_operation_pressure_correction.reset(
-      new DGNavierStokesPressureCorrection<dim,
-                                           fe_degree_u,
-                                           fe_degree_p,
-                                           fe_degree_xwall,
-                                           xwall_quad_rule,
-                                           Number>(triangulation, param));
+      new DGPressureCorrection(triangulation, param, postprocessor));
 
     navier_stokes_operation = navier_stokes_operation_pressure_correction;
   }
@@ -284,15 +260,9 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
   }
 }
 
-template<int dim,
-         int fe_degree_u,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  print_header()
+NavierStokesProblem<dim, degree_u, degree_p, Number>::print_header()
 {
   // clang-format off
   pcout << std::endl << std::endl << std::endl
@@ -306,29 +276,17 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
   // clang-format on
 }
 
-template<int dim,
-         int fe_degree_u,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  print_mpi_info()
+NavierStokesProblem<dim, degree_u, degree_p, Number>::print_mpi_info()
 {
   pcout << std::endl << "MPI info:" << std::endl << std::endl;
   print_parameter(pcout, "Number of processes", Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD));
 }
 
-template<int dim,
-         int fe_degree_u,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  print_grid_data()
+NavierStokesProblem<dim, degree_u, degree_p, Number>::print_grid_data()
 {
   pcout << std::endl
         << "Generating grid for " << dim << "-dimensional problem:" << std::endl
@@ -340,15 +298,9 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
   print_parameter(pcout, "Number of vertices", triangulation.n_vertices());
 }
 
-template<int dim,
-         int fe_degree_u,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  setup()
+NavierStokesProblem<dim, degree_u, degree_p, Number>::setup()
 {
   // this function has to be defined in the header file that implements all
   // problem specific things like parameters, geometry, boundary conditions, etc.
@@ -365,7 +317,8 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
   navier_stokes_operation->setup(periodic_faces,
                                  boundary_descriptor_velocity,
                                  boundary_descriptor_pressure,
-                                 field_functions);
+                                 field_functions,
+                                 analytical_solution);
 
   // setup Navier-Stokes solvers
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
@@ -386,15 +339,9 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
   }
 }
 
-template<int dim,
-         int fe_degree_u,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  apply_operator()
+NavierStokesProblem<dim, degree_u, degree_p, Number>::apply_operator()
 {
   pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
 
@@ -417,8 +364,7 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
     // in case an unsteady problem is considered
     navier_stokes_operation_coupled->set_sum_alphai_ui(&src1.block(0));
 
-    if(OPERATOR == Operator::ConvectiveOperator ||
-       OPERATOR == Operator::InverseMassMatrix)
+    if(OPERATOR == Operator::ConvectiveOperator || OPERATOR == Operator::InverseMassMatrix)
     {
       navier_stokes_operation_coupled->initialize_vector_velocity(src2);
       navier_stokes_operation_coupled->initialize_vector_velocity(dst2);
@@ -426,10 +372,8 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    if(OPERATOR == Operator::ConvectiveOperator ||
-       OPERATOR == Operator::HelmholtzOperator ||
-       OPERATOR == Operator::ProjectionOperator ||
-       OPERATOR == Operator::InverseMassMatrix)
+    if(OPERATOR == Operator::ConvectiveOperator || OPERATOR == Operator::HelmholtzOperator ||
+       OPERATOR == Operator::ProjectionOperator || OPERATOR == Operator::InverseMassMatrix)
     {
       navier_stokes_operation_dual_splitting->initialize_vector_velocity(src2);
       navier_stokes_operation_dual_splitting->initialize_vector_velocity(dst2);
@@ -448,10 +392,8 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    if(OPERATOR == Operator::ConvectiveOperator ||
-       OPERATOR == Operator::VelocityConvDiffOperator ||
-       OPERATOR == Operator::ProjectionOperator ||
-       OPERATOR == Operator::InverseMassMatrix)
+    if(OPERATOR == Operator::ConvectiveOperator || OPERATOR == Operator::VelocityConvDiffOperator ||
+       OPERATOR == Operator::ProjectionOperator || OPERATOR == Operator::InverseMassMatrix)
     {
       navier_stokes_operation_dual_splitting->initialize_vector_velocity(src2);
       navier_stokes_operation_dual_splitting->initialize_vector_velocity(dst2);
@@ -557,29 +499,27 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
   unsigned int dofs      = 0;
   unsigned int fe_degree = 1;
 
-  if(OPERATOR == Operator::CoupledNonlinearResidual ||
-     OPERATOR == Operator::CoupledLinearized)
+  if(OPERATOR == Operator::CoupledNonlinearResidual || OPERATOR == Operator::CoupledLinearized)
   {
     dofs = navier_stokes_operation->get_dof_handler_u().n_dofs() +
            navier_stokes_operation->get_dof_handler_p().n_dofs();
 
-    fe_degree = fe_degree_u;
+    fe_degree = degree_u;
   }
   else if(OPERATOR == Operator::ConvectiveOperator ||
           OPERATOR == Operator::VelocityConvDiffOperator ||
-          OPERATOR == Operator::HelmholtzOperator ||
-          OPERATOR == Operator::ProjectionOperator ||
+          OPERATOR == Operator::HelmholtzOperator || OPERATOR == Operator::ProjectionOperator ||
           OPERATOR == Operator::InverseMassMatrix)
   {
     dofs = navier_stokes_operation->get_dof_handler_u().n_dofs();
 
-    fe_degree = fe_degree_u;
+    fe_degree = degree_u;
   }
   else if(OPERATOR == Operator::PressurePoissonOperator)
   {
     dofs = navier_stokes_operation->get_dof_handler_p().n_dofs();
 
-    fe_degree = fe_degree_p;
+    fe_degree = degree_p;
   }
   else
   {
@@ -665,59 +605,34 @@ print_wall_times(std::vector<std::pair<unsigned int, double>> const & wall_times
  *  FE_DEGREE_U_MIN < fe_degree_i < FE_DEGREE_U_MAX so that we do not have to recompile
  *  in order to run the program for different polynomial degrees
  */
-template<int dim,
-         int fe_degree_u,
-         int max_fe_degree_u,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int max_degree_u, typename Number>
 class NavierStokesPrecompiled
 {
 public:
   static void
   run()
   {
-    NavierStokesPrecompiled<dim,
-                            fe_degree_u,
-                            fe_degree_u,
-                            fe_degree_xwall,
-                            xwall_quad_rule,
-                            Number>::run();
+    NavierStokesPrecompiled<dim, degree_u, degree_u, Number>::run();
 
-    NavierStokesPrecompiled<dim,
-                            fe_degree_u + 1,
-                            max_fe_degree_u,
-                            fe_degree_xwall,
-                            xwall_quad_rule,
-                            Number>::run();
+    NavierStokesPrecompiled<dim, degree_u + 1, max_degree_u, Number>::run();
   }
 };
 
 /*
- * specialization of templates: fe_degree_u == max_fe_degree_u
- * Note that fe_degree_p = fe_degree_u - 1.
+ * specialization of templates: degree_u == max_degree_u
+ * Note that degree_p = degree_u - 1.
  */
-template<int dim, int fe_degree_u, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-class NavierStokesPrecompiled<dim,
-                              fe_degree_u,
-                              fe_degree_u,
-                              fe_degree_xwall,
-                              xwall_quad_rule,
-                              Number>
+template<int dim, int degree_u, typename Number>
+class NavierStokesPrecompiled<dim, degree_u, degree_u, Number>
 {
 public:
   static void
   run()
   {
-    typedef NavierStokesProblem<dim,
-                                fe_degree_u,
-                                fe_degree_u - 1 /* fe_degree_p*/,
-                                fe_degree_xwall,
-                                xwall_quad_rule,
-                                Number>
+    typedef NavierStokesProblem<dim, degree_u, degree_u - 1 /* degree_p*/, Number>
       NAVIER_STOKES_PROBLEM;
 
-    NAVIER_STOKES_PROBLEM navier_stokes_problem(REFINE_LEVELS[fe_degree_u - 1]);
+    NAVIER_STOKES_PROBLEM navier_stokes_problem(REFINE_LEVELS[degree_u - 1]);
     navier_stokes_problem.setup();
     navier_stokes_problem.apply_operator();
   }
@@ -745,12 +660,7 @@ main(int argc, char ** argv)
         ++refine_steps_space)
     {
       // increasing polynomial degrees
-      typedef NavierStokesPrecompiled<DIMENSION,
-                                      FE_DEGREE_U_MIN,
-                                      FE_DEGREE_U_MAX,
-                                      FE_DEGREE_XWALL,
-                                      N_Q_POINTS_1D_XWALL,
-                                      VALUE_TYPE>
+      typedef NavierStokesPrecompiled<DIMENSION, FE_DEGREE_U_MIN, FE_DEGREE_U_MAX, VALUE_TYPE>
         NAVIER_STOKES;
 
       NAVIER_STOKES::run();

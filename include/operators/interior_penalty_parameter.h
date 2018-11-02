@@ -8,12 +8,17 @@
 #ifndef INCLUDE_OPERATORS_INTERIOR_PENALTY_PARAMETER_H_
 #define INCLUDE_OPERATORS_INTERIOR_PENALTY_PARAMETER_H_
 
+#include <deal.II/base/aligned_vector.h>
+#include <deal.II/base/vectorization.h>
+
 #include <deal.II/fe/mapping.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
 #include <deal.II/matrix_free/matrix_free.h>
 
 namespace IP // IP = interior penalty
 {
+using namespace dealii;
+
 /*
  *  This function calculates the penalty parameter of the interior
  *  penalty method for each cell.

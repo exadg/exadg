@@ -39,12 +39,7 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
 
 
-template<int dim,
-         int fe_degree_u,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number = double>
+template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
 class NavierStokesProblem
 {
 public:
@@ -77,30 +72,23 @@ private:
 
   InputParameters<dim> param;
 
-  std::shared_ptr<
-    DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>>
-    navier_stokes_operation;
+  typedef DGNavierStokesCoupled<dim, degree_u, degree_p, Number> DGCoupled;
 
-  std::shared_ptr<
-    PostProcessorBase<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>>
-    postprocessor;
+  std::shared_ptr<DGCoupled> navier_stokes_operation;
 
-  std::shared_ptr<DriverSteadyProblems<
-    dim,
-    Number,
-    DGNavierStokesCoupled<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>>>
-    driver_steady;
+  typedef PostProcessorBase<dim, degree_u, degree_p, Number> Postprocessor;
+
+  std::shared_ptr<Postprocessor> postprocessor;
+
+  typedef DriverSteadyProblems<dim, Number, DGCoupled> DriverSteady;
+
+  std::shared_ptr<DriverSteady> driver_steady;
 };
 
-template<int dim,
-         int fe_degree_u,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
-NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  NavierStokesProblem(unsigned int const refine_steps_space,
-                      unsigned int const /*refine_steps_time*/)
+template<int dim, int degree_u, int degree_p, typename Number>
+NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
+  unsigned int const refine_steps_space,
+  unsigned int const /*refine_steps_time*/)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     triangulation(MPI_COMM_WORLD,
                   dealii::Triangulation<dim>::none,
@@ -135,38 +123,18 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
               ExcMessage("This is a steady solver. Check input parameters."));
 
   // initialize postprocessor
-  postprocessor = construct_postprocessor<dim, Number>(param);
+  postprocessor = construct_postprocessor<dim, degree_u, degree_p, Number>(param);
 
   // initialize navier_stokes_operation
-  navier_stokes_operation.reset(
-    new DGNavierStokesCoupled<dim,
-                              fe_degree_u,
-                              fe_degree_p,
-                              fe_degree_xwall,
-                              xwall_quad_rule,
-                              Number>(triangulation, param, postprocessor));
+  navier_stokes_operation.reset(new DGCoupled(triangulation, param, postprocessor));
 
   // initialize driver for steady state problem that depends on navier_stokes_operation
-  driver_steady.reset(
-    new DriverSteadyProblems<dim,
-                             Number,
-                             DGNavierStokesCoupled<dim,
-                                                   fe_degree_u,
-                                                   fe_degree_p,
-                                                   fe_degree_xwall,
-                                                   xwall_quad_rule,
-                                                   Number>>(navier_stokes_operation, param));
+  driver_steady.reset(new DriverSteady(navier_stokes_operation, param));
 }
 
-template<int dim,
-         int fe_degree_u,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  print_header()
+NavierStokesProblem<dim, degree_u, degree_p, Number>::print_header()
 {
   // clang-format off
   pcout << std::endl << std::endl << std::endl
@@ -180,15 +148,9 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
   // clang-format on
 }
 
-template<int dim,
-         int fe_degree_u,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  setup_navier_stokes_operation()
+NavierStokesProblem<dim, degree_u, degree_p, Number>::setup_navier_stokes_operation()
 {
   AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
 
@@ -199,15 +161,9 @@ NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_r
                                  analytical_solution);
 }
 
-template<int dim,
-         int fe_degree_u,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-NavierStokesProblem<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  solve_problem()
+NavierStokesProblem<dim, degree_u, degree_p, Number>::solve_problem()
 {
   // this function has to be defined in the header file that implements all
   // problem specific things like parameters, geometry, boundary conditions, etc.
@@ -254,11 +210,7 @@ main(int argc, char ** argv)
           refine_steps_time <= REFINE_STEPS_TIME_MAX;
           ++refine_steps_time)
       {
-        NavierStokesProblem<DIMENSION,
-                            FE_DEGREE_VELOCITY,
-                            FE_DEGREE_PRESSURE,
-                            FE_DEGREE_XWALL,
-                            N_Q_POINTS_1D_XWALL>
+        NavierStokesProblem<DIMENSION, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, VALUE_TYPE>
           navier_stokes_problem(refine_steps_space, refine_steps_time);
 
         navier_stokes_problem.solve_problem();

@@ -1,5 +1,5 @@
 /*
- * VelocityConvDiffOperator.h
+ * velocity_conv_diff_operator.h
  *
  *  Created on: Aug 8, 2016
  *      Author: fehn
@@ -8,14 +8,16 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_VELOCITY_CONVECTION_DIFFUSION_OPERATOR_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_VELOCITY_CONVECTION_DIFFUSION_OPERATOR_H_
 
+#include <deal.II/matrix_free/fe_evaluation.h>
+
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_gmres.h>
 
-#include "../../incompressible_navier_stokes/spatial_discretization/helmholtz_operator.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/navier_stokes_operators.h"
+#include "../../operators/elementwise_operator.h"
+#include "../../operators/matrix_operator_base.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 #include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
-#include "operators/matrix_operator_base.h"
 
 
 #include "../../operators/multigrid_operator_base.h"
@@ -24,28 +26,6 @@
 
 namespace IncNS
 {
-template<typename UnderlyingOperator, typename Number>
-class VelocityConvectionDiffusionBlockJacobiOperator
-{
-public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-
-  VelocityConvectionDiffusionBlockJacobiOperator(UnderlyingOperator const & underlying_operator_in)
-    : underlying_operator(underlying_operator_in)
-  {
-  }
-
-  void
-  vmult(VectorType & dst, VectorType const & src) const
-  {
-    underlying_operator.vmult_block_jacobi(dst, src);
-  }
-
-private:
-  UnderlyingOperator const & underlying_operator;
-};
-
-
 template<int dim>
 struct VelocityConvDiffOperatorData
 {
@@ -53,7 +33,12 @@ struct VelocityConvDiffOperatorData
     : unsteady_problem(true),
       convective_problem(true),
       dof_index(0),
-      scaling_factor_time_derivative_term(-1.0)
+      quad_index_std(0),
+      scaling_factor_time_derivative_term(-1.0),
+      implement_block_diagonal_preconditioner_matrix_free(false),
+      use_cell_based_loops(false),
+      preconditioner_block_jacobi(PreconditionerBlockDiagonal::InverseMassMatrix),
+      block_jacobi_solver_data(SolverData(100, 1.e-12, 1.e-2))
   {
   }
 
@@ -62,36 +47,37 @@ struct VelocityConvDiffOperatorData
 
   unsigned int dof_index;
 
+  unsigned int quad_index_std;
+
   double scaling_factor_time_derivative_term;
 
   MassMatrixOperatorData      mass_matrix_operator_data;
   ViscousOperatorData<dim>    viscous_operator_data;
   ConvectiveOperatorData<dim> convective_operator_data;
+
+  // block diagonal preconditioner
+  bool implement_block_diagonal_preconditioner_matrix_free;
+
+  // use cell based loops
+  bool use_cell_based_loops;
+
+  // elementwise iterative solution of block Jacobi problems
+  PreconditionerBlockDiagonal preconditioner_block_jacobi;
+  SolverData                  block_jacobi_solver_data;
 };
 
-template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number = double>
+template<int dim, int degree, typename Number = double>
 class VelocityConvDiffOperator : public MultigridOperatorBase<dim, Number>
 {
 public:
-  static const int DIM = dim;
-  typedef Number   value_type;
-
-  static const bool         is_xwall = (xwall_quad_rule > 1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear =
-    (is_xwall) ? xwall_quad_rule : fe_degree + 1;
+  typedef VelocityConvDiffOperator<dim, degree, Number> This;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef FEEvaluationWrapper<dim,
-                              fe_degree,
-                              fe_degree_xwall,
-                              n_actual_q_points_vel_linear,
-                              dim,
-                              value_type,
-                              is_xwall>
-    FEEval_Velocity_Velocity_linear;
+  static const int DIM = dim;
+  typedef Number   value_type;
 
-  typedef VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> This;
+  typedef FEEvaluation<dim, degree, degree + 1, dim, Number> FEEval;
 
   VelocityConvDiffOperator();
 
@@ -100,14 +86,11 @@ public:
   }
 
   void
-  initialize(MatrixFree<dim, Number> const &           mf_data_in,
-             VelocityConvDiffOperatorData<dim> const & operator_data_in,
-             MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const &
-               mass_matrix_operator_in,
-             ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const &
-               viscous_operator_in,
-             ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const &
-               convective_operator_in);
+  initialize(MatrixFree<dim, Number> const &                 data_in,
+             VelocityConvDiffOperatorData<dim> const &       operator_data_in,
+             MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator_in,
+             ViscousOperator<dim, degree, Number> const &    viscous_operator_in,
+             ConvectiveOperator<dim, degree, Number> const & convective_operator_in);
 
   /*
    *  This function is called by the multigrid algorithm to initialize the
@@ -124,6 +107,19 @@ public:
          const unsigned int level);
 
   /*
+   * Setters and getters.
+   */
+
+  MatrixFree<dim, Number> const &
+  get_data() const;
+
+  unsigned int
+  get_dof_index() const;
+
+  unsigned int
+  get_quad_index() const;
+
+  /*
    *  Scaling factor of time derivative term (mass matrix term)
    */
   void
@@ -136,9 +132,9 @@ public:
    *  Linearized velocity field for convective operator
    */
   void
-  set_solution_linearization(VectorType const & solution_linearization);
+  set_solution_linearization(VectorType const & solution_linearization) const;
 
-  parallel::distributed::Vector<value_type> &
+  VectorType const &
   get_solution_linearization() const;
 
   /*
@@ -155,14 +151,6 @@ public:
    */
   VelocityConvDiffOperatorData<dim> const &
   get_operator_data() const;
-
-  /*
-   *  This function is needed to initialize the multigrid matrices
-   *  for the HelmholtzOperator using VelocityConvDiffOperator as
-   *  underlying operator.
-   */
-  HelmholtzOperatorData<dim> const
-  get_helmholtz_operator_data() const;
 
   /*
    *  Operator data of basic operators: mass matrix, convective operator, viscous operator
@@ -191,9 +179,6 @@ public:
   Number
   el(const unsigned int, const unsigned int) const;
 
-  MatrixFree<dim, value_type> const &
-  get_data() const;
-
   /*
    *  This function applies the matrix vector multiplication.
    */
@@ -213,9 +198,6 @@ public:
    */
   void
   vmult_block_jacobi(VectorType & dst, VectorType const & src) const;
-
-  unsigned int
-  get_dof_index() const;
 
   /*
    *  This function initializes a global dof-vector.
@@ -245,6 +227,12 @@ public:
   void
   update_block_diagonal_preconditioner() const;
 
+  void
+  apply_add_block_diagonal_elementwise(unsigned int const                    cell,
+                                       VectorizedArray<Number> * const       dst,
+                                       VectorizedArray<Number> const * const src,
+                                       unsigned int const problem_size = 1) const;
+
 private:
   /*
    *  This function calculates the diagonal of the discrete operator representing the
@@ -258,67 +246,51 @@ private:
    * This is done sequentially for the different operators.
    */
   void
-  calculate_block_jacobi_matrices() const;
+  add_block_diagonal_matrices(std::vector<LAPACKFullMatrix<value_type>> & matrices) const;
 
   /*
-   *  This function loops over all cells and applies the inverse block Jacobi matrices elementwise.
+   * Apply inverse block diagonal:
+   *
+   * instead of applying the block matrix B we compute dst = B^{-1} * src (LU factorization
+   * should have already been performed with the method update_inverse_block_diagonal())
    */
   void
-  cell_loop_apply_inverse_block_jacobi_matrices(
+  cell_loop_apply_inverse_block_diagonal(
     MatrixFree<dim, Number> const &               data,
     VectorType &                                  dst,
     VectorType const &                            src,
     std::pair<unsigned int, unsigned int> const & cell_range) const;
+
+  void
+  initialize_block_diagonal_preconditioner_matrix_free() const;
 
   /*
    * Verify computation of block Jacobi matrices.
    */
   void
-  check_block_jacobi_matrices(VectorType const & src) const;
-
-  /*
-   * Apply matrix-vector multiplication (matrix-based) for global block Jacobi system
-   * by looping over all cells and applying the matrix-based matrix-vector product cellwise.
-   * This function is only needed for testing.
-   */
-  void
-  vmult_block_jacobi_test(VectorType & dst, VectorType const & src) const;
+  check_block_jacobi_matrices() const;
 
   /*
    *  This function is only needed for testing.
    */
   void
-  cell_loop_apply_block_diagonal_matrices_test(
-    MatrixFree<dim, Number> const &               data,
-    VectorType &                                  dst,
-    VectorType const &                            src,
-    std::pair<unsigned int, unsigned int> const & cell_range) const;
+  cell_loop_apply_block_diagonal(MatrixFree<dim, Number> const &               data,
+                                 VectorType &                                  dst,
+                                 VectorType const &                            src,
+                                 std::pair<unsigned int, unsigned int> const & cell_range) const;
 
   virtual MultigridOperatorBase<dim, Number> *
   get_new(unsigned int deg) const;
 
-  mutable std::vector<LAPACKFullMatrix<Number>> matrices;
-
-  mutable bool block_jacobi_matrices_have_been_initialized;
+  VelocityConvDiffOperatorData<dim> operator_data;
 
   MatrixFree<dim, Number> const * data;
 
-  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const *
-    mass_matrix_operator;
+  MassMatrixOperator<dim, degree, Number> const * mass_matrix_operator;
 
-  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const *
-    viscous_operator;
+  ViscousOperator<dim, degree, Number> const * viscous_operator;
 
-  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> const *
-    convective_operator;
-
-  VelocityConvDiffOperatorData<dim> operator_data;
-
-  VectorType mutable temp_vector;
-  VectorType mutable velocity_linearization;
-
-  double evaluation_time;
-  double scaling_factor_time_derivative_term;
+  ConvectiveOperator<dim, degree, Number> const * convective_operator;
 
   /*
    * The following variables are necessary when applying the multigrid
@@ -334,14 +306,42 @@ private:
    */
   MatrixFree<dim, Number> own_matrix_free_storage;
 
-  MassMatrixOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>
-    own_mass_matrix_operator_storage;
+  MassMatrixOperator<dim, degree, Number> own_mass_matrix_operator_storage;
 
-  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>
-    own_viscous_operator_storage;
+  ViscousOperator<dim, degree, Number> own_viscous_operator_storage;
 
-  ConvectiveOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number>
-    own_convective_operator_storage;
+  ConvectiveOperator<dim, degree, Number> own_convective_operator_storage;
+
+  VectorType mutable temp_vector;
+  VectorType mutable velocity_linearization;
+
+  double evaluation_time;
+  double scaling_factor_time_derivative_term;
+
+  /*
+   * Vector of matrices for block-diagonal preconditioners.
+   */
+  mutable std::vector<LAPACKFullMatrix<Number>> matrices;
+
+  /*
+   * We want to initialize the block diagonal preconditioner (block diagonal matrices or elementwise
+   * iterative solvers in case of matrix-free implementation) only once, so we store the status of
+   * initialization in a variable.
+   */
+  mutable bool block_diagonal_preconditioner_is_initialized;
+
+  /*
+   * Block Jacobi preconditioner/smoother: matrix-free version with elementwise iterative solver
+   */
+  typedef Elementwise::OperatorBase<dim, Number, This>             ELEMENTWISE_OPERATOR;
+  typedef Elementwise::PreconditionerBase<VectorizedArray<Number>> PRECONDITIONER_BASE;
+  typedef Elementwise::
+    IterativeSolver<dim, dim, degree, Number, ELEMENTWISE_OPERATOR, PRECONDITIONER_BASE>
+      ELEMENTWISE_SOLVER;
+
+  mutable std::shared_ptr<ELEMENTWISE_OPERATOR> elementwise_operator;
+  mutable std::shared_ptr<PRECONDITIONER_BASE>  elementwise_preconditioner;
+  mutable std::shared_ptr<ELEMENTWISE_SOLVER>   elementwise_solver;
 };
 
 

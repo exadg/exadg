@@ -2,14 +2,8 @@
 
 namespace IncNS
 {
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  CompatibleLaplaceOperator()
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::CompatibleLaplaceOperator()
   : data(nullptr),
     gradient_operator(nullptr),
     divergence_operator(nullptr),
@@ -19,20 +13,15 @@ CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_qu
 {
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 void
 // clang-format off
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::
   initialize(
     MatrixFree<dim, Number> const &                                                                   mf_data_in,
     CompatibleLaplaceOperatorData<dim> const &                                                        compatible_laplace_operator_data_in,
-    GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> const &   gradient_operator_in,
-    DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> const & divergence_operator_in,
+    GradientOperator<dim, fe_degree, fe_degree_p, Number> const &   gradient_operator_in,
+    DivergenceOperator<dim, fe_degree, fe_degree_p, Number> const & divergence_operator_in,
     InverseMassMatrixOperator<dim, fe_degree, Number> const &                                         inv_mass_matrix_operator_in)
 // clang-format on
 {
@@ -168,81 +157,51 @@ CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_qu
 //    disable_mean_value_constraint();
 //  }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 bool
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  is_singular() const
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::is_singular() const
 {
   return needs_mean_value_constraint;
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 void
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  disable_mean_value_constraint()
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::disable_mean_value_constraint()
 {
   this->apply_mean_value_constraint_in_matvec = false;
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 void
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  vmult(VectorType & dst, VectorType const & src) const
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::vmult(VectorType &       dst,
+                                                                      VectorType const & src) const
 {
   dst = 0;
   vmult_add(dst, src);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 void
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  Tvmult(VectorType & dst, VectorType const & src) const
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::Tvmult(VectorType &       dst,
+                                                                       VectorType const & src) const
 {
   vmult(dst, src);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 void
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  Tvmult_add(VectorType & dst, VectorType const & src) const
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::Tvmult_add(
+  VectorType &       dst,
+  VectorType const & src) const
 {
   vmult_add(dst, src);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 void
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  vmult_add(VectorType & dst, VectorType const & src) const
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::vmult_add(
+  VectorType &       dst,
+  VectorType const & src) const
 {
   VectorType const * actual_src = &src;
   if(apply_mean_value_constraint_in_matvec)
@@ -263,94 +222,58 @@ CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_qu
     set_zero_mean_value(dst);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 void
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  vmult_interface_down(VectorType & dst, VectorType const & src) const
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::vmult_interface_down(
+  VectorType &       dst,
+  VectorType const & src) const
 {
   vmult(dst, src);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 void
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  vmult_add_interface_up(VectorType & dst, VectorType const & src) const
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::vmult_add_interface_up(
+  VectorType &       dst,
+  VectorType const & src) const
 {
   vmult_add(dst, src);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 types::global_dof_index
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  m() const
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::m() const
 {
   return data->get_vector_partitioner(compatible_laplace_operator_data.dof_index_pressure)->size();
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 types::global_dof_index
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  n() const
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::n() const
 {
   return data->get_vector_partitioner(compatible_laplace_operator_data.dof_index_pressure)->size();
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 Number
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  el(const unsigned int, const unsigned int) const
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::el(const unsigned int,
+                                                                   const unsigned int) const
 {
   AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
   return Number();
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 MatrixFree<dim, Number> const &
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  get_data() const
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::get_data() const
 {
   return *data;
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 void
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  calculate_diagonal(VectorType & diagonal) const
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::calculate_diagonal(
+  VectorType & diagonal) const
 {
   // naive implementation of calculation of diagonal (TODO)
   diagonal = 0.0;
@@ -378,84 +301,55 @@ CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_qu
   }
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 void
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  calculate_inverse_diagonal(VectorType & diagonal) const
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::calculate_inverse_diagonal(
+  VectorType & diagonal) const
 {
   calculate_diagonal(diagonal);
 
   invert_diagonal(diagonal);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 void
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  initialize_dof_vector(VectorType & vector) const
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::initialize_dof_vector(
+  VectorType & vector) const
 {
   initialize_dof_vector_pressure(vector);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 void
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  initialize_dof_vector_pressure(VectorType & vector) const
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::initialize_dof_vector_pressure(
+  VectorType & vector) const
 {
   data->initialize_dof_vector(vector, compatible_laplace_operator_data.dof_index_pressure);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 void
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  initialize_dof_vector_velocity(VectorType & vector) const
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::initialize_dof_vector_velocity(
+  VectorType & vector) const
 {
   data->initialize_dof_vector(vector, compatible_laplace_operator_data.dof_index_velocity);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 void
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  apply_inverse_block_diagonal(VectorType & /*dst*/, VectorType const & /*src*/) const
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::apply_inverse_block_diagonal(
+  VectorType & /*dst*/,
+  VectorType const & /*src*/) const
 {
   AssertThrow(false,
               ExcMessage(
                 "Block Jacobi preconditioner not implemented for compatible Laplace operator."));
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 void
-CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>::
-  update_inverse_block_diagonal() const
+CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::update_inverse_block_diagonal()
+  const
 {
   AssertThrow(false,
               ExcMessage("Function update_inverse_block_diagonal() has not been implemented."));

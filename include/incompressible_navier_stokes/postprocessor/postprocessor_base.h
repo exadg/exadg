@@ -37,12 +37,7 @@ struct DofQuadIndexData
 namespace IncNS
 {
 // forward declarations
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree, int fe_degree_p, typename Number>
 class DGNavierStokesBase;
 
 /*
@@ -50,24 +45,13 @@ class DGNavierStokesBase;
  *  incompressible Navier-Stokes equation.
  *
  */
-template<int dim,
-         int fe_degree_u,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
 class PostProcessorBase
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef DGNavierStokesBase<dim,
-                             fe_degree_u,
-                             fe_degree_p,
-                             fe_degree_xwall,
-                             xwall_quad_rule,
-                             Number>
-    NavierStokesOperator;
+  typedef DGNavierStokesBase<dim, fe_degree_u, fe_degree_p, Number> NavierStokesOperator;
 
   PostProcessorBase()
   {

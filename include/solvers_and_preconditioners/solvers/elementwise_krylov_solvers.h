@@ -8,6 +8,9 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_ELEMENTWISE_KRYLOV_SOLVERS_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_ELEMENTWISE_KRYLOV_SOLVERS_H_
 
+#include <deal.II/base/aligned_vector.h>
+#include <deal.II/base/vectorization.h>
+
 #include "solver_data.h"
 
 using namespace dealii;

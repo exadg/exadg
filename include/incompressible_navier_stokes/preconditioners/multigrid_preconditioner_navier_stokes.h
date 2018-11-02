@@ -176,25 +176,30 @@ private:
       else // all coarser levels
       {
         // restrict vector_linearization from fine to coarse level
-        LinearAlgebra::distributed::Vector<typename Operator::value_type> & vector_fine_level =
-          dynamic_cast<Operator *>(&*this->mg_matrices[level + 1])->get_solution_linearization();
-        LinearAlgebra::distributed::Vector<typename Operator::value_type> & vector_coarse_level =
+        LinearAlgebra::distributed::Vector<typename Operator::value_type> const &
+          vector_fine_level =
+            dynamic_cast<Operator *>(&*this->mg_matrices[level + 1])->get_solution_linearization();
+        LinearAlgebra::distributed::Vector<typename Operator::value_type> vector_coarse_level =
           dynamic_cast<Operator *>(&*this->mg_matrices[level])->get_solution_linearization();
 
         unsigned int dof_index_velocity =
           dynamic_cast<Operator *>(&*this->mg_matrices[level])->get_operator_data().dof_index;
+
         DoFHandler<dim> const & dof_handler_velocity =
           dynamic_cast<Operator *>(&*this->mg_matrices[level])
             ->get_data()
             .get_dof_handler(dof_index_velocity);
+
         unsigned int dofs_per_cell = dof_handler_velocity.get_fe().dofs_per_cell;
 
         IndexSet relevant_dofs;
         DoFTools::extract_locally_relevant_level_dofs(dof_handler_velocity,
                                                       level + 1,
                                                       relevant_dofs);
+
         LinearAlgebra::distributed::Vector<typename Operator::value_type> ghosted_vector(
           dof_handler_velocity.locally_owned_mg_dofs(level + 1), relevant_dofs, MPI_COMM_WORLD);
+
         ghosted_vector = vector_fine_level;
         ghosted_vector.update_ghost_values();
 
@@ -236,6 +241,12 @@ private:
           }
         }
         vector_coarse_level.compress(VectorOperation::insert); // continuous case
+
+        // this->mg_matrices[level] is a std::shared_ptr<MultigridOperatorBase>:
+        // so we have to dereference the shared_ptr, get the reference to it and
+        // finally we can cast it to pointer of type Operator
+        dynamic_cast<Operator *>(&*this->mg_matrices[level])
+          ->set_solution_linearization(vector_coarse_level);
       }
     }
   }

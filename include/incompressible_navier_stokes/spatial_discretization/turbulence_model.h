@@ -8,7 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_TURBULENCE_MODEL_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_TURBULENCE_MODEL_H_
 
-//#include "solvers_and_preconditioners/iterative_solvers.h"
+#include <deal.II/matrix_free/fe_evaluation.h>
 
 namespace IncNS
 {
@@ -29,35 +29,21 @@ struct TurbulenceModelData
 /*
  *  Algebraic subgrid-scale turbulence models for LES of incompressible flows.
  */
-template<int dim, int fe_degree, int fe_degree_xwall, int xwall_quad_rule, typename Number>
+template<int dim, int degree, typename Number>
 class TurbulenceModel
 {
 public:
-  static const bool         is_xwall = (xwall_quad_rule > 1) ? true : false;
-  static const unsigned int n_actual_q_points_vel_linear =
-    (is_xwall) ? xwall_quad_rule : fe_degree + 1;
+  typedef TurbulenceModel<dim, degree, Number> This;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef FEEvaluationWrapper<dim,
-                              fe_degree,
-                              fe_degree_xwall,
-                              n_actual_q_points_vel_linear,
-                              dim,
-                              Number,
-                              is_xwall>
-    FEEval_Velocity_Velocity_linear;
+  typedef VectorizedArray<Number>                 scalar;
+  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
 
-  typedef FEFaceEvaluationWrapper<dim,
-                                  fe_degree,
-                                  fe_degree_xwall,
-                                  n_actual_q_points_vel_linear,
-                                  dim,
-                                  Number,
-                                  is_xwall>
-    FEFaceEval_Velocity_Velocity_linear;
+  typedef std::pair<unsigned int, unsigned int> Range;
 
-  typedef TurbulenceModel<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> This;
+  typedef FEEvaluation<dim, degree, degree + 1, dim, Number>     FEEvalCell;
+  typedef FEFaceEvaluation<dim, degree, degree + 1, dim, Number> FEEvalFace;
 
   /*
    *  Constructor.
@@ -67,11 +53,10 @@ public:
   }
 
   void
-  initialize(
-    MatrixFree<dim, Number> const &                                             matrix_free_data_in,
-    Mapping<dim> const &                                                        mapping,
-    ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> & viscous_operator_in,
-    TurbulenceModelData const &                                                 model_data)
+  initialize(MatrixFree<dim, Number> const &        matrix_free_data_in,
+             Mapping<dim> const &                   mapping,
+             ViscousOperator<dim, degree, Number> & viscous_operator_in,
+             TurbulenceModelData const &            model_data)
   {
     matrix_free_data = &matrix_free_data_in;
     viscous_operator = &viscous_operator_in;
@@ -97,26 +82,16 @@ public:
                            velocity);
   }
 
-  void
-  calculate_turbulent_viscosity(VectorType & dst, VectorType const & velocity) const
-  {
-    // set dst-vector to zero
-    dst = 0.0;
-
-    // calculate rhs-vector
-    matrix_free_data->cell_loop(&This::cell_loop_calculate_dof_vector, this, dst, velocity);
-  }
-
 private:
   void
   cell_loop_set_coefficients(MatrixFree<dim, Number> const & data,
                              VectorType &,
-                             VectorType const &                            src,
-                             std::pair<unsigned int, unsigned int> const & cell_range) const
+                             VectorType const & src,
+                             Range const &      cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval(data,
-                                            viscous_operator->get_fe_param(),
-                                            viscous_operator->get_operator_data().dof_index);
+    FEEvalCell fe_eval(data,
+                       viscous_operator->get_operator_data().dof_index,
+                       viscous_operator->get_operator_data().quad_index);
 
     // loop over all cells
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
@@ -128,16 +103,15 @@ private:
       fe_eval.evaluate(false, true, false);
 
       // get filter width for this cell
-      VectorizedArray<Number> filter_width = fe_eval.read_cell_data(this->filter_width_vector);
+      scalar filter_width = fe_eval.read_cell_data(this->filter_width_vector);
 
       // loop over all quadrature points
       for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
       {
-        VectorizedArray<Number> viscosity =
-          make_vectorized_array<Number>(viscous_operator->get_const_viscosity());
+        scalar viscosity = make_vectorized_array<Number>(viscous_operator->get_const_viscosity());
 
         // calculate velocity gradient
-        Tensor<2, dim, VectorizedArray<Number>> velocity_gradient = fe_eval.get_gradient(q);
+        tensor velocity_gradient = fe_eval.get_gradient(q);
 
         add_turbulent_viscosity(viscosity,
                                 filter_width,
@@ -153,19 +127,18 @@ private:
   void
   face_loop_set_coefficients(MatrixFree<dim, Number> const & data,
                              VectorType &,
-                             VectorType const &                            src,
-                             std::pair<unsigned int, unsigned int> const & face_range) const
+                             VectorType const & src,
+                             Range const &      face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval(data,
-                                                viscous_operator->get_fe_param(),
-                                                true,
-                                                viscous_operator->get_operator_data().dof_index);
+    FEEvalFace fe_eval(data,
+                       true,
+                       viscous_operator->get_operator_data().dof_index,
+                       viscous_operator->get_operator_data().quad_index);
 
-    FEFaceEval_Velocity_Velocity_linear fe_eval_neighbor(
-      data,
-      viscous_operator->get_fe_param(),
-      false,
-      viscous_operator->get_operator_data().dof_index);
+    FEEvalFace fe_eval_neighbor(data,
+                                false,
+                                viscous_operator->get_operator_data().dof_index,
+                                viscous_operator->get_operator_data().quad_index);
 
     // loop over all interior faces
     for(unsigned int face = face_range.first; face < face_range.second; face++)
@@ -181,22 +154,19 @@ private:
       fe_eval_neighbor.evaluate(false, true);
 
       // get filter width for this cell and the neighbor
-      VectorizedArray<Number> filter_width = fe_eval.read_cell_data(this->filter_width_vector);
-      VectorizedArray<Number> filter_width_neighbor =
-        fe_eval_neighbor.read_cell_data(this->filter_width_vector);
+      scalar filter_width          = fe_eval.read_cell_data(this->filter_width_vector);
+      scalar filter_width_neighbor = fe_eval_neighbor.read_cell_data(this->filter_width_vector);
 
       // loop over all quadrature points
       for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
       {
-        VectorizedArray<Number> viscosity =
-          make_vectorized_array<Number>(viscous_operator->get_const_viscosity());
-        VectorizedArray<Number> viscosity_neighbor =
+        scalar viscosity = make_vectorized_array<Number>(viscous_operator->get_const_viscosity());
+        scalar viscosity_neighbor =
           make_vectorized_array<Number>(viscous_operator->get_const_viscosity());
 
         // calculate velocity gradient for both elements adjacent to the current face
-        Tensor<2, dim, VectorizedArray<Number>> velocity_gradient = fe_eval.get_gradient(q);
-        Tensor<2, dim, VectorizedArray<Number>> velocity_gradient_neighbor =
-          fe_eval_neighbor.get_gradient(q);
+        tensor velocity_gradient          = fe_eval.get_gradient(q);
+        tensor velocity_gradient_neighbor = fe_eval_neighbor.get_gradient(q);
 
         add_turbulent_viscosity(viscosity,
                                 filter_width,
@@ -216,16 +186,15 @@ private:
 
   // loop over all boundary faces
   void
-  boundary_face_loop_set_coefficients(
-    MatrixFree<dim, Number> const & data,
-    VectorType &,
-    VectorType const &                            src,
-    std::pair<unsigned int, unsigned int> const & face_range) const
+  boundary_face_loop_set_coefficients(MatrixFree<dim, Number> const & data,
+                                      VectorType &,
+                                      VectorType const & src,
+                                      Range const &      face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval(data,
-                                                viscous_operator->get_fe_param(),
-                                                true,
-                                                viscous_operator->get_operator_data().dof_index);
+    FEEvalFace fe_eval(data,
+                       true,
+                       viscous_operator->get_operator_data().dof_index,
+                       viscous_operator->get_operator_data().quad_index);
 
     // loop over all boundary faces
     for(unsigned int face = face_range.first; face < face_range.second; face++)
@@ -237,16 +206,15 @@ private:
       fe_eval.evaluate(false, true);
 
       // get filter width for this cell
-      VectorizedArray<Number> filter_width = fe_eval.read_cell_data(this->filter_width_vector);
+      scalar filter_width = fe_eval.read_cell_data(this->filter_width_vector);
 
       // loop over all quadrature points
       for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
       {
-        VectorizedArray<Number> viscosity =
-          make_vectorized_array<Number>(viscous_operator->get_const_viscosity());
+        scalar viscosity = make_vectorized_array<Number>(viscous_operator->get_const_viscosity());
 
         // calculate velocity gradient
-        Tensor<2, dim, VectorizedArray<Number>> velocity_gradient = fe_eval.get_gradient(q);
+        tensor velocity_gradient = fe_eval.get_gradient(q);
 
         add_turbulent_viscosity(viscosity,
                                 filter_width,
@@ -256,53 +224,6 @@ private:
         // set the coefficients
         viscous_operator->set_viscous_coefficient_face(face, q, viscosity);
       }
-    }
-  }
-
-  void
-  cell_loop_calculate_dof_vector(MatrixFree<dim, Number> const &               data,
-                                 VectorType &                                  dst,
-                                 VectorType const &                            src,
-                                 std::pair<unsigned int, unsigned int> const & cell_range) const
-  {
-    FEEval_Velocity_Velocity_linear fe_eval(data,
-                                            viscous_operator->get_fe_param(),
-                                            viscous_operator->get_operator_data().dof_index);
-
-    // loop over all cells
-    for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
-    {
-      fe_eval.reinit(cell);
-      fe_eval.read_dof_values(src);
-
-      // we only want to evaluate the gradient
-      fe_eval.evaluate(false, true, false);
-
-      // get filter width for this cell
-      VectorizedArray<Number> filter_width = fe_eval.read_cell_data(this->filter_width_vector);
-
-      // loop over all quadrature points
-      for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
-      {
-        VectorizedArray<Number> viscosity =
-          make_vectorized_array<Number>(viscous_operator->get_const_viscosity());
-
-        // calculate velocity gradient
-        Tensor<2, dim, VectorizedArray<Number>> velocity_gradient = fe_eval.get_gradient(q);
-
-        add_turbulent_viscosity(viscosity,
-                                filter_width,
-                                velocity_gradient,
-                                turb_model_data.constant);
-
-        Tensor<1, dim, VectorizedArray<Number>> vector;
-        vector[0] = make_vectorized_array<Number>(1.0);
-
-        fe_eval.submit_value(viscosity * vector, q);
-      }
-      fe_eval.integrate(true, false);
-
-      fe_eval.distribute_local_to_global(dst);
     }
   }
 
@@ -317,8 +238,7 @@ private:
 
     unsigned int dof_index = viscous_operator->get_operator_data().dof_index;
 
-    // QGauss<dim> quadrature(fe_degree+1);
-    QGauss<dim> quadrature(fe_degree + 1);
+    QGauss<dim> quadrature(degree + 1);
 
     FEValues<dim> fe_values(mapping,
                             matrix_free_data->get_dof_handler(dof_index).get_fe(),
@@ -348,7 +268,7 @@ private:
 
         // take polynomial degree of shape functions into account:
         // h/(k_u + 1)
-        h /= (double)(fe_degree + 1);
+        h /= (double)(degree + 1);
 
         filter_width_vector[i][v] = h;
       }
@@ -360,10 +280,10 @@ private:
    *  by using one of the implemented models.
    */
   void
-  add_turbulent_viscosity(VectorizedArray<Number> &                       viscosity,
-                          VectorizedArray<Number> const &                 filter_width,
-                          Tensor<2, dim, VectorizedArray<Number>> const & velocity_gradient,
-                          double const &                                  model_constant) const
+  add_turbulent_viscosity(scalar &       viscosity,
+                          scalar const & filter_width,
+                          tensor const & velocity_gradient,
+                          double const & model_constant) const
   {
     switch(turb_model_data.turbulence_model)
     {
@@ -401,19 +321,18 @@ private:
    *      C = 0.18  (Toda et al. (2010))
    */
   void
-  smagorinsky_model(VectorizedArray<Number> const &                 filter_width,
-                    Tensor<2, dim, VectorizedArray<Number>> const & velocity_gradient,
-                    double const &                                  C,
-                    VectorizedArray<Number> &                       viscosity) const
+  smagorinsky_model(scalar const & filter_width,
+                    tensor const & velocity_gradient,
+                    double const & C,
+                    scalar &       viscosity) const
   {
-    Tensor<2, dim, VectorizedArray<Number>> symmetric_gradient =
+    tensor symmetric_gradient =
       make_vectorized_array<Number>(0.5) * (velocity_gradient + transpose(velocity_gradient));
 
-    VectorizedArray<Number> rate_of_strain =
-      2.0 * scalar_product(symmetric_gradient, symmetric_gradient);
-    rate_of_strain = std::exp(0.5 * std::log(rate_of_strain));
+    scalar rate_of_strain = 2.0 * scalar_product(symmetric_gradient, symmetric_gradient);
+    rate_of_strain        = std::exp(0.5 * std::log(rate_of_strain));
 
-    VectorizedArray<Number> factor = C * filter_width;
+    scalar factor = C * filter_width;
 
     viscosity += factor * factor * rate_of_strain;
   }
@@ -443,27 +362,25 @@ private:
    *
    */
   void
-  vreman_model(VectorizedArray<Number> const &                 filter_width,
-               Tensor<2, dim, VectorizedArray<Number>> const & velocity_gradient,
-               double const &                                  C,
-               VectorizedArray<Number> &                       viscosity) const
+  vreman_model(scalar const & filter_width,
+               tensor const & velocity_gradient,
+               double const & C,
+               scalar &       viscosity) const
   {
-    VectorizedArray<Number> velocity_gradient_norm_square =
-      scalar_product(velocity_gradient, velocity_gradient);
-    Number const tolerance = 1.0e-12;
+    scalar velocity_gradient_norm_square = scalar_product(velocity_gradient, velocity_gradient);
+    Number const tolerance               = 1.0e-12;
 
-    Tensor<2, dim, VectorizedArray<Number>> tensor =
-      velocity_gradient * transpose(velocity_gradient);
+    tensor tensor = velocity_gradient * transpose(velocity_gradient);
 
     AssertThrow(dim == 3,
                 ExcMessage(
                   "Number of dimensions has to be dim==3 to evaluate Vreman turbulence model."));
 
-    VectorizedArray<Number> B_gamma = +tensor[0][0] * tensor[1][1] - tensor[0][1] * tensor[0][1] +
-                                      tensor[0][0] * tensor[2][2] - tensor[0][2] * tensor[0][2] +
-                                      tensor[1][1] * tensor[2][2] - tensor[1][2] * tensor[1][2];
+    scalar B_gamma = +tensor[0][0] * tensor[1][1] - tensor[0][1] * tensor[0][1] +
+                     tensor[0][0] * tensor[2][2] - tensor[0][2] * tensor[0][2] +
+                     tensor[1][1] * tensor[2][2] - tensor[1][2] * tensor[1][2];
 
-    VectorizedArray<Number> factor = C * filter_width;
+    scalar factor = C * filter_width;
 
     for(unsigned int i = 0; i < VectorizedArray<Number>::n_array_elements; i++)
     {
@@ -505,31 +422,31 @@ private:
    *
    */
   void
-  wale_model(VectorizedArray<Number> const &                 filter_width,
-             Tensor<2, dim, VectorizedArray<Number>> const & velocity_gradient,
-             double const &                                  C,
-             VectorizedArray<Number> &                       viscosity) const
+  wale_model(scalar const & filter_width,
+             tensor const & velocity_gradient,
+             double const & C,
+             scalar &       viscosity) const
   {
-    Tensor<2, dim, VectorizedArray<Number>> S =
+    tensor S =
       make_vectorized_array<Number>(0.5) * (velocity_gradient + transpose(velocity_gradient));
-    VectorizedArray<Number> S_norm_square = scalar_product(S, S);
+    scalar S_norm_square = scalar_product(S, S);
 
-    Tensor<2, dim, VectorizedArray<Number>> square_gradient = velocity_gradient * velocity_gradient;
-    VectorizedArray<Number>                 trace_square_gradient = trace(square_gradient);
+    tensor square_gradient       = velocity_gradient * velocity_gradient;
+    scalar trace_square_gradient = trace(square_gradient);
 
-    Tensor<2, dim, VectorizedArray<Number>> isotropic_tensor;
+    tensor isotropic_tensor;
     for(unsigned int i = 0; i < dim; ++i)
     {
       isotropic_tensor[i][i] = 1.0 / 3.0 * trace_square_gradient;
     }
 
-    Tensor<2, dim, VectorizedArray<Number>> S_d =
+    tensor S_d =
       make_vectorized_array<Number>(0.5) * (square_gradient + transpose(square_gradient)) -
       isotropic_tensor;
 
-    VectorizedArray<Number> S_d_norm_square = scalar_product(S_d, S_d);
+    scalar S_d_norm_square = scalar_product(S_d, S_d);
 
-    VectorizedArray<Number> D = make_vectorized_array<Number>(0.0);
+    scalar D = make_vectorized_array<Number>(0.0);
 
     for(unsigned int i = 0; i < VectorizedArray<Number>::n_array_elements; i++)
     {
@@ -541,7 +458,7 @@ private:
       }
     }
 
-    VectorizedArray<Number> factor = C * filter_width;
+    scalar factor = C * filter_width;
 
     viscosity += factor * factor * D;
   }
@@ -564,10 +481,10 @@ private:
    *      C = 1.5  (Toda et al. (2010)) .
    */
   void
-  sigma_model(VectorizedArray<Number> const &                 filter_width,
-              Tensor<2, dim, VectorizedArray<Number>> const & velocity_gradient,
-              double const &                                  C,
-              VectorizedArray<Number> &                       viscosity) const
+  sigma_model(scalar const & filter_width,
+              tensor const & velocity_gradient,
+              double const & C,
+              scalar &       viscosity) const
   {
     AssertThrow(dim == 3,
                 ExcMessage(
@@ -578,13 +495,13 @@ private:
      *  (see appendix in Nicoud et al. (2011)). This approach is more efficient
      *  than calculating eigenvalues or singular values using LAPACK routines.
      */
-    VectorizedArray<Number> D = make_vectorized_array<Number>(0.0);
+    scalar D = make_vectorized_array<Number>(0.0);
 
-    Tensor<2, dim, VectorizedArray<Number>> G = transpose(velocity_gradient) * velocity_gradient;
+    tensor G = transpose(velocity_gradient) * velocity_gradient;
 
-    VectorizedArray<Number> invariant1 = trace(G);
-    VectorizedArray<Number> invariant2 = 0.5 * (invariant1 * invariant1 - trace(G * G));
-    VectorizedArray<Number> invariant3 = determinant(G);
+    scalar invariant1 = trace(G);
+    scalar invariant2 = 0.5 * (invariant1 * invariant1 - trace(G * G));
+    scalar invariant3 = determinant(G);
 
     for(unsigned int n = 0; n < VectorizedArray<Number>::n_array_elements; n++)
     {
@@ -644,7 +561,7 @@ private:
      * the square root of the eigenvalues of G = g^T * g.
      */
 
-    //    VectorizedArray<Number> D_copy = D; // save a copy in order to verify the correctness of
+    //    scalar D_copy = D; // save a copy in order to verify the correctness of
     //    the computation for(unsigned int n = 0; n < VectorizedArray<Number>::n_array_elements;
     //    n++)
     //    {
@@ -699,7 +616,7 @@ private:
     /*
      *  Alternatively, compute singular values directly using SVD.
      */
-    //    VectorizedArray<Number> D_copy2 = D; // save a copy in order to verify the correctness of
+    //    scalar D_copy2 = D; // save a copy in order to verify the correctness of
     //    the computation D = make_vectorized_array<Number>(0.0);
     //
     //    for(unsigned int n = 0; n < VectorizedArray<Number>::n_array_elements; n++)
@@ -735,7 +652,7 @@ private:
     //    }
 
     // add turbulent eddy-viscosity to laminar viscosity
-    VectorizedArray<Number> factor = C * filter_width;
+    scalar factor = C * filter_width;
     viscosity += factor * factor * D;
   }
 
@@ -744,9 +661,9 @@ private:
 
   MatrixFree<dim, Number> const * matrix_free_data;
 
-  ViscousOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, Number> * viscous_operator;
+  ViscousOperator<dim, degree, Number> * viscous_operator;
 
-  AlignedVector<VectorizedArray<Number>> filter_width_vector;
+  AlignedVector<scalar> filter_width_vector;
 };
 
 

@@ -862,10 +862,6 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
     times.at(i) = this->time - (double)(i) * this->time_steps[0];
   }
 
-  // this is only needed for transport with interpolated/extrapolated velocity
-  // as opposed to the standard nonlinear transport
-  this->convective_operator_OIF->set_solutions_and_times(solutions, times);
-
   // Loop over all previous time instants required by the BDF scheme
   // and calculate u_tilde by substepping algorithm, i.e.,
   // integrate over time interval t_{n-i} <= t <= t_{n+1}

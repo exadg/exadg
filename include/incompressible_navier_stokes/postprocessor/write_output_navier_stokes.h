@@ -91,32 +91,16 @@ write_output(OutputDataNavierStokes const &                     output_data,
 namespace IncNS
 {
 // forward declarations
-template<int dim,
-         int fe_degree_u,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
 class DGNavierStokesBase;
 
-template<int dim,
-         int fe_degree_u,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
 class OutputGenerator
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef DGNavierStokesBase<dim,
-                             fe_degree_u,
-                             fe_degree_p,
-                             fe_degree_xwall,
-                             xwall_quad_rule,
-                             Number>
-    NavierStokesOperator;
+  typedef DGNavierStokesBase<dim, fe_degree_u, fe_degree_p, Number> NavierStokesOperator;
 
   OutputGenerator() : output_counter(0), counter_mean_velocity(0)
   {
