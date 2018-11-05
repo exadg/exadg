@@ -116,6 +116,13 @@ template class MassMatrixOperator<2, 15, float>;
 template class MassMatrixOperator<2, 15, double>;
 #endif
 
+#if DIM_3 && DEGREE_0 && (OP_FLOAT || MG_FLOAT)
+template class MassMatrixOperator<3, 0, float>;
+#endif
+#if DIM_3 && DEGREE_0 && (OP_DOUBLE || MG_DOUBLE)
+template class MassMatrixOperator<3, 0, double>;
+#endif
+
 #if DIM_3 && DEGREE_1 && (OP_FLOAT || MG_FLOAT)
 template class MassMatrixOperator<3, 1, float>;
 #endif
