@@ -37,8 +37,8 @@ using namespace IncNS;
 // specify the flow problem that has to be solved
 
 //#include "incompressible_navier_stokes_test_cases/turbulent_channel_two_domains.h"
-//#include "incompressible_navier_stokes_test_cases/backward_facing_step_two_domains.h"
-#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
+#include "incompressible_navier_stokes_test_cases/backward_facing_step_two_domains.h"
+//#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
 
 template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
 class NavierStokesProblem

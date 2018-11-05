@@ -36,26 +36,32 @@ using namespace IncNS;
 
 // specify the flow problem that has to be solved
 
-//#include "incompressible_navier_stokes_test_cases/couette.h"
-//#include "incompressible_navier_stokes_test_cases/poiseuille.h"
-//#include "incompressible_navier_stokes_test_cases/cavity.h"
+// 2D Stokes flow
 //#include "incompressible_navier_stokes_test_cases/stokes_guermond.h"
 //#include "incompressible_navier_stokes_test_cases/stokes_shahbazi.h"
 //#include "incompressible_navier_stokes_test_cases/stokes_curl_flow.h"
+
+// 2D Navier-Stokes flow
+//#include "incompressible_navier_stokes_test_cases/couette.h"
+//#include "incompressible_navier_stokes_test_cases/poiseuille.h"
+//#include "incompressible_navier_stokes_test_cases/cavity.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
-//#include "incompressible_navier_stokes_test_cases/vortex.h"
+#include "incompressible_navier_stokes_test_cases/vortex.h"
 //#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
-#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
-//#include "incompressible_navier_stokes_test_cases/beltrami.h"
-//#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
+//#include "incompressible_navier_stokes_test_cases/tum.h"
 //#include "incompressible_navier_stokes_test_cases/orr_sommerfeld.h"
 //#include "incompressible_navier_stokes_test_cases/kelvin_helmholtz.h"
-//#include "incompressible_navier_stokes_test_cases/tum.h"
-//#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
-//#include "incompressible_navier_stokes_test_cases/cavity_3D.h"
-//#include "incompressible_navier_stokes_test_cases/backward_facing_step_tim.h"
-//#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
+
+// 2D/3D Navier-Stokes flow
+//#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
+
+// 3D Navier-Stokes flow
+//#include "incompressible_navier_stokes_test_cases/beltrami.h"
 //#include "incompressible_navier_stokes_test_cases/unstable_beltrami.h"
+//#include "incompressible_navier_stokes_test_cases/cavity_3D.h"
+//#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
+//#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
+//#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
 
 template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
 class NavierStokesProblem

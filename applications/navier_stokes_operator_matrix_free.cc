@@ -35,20 +35,9 @@
 using namespace dealii;
 using namespace IncNS;
 
-// specify the flow problem that has to be solved
+// specify the flow problem to be used for throughput measurements
 
-//#include "incompressible_navier_stokes_test_cases/couette.h"
-//#include "incompressible_navier_stokes_test_cases/poiseuille.h"
-//#include "incompressible_navier_stokes_test_cases/cavity.h"
-//#include "incompressible_navier_stokes_test_cases/stokes_guermond.h"
-//#include "incompressible_navier_stokes_test_cases/stokes_shahbazi.h"
-//#include "incompressible_navier_stokes_test_cases/kovasznay.h"
-//#include "incompressible_navier_stokes_test_cases/vortex.h"
-//#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
 #include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
-//#include "incompressible_navier_stokes_test_cases/beltrami.h"
-//#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
-//#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -57,7 +46,7 @@ using namespace IncNS;
 /**************************************************************************************/
 
 // set the polynomial degree k of the shape functions
-unsigned int const FE_DEGREE_U_MIN = 2;
+unsigned int const FE_DEGREE_U_MIN = 1;
 unsigned int const FE_DEGREE_U_MAX = 2;
 
 // refinement level: l = REFINE_LEVELS[fe_degree-1]

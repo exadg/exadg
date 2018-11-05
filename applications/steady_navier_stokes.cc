@@ -31,11 +31,16 @@ using namespace IncNS;
 
 // specify the flow problem that has to be solved
 
+// 2D Stokes flow
 //#include "incompressible_navier_stokes_test_cases/stokes_curl_flow.h"
+
+// 2D Navier-Stokes flow
 //#include "incompressible_navier_stokes_test_cases/couette.h"
 #include "incompressible_navier_stokes_test_cases/poiseuille.h"
 //#include "incompressible_navier_stokes_test_cases/cavity.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
+
+// 2D/3D Navier-Stokes flow
 //#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
 
 
