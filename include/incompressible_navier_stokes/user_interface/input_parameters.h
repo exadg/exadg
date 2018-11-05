@@ -361,9 +361,9 @@ enum class SolverViscous
 enum class PreconditionerViscous
 {
   None,
+  InverseMassMatrix,
   PointJacobi,
   BlockJacobi,
-  InverseMassMatrix,
   GeometricMultigrid
 };
 
@@ -1546,7 +1546,7 @@ public:
     print_parameter(pcout, "Solver viscous step", str_solver_viscous[(int)solver_viscous]);
 
     std::string str_precon_viscous[] = {
-      "None", "PointJacobi", "BlockJacobi", "InverseMassMatrix", "GeometricMultigrid"};
+      "None", "InverseMassMatrix", "PointJacobi", "BlockJacobi", "GeometricMultigrid"};
 
     print_parameter(pcout,
                     "Preconditioner viscous step",
@@ -2049,7 +2049,11 @@ public:
 
   // Implement block diagonal (block Jacobi) preconditioner in a matrix-free way
   // by solving the block Jacobi problems elementwise using iterative solvers and
-  // matrix-free operator evaluation
+  // matrix-free operator evaluation. By default, this variable should be set to true
+  // because the matrix-based variant (which is used otherwise) is very slow and the
+  // matrix-free variant can be expected to be much faster.
+  // Only in case that convergence problems occur or for reasons of testing/debugging
+  // the matrix-based variant should be used.
   bool implement_block_diagonal_preconditioner_matrix_free;
 
   // By default, the matrix-free implementation performs separate loops over all cells,

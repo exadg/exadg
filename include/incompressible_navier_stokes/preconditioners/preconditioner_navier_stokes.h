@@ -14,7 +14,6 @@
 #include "../../incompressible_navier_stokes/preconditioners/compatible_laplace_operator.h"
 #include "../../incompressible_navier_stokes/preconditioners/multigrid_preconditioner_navier_stokes.h"
 #include "../../incompressible_navier_stokes/preconditioners/pressure_convection_diffusion_operator.h"
-#include "../../incompressible_navier_stokes/spatial_discretization/helmholtz_operator.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/velocity_convection_diffusion_operator.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
@@ -35,12 +34,7 @@ struct LaplaceOperatorData;
 namespace IncNS
 {
 // forward declaration
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 class DGNavierStokesCoupled;
 
 // clang-format off
@@ -187,13 +181,7 @@ struct BlockPreconditionerData
   double                        rel_tol_solver_schur_complement_preconditioner;
 };
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename value_type,
-         typename UnderlyingOperator>
+template<int dim, int fe_degree, int fe_degree_p, typename value_type, typename UnderlyingOperator>
 class BlockPreconditionerNavierStokes
   : public PreconditionerNavierStokesBase<value_type, UnderlyingOperator>
 {
@@ -202,13 +190,9 @@ public:
 
   typedef float MultigridNumber;
 
-  BlockPreconditionerNavierStokes(DGNavierStokesCoupled<dim,
-                                                        fe_degree,
-                                                        fe_degree_p,
-                                                        fe_degree_xwall,
-                                                        xwall_quad_rule,
-                                                        value_type> * underlying_operator_in,
-                                  BlockPreconditionerData const &     preconditioner_data_in)
+  BlockPreconditionerNavierStokes(
+    DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, value_type> * underlying_operator_in,
+    BlockPreconditionerData const &                                  preconditioner_data_in)
   {
     underlying_operator = underlying_operator_in;
     preconditioner_data = preconditioner_data_in;
@@ -234,27 +218,26 @@ public:
       // Point Jacobi preconditioner
       // TODO
       preconditioner_momentum.reset(
-        new JacobiPreconditioner<
-          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>>(
-          underlying_operator->velocity_conv_diff_operator));
+        new JacobiPreconditioner<MomentumOperator<dim, fe_degree, value_type>>(
+          underlying_operator->momentum_operator));
     }
     else if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::BlockJacobi)
     {
       // Block Jacobi preconditioner
       // TODO
       preconditioner_momentum.reset(
-        new BlockJacobiPreconditioner<
-          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>>(
-          underlying_operator->velocity_conv_diff_operator));
+        new BlockJacobiPreconditioner<MomentumOperator<dim, fe_degree, value_type>>(
+          underlying_operator->momentum_operator));
     }
     else if(preconditioner_data.momentum_preconditioner ==
             MomentumPreconditioner::InverseMassMatrix)
     {
       // inverse mass matrix
-      preconditioner_momentum.reset(new InverseMassMatrixPreconditioner<dim, fe_degree, value_type>(
-        underlying_operator->get_data(),
-        underlying_operator->get_dof_index_velocity(),
-        underlying_operator->get_quad_index_velocity_linear()));
+      preconditioner_momentum.reset(
+        new InverseMassMatrixPreconditioner<dim, fe_degree, value_type, dim>(
+          underlying_operator->get_data(),
+          underlying_operator->get_dof_index_velocity(),
+          underlying_operator->get_quad_index_velocity_linear()));
     }
     else if(preconditioner_data.momentum_preconditioner ==
               MomentumPreconditioner::VelocityDiffusion ||
@@ -546,8 +529,8 @@ private:
       typedef MyMultigridPreconditionerVelocityDiffusion<
         dim,
         value_type,
-        HelmholtzOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, MultigridNumber>,
-        VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>>
+        MomentumOperator<dim, fe_degree, MultigridNumber>,
+        MomentumOperator<dim, fe_degree, value_type>>
         MULTIGRID;
 
       preconditioner_momentum.reset(new MULTIGRID());
@@ -555,12 +538,18 @@ private:
       std::shared_ptr<MULTIGRID> mg_preconditioner =
         std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
 
+      // get operator data
+      momentum_operator_data_multigrid = underlying_operator->momentum_operator.get_operator_data();
+      // multgrid is only applied to reaction-diffusion operator so the convective term has to be
+      // deactivated
+      momentum_operator_data_multigrid.convective_problem = false;
+
       mg_preconditioner->initialize(
         mg_data,
         underlying_operator->get_dof_handler_u(),
         underlying_operator->get_mapping(),
         /*underlying_operator->velocity_conv_diff_operator.get_operator_data().bc->dirichlet_bc,*/
-        (void *)&underlying_operator->velocity_conv_diff_operator.get_operator_data());
+        (void *)&momentum_operator_data_multigrid);
     }
     else if(preconditioner_data.momentum_preconditioner ==
             MomentumPreconditioner::VelocityConvectionDiffusion)
@@ -568,8 +557,8 @@ private:
       typedef MyMultigridPreconditionerVelocityConvectionDiffusion<
         dim,
         value_type,
-        VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, MultigridNumber>,
-        VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>>
+        MomentumOperator<dim, fe_degree, MultigridNumber>,
+        MomentumOperator<dim, fe_degree, value_type>>
         MULTIGRID;
 
       preconditioner_momentum.reset(new MULTIGRID());
@@ -582,7 +571,7 @@ private:
         underlying_operator->get_dof_handler_u(),
         underlying_operator->get_mapping(),
         /*underlying_operator->velocity_conv_diff_operator.get_operator_data().bc->dirichlet_bc,*/
-        (void *)&underlying_operator->velocity_conv_diff_operator.get_operator_data());
+        (void *)&underlying_operator->momentum_operator.get_operator_data());
     }
   }
 
@@ -608,13 +597,10 @@ private:
       gmres_data.max_n_tmp_vectors =
         preconditioner_data.max_n_tmp_vectors_solver_momentum_preconditioner;
 
-      solver_velocity_block.reset(
-        new FGMRESSolver<
-          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>,
-          PreconditionerBase<value_type>,
-          VectorType>(underlying_operator->velocity_conv_diff_operator,
-                      *preconditioner_momentum,
-                      gmres_data));
+      solver_velocity_block.reset(new FGMRESSolver<MomentumOperator<dim, fe_degree, value_type>,
+                                                   PreconditionerBase<value_type>,
+                                                   VectorType>(
+        underlying_operator->momentum_operator, *preconditioner_momentum, gmres_data));
     }
     else
     {
@@ -627,13 +613,10 @@ private:
       gmres_data.max_n_tmp_vectors =
         preconditioner_data.max_n_tmp_vectors_solver_momentum_preconditioner;
 
-      solver_velocity_block.reset(
-        new GMRESSolver<
-          VelocityConvDiffOperator<dim, fe_degree, fe_degree_xwall, xwall_quad_rule, value_type>,
-          PreconditionerBase<value_type>,
-          VectorType>(underlying_operator->velocity_conv_diff_operator,
-                      *preconditioner_momentum,
-                      gmres_data));
+      solver_velocity_block.reset(new GMRESSolver<MomentumOperator<dim, fe_degree, value_type>,
+                                                  PreconditionerBase<value_type>,
+                                                  VectorType>(
+        underlying_operator->momentum_operator, *preconditioner_momentum, gmres_data));
     }
   }
 
@@ -645,14 +628,10 @@ private:
       MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
       // use DGNavierStokesCoupled as underlying operator for multigrid applied to compatible
       // Laplace operator
-      typedef MyMultigridPreconditionerDG<dim,
-                                          value_type,
-                                          CompatibleLaplaceOperator<dim,
-                                                                    fe_degree,
-                                                                    fe_degree_p,
-                                                                    fe_degree_xwall,
-                                                                    xwall_quad_rule,
-                                                                    MultigridNumber>>
+      typedef MyMultigridPreconditionerDG<
+        dim,
+        value_type,
+        CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, MultigridNumber>>
         MULTIGRID;
 
       multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
@@ -758,12 +737,8 @@ private:
       compatible_laplace_operator_data.underlying_operator_dof_index_velocity =
         underlying_operator->get_dof_index_velocity();
 
-      laplace_operator_compatible.reset(new CompatibleLaplaceOperator<dim,
-                                                                      fe_degree,
-                                                                      fe_degree_p,
-                                                                      fe_degree_xwall,
-                                                                      xwall_quad_rule,
-                                                                      value_type>());
+      laplace_operator_compatible.reset(
+        new CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, value_type>());
 
       laplace_operator_compatible->initialize(underlying_operator->get_data(),
                                               compatible_laplace_operator_data,
@@ -771,15 +746,12 @@ private:
                                               underlying_operator->divergence_operator,
                                               *underlying_operator->inverse_mass_matrix_operator);
 
-      solver_pressure_block.reset(new CGSolver<CompatibleLaplaceOperator<dim,
-                                                                         fe_degree,
-                                                                         fe_degree_p,
-                                                                         fe_degree_xwall,
-                                                                         xwall_quad_rule,
-                                                                         value_type>,
-                                               PreconditionerBase<value_type>,
-                                               VectorType>(
-        *laplace_operator_compatible, *multigrid_preconditioner_schur_complement, solver_data));
+      solver_pressure_block.reset(
+        new CGSolver<CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, value_type>,
+                     PreconditionerBase<value_type>,
+                     VectorType>(*laplace_operator_compatible,
+                                 *multigrid_preconditioner_schur_complement,
+                                 solver_data));
     }
   }
 
@@ -862,14 +834,14 @@ private:
 
     if(underlying_operator->unsteady_problem_has_to_be_solved())
       pressure_convection_diffusion_operator->set_scaling_factor_time_derivative_term(
-        underlying_operator->velocity_conv_diff_operator.get_scaling_factor_time_derivative_term());
+        underlying_operator->momentum_operator.get_scaling_factor_time_derivative_term());
   }
 
   void
   update(UnderlyingOperator const * /*underlying_op*/)
   {
     // momentum block
-    preconditioner_momentum->update(&underlying_operator->velocity_conv_diff_operator);
+    preconditioner_momentum->update(&underlying_operator->momentum_operator);
 
     // pressure block
     if(preconditioner_data.schur_complement_preconditioner ==
@@ -877,8 +849,7 @@ private:
     {
       if(underlying_operator->unsteady_problem_has_to_be_solved())
         pressure_convection_diffusion_operator->set_scaling_factor_time_derivative_term(
-          underlying_operator->velocity_conv_diff_operator
-            .get_scaling_factor_time_derivative_term());
+          underlying_operator->momentum_operator.get_scaling_factor_time_derivative_term());
     }
   }
 
@@ -900,7 +871,7 @@ private:
       // use the inverse mass matrix as an approximation to the momentum block
       preconditioner_momentum->vmult(dst, src);
       // clang-format off
-      dst *= 1. / underlying_operator->velocity_conv_diff_operator.get_scaling_factor_time_derivative_term();
+      dst *= 1. / underlying_operator->momentum_operator.get_scaling_factor_time_derivative_term();
       // clang-format on
     }
     else if(preconditioner_data.momentum_preconditioner ==
@@ -978,8 +949,7 @@ private:
     {
       // -S^{-1} = 1/dt  (-L)^{-1}
       apply_inverse_negative_laplace_operator(dst, src);
-      dst *=
-        underlying_operator->velocity_conv_diff_operator.get_scaling_factor_time_derivative_term();
+      dst *= underlying_operator->momentum_operator.get_scaling_factor_time_derivative_term();
     }
     else if(preconditioner_data.schur_complement_preconditioner ==
             SchurComplementPreconditioner::CahouetChabard)
@@ -988,8 +958,7 @@ private:
 
       // I. 1/dt (-L)^{-1}
       apply_inverse_negative_laplace_operator(dst, src);
-      dst *=
-        underlying_operator->velocity_conv_diff_operator.get_scaling_factor_time_derivative_term();
+      dst *= underlying_operator->momentum_operator.get_scaling_factor_time_derivative_term();
 
       // II. M_p^{-1}, apply inverse pressure mass matrix to src-vector and store the result in a
       // temporary vector
@@ -1014,8 +983,7 @@ private:
         underlying_operator->gradient_operator.apply(tmp_scp_velocity, dst);
 
         // II.b) A = 1/dt * mass matrix  +  viscous term  +  linearized convective term
-        underlying_operator->velocity_conv_diff_operator.vmult(tmp_scp_velocity_2,
-                                                               tmp_scp_velocity);
+        underlying_operator->momentum_operator.vmult(tmp_scp_velocity_2, tmp_scp_velocity);
 
         // II.c) -B
         underlying_operator->divergence_operator.apply(tmp_scp_pressure, tmp_scp_velocity_2);
@@ -1044,8 +1012,7 @@ private:
         inv_mass_matrix_preconditioner_schur_complement->vmult(tmp_scp_velocity, tmp_scp_velocity);
 
         // II.c) A = 1/dt * mass matrix + viscous term + linearized convective term
-        underlying_operator->velocity_conv_diff_operator.vmult(tmp_scp_velocity_2,
-                                                               tmp_scp_velocity);
+        underlying_operator->momentum_operator.vmult(tmp_scp_velocity_2, tmp_scp_velocity);
 
         // II.d) M^{-1}
         inv_mass_matrix_preconditioner_schur_complement->vmult(tmp_scp_velocity_2,
@@ -1135,13 +1102,15 @@ private:
   }
 
 private:
-  DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, value_type> *
-    underlying_operator;
+  DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, value_type> * underlying_operator;
 
   BlockPreconditionerData preconditioner_data;
 
   // preconditioner velocity/momentum block
   std::shared_ptr<PreconditionerBase<value_type>> preconditioner_momentum;
+
+  // required for multigrid (if multigrid is applied to HelmholtzOperator only)
+  MomentumOperatorData<dim> momentum_operator_data_multigrid;
 
   std::shared_ptr<IterativeSolverBase<VectorType>> solver_velocity_block;
 
@@ -1155,12 +1124,7 @@ private:
   std::shared_ptr<Poisson::LaplaceOperator<dim, fe_degree_p, value_type>>
     laplace_operator_classical;
 
-  std::shared_ptr<CompatibleLaplaceOperator<dim,
-                                            fe_degree,
-                                            fe_degree_p,
-                                            fe_degree_xwall,
-                                            xwall_quad_rule,
-                                            value_type>>
+  std::shared_ptr<CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, value_type>>
     laplace_operator_compatible;
 
   std::shared_ptr<IterativeSolverBase<VectorType>> solver_pressure_block;

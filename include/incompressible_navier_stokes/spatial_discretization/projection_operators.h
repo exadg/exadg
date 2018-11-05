@@ -11,147 +11,11 @@
 #include "../../solvers_and_preconditioners/util/block_jacobi_matrices.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 #include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
-#include "operators/base_operator.h"
+
+#include "operators/matrix_operator_base.h"
 
 namespace IncNS
 {
-/*
- *  Projection operator (mass matrix + divergence penalty term) where the integrals are computed
- * elementwise. This wrapper is needed to define the interface to the elementwise iterative solver.
- *
- *  Weak form:
- *
- *   (v_h, u_h)_Omega^e + delta_t * (div(v_h), tau_div * div(u_h))_Omega^e.
- *
- */
-template<int dim, int fe_degree, typename value_type, typename Operator>
-class ElementwiseProjectionOperatorDivergencePenalty
-{
-public:
-  ElementwiseProjectionOperatorDivergencePenalty(Operator const & operator_in)
-    : op(operator_in), fe_eval(op.get_data(), op.get_dof_index(), op.get_quad_index())
-  {
-  }
-
-  MatrixFree<dim, value_type> const &
-  get_data() const
-  {
-    return op.get_data();
-  }
-
-  unsigned int
-  get_dof_index() const
-  {
-    return op.get_dof_index();
-  }
-
-  unsigned int
-  get_quad_index() const
-  {
-    return op.get_dof_index();
-  }
-
-  void
-  setup(const unsigned int cell)
-  {
-    fe_eval.reinit(cell);
-  }
-
-  unsigned int
-  get_problem_size() const
-  {
-    return fe_eval.dofs_per_cell;
-  }
-
-  void
-  vmult(VectorizedArray<value_type> * dst, VectorizedArray<value_type> * src) const
-  {
-    Elementwise::vector_init(dst, fe_eval.dofs_per_cell);
-    op.apply_add_block_diagonal_elementwise_cell(fe_eval, dst, src);
-  }
-
-private:
-  Operator const & op;
-
-  mutable FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type> fe_eval;
-};
-
-
-/*
- * Projection operator (mass matrix + divergence penalty term + continuity penalty term) where the
- * integrals are computed elementwise. This wrapper is needed to define the interface to the
- * elementwise iterative solver.
- *
- *  Weak form:
- *
- *   (v_h, u_h)_Omega^e + delta_t * (div(v_h), tau_div * div(u_h))_Omega^e
- *                      + delta_t * (jump(v_h), tau_conti * jump(u_h))_Omega^e.
- *
- */
-template<int dim, int fe_degree, typename value_type, typename Operator>
-class ElementwiseProjectionOperator
-{
-public:
-  ElementwiseProjectionOperator(Operator const & operator_in)
-    : op(operator_in),
-      current_cell(1),
-      fe_eval(op.get_data(), op.get_dof_index(), op.get_quad_index()),
-      fe_eval_m(op.get_data(), true, op.get_dof_index(), op.get_quad_index()),
-      fe_eval_p(op.get_data(), false, op.get_dof_index(), op.get_quad_index())
-  {
-  }
-
-  MatrixFree<dim, value_type> const &
-  get_data() const
-  {
-    return op.get_data();
-  }
-
-  unsigned int
-  get_dof_index() const
-  {
-    return op.get_dof_index();
-  }
-
-  unsigned int
-  get_quad_index() const
-  {
-    return op.get_dof_index();
-  }
-
-  void
-  setup(const unsigned int cell)
-  {
-    fe_eval.reinit(cell);
-
-    current_cell = cell;
-  }
-
-  unsigned int
-  get_problem_size() const
-  {
-    return fe_eval.dofs_per_cell;
-  }
-
-  void
-  vmult(VectorizedArray<value_type> * dst, VectorizedArray<value_type> * src) const
-  {
-    Elementwise::vector_init(dst, fe_eval.dofs_per_cell);
-    op.apply_add_block_diagonal_elementwise(current_cell, fe_eval, fe_eval_m, fe_eval_p, dst, src);
-  }
-
-private:
-  Operator const & op;
-
-  unsigned int current_cell;
-
-  mutable FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>     fe_eval;
-  mutable FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type> fe_eval_m;
-  mutable FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type> fe_eval_p;
-};
-
-
-
 /*
  *  Combined divergence and continuity penalty operator: applies the operation
  *
@@ -202,11 +66,13 @@ private:
 /*
  *  Operator data.
  */
-struct CombinedDivergenceContinuityPenaltyOperatorData
+struct ProjectionOperatorData
 {
-  CombinedDivergenceContinuityPenaltyOperatorData()
+  ProjectionOperatorData()
     : type_penalty_parameter(TypePenaltyParameter::ConvectiveTerm),
       viscosity(0.0),
+      use_divergence_penalty(true),
+      use_continuity_penalty(true),
       penalty_factor_div(1.0),
       penalty_factor_conti(1.0),
       which_components(ContinuityPenaltyComponents::Normal),
@@ -222,6 +88,9 @@ struct CombinedDivergenceContinuityPenaltyOperatorData
 
   // kinematic viscosity
   double viscosity;
+
+  // specify which penalty terms to be used
+  bool use_divergence_penalty, use_continuity_penalty;
 
   // scaling factor
   double penalty_factor_div, penalty_factor_conti;
@@ -241,55 +110,28 @@ struct CombinedDivergenceContinuityPenaltyOperatorData
   SolverData                  block_jacobi_solver_data;
 };
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
-class CombinedDivergenceContinuityPenaltyOperator : public BaseOperator<dim>
+template<int dim, int degree, typename Number>
+class ProjectionOperator : public MatrixOperatorBase
 {
 public:
+  typedef ProjectionOperator<dim, degree, Number> This;
+
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef VectorizedArray<Number>                 scalar;
+  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+
+  typedef std::pair<unsigned int, unsigned int> Range;
+
   typedef Number value_type;
 
-  static const bool is_xwall = (xwall_quad_rule > 1) ? true : false;
+  typedef FEEvaluation<dim, degree, degree + 1, dim, Number>     FEEvalCell;
+  typedef FEFaceEvaluation<dim, degree, degree + 1, dim, Number> FEEvalFace;
 
-  static const unsigned int n_actual_q_points_vel_linear =
-    (is_xwall) ? xwall_quad_rule : fe_degree + 1;
-
-  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
-
-  typedef FEEvaluationWrapper<dim,
-                              fe_degree,
-                              fe_degree_xwall,
-                              n_actual_q_points_vel_linear,
-                              dim,
-                              value_type,
-                              is_xwall>
-    FEEval_Velocity_Velocity_linear;
-
-  typedef FEFaceEvaluationWrapper<dim,
-                                  fe_degree,
-                                  fe_degree_xwall,
-                                  n_actual_q_points_vel_linear,
-                                  dim,
-                                  value_type,
-                                  is_xwall>
-    FEFaceEval_Velocity_Velocity_linear;
-
-  typedef CombinedDivergenceContinuityPenaltyOperator<dim,
-                                                      fe_degree,
-                                                      fe_degree_p,
-                                                      fe_degree_xwall,
-                                                      xwall_quad_rule,
-                                                      value_type>
-    This;
-
-  CombinedDivergenceContinuityPenaltyOperator(
-    MatrixFree<dim, value_type> const &                   data_in,
-    unsigned int const                                    dof_index_in,
-    unsigned int const                                    quad_index_in,
-    CombinedDivergenceContinuityPenaltyOperatorData const operator_data_in)
+  ProjectionOperator(MatrixFree<dim, Number> const & data_in,
+                     unsigned int const              dof_index_in,
+                     unsigned int const              quad_index_in,
+                     ProjectionOperatorData const    operator_data_in)
     : data(data_in),
       dof_index(dof_index_in),
       quad_index(quad_index_in),
@@ -302,26 +144,35 @@ public:
       n_mpi_processes(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD)),
       block_diagonal_preconditioner_is_initialized(false)
   {
-    array_conti_penalty_parameter.resize(data.n_macro_cells() + data.n_macro_ghost_cells());
-    array_div_penalty_parameter.resize(data.n_macro_cells() + data.n_macro_ghost_cells());
+    if(operator_data.use_divergence_penalty)
+      array_div_penalty_parameter.resize(data.n_macro_cells() + data.n_macro_ghost_cells());
+
+    if(operator_data.use_continuity_penalty)
+      array_conti_penalty_parameter.resize(data.n_macro_cells() + data.n_macro_ghost_cells());
+
+    if(operator_data.use_divergence_penalty)
+      fe_eval.reset(
+        new FEEvalCell(this->get_data(), this->get_dof_index(), this->get_quad_index()));
+
+    if(operator_data.use_continuity_penalty)
+    {
+      fe_eval_m.reset(
+        new FEEvalFace(this->get_data(), true, this->get_dof_index(), this->get_quad_index()));
+      fe_eval_p.reset(
+        new FEEvalFace(this->get_data(), false, this->get_dof_index(), this->get_quad_index()));
+    }
   }
 
-  MatrixFree<dim, value_type> const &
+  MatrixFree<dim, Number> const &
   get_data() const
   {
     return data;
   }
 
-  AlignedVector<VectorizedArray<value_type>> const &
+  AlignedVector<VectorizedArray<Number>> const &
   get_array_div_penalty_parameter() const
   {
     return array_div_penalty_parameter;
-  }
-
-  FEParameters<dim> const *
-  get_fe_param() const
-  {
-    return this->fe_param;
   }
 
   unsigned int
@@ -357,8 +208,10 @@ public:
   void
   calculate_array_penalty_parameter(VectorType const & velocity)
   {
-    calculate_array_div_penalty_parameter(velocity);
-    calculate_array_conti_penalty_parameter(velocity);
+    if(operator_data.use_divergence_penalty)
+      calculate_array_div_penalty_parameter(velocity);
+    if(operator_data.use_continuity_penalty)
+      calculate_array_conti_penalty_parameter(velocity);
   }
 
   void
@@ -366,15 +219,14 @@ public:
   {
     velocity.update_ghost_values();
 
-    FEEval_Velocity_Velocity_linear fe_eval(data, this->fe_param, dof_index);
+    FEEvalCell fe_eval(data, dof_index, quad_index);
 
-    AlignedVector<VectorizedArray<value_type>> JxW_values(fe_eval.n_q_points);
+    AlignedVector<scalar> JxW_values(fe_eval.n_q_points);
 
     for(unsigned int cell = 0; cell < data.n_macro_cells() + data.n_macro_ghost_cells(); ++cell)
     {
-      VectorizedArray<value_type> tau_convective = make_vectorized_array<value_type>(0.0);
-      VectorizedArray<value_type> tau_viscous =
-        make_vectorized_array<value_type>(operator_data.viscosity);
+      scalar tau_convective = make_vectorized_array<Number>(0.0);
+      scalar tau_viscous    = make_vectorized_array<Number>(operator_data.viscosity);
 
       if(operator_data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm ||
          operator_data.type_penalty_parameter == TypePenaltyParameter::ViscousAndConvectiveTerms)
@@ -382,8 +234,9 @@ public:
         fe_eval.reinit(cell);
         fe_eval.read_dof_values(velocity);
         fe_eval.evaluate(true, false);
-        VectorizedArray<value_type> volume      = make_vectorized_array<value_type>(0.0);
-        VectorizedArray<value_type> norm_U_mean = make_vectorized_array<value_type>(0.0);
+
+        scalar volume      = make_vectorized_array<Number>(0.0);
+        scalar norm_U_mean = make_vectorized_array<Number>(0.0);
         JxW_values.resize(fe_eval.n_q_points);
         fe_eval.fill_JxW_values(JxW_values);
         for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
@@ -394,7 +247,7 @@ public:
         norm_U_mean /= volume;
 
         tau_convective =
-          norm_U_mean * std::exp(std::log(volume) / (double)dim) / (double)(fe_degree + 1);
+          norm_U_mean * std::exp(std::log(volume) / (double)dim) / (double)(degree + 1);
       }
 
       if(operator_data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm)
@@ -419,17 +272,17 @@ public:
   {
     velocity.update_ghost_values();
 
-    FEEval_Velocity_Velocity_linear fe_eval(data, this->fe_param, dof_index);
+    FEEvalCell fe_eval(data, dof_index, quad_index);
 
-    AlignedVector<VectorizedArray<value_type>> JxW_values(fe_eval.n_q_points);
+    AlignedVector<scalar> JxW_values(fe_eval.n_q_points);
 
     for(unsigned int cell = 0; cell < data.n_macro_cells() + data.n_macro_ghost_cells(); ++cell)
     {
       fe_eval.reinit(cell);
       fe_eval.read_dof_values(velocity);
       fe_eval.evaluate(true, false);
-      VectorizedArray<value_type> volume      = make_vectorized_array<value_type>(0.0);
-      VectorizedArray<value_type> norm_U_mean = make_vectorized_array<value_type>(0.0);
+      scalar volume      = make_vectorized_array<Number>(0.0);
+      scalar norm_U_mean = make_vectorized_array<Number>(0.0);
       JxW_values.resize(fe_eval.n_q_points);
       fe_eval.fill_JxW_values(JxW_values);
       for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
@@ -439,11 +292,9 @@ public:
       }
       norm_U_mean /= volume;
 
-      VectorizedArray<value_type> tau_convective = norm_U_mean;
-      VectorizedArray<value_type> h =
-        std::exp(std::log(volume) / (double)dim) / (double)(fe_degree + 1);
-      VectorizedArray<value_type> tau_viscous =
-        make_vectorized_array<value_type>(operator_data.viscosity) / h;
+      scalar tau_convective = norm_U_mean;
+      scalar h              = std::exp(std::log(volume) / (double)dim) / (double)(degree + 1);
+      scalar tau_viscous    = make_vectorized_array<Number>(operator_data.viscosity) / h;
 
       if(operator_data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm)
       {
@@ -474,15 +325,12 @@ public:
     scaling_factor_div   = time_step_size;
     scaling_factor_conti = time_step_size;
 
-    data.loop(&This::cell_loop,
-              &This::face_loop,
-              &This::boundary_face_loop_empty,
-              this,
-              dst,
-              src,
-              /*zero dst vector = */ true,
-              MatrixFree<dim, value_type>::only_values,
-              MatrixFree<dim, value_type>::only_values);
+    if(operator_data.use_divergence_penalty && operator_data.use_continuity_penalty)
+      do_apply(dst, src, true);
+    else if(operator_data.use_divergence_penalty && !operator_data.use_continuity_penalty)
+      do_apply_mass_div_penalty(dst, src, true);
+    else
+      AssertThrow(false, ExcMessage("Not implemented."));
   }
 
   void
@@ -491,15 +339,12 @@ public:
     scaling_factor_div   = time_step_size;
     scaling_factor_conti = time_step_size;
 
-    data.loop(&This::cell_loop,
-              &This::face_loop,
-              &This::boundary_face_loop_empty,
-              this,
-              dst,
-              src,
-              /*zero dst vector = */ false,
-              MatrixFree<dim, value_type>::only_values,
-              MatrixFree<dim, value_type>::only_values);
+    if(operator_data.use_divergence_penalty && operator_data.use_continuity_penalty)
+      do_apply(dst, src, false);
+    else if(operator_data.use_divergence_penalty && !operator_data.use_continuity_penalty)
+      do_apply_mass_div_penalty(dst, src, false);
+    else
+      AssertThrow(false, ExcMessage("Not implemented."));
   }
 
   void
@@ -507,11 +352,7 @@ public:
   {
     scaling_factor_div = 1.0;
 
-    data.cell_loop(&This::cell_loop_div_penalty,
-                   this,
-                   dst,
-                   src,
-                   /*zero dst vector = */ true);
+    do_apply_div_penalty(dst, src, true);
   }
 
   void
@@ -519,11 +360,7 @@ public:
   {
     scaling_factor_div = 1.0;
 
-    data.cell_loop(&This::cell_loop_div_penalty,
-                   this,
-                   dst,
-                   src,
-                   /*zero dst vector = */ false);
+    do_apply_div_penalty(dst, src, false);
   }
 
   void
@@ -531,15 +368,7 @@ public:
   {
     scaling_factor_conti = 1.0;
 
-    data.loop(&This::cell_loop_empty,
-              &This::face_loop,
-              &This::boundary_face_loop_empty,
-              this,
-              dst,
-              src,
-              /*zero dst vector = */ true,
-              MatrixFree<dim, value_type>::only_values,
-              MatrixFree<dim, value_type>::only_values);
+    do_apply_conti_penalty(dst, src, true);
   }
 
   void
@@ -547,16 +376,9 @@ public:
   {
     scaling_factor_conti = 1.0;
 
-    data.loop(&This::cell_loop_empty,
-              &This::face_loop,
-              &This::boundary_face_loop_empty,
-              this,
-              dst,
-              src,
-              /*zero dst vector = */ false,
-              MatrixFree<dim, value_type>::only_values,
-              MatrixFree<dim, value_type>::only_values);
+    do_apply_conti_penalty(dst, src, false);
   }
+
 
   /*
    *  Calculate inverse diagonal which is needed for the Jacobi preconditioner.
@@ -624,8 +446,8 @@ public:
         // Note that the velocity has dim components.
         unsigned int dofs_per_cell = data.get_shape_info().dofs_per_component_on_cell * dim;
 
-        matrices.resize(data.n_macro_cells() * VectorizedArray<value_type>::n_array_elements,
-                        LAPACKFullMatrix<value_type>(dofs_per_cell, dofs_per_cell));
+        matrices.resize(data.n_macro_cells() * VectorizedArray<Number>::n_array_elements,
+                        LAPACKFullMatrix<Number>(dofs_per_cell, dofs_per_cell));
       }
 
       block_diagonal_preconditioner_is_initialized = true;
@@ -647,98 +469,121 @@ public:
     }
   }
 
-  typedef FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type>     FEEvalCell;
-  typedef FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type> FEEvalFace;
-
   void
-  apply_add_block_diagonal_elementwise_cell(FEEvalCell &                          fe_eval,
-                                            VectorizedArray<Number> * const       dst,
-                                            VectorizedArray<Number> const * const src) const
+  apply_add_block_diagonal_elementwise(unsigned int const   cell,
+                                       scalar * const       dst,
+                                       scalar const * const src,
+                                       unsigned int const   problem_size = 1.0) const
   {
     scaling_factor_div   = time_step_size;
     scaling_factor_conti = time_step_size;
 
-    unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
-
-    for(unsigned int i = 0; i < dofs_per_cell; ++i)
-      fe_eval.begin_dof_values()[i] = src[i];
-
-    fe_eval.evaluate(true, true, false);
-
-    do_cell_integral(fe_eval);
-
-    fe_eval.integrate(true, true);
-
-    for(unsigned int i = 0; i < dofs_per_cell; ++i)
-      dst[i] += fe_eval.begin_dof_values()[i];
-  }
-
-  void
-  apply_add_block_diagonal_elementwise(unsigned int const                    cell,
-                                       FEEvalCell &                          fe_eval,
-                                       FEEvalFace &                          fe_eval_m,
-                                       FEEvalFace &                          fe_eval_p,
-                                       VectorizedArray<Number> * const       dst,
-                                       VectorizedArray<Number> const * const src) const
-  {
-    scaling_factor_div   = time_step_size;
-    scaling_factor_conti = time_step_size;
-
-    unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
-
-    for(unsigned int i = 0; i < dofs_per_cell; ++i)
-      fe_eval.begin_dof_values()[i] = src[i];
-
-    fe_eval.evaluate(true, true, false);
-
-    do_cell_integral(fe_eval);
-
-    fe_eval.integrate(true, true);
-
-    for(unsigned int i = 0; i < dofs_per_cell; ++i)
-      dst[i] += fe_eval.begin_dof_values()[i];
-
-    // face integrals
-    unsigned int const n_faces = GeometryInfo<dim>::faces_per_cell;
-    for(unsigned int face = 0; face < n_faces; ++face)
+    if(operator_data.use_divergence_penalty)
     {
-      fe_eval_m.reinit(cell, face);
-      fe_eval_p.reinit(cell, face);
+      fe_eval->reinit(cell);
+
+      unsigned int dofs_per_cell = fe_eval->dofs_per_cell;
 
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
-        fe_eval_m.begin_dof_values()[i] = src[i];
+        fe_eval->begin_dof_values()[i] = src[i];
 
-      // do not need to read dof values for fe_eval_p (already initialized with 0)
+      fe_eval->evaluate(true, true, false);
 
-      fe_eval_m.evaluate(true, false);
+      do_cell_integral(*fe_eval);
 
-      auto bids = data.get_faces_by_cells_boundary_id(cell, face);
-      auto bid  = bids[0];
-
-      if(bid == numbers::internal_face_boundary_id) // internal face
-      {
-        do_face_int_integral(fe_eval_m, fe_eval_p);
-      }
-      else // boundary face
-      {
-        // use same fe_eval so that the result becomes zero (only jumps involved)
-        do_face_int_integral(fe_eval_m, fe_eval_m);
-      }
-
-      fe_eval_m.integrate(true, false);
+      fe_eval->integrate(true, true);
 
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
-        dst[i] += fe_eval_m.begin_dof_values()[i];
+        dst[i] += fe_eval->begin_dof_values()[i];
+    }
+
+    if(operator_data.use_continuity_penalty)
+    {
+      // face integrals
+      unsigned int const n_faces = GeometryInfo<dim>::faces_per_cell;
+      for(unsigned int face = 0; face < n_faces; ++face)
+      {
+        fe_eval_m->reinit(cell, face);
+        fe_eval_p->reinit(cell, face);
+
+        unsigned int dofs_per_cell = fe_eval_m->dofs_per_cell;
+
+        for(unsigned int i = 0; i < dofs_per_cell; ++i)
+          fe_eval_m->begin_dof_values()[i] = src[i];
+
+        // do not need to read dof values for fe_eval_p (already initialized with 0)
+
+        fe_eval_m->evaluate(true, false);
+
+        auto bids = data.get_faces_by_cells_boundary_id(cell, face);
+        auto bid  = bids[0];
+
+        if(bid == numbers::internal_face_boundary_id) // internal face
+        {
+          do_face_int_integral(*fe_eval_m, *fe_eval_p);
+        }
+        else // boundary face
+        {
+          // use same fe_eval so that the result becomes zero (only jumps involved)
+          do_face_int_integral(*fe_eval_m, *fe_eval_m);
+        }
+
+        fe_eval_m->integrate(true, false);
+
+        for(unsigned int i = 0; i < dofs_per_cell; ++i)
+          dst[i] += fe_eval_m->begin_dof_values()[i];
+      }
     }
   }
 
 private:
+  void
+  do_apply_div_penalty(VectorType & dst, VectorType const & src, bool const zero_dst_vector) const
+  {
+    data.cell_loop(&This::cell_loop_div_penalty, this, dst, src, zero_dst_vector);
+  }
+
+  void
+  do_apply_mass_div_penalty(VectorType &       dst,
+                            VectorType const & src,
+                            bool const         zero_dst_vector) const
+  {
+    data.cell_loop(&This::cell_loop, this, dst, src, zero_dst_vector);
+  }
+
+  void
+  do_apply_conti_penalty(VectorType & dst, VectorType const & src, bool const zero_dst_vector) const
+  {
+    data.loop(&This::cell_loop_empty,
+              &This::face_loop,
+              &This::boundary_face_loop_empty,
+              this,
+              dst,
+              src,
+              zero_dst_vector,
+              MatrixFree<dim, Number>::only_values,
+              MatrixFree<dim, Number>::only_values);
+  }
+
+  void
+  do_apply(VectorType & dst, VectorType const & src, bool const zero_dst_vector) const
+  {
+    data.loop(&This::cell_loop,
+              &This::face_loop,
+              &This::boundary_face_loop_empty,
+              this,
+              dst,
+              src,
+              zero_dst_vector,
+              MatrixFree<dim, Number>::only_values,
+              MatrixFree<dim, Number>::only_values);
+  }
+
   template<typename FEEval>
   void
   do_cell_integral(FEEval & fe_eval) const
   {
-    VectorizedArray<value_type> tau =
-      fe_eval.read_cell_data(array_div_penalty_parameter) * scaling_factor_div;
+    scalar tau = fe_eval.read_cell_data(array_div_penalty_parameter) * scaling_factor_div;
 
     for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
     {
@@ -751,8 +596,7 @@ private:
   void
   do_cell_integral_div_penalty(FEEval & fe_eval) const
   {
-    VectorizedArray<value_type> tau =
-      fe_eval.read_cell_data(array_div_penalty_parameter) * scaling_factor_div;
+    scalar tau = fe_eval.read_cell_data(array_div_penalty_parameter) * scaling_factor_div;
 
     for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
     {
@@ -764,17 +608,16 @@ private:
   void
   do_face_integral(FEFaceEval & fe_eval, FEFaceEval & fe_eval_neighbor) const
   {
-    VectorizedArray<value_type> tau =
-      0.5 *
-      (fe_eval.read_cell_data(array_conti_penalty_parameter) +
-       fe_eval_neighbor.read_cell_data(array_conti_penalty_parameter)) *
-      scaling_factor_conti;
+    scalar tau = 0.5 *
+                 (fe_eval.read_cell_data(array_conti_penalty_parameter) +
+                  fe_eval_neighbor.read_cell_data(array_conti_penalty_parameter)) *
+                 scaling_factor_conti;
 
     for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
     {
-      Tensor<1, dim, VectorizedArray<value_type>> uM         = fe_eval.get_value(q);
-      Tensor<1, dim, VectorizedArray<value_type>> uP         = fe_eval_neighbor.get_value(q);
-      Tensor<1, dim, VectorizedArray<value_type>> jump_value = uM - uP;
+      vector uM         = fe_eval.get_value(q);
+      vector uP         = fe_eval_neighbor.get_value(q);
+      vector jump_value = uM - uP;
 
       if(operator_data.which_components == ContinuityPenaltyComponents::All)
       {
@@ -785,7 +628,7 @@ private:
       else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
       {
         // penalize normal components only
-        Tensor<1, dim, VectorizedArray<value_type>> normal = fe_eval.get_normal_vector(q);
+        vector normal = fe_eval.get_normal_vector(q);
 
         fe_eval.submit_value(tau * (jump_value * normal) * normal, q);
         fe_eval_neighbor.submit_value(-tau * (jump_value * normal) * normal, q);
@@ -803,18 +646,16 @@ private:
   void
   do_face_int_integral(FEFaceEval & fe_eval, FEFaceEval & fe_eval_neighbor) const
   {
-    VectorizedArray<value_type> tau =
-      0.5 *
-      (fe_eval.read_cell_data(array_conti_penalty_parameter) +
-       fe_eval_neighbor.read_cell_data(array_conti_penalty_parameter)) *
-      scaling_factor_conti;
+    scalar tau = 0.5 *
+                 (fe_eval.read_cell_data(array_conti_penalty_parameter) +
+                  fe_eval_neighbor.read_cell_data(array_conti_penalty_parameter)) *
+                 scaling_factor_conti;
 
     for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
     {
-      Tensor<1, dim, VectorizedArray<value_type>> uM = fe_eval.get_value(q);
-      // set uP to zero
-      Tensor<1, dim, VectorizedArray<value_type>> uP;
-      Tensor<1, dim, VectorizedArray<value_type>> jump_value = uM - uP;
+      vector uM = fe_eval.get_value(q);
+      vector uP; // set uP to zero
+      vector jump_value = uM - uP;
 
       if(operator_data.which_components == ContinuityPenaltyComponents::All)
       {
@@ -824,7 +665,7 @@ private:
       else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
       {
         // penalize normal components only
-        Tensor<1, dim, VectorizedArray<value_type>> normal = fe_eval.get_normal_vector(q);
+        vector normal = fe_eval.get_normal_vector(q);
         fe_eval.submit_value(tau * (jump_value * normal) * normal, q);
       }
       else
@@ -840,19 +681,16 @@ private:
   void
   do_face_ext_integral(FEFaceEval & fe_eval, FEFaceEval & fe_eval_neighbor) const
   {
-    VectorizedArray<value_type> tau =
-      0.5 *
-      (fe_eval.read_cell_data(array_conti_penalty_parameter) +
-       fe_eval_neighbor.read_cell_data(array_conti_penalty_parameter)) *
-      scaling_factor_conti;
+    scalar tau = 0.5 *
+                 (fe_eval.read_cell_data(array_conti_penalty_parameter) +
+                  fe_eval_neighbor.read_cell_data(array_conti_penalty_parameter)) *
+                 scaling_factor_conti;
 
     for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
     {
-      // set uM to zero
-      Tensor<1, dim, VectorizedArray<value_type>> uM;
-      Tensor<1, dim, VectorizedArray<value_type>> uP = fe_eval_neighbor.get_value(q);
-      Tensor<1, dim, VectorizedArray<value_type>> jump_value =
-        uP - uM; // interior - exterior = uP - uM (neighbor!)
+      vector uM; // set uM to zero
+      vector uP         = fe_eval_neighbor.get_value(q);
+      vector jump_value = uP - uM; // interior - exterior = uP - uM (neighbor!)
 
       if(operator_data.which_components == ContinuityPenaltyComponents::All)
       {
@@ -862,7 +700,7 @@ private:
       else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
       {
         // penalize normal components only
-        Tensor<1, dim, VectorizedArray<value_type>> normal = fe_eval_neighbor.get_normal_vector(q);
+        vector normal = fe_eval_neighbor.get_normal_vector(q);
         fe_eval_neighbor.submit_value(tau * (jump_value * normal) * normal, q);
       }
       else
@@ -876,12 +714,12 @@ private:
 
 
   void
-  cell_loop(MatrixFree<dim, value_type> const &           data,
-            VectorType &                                  dst,
-            VectorType const &                            src,
-            std::pair<unsigned int, unsigned int> const & cell_range) const
+  cell_loop(MatrixFree<dim, Number> const & data,
+            VectorType &                    dst,
+            VectorType const &              src,
+            Range const &                   cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval(data, this->fe_param, dof_index);
+    FEEvalCell fe_eval(data, dof_index, quad_index);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -895,12 +733,12 @@ private:
   }
 
   void
-  cell_loop_div_penalty(MatrixFree<dim, value_type> const &           data,
-                        VectorType &                                  dst,
-                        VectorType const &                            src,
-                        std::pair<unsigned int, unsigned int> const & cell_range) const
+  cell_loop_div_penalty(MatrixFree<dim, Number> const & data,
+                        VectorType &                    dst,
+                        VectorType const &              src,
+                        Range const &                   cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval(data, this->fe_param, dof_index);
+    FEEvalCell fe_eval(data, dof_index, quad_index);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -914,22 +752,22 @@ private:
   }
 
   void
-  cell_loop_empty(MatrixFree<dim, value_type> const & /*data*/,
+  cell_loop_empty(MatrixFree<dim, Number> const & /*data*/,
                   VectorType & /*dst*/,
                   VectorType const & /*src*/,
-                  std::pair<unsigned int, unsigned int> const & /*cell_range*/) const
+                  Range const & /*cell_range*/) const
   {
     // do nothing
   }
 
   void
-  face_loop(MatrixFree<dim, value_type> const &           data,
-            VectorType &                                  dst,
-            VectorType const &                            src,
-            std::pair<unsigned int, unsigned int> const & face_range) const
+  face_loop(MatrixFree<dim, Number> const & data,
+            VectorType &                    dst,
+            VectorType const &              src,
+            Range const &                   face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval(data, this->fe_param, true, dof_index);
-    FEFaceEval_Velocity_Velocity_linear fe_eval_neighbor(data, this->fe_param, false, dof_index);
+    FEEvalFace fe_eval(data, true, dof_index, quad_index);
+    FEEvalFace fe_eval_neighbor(data, false, dof_index, quad_index);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
@@ -947,10 +785,10 @@ private:
   }
 
   void
-  boundary_face_loop_empty(MatrixFree<dim, value_type> const & /*data*/,
+  boundary_face_loop_empty(MatrixFree<dim, Number> const & /*data*/,
                            VectorType & /*dst*/,
                            VectorType const & /*src*/,
-                           std::pair<unsigned int, unsigned int> const & /*face_range*/) const
+                           Range const & /*face_range*/) const
   {
     // do nothing
   }
@@ -974,20 +812,20 @@ private:
               diagonal,
               src_dummy,
               true /*zero dst vector = true*/,
-              MatrixFree<dim, value_type>::only_values,
-              MatrixFree<dim, value_type>::only_values);
+              MatrixFree<dim, Number>::only_values,
+              MatrixFree<dim, Number>::only_values);
   }
 
   /*
    * Calculation of diagonal (cell loop).
    */
   void
-  cell_loop_diagonal(MatrixFree<dim, value_type> const & data,
-                     VectorType &                        dst,
+  cell_loop_diagonal(MatrixFree<dim, Number> const & data,
+                     VectorType &                    dst,
                      VectorType const & /*src*/,
-                     std::pair<unsigned int, unsigned int> const & cell_range) const
+                     Range const & cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval(data, this->fe_param, dof_index);
+    FEEvalCell fe_eval(data, dof_index, quad_index);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -995,12 +833,12 @@ private:
 
       unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
 
-      VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
+      VectorizedArray<Number> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
       {
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          fe_eval.write_cellwise_dof_value(i, make_vectorized_array<value_type>(0.));
-        fe_eval.write_cellwise_dof_value(j, make_vectorized_array<value_type>(1.));
+          fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+        fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
         fe_eval.evaluate(true, true);
 
@@ -1008,10 +846,10 @@ private:
 
         fe_eval.integrate(true, true);
 
-        local_diagonal_vector[j] = fe_eval.read_cellwise_dof_value(j);
+        local_diagonal_vector[j] = fe_eval.begin_dof_values()[j];
       }
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        fe_eval.write_cellwise_dof_value(j, local_diagonal_vector[j]);
+        fe_eval.begin_dof_values()[j] = local_diagonal_vector[j];
 
       fe_eval.distribute_local_to_global(dst);
     }
@@ -1021,13 +859,13 @@ private:
    * Calculation of diagonal (face loop).
    */
   void
-  face_loop_diagonal(MatrixFree<dim, value_type> const & data,
-                     VectorType &                        dst,
+  face_loop_diagonal(MatrixFree<dim, Number> const & data,
+                     VectorType &                    dst,
                      VectorType const & /*src*/,
-                     std::pair<unsigned int, unsigned int> const & face_range) const
+                     Range const & face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval(data, this->fe_param, true, dof_index);
-    FEFaceEval_Velocity_Velocity_linear fe_eval_neighbor(data, this->fe_param, false, dof_index);
+    FEEvalFace fe_eval(data, true, dof_index, quad_index);
+    FEEvalFace fe_eval_neighbor(data, false, dof_index, quad_index);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
@@ -1035,14 +873,14 @@ private:
       fe_eval_neighbor.reinit(face);
 
       // element-
-      unsigned int                dofs_per_cell = fe_eval.dofs_per_cell;
-      VectorizedArray<value_type> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
+      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
+      scalar       local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
       {
         // set dof value j of element- to 1 and all other dof values of element- to zero
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          fe_eval.write_cellwise_dof_value(i, make_vectorized_array<value_type>(0.));
-        fe_eval.write_cellwise_dof_value(j, make_vectorized_array<value_type>(1.));
+          fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+        fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
         fe_eval.evaluate(true, false);
 
@@ -1050,23 +888,22 @@ private:
 
         fe_eval.integrate(true, false);
 
-        local_diagonal_vector[j] = fe_eval.read_cellwise_dof_value(j);
+        local_diagonal_vector[j] = fe_eval.begin_dof_values()[j];
       }
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        fe_eval.write_cellwise_dof_value(j, local_diagonal_vector[j]);
+        fe_eval.begin_dof_values()[j] = local_diagonal_vector[j];
 
       fe_eval.distribute_local_to_global(dst);
 
       // neighbor (element+)
       unsigned int dofs_per_cell_neighbor = fe_eval_neighbor.dofs_per_cell;
-      VectorizedArray<value_type>
-        local_diagonal_vector_neighbor[fe_eval_neighbor.tensor_dofs_per_cell];
+      scalar       local_diagonal_vector_neighbor[fe_eval_neighbor.tensor_dofs_per_cell];
       for(unsigned int j = 0; j < dofs_per_cell_neighbor; ++j)
       {
         // set dof value j of element+ to 1 and all other dof values of element+ to zero
         for(unsigned int i = 0; i < dofs_per_cell_neighbor; ++i)
-          fe_eval_neighbor.write_cellwise_dof_value(i, make_vectorized_array<value_type>(0.));
-        fe_eval_neighbor.write_cellwise_dof_value(j, make_vectorized_array<value_type>(1.));
+          fe_eval_neighbor.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+        fe_eval_neighbor.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
         fe_eval_neighbor.evaluate(true, false);
 
@@ -1074,10 +911,10 @@ private:
 
         fe_eval_neighbor.integrate(true, false);
 
-        local_diagonal_vector_neighbor[j] = fe_eval_neighbor.read_cellwise_dof_value(j);
+        local_diagonal_vector_neighbor[j] = fe_eval_neighbor.begin_dof_values()[j];
       }
       for(unsigned int j = 0; j < dofs_per_cell_neighbor; ++j)
-        fe_eval_neighbor.write_cellwise_dof_value(j, local_diagonal_vector_neighbor[j]);
+        fe_eval_neighbor.begin_dof_values()[j] = local_diagonal_vector_neighbor[j];
 
       fe_eval_neighbor.distribute_local_to_global(dst);
     }
@@ -1087,10 +924,10 @@ private:
    * Calculation of diagonal (boundary face loop).
    */
   void
-  boundary_face_loop_diagonal(MatrixFree<dim, value_type> const & /*data*/,
+  boundary_face_loop_diagonal(MatrixFree<dim, Number> const & /*data*/,
                               VectorType & /*dst*/,
                               VectorType const & /*src*/,
-                              std::pair<unsigned int, unsigned int> const & /*face_range*/) const
+                              Range const & /*face_range*/) const
   {
     // do nothing
   }
@@ -1108,8 +945,7 @@ private:
     else if(this->operator_data.preconditioner_block_jacobi ==
             PreconditionerBlockDiagonal::InverseMassMatrix)
     {
-      typedef Elementwise::InverseMassMatrixPreconditioner<dim, dim, fe_degree, Number>
-        INVERSE_MASS;
+      typedef Elementwise::InverseMassMatrixPreconditioner<dim, dim, degree, Number> INVERSE_MASS;
 
       elementwise_preconditioner.reset(
         new INVERSE_MASS(this->get_data(), this->get_dof_index(), this->get_quad_index()));
@@ -1130,7 +966,7 @@ private:
   }
 
   void
-  add_block_diagonal_matrices(std::vector<LAPACKFullMatrix<value_type>> & matrices) const
+  add_block_diagonal_matrices(std::vector<LAPACKFullMatrix<Number>> & matrices) const
   {
     scaling_factor_div   = time_step_size;
     scaling_factor_conti = time_step_size;
@@ -1160,12 +996,12 @@ private:
 
 
   void
-  cell_loop_calculate_block_diagonal(MatrixFree<dim, value_type> const &         data,
-                                     std::vector<LAPACKFullMatrix<value_type>> & matrices,
+  cell_loop_calculate_block_diagonal(MatrixFree<dim, Number> const &         data,
+                                     std::vector<LAPACKFullMatrix<Number>> & matrices,
                                      VectorType const &,
-                                     std::pair<unsigned int, unsigned int> const & cell_range) const
+                                     Range const & cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval(data, this->fe_param, dof_index);
+    FEEvalCell fe_eval(data, dof_index, quad_index);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -1176,8 +1012,8 @@ private:
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
       {
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          fe_eval.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
-        fe_eval.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+          fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+        fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
         fe_eval.evaluate(true, true);
 
@@ -1186,21 +1022,21 @@ private:
         fe_eval.integrate(true, true);
 
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
-            matrices[cell * VectorizedArray<value_type>::n_array_elements + v](i, j) +=
+          for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
+            matrices[cell * VectorizedArray<Number>::n_array_elements + v](i, j) +=
               fe_eval.begin_dof_values()[i][v];
       }
     }
   }
 
   void
-  face_loop_calculate_block_diagonal(MatrixFree<dim, value_type> const &         data,
-                                     std::vector<LAPACKFullMatrix<value_type>> & matrices,
+  face_loop_calculate_block_diagonal(MatrixFree<dim, Number> const &         data,
+                                     std::vector<LAPACKFullMatrix<Number>> & matrices,
                                      VectorType const &,
-                                     std::pair<unsigned int, unsigned int> const & face_range) const
+                                     Range const & face_range) const
   {
-    FEFaceEval_Velocity_Velocity_linear fe_eval(data, this->fe_param, true, dof_index);
-    FEFaceEval_Velocity_Velocity_linear fe_eval_neighbor(data, this->fe_param, false, dof_index);
+    FEEvalFace fe_eval(data, true, dof_index, quad_index);
+    FEEvalFace fe_eval_neighbor(data, false, dof_index, quad_index);
 
     // Perform face integrals for element e⁻.
     for(unsigned int face = face_range.first; face < face_range.second; face++)
@@ -1214,8 +1050,8 @@ private:
       {
         // set dof value j of element- to 1 and all other dof values of element- to zero
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          fe_eval.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
-        fe_eval.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+          fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+        fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
         fe_eval.evaluate(true, false);
 
@@ -1223,7 +1059,7 @@ private:
 
         fe_eval.integrate(true, false);
 
-        for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
+        for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
         {
           const unsigned int cell_number = data.get_face_info(face).cells_interior[v];
           if(cell_number != numbers::invalid_unsigned_int)
@@ -1246,8 +1082,8 @@ private:
       {
         // set dof value j of element+ to 1 and all other dof values of element+ to zero
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          fe_eval_neighbor.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
-        fe_eval_neighbor.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+          fe_eval_neighbor.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+        fe_eval_neighbor.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
         fe_eval_neighbor.evaluate(true, false);
 
@@ -1255,7 +1091,7 @@ private:
 
         fe_eval_neighbor.integrate(true, false);
 
-        for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
+        for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
         {
           const unsigned int cell_number = data.get_face_info(face).cells_exterior[v];
           if(cell_number != numbers::invalid_unsigned_int)
@@ -1267,29 +1103,27 @@ private:
   }
 
   void
-  boundary_face_loop_calculate_block_diagonal(
-    MatrixFree<dim, value_type> const &         data,
-    std::vector<LAPACKFullMatrix<value_type>> & matrices,
-    VectorType const &,
-    std::pair<unsigned int, unsigned int> const & face_range) const
+  boundary_face_loop_calculate_block_diagonal(MatrixFree<dim, Number> const &         data,
+                                              std::vector<LAPACKFullMatrix<Number>> & matrices,
+                                              VectorType const &,
+                                              Range const & face_range) const
   {
     // do nothing
   }
 
   void
-  cell_based_loop_calculate_block_diagonal(
-    MatrixFree<dim, value_type> const &         data,
-    std::vector<LAPACKFullMatrix<value_type>> & matrices,
-    VectorType const &,
-    std::pair<unsigned int, unsigned int> const & cell_range) const
+  cell_based_loop_calculate_block_diagonal(MatrixFree<dim, Number> const &         data,
+                                           std::vector<LAPACKFullMatrix<Number>> & matrices,
+                                           VectorType const &,
+                                           Range const & cell_range) const
   {
-    FEEval_Velocity_Velocity_linear     fe_eval(data, this->fe_param, dof_index);
-    FEFaceEval_Velocity_Velocity_linear fe_eval_m(data, this->fe_param, true, dof_index);
-    FEFaceEval_Velocity_Velocity_linear fe_eval_p(data, this->fe_param, false, dof_index);
+    FEEvalCell fe_eval(data, dof_index, quad_index);
+    FEEvalFace fe_eval_m(data, true, dof_index, quad_index);
+    FEEvalFace fe_eval_p(data, false, dof_index, quad_index);
 
-    // cell integral
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
+      // cell integral
       unsigned int const n_filled_lanes = data.n_active_entries_per_cell_batch(cell);
 
       fe_eval.reinit(cell);
@@ -1299,8 +1133,8 @@ private:
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
       {
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          fe_eval.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
-        fe_eval.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+          fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+        fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
         fe_eval.evaluate(true, true);
 
@@ -1310,7 +1144,7 @@ private:
 
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
           for(unsigned int v = 0; v < n_filled_lanes; ++v)
-            matrices[cell * VectorizedArray<value_type>::n_array_elements + v](i, j) +=
+            matrices[cell * VectorizedArray<Number>::n_array_elements + v](i, j) +=
               fe_eval.begin_dof_values()[i][v];
       }
 
@@ -1326,8 +1160,8 @@ private:
         for(unsigned int j = 0; j < dofs_per_cell; ++j)
         {
           for(unsigned int i = 0; i < dofs_per_cell; ++i)
-            fe_eval_m.begin_dof_values()[i] = make_vectorized_array<value_type>(0.);
-          fe_eval_m.begin_dof_values()[j] = make_vectorized_array<value_type>(1.);
+            fe_eval_m.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+          fe_eval_m.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
           fe_eval_m.evaluate(true, false);
 
@@ -1345,7 +1179,7 @@ private:
 
           for(unsigned int i = 0; i < dofs_per_cell; ++i)
             for(unsigned int v = 0; v < n_filled_lanes; ++v)
-              matrices[cell * VectorizedArray<value_type>::n_array_elements + v](i, j) +=
+              matrices[cell * VectorizedArray<Number>::n_array_elements + v](i, j) +=
                 fe_eval_m.begin_dof_values()[i][v];
         }
       }
@@ -1359,13 +1193,12 @@ private:
    * should have already been performed with the method update_inverse_block_diagonal())
    */
   void
-  cell_loop_apply_inverse_block_diagonal(
-    MatrixFree<dim, value_type> const &           data,
-    VectorType &                                  dst,
-    VectorType const &                            src,
-    std::pair<unsigned int, unsigned int> const & cell_range) const
+  cell_loop_apply_inverse_block_diagonal(MatrixFree<dim, Number> const & data,
+                                         VectorType &                    dst,
+                                         VectorType const &              src,
+                                         Range const &                   cell_range) const
   {
-    FEEval_Velocity_Velocity_linear fe_eval(data, this->fe_param, dof_index);
+    FEEvalCell fe_eval(data, dof_index, quad_index);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -1374,15 +1207,15 @@ private:
 
       unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
 
-      for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
+      for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
       {
         // fill source vector
-        Vector<value_type> src_vector(dofs_per_cell);
+        Vector<Number> src_vector(dofs_per_cell);
         for(unsigned int j = 0; j < dofs_per_cell; ++j)
           src_vector(j) = fe_eval.begin_dof_values()[j][v];
 
         // apply inverse matrix
-        matrices[cell * VectorizedArray<value_type>::n_array_elements + v].solve(src_vector, false);
+        matrices[cell * VectorizedArray<Number>::n_array_elements + v].solve(src_vector, false);
 
         // write solution to dst-vector
         for(unsigned int j = 0; j < dofs_per_cell; ++j)
@@ -1393,17 +1226,17 @@ private:
     }
   }
 
-  MatrixFree<dim, value_type> const & data;
+  MatrixFree<dim, Number> const & data;
 
   unsigned int const dof_index;
   unsigned int const quad_index;
 
-  AlignedVector<VectorizedArray<value_type>> array_conti_penalty_parameter;
-  AlignedVector<VectorizedArray<value_type>> array_div_penalty_parameter;
+  AlignedVector<scalar> array_conti_penalty_parameter;
+  AlignedVector<scalar> array_div_penalty_parameter;
 
   double time_step_size;
 
-  CombinedDivergenceContinuityPenaltyOperatorData operator_data;
+  ProjectionOperatorData operator_data;
 
   // Scaling factors for divergence and continuity penalty term:
   // Normally, the scaling factor equals the time step size when applying the combined operator
@@ -1431,15 +1264,22 @@ private:
   /*
    * Block Jacobi preconditioner/smoother: matrix-free version with elementwise iterative solver
    */
-  typedef ElementwiseProjectionOperator<dim, fe_degree, Number, This> ELEMENTWISE_OPERATOR;
-  typedef Elementwise::PreconditionerBase<VectorizedArray<Number>>    PRECONDITIONER_BASE;
+  typedef Elementwise::OperatorBase<dim, Number, This>             ELEMENTWISE_OPERATOR;
+  typedef Elementwise::PreconditionerBase<VectorizedArray<Number>> PRECONDITIONER_BASE;
   typedef Elementwise::
-    IterativeSolver<dim, dim, fe_degree, Number, ELEMENTWISE_OPERATOR, PRECONDITIONER_BASE>
+    IterativeSolver<dim, dim, degree, Number, ELEMENTWISE_OPERATOR, PRECONDITIONER_BASE>
       ELEMENTWISE_SOLVER;
 
   mutable std::shared_ptr<ELEMENTWISE_OPERATOR> elementwise_operator;
   mutable std::shared_ptr<PRECONDITIONER_BASE>  elementwise_preconditioner;
   mutable std::shared_ptr<ELEMENTWISE_SOLVER>   elementwise_solver;
+
+  /*
+   * FEEvaluation objects required for elementwise block Jacobi operations
+   */
+  std::shared_ptr<FEEvalCell> fe_eval;
+  std::shared_ptr<FEEvalFace> fe_eval_m;
+  std::shared_ptr<FEEvalFace> fe_eval_p;
 };
 
 } // namespace IncNS

@@ -28,11 +28,11 @@
 
 namespace Poisson
 {
-template<int dim, int fe_degree, typename value_type>
+template<int dim, int degree, typename Number>
 class DGOperation : public MatrixOperatorBase
 {
 public:
-  typedef parallel::distributed::Vector<value_type> VectorType;
+  typedef parallel::distributed::Vector<Number> VectorType;
 
   DGOperation(parallel::distributed::Triangulation<dim> const & triangulation,
               Poisson::InputParameters const &                  param_in);
@@ -55,7 +55,7 @@ public:
   unsigned int
   solve(VectorType & sol, VectorType const & rhs);
 
-  MatrixFree<dim, value_type> const &
+  MatrixFree<dim, Number> const &
   get_data() const;
 
   Mapping<dim> const &
@@ -78,7 +78,7 @@ private:
   MappingQGeneric<dim> mapping;
   DoFHandler<dim>      dof_handler;
 
-  MatrixFree<dim, value_type> data;
+  MatrixFree<dim, Number> data;
 
   Poisson::InputParameters const & param;
 
@@ -88,11 +88,11 @@ private:
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor;
   std::shared_ptr<Poisson::FieldFunctions<dim>>     field_functions;
 
-  ConvDiff::RHSOperator<dim, fe_degree, value_type> rhs_operator;
+  ConvDiff::RHSOperator<dim, degree, Number> rhs_operator;
 
-  Poisson::LaplaceOperator<dim, fe_degree, value_type> laplace_operator;
+  Poisson::LaplaceOperator<dim, degree, Number> laplace_operator;
 
-  std::shared_ptr<PreconditionerBase<value_type>>  preconditioner;
+  std::shared_ptr<PreconditionerBase<Number>>      preconditioner;
   std::shared_ptr<IterativeSolverBase<VectorType>> iterative_solver;
 };
 } // namespace Poisson

@@ -28,15 +28,11 @@ unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
 unsigned int const FE_DEGREE_VELOCITY = 5;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;  // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
-
-// set xwall specific parameters
-unsigned int const FE_DEGREE_XWALL = 1;
-unsigned int const N_Q_POINTS_1D_XWALL = 1;
+unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
 // set the number of refine levels for spatial convergence tests
 unsigned int const REFINE_STEPS_SPACE_MIN = 5;
-unsigned int const REFINE_STEPS_SPACE_MAX = 5; //REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -539,11 +535,11 @@ struct PostProcessorDataOrrSommerfeld
   PerturbationEnergyData energy_data;
 };
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-class PostProcessorOrrSommerfeld : public PostProcessor<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
+template<int dim, int degree_u, int degree_p, typename Number>
+class PostProcessorOrrSommerfeld : public PostProcessor<dim, degree_u, degree_p, Number>
 {
 public:
-  typedef PostProcessor<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> Base;
+  typedef PostProcessor<dim, degree_u, degree_p, Number> Base;
 
   typedef typename Base::NavierStokesOperator NavierStokesOperator;
 
@@ -593,11 +589,11 @@ public:
   }
 
   PerturbationEnergyData energy_data;
-  PerturbationEnergyCalculator<dim,fe_degree_u,Number> energy_calculator;
+  PerturbationEnergyCalculator<dim,degree_u,Number> energy_calculator;
 };
 
-template<int dim, typename Number>
-std::shared_ptr<PostProcessorBase<dim, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, Number> >
+template<int dim, int degree_u, int degree_p, typename Number>
+std::shared_ptr<PostProcessorBase<dim, degree_u, degree_p, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -611,8 +607,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data_os.pp_data = pp_data;
   pp_data_os.energy_data = param.perturbation_energy_data;
 
-  std::shared_ptr<PostProcessorBase<dim, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, Number> > pp;
-  pp.reset(new PostProcessorOrrSommerfeld<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number>(pp_data_os));
+  std::shared_ptr<PostProcessor<dim,degree_u,degree_p,Number> > pp;
+  pp.reset(new PostProcessorOrrSommerfeld<dim,degree_u,degree_p,Number>(pp_data_os));
 
   return pp;
 }

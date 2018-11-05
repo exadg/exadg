@@ -190,7 +190,7 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // diffusive term: Symmetric interior penalty discretization Galerkin (SIPG)
+  // Symmetric interior penalty Galerkin (SIPG) discretization
   // interior penalty parameter scaling factor: default value is 1.0
   double IP_factor;
 

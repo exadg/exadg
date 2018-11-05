@@ -45,7 +45,7 @@
 #include <iostream>
 #include <memory>
 
-#include "../../../include/operators/operation_base.h"
+#include "../../../include/operators/operator_base.h"
 
 enum class OperatorType
 {
@@ -69,7 +69,8 @@ struct BoundaryDescriptor
 };
 
 template<int dim>
-struct LaplaceOperatorData : public OperatorBaseData<dim, BoundaryType, OperatorType, BoundaryDescriptor<dim>>
+struct LaplaceOperatorData
+  : public OperatorBaseData<dim, BoundaryType, OperatorType, BoundaryDescriptor<dim>>
 {
 public:
   LaplaceOperatorData()

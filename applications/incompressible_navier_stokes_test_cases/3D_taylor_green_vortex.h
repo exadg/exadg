@@ -26,15 +26,11 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 3;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 9;
+unsigned int const FE_DEGREE_VELOCITY = 3;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
-// set xwall specific parameters
-unsigned int const FE_DEGREE_XWALL = 1;
-unsigned int const N_Q_POINTS_1D_XWALL = 1;
-
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 3;
+unsigned int const REFINE_STEPS_SPACE_MIN = 4;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
@@ -52,9 +48,9 @@ const double VISCOSITY = V_0*L/Re;
 const double MAX_VELOCITY = V_0;
 const double CHARACTERISTIC_TIME = L/V_0;
 
-std::string OUTPUT_FOLDER = "output/taylor_green_vortex/coupled_solver_BDF2_monolithic/divergence_formulation/";
+std::string OUTPUT_FOLDER = "output/taylor_green_vortex/"; //"output/taylor_green_vortex/coupled_solver_BDF2_monolithic/divergence_formulation/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "Re1600_N8_k9_CFL_0-15_div_normal_conti_penalty_1-0";
+std::string OUTPUT_NAME = "test"; //"Re1600_N8_k9_CFL_0-15_div_normal_conti_penalty_1-0";
 
 enum class MeshType{ Cartesian, Curvilinear };
 const MeshType MESH_TYPE = MeshType::Cartesian;
@@ -80,12 +76,12 @@ void InputParameters<dim>::set_input_parameters()
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit; //Implicit;
   time_integrator_oif = TimeIntegratorOIF::ExplRK2Stage2;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
   max_velocity = MAX_VELOCITY;
-  cfl_oif = 0.15; //0.125;
+  cfl_oif = 0.5; //0.2; //0.125;
   cfl = cfl_oif * 1.0;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-3; // 1.0e-4;
@@ -93,13 +89,17 @@ void InputParameters<dim>::set_input_parameters()
   order_time_integrator = 2; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
 
+  // NUMERICAL PARAMETERS
+  implement_block_diagonal_preconditioner_matrix_free = true;
+  use_cell_based_face_loops = false;
 
   // SPATIAL DISCRETIZATION
 
   // spatial discretization method
   spatial_discretization = SpatialDiscretization::DG;
 
-  // convective term - currently no parameters
+  // convective term
+  upwind_factor = 0.5;
 
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
@@ -122,10 +122,9 @@ void InputParameters<dim>::set_input_parameters()
   divergence_penalty_factor = 1.0e0;
   use_continuity_penalty = true;
   continuity_penalty_factor = divergence_penalty_factor;
-  continuity_penalty_use_boundary_data = false;
   continuity_penalty_components = ContinuityPenaltyComponents::Normal;
   type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
-  add_penalty_terms_to_monolithic_system = true;
+  add_penalty_terms_to_monolithic_system = false;
 
   // TURBULENCE
   use_turbulence_model = false;
@@ -152,7 +151,10 @@ void InputParameters<dim>::set_input_parameters()
 
   // projection step
   solver_projection = SolverProjection::PCG;
-  preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
+  preconditioner_projection = PreconditionerProjection::InverseMassMatrix; //BlockJacobi;
+  preconditioner_block_diagonal_projection = PreconditionerBlockDiagonal::InverseMassMatrix;
+  solver_data_block_diagonal_projection = SolverData(1000,1.e-12,1.e-2);
+  update_preconditioner_projection = true;
   abs_tol_projection = 1.e-12;
   rel_tol_projection = 1.e-6;
 
@@ -179,10 +181,14 @@ void InputParameters<dim>::set_input_parameters()
 
   // viscous step
   solver_viscous = SolverViscous::PCG;
-  preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; //GeometricMultigrid;
+  preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
+  multigrid_data_viscous.smoother = MultigridSmoother::Jacobi;
+  multigrid_data_viscous.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi;
+  multigrid_data_viscous.jacobi_smoother_data.damping_factor = 0.7;
   multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_viscous = 1.e-12;
   rel_tol_viscous = 1.e-6;
+  update_preconditioner_viscous = false;
 
   // PRESSURE-CORRECTION SCHEME
 
@@ -195,14 +201,15 @@ void InputParameters<dim>::set_input_parameters()
 
   // linear solver
   solver_momentum = SolverMomentum::GMRES;
-  preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; //VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
+  preconditioner_momentum = MomentumPreconditioner::VelocityDiffusion; //VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+
   abs_tol_momentum_linear = 1.e-12;
-  rel_tol_momentum_linear = 1.e-6;
+  rel_tol_momentum_linear = 1.e-2;
   max_iter_momentum_linear = 1e4;
   use_right_preconditioning_momentum = true;
   max_n_tmp_vectors_momentum = 100;
-  update_preconditioner_momentum = false;
+  update_preconditioner_momentum = true;
 
   // formulation
   order_pressure_extrapolation = order_time_integrator-1;
@@ -228,7 +235,7 @@ void InputParameters<dim>::set_input_parameters()
   preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::InverseMassMatrix; //VelocityDiffusion;
+  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion;
   multigrid_data_momentum_preconditioner.chebyshev_smoother_data.smoother_poly_degree = 5;
   multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
@@ -286,7 +293,7 @@ void InputParameters<dim>::set_input_parameters()
   kinetic_energy_spectrum_data.filename_prefix = OUTPUT_FOLDER + "spectrum";
 
   // output of solver information
-  output_solver_info_every_timesteps = 100; //1e5;
+  output_solver_info_every_timesteps = 1; //1e5;
 }
 
 /**************************************************************************************/
@@ -496,8 +503,8 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytica
 // Postprocessor
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
-template<int dim, typename Number>
-std::shared_ptr<PostProcessorBase<dim, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, Number> >
+template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
+std::shared_ptr<PostProcessorBase<dim, fe_degree_u, fe_degree_p, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -509,8 +516,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data.kinetic_energy_data = param.kinetic_energy_data;
   pp_data.kinetic_energy_spectrum_data = param.kinetic_energy_spectrum_data;
 
-  std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number> > pp;
-  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number>(pp_data));
+  std::shared_ptr<PostProcessor<dim,fe_degree_u,fe_degree_p,Number> > pp;
+  pp.reset(new PostProcessor<dim,fe_degree_u,fe_degree_p,Number>(pp_data));
 
   return pp;
 }

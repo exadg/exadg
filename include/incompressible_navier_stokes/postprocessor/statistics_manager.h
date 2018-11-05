@@ -3,7 +3,8 @@
 #define __indexa_statistics_manager_h
 
 #include <deal.II/lac/parallel_vector.h>
-#include "../../incompressible_navier_stokes/infrastructure/fe_parameters.h"
+
+#include "../../incompressible_navier_stokes/user_interface/input_parameters.h"
 
 using namespace IncNS;
 
@@ -31,11 +32,12 @@ public:
   void
   evaluate(const std::vector<VectorType> & velocity);
 
-  void
-  evaluate_xwall(const VectorType &        velocity,
-                 const DoFHandler<dim> &   dof_handler_wdist,
-                 const FEParameters<dim> & fe_param,
-                 const double              viscosity);
+  // TODO
+  //  void
+  //  evaluate_xwall(const VectorType &        velocity,
+  //                 const DoFHandler<dim> &   dof_handler_wdist,
+  //                 const FEParameters<dim> & fe_param,
+  //                 const double              viscosity);
 
   void
   write_output(const std::string output_prefix,
@@ -52,11 +54,12 @@ private:
   void
   do_evaluate(const std::vector<const VectorType *> & velocity);
 
-  void
-  do_evaluate_xwall(const std::vector<const VectorType *> & velocity,
-                    const DoFHandler<dim> &                 dof_handler_wdist,
-                    const FEParameters<dim> &               fe_param,
-                    const double                            viscosity);
+  // TODO
+  //  void
+  //  do_evaluate_xwall(const std::vector<const VectorType *> & velocity,
+  //                    const DoFHandler<dim> &                 dof_handler_wdist,
+  //                    const FEParameters<dim> &               fe_param,
+  //                    const double                            viscosity);
 
   const DoFHandler<dim> & dof_handler;
   const Mapping<dim> &    mapping;

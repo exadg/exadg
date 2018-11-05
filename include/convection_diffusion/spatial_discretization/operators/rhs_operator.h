@@ -21,21 +21,22 @@ struct RHSOperatorData
   std::shared_ptr<Function<dim>> rhs;
 };
 
-template<int dim, int fe_degree, typename value_type>
+template<int dim, int degree, typename Number>
 class RHSOperator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef RHSOperator<dim, fe_degree, value_type> This;
+  typedef VectorizedArray<Number> scalar;
+
+  typedef RHSOperator<dim, degree, Number> This;
 
   RHSOperator() : data(nullptr), eval_time(0.0)
   {
   }
 
   void
-  initialize(MatrixFree<dim, value_type> const & mf_data,
-             RHSOperatorData<dim> const &        operator_data_in)
+  initialize(MatrixFree<dim, Number> const & mf_data, RHSOperatorData<dim> const & operator_data_in)
   {
     this->data          = &mf_data;
     this->operator_data = operator_data_in;
@@ -65,9 +66,9 @@ private:
   {
     for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
     {
-      Point<dim, VectorizedArray<value_type>> q_points = fe_eval.quadrature_point(q);
+      Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
 
-      VectorizedArray<value_type> rhs = make_vectorized_array<value_type>(0.0);
+      scalar rhs = make_vectorized_array<Number>(0.0);
       evaluate_scalar_function(rhs, operator_data.rhs, q_points, eval_time);
 
       fe_eval.submit_value(rhs, q);
@@ -76,14 +77,14 @@ private:
   }
 
   void
-  cell_loop(MatrixFree<dim, value_type> const & data,
-            VectorType &                        dst,
+  cell_loop(MatrixFree<dim, Number> const & data,
+            VectorType &                    dst,
             VectorType const & /*src*/,
             std::pair<unsigned int, unsigned int> const & cell_range) const
   {
-    FEEvaluation<dim, fe_degree, fe_degree + 1, 1, value_type> fe_eval(data,
-                                                                       operator_data.dof_index,
-                                                                       operator_data.quad_index);
+    FEEvaluation<dim, degree, degree + 1, 1, Number> fe_eval(data,
+                                                             operator_data.dof_index,
+                                                             operator_data.quad_index);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -95,7 +96,7 @@ private:
     }
   }
 
-  MatrixFree<dim, value_type> const * data;
+  MatrixFree<dim, Number> const * data;
 
   RHSOperatorData<dim> operator_data;
 

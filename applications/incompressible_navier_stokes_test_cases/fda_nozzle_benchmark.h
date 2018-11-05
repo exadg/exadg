@@ -28,10 +28,6 @@ unsigned int const DIMENSION = 3;
 unsigned int const FE_DEGREE_VELOCITY = 3;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
-// set xwall specific parameters
-unsigned int const FE_DEGREE_XWALL = 1;
-unsigned int const N_Q_POINTS_1D_XWALL = 1;
-
 // set the number of refine levels for DOMAIN 1
 unsigned int const REFINE_STEPS_SPACE_DOMAIN1 = 1; //4;
 
@@ -1348,11 +1344,11 @@ struct PostProcessorDataFDA
   LinePlotData<dim> line_plot_data;
 };
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-class PostProcessorFDA : public PostProcessor<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
+template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
+class PostProcessorFDA : public PostProcessor<dim, fe_degree_u, fe_degree_p, Number>
 {
 public:
-  typedef PostProcessor<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> Base;
+  typedef PostProcessor<dim, fe_degree_u, fe_degree_p, Number> Base;
 
   typedef typename Base::NavierStokesOperator NavierStokesOperator;
 
@@ -1455,8 +1451,8 @@ private:
   std::shared_ptr<LinePlotCalculatorStatistics<dim> > line_plot_calculator_statistics;
 };
 
-template<int dim, typename Number>
-std::shared_ptr<PostProcessorBase<dim, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, Number> >
+template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
+std::shared_ptr<PostProcessorBase<dim, fe_degree_u, fe_degree_p, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   // basic modules
@@ -1474,8 +1470,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data_fda.mean_velocity_data = param.mean_velocity_data;
   pp_data_fda.line_plot_data = param.line_plot_data;
 
-  std::shared_ptr<PostProcessorFDA<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number> > pp;
-  pp.reset(new PostProcessorFDA<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number>(pp_data_fda));
+  std::shared_ptr<PostProcessorFDA<dim,fe_degree_u,fe_degree_p,Number> > pp;
+  pp.reset(new PostProcessorFDA<dim,fe_degree_u,fe_degree_p,Number>(pp_data_fda));
 
   return pp;
 }

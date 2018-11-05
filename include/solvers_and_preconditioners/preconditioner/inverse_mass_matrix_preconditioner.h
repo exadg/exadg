@@ -1,5 +1,5 @@
 /*
- * InverseMassMatrixPreconditioner.h
+ * inverse_mass_matrix_preconditioner.h
  *
  *  Created on: Nov 23, 2016
  *      Author: fehn
@@ -14,15 +14,15 @@
 #include "operators/inverse_mass_matrix.h"
 #include "operators/matrix_operator_base.h"
 
-template<int dim, int fe_degree, typename value_type, int n_components = dim>
-class InverseMassMatrixPreconditioner : public PreconditionerBase<value_type>
+template<int dim, int degree, typename Number, int n_components>
+class InverseMassMatrixPreconditioner : public PreconditionerBase<Number>
 {
 public:
-  typedef typename PreconditionerBase<value_type>::VectorType VectorType;
+  typedef typename PreconditionerBase<Number>::VectorType VectorType;
 
-  InverseMassMatrixPreconditioner(MatrixFree<dim, value_type> const & mf_data,
-                                  unsigned int const                  dof_index,
-                                  unsigned int const                  quad_index)
+  InverseMassMatrixPreconditioner(MatrixFree<dim, Number> const & mf_data,
+                                  unsigned int const              dof_index,
+                                  unsigned int const              quad_index)
   {
     inverse_mass_matrix_operator.initialize(mf_data, dof_index, quad_index);
   }
@@ -36,39 +36,11 @@ public:
   void
   update(MatrixOperatorBase const * /*matrix_operator*/)
   {
-  } // do nothing
-
-private:
-  InverseMassMatrixOperator<dim, fe_degree, value_type, n_components> inverse_mass_matrix_operator;
-};
-
-template<int dim, int fe_degree, typename value_type, int n_components = dim>
-class InverseMassMatrixPreconditionerPtr : public PreconditionerBase<value_type>
-{
-public:
-  typedef typename PreconditionerBase<value_type>::VectorType VectorType;
-
-  InverseMassMatrixPreconditionerPtr(
-    std::shared_ptr<InverseMassMatrixOperator<dim, fe_degree, value_type, n_components>>
-      inv_mass_operator)
-    : inverse_mass_matrix_operator(inv_mass_operator)
-  {
+    // do nothing
   }
 
-  void
-  vmult(VectorType & dst, VectorType const & src) const
-  {
-    inverse_mass_matrix_operator->apply_inverse_mass_matrix(dst, src);
-  }
-
-  void
-  update(MatrixOperatorBase const * /*matrix_operator*/)
-  {
-  } // do nothing
-
 private:
-  std::shared_ptr<InverseMassMatrixOperator<dim, fe_degree, value_type, n_components>>
-    inverse_mass_matrix_operator;
+  InverseMassMatrixOperator<dim, degree, Number, n_components> inverse_mass_matrix_operator;
 };
 
 

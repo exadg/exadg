@@ -28,10 +28,6 @@ unsigned int const DIMENSION = 3;
 unsigned int const FE_DEGREE_VELOCITY = 3;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY - 1;
 
-// set xwall specific parameters
-unsigned int const FE_DEGREE_XWALL = 1;
-unsigned int const N_Q_POINTS_1D_XWALL = 1;
-
 // set the number of refine levels for spatial convergence tests
 unsigned int const REFINE_STEPS_SPACE_MIN = 3;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
@@ -730,11 +726,13 @@ struct PostProcessorDataTurbulentChannel
   TurbulentChannelData turb_ch_data;
 };
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-class PostProcessorTurbulentChannel : public PostProcessor<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
+template<int dim, int degree_u, int degree_p, typename Number>
+class PostProcessorTurbulentChannel : public PostProcessor<dim, degree_u, degree_p, Number>
 {
 public:
-  typedef PostProcessor<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> Base;
+  typedef PostProcessor<dim, degree_u, degree_p, Number> Base;
+
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef typename Base::NavierStokesOperator NavierStokesOperator;
 
@@ -767,11 +765,11 @@ public:
     statistics_turb_ch->setup(&grid_transform_y,turb_ch_data);
   }
 
-  void do_postprocessing(parallel::distributed::Vector<Number> const   &velocity,
-                         parallel::distributed::Vector<Number> const   &intermediate_velocity,
-                         parallel::distributed::Vector<Number> const   &pressure,
-                         double const                                  time,
-                         int const                                     time_step_number)
+  void do_postprocessing(VectorType const &velocity,
+                         VectorType const &intermediate_velocity,
+                         VectorType const &pressure,
+                         double const     time,
+                         int const        time_step_number)
   {
     Base::do_postprocessing(
 	      velocity,
@@ -787,8 +785,8 @@ public:
   std::shared_ptr<StatisticsManager<dim> > statistics_turb_ch;
 };
 
-template<int dim, typename Number>
-std::shared_ptr<PostProcessorBase<dim, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, Number> >
+template<int dim, int degree_u, int degree_p, typename Number>
+std::shared_ptr<PostProcessorBase<dim, degree_u, degree_p, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -802,8 +800,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data_turb_ch.pp_data = pp_data;
   pp_data_turb_ch.turb_ch_data = param.turb_ch_data;
 
-  std::shared_ptr<PostProcessorBase<dim, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, Number> > pp;
-  pp.reset(new PostProcessorTurbulentChannel<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number>(pp_data_turb_ch));
+  std::shared_ptr<PostProcessorBase<dim,degree_u,degree_p,Number> > pp;
+  pp.reset(new PostProcessorTurbulentChannel<dim,degree_u,degree_p,Number>(pp_data_turb_ch));
 
   return pp;
 }

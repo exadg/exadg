@@ -18,7 +18,7 @@
 
 using namespace dealii;
 
-template<int dim, typename BoundaryDescriptor>
+template<int dim>
 struct OperatorBaseData
 {
   OperatorBaseData(const unsigned int dof_index,
@@ -101,8 +101,6 @@ struct OperatorBaseData
   UpdateFlags mapping_update_flags_inner_faces;
   UpdateFlags mapping_update_flags_boundary_faces;
 
-  std::shared_ptr<BoundaryDescriptor> bc;
-
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_face_pairs_level0;
 
@@ -125,7 +123,6 @@ public:
 #endif
 
   typedef std::vector<LAPACKFullMatrix<Number>>                BlockMatrix;
-  typedef MatrixFree<dim, Number>                              MatrixFree_;
   typedef std::pair<unsigned int, unsigned int>                Range;
   typedef FEEvaluation<dim, degree, degree + 1, 1, Number>     FEEvalCell;
   typedef FEFaceEvaluation<dim, degree, degree + 1, 1, Number> FEEvalFace;
@@ -146,10 +143,10 @@ public:
    * initialized for level -1, i.e. the finest grid.
    */
   void
-  reinit(MatrixFree_ const &      matrix_free,
-         ConstraintMatrix const & constraint_matrix,
-         AdditionalData const &   operator_data,
-         unsigned int             level_mg_handler = numbers::invalid_unsigned_int) const;
+  reinit(MatrixFree<dim, Number> const & matrix_free,
+         ConstraintMatrix const &        constraint_matrix,
+         AdditionalData const &          operator_data,
+         unsigned int                    level_mg_handler = numbers::invalid_unsigned_int) const;
 
   virtual void
   reinit(DoFHandler<dim> const &   dof_handler,
@@ -240,18 +237,12 @@ public:
   // apply block diagonal elementwise: matrix-free implementation
   void
   apply_add_block_diagonal_elementwise(unsigned int const                    cell,
-                                       FEEvalCell &                          fe_eval,
-                                       FEEvalFace &                          fe_eval_m,
-                                       FEEvalFace &                          fe_eval_p,
                                        VectorizedArray<Number> * const       dst,
                                        VectorizedArray<Number> const * const src) const;
 
   // apply block diagonal elementwise: matrix-free implementation
   void
   apply_add_block_diagonal_elementwise(unsigned int const                    cell,
-                                       FEEvalCell &                          fe_eval,
-                                       FEEvalFace &                          fe_eval_m,
-                                       FEEvalFace &                          fe_eval_p,
                                        VectorizedArray<Number> * const       dst,
                                        VectorizedArray<Number> const * const src,
                                        Number const                          evaluation_time) const;
@@ -408,7 +399,7 @@ protected:
   /*
    * Matrix-free object.
    */
-  mutable lazy_ptr<MatrixFree_> data;
+  mutable lazy_ptr<MatrixFree<dim, Number>> data;
 
   /*
    * Evaluation time (required for time-dependent problems).
@@ -436,7 +427,7 @@ private:
    * This function loops over all cells and calculates cell integrals.
    */
   void
-  cell_loop(MatrixFree_ const & /*data*/,
+  cell_loop(MatrixFree<dim, Number> const & /*data*/,
             VectorType &       dst,
             VectorType const & src,
             Range const &      range) const;
@@ -445,7 +436,7 @@ private:
    * This function loops over all interior faces and calculates face integrals.
    */
   void
-  face_loop(MatrixFree_ const & /*data*/,
+  face_loop(MatrixFree<dim, Number> const & /*data*/,
             VectorType &       dst,
             VectorType const & src,
             Range const &      range) const;
@@ -458,21 +449,21 @@ private:
 
   // homogeneous operator
   void
-  boundary_face_loop_hom_operator(MatrixFree_ const & /*data*/,
+  boundary_face_loop_hom_operator(MatrixFree<dim, Number> const & /*data*/,
                                   VectorType & /*dst*/,
                                   VectorType const & /*src*/,
                                   Range const & /*range*/) const;
 
   // inhomogeneous operator
   void
-  boundary_face_loop_inhom_operator(MatrixFree_ const & /*data*/,
+  boundary_face_loop_inhom_operator(MatrixFree<dim, Number> const & /*data*/,
                                     VectorType & /*dst*/,
                                     VectorType const & /*src*/,
                                     Range const & /*range*/) const;
 
   // full operator
   void
-  boundary_face_loop_full_operator(MatrixFree_ const & /*data*/,
+  boundary_face_loop_full_operator(MatrixFree<dim, Number> const & /*data*/,
                                    VectorType & /*dst*/,
                                    VectorType const & /*src*/,
                                    Range const & /*range*/) const;
@@ -483,7 +474,7 @@ private:
    * integrals only. Hence we have to provide empty functions for cell and interior face integrals.
    */
   void
-  cell_loop_empty(MatrixFree_ const & /*data*/,
+  cell_loop_empty(MatrixFree<dim, Number> const & /*data*/,
                   VectorType & /*dst*/,
                   VectorType const & /*src*/,
                   Range const & /*range*/) const
@@ -492,7 +483,7 @@ private:
   }
 
   void
-  face_loop_empty(MatrixFree_ const & /*data*/,
+  face_loop_empty(MatrixFree<dim, Number> const & /*data*/,
                   VectorType & /*dst*/,
                   VectorType const & /*src*/,
                   Range const & /*range*/) const
@@ -504,25 +495,25 @@ private:
    * Calculate diagonal.
    */
   void
-  cell_loop_diagonal(MatrixFree_ const & /*data*/,
+  cell_loop_diagonal(MatrixFree<dim, Number> const & /*data*/,
                      VectorType & dst,
                      VectorType const & /*src*/,
                      Range const & range) const;
 
   void
-  face_loop_diagonal(MatrixFree_ const & /*data*/,
+  face_loop_diagonal(MatrixFree<dim, Number> const & /*data*/,
                      VectorType & dst,
                      VectorType const & /*src*/,
                      Range const & range) const;
 
   void
-  boundary_face_loop_diagonal(MatrixFree_ const & /*data*/,
+  boundary_face_loop_diagonal(MatrixFree<dim, Number> const & /*data*/,
                               VectorType & dst,
                               VectorType const & /*src*/,
                               Range const & range) const;
 
   void
-  cell_based_loop_diagonal(MatrixFree_ const & /*data*/,
+  cell_based_loop_diagonal(MatrixFree<dim, Number> const & /*data*/,
                            VectorType & dst,
                            VectorType const & /*src*/,
                            Range const & range) const;
@@ -531,27 +522,27 @@ private:
    * Calculate (assemble) block diagonal.
    */
   void
-  cell_loop_block_diagonal(MatrixFree_ const & data,
-                           BlockMatrix &       matrices,
+  cell_loop_block_diagonal(MatrixFree<dim, Number> const & data,
+                           BlockMatrix &                   matrices,
                            BlockMatrix const & /*src*/,
                            Range const & range) const;
 
   void
-  face_loop_block_diagonal(MatrixFree_ const & data,
-                           BlockMatrix &       matrices,
+  face_loop_block_diagonal(MatrixFree<dim, Number> const & data,
+                           BlockMatrix &                   matrices,
                            BlockMatrix const & /*src*/,
                            Range const & range) const;
 
   void
-  boundary_face_loop_block_diagonal(MatrixFree_ const & data,
-                                    BlockMatrix &       matrices,
+  boundary_face_loop_block_diagonal(MatrixFree<dim, Number> const & data,
+                                    BlockMatrix &                   matrices,
                                     BlockMatrix const & /*src*/,
                                     Range const & range) const;
 
   // cell-based variant for computation of both cell and face integrals
   void
-  cell_based_loop_block_diagonal(MatrixFree_ const & data,
-                                 BlockMatrix &       matrices,
+  cell_based_loop_block_diagonal(MatrixFree<dim, Number> const & data,
+                                 BlockMatrix &                   matrices,
                                  BlockMatrix const & /*src*/,
                                  Range const & range) const;
 
@@ -560,7 +551,7 @@ private:
    * Apply block diagonal.
    */
   void
-  cell_loop_apply_block_diagonal_matrix_based(MatrixFree_ const & /*data*/,
+  cell_loop_apply_block_diagonal_matrix_based(MatrixFree<dim, Number> const & /*data*/,
                                               VectorType &       dst,
                                               VectorType const & src,
                                               Range const &      range) const;
@@ -572,29 +563,29 @@ private:
    * should have already been performed with the method update_inverse_block_diagonal())
    */
   void
-  cell_loop_apply_inverse_block_diagonal(MatrixFree_ const & data,
-                                         VectorType &        dst,
-                                         VectorType const &  src,
-                                         Range const &       cell_range) const;
+  cell_loop_apply_inverse_block_diagonal(MatrixFree<dim, Number> const & data,
+                                         VectorType &                    dst,
+                                         VectorType const &              src,
+                                         Range const &                   cell_range) const;
 
 #ifdef DEAL_II_WITH_TRILINOS
   /*
    * Calculate sparse matrix.
    */
   void
-  cell_loop_calculate_system_matrix(MatrixFree_ const & /*data*/,
+  cell_loop_calculate_system_matrix(MatrixFree<dim, Number> const & /*data*/,
                                     SparseMatrix & dst,
                                     SparseMatrix const & /*src*/,
                                     Range const & range) const;
 
   void
-  face_loop_calculate_system_matrix(MatrixFree_ const & /*data*/,
+  face_loop_calculate_system_matrix(MatrixFree<dim, Number> const & /*data*/,
                                     SparseMatrix & dst,
                                     SparseMatrix const & /*src*/,
                                     Range const & range) const;
 
   void
-  boundary_face_loop_calculate_system_matrix(MatrixFree_ const & /*data*/,
+  boundary_face_loop_calculate_system_matrix(MatrixFree<dim, Number> const & /*data*/,
                                              SparseMatrix & /*dst*/,
                                              SparseMatrix const & /*src*/,
                                              Range const & /*range*/) const;
@@ -653,9 +644,10 @@ private:
    *  to be implemented by derived classes and can not be implemented in the abstract base class.
    */
   virtual void
-  do_verify_boundary_conditions(types::boundary_id const             boundary_id,
-                                AdditionalData const &               operator_data,
-                                std::set<types::boundary_id> const & periodic_boundary_ids) const
+  do_verify_boundary_conditions(
+    types::boundary_id const /* boundary_id */,
+    AdditionalData const & /* operator_data */,
+    std::set<types::boundary_id> const & /* periodic_boundary_ids */) const
   {
     AssertThrow(
       false,
@@ -703,8 +695,13 @@ private:
   mutable bool block_diagonal_preconditioner_is_initialized;
 
   unsigned int n_mpi_processes;
+
+  // FEEvaluation objects required for elementwise application of block Jacobi operation
+  mutable std::shared_ptr<FEEvalCell> fe_eval;
+  mutable std::shared_ptr<FEEvalFace> fe_eval_m;
+  mutable std::shared_ptr<FEEvalFace> fe_eval_p;
 };
 
-#include "operation_base.cpp"
+#include "operator_base.cpp"
 
 #endif

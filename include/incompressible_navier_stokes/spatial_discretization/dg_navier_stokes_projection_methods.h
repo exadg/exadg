@@ -16,17 +16,11 @@ namespace IncNS
  * Base class for projection type splitting methods such as the high-order dual splitting scheme
  * (velocity-correction) or pressure correction schemes
  */
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
-class DGNavierStokesProjectionMethods
-  : public DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
+template<int dim, int degree_u, int degree_p, typename Number>
+class DGNavierStokesProjectionMethods : public DGNavierStokesBase<dim, degree_u, degree_p, Number>
 {
 public:
-  typedef DGNavierStokesBase<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule> BASE;
+  typedef DGNavierStokesBase<dim, degree_u, degree_p, Number> BASE;
 
   typedef typename BASE::VectorType VectorType;
 
@@ -37,7 +31,7 @@ public:
                                   std::shared_ptr<Postprocessor> postprocessor_in)
     : BASE(triangulation, parameters_in, postprocessor_in)
   {
-    AssertThrow(fe_degree_p > 0,
+    AssertThrow(degree_p > 0,
                 ExcMessage("Polynomial degree of pressure shape functions has to be larger than "
                            "zero for dual splitting scheme and pressure-correction scheme."));
   }
@@ -96,26 +90,17 @@ protected:
   setup_pressure_poisson_solver(double const time_step_size);
 
   // Pressure Poisson equation
-  Poisson::LaplaceOperator<dim, fe_degree_p, Number> laplace_operator;
+  Poisson::LaplaceOperator<dim, degree_p, Number> laplace_operator;
 
   std::shared_ptr<PreconditionerBase<Number>> preconditioner_pressure_poisson;
 
   std::shared_ptr<IterativeSolverBase<VectorType>> pressure_poisson_solver;
 };
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesProjectionMethods<dim,
-                                fe_degree,
-                                fe_degree_p,
-                                fe_degree_xwall,
-                                xwall_quad_rule,
-                                Number>::setup_pressure_poisson_solver(double const time_step_size)
+DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::setup_pressure_poisson_solver(
+  double const time_step_size)
 {
   // setup Laplace operator
   Poisson::LaplaceOperatorData<dim> laplace_operator_data;
@@ -163,8 +148,7 @@ DGNavierStokesProjectionMethods<dim,
   if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Jacobi)
   {
     preconditioner_pressure_poisson.reset(
-      new JacobiPreconditioner<Poisson::LaplaceOperator<dim, fe_degree_p, Number>>(
-        laplace_operator));
+      new JacobiPreconditioner<Poisson::LaplaceOperator<dim, degree_p, Number>>(laplace_operator));
   }
   else if(this->param.preconditioner_pressure_poisson ==
           PreconditionerPressurePoisson::GeometricMultigrid)
@@ -177,7 +161,7 @@ DGNavierStokesProjectionMethods<dim,
 
     typedef MyMultigridPreconditionerDG<dim,
                                         Number,
-                                        Poisson::LaplaceOperator<dim, fe_degree_p, MultigridNumber>>
+                                        Poisson::LaplaceOperator<dim, degree_p, MultigridNumber>>
       MULTIGRID;
 
     preconditioner_pressure_poisson.reset(new MULTIGRID());
@@ -218,7 +202,7 @@ DGNavierStokesProjectionMethods<dim,
 
     // setup solver
     pressure_poisson_solver.reset(
-      new CGSolver<Poisson::LaplaceOperator<dim, fe_degree_p, Number>,
+      new CGSolver<Poisson::LaplaceOperator<dim, degree_p, Number>,
                    PreconditionerBase<Number>,
                    VectorType>(laplace_operator, *preconditioner_pressure_poisson, solver_data));
   }
@@ -238,12 +222,11 @@ DGNavierStokesProjectionMethods<dim,
       solver_data.use_preconditioner = true;
     }
 
-    pressure_poisson_solver.reset(
-      new FGMRESSolver<Poisson::LaplaceOperator<dim, fe_degree_p, Number>,
-                       PreconditionerBase<Number>,
-                       VectorType>(laplace_operator,
-                                   *preconditioner_pressure_poisson,
-                                   solver_data));
+    pressure_poisson_solver.reset(new FGMRESSolver<Poisson::LaplaceOperator<dim, degree_p, Number>,
+                                                   PreconditionerBase<Number>,
+                                                   VectorType>(laplace_operator,
+                                                               *preconditioner_pressure_poisson,
+                                                               solver_data));
   }
   else
   {
@@ -255,105 +238,58 @@ DGNavierStokesProjectionMethods<dim,
   }
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesProjectionMethods<dim,
-                                fe_degree,
-                                fe_degree_p,
-                                fe_degree_xwall,
-                                xwall_quad_rule,
-                                Number>::evaluate_velocity_divergence_term(VectorType &       dst,
-                                                                           VectorType const & src,
-                                                                           double const
-                                                                             evaluation_time) const
+DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::evaluate_velocity_divergence_term(
+  VectorType &       dst,
+  VectorType const & src,
+  double const       evaluation_time) const
 {
   this->divergence_operator.evaluate(dst, src, evaluation_time);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesProjectionMethods<dim,
-                                fe_degree,
-                                fe_degree_p,
-                                fe_degree_xwall,
-                                xwall_quad_rule,
-                                Number>::evaluate_pressure_gradient_term(VectorType &       dst,
-                                                                         VectorType const & src,
-                                                                         double const
-                                                                           evaluation_time) const
+DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::evaluate_pressure_gradient_term(
+  VectorType &       dst,
+  VectorType const & src,
+  double const       evaluation_time) const
 {
   this->gradient_operator.evaluate(dst, src, evaluation_time);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesProjectionMethods<dim,
-                                fe_degree,
-                                fe_degree_p,
-                                fe_degree_xwall,
-                                xwall_quad_rule,
-                                Number>::rhs_add_viscous_term(VectorType & dst,
-                                                              double const evaluation_time) const
+DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::rhs_add_viscous_term(
+  VectorType & dst,
+  double const evaluation_time) const
 {
   this->viscous_operator.rhs_add(dst, evaluation_time);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesProjectionMethods<dim,
-                                fe_degree,
-                                fe_degree_p,
-                                fe_degree_xwall,
-                                xwall_quad_rule,
-                                Number>::rhs_ppe_laplace_add(VectorType &   dst,
-                                                             double const & evaluation_time) const
+DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::rhs_ppe_laplace_add(
+  VectorType &   dst,
+  double const & evaluation_time) const
 {
   this->laplace_operator.rhs_add(dst, evaluation_time);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 unsigned int
-DGNavierStokesProjectionMethods<dim,
-                                fe_degree,
-                                fe_degree_p,
-                                fe_degree_xwall,
-                                xwall_quad_rule,
-                                Number>::solve_pressure(VectorType &       dst,
-                                                        VectorType const & src) const
+DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::solve_pressure(
+  VectorType &       dst,
+  VectorType const & src) const
 {
   //  typedef float MultigridNumber;
   //  typedef MyMultigridPreconditionerLaplace<dim, Number,
-  //      LaplaceOperator<dim, fe_degree_p, MultigridNumber>, LaplaceOperatorData<dim> > MULTIGRID;
+  //      LaplaceOperator<dim, degree_p, MultigridNumber>, LaplaceOperatorData<dim> > MULTIGRID;
   //
   //  std::shared_ptr<MULTIGRID> mg_preconditioner
   //    = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
   //
-  //  CheckMultigrid<dim,Number,LaplaceOperator<dim,fe_degree_p, Number>,MULTIGRID>
+  //  CheckMultigrid<dim,Number,LaplaceOperator<dim,degree_p, Number>,MULTIGRID>
   //    check_multigrid(this->laplace_operator,mg_preconditioner);
   //  check_multigrid.check();
 
@@ -363,72 +299,35 @@ DGNavierStokesProjectionMethods<dim,
 }
 
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesProjectionMethods<dim,
-                                fe_degree,
-                                fe_degree_p,
-                                fe_degree_xwall,
-                                xwall_quad_rule,
-                                Number>::apply_laplace_operator(VectorType &       dst,
-                                                                VectorType const & src) const
+DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::apply_laplace_operator(
+  VectorType &       dst,
+  VectorType const & src) const
 {
   this->laplace_operator.vmult(dst, src);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesProjectionMethods<dim,
-                                fe_degree,
-                                fe_degree_p,
-                                fe_degree_xwall,
-                                xwall_quad_rule,
-                                Number>::apply_projection_operator(VectorType &       dst,
-                                                                   VectorType const & src) const
+DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::apply_projection_operator(
+  VectorType &       dst,
+  VectorType const & src) const
 {
-  typedef CombinedDivergenceContinuityPenaltyOperator<dim,
-                                                      fe_degree,
-                                                      fe_degree_p,
-                                                      fe_degree_xwall,
-                                                      xwall_quad_rule,
-                                                      Number>
-    PROJ_OPERATOR;
+  AssertThrow(this->projection_operator.get() != 0,
+              ExcMessage("Projection operator is not initialized correctly."));
 
-  std::shared_ptr<PROJ_OPERATOR> proj_op =
-    std::dynamic_pointer_cast<PROJ_OPERATOR>(this->projection_operator);
-  AssertThrow(proj_op.get() != 0, ExcMessage("Projection operator is not initialized correctly."));
-
-  proj_op->vmult(dst, src);
+  this->projection_operator->vmult(dst, src);
 }
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number>
+template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesProjectionMethods<
-  dim,
-  fe_degree,
-  fe_degree_p,
-  fe_degree_xwall,
-  xwall_quad_rule,
-  Number>::evaluate_nonlinear_residual_steady(VectorType &       dst_u,
-                                              VectorType &       dst_p,
-                                              VectorType const & src_u,
-                                              VectorType const & src_p,
-                                              double const &     evaluation_time)
+DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::
+  evaluate_nonlinear_residual_steady(VectorType &       dst_u,
+                                     VectorType &       dst_p,
+                                     VectorType const & src_u,
+                                     VectorType const & src_p,
+                                     double const &     evaluation_time)
 {
   // velocity-block
 

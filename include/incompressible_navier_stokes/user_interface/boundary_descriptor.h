@@ -20,17 +20,18 @@ namespace IncNS
  *
  *   Boundary conditions:
  *
- *        example          |          velocity         |               pressure
- *   ----------------------+---------------------------+------------------------------------------------
- *        inflow, no-slip  |   Dirichlet:              |  Neumann:
- *                         | prescribe g_u             | prescribe dg_u/dt in case of dual-splitting
- *   ----------------------+---------------------------+------------------------------------------------
- *        symmetry         |   Symmetry:               |  Neumann:
- *                         | no BCs to be prescribed   | prescribe dg_u/dt=0 in case of dual-splitting
- *   ----------------------+---------------------------+------------------------------------------------
- *        outflow          |   Neumann:                |  Dirichlet:
- *                         | prescribe grad(u)*n       | prescribe g_p
- *   ----------------------+---------------------------+------------------------------------------------
+ *   +----------------------+---------------------------+------------------------------------------------+
+ *   |     example          |          velocity         |               pressure                         |
+ *   +----------------------+---------------------------+------------------------------------------------+
+ *   |     inflow, no-slip  |   Dirichlet:              |  Neumann:                                      |
+ *   |                      | prescribe g_u             | prescribe dg_u/dt in case of dual-splitting    |
+ *   +----------------------+---------------------------+------------------------------------------------+
+ *   |     symmetry         |   Symmetry:               |  Neumann:                                      |
+ *   |                      | no BCs to be prescribed   | prescribe dg_u/dt=0 in case of dual-splitting  |
+ *   +----------------------+---------------------------+------------------------------------------------+
+ *   |     outflow          |   Neumann:                |  Dirichlet:                                    |
+ *   |                      | prescribe grad(u)*n       | prescribe g_p                                  |
+ *   +----------------------+---------------------------+------------------------------------------------+
  *
  *
  */
@@ -65,6 +66,24 @@ struct BoundaryDescriptorU
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> symmetry_bc;
 
   // add more types of boundary conditions
+
+
+  // return the boundary type
+  inline DEAL_II_ALWAYS_INLINE //
+    BoundaryTypeU
+    get_boundary_type(types::boundary_id const & boundary_id) const
+  {
+    if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
+      return BoundaryTypeU::Dirichlet;
+    else if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
+      return BoundaryTypeU::Neumann;
+    else if(this->symmetry_bc.find(boundary_id) != this->symmetry_bc.end())
+      return BoundaryTypeU::Symmetry;
+
+    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+
+    return BoundaryTypeU::Undefined;
+  }
 };
 
 template<int dim>
@@ -80,6 +99,24 @@ struct BoundaryDescriptorP
   // homogeneous NBC also for higher-order formulations).
   // BUT: Use Function<dim> to store boundary condition du/dt in case of dual splitting scheme.
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
+
+  // add more types of boundary conditions
+
+
+  // return the boundary type
+  inline DEAL_II_ALWAYS_INLINE //
+    BoundaryTypeP
+    get_boundary_type(types::boundary_id const & boundary_id) const
+  {
+    if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
+      return BoundaryTypeP::Dirichlet;
+    else if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
+      return BoundaryTypeP::Neumann;
+
+    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+
+    return BoundaryTypeP::Undefined;
+  }
 };
 
 

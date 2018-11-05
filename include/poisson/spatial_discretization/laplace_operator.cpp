@@ -14,8 +14,7 @@ LaplaceOperator<dim, degree, Number>::LaplaceOperator()
 template<int dim, int fe_degree, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
-  LaplaceOperator<dim, fe_degree, Number>::calculate_value_flux(
-    VectorizedArray<Number> const & jump_value) const
+  LaplaceOperator<dim, fe_degree, Number>::calculate_value_flux(scalar const & jump_value) const
 {
   return -0.5 * jump_value;
 }
@@ -28,7 +27,7 @@ inline DEAL_II_ALWAYS_INLINE //
     FEEvalFace const &   fe_eval,
     OperatorType const & operator_type) const
 {
-  VectorizedArray<Number> value_m = make_vectorized_array<Number>(0.0);
+  scalar value_m = make_vectorized_array<Number>(0.0);
 
   if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
   {
@@ -50,23 +49,23 @@ template<int dim, int fe_degree, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
   LaplaceOperator<dim, fe_degree, Number>::calculate_exterior_value(
-    VectorizedArray<Number> const & value_m,
-    unsigned int const              q,
-    FEEvalFace const &              fe_eval,
-    OperatorType const &            operator_type,
-    BoundaryType const &            boundary_type,
-    types::boundary_id const        boundary_id) const
+    scalar const &           value_m,
+    unsigned int const       q,
+    FEEvalFace const &       fe_eval,
+    OperatorType const &     operator_type,
+    BoundaryType const &     boundary_type,
+    types::boundary_id const boundary_id) const
 {
-  VectorizedArray<Number> value_p = make_vectorized_array<Number>(0.0);
+  scalar value_p = make_vectorized_array<Number>(0.0);
 
   if(boundary_type == BoundaryType::dirichlet)
   {
     if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
     {
-      VectorizedArray<Number> g = make_vectorized_array<Number>(0.0);
+      scalar g = make_vectorized_array<Number>(0.0);
       typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-      it = this->operator_data.bc->dirichlet_bc.find(boundary_id);
-      Point<dim, VectorizedArray<Number>> q_points = fe_eval.quadrature_point(q);
+      it                          = this->operator_data.bc->dirichlet_bc.find(boundary_id);
+      Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
       evaluate_scalar_function(g, it->second, q_points, this->eval_time);
 
       value_p = -value_m + 2.0 * g;
@@ -96,10 +95,10 @@ template<int dim, int fe_degree, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
   LaplaceOperator<dim, fe_degree, Number>::calculate_gradient_flux(
-    VectorizedArray<Number> const & normal_gradient_m,
-    VectorizedArray<Number> const & normal_gradient_p,
-    VectorizedArray<Number> const & jump_value,
-    VectorizedArray<Number> const & penalty_parameter) const
+    scalar const & normal_gradient_m,
+    scalar const & normal_gradient_p,
+    scalar const & jump_value,
+    scalar const & penalty_parameter) const
 {
   return 0.5 * (normal_gradient_m + normal_gradient_p) - penalty_parameter * jump_value;
 }
@@ -112,7 +111,7 @@ inline DEAL_II_ALWAYS_INLINE //
     FEEvalFace const &   fe_eval,
     OperatorType const & operator_type) const
 {
-  VectorizedArray<Number> normal_gradient_m = make_vectorized_array<Number>(0.0);
+  scalar normal_gradient_m = make_vectorized_array<Number>(0.0);
 
   if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
   {
@@ -134,14 +133,14 @@ template<int dim, int fe_degree, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
   LaplaceOperator<dim, fe_degree, Number>::calculate_exterior_normal_gradient(
-    VectorizedArray<Number> const & normal_gradient_m,
-    unsigned int const              q,
-    FEEvalFace const &              fe_eval,
-    OperatorType const &            operator_type,
-    BoundaryType const &            boundary_type,
-    types::boundary_id const        boundary_id) const
+    scalar const &           normal_gradient_m,
+    unsigned int const       q,
+    FEEvalFace const &       fe_eval,
+    OperatorType const &     operator_type,
+    BoundaryType const &     boundary_type,
+    types::boundary_id const boundary_id) const
 {
-  VectorizedArray<Number> normal_gradient_p = make_vectorized_array<Number>(0.0);
+  scalar normal_gradient_p = make_vectorized_array<Number>(0.0);
 
   if(boundary_type == BoundaryType::dirichlet)
   {
@@ -151,11 +150,11 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
     {
-      VectorizedArray<Number> h = make_vectorized_array<Number>(0.0);
+      scalar h = make_vectorized_array<Number>(0.0);
       typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
       it = this->operator_data.bc->neumann_bc.find(boundary_id);
 
-      Point<dim, VectorizedArray<Number>> q_points = fe_eval.quadrature_point(q);
+      Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
       evaluate_scalar_function(h, it->second, q_points, this->eval_time);
 
       normal_gradient_p = -normal_gradient_m + 2.0 * h;
@@ -278,7 +277,7 @@ LaplaceOperator<dim, fe_degree, value_type>::do_boundary_integral(
   OperatorType const &       operator_type,
   types::boundary_id const & boundary_id) const
 {
-  BoundaryType boundary_type = this->operator_data.get_boundary_type(boundary_id);
+  BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 
   VectorizedArray<value_type> tau_IP =
     fe_eval.read_cell_data(array_penalty_parameter) *

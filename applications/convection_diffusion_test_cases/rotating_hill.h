@@ -25,8 +25,8 @@ const unsigned int DIMENSION = 2;
 const unsigned int FE_DEGREE = 6;
 
 // set the number of refine levels for spatial convergence tests
-const unsigned int REFINE_STEPS_SPACE_MIN = 1;
-const unsigned int REFINE_STEPS_SPACE_MAX = 6;
+const unsigned int REFINE_STEPS_SPACE_MIN = 2;
+const unsigned int REFINE_STEPS_SPACE_MAX = 2;
 
 // set the number of refine levels for temporal convergence tests
 const unsigned int REFINE_STEPS_TIME_MIN = 0;

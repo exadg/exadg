@@ -1,28 +1,21 @@
 #ifndef LAPLACE_OPERATOR_H
 #define LAPLACE_OPERATOR_H
 
-#include "../../../include/operators/operation_base.h"
 #include "../../operators/interior_penalty_parameter.h"
-#include "../user_interface/boundary_descriptor.h"
-
+#include "../../operators/operator_base.h"
 #include "../../operators/operator_type.h"
+
+#include "../user_interface/boundary_descriptor.h"
 
 namespace Poisson
 {
-enum class BoundaryType
-{
-  undefined,
-  dirichlet,
-  neumann
-};
-
 template<int dim>
-struct LaplaceOperatorData : public OperatorBaseData<dim, BoundaryDescriptor<dim>>
+struct LaplaceOperatorData : public OperatorBaseData<dim>
 {
 public:
   LaplaceOperatorData()
     // clang-format off
-    : OperatorBaseData<dim, BoundaryDescriptor<dim>>(0, 0,
+    : OperatorBaseData<dim>(0, 0,
           false, true, false, false, true, false, // cell
           true,  true,        true,  true         // face
       ),
@@ -36,22 +29,9 @@ public:
       this->mapping_update_flags_inner_faces | update_quadrature_points;
   }
 
-
-  inline DEAL_II_ALWAYS_INLINE //
-    BoundaryType
-    get_boundary_type(types::boundary_id const & boundary_id) const
-  {
-    if(this->bc->dirichlet_bc.find(boundary_id) != this->bc->dirichlet_bc.end())
-      return BoundaryType::dirichlet;
-    else if(this->bc->neumann_bc.find(boundary_id) != this->bc->neumann_bc.end())
-      return BoundaryType::neumann;
-
-    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
-
-    return BoundaryType::undefined;
-  }
-
   double IP_factor;
+
+  std::shared_ptr<Poisson::BoundaryDescriptor<dim>> bc;
 };
 
 template<int dim, int degree, typename Number>
@@ -62,7 +42,10 @@ public:
   typedef OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>> Parent;
   typedef typename Parent::FEEvalCell                                 FEEvalCell;
   typedef typename Parent::FEEvalFace                                 FEEvalFace;
-  typedef typename Parent::VectorType                                 VectorType;
+
+  typedef typename Parent::VectorType VectorType;
+
+  typedef VectorizedArray<Number> scalar;
 
   // static constants
   static const int DIM = Parent::DIM;
@@ -117,45 +100,45 @@ public:
 
 private:
   inline DEAL_II_ALWAYS_INLINE //
-    VectorizedArray<Number>
-    calculate_value_flux(VectorizedArray<Number> const & jump_value) const;
+    scalar
+    calculate_value_flux(scalar const & jump_value) const;
 
   inline DEAL_II_ALWAYS_INLINE //
-    VectorizedArray<Number>
+    scalar
     calculate_interior_value(unsigned int const   q,
                              FEEvalFace const &   fe_eval,
                              OperatorType const & operator_type) const;
 
   inline DEAL_II_ALWAYS_INLINE //
-    VectorizedArray<Number>
-    calculate_exterior_value(VectorizedArray<Number> const & value_m,
-                             unsigned int const              q,
-                             FEEvalFace const &              fe_eval,
-                             OperatorType const &            operator_type,
-                             BoundaryType const &            boundary_type,
-                             types::boundary_id const        boundary_id) const;
+    scalar
+    calculate_exterior_value(scalar const &           value_m,
+                             unsigned int const       q,
+                             FEEvalFace const &       fe_eval,
+                             OperatorType const &     operator_type,
+                             BoundaryType const &     boundary_type,
+                             types::boundary_id const boundary_id) const;
 
   inline DEAL_II_ALWAYS_INLINE //
-    VectorizedArray<Number>
-    calculate_gradient_flux(VectorizedArray<Number> const & normal_gradient_m,
-                            VectorizedArray<Number> const & normal_gradient_p,
-                            VectorizedArray<Number> const & jump_value,
-                            VectorizedArray<Number> const & penalty_parameter) const;
+    scalar
+    calculate_gradient_flux(scalar const & normal_gradient_m,
+                            scalar const & normal_gradient_p,
+                            scalar const & jump_value,
+                            scalar const & penalty_parameter) const;
 
   inline DEAL_II_ALWAYS_INLINE //
-    VectorizedArray<Number>
+    scalar
     calculate_interior_normal_gradient(unsigned int const   q,
                                        FEEvalFace const &   fe_eval,
                                        OperatorType const & operator_type) const;
 
   inline DEAL_II_ALWAYS_INLINE //
-    VectorizedArray<Number>
-    calculate_exterior_normal_gradient(VectorizedArray<Number> const & normal_gradient_m,
-                                       unsigned int const              q,
-                                       FEEvalFace const &              fe_eval,
-                                       OperatorType const &            operator_type,
-                                       BoundaryType const &            boundary_type,
-                                       types::boundary_id const        boundary_id) const;
+    scalar
+    calculate_exterior_normal_gradient(scalar const &           normal_gradient_m,
+                                       unsigned int const       q,
+                                       FEEvalFace const &       fe_eval,
+                                       OperatorType const &     operator_type,
+                                       BoundaryType const &     boundary_type,
+                                       types::boundary_id const boundary_id) const;
 
   void
   do_cell_integral(FEEvalCell & fe_eval) const;
@@ -177,13 +160,13 @@ private:
   MultigridOperatorBase<dim, Number> *
   get_new(unsigned int deg) const;
 
-  virtual void
+  void
   do_verify_boundary_conditions(types::boundary_id const             boundary_id,
                                 LaplaceOperatorData<dim> const &     operator_data,
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
   // stores the penalty parameter of the interior penalty method for each cell
-  AlignedVector<VectorizedArray<Number>> array_penalty_parameter;
+  AlignedVector<scalar> array_penalty_parameter;
 };
 
 } // namespace Poisson

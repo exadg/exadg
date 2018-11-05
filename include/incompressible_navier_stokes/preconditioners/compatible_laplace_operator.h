@@ -12,7 +12,9 @@
 #include "../../operators/multigrid_operator_base.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
-#include "../spatial_discretization/navier_stokes_operators.h"
+
+#include "../spatial_discretization/operators/divergence_operator.h"
+#include "../spatial_discretization/operators/gradient_operator.h"
 
 namespace IncNS
 {
@@ -35,12 +37,7 @@ struct CompatibleLaplaceOperatorData
   unsigned int                underlying_operator_dof_index_velocity;
 };
 
-template<int dim,
-         int fe_degree,
-         int fe_degree_p,
-         int fe_degree_xwall,
-         int xwall_quad_rule,
-         typename Number = double>
+template<int dim, int fe_degree, int fe_degree_p, typename Number = double>
 class CompatibleLaplaceOperator : public MultigridOperatorBase<dim, Number>
 {
 public:
@@ -56,8 +53,8 @@ public:
   initialize(
       MatrixFree<dim,Number> const                                                                    &mf_data_in,
       CompatibleLaplaceOperatorData<dim> const                                                        &compatible_laplace_operator_data_in,
-      GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>  const  &gradient_operator_in,
-      DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> const &divergence_operator_in,
+      GradientOperator<dim, fe_degree, fe_degree_p, Number>  const  &gradient_operator_in,
+      DivergenceOperator<dim, fe_degree, fe_degree_p, Number> const &divergence_operator_in,
       InverseMassMatrixOperator<dim,fe_degree, Number> const                                          &inv_mass_matrix_operator_in);
   // clang-format on
 
@@ -229,21 +226,14 @@ public:
   {
     AssertThrow(deg == fe_degree_p, ExcMessage("Not compatible for p-GMG!"));
 
-    return new CompatibleLaplaceOperator<dim,
-                                         fe_degree,
-                                         fe_degree_p,
-                                         fe_degree_xwall,
-                                         xwall_quad_rule,
-                                         Number>();
+    return new CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>();
   }
 
 private:
-  MatrixFree<dim, Number> const * data;
-  GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> const *
-    gradient_operator;
+  MatrixFree<dim, Number> const *                               data;
+  GradientOperator<dim, fe_degree, fe_degree_p, Number> const * gradient_operator;
 
-  DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> const *
-    divergence_operator;
+  DivergenceOperator<dim, fe_degree, fe_degree_p, Number> const * divergence_operator;
 
   InverseMassMatrixOperator<dim, fe_degree, Number> const * inv_mass_matrix_operator;
 
@@ -262,11 +252,9 @@ private:
    */
   MatrixFree<dim, Number> own_matrix_free_storage;
 
-  GradientOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
-    own_gradient_operator_storage;
+  GradientOperator<dim, fe_degree, fe_degree_p, Number> own_gradient_operator_storage;
 
-  DivergenceOperator<dim, fe_degree, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
-    own_divergence_operator_storage;
+  DivergenceOperator<dim, fe_degree, fe_degree_p, Number> own_divergence_operator_storage;
 
   InverseMassMatrixOperator<dim, fe_degree, Number> own_inv_mass_matrix_operator_storage;
 

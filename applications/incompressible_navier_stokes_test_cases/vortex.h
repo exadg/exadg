@@ -27,24 +27,20 @@ unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
 unsigned int const FE_DEGREE_VELOCITY = 5;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
-
-// set xwall specific parameters
-unsigned int const FE_DEGREE_XWALL = 1;
-unsigned int const N_Q_POINTS_1D_XWALL = 1;
+unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 0;
-unsigned int const REFINE_STEPS_SPACE_MAX = 2; //REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 1;
+unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
-unsigned int const REFINE_STEPS_TIME_MAX = 0; //REFINE_STEPS_TIME_MIN;
+unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
 const double U_X_MAX = 1.0;
 const double VISCOSITY = 2.5e-2; //1.e-2; //2.5e-2;
-const FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::LaplaceFormulation; //LaplaceFormulation; //DivergenceFormulation;
+const FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::LaplaceFormulation;
 
 enum class MeshType{ UniformCartesian, ComplexSurfaceManifold, ComplexVolumeManifold };
 const MeshType MESH_TYPE = MeshType::UniformCartesian;
@@ -56,7 +52,7 @@ void InputParameters<dim>::set_input_parameters()
   problem_type = ProblemType::Unsteady;
   equation_type = EquationType::NavierStokes;
   formulation_viscous_term = FORMULATION_VISCOUS_TERM;
-  formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
+  formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
   right_hand_side = false;
 
 
@@ -68,19 +64,19 @@ void InputParameters<dim>::set_input_parameters()
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   time_integrator_oif = TimeIntegratorOIF::ExplRK2Stage2;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepMaxEfficiency; //ConstTimeStepUserSpecified; //ConstTimeStepCFL; //ConstTimeStepUserSpecified;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
   max_velocity = 1.4 * U_X_MAX;
-  cfl = 0.0625;
+  cfl = 0.1;
   cfl_oif = cfl/1.0;
   cfl_exponent_fe_degree_velocity = 1.5;
   c_eff = 8.0;
   time_step_size = 5.e-5; //1.e-1; //1.e-4;
   max_number_of_time_steps = 1e8;
   order_time_integrator = 2;
-  start_with_low_order = false; // true; // false;
+  start_with_low_order = false;
 
 
   // SPATIAL DISCRETIZATION
@@ -113,7 +109,7 @@ void InputParameters<dim>::set_input_parameters()
   continuity_penalty_components = ContinuityPenaltyComponents::Normal;
   continuity_penalty_factor = divergence_penalty_factor;
   type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
-  add_penalty_terms_to_monolithic_system = false; //true;
+  add_penalty_terms_to_monolithic_system = false;
 
   // TURBULENCE
   use_turbulence_model = false;
@@ -124,6 +120,9 @@ void InputParameters<dim>::set_input_parameters()
   // Sigma: 1.35
   turbulence_model_constant = 0.5;
 
+  // NUMERICAL PARAMETERS
+  implement_block_diagonal_preconditioner_matrix_free = true;
+  use_cell_based_face_loops = true;
 
   // PROJECTION METHODS
 
@@ -141,6 +140,8 @@ void InputParameters<dim>::set_input_parameters()
   // projection step
   solver_projection = SolverProjection::PCG;
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix; //None; //Jacobi; //InverseMassMatrix;
+  preconditioner_block_diagonal_projection = PreconditionerBlockDiagonal::InverseMassMatrix;
+  solver_data_block_diagonal_projection = SolverData(1000,1.e-12,1.e-2);
   abs_tol_projection = 1.e-12;
   rel_tol_projection = 1.e-12;
 
@@ -172,7 +173,7 @@ void InputParameters<dim>::set_input_parameters()
   multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_viscous = 1.e-12;
   rel_tol_viscous = 1.e-12;
-  update_preconditioner_viscous = false;
+  update_preconditioner_viscous = true;
 
 
   // PRESSURE-CORRECTION SCHEME
@@ -196,15 +197,19 @@ void InputParameters<dim>::set_input_parameters()
 
   // linear solver
   solver_momentum = SolverMomentum::GMRES;
-  preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; //PointJacobi; //VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
-//  multigrid_data_momentum.smoother = MultigridSmoother::Jacobi;
-//  multigrid_data_momentum.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi;
-//  multigrid_data_momentum.jacobi_smoother_data.number_of_smoothing_steps = 5;
-//  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner;
+  preconditioner_momentum = MomentumPreconditioner::BlockJacobi;
+  multigrid_data_momentum.smoother = MultigridSmoother::Jacobi;
 
-  multigrid_data_momentum.smoother = MultigridSmoother::Chebyshev;
-  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+  // Jacobi smoother data
+  multigrid_data_momentum.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi;
+  multigrid_data_momentum.jacobi_smoother_data.number_of_smoothing_steps = 5;
+  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner;
 
+  // Chebyshev smoother data
+//  multigrid_data_momentum.smoother = MultigridSmoother::Chebyshev;
+//  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+
+  // GMRES smoother data
 //    multigrid_data_momentum.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
 
 
@@ -227,20 +232,23 @@ void InputParameters<dim>::set_input_parameters()
 
   // preconditioning linear solver
   preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
-  update_preconditioner = false; //true;
+  update_preconditioner = true;
 
-  // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::InverseMassMatrix; //VelocityConvectionDiffusion; //InverseMassMatrix; //VelocityDiffusion;
-  multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::Chebyshev; //Jacobi; //Chebyshev; //GMRES;
+  // preconditioner momentum block
+  momentum_preconditioner = MomentumPreconditioner::InverseMassMatrix;
+  multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::GMRES; //Jacobi; //Jacobi; //Chebyshev; //GMRES;
 
   // Jacobi smoother data
   multigrid_data_momentum_preconditioner.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
   multigrid_data_momentum_preconditioner.jacobi_smoother_data.number_of_smoothing_steps = 5;
   multigrid_data_momentum_preconditioner.jacobi_smoother_data.damping_factor = 0.7;
-//  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner; //NoPreconditioner; //Chebyshev; //Chebyshev; //ChebyshevNonsymmetricOperator;
 
-  // Chebyshev smoother data
-  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+  // GMRES smoother data
+    multigrid_data_momentum.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
+
+  // coarse grid solver
+  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner;
+//  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
   exact_inversion_of_momentum_block = false;
   rel_tol_solver_momentum_preconditioner = 1.e-6;
@@ -730,8 +738,8 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytica
 
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
-template<int dim, typename Number>
-std::shared_ptr<PostProcessorBase<dim, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, Number> >
+template<int dim, int degree_u, int degree_p, typename Number>
+std::shared_ptr<PostProcessorBase<dim, degree_u, degree_p, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -742,8 +750,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data.pressure_difference_data = param.pressure_difference_data;
   pp_data.mass_data = param.mass_data;
 
-  std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number> > pp;
-  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number>(pp_data));
+  std::shared_ptr<PostProcessor<dim,degree_u,degree_p,Number> > pp;
+  pp.reset(new PostProcessor<dim,degree_u,degree_p,Number>(pp_data));
 
   return pp;
 }
