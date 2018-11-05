@@ -13,12 +13,14 @@
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_gmres.h>
 
-#include "../../incompressible_navier_stokes/spatial_discretization/navier_stokes_operators.h"
+#include "operators/convective_operator.h"
+#include "operators/mass_matrix_operator.h"
+#include "operators/viscous_operator.h"
+
 #include "../../operators/elementwise_operator.h"
 #include "../../operators/matrix_operator_base.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 #include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
-
 
 #include "../../operators/multigrid_operator_base.h"
 
@@ -27,9 +29,9 @@
 namespace IncNS
 {
 template<int dim>
-struct VelocityConvDiffOperatorData
+struct MomentumOperatorData
 {
-  VelocityConvDiffOperatorData()
+  MomentumOperatorData()
     : unsteady_problem(true),
       convective_problem(true),
       dof_index(0),
@@ -67,10 +69,10 @@ struct VelocityConvDiffOperatorData
 };
 
 template<int dim, int degree, typename Number = double>
-class VelocityConvDiffOperator : public MultigridOperatorBase<dim, Number>
+class MomentumOperator : public MultigridOperatorBase<dim, Number>
 {
 public:
-  typedef VelocityConvDiffOperator<dim, degree, Number> This;
+  typedef MomentumOperator<dim, degree, Number> This;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
@@ -79,15 +81,15 @@ public:
 
   typedef FEEvaluation<dim, degree, degree + 1, dim, Number> FEEval;
 
-  VelocityConvDiffOperator();
+  MomentumOperator();
 
-  virtual ~VelocityConvDiffOperator()
+  virtual ~MomentumOperator()
   {
   }
 
   void
   initialize(MatrixFree<dim, Number> const &                 data_in,
-             VelocityConvDiffOperatorData<dim> const &       operator_data_in,
+             MomentumOperatorData<dim> const &               operator_data_in,
              MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator_in,
              ViscousOperator<dim, degree, Number> const &    viscous_operator_in,
              ConvectiveOperator<dim, degree, Number> const & convective_operator_in);
@@ -149,7 +151,7 @@ public:
   /*
    *  Operator data
    */
-  VelocityConvDiffOperatorData<dim> const &
+  MomentumOperatorData<dim> const &
   get_operator_data() const;
 
   /*
@@ -282,7 +284,7 @@ private:
   virtual MultigridOperatorBase<dim, Number> *
   get_new(unsigned int deg) const;
 
-  VelocityConvDiffOperatorData<dim> operator_data;
+  MomentumOperatorData<dim> operator_data;
 
   MatrixFree<dim, Number> const * data;
 

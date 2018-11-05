@@ -9,9 +9,7 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_DUAL_SPLITTING_H_
 
 #include "dg_navier_stokes_projection_methods.h"
-#include "pressure_neumann_bc_convective_term.h"
-#include "pressure_neumann_bc_viscous_term.h"
-#include "velocity_divergence_convective_term.h"
+#include "dual_splitting_boundary_conditions.h"
 
 namespace IncNS
 {
@@ -23,6 +21,9 @@ public:
   typedef DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number> PROJECTION_METHODS_BASE;
 
   typedef typename PROJECTION_METHODS_BASE::VectorType VectorType;
+
+  typedef VectorizedArray<Number>                 scalar;
+  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
 
   typedef typename PROJECTION_METHODS_BASE::Postprocessor Postprocessor;
 
@@ -210,7 +211,7 @@ private:
 
 
   // Helmholtz
-  VelocityConvDiffOperator<dim, degree_u, Number> helmholtz_operator;
+  MomentumOperator<dim, degree_u, Number> helmholtz_operator;
 
   std::shared_ptr<PreconditionerBase<Number>> helmholtz_preconditioner;
 
@@ -221,7 +222,7 @@ private:
   VectorType const * sum_alphai_ui;
 
   // implicit solution of convective step
-  std::shared_ptr<InverseMassMatrixPreconditioner<dim, degree_u, Number>>
+  std::shared_ptr<InverseMassMatrixPreconditioner<dim, degree_u, Number, dim>>
     preconditioner_convective_problem;
 
   std::shared_ptr<IterativeSolverBase<VectorType>> linear_solver;
@@ -275,7 +276,7 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::setup_convective_s
 
   // preconditioner implicit convective step
   preconditioner_convective_problem.reset(
-    new InverseMassMatrixPreconditioner<dim, degree_u, Number>(
+    new InverseMassMatrixPreconditioner<dim, degree_u, Number, dim>(
       this->data, this->get_dof_index_velocity(), this->get_quad_index_velocity_linear()));
 
   // linear solver (GMRES)
@@ -291,7 +292,7 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::setup_convective_s
 
   // setup linear solver
   linear_solver.reset(
-    new GMRESSolver<THIS, InverseMassMatrixPreconditioner<dim, degree_u, Number>, VectorType>(
+    new GMRESSolver<THIS, InverseMassMatrixPreconditioner<dim, degree_u, Number, dim>, VectorType>(
       *this, *preconditioner_convective_problem, solver_data));
 
   // setup Newton solver
@@ -346,30 +347,29 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::setup_helmholtz_so
   // 1. Setup Helmholtz operator
 
   // setup velocity convection-diffusion operator
-  VelocityConvDiffOperatorData<dim> vel_conv_diff_operator_data;
+  MomentumOperatorData<dim> momentum_operator_data;
 
   // unsteady problem
-  vel_conv_diff_operator_data.unsteady_problem = true;
+  momentum_operator_data.unsteady_problem = true;
 
-  vel_conv_diff_operator_data.scaling_factor_time_derivative_term =
-    scaling_factor_time_derivative_term;
+  momentum_operator_data.scaling_factor_time_derivative_term = scaling_factor_time_derivative_term;
 
   // convective problem = false (dual splitting scheme!)
-  vel_conv_diff_operator_data.convective_problem = false;
+  momentum_operator_data.convective_problem = false;
 
-  vel_conv_diff_operator_data.dof_index      = this->get_dof_index_velocity();
-  vel_conv_diff_operator_data.quad_index_std = this->get_quad_index_velocity_linear();
+  momentum_operator_data.dof_index      = this->get_dof_index_velocity();
+  momentum_operator_data.quad_index_std = this->get_quad_index_velocity_linear();
 
-  vel_conv_diff_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
-  vel_conv_diff_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+  momentum_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
+  momentum_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     this->param.implement_block_diagonal_preconditioner_matrix_free;
 
-  vel_conv_diff_operator_data.mass_matrix_operator_data = this->mass_matrix_operator_data;
-  vel_conv_diff_operator_data.viscous_operator_data     = this->viscous_operator_data;
-  vel_conv_diff_operator_data.convective_operator_data  = this->convective_operator_data;
+  momentum_operator_data.mass_matrix_operator_data = this->mass_matrix_operator_data;
+  momentum_operator_data.viscous_operator_data     = this->viscous_operator_data;
+  momentum_operator_data.convective_operator_data  = this->convective_operator_data;
 
   helmholtz_operator.initialize(this->get_data(),
-                                vel_conv_diff_operator_data,
+                                momentum_operator_data,
                                 this->mass_matrix_operator,
                                 this->viscous_operator,
                                 this->convective_operator);
@@ -378,20 +378,18 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::setup_helmholtz_so
 
   if(this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix)
   {
-    helmholtz_preconditioner.reset(new InverseMassMatrixPreconditioner<dim, degree_u, Number>(
+    helmholtz_preconditioner.reset(new InverseMassMatrixPreconditioner<dim, degree_u, Number, dim>(
       this->data, this->get_dof_index_velocity(), this->get_quad_index_velocity_linear()));
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi)
   {
     helmholtz_preconditioner.reset(
-      new JacobiPreconditioner<VelocityConvDiffOperator<dim, degree_u, Number>>(
-        helmholtz_operator));
+      new JacobiPreconditioner<MomentumOperator<dim, degree_u, Number>>(helmholtz_operator));
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi)
   {
     helmholtz_preconditioner.reset(
-      new BlockJacobiPreconditioner<VelocityConvDiffOperator<dim, degree_u, Number>>(
-        helmholtz_operator));
+      new BlockJacobiPreconditioner<MomentumOperator<dim, degree_u, Number>>(helmholtz_operator));
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
   {
@@ -404,8 +402,8 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::setup_helmholtz_so
     typedef MyMultigridPreconditionerVelocityDiffusion<
       dim,
       Number,
-      VelocityConvDiffOperator<dim, degree_u, MultigridNumber>,
-      VelocityConvDiffOperator<dim, degree_u, Number>>
+      MomentumOperator<dim, degree_u, MultigridNumber>,
+      MomentumOperator<dim, degree_u, Number>>
       MULTIGRID;
 
     helmholtz_preconditioner.reset(new MULTIGRID());
@@ -440,9 +438,8 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::setup_helmholtz_so
 
     // setup helmholtz solver
     helmholtz_solver.reset(
-      new CGSolver<VelocityConvDiffOperator<dim, degree_u, Number>,
-                   PreconditionerBase<Number>,
-                   VectorType>(helmholtz_operator, *helmholtz_preconditioner, solver_data));
+      new CGSolver<MomentumOperator<dim, degree_u, Number>, PreconditionerBase<Number>, VectorType>(
+        helmholtz_operator, *helmholtz_preconditioner, solver_data));
   }
   else if(this->param.solver_viscous == SolverViscous::GMRES)
   {
@@ -467,7 +464,7 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::setup_helmholtz_so
 
     // setup helmholtz solver
     helmholtz_solver.reset(
-      new GMRESSolver<VelocityConvDiffOperator<dim, degree_u, Number>,
+      new GMRESSolver<MomentumOperator<dim, degree_u, Number>,
                       PreconditionerBase<Number>,
                       VectorType>(helmholtz_operator, *helmholtz_preconditioner, solver_data));
   }
@@ -489,7 +486,7 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::setup_helmholtz_so
     }
 
     helmholtz_solver.reset(
-      new FGMRESSolver<VelocityConvDiffOperator<dim, degree_u, Number>,
+      new FGMRESSolver<MomentumOperator<dim, degree_u, Number>,
                        PreconditionerBase<Number>,
                        VectorType>(helmholtz_operator, *helmholtz_preconditioner, solver_data));
   }
@@ -678,42 +675,23 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::
   {
     fe_eval.reinit(face);
 
-    types::boundary_id boundary_id   = data.get_boundary_id(face);
-    BoundaryTypeU      boundary_type = BoundaryTypeU::Undefined;
-
-    if(this->boundary_descriptor_velocity->dirichlet_bc.find(boundary_id) !=
-       this->boundary_descriptor_velocity->dirichlet_bc.end())
-    {
-      boundary_type = BoundaryTypeU::Dirichlet;
-    }
-    else if(this->boundary_descriptor_velocity->neumann_bc.find(boundary_id) !=
-            this->boundary_descriptor_velocity->neumann_bc.end())
-    {
-      boundary_type = BoundaryTypeU::Neumann;
-    }
-    else if(this->boundary_descriptor_velocity->symmetry_bc.find(boundary_id) !=
-            this->boundary_descriptor_velocity->symmetry_bc.end())
-    {
-      boundary_type = BoundaryTypeU::Symmetry;
-    }
-
-    AssertThrow(boundary_type != BoundaryTypeU::Undefined,
-                ExcMessage("Boundary type of face is invalid or not implemented."));
+    BoundaryTypeU boundary_type =
+      this->boundary_descriptor_velocity->get_boundary_type(data.get_boundary_id(face));
 
     for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
     {
       if(boundary_type == BoundaryTypeU::Dirichlet)
       {
-        Point<dim, VectorizedArray<Number>> q_points = fe_eval.quadrature_point(q);
+        Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
 
         // evaluate right-hand side
-        Tensor<1, dim, VectorizedArray<Number>> rhs;
+        vector rhs;
         evaluate_vectorial_function(rhs,
                                     this->field_functions->right_hand_side,
                                     q_points,
                                     evaluation_time);
 
-        VectorizedArray<Number> flux_times_normal = rhs * fe_eval.get_normal_vector(q);
+        scalar flux_times_normal = rhs * fe_eval.get_normal_vector(q);
         // minus sign is introduced here which allows to call a function of type ...add()
         // and avoids a scaling of the resulting vector by the factor -1.0
         fe_eval.submit_value(-flux_times_normal, q);
@@ -728,7 +706,7 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::
         // to symmetry boundaries and using g_u*n=0 as well as exploiting symmetry, we obtain
         // g_{u_hat}*n=0 on symmetry boundaries. Hence, there are no inhomogeneous contributions for
         // g_{u_hat}*n.
-        VectorizedArray<Number> zero = make_vectorized_array<Number>(0.0);
+        scalar zero = make_vectorized_array<Number>(0.0);
         fe_eval.submit_value(zero, q);
       }
       else
@@ -808,54 +786,39 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::local_rhs_ppe_nbc_
   {
     fe_eval.reinit(face);
 
-    types::boundary_id boundary_id   = data.get_boundary_id(face);
-    BoundaryTypeP      boundary_type = BoundaryTypeP::Undefined;
-
-    if(this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id) !=
-       this->boundary_descriptor_pressure->dirichlet_bc.end())
-    {
-      boundary_type = BoundaryTypeP::Dirichlet;
-    }
-    else if(this->boundary_descriptor_pressure->neumann_bc.find(boundary_id) !=
-            this->boundary_descriptor_pressure->neumann_bc.end())
-    {
-      boundary_type = BoundaryTypeP::Neumann;
-    }
-
-    AssertThrow(boundary_type != BoundaryTypeP::Undefined,
-                ExcMessage("Boundary type of face is invalid or not implemented."));
+    types::boundary_id boundary_id = data.get_boundary_id(face);
+    BoundaryTypeP      boundary_type =
+      this->boundary_descriptor_pressure->get_boundary_type(boundary_id);
 
     for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
     {
       if(boundary_type == BoundaryTypeP::Neumann)
       {
-        Point<dim, VectorizedArray<Number>> q_points = fe_eval.quadrature_point(q);
+        Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
 
         // evaluate right-hand side
-        Tensor<1, dim, VectorizedArray<Number>> rhs;
+        vector rhs;
         evaluate_vectorial_function(rhs,
                                     this->field_functions->right_hand_side,
                                     q_points,
                                     evaluation_time);
 
         // evaluate boundary condition
-        Tensor<1, dim, VectorizedArray<Number>> dudt;
+        vector dudt;
 
         typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
         it = this->boundary_descriptor_pressure->neumann_bc.find(boundary_id);
         evaluate_vectorial_function(dudt, it->second, q_points, evaluation_time);
 
-        Tensor<1, dim, VectorizedArray<Number>> normal = fe_eval.get_normal_vector(q);
+        vector normal = fe_eval.get_normal_vector(q);
 
-        VectorizedArray<Number> h;
-
-        h = -normal * (dudt - rhs);
+        scalar h = -normal * (dudt - rhs);
 
         fe_eval.submit_value(h, q);
       }
       else if(boundary_type == BoundaryTypeP::Dirichlet)
       {
-        VectorizedArray<Number> zero = make_vectorized_array<Number>(0.0);
+        scalar zero = make_vectorized_array<Number>(0.0);
         fe_eval.submit_value(zero, q);
       }
       else

@@ -123,17 +123,17 @@ private:
   setup_inverse_mass_matrix_operator_pressure();
 
   // momentum equation
-  VelocityConvDiffOperator<dim, degree_u, Number> velocity_conv_diff_operator;
+  MomentumOperator<dim, degree_u, Number> momentum_operator;
 
   // required for multigrid (if multigrid is applied to HelmholtzOperator only)
-  VelocityConvDiffOperatorData<dim> multigrid_operator_data;
+  MomentumOperatorData<dim> multigrid_operator_data;
 
   std::shared_ptr<PreconditionerBase<Number>>      momentum_preconditioner;
   std::shared_ptr<IterativeSolverBase<VectorType>> momentum_linear_solver;
 
   std::shared_ptr<NewtonSolver<VectorType,
                                THIS,
-                               VelocityConvDiffOperator<dim, degree_u, Number>,
+                               MomentumOperator<dim, degree_u, Number>,
                                IterativeSolverBase<VectorType>>>
     momentum_newton_solver;
 
@@ -171,61 +171,58 @@ void
 DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::setup_momentum_solver(
   double const & scaling_factor_time_derivative_term)
 {
-  // setup velocity convection-diffusion operator
-  VelocityConvDiffOperatorData<dim> vel_conv_diff_operator_data;
+  // setup momentum operator
+  MomentumOperatorData<dim> momentum_operator_data;
 
   // unsteady problem
-  vel_conv_diff_operator_data.unsteady_problem = true;
+  momentum_operator_data.unsteady_problem = true;
 
-  vel_conv_diff_operator_data.scaling_factor_time_derivative_term =
-    scaling_factor_time_derivative_term;
+  momentum_operator_data.scaling_factor_time_derivative_term = scaling_factor_time_derivative_term;
 
   // convective problem
   if(this->param.equation_type == EquationType::NavierStokes &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
   {
-    vel_conv_diff_operator_data.convective_problem = true;
+    momentum_operator_data.convective_problem = true;
   }
   else
   {
-    vel_conv_diff_operator_data.convective_problem = false;
+    momentum_operator_data.convective_problem = false;
   }
 
-  vel_conv_diff_operator_data.dof_index      = this->get_dof_index_velocity();
-  vel_conv_diff_operator_data.quad_index_std = this->get_quad_index_velocity_linear();
+  momentum_operator_data.dof_index      = this->get_dof_index_velocity();
+  momentum_operator_data.quad_index_std = this->get_quad_index_velocity_linear();
 
-  vel_conv_diff_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
-  vel_conv_diff_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+  momentum_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
+  momentum_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     this->param.implement_block_diagonal_preconditioner_matrix_free;
 
-  vel_conv_diff_operator_data.mass_matrix_operator_data = this->mass_matrix_operator_data;
-  vel_conv_diff_operator_data.viscous_operator_data     = this->viscous_operator_data;
-  vel_conv_diff_operator_data.convective_operator_data  = this->convective_operator_data;
+  momentum_operator_data.mass_matrix_operator_data = this->mass_matrix_operator_data;
+  momentum_operator_data.viscous_operator_data     = this->viscous_operator_data;
+  momentum_operator_data.convective_operator_data  = this->convective_operator_data;
 
-  velocity_conv_diff_operator.initialize(this->get_data(),
-                                         vel_conv_diff_operator_data,
-                                         this->mass_matrix_operator,
-                                         this->viscous_operator,
-                                         this->convective_operator);
+  momentum_operator.initialize(this->get_data(),
+                               momentum_operator_data,
+                               this->mass_matrix_operator,
+                               this->viscous_operator,
+                               this->convective_operator);
 
 
   // setup preconditioner for momentum equation
   if(this->param.preconditioner_momentum == MomentumPreconditioner::InverseMassMatrix)
   {
-    momentum_preconditioner.reset(new InverseMassMatrixPreconditioner<dim, degree_u, Number>(
+    momentum_preconditioner.reset(new InverseMassMatrixPreconditioner<dim, degree_u, Number, dim>(
       this->data, this->get_dof_index_velocity(), this->get_quad_index_velocity_linear()));
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::PointJacobi)
   {
     momentum_preconditioner.reset(
-      new JacobiPreconditioner<VelocityConvDiffOperator<dim, degree_u, Number>>(
-        velocity_conv_diff_operator));
+      new JacobiPreconditioner<MomentumOperator<dim, degree_u, Number>>(momentum_operator));
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::BlockJacobi)
   {
     momentum_preconditioner.reset(
-      new BlockJacobiPreconditioner<VelocityConvDiffOperator<dim, degree_u, Number>>(
-        velocity_conv_diff_operator));
+      new BlockJacobiPreconditioner<MomentumOperator<dim, degree_u, Number>>(momentum_operator));
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::VelocityDiffusion)
   {
@@ -234,8 +231,8 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::setup_momentu
     typedef MyMultigridPreconditionerVelocityDiffusion<
       dim,
       Number,
-      VelocityConvDiffOperator<dim, degree_u, MultigridNumber>,
-      VelocityConvDiffOperator<dim, degree_u, Number>>
+      MomentumOperator<dim, degree_u, MultigridNumber>,
+      MomentumOperator<dim, degree_u, Number>>
       MULTIGRID;
 
     momentum_preconditioner.reset(new MULTIGRID());
@@ -243,17 +240,16 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::setup_momentu
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(momentum_preconditioner);
 
-    multigrid_operator_data = velocity_conv_diff_operator.get_operator_data();
+    multigrid_operator_data = momentum_operator.get_operator_data();
     // multgrid is only applied to reaction-diffusion operator so the convective term has to be
     // deactivated
     multigrid_operator_data.convective_problem = false;
 
-    mg_preconditioner->initialize(
-      this->param.multigrid_data_momentum,
-      this->dof_handler_u,
-      this->mapping,
-      /*velocity_conv_diff_operator.get_operator_data().bc->dirichlet_bc,*/
-      (void *)&multigrid_operator_data);
+    mg_preconditioner->initialize(this->param.multigrid_data_momentum,
+                                  this->dof_handler_u,
+                                  this->mapping,
+                                  /*momentum_operator.get_operator_data().bc->dirichlet_bc,*/
+                                  (void *)&multigrid_operator_data);
   }
   else if(this->param.preconditioner_momentum ==
           MomentumPreconditioner::VelocityConvectionDiffusion)
@@ -263,8 +259,8 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::setup_momentu
     typedef MyMultigridPreconditionerVelocityConvectionDiffusion<
       dim,
       Number,
-      VelocityConvDiffOperator<dim, degree_u, MultigridNumber>,
-      VelocityConvDiffOperator<dim, degree_u, Number>>
+      MomentumOperator<dim, degree_u, MultigridNumber>,
+      MomentumOperator<dim, degree_u, Number>>
       MULTIGRID;
 
     momentum_preconditioner.reset(new MULTIGRID());
@@ -272,12 +268,11 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::setup_momentu
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(momentum_preconditioner);
 
-    mg_preconditioner->initialize(
-      this->param.multigrid_data_momentum,
-      this->get_dof_handler_u(),
-      this->get_mapping(),
-      /*velocity_conv_diff_operator.get_operator_data().bc->dirichlet_bc,*/
-      (void *)&velocity_conv_diff_operator.get_operator_data());
+    mg_preconditioner->initialize(this->param.multigrid_data_momentum,
+                                  this->get_dof_handler_u(),
+                                  this->get_mapping(),
+                                  /*momentum_operator.get_operator_data().bc->dirichlet_bc,*/
+                                  (void *)&momentum_operator.get_operator_data());
   }
 
   // setup linear solver for momentum equation
@@ -301,9 +296,8 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::setup_momentu
 
     // setup solver
     momentum_linear_solver.reset(
-      new CGSolver<VelocityConvDiffOperator<dim, degree_u, Number>,
-                   PreconditionerBase<Number>,
-                   VectorType>(velocity_conv_diff_operator, *momentum_preconditioner, solver_data));
+      new CGSolver<MomentumOperator<dim, degree_u, Number>, PreconditionerBase<Number>, VectorType>(
+        momentum_operator, *momentum_preconditioner, solver_data));
   }
   else if(this->param.solver_momentum == SolverMomentum::GMRES)
   {
@@ -327,11 +321,10 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::setup_momentu
     solver_data.update_preconditioner = this->param.update_preconditioner_momentum;
 
     // setup solver
-    momentum_linear_solver.reset(new GMRESSolver<VelocityConvDiffOperator<dim, degree_u, Number>,
-                                                 PreconditionerBase<Number>,
-                                                 VectorType>(velocity_conv_diff_operator,
-                                                             *momentum_preconditioner,
-                                                             solver_data));
+    momentum_linear_solver.reset(
+      new GMRESSolver<MomentumOperator<dim, degree_u, Number>,
+                      PreconditionerBase<Number>,
+                      VectorType>(momentum_operator, *momentum_preconditioner, solver_data));
   }
   else if(this->param.solver_momentum == SolverMomentum::FGMRES)
   {
@@ -351,11 +344,10 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::setup_momentu
     }
     solver_data.update_preconditioner = this->param.update_preconditioner_momentum;
 
-    momentum_linear_solver.reset(new FGMRESSolver<VelocityConvDiffOperator<dim, degree_u, Number>,
-                                                  PreconditionerBase<Number>,
-                                                  VectorType>(velocity_conv_diff_operator,
-                                                              *momentum_preconditioner,
-                                                              solver_data));
+    momentum_linear_solver.reset(
+      new FGMRESSolver<MomentumOperator<dim, degree_u, Number>,
+                       PreconditionerBase<Number>,
+                       VectorType>(momentum_operator, *momentum_preconditioner, solver_data));
   }
   else
   {
@@ -375,14 +367,11 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::setup_momentu
     this->initialize_vector_velocity(temp_vector);
 
     // setup Newton solver
-    momentum_newton_solver.reset(
-      new NewtonSolver<VectorType,
-                       THIS,
-                       VelocityConvDiffOperator<dim, degree_u, Number>,
-                       IterativeSolverBase<VectorType>>(this->param.newton_solver_data_momentum,
-                                                        *this,
-                                                        velocity_conv_diff_operator,
-                                                        *momentum_linear_solver));
+    momentum_newton_solver.reset(new NewtonSolver<VectorType,
+                                                  THIS,
+                                                  MomentumOperator<dim, degree_u, Number>,
+                                                  IterativeSolverBase<VectorType>>(
+      this->param.newton_solver_data_momentum, *this, momentum_operator, *momentum_linear_solver));
   }
 }
 
@@ -406,13 +395,12 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::solve_linear_
   double const &     scaling_factor_mass_matrix_term,
   unsigned int &     linear_iterations)
 {
-  // Set scaling_factor_time_derivative_term for linear operator (=velocity_conv_diff_operator).
-  velocity_conv_diff_operator.set_scaling_factor_time_derivative_term(
-    scaling_factor_mass_matrix_term);
+  // Set scaling_factor_time_derivative_term for linear operator (=momentum_operator).
+  momentum_operator.set_scaling_factor_time_derivative_term(scaling_factor_mass_matrix_term);
 
-  // Note that there is no need to set the evaluation time for the velocity_conv_diff_operator
+  // Note that there is no need to set the evaluation time for the momentum_operator
   // in this because because this function is only called if the convective term is not considered
-  // in the velocity_conv_diff_operator (Stokes eq. or explicit treatment of convective term).
+  // in the momentum_operator (Stokes eq. or explicit treatment of convective term).
 
   linear_iterations = momentum_linear_solver->solve(solution, rhs);
 }
@@ -445,11 +433,10 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::
   // Set scaling_time_derivative_term for nonlinear operator (=DGNavierStokesPressureCorrection)
   scaling_factor_time_derivative_term = scaling_factor_mass_matrix_term;
 
-  // Set correct evaluation time for linear operator (=velocity_conv_diff_operator).
-  velocity_conv_diff_operator.set_evaluation_time(eval_time);
-  // Set scaling_factor_time_derivative_term for linear operator (=velocity_conv_diff_operator).
-  velocity_conv_diff_operator.set_scaling_factor_time_derivative_term(
-    scaling_factor_mass_matrix_term);
+  // Set correct evaluation time for linear operator (=momentum_operator).
+  momentum_operator.set_evaluation_time(eval_time);
+  // Set scaling_factor_time_derivative_term for linear operator (=momentum_operator).
+  momentum_operator.set_scaling_factor_time_derivative_term(scaling_factor_mass_matrix_term);
 
   // Solve nonlinear problem
   momentum_newton_solver->solve(dst, newton_iterations, linear_iterations);
@@ -490,8 +477,8 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::
                                     VectorType const & src,
                                     VectorType const & solution_linearization)
 {
-  velocity_conv_diff_operator.set_solution_linearization(solution_linearization);
-  velocity_conv_diff_operator.vmult(dst, src);
+  momentum_operator.set_solution_linearization(solution_linearization);
+  momentum_operator.vmult(dst, src);
 }
 
 

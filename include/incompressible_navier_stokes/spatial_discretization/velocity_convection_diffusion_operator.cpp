@@ -7,7 +7,7 @@
 namespace IncNS
 {
 template<int dim, int degree, typename Number>
-VelocityConvDiffOperator<dim, degree, Number>::VelocityConvDiffOperator()
+MomentumOperator<dim, degree, Number>::MomentumOperator()
   : data(nullptr),
     mass_matrix_operator(nullptr),
     viscous_operator(nullptr),
@@ -20,9 +20,9 @@ VelocityConvDiffOperator<dim, degree, Number>::VelocityConvDiffOperator()
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::initialize(
+MomentumOperator<dim, degree, Number>::initialize(
   MatrixFree<dim, Number> const &                 data_in,
-  VelocityConvDiffOperatorData<dim> const &       operator_data_in,
+  MomentumOperatorData<dim> const &               operator_data_in,
   MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator_in,
   ViscousOperator<dim, degree, Number> const &    viscous_operator_in,
   ConvectiveOperator<dim, degree, Number> const & convective_operator_in)
@@ -40,14 +40,13 @@ VelocityConvDiffOperator<dim, degree, Number>::initialize(
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::reinit(
-  const DoFHandler<dim> & dof_handler,
-  const Mapping<dim> &    mapping,
-  void *                  operator_data_in,
-  const MGConstrainedDoFs & /*mg_constrained_dofs*/,
-  const unsigned int level)
+MomentumOperator<dim, degree, Number>::reinit(const DoFHandler<dim> & dof_handler,
+                                              const Mapping<dim> &    mapping,
+                                              void *                  operator_data_in,
+                                              const MGConstrainedDoFs & /*mg_constrained_dofs*/,
+                                              const unsigned int level)
 {
-  auto operator_data = *static_cast<VelocityConvDiffOperatorData<dim> *>(operator_data_in);
+  auto operator_data = *static_cast<MomentumOperatorData<dim> *>(operator_data_in);
 
   // setup own matrix free object
 
@@ -147,7 +146,7 @@ VelocityConvDiffOperator<dim, degree, Number>::reinit(
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::set_scaling_factor_time_derivative_term(
+MomentumOperator<dim, degree, Number>::set_scaling_factor_time_derivative_term(
   double const & factor)
 {
   this->scaling_factor_time_derivative_term = factor;
@@ -155,14 +154,14 @@ VelocityConvDiffOperator<dim, degree, Number>::set_scaling_factor_time_derivativ
 
 template<int dim, int degree, typename Number>
 double
-VelocityConvDiffOperator<dim, degree, Number>::get_scaling_factor_time_derivative_term() const
+MomentumOperator<dim, degree, Number>::get_scaling_factor_time_derivative_term() const
 {
   return this->scaling_factor_time_derivative_term;
 }
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::set_solution_linearization(
+MomentumOperator<dim, degree, Number>::set_solution_linearization(
   VectorType const & solution_linearization) const
 {
   if(operator_data.convective_problem == true)
@@ -173,7 +172,7 @@ VelocityConvDiffOperator<dim, degree, Number>::set_solution_linearization(
 
 template<int dim, int degree, typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-VelocityConvDiffOperator<dim, degree, Number>::get_solution_linearization() const
+MomentumOperator<dim, degree, Number>::get_solution_linearization() const
 {
   AssertThrow(operator_data.convective_problem == true,
               ExcMessage(
@@ -184,73 +183,72 @@ VelocityConvDiffOperator<dim, degree, Number>::get_solution_linearization() cons
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::set_evaluation_time(
-  double const & evaluation_time_in)
+MomentumOperator<dim, degree, Number>::set_evaluation_time(double const & evaluation_time_in)
 {
   evaluation_time = evaluation_time_in;
 }
 
 template<int dim, int degree, typename Number>
 double
-VelocityConvDiffOperator<dim, degree, Number>::get_evaluation_time() const
+MomentumOperator<dim, degree, Number>::get_evaluation_time() const
 {
   return evaluation_time;
 }
 
 template<int dim, int degree, typename Number>
-VelocityConvDiffOperatorData<dim> const &
-VelocityConvDiffOperator<dim, degree, Number>::get_operator_data() const
+MomentumOperatorData<dim> const &
+MomentumOperator<dim, degree, Number>::get_operator_data() const
 {
   return this->operator_data;
 }
 
 template<int dim, int degree, typename Number>
 MassMatrixOperatorData const &
-VelocityConvDiffOperator<dim, degree, Number>::get_mass_matrix_operator_data() const
+MomentumOperator<dim, degree, Number>::get_mass_matrix_operator_data() const
 {
   return mass_matrix_operator->get_operator_data();
 }
 
 template<int dim, int degree, typename Number>
 ConvectiveOperatorData<dim> const &
-VelocityConvDiffOperator<dim, degree, Number>::get_convective_operator_data() const
+MomentumOperator<dim, degree, Number>::get_convective_operator_data() const
 {
   return convective_operator->get_operator_data();
 }
 
 template<int dim, int degree, typename Number>
 ViscousOperatorData<dim> const &
-VelocityConvDiffOperator<dim, degree, Number>::get_viscous_operator_data() const
+MomentumOperator<dim, degree, Number>::get_viscous_operator_data() const
 {
   return viscous_operator->get_operator_data();
 }
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::vmult_interface_down(VectorType &       dst,
-                                                                    VectorType const & src) const
+MomentumOperator<dim, degree, Number>::vmult_interface_down(VectorType &       dst,
+                                                            VectorType const & src) const
 {
   vmult(dst, src);
 }
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::vmult_add_interface_up(VectorType &       dst,
-                                                                      VectorType const & src) const
+MomentumOperator<dim, degree, Number>::vmult_add_interface_up(VectorType &       dst,
+                                                              VectorType const & src) const
 {
   vmult_add(dst, src);
 }
 
 template<int dim, int degree, typename Number>
 types::global_dof_index
-VelocityConvDiffOperator<dim, degree, Number>::m() const
+MomentumOperator<dim, degree, Number>::m() const
 {
   return data->get_vector_partitioner(get_dof_index())->size();
 }
 
 template<int dim, int degree, typename Number>
 Number
-VelocityConvDiffOperator<dim, degree, Number>::el(const unsigned int, const unsigned int) const
+MomentumOperator<dim, degree, Number>::el(const unsigned int, const unsigned int) const
 {
   AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
   return Number();
@@ -258,14 +256,14 @@ VelocityConvDiffOperator<dim, degree, Number>::el(const unsigned int, const unsi
 
 template<int dim, int degree, typename Number>
 MatrixFree<dim, Number> const &
-VelocityConvDiffOperator<dim, degree, Number>::get_data() const
+MomentumOperator<dim, degree, Number>::get_data() const
 {
   return *data;
 }
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::vmult(VectorType & dst, VectorType const & src) const
+MomentumOperator<dim, degree, Number>::vmult(VectorType & dst, VectorType const & src) const
 {
   if(operator_data.unsteady_problem == true)
   {
@@ -292,15 +290,12 @@ VelocityConvDiffOperator<dim, degree, Number>::vmult(VectorType & dst, VectorTyp
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::vmult_add(VectorType &       dst,
-                                                         VectorType const & src) const
+MomentumOperator<dim, degree, Number>::vmult_add(VectorType & dst, VectorType const & src) const
 {
   if(operator_data.unsteady_problem == true)
   {
-    AssertThrow(
-      this->get_scaling_factor_time_derivative_term() > 0.0,
-      ExcMessage(
-        "Scaling factor of time derivative term has not been set for velocity convection-diffusion operator!"));
+    AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
+                ExcMessage("Scaling factor of time derivative term has not been set!"));
 
     mass_matrix_operator->apply(temp_vector, src);
     temp_vector *= this->get_scaling_factor_time_derivative_term();
@@ -318,15 +313,13 @@ VelocityConvDiffOperator<dim, degree, Number>::vmult_add(VectorType &       dst,
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::vmult_block_jacobi(VectorType &       dst,
-                                                                  VectorType const & src) const
+MomentumOperator<dim, degree, Number>::vmult_block_jacobi(VectorType &       dst,
+                                                          VectorType const & src) const
 {
   if(operator_data.unsteady_problem == true)
   {
-    AssertThrow(
-      this->get_scaling_factor_time_derivative_term() > 0.0,
-      ExcMessage(
-        "Scaling factor of time derivative term has not been set for velocity convection-diffusion operator!"));
+    AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
+                ExcMessage("Scaling factor of time derivative term has not been set!"));
 
     mass_matrix_operator->apply(dst, src);
     dst *= this->get_scaling_factor_time_derivative_term();
@@ -346,29 +339,28 @@ VelocityConvDiffOperator<dim, degree, Number>::vmult_block_jacobi(VectorType &  
 
 template<int dim, int degree, typename Number>
 unsigned int
-VelocityConvDiffOperator<dim, degree, Number>::get_dof_index() const
+MomentumOperator<dim, degree, Number>::get_dof_index() const
 {
   return operator_data.dof_index;
 }
 
 template<int dim, int degree, typename Number>
 unsigned int
-VelocityConvDiffOperator<dim, degree, Number>::get_quad_index() const
+MomentumOperator<dim, degree, Number>::get_quad_index() const
 {
   return operator_data.quad_index_std;
 }
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::initialize_dof_vector(VectorType & vector) const
+MomentumOperator<dim, degree, Number>::initialize_dof_vector(VectorType & vector) const
 {
   data->initialize_dof_vector(vector, get_dof_index());
 }
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::calculate_inverse_diagonal(
-  VectorType & diagonal) const
+MomentumOperator<dim, degree, Number>::calculate_inverse_diagonal(VectorType & diagonal) const
 {
   calculate_diagonal(diagonal);
 
@@ -379,14 +371,12 @@ VelocityConvDiffOperator<dim, degree, Number>::calculate_inverse_diagonal(
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::calculate_diagonal(VectorType & diagonal) const
+MomentumOperator<dim, degree, Number>::calculate_diagonal(VectorType & diagonal) const
 {
   if(operator_data.unsteady_problem == true)
   {
-    AssertThrow(
-      this->get_scaling_factor_time_derivative_term() > 0.0,
-      ExcMessage(
-        "Scaling factor of time derivative term has not been set for velocity convection-diffusion operator!"));
+    AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
+                ExcMessage("Scaling factor of time derivative term has not been set!"));
 
     mass_matrix_operator->calculate_diagonal(diagonal);
     diagonal *= this->get_scaling_factor_time_derivative_term();
@@ -406,8 +396,7 @@ VelocityConvDiffOperator<dim, degree, Number>::calculate_diagonal(VectorType & d
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::
-  initialize_block_diagonal_preconditioner_matrix_free() const
+MomentumOperator<dim, degree, Number>::initialize_block_diagonal_preconditioner_matrix_free() const
 {
   elementwise_operator.reset(new ELEMENTWISE_OPERATOR(*this));
 
@@ -445,7 +434,7 @@ VelocityConvDiffOperator<dim, degree, Number>::
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::update_block_diagonal_preconditioner() const
+MomentumOperator<dim, degree, Number>::update_block_diagonal_preconditioner() const
 {
   // initialization
 
@@ -487,9 +476,8 @@ VelocityConvDiffOperator<dim, degree, Number>::update_block_diagonal_preconditio
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::apply_inverse_block_diagonal(
-  VectorType &       dst,
-  VectorType const & src) const
+MomentumOperator<dim, degree, Number>::apply_inverse_block_diagonal(VectorType &       dst,
+                                                                    VectorType const & src) const
 {
   // matrix-free
   if(this->operator_data.implement_block_diagonal_preconditioner_matrix_free)
@@ -508,16 +496,14 @@ VelocityConvDiffOperator<dim, degree, Number>::apply_inverse_block_diagonal(
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::add_block_diagonal_matrices(
+MomentumOperator<dim, degree, Number>::add_block_diagonal_matrices(
   std::vector<LAPACKFullMatrix<value_type>> & matrices) const
 {
   // calculate block Jacobi matrices
   if(operator_data.unsteady_problem == true)
   {
-    AssertThrow(
-      this->get_scaling_factor_time_derivative_term() > 0.0,
-      ExcMessage(
-        "Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
+    AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
+                ExcMessage("Scaling factor of time derivative term has not been set!"));
 
     mass_matrix_operator->add_block_diagonal_matrices(matrices);
 
@@ -539,7 +525,7 @@ VelocityConvDiffOperator<dim, degree, Number>::add_block_diagonal_matrices(
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::apply_add_block_diagonal_elementwise(
+MomentumOperator<dim, degree, Number>::apply_add_block_diagonal_elementwise(
   unsigned int const                    cell,
   VectorizedArray<Number> * const       dst,
   VectorizedArray<Number> const * const src,
@@ -548,10 +534,8 @@ VelocityConvDiffOperator<dim, degree, Number>::apply_add_block_diagonal_elementw
   // calculate block Jacobi matrices
   if(operator_data.unsteady_problem == true)
   {
-    AssertThrow(
-      this->get_scaling_factor_time_derivative_term() > 0.0,
-      ExcMessage(
-        "Scaling factor of time derivative term has not been initialized for Helmholtz operator!"));
+    AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
+                ExcMessage("Scaling factor of time derivative term has not been set!"));
 
     mass_matrix_operator->apply_add_block_diagonal_elementwise(cell, dst, src);
 
@@ -568,7 +552,7 @@ VelocityConvDiffOperator<dim, degree, Number>::apply_add_block_diagonal_elementw
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::cell_loop_apply_inverse_block_diagonal(
+MomentumOperator<dim, degree, Number>::cell_loop_apply_inverse_block_diagonal(
   MatrixFree<dim, Number> const &               data,
   VectorType &                                  dst,
   VectorType const &                            src,
@@ -604,7 +588,7 @@ VelocityConvDiffOperator<dim, degree, Number>::cell_loop_apply_inverse_block_dia
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::check_block_jacobi_matrices() const
+MomentumOperator<dim, degree, Number>::check_block_jacobi_matrices() const
 {
   VectorType src;
   initialize_dof_vector(src);
@@ -637,7 +621,7 @@ VelocityConvDiffOperator<dim, degree, Number>::check_block_jacobi_matrices() con
 
 template<int dim, int degree, typename Number>
 void
-VelocityConvDiffOperator<dim, degree, Number>::cell_loop_apply_block_diagonal(
+MomentumOperator<dim, degree, Number>::cell_loop_apply_block_diagonal(
   MatrixFree<dim, Number> const &               data,
   VectorType &                                  dst,
   VectorType const &                            src,
@@ -676,10 +660,10 @@ VelocityConvDiffOperator<dim, degree, Number>::cell_loop_apply_block_diagonal(
 
 template<int dim, int degree, typename Number>
 MultigridOperatorBase<dim, Number> *
-VelocityConvDiffOperator<dim, degree, Number>::get_new(unsigned int deg) const
+MomentumOperator<dim, degree, Number>::get_new(unsigned int deg) const
 {
-  AssertThrow(deg == degree, ExcMessage("Not compatible for p-GMG!"));
-  return new VelocityConvDiffOperator<dim, degree, Number>();
+  AssertThrow(deg == degree, ExcMessage("Not compatible with p-MG!"));
+  return new MomentumOperator<dim, degree, Number>();
 }
 
 } // namespace IncNS

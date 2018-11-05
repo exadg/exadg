@@ -175,13 +175,6 @@ public:
     return array_div_penalty_parameter;
   }
 
-  // TODO
-  //  FEParameters<dim> const *
-  //  get_fe_param() const
-  //  {
-  //    return this->fe_param;
-  //  }
-
   unsigned int
   get_dof_index() const
   {

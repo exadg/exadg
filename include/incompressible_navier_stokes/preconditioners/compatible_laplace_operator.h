@@ -12,7 +12,9 @@
 #include "../../operators/multigrid_operator_base.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
-#include "../spatial_discretization/navier_stokes_operators.h"
+
+#include "../spatial_discretization/operators/divergence_operator.h"
+#include "../spatial_discretization/operators/gradient_operator.h"
 
 namespace IncNS
 {

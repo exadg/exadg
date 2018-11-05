@@ -17,11 +17,18 @@
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q.h>
 
-#include "../../incompressible_navier_stokes/spatial_discretization/navier_stokes_calculators.h"
-#include "../../incompressible_navier_stokes/spatial_discretization/navier_stokes_operators.h"
 #include "../../incompressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../../incompressible_navier_stokes/user_interface/field_functions.h"
 #include "../../incompressible_navier_stokes/user_interface/input_parameters.h"
+
+#include "../../incompressible_navier_stokes/spatial_discretization/navier_stokes_calculators.h"
+
+#include "operators/body_force_operator.h"
+#include "operators/convective_operator.h"
+#include "operators/divergence_operator.h"
+#include "operators/gradient_operator.h"
+#include "operators/mass_matrix_operator.h"
+#include "operators/viscous_operator.h"
 
 #include "../../operators/elementwise_operator.h"
 #include "../../operators/inverse_mass_matrix.h"
@@ -43,38 +50,6 @@ using namespace dealii;
 
 namespace IncNS
 {
-template<int dim, int degree_u, int degree_p, typename Number>
-class PostProcessorBase;
-
-template<int dim>
-struct ViscousOperatorData;
-template<int dim>
-struct ConvectiveOperatorData;
-template<int dim>
-struct GradientOperatorData;
-template<int dim>
-struct DivergenceOperatorData;
-template<int dim>
-struct BodyForceOperatorData;
-
-template<int dim, int degree_u, typename Number>
-class MassMatrixOperator;
-
-template<int dim, int degree_u, typename Number>
-class ConvectiveOperator;
-
-template<int dim, int degree_u, typename Number>
-class ViscousOperator;
-
-template<int dim, int degree_u, typename Number>
-class BodyForceOperator;
-
-template<int dim, int degree_u, int degree_p, typename Number>
-class GradientOperator;
-
-template<int dim, int degree_u, int degree_p, typename Number>
-class DivergenceOperator;
-
 template<int dim, int degree_u, int degree_p, typename Number>
 class DGNavierStokesBase : public MatrixOperatorBase
 {
@@ -1234,8 +1209,9 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::setup_projection_solver()
     // preconditioner
     if(this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
     {
-      preconditioner_projection.reset(new InverseMassMatrixPreconditioner<dim, degree_u, Number>(
-        this->data, this->get_dof_index_velocity(), this->get_quad_index_velocity_linear()));
+      preconditioner_projection.reset(
+        new InverseMassMatrixPreconditioner<dim, degree_u, Number, dim>(
+          this->data, this->get_dof_index_velocity(), this->get_quad_index_velocity_linear()));
     }
     else if(this->param.preconditioner_projection == PreconditionerProjection::PointJacobi)
     {

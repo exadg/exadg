@@ -190,7 +190,7 @@ public:
   void
   set_solution_linearization(BlockVectorType const & solution_linearization)
   {
-    velocity_conv_diff_operator.set_solution_linearization(solution_linearization.block(0));
+    momentum_operator.set_solution_linearization(solution_linearization.block(0));
   }
 
   LinearAlgebra::distributed::Vector<Number> const &
@@ -200,7 +200,7 @@ public:
                 ExcMessage(
                   "Attempt to access velocity_linearization which has not been initialized."));
 
-    return velocity_conv_diff_operator.get_solution_linearization();
+    return momentum_operator.get_solution_linearization();
   }
 
   void
@@ -236,7 +236,7 @@ public:
 private:
   friend class BlockPreconditionerNavierStokes<dim, degree_u, degree_p, Number, THIS>;
 
-  VelocityConvDiffOperator<dim, degree_u, Number> velocity_conv_diff_operator;
+  MomentumOperator<dim, degree_u, Number> momentum_operator;
 
   VectorType mutable temp_vector;
   VectorType const *      sum_alphai_ui;
@@ -394,39 +394,38 @@ void
 DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::setup_velocity_conv_diff_operator(
   double const & scaling_factor_time_derivative_term)
 {
-  VelocityConvDiffOperatorData<dim> vel_conv_diff_operator_data;
+  MomentumOperatorData<dim> momentum_operator_data;
 
-  vel_conv_diff_operator_data.mass_matrix_operator_data = this->mass_matrix_operator_data;
-  vel_conv_diff_operator_data.viscous_operator_data     = this->viscous_operator_data;
-  vel_conv_diff_operator_data.convective_operator_data  = this->convective_operator_data;
+  momentum_operator_data.mass_matrix_operator_data = this->mass_matrix_operator_data;
+  momentum_operator_data.viscous_operator_data     = this->viscous_operator_data;
+  momentum_operator_data.convective_operator_data  = this->convective_operator_data;
 
   // unsteady problem
   if(unsteady_problem_has_to_be_solved())
-    vel_conv_diff_operator_data.unsteady_problem = true;
+    momentum_operator_data.unsteady_problem = true;
   else
-    vel_conv_diff_operator_data.unsteady_problem = false;
+    momentum_operator_data.unsteady_problem = false;
 
-  vel_conv_diff_operator_data.scaling_factor_time_derivative_term =
-    scaling_factor_time_derivative_term;
+  momentum_operator_data.scaling_factor_time_derivative_term = scaling_factor_time_derivative_term;
 
   // convective problem
   if(nonlinear_problem_has_to_be_solved())
-    vel_conv_diff_operator_data.convective_problem = true;
+    momentum_operator_data.convective_problem = true;
   else
-    vel_conv_diff_operator_data.convective_problem = false;
+    momentum_operator_data.convective_problem = false;
 
-  vel_conv_diff_operator_data.dof_index      = this->get_dof_index_velocity();
-  vel_conv_diff_operator_data.quad_index_std = this->get_quad_index_velocity_linear();
+  momentum_operator_data.dof_index      = this->get_dof_index_velocity();
+  momentum_operator_data.quad_index_std = this->get_quad_index_velocity_linear();
 
-  vel_conv_diff_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
-  vel_conv_diff_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+  momentum_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
+  momentum_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     this->param.implement_block_diagonal_preconditioner_matrix_free;
 
-  velocity_conv_diff_operator.initialize(this->get_data(),
-                                         vel_conv_diff_operator_data,
-                                         this->mass_matrix_operator,
-                                         this->viscous_operator,
-                                         this->convective_operator);
+  momentum_operator.initialize(this->get_data(),
+                               momentum_operator_data,
+                               this->mass_matrix_operator,
+                               this->viscous_operator,
+                               this->convective_operator);
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -453,8 +452,7 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::solve_linear_stokes_prob
   double const &          scaling_factor_mass_matrix_term)
 {
   // Set scaling_factor_time_derivative_term for linear operator (velocity_conv_diff_operator).
-  velocity_conv_diff_operator.set_scaling_factor_time_derivative_term(
-    scaling_factor_mass_matrix_term);
+  momentum_operator.set_scaling_factor_time_derivative_term(scaling_factor_mass_matrix_term);
 
   // Note that there is no need to set the evaluation time for the velocity_conv_diff_operator
   // because this function is only called if the convective term is not considered
@@ -504,7 +502,7 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::apply_linearized_problem
   BlockVectorType const & src) const
 {
   // (1,1) block of saddle point matrix
-  velocity_conv_diff_operator.vmult(dst.block(0), src.block(0));
+  momentum_operator.vmult(dst.block(0), src.block(0));
 
   // Divergence and continuity penalty operators
   if(this->param.add_penalty_terms_to_monolithic_system == true)
@@ -559,10 +557,9 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::solve_nonlinear_problem(
   scaling_factor_time_derivative_term = scaling_factor_mass_matrix_term;
 
   // Set correct evaluation time for linear operator (velocity_conv_diff_operator).
-  velocity_conv_diff_operator.set_evaluation_time(eval_time);
+  momentum_operator.set_evaluation_time(eval_time);
   // Set scaling_factor_time_derivative_term for linear operator (velocity_conv_diff_operator).
-  velocity_conv_diff_operator.set_scaling_factor_time_derivative_term(
-    scaling_factor_mass_matrix_term);
+  momentum_operator.set_scaling_factor_time_derivative_term(scaling_factor_mass_matrix_term);
 
   // Solve nonlinear problem
   newton_solver->solve(dst, newton_iterations, linear_iterations);
