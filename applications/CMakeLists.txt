@@ -2,7 +2,7 @@
 #  CMake script
 ##
 
-PROJECT(indexa_applications)
+PROJECT(applications)
 
 INCLUDE_DIRECTORIES(
         include
@@ -15,7 +15,7 @@ SET( SOURCE_FILES
      unsteady_compressible_navier_stokes.cc
      
      # Incompressible Navier-Stokes
-     #navier_stokes_operator_matrix_free.cc
+     navier_stokes_operator_matrix_free.cc
      steady_navier_stokes.cc
      unsteady_navier_stokes.cc
      unsteady_navier_stokes_two_domains.cc
@@ -30,7 +30,7 @@ SET( SOURCE_FILES
      unsteady_convection_diffusion.cc
 
      # Other
-     #gmres_test.cc
+     gmres_test.cc
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )
@@ -38,7 +38,7 @@ FOREACH ( sourcefile ${SOURCE_FILES} )
         STRING( REPLACE ".cc" "" testname ${sourcefile} )
         ADD_EXECUTABLE( ${testname} ${sourcefile})
         DEAL_II_SETUP_TARGET(${testname})
-        TARGET_LINK_LIBRARIES(${testname} indexa)
+        TARGET_LINK_LIBRARIES(${testname} exadg)
 
         option(USE_DEAL_SPECTRUM "Use deal.spectrum" OFF)
         IF(${USE_DEAL_SPECTRUM})

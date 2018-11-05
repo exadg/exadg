@@ -2,10 +2,11 @@
 #  CMake script
 ##
 
-MESSAGE("====================================================")
-MESSAGE("=============== Configuring INDEXA =================")
-MESSAGE("== High-order incompressible DG towards Exa-scale ==")
-MESSAGE("====================================================")
+MESSAGE("_________________________________________________________________________________")
+MESSAGE("                                                                                 ")
+MESSAGE("                                   ExaDG                                         ")
+MESSAGE("            High-order Discontinuous Galerkin for the Exa-Scale                  ")
+MESSAGE("_________________________________________________________________________________")
 
 
 # this is the standard deal.II search mechanism, including check for Trilinos and p4est
@@ -25,7 +26,7 @@ ENDIF()
 
 IF(NOT DEAL_II_WITH_P4EST)
   MESSAGE(FATAL_ERROR
-    "\nindexa requires a deal.II installation built with support for p4est but it appears to be missing!\n"
+    "\nExaDG requires a deal.II installation built with support for p4est but it appears to be missing!\n"
     )
 ENDIF()
 
@@ -35,15 +36,19 @@ include_directories(applications/macros)
 
 # Set the source files to be compiled
 SET( TARGET_SRC
-     include/incompressible_navier_stokes/xwall/SpaldingsLaw.cpp
-     include/incompressible_navier_stokes/postprocessor/statistics_manager.cpp
-     include/incompressible_navier_stokes/postprocessor/statistics_manager_ph.cpp
-     include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_adapter_base.cpp
+     include/poisson/spatial_discretization/laplace_operator.cpp     
      include/convection_diffusion/spatial_discretization/operators/convection_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/diffusive_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/mass_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/convection_diffusion_operator.cpp
-     include/poisson/spatial_discretization/laplace_operator.cpp
+     include/incompressible_navier_stokes/spatial_discretization/operators/mass_matrix_operator.cpp     
+     include/incompressible_navier_stokes/spatial_discretization/operators/convective_operator.cpp 
+     include/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.cpp 
+     include/incompressible_navier_stokes/spatial_discretization/operators/gradient_operator.cpp 
+     include/incompressible_navier_stokes/spatial_discretization/operators/divergence_operator.cpp
+     include/incompressible_navier_stokes/spatial_discretization/operators/body_force_operator.cpp     
+     include/incompressible_navier_stokes/postprocessor/statistics_manager.cpp 
+     include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_adapter_base.cpp     
      include/solvers_and_preconditioners/transfer/mg_transfer_mf_p.cpp
      include/solvers_and_preconditioners/mg_coarse/mg_coarse_ml.cpp
      include/solvers_and_preconditioners/transfer/dg_to_cg_transfer.cpp
@@ -52,9 +57,9 @@ SET( TARGET_SRC
 # Set the include directory and the name of the project
 INCLUDE_DIRECTORIES(include)
 
-PROJECT(indexa)
+PROJECT(exadg)
 
-ADD_LIBRARY(indexa  ${TARGET_SRC})
+ADD_LIBRARY(exadg  ${TARGET_SRC})
 
 
 # Define custom targets to easily switch the build type:
@@ -70,10 +75,7 @@ ADD_CUSTOM_TARGET(release
 
 DEAL_II_INITIALIZE_CACHED_VARIABLES()
 
-DEAL_II_SETUP_TARGET(indexa)
+DEAL_II_SETUP_TARGET(exadg)
 
 ADD_SUBDIRECTORY(applications)
 
-#ADD_SUBDIRECTORY(xwall_applications)
-
-MESSAGE("====================================================")

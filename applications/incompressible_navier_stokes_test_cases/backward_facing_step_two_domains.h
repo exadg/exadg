@@ -29,10 +29,6 @@ unsigned int const DIMENSION = 3;
 unsigned int const FE_DEGREE_VELOCITY = 2;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
-// set xwall specific parameters
-unsigned int const FE_DEGREE_XWALL = 1;
-unsigned int const N_Q_POINTS_1D_XWALL = 1;
-
 // DOMAIN 1: turbulent channel problem: used to generate inflow data for the BFS
 // DOMAIN 2: backward facing step (using results of the turbulent channel flow as velocity inflow profile)
 
@@ -1121,11 +1117,13 @@ struct PostProcessorDataBFS
   LinePlotData<dim> line_plot_data;
 };
 
-template<int dim, int fe_degree_u, int fe_degree_p, int fe_degree_xwall, int xwall_quad_rule, typename Number>
-class PostProcessorBFS : public PostProcessor<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number>
+template<int dim, int degree_u, int degree_p, typename Number>
+class PostProcessorBFS : public PostProcessor<dim, degree_u, degree_p, Number>
 {
 public:
-  typedef PostProcessor<dim, fe_degree_u, fe_degree_p, fe_degree_xwall, xwall_quad_rule, Number> Base;
+  typedef PostProcessor<dim, degree_u, degree_p, Number> Base;
+
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef typename Base::NavierStokesOperator NavierStokesOperator;
 
@@ -1172,11 +1170,11 @@ public:
     line_plot_calculator_statistics->setup(pp_data_bfs.line_plot_data);
   }
 
-  void do_postprocessing(parallel::distributed::Vector<Number> const &velocity,
-                         parallel::distributed::Vector<Number> const &intermediate_velocity,
-                         parallel::distributed::Vector<Number> const &pressure,
-                         double const                                time,
-                         int const                                   time_step_number)
+  void do_postprocessing(VectorType const &velocity,
+                         VectorType const &intermediate_velocity,
+                         VectorType const &pressure,
+                         double const     time,
+                         int const        time_step_number)
   {
     Base::do_postprocessing(
         velocity,
@@ -1206,8 +1204,8 @@ public:
   std::shared_ptr<LinePlotCalculatorStatisticsHomogeneousDirection<dim> > line_plot_calculator_statistics;
 };
 
-template<int dim, typename Number>
-std::shared_ptr<PostProcessorBase<dim, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, Number> >
+template<int dim, int degree_u, int degree_p, typename Number>
+std::shared_ptr<PostProcessorBase<dim, degree_u, degree_p, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -1223,8 +1221,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data_bfs.inflow_data = param.inflow_data;
   pp_data_bfs.line_plot_data = param.line_plot_data;
 
-  std::shared_ptr<PostProcessorBase<dim, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, Number> > pp;
-  pp.reset(new PostProcessorBFS<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number>(pp_data_bfs));
+  std::shared_ptr<PostProcessorBase<dim,degree_u,degree_p,Number> > pp;
+  pp.reset(new PostProcessorBFS<dim,degree_u,degree_p,Number>(pp_data_bfs));
 
   return pp;
 }

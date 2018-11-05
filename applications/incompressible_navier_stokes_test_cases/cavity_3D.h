@@ -26,15 +26,11 @@ unsigned int const DIMENSION = 3;
 
 // set the polynomial degree of the shape functions for velocity and pressure
 unsigned int const FE_DEGREE_VELOCITY = 3;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
-
-// set xwall specific parameters
-unsigned int const FE_DEGREE_XWALL = 1;
-unsigned int const N_Q_POINTS_1D_XWALL = 1;
+unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
 // set the number of refine levels for spatial convergence tests
 unsigned int const REFINE_STEPS_SPACE_MIN = 4;
-unsigned int const REFINE_STEPS_SPACE_MAX = 4; //REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -517,8 +513,8 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytica
 
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
-template<int dim, typename Number>
-std::shared_ptr<PostProcessorBase<dim, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, Number> >
+template<int dim, int degree_u, int degree_p, typename Number>
+std::shared_ptr<PostProcessorBase<dim, degree_u, degree_p, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -531,8 +527,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data.kinetic_energy_data = param.kinetic_energy_data;
   pp_data.line_plot_data = param.line_plot_data;
 
-  std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number> > pp;
-  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number>(pp_data));
+  std::shared_ptr<PostProcessor<dim,degree_u,degree_p,Number> > pp;
+  pp.reset(new PostProcessor<dim,degree_u,degree_p,Number>(pp_data));
 
   return pp;
 }

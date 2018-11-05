@@ -28,10 +28,6 @@ unsigned int const DIMENSION = 3;
 unsigned int const FE_DEGREE_VELOCITY = 8;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
-// set xwall specific parameters
-unsigned int const FE_DEGREE_XWALL = 1;
-unsigned int const N_Q_POINTS_1D_XWALL = 1;
-
 // set the number of refine levels for spatial convergence tests
 unsigned int const REFINE_STEPS_SPACE_MIN = 2;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
@@ -41,7 +37,7 @@ unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
-const double VISCOSITY = 0.0; //TODO //1.0/(2.0e3);
+const double VISCOSITY = 1.0/(2.0e3);
 
 // output folders and names
 std::string OUTPUT_FOLDER = "output/unstable_beltrami/div_normal_conti_penalty_CFL0-2_reltol_1e-8/";
@@ -68,9 +64,9 @@ void InputParameters<dim>::set_input_parameters()
   temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
-  max_velocity = 1.0; //TODO //std::sqrt(2.0);
-  cfl = 0.2; //TODO //0.25;
-  cfl_exponent_fe_degree_velocity = 2.0; //TODO //1.5;
+  max_velocity = std::sqrt(2.0);
+  cfl = 0.25;
+  cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-3;
   max_number_of_time_steps = 1e8;
   order_time_integrator = 2; // 1; // 2; // 3;
@@ -228,7 +224,7 @@ void InputParameters<dim>::set_input_parameters()
 
   // calculation of error
   error_data.analytical_solution_available = true;
-  error_data.calculate_relative_errors = false; // TODO
+  error_data.calculate_relative_errors = true;
   error_data.calculate_H1_seminorm_velocity = true;
   error_data.error_calc_start_time = start_time;
   //error_data.error_calc_interval_time = (end_time-start_time);
@@ -295,11 +291,6 @@ double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
     result = std::sqrt(2.0)*std::sin(2.0*pi*p[0])*std::cos(2.0*pi*p[1]);
 
   result *= std::exp(-8.0*pi*pi*VISCOSITY*t);
-
-  // add perturbations
-  // TODO
-//  double const eps = 1.e-6;
-//  result *= (1.0 + eps * std::cos(20*pi*p[2]));
 
   return result;
 }
@@ -502,8 +493,8 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytica
 
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
-template<int dim, typename Number>
-std::shared_ptr<PostProcessorBase<dim, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_XWALL, N_Q_POINTS_1D_XWALL, Number> >
+template<int dim, int degree_u, int degree_p, typename Number>
+std::shared_ptr<PostProcessorBase<dim, degree_u, degree_p, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -515,8 +506,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data.mass_data = param.mass_data;
   pp_data.kinetic_energy_data = param.kinetic_energy_data;
 
-  std::shared_ptr<PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number> > pp;
-  pp.reset(new PostProcessor<dim,FE_DEGREE_VELOCITY,FE_DEGREE_PRESSURE,FE_DEGREE_XWALL,N_Q_POINTS_1D_XWALL,Number>(pp_data));
+  std::shared_ptr<PostProcessor<dim,degree_u,degree_p,Number> > pp;
+  pp.reset(new PostProcessor<dim,degree_u,degree_p,Number>(pp_data));
 
   return pp;
 }
