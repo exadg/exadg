@@ -92,7 +92,7 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit(
     this->operator_data.convective_problem = false;
     this->operator_data.diffusive_problem  = true;
   }
-  if(this->operator_data.mg_operator_type == MultigridOperatorType::ReactionConvection)
+  else if(this->operator_data.mg_operator_type == MultigridOperatorType::ReactionConvection)
   {
     this->operator_data.convective_problem = true;
     // deactivate viscous term for multigrid preconditioner
