@@ -32,13 +32,6 @@ public:
   void
   evaluate(const std::vector<VectorType> & velocity);
 
-  // TODO
-  //  void
-  //  evaluate_xwall(const VectorType &        velocity,
-  //                 const DoFHandler<dim> &   dof_handler_wdist,
-  //                 const FEParameters<dim> & fe_param,
-  //                 const double              viscosity);
-
   void
   write_output(const std::string output_prefix,
                const double      dynamic_viscosity,
@@ -53,13 +46,6 @@ private:
 
   void
   do_evaluate(const std::vector<const VectorType *> & velocity);
-
-  // TODO
-  //  void
-  //  do_evaluate_xwall(const std::vector<const VectorType *> & velocity,
-  //                    const DoFHandler<dim> &                 dof_handler_wdist,
-  //                    const FEParameters<dim> &               fe_param,
-  //                    const double                            viscosity);
 
   const DoFHandler<dim> & dof_handler;
   const Mapping<dim> &    mapping;
