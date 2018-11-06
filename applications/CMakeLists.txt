@@ -29,6 +29,9 @@ SET( SOURCE_FILES
      steady_convection_diffusion.cc
      unsteady_convection_diffusion.cc
 
+     # incompressible flow with scalar transport
+     unsteady_incompressible_flow_with_transport.cc
+
      # Other
      gmres_test.cc
      )
@@ -43,7 +46,7 @@ FOREACH ( sourcefile ${SOURCE_FILES} )
         option(USE_DEAL_SPECTRUM "Use deal.spectrum" OFF)
         IF(${USE_DEAL_SPECTRUM})
             include_directories(${FFTW_INC})
-            FIND_LIBRARY(FFTW3 fftw3_mpi HINTS ${FFTW_LIB})
+            FIND_LIBRARY(FFTW3 fftw3 HINTS ${FFTW_LIB})
             add_definitions(-DUSE_DEAL_SPECTRUM)
             MESSAGE(${FFTW3})
             target_link_libraries(${testname} ${FFTW3})

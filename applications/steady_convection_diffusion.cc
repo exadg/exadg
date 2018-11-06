@@ -44,9 +44,6 @@ private:
   void
   print_header();
 
-  void
-  print_grid_data();
-
   ConditionalOStream pcout;
 
   parallel::distributed::Triangulation<dim> triangulation;
@@ -83,12 +80,12 @@ ConvDiffProblem<dim, fe_degree, Number>::ConvDiffProblem(const unsigned int n_re
     n_refine_space(n_refine_space_in)
 {
   print_header();
+  print_MPI_info(pcout);
 
   param.set_input_parameters();
   param.check_input_parameters();
   AssertThrow(param.problem_type == ProblemType::Steady, ExcMessage("ProblemType must be steady!"));
 
-  print_MPI_info(pcout);
   if(param.print_input_parameters == true)
     param.print(pcout);
 
@@ -135,27 +132,13 @@ ConvDiffProblem<dim, fe_degree, Number>::print_header()
 
 template<int dim, int fe_degree, typename Number>
 void
-ConvDiffProblem<dim, fe_degree, Number>::print_grid_data()
-{
-  pcout << std::endl
-        << "Generating grid for " << dim << "-dimensional problem:" << std::endl
-        << std::endl;
-
-  print_parameter(pcout, "Number of refinements", n_refine_space);
-  print_parameter(pcout, "Number of cells", triangulation.n_global_active_cells());
-  print_parameter(pcout, "Number of faces", triangulation.n_active_faces());
-  print_parameter(pcout, "Number of vertices", triangulation.n_vertices());
-}
-
-template<int dim, int fe_degree, typename Number>
-void
 ConvDiffProblem<dim, fe_degree, Number>::solve_problem()
 {
   // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
   create_grid_and_set_boundary_conditions(triangulation, n_refine_space, boundary_descriptor);
 
-  print_grid_data();
+  print_grid_data(pcout, n_refine_space, triangulation);
 
   conv_diff_operation->setup(periodic_faces,
                              boundary_descriptor,

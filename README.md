@@ -119,12 +119,12 @@ git clone https://gitlab.lrz.de/ne96pad/matrixfree.git
 Download **p4est**
 
 ```bash
-wget http://p4est.github.io/release/p4est-1.1.tar.gz
+wget http://p4est.github.io/release/p4est-2.0.tar.gz
 ```
 and run the command
 
 ```bash
-matrixfree/doc/external-libs/p4est-setup.sh p4est-1.1.tar.gz `pwd`
+matrixfree/doc/external-libs/p4est-setup.sh p4est-2.0.tar.gz `pwd`
 ```
 Create a folder *build*
 
@@ -172,6 +172,9 @@ Install **fftw** (Fast Fourier transformation) for evaluation of kinetic energy 
 Download **fftw** from homepage http://www.fftw.org/download.html and copy to folder *sw*
 
 ```bash
+cd /working_directory/sw/
+wget http://fftw.org/fftw-3.3.7.tar.gz
+tar -xf fftw-3.3.7.tar.gz
 cd fftw-3.3.7
 ./configure --enable-mpi --prefix=/scratch/students_name/sw/fftw-3.3.7-install
 make

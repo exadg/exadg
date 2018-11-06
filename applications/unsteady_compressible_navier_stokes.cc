@@ -102,11 +102,12 @@ CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>
     n_refine_space(n_refine_space_in),
     n_refine_time(n_refine_time_in)
 {
+  print_header();
+  print_MPI_info(pcout);
+
   param.set_input_parameters();
   param.check_input_parameters();
 
-  print_header();
-  print_MPI_info(pcout);
   if(param.print_input_parameters == true)
     param.print(pcout);
 

@@ -38,6 +38,7 @@ public:
       time(param.start_time),
       time_step(1.0),
       time_step_number(1),
+      adaptive_time_stepping(false),
       n_refine_time(n_refine_time_in),
       cfl_number(param.cfl_number / std::pow(2.0, n_refine_time)),
       diffusion_number(param.diffusion_number / std::pow(2.0, n_refine_time))
@@ -45,10 +46,49 @@ public:
   }
 
   void
-  timeloop();
+  setup();
 
   void
-  setup();
+  timeloop();
+
+  bool
+  advance_one_timestep(bool write_final_output);
+
+  void
+  set_time(double const & current_time)
+  {
+    this->time = current_time;
+  }
+
+  double
+  get_time_step_size() const
+  {
+    if(adaptive_time_stepping == true)
+    {
+      double const EPSILON = 1.e-10;
+      if(time > param.start_time - EPSILON)
+      {
+        return time_step;
+      }
+      else // time integrator has not yet started
+      {
+        // return a large value because we take the minimum time step size when coupling this time
+        // integrator to others. This way, this time integrator does not pose a restriction on the
+        // time step size.
+        return std::numeric_limits<double>::max();
+      }
+    }
+    else // constant time step size
+    {
+      return time_step;
+    }
+  }
+
+  void
+  set_time_step_size(double const time_step_size)
+  {
+    time_step = time_step_size;
+  }
 
 private:
   void
@@ -59,6 +99,15 @@ private:
 
   void
   postprocessing() const;
+
+  void
+  output_solver_info_header();
+
+  void
+  output_remaining_time();
+
+  void
+  do_timestep();
 
   void
   solve_timestep();
@@ -100,6 +149,9 @@ private:
 
   // the number of the current time step starting with time_step_number = 1
   unsigned int time_step_number;
+
+  // use adaptive time stepping?
+  bool const adaptive_time_stepping;
 
   unsigned int const n_refine_time;
   double const       cfl_number;
@@ -394,12 +446,7 @@ TimeIntExplRK<dim, fe_degree, value_type>::timeloop()
   const double EPSILON = 1.0e-10;
   while(time < (param.end_time - EPSILON))
   {
-    solve_timestep();
-
-    prepare_vectors_for_next_timestep();
-
-    time += time_step;
-    ++time_step_number;
+    do_timestep();
 
     postprocessing();
   }
@@ -413,9 +460,72 @@ TimeIntExplRK<dim, fe_degree, value_type>::timeloop()
 
 template<int dim, int fe_degree, typename value_type>
 void
-TimeIntExplRK<dim, fe_degree, value_type>::postprocessing() const
+TimeIntExplRK<dim, fe_degree, value_type>::do_timestep()
 {
-  conv_diff_operation->do_postprocessing(solution_n, time, time_step_number);
+  output_solver_info_header();
+
+  solve_timestep();
+
+  output_remaining_time();
+
+  prepare_vectors_for_next_timestep();
+
+  time += time_step;
+  ++time_step_number;
+
+  // currently no write_restart implemented
+
+  // currently no adaptive time stepping implemented
+}
+
+template<int dim, int fe_degree, typename value_type>
+bool
+TimeIntExplRK<dim, fe_degree, value_type>::advance_one_timestep(bool write_final_output)
+{
+  // a small number which is much smaller than the time step size
+  const value_type EPSILON = 1.0e-10;
+
+  bool started = time > (param.start_time - EPSILON);
+
+  // If the time integrator has not yet started, simply increment physical time without solving the
+  // current time step.
+  if(!started)
+  {
+    time += time_step;
+  }
+
+  if(started && time_step_number == 1)
+  {
+    pcout << std::endl
+          << "Starting time loop for scalar convection-diffusion equation ..." << std::endl;
+
+    global_timer.restart();
+
+    postprocessing();
+  }
+
+  // check if we have reached the end of the time loop
+  bool finished =
+    !(time < (param.end_time - EPSILON) && time_step_number <= param.max_number_of_time_steps);
+
+  if(started && !finished)
+  {
+    // advance one time step
+    do_timestep();
+
+    postprocessing();
+  }
+
+  if(finished && write_final_output)
+  {
+    total_time += global_timer.wall_time();
+
+    pcout << std::endl << "... done!" << std::endl;
+
+    analyze_computing_times();
+  }
+
+  return finished;
 }
 
 template<int dim, int fe_degree, typename value_type>
@@ -428,7 +538,7 @@ TimeIntExplRK<dim, fe_degree, value_type>::prepare_vectors_for_next_timestep()
 
 template<int dim, int fe_degree, typename value_type>
 void
-TimeIntExplRK<dim, fe_degree, value_type>::solve_timestep()
+TimeIntExplRK<dim, fe_degree, value_type>::output_solver_info_header()
 {
   // write output
   if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
@@ -442,7 +552,30 @@ TimeIntExplRK<dim, fe_degree, value_type>::solve_timestep()
           << "______________________________________________________________________" << std::endl
           << std::endl;
   }
+}
 
+template<int dim, int fe_degree, typename value_type>
+void
+TimeIntExplRK<dim, fe_degree, value_type>::output_remaining_time()
+{
+  // write output
+  if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+  {
+    if(time > param.start_time)
+    {
+      double const remaining_time =
+        global_timer.wall_time() * (param.end_time - time) / (time - param.start_time);
+      pcout << std::endl
+            << "Estimated time until completion is " << remaining_time << " s / "
+            << remaining_time / 3600. << " h." << std::endl;
+    }
+  }
+}
+
+template<int dim, int fe_degree, typename value_type>
+void
+TimeIntExplRK<dim, fe_degree, value_type>::solve_timestep()
+{
   Timer timer;
   timer.restart();
 
@@ -454,16 +587,14 @@ TimeIntExplRK<dim, fe_degree, value_type>::solve_timestep()
     pcout << std::endl
           << "Solve time step explicitly: Wall time in [s] = " << std::scientific
           << timer.wall_time() << std::endl;
-
-    if(time > param.start_time)
-    {
-      double const remaining_time =
-        global_timer.wall_time() * (param.end_time - time) / (time - param.start_time);
-      pcout << std::endl
-            << "Estimated time until completion is " << remaining_time << " s / "
-            << remaining_time / 3600. << " h." << std::endl;
-    }
   }
+}
+
+template<int dim, int fe_degree, typename value_type>
+void
+TimeIntExplRK<dim, fe_degree, value_type>::postprocessing() const
+{
+  conv_diff_operation->do_postprocessing(solution_n, time, time_step_number);
 }
 
 template<int dim, int fe_degree, typename value_type>

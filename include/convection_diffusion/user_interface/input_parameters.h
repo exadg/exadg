@@ -221,6 +221,7 @@ public:
       treatment_of_convective_term(TreatmentOfConvectiveTerm::Undefined),
       calculation_of_time_step_size(TimeStepCalculation::Undefined),
       time_step_size(-1.),
+      max_number_of_time_steps(std::numeric_limits<unsigned int>::max()),
       cfl_number(-1.),
       time_integrator_oif(TimeIntegratorRK::Undefined),
       cfl_oif(-1.),
@@ -486,6 +487,9 @@ public:
                       str_expl_time_int[(int)time_integrator_rk]);
     }
 
+    // maximum number of time steps
+    print_parameter(pcout, "Maximum number of time steps", max_number_of_time_steps);
+
     if(temporal_discretization == TemporalDiscretization::BDF)
     {
       print_parameter(pcout, "Order of time integrator", order_time_integrator);
@@ -702,6 +706,9 @@ public:
   // in a series of time_step_size's when performing temporal convergence tests,
   // i.e., delta_t = time_step_size, time_step_size/2, ...
   double time_step_size;
+
+  // maximum number of time steps
+  unsigned int max_number_of_time_steps;
 
   // cfl number ("global" CFL number, can be larger than critical CFL in case
   // of operator-integration-factor splitting)
