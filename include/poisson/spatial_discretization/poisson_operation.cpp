@@ -9,7 +9,7 @@ template<int dim, int degree, typename Number>
 DGOperation<dim, degree, Number>::DGOperation(
   parallel::distributed::Triangulation<dim> const & triangulation,
   Poisson::InputParameters const &                  param_in)
-  : fe(degree), mapping(degree), dof_handler(triangulation), param(param_in)
+  : fe(degree), mapping(param_in.degree_mapping), dof_handler(triangulation), param(param_in)
 {
 }
 

@@ -27,6 +27,7 @@ Poisson::InputParameters::set_input_parameters()
   // PHYSICAL QUANTITIES
 
   // SPATIAL DISCRETIZATION
+  degree_mapping = FE_DEGREE;
   IP_factor = 1.0;
 
   // SOLVER

@@ -60,6 +60,7 @@ public:
       // PHYSICAL QUANTITIES
 
       // SPATIAL DISCRETIZATION
+      degree_mapping(1),
       IP_factor(1.0),
 
       // SOLVER
@@ -86,6 +87,8 @@ public:
   void
   check_input_parameters()
   {
+    // SPATIAL DISCRETIZATION
+    AssertThrow(degree_mapping > 0, ExcMessage("Invalid parameter."));
   }
 
   void
@@ -131,6 +134,8 @@ public:
   print_parameters_spatial_discretization(ConditionalOStream & pcout)
   {
     pcout << std::endl << "Spatial Discretization:" << std::endl;
+
+    print_parameter(pcout, "Polynomial degree of mapping", degree_mapping);
 
     print_parameter(pcout, "IP factor viscous term", IP_factor);
   }
@@ -189,6 +194,10 @@ public:
   /*                              SPATIAL DISCRETIZATION                                */
   /*                                                                                    */
   /**************************************************************************************/
+
+  // Polynomial degree of shape functions used for geometry approximation (mapping from
+  // parameter space to physical space)
+  unsigned int degree_mapping;
 
   // Symmetric interior penalty Galerkin (SIPG) discretization
   // interior penalty parameter scaling factor: default value is 1.0

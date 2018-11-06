@@ -95,8 +95,10 @@ void InputParameters<dim>::set_input_parameters()
 
   // SPATIAL DISCRETIZATION
 
-  // spatial discretization method
-  spatial_discretization = SpatialDiscretization::DG;
+  if(MESH_TYPE == MeshType::Cartesian)
+    degree_mapping = 1;
+  else
+    degree_mapping = FE_DEGREE_VELOCITY;
 
   // convective term
   upwind_factor = 0.5;

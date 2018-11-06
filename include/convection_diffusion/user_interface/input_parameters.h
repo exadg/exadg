@@ -230,6 +230,7 @@ public:
       exponent_fe_degree_diffusion(3.0),
 
       // SPATIAL DISCRETIZATION
+      degree_mapping(1),
       numerical_flux_convective_operator(NumericalFluxConvectiveOperator::Undefined),
       IP_factor(1.0),
 
@@ -342,6 +343,8 @@ public:
     }
 
     // SPATIAL DISCRETIZATION
+    AssertThrow(degree_mapping > 0, ExcMessage("Invalid parameter."));
+
     if(equation_type == EquationType::Convection ||
        equation_type == EquationType::ConvectionDiffusion || runtime_optimization == true)
     {
@@ -535,6 +538,8 @@ public:
   print_parameters_spatial_discretization(ConditionalOStream & pcout)
   {
     pcout << std::endl << "Spatial Discretization:" << std::endl;
+
+    print_parameter(pcout, "Polynomial degree of mapping", degree_mapping);
 
     if(equation_type == EquationType::Convection ||
        equation_type == EquationType::ConvectionDiffusion)
@@ -730,6 +735,11 @@ public:
   /*                              SPATIAL DISCRETIZATION                                */
   /*                                                                                    */
   /**************************************************************************************/
+
+  // Polynomial degree of shape functions used for geometry approximation (mapping from
+  // parameter space to physical space)
+  unsigned int degree_mapping;
+
 
   // convective term: the convective term is written in divergence formulation
 

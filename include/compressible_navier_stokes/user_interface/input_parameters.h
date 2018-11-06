@@ -1,16 +1,16 @@
 /*
- * InputParametersCompNavierStokes.h
+ * input_parameters.h
  *
  */
 
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_
 #define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_
 
+#include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_data.h"
+#include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_spectrum_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/lift_and_drag_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/pressure_difference_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/turbulent_channel_data.h"
-#include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_data.h"
-#include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_spectrum_data.h"
 #include "../include/functionalities/print_functions.h"
 #include "postprocessor/error_calculation_data.h"
 #include "postprocessor/output_data.h"
@@ -215,6 +215,7 @@ public:
       exponent_fe_degree_viscous(4.0),
 
       // SPATIAL DISCRETIZATION
+      degree_mapping(1),
       IP_factor(1.0),
 
       // SOLVER
@@ -294,7 +295,7 @@ public:
 
 
     // SPATIAL DISCRETIZATION
-
+    AssertThrow(degree_mapping > 0, ExcMessage("Invalid parameter."));
 
     // SOLVER
 
@@ -435,6 +436,8 @@ public:
   {
     pcout << std::endl << "Spatial Discretization:" << std::endl;
 
+    print_parameter(pcout, "Polynomial degree of mapping", degree_mapping);
+
     print_parameter(pcout, "IP factor viscous term", IP_factor);
   }
 
@@ -570,6 +573,10 @@ public:
   /*                              SPATIAL DISCRETIZATION                                */
   /*                                                                                    */
   /**************************************************************************************/
+
+  // Polynomial degree of shape functions used for geometry approximation (mapping from
+  // parameter space to physical space)
+  unsigned int degree_mapping;
 
   // diffusive term: Symmetric interior penalty Galerkin (SIPG) discretization
   // interior penalty parameter scaling factor: default value is 1.0
