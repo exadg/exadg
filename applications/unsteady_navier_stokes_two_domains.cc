@@ -37,8 +37,8 @@ using namespace IncNS;
 // specify the flow problem that has to be solved
 
 //#include "incompressible_navier_stokes_test_cases/turbulent_channel_two_domains.h"
-#include "incompressible_navier_stokes_test_cases/backward_facing_step_two_domains.h"
-//#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
+//#include "incompressible_navier_stokes_test_cases/backward_facing_step_two_domains.h"
+#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
 
 template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
 class NavierStokesProblem
@@ -65,7 +65,7 @@ private:
   set_start_time();
 
   void
-  set_combined_time_step_size();
+  synchronize_time_step_size();
 
   void
   setup_solvers();
@@ -80,6 +80,8 @@ private:
     periodic_faces_1, periodic_faces_2;
 
   const unsigned int n_refine_space_domain1, n_refine_space_domain2;
+
+  bool use_adaptive_time_stepping;
 
   std::shared_ptr<FieldFunctions<dim>>      field_functions_1, field_functions_2;
   std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity_1,
@@ -127,8 +129,6 @@ private:
 
   std::shared_ptr<TimeIntPressureCorrection> time_integrator_pressure_correction_1,
     time_integrator_pressure_correction_2;
-
-  bool use_adaptive_time_stepping;
 };
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -453,31 +453,23 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::set_start_time()
 
 template<int dim, int degree_u, int degree_p, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::set_combined_time_step_size()
+NavierStokesProblem<dim, degree_u, degree_p, Number>::synchronize_time_step_size()
 {
   // Setup time integrator and get time step size
   double time_step_size_1 = 1.0, time_step_size_2 = 1.0;
 
-  double const EPSILON = 1.e-10;
-
   // DOMAIN 1
   if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    if(time_integrator_coupled_1->get_time() > param_1.start_time - EPSILON ||
-       use_adaptive_time_stepping == false)
-      time_step_size_1 = time_integrator_coupled_1->get_time_step_size();
+    time_step_size_1 = time_integrator_coupled_1->get_time_step_size();
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    if(time_integrator_dual_splitting_1->get_time() > param_1.start_time - EPSILON ||
-       use_adaptive_time_stepping == false)
-      time_step_size_1 = time_integrator_dual_splitting_1->get_time_step_size();
+    time_step_size_1 = time_integrator_dual_splitting_1->get_time_step_size();
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    if(time_integrator_pressure_correction_1->get_time() > param_1.start_time - EPSILON ||
-       use_adaptive_time_stepping == false)
-      time_step_size_1 = time_integrator_pressure_correction_1->get_time_step_size();
+    time_step_size_1 = time_integrator_pressure_correction_1->get_time_step_size();
   }
   else
   {
@@ -486,21 +478,15 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::set_combined_time_step_siz
   // DOMAIN 2
   if(this->param_2.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    if(time_integrator_coupled_2->get_time() > param_2.start_time - EPSILON ||
-       use_adaptive_time_stepping == false)
-      time_step_size_2 = time_integrator_coupled_2->get_time_step_size();
+    time_step_size_2 = time_integrator_coupled_2->get_time_step_size();
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    if(time_integrator_dual_splitting_2->get_time() > param_2.start_time - EPSILON ||
-       use_adaptive_time_stepping == false)
-      time_step_size_2 = time_integrator_dual_splitting_2->get_time_step_size();
+    time_step_size_2 = time_integrator_dual_splitting_2->get_time_step_size();
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    if(time_integrator_pressure_correction_2->get_time() > param_2.start_time - EPSILON ||
-       use_adaptive_time_stepping == false)
-      time_step_size_2 = time_integrator_pressure_correction_2->get_time_step_size();
+    time_step_size_2 = time_integrator_pressure_correction_2->get_time_step_size();
   }
   else
   {
@@ -615,7 +601,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::run_timeloop()
 
   set_start_time();
 
-  set_combined_time_step_size();
+  synchronize_time_step_size();
 
   while(!finished_1 || !finished_2)
   {
@@ -664,7 +650,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::run_timeloop()
       // Both domains have already calculated the new, adaptive time step size individually in
       // function advance_one_timestep(). Here, we only have to synchronize the time step size for
       // both domains.
-      set_combined_time_step_size();
+      synchronize_time_step_size();
     }
   }
 }

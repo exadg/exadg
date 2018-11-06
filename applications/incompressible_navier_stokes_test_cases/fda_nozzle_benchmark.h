@@ -305,7 +305,7 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
   max_velocity = MAX_VELOCITY_CFL;
   // ConstTimeStepCFL: CFL_critical = 0.3 - 0.5 for k=3
   // AdaptiveTimeStepCFL: CFL_critical = 0.125 - 0.15 for k=3
-  // Best pratice: use CFL = 4.0 for implicit treatment (e.g., pressure-correction scheme)
+  // Best practice: use CFL = 4.0 for implicit treatment (e.g., pressure-correction scheme)
   // and CFL = 0.13 with adaptive time stepping for an explicit treatment (e.g., dual splitting)
   cfl = 4.0;
   cfl_exponent_fe_degree_velocity = 1.5;

@@ -42,6 +42,7 @@ public:
       time_step_number(1),
       order(param_in.order_time_integrator),
       time_steps(this->order),
+      adaptive_time_stepping(false),
       bdf(param_in.order_time_integrator, param_in.start_with_low_order),
       extra(param_in.order_time_integrator, param_in.start_with_low_order),
       solution(this->order),
@@ -64,10 +65,64 @@ public:
   virtual void
   timeloop();
 
+  bool
+  advance_one_timestep(bool write_final_output);
+
   double
   get_scaling_factor_time_derivative_term()
   {
     return bdf.get_gamma0() / time_steps[0];
+  }
+
+  void
+  set_time(double const & current_time)
+  {
+    this->time = current_time;
+  }
+
+  double
+  get_time_step_size() const
+  {
+    if(adaptive_time_stepping == true)
+    {
+      double const EPSILON = 1.e-10;
+      if(time > param.start_time - EPSILON)
+      {
+        return time_steps[0];
+      }
+      else // time integrator has not yet started
+      {
+        // return a large value because we take the minimum time step size when coupling this time
+        // integrator to others. This way, this time integrator does not pose a restriction on the
+        // time step size.
+        return std::numeric_limits<double>::max();
+      }
+    }
+    else // constant time step size
+    {
+      return time_steps[0];
+    }
+  }
+
+  void
+  set_time_step_size(double const & time_step)
+  {
+    // constant time step sizes
+    if(adaptive_time_stepping == false)
+    {
+      AssertThrow(time_step_number == 1,
+                  ExcMessage("For time integration with constant time step sizes this "
+                             "function can only be called in the very first time step."));
+    }
+
+    time_steps[0] = time_step;
+
+    // fill time_steps array
+    if(time_step_number == 1)
+    {
+      for(unsigned int i = 1; i < order; ++i)
+        time_steps[i] = time_steps[0];
+    }
   }
 
 private:
@@ -94,6 +149,15 @@ private:
 
   void
   solve_timestep();
+
+  void
+  output_solver_info_header();
+
+  void
+  output_remaining_time();
+
+  void
+  do_timestep();
 
   void
   postprocessing() const;
@@ -128,6 +192,9 @@ private:
 
   // vector with time step sizes
   std::vector<double> time_steps;
+
+  // use adaptive time stepping?
+  bool const adaptive_time_stepping;
 
   // time integration constants
   BDFTimeIntegratorConstants bdf;
@@ -465,20 +532,9 @@ TimeIntBDF<dim, fe_degree, value_type>::timeloop()
   const double EPSILON = 1.0e-10;
   while(time < (param.end_time - EPSILON))
   {
-    this->update_time_integrator_constants();
-
-    solve_timestep();
-
-    prepare_vectors_for_next_timestep();
-
-    time += time_steps[0];
-    ++time_step_number;
+    do_timestep();
 
     postprocessing();
-
-    // currently no write_restart implemented
-
-    // currently no adaptive time stepping implemented
   }
 
   total_time += global_timer.wall_time();
@@ -490,9 +546,74 @@ TimeIntBDF<dim, fe_degree, value_type>::timeloop()
 
 template<int dim, int fe_degree, typename value_type>
 void
-TimeIntBDF<dim, fe_degree, value_type>::postprocessing() const
+TimeIntBDF<dim, fe_degree, value_type>::do_timestep()
 {
-  conv_diff_operation->do_postprocessing(solution[0], time, time_step_number);
+  update_time_integrator_constants();
+
+  output_solver_info_header();
+
+  solve_timestep();
+
+  output_remaining_time();
+
+  prepare_vectors_for_next_timestep();
+
+  time += time_steps[0];
+  ++time_step_number;
+
+  // currently no write_restart implemented
+
+  // currently no adaptive time stepping implemented
+}
+
+template<int dim, int fe_degree, typename value_type>
+bool
+TimeIntBDF<dim, fe_degree, value_type>::advance_one_timestep(bool write_final_output)
+{
+  // a small number which is much smaller than the time step size
+  const value_type EPSILON = 1.0e-10;
+
+  bool started = time > (param.start_time - EPSILON);
+
+  // If the time integrator has not yet started, simply increment physical time without solving the
+  // current time step.
+  if(!started)
+  {
+    time += time_steps[0];
+  }
+
+  if(started && time_step_number == 1)
+  {
+    pcout << std::endl
+          << "Starting time loop for scalar convection-diffusion equation ..." << std::endl;
+
+    global_timer.restart();
+
+    postprocessing();
+  }
+
+  // check if we have reached the end of the time loop
+  bool finished =
+    !(time < (param.end_time - EPSILON) && time_step_number <= param.max_number_of_time_steps);
+
+  if(started && !finished)
+  {
+    // advance one time step
+    do_timestep();
+
+    postprocessing();
+  }
+
+  if(finished && write_final_output)
+  {
+    total_time += global_timer.wall_time();
+
+    pcout << std::endl << "... done!" << std::endl;
+
+    analyze_computing_times();
+  }
+
+  return finished;
 }
 
 template<int dim, int fe_degree, typename value_type>
@@ -513,7 +634,7 @@ TimeIntBDF<dim, fe_degree, value_type>::prepare_vectors_for_next_timestep()
 
 template<int dim, int fe_degree, typename value_type>
 void
-TimeIntBDF<dim, fe_degree, value_type>::solve_timestep()
+TimeIntBDF<dim, fe_degree, value_type>::output_solver_info_header()
 {
   // write output
   if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
@@ -527,7 +648,30 @@ TimeIntBDF<dim, fe_degree, value_type>::solve_timestep()
           << "______________________________________________________________________" << std::endl
           << std::endl;
   }
+}
 
+template<int dim, int fe_degree, typename value_type>
+void
+TimeIntBDF<dim, fe_degree, value_type>::output_remaining_time()
+{
+  // write output
+  if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+  {
+    if(time > param.start_time)
+    {
+      double const remaining_time =
+        global_timer.wall_time() * (param.end_time - time) / (time - param.start_time);
+      pcout << std::endl
+            << "Estimated time until completion is " << remaining_time << " s / "
+            << remaining_time / 3600. << " h." << std::endl;
+    }
+  }
+}
+
+template<int dim, int fe_degree, typename value_type>
+void
+TimeIntBDF<dim, fe_degree, value_type>::solve_timestep()
+{
   Timer timer;
   timer.restart();
 
@@ -616,19 +760,17 @@ TimeIntBDF<dim, fe_degree, value_type>::solve_timestep()
   // write output
   if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
   {
-    pcout << "Solve linear convection-diffusion problem:" << std::endl
+    pcout << "Solve scalar convection-diffusion problem:" << std::endl
           << "  Iterations: " << std::setw(6) << std::right << iterations
           << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
-
-    if(time > param.start_time)
-    {
-      double const remaining_time =
-        global_timer.wall_time() * (param.end_time - time) / (time - param.start_time);
-      pcout << std::endl
-            << "Estimated time until completion is " << remaining_time << " s / "
-            << remaining_time / 3600. << " h." << std::endl;
-    }
   }
+}
+
+template<int dim, int fe_degree, typename value_type>
+void
+TimeIntBDF<dim, fe_degree, value_type>::postprocessing() const
+{
+  conv_diff_operation->do_postprocessing(solution[0], time, time_step_number);
 }
 
 template<int dim, int fe_degree, typename value_type>

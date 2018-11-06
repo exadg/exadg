@@ -100,11 +100,12 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
                   parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
     n_refine_space(refine_steps_space)
 {
+  print_header();
+  print_MPI_info(pcout);
+
   param.set_input_parameters();
   param.check_input_parameters();
 
-  print_header();
-  print_MPI_info(pcout);
   if(param.print_input_parameters == true)
     param.print(pcout);
 

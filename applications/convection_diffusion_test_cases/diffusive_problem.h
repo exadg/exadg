@@ -1,5 +1,5 @@
 /*
- * DiffusiveProblemHomogeneousDBC.h
+ * diffusive_problem.h
  *
  *  Created on: Aug 18, 2016
  *      Author: fehn
@@ -16,6 +16,9 @@
 /*                                 INPUT PARAMETERS                                   */
 /*                                                                                    */
 /**************************************************************************************/
+
+namespace ConvDiff
+{
 
 // set the number of space dimensions: DIMENSION = 2, 3
 const unsigned int DIMENSION = 2;
@@ -115,24 +118,22 @@ void ConvDiff::InputParameters::set_input_parameters()
  */
 
 template<int dim>
-class AnalyticalSolution : public Function<dim>
+class Solution : public Function<dim>
 {
 public:
-  AnalyticalSolution (const unsigned int  n_components = 1,
-                      const double        time = 0.)
+  Solution (const unsigned int  n_components = 1,
+            const double        time = 0.)
     :
     Function<dim>(n_components, time)
   {}
 
-  virtual ~AnalyticalSolution(){};
-
-  virtual double value (const Point<dim>   &p,
-                        const unsigned int component = 0) const;
+  double value (const Point<dim>   &p,
+                const unsigned int component = 0) const;
 };
 
 template<int dim>
-double AnalyticalSolution<dim>::value(const Point<dim>    &p,
-                                      const unsigned int  /* component */) const
+double Solution<dim>::value(const Point<dim>    &p,
+                            const unsigned int  /* component */) const
 {
   double t = this->get_time();
   double result = 1.0;
@@ -288,7 +289,7 @@ void create_grid_and_set_boundary_conditions(
   if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousDBC)
   {
     std::shared_ptr<Function<dim> > analytical_solution;
-    analytical_solution.reset(new AnalyticalSolution<dim>());
+    analytical_solution.reset(new Solution<dim>());
     //problem with pure Dirichlet boundary conditions
     boundary_descriptor->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,analytical_solution));
   }
@@ -310,7 +311,7 @@ void set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_f
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > analytical_solution;
-  analytical_solution.reset(new AnalyticalSolution<dim>());
+  analytical_solution.reset(new Solution<dim>());
 
   std::shared_ptr<Function<dim> > right_hand_side;
   right_hand_side.reset(new RightHandSide<dim>());
@@ -324,9 +325,11 @@ void set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_f
 }
 
 template<int dim>
-void set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim> > analytical_solution)
+void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
 {
-  analytical_solution->solution.reset(new AnalyticalSolution<dim>(1));
+  analytical_solution->solution.reset(new Solution<dim>(1));
+}
+
 }
 
 #endif /* APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_DIFFUSIVE_PROBLEM_H_ */

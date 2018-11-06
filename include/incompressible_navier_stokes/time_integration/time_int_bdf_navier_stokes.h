@@ -81,7 +81,25 @@ public:
   double
   get_time_step_size() const
   {
-    return time_steps[0];
+    if(adaptive_time_stepping == true)
+    {
+      double const EPSILON = 1.e-10;
+      if(time > param.start_time - EPSILON)
+      {
+        return time_steps[0];
+      }
+      else // time integrator has not yet started
+      {
+        // return a large value because we take the minimum time step size when coupling this time
+        // integrator to others. This way, this time integrator does not pose a restriction on the
+        // time step size.
+        return std::numeric_limits<double>::max();
+      }
+    }
+    else // constant time step size
+    {
+      return time_steps[0];
+    }
   }
 
   void
@@ -701,7 +719,8 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::adv
 
   if(started && this->time_step_number == 1)
   {
-    pcout << std::endl << "Starting time loop ..." << std::endl;
+    pcout << std::endl
+          << "Starting time loop for incompressible Navier-Stokes solver ..." << std::endl;
 
     global_timer.restart();
 
