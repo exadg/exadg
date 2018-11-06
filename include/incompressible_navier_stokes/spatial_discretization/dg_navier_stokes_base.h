@@ -103,7 +103,7 @@ public:
     : fe_u(new FESystem<dim>(FE_DGQ<dim>(degree_u), dim)),
       fe_p(degree_p),
       fe_u_scalar(degree_u),
-      mapping(degree_u), // mapping(degree_u <= 10 ? degree_u : 10), // TODO
+      mapping(parameters_in.degree_mapping),
       dof_handler_u(triangulation),
       dof_handler_p(triangulation),
       dof_handler_u_scalar(triangulation),
@@ -587,7 +587,7 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::setup(
   convective_operator_data.upwind_factor        = param.upwind_factor;
   convective_operator_data.bc                   = boundary_descriptor_velocity;
   convective_operator_data.use_outflow_bc       = param.use_outflow_bc_convective_term;
-  convective_operator_data.type_dirichlet_bc    = param.imposition_of_dirichlet_bc_convective;
+  convective_operator_data.type_dirichlet_bc    = param.type_dirichlet_bc_convective;
   convective_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   convective_operator.initialize(data, convective_operator_data);
 

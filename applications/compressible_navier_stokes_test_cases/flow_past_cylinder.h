@@ -96,6 +96,7 @@ void CompNS::InputParameters<dim>::set_input_parameters()
 
 
   // SPATIAL DISCRETIZATION
+  degree_mapping = FE_DEGREE;
 
   // viscous term
   IP_factor = 1.0;

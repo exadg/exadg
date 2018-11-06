@@ -8,7 +8,9 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_KINETIC_ENERGY_DATA_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_KINETIC_ENERGY_DATA_H_
 
-// kinetic energy data
+#include <deal.II/base/conditional_ostream.h>
+
+#include "functionalities/print_functions.h"
 
 struct KineticEnergyData
 {

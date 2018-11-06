@@ -198,16 +198,6 @@ enum class ConvergenceCriterionSteadyProblem
 /**************************************************************************************/
 
 /*
- *  Spatial discretization method
- */
-enum class SpatialDiscretization
-{
-  Undefined,
-  DG,
-  DGXWall
-};
-
-/*
  *  Type of imposition of Dirichlet BC's:
  *
  *  direct: u⁺ = g
@@ -683,10 +673,9 @@ public:
       rel_tol_steady(1.e-12),
 
       // SPATIAL DISCRETIZATION
-      // spatial discretization method
-      spatial_discretization(SpatialDiscretization::Undefined),
+      degree_mapping(1),
       upwind_factor(1.0),
-      imposition_of_dirichlet_bc_convective(TypeDirichletBCs::Mirror),
+      type_dirichlet_bc_convective(TypeDirichletBCs::Mirror),
 
       // convective term - currently no parameters
 
@@ -960,8 +949,8 @@ public:
 
 
     // SPATIAL DISCRETIZATION
-    AssertThrow(spatial_discretization != SpatialDiscretization::Undefined,
-                ExcMessage("parameter must be defined"));
+    AssertThrow(degree_mapping > 0, ExcMessage("Invalid parameter."));
+
     AssertThrow(IP_formulation_viscous != InteriorPenaltyFormulation::Undefined,
                 ExcMessage("parameter must be defined"));
 
@@ -1304,22 +1293,17 @@ public:
      *  from enums to strings
      */
 
-    // Spatial discretization method
-    std::string str_spatial_discret[] = {"Undefined", "DG", "DG-XWALL"};
-
-    print_parameter(pcout,
-                    "Spatial discretization method",
-                    str_spatial_discret[(int)spatial_discretization]);
+    print_parameter(pcout, "Polynomial degree of mapping", degree_mapping);
 
     if(equation_type == EquationType::NavierStokes)
     {
-      print_parameter(pcout, "Upwind factor", upwind_factor);
+      print_parameter(pcout, "Convective term - Upwind factor", upwind_factor);
 
       std::string str_type_dirichlet_convective[] = {"Direct", "Mirror"};
 
       print_parameter(pcout,
-                      "Type of Dirichlet BC's (convective)",
-                      str_type_dirichlet_convective[(int)imposition_of_dirichlet_bc_convective]);
+                      "Convective term - Type of Dirichlet BC's",
+                      str_type_dirichlet_convective[(int)type_dirichlet_bc_convective]);
     }
 
 
@@ -1971,8 +1955,9 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // description: see enum declaration
-  SpatialDiscretization spatial_discretization;
+  // Polynomial degree of shape functions used for geometry approximation (mapping from
+  // parameter space to physical space)
+  unsigned int degree_mapping;
 
   // convective term: upwind factor describes the scaling factor in front of the
   // stabilization term (which is strictly dissipative) of the numerical function
@@ -1985,7 +1970,7 @@ public:
   double upwind_factor;
 
   // description: see enum declaration
-  TypeDirichletBCs imposition_of_dirichlet_bc_convective;
+  TypeDirichletBCs type_dirichlet_bc_convective;
 
   // description: see enum declaration
   InteriorPenaltyFormulation IP_formulation_viscous;

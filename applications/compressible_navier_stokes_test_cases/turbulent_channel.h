@@ -124,6 +124,7 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   exponent_fe_degree_viscous = 3.0;
 
   // SPATIAL DISCRETIZATION
+  degree_mapping = FE_DEGREE;
 
   // viscous term
   IP_factor = 1.0;

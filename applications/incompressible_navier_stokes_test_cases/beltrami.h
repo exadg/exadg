@@ -70,8 +70,7 @@ void InputParameters<dim>::set_input_parameters()
 
   // SPATIAL DISCRETIZATION
 
-  // spatial discretization method
-  spatial_discretization = SpatialDiscretization::DG;
+  degree_mapping = FE_DEGREE_VELOCITY;
 
   // convective term - currently no parameters
 

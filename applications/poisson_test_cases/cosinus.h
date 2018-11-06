@@ -28,6 +28,7 @@ Poisson::InputParameters::set_input_parameters()
   // TEMPORAL DISCRETIZATION
 
   // SPATIAL DISCRETIZATION
+  degree_mapping = FE_DEGREE;
   IP_factor = 1.0;
 
   // SOLVER

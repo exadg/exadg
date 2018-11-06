@@ -186,14 +186,13 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
 
   // SPATIAL DISCRETIZATION
 
-  // spatial discretization method
-  spatial_discretization = SpatialDiscretization::DG;
+  degree_mapping = FE_DEGREE_VELOCITY;
 
   // convective term
 
   // variant Direct allows to use larger time step
   // sizes due to CFL condition at inflow boundary
-  imposition_of_dirichlet_bc_convective = TypeDirichletBCs::Mirror;
+  type_dirichlet_bc_convective = TypeDirichletBCs::Mirror;
 
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;

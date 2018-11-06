@@ -37,7 +37,7 @@ public:
               ConvDiff::InputParameters const &                     param_in,
               std::shared_ptr<ConvDiff::PostProcessor<dim, degree>> postprocessor_in)
     : fe(degree),
-      mapping(degree),
+      mapping(param_in.degree_mapping),
       dof_handler(triangulation),
       param(param_in),
       postprocessor(postprocessor_in)
