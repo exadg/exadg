@@ -1,6 +1,8 @@
 /*
- * FieldFunctionsCompNavierStokes.h
+ * field_functions.h
  *
+ *  Created on: 2018
+ *      Author: fehn
  */
 
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_FIELD_FUNCTIONS_H_

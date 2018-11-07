@@ -1,5 +1,5 @@
 /*
- * PressureDifferenceCalculation.h
+ * pressure_difference_calculation.h
  *
  *  Created on: Oct 14, 2016
  *      Author: fehn

@@ -134,8 +134,8 @@ public:
                dst,
                src,
                true /*zero_dst_vector = true*/,
-               MatrixFree<dim, Number>::only_values,
-               MatrixFree<dim, Number>::only_values);
+               MatrixFree<dim, Number>::DataAccessOnFaces::values,
+               MatrixFree<dim, Number>::DataAccessOnFaces::values);
   }
 
   void
@@ -150,8 +150,8 @@ public:
                dst,
                src,
                false /*zero_dst_vector = false*/,
-               MatrixFree<dim, Number>::only_values,
-               MatrixFree<dim, Number>::only_values);
+               MatrixFree<dim, Number>::DataAccessOnFaces::values,
+               MatrixFree<dim, Number>::DataAccessOnFaces::values);
   }
 
   /*
@@ -172,8 +172,8 @@ public:
                dst,
                src,
                true /*zero_dst_vector = true*/,
-               MatrixFree<dim, Number>::only_values,
-               MatrixFree<dim, Number>::only_values);
+               MatrixFree<dim, Number>::DataAccessOnFaces::values,
+               MatrixFree<dim, Number>::DataAccessOnFaces::values);
   }
 
   void
@@ -191,8 +191,8 @@ public:
                dst,
                src,
                false /*zero_dst_vector = false*/,
-               MatrixFree<dim, Number>::only_values,
-               MatrixFree<dim, Number>::only_values);
+               MatrixFree<dim, Number>::DataAccessOnFaces::values,
+               MatrixFree<dim, Number>::DataAccessOnFaces::values);
   }
 
   /*
@@ -215,8 +215,8 @@ public:
                diagonal,
                src,
                true /*zero_dst_vector = true*/,
-               MatrixFree<dim, Number>::only_values,
-               MatrixFree<dim, Number>::only_values);
+               MatrixFree<dim, Number>::DataAccessOnFaces::values,
+               MatrixFree<dim, Number>::DataAccessOnFaces::values);
   }
 
   void
@@ -236,8 +236,8 @@ public:
                diagonal,
                src,
                false /*zero_dst_vector = false*/,
-               MatrixFree<dim, Number>::only_values,
-               MatrixFree<dim, Number>::only_values);
+               MatrixFree<dim, Number>::DataAccessOnFaces::values,
+               MatrixFree<dim, Number>::DataAccessOnFaces::values);
   }
 
   /*
@@ -294,8 +294,8 @@ public:
                dst,
                src,
                true /*zero_dst_vector = true*/,
-               MatrixFree<dim, Number>::only_values,
-               MatrixFree<dim, Number>::only_values);
+               MatrixFree<dim, Number>::DataAccessOnFaces::values,
+               MatrixFree<dim, Number>::DataAccessOnFaces::values);
   }
 
   void
@@ -315,8 +315,8 @@ public:
                dst,
                src,
                false /*zero_dst_vector = false*/,
-               MatrixFree<dim, Number>::only_values,
-               MatrixFree<dim, Number>::only_values);
+               MatrixFree<dim, Number>::DataAccessOnFaces::values,
+               MatrixFree<dim, Number>::DataAccessOnFaces::values);
   }
 
   void
@@ -325,6 +325,8 @@ public:
                                        scalar const * const src,
                                        unsigned int const   problem_size = 1) const
   {
+    (void)problem_size;
+
     unsigned int dofs_per_cell = fe_eval->dofs_per_cell;
 
     fe_eval_linearization->reinit(cell);

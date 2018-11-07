@@ -1,5 +1,5 @@
 /*
- * DivergenceAndMassError.h
+ * divergence_and_mass_error.h
  *
  *  Created on: Oct 14, 2016
  *      Author: fehn
@@ -11,7 +11,7 @@
 #include <fstream>
 #include <sstream>
 
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
 #include <deal.II/matrix_free/matrix_free.h>
 #include <deal.II/matrix_free/operators.h>

@@ -25,10 +25,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::reinit(
-  MatrixFree<dim, Number> const & matrix_free,
-  ConstraintMatrix const &        constraint_matrix,
-  AdditionalData const &          operator_data,
-  unsigned int                    level_mg_handler) const
+  MatrixFree<dim, Number> const &   matrix_free,
+  AffineConstraints<double> const & constraint_matrix,
+  AdditionalData const &            operator_data,
+  unsigned int                      level_mg_handler) const
 {
   // reinit data structures
   this->data.reinit(matrix_free);
@@ -99,7 +99,6 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(
 
   if(is_dg)
   {
-    additional_data.build_face_info = true;
     additional_data.mapping_update_flags_inner_faces =
       operator_data.mapping_update_flags_inner_faces;
     additional_data.mapping_update_flags_boundary_faces =
@@ -705,7 +704,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::get_level() const
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
-ConstraintMatrix const &
+AffineConstraints<double> const &
 OperatorBase<dim, degree, Number, AdditionalData>::get_constraint_matrix() const
 {
   return *constraint;
@@ -1702,11 +1701,11 @@ OperatorBase<dim, degree, Number, AdditionalData>::set_constraint_diagonal(
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::add_constraints(
-  DoFHandler<dim> const &   dof_handler,
-  ConstraintMatrix &        constraint_own,
-  MGConstrainedDoFs const & mg_constrained_dofs,
-  AdditionalData &          operator_data,
-  unsigned int const        level)
+  DoFHandler<dim> const &     dof_handler,
+  AffineConstraints<double> & constraint_own,
+  MGConstrainedDoFs const &   mg_constrained_dofs,
+  AdditionalData &            operator_data,
+  unsigned int const          level)
 {
   // 0) clear old content (to be on the safe side)
   constraint_own.clear();
@@ -1764,7 +1763,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(
   DoFHandler<dim> const &                 dof_handler,
   unsigned int const                      level,
   std::vector<PeriodicFacePairIterator> & periodic_face_pairs_level0,
-  ConstraintMatrix &                      constraint_own)
+  AffineConstraints<double> &             constraint_own)
 {
   // loop over all periodic face pairs of level 0
   for(auto & it : periodic_face_pairs_level0)
@@ -1793,7 +1792,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(
   unsigned int const                            target_level,
   typename DoFHandler<dim>::face_iterator const face1,
   typename DoFHandler<dim>::face_iterator const face2,
-  ConstraintMatrix &                            constraints)
+  AffineConstraints<double> &                   constraints)
 {
   if(level == 0)
   {

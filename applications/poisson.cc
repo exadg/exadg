@@ -185,8 +185,8 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(ConvergenceTable & converg
   double time_setup = timer.wall_time();
 
   // allocate vectors
-  parallel::distributed::Vector<Number> rhs;
-  parallel::distributed::Vector<Number> solution;
+  LinearAlgebra::distributed::Vector<Number> rhs;
+  LinearAlgebra::distributed::Vector<Number> solution;
   poisson_operation->initialize_dof_vector(rhs);
   poisson_operation->initialize_dof_vector(solution);
 
@@ -259,14 +259,14 @@ main(int argc, char ** argv)
 
     ConvergenceTable convergence_table;
 
-    Run<DIMENSION,2>::run(convergence_table);
-//    Run<DIMENSION,3>::run(convergence_table);
-//    Run<DIMENSION,4>::run(convergence_table);
-//    Run<DIMENSION,5>::run(convergence_table);
-//    Run<DIMENSION,6>::run(convergence_table);
-//    Run<DIMENSION,7>::run(convergence_table);
-//    Run<DIMENSION,8>::run(convergence_table);
-//    Run<DIMENSION,9>::run(convergence_table);
+    Run<DIMENSION, 2>::run(convergence_table);
+    //    Run<DIMENSION,3>::run(convergence_table);
+    //    Run<DIMENSION,4>::run(convergence_table);
+    //    Run<DIMENSION,5>::run(convergence_table);
+    //    Run<DIMENSION,6>::run(convergence_table);
+    //    Run<DIMENSION,7>::run(convergence_table);
+    //    Run<DIMENSION,8>::run(convergence_table);
+    //    Run<DIMENSION,9>::run(convergence_table);
 
     if(!rank)
     {

@@ -1,5 +1,5 @@
 /*
- * DriverSteadyConvDiff.h
+ * driver_steady_problems.h
  *
  *  Created on: Nov 23, 2016
  *      Author: fehn
@@ -9,7 +9,7 @@
 #define INCLUDE_CONVECTION_DIFFUSION_DRIVER_STEADY_PROBLEMS_H_
 
 #include <deal.II/base/timer.h>
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 
 using namespace dealii;
 

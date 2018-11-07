@@ -1,5 +1,5 @@
 /*
- * TimeStepCalculation.h
+ * time_step_calculation.h
  *
  *  Created on: May 30, 2016
  *      Author: fehn
@@ -11,7 +11,7 @@
 #define CFL_BASED_ON_MINIMUM_COMPONENT
 
 #include <deal.II/base/function.h>
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
 #include "../functionalities/calculate_characteristic_element_length.h"
 
@@ -124,11 +124,11 @@ calculate_time_step_max_efficiency(double const       c_eff,
 
 template<int dim, int fe_degree, typename value_type>
 double
-calculate_adaptive_time_step_cfl(MatrixFree<dim, value_type> const &               data,
-                                 unsigned int const                                dof_index,
-                                 unsigned int const                                quad_index,
-                                 parallel::distributed::Vector<value_type> const & velocity,
-                                 double const                                      cfl,
+calculate_adaptive_time_step_cfl(MatrixFree<dim, value_type> const &                    data,
+                                 unsigned int const                                     dof_index,
+                                 unsigned int const                                     quad_index,
+                                 LinearAlgebra::distributed::Vector<value_type> const & velocity,
+                                 double const                                           cfl,
                                  double const exponent_fe_degree)
 {
   FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type> fe_eval(data, dof_index, quad_index);
@@ -202,12 +202,12 @@ limit_time_step_change(double & new_time_step, double const & last_time_step, do
 
 template<int dim, int fe_degree, typename value_type>
 double
-calculate_adaptive_time_step_diffusion(MatrixFree<dim, value_type> const &               data,
-                                       unsigned int const                                dof_index,
-                                       unsigned int const                                quad_index,
-                                       parallel::distributed::Vector<value_type> const & vt,
-                                       double const                                      viscosity,
-                                       double const                                      d,
+calculate_adaptive_time_step_diffusion(MatrixFree<dim, value_type> const & data,
+                                       unsigned int const                  dof_index,
+                                       unsigned int const                  quad_index,
+                                       LinearAlgebra::distributed::Vector<value_type> const & vt,
+                                       double const viscosity,
+                                       double const d,
                                        double const last_time_step,
                                        bool const   use_limiter        = true,
                                        double const exponent_fe_degree = 3)

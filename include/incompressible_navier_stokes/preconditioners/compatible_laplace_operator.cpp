@@ -100,10 +100,10 @@ CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, Number>::
 //    dof_handler_vec[dof_index_pressure] = &dof_handler_p;
 //
 //    // constraint matrix
-//    std::vector<ConstraintMatrix const *> constraint_matrix_vec;
+//    std::vector<AffineConstraints<double> const *> constraint_matrix_vec;
 //    // TODO: instead of 2 use something more general like DofHandlerSelector::n_variants
 //    constraint_matrix_vec.resize(2);
-//    ConstraintMatrix constraint_u, constraint_p;
+//    AffineConstraints<double> constraint_u, constraint_p;
 //    constraint_u.close();
 //    constraint_p.close();
 //    constraint_matrix_vec[dof_index_velocity] = &constraint_u;

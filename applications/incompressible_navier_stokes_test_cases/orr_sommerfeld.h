@@ -540,6 +540,8 @@ class PostProcessorOrrSommerfeld : public PostProcessor<dim, degree_u, degree_p,
 public:
   typedef PostProcessor<dim, degree_u, degree_p, Number> Base;
 
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   typedef typename Base::NavierStokesOperator NavierStokesOperator;
 
   PostProcessorOrrSommerfeld(PostProcessorDataOrrSommerfeld<dim> const & pp_data_os)
@@ -571,11 +573,11 @@ public:
                             energy_data);
   }
 
-  void do_postprocessing(parallel::distributed::Vector<Number> const &velocity,
-                         parallel::distributed::Vector<Number> const &intermediate_velocity,
-                         parallel::distributed::Vector<Number> const &pressure,
-                         double const                                time,
-                         int const                                   time_step_number)
+  void do_postprocessing(VectorType const &velocity,
+                         VectorType const &intermediate_velocity,
+                         VectorType const &pressure,
+                         double const      time,
+                         int const         time_step_number)
   {
     Base::do_postprocessing(
         velocity,

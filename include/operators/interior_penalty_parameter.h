@@ -30,7 +30,7 @@ calculate_penalty_parameter(AlignedVector<VectorizedArray<Number>> & array_penal
                             Mapping<dim> const &                     mapping,
                             unsigned int const                       dof_index = 0)
 {
-  unsigned int n_cells = data.n_macro_cells() + data.n_macro_ghost_cells();
+  unsigned int n_cells = data.n_cell_batches() + data.n_ghost_cell_batches();
   array_penalty_parameter.resize(n_cells);
 
   QGauss<dim>   quadrature(fe_degree + 1);

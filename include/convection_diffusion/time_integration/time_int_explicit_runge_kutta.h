@@ -1,5 +1,5 @@
 /*
- * TimeIntExplRKConvDiff.h
+ * time_int_explicit_runge_kutta.h
  *
  *  Created on: Aug 2, 2016
  *      Author: fehn
@@ -8,7 +8,7 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_TIME_INT_EXPLICIT_RUNGE_KUTTA_H_
 #define INCLUDE_CONVECTION_DIFFUSION_TIME_INT_EXPLICIT_RUNGE_KUTTA_H_
 
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 
 #include <deal.II/base/timer.h>
 

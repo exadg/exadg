@@ -1,5 +1,5 @@
 /*
- * TimeIntBDFCoupled.h
+ * time_int_bdf_coupled.h
  *
  *  Created on: Jun 13, 2016
  *      Author: fehn
@@ -8,8 +8,8 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_COUPLED_SOLVER_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_COUPLED_SOLVER_H_
 
-#include <deal.II/lac/parallel_block_vector.h>
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_block_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 
 #include "../../incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.h"
 #include "time_integration/push_back_vectors.h"

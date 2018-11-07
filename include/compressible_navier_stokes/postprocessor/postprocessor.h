@@ -1,6 +1,8 @@
 /*
  * postprocessor.h
  *
+ *  Created on: 2018
+ *      Author: fehn
  */
 
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_
@@ -12,7 +14,7 @@
 #include <sstream>
 
 // deal.II
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/vector_tools.h>
 
@@ -68,10 +70,11 @@ public:
   {
   }
 
+  // TODO check if we need dof_handler_vector_in
   virtual void
-  setup(NavierStokesOperator const &                     navier_stokes_operator_in,
-        DoFHandler<dim> const &                          dof_handler_in,
-        DoFHandler<dim> const &                          dof_handler_vector_in,
+  setup(NavierStokesOperator const & navier_stokes_operator_in,
+        DoFHandler<dim> const &      dof_handler_in,
+        DoFHandler<dim> const & /*dof_handler_vector_in*/,
         DoFHandler<dim> const &                          dof_handler_scalar_in,
         Mapping<dim> const &                             mapping_in,
         MatrixFree<dim, double> const &                  matrix_free_data_in,

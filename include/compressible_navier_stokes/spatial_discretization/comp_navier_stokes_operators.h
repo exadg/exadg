@@ -1,12 +1,14 @@
-/* *CompNavierStokesOperators.h
+/*
+ * comp_navier_stokes_operators.h
  *
- *
+ *  Created on: 2018
+ *      Author: fehn
  */
 
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_COMP_NAVIER_STOKES_OPERATORS_H_
 #define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_COMP_NAVIER_STOKES_OPERATORS_H_
 
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
 
 #include "../include/functionalities/evaluate_functions.h"

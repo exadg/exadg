@@ -1,7 +1,7 @@
 #ifndef MG_COARSE_ML
 #define MG_COARSE_ML
 
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
 #include <deal.II/multigrid/mg_base.h>

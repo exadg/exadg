@@ -41,7 +41,7 @@ public:
 
   void
   initialize(MatrixFree<dim, Number> const &     mf_data,
-             ConstraintMatrix const &            constraint_matrix,
+             AffineConstraints<double> const &   constraint_matrix,
              MassMatrixOperatorData<dim> const & mass_matrix_operator_data,
              unsigned int                        level_mg_handler = numbers::invalid_unsigned_int);
 

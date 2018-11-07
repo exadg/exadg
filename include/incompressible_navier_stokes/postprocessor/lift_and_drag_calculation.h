@@ -39,8 +39,8 @@ calculate_lift_and_drag_force(MatrixFree<dim, Number> const &      matrix_free_d
   for(unsigned int d = 0; d < dim; ++d)
     Force[d] = 0.0;
 
-  for(unsigned int face = matrix_free_data.n_macro_inner_faces();
-      face < (matrix_free_data.n_macro_inner_faces() + matrix_free_data.n_macro_boundary_faces());
+  for(unsigned int face = matrix_free_data.n_inner_face_batches();
+      face < (matrix_free_data.n_inner_face_batches() + matrix_free_data.n_boundary_face_batches());
       face++)
   {
     fe_eval_velocity.reinit(face);

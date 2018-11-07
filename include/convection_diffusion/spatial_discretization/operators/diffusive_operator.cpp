@@ -15,7 +15,7 @@ DiffusiveOperator<dim, degree, Number>::initialize(
   DiffusiveOperatorData<dim> const & operator_data_in,
   unsigned int                       level_mg_handler)
 {
-  ConstraintMatrix constraint_matrix;
+  AffineConstraints<double> constraint_matrix;
   Parent::reinit(mf_data, constraint_matrix, operator_data_in, level_mg_handler);
 
   IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
@@ -30,7 +30,7 @@ void
 DiffusiveOperator<dim, degree, Number>::initialize(
   Mapping<dim> const &               mapping,
   MatrixFree<dim, Number> const &    mf_data,
-  ConstraintMatrix const &           constraint_matrix,
+  AffineConstraints<double> const &  constraint_matrix,
   DiffusiveOperatorData<dim> const & operator_data_in,
   unsigned int                       level_mg_handler)
 {
@@ -218,7 +218,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
   {
-    normal_gradient_m = fe_eval.get_normal_gradient(q);
+    normal_gradient_m = fe_eval.get_normal_derivative(q);
   }
   else if(operator_type == OperatorType::inhomogeneous)
   {
@@ -300,13 +300,13 @@ DiffusiveOperator<dim, degree, Number>::do_face_integral(FEEvalFace & fe_eval,
     scalar jump_value = fe_eval.get_value(q) - fe_eval_neighbor.get_value(q);
     scalar value_flux = calculate_value_flux(jump_value);
 
-    scalar normal_gradient_m = fe_eval.get_normal_gradient(q);
-    scalar normal_gradient_p = fe_eval_neighbor.get_normal_gradient(q);
+    scalar normal_gradient_m = fe_eval.get_normal_derivative(q);
+    scalar normal_gradient_p = fe_eval_neighbor.get_normal_derivative(q);
     scalar gradient_flux =
       calculate_gradient_flux(normal_gradient_m, normal_gradient_p, jump_value, tau_IP);
 
-    fe_eval.submit_normal_gradient(value_flux, q);
-    fe_eval_neighbor.submit_normal_gradient(value_flux, q);
+    fe_eval.submit_normal_derivative(value_flux, q);
+    fe_eval_neighbor.submit_normal_derivative(value_flux, q);
 
     fe_eval.submit_value(-gradient_flux, q);
     // + sign since n⁺ = -n⁻
@@ -330,12 +330,12 @@ DiffusiveOperator<dim, degree, Number>::do_face_int_integral(FEEvalFace & fe_eva
     scalar value_flux = calculate_value_flux(jump_value);
 
     // set exterior value to zero
-    scalar normal_gradient_m = fe_eval.get_normal_gradient(q);
+    scalar normal_gradient_m = fe_eval.get_normal_derivative(q);
     scalar normal_gradient_p = make_vectorized_array<Number>(0.0);
     scalar gradient_flux =
       calculate_gradient_flux(normal_gradient_m, normal_gradient_p, jump_value, tau_IP);
 
-    fe_eval.submit_normal_gradient(value_flux, q);
+    fe_eval.submit_normal_derivative(value_flux, q);
     fe_eval.submit_value(-gradient_flux, q);
   }
 }
@@ -358,12 +358,12 @@ DiffusiveOperator<dim, degree, Number>::do_face_ext_integral(FEEvalFace & fe_eva
     // set gradient_m to zero
     scalar normal_gradient_m = make_vectorized_array<Number>(0.0);
     // minus sign to get the correct normal vector n⁺ = -n⁻
-    scalar normal_gradient_p = -fe_eval_neighbor.get_normal_gradient(q);
+    scalar normal_gradient_p = -fe_eval_neighbor.get_normal_derivative(q);
     scalar gradient_flux =
       calculate_gradient_flux(normal_gradient_m, normal_gradient_p, jump_value, tau_IP);
 
     // minus sign since n⁺ = -n⁻
-    fe_eval_neighbor.submit_normal_gradient(-value_flux, q);
+    fe_eval_neighbor.submit_normal_derivative(-value_flux, q);
     fe_eval_neighbor.submit_value(-gradient_flux, q);
   }
 }
@@ -394,7 +394,7 @@ DiffusiveOperator<dim, degree, Number>::do_boundary_integral(
     scalar gradient_flux =
       calculate_gradient_flux(normal_gradient_m, normal_gradient_p, jump_value, tau_IP);
 
-    fe_eval.submit_normal_gradient(value_flux, q);
+    fe_eval.submit_normal_derivative(value_flux, q);
     fe_eval.submit_value(-gradient_flux, q);
   }
 }

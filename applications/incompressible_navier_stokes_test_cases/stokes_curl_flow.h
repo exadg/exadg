@@ -381,7 +381,7 @@ public:
 };
 
 template<int dim>
-double PressureBC_dudt<dim>::value(const Point<dim>   &p,
+double PressureBC_dudt<dim>::value(const Point<dim>   &/*p*/,
                                    const unsigned int /*component*/) const
 {
   double result = 0.0;
@@ -460,7 +460,7 @@ void create_grid_and_set_boundary_conditions(
     std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
     std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >            &periodic_faces)
+      Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
 {
   const double left = 0.0, right = 1.0;
   GridGenerator::hyper_cube(triangulation,left,right);

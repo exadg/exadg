@@ -26,7 +26,7 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 11;
+unsigned int const FE_DEGREE_VELOCITY = 7;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
 // set the number of refine levels for spatial convergence tests
@@ -379,7 +379,7 @@ public:
 
  template<int dim>
  double RightHandSide<dim>::value(const Point<dim>   &/*p*/,
-                                  const unsigned int component) const
+                                  const unsigned int /*component*/) const
  {
    double result = 0.0;
    return result;

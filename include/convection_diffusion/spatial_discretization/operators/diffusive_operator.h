@@ -59,7 +59,7 @@ public:
   void
   initialize(Mapping<dim> const &               mapping,
              MatrixFree<dim, Number> const &    mf_data,
-             ConstraintMatrix const &           constraint_matrx,
+             AffineConstraints<double> const &  constraint_matrx,
              DiffusiveOperatorData<dim> const & operator_data_in,
              unsigned int                       level_mg_handler = numbers::invalid_unsigned_int);
 

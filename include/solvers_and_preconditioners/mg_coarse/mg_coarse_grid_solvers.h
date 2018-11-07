@@ -1,5 +1,5 @@
 /*
- * MGCoarseGridSolvers.h
+ * mg_coarse_grid_solvers.h
  *
  *  Created on: Nov 23, 2016
  *      Author: fehn
@@ -8,7 +8,7 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MGCOARSEGRIDSOLVERS_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MGCOARSEGRIDSOLVERS_H_
 
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/solver_control.h>
 #include <deal.II/lac/solver_gmres.h>

@@ -99,10 +99,10 @@ public:
     dof_handler_vec[dof_index_pressure] = &dof_handler_p;
 
     // constraint matrix
-    std::vector<ConstraintMatrix const *> constraint_matrix_vec;
+    std::vector<AffineConstraints<double> const *> constraint_matrix_vec;
     // TODO: instead of 2 use something more general like DofHandlerSelector::n_variants
     constraint_matrix_vec.resize(2);
-    ConstraintMatrix constraint_u, constraint_p;
+    AffineConstraints<double> constraint_u, constraint_p;
     constraint_u.close();
     constraint_p.close();
     constraint_matrix_vec[dof_index_velocity] = &constraint_u;
@@ -117,9 +117,12 @@ public:
     // additional data
     typename MatrixFree<dim, Number>::AdditionalData addit_data;
     addit_data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::none;
+
+    // TODO
     // continuous or discontinuous elements: discontinuous == 0
-    if(dof_handler_p.get_fe().dofs_per_vertex == 0)
-      addit_data.build_face_info = true;
+    //    if(dof_handler_p.get_fe().dofs_per_vertex == 0)
+    //      addit_data.build_face_info = true;
+
     addit_data.level_mg_handler = level;
 
     // reinit

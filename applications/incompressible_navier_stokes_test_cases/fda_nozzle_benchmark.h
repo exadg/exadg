@@ -902,13 +902,13 @@ void create_grid_and_set_boundary_conditions_1(
   // fill boundary descriptor velocity
   // no slip boundaries at lower and upper wall with ID=0
   std::shared_ptr<Function<dim> > zero_function_velocity;
-  zero_function_velocity.reset(new ZeroFunction<dim>(dim));
+  zero_function_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_velocity));
 
   // fill boundary descriptor pressure
   // no slip boundaries at lower and upper wall with ID=0
   std::shared_ptr<Function<dim> > pressure_bc_dudt;
-  pressure_bc_dudt.reset(new ZeroFunction<dim>(dim));
+  pressure_bc_dudt.reset(new Functions::ZeroFunction<dim>(dim));
   boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,pressure_bc_dudt));
 }
 
@@ -922,7 +922,7 @@ void create_grid_and_set_boundary_conditions_2(
     std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
     std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >            &periodic_faces)
+      Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
 {
   /*
    *   Inflow
@@ -1226,7 +1226,7 @@ void create_grid_and_set_boundary_conditions_2(
   // fill boundary descriptor velocity
   // no slip boundaries at the upper and lower wall with ID=0
   std::shared_ptr<Function<dim> > zero_function_velocity;
-  zero_function_velocity.reset(new ZeroFunction<dim>(dim));
+  zero_function_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_velocity));
 
   // inflow boundary condition at left boundary with ID=1: prescribe velocity profile which
@@ -1241,7 +1241,7 @@ void create_grid_and_set_boundary_conditions_2(
   // fill boundary descriptor pressure
   // no slip boundaries at the upper and lower wall with ID=0
   std::shared_ptr<Function<dim> > pressure_bc_dudt;
-  pressure_bc_dudt.reset(new ZeroFunction<dim>(dim));
+  pressure_bc_dudt.reset(new Functions::ZeroFunction<dim>(dim));
   boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,pressure_bc_dudt));
 
   // inflow boundary condition at left boundary with ID=1
@@ -1251,7 +1251,7 @@ void create_grid_and_set_boundary_conditions_2(
 
   // outflow boundary condition at right boundary with ID=2: set pressure to zero
   std::shared_ptr<Function<dim> > zero_function_pressure;
-  zero_function_pressure.reset(new ZeroFunction<dim>(1));
+  zero_function_pressure.reset(new Functions::ZeroFunction<dim>(1));
   boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(2,zero_function_pressure));
 }
 
@@ -1279,7 +1279,7 @@ void set_field_functions_1(std::shared_ptr<FieldFunctions<dim> > field_functions
   std::shared_ptr<Function<dim> > initial_solution_velocity;
   initial_solution_velocity.reset(new InitialSolutionVelocity<dim>());
   std::shared_ptr<Function<dim> > initial_solution_pressure;
-  initial_solution_pressure.reset(new ZeroFunction<dim>(1));
+  initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
 
   // prescribe body force for the turbulent channel (DOMAIN 1) to
   // adjust the desired flow rate
@@ -1300,11 +1300,11 @@ void set_field_functions_2(std::shared_ptr<FieldFunctions<dim> > field_functions
   std::shared_ptr<Function<dim> > initial_solution_velocity;
   initial_solution_velocity.reset(new InitialSolutionVelocity<dim>());
   std::shared_ptr<Function<dim> > initial_solution_pressure;
-  initial_solution_pressure.reset(new ZeroFunction<dim>(1));
+  initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
 
   // no body forces for the second domain
   std::shared_ptr<Function<dim> > right_hand_side;
-  right_hand_side.reset(new ZeroFunction<dim>(dim));
+  right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
 
   field_functions->initial_solution_velocity = initial_solution_velocity;
   field_functions->initial_solution_pressure = initial_solution_pressure;
@@ -1324,8 +1324,8 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 template<int dim>
 void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
 {
-  analytical_solution->velocity.reset(new ZeroFunction<dim>(dim));
-  analytical_solution->pressure.reset(new ZeroFunction<dim>(1));
+  analytical_solution->velocity.reset(new Functions::ZeroFunction<dim>(dim));
+  analytical_solution->pressure.reset(new Functions::ZeroFunction<dim>(1));
 }
 
 // Postprocessor
@@ -1343,11 +1343,13 @@ struct PostProcessorDataFDA
   LinePlotData<dim> line_plot_data;
 };
 
-template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
-class PostProcessorFDA : public PostProcessor<dim, fe_degree_u, fe_degree_p, Number>
+template<int dim, int degree_u, int degree_p, typename Number>
+class PostProcessorFDA : public PostProcessor<dim, degree_u, degree_p, Number>
 {
 public:
-  typedef PostProcessor<dim, fe_degree_u, fe_degree_p, Number> Base;
+  typedef PostProcessor<dim, degree_u, degree_p, Number> Base;
+
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef typename Base::NavierStokesOperator NavierStokesOperator;
 
@@ -1382,7 +1384,7 @@ public:
     inflow_data_calculator->setup(dof_handler_velocity_in,mapping_in);
 
     // calculation of mean velocity
-    mean_velocity_calculator.reset(new MeanVelocityCalculator<dim,fe_degree_u,Number>(
+    mean_velocity_calculator.reset(new MeanVelocityCalculator<dim,degree_u,Number>(
         matrix_free_data_in, dof_quad_index_data_in, pp_data_fda.mean_velocity_data));
 
     // evaluation of results along lines
@@ -1391,11 +1393,11 @@ public:
     line_plot_calculator_statistics->setup(pp_data_fda.line_plot_data);
   }
 
-  void do_postprocessing(parallel::distributed::Vector<Number> const &velocity,
-                         parallel::distributed::Vector<Number> const &intermediate_velocity,
-                         parallel::distributed::Vector<Number> const &pressure,
-                         double const                                time,
-                         int const                                   time_step_number)
+  void do_postprocessing(VectorType const &velocity,
+                         VectorType const &intermediate_velocity,
+                         VectorType const &pressure,
+                         double const     time,
+                         int const        time_step_number)
   {
     Base::do_postprocessing(
 	      velocity,
@@ -1441,7 +1443,7 @@ private:
 
   // calculate flow rate in precursor domain so that the flow rate can be
   // dynamically adjusted by a flow rate controller.
-  std::shared_ptr<MeanVelocityCalculator<dim,fe_degree_u,Number> > mean_velocity_calculator;
+  std::shared_ptr<MeanVelocityCalculator<dim,degree_u,Number> > mean_velocity_calculator;
 
   // the flow rate controller needs the time step size, so we have to store the previous time instant
   double time_old;
@@ -1450,8 +1452,8 @@ private:
   std::shared_ptr<LinePlotCalculatorStatistics<dim> > line_plot_calculator_statistics;
 };
 
-template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
-std::shared_ptr<PostProcessorBase<dim, fe_degree_u, fe_degree_p, Number> >
+template<int dim, int degree_u, int degree_p, typename Number>
+std::shared_ptr<PostProcessorBase<dim, degree_u, degree_p, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   // basic modules
@@ -1469,8 +1471,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data_fda.mean_velocity_data = param.mean_velocity_data;
   pp_data_fda.line_plot_data = param.line_plot_data;
 
-  std::shared_ptr<PostProcessorFDA<dim,fe_degree_u,fe_degree_p,Number> > pp;
-  pp.reset(new PostProcessorFDA<dim,fe_degree_u,fe_degree_p,Number>(pp_data_fda));
+  std::shared_ptr<PostProcessorFDA<dim,degree_u,degree_p,Number> > pp;
+  pp.reset(new PostProcessorFDA<dim,degree_u,degree_p,Number>(pp_data_fda));
 
   return pp;
 }

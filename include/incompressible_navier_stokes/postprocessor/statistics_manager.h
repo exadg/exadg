@@ -2,7 +2,7 @@
 #ifndef __indexa_statistics_manager_h
 #define __indexa_statistics_manager_h
 
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 
 #include "../../incompressible_navier_stokes/user_interface/input_parameters.h"
 

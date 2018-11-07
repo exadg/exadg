@@ -118,7 +118,7 @@ private:
     bool const relative_errors = error_data.calculate_relative_errors;
 
     // velocity
-    parallel::distributed::Vector<double> velocity_double;
+    LinearAlgebra::distributed::Vector<double> velocity_double;
     velocity_double = velocity;
 
     // L2-norm
@@ -220,7 +220,7 @@ private:
 
 
     // pressure
-    parallel::distributed::Vector<double> pressure_double;
+    LinearAlgebra::distributed::Vector<double> pressure_double;
     pressure_double = pressure;
 
     // L2-norm

@@ -1,5 +1,5 @@
 /*
- * BlockJacobiPreconditioner.h
+ * block_jacobi_preconditioner.h
  *
  *  Created on: Nov 25, 2016
  *      Author: fehn
@@ -8,7 +8,7 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_BLOCKJACOBIPRECONDITIONER_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_BLOCKJACOBIPRECONDITIONER_H_
 
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 
 #include "./preconditioner_base.h"
 

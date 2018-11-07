@@ -1,5 +1,5 @@
 /*
- * TimeIntBDFPressureCorrection.h
+ * time_int_bdf_pressure_correction.h
  *
  *  Created on: Oct 26, 2016
  *      Author: fehn

@@ -427,8 +427,8 @@ template<int dim>
  };
 
  template<int dim>
- double RightHandSide<dim>::value(const Point<dim>   &p,
-                                  const unsigned int component) const
+ double RightHandSide<dim>::value(const Point<dim>   &/*p*/,
+                                  const unsigned int /*component*/) const
  {
    double result = 0.0;
    return result;
@@ -445,8 +445,8 @@ template<int dim>
 void create_grid_and_set_boundary_conditions(
     parallel::distributed::Triangulation<dim>         &triangulation,
     unsigned int const                                n_refine_space,
-    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
+    std::shared_ptr<BoundaryDescriptorU<dim> >        /*boundary_descriptor_velocity*/,
+    std::shared_ptr<BoundaryDescriptorP<dim> >        /*boundary_descriptor_pressure*/,
     std::vector<GridTools::PeriodicFacePair<typename
       Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {

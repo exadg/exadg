@@ -432,8 +432,8 @@ template<int dim>
 void create_grid_and_set_boundary_conditions(
     parallel::distributed::Triangulation<dim>         &triangulation,
     unsigned int const                                n_refine_space,
-    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
+    std::shared_ptr<BoundaryDescriptorU<dim> >        /*boundary_descriptor_velocity*/,
+    std::shared_ptr<BoundaryDescriptorP<dim> >        /*boundary_descriptor_pressure*/,
     std::vector<GridTools::PeriodicFacePair<typename
       Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
@@ -475,7 +475,7 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
   analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
 
   std::shared_ptr<Function<dim> > right_hand_side;
-  right_hand_side.reset(new ZeroFunction<dim>(dim));
+  right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
 
   field_functions->initial_solution_velocity = analytical_solution_velocity;
   field_functions->initial_solution_pressure = analytical_solution_pressure;

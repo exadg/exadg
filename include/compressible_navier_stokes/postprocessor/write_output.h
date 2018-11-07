@@ -1,7 +1,8 @@
 /*
- * WriteOutputCompNavierStokes.h
+ * write_output.h
  *
- *
+ *  Created on: 2018
+ *      Author: fehn
  */
 
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_WRITE_OUTPUT_H_
@@ -95,7 +96,7 @@ template<int dim>
 class OutputGenerator
 {
 public:
-  typedef parallel::distributed::Vector<double> VectorType;
+  typedef LinearAlgebra::distributed::Vector<double> VectorType;
 
   OutputGenerator() : output_counter(0)
   {
