@@ -6,8 +6,8 @@ DEAL=deal.II
 # issue the build - must usually not be modified
 cmake \
     -D CMAKE_CXX_FLAGS="-march=native -Wno-array-bounds -Wno-literal-suffix -pthread" \
-    -D DEAL_II_CXX_FLAGS_RELEASE="-Wno-unused-parameter -Wno-deprecated-declarations" \
-    -D DEAL_II_CXX_FLAGS_DEBUG="-Wno-deprecated-declarations" \
+    -D DEAL_II_CXX_FLAGS_RELEASE=" " \
+    -D DEAL_II_CXX_FLAGS_DEBUG="-Og" \
     -D CMAKE_C_FLAGS="-march=native -Wno-array-bounds" \
     -D DEAL_II_WITH_MPI:BOOL="ON" \
     -D DEAL_II_LINKER_FLAGS="-lpthread" \

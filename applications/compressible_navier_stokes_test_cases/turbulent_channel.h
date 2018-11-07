@@ -239,8 +239,8 @@ public:
 
   virtual ~EnergyBC(){};
 
-  virtual double value (const Point<dim>    &p,
-                        const unsigned int  component = 0) const
+  virtual double value (const Point<dim>    &/*p*/,
+                        const unsigned int  /*component = 0*/) const
   {
     return T_0;
   }
@@ -263,7 +263,7 @@ template<int dim>
  };
 
  template<int dim>
- double RightHandSideVelocity<dim>::value(const Point<dim>   &p,
+ double RightHandSideVelocity<dim>::value(const Point<dim>   &/*p*/,
                                           const unsigned int component) const
  {
    double result = 0.0;
@@ -457,6 +457,8 @@ class PostProcessorTurbulentChannel : public CompNS::PostProcessor<dim,fe_degree
 public:
   typedef CompNS::PostProcessor<dim,fe_degree, n_q_points_conv, n_q_points_vis, value_type> Base;
 
+  typedef LinearAlgebra::distributed::Vector<double> VectorType;
+
   typedef typename Base::NavierStokesOperator NavierStokesOperator;
 
   PostProcessorTurbulentChannel(PostProcessorDataTurbulentChannel<dim> const & pp_data_turb_channel)
@@ -490,9 +492,9 @@ public:
     statistics_turb_ch->setup(&grid_transform_y,turb_ch_data);
   }
 
-  void do_postprocessing(parallel::distributed::Vector<double> const   &solution,
-                         double const                                  time,
-                         int const                                     time_step_number)
+  void do_postprocessing(VectorType const &solution,
+                         double const     time,
+                         int const        time_step_number)
   {
     Base::do_postprocessing(
         solution,

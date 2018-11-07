@@ -10,7 +10,6 @@
 
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/tria_boundary_lib.h>
 #include <deal.II/grid/manifold_lib.h>
 #include "../../include/functionalities/one_sided_cylindrical_manifold.h"
 
@@ -185,7 +184,7 @@ public:
 };
 
 template<int dim>
-double InitialSolution<dim>::value(const Point<dim>    &p,
+double InitialSolution<dim>::value(const Point<dim>    &/*p*/,
                                    const unsigned int  component) const
 {
   double result = 0.0;
@@ -346,7 +345,7 @@ void create_grid_and_set_boundary_conditions(
   std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_pressure,
   std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim> >  boundary_descriptor_energy,
   std::vector<GridTools::PeriodicFacePair<typename
-    Triangulation<dim>::cell_iterator> >                   &periodic_faces)
+    Triangulation<dim>::cell_iterator> >                   &/*periodic_faces*/)
 {
  Point<dim> center;
  center[0] = X_C;

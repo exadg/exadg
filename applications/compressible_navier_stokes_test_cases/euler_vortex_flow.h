@@ -322,7 +322,7 @@ double AnalyticalSolutionCompNS<dim>::value(const Point<dim>    &p,
 	 std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_pressure,
 	 std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim> >  boundary_descriptor_energy,
 	 std::vector<GridTools::PeriodicFacePair<typename
-	   Triangulation<dim>::cell_iterator> >                   &periodic_faces)
+	   Triangulation<dim>::cell_iterator> >                   &/*periodic_faces*/)
  {
    std::vector<unsigned int> repetitions({1,1});
    Point<dim> point1(X_0-L/2.0,Y_0-H/2.0), point2(X_0+L/2.0,Y_0+H/2.0);
