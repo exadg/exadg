@@ -58,7 +58,7 @@ This has to be done on website https://gitlab.lrz.de/ (open the supervisor's **n
 ```bash
 git clone https://gitlab.lrz.de/ab12xyz/navierstokes.git
 cd navierstokes/
-git remote add supervisor git@gitlab.lrz.de:supervisor_id/navierstokes.git
+git remote add supervisor https://gitlab.lrz.de/supervisor_id/navierstokes.git
 ```
 
 ### Interlude - install other software packages
