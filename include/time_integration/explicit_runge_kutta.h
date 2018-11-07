@@ -254,6 +254,8 @@ public:
     double const c3 = b1 + a32;
     double const c4 = b1 + b2 + a43;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     // stage 1
     this->underlying_operator->evaluate(vec_tmp1, vec_n /* u_1 */, time + c1 * time_step);
     vec_n.add(a21 * time_step, vec_tmp1);                    /* = u_2 */
@@ -272,6 +274,7 @@ public:
     // stage 4
     this->underlying_operator->evaluate(vec_tmp1, vec_n /* u_3 */, time + c4 * time_step);
     vec_np.add(b4 * time_step, vec_tmp1); /* = u_p */
+#pragma GCC diagnostic pop
   }
 
   unsigned int
@@ -337,6 +340,8 @@ public:
     double const c4 = b1 + b2 + a43;
     double const c5 = b1 + b2 + b3 + a54;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     // stage 1
     this->underlying_operator->evaluate(vec_tmp1, vec_n /* u_1 */, time + c1 * time_step);
     vec_n.add(a21 * time_step, vec_tmp1);                    /* = u_2 */
@@ -360,6 +365,7 @@ public:
     // stage 5
     this->underlying_operator->evaluate(vec_tmp1, vec_np /* u_4 */, time + c5 * time_step);
     vec_np.equ(1., vec_n, b5 * time_step, vec_tmp1);
+#pragma GCC diagnostic pop
   }
 
   unsigned int
@@ -549,6 +555,8 @@ public:
     double const c8 = b1 + b2 + b3 + b4 + b5 + b6 + a87;
     double const c9 = b1 + b2 + b3 + b4 + b5 + b6 + b7 + a98;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     // stage 1
     this->underlying_operator->evaluate(vec_tmp1, vec_n /* u_1 */, time + c1 * time_step);
     vec_n.add(a21 * time_step, vec_tmp1);                    /* = u_2 */
@@ -592,6 +600,7 @@ public:
     // stage 9
     this->underlying_operator->evaluate(vec_tmp1, vec_np /* u_9 */, time + c9 * time_step);
     vec_np.equ(1., vec_n, b9 * time_step, vec_tmp1);
+#pragma GCC diagnostic pop
   }
 
   unsigned int

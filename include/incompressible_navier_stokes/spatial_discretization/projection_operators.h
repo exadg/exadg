@@ -477,6 +477,8 @@ public:
                                        scalar const * const src,
                                        unsigned int const   problem_size = 1.0) const
   {
+    (void)problem_size;
+
     scaling_factor_div   = time_step_size;
     scaling_factor_conti = time_step_size;
 
@@ -1105,10 +1107,10 @@ private:
   }
 
   void
-  boundary_face_loop_calculate_block_diagonal(MatrixFree<dim, Number> const &         data,
-                                              std::vector<LAPACKFullMatrix<Number>> & matrices,
+  boundary_face_loop_calculate_block_diagonal(MatrixFree<dim, Number> const &,
+                                              std::vector<LAPACKFullMatrix<Number>> &,
                                               VectorType const &,
-                                              Range const & face_range) const
+                                              Range const &) const
   {
     // do nothing
   }

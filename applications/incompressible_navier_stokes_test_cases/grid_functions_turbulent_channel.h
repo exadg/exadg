@@ -60,7 +60,7 @@ template <int dim>
 class ManifoldTurbulentChannel : public ChartManifold<dim,dim,dim>
 {
 public:
- ManifoldTurbulentChannel(Tensor<1,dim> &dimensions_in)
+ ManifoldTurbulentChannel(Tensor<1,dim> const &dimensions_in)
  {
    dimensions = dimensions_in;
  }
@@ -97,6 +97,12 @@ public:
      xi[2] = x[2]/dimensions[2]+0.5;
 
    return xi;
+ }
+
+ std::unique_ptr<Manifold<dim>>
+ clone() const override
+ {
+   return std_cxx14::make_unique<ManifoldTurbulentChannel<dim>>(dimensions);
  }
 
 private:

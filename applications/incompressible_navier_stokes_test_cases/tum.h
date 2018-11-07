@@ -372,7 +372,7 @@ public:
 };
 
 template<int dim>
-double NeumannBoundaryVelocity<dim>::value(const Point<dim> &p,const unsigned int component) const
+double NeumannBoundaryVelocity<dim>::value(const Point<dim> &/*p*/,const unsigned int /*component*/) const
 {
   double result = 0.0;
   return result;

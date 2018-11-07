@@ -53,7 +53,7 @@ public:
 
   void
   initialize(MatrixFree<dim, Number> const &     mf_data,
-             ConstraintMatrix const &            constraint_matrix,
+             AffineConstraints<double> const &   constraint_matrix,
              ConvectiveOperatorData<dim> const & operator_data_in,
              unsigned int                        level_mg_handler = numbers::invalid_unsigned_int);
 

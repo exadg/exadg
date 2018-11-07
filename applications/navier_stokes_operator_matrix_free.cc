@@ -46,7 +46,7 @@ using namespace IncNS;
 /**************************************************************************************/
 
 // set the polynomial degree k of the shape functions
-unsigned int const FE_DEGREE_U_MIN = 1;
+unsigned int const FE_DEGREE_U_MIN = 2;
 unsigned int const FE_DEGREE_U_MAX = 2;
 
 // refinement level: l = REFINE_LEVELS[fe_degree-1]
@@ -335,10 +335,10 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::apply_operator()
   pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
 
   // Vectors needed for coupled solution approach
-  parallel::distributed::BlockVector<VALUE_TYPE> dst1, src1;
+  LinearAlgebra::distributed::BlockVector<Number> dst1, src1;
 
   // ... for dual splitting, pressure-correction.
-  parallel::distributed::Vector<VALUE_TYPE> dst2, src2;
+  LinearAlgebra::distributed::Vector<Number> dst2, src2;
 
   // initialize vectors
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)

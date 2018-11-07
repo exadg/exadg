@@ -211,7 +211,7 @@ DGOperation<dim, degree, Number>::initialize_matrix_free()
     Categorization::do_cell_based_loops(*tria, additional_data);
   }
 
-  ConstraintMatrix dummy;
+  AffineConstraints<double> dummy;
   dummy.close();
   data.reinit(mapping, dof_handler, dummy, quadrature, additional_data);
 }

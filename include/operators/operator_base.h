@@ -143,10 +143,10 @@ public:
    * initialized for level -1, i.e. the finest grid.
    */
   void
-  reinit(MatrixFree<dim, Number> const & matrix_free,
-         ConstraintMatrix const &        constraint_matrix,
-         AdditionalData const &          operator_data,
-         unsigned int                    level_mg_handler = numbers::invalid_unsigned_int) const;
+  reinit(MatrixFree<dim, Number> const &   matrix_free,
+         AffineConstraints<double> const & constraint_matrix,
+         AdditionalData const &            operator_data,
+         unsigned int                      level_mg_handler = numbers::invalid_unsigned_int) const;
 
   virtual void
   reinit(DoFHandler<dim> const &   dof_handler,
@@ -328,7 +328,7 @@ public:
   unsigned int
   get_level() const;
 
-  ConstraintMatrix const &
+  AffineConstraints<double> const &
   get_constraint_matrix() const;
 
   /*
@@ -606,11 +606,11 @@ private:
   set_constraint_diagonal(VectorType & diagonal) const;
 
   void
-  add_constraints(DoFHandler<dim> const &   dof_handler,
-                  ConstraintMatrix &        constraint_own,
-                  MGConstrainedDoFs const & mg_constrained_dofs,
-                  AdditionalData &          operator_data,
-                  unsigned int const        level);
+  add_constraints(DoFHandler<dim> const &     dof_handler,
+                  AffineConstraints<double> & constraint_own,
+                  MGConstrainedDoFs const &   mg_constrained_dofs,
+                  AdditionalData &            operator_data,
+                  unsigned int const          level);
 
   /*
    * Add periodic constraints: loop over all periodic face pairs on level 0
@@ -619,7 +619,7 @@ private:
   add_periodicity_constraints(DoFHandler<dim> const &                 dof_handler,
                               unsigned int const                      level,
                               std::vector<PeriodicFacePairIterator> & periodic_face_pairs_level0,
-                              ConstraintMatrix &                      constraint_own);
+                              AffineConstraints<double> &             constraint_own);
 
   /*
    * Add periodic constraints: for a given face pair on level 0 add recursively
@@ -630,7 +630,7 @@ private:
                               unsigned int const                            target_level,
                               typename DoFHandler<dim>::face_iterator const face1,
                               typename DoFHandler<dim>::face_iterator const face2,
-                              ConstraintMatrix &                            constraints);
+                              AffineConstraints<double> &                   constraints);
 
   /*
    *  Verify that each boundary face is assigned exactly one boundary type.
@@ -664,7 +664,7 @@ private:
   /*
    * Constraint matrix.
    */
-  mutable lazy_ptr<ConstraintMatrix> constraint;
+  mutable lazy_ptr<AffineConstraints<double>> constraint;
 
   /*
    * Is the discretization based on discontinuous Galerin method?

@@ -841,8 +841,11 @@ public:
     return xi;
   }
 
-private:
- Tensor<1,dim> dimensions;
+  std::unique_ptr<Manifold<dim>>
+  clone() const override
+  {
+    return std_cxx14::make_unique<ManifoldTurbulentChannel<dim>>();
+  }
 };
 
 template<int dim>

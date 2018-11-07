@@ -325,6 +325,8 @@ public:
                                        scalar const * const src,
                                        unsigned int const   problem_size = 1) const
   {
+    (void)problem_size;
+
     unsigned int dofs_per_cell = fe_eval->dofs_per_cell;
 
     fe_eval_linearization->reinit(cell);

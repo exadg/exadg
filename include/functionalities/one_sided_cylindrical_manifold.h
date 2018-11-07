@@ -26,10 +26,10 @@ template<int dim>
 class OneSidedCylindricalManifold : public ChartManifold<dim, dim, dim>
 {
 public:
-  OneSidedCylindricalManifold(typename Triangulation<dim>::cell_iterator & cell_in,
-                              unsigned int                                 face_in,
-                              Point<dim> const &                           center)
-    : cell(cell_in), face(face_in)
+  OneSidedCylindricalManifold(typename Triangulation<dim>::cell_iterator const & cell_in,
+                              unsigned int const                                 face_in,
+                              Point<dim> const &                                 center_in)
+    : cell(cell_in), face(face_in), center(center_in)
   {
     AssertThrow(face >= 0 && face <= 3,
                 ExcMessage("One sided spherical manifold can only be applied to face f=0,1,2,3."));
@@ -295,6 +295,12 @@ public:
     return xi;
   }
 
+  std::unique_ptr<Manifold<dim>>
+  clone() const override
+  {
+    return std_cxx14::make_unique<OneSidedCylindricalManifold<dim>>(cell, face, center);
+  }
+
 private:
   Point<2>     x_C;
   Tensor<1, 2> v_1;
@@ -305,6 +311,7 @@ private:
 
   typename Triangulation<dim>::cell_iterator cell;
   unsigned int                               face;
+  Point<dim>                                 center;
 };
 
 /*
@@ -322,12 +329,12 @@ template<int dim>
 class OneSidedConicalManifold : public ChartManifold<dim, dim, dim>
 {
 public:
-  OneSidedConicalManifold(typename Triangulation<dim>::cell_iterator & cell_in,
-                          unsigned int                                 face_in,
-                          Point<dim> const &                           center,
-                          double const                                 r_0_in,
-                          double const                                 r_1_in)
-    : cell(cell_in), face(face_in), r_0(r_0_in), r_1(r_1_in)
+  OneSidedConicalManifold(typename Triangulation<dim>::cell_iterator const & cell_in,
+                          unsigned int const                                 face_in,
+                          Point<dim> const &                                 center_in,
+                          double const                                       r_0_in,
+                          double const                                       r_1_in)
+    : cell(cell_in), face(face_in), center(center_in), r_0(r_0_in), r_1(r_1_in)
   {
     AssertThrow(dim == 3, ExcMessage("OneSidedConicalManifold can only be used for 3D problems."));
 
@@ -607,6 +614,13 @@ public:
     return xi;
   }
 
+  std::unique_ptr<Manifold<dim>>
+  clone() const override
+  {
+    return std_cxx14::make_unique<OneSidedConicalManifold<dim>>(cell, face, center, r_0, r_1);
+  }
+
+
 private:
   Point<2>     x_C;
   Tensor<1, 2> v_1;
@@ -616,6 +630,8 @@ private:
 
   typename Triangulation<dim>::cell_iterator cell;
   unsigned int                               face;
+
+  Point<dim> center;
 
   // radius of cone at xi_3 = 0 (-> r_0) and at xi_3 = 1 (-> r_1)
   double r_0, r_1;
@@ -631,7 +647,7 @@ template<int dim, int spacedim = dim>
 class MyCylindricalManifold : public ChartManifold<dim, spacedim, spacedim>
 {
 public:
-  MyCylindricalManifold(const Point<spacedim> center_in)
+  MyCylindricalManifold(Point<spacedim> const center_in)
     : ChartManifold<dim, spacedim, spacedim>(
         MyCylindricalManifold<dim, spacedim>::get_periodicity()),
       center(center_in)
@@ -649,10 +665,10 @@ public:
   }
 
   Point<spacedim>
-  push_forward(const Point<spacedim> & ref_point) const
+  push_forward(Point<spacedim> const & ref_point) const
   {
-    const double radius = ref_point[0];
-    const double theta  = ref_point[1];
+    double const radius = ref_point[0];
+    double const theta  = ref_point[1];
 
     Assert(ref_point[0] >= 0.0, ExcMessage("Radius must be positive."));
 
@@ -673,14 +689,14 @@ public:
   }
 
   Point<spacedim>
-  pull_back(const Point<spacedim> & space_point) const
+  pull_back(Point<spacedim> const & space_point) const
   {
     Tensor<1, spacedim> vector;
     vector[0] = space_point[0] - center[0];
     vector[1] = space_point[1] - center[1];
     // for the 3D case: vector[2] will always be 0.
 
-    const double radius = vector.norm();
+    double const radius = vector.norm();
 
     Point<spacedim> ref_point;
     ref_point[0] = radius;
@@ -692,6 +708,13 @@ public:
 
     return ref_point;
   }
+
+  std::unique_ptr<Manifold<dim>>
+  clone() const override
+  {
+    return std_cxx14::make_unique<MyCylindricalManifold<dim, spacedim>>(center);
+  }
+
 
 private:
   Point<dim> center;

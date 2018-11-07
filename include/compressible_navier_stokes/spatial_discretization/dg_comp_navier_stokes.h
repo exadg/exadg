@@ -438,11 +438,11 @@ private:
     additional_data.mapping_update_flags_inner_faces |= update_quadrature_points;
 
     // constraints
-    std::vector<const ConstraintMatrix *> constraint_matrix_vec;
+    std::vector<const AffineConstraints<double> *> constraint_matrix_vec;
     constraint_matrix_vec.resize(
       static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
         DofHandlerSelector::n_variants));
-    ConstraintMatrix constraint;
+    AffineConstraints<double> constraint;
     constraint.close();
     constraint_matrix_vec[dof_index_all]    = &constraint;
     constraint_matrix_vec[dof_index_vector] = &constraint;

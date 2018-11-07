@@ -101,7 +101,7 @@ private:
         }
 
         Number const rel   = perturbation_energy / initial_perturbation_energy;
-        Number const error = std::abs(std::exp<Number>(2 * energy_data.omega_i * time) - rel);
+        Number const error = std::abs(std::exp(2 * energy_data.omega_i * time) - rel);
 
         unsigned int const precision = 12;
         f << std::scientific << std::setprecision(precision) << std::setw(precision + 8) << time
@@ -112,7 +112,7 @@ private:
   }
 
   void
-  calculate_steady(VectorType const & velocity)
+  calculate_steady(VectorType const & /*velocity*/)
   {
     AssertThrow(false,
                 ExcMessage("Calculation of perturbation energy for "

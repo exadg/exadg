@@ -15,7 +15,7 @@ DiffusiveOperator<dim, degree, Number>::initialize(
   DiffusiveOperatorData<dim> const & operator_data_in,
   unsigned int                       level_mg_handler)
 {
-  ConstraintMatrix constraint_matrix;
+  AffineConstraints<double> constraint_matrix;
   Parent::reinit(mf_data, constraint_matrix, operator_data_in, level_mg_handler);
 
   IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
@@ -30,7 +30,7 @@ void
 DiffusiveOperator<dim, degree, Number>::initialize(
   Mapping<dim> const &               mapping,
   MatrixFree<dim, Number> const &    mf_data,
-  ConstraintMatrix const &           constraint_matrix,
+  AffineConstraints<double> const &  constraint_matrix,
   DiffusiveOperatorData<dim> const & operator_data_in,
   unsigned int                       level_mg_handler)
 {

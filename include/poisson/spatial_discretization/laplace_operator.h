@@ -57,7 +57,8 @@ public:
              MatrixFree<dim, Number> const &  mf_data,
              LaplaceOperatorData<dim> const & operator_data)
   {
-    ConstraintMatrix constraint_matrix;
+    AffineConstraints<double> constraint_matrix;
+
     Parent::reinit(mf_data, constraint_matrix, operator_data);
 
     // calculate penalty parameters
@@ -70,7 +71,7 @@ public:
   void
   initialize(Mapping<dim> const &             mapping,
              MatrixFree<dim, Number> &        mf_data,
-             ConstraintMatrix &               constraint_matrix,
+             AffineConstraints<double> &      constraint_matrix,
              LaplaceOperatorData<dim> const & operator_data)
   {
     Parent::reinit(mf_data, constraint_matrix, operator_data);

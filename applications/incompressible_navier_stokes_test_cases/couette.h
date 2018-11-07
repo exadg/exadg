@@ -306,7 +306,7 @@ public:
 };
 
 template<int dim>
-double AnalyticalSolutionPressure<dim>::value(const Point<dim>    &p,
+double AnalyticalSolutionPressure<dim>::value(const Point<dim>    &/*p*/,
                                               const unsigned int  /* component */) const
 {
   double result = 0.0;
@@ -338,7 +338,7 @@ public:
 };
 
 template<int dim>
-double NeumannBoundaryVelocity<dim>::value(const Point<dim> &p,const unsigned int component) const
+double NeumannBoundaryVelocity<dim>::value(const Point<dim> &/*p*/,const unsigned int /*component*/) const
 {
   double result = 0.0;
   return result;
@@ -375,8 +375,8 @@ public:
 };
 
 template<int dim>
-double PressureBC_dudt<dim>::value(const Point<dim>   &p,
-                                   const unsigned int component) const
+double PressureBC_dudt<dim>::value(const Point<dim>   &/*p*/,
+                                   const unsigned int /*component*/) const
 {
   // do nothing (result = 0) since we are interested in a steady state solution
   double result = 0.0;
@@ -403,8 +403,8 @@ template<int dim>
  };
 
  template<int dim>
- double RightHandSide<dim>::value(const Point<dim>   &p,
-                                  const unsigned int component) const
+ double RightHandSide<dim>::value(const Point<dim>   &/*p*/,
+                                  const unsigned int /*component*/) const
  {
    double result = 0.0;
    return result;
@@ -424,7 +424,7 @@ void create_grid_and_set_boundary_conditions(
     std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
     std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >            &periodic_faces)
+      Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
 {
   std::vector<unsigned int> repetitions({2,1});
   Point<dim> point1(0.0,-H/2.), point2(L,H/2.);

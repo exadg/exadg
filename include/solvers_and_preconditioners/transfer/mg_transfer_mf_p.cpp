@@ -27,7 +27,7 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::reinit
     typename MatrixFree<dim, value_type>::AdditionalData additional_data;
     additional_data.level_mg_handler = level;
 
-    ConstraintMatrix dummy;
+    AffineConstraints<double> dummy;
     dummy.close();
     data_1.reinit(dof_handler_1, dummy, quadrature, additional_data);
   }
@@ -37,7 +37,7 @@ MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, Number, VectorType>::reinit
     typename MatrixFree<dim, value_type>::AdditionalData additional_data;
     additional_data.level_mg_handler = level;
 
-    ConstraintMatrix dummy;
+    AffineConstraints<double> dummy;
     dummy.close();
     data_2.reinit(dof_handler_2, dummy, quadrature, additional_data);
   }

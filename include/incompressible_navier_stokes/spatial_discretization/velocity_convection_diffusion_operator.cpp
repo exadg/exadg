@@ -56,9 +56,9 @@ MomentumOperator<dim, degree, Number>::reinit(const DoFHandler<dim> & dof_handle
   dof_handler_vec[0] = &dof_handler;
 
   // constraint matrix
-  std::vector<const ConstraintMatrix *> constraint_matrix_vec;
+  std::vector<const AffineConstraints<double> *> constraint_matrix_vec;
   constraint_matrix_vec.resize(1);
-  ConstraintMatrix constraints;
+  AffineConstraints<double> constraints;
   constraints.close();
   constraint_matrix_vec[0] = &constraints;
 

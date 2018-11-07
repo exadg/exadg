@@ -733,10 +733,10 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::data_reinit(
   dof_handler_vec[dof_index_p]        = &dof_handler_p;
   dof_handler_vec[dof_index_u_scalar] = &dof_handler_u_scalar;
 
-  std::vector<const ConstraintMatrix *> constraint_matrix_vec;
+  std::vector<const AffineConstraints<double> *> constraint_matrix_vec;
   constraint_matrix_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
     DofHandlerSelector::n_variants));
-  ConstraintMatrix constraint_u, constraint_p, constraint_u_scalar;
+  AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
   constraint_u.close();
   constraint_p.close();
   constraint_u_scalar.close();

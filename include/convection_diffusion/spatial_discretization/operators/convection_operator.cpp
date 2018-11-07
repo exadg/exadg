@@ -13,7 +13,7 @@ ConvectiveOperator<dim, degree, Number>::initialize(
   ConvectiveOperatorData<dim> const & operator_data_in,
   unsigned int                        level_mg_handler)
 {
-  ConstraintMatrix constraint_matrix;
+  AffineConstraints<double> constraint_matrix;
   Parent::reinit(mf_data, constraint_matrix, operator_data_in, level_mg_handler);
 }
 
@@ -21,7 +21,7 @@ template<int dim, int degree, typename Number>
 void
 ConvectiveOperator<dim, degree, Number>::initialize(
   MatrixFree<dim, Number> const &     mf_data,
-  ConstraintMatrix const &            constraint_matrix,
+  AffineConstraints<double> const &   constraint_matrix,
   ConvectiveOperatorData<dim> const & operator_data_in,
   unsigned int                        level_mg_handler)
 {
