@@ -1,7 +1,7 @@
 #ifndef INCLUDE_FUNCTIONALITIES_SET_ZERO_MEAN_VALUE_H_
 #define INCLUDE_FUNCTIONALITIES_SET_ZERO_MEAN_VALUE_H_
 
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 
 template<typename Number>
 void

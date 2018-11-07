@@ -9,7 +9,7 @@
 #define INCLUDE_POSTPROCESSOR_EVALUATE_SOLUTION_IN_GIVEN_POINT_H_
 
 #include <deal.II/grid/grid_tools.h>
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 
 template<int dim, typename Number>
 void

@@ -99,7 +99,6 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(
 
   if(is_dg)
   {
-    additional_data.build_face_info = true;
     additional_data.mapping_update_flags_inner_faces =
       operator_data.mapping_update_flags_inner_faces;
     additional_data.mapping_update_flags_boundary_faces =

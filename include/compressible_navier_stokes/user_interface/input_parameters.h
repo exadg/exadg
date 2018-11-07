@@ -1,6 +1,8 @@
 /*
  * input_parameters.h
  *
+ *  Created on: 2018
+ *      Author: fehn
  */
 
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_

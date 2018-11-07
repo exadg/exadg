@@ -1,5 +1,5 @@
 /*
- * DGConvDiffOperation.h
+ * dg_convection_diffusion_operation.h
  *
  *  Created on: Aug 2, 2016
  *      Author: fehn
@@ -11,7 +11,7 @@
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q.h>
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/numerics/vector_tools.h>
 
 #include "../../convection_diffusion/preconditioners/multigrid_preconditioner.h"
@@ -434,7 +434,6 @@ private:
     typename MatrixFree<dim, Number>::AdditionalData additional_data;
     additional_data.tasks_parallel_scheme =
       MatrixFree<dim, Number>::AdditionalData::partition_partition;
-    additional_data.build_face_info = true;
     additional_data.mapping_update_flags =
       (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
        update_values);

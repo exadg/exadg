@@ -2,9 +2,9 @@
 #define OPERATION_BASE_H
 
 #include <deal.II/dofs/dof_handler.h>
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
+#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/lac/lapack_full_matrix.h>
-#include <deal.II/lac/parallel_vector.h>
 #ifdef DEAL_II_WITH_TRILINOS
 #  include <deal.II/lac/trilinos_sparse_matrix.h>
 #endif

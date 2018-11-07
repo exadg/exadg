@@ -8,8 +8,8 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_PRECONDITIONER_NAVIER_STOKES_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_PRECONDITIONER_NAVIER_STOKES_H_
 
-#include <deal.II/lac/parallel_block_vector.h>
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_block_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 
 #include "../../incompressible_navier_stokes/preconditioners/compatible_laplace_operator.h"
 #include "../../incompressible_navier_stokes/preconditioners/multigrid_preconditioner_navier_stokes.h"
@@ -150,13 +150,14 @@ template<typename value_type, typename UnderlyingOperator>
 class PreconditionerNavierStokesBase
 {
 public:
+  typedef LinearAlgebra::distributed::BlockVector<value_type> VectorType;
+
   virtual ~PreconditionerNavierStokesBase()
   {
   }
 
   virtual void
-  vmult(parallel::distributed::BlockVector<value_type> &       dst,
-        const parallel::distributed::BlockVector<value_type> & src) const = 0;
+  vmult(VectorType & dst, VectorType const & src) const = 0;
 
   virtual void
   update(UnderlyingOperator const * matrix_operator) = 0;
@@ -186,7 +187,8 @@ class BlockPreconditionerNavierStokes
   : public PreconditionerNavierStokesBase<value_type, UnderlyingOperator>
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+  typedef LinearAlgebra::distributed::Vector<value_type>      VectorType;
+  typedef LinearAlgebra::distributed::BlockVector<value_type> BlockVectorType;
 
   typedef float MultigridNumber;
 
@@ -366,8 +368,7 @@ public:
   }
 
   void
-  vmult(parallel::distributed::BlockVector<value_type> &       dst,
-        const parallel::distributed::BlockVector<value_type> & src) const
+  vmult(BlockVectorType & dst, BlockVectorType const & src) const
   {
     if(preconditioner_data.preconditioner_type ==
        PreconditionerLinearizedNavierStokes::BlockDiagonal)

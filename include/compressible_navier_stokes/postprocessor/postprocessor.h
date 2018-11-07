@@ -1,6 +1,8 @@
 /*
  * postprocessor.h
  *
+ *  Created on: 2018
+ *      Author: fehn
  */
 
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_
@@ -12,7 +14,7 @@
 #include <sstream>
 
 // deal.II
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/vector_tools.h>
 

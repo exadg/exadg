@@ -1,5 +1,5 @@
 /*
- * MultigridPreconditionerWrapperBase.h
+ * multigrid_preconditioner_adapter_base.h
  *
  *  Created on: Nov 23, 2016
  *      Author: fehn
@@ -11,7 +11,6 @@
 #include "../transfer/mg_transfer_mf_p.h"
 
 #include <deal.II/fe/fe_tools.h>
-#include <deal.II/lac/parallel_vector.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_gmres.h>
 #include <deal.II/matrix_free/fe_evaluation.h>

@@ -1,5 +1,5 @@
 /*
- * TimeIntBDFConvDiff.h
+ * time_int_bdf.h
  *
  *  Created on: Aug 22, 2016
  *      Author: fehn
@@ -8,7 +8,7 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_TIME_INT_BDF_H_
 #define INCLUDE_CONVECTION_DIFFUSION_TIME_INT_BDF_H_
 
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 
 #include <deal.II/base/timer.h>
 

@@ -1,5 +1,5 @@
 /*
- * InverseMassMatrix.h
+ * inverse_mass_matrix.h
  *
  *  Created on: May 12, 2016
  *      Author: fehn
@@ -10,7 +10,7 @@
 
 using namespace dealii;
 
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 
 #include <deal.II/matrix_free/fe_evaluation.h>
 #include <deal.II/matrix_free/operators.h>

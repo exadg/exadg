@@ -10,7 +10,7 @@
 
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/function.h>
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/numerics/vector_tools.h>
 
 using namespace dealii;

@@ -8,7 +8,7 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_CONVECTION_DIFFUSION_OPERATORS_H_
 #define INCLUDE_CONVECTION_DIFFUSION_CONVECTION_DIFFUSION_OPERATORS_H_
 
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
 
 #include "convection_diffusion/user_interface/boundary_descriptor.h"
@@ -497,11 +497,11 @@ private:
         }
 
         VectorizedArray<value_type> gradient_flux =
-          (fe_eval.get_normal_gradient(q) + fe_eval_neighbor.get_normal_gradient(q)) * 0.5;
+          (fe_eval.get_normal_derivative(q) + fe_eval_neighbor.get_normal_derivative(q)) * 0.5;
         gradient_flux = gradient_flux - tau_IP * jump_value;
 
-        fe_eval.submit_normal_gradient(-1.0 * (-0.5 * diffusivity * jump_value), q);
-        fe_eval_neighbor.submit_normal_gradient(-1.0 * (-0.5 * diffusivity * jump_value), q);
+        fe_eval.submit_normal_derivative(-1.0 * (-0.5 * diffusivity * jump_value), q);
+        fe_eval_neighbor.submit_normal_derivative(-1.0 * (-0.5 * diffusivity * jump_value), q);
 
         fe_eval.submit_value(-1.0 * (lf_flux - diffusivity * gradient_flux), q);
         fe_eval_neighbor.submit_value(-1.0 * (-lf_flux + diffusivity * gradient_flux), q);
@@ -612,11 +612,11 @@ private:
                 "Specified numerical flux function for convective operator is not implemented!"));
           }
 
-          VectorizedArray<value_type> gradient_flux = fe_eval.get_normal_gradient(q);
+          VectorizedArray<value_type> gradient_flux = fe_eval.get_normal_derivative(q);
 
           gradient_flux = gradient_flux - tau_IP * jump_value;
 
-          fe_eval.submit_normal_gradient(-1.0 * (-0.5 * diffusivity * jump_value), q);
+          fe_eval.submit_normal_derivative(-1.0 * (-0.5 * diffusivity * jump_value), q);
 
           fe_eval.submit_value(-1.0 * (lf_flux - diffusivity * gradient_flux), q);
         }
@@ -690,7 +690,7 @@ private:
           }
           gradient_flux.load(&array[0]);
 
-          fe_eval.submit_normal_gradient(-1.0 * (-0.5 * diffusivity * jump_value), q);
+          fe_eval.submit_normal_derivative(-1.0 * (-0.5 * diffusivity * jump_value), q);
 
           fe_eval.submit_value(-1.0 * (lf_flux - diffusivity * gradient_flux), q);
         }

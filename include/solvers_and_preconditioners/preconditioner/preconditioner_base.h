@@ -10,7 +10,7 @@
 
 using namespace dealii;
 
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 
 #include "../../operators/matrix_operator_base.h"
 

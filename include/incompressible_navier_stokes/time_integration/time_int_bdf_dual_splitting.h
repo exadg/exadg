@@ -1,5 +1,5 @@
 /*
- * TimeIntBDFDualSplitting.h
+ * time_int_bdf_dual_splitting.h
  *
  *  Created on: May 23, 2016
  *      Author: fehn

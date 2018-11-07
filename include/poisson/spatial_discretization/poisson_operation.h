@@ -1,8 +1,8 @@
 /*
- * DGLaplaceOperation.h
+ * poisson_operation.h
  *
- *  Created on:
- *      Author:
+ *  Created on: 2016
+ *      Author: Fehn/Munch
  */
 
 #ifndef INCLUDE_LAPLACE_DG_LAPLACE_OPERATION_H_
@@ -11,7 +11,6 @@
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q.h>
-#include <deal.II/lac/parallel_vector.h>
 #include <deal.II/numerics/vector_tools.h>
 
 #include "../../operators/inverse_mass_matrix.h"
@@ -32,7 +31,7 @@ template<int dim, int degree, typename Number>
 class DGOperation : public MatrixOperatorBase
 {
 public:
-  typedef parallel::distributed::Vector<Number> VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   DGOperation(parallel::distributed::Triangulation<dim> const & triangulation,
               Poisson::InputParameters const &                  param_in);

@@ -233,8 +233,10 @@ private:
   void
   calculate_filter_width(Mapping<dim> const & mapping)
   {
-    filter_width_vector.resize(matrix_free_data->n_macro_cells() +
-                               matrix_free_data->n_macro_ghost_cells());
+    unsigned int n_cells =
+      matrix_free_data->n_cell_batches() + matrix_free_data->n_ghost_cell_batches();
+
+    filter_width_vector.resize(n_cells);
 
     unsigned int dof_index = viscous_operator->get_operator_data().dof_index;
 
@@ -246,9 +248,7 @@ private:
                             update_JxW_values);
 
     // loop over all cells
-    for(unsigned int i = 0;
-        i < matrix_free_data->n_macro_cells() + matrix_free_data->n_macro_ghost_cells();
-        ++i)
+    for(unsigned int i = 0; i < n_cells; ++i)
     {
       for(unsigned int v = 0; v < matrix_free_data->n_components_filled(i); ++v)
       {

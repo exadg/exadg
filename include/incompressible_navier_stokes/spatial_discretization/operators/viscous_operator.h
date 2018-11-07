@@ -149,22 +149,22 @@ public:
   void
   initialize_viscous_coefficients()
   {
-    this->viscous_coefficient_cell.reinit(this->data->n_macro_cells(),
+    this->viscous_coefficient_cell.reinit(this->data->n_cell_batches(),
                                           Utilities::pow(degree + 1, dim));
     this->viscous_coefficient_cell.fill(make_vectorized_array<Number>(const_viscosity));
 
-    this->viscous_coefficient_face.reinit(this->data->n_macro_inner_faces() +
-                                            this->data->n_macro_boundary_faces(),
+    this->viscous_coefficient_face.reinit(this->data->n_inner_face_batches() +
+                                            this->data->n_boundary_face_batches(),
                                           Utilities::pow(degree + 1, dim - 1));
     this->viscous_coefficient_face.fill(make_vectorized_array<Number>(const_viscosity));
 
-    this->viscous_coefficient_face_neighbor.reinit(this->data->n_macro_inner_faces(),
+    this->viscous_coefficient_face_neighbor.reinit(this->data->n_inner_face_batches(),
                                                    Utilities::pow(degree + 1, dim - 1));
     this->viscous_coefficient_face_neighbor.fill(make_vectorized_array<Number>(const_viscosity));
 
     // TODO
     //    this->viscous_coefficient_face_cell_based.reset(new
-    //    Table<3,VectorizedArray<Number>>(this->data->n_macro_cells(),
+    //    Table<3,VectorizedArray<Number>>(this->data->n_cell_batches(),
     //                                                                                         2*dim,
     //                                                                                         Utilities::pow(n_actual_q_points_vel_linear,
     //                                                                                         dim -

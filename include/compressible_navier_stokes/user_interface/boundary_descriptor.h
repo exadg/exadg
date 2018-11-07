@@ -1,7 +1,8 @@
 /*
- * BoundaryDescriptorCompNavierStokes.h
+ * boundary_descriptor.h
  *
- *
+ *  Created on: 2018
+ *      Author: fehn
  */
 
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_

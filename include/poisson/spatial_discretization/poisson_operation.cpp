@@ -191,7 +191,6 @@ DGOperation<dim, degree, Number>::initialize_matrix_free()
   typename MatrixFree<dim, Number>::AdditionalData additional_data;
   additional_data.tasks_parallel_scheme =
     MatrixFree<dim, Number>::AdditionalData::partition_partition;
-  additional_data.build_face_info = true;
 
   additional_data.mapping_update_flags =
     (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |

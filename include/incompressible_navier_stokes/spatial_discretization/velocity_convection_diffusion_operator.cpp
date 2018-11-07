@@ -72,8 +72,6 @@ MomentumOperator<dim, degree, Number>::reinit(const DoFHandler<dim> & dof_handle
   // additional data
   typename MatrixFree<dim, Number>::AdditionalData addit_data;
   addit_data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::none;
-  if(dof_handler.get_fe().dofs_per_vertex == 0)
-    addit_data.build_face_info = true;
 
   addit_data.mapping_update_flags =
     (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |

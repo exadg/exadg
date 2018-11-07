@@ -519,7 +519,6 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::setup(
   typename MatrixFree<dim, Number>::AdditionalData additional_data;
   additional_data.tasks_parallel_scheme =
     MatrixFree<dim, Number>::AdditionalData::partition_partition;
-  additional_data.build_face_info = true;
   additional_data.mapping_update_flags =
     (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
      update_values);
@@ -771,8 +770,10 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::prescribe_initial_condition
   this->field_functions->initial_solution_pressure->set_time(evaluation_time);
 
   // This is necessary if Number == float
-  parallel::distributed::Vector<double> velocity_double;
-  parallel::distributed::Vector<double> pressure_double;
+  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+
+  VectorTypeDouble velocity_double;
+  VectorTypeDouble pressure_double;
   velocity_double = velocity;
   pressure_double = pressure;
 
@@ -841,7 +842,9 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::shift_pressure_mean_value(
 
   // one cannot use Number as template here since Number might be float
   // while analytical_solution_pressure is of type Function<dim,double>
-  parallel::distributed::Vector<double> vec_double;
+  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+
+  VectorTypeDouble vec_double;
   vec_double = pressure; // initialize
 
   this->field_functions->analytical_solution_pressure->set_time(eval_time);

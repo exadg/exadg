@@ -1,7 +1,8 @@
 /*
  * dg_comp_navier_stokes.h
  *
- *
+ *  Created on: 2018
+ *      Author: fehn
  */
 
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_COMP_NAVIER_STOKES_H_
@@ -12,7 +13,7 @@
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q.h>
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/numerics/vector_tools.h>
 
 // timer
@@ -429,7 +430,7 @@ private:
     typename MatrixFree<dim, value_type>::AdditionalData additional_data;
     additional_data.tasks_parallel_scheme =
       MatrixFree<dim, value_type>::AdditionalData::partition_partition;
-    additional_data.build_face_info = true;
+
     additional_data.mapping_update_flags =
       (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
        update_values);

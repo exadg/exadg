@@ -1,6 +1,8 @@
 /*
- * AnalyticalSolutionCompNavierStokes.h
+ * analytical_solution.h
  *
+ *  Created on: 2018
+ *      Author: fehn
  */
 
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_ANALYTICAL_SOLUTION_H_

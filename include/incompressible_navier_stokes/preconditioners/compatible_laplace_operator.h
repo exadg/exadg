@@ -117,9 +117,12 @@ public:
     // additional data
     typename MatrixFree<dim, Number>::AdditionalData addit_data;
     addit_data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::none;
+
+    // TODO
     // continuous or discontinuous elements: discontinuous == 0
-    if(dof_handler_p.get_fe().dofs_per_vertex == 0)
-      addit_data.build_face_info = true;
+    //    if(dof_handler_p.get_fe().dofs_per_vertex == 0)
+    //      addit_data.build_face_info = true;
+
     addit_data.level_mg_handler = level;
 
     // reinit

@@ -1,5 +1,5 @@
 /*
- * PostProcessorConvDiff.h
+ * postprocessor.h
  *
  *  Created on: Oct 12, 2016
  *      Author: fehn
@@ -8,7 +8,7 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_POSTPROCESSOR_H_
 #define INCLUDE_CONVECTION_DIFFUSION_POSTPROCESSOR_H_
 
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/vector_tools.h>
 

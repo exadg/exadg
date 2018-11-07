@@ -144,11 +144,13 @@ public:
       n_mpi_processes(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD)),
       block_diagonal_preconditioner_is_initialized(false)
   {
+    unsigned int n_cells = data.n_cell_batches() + data.n_ghost_cell_batches();
+
     if(operator_data.use_divergence_penalty)
-      array_div_penalty_parameter.resize(data.n_macro_cells() + data.n_macro_ghost_cells());
+      array_div_penalty_parameter.resize(n_cells);
 
     if(operator_data.use_continuity_penalty)
-      array_conti_penalty_parameter.resize(data.n_macro_cells() + data.n_macro_ghost_cells());
+      array_conti_penalty_parameter.resize(n_cells);
 
     if(operator_data.use_divergence_penalty)
       fe_eval.reset(
@@ -223,7 +225,7 @@ public:
 
     AlignedVector<scalar> JxW_values(fe_eval.n_q_points);
 
-    for(unsigned int cell = 0; cell < data.n_macro_cells() + data.n_macro_ghost_cells(); ++cell)
+    for(unsigned int cell = 0; cell < data.n_cell_batches() + data.n_ghost_cell_batches(); ++cell)
     {
       scalar tau_convective = make_vectorized_array<Number>(0.0);
       scalar tau_viscous    = make_vectorized_array<Number>(operator_data.viscosity);
@@ -276,7 +278,7 @@ public:
 
     AlignedVector<scalar> JxW_values(fe_eval.n_q_points);
 
-    for(unsigned int cell = 0; cell < data.n_macro_cells() + data.n_macro_ghost_cells(); ++cell)
+    for(unsigned int cell = 0; cell < data.n_cell_batches() + data.n_ghost_cell_batches(); ++cell)
     {
       fe_eval.reinit(cell);
       fe_eval.read_dof_values(velocity);
@@ -561,8 +563,8 @@ private:
               dst,
               src,
               zero_dst_vector,
-              MatrixFree<dim, Number>::only_values,
-              MatrixFree<dim, Number>::only_values);
+              MatrixFree<dim, Number>::DataAccessOnFaces::values,
+              MatrixFree<dim, Number>::DataAccessOnFaces::values);
   }
 
   void
@@ -575,8 +577,8 @@ private:
               dst,
               src,
               zero_dst_vector,
-              MatrixFree<dim, Number>::only_values,
-              MatrixFree<dim, Number>::only_values);
+              MatrixFree<dim, Number>::DataAccessOnFaces::values,
+              MatrixFree<dim, Number>::DataAccessOnFaces::values);
   }
 
   template<typename FEEval>
@@ -812,8 +814,8 @@ private:
               diagonal,
               src_dummy,
               true /*zero dst vector = true*/,
-              MatrixFree<dim, Number>::only_values,
-              MatrixFree<dim, Number>::only_values);
+              MatrixFree<dim, Number>::DataAccessOnFaces::values,
+              MatrixFree<dim, Number>::DataAccessOnFaces::values);
   }
 
   /*
