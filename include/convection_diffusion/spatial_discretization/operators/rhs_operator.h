@@ -68,8 +68,7 @@ private:
     {
       Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
 
-      scalar rhs = make_vectorized_array<Number>(0.0);
-      evaluate_scalar_function(rhs, operator_data.rhs, q_points, eval_time);
+      scalar rhs = evaluate_scalar_function(operator_data.rhs, q_points, eval_time);
 
       fe_eval.submit_value(rhs, q);
     }

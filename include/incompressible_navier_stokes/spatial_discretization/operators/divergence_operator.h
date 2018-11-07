@@ -302,12 +302,11 @@ private:
     {
       if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
       {
-        vector g;
-
-        typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-        it                          = operator_data.bc->dirichlet_bc.find(boundary_id);
+        typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
+          operator_data.bc->dirichlet_bc.find(boundary_id);
         Point<dim, scalar> q_points = fe_eval_velocity.quadrature_point(q);
-        evaluate_vectorial_function(g, it->second, q_points, eval_time);
+
+        vector g = evaluate_vectorial_function(it->second, q_points, eval_time);
 
         value_p = -value_m + make_vectorized_array<Number>(2.0) * g;
       }

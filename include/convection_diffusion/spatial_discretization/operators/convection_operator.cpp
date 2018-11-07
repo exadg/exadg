@@ -77,9 +77,8 @@ inline DEAL_II_ALWAYS_INLINE //
 
   Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
 
-  vector velocity;
-
-  evaluate_vectorial_function(velocity, this->operator_data.velocity, q_points, this->eval_time);
+  vector velocity =
+    evaluate_vectorial_function(this->operator_data.velocity, q_points, this->eval_time);
 
   vector normal = fe_eval.get_normal_vector(q);
 
@@ -148,11 +147,11 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
     {
-      scalar g = make_vectorized_array<Number>(0.0);
-      typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-      it                          = this->operator_data.bc->dirichlet_bc.find(boundary_id);
+      typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
+        this->operator_data.bc->dirichlet_bc.find(boundary_id);
       Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
-      evaluate_scalar_function(g, it->second, q_points, this->eval_time);
+
+      scalar g = evaluate_scalar_function(it->second, q_points, this->eval_time);
 
       value_p = -value_m + 2.0 * g;
     }
@@ -185,9 +184,8 @@ ConvectiveOperator<dim, degree, Number>::do_cell_integral(FEEvalCell & fe_eval) 
   {
     Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
 
-    vector velocity;
-
-    evaluate_vectorial_function(velocity, this->operator_data.velocity, q_points, this->eval_time);
+    vector velocity =
+      evaluate_vectorial_function(this->operator_data.velocity, q_points, this->eval_time);
 
     fe_eval.submit_gradient(-fe_eval.get_value(q) * velocity, q);
   }

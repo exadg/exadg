@@ -130,11 +130,11 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
     {
-      scalar g = make_vectorized_array<Number>(0.0);
-      typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-      it                          = this->operator_data.bc->dirichlet_bc.find(boundary_id);
+      typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
+        this->operator_data.bc->dirichlet_bc.find(boundary_id);
       Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
-      evaluate_scalar_function(g, it->second, q_points, this->eval_time);
+
+      scalar g = evaluate_scalar_function(it->second, q_points, this->eval_time);
 
       value_p = -value_m + 2.0 * g;
     }
@@ -253,11 +253,11 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
     {
-      scalar h = make_vectorized_array<Number>(0.0);
-      typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-      it                          = this->operator_data.bc->neumann_bc.find(boundary_id);
+      typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
+        this->operator_data.bc->neumann_bc.find(boundary_id);
       Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
-      evaluate_scalar_function(h, it->second, q_points, this->eval_time);
+
+      scalar h = evaluate_scalar_function(it->second, q_points, this->eval_time);
 
       normal_gradient_p = -normal_gradient_m + 2.0 * h;
     }

@@ -307,11 +307,11 @@ private:
     {
       if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
       {
-        scalar g = make_vectorized_array<Number>(0.0);
-        typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-        it                          = operator_data.bc->dirichlet_bc.find(boundary_id);
+        typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
+          operator_data.bc->dirichlet_bc.find(boundary_id);
         Point<dim, scalar> q_points = fe_eval_pressure.quadrature_point(q);
-        evaluate_scalar_function(g, it->second, q_points, eval_time);
+
+        scalar g = evaluate_scalar_function(it->second, q_points, eval_time);
 
         value_p = -value_m + 2.0 * inverse_scaling_factor_pressure * g;
       }

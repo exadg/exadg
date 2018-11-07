@@ -685,11 +685,9 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::
         Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
 
         // evaluate right-hand side
-        vector rhs;
-        evaluate_vectorial_function(rhs,
-                                    this->field_functions->right_hand_side,
-                                    q_points,
-                                    evaluation_time);
+        vector rhs = evaluate_vectorial_function(this->field_functions->right_hand_side,
+                                                 q_points,
+                                                 evaluation_time);
 
         scalar flux_times_normal = rhs * fe_eval.get_normal_vector(q);
         // minus sign is introduced here which allows to call a function of type ...add()
@@ -797,18 +795,14 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::local_rhs_ppe_nbc_
         Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
 
         // evaluate right-hand side
-        vector rhs;
-        evaluate_vectorial_function(rhs,
-                                    this->field_functions->right_hand_side,
-                                    q_points,
-                                    evaluation_time);
+        vector rhs = evaluate_vectorial_function(this->field_functions->right_hand_side,
+                                                 q_points,
+                                                 evaluation_time);
 
         // evaluate boundary condition
-        vector dudt;
-
-        typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-        it = this->boundary_descriptor_pressure->neumann_bc.find(boundary_id);
-        evaluate_vectorial_function(dudt, it->second, q_points, evaluation_time);
+        typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
+          this->boundary_descriptor_pressure->neumann_bc.find(boundary_id);
+        vector dudt = evaluate_vectorial_function(it->second, q_points, evaluation_time);
 
         vector normal = fe_eval.get_normal_vector(q);
 
