@@ -1,5 +1,5 @@
 /*
- * ExtrapolationScheme.h
+ * extrapolation_scheme.h
  *
  *  Created on: Jan 30, 2017
  *      Author: fehn
@@ -19,6 +19,9 @@ public:
       beta(order)
   {
     AssertThrow(order <= 4, ExcMessage("Specified order of extrapolation scheme not implemented."));
+
+    // The default case is start_with_low_order = false.
+    set_constant_time_step(order);
   }
 
   double
@@ -36,12 +39,6 @@ public:
   {
     return order;
   }
-
-  /*
-   *  This function initializes the time integrator constants.
-   */
-  void
-  initialize();
 
   /*
    *  This function updates the time integrator constants of the BDF scheme
@@ -202,14 +199,6 @@ ExtrapolationConstants::set_adaptive_time_step(unsigned int const          curre
 }
 
 void
-ExtrapolationConstants::initialize()
-{
-  // The default case is start_with_low_order = false.
-  set_constant_time_step(order);
-}
-
-
-void
 ExtrapolationConstants::update(unsigned int const current_order)
 {
   // when starting the time integrator with a low order method, ensure that
@@ -217,6 +206,10 @@ ExtrapolationConstants::update(unsigned int const current_order)
   if(current_order <= order && start_with_low_order == true)
   {
     set_constant_time_step(current_order);
+  }
+  else
+  {
+    set_constant_time_step(order);
   }
 }
 

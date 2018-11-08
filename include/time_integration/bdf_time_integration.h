@@ -1,5 +1,5 @@
 /*
- * BDFTimeIntegration.h
+ * bdf_time_integration.h
  *
  *  Created on: Jan 30, 2017
  *      Author: fehn
@@ -16,16 +16,21 @@ public:
                              bool const         start_with_low_order_method)
     : order(order_time_integrator),
       start_with_low_order(start_with_low_order_method),
-      gamma0(1.0),
+      gamma0(-1.0),
       alpha(order)
   {
     AssertThrow(order >= 1 && order <= 4,
                 ExcMessage("Specified order of BDF scheme not implemented."));
+
+    // The default case is start_with_low_order = false.
+    set_constant_time_step(order);
   }
 
   double
   get_gamma0() const
   {
+    AssertThrow(gamma0 > 0.0, ExcMessage("Constant gamma0 has not been initialized."));
+
     return gamma0;
   }
 
@@ -38,12 +43,6 @@ public:
 
     return alpha[i];
   }
-
-  /*
-   *  This function initializes the time integrator constants.
-   */
-  void
-  initialize();
 
   /*
    *  This function updates the time integrator constants of the BDF scheme
@@ -92,7 +91,8 @@ private:
    *
    *  du/dt = (gamma_0 u^{n+1} - alpha_0 u^{n} - alpha_1 u^{n-1} ... - alpha_{J-1} u^{n-J+1})/dt
    */
-  double              gamma0;
+  double gamma0;
+
   std::vector<double> alpha;
 };
 
@@ -224,14 +224,6 @@ BDFTimeIntegratorConstants::set_adaptive_time_step(unsigned int const          c
 }
 
 void
-BDFTimeIntegratorConstants::initialize()
-{
-  // The default case is start_with_low_order = false.
-  set_constant_time_step(order);
-}
-
-
-void
 BDFTimeIntegratorConstants::update(unsigned int const time_step_number)
 {
   // when starting the time integrator with a low order method, ensure that
@@ -239,6 +231,10 @@ BDFTimeIntegratorConstants::update(unsigned int const time_step_number)
   if(time_step_number <= order && start_with_low_order == true)
   {
     set_constant_time_step(time_step_number);
+  }
+  else
+  {
+    set_constant_time_step(order);
   }
 }
 
