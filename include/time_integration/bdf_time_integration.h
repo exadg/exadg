@@ -224,13 +224,13 @@ BDFTimeIntegratorConstants::set_adaptive_time_step(unsigned int const          c
 }
 
 void
-BDFTimeIntegratorConstants::update(unsigned int const time_step_number)
+BDFTimeIntegratorConstants::update(unsigned int const current_order)
 {
   // when starting the time integrator with a low order method, ensure that
   // the time integrator constants are set properly
-  if(time_step_number <= order && start_with_low_order == true)
+  if(current_order <= order && start_with_low_order == true)
   {
-    set_constant_time_step(time_step_number);
+    set_constant_time_step(current_order);
   }
   else
   {
@@ -239,14 +239,14 @@ BDFTimeIntegratorConstants::update(unsigned int const time_step_number)
 }
 
 void
-BDFTimeIntegratorConstants::update(unsigned int const          time_step_number,
+BDFTimeIntegratorConstants::update(unsigned int const          current_order,
                                    std::vector<double> const & time_steps)
 {
   // when starting the time integrator with a low order method, ensure that
   // the time integrator constants are set properly
-  if(time_step_number <= order && start_with_low_order == true)
+  if(current_order <= order && start_with_low_order == true)
   {
-    set_adaptive_time_step(time_step_number, time_steps);
+    set_adaptive_time_step(current_order, time_steps);
   }
   else // adjust time integrator constants since this is adaptive time stepping
   {
