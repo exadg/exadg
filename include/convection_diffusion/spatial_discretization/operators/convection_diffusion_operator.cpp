@@ -173,11 +173,11 @@ ConvectionDiffusionOperator<dim, degree, Number>::vmult(VectorType &       dst,
 {
   if(this->operator_data.unsteady_problem == true)
   {
-    AssertThrow(this->operator_data.scaling_factor_time_derivative_term > 0.0,
+    AssertThrow(scaling_factor_time_derivative_term > 0.0,
                 ExcMessage("Scaling factor of time derivative term has not been initialized!"));
 
     mass_matrix_operator->apply(dst, src);
-    dst *= this->operator_data.scaling_factor_time_derivative_term;
+    dst *= scaling_factor_time_derivative_term;
   }
   else
   {
@@ -203,12 +203,12 @@ ConvectionDiffusionOperator<dim, degree, Number>::vmult_add(VectorType &       d
   if(this->operator_data.unsteady_problem == true)
   {
     AssertThrow(
-      this->operator_data.scaling_factor_time_derivative_term > 0.0,
+      scaling_factor_time_derivative_term > 0.0,
       ExcMessage(
         "Scaling factor of time derivative term has not been initialized for convection-diffusion operator!"));
 
     mass_matrix_operator->apply(temp, src);
-    temp *= this->operator_data.scaling_factor_time_derivative_term;
+    temp *= scaling_factor_time_derivative_term;
     dst += temp;
   }
 
@@ -244,12 +244,12 @@ ConvectionDiffusionOperator<dim, degree, Number>::calculate_system_matrix(
   if(this->operator_data.unsteady_problem == true)
   {
     AssertThrow(
-      this->operator_data.scaling_factor_time_derivative_term > 0.0,
+      scaling_factor_time_derivative_term > 0.0,
       ExcMessage(
         "Scaling factor of time derivative term has not been initialized for convection-diffusion operator!"));
 
     mass_matrix_operator->calculate_system_matrix(system_matrix);
-    system_matrix *= this->operator_data.scaling_factor_time_derivative_term;
+    system_matrix *= scaling_factor_time_derivative_term;
   }
   else
   {
@@ -275,12 +275,12 @@ ConvectionDiffusionOperator<dim, degree, Number>::calculate_diagonal(VectorType 
   if(this->operator_data.unsteady_problem == true)
   {
     AssertThrow(
-      this->operator_data.scaling_factor_time_derivative_term > 0.0,
+      scaling_factor_time_derivative_term > 0.0,
       ExcMessage(
         "Scaling factor of time derivative term has not been initialized for convection-diffusion operator!"));
 
     mass_matrix_operator->calculate_diagonal(diagonal);
-    diagonal *= this->operator_data.scaling_factor_time_derivative_term;
+    diagonal *= scaling_factor_time_derivative_term;
   }
   else
   {
@@ -366,12 +366,12 @@ ConvectionDiffusionOperator<dim, degree, Number>::apply_add_block_diagonal_eleme
   // calculate block Jacobi matrices
   if(this->operator_data.unsteady_problem == true)
   {
-    AssertThrow(this->operator_data.scaling_factor_time_derivative_term > 0.0,
+    AssertThrow(scaling_factor_time_derivative_term > 0.0,
                 ExcMessage("Scaling factor of time derivative term has not been initialized!"));
 
     mass_matrix_operator->apply_add_block_diagonal_elementwise(cell, dst, src);
 
-    Elementwise::scale(dst, this->operator_data.scaling_factor_time_derivative_term, problem_size);
+    Elementwise::scale(dst, scaling_factor_time_derivative_term, problem_size);
   }
 
   if(this->operator_data.diffusive_problem == true)
@@ -404,7 +404,7 @@ ConvectionDiffusionOperator<dim, degree, Number>::add_block_diagonal_matrices(
   // calculate block Jacobi matrices
   if(this->operator_data.unsteady_problem == true)
   {
-    AssertThrow(this->operator_data.scaling_factor_time_derivative_term > 0.0,
+    AssertThrow(scaling_factor_time_derivative_term > 0.0,
                 ExcMessage("Scaling factor of time derivative term has not been initialized!"));
 
     mass_matrix_operator->add_block_diagonal_matrices(matrices);
@@ -413,7 +413,7 @@ ConvectionDiffusionOperator<dim, degree, Number>::add_block_diagonal_matrices(
         it != matrices.end();
         ++it)
     {
-      (*it) *= this->operator_data.scaling_factor_time_derivative_term;
+      (*it) *= scaling_factor_time_derivative_term;
     }
   }
 
