@@ -1,5 +1,5 @@
 /*
- * TimeIntBDF.h
+ * time_int_bdf_navier_stokes.h
  *
  *  Created on: Jun 10, 2016
  *      Author: fehn
@@ -8,18 +8,16 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_NAVIER_STOKES_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_NAVIER_STOKES_H_
 
-#include <deal.II/base/timer.h>
+#include "time_integration/time_int_bdf_base.h"
 
 #include "../../incompressible_navier_stokes/time_integration/restart.h"
-#include "time_integration/bdf_time_integration.h"
 #include "time_integration/explicit_runge_kutta.h"
-#include "time_integration/extrapolation_scheme.h"
 #include "time_integration/time_step_calculation.h"
 
 namespace IncNS
 {
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-class TimeIntBDFNavierStokes
+class TimeIntBDFNavierStokes : public TimeIntBDFBase
 {
 public:
   typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
@@ -27,21 +25,19 @@ public:
   TimeIntBDFNavierStokes(std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
                          InputParameters<dim> const &           param_in,
                          unsigned int const                     n_refine_time_in,
-                         bool const                             use_adaptive_time_stepping)
-    : param(param_in),
-      total_time(0.0),
-      time(param.start_time),
-      time_step_number(1),
-      order(param_in.order_time_integrator),
-      time_steps(param_in.order_time_integrator),
-      bdf(param_in.order_time_integrator, param_in.start_with_low_order),
-      extra(param_in.order_time_integrator, param_in.start_with_low_order),
-      adaptive_time_stepping(use_adaptive_time_stepping),
+                         bool const                             use_adaptive_time_stepping_in)
+    : TimeIntBDFBase(param_in.start_time,
+                     param_in.end_time,
+                     param_in.max_number_of_time_steps,
+                     param_in.order_time_integrator,
+                     param_in.start_with_low_order,
+                     use_adaptive_time_stepping_in,
+                     param_in.write_restart),
+      param(param_in),
       cfl(param.cfl / std::pow(2.0, n_refine_time_in)),
       cfl_oif(param_in.cfl_oif / std::pow(2.0, n_refine_time_in)),
       M(1),
       delta_s(1.0),
-      pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
       n_refine_time(n_refine_time_in),
       navier_stokes_operation(navier_stokes_operation_in)
   {
@@ -54,93 +50,12 @@ public:
   void
   setup(bool do_restart);
 
-  void
-  timeloop();
-
-  bool
-  advance_one_timestep(bool write_final_output);
-
-  void
-  timeloop_steady_problem();
-
-  virtual void
-  analyze_computing_times() const = 0;
-
-  double
-  get_time() const
-  {
-    return this->time;
-  }
-
-  void
-  set_time(double const & current_time)
-  {
-    this->time = current_time;
-  }
-
-  double
-  get_time_step_size() const
-  {
-    if(adaptive_time_stepping == true)
-    {
-      double const EPSILON = 1.e-10;
-      if(time > param.start_time - EPSILON)
-      {
-        return time_steps[0];
-      }
-      else // time integrator has not yet started
-      {
-        // return a large value because we take the minimum time step size when coupling this time
-        // integrator to others. This way, this time integrator does not pose a restriction on the
-        // time step size.
-        return std::numeric_limits<double>::max();
-      }
-    }
-    else // constant time step size
-    {
-      return time_steps[0];
-    }
-  }
-
-  void
-  set_time_step_size(double const & time_step)
-  {
-    // constant time step sizes
-    if(adaptive_time_stepping == false)
-    {
-      AssertThrow(time_step_number == 1,
-                  ExcMessage("For time integration with constant time step sizes this "
-                             "function can only be called in the very first time step."));
-    }
-
-    time_steps[0] = time_step;
-
-    // fill time_steps array
-    if(time_step_number == 1)
-    {
-      for(unsigned int i = 1; i < order; ++i)
-        time_steps[i] = time_steps[0];
-    }
-  }
-
-  double
-  get_scaling_factor_time_derivative_term()
-  {
-    return bdf.get_gamma0() / time_steps[0];
-  }
-
 protected:
-  void
-  do_timestep();
+  virtual void
+  update_time_integrator_constants();
 
   virtual void
   initialize_vectors() = 0;
-
-  virtual void
-  initialize_time_integrator_constants();
-
-  virtual void
-  update_time_integrator_constants();
 
   void
   initialize_oif();
@@ -154,8 +69,6 @@ protected:
   virtual void
   recalculate_adaptive_time_step();
 
-  // output of solver information regarding iteration counts, wall times,
-  // and remaining time until completion of the simulation
   void
   output_solver_info_header() const;
 
@@ -176,33 +89,8 @@ protected:
 
   InputParameters<dim> const & param;
 
-  // computation time
-  Timer  global_timer;
-  double total_time;
-
-  // physical time
-  double time;
-
-  // the number of the current time step starting with time_step_number = 1
-  unsigned int time_step_number;
-
-  // order of time integration scheme
-  unsigned int const order;
-
-  // Vector that stores time step sizes. This vector is necessary
-  // if adaptive_time_stepping = true. For constant time step sizes
-  // one double for the time step size would be sufficient.
-  std::vector<double> time_steps;
-
-  // Time integrator constants of BDF and extrapolation schemes
-  BDFTimeIntegratorConstants bdf;
-  ExtrapolationConstants     extra;
-
   // BDF time integration: Sum_i (alpha_i/dt * u_i)
   VectorType sum_alphai_ui;
-
-  // use adaptive time stepping?
-  bool const adaptive_time_stepping;
 
   // gobal cfl number
   double const cfl;
@@ -230,8 +118,6 @@ protected:
   VectorType solution_tilde_m;
   VectorType solution_tilde_mp;
 
-  ConditionalOStream pcout;
-
 private:
   virtual void
   setup_derived() = 0;
@@ -246,20 +132,10 @@ private:
   initialize_solution_and_calculate_timestep(bool do_restart);
 
   virtual void
-  solve_timestep() = 0;
-
-  virtual void
   solve_steady_problem() = 0;
 
   virtual void
-  postprocessing() const = 0;
-
-  virtual void
   postprocessing_steady_problem() const = 0;
-
-  // TODO
-  virtual void
-  postprocessing_stability_analysis() = 0;
 
   virtual void
   prepare_vectors_for_next_timestep() = 0;
@@ -281,14 +157,6 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::set
 {
   pcout << std::endl << "Setup time integrator ..." << std::endl << std::endl;
 
-  // initialize time integrator constants assuming that the time integrator
-  // uses a high-order method in first time step, i.e., the default case is
-  // start_with_low_order = false. This is reasonable since DGNavierStokes
-  // uses these time integrator constants for the setup of solvers.
-  // in case of start_with_low_order == true the time integrator constants
-  // have to be adjusted in timeloop().
-  initialize_time_integrator_constants();
-
   // operator-integration-factor splitting
   initialize_oif();
 
@@ -307,39 +175,6 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::set
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
 TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_time_integrator_constants()
-{
-  bdf.initialize();
-  extra.initialize();
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  update_time_integrator_constants()
-{
-  if(adaptive_time_stepping == false) // constant time steps
-  {
-    bdf.update(time_step_number);
-    extra.update(time_step_number);
-  }
-  else // adaptive time stepping
-  {
-    bdf.update(time_step_number, time_steps);
-    extra.update(time_step_number, time_steps);
-  }
-
-  // use this function to check the correctness of the time integrator constants
-  //  std::cout << std::endl << "Time step " << time_step_number << std::endl << std::endl;
-  //  std::cout << "Coefficients BDF time integration scheme:" << std::endl;
-  //  bdf.print();
-  //  std::cout << "Coefficients extrapolation scheme:" << std::endl;
-  //  extra.print();
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
   initialize_solution_and_calculate_timestep(bool do_restart)
 {
   if(do_restart)
@@ -348,7 +183,7 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
 
     // if anything in the temporal discretization is changed, start_with_low_order has to be set to
     // true otherwise the old solutions would not fit the time step increments, etc.
-    if(param.start_with_low_order)
+    if(start_with_low_order == true)
       calculate_time_step();
 
     if(adaptive_time_stepping == true)
@@ -366,9 +201,18 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
 
     // now: prescribe initial conditions at former time instants t = time - time_step, time
     // - 2.0*time_step, etc.
-    if(param.start_with_low_order == false)
+    if(start_with_low_order == false)
       initialize_former_solution();
   }
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void
+TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+  update_time_integrator_constants()
+{
+  // call function of base class to update the standard time integrator constants
+  TimeIntBDFBase::update_time_integrator_constants();
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -376,69 +220,69 @@ void
 TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::initialize_oif()
 {
   // Operator-integration-factor splitting
-  if(this->param.equation_type == EquationType::NavierStokes &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+  if(param.equation_type == EquationType::NavierStokes &&
+     param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
     convective_operator_OIF.reset(
       new ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>(
         navier_stokes_operation));
 
     // initialize OIF time integrator
-    if(this->param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK1Stage1)
+    if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK1Stage1)
     {
       time_integrator_OIF.reset(new ExplicitRungeKuttaTimeIntegrator<
                                 ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
                                 VectorType>(1, convective_operator_OIF));
     }
-    else if(this->param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK2Stage2)
+    else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK2Stage2)
     {
       time_integrator_OIF.reset(new ExplicitRungeKuttaTimeIntegrator<
                                 ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
                                 VectorType>(2, convective_operator_OIF));
     }
-    else if(this->param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK3Stage3)
+    else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK3Stage3)
     {
       time_integrator_OIF.reset(new ExplicitRungeKuttaTimeIntegrator<
                                 ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
                                 VectorType>(3, convective_operator_OIF));
     }
-    else if(this->param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage4)
+    else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage4)
     {
       time_integrator_OIF.reset(new ExplicitRungeKuttaTimeIntegrator<
                                 ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
                                 VectorType>(4, convective_operator_OIF));
     }
-    else if(this->param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK3Stage4Reg2C)
+    else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK3Stage4Reg2C)
     {
       time_integrator_OIF.reset(new LowStorageRK3Stage4Reg2C<
                                 ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
                                 VectorType>(convective_operator_OIF));
     }
-    else if(this->param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage5Reg2C)
+    else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage5Reg2C)
     {
       time_integrator_OIF.reset(new LowStorageRK4Stage5Reg2C<
                                 ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
                                 VectorType>(convective_operator_OIF));
     }
-    else if(this->param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage5Reg3C)
+    else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage5Reg3C)
     {
       time_integrator_OIF.reset(new LowStorageRK4Stage5Reg3C<
                                 ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
                                 VectorType>(convective_operator_OIF));
     }
-    else if(this->param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK5Stage9Reg2S)
+    else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK5Stage9Reg2S)
     {
       time_integrator_OIF.reset(new LowStorageRK5Stage9Reg2S<
                                 ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
                                 VectorType>(convective_operator_OIF));
     }
-    else if(this->param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK3Stage7Reg2)
+    else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK3Stage7Reg2)
     {
       time_integrator_OIF.reset(
         new LowStorageRKTD<ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
                            VectorType>(convective_operator_OIF, 3, 7));
     }
-    else if(this->param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage8Reg2)
+    else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage8Reg2)
     {
       time_integrator_OIF.reset(
         new LowStorageRKTD<ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
@@ -463,7 +307,12 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::res
   std::ifstream     in(filename.c_str());
   check_file(in, filename);
   boost::archive::binary_iarchive ia(in);
-  resume_restart<dim, value_type>(ia, param, time, time_steps, order);
+
+  double              time_local = 0.0;
+  std::vector<double> time_steps_local(order, -1.0);
+  resume_restart<dim, value_type>(ia, param, time_local, time_steps_local, order);
+  this->reset_time(time_local);
+  this->reset_time_step_vector(time_steps_local);
 
   read_restart_vectors(ia);
 
@@ -477,15 +326,17 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::wri
   const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
 
   const double wall_time = global_timer.wall_time();
-  if((std::fmod(time, param.restart_interval_time) < time_steps[0] + EPSILON &&
-      time > param.restart_interval_time - EPSILON) ||
+  if((std::fmod(this->get_time(), param.restart_interval_time) <
+        this->get_time_step_size() + EPSILON &&
+      this->get_time() > param.restart_interval_time - EPSILON) ||
      (std::fmod(wall_time, param.restart_interval_wall_time) < wall_time - total_time) ||
-     (time_step_number % param.restart_every_timesteps == 0))
+     (get_time_step_number() % param.restart_every_timesteps == 0))
   {
     std::ostringstream oss;
 
     boost::archive::binary_oarchive oa(oss);
-    write_restart_preamble<dim, value_type>(oa, param, time_steps, time, order);
+    write_restart_preamble<dim, value_type>(
+      oa, param, this->get_time_step_vector(), this->get_time(), order);
     write_restart_vectors(oa);
     write_restart_file<dim>(oss, param);
   }
@@ -497,10 +348,12 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::cal
 {
   if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified)
   {
-    time_steps[0] = calculate_const_time_step(param.time_step_size, n_refine_time);
+    double const time_step = calculate_const_time_step(param.time_step_size, n_refine_time);
+
+    this->set_time_step_size(time_step);
 
     pcout << "User specified time step size:" << std::endl << std::endl;
-    print_parameter(pcout, "time step size", time_steps[0]);
+    print_parameter(pcout, "time step size", time_step);
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL)
   {
@@ -514,8 +367,10 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::cal
                                                      param.cfl_exponent_fe_degree_velocity);
 
     // decrease time_step in order to exactly hit end_time
-    time_steps[0] = (param.end_time - param.start_time) /
-                    (1 + int((param.end_time - param.start_time) / time_step));
+    time_step = (param.end_time - param.start_time) /
+                (1 + int((param.end_time - param.start_time) / time_step));
+
+    this->set_time_step_size(time_step);
 
     pcout << "Calculation of time step size according to CFL condition:" << std::endl << std::endl;
 
@@ -523,7 +378,7 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::cal
     print_parameter(pcout, "U_max", param.max_velocity);
     print_parameter(pcout, "CFL", cfl);
     print_parameter(pcout, "exponent fe_degree_velocity", param.cfl_exponent_fe_degree_velocity);
-    print_parameter(pcout, "Time step size", time_steps[0]);
+    print_parameter(pcout, "Time step size", time_step);
   }
   else if(adaptive_time_stepping == true)
   {
@@ -546,7 +401,7 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::cal
     print_parameter(pcout, "Time step size", time_step_tmp);
 
     // if u(x,t=0)=0, this time step size will tend to infinity
-    time_steps[0] = calculate_adaptive_time_step_cfl<dim, fe_degree_u, value_type>(
+    double time_step_adap = calculate_adaptive_time_step_cfl<dim, fe_degree_u, value_type>(
       navier_stokes_operation->get_data(),
       navier_stokes_operation->get_dof_index_velocity(),
       navier_stokes_operation->get_quad_index_velocity_linear(),
@@ -555,7 +410,9 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::cal
       param.cfl_exponent_fe_degree_velocity);
 
     // use adaptive time step size only if it is smaller, otherwise use temporary time step size
-    time_steps[0] = std::min(time_steps[0], time_step_tmp);
+    time_step_adap = std::min(time_step_adap, time_step_tmp);
+
+    this->set_time_step_size(time_step_adap);
 
     pcout << std::endl
           << "Calculation of time step size according to adaptive CFL condition:" << std::endl
@@ -563,7 +420,7 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::cal
 
     print_parameter(pcout, "CFL", cfl);
     print_parameter(pcout, "exponent fe_degree_velocity", param.cfl_exponent_fe_degree_velocity);
-    print_parameter(pcout, "Time step size", time_steps[0]);
+    print_parameter(pcout, "Time step size", time_step_adap);
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepMaxEfficiency)
   {
@@ -574,12 +431,13 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::cal
       param.c_eff, global_min_cell_diameter, fe_degree_u, order, n_refine_time);
 
     // decrease time_step in order to exactly hit end_time
-    time_steps[0] = (param.end_time - param.start_time) /
-                    (1 + int((param.end_time - param.start_time) / time_step));
+    time_step = (end_time - start_time) / (1 + int((end_time - start_time) / time_step));
+
+    this->set_time_step_size(time_step);
 
     pcout << "Calculation of time step size (max efficiency):" << std::endl << std::endl;
     print_parameter(pcout, "C_eff", param.c_eff / std::pow(2, n_refine_time));
-    print_parameter(pcout, "Time step size", time_steps[0]);
+    print_parameter(pcout, "Time step size", time_step);
   }
   else
   {
@@ -593,11 +451,7 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::cal
         "possibilities are ConstTimeStepUserSpecified, ConstTimeStepCFL  and AdaptiveTimeStepCFL."));
   }
 
-  // fill time_steps array
-  for(unsigned int i = 1; i < order; ++i)
-    time_steps[i] = time_steps[0];
-
-  if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+  if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
     // make sure that CFL condition is used for the calculation of the time step size (the aim
     // of the OIF splitting approach is to overcome limitations of the CFL condition)
@@ -608,13 +462,15 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::cal
 
     // calculate number of substeps M
     double tol = 1.0e-6;
-    M          = (int)(this->cfl / (cfl_oif - tol));
 
-    if(cfl_oif < this->cfl / double(M) - tol)
+    M = (int)(cfl / (cfl_oif - tol));
+
+    if(cfl_oif < cfl / double(M) - tol)
       M += 1;
 
     // calculate substepping time step size delta_s
-    delta_s = this->time_steps[0] / (double)M;
+    double delta_t = this->get_time_step_size();
+    delta_s        = delta_t / (double)M;
 
     pcout << std::endl
           << "Calculation of OIF substepping time step size:" << std::endl
@@ -640,16 +496,14 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
    *                 |         |        |           |           /
    *  time_steps-vec:   dt[2]     dt[1]    dt[0]
    *
-   *                    dt[1]  <- dt[0] <- recalculate dt[0]
+   *                    dt[1]  <- dt[0] <- new_dt
    *
    */
+  this->push_back_time_step_sizes();
 
-  for(unsigned int i = order - 1; i > 0; --i)
-    time_steps[i] = time_steps[i - 1];
+  double last_time_step = this->get_time_step_size();
 
-  value_type last_time_step = time_steps[0];
-
-  time_steps[0] = calculate_adaptive_time_step_cfl<dim, fe_degree_u, value_type>(
+  double new_time_step = calculate_adaptive_time_step_cfl<dim, fe_degree_u, value_type>(
     navier_stokes_operation->get_data(),
     navier_stokes_operation->get_dof_index_velocity(),
     navier_stokes_operation->get_quad_index_velocity_linear(),
@@ -661,151 +515,10 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
   if(use_limiter == true)
   {
     double factor = param.adaptive_time_stepping_limiting_factor;
-    limit_time_step_change(time_steps[0], last_time_step, factor);
-  }
-}
-
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::timeloop()
-{
-  pcout << std::endl << "Starting time loop ..." << std::endl;
-
-  global_timer.restart();
-
-  postprocessing();
-
-  // TODO
-  //  postprocessing_stability_analysis();
-
-  // a small number which is much smaller than the time step size
-  const value_type EPSILON = 1.0e-10;
-
-  while(time < (param.end_time - EPSILON) && time_step_number <= param.max_number_of_time_steps)
-  {
-    do_timestep();
-
-    postprocessing();
+    limit_time_step_change(new_time_step, last_time_step, factor);
   }
 
-  total_time += global_timer.wall_time();
-
-  pcout << std::endl << "... done!" << std::endl;
-
-  analyze_computing_times();
-}
-
-/*
- *  For the two-domain solver we only want to advance one time step because
- *  the solvers for the two domains have to communicate between the time steps.
- */
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-bool
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::advance_one_timestep(
-  bool write_final_output)
-{
-  // a small number which is much smaller than the time step size
-  const value_type EPSILON = 1.0e-10;
-
-  bool started = time > (param.start_time - EPSILON);
-
-  // If the time integrator has not yet started, simply increment physical
-  // time without solving the current time step.
-  if(!started)
-  {
-    time += time_steps[0];
-  }
-
-  if(started && this->time_step_number == 1)
-  {
-    pcout << std::endl
-          << "Starting time loop for incompressible Navier-Stokes solver ..." << std::endl;
-
-    global_timer.restart();
-
-    postprocessing();
-  }
-
-  // check if we have reached the end of the time loop
-  bool finished =
-    !(time < (param.end_time - EPSILON) && time_step_number <= param.max_number_of_time_steps);
-
-  if(started && !finished)
-  {
-    // advance one time step
-    do_timestep();
-    postprocessing();
-  }
-
-  if(finished && write_final_output)
-  {
-    total_time += global_timer.wall_time();
-
-    pcout << std::endl << "... done!" << std::endl;
-
-    analyze_computing_times();
-  }
-
-  return finished;
-}
-
-/*
- *  Implementation of pseudo-timestepping to solve steady-state problems
- *  applying an unsteady solution approach.
- *  The aim/motivation is to obtain a solution algorithm that allows to
- *  solve the steady Navier-Stokes equations more efficiently for large
- *  Reynolds numbers as compared to a steady-state solver for which preconditioning
- *  of the linearized, coupled system of equations becomes more difficult for
- *  large Re numbers.
- *  This solver differs from the unsteady solver only in the way that the simulation
- *  is terminated in case a convergence criterion is fulfilled.
- */
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  timeloop_steady_problem()
-{
-  global_timer.restart();
-
-  postprocessing_steady_problem();
-
-  solve_steady_problem();
-
-  postprocessing_steady_problem();
-
-  total_time += this->global_timer.wall_time();
-
-  analyze_computing_times();
-}
-
-/*
- *  Solve on time step including the update of time integrator constants, counters,
- *  the time step size (in case of adaptive time stepping) and the update of solution
- *  vectors so that everything is pepared for the next time step.
- */
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::do_timestep()
-{
-  update_time_integrator_constants();
-
-  output_solver_info_header();
-
-  solve_timestep();
-
-  output_remaining_time();
-
-  prepare_vectors_for_next_timestep();
-
-  time += time_steps[0];
-  ++time_step_number;
-
-  if(param.write_restart == true)
-    write_restart();
-
-  if(adaptive_time_stepping == true)
-    recalculate_adaptive_time_step();
+  this->set_time_step_size(new_time_step);
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -813,17 +526,15 @@ void
 TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
   output_solver_info_header() const
 {
-  if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+  if(get_time_step_number() % param.output_solver_info_every_timesteps == 0)
   {
-    this->pcout << std::endl
-                << "______________________________________________________________________"
-                << std::endl
-                << std::endl
-                << " Number of TIME STEPS: " << std::left << std::setw(8) << this->time_step_number
-                << "t_n = " << std::scientific << std::setprecision(4) << this->time
-                << " -> t_n+1 = " << this->time + this->time_steps[0] << std::endl
-                << "______________________________________________________________________"
-                << std::endl;
+    pcout << std::endl
+          << "______________________________________________________________________" << std::endl
+          << std::endl
+          << " Number of TIME STEPS: " << std::left << std::setw(8) << get_time_step_number()
+          << "t_n = " << std::scientific << std::setprecision(4) << this->get_time()
+          << " -> t_n+1 = " << this->get_time() + this->get_time_step_size() << std::endl
+          << "______________________________________________________________________" << std::endl;
   }
 }
 
@@ -837,17 +548,16 @@ void
 TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::output_remaining_time()
   const
 {
-  if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+  if(get_time_step_number() % param.output_solver_info_every_timesteps == 0)
   {
-    if(this->time > this->param.start_time)
+    if(this->get_time() > start_time)
     {
-      double const remaining_time = this->global_timer.wall_time() *
-                                    (this->param.end_time - this->time) /
-                                    (this->time - this->param.start_time);
+      double const remaining_time =
+        global_timer.wall_time() * (end_time - this->get_time()) / (this->get_time() - start_time);
 
-      this->pcout << std::endl
-                  << "Estimated time until completion is " << remaining_time << " s / "
-                  << remaining_time / 3600. << " h." << std::endl;
+      pcout << std::endl
+            << "Estimated time until completion is " << remaining_time << " s / "
+            << remaining_time / 3600. << " h." << std::endl;
     }
   }
 }
@@ -858,16 +568,16 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
   calculate_sum_alphai_ui_oif_substepping()
 {
   unsigned int current_order = 0;
-  if(this->time_step_number <= this->order && this->param.start_with_low_order == true)
+  if(get_time_step_number() <= order && param.start_with_low_order == true)
   {
-    current_order = this->time_step_number;
+    current_order = get_time_step_number();
   }
   else
   {
-    current_order = this->order;
+    current_order = order;
   }
 
-  AssertThrow(current_order > 0 && current_order <= this->order,
+  AssertThrow(current_order > 0 && current_order <= order,
               ExcMessage("Invalid parameter current_order"));
 
   // fill vectors with previous velocity solutions and previous time instants
@@ -878,7 +588,7 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
   {
     solutions.at(i) = &get_velocity(i);
     // assume equidistant time step sizes
-    times.at(i) = this->time - (double)(i) * this->time_steps[0];
+    times.at(i) = this->get_time() - (double)(i) * this->get_time_step_size();
   }
 
   // Loop over all previous time instants required by the BDF scheme
@@ -888,28 +598,28 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
   for(unsigned int i = 0; i < current_order; ++i)
   {
     // initialize solution: u_tilde(s=0) = u(t_{n-i})
-    this->solution_tilde_m = *solutions.at(i);
+    solution_tilde_m = *solutions.at(i);
 
     // calculate start time t_{n-i}
     double const time_n_i = times.at(i);
 
     // time loop substepping: t_{n-i} <= t <= t_{n+1}
-    for(unsigned int m = 0; m < this->M * (i + 1); ++m)
+    for(unsigned int m = 0; m < M * (i + 1); ++m)
     {
       // solve time step
-      this->time_integrator_OIF->solve_timestep(this->solution_tilde_mp,
-                                                this->solution_tilde_m,
-                                                time_n_i + this->delta_s * m,
-                                                this->delta_s);
+      time_integrator_OIF->solve_timestep(solution_tilde_mp,
+                                          solution_tilde_m,
+                                          time_n_i + delta_s * m,
+                                          delta_s);
 
-      this->solution_tilde_mp.swap(this->solution_tilde_m);
+      solution_tilde_mp.swap(solution_tilde_m);
     }
 
     // calculate sum (alpha_i/dt * u_tilde_i)
     if(i == 0)
-      this->sum_alphai_ui.equ(this->bdf.get_alpha(i) / this->time_steps[0], this->solution_tilde_m);
+      sum_alphai_ui.equ(bdf.get_alpha(i) / this->get_time_step_size(), solution_tilde_m);
     else // i>0
-      this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->time_steps[0], this->solution_tilde_m);
+      sum_alphai_ui.add(bdf.get_alpha(i) / this->get_time_step_size(), solution_tilde_m);
   }
 }
 

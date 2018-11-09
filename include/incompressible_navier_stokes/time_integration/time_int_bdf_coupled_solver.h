@@ -53,6 +53,9 @@ public:
   virtual void
   analyze_computing_times() const;
 
+  void
+  postprocessing_stability_analysis();
+
 private:
   virtual void
   setup_derived();
@@ -86,9 +89,6 @@ private:
 
   virtual void
   postprocessing_steady_problem() const;
-
-  void
-  postprocessing_stability_analysis();
 
   virtual void
   prepare_vectors_for_next_timestep();
@@ -164,7 +164,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 {
   navier_stokes_operation->prescribe_initial_conditions(solution[0].block(0),
                                                         solution[0].block(1),
-                                                        this->time);
+                                                        this->get_time());
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -174,8 +174,10 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::initiali
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < solution.size(); ++i)
   {
-    navier_stokes_operation->prescribe_initial_conditions(
-      solution[i].block(0), solution[i].block(1), this->time - double(i) * this->time_steps[0]);
+    navier_stokes_operation->prescribe_initial_conditions(solution[i].block(0),
+                                                          solution[i].block(1),
+                                                          this->get_time() -
+                                                            double(i) * this->get_time_step_size());
   }
 }
 
@@ -210,7 +212,8 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
   {
     navier_stokes_operation->evaluate_convective_term(vec_convective_term[i],
                                                       solution[i].block(0),
-                                                      this->time - double(i) * this->time_steps[0]);
+                                                      this->get_time() -
+                                                        double(i) * this->get_time_step_size());
   }
 }
 
@@ -278,8 +281,8 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
   // update scaling factor of continuity equation
   if(this->param.use_scaling_continuity == true)
   {
-    scaling_factor_continuity =
-      this->param.scaling_factor_continuity * characteristic_element_length / this->time_steps[0];
+    scaling_factor_continuity = this->param.scaling_factor_continuity *
+                                characteristic_element_length / this->get_time_step_size();
     navier_stokes_operation->set_scaling_factor_continuity(scaling_factor_continuity);
   }
   else // use_scaling_continuity == false
@@ -300,7 +303,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
 
     navier_stokes_operation->update_turbulence_model(solution_np.block(0));
 
-    if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+    if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
     {
       this->pcout << std::endl
                   << "Update of turbulent viscosity:   Wall time [s]: " << std::scientific
@@ -343,7 +346,8 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
   {
     // calculate rhs vector for the Stokes problem, i.e., the convective term is neglected in this
     // step
-    navier_stokes_operation->rhs_stokes_problem(rhs_vector, this->time + this->time_steps[0]);
+    navier_stokes_operation->rhs_stokes_problem(rhs_vector,
+                                                this->get_time() + this->get_time_step_size());
 
     // Add the convective term to the right-hand side of the equations
     // if the convective term is treated explicitly (additive decomposition):
@@ -353,7 +357,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
     {
       navier_stokes_operation->evaluate_convective_term(vec_convective_term[0],
                                                         solution[0].block(0),
-                                                        this->time);
+                                                        this->get_time());
 
       for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
         rhs_vector.block(0).add(-this->extra.get_beta(i), vec_convective_term[i]);
@@ -369,10 +373,12 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
     // calculate sum (alpha_i/dt * u_i) for standard BDF discretization
     else
     {
-      this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->time_steps[0], solution[0].block(0));
+      this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(),
+                              solution[0].block(0));
       for(unsigned int i = 1; i < solution.size(); ++i)
       {
-        this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->time_steps[0], solution[i].block(0));
+        this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(),
+                                solution[i].block(0));
       }
     }
 
@@ -387,7 +393,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
     computing_times[0] += timer.wall_time();
 
     // write output
-    if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+    if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
     {
       ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
       pcout << "Solve linear Stokes problem:" << std::endl
@@ -398,10 +404,12 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
   else // a nonlinear system of equations has to be solved
   {
     // calculate Sum_i (alpha_i/dt * u_i)
-    this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->time_steps[0], solution[0].block(0));
+    this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(),
+                            solution[0].block(0));
     for(unsigned int i = 1; i < solution.size(); ++i)
     {
-      this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->time_steps[0], solution[i].block(0));
+      this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(),
+                              solution[i].block(0));
     }
 
     // Newton solver
@@ -410,7 +418,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
     navier_stokes_operation->solve_nonlinear_problem(
       solution_np,
       this->sum_alphai_ui,
-      this->time + this->time_steps[0],
+      this->get_time() + this->get_time_step_size(),
       this->get_scaling_factor_time_derivative_term(),
       newton_iterations,
       linear_iterations);
@@ -420,7 +428,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
     computing_times[0] += timer.wall_time();
 
     // write output
-    if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+    if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
     {
       ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
@@ -448,7 +456,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
     if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
     {
       navier_stokes_operation->shift_pressure(solution_np.block(1),
-                                              this->time + this->time_steps[0]);
+                                              this->get_time() + this->get_time_step_size());
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
     {
@@ -457,7 +465,8 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
     {
       navier_stokes_operation->shift_pressure_mean_value(solution_np.block(1),
-                                                         this->time + this->time_steps[0]);
+                                                         this->get_time() +
+                                                           this->get_time_step_size());
     }
     else
     {
@@ -499,7 +508,8 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::postproc
     velocity_extrapolated.add(this->extra.get_beta(i), solution[i].block(0));
 
   // update projection operator
-  navier_stokes_operation->update_projection_operator(velocity_extrapolated, this->time_steps[0]);
+  navier_stokes_operation->update_projection_operator(velocity_extrapolated,
+                                                      this->get_time_step_size());
 
   // solve projection (where also the preconditioner is updated)
   unsigned int iterations_postprocessing =
@@ -508,7 +518,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::postproc
   iterations[1] += iterations_postprocessing;
 
   // write output
-  if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+  if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
   {
     this->pcout << std::endl
                 << "Postprocessing of velocity field:" << std::endl
@@ -523,8 +533,8 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::postproc
 {
   navier_stokes_operation->do_postprocessing(solution[0].block(0),
                                              solution[0].block(1),
-                                             this->time,
-                                             this->time_step_number);
+                                             this->get_time(),
+                                             this->get_time_step_number());
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -590,7 +600,8 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
       norm_max = norm;
 
     // print eigenvalues
-    std::cout << propagation_matrix.eigenvalue(i) << std::endl;
+    std::cout << std::scientific << std::setprecision(5) << propagation_matrix.eigenvalue(i)
+              << std::endl;
   }
 
   std::cout << std::endl << std::endl << "Maximum eigenvalue = " << norm_max << std::endl;
@@ -625,7 +636,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_st
   if(this->param.convergence_criterion_steady_problem ==
      ConvergenceCriterionSteadyProblem::SolutionIncrement)
   {
-    while(!converged && this->time_step_number <= this->param.max_number_of_time_steps)
+    while(!converged && this->get_time_step_number() <= this->param.max_number_of_time_steps)
     {
       // save solution from previous time step
       velocity_tmp = this->solution[0].block(0);
@@ -655,7 +666,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_st
         incr_rel = incr / norm;
 
       // write output
-      if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+      if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
       {
         this->pcout << std::endl
                     << "Norm of solution increment:" << std::endl
@@ -675,7 +686,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_st
   else if(this->param.convergence_criterion_steady_problem ==
           ConvergenceCriterionSteadyProblem::ResidualSteadyNavierStokes)
   {
-    while(!converged && this->time_step_number <= this->param.max_number_of_time_steps)
+    while(!converged && this->get_time_step_number() <= this->param.max_number_of_time_steps)
     {
       this->do_timestep();
 
@@ -716,7 +727,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::evaluate
   double residual = this->solution_np.l2_norm();
 
   // write output
-  if((this->time_step_number - 1) % this->param.output_solver_info_every_timesteps == 0)
+  if((this->get_time_step_number() - 1) % this->param.output_solver_info_every_timesteps == 0)
   {
     this->pcout << std::endl
                 << "Norm of residual of steady Navier-Stokes equations:" << std::endl
@@ -733,7 +744,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::analyze_
   const
 {
   std::string  names[2]     = {"Coupled system ", "Postprocessing "};
-  unsigned int N_time_steps = this->time_step_number - 1;
+  unsigned int N_time_steps = this->get_time_step_number() - 1;
 
   // iterations
   this->pcout << std::endl
