@@ -150,12 +150,10 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if(boundary_type == BoundaryType::dirichlet)
   {
-    VectorizedArray<value_type> g;
+    typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
+      boundary_descriptor->dirichlet_bc.find(boundary_id);
+    VectorizedArray<value_type> g = evaluate_scalar_function(it->second, q_point, time);
 
-    typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-    it = boundary_descriptor->dirichlet_bc.find(boundary_id);
-
-    evaluate_scalar_function(g, it->second, q_point, time);
     value_p = -value_m + make_vectorized_array<value_type>(2.0) * g;
   }
   else if(boundary_type == BoundaryType::neumann)
@@ -189,12 +187,11 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if(boundary_type == BoundaryType::dirichlet)
   {
-    Tensor<1, dim, VectorizedArray<value_type>> g;
+    typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
+      boundary_descriptor->dirichlet_bc.find(boundary_id);
+    Tensor<1, dim, VectorizedArray<value_type>> g =
+      evaluate_vectorial_function(it->second, q_point, time);
 
-    typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-    it = boundary_descriptor->dirichlet_bc.find(boundary_id);
-
-    evaluate_vectorial_function(g, it->second, q_point, time);
     value_p = -value_m + make_vectorized_array<value_type>(2.0) * g;
   }
   else if(boundary_type == BoundaryType::neumann)
@@ -232,11 +229,10 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else if(boundary_type == BoundaryType::neumann)
   {
-    Tensor<1, dim, VectorizedArray<value_type>> h;
-
-    typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-    it = boundary_descriptor->neumann_bc.find(boundary_id);
-    evaluate_vectorial_function(h, it->second, q_point, time);
+    typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
+      boundary_descriptor->neumann_bc.find(boundary_id);
+    Tensor<1, dim, VectorizedArray<value_type>> h =
+      evaluate_vectorial_function(it->second, q_point, time);
 
     tau_P_normal = -tau_M_normal + make_vectorized_array<value_type>(2.0) * h;
   }
@@ -271,11 +267,9 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else if(boundary_type == BoundaryType::neumann)
   {
-    VectorizedArray<value_type> h;
-
-    typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-    it = boundary_descriptor->neumann_bc.find(boundary_id);
-    evaluate_scalar_function(h, it->second, q_point, time);
+    typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
+      boundary_descriptor->neumann_bc.find(boundary_id);
+    VectorizedArray<value_type> h = evaluate_scalar_function(it->second, q_point, time);
 
     grad_T_P_normal = -grad_T_M_normal + make_vectorized_array<value_type>(2.0) * h;
   }
@@ -433,12 +427,9 @@ private:
         scalar density  = fe_eval_density.get_value(q);
         vector velocity = fe_eval_momentum.get_value(q) / density;
 
-        scalar rhs_density, rhs_energy;
-        vector rhs_momentum;
-
-        evaluate_scalar_function(rhs_density, operator_data.rhs_rho, q_points, eval_time);
-        evaluate_vectorial_function(rhs_momentum, operator_data.rhs_u, q_points, eval_time);
-        evaluate_scalar_function(rhs_energy, operator_data.rhs_E, q_points, eval_time);
+        scalar rhs_density  = evaluate_scalar_function(operator_data.rhs_rho, q_points, eval_time);
+        vector rhs_momentum = evaluate_vectorial_function(operator_data.rhs_u, q_points, eval_time);
+        scalar rhs_energy   = evaluate_scalar_function(operator_data.rhs_E, q_points, eval_time);
 
         fe_eval_density.submit_value(rhs_density, q);
         fe_eval_momentum.submit_value(rhs_momentum, q);
