@@ -580,17 +580,6 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
   AssertThrow(current_order > 0 && current_order <= order,
               ExcMessage("Invalid parameter current_order"));
 
-  // fill vectors with previous velocity solutions and previous time instants
-  std::vector<VectorType const *> solutions(current_order);
-  std::vector<double>             times(current_order);
-
-  for(unsigned int i = 0; i < current_order; ++i)
-  {
-    solutions.at(i) = &get_velocity(i);
-    // assume equidistant time step sizes
-    times.at(i) = this->get_previous_time(i);
-  }
-
   // Loop over all previous time instants required by the BDF scheme
   // and calculate u_tilde by substepping algorithm, i.e.,
   // integrate over time interval t_{n-i} <= t <= t_{n+1}
@@ -598,10 +587,10 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
   for(unsigned int i = 0; i < current_order; ++i)
   {
     // initialize solution: u_tilde(s=0) = u(t_{n-i})
-    solution_tilde_m = *solutions.at(i);
+    solution_tilde_m = get_velocity(i);
 
     // calculate start time t_{n-i}
-    double const time_n_i = times.at(i);
+    double const time_n_i = this->get_previous_time(i);
 
     // time loop substepping: t_{n-i} <= t <= t_{n+1}
     for(unsigned int m = 0; m < M * (i + 1); ++m)
