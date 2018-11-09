@@ -418,15 +418,15 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::set_start_time()
   // DOMAIN 1
   if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    time_integrator_coupled_1->set_time(time);
+    time_integrator_coupled_1->reset_time(time);
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    time_integrator_dual_splitting_1->set_time(time);
+    time_integrator_dual_splitting_1->reset_time(time);
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    time_integrator_pressure_correction_1->set_time(time);
+    time_integrator_pressure_correction_1->reset_time(time);
   }
   else
   {
@@ -435,15 +435,15 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::set_start_time()
   // DOMAIN 2
   if(this->param_2.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    time_integrator_coupled_2->set_time(time);
+    time_integrator_coupled_2->reset_time(time);
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    time_integrator_dual_splitting_2->set_time(time);
+    time_integrator_dual_splitting_2->reset_time(time);
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    time_integrator_pressure_correction_2->set_time(time);
+    time_integrator_pressure_correction_2->reset_time(time);
   }
   else
   {

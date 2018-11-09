@@ -46,7 +46,7 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/poiseuille.h"
 //#include "incompressible_navier_stokes_test_cases/cavity.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
-//#include "incompressible_navier_stokes_test_cases/vortex.h"
+#include "incompressible_navier_stokes_test_cases/vortex.h"
 //#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/tum.h"
 //#include "incompressible_navier_stokes_test_cases/orr_sommerfeld.h"
@@ -61,7 +61,7 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/cavity_3D.h"
 //#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
-#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
+//#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
 
 template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
 class NavierStokesProblem
@@ -322,6 +322,24 @@ template<int dim, int degree_u, int degree_p, typename Number>
 void
 NavierStokesProblem<dim, degree_u, degree_p, Number>::run_timeloop()
 {
+  // stability analysis (uncomment if desired)
+  if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+  {
+    // time_integrator_coupled->postprocessing_stability_analysis();
+  }
+  else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  {
+    // time_integrator_dual_splitting->postprocessing_stability_analysis();
+  }
+  else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+  {
+    // time_integrator_pressure_correction->postprocessing_stability_analysis();
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
+
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
     if(this->param.problem_type == ProblemType::Steady)

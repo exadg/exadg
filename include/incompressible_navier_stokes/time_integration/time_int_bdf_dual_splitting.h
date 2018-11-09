@@ -526,7 +526,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::co
   if(this->param.equation_type == EquationType::NavierStokes &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
-    this->calculate_sum_alphai_ui_oif_substepping(this->param.cfl, this->param.cfl_oif);
+    this->calculate_sum_alphai_ui_oif_substepping(this->cfl, this->cfl_oif);
   }
   // calculate sum (alpha_i/dt * u_i) for standard BDF discretization
   else

@@ -491,17 +491,17 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::set_start_time()
   // fluid
   if(fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
   {
-    time_integrator_coupled->set_time(time);
+    time_integrator_coupled->reset_time(time);
   }
   else if(fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFDualSplittingScheme)
   {
-    time_integrator_dual_splitting->set_time(time);
+    time_integrator_dual_splitting->reset_time(time);
   }
   else if(fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFPressureCorrection)
   {
-    time_integrator_pressure_correction->set_time(time);
+    time_integrator_pressure_correction->reset_time(time);
   }
   else
   {
@@ -511,11 +511,11 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::set_start_time()
   // scalar transport
   if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
   {
-    scalar_time_integrator_explRK->set_time(time);
+    scalar_time_integrator_explRK->reset_time(time);
   }
   else if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
   {
-    scalar_time_integrator_BDF->set_time(time);
+    scalar_time_integrator_BDF->reset_time(time);
   }
   else
   {
