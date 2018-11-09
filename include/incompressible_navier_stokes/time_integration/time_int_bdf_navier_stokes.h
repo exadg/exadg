@@ -36,8 +36,6 @@ public:
       param(param_in),
       cfl(param.cfl / std::pow(2.0, n_refine_time_in)),
       cfl_oif(param_in.cfl_oif / std::pow(2.0, n_refine_time_in)),
-      M(1),
-      delta_s(1.0),
       n_refine_time(n_refine_time_in),
       navier_stokes_operation(navier_stokes_operation_in)
   {
@@ -61,7 +59,14 @@ protected:
   initialize_oif();
 
   void
-  calculate_sum_alphai_ui_oif_substepping();
+  initialize_solution_oif_substepping(unsigned int i);
+
+  void
+  update_sum_alphai_ui_oif_substepping(unsigned int i);
+
+  void
+  do_timestep_oif_substepping_and_update_vectors(double const start_time,
+                                                 double const time_step_size);
 
   virtual void
   calculate_time_step();
@@ -107,12 +112,6 @@ protected:
 
   // cfl number cfl_oif for operator-integration-factor splitting
   double const cfl_oif;
-
-  // number of substeps for operator-integration-factor splitting per macro time step dt
-  unsigned int M;
-
-  // substepping time step size delta_s for operator-integration-factor splitting
-  double delta_s;
 
   // solution vectors needed for OIF substepping of convective term
   VectorType solution_tilde_m;
@@ -460,25 +459,9 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::cal
       ExcMessage(
         "Specified calculation of time step size not compatible with OIF splitting approach!"));
 
-    // calculate number of substeps M
-    double tol = 1.0e-6;
-
-    M = (int)(cfl / (cfl_oif - tol));
-
-    if(cfl_oif < cfl / double(M) - tol)
-      M += 1;
-
-    // calculate substepping time step size delta_s
-    double delta_t = this->get_time_step_size();
-    delta_s        = delta_t / (double)M;
-
-    pcout << std::endl
-          << "Calculation of OIF substepping time step size:" << std::endl
-          << std::endl;
+    pcout << std::endl << "OIF substepping for convective term:" << std::endl << std::endl;
 
     print_parameter(pcout, "CFL (OIF)", cfl_oif);
-    print_parameter(pcout, "Number of substeps", M);
-    print_parameter(pcout, "Substepping time step size", delta_s);
   }
 }
 
@@ -565,39 +548,39 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::out
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
 TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  calculate_sum_alphai_ui_oif_substepping()
+  initialize_solution_oif_substepping(unsigned int i)
 {
-  // Loop over all previous time instants required by the BDF scheme
-  // and calculate u_tilde by substepping algorithm, i.e.,
-  // integrate over time interval t_{n-i} <= t <= t_{n+1}
-  // using explicit Runge-Kutta methods.
-  for(unsigned int i = 0; i < order; ++i)
-  {
-    // initialize solution: u_tilde(s=0) = u(t_{n-i})
-    solution_tilde_m = get_velocity(i);
-
-    // calculate start time t_{n-i}
-    double const time_n_i = this->get_previous_time(i);
-
-    // time loop substepping: t_{n-i} <= t <= t_{n+1}
-    for(unsigned int m = 0; m < M * (i + 1); ++m)
-    {
-      // solve time step
-      time_integrator_OIF->solve_timestep(solution_tilde_mp,
-                                          solution_tilde_m,
-                                          time_n_i + delta_s * m,
-                                          delta_s);
-
-      solution_tilde_mp.swap(solution_tilde_m);
-    }
-
-    // calculate sum (alpha_i/dt * u_tilde_i)
-    if(i == 0)
-      sum_alphai_ui.equ(bdf.get_alpha(i) / this->get_time_step_size(), solution_tilde_m);
-    else // i>0
-      sum_alphai_ui.add(bdf.get_alpha(i) / this->get_time_step_size(), solution_tilde_m);
-  }
+  // initialize solution: u_tilde(s=0) = u(t_{n-i})
+  solution_tilde_m = get_velocity(i);
 }
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void
+TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+  update_sum_alphai_ui_oif_substepping(unsigned int i)
+{
+  // calculate sum (alpha_i/dt * u_tilde_i)
+  if(i == 0)
+    sum_alphai_ui.equ(bdf.get_alpha(i) / this->get_time_step_size(), solution_tilde_m);
+  else // i>0
+    sum_alphai_ui.add(bdf.get_alpha(i) / this->get_time_step_size(), solution_tilde_m);
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void
+TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+  do_timestep_oif_substepping_and_update_vectors(double const start_time,
+                                                 double const time_step_size)
+{
+  // solve sub-step
+  time_integrator_OIF->solve_timestep(solution_tilde_mp,
+                                      solution_tilde_m,
+                                      start_time,
+                                      time_step_size);
+
+  solution_tilde_mp.swap(solution_tilde_m);
+}
+
 
 } // namespace IncNS
 
